@@ -33,7 +33,46 @@ class Reporter {
     }
 
     /**
+     * Write and return relation definition report
+     * 
+     * Specifies multiplicity constraints, related conjuncts and other aspects of all relations
+     *
+     * @return array
+     */
+    public function reportRelationDefinitions(){
+        $content = array_map(function($relation){
+            $relArr = [];
+            
+            $relArr['signature'] = $relation->signature;
+            
+            // Get multiplicity constraints
+            $constraints = [];
+            if($relation->isUni) $constraints[] = "[UNI]";
+            if($relation->isTot) $constraints[] = "[TOT]";
+            if($relation->isInj) $constraints[] = "[INJ]";
+            if($relation->isSur) $constraints[] = "[SUR]";
+            $relArr['constraints'] = empty($constraints) ? "no constraints" : implode(',', $constraints);
+            
+            $relArr['affectedConjuncts'] = [];
+            foreach($relation->affectedConjuncts as $conjunct){
+                $relArr['affectedConjuncts'][$conjunct->id] = [];
+                foreach ($conjunct->invRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['invRules'][] = $ruleName;
+                foreach ($conjunct->sigRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['sigRules'][] = $ruleName;
+            }
+            $relArr['srcOrTgtTable'] = $relation->getMysqlTable()->tableOf;
+            
+            return $relArr;
+        }, Relation::getAllRelations());
+
+        $this->writer->write($content);
+        
+        return $content;
+    }
+
+    /**
      * Write and return interface report
+     * 
+     * Specifies aspects for all interfaces (incl. subinterfaces), like path, label, crud-rights, etc
      * 
      * @return array
      */
