@@ -18,6 +18,7 @@ use Ampersand\IO\JSONWriter;
 use Ampersand\IO\CSVWriter;
 use Ampersand\IO\Importer;
 use Ampersand\IO\JSONReader;
+use Ampersand\Misc\Reporter;
 
 global $app;
 
@@ -273,33 +274,10 @@ $app->get('/admin/report/conjuncts', function () use ($app){
 });
 
 $app->get('/admin/report/interfaces', function () use ($app){
-    /** @var \Slim\Slim $app */
-    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
-    
-    $arr = array();
-    foreach (InterfaceObject::getAllInterfaces() as $key => $ifc) {
-        $arr = array_merge($arr, $ifc->getInterfaceFlattened());
-    }
-    
-    $content = array_map(function(InterfaceObject $ifc){
-        return array( 'path' => $ifc->getPath()
-                    , 'label' => $ifc->label
-                    , 'crudC' => $ifc->crudC()
-                    , 'crudR' => $ifc->crudR()
-                    , 'crudU' => $ifc->crudU()
-                    , 'crudD' => $ifc->crudD()
-                    , 'src' => $ifc->srcConcept->name
-                    , 'tgt' => $ifc->tgtConcept->name
-                    , 'view' => $ifc->getView()->label
-                    , 'relation' => $ifc->relation->signature
-                    , 'flipped' => $ifc->relationIsFlipped
-                    , 'ref' => $ifc->getRefToIfcId()
-                    , 'root' => $ifc->isRoot()
-                    , 'public' => $ifc->isPublic()
-                    , 'roles' => implode(',', $ifc->ifcRoleNames)
-                );
-        
-    }, $arr);
+
+    // Get interface report
+    $reporter = new Reporter(new CSVWriter());
+    $reporter->reportInterfaceDefinitions();
     
     // Response headers
     $filename = Config::get('contextName') . "_Interface definitions_" . date('Y-m-d\TH-i-s') . ".csv";
@@ -307,8 +285,5 @@ $app->get('/admin/report/interfaces', function () use ($app){
     $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
 
     // Output response
-    $output = new CSVWriter();
-    $output->write($content);
-    $output->print();
-    $output->close();
+    print $reporter;
 });
