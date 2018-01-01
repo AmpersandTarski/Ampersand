@@ -10,14 +10,19 @@ use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
-use Ampersand\IO\CSVWriter;
 use Ampersand\Transaction;
 use Ampersand\AmpersandApp;
 use Ampersand\Rule\RuleEngine;
+use Ampersand\IO\Exporter;
+use Ampersand\IO\JSONWriter;
+use Ampersand\IO\CSVWriter;
+use Ampersand\IO\Importer;
+use Ampersand\IO\JSONReader;
 
 global $app;
 
 $app->get('/admin/installer', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reinstallation of application not allowed in production environment", 403);
     
     $defaultPop = filter_var($app->request->params('defaultPop'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE); 
@@ -61,6 +66,7 @@ $app->get('/admin/installer', function () use ($app){
 });
 
 $app->get('/admin/execengine/run', function () use ($app){
+    /** @var \Slim\Slim $app */
     $ampersandApp = AmpersandApp::singleton();
     
     $roleIds = $app->request->params('roleIds');
@@ -83,10 +89,10 @@ $app->get('/admin/execengine/run', function () use ($app){
 });
 
 $app->get('/admin/checks/rules/evaluate/all', function() use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Evaluation of all rules not allowed in production environment", 403);
     
     foreach (RuleEngine::checkRules(Rule::getAllInvRules(), true) as $violation) Notifications::addInvariant($violation);
-    
     foreach (RuleEngine::checkRules(Rule::getAllSigRules(), true) as $violation) Notifications::addSignal($violation);
     
     $content = Notifications::getAll(); // Return all notifications
@@ -94,81 +100,48 @@ $app->get('/admin/checks/rules/evaluate/all', function() use ($app){
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-//TODO: refactor function using new JSON import/export format and functionality
 $app->get('/admin/export/all', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Export not allowed in production environment", 403);
     
-    $allAtoms = array();
-    foreach (Concept::getAllConcepts() as $concept){
-        $allAtoms[$concept->name] = array_map(function($atom){
-            return $atom->id;
-        }, $concept->getAllAtomObjects());
-    }
-    
-    $allLinks = array();
-    foreach (Relation::getAllRelations() as $rel){
-        $allLinks[$rel->signature] = $rel->getAllLinks();
-    }
-    
-    $strFileContent = '<?php' . PHP_EOL
-                     .'$allAtoms = ' . var_export($allAtoms, true) . ';' . PHP_EOL
-                     .'$allLinks = ' . var_export($allLinks, true) . ';' .PHP_EOL
-                     .'?>';
-    
-    file_put_contents(Config::get('absolutePath') . Config::get('logPath') . "export-" . date('Y-m-d_H-i-s') . ".php", $strFileContent);
+    // Response header
+    $filename = Config::get('contextName') . "_Population_" . date('Y-m-d\TH-i-s') . ".json";
+    $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
+    $app->response->headers->set('Content-Type', 'application/json; charset=utf-8');
+
+    // Output response
+    $exporter = new Exporter(new JSONWriter(fopen('php://output', 'w')));
+    $exporter->exportAllPopulation();
 });
 
-//TODO: refactor function using new JSON import/export format and functionality
 $app->get('/admin/import', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
-    $logger = Logger::getLogger('ADMIN');
 
-    $file = $app->request->params('file'); if(is_null($file)) throw new Exception("Import file not specified",500);
-    
-    $ampersandApp = AmpersandApp::singleton();
-
-    include_once (Config::get('absolutePath') . Config::get('logPath') . "{$file}");
-    
-    // check if all concepts and relations are defined
-    foreach((array)$allAtoms as $cpt => $atoms) if(!empty($atoms)) Concept::getConcept($cpt);
-    foreach((array)$allLinks as $rel => $links) if(!empty($links)) Relation::getRelation($rel);
-    
-    foreach((array)$allAtoms as $cpt => $atoms){
-        $logger->info("Importing atoms for concept {$cpt}");
-        if(empty($atoms)) continue;
+    if (is_uploaded_file($_FILES['file']['tmp_name'])) {
+        $reader = new JSONReader();
+        $reader->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
+        $importer = new Importer($reader);
+        $importer->importPopulation();
         
-        $concept = Concept::getConcept($cpt);
-        $total = count($atoms); 
-        $i = 1;
-        foreach($atoms as $atomId){
-            $logger->debug("Importing {$cpt}: atom {$i}/{$total}");
-            $i++;
-            
-            $atom = new Atom($atomId, $concept);
-            $atom->add();
-        }
+        unlink($_FILES['file']['tmp_name']);
+    } else {
+        throw new Exception("Import file not specified", 500);
     }
     
-    foreach ((array)$allLinks as $rel => $links){
-        $logger->info("Importing links for relation {$rel}");
-        if(empty($links)) continue;
-        
-        foreach($links as $link) $link->add();
-    }
-    
+    // Commit transaction
     $transaction = Transaction::getCurrentTransaction()->close(true);
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported successfully");
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported {$_FILES['file']['name']} successfully");
     
-    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
-
+    // Check all process rules that are relevant for the activate roles
+    AmpersandApp::singleton()->checkProcessRules(); 
     $content = Notifications::getAll(); // Return all notifications
-    
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    
 });
 
 
 $app->get('/admin/performance/conjuncts', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Performance tests are not allowed in production environment", 403);
     
     // Defaults
@@ -242,17 +215,20 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
         elseif($b['duration'] > $a['duration']) return 1;
     });
     
-    // Output
+    // Response headers
+    $filename = Config::get('contextName') . "_Conjunct performance_" . date('Y-m-d\TH-i-s') . ".json";
+    $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+    $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
+
+    // Output response
     $output = new CSVWriter();
-    $output->addColumns(array_keys($content[0]));
-    foreach ($content as $row) $output->addRow($row);
-    $output->render('conj-performance-report.csv');
-    
-    // print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    
+    $output->write($content);
+    $output->print();
+    $output->close();
 });
 
 $app->get('/admin/report/relations', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
     
     $content = array();
@@ -283,6 +259,7 @@ $app->get('/admin/report/relations', function () use ($app){
 
 
 $app->get('/admin/report/conjuncts', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
     
     $content = array();
@@ -296,6 +273,7 @@ $app->get('/admin/report/conjuncts', function () use ($app){
 });
 
 $app->get('/admin/report/interfaces', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
     
     $arr = array();
@@ -323,13 +301,16 @@ $app->get('/admin/report/interfaces', function () use ($app){
         
     }, $arr);
     
-    // Output
+    // Response headers
+    $filename = Config::get('contextName') . "_Interface definitions_" . date('Y-m-d\TH-i-s') . ".json";
+    $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+    $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
+
+    // Output response
     $output = new CSVWriter();
-    $output->addColumns(array_keys($content[0]));
-    foreach ($content as $row) $output->addRow($row);
-    $output->render('ifc-report.csv');
-    
-    // print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    $output->write($content);
+    $output->print();
+    $output->close();
 });
 
 ?>

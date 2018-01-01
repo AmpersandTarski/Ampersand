@@ -47,7 +47,7 @@ class Link implements JsonSerializable {
      * @return array
      */
     public function jsonSerialize(){
-        return ['rel' => $this->rel->getSignature(),  'src' => $this->src, 'tgt' => $this->tgt];
+        return ['src' => $this->src, 'tgt' => $this->tgt];
     }
     
     /**

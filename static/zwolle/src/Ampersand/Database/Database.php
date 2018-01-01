@@ -521,15 +521,11 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         $query = "SELECT `{$relTable->srcCol()->name}` as `src`, `{$relTable->tgtCol()->name}` as `tgt` FROM `{$relTable->name}`";
         
         // Construct WHERE-clause if applicable
-        if(isset($srcAtom)){
-            $srcAtomId = $this->getDBRepresentation($srcAtom);
-            $query .= " WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'";
-        }
-        if(isset($tgtAtom)){
-            $tgtAtomId = $this->getDBRepresentation($tgtAtom);
-            if(isset($srcAtom)) $query .= " AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'";
-            else $query .= " WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'";
-        }
+        if(isset($srcAtom)) $query .= " WHERE `{$relTable->srcCol()->name}` = '{$this->getDBRepresentation($srcAtom)}'";
+        else $query .= " WHERE `{$relTable->srcCol()->name}` IS NOT NULL";
+
+        if(isset($tgtAtom)) $query .= " AND `{$relTable->tgtCol()->name}` = '{$this->getDBRepresentation($tgtAtom)}'";
+        else $query .= " AND `{$relTable->tgtCol()->name}` IS NOT NULL";
         
         $links = [];
         foreach((array)$this->Exe($query) as $row){

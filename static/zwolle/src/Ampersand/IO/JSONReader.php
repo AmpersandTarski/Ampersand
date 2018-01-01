@@ -7,37 +7,12 @@
 
 namespace Ampersand\IO;
 
-class JSONReader {
+use Ampersand\IO\AbstractReader;
 
-    /**
-     * Undocumented variable
-     *
-     * @var array $options
-     */
-    protected $options = [];
+class JSONReader extends AbstractReader {
 
-    /**
-     * Content of loaded json file.
-     * 
-     * @var object $content
-     */
-    protected $content = null;
-
-    /**
-     * @param array $options Configuration options
-     */
-    public function __construct($options = []){
-        \array_merge($this->options, $options);
-    }
-    
-    public function loadFileContent($fileContent){
-        $this->content = json_decode($fileContent);
+    public function getContent(){
+        return json_decode(stream_get_contents($this->stream, -1, 0));
     }
 
-    public function loadFile($filePath){
-        $content = file_get_contents($filePath);
-        $this->loadFileContent($content);
-    }
 }
-
-?>
