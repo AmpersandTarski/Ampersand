@@ -27,8 +27,28 @@ class CSVWriter extends AbstractWriter {
         foreach ($data as $row) {
             $fields = [];
             foreach ($columns as $col) {
-                if(isset($row[$col])) $fields[] = $row[$col];
-                else $fields[] = null;
+                if (isset($row[$col])) {
+                    switch (gettype($row[$col])) {
+                        case "array":
+                            throw new Exception("Cannot output multi layer arrays to CSV"); // TODO, replace with functionality to comma separate content one level deeper
+                        case "boolean":
+                        case "integer":
+                        case "double": // = float
+                        case "string":
+                        case "NULL":
+                            $fields[] = $row[$col];
+                            break;
+                        case "object":
+                            $fields[] = (string) $row[$col]; // cast to string (uses __toString function)
+                            break;
+                        case "resource":
+                        case "resource (closed)": //as of PHP 7.2.0
+                        case "unknown type":
+                            throw new Exception("Cannot output variable of type '" . gettype($row[$col] . "' to CSV"));
+                    }
+                } else {
+                    $fields[] = null;
+                }
             }
             
             fputcsv($this->stream, $fields, $delimiter);
