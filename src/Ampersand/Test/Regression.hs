@@ -109,6 +109,7 @@ testAdlfile indnt path adl tinfo = runMyProc myProc
                             , new_session = False
                             , child_group = Nothing
                             , child_user = Nothing
+                            , use_process_jobs = False
                             }
      runMyProc :: CreateProcess -> IO Bool
      runMyProc x = do 

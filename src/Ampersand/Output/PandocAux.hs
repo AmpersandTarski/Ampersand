@@ -28,26 +28,17 @@ import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
-import           Control.Monad
+import qualified Control.Exception as E
 import           Data.Char hiding    (Space)
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Lazy.Char8 as BC
-import           Data.List
-import qualified Data.Text as Text
-import           System.Directory
-import           System.Environment
-import qualified System.Exit as SE (ExitCode(..)) -- These are not considered Ampersand exit codes, but from Pandoc
+import qualified Data.Text.Encoding.Error as TE
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TE
 import           System.FilePath  -- (combine,addExtension,replaceExtension)
 import           Text.Pandoc
 import           Text.Pandoc.Builder
-import           Text.Pandoc.MediaBag
-import           Text.Pandoc.Process (pipeProcess)
-
-#ifdef _WINDOWS
-changePathSeparators :: FilePath -> FilePath
-changePathSeparators = intercalate "/" . splitDirectories
-#endif
+import           Text.Pandoc.PDF (makePDF)
+import           Conduit (liftIO)  
 
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: FSpec -> [(String , String)]
@@ -66,8 +57,8 @@ defaultWriterVariables fSpec
  --   , ("mathfont",
     , ("fontsize", "12pt")   --can be overridden by geometry package (see below)
     , ("lang"    , case fsLang fSpec of
-                       Dutch   -> "dutch"
-                       English -> "english")
+                       Dutch   -> "nl-NL"
+                       English -> "en-US")
     , ("papersize", "a4")
     , ("babel-lang", case fsLang fSpec of
                        Dutch   -> "dutch"
@@ -140,40 +131,68 @@ defaultWriterVariables fSpec
 --         String = the name of the outputfile
 --         The IO() creates the actual output
 writepandoc :: FSpec -> Pandoc -> IO()
-writepandoc fSpec thePandoc = 
-  do verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
-     let wOpts = writerOptions
-     writeToFile wOpts
-     -- In case of Latex, we need to postprocess the .ltx file to pdf:
-     case fspecFormat (getOpts fSpec) of
-        FLatex  ->
-           do result <- makePDF writeLaTeX wOpts thePandoc fSpec
-              case result of 
-                Left err -> do putStrLn "LaTeX Error: "
-                               BL.putStr err
-                               putStrLn "\n."
-                Right _  -> do let pdfFile = outputFile -<.> "pdf"
-                               verboseLn (getOpts fSpec) $ pdfFile ++" created."
-             
-        _ -> return ()
+writepandoc fSpec thePandoc = do
+  verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
+  writePandoc'
  where
-    writeToFile :: WriterOptions -> IO()
-    writeToFile wOpts = do
-      -- when (fspecFormat (getOpts fSpec) == Fdocx)
-      --      writeReferenceFileDocx
-      case getWriter fSpecFormatString of
-        Left msg -> fatal . unlines $
-                        ("Something wrong with format "++show(fspecFormat (getOpts fSpec))++":")
-                        : map ("  "++) (lines msg)
-        Right (writer, extentions) 
-                 -> do let content = writer wOpts thePandoc
-                       writeFile outputFile content
---        Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
---                                                writeFile outputFile content
---        Right (IOStringWriter worker)     -> do content <- worker wOpts thePandoc
---                                                writeFile outputFile content
---        Right (IOByteStringWriter worker) -> do content <- worker wOpts thePandoc
---                                                BC.writeFile outputFile content
+
+    writePandoc' :: IO()
+    writePandoc' =
+     case fspecFormat (getOpts fSpec) of
+       Fdocx  -> do
+         docx <- runIO (writeDocx writerOptions thePandoc) >>= handleError
+         BL.writeFile outputFile docx
+       FLatex -> do
+         res <- runIO aap >>= handleError
+         case res of
+          Left content -> BL.writeFile outputFile content
+          Right err' -> liftIO $
+                  E.throwIO $ PandocPDFError $
+                                     TL.unpack (TE.decodeUtf8With TE.lenientDecode err')
+         where aap :: PandocIO (Either BL.ByteString BL.ByteString)
+               aap = makePDF "pdflatex" [] f
+                        writerOptions thePandoc
+               f = case writer of 
+                    ByteStringWriter _ -> fatal $ "The latex writer should not be a bytestringwriter"
+                    TextWriter x -> x
+                    
+               writer = case getWriter "latex" of
+                         Left e  -> fatal $ "A writer for latex should exist in Pandoc. However, we got:\n"
+                                       ++ e
+                         Right (w, _) -> w :: Writer PandocIO
+
+
+    --  writeToFile wOpts
+    --  -- In case of Latex, we need to postprocess the .ltx file to pdf:
+    --  case fspecFormat (getOpts fSpec) of
+    --     FLatex  ->
+    --        do result <- makePDF writeLaTeX wOpts thePandoc fSpec
+    --           case result of 
+    --             Left err -> do putStrLn "LaTeX Error: "
+    --                            BL.putStr err
+    --                            putStrLn "\n."
+    --             Right _  -> do let pdfFile = outputFile -<.> "pdf"
+    --                            verboseLn (getOpts fSpec) $ pdfFile ++" created."
+             
+    --     _ -> return ()
+
+--     writeToFile :: WriterOptions -> IO()
+--     writeToFile wOpts = do
+--       -- when (fspecFormat (getOpts fSpec) == Fdocx)
+--       --      writeReferenceFileDocx
+--       case getWriter fSpecFormatString of
+--         Left msg -> fatal . unlines $
+--                         ("Something wrong with format "++show(fspecFormat (getOpts fSpec))++":")
+--                         : map ("  "++) (lines msg)
+--         Right (writer, extentions) 
+--                  -> do let content = writer wOpts thePandoc
+--                        writeFile outputFile content
+-- --        Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
+-- --                                                writeFile outputFile content
+-- --        Right (IOStringWriter worker)     -> do content <- worker wOpts thePandoc
+-- --                                                writeFile outputFile content
+-- --        Right (IOByteStringWriter worker) -> do content <- worker wOpts thePandoc
+-- --                                                BC.writeFile outputFile content
 
     outputFile = 
       addExtension (dirOutput (getOpts fSpec) </> baseName (getOpts fSpec))
@@ -582,103 +601,94 @@ texOnlyMarginNote mgn =
 ---temporary from Pandoc:
 ------------------------------------------
 
-makePDF :: (WriterOptions -> Pandoc -> Text.Text)  -- ^ writer
-        -> WriterOptions       -- ^ options
-        -> Pandoc              -- ^ document
-        -> FSpec
-        -> IO (Either BL.ByteString BL.ByteString)
-makePDF writer wOpts pandoc fSpec = 
-  tex2pdf' (dirOutput (getOpts fSpec))
+-- makePDF :: (WriterOptions -> Pandoc -> Text.Text)  -- ^ writer
+--         -> WriterOptions       -- ^ options
+--         -> Pandoc              -- ^ document
+--         -> FSpec
+--         -> IO (Either BL.ByteString BL.ByteString)
+-- makePDF writer wOpts pandoc fSpec = 
+--   tex2pdf' (dirOutput (getOpts fSpec))
   
-  where 
-    wVerbose = writerVerbose wOpts
-    program  = "pdflatex" 
-    args     = writerLaTeXArgs wOpts
-    wSource  = writer wOpts pandoc
-    tex2pdf' :: FilePath                        -- ^ temp directory for output
-             -> IO (Either BL.ByteString BL.ByteString)
-    tex2pdf' tmpDir = do
-      let numruns = if "\\tableofcontents" `isInfixOf` wSource
-                       then 3  -- to get page numbers
-                       else 2  -- 1 run won't give you PDF bookmarks
-      (exit, log', mbPdf) <- runTeXProgram 1 numruns tmpDir
-      case (exit, mbPdf) of
-           (SE.ExitFailure _, _)      -> do
-              let logmsg = extractMsg log'
-              return $ Left logmsg
-           (SE.ExitSuccess, Nothing)  -> return $ Left ""
-           (SE.ExitSuccess, Just pdf) -> return $ Right pdf
+--   where 
+--     wVerbose = writerVerbose wOpts
+--     program  = "pdflatex" 
+--     args     = writerLaTeXArgs wOpts
+--     wSource  = writer wOpts pandoc
+--     tex2pdf' :: FilePath                        -- ^ temp directory for output
+--              -> IO (Either BL.ByteString BL.ByteString)
+--     tex2pdf' tmpDir = do
+--       let numruns = if "\\tableofcontents" `isInfixOf` wSource
+--                        then 3  -- to get page numbers
+--                        else 2  -- 1 run won't give you PDF bookmarks
+--       (exit, log', mbPdf) <- runTeXProgram 1 numruns tmpDir
+--       case (exit, mbPdf) of
+--            (SE.ExitFailure _, _)      -> do
+--               let logmsg = extractMsg log'
+--               return $ Left logmsg
+--            (SE.ExitSuccess, Nothing)  -> return $ Left ""
+--            (SE.ExitSuccess, Just pdf) -> return $ Right pdf
 
--- running tex programs
+-- -- running tex programs
 
--- Run a TeX program on an input bytestring and return (exit code,
--- contents of stdout, contents of produced PDF if any).  Rerun
--- a fixed number of times to resolve references.
-    runTeXProgram :: Int -> Int -> FilePath
-                  -> IO (SE.ExitCode, BL.ByteString, Maybe BL.ByteString)
-    runTeXProgram runNumber numRuns tmpDir = do
-        let file = dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ".ltx"
-        exists <- doesFileExist file
-        unless exists $ fatal ("File should be written by now:\n  "++file)
-#ifdef _WINDOWS
-        -- note:  we want / even on Windows, for TexLive
-        let tmpDir' = changePathSeparators tmpDir
-        let file' = changePathSeparators file
-#else
-        let tmpDir' = tmpDir
-        let file' = file
-#endif
-        let programArgs = ["-halt-on-error", "-interaction", "nonstopmode",
-             "-output-directory", tmpDir'] ++ args ++ [file']
-        env' <- getEnvironment
-        let sep = [searchPathSeparator]
-        let texinputs = maybe (tmpDir' ++ sep) ((tmpDir' ++ sep) ++)
-              $ lookup "TEXINPUTS" env'
-        let env'' = ("TEXINPUTS", texinputs) :
-                      [(k,v) | (k,v) <- env', k /= "TEXINPUTS"]
-        when (wVerbose && runNumber == 1) $ do
-          putStrLn "[makePDF] temp dir:"
-          putStrLn tmpDir'
-          putStrLn "[makePDF] Command line:"
-          putStrLn $ program ++ " " ++ unwords (map show programArgs)
-          putStr "\n"
-          putStrLn $ "[makePDF] Processing: " ++ file'
-          putStr "\n"
-        (exit, out) <- pipeProcess (Just env'') program programArgs BL.empty
-        when wVerbose $ do
-          putStrLn $ "[makePDF] Run #" ++ show runNumber
-          BL.hPutStr stdout out
-          putStr "\n"
-        if runNumber <= numRuns
-           then runTeXProgram (runNumber + 1) numRuns tmpDir
-           else do
-             let pdfFile = replaceDirectory (replaceExtension file ".pdf") tmpDir
-             pdfExists <- doesFileExist pdfFile
-             pdf <- if pdfExists
-                       -- We read PDF as a strict bytestring to make sure that the
-                       -- temp directory is removed on Windows.
-                       -- See https://github.com/jgm/pandoc/issues/1192.
-                       then (Just . BL.fromChunks . (:[])) `fmap` BS.readFile pdfFile
-                       else return Nothing
-             -- Note that some things like Missing character warnings
-             -- appear in the log but not on stderr, so we prefer the log:
-             let logFile = replaceExtension file ".log"
-             logExists <- doesFileExist logFile
-             log' <- if logExists
-                        then BL.readFile logFile
-                        else return out
-             return (exit, log', pdf)
+-- -- Run a TeX program on an input bytestring and return (exit code,
+-- -- contents of stdout, contents of produced PDF if any).  Rerun
+-- -- a fixed number of times to resolve references.
+--     runTeXProgram :: Int -> Int -> FilePath
+--                   -> IO (SE.ExitCode, BL.ByteString, Maybe BL.ByteString)
+--     runTeXProgram runNumber numRuns tmpDir = do
+--         let file = dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ".ltx"
+--         exists <- doesFileExist file
+--         unless exists $ fatal ("File should be written by now:\n  "++file)
+-- #ifdef _WINDOWS
+--         -- note:  we want / even on Windows, for TexLive
+--         let tmpDir' = changePathSeparators tmpDir
+--         let file' = changePathSeparators file
+-- #else
+--         let tmpDir' = tmpDir
+--         let file' = file
+-- #endif
+--         let programArgs = ["-halt-on-error", "-interaction", "nonstopmode",
+--              "-output-directory", tmpDir'] ++ args ++ [file']
+--         env' <- getEnvironment
+--         let sep = [searchPathSeparator]
+--         let texinputs = maybe (tmpDir' ++ sep) ((tmpDir' ++ sep) ++)
+--               $ lookup "TEXINPUTS" env'
+--         let env'' = ("TEXINPUTS", texinputs) :
+--                       [(k,v) | (k,v) <- env', k /= "TEXINPUTS"]
+--         when (wVerbose && runNumber == 1) $ do
+--           putStrLn "[makePDF] temp dir:"
+--           putStrLn tmpDir'
+--           putStrLn "[makePDF] Command line:"
+--           putStrLn $ program ++ " " ++ unwords (map show programArgs)
+--           putStr "\n"
+--           putStrLn $ "[makePDF] Processing: " ++ file'
+--           putStr "\n"
+--         (exit, out) <- pipeProcess (Just env'') program programArgs BL.empty
+--         when wVerbose $ do
+--           putStrLn $ "[makePDF] Run #" ++ show runNumber
+--           BL.hPutStr stdout out
+--           putStr "\n"
+--         if runNumber <= numRuns
+--            then runTeXProgram (runNumber + 1) numRuns tmpDir
+--            else do
+--              let pdfFile = replaceDirectory (replaceExtension file ".pdf") tmpDir
+--              pdfExists <- doesFileExist pdfFile
+--              pdf <- if pdfExists
+--                        -- We read PDF as a strict bytestring to make sure that the
+--                        -- temp directory is removed on Windows.
+--                        -- See https://github.com/jgm/pandoc/issues/1192.
+--                        then (Just . BL.fromChunks . (:[])) `fmap` BS.readFile pdfFile
+--                        else return Nothing
+--              -- Note that some things like Missing character warnings
+--              -- appear in the log but not on stderr, so we prefer the log:
+--              let logFile = replaceExtension file ".log"
+--              logExists <- doesFileExist logFile
+--              log' <- if logExists
+--                         then BL.readFile logFile
+--                         else return out
+--              return (exit, log', pdf)
 
 -- parsing output
-
-extractMsg :: BL.ByteString -> BL.ByteString
-extractMsg log' = do
-  let msg'  = dropWhile (not . ("!" `BC.isPrefixOf`)) $ BC.lines log'
-  let (msg'',rest) = break ("l." `BC.isPrefixOf`) msg'
-  let lineno = take 1 rest
-  if null msg'
-     then log'
-     else BC.unlines (msg'' ++ lineno)
 
 commaPandocAnd :: Lang -> [Inlines] -> Inlines
 commaPandocAnd Dutch = commaNLPandoc "en"

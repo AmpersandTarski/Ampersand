@@ -35,6 +35,7 @@ checkArgs = Args
   , maxSuccess      = 64
   , maxDiscardRatio = 8
   , maxSize         = 8      -- otherwise there's nothing quick about it.
+  , maxShrinks      = 50 
   , chatty          = False
   }
 

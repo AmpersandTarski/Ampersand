@@ -1,10 +1,20 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.SharedAmongChapters
-    ( module X
-    , module Text.Pandoc.Builder
+    ( module Text.Pandoc.Builder
     , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
     , math --
+    , module Text.Pandoc
+    , module Data.Monoid
+    , module Ampersand.ADL1
+    , module Ampersand.Basics
+    , module Ampersand.Core.AbstractSyntaxTree
+    , module Ampersand.Core.ShowAStruct
+    , module Ampersand.FSpec
+    , module Ampersand.Graphic.Graphics
+    , module Ampersand.Misc
+    , module Ampersand.Output.PandocAux
+    , module Ampersand.Classes
     , Chapter(..)
     , chaptersInDoc
     , Xreferenceble(..)
@@ -12,6 +22,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , pandocEqnArray
     , pandocEquationWithLabel
     , Purpose(..)
+    , Role
     , purposes2Blocks
     , violation2Inlines
     , isMissing
@@ -23,29 +34,27 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , plainText
     , sortWith)
 where
-import Ampersand.Basics as X
-import Ampersand.Core.ParseTree as X
-     ( Role
-     )
-import Ampersand.Core.AbstractSyntaxTree as X hiding (Meta)
-import Ampersand.Core.ShowAStruct as X
-import Ampersand.ADL1 as X hiding (Meta)
-import Ampersand.Classes as X
-import Ampersand.FSpec as X
-import Text.Pandoc as X
-import Text.Pandoc.Builder hiding (bulletList,math)
-import qualified Text.Pandoc.Builder as  BuggyBuilder
-import Ampersand.Misc as X
-import Ampersand.Output.PandocAux as X
-import Data.List      --       (intercalate,partition)
-import Data.Monoid as X
-import Data.Maybe
-import Data.Ord
-import Data.Typeable
+import           Ampersand.ADL1 hiding (Meta)
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree hiding (Meta)
+import           Ampersand.Core.ParseTree(Role)
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec
+import           Ampersand.Graphic.Graphics
+import           Ampersand.Misc
+import           Ampersand.Output.PandocAux
+import           Data.List
+import           Data.Maybe
+import           Data.Monoid 
+import           Data.Ord
+import           Data.Typeable
 import qualified Data.Time.Format as DTF
-import GHC.Exts(sortWith)
-import Ampersand.Graphic.Graphics as X
-import System.FilePath  -- (combine,addExtension,replaceExtension)
+import           GHC.Exts(sortWith)
+import           System.FilePath  -- (combine,addExtension,replaceExtension)
+import           Text.Pandoc hiding (trace)
+import           Text.Pandoc.Builder hiding (bulletList,math)
+import qualified Text.Pandoc.Builder as  BuggyBuilder
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]

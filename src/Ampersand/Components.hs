@@ -25,7 +25,6 @@ import qualified Data.ByteString.Lazy as L
 import           Data.Function (on)
 import           Data.List
 import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
-import           Data.Time.Clock.POSIX
 import           Data.Maybe (maybeToList)
 import           System.Directory
 import           System.FilePath
@@ -72,7 +71,8 @@ generateAmpersandOutput multi = do
    doGenProofs =
     do { verboseLn opts $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
    --  ; verboseLn opts $ writeTextile def thePandoc
-       ; writeFile outputFile $ writeHtmlString def thePandoc
+       ; content <- runIO (writeHtml5String def thePandoc) >>= handleError
+       ; Text.writeFile outputFile content
        ; verboseLn opts "Proof written."
        }
     where outputFile = dirOutput opts </> "proofs_of_"++baseName opts -<.> ".html"
@@ -131,7 +131,7 @@ generateAmpersandOutput multi = do
    doGenPopsXLSX :: IO()
    doGenPopsXLSX =
     do { verboseLn opts "Generating .xlsx file containing the population "
-       ; ct <- getPOSIXTime 
+       ; ct <- runIO getPOSIXTime >>= handleError
        ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
        ; verboseLn opts $ "Generated file: " ++ outputFile
        }

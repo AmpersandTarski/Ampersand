@@ -187,6 +187,7 @@ installComposerLibs opts =
        , new_session = False
        , child_group = Nothing
        , child_user = Nothing
+       , use_process_jobs = False
        }
      composerTargetPath = dirPrototype opts
      failOutput (exit_code, stdout', stderr') =
