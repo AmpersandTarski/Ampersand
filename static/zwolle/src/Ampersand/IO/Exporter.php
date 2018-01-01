@@ -64,5 +64,3 @@ class Exporter {
         $this->writer->close();
     }
 }
-
-?>

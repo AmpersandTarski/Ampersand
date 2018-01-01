@@ -656,5 +656,3 @@ class Concept {
         foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $plugs);
     }
 }
-
-?>

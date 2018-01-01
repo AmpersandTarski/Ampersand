@@ -158,4 +158,3 @@ class Role {
         foreach ($allRoleDefs as $roleDef) self::$allRoles[$roleDef['name']] = new Role($roleDef);
     }
 }
-?>

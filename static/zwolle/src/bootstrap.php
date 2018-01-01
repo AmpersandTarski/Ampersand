@@ -37,5 +37,3 @@ if(!defined('LOCALSETTINGS_VERSION') || AmpersandApp::REQ_LOCALSETTINGS_VERSION 
 require_once(__DIR__ . '/bootstrap/ExecEngineFunctions.php');
 // require_once(__DIR__ . '/bootstrap/ExecEngineDateTime.php');
 // require_once(__DIR__ . '/bootstrap/ExecEngineWarshall.php');
-
-?>

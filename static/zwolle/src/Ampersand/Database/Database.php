@@ -731,5 +731,3 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         } 
     }
 }
-
-?>

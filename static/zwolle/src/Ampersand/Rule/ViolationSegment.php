@@ -85,5 +85,3 @@ class ViolationSegment extends ViewSegment {
         }
     }
 }
-
-?>

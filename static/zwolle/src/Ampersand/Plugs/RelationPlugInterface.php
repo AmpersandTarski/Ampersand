@@ -41,5 +41,3 @@ interface RelationPlugInterface extends StorageInterface {
      */
     public function deleteAllLinks(Relation $relation, Atom $atom = null, $srcOrTgt = null);
 }
-
-?>

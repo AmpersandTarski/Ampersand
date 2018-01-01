@@ -47,5 +47,3 @@ class DatabaseTableCol
         $this->unique = $unique;
     }
 }
-
-?>

@@ -205,4 +205,3 @@ class OAuthLoginController {
         if(Transaction::getCurrentTransaction()->isCommitted()) Logger::getUserLogger()->notice("Login successfull");
     }
 }
-?>

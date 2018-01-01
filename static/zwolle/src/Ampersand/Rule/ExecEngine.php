@@ -210,5 +210,3 @@ class ExecEngine extends RuleEngine {
         Logger::getLogger('EXECENGINE')->debug("ExecEngine function '{$name}' registered");
     }
 }
-
-?>

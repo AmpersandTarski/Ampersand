@@ -38,5 +38,3 @@ $app->post('/excelimport/import', function () use ($app){
     
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
-
-?>

@@ -101,5 +101,3 @@ class Link implements JsonSerializable {
     }
     
 }
-
-?>

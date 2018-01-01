@@ -172,6 +172,3 @@ class Hook {
         self::$hookpoints[] = $hookpoint;
     }
 }
-
-?>
-

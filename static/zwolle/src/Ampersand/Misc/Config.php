@@ -43,5 +43,3 @@ class Config {
         self::$configVars[$scope][$configVar] = $value;
     }
 }
-
-?>

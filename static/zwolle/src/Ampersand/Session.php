@@ -198,4 +198,3 @@ class Session {
         Transaction::getCurrentTransaction()->close(true);
     }
 }
-?>

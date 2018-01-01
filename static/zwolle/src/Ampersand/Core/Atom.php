@@ -242,5 +242,3 @@ class Atom implements JsonSerializable {
         }
     }
 }
-
-?>

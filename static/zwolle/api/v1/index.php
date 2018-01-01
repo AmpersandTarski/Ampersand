@@ -77,5 +77,3 @@ foreach((array)$GLOBALS['api']['files'] as $apiFile) include_once ($apiFile); //
 
 // Run app
 $app->run();
-
-?>

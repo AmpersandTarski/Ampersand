@@ -36,5 +36,3 @@ interface ConceptPlugInterface extends StorageInterface {
      */
     public function renameAtom(Atom $atom, $newAtomId);
 }
-
-?>

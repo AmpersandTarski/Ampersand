@@ -21,5 +21,3 @@ class NotificationHandler extends AbstractProcessingHandler
         Notifications::addNotification($record['level'], $record['message']);
     }
 }
-
-?>

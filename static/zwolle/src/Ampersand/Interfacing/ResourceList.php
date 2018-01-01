@@ -377,5 +377,3 @@ class ResourceList implements IteratorAggregate {
     }
     
 }
-
-?>

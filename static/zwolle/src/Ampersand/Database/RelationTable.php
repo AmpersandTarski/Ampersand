@@ -95,5 +95,3 @@ class RelationTable extends DatabaseTable
         return $this->tgtCol;
     }
 }
-
-?>

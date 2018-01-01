@@ -131,5 +131,3 @@ ExecEngine::registerFunction('TransitiveClosure', function($r,$C,$rCopy,$rPlus) 
     
     $OverwritePopulation($closure, $rPlus, $C);
 });
-
-?>

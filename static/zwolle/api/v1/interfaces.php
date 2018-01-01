@@ -24,6 +24,3 @@ $app->get('/interfaces/public', function () use ($app){
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
 });
-
-
-?>

@@ -63,5 +63,3 @@ $app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app)
     
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
-
-?>

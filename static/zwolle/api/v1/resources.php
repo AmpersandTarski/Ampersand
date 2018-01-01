@@ -240,5 +240,3 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
 });
-
-?>

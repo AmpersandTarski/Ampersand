@@ -69,4 +69,3 @@ $app->get('/oauthlogin/callback/github', function () use ($app){
     $code = $app->request->params('code');
     OAuthLoginController::callback($code, 'github');
 });
-?>

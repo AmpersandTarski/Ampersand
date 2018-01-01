@@ -25,5 +25,3 @@ interface ViewPlugInterface extends PlugInterface{
     public function executeViewExpression(ViewSegment $view, Atom $srcAtom = null): array;
     
 }
-
-?>

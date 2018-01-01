@@ -119,5 +119,3 @@ class ViewSegment {
         return str_replace('_SESSION', session_id(), $this->expSQL); // Replace _SESSION var with current session id.
     }
 }
-
-?>

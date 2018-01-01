@@ -160,5 +160,3 @@ ExecEngine::registerFunction('datimeGT', function($gtRelation,$DateConcept,$srcA
         InsPair($gtRelation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
     }
 });
-
-?>

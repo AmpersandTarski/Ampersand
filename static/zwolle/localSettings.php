@@ -87,5 +87,3 @@ require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable Exc
 AmpersandApp::singleton([
     'storages' => [Database::singleton()]
 ]);
-
-?>

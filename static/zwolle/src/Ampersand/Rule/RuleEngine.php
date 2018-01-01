@@ -77,5 +77,3 @@ class RuleEngine {
         return $violations;
     }
 }
-
-?>

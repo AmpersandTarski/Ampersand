@@ -91,5 +91,3 @@ class DatabaseTable
         return current($this->getCols());
     }
 }
-
-?>

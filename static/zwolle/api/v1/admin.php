@@ -312,5 +312,3 @@ $app->get('/admin/report/interfaces', function () use ($app){
     $output->print();
     $output->close();
 });
-
-?>

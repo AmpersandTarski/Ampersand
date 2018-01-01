@@ -364,4 +364,3 @@ ExecEngine::registerFunction('SetNavToOnRollback', function($navTo){
 	
 	AngularApp::setNavToResponse($navTo, 'ROLLBACK');
 });
-?>

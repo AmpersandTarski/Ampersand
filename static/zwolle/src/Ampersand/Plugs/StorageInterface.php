@@ -27,5 +27,3 @@ interface StorageInterface {
 
     public function reinstallStorage();
 }
-
-?>

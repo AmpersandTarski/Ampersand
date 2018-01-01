@@ -25,5 +25,3 @@ interface IfcPlugInterface extends PlugInterface {
     public function executeIfcExpression(InterfaceObject $ifc, Atom $srcAtom = null);
     
 }
-
-?>

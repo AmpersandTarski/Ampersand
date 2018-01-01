@@ -448,5 +448,3 @@ class Resource extends Atom {
         return $resources;
     }
 }
-
-?>
