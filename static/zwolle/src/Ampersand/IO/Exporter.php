@@ -41,19 +41,23 @@ class Exporter {
     }
 
     public function exportAllPopulation(){
-        $allAtoms = array();
+        $conceptPop = [];
         foreach (Concept::getAllConcepts() as $concept){
-            $allAtoms[$concept->name] = array_map(function($atom){
-                return $atom->id;
-            }, $concept->getAllAtomObjects());
+            $conceptPop[] = [
+                'concept' => $concept->name,
+                'atoms' => array_map(function($atom){ return $atom->id; }, $concept->getAllAtomObjects())
+            ];
         }
         
-        $allLinks = array();
+        $relationPop = [];
         foreach (Relation::getAllRelations() as $rel){
-            $allLinks[$rel->signature] = $rel->getAllLinks();
+            $relationPop[] = [
+                'relation' => $rel->signature,
+                'links' => $rel->getAllLinks()
+            ];
         }
 
-        $this->writer->write(['atoms' => $allAtoms, 'links' => $allLinks]);
+        $this->writer->write(['atoms' => $conceptPop, 'links' => $relationPop]);
 
         $this->writer->print();
 
