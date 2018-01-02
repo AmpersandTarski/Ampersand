@@ -1,19 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!DOCTYPE article>
-<article
-$if(lang)$
-  xml:lang="$lang$"
-$endif$
-  xmlns="http://docbook.org/ns/docbook" version="5.0"
 $if(mathml)$
-  xmlns:mml="http://www.w3.org/1998/Math/MathML"
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook EBNF Module V1.1CR1//EN"
+                  "http://www.oasis-open.org/docbook/xml/mathml/1.1CR1/dbmathml.dtd">
+$else$
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 $endif$
-  xmlns:xlink="http://www.w3.org/1999/xlink" >
-  <info>
+<article>
+  <articleinfo>
     <title>$title$</title>
-$if(subtitle)$
-    <subtitle>$subtitle$</subtitle>
-$endif$
 $if(author)$
     <authorgroup>
 $for(author)$
@@ -26,7 +21,7 @@ $endif$
 $if(date)$
     <date>$date$</date>
 $endif$
-  </info>
+  </articleinfo>
 $for(include-before)$
 $include-before$
 $endfor$
