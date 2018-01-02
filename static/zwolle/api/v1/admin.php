@@ -115,23 +115,6 @@ $app->get('/admin/import', function () use ($app){
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-
-$app->get('/admin/performance/conjuncts', function () use ($app){
-    /** @var \Slim\Slim $app */
-
-    // Get report
-    $reporter = new Reporter(new CSVWriter());
-    $reporter->reportConjunctPerformance(Conjunct::getAllConjuncts());
-    
-    // Set response headers
-    $filename = Config::get('contextName') . "_Conjunct performance_" . date('Y-m-d\TH-i-s') . ".csv";
-    $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
-    $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
-
-    // Output response
-    print $reporter;
-});
-
 $app->get('/admin/report/relations', function () use ($app){
     /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
@@ -147,8 +130,7 @@ $app->get('/admin/report/relations', function () use ($app){
     print $reporter;
 });
 
-
-$app->get('/admin/report/conjuncts', function () use ($app){
+$app->get('/admin/report/conjuncts/usage', function () use ($app){
     /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
     
@@ -160,6 +142,23 @@ $app->get('/admin/report/conjuncts', function () use ($app){
     $app->response->headers->set('Content-Type', 'application/json');
     
     // Output
+    print $reporter;
+});
+
+$app->get('/admin/report/conjuncts/performance', function () use ($app){
+    /** @var \Slim\Slim $app */
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+
+    // Get report
+    $reporter = new Reporter(new CSVWriter());
+    $reporter->reportConjunctPerformance(Conjunct::getAllConjuncts());
+    
+    // Set response headers
+    $filename = Config::get('contextName') . "_Conjunct performance_" . date('Y-m-d\TH-i-s') . ".csv";
+    $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+    $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
+
+    // Output response
     print $reporter;
 });
 
