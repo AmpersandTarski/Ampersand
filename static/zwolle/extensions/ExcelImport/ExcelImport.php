@@ -86,18 +86,20 @@ class ExcelImport {
     }
     
     /**
+     * Parse worksheet according to an Ampersand interface definition.
      * 
      * @param \PHPExcel\Worksheet $worksheet
      * @param \Ampersand\Interfacing\InterfaceObject $ifc
      * @return void
+     * 
+     * Use interface name as worksheet name. Format for content is as follows:
+     *          | Column A        | Column B        | Column C        | etc
+     * Row 1    | <srcConcept>    | <ifc label x>   | <ifc label y>   | etc
+     * Row 2    | <srcAtom a1>    | <tgtAtom b1>    | <tgtAtom c1>    | etc
+     * Row 3    | <srcAtom a2>    | <tgtAtom b2>    | <tgtAtom c2>    | etc
+     * etc
      */
     private function ParseWorksheetWithIfc($worksheet, $ifc){
-        /* Use interface name as worksheet name. Format for content is as follows:
-        #1 <srcConcept> | <ifc label x> | <ifc label y> | <etc>
-        #2 <srcAtomA>   | <tgtAtom1>    | <tgtAtom2>    | <etc>
-        #3 <srcAtomB>   | <tgtAtom3>    | <tgtAtom4>    | <etc>
-        */
-        
         $highestrow = $worksheet->getHighestRow();
         $highestcolumn = $worksheet->getHighestColumn();
         $highestcolumnnr = \PHPExcel\Cell::columnIndexFromString($highestcolumn);
@@ -158,18 +160,24 @@ class ExcelImport {
     }
     
     /**
+     * Parse worksheet according to the 2-row header information.
+     * Row 1 contains the relation names, Row 2 the corresponding concept names
+     * Multiple block of imports can be specified on a single sheet. 
+     * The parser looks for the brackets '[ ]' to start a new block
      * 
      * @param \PHPExcel\Worksheet $worksheet
      * @return void
+     * 
+     * Format of sheet:
+     *           | Column A        | Column B        | Column C        | etc
+     * Row 1     | [ block label ] | <relation name> | <relation name> | etc
+     * Row 2     | <srcConcept>    | <tgtConcept1>   | <tgtConcept2>   | etc
+     * Row 3     | <srcAtom a1>    | <tgtAtom b1>    | <tgtAtomN c1>   | etc
+     * Row 4     | <srcAtom a2>    | <tgtAtom b2>    | <tgtAtomN c2>   | etc
+     * etc
+     * 
      */
     private function ParseWorksheet($worksheet){
-        // Format is as follows:
-        // (gray bg)    [ <description of data> ], <relation1>,    <relationN>
-        //              <srcConcept>,              <tgtConcept1>,  <tgtConceptN>
-        //              <srcAtomA>,                <tgtAtom1A>,    <tgtAtomNA>
-        //              <srcAtomB>,                <tgtAtom1B>,    <tgtAtomNB>
-        //              <srcAtomC>,                <tgtAtom1C>,    <tgtAtomNC>
-        
         // Loop through all rows
         $highestrow = $worksheet->getHighestRow();
         $highestcolumn = $worksheet->getHighestColumn();
