@@ -159,6 +159,7 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 
 $app->get('/admin/report/relations', function () use ($app){
     /** @var \Slim\Slim $app */
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
 
     // Get report
     $reporter = new Reporter(new JSONWriter());
@@ -174,6 +175,7 @@ $app->get('/admin/report/relations', function () use ($app){
 
 $app->get('/admin/report/conjuncts', function () use ($app){
     /** @var \Slim\Slim $app */
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
     
     // Get report
     $reporter = new Reporter(new JSONWriter());
@@ -188,6 +190,7 @@ $app->get('/admin/report/conjuncts', function () use ($app){
 
 $app->get('/admin/report/interfaces', function () use ($app){
     /** @var \Slim\Slim $app */
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
 
     // Get report
     $reporter = new Reporter(new CSVWriter());

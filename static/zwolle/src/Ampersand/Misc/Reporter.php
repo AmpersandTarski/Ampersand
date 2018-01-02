@@ -9,7 +9,6 @@ namespace Ampersand\Misc;
 
 use Exception;
 use Ampersand\Interfacing\InterfaceObject;
-use Ampersand\Misc\Config;
 use Ampersand\IO\AbstractWriter;
 use Ampersand\Rule\Conjunct;
 
@@ -23,8 +22,6 @@ class Reporter {
     protected $writer;
 
     public function __construct(AbstractWriter $writer){
-        if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
-
         $this->writer = $writer;
     }
 
