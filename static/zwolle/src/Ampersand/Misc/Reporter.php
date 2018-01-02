@@ -105,6 +105,62 @@ class Reporter {
     }
 
     /**
+     * Write and return interface issue report
+     * Currently focussed on CRUD rights
+     *
+     * @return array
+     */
+    public function reportInterfaceIssues(){
+        $content = [];
+        foreach (InterfaceObject::getAllInterfaces() as $key => $interface) {
+            foreach($interface->getInterfaceFlattened() as $ifc){
+                if($ifc->crudU() && !$ifc->isEditable()) {
+                    $content[] = [ 'interface' => $ifc->getPath()
+                                 , 'message' => "Update rights (crUd) specified while interface expression is not an editable relation!"
+                                 ];
+                }
+
+                if($ifc->crudC() && !$ifc->tgtConcept->isObject()) {
+                    $content[] = [ 'interface' => $ifc->getPath()
+                                 , 'message' => "Create rights (Crud) specified while target concept is a scalar. This has no affect!"
+                                 ];
+                }
+
+                if($ifc->crudD() && !$ifc->tgtConcept->isObject()) {
+                    $content[] = [ 'interface' => $ifc->getPath()
+                                 , 'message' => "Delete rights (cruD) specified while target concept is a scalar. This has no affect!"
+                                 ];
+                }
+
+                if(!$ifc->crudR()) {
+                    $content[] = [ 'interface' => $ifc->getPath()
+                                 , 'message' => "No read rights specified. Are you sure?"
+                                 ];
+                }
+                
+                // Check for unsupported patchReplace functionality due to missing 'old value'. Related with issue #318. TODO: still needed??
+                if($ifc->isEditable() && $ifc->crudU() && !$ifc->tgtConcept->isObject() && $ifc->isUni()){
+                    // Only applies to editable relations
+                    // Only applies to crudU, because issue is with patchReplace, not with add/remove
+                    // Only applies to scalar, because objects don't use patchReplace, but Remove and Add
+                    // Only if interface expression (not! the relation) is univalent, because else a add/remove option is used in the UI
+                    if((!$ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'tgt')
+                            || ($ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'src'))
+                        $content[] = [ 'interface' => $ifc->getPath()
+                                     , 'message' => "Unsupported edit functionality due to combination of factors. See issue #318"
+                                     ];
+                }
+            }
+        }
+
+        if(empty($content)) $content[] = ['No issues found'];
+
+        $this->writer->write($content);
+        
+        return $content;
+    }
+
+    /**
      * Write and return conjunct usage report
      * 
      * Specifies which conjuncts are used by which rules, grouped by invariants, signals, and unused conjuncts

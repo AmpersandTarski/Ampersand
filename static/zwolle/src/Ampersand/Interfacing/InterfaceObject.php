@@ -441,8 +441,7 @@ class InterfaceObject {
      * @return InterfaceObject[]
      */
     public function getInterfaceFlattened(){
-        $arr = array();
-        $arr[] = $this;
+        $arr = [$this];
         foreach ($this->getSubinterfaces(self::DEFAULT_OPTIONS & ~self::INCLUDE_REF_IFCS) as $ifc){
             $arr = array_merge($arr, $ifc->getInterfaceFlattened());
         }

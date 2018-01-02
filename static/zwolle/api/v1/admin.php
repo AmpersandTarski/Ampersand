@@ -34,29 +34,6 @@ $app->get('/admin/installer', function () use ($app){
 
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
-    
-    // Checks
-    $logger = Logger::getUserLogger();
-    foreach (InterfaceObject::getAllInterfaces() as $key => $interface) {
-        foreach($interface->getInterfaceFlattened() as $ifc){
-            if($ifc->crudU() && !$ifc->isEditable()) $logger->warning("Update rights (crUd) specified while interface expression is not an editable relation! Ifc:". $ifc->getPath());
-            if($ifc->crudC() && !$ifc->tgtConcept->isObject()) $logger->warning("Create rights (Crud) specified while target concept is a scalar. This has no affect! Ifc:". $ifc->getPath());
-            if($ifc->crudD() && !$ifc->tgtConcept->isObject()) $logger->warning("Delete rights (cruD) specified while target concept is a scalar. This has no affect! Ifc:". $ifc->getPath());
-            if(!$ifc->crudR()) $logger->warning("No read rights specified. Are you sure? Ifc:". $ifc->getPath());
-            
-            // Check for unsupported patchReplace functionality due to missing 'old value'. Related with issue #318. TODO: still needed??
-            if($ifc->isEditable() && $ifc->crudU() && !$ifc->tgtConcept->isObject() && $ifc->isUni()){
-                // Only applies to editable relations
-                // Only applies to crudU, because issue is with patchReplace, not with add/remove
-                // Only applies to scalar, because objects don't use patchReplace, but Remove and Add
-                // Only if interface expression (not! the relation) is univalent, because else a add/remove option is used in the UI
-                
-                if((!$ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'tgt')
-                        || ($ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'src'))
-                    $logger->warning("Unsupported edit functionality due to combination of factors for (sub)interface: " . $ifc->getPath());
-            }
-        }
-    }
 
     $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
@@ -198,7 +175,24 @@ $app->get('/admin/report/interfaces', function () use ($app){
     $filename = Config::get('contextName') . "_Interface definitions_" . date('Y-m-d\TH-i-s') . ".csv";
     $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
     $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
-    
+
+    // Output
+    print $reporter;
+});
+
+$app->get('/admin/report/interfaces/issues', function () use ($app){
+    /** @var \Slim\Slim $app */
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+
+    // Get report
+    $reporter = new Reporter(new CSVWriter());
+    $reporter->reportInterfaceIssues();
+
+    // Set response headers
+    $filename = Config::get('contextName') . "_Interface issues_" . date('Y-m-d\TH-i-s') . ".csv";
+    $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+    $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
+
     // Output
     print $reporter;
 });
