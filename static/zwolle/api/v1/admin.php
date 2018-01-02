@@ -83,10 +83,8 @@ $app->get('/admin/execengine/run', function () use ($app){
     else Logger::getUserLogger()->warning("Run completed but transaction not committed");
 
     $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
-        
-    $result = array('notifications' => Notifications::getAll());
     
-    print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    print json_encode(Notifications::getAll(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->get('/admin/checks/rules/evaluate/all', function() use ($app){

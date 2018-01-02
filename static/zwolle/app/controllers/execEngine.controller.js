@@ -5,7 +5,7 @@ angular.module('AmpersandApp').controller('ExecEngineController', function ($sco
         .then(
             function(data){ // on success
                 data = data.plain();
-                NotificationService.updateNotifications(data.notifications);
+                NotificationService.updateNotifications(data);
             }
         );
     };
