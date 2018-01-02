@@ -64,7 +64,7 @@ $app->get('/admin/execengine/run', function () use ($app){
     print json_encode(Notifications::getAll(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/admin/checks/rules/evaluate/all', function() use ($app){
+$app->get('/admin/ruleengine/evaluate/all', function() use ($app){
     /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Evaluation of all rules not allowed in production environment", 403);
     
