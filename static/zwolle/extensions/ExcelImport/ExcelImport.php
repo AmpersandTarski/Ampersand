@@ -74,14 +74,11 @@ class ExcelImport {
             try {
                 // First check if there is an interface with the same id as the worksheet
                 $ifc = InterfaceObject::getInterfaceByLabel($worksheet->getTitle());
-                $parseWithIfc = true;
+                $this->ParseWorksheetWithIfc($worksheet, $ifc);
             }catch (Exception $e){
                 $this->logger->warning("No interface found with name as title of worksheet '{$worksheet->getTitle()}'. Parsing file without interface");
-                $parseWithIfc = false;
+                $this->ParseWorksheet($worksheet);
             }
-            
-            if($parseWithIfc) $this->ParseWorksheetWithIfc($worksheet, $ifc);
-            else $this->ParseWorksheet($worksheet);
         }
     }
     
