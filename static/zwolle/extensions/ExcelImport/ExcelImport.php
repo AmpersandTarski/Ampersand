@@ -11,6 +11,9 @@ use Ampersand\Misc\Config;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Relation;
 use Ampersand\Log\Logger;
+use PHPExcel_Cell;
+use PHPExcel_Shared_Date;
+use PHPExcel_IOFactory;
 
 // UI
 AngularApp::addMenuItem('ext', 'extensions/ExcelImport/ui/views/MenuItem.html', 
@@ -67,7 +70,7 @@ class ExcelImport {
      * @return void
      */
     private function ProcessFileContent(){
-        $objPHPExcel = \PHPExcel\IOFactory::load($this->file);
+        $objPHPExcel = PHPExcel_IOFactory::load($this->file);
 
         // Loop over all worksheets
         foreach($objPHPExcel->getWorksheetIterator() as $worksheet){
@@ -85,8 +88,8 @@ class ExcelImport {
     /**
      * Parse worksheet according to an Ampersand interface definition.
      * 
-     * @param \PHPExcel\Worksheet $worksheet
-     * @param \Ampersand\Interfacing\InterfaceObject $ifc
+     * @param PHPExcel_Worksheet $worksheet
+     * @param InterfaceObject $ifc
      * @return void
      * 
      * Use interface name as worksheet name. Format for content is as follows:
@@ -99,7 +102,7 @@ class ExcelImport {
     private function ParseWorksheetWithIfc($worksheet, $ifc){
         $highestrow = $worksheet->getHighestRow();
         $highestcolumn = $worksheet->getHighestColumn();
-        $highestcolumnnr = \PHPExcel\Cell::columnIndexFromString($highestcolumn);
+        $highestcolumnnr = PHPExcel_Cell::columnIndexFromString($highestcolumn);
         
         $leftConcept = Concept::getConceptByLabel((string)$worksheet->getCell('A1'));
         if($leftConcept != $ifc->tgtConcept) throw new Exception("Target concept of interface '". $ifc->getPath() ."' does not match concept specified in cell {$worksheet->getTitle()}:A1", 500);
@@ -107,7 +110,7 @@ class ExcelImport {
         // Parse other columns of first row
         $header = array();
         for ($columnnr = 1; $columnnr < $highestcolumnnr; $columnnr++){
-            $columnletter = \PHPExcel\Cell::stringFromColumnIndex($columnnr);
+            $columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
             $cell = $worksheet->getCell($columnletter . '1');
             
             $cellvalue = (string)$cell->getCalculatedValue();
@@ -134,7 +137,7 @@ class ExcelImport {
             }
             
             for ($columnnr = 1; $columnnr < $highestcolumnnr; $columnnr++){
-                $columnletter = \PHPExcel\Cell::stringFromColumnIndex($columnnr);
+                $columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
                 
                 if(is_null($header[$columnletter])) continue; // skip this column.
                 
@@ -145,7 +148,7 @@ class ExcelImport {
                  
                 // overwrite $cellvalue in case of datetime
                 // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
-                if(\PHPExcel\Shared\Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)\PHPExcel\Shared\Date::ExcelToPHP($cellvalue);
+                if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
                 
                 $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept);
                 if(!$rightAtom->exists() && !$header[$columnletter]->crudC()) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
@@ -162,7 +165,7 @@ class ExcelImport {
      * Multiple block of imports can be specified on a single sheet. 
      * The parser looks for the brackets '[ ]' to start a new block
      * 
-     * @param \PHPExcel\Worksheet $worksheet
+     * @param PHPExcel_Worksheet $worksheet
      * @return void
      * 
      * Format of sheet:
@@ -178,7 +181,7 @@ class ExcelImport {
         // Loop through all rows
         $highestrow = $worksheet->getHighestRow();
         $highestcolumn = $worksheet->getHighestColumn();
-        $highestcolumnnr = \PHPExcel\Cell::columnIndexFromString($highestcolumn);
+        $highestcolumnnr = PHPExcel_Cell::columnIndexFromString($highestcolumn);
         
         $row = 1; // Go to the first row where a table starts.
         for ($i = $row; $i <= $highestrow; $i++){
@@ -194,12 +197,12 @@ class ExcelImport {
 
             $line = array(); // values is a buffer containing the cells in a single excel row
             for ($columnnr = 0; $columnnr < $highestcolumnnr; $columnnr++){
-                $columnletter = \PHPExcel\Cell::stringFromColumnIndex($columnnr);
+                $columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
                 $cell = $worksheet->getCell($columnletter . $row);
                 $cellvalue = (string)$cell->getCalculatedValue();
                 // overwrite $cellvalue in case of datetime
                 // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
-                if(\PHPExcel\Shared\Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)\PHPExcel\Shared\Date::ExcelToPHP($cellvalue);
+                if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
                 $line[] = $cellvalue;
             }
             $lines[] = $line; // add line (array of values) to the line buffer
