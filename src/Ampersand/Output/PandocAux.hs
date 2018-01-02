@@ -143,14 +143,14 @@ writepandoc fSpec thePandoc = do
          docx <- runIO (writeDocx writerOptions thePandoc) >>= handleError
          BL.writeFile outputFile docx
        FLatex -> do
-         res <- runIO aap >>= handleError
+         res <- runIO ltx >>= handleError
          case res of
           Left content -> BL.writeFile outputFile content
           Right err' -> liftIO $
                   E.throwIO $ PandocPDFError $
                                      TL.unpack (TE.decodeUtf8With TE.lenientDecode err')
-         where aap :: PandocIO (Either BL.ByteString BL.ByteString)
-               aap = makePDF "pdflatex" [] f
+         where ltx :: PandocIO (Either BL.ByteString BL.ByteString)
+               ltx = makePDF "pdflatex" [] f
                         writerOptions thePandoc
                f = case writer of 
                     ByteStringWriter _ -> fatal $ "The latex writer should not be a bytestringwriter"
@@ -160,39 +160,6 @@ writepandoc fSpec thePandoc = do
                          Left e  -> fatal $ "A writer for latex should exist in Pandoc. However, we got:\n"
                                        ++ e
                          Right (w, _) -> w :: Writer PandocIO
-
-
-    --  writeToFile wOpts
-    --  -- In case of Latex, we need to postprocess the .ltx file to pdf:
-    --  case fspecFormat (getOpts fSpec) of
-    --     FLatex  ->
-    --        do result <- makePDF writeLaTeX wOpts thePandoc fSpec
-    --           case result of 
-    --             Left err -> do putStrLn "LaTeX Error: "
-    --                            BL.putStr err
-    --                            putStrLn "\n."
-    --             Right _  -> do let pdfFile = outputFile -<.> "pdf"
-    --                            verboseLn (getOpts fSpec) $ pdfFile ++" created."
-             
-    --     _ -> return ()
-
---     writeToFile :: WriterOptions -> IO()
---     writeToFile wOpts = do
---       -- when (fspecFormat (getOpts fSpec) == Fdocx)
---       --      writeReferenceFileDocx
---       case getWriter fSpecFormatString of
---         Left msg -> fatal . unlines $
---                         ("Something wrong with format "++show(fspecFormat (getOpts fSpec))++":")
---                         : map ("  "++) (lines msg)
---         Right (writer, extentions) 
---                  -> do let content = writer wOpts thePandoc
---                        writeFile outputFile content
--- --        Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
--- --                                                writeFile outputFile content
--- --        Right (IOStringWriter worker)     -> do content <- worker wOpts thePandoc
--- --                                                writeFile outputFile content
--- --        Right (IOByteStringWriter worker) -> do content <- worker wOpts thePandoc
--- --                                                BC.writeFile outputFile content
 
     outputFile = 
       addExtension (dirOutput (getOpts fSpec) </> baseName (getOpts fSpec))
