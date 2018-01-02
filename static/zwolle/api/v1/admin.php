@@ -143,89 +143,18 @@ $app->get('/admin/import', function () use ($app){
 
 $app->get('/admin/performance/conjuncts', function () use ($app){
     /** @var \Slim\Slim $app */
-    if(Config::get('productionEnv')) throw new Exception ("Performance tests are not allowed in production environment", 403);
+
+    // Get report
+    $reporter = new Reporter(new CSVWriter());
+    $reporter->reportConjunctPerformance(Conjunct::getAllConjuncts());
     
-    // Defaults
-    $groupBy = $app->request->params('groupBy'); if(is_null($groupBy)) $groupBy = 'conjuncts';
-    $from = $app->request->params('from'); if(is_null($from)) $from = 0;
-    $to = $app->request->params('to'); if(is_null($to)) $to = 10;
-    
-    $performanceArr = array();
-    
-    // run all conjuncts (from - to)
-    for ($i = $from; $i <= $to; $i++){
-        $conjunct = Conjunct::getConjunct('conj_' . $i);
-        $startTimeStamp = microtime(true); // true means get as float instead of string
-        $conjunct->evaluateConjunct(false);
-        $endTimeStamp = microtime(true);
-    
-        $performanceArr[$conjunct->id] = array( 'id' => $conjunct->id
-                , 'start' => round($startTimeStamp, 6)
-                , 'end' => round($endTimeStamp, 6)
-                , 'duration' => round($endTimeStamp - $startTimeStamp, 6)
-                , 'invariantRules' => implode(';', $conjunct->invRuleNames)
-                , 'signalRules' => implode(';', $conjunct->sigRuleNames)
-        );
-    }
-    
-    switch ($groupBy){
-        case 'conjuncts' :
-            $content = array_values($performanceArr);
-            break;
-        case 'rules' :
-            $ruleArr = array();
-            foreach(Rule::getAllRules() as $rule){
-                $duration = 0;
-                $conjunctIds = array();
-                foreach($rule->conjuncts as $conjunct){
-                    $duration += $performanceArr[$conjunct->id]['duration'];
-                    $conjunctIds[] = $conjunct->id;
-                }
-                $ruleArr[] = array('ruleName' => $rule->id
-                        , 'duration' => $duration
-                        , 'conjuncts' => implode(';', $conjunctIds)
-                );
-            }
-            $content = $ruleArr;
-            break;
-        case 'relations' :
-            $relArr = array();
-            $conjunctIds = array();
-            foreach(Relation::getAllRelations() as $relation){
-                $duration = 0;
-                foreach($relation->affectedConjuncts as $conjunct){
-                    $duration += $performanceArr[$conjunct->id]['duration'];
-                    $conjunctIds = $conjunct->id;
-                }
-                $relArr[] = array('relationSignature' => $relation->__toString()
-                        , 'duration' => $duration
-                        , 'conjuncts' => implode(';', $conjunctIds)
-                );
-            }
-            $content = $relArr;
-            break;
-        default :
-            throw new Exception ("Unknown groupBy argument", 500);
-            break;
-    }
-    
-    usort($content, function($a, $b){ 
-        // return $b['duration'] <=> $a['duration']; // uses php7 spaceship operator
-        if($b['duration'] < $a['duration']) return -1;
-        elseif($b['duration'] == $a['duration']) return 0;
-        elseif($b['duration'] > $a['duration']) return 1;
-    });
-    
-    // Response headers
+    // Set response headers
     $filename = Config::get('contextName') . "_Conjunct performance_" . date('Y-m-d\TH-i-s') . ".csv";
     $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
     $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
 
     // Output response
-    $output = new CSVWriter();
-    $output->write($content);
-    $output->print();
-    $output->close();
+    print $reporter;
 });
 
 $app->get('/admin/report/relations', function () use ($app){
@@ -237,7 +166,7 @@ $app->get('/admin/report/relations', function () use ($app){
 
     // Set response headers
     $app->response->headers->set('Content-Type', 'application/json');
-    
+
     // Output
     print $reporter;
 });
@@ -263,12 +192,12 @@ $app->get('/admin/report/interfaces', function () use ($app){
     // Get report
     $reporter = new Reporter(new CSVWriter());
     $reporter->reportInterfaceDefinitions();
-    
+
     // Set response headers
     $filename = Config::get('contextName') . "_Interface definitions_" . date('Y-m-d\TH-i-s') . ".csv";
     $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
     $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
-
+    
     // Output
     print $reporter;
 });

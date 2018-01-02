@@ -127,4 +127,39 @@ class Reporter {
         return $content;
     }
 
+    /**
+     * Write and return conjunct performance report
+     *
+     * @param Conjunct[] $conjuncts
+     * @return array
+     */
+    public function reportConjunctPerformance(array $conjuncts){
+        $content = [];
+        
+        // run all conjuncts (from - to)
+        foreach($conjuncts as $conjunct){
+            /** @var \Ampersand\Rule\Conjunct $conjunct */
+            $startTimeStamp = microtime(true); // true means get as float instead of string
+            $conjunct->evaluateConjunct(false);
+            $endTimeStamp = microtime(true);
+            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter
+            
+            $content = array( 'id' => $conjunct->id
+                    , 'start' => round($startTimeStamp, 6)
+                    , 'end' => round($endTimeStamp, 6)
+                    , 'duration' => round($endTimeStamp - $startTimeStamp, 6)
+                    , 'invariantRules' => implode(';', $conjunct->invRuleNames)
+                    , 'signalRules' => implode(';', $conjunct->sigRuleNames)
+            );
+        }
+        
+        usort($content, function($a, $b){ 
+            return $b['duration'] <=> $a['duration']; // uses php7 spaceship operator
+        });
+
+        $this->writer->write($content);
+
+        return $content;
+    }
+
 }
