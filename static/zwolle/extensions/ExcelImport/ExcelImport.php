@@ -15,8 +15,6 @@ use PHPExcel_Cell;
 use PHPExcel_Shared_Date;
 use PHPExcel_IOFactory;
 
-require_once (__DIR__ . '/lib/Classes/PHPExcel.php');
-
 // UI
 AngularApp::addMenuItem('ext', 'extensions/ExcelImport/ui/views/MenuItem.html', 
     function(\Ampersand\AmpersandApp $app){
