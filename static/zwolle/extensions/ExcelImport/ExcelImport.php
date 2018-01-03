@@ -14,6 +14,7 @@ use Ampersand\Log\Logger;
 use PHPExcel_Cell;
 use PHPExcel_Shared_Date;
 use PHPExcel_IOFactory;
+use PHPExcel_Worksheet;
 
 // UI
 AngularApp::addMenuItem('ext', 'extensions/ExcelImport/ui/views/MenuItem.html', 
@@ -88,8 +89,8 @@ class ExcelImport {
     /**
      * Parse worksheet according to an Ampersand interface definition.
      * 
-     * @param PHPExcel_Worksheet $worksheet
-     * @param InterfaceObject $ifc
+     * @param \PHPExcel_Worksheet $worksheet
+     * @param \Ampersand\Interfacing\InterfaceObject $ifc
      * @return void
      * 
      * Use interface name as worksheet name. Format for content is as follows:
@@ -99,62 +100,84 @@ class ExcelImport {
      * Row 3    | <srcAtom a2>    | <tgtAtom b2>    | <tgtAtom c2>    | etc
      * etc
      */
-    private function ParseWorksheetWithIfc($worksheet, $ifc){
-        $highestrow = $worksheet->getHighestRow();
-        $highestcolumn = $worksheet->getHighestColumn();
-        $highestcolumnnr = PHPExcel_Cell::columnIndexFromString($highestcolumn);
-        
+    private function ParseWorksheetWithIfc(PHPExcel_Worksheet $worksheet, InterfaceObject $ifc) 
+    {
+        // Determine $leftConcept from cell A1
         $leftConcept = Concept::getConceptByLabel((string)$worksheet->getCell('A1'));
-        if($leftConcept != $ifc->tgtConcept) throw new Exception("Target concept of interface '". $ifc->getPath() ."' does not match concept specified in cell {$worksheet->getTitle()}:A1", 500);
+        if ($leftConcept != $ifc->tgtConcept) throw new Exception("Target concept of interface '{$ifc->getPath()}' does not match concept specified in cell {$worksheet->getTitle()}:A1", 500);
         
         // Parse other columns of first row
-        $header = array();
-        for ($columnnr = 1; $columnnr < $highestcolumnnr; $columnnr++){
-            $columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
-            $cell = $worksheet->getCell($columnletter . '1');
+        $header = [];
+        foreach ($worksheet->getColumnIterator('B') as $column) {
+            /** @var \PHPExcel_Worksheet_Column $column */
+
+            $columnLetter = $column->getColumnIndex();            
+            $cellvalue = (string)$worksheet->getCell($columnLetter . '1')->getCalculatedValue();
             
-            $cellvalue = (string)$cell->getCalculatedValue();
-            
-            if($cellvalue == '') $header[$columnletter] = null; // will be skipped
-            else{
+            if ($cellvalue != '') {
                 $subIfc = $ifc->getSubinterfaceByLabel($cellvalue);
-                if(!$subIfc->crudU() || !$subIfc->relation) throw new Exception ("Update not allowed/possible for {$subIfc->label} as specified in cell {$columnletter}1", 403);
-                $header[$columnletter] = $subIfc;
-                
+                if(!$subIfc->crudU() || !$subIfc->relation) throw new Exception ("Use of {$subIfc->label} in cell {$columnLetter}1 is not allowed. No update rights specified in interface", 403);
+                $header[$columnLetter] = $subIfc;
+            } else {
+                $this->logger->warning("Skipping column {$columnLetter} in sheet {$worksheet->getTitle()}, because header is not provided");
             }
         }
         
-        for ($row = 2; $row <= $highestrow; $row++){
-            $firstCol = (string)$worksheet->getCell('A'.$row)->getCalculatedValue();
-            if($firstCol == '') continue; // Skip this row
-            elseif($firstCol == '_NEW'){
-                if(!$ifc->crudC()) throw new Exception("Trying to create new atom in cell A{$row}. This is not allowed.", 403);
+        // Parse other rows
+        foreach ($worksheet->getRowIterator(2) as $row) {
+            /** @var \PHPExcel_Worksheet_Row $row */
+
+            $rowNr = $row->getRowIndex();
+
+            $firstCol = (string)$worksheet->getCell('A'.$rowNr)->getCalculatedValue();
+            
+            // If cell Ax is empty, skip complete row
+            if ($firstCol == ''){
+                $this->logger->warning("Skipping row {$rowNr} in sheet {$worksheet->getTitle()}, because column A is empty");
+                continue;
+            }
+
+            // If cell Ax contains '_NEW', this means to automatically create a new atom
+            elseif ($firstCol == '_NEW') {
+                if(!$ifc->crudC()) throw new Exception("Trying to create new atom in cell A{$rowNr}. This is not allowed.", 403);
                 $leftAtom = $leftConcept->createNewAtom()->add();
-            }else{
-                $leftAtom = new Atom($firstCol, $leftConcept);
-                if(!$leftAtom->exists() && !$ifc->crudC()) throw new Exception("Trying to create new {$leftConcept} in cell A{$row}. This is not allowed.", 403);
-                $leftAtom->add();
             }
             
-            for ($columnnr = 1; $columnnr < $highestcolumnnr; $columnnr++){
-                $columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
-                
-                if(is_null($header[$columnletter])) continue; // skip this column.
-                
-                $cell = $worksheet->getCell($columnletter . $row); 
+            // Else instantiate atom with given atom identifier
+            else {
+                $leftAtom = new Atom($firstCol, $leftConcept);
+                if(!$leftAtom->exists()){
+                    if (!$ifc->crudC()) {
+                        throw new Exception("Trying to create new {$leftConcept} in cell A{$rowNr}. This is not allowed.", 403);
+                    } else {
+                        $leftAtom->add();
+                    }
+                } else {
+                    // $leftAtom already exists..do nothing
+                }
+            }
+            
+            // Process other columns of this row
+            foreach ($header as $columnLetter => $ifc) {                
+                $cell = $worksheet->getCell($columnLetter . $rowNr); 
                 $cellvalue = (string)$cell->getCalculatedValue();
                 
-                if($cellvalue == '') continue; // skip if not value provided                
+                if ($cellvalue == '') continue; // skip if not value provided                
                  
-                // overwrite $cellvalue in case of datetime
-                // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
-                if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
+                // Overwrite $cellvalue in case of datetime
+                // The @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
+                if (PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
                 
-                $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept);
-                if(!$rightAtom->exists() && !$header[$columnletter]->crudC()) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
+                $rightAtom = new Atom($cellvalue, $ifc->tgtConcept);
+                if (!$rightAtom->exists()) {
+                    if ($ifc->tgtConcept->isObject() && !$ifc->crudC()) {
+                        throw new Exception("Trying to create new {$ifc->tgtConcept} in cell {$columnLetter}{$rowNr}. This is not allowed.", 403);
+                    } else {
+                        $rightAtom->add();
+                    }
+                }
                 
-                if($header[$columnletter]->relationIsFlipped) (new Link($header[$columnletter]->relation(), $rightAtom, $leftAtom))->add();
-                else (new Link($header[$columnletter]->relation(), $leftAtom, $rightAtom))->add();
+                $leftAtom->link($rightAtom, $ifc->relation(), $ifc->relationIsFlipped)->add();
             }
         }
     }
@@ -165,7 +188,7 @@ class ExcelImport {
      * Multiple block of imports can be specified on a single sheet. 
      * The parser looks for the brackets '[ ]' to start a new block
      * 
-     * @param PHPExcel_Worksheet $worksheet
+     * @param \PHPExcel_Worksheet $worksheet
      * @return void
      * 
      * Format of sheet:
@@ -177,7 +200,7 @@ class ExcelImport {
      * etc
      * 
      */
-    private function ParseWorksheet($worksheet){
+    private function ParseWorksheet(PHPExcel_Worksheet $worksheet){
         // Loop through all rows
         $highestrow = $worksheet->getHighestRow();
         $highestcolumn = $worksheet->getHighestColumn();
@@ -197,8 +220,8 @@ class ExcelImport {
 
             $line = array(); // values is a buffer containing the cells in a single excel row
             for ($columnnr = 0; $columnnr < $highestcolumnnr; $columnnr++){
-                $columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
-                $cell = $worksheet->getCell($columnletter . $row);
+                $columnLetter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
+                $cell = $worksheet->getCell($columnLetter . $row);
                 $cellvalue = (string)$cell->getCalculatedValue();
                 // overwrite $cellvalue in case of datetime
                 // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
