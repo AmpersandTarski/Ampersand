@@ -92,6 +92,11 @@ try{
             $roles = Config::get('allowedRolesForImporter');
             return $app->hasActiveRole($roles);
         });
+    
+    AngularApp::addMenuItem('ext', 'app/view/menu/exporter.html',
+        function($app){
+            return !Config::get('productionEnv');
+        });
 
 }catch(Exception $e){
     throw $e;
