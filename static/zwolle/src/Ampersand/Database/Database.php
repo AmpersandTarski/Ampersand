@@ -72,6 +72,13 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @var boolean $dbTransactionActive
      */
     private $dbTransactionActive = false;
+
+    /**
+     * Contains the last executed query
+     *
+     * @var $string
+     */
+    protected $lastQuery = null;
     
     /**
      * Contains reference to database instance (singleton pattern)
@@ -239,6 +246,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @throws Exception
      */
     private function doQuery($query, $multiQuery = false){
+        $this->lastQuery = $query;
         try{
             if($multiQuery){
                 $this->dbLink->multi_query($query);
@@ -724,9 +732,9 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     private function checkForAffectedRows(){
         if($this->dbLink->affected_rows == 0){
             if(Config::get('productionEnv')){
-                $this->logger->warning("Oops.. something went wrong: No recors affected in database");
+                $this->logger->warning("No recors affected with query '{$this->lastQuery}'");
             }else{
-                throw new Exception ("Oops.. something went wrong: No records affected in database", 500);
+                throw new Exception ("Oops.. something went wrong. No records affected in database", 500);
             }
         } 
     }

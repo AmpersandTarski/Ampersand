@@ -172,7 +172,7 @@ class Session {
                 $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionResource}");
                 return $this->sessionResource->all('SessionVars')->get();
             }catch (Exception $e){
-                $this->logger->warning("Error while getting SessionVars interface: " . $e->getMessage());
+                $this->logger->error("Error while getting SessionVars interface: " . $e->getMessage());
                 return false;
             }
         }else{

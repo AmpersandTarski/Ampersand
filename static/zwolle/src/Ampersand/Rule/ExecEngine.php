@@ -73,14 +73,14 @@ class ExecEngine extends RuleEngine {
         self::$maxRunCount = Config::get('maxRunCount', 'execEngine');
         self::$autoRerun = Config::get('autoRerun', 'execEngine');
 
-        $logger->notice("ExecEngine started");
+        $logger->info("ExecEngine started");
         
         $roles = [];
         foreach((array) Config::get('execEngineRoleNames', 'execEngine') as $roleName){
             try{
                 $roles[] = Role::getRoleByName($roleName);
             }catch (Exception $e){
-                $logger->warning("ExecEngine role '{$roleName}' configured, but role is not used/defined in &-script.");
+                $logger->debug("ExecEngine role '{$roleName}' configured, but role is not used/defined in &-script.");
             }
         }
 
@@ -106,7 +106,7 @@ class ExecEngine extends RuleEngine {
 
         } while (self::$doRun && self::$autoRerun); // self::$doRun can also be set to false by some ExecEngine function
 
-        $logger->notice("ExecEngine finished");
+        $logger->info("ExecEngine finished");
         
     }
 

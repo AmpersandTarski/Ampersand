@@ -214,7 +214,8 @@ class Rule {
             return $violations;
             
         }catch (Exception $e){
-            Logger::getUserLogger()->error("While evaluating rule '{$this}': {$e->getMessage()}");
+            $logger->error("Error while evaluating rule '{$this}': {$e->getMessage()}");
+            Logger::getUserLogger()->error("Error while evaluating rule");
         }
     }
     
