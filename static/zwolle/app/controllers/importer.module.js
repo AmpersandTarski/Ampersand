@@ -7,8 +7,8 @@ angular.module('AmpersandApp').config(function($routeProvider) {
         // default start page
         .when('/ext/ExcelImport', {
             controller : 'ExcelImportController',
-            templateUrl : 'extensions/ExcelImport/ui/views/ExcelImport.html',
-            interfaceLabel : 'Excel import'
+            templateUrl : 'app/views/importer.html',
+            interfaceLabel : 'Excel importer'
         });
 }).controller('ExcelImportController', function ($scope, $rootScope, FileUploader, NotificationService) {
     // $rootScope, so that all information and uploaded files are kept while browsing in the application

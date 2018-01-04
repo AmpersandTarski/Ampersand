@@ -17,10 +17,6 @@ use PHPExcel_IOFactory;
 use PHPExcel_Worksheet;
 use PHPExcel_Worksheet_Row;
 
-// UI
-AngularApp::addCSS('extensions/ExcelImport/ui/css/style.css');
-AngularApp::addJS('extensions/ExcelImport/ui/js/ExcelImport.js');
-
 class ExcelImporter {
     /**
      *

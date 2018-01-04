@@ -1,3 +1,17 @@
+<style>
+.my-drop-zone { 
+border: dotted 3px lightgray;
+}
+
+/* Default class applied to drop zones on over */
+.nv-file-over {
+	border: dotted 3px red;
+}
+
+.another-file-over-class {
+	border: dotted 3px green;
+}
+</style>
 <div class="container-fluid interface">
 	<fieldset>
 		<legend>Excel import</legend>
@@ -48,7 +62,7 @@
 								<span ng-show="item.isSuccess"><i class="glyphicon glyphicon-ok"></i></span>
 								<span ng-show="item.isCancel"><i class="glyphicon glyphicon-ban-circle"></i></span>
 								<span ng-show="item.isError"><i class="glyphicon glyphicon-remove"></i></span>
-								<span ng-show="item.isUploading"><img src="extensions/ExcelImport/ui/img/loading.gif" height="20" width="20"></span>
+								<span ng-show="item.isUploading"><img src="app/images/loading.gif" height="20" width="20"></span>
 							</td>
 							<td nowrap>
 								<button type="button" class="btn btn-success btn-xs" ng-click="item.upload()" ng-disabled="item.isReady || item.isUploading">  <!-- Removed: "|| item.isSuccess" to enable the re-upload of a file.-->
