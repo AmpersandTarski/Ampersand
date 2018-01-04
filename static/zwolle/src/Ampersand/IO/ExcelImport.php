@@ -3,11 +3,8 @@
 namespace Ampersand\IO;
 
 use Exception;
-use Ampersand\AngularApp;
-use Ampersand\Core\Link;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
-use Ampersand\Misc\Config;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Relation;
 use Ampersand\Log\Logger;
