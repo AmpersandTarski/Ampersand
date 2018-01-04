@@ -91,59 +91,48 @@ $app->get('/admin/export/all', function () use ($app){
     $exporter->exportAllPopulation();
 });
 
-$app->get('/admin/import', function () use ($app){
-    /** @var \Slim\Slim $app */
-    if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
-
-    if (is_uploaded_file($_FILES['file']['tmp_name'])) {
-        $reader = new JSONReader();
-        $reader->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
-        $importer = new Importer($reader);
-        $importer->importPopulation();
-        
-        unlink($_FILES['file']['tmp_name']);
-    } else {
-        throw new Exception("Import file not specified", 500);
-    }
-    
-    // Commit transaction
-    $transaction = Transaction::getCurrentTransaction()->close(true);
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported {$_FILES['file']['name']} successfully");
-    
-    // Check all process rules that are relevant for the activate roles
-    AmpersandApp::singleton()->checkProcessRules(); 
-    $content = Notifications::getAll(); // Return all notifications
-    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-});
-
-$app->post('/excelimport/import', function () use ($app){
+$app->post('/admin/import', function () use ($app){
     /** @var \Slim\Slim $app */
     $ampersandApp = AmpersandApp::singleton();
-    
+
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
-            
-    // Check for required role
-    if(!$ampersandApp->hasRole(Config::get('allowedRolesForExcelImport','excelImport'))) throw new Exception("You do not have access to import excel files", 401);
-    
-    if (is_uploaded_file($_FILES['file']['tmp_name'])){
-        // Parse:
-        $parser = new ExcelImporter();
-        $parser->parseFile($_FILES['file']['tmp_name']);
-        
-        $transaction = Transaction::getCurrentTransaction()->close(true);
-        if($transaction->isCommitted()) Logger::getUserLogger()->notice("File {$_FILES['file']['tmp_name']} imported successfully");
-        
-        $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
+    // Check for required role
+    if(!$ampersandApp->hasRole(Config::get('allowedRolesForImporter'))) throw new Exception("You do not have access to import population", 401);
+    
+    if (is_uploaded_file($_FILES['file']['tmp_name'])) {
+        switch ($_FILES['file']['type']) {
+            case 'application/json':
+            case 'text/json':
+                $reader = new JSONReader();
+                $reader->loadFile($_FILES['file']['tmp_name']);
+                $importer = new Importer($reader);
+                $importer->importPopulation();
+                break;
+            case 'application/vnd.ms-excel':
+            case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            case 'application/excel':
+                $importer = new ExcelImporter();
+                $importer->parseFile($_FILES['file']['tmp_name']);
+                break;
+            default:
+                throw new Exception("Unsupported file type", 400);
+                break;
+        }
+
+        // Commit transaction
+        $transaction = Transaction::getCurrentTransaction()->close(true);
+        if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported {$_FILES['file']['name']} successfully");
         unlink($_FILES['file']['tmp_name']);
-    }else{
+    } else {
         Logger::getUserLogger()->error("No file uploaded");
-    }
+    }    
     
-    $result = array('notifications' => Notifications::getAll(), 'files' => $_FILES);
-    
-    print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    // Check all process rules that are relevant for the activate roles
+    $ampersandApp->checkProcessRules(); 
+    $content = ['notifications' => Notifications::getAll(), 'files' => $_FILES];
+    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->get('/admin/report/relations', function () use ($app){

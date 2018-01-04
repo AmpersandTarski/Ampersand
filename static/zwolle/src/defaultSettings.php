@@ -39,6 +39,7 @@ try{
             ,'application/pdf'
             ,'text/xml'
     ));
+    Config::set('allowedRolesForImporter', 'global', null); // implies that everyone has access
 
     Config::set('loginEnabled', 'global', false); // enable/disable login functionality (requires Ampersand script, see localSettings.php)
 
@@ -68,9 +69,6 @@ try{
     Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
     Config::set('autoRerun', 'execEngine', true);
     Config::set('maxRunCount', 'execEngine', 10);
-
-    // ExcelImporter settings
-    Config::set('allowedMimeTypes', 'excelImport', array('application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/excel'));
     
     // Navigation menu settings
     AngularApp::addMenuItem('refresh', 'app/views/menu/installer.html', 
@@ -91,7 +89,7 @@ try{
 
     AngularApp::addMenuItem('ext', 'app/views/menu/importer.html', 
         function(\Ampersand\AmpersandApp $app){
-            $roles = Config::get('allowedRolesForExcelImport','excelImport');
+            $roles = Config::get('allowedRolesForImporter');
             return $app->hasActiveRole($roles);
         });
 
