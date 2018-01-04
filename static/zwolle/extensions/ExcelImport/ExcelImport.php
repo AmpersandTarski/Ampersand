@@ -33,12 +33,6 @@ Config::set('allowedMimeTypes', 'excelImport', array('application/vnd.ms-excel',
 
 class ExcelImport {
     /**
-     * 
-     * @var string
-     */
-    public $file;
-    
-    /**
      *
      * @var \Psr\Log\LoggerInterface
      */
@@ -52,38 +46,31 @@ class ExcelImport {
     }
     
     /**
+     * Parse excelsheet and import population
+     * 
      * @param string $filename
      * @return void
      */
-    public function ParseFile($filename){
-        $this->file = $filename;
-        
-        $this->logger->info("Excel import started: parsing file {$this->file}");
-                
-        $this->ProcessFileContent();
-        
-        $this->logger->info("Excel import completed");
-        
-    }
-    
-    /**
-     * 
-     * @return void
-     */
-    private function ProcessFileContent(){
-        $objPHPExcel = PHPExcel_IOFactory::load($this->file);
+    public function parseFile($filename){
+        $file = PHPExcel_IOFactory::load($filename);
 
+        $this->logger->info("Excel import started: parsing file {$filename}");
+        
         // Loop over all worksheets
-        foreach($objPHPExcel->getWorksheetIterator() as $worksheet){
+        foreach($file->getWorksheetIterator() as $worksheet){
+            /** @var \PHPExcel_Worksheet $worksheet */
             try {
                 // First check if there is an interface with the same id as the worksheet
                 $ifc = InterfaceObject::getInterfaceByLabel($worksheet->getTitle());
-                $this->ParseWorksheetWithIfc($worksheet, $ifc);
+                $this->parseWorksheetWithIfc($worksheet, $ifc);
             }catch (Exception $e){
                 $this->logger->warning("No interface found with name as title of worksheet '{$worksheet->getTitle()}'. Parsing file without interface");
-                $this->ParseWorksheet($worksheet);
+                $this->parseWorksheet($worksheet);
             }
         }
+        
+        $this->logger->info("Excel import completed");
+        
     }
     
     /**

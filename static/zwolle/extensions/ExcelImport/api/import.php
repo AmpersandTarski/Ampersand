@@ -22,7 +22,7 @@ $app->post('/excelimport/import', function () use ($app){
     if (is_uploaded_file($_FILES['file']['tmp_name'])){
         // Parse:
         $parser = new ExcelImport();
-        $parser->ParseFile($_FILES['file']['tmp_name']);
+        $parser->parseFile($_FILES['file']['tmp_name']);
         
         $transaction = Transaction::getCurrentTransaction()->close(true);
         if($transaction->isCommitted()) Logger::getUserLogger()->notice("File {$_FILES['file']['tmp_name']} imported successfully");
