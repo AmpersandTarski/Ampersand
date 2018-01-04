@@ -18,6 +18,7 @@ use Ampersand\IO\JSONWriter;
 use Ampersand\IO\CSVWriter;
 use Ampersand\IO\Importer;
 use Ampersand\IO\JSONReader;
+use Ampersand\IO\ExcelImporter;
 use Ampersand\Misc\Reporter;
 
 global $app;
@@ -90,28 +91,47 @@ $app->get('/admin/export/all', function () use ($app){
     $exporter->exportAllPopulation();
 });
 
-$app->get('/admin/import', function () use ($app){
+$app->post('/admin/import', function () use ($app){
     /** @var \Slim\Slim $app */
-    if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
+    $ampersandApp = AmpersandApp::singleton();
 
+    $roleIds = $app->request->params('roleIds');
+    $ampersandApp->activateRoles($roleIds);
+
+    // Check for required role
+    if(!$ampersandApp->hasRole(Config::get('allowedRolesForImporter'))) throw new Exception("You do not have access to import population", 401);
+    
     if (is_uploaded_file($_FILES['file']['tmp_name'])) {
-        $reader = new JSONReader();
-        $reader->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
-        $importer = new Importer($reader);
-        $importer->importPopulation();
-        
+        $extension = pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION);
+        switch ($extension) {
+            case 'json':
+                $reader = new JSONReader();
+                $reader->loadFile($_FILES['file']['tmp_name']);
+                $importer = new Importer($reader);
+                $importer->importPopulation();
+                break;
+            case 'xls':
+            case 'xlsx':
+            case 'ods':
+                $importer = new ExcelImporter();
+                $importer->parseFile($_FILES['file']['tmp_name']);
+                break;
+            default:
+                throw new Exception("Unsupported file extension", 400);
+                break;
+        }
+
+        // Commit transaction
+        $transaction = Transaction::getCurrentTransaction()->close(true);
+        if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported {$_FILES['file']['name']} successfully");
         unlink($_FILES['file']['tmp_name']);
     } else {
-        throw new Exception("Import file not specified", 500);
-    }
-    
-    // Commit transaction
-    $transaction = Transaction::getCurrentTransaction()->close(true);
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported {$_FILES['file']['name']} successfully");
+        Logger::getUserLogger()->error("No file uploaded");
+    }    
     
     // Check all process rules that are relevant for the activate roles
-    AmpersandApp::singleton()->checkProcessRules(); 
-    $content = Notifications::getAll(); // Return all notifications
+    $ampersandApp->checkProcessRules(); 
+    $content = ['notifications' => Notifications::getAll(), 'files' => $_FILES];
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 

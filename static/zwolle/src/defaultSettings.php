@@ -39,6 +39,7 @@ try{
             ,'application/pdf'
             ,'text/xml'
     ));
+    Config::set('allowedRolesForImporter', 'global', null); // implies that everyone has access
 
     Config::set('loginEnabled', 'global', false); // enable/disable login functionality (requires Ampersand script, see localSettings.php)
 
@@ -84,6 +85,17 @@ try{
         function(\Ampersand\AmpersandApp $app){
             $roles = Config::get('allowedRolesForRunFunction','execEngine');
             return $app->hasActiveRole($roles);
+        });
+
+    AngularApp::addMenuItem('ext', 'app/views/menu/importer.html', 
+        function(\Ampersand\AmpersandApp $app){
+            $roles = Config::get('allowedRolesForImporter');
+            return $app->hasActiveRole($roles);
+        });
+    
+    AngularApp::addMenuItem('ext', 'app/views/menu/exporter.html',
+        function($app){
+            return !Config::get('productionEnv');
         });
 
 }catch(Exception $e){
