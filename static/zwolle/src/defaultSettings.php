@@ -89,6 +89,12 @@ try{
             return $app->hasActiveRole($roles);
         });
 
+    AngularApp::addMenuItem('ext', 'app/views/menu/excelImporter.html', 
+        function(\Ampersand\AmpersandApp $app){
+            $roles = Config::get('allowedRolesForExcelImport','excelImport');
+            return $app->hasActiveRole($roles);
+        });
+
 }catch(Exception $e){
     throw $e;
 }

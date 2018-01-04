@@ -18,11 +18,6 @@ use PHPExcel_Worksheet;
 use PHPExcel_Worksheet_Row;
 
 // UI
-AngularApp::addMenuItem('ext', 'extensions/ExcelImport/ui/views/MenuItem.html', 
-    function(\Ampersand\AmpersandApp $app){
-        $roles = Config::get('allowedRolesForExcelImport','excelImport');
-        return $app->hasActiveRole($roles);
-    });
 AngularApp::addCSS('extensions/ExcelImport/ui/css/style.css');
 AngularApp::addJS('extensions/ExcelImport/ui/js/ExcelImport.js');
 
