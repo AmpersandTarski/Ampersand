@@ -68,6 +68,9 @@ try{
     Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
     Config::set('autoRerun', 'execEngine', true);
     Config::set('maxRunCount', 'execEngine', 10);
+
+    // ExcelImporter settings
+    Config::set('allowedMimeTypes', 'excelImport', array('application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/excel'));
     
     // Navigation menu settings
     AngularApp::addMenuItem('refresh', 'app/views/menu/installer.html', 
