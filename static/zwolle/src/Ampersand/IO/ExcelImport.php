@@ -1,6 +1,6 @@
 <?php
 
-namespace Ampersand\Extension\ExcelImport;
+namespace Ampersand\IO;
 
 use Exception;
 use Ampersand\AngularApp;
@@ -32,7 +32,7 @@ $GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_S
 // Config
 Config::set('allowedMimeTypes', 'excelImport', array('application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/excel'));
 
-class ExcelImport {
+class ExcelImporter {
     /**
      *
      * @var \Psr\Log\LoggerInterface

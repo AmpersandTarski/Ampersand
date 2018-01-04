@@ -2,7 +2,7 @@
 
 use Ampersand\Misc\Config;
 use Ampersand\Log\Logger;
-use Ampersand\Extension\ExcelImport\ExcelImport;
+use Ampersand\IO\ExcelImporter;
 use Ampersand\Log\Notifications;
 use Ampersand\Transaction;
 use Ampersand\AmpersandApp;
@@ -21,7 +21,7 @@ $app->post('/excelimport/import', function () use ($app){
     
     if (is_uploaded_file($_FILES['file']['tmp_name'])){
         // Parse:
-        $parser = new ExcelImport();
+        $parser = new ExcelImporter();
         $parser->parseFile($_FILES['file']['tmp_name']);
         
         $transaction = Transaction::getCurrentTransaction()->close(true);

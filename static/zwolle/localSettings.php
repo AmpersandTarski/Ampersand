@@ -81,7 +81,6 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * EXTENSIONS
  *************************************************************************************************/
-require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
 
 // First initiation of Ampersand application
 AmpersandApp::singleton([
