@@ -18,6 +18,7 @@ use Ampersand\IO\JSONWriter;
 use Ampersand\IO\CSVWriter;
 use Ampersand\IO\Importer;
 use Ampersand\IO\JSONReader;
+use Ampersand\IO\ExcelImporter;
 use Ampersand\Misc\Reporter;
 
 global $app;
@@ -113,6 +114,36 @@ $app->get('/admin/import', function () use ($app){
     AmpersandApp::singleton()->checkProcessRules(); 
     $content = Notifications::getAll(); // Return all notifications
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
+$app->post('/excelimport/import', function () use ($app){
+    /** @var \Slim\Slim $app */
+    $ampersandApp = AmpersandApp::singleton();
+    
+    $roleIds = $app->request->params('roleIds');
+    $ampersandApp->activateRoles($roleIds);
+            
+    // Check for required role
+    if(!$ampersandApp->hasRole(Config::get('allowedRolesForExcelImport','excelImport'))) throw new Exception("You do not have access to import excel files", 401);
+    
+    if (is_uploaded_file($_FILES['file']['tmp_name'])){
+        // Parse:
+        $parser = new ExcelImporter();
+        $parser->parseFile($_FILES['file']['tmp_name']);
+        
+        $transaction = Transaction::getCurrentTransaction()->close(true);
+        if($transaction->isCommitted()) Logger::getUserLogger()->notice("File {$_FILES['file']['tmp_name']} imported successfully");
+        
+        $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
+
+        unlink($_FILES['file']['tmp_name']);
+    }else{
+        Logger::getUserLogger()->error("No file uploaded");
+    }
+    
+    $result = array('notifications' => Notifications::getAll(), 'files' => $_FILES);
+    
+    print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->get('/admin/report/relations', function () use ($app){
