@@ -15,6 +15,7 @@ use PHPExcel_Cell;
 use PHPExcel_Shared_Date;
 use PHPExcel_IOFactory;
 use PHPExcel_Worksheet;
+use PHPExcel_Worksheet_Row;
 
 // UI
 AngularApp::addMenuItem('ext', 'extensions/ExcelImport/ui/views/MenuItem.html', 
@@ -87,7 +88,7 @@ class ExcelImport {
      * Row 3    | <srcAtom a2>    | <tgtAtom b2>    | <tgtAtom c2>    | etc
      * etc
      */
-    private function ParseWorksheetWithIfc(PHPExcel_Worksheet $worksheet, InterfaceObject $ifc) 
+    protected function parseWorksheetWithIfc(PHPExcel_Worksheet $worksheet, InterfaceObject $ifc) 
     {
         // Determine $leftConcept from cell A1
         $leftConcept = Concept::getConceptByLabel((string)$worksheet->getCell('A1'));
@@ -145,7 +146,7 @@ class ExcelImport {
             }
             
             // Process other columns of this row
-            foreach ($header as $columnLetter => $ifc) {                
+            foreach ($header as $columnLetter => $ifc) {
                 $cell = $worksheet->getCell($columnLetter . $rowNr); 
                 $cellvalue = (string)$cell->getCalculatedValue();
                 
@@ -187,135 +188,152 @@ class ExcelImport {
      * etc
      * 
      */
-    private function ParseWorksheet(PHPExcel_Worksheet $worksheet){
-        // Loop through all rows
-        $highestrow = $worksheet->getHighestRow();
-        $highestcolumn = $worksheet->getHighestColumn();
-        $highestcolumnnr = PHPExcel_Cell::columnIndexFromString($highestcolumn);
-        
-        $row = 1; // Go to the first row where a table starts.
-        for ($i = $row; $i <= $highestrow; $i++){
-            $row = $i;
-            $cellvalue = $worksheet->getCell('A' . $row)->getValue();
-            if (substr(trim($cellvalue), 0, 1) === '[') break;
-        } // We are now at the beginning of a table or at the end of the file.
-        
-        $lines = array(); // Line is a buffer of one or more related (subsequent) excel rows
-        
-        while ($row <= $highestrow){
-            // Read this line as an array of values
+    protected function parseWorksheet(PHPExcel_Worksheet $worksheet)
+    {
+        // Find import blocks
+        $blockStartRowNrs = [];
+        foreach ($worksheet->getRowIterator() as $row) {
+            /** @var \PHPExcel_Worksheet_Row $row */
+            $rowNr = $row->getRowIndex();
+            $cellvalue = $worksheet->getCell('A'. $rowNr)->getValue();
 
-            $line = array(); // values is a buffer containing the cells in a single excel row
-            for ($columnnr = 0; $columnnr < $highestcolumnnr; $columnnr++){
-                $columnLetter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
-                $cell = $worksheet->getCell($columnLetter . $row);
-                $cellvalue = (string)$cell->getCalculatedValue();
-                // overwrite $cellvalue in case of datetime
-                // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
-                if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
-                $line[] = $cellvalue;
-            }
-            $lines[] = $line; // add line (array of values) to the line buffer
-        
-            $row++;
-            // Is this relation table done? Then we parse the current values into function calls and reset it
-            $firstCellInRow = (string)$worksheet->getCell('A' . $row)->getCalculatedValue();
-            if (substr(trim($firstCellInRow), 0, 1) === '['){
-                // Relation table is complete, so it can be processed.
-                $this->ParseLines($lines);
-                $lines = array();
+            // Import block is indicated by '[]' brackets in cell Ax
+            if (substr(trim($cellvalue), 0, 1) === '['){
+                $blockStartRowNrs[] = $rowNr;
             }
         }
-            
-        // Last relation table remains to be processed.
-        $this->ParseLines($lines);
-        $lines = array();
+
+        // Process import blocks
+        foreach ($blockStartRowNrs as $key => $startRowNr) {
+            $endRowNr = isset($blockStartRowNrs[$key + 1]) ? $blockStartRowNrs[$key + 1] : null;
+            $this->parseBlock($worksheet, $startRowNr, $endRowNr);
+        }
     }
-    
+
     /**
-     * 
-     * @param array $lines
+     * Undocumented function
+     *
+     * @param PHPExcel_Worksheet $worksheet
+     * @param int $startRowNr
+     * @param int $endRowNr
+     * @return void
      */
-    private function ParseLines($lines){
-        $relations = $concept = $separator = $flipped = array();
-        
-        foreach ($lines as $linenr => $line){
-            $totalcolumns = count($line);
-            
-            // First line specifies relation names
-            if ($linenr == 0){
-                for ($col = 0; $col < $totalcolumns; $col++){
-                    $relations[$col] = trim($line[$col]); // No leading/trailing spaces around relation names.
+    protected function parseBlock(PHPExcel_Worksheet $worksheet, int $startRowNr, int $endRowNr = null)
+    {
+        $line1 = [];
+        $line2 = [];
+        $header = [];
+
+        $i = 0; // row counter
+        foreach($worksheet->getRowIterator($startRowNr, $endRowNr) as $row) {
+            /** @var \PHPExcel_Worksheet_Row $row */
+
+            $i++; // increment row counter
+
+            // Header line 1 specifies relation names
+            if ($i === 1) {
+                foreach ($row->getCellIterator() as $cell) {
+                    /** @var \PHPExcel_Cell $cell */
+                    $line1[$cell->getColumn()] = trim((string) $cell->getValue()); // no leading/trailing spaces allowed
                 }
+            }
             
-            // Second line specifies concepts (and optionally: separators)
-            }elseif ($linenr == 1){
-                // In the Haskell importer, separators are the last character before the ']' if the concept is surrounded by such block quotes. Alternatively, you could specify a separator following such block-quotes, allowing for multiple-character separators.
-                for ($col = 0; $col < $totalcolumns; $col++){
+            // Header line 2 specifies concept names
+            elseif ($i === 2) {
+                foreach ($row->getCellIterator() as $cell) {
+                    /** @var \PHPExcel_Cell $cell */
                     
-                    $cellvalue = trim($line[$col]); // No leading/trailing spaces around cell values in second line
-                    if($cellvalue == ''){
-                        $concept[$col] = null;
-                    // The cell contains either 'Concept' or '[Conceptx]' where x is a separator character (e.g. ';', ',', ...)
-                    }elseif ((substr($cellvalue, 0, 1) == '[') && (substr($cellvalue, -1) == ']') ){
-                        if($col == 0) throw new Exception ("Seperator character not allowed for first column of excel import. Specified '{$line[$col]}'", 500);
-                        $concept[$col] = Concept::getConceptByLabel(substr($cellvalue, 1, -2));
-                        $separator[$col] = substr($cellvalue, -2, 1);
-                    }else{
-                        $concept[$col] = Concept::getConceptByLabel($cellvalue);
-                        $separator[$col] = false;
-                    }
-                    
-                    // Determine relations for all cols except col 0
-                    if($col > 0){
-                        if($relations[$col] == '' || $concept[$col] == ''){
-                            $relations[$col] = null;
-                        }elseif(substr($relations[$col], -1) == '~'){ // Relation is flipped is last character is a tilde (~)
-                            $relations[$col] = Relation::getRelation(substr($relations[$col], 0, -1), $concept[$col], $concept[0]);
-                            $flipped[$col] = true;
-                        }else{
-                            $relations[$col] = Relation::getRelation($relations[$col], $concept[0], $concept[$col]);
-                            $flipped[$col] = false;
+                    $col = $cell->getColumn();
+                    $line2[$col] = trim((string) $cell->getValue()); // no leading/trailing spaces allowed
+                
+                    // Import header can be determined now using line 1 and line 2
+                    if ($col === 'A') {
+                        $leftConcept = Concept::getConceptByLabel($line2[$col]);
+                        $header[$col] = ['concept' => $leftConcept, 'relation' => null, 'flipped' => null];
+                    } else {
+                        if ($line1[$col] == '' || $line2[$col] == '') {
+                            // Skipping column
+                            $this->logger->warning("Skipping column {$col} in sheet {$worksheet->getTitle()}, because header is not complete");
+                        }
+                        // Relation is flipped when last character is a tilde (~)
+                        elseif (substr($line1[$col], -1) == '~') {
+                            $rightConcept = Concept::getConceptByLabel($line2[$col]);
+                            
+                            $header[$col] = ['concept' => $rightConcept
+                                            ,'relation' => Relation::getRelation(substr($line1[$col], 0, -1), $rightConcept, $leftConcept)
+                                            ,'flipped' => true
+                                            ];
+                        } else {
+                            $rightConcept = Concept::getConceptByLabel($line2[$col]);
+                            $header[$col] = ['concept' => $rightConcept
+                                            ,'relation' => Relation::getRelation($line1[$col], $leftConcept, $rightConcept)
+                                            ,'flipped' => false
+                                            ];
                         }
                     }
                 }
+            }
             
-            // All other lines specify atoms
-            }else{                
-                $line[0] = trim($line[0]); // Trim cell content (= dirty identifier)
-                
-                // Determine left atom (column 0) of line
-                if ($line[0] == '') continue; // Don't process lines that start with an empty first cell
-                elseif ($line[0] == '_NEW') $leftAtom = $concept[0]->createNewAtom(); // Create a unique atom name
-                else $leftAtom = new Atom($line[0], $concept[0]);
-                
-                // Insert $leftAtom into the DB if it does not yet exist
-                $leftAtom->add();
-                
-                // Process other columns of line
-                for ($col = 1; $col < $totalcolumns; $col++){
-                    
-                    if (is_null($concept[$col])) continue; // If no concept is specified, the cell is skipped
-                    if (is_null($relations[$col])) continue; // If no relation is specified, the cell is skipped
-                    
-                    // Determine right atom(s)
-                    $rightAtoms = array();
-                    
-                    $cell = trim($line[$col]); // Start of check for multiple atoms in single cell
-                    if ($cell == '') continue; // If cell is empty, it is skipped
-                    elseif ($cell == '_NEW') $rightAtoms[] = $leftAtom; // If the cell contains '_NEW', the same atom as the $leftAtom is used. Useful for property-relations
-                    elseif($separator[$col]){
-                        $atomsIds = explode($separator[$col],$cell); // atomnames may have surrounding whitespace
-                        foreach($atomsIds as $atomId) $rightAtoms[] = new Atom(trim($atomId), $concept[$col]);
-                    }else{
-                        $rightAtoms[] = new Atom($line[$col], $concept[$col]); // DO NOT TRIM THIS CELL CONTENTS as it contains an atom that may need leading/trailing spaces
-                    }
-                    
-                    foreach ($rightAtoms as $rightAtom){
-                        if($flipped[$col]) (new Link($relations[$col], $rightAtom, $leftAtom))->add();
-                        else (new Link($relations[$col], $leftAtom, $rightAtom))->add();
-                    }
+            // Data lines
+            else {
+                $this->processDataRow($row, $header);
+            }
+        }
+    }
+    
+    /**
+     * Undocumented function
+     *
+     * @param PHPExcel_Worksheet_Row $row
+     * @param array $headerInfo
+     * @return void
+     */
+    private function processDataRow(PHPExcel_Worksheet_Row $row, array $headerInfo)
+    {
+        foreach ($row->getCellIterator() as $cell) {
+            /** @var \PHPExcel_Cell $cell */
+
+            $col = $cell->getColumn();
+
+            // Skip cell if column must not be imported
+            if(!array_key_exists($col, $headerInfo)) continue; // continue to next cell
+
+            $cellvalue = (string) $cell->getCalculatedValue(); // !Do NOT trim this cellvalue, because atoms may have leading/trailing whitespace
+
+            // Overwrite $cellvalue in case of datetime
+            // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
+            if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
+
+            // Determine $leftAtom using column A
+            if ($col == 'A') {
+                // If cell Ax is empty, skip complete row
+                if ($cellvalue == '') {
+                    $this->logger->warning("Skipping row {$row->getRowIndex()}, because column A is empty");
+                    return; // stop processing complete row
                 }
+
+                // If cell Ax contains '_NEW', this means to automatically create a new atom
+                elseif ($cellvalue == '_NEW') {
+                    $leftAtom = $headerInfo[$col]['concept']->createNewAtom()->add();
+                }
+
+                // Else instantiate atom with given atom identifier
+                else {
+                    $leftAtom = (new Atom($cellvalue, $headerInfo[$col]['concept']))->add();
+                }
+            
+            // Process other columns
+            } else {
+                // If cell is empty, skip column
+                if ($cellvalue == '') {
+                    continue; // continue to next cell
+                } elseif ($cellvalue == '_NEW') {
+                    $rightAtom = $leftAtom;
+                } else {
+                    $rightAtom = (new Atom($cellvalue, $headerInfo[$col]['concept']))->add();
+                }
+
+                $leftAtom->link($rightAtom, $headerInfo[$col]['relation'], $headerInfo[$col]['flipped'])->add();
             }
         }
     }
