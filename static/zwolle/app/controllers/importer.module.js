@@ -5,16 +5,16 @@ app.requires[app.requires.length] = 'angularFileUpload';
 angular.module('AmpersandApp').config(function($routeProvider) {
     $routeProvider
         // default start page
-        .when('/ext/ExcelImport', {
-            controller : 'ExcelImportController',
+        .when('/ext/importer', {
+            controller : 'PopulationImportController',
             templateUrl : 'app/views/importer.html',
-            interfaceLabel : 'Excel importer'
+            interfaceLabel : 'Population importer'
         });
-}).controller('ExcelImportController', function ($scope, $rootScope, FileUploader, NotificationService) {
+}).controller('PopulationImportController', function ($scope, $rootScope, FileUploader, NotificationService) {
     // $rootScope, so that all information and uploaded files are kept while browsing in the application
     if (typeof $rootScope.uploader == 'undefined') {
         $rootScope.uploader = new FileUploader({
-             url: 'api/v1/excelimport/import'
+             url: 'api/v1/admin/import'
         });
     }
     

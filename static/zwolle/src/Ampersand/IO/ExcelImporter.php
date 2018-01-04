@@ -25,7 +25,7 @@ class ExcelImporter {
      * Constructor
      */
     function __construct(){
-        $this->logger = Logger::getLogger('EXCELIMPORT');
+        $this->logger = Logger::getLogger('IO');
     }
     
     /**
