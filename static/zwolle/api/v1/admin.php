@@ -102,22 +102,22 @@ $app->post('/admin/import', function () use ($app){
     if(!$ampersandApp->hasRole(Config::get('allowedRolesForImporter'))) throw new Exception("You do not have access to import population", 401);
     
     if (is_uploaded_file($_FILES['file']['tmp_name'])) {
-        switch ($_FILES['file']['type']) {
-            case 'application/json':
-            case 'text/json':
+        $extension = pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION);
+        switch ($extension) {
+            case 'json':
                 $reader = new JSONReader();
                 $reader->loadFile($_FILES['file']['tmp_name']);
                 $importer = new Importer($reader);
                 $importer->importPopulation();
                 break;
-            case 'application/vnd.ms-excel':
-            case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-            case 'application/excel':
+            case 'xls':
+            case 'xlsx':
+            case 'ods':
                 $importer = new ExcelImporter();
                 $importer->parseFile($_FILES['file']['tmp_name']);
                 break;
             default:
-                throw new Exception("Unsupported file type", 400);
+                throw new Exception("Unsupported file extension", 400);
                 break;
         }
 

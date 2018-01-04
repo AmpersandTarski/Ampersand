@@ -12,6 +12,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Link;
+use Ampersand\Log\Logger;
 
 class Importer {
 

@@ -5,7 +5,7 @@ angular.module('AmpersandApp').controller('NotificationCenterController', functi
     
     $rootScope.checkAllRules = function(){
         Restangular
-        .all('admin/checks/rules/evaluate').one('all')
+        .all('admin/ruleengine/evaluate').one('all')
         .get()
         .then(
             function(data){

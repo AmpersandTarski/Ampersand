@@ -93,7 +93,7 @@ try{
             return $app->hasActiveRole($roles);
         });
     
-    AngularApp::addMenuItem('ext', 'app/view/menu/exporter.html',
+    AngularApp::addMenuItem('ext', 'app/views/menu/exporter.html',
         function($app){
             return !Config::get('productionEnv');
         });
