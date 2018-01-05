@@ -508,7 +508,7 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option []        ["diagnosis"]
                (NoArg (\opts -> opts{diagnosisOnly = True}))
-               "diagnose your Ampersand script (generates a .pdf file)."
+               "diagnose your Ampersand script (generates a document containing the diagnosis chapter only)."
             , Public)
           , (Option []        ["reference-table"]
                (NoArg (\opts -> opts{genLegalRefs = True}))
