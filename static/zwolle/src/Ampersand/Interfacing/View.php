@@ -21,7 +21,7 @@ class View {
     
     /**
      * Contains all view definitions
-     * @var View[]
+     * @var \Ampersand\Interfacing\View[]
      */
     private static $allViews; 
     
@@ -51,7 +51,7 @@ class View {
     
     /**
      * Array with view segments that are used to build the view
-     * @var ViewSegment[]
+     * @var \Ampersand\Interfacing\ViewSegment[]
      */
     public $segments = [];
     
@@ -61,6 +61,7 @@ class View {
      * Private function to prevent outside instantiation of views. Use View::getView($viewLabel)
      *
      * @param array $viewDef
+     * @param \Ampersand\Plugs\ViewPlugInterface $plug
      */
     private function __construct($viewDef, ViewPlugInterface $plug){
         $this->plug = $plug;

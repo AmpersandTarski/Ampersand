@@ -34,7 +34,7 @@ class InterfaceObject {
     
     /**
      * Contains all interface definitions
-     * @var InterfaceObject[]
+     * @var \Ampersand\Interfacing\InterfaceObject[]
      */
     private static $allInterfaces; // contains all interface objects
     
@@ -107,7 +107,7 @@ class InterfaceObject {
     
     /**
      * 
-     * @var Relation|null
+     * @var \Ampersand\Core\Relation|null
      */
     public $relation;
     
@@ -143,19 +143,19 @@ class InterfaceObject {
     
     /**
      * 
-     * @var Concept
+     * @var \Ampersand\Core\Concept
      */
     public $srcConcept;
     
     /**
      * 
-     * @var Concept
+     * @var \Ampersand\Core\Concept
      */
     public $tgtConcept;
     
     /**
      * 
-     * @var View
+     * @var \Ampersand\Interfacing\View
      */
     private $view;
     
@@ -173,7 +173,7 @@ class InterfaceObject {
     
     /**
      * 
-     * @var InterfaceObject[]
+     * @var \Ampersand\Interfacing\InterfaceObject[]
      */
     private $subInterfaces = array();
 

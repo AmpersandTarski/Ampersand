@@ -22,7 +22,7 @@ class Conjunct {
     /**
      * List of all conjuncts
      * 
-     * @var Conjunct[]
+     * @var \Ampersand\Rule\Conjunct[]
      */
     private static $allConjuncts;
     
