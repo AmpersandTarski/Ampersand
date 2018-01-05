@@ -1,7 +1,8 @@
 <?php
 
 use Ampersand\AmpersandApp;
-use Ampersand\Session;
+use Ampersand\Core\Concept;
+use Ampersand\Database\Database;
 
 register_shutdown_function(function (){
     $error = error_get_last();
@@ -28,6 +29,9 @@ require_once(__DIR__ . '/../lib/autoload.php');
 
 // Include/set default settings
 require_once(__DIR__ . '/defaultSettings.php');
+
+// Add mysql as default plug
+Concept::registerPlug(Database::singleton(), null);
 
 // Include project specific settings (i.e. localSettings.php file)
 require_once (__DIR__ . '/../localSettings.php');

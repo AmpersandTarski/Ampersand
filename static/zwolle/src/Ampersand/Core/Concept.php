@@ -8,7 +8,6 @@
 namespace Ampersand\Core;
 
 use Exception;
-use Ampersand\Database\Database;
 use Ampersand\Database\DatabaseTable;
 use Ampersand\Database\DatabaseTableCol;
 use Ampersand\Interfacing\Resource;
@@ -19,6 +18,7 @@ use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Atom;
 use Ampersand\Misc\Config;
 use Ampersand\Transaction;
+use Ampersand\Plugs\ConceptPlugInterface;
 
 /**
  * 
@@ -141,17 +141,13 @@ class Concept {
     /**
      * Concept constructor
      * Private function to prevent outside instantiation of concepts. Use Concept::getConcept($conceptName)
+     * 
      * @param array $conceptDef
-     * @param ConceptPlugInterface[] $plugs
      */
-    private function __construct(array $conceptDef, array $plugs){
+    private function __construct(array $conceptDef){
         $this->logger = Logger::getLogger('CORE');
         
         $this->def = $conceptDef;
-        
-        if(empty($plugs)) throw new Exception("No plug(s) provided for concept {$conceptDef['label']}", 500);
-        $this->plugs = $plugs;
-        $this->primaryPlug = current($this->plugs); // For now, we just pick the first plug as primary plug
         
         $this->name = $conceptDef['id'];
         $this->label = $conceptDef['label'];
@@ -358,7 +354,19 @@ class Concept {
      * @return \Ampersand\Plugs\ConceptPlugInterface[]
      */
     public function getPlugs(){
+        if(empty($this->plugs)) throw new Exception("No plug(s) provided for concept {$this}", 500);
         return $this->plugs;
+    }
+
+    /**
+     * Add plug for this concept
+     *
+     * @param \Ampersand\Plugs\ConceptPlugInterface $plug
+     * @return void
+     */
+    protected function addPlug(ConceptPlugInterface $plug){
+        if(!in_array($plug, $this->plugs)) $this->plugs[] = $plug;
+        if(count($this->plugs) === 1) $this->primaryPlug = $plug;
     }
 
     /**
@@ -457,7 +465,7 @@ class Concept {
 
         // Rename atom in concept set
         Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
-        foreach($this->plugs as $plug) $plug->renameAtom($atom, $newAtomId);
+        foreach($this->getPlugs() as $plug) $plug->renameAtom($atom, $newAtomId);
 
         // Rename atom in relation sets
         $newAtom = new Atom($newAtomId, $this);
@@ -502,7 +510,7 @@ class Concept {
                 $this->logger->debug("Add atom {$atom} to plug");
                 Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
                 
-                foreach($this->plugs as $plug) $plug->addAtom($atom); // Add to plug
+                foreach($this->getPlugs() as $plug) $plug->addAtom($atom); // Add to plug
                 $this->atomCache[] = $atom->id; // Add to cache
             }
         // Adding atom[A] to another concept [B] ($this)
@@ -535,7 +543,7 @@ class Concept {
             $this->logger->debug("Remove atom {$atom} from {$this} in plug");
             Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
             
-            foreach($this->plugs as $plug) $plug->removeAtom($atom); // Remove from concept in plug
+            foreach($this->getPlugs() as $plug) $plug->removeAtom($atom); // Remove from concept in plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
             
             // Delete all links where $atom is used as src or tgt atom
@@ -555,7 +563,7 @@ class Concept {
             $this->logger->debug("Delete atom {$atom} from plug");
             Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
             
-            foreach($this->plugs as $plug) $plug->deleteAtom($atom); // Delete from plug
+            foreach($this->getPlugs() as $plug) $plug->deleteAtom($atom); // Delete from plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
             
             // Delete all links where $atom is used as src or tgt atom
@@ -640,6 +648,29 @@ class Concept {
         
         return self::$allConcepts;
     }
+
+    /**
+     * Register plug for specified concepts
+     *
+     * @param \Ampersand\Plugs\ConceptPlugInterface $plug
+     * @param array $conceptLabels
+     * @return void
+     */
+    public static function registerPlug(ConceptPlugInterface $plug, array $conceptLabels = null){
+        // Add plugs for all concepts
+        if (is_null($conceptLabels)) {
+            foreach (self::getAllConcepts() as $cpt) {
+                $cpt->addPlug($plug);
+            }
+        }
+
+        // Only for specific concepts
+        else {
+            foreach ($conceptLabels as $label) {
+                (self::getConceptByLabel($label))->addPlug($plug);
+            }
+        }
+    }
     
     /**
      * Import all concept definitions from json file and create and save Concept objects
@@ -651,8 +682,7 @@ class Concept {
         // import json file
         $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'concepts.json');
         $allConceptDefs = (array)json_decode($file, true);
-        $plugs = [Database::singleton()];
     
-        foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $plugs);
+        foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef);
     }
 }
