@@ -42,7 +42,7 @@ class Relation {
      * 
      * @var \Ampersand\Plug\RelationPlugInterface[]
      */
-    protected $plugs;
+    protected $plugs = [];
     
     /**
      *
@@ -192,7 +192,7 @@ class Relation {
      * @return \Ampersand\Plugs\RelationPlugInterface[]
      */
     public function getPlugs(){
-        if(empty($plugs)) throw new Exception("No plug(s) provided for relation {$this->getSignature()}", 500);
+        if(empty($this->plugs)) throw new Exception("No plug(s) provided for relation {$this->getSignature()}", 500);
         return $this->plugs;
     }
 

@@ -44,7 +44,7 @@ class Concept {
      * 
      * @var \Ampersand\Plugs\ConceptPlugInterface[]
      */
-    protected $plugs;
+    protected $plugs = [];
     
     /**
      *
@@ -686,7 +686,7 @@ class Concept {
         
         $allConceptDefs = (array)json_decode(file_get_contents($fileName), true);
     
-        foreach ($conceptDefinitions as $conceptDef) {
+        foreach ($allConceptDefs as $conceptDef) {
             self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $defaultPlug);
         }
     }
