@@ -139,15 +139,8 @@ writepandoc fSpec thePandoc = do
     writePandoc' = do
          docx <- runIO (writeDocx pandocWriterOptions thePandoc) >>= handleError
          BL.writeFile (outputFile -<.> ".docx") docx
-      where
-         myDoc :: Pandoc
-         myDoc = setTitle "My title" $ doc $
-           para "This is the first paragraph" <>
-           para ("And " <> emph "another" <> ".") <>
-           bulletList [ para "item one" <> para "continuation"
-                      , plain ("item two and a " <>
-                          link "/url" "go to url" "link")
-                      ]
+
+         
     writePandoc'' :: IO()
     writePandoc'' =
      case fspecFormat (getOpts fSpec) of
