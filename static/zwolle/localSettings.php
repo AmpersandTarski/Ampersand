@@ -70,6 +70,8 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
  * Uncomment the config setting below
  *************************************************************************************************/
 // Config::set('loginEnabled', 'global', true);
+// Config::set('allowedRolesForImporter', 'global', []); // list of roles that have access to the importer
+
 
 /**************************************************************************************************
  * EXEC ENGINE 
@@ -77,6 +79,7 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 // Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
 // Config::set('autoRerun', 'execEngine', true);
 // Config::set('maxRunCount', 'execEngine', 10);
+
 
 /**************************************************************************************************
  * EXTENSIONS
