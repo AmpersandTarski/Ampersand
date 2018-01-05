@@ -8,6 +8,8 @@ import Data.Maybe(isJust)
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
+ | noDiagnosis (getOpts fSpec) = mempty
+ | otherwise
  = (  xDefBlck fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
