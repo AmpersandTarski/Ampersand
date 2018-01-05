@@ -289,8 +289,8 @@ chpDiagnosis fSpec
                           "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " ++
                           "gedeclareerd worden, worden ook meerdere keren geteld."
                     ,EN $ "The table below shows for each theme (i.e. pattern) the number of relations and rules, followed " ++
-                          " by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
-                          " times."
+                          "by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
+                          "times."
                     )
     <> table -- No caption:
              mempty
@@ -308,7 +308,6 @@ chpDiagnosis fSpec
              )
              -- Content rows
              (   map mkTableRowPat (vpatterns fSpec)
-              ++ [mempty] -- empty row
               ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (filter decusr $ vrels fSpec) (vrules fSpec)]
              )
       
