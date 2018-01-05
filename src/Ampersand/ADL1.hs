@@ -1,8 +1,11 @@
 module Ampersand.ADL1
-   ( module X
+   ( module Ampersand.Core.AbstractSyntaxTree
+   , module Ampersand.Core.ParseTree
+   , module Ampersand.ADL1.Expression
+   , module Ampersand.ADL1.Rule
    )
 where
-import Ampersand.Core.ParseTree as X (
+import Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
          , mkPair
          , FilePos(..), Origin(..), Traced(..)
@@ -29,7 +32,7 @@ import Ampersand.Core.ParseTree as X (
          , P_Relation(..)
          , ConceptDef(..)
          )
-import Ampersand.Core.AbstractSyntaxTree as X (
+import Ampersand.Core.AbstractSyntaxTree (
           A_Concept(..)
          ,Signature(..),showSign
          ,A_Context(..)
@@ -53,11 +56,11 @@ import Ampersand.Core.AbstractSyntaxTree as X (
          , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), representationOf
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
-import Ampersand.ADL1.Expression as X
+import Ampersand.ADL1.Expression
          ( notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
          , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
          , insParentheses)
-import Ampersand.ADL1.Rule as X (
+import Ampersand.ADL1.Rule (
           rulefromProp
          ,consequent,antecedent,hasantecedent)
 
