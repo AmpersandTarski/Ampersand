@@ -225,23 +225,24 @@ class Conjunct {
      * @return \Ampersand\Rule\Conjunct[]
      */
     public static function getAllConjuncts(): array {
-        if(!isset(self::$allConjuncts)) self::setAllConjuncts();
+        if(!isset(self::$allConjuncts)) throw new Exception("Conjunct definitions not loaded yet", 500);
          
         return self::$allConjuncts;
     }
     
     /**
-     * Import all conjunct definitions from json file and create and save Conjunct objects
+     * Import all role definitions from json file and instantiate Conjunct objects
      * 
+     * @param string $fileName containing the Ampersand conjunct definitions
      * @return void
      */
-    private static function setAllConjuncts(){
+    public static function setAllConjuncts(string $fileName){
         self::$allConjuncts = array();
+        
+        $allConjDefs = (array)json_decode(file_get_contents($fileName), true);
     
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'conjuncts.json');
-        $allConjDefs = (array)json_decode($file, true);
-    
-        foreach ($allConjDefs as $conjDef) self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef);
+        foreach ($allConjDefs as $conjDef) {
+            self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef);
+        }
     }
 }

@@ -17,6 +17,8 @@ use Ampersand\Role;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Log\Notifications;
 use Ampersand\IO\JSONReader;
+use Ampersand\Interfacing\View;
+use Ampersand\Rule\Rule;
 
 class AmpersandApp
 {
@@ -77,6 +79,18 @@ class AmpersandApp
      */
     private function __construct(array $depInj = []){
         $this->logger = Logger::getLogger('APPLICATION');
+
+        $mySqlPlug = Database::singleton(); // default plug
+        $genericsFolder = Config::get('pathToGeneratedFiles');
+
+        // Instantiate object definitions from generated files
+        Concept::setAllConcepts($genericsFolder . 'concepts.json', $mySqlPlug);
+        Relation::setAllRelations($genericsFolder . 'relations.json', $mySqlPlug);
+        View::setAllViews($genericsFolder . 'views.json', $mySqlPlug);
+        InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $mySqlPlug);
+        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json');
+        Rule::setAllRules($genericsFolder . 'rules.json', $mySqlPlug);
+        Role::setAllRoles($genericsFolder . 'roles.json');
 
         // Register storages
         if(isset($depInj['storages'])) foreach($depInj['storages'] as $storage) $this->registerStorage($storage);

@@ -139,22 +139,24 @@ class Role {
      * @return Role[]
      */
     public static function getAllRoles(){
-        if(!isset(self::$allRoles)) self::setAllRoles();
+        if(!isset(self::$allRoles)) throw new Exception("Role definitions not loaded yet", 500);
          
         return self::$allRoles;
     }
     
     /**
-     * Import all role definitions from json file and create and save Role objects
+     * Import all role definitions from json file and instantiate Role objects
+     * 
+     * @param string $fileName containing the Ampersand role definitions
      * @return void
      */
-    private static function setAllRoles(){
-        self::$allRoles = array();
-    
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'roles.json');
-        $allRoleDefs = (array)json_decode($file, true);
+    public static function setAllRoles(string $fileName){
+        self::$allRoles = [];
+
+        $allRoleDefs = (array) json_decode(file_get_contents($fileName), true);
         
-        foreach ($allRoleDefs as $roleDef) self::$allRoles[$roleDef['name']] = new Role($roleDef);
+        foreach ($allRoleDefs as $roleDef) {
+            self::$allRoles[$roleDef['name']] = new Role($roleDef);
+        }
     }
 }

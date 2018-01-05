@@ -181,10 +181,11 @@ class InterfaceObject {
     /**
      * InterfaceObject constructor
      * @param array $ifcDef Interface object definition as provided by Ampersand generator
+     * @param \Ampersand\Plugs\IfcPlugInterface $plug
      * @param string $pathEntry
-     * @param boolean $rootIfc Specifies if this interface object is a toplevel interface (true) or subinterface (false)
+     * @param bool $rootIfc Specifies if this interface object is a toplevel interface (true) or subinterface (false)
      */
-    private function __construct($ifcDef, IfcPlugInterface $plug, $pathEntry = null, $rootIfc = false){
+    private function __construct(array $ifcDef, IfcPlugInterface $plug, string $pathEntry = null, bool $rootIfc = false){
         $this->logger = Logger::getLogger('INTERFACING');
         
         $this->plug = $plug;
@@ -534,7 +535,7 @@ class InterfaceObject {
      * @return InterfaceObject[]
      */
     public static function getAllInterfaces(){
-        if(!isset(self::$allInterfaces)) self::setAllInterfaces();
+        if(!isset(self::$allInterfaces)) throw new Exception("Interface definitions not loaded yet", 500);
         
         return self::$allInterfaces;   
     }
@@ -550,19 +551,19 @@ class InterfaceObject {
     }
     
     /**
-     * Import all interface object definitions from json file and create and save InterfaceObject objects
+     * Import all interface object definitions from json file and instantiate InterfaceObject objects
+     * 
+     * @param string $fileName containing the Ampersand interface definitions
+     * @param \Ampersand\Plugs\IfcPlugInterface $defaultPlug
      * @return void
      */
-    private static function setAllInterfaces(){
-        self::$allInterfaces = array();
+    public static function setAllInterfaces(string $fileName, IfcPlugInterface $defaultPlug){
+        self::$allInterfaces = [];
         
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'interfaces.json');
-        $allInterfaceDefs = (array)json_decode($file, true);
+        $allInterfaceDefs = (array)json_decode(file_get_contents($fileName), true);
         
-        $plug = Database::singleton();
         foreach ($allInterfaceDefs as $ifcDef){
-            $ifc = new InterfaceObject($ifcDef['ifcObject'], $plug, null, true);
+            $ifc = new InterfaceObject($ifcDef['ifcObject'], $defaultPlug, null, true);
             
             // Set additional information about this toplevel interface object
             $ifc->ifcRoleNames = $ifcDef['interfaceRoles'];

@@ -112,25 +112,27 @@ class View {
      * Returns array with all view objects
      * @return View[]
      */
-    private static function getAllViews(){
-        if(!isset(self::$allViews)) self::setAllViews();
+    public static function getAllViews(){
+        if(!isset(self::$allViews)) throw new Exception("View definitions not loaded yet", 500);
          
         return self::$allViews;
     }
     
     /**
-     * Import all view definitions from json file and create and save View objects 
+     * Import all view definitions from json file and instantiate View objects 
+     * 
+     * @param string $fileName containing the Ampersand view definitions
+     * @param \Ampersand\Plugs\ViewPlugInterface $defaultPlug
      * @return void
      */
-    private static function setAllViews(){
-        self::$allViews = array();
-    
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'views.json');
-        $allViewDefs = (array)json_decode($file, true);
-        $plug = Database::singleton();
+    public static function setAllViews(string $fileName, ViewPlugInterface $defaultPlug){
+        self::$allViews = [];
         
-        foreach ($allViewDefs as $viewDef) self::$allViews[$viewDef['label']] = new View($viewDef, $plug);
+        $allViewDefs = (array)json_decode(file_get_contents($fileName), true);
+        
+        foreach ($allViewDefs as $viewDef){
+            self::$allViews[$viewDef['label']] = new View($viewDef, $defaultPlug);
+        }
     }
     
 }

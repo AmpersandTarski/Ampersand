@@ -31,11 +31,6 @@ require_once(__DIR__ . '/../lib/autoload.php');
 // Include/set default settings
 require_once(__DIR__ . '/defaultSettings.php');
 
-// Add mysql as default plug
-$mySqlPlug = Database::singleton();
-Concept::registerPlug($mySqlPlug, null);
-Relation::registerPlug($mySqlPlug, null);
-
 // Include project specific settings (i.e. localSettings.php file)
 require_once (__DIR__ . '/../localSettings.php');
 if(!defined('LOCALSETTINGS_VERSION') || AmpersandApp::REQ_LOCALSETTINGS_VERSION > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to format of v" . number_format (AmpersandApp::REQ_LOCALSETTINGS_VERSION, 1), 500);

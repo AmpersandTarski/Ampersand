@@ -122,9 +122,9 @@ class Relation {
      *
      * @param array $relationDef
      */
-    public function __construct($relationDef){
+    public function __construct($relationDef, RelationPlugInterface $defaultPlug = null){
         $this->logger = Logger::getLogger('CORE');
-        
+
         $this->name = $relationDef['name'];
         $this->srcConcept = Concept::getConcept($relationDef['srcConceptId']);
         $this->tgtConcept = Concept::getConcept($relationDef['tgtConceptId']);
@@ -142,6 +142,8 @@ class Relation {
             $this->relatedConjuncts[] = $conj;
         }
         
+        if(!is_null($defaultPlug)) $this->addPlug($defaultPlug);
+
         // Specify mysql table information
         $this->mysqlTable = new RelationTable($relationDef['mysqlTable']['name'], $relationDef['mysqlTable']['tableOf']);
         
@@ -344,7 +346,7 @@ class Relation {
      * @return Relation[]
      */
     public static function getAllRelations(){
-        if(!isset(self::$allRelations)) self::setAllRelations();
+        if(!isset(self::$allRelations)) throw new Exception("Relation definitions not loaded yet", 500);
          
         return self::$allRelations;
     }
@@ -373,18 +375,20 @@ class Relation {
     }
     
     /**
-     * Import all Relation definitions from json file and create and save Relation objects
+     * Import all Relation definitions from json file and instantiate Relation objects
+     * 
+     * @param string $fileName containing the Ampersand relation definitions
+     * @param \Ampersand\Plugs\RelationPlugInterface $defaultPlug
      * @return void
      */
-    private static function setAllRelations(){
-        self::$allRelations = array();
+    public static function setAllRelations(string $fileName, RelationPlugInterface $defaultPlug = null){
+        self::$allRelations = [];
     
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'relations.json');
-        $allRelationDefs = (array)json_decode($file, true);
+        // Import json file
+        $allRelationDefs = (array)json_decode(file_get_contents($fileName), true);
     
         foreach ($allRelationDefs as $relationDef){
-            $relation = new Relation($relationDef);
+            $relation = new Relation($relationDef, $defaultPlug);
             self::$allRelations[$relation->signature] = $relation; 
         }
     }

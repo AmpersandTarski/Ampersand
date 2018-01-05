@@ -143,11 +143,13 @@ class Concept {
      * Private function to prevent outside instantiation of concepts. Use Concept::getConcept($conceptName)
      * 
      * @param array $conceptDef
+     * @param \Ampersand\Plugs\ConceptPlugInterface $defaultPlug
      */
-    private function __construct(array $conceptDef){
+    private function __construct(array $conceptDef, ConceptPlugInterface $defaultPlug = null){
         $this->logger = Logger::getLogger('CORE');
         
         $this->def = $conceptDef;
+        if(!is_null($defaultPlug)) $this->addPlug($defaultPlug);
         
         $this->name = $conceptDef['id'];
         $this->label = $conceptDef['label'];
@@ -644,7 +646,7 @@ class Concept {
      * @return Concept[]
      */
     public static function getAllConcepts(){
-        if(!isset(self::$allConcepts)) self::setAllConcepts();
+        if(!isset(self::$allConcepts)) throw new Exception("Concept definitions not loaded yet", 500);
         
         return self::$allConcepts;
     }
@@ -673,16 +675,19 @@ class Concept {
     }
     
     /**
-     * Import all concept definitions from json file and create and save Concept objects
+     * Import all concept definitions from json file and instantiate Concept objects
+     * 
+     * @param string $fileName containing the Ampersand concept definitions
+     * @param \Ampersand\Plugs\ConceptPlugInterface $defaultPlug
      * @return void
      */
-    private static function setAllConcepts(){
-        self::$allConcepts = array();
-         
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'concepts.json');
-        $allConceptDefs = (array)json_decode($file, true);
+    public static function setAllConcepts(string $fileName, ConceptPlugInterface $defaultPlug = null){
+        self::$allConcepts = [];
+        
+        $allConceptDefs = (array)json_decode(file_get_contents($fileName), true);
     
-        foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef);
+        foreach ($conceptDefinitions as $conceptDef) {
+            self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $defaultPlug);
+        }
     }
 }
