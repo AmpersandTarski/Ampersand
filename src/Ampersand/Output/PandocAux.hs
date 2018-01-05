@@ -135,12 +135,24 @@ writepandoc fSpec thePandoc = do
   verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
   writePandoc'
  where
-
     writePandoc' :: IO()
-    writePandoc' =
+    writePandoc' = do
+         docx <- runIO (writeDocx pandocWriterOptions thePandoc) >>= handleError
+         BL.writeFile (outputFile -<.> ".docx") docx
+      where
+         myDoc :: Pandoc
+         myDoc = setTitle "My title" $ doc $
+           para "This is the first paragraph" <>
+           para ("And " <> emph "another" <> ".") <>
+           bulletList [ para "item one" <> para "continuation"
+                      , plain ("item two and a " <>
+                          link "/url" "go to url" "link")
+                      ]
+    writePandoc'' :: IO()
+    writePandoc'' =
      case fspecFormat (getOpts fSpec) of
        Fdocx  -> do
-         docx <- runIO (writeDocx writerOptions thePandoc) >>= handleError
+         docx <- runIO (writeDocx pandocWriterOptions thePandoc) >>= handleError
          BL.writeFile outputFile docx
        FLatex -> do
          res <- runIO ltx >>= handleError
@@ -151,7 +163,7 @@ writepandoc fSpec thePandoc = do
                                      TL.unpack (TE.decodeUtf8With TE.lenientDecode err')
          where ltx :: PandocIO (Either BL.ByteString BL.ByteString)
                ltx = makePDF "pdflatex" [] f
-                        writerOptions thePandoc
+                        pandocWriterOptions thePandoc
                f = case writer of 
                     ByteStringWriter _ -> fatal $ "The latex writer should not be a bytestringwriter"
                     TextWriter x -> x
@@ -161,6 +173,7 @@ writepandoc fSpec thePandoc = do
                                        ++ e
                          Right (w, _) -> w :: Writer PandocIO
 
+    pandocWriterOptions = writerOptions
     outputFile = 
       addExtension (dirOutput (getOpts fSpec) </> baseName (getOpts fSpec))
                    (case fspecFormat (getOpts fSpec) of
