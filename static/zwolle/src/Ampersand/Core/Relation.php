@@ -8,7 +8,6 @@
 namespace Ampersand\Core;
 
 use Exception;
-use Ampersand\Database\Database;
 use Ampersand\Database\DatabaseTableCol;
 use Ampersand\Database\RelationTable;
 use Ampersand\Core\Concept;
@@ -16,6 +15,7 @@ use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
 use Ampersand\Misc\Config;
 use Ampersand\Transaction;
+use Ampersand\Plugs\RelationPlugInterface;
 
 /**
  *
@@ -121,14 +121,9 @@ class Relation {
      * Private function to prevent outside instantiation of Relations. Use Relation::getRelation($relationSignature)
      *
      * @param array $relationDef
-     * @param RelationPlugInterface[] $plugs
      */
-    public function __construct($relationDef, array $plugs){
+    public function __construct($relationDef){
         $this->logger = Logger::getLogger('CORE');
-        
-        if(empty($plugs)) throw new Exception("No plug(s) provided for relation {$relationDef['signature']}", 500);
-        $this->plugs = $plugs;
-        $this->primaryPlug = current($this->plugs); // For now, we just pick the first plug as primary plug
         
         $this->name = $relationDef['name'];
         $this->srcConcept = Concept::getConcept($relationDef['srcConceptId']);
@@ -195,7 +190,19 @@ class Relation {
      * @return \Ampersand\Plugs\RelationPlugInterface[]
      */
     public function getPlugs(){
+        if(empty($plugs)) throw new Exception("No plug(s) provided for relation {$this->getSignature()}", 500);
         return $this->plugs;
+    }
+
+    /**
+     * Add plug for this relation
+     *
+     * @param \Ampersand\Plugs\RelationPlugInterface $plug
+     * @return void
+     */
+    protected function addPlug(RelationPlugInterface $plug){
+        if(!in_array($plug, $this->plugs)) $this->plugs[] = $plug;
+        if(count($this->plugs) === 1) $this->primaryPlug = $plug;
     }
     
     /**
@@ -232,7 +239,7 @@ class Relation {
         $link->src()->add(); // TODO: remove when we know for sure that this is guaranteed by calling functions
         $link->tgt()->add(); // TODO: remove when we know for sure that this is guaranteed by calling functions
         
-        foreach($this->plugs as $plug) $plug->addLink($link);
+        foreach($this->getPlugs() as $plug) $plug->addLink($link);
     }
     
     /**
@@ -244,7 +251,7 @@ class Relation {
         $this->logger->debug("Delete link {$link} from plug");
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation and transaction management
         
-        foreach($this->plugs as $plug) $plug->deleteLink($link);
+        foreach($this->getPlugs() as $plug) $plug->deleteLink($link);
     }
     
     /**
@@ -257,15 +264,15 @@ class Relation {
         switch ($srcOrTgt) {
             case 'src':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src");
-                foreach($this->plugs as $plug) $plug->deleteAllLinks($this, $atom, 'src');
+                foreach($this->getPlugs() as $plug) $plug->deleteAllLinks($this, $atom, 'src');
                 break;
             case 'tgt':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as tgt");
-                foreach($this->plugs as $plug) $plug->deleteAllLinks($this, $atom, 'tgt');
+                foreach($this->getPlugs() as $plug) $plug->deleteAllLinks($this, $atom, 'tgt');
                 break;
             case null:
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src or tgt");
-                foreach($this->plugs as $plug) $plug->deleteAllLinks($this, $atom, null);
+                foreach($this->getPlugs() as $plug) $plug->deleteAllLinks($this, $atom, null);
                 break;
             default:
                 throw new Exception("Unknown/unsupported param option '{$srcOrTgt}'. Supported options are 'src', 'tgt' or null", 500);
@@ -341,6 +348,29 @@ class Relation {
          
         return self::$allRelations;
     }
+
+    /**
+     * Register plug for specified relations
+     *
+     * @param RelationPlugInterface $plug
+     * @param array $relationSignatures
+     * @return void
+     */
+    public static function registerPlug(RelationPlugInterface $plug, array $relationSignatures = null){
+        // Add plugs for all relations
+        if (is_null($relationSignatures)) {
+            foreach (self::getAllRelations() as $rel) {
+                $rel->addPlug($plug);
+            }
+        }
+
+        // Only for specific relations
+        else {
+            foreach ($relationSignatures as $rel) {
+                (self::getRelation($rel))->addPlug($plug);
+            }
+        }
+    }
     
     /**
      * Import all Relation definitions from json file and create and save Relation objects
@@ -352,10 +382,9 @@ class Relation {
         // import json file
         $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'relations.json');
         $allRelationDefs = (array)json_decode($file, true);
-        $plugs = [Database::singleton()];
     
         foreach ($allRelationDefs as $relationDef){
-            $relation = new Relation($relationDef, $plugs);
+            $relation = new Relation($relationDef);
             self::$allRelations[$relation->signature] = $relation; 
         }
     }
