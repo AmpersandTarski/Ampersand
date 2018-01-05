@@ -112,9 +112,9 @@ generateAmpersandOutput multi = do
    doGenDocument :: IO()
    doGenDocument =
     do { verboseLn opts ("Processing "++name fSpec)
-  --     ; -- First we need to output the pictures, because they should be present before the actual document is written
-  --       when (not(null thePictures) && fspecFormat opts/=FPandoc) $
-  --         mapM_ (writePicture opts) (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
+       ; -- First we need to output the pictures, because they should be present before the actual document is written
+         when (not(null thePictures) && fspecFormat opts/=FPandoc) $
+           mapM_ (writePicture opts) (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
        ; writepandoc fSpec thePandoc
        }
      where (thePandoc,thePictures) = fSpec2Pandoc fSpec
