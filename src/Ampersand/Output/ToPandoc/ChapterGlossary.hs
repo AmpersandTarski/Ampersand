@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterGlossary
   (chpGlossary)
 where
@@ -6,16 +7,15 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 
 chpGlossary :: Int -> FSpec ->  Blocks
 chpGlossary _ fSpec
- = fromList $
-   if fspecFormat (getOpts fSpec)==FLatex
-   then [ Para [RawInline (Format "latex") "\\printglossaries"] ]
-   else [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
+ =      --  *** Header ***
+     xDefBlck fSpec Glossary 
+  <> simpleTable 
           ( case fsLang fSpec of
                Dutch   ->
-                 [ [Plain [Str "term"]] , [Plain [Str "definitie"]] , [Plain [Str "bron"]]]
+                 [ plain "term", plain "definitie", plain "bron"]
                English ->
-                 [ [Plain [Str "term"]] , [Plain [Str "definition"]], [Plain [Str "source"]]]
+                 [ plain "term", plain "definition", plain "source"]
           )
-          [ [ [Plain [(Str . name)  c]], [Plain [(Str . cddef) cd]], [Plain [(Str . cdref) cd]]]
-          | c<-concs fSpec, cd<-concDefs fSpec c
-          ]]
+          [ [ plain . str . name $ c, plain . str . cddef $ cd, plain . str . cdref $ cd]
+          | c<-sortWith name (concs fSpec), cd<-concDefs fSpec c
+          ]

@@ -58,28 +58,16 @@ import qualified Text.Pandoc.Builder as  BuggyBuilder
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]
-chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
- where
-   -- temporarily switch off chapters that need too much refactoring, but keep this Haskell code compilable.
-    disabled = []
-    chapters
-     | test opts                  = [SharedLang]
-     | diagnosisOnly opts         = [Diagnosis]
-     | otherwise                   = [ Intro
-                                     , SharedLang
-                                     , Diagnosis
-                                     , ConceptualAnalysis
-                                  --   , ProcessAnalysis
-                                     , DataAnalysis
-                                  --   , SoftwareMetrics
-                                  --   , EcaRules
-                                  --   , Interfaces
-                                     ]  
-                                  --   ++
-                                  --   [ FunctionPointAnalysis | genFPAChap opts ] ++
-                                  --   [ Glossary
-                                  --   ]
-
+chaptersInDoc opts 
+     | test opts          = [ SharedLang]
+     | diagnosisOnly opts = [ Diagnosis]
+     | otherwise          = [ Intro
+                            , SharedLang
+                            , Diagnosis
+                            , ConceptualAnalysis
+                            , DataAnalysis
+                            , Glossary
+                            ]
 
 data XRefSection
              = XRefSharedLangRelation Relation
