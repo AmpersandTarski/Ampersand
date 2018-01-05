@@ -10,7 +10,6 @@ namespace Ampersand;
 use Exception;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Rule\Rule;
-use Ampersand\Misc\Config;
 
 /**
  *

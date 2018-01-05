@@ -1,9 +1,6 @@
 <?php
 
 use Ampersand\AmpersandApp;
-use Ampersand\Core\Concept;
-use Ampersand\Database\Database;
-use Ampersand\Core\Relation;
 
 register_shutdown_function(function (){
     $error = error_get_last();

@@ -1,15 +1,10 @@
 <?php
 
 use Ampersand\Misc\Config;
-use Ampersand\Database\Database;
-use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\Rule;
-use Ampersand\Core\Relation;
-use Ampersand\Core\Atom;
-use Ampersand\Core\Concept;
 use Ampersand\Transaction;
 use Ampersand\AmpersandApp;
 use Ampersand\Rule\RuleEngine;

@@ -8,7 +8,6 @@
 namespace Ampersand\Interfacing;
 
 use Exception;
-use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;

@@ -9,9 +9,7 @@ namespace Ampersand\Interfacing;
 
 use Exception;
 use Ampersand\Core\Atom;
-use Ampersand\Database\Database;
 use Ampersand\Interfacing\ViewSegment;
-use Ampersand\Misc\Config;
 use Ampersand\Plugs\ViewPlugInterface;
 
 /**
