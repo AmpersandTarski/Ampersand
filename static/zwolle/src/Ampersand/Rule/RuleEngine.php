@@ -62,6 +62,10 @@ class RuleEngine {
         }
         $conjuncts = array_unique($conjuncts); // remove duplicates
         
+        if (empty($conjuncts)) {
+            return [];
+        }
+        
         // Query database
         $q = implode(',', array_map( function($conj){ return "'{$conj->id}'";}, $conjuncts)); // returns string "<conjId1>,<conjId2>,<etc>"
         $query = "SELECT * FROM `{$dbsignalTableName}` WHERE `conjId` IN ({$q})";
