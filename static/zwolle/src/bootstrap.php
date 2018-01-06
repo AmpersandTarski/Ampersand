@@ -1,6 +1,7 @@
 <?php
 
 use Ampersand\AmpersandApp;
+use Pimple\Container;
 
 register_shutdown_function(function (){
     $error = error_get_last();
@@ -24,6 +25,12 @@ session_start();
 
 // Composer Autoloader
 require_once(__DIR__ . '/../lib/autoload.php');
+
+// New Pimple Dependency Injection Container
+$container = new Container();
+$container['ampersand_app'] = function ($c) {
+    return new AmpersandApp($c);
+};
 
 // Include/set default settings
 require_once(__DIR__ . '/defaultSettings.php');

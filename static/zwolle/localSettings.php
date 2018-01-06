@@ -3,7 +3,6 @@
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Misc\Config;
-use Ampersand\AmpersandApp;
 use Ampersand\Database\Database;
 
 define ('LOCALSETTINGS_VERSION', 1.6);
@@ -85,7 +84,3 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
  * EXTENSIONS
  *************************************************************************************************/
 
-// First initiation of Ampersand application
-AmpersandApp::singleton([
-    'storages' => [Database::singleton()]
-]);
