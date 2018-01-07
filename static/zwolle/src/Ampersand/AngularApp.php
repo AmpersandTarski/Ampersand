@@ -21,7 +21,7 @@ use Ampersand\Misc\Config;
  */
 class AngularApp {
 
-    private $html;
+    protected $html;
     
     /**
      * 
@@ -29,34 +29,64 @@ class AngularApp {
      */
     private $logger;
     
-    private static $cssFiles = array();
-    private static $jsFiles = array();
+    /**
+     * List of css files that must be included in the Angular webapplication
+     *
+     * @var array
+     */
+    protected $cssFiles = [];
+
+    /**
+     * List of javascript files that must be included in the Angular webapplication
+     *
+     * @var array
+     */
+    protected $jsFiles = [];
     
     /**
-     * @var array $extMenu contains potential items for the extensions menu (in navbar)
+     * List of items for the extensions menu (in navbar)
+     * 
+     * @var array 
      */
-    private static $extMenu = array();
+    protected $extMenu = [];
     
     /**
-     * @var array $refreshMenu contains potential items for the refresh menu (in navbar)
+     * List of items for the refresh menu (in navbar)
+     * 
+     * @var array
      */
-    private static $refreshMenu = array();
+    protected $refreshMenu = [];
     
     /**
-     * @var array $roleMenu contains potential items for the role menu (in navbar)
+     * List of items for the role menu (in navbar)
+     * 
+     * @var array
      */
-    private static $roleMenu = array();
+    protected $roleMenu = [];
 
     /**
      * Contains information for the front-end to navigate the user in a certain case (e.g. after COMMIT)
-     * @var array $navToResponse
+     * 
+     * @var array
      */
-    private static $navToResponse = [];
+    protected $navToResponse = [];
 
-    public function __construct(){
+    /**
+     * Instantiation of Ampersand backend application
+     *
+     * @var \Ampersand\AmpersandApp
+     */
+    protected $ampersandApp;
+
+    /**
+     * Undocumented function
+     *
+     * @param \Ampersand\AmpersandApp $ampersandApp
+     */
+    public function __construct(AmpersandApp $ampersandApp){
         $this->logger = Logger::getLogger('APP');
         $this->logger->debug("## BUILD ANGULAR APP ##################################################");
-        $this->buildHtml();
+        $this->ampersandApp = $ampersandApp;
     }
 
     /**
@@ -67,12 +97,12 @@ class AngularApp {
         return $this->html;
     }
 
-    public static function addCSS($relativePath){
-        AngularApp::$cssFiles[] = $relativePath;
+    public function addCSS($relativePath){
+        $this->cssFiles[] = $relativePath;
     }
 
-    public static function addJS($relativePath){
-        AngularApp::$jsFiles[] = $relativePath;
+    public function addJS($relativePath){
+        $this->jsFiles[] = $relativePath;
     }
     
     /**
@@ -80,16 +110,16 @@ class AngularApp {
      * @param string $itemUrl location of html template to use as menu item
      * @param callable function which returns true/false determining to add the menu item or not
      */
-    public static function addMenuItem(string $menu, string $itemUrl, callable $function){
+    public function addMenuItem(string $menu, string $itemUrl, callable $function){
         switch ($menu) {
             case 'ext':
-                self::$extMenu[] = ['url' => $itemUrl, 'function' => $function];
+                $this->extMenu[] = ['url' => $itemUrl, 'function' => $function];
                 break;
             case 'refresh':
-                self::$refreshMenu[] = ['url' => $itemUrl, 'function' => $function];
+                $this->refreshMenu[] = ['url' => $itemUrl, 'function' => $function];
                 break;
             case 'role':
-                self::$roleMenu[] = ['url' => $itemUrl, 'function' => $function];
+                $this->roleMenu[] = ['url' => $itemUrl, 'function' => $function];
                 break;
             default:
                 throw new Exception("Cannot add item to menu. Unknown menu: '{$menu}'", 500);
@@ -97,16 +127,16 @@ class AngularApp {
         }
     }
     
-    public static function getMenuItems($menu){
+    public function getMenuItems($menu){
         switch ($menu) {
             case 'ext':
-                $arr = self::$extMenu;
+                $arr = $this->extMenu;
                 break;
             case 'refresh':
-                $arr = self::$refreshMenu;
+                $arr = $this->refreshMenu;
                 break;
             case 'role':
-                $arr = self::$roleMenu;
+                $arr = $this->roleMenu;
                 break;
             default:
                 throw new Exception("Cannot get menu items. Unknown menu: '{$menu}'", 500);
@@ -124,7 +154,7 @@ class AngularApp {
         return array_values($result); // reindex array
     }
     
-    public static function getNavBarIfcs($menu){
+    public function getNavBarIfcs($menu){
         global $container;
 
         // Filter interfaces for requested part of navbar
@@ -152,11 +182,11 @@ class AngularApp {
         return array_values($result); // reindex array
     }
 
-    public static function getNavToResponse($case){
+    public function getNavToResponse($case){
         switch ($case) {
             case 'COMMIT':
             case 'ROLLBACK':
-                if(array_key_exists($case, self::$navToResponse)) return self::$navToResponse[$case];
+                if(array_key_exists($case, $this->navToResponse)) return $this->navToResponse[$case];
                 else return null;
                 break;
             default:
@@ -164,11 +194,11 @@ class AngularApp {
         }
     }
     
-    public static function setNavToResponse($navTo, $case = 'COMMIT'){
+    public function setNavToResponse($navTo, $case = 'COMMIT'){
         switch ($case) {
             case 'COMMIT':
             case 'ROLLBACK':
-                self::$navToResponse[$case] = $navTo;
+                $this->navToResponse[$case] = $navTo;
                 break;
             default:
                 throw new Exception("Unsupported case '{$case}' to setNavToResponse", 500);
@@ -250,7 +280,7 @@ class AngularApp {
         */
         // CSS files from app directory
         $files = getDirectoryList(Config::get('pathToAppFolder') . 'css');
-        $cssFiles = array();
+        $cssFiles = [];
         foreach ((array)$files as $file){
             if (substr($file,-3) !== 'css') continue;
             if ($file == 'ampersand.css') array_unshift($cssFiles, 'app/css/' . $file); // make sure ampersand.css is listed first
@@ -260,7 +290,7 @@ class AngularApp {
         foreach ($cssFiles as $file) $this->addHtmlLine('<link href="'.$file.'" rel="stylesheet" media="screen" type="text/css">');
             
         // Other css files (from extensions)
-        foreach (AngularApp::$cssFiles as $file) $this->addHtmlLine('<link href="'.$file.'" rel="stylesheet" media="screen" type="text/css">');
+        foreach ($this->cssFiles as $file) $this->addHtmlLine('<link href="'.$file.'" rel="stylesheet" media="screen" type="text/css">');
 
         /*
          ********** App specific javascript ***************
@@ -285,7 +315,7 @@ class AngularApp {
         }
 
         // Add js files to html output
-        foreach (AngularApp::$jsFiles as $file) $this->addHtmlLine('<script src="'.$file.'"></script>');
+        foreach ($this->jsFiles as $file) $this->addHtmlLine('<script src="'.$file.'"></script>');
 
         $this->addHtmlLine('</head>');
 
@@ -297,6 +327,7 @@ class AngularApp {
 
         $this->addHtmlLine('</html>');
 
+        return $this->html;
     }
 
     private function addHtmlLine($htmlLine){

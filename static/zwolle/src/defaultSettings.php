@@ -1,7 +1,11 @@
 <?php
 
 use Ampersand\Misc\Config;
-use Ampersand\AngularApp;
+
+/** 
+ * @var \Pimple\Container $container
+ */
+global $container;
 
 try{
     Config::set('pathToGeneratedFiles', 'global', dirname(dirname(__FILE__)) . '/generics/');
@@ -71,29 +75,30 @@ try{
     Config::set('maxRunCount', 'execEngine', 10);
     
     // Navigation menu settings
-    AngularApp::addMenuItem('refresh', 'app/views/menu/installer.html', 
+    $angularApp = $container['angular_app'];
+    $angularApp->addMenuItem('refresh', 'app/views/menu/installer.html', 
         function($app){
             return !Config::get('productionEnv');
         });
     
-    AngularApp::addMenuItem('refresh', 'app/views/menu/checkAllRules.html',
+    $angularApp->addMenuItem('refresh', 'app/views/menu/checkAllRules.html',
         function($app){
             return !Config::get('productionEnv');
         });
     
-    AngularApp::addMenuItem('refresh', 'app/views/menu/execEngine.html',
+    $angularApp->addMenuItem('refresh', 'app/views/menu/execEngine.html',
         function(\Ampersand\AmpersandApp $app){
             $roles = Config::get('allowedRolesForRunFunction','execEngine');
             return $app->hasActiveRole($roles);
         });
 
-    AngularApp::addMenuItem('ext', 'app/views/menu/importer.html', 
+    $angularApp->addMenuItem('ext', 'app/views/menu/importer.html', 
         function(\Ampersand\AmpersandApp $app){
             $roles = Config::get('allowedRolesForImporter');
             return $app->hasActiveRole($roles);
         });
     
-    AngularApp::addMenuItem('ext', 'app/views/menu/exporter.html',
+    $angularApp->addMenuItem('ext', 'app/views/menu/exporter.html',
         function($app){
             return !Config::get('productionEnv');
         });

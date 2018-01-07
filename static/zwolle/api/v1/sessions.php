@@ -1,7 +1,6 @@
 <?php
 
 use Ampersand\Session;
-use Ampersand\AngularApp;
 use Ampersand\Log\Notifications;
 use Ampersand\Misc\Config;
 
@@ -29,6 +28,7 @@ $app->get('/admin/sessions/delete/expired', function () use ($app, $container) {
 $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $container) {
     /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
+    $angularApp = $container['angular_app'];
     
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
@@ -36,11 +36,11 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $conta
     $ampersandApp->checkProcessRules();
     
     $session = $ampersandApp->getSession();
-    $content = array ('top' => AngularApp::getNavBarIfcs('top')
-                     ,'new' => AngularApp::getNavBarIfcs('new')
-                     ,'refreshMenu' => AngularApp::getMenuItems('refresh')
-                     ,'extMenu' => AngularApp::getMenuItems('ext')
-                     ,'roleMenu' => AngularApp::getMenuItems('role')
+    $content = array ('top' => $angularApp->getNavBarIfcs('top')
+                     ,'new' => $angularApp->getNavBarIfcs('new')
+                     ,'refreshMenu' => $angularApp->getMenuItems('refresh')
+                     ,'extMenu' => $angularApp->getMenuItems('ext')
+                     ,'roleMenu' => $angularApp->getMenuItems('role')
                      ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
                                                  ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
                                                  ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')

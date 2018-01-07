@@ -2,7 +2,6 @@
 
 use Ampersand\Misc\Config;
 use Ampersand\Core\Concept;
-use Ampersand\AngularApp;
 use Ampersand\Core\Atom;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
@@ -106,6 +105,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
+    $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
     
     $roleIds = $app->request->params('roleIds');
@@ -135,7 +135,7 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
                 , 'notifications'       => Notifications::getAll()
                 , 'invariantRulesHold'  => $transaction->invariantRulesHold()
                 , 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
-                , 'navTo'				=> AngularApp::getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+                , 'navTo'				=> $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                 ];
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
@@ -143,6 +143,7 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app, $container) {
     /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
+    $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
     
     $roleIds = $app->request->params('roleIds');
@@ -173,7 +174,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
                     , 'notifications'         => Notifications::getAll()
                     , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                     , 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
-					, 'navTo'				=> AngularApp::getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+					, 'navTo'				=> $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                     );
     
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -183,6 +184,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
+    $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
 
     $roleIds = $app->request->params('roleIds');
@@ -212,7 +214,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
                     , 'notifications'         => Notifications::getAll()
                     , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                     , 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
-					, 'navTo'				=> AngularApp::getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+					, 'navTo'				=> $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                     );
 
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -221,6 +223,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
+    $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
 
     $roleIds = $app->request->params('roleIds');
@@ -241,7 +244,7 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     $result = array ( 'notifications'         => Notifications::getAll()
                     , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                     , 'sessionRefreshAdvice'  => $transaction->getSessionRefreshAdvice()
-					, 'navTo'				  => AngularApp::getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+					, 'navTo'				  => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                     );
 
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

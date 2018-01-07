@@ -2,6 +2,7 @@
 
 use Ampersand\AmpersandApp;
 use Pimple\Container;
+use Ampersand\AngularApp;
 
 register_shutdown_function(function (){
     $error = error_get_last();
@@ -30,6 +31,9 @@ require_once(__DIR__ . '/../lib/autoload.php');
 $container = new Container();
 $container['ampersand_app'] = function ($c) {
     return new AmpersandApp($c);
+};
+$container['angular_app'] = function($c) {
+    return new AngularApp($c['ampersand_app']);
 };
 
 // Include/set default settings

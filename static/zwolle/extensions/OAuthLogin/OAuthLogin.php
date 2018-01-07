@@ -3,18 +3,22 @@
 namespace Ampersand\Extension\OAuthLogin;
 
 use Exception;
-use Ampersand\AngularApp;
 use Ampersand\Misc\Config;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Transaction;
 
+/** 
+ * @var \Pimple\Container $container
+ */
+global $container;
+
 // UI
-AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', 
+$container['angular_app']->addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', 
     function($app){ 
         return true;
     });
-AngularApp::addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
+$container['angular_app']->addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
 
 // API
 $GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'oauthlogin.php';
