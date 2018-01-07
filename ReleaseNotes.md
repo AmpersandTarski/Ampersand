@@ -1,10 +1,14 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-* PHP Backend: integrate and refactor ExecEngine (not an extension anymore)
-* PHP Backend: integrate and refactor ExcelImporter (not an extension anymore)
+* PHP Backend: integrated and refactored ExecEngine (not an extension anymore)
+* PHP Backend: integrated and refactored ExcelImporter (not an extension anymore)
 * PHP Backend: added functionality to import json population files via UI of ExcelImporter
-* PHP Backend: requires PHP 7.x (5.6 is not supported anymore)
+* PHP Backend: now requires PHP 7.x (5.6 is not supported anymore)
+* PHP Backend: added [Pimple](https://pimple.symfony.com/) as Dependency Injection Container library 
+* PHP Backend: refactored creation of AngularApp, AmpersandApp and MysqlDB using Pimple container 
+* PHP Backend: mysql database class placed under Plug namespace
+* PHP Backend: added function/method parameter and return type specifications
 
 * Security fix: use PHP session strict mode. This prevents a user defined session ID that is never generated
 * [Issue #707](https://github.com/AmpersandTarski/Ampersand/issues/707) Bugfix issue where user input '_SESSION' was also replaced by the session id
