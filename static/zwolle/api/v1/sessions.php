@@ -2,26 +2,33 @@
 
 use Ampersand\Session;
 use Ampersand\AngularApp;
-use Ampersand\AmpersandApp;
 use Ampersand\Log\Notifications;
 use Ampersand\Misc\Config;
 
+/**
+ * @var \Slim\Slim $app
+ */
 global $app;
 
-$app->get('/admin/sessions/delete/all', function () use ($app) {
+/** 
+ * @var \Pimple\Container $container
+ */
+global $container;
+
+$app->get('/admin/sessions/delete/all', function () use ($app, $container) {
     /** @var \Slim\Slim $app */
     throw new Exception("Not implemented", 501);
     if(Config::get('productionEnv')) throw new Exception ("Deleting all sessions is not allowed in production environment", 403);
 });
 
-$app->get('/admin/sessions/delete/expired', function () use ($app) {
+$app->get('/admin/sessions/delete/expired', function () use ($app, $container) {
     /** @var \Slim\Slim $app */
     Session::deleteExpiredSessions();
 });
 
-$app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
+$app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $container) {
     /** @var \Slim\Slim $app */
-    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp = $container['ampersand_app'];
     
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
@@ -50,9 +57,9 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 });
 
 
-$app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app) {
+$app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app, $container) {
     /** @var \Slim\Slim $app */
-    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp = $container['ampersand_app'];
     
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);

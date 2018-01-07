@@ -3,9 +3,13 @@
 use Ampersand\Misc\Config;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
-use Ampersand\AmpersandApp;
 
 require_once (__DIR__ . '/../../src/bootstrap.php');
+
+/** 
+ * @var \Pimple\Container $container
+ */
+global $container;
 
 // Code to add special http response codes that are not supported by Slim
 class NewResponse extends \Slim\Http\Response {
@@ -27,7 +31,7 @@ $app->add(new \Slim\Middleware\ContentTypes([
 $app->response->headers->set('Content-Type', 'application/json');
 
 // Error handler
-$app->error(function (Exception $e) use ($app) {
+$app->error(function (Exception $e) use ($app, $container) {
     /** @var \Slim\Slim $app */
     try{
         Logger::getLogger("API")->error($e->getMessage());
@@ -35,7 +39,7 @@ $app->error(function (Exception $e) use ($app) {
         switch ($e->getCode()) {
             case 401: // Unauthorized
             case 403: // Forbidden
-                if(Config::get('loginEnabled') && !AmpersandApp::singleton()->getSession()->sessionUserLoggedIn()){
+                if(Config::get('loginEnabled') && !$container['ampersand_app']->getSession()->sessionUserLoggedIn()){
                     $code = 401;
                     $message = "Please login to access this page";
                 }else{

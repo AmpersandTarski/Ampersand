@@ -15,7 +15,6 @@ use Ampersand\Interfacing\View;
 use Ampersand\Core\Atom;
 use Ampersand\Misc\Config;
 use Ampersand\Plugs\IfcPlugInterface;
-use Ampersand\AmpersandApp;
 
 /**
  *
@@ -473,9 +472,11 @@ class InterfaceObject {
      * @return InterfaceObject[]
      */
     public function getNavInterfacesForTgt(){
-        $ifcs = array();
-        if($this->isLinkTo() && AmpersandApp::singleton()->isAccessibleIfc($refIfc = self::getInterface($this->refInterfaceId))) $ifcs[] = $refIfc;
-        else $ifcs = AmpersandApp::singleton()->getInterfacesToReadConcepts([$this->tgtConcept]);
+        /** @var \Pimple\Container $container */
+        global $container;
+        $ifcs = [];
+        if($this->isLinkTo() && $container['ampersand_app']->isAccessibleIfc($refIfc = self::getInterface($this->refInterfaceId))) $ifcs[] = $refIfc;
+        else $ifcs = $container['ampersand_app']->getInterfacesToReadConcepts([$this->tgtConcept]);
         
         return $ifcs;
     }

@@ -114,7 +114,8 @@ class AngularApp {
         }
         
         // Filter menu items
-        $ampersandApp = AmpersandApp::singleton();
+        global $container;
+        $ampersandApp = $container['ampersand_app'];
         $result = array_filter($arr, function($item) use ($ampersandApp){
             // Execute function which determines if item must be added or not
             return call_user_func_array($item['function'], [$ampersandApp]);
@@ -124,11 +125,11 @@ class AngularApp {
     }
     
     public static function getNavBarIfcs($menu){
-        $ampersandApp = AmpersandApp::singleton();
-        
+        global $container;
+
         // Filter interfaces for requested part of navbar
         $sessionCpt = Concept::getSessionConcept();
-        $interfaces = array_filter($ampersandApp->getAccessibleInterfaces(), function($ifc) use ($menu, $sessionCpt){
+        $interfaces = array_filter($container['ampersand_app']->getAccessibleInterfaces(), function($ifc) use ($menu, $sessionCpt){
             switch ($menu) {
                 case 'top':
                     if(($ifc->srcConcept == $sessionCpt || $ifc->srcConcept->name == 'ONE') && $ifc->crudR()) return true;

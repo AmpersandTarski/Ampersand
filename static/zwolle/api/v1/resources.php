@@ -3,7 +3,6 @@
 use Ampersand\Misc\Config;
 use Ampersand\Core\Concept;
 use Ampersand\AngularApp;
-use Ampersand\AmpersandApp;
 use Ampersand\Core\Atom;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
@@ -11,7 +10,15 @@ use Ampersand\Log\Notifications;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Transaction;
 
+/**
+ * @var \Slim\Slim $app
+ */
 global $app;
+
+/** 
+ * @var \Pimple\Container $container
+ */
+global $container;
 
 /**************************************************************************************************
  *
@@ -19,7 +26,7 @@ global $app;
  *
  *************************************************************************************************/
 
-$app->get('/resources', function() use ($app) {
+$app->get('/resources', function() use ($app, $container) {
     /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
     
@@ -33,9 +40,9 @@ $app->get('/resources', function() use ($app) {
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/resources/:resourceType', function ($resourceType) use ($app) {
+$app->get('/resources/:resourceType', function ($resourceType) use ($app, $container) {
     /** @var \Slim\Slim $app */
-    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp = $container['ampersand_app'];
     
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
@@ -52,9 +59,9 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app) {
 });
 
 
-$app->get('/resources/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app) {
+$app->get('/resources/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app, $container) {
     /** @var \Slim\Slim $app */
-    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp = $container['ampersand_app'];
 
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
@@ -75,9 +82,9 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
  *
  *************************************************************************************************/
 
-$app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
+$app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     /** @var \Slim\Slim $app */
-    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp = $container['ampersand_app'];
 
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
@@ -96,9 +103,9 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 
 });
 
-$app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
+$app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     /** @var \Slim\Slim $app */
-    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp = $container['ampersand_app'];
     $transaction = Transaction::getCurrentTransaction();
     
     $roleIds = $app->request->params('roleIds');
@@ -133,9 +140,9 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app) {
+$app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app, $container) {
     /** @var \Slim\Slim $app */
-    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp = $container['ampersand_app'];
     $transaction = Transaction::getCurrentTransaction();
     
     $roleIds = $app->request->params('roleIds');
@@ -173,9 +180,9 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     
 });
 
-$app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
+$app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     /** @var \Slim\Slim $app */
-    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp = $container['ampersand_app'];
     $transaction = Transaction::getCurrentTransaction();
 
     $roleIds = $app->request->params('roleIds');
@@ -211,9 +218,9 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
+$app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     /** @var \Slim\Slim $app */
-    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp = $container['ampersand_app'];
     $transaction = Transaction::getCurrentTransaction();
 
     $roleIds = $app->request->params('roleIds');

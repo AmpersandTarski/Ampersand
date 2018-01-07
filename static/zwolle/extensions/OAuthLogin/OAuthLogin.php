@@ -8,7 +8,6 @@ use Ampersand\Misc\Config;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Transaction;
-use Ampersand\AmpersandApp;
 
 // UI
 AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', 
@@ -177,6 +176,9 @@ class OAuthLoginController {
     }
     
     private function login($email){
+        /** @var \Pimple\Container $container */
+        global $container;
+
         if(empty($email)) throw new Exception("No emailaddress provided to login", 500);
         
         $accounts = (new Resource($email, 'UserID'))->all('AccountForUserid');
@@ -200,7 +202,7 @@ class OAuthLoginController {
         }
         
         // Login account
-        AmpersandApp::singleton()->login($account); // Automatically closes transaction
+        $container['ampersand_app']->login($account); // Automatically closes transaction
 
         if(Transaction::getCurrentTransaction()->isCommitted()) Logger::getUserLogger()->notice("Login successfull");
     }
