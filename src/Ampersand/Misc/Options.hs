@@ -55,7 +55,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
                        , blackWhite :: Bool   -- only use black/white in graphics
                        , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.
-                       , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document
+                       , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document.
+                       , noGraphics :: Bool  -- Omit generation of graphics during generation of functional design document.
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , genUML :: Bool   -- Generate a UML 2.0 data model
@@ -235,6 +236,7 @@ getOptions' envOpts =
                       , blackWhite       = False
                       , doubleEdges      = True
                       , noDiagnosis      = False
+                      , noGraphics       = False
                       , diagnosisOnly    = False
                       , genLegalRefs     = False
                       , genUML           = False
@@ -438,7 +440,7 @@ options = [ (Option ['v']   ["version"]
           , (Option []      ["namespace"]
                (ReqArg (\nm opts -> opts{namespace = nm}
                        ) "NAMESPACE")
-               "prefix database identifiers with this namespace, in order to isolate namspaces."
+               "prefix database identifiers with this namespace, in order to isolate namespaces."
             , Public)
           , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> opts
@@ -501,6 +503,10 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["altGraphics"]
                (NoArg (\opts -> opts{doubleEdges = not (doubleEdges opts)}))
                "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
+            , Public)
+          , (Option []        ["noGraphics"]
+               (NoArg (\opts -> opts{noGraphics = True}))
+               "omit the generation of graphics during generation of the functional design document."
             , Public)
           , (Option []        ["noDiagnosis"]
                (NoArg (\opts -> opts{noDiagnosis = True}))
