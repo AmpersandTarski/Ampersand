@@ -3,6 +3,7 @@
 		"vendor-dir" : "lib"
 	},
     "require": {
+        "php": ">=7.0",
     	"slim/slim": "^2.0",
 		"monolog/monolog": "^1.18",
         "wikimedia/composer-merge-plugin": "^1.3",
