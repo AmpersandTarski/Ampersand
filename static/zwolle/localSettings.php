@@ -53,11 +53,16 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * DATABASE settings
  *************************************************************************************************/
-// Config::set('dbHost', 'mysqlDatabase', '127.0.0.1');
-// Config::set('dbUser', 'mysqlDatabase', 'ampersand');
-// Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
-// Config::set('dbName', 'mysqlDatabase', '');
-
+$container['mysql_database'] = function($c) {
+    $dbHost = Config::get('dbHost', 'mysqlDatabase');
+    $dbUser = Config::get('dbUser', 'mysqlDatabase');
+    $dbPass = Config::get('dbPassword', 'mysqlDatabase');
+    $dbName = Config::get('dbName', 'mysqlDatabase');
+    return new Database($dbHost, $dbUser, $dbPass, $dbName);
+};
+$container['default_plug'] = function ($c) {
+    return $c['mysql_database'];
+};
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY

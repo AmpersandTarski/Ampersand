@@ -7,7 +7,6 @@
 
 namespace Ampersand\Rule;
 
-use Ampersand\Database\Database;
 use Ampersand\Misc\Config;
 use Ampersand\Rule\Violation;
 
@@ -50,7 +49,9 @@ class RuleEngine {
      * @return \Ampersand\Rule\Violation[]
      */
     protected static function getViolationsFromDB(array $rules): array{
-        $database = Database::singleton();
+        /** @var \Pimple\Container $container */
+        global $container;
+        $database = $container['mysql_database'];
         $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 
         // Determine conjuncts to select from database

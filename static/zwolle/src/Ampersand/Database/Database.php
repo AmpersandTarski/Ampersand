@@ -88,50 +88,34 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Constructor of database class
-     * Singleton pattern: private function to prevent any outside instantiantion of this object. 
-     * Use Database::singleton() instead
+     * 
      */
-    private function __construct(){
+    public function __construct($dbHost, $dbUser, $dbPass, $dbName){
         $this->logger = Logger::getLogger('DATABASE');
         
-        $this->dbHost = Config::get('dbHost', 'mysqlDatabase');
-        $this->dbUser = Config::get('dbUser', 'mysqlDatabase');
-        $this->dbPass = Config::get('dbPassword', 'mysqlDatabase');
-        $this->dbName = Config::get('dbName', 'mysqlDatabase');
+        $this->dbHost = $dbHost;
+        $this->dbUser = $dbUser;
+        $this->dbPass = $dbPass;
+        $this->dbName = $dbName;
         
-        // Enable mysqli errors to be thrown as Exceptions
-        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-        
-        // Connect to MYSQL database
-        $this->dbLink = mysqli_init();
-        $this->dbLink->real_connect($this->dbHost, $this->dbUser, $this->dbPass, null, null, null, MYSQLI_CLIENT_FOUND_ROWS);
-        $this->dbLink->set_charset("utf8");
-        
-        // Set sql_mode to ANSI
-        $this->dbLink->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-
-        $this->selectDB();
-    }
-    
-    /**
-     * Use Database::singleton() instead
-     * Singleton pattern: private function to prevent any copy/clone of database instance
-     */
-    private function __clone(){}
-    
-    /**
-     * Function to return the database instance
-     * Singleton pattern: use this static function to get the single instance of this class
-     * @return Database
-     */
-    public static function singleton(){
         try {
-            if(!is_object (self::$_instance)) self::$_instance = new Database();
+            // Enable mysqli errors to be thrown as Exceptions
+            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+            
+            // Connect to MYSQL database
+            $this->dbLink = mysqli_init();
+            $this->dbLink->real_connect($this->dbHost, $this->dbUser, $this->dbPass, null, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+            $this->dbLink->set_charset("utf8");
+            
+            // Set sql_mode to ANSI
+            $this->dbLink->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+
         }catch (Exception $e){
             // Convert mysqli_sql_exceptions into 500 errors
             throw new Exception("Cannot connect to database", 500);
         }
-        return self::$_instance;
+
+        $this->selectDB();
     }
 
     private function selectDB(){

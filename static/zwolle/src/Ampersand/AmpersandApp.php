@@ -19,7 +19,6 @@ use Ampersand\Log\Notifications;
 use Ampersand\IO\JSONReader;
 use Ampersand\Interfacing\View;
 use Ampersand\Rule\Rule;
-use Ampersand\Database\Database;
 use Ampersand\Core\Relation;
 use Pimple\Container;
 
@@ -83,20 +82,19 @@ class AmpersandApp
     public function __construct(Container $container){
         $this->logger = Logger::getLogger('APPLICATION');
 
-        $mySqlPlug = Database::singleton(); // default plug
         $genericsFolder = Config::get('pathToGeneratedFiles');
 
         // Instantiate object definitions from generated files
         Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json');
-        View::setAllViews($genericsFolder . 'views.json', $mySqlPlug);
-        Concept::setAllConcepts($genericsFolder . 'concepts.json', $mySqlPlug);
-        Relation::setAllRelations($genericsFolder . 'relations.json', $mySqlPlug);
-        InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $mySqlPlug);
-        Rule::setAllRules($genericsFolder . 'rules.json', $mySqlPlug);
+        View::setAllViews($genericsFolder . 'views.json', $container['default_plug']);
+        Concept::setAllConcepts($genericsFolder . 'concepts.json', $container['default_plug']);
+        Relation::setAllRelations($genericsFolder . 'relations.json', $container['default_plug']);
+        InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $container['default_plug']);
+        Rule::setAllRules($genericsFolder . 'rules.json', $container['default_plug']);
         Role::setAllRoles($genericsFolder . 'roles.json');
 
         // Register storages
-        if(isset($depInj['storages'])) foreach($depInj['storages'] as $storage) $this->registerStorage($storage);
+        $this->registerStorage($container['default_plug']);
 
         // Initiate session
         $this->setSession();

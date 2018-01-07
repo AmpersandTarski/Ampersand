@@ -8,7 +8,6 @@
 namespace Ampersand\Rule;
 
 use Exception;
-use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
 use Ampersand\Misc\Config;
 
@@ -163,7 +162,9 @@ class Conjunct {
 
             // Otherwise evaluate conjunct, cache and return violations
             else{
-                $db = Database::singleton();
+                /** @var \Pimple\Container $container */
+                global $container;
+                $db = $container['mysql_database'];
                 $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
                 $violations = array();
     
