@@ -8,9 +8,8 @@
 namespace Ampersand\Core;
 
 use Exception;
-use Ampersand\Database\Database;
-use Ampersand\Database\DatabaseTable;
-use Ampersand\Database\DatabaseTableCol;
+use Ampersand\Plugs\MysqlDB\MysqlDBTable;
+use Ampersand\Plugs\MysqlDB\MysqlDBTableCol;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Interfacing\View;
@@ -19,6 +18,7 @@ use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Atom;
 use Ampersand\Misc\Config;
 use Ampersand\Transaction;
+use Ampersand\Plugs\ConceptPlugInterface;
 
 /**
  * 
@@ -28,7 +28,8 @@ use Ampersand\Transaction;
 class Concept {
     /**
      * Contains all concept definitions
-     * @var Concept[]
+     * 
+     * @var \Ampersand\Core\Concept[]
      */
     private static $allConcepts;
     
@@ -44,7 +45,7 @@ class Concept {
      * 
      * @var \Ampersand\Plugs\ConceptPlugInterface[]
      */
-    protected $plugs;
+    protected $plugs = [];
     
     /**
      *
@@ -54,25 +55,29 @@ class Concept {
     
     /**
      * Definition from which Concept object is created
+     * 
      * @var array
      */
     private $def;
     
     /**
-     * Name (and unique escaped identifier) of concept
+     * Name (and unique escaped identifier) of concept as defined in Ampersand script
      * TODO: rename var to $id
-     * @var string $name Escaped name of concept as defined in Ampersand script
+     * 
+     * @var string
      */
     public $name;
     
     /**
-     * Unescaped name of concept
-     * @var string $label Unescaped name of concept as defined in Ampersand script
+     * Unescaped name of concept as defined in Ampersand script
+     * 
+     * @var string
      */
     public $label;
     
     /**
      * Specifies technical representation of atoms of this concept (e.g. OBJECT, ALPHANUMERIC, INTERGER, BOOLEAN, etc)
+     * 
      * @var string
      */
     public $type;
@@ -85,73 +90,81 @@ class Concept {
     public $relatedConjuncts = [];
     
     /**
-     * Array of concepts (name) that are specializations of this concept
+     * List of concepts (name) that are specializations of this concept
+     * 
      * @var string[]
      */
-    private $specializations = array();
+    private $specializations = [];
     
     /**
-     * Array of concepts (name) that are direct specializations of this concept
+     * List of concepts (name) that are direct specializations of this concept
+     * 
      * @var string[]
      */
-    private $directSpecs = array();
+    private $directSpecs = [];
     
     /**
-     * Array of concepts (name) that are generalizations of this concept
+     * List of concepts (name) that are generalizations of this concept
+     * 
      * @var string[]
      */
-    private $generalizations = array();
+    private $generalizations = [];
     
     /**
-     * Array of concepts (name) that are direct generalizations of this concept
+     * List of concepts (name) that are direct generalizations of this concept
+     * 
      * @var string[]
      */
-    private $directGens = array();
+    private $directGens = [];
     
     /**
      * Concept identifier of largest generalization for this concept
+     * 
      * @var string
      */
     private $largestConceptId;
     
     /**
-     * Array of interface identifiers that have this concept as src concept
+     * List of interface identifiers that have this concept as src concept
+     * 
      * @var string[]
      */
-    public $interfaceIds = array();
+    public $interfaceIds = [];
     
     /**
      * Default view object for atoms of this concept
-     * @var View|NULL
+     * 
+     * @var \Ampersand\Interfacing\View|NULL
      */
     private $defaultView = null;
 
     /**
      * Contains information about mysql table and columns in which this concept is administrated
-     * @var DatabaseTable
+     * 
+     * @var \Ampersand\Plugs\MysqlDB\MysqlDBTable
      */
     private $mysqlConceptTable;
     
     /**
-     * @var string[] $atomCache array with atomids that exist in the concept
+     * List with atom identifiers that exist in the concept
      * used to prevent unnecessary checks if atom exists in plug
+     * 
+     * @var string[]
      */
     private $atomCache = [];
     
     /**
      * Concept constructor
      * Private function to prevent outside instantiation of concepts. Use Concept::getConcept($conceptName)
+     * 
      * @param array $conceptDef
-     * @param ConceptPlugInterface[] $plugs
+     * @param \Ampersand\Plugs\ConceptPlugInterface $defaultPlug
      */
-    private function __construct(array $conceptDef, array $plugs){
+    private function __construct(array $conceptDef, ConceptPlugInterface $defaultPlug = null){
         $this->logger = Logger::getLogger('CORE');
         
         $this->def = $conceptDef;
-        
-        if(empty($plugs)) throw new Exception("No plug(s) provided for concept {$conceptDef['label']}", 500);
-        $this->plugs = $plugs;
-        $this->primaryPlug = current($this->plugs); // For now, we just pick the first plug as primary plug
+        if(!is_null($defaultPlug)) $this->addPlug($defaultPlug);
         
         $this->name = $conceptDef['id'];
         $this->label = $conceptDef['label'];
@@ -171,9 +184,9 @@ class Concept {
         
         if(!is_null($conceptDef['defaultViewId'])) $this->defaultView = View::getView($conceptDef['defaultViewId']);
         
-        $this->mysqlConceptTable = new DatabaseTable($conceptDef['conceptTable']['name']);
+        $this->mysqlConceptTable = new MysqlDBTable($conceptDef['conceptTable']['name']);
         foreach ($conceptDef['conceptTable']['cols'] as $colName){
-            $this->mysqlConceptTable->addCol(new DatabaseTableCol($colName));
+            $this->mysqlConceptTable->addCol(new MysqlDBTableCol($colName));
         }
         
         // All atoms query is a hack which allows to manually add a more efficient query to get all atoms in Concepts.json
@@ -185,33 +198,37 @@ class Concept {
     
     /**
      * Function is called when object is treated as a string
+     * 
      * @return string
      */
-    public function __toString(){
+    public function __toString(): string {
         return $this->label;
     }
     
     /**
      * Specifies if concept representation is integer
-     * @return boolean
+     * 
+     * @return bool
      */
-    public function isInteger(){
+    public function isInteger(): bool {
         return $this->type == "INTEGER";
     }
     
     /**
      * Specifies if concept is object
-     * @return boolean
+     * 
+     * @return bool
      */
-    public function isObject(){
+    public function isObject(): bool {
         return $this->type == "OBJECT";
     }
     
     /**
      * Check if concept is file object
+     * 
      * @return boolean
      */
-    public function isFileObject(){
+    public function isFileObject(): bool {
         foreach ($this->getGeneralizationsIncl() as $concept) {
             if ($concept->label == 'FileObject') return true;
         }
@@ -220,9 +237,10 @@ class Concept {
     
     /**
      * Returns if concept is the ampersand SESSION concept
-     * @return boolean
+     * 
+     * @return bool
      */
-    public function isSession(){
+    public function isSession(): bool {
         foreach ($this->getGeneralizationsIncl() as $concept) {
             if ($concept->label == 'SESSION') return true;
         }
@@ -231,11 +249,12 @@ class Concept {
     
     /**
      * Check if this concept is a generalization of another given concept
-     * @param Concept $concept
-     * @param boolean $thisIncluded specifies if $this concept is included in comparison
-     * @return boolean
+     * 
+     * @param \Ampersand\Core\Concept $concept
+     * @param bool $thisIncluded specifies if $this concept is included in comparison
+     * @return bool
      */
-    public function hasSpecialization($concept, $thisIncluded = false){
+    public function hasSpecialization(Concept $concept, bool $thisIncluded = false): bool {
         if($thisIncluded && $concept == $this) return true;
         
         return in_array($concept->name, $this->specializations);
@@ -243,11 +262,12 @@ class Concept {
     
     /**
      * Check if this concept is a specialization of another given concept
-     * @param Concept $concept
-     * @param boolean $thisIncluded specifies if $this concept is included in comparison
-     * @return boolean
+     * 
+     * @param \Ampersand\Core\Concept $concept
+     * @param bool $thisIncluded specifies if $this concept is included in comparison
+     * @return bool
      */
-    public function hasGeneralization($concept, $thisIncluded = false){
+    public function hasGeneralization(Concept $concept, bool $thisIncluded = false): bool {
         if($thisIncluded && $concept == $this) return true;
         
         return in_array($concept->name, $this->generalizations);
@@ -255,10 +275,11 @@ class Concept {
     
     /**
      * Checks if this concept is in same classification tree as the provided concept
-     * @param Concept $concept
-     * @return boolean
+     * 
+     * @param \Ampersand\Core\Concept $concept
+     * @return bool
      */
-    public function inSameClassificationTree($concept){
+    public function inSameClassificationTree(Concept $concept): bool {
         if($this->hasSpecialization($concept, true)) return true;
         if($this->hasGeneralization($concept, true)) return true;
          
@@ -268,7 +289,8 @@ class Concept {
     
     /**
      * Array of all concepts of which this concept is a generalization.
-     * @return Concept[]
+     * 
+     * @return \Ampersand\Core\Concept[]
      */
     public function getSpecializations(){
         $specializations = array();
@@ -278,7 +300,8 @@ class Concept {
     
     /**
      * Array of all concepts of which this concept is a specialization (exluding the concept itself).
-     * @return Concept[]
+     * 
+     * @return \Ampersand\Core\Concept[]
      */
     public function getGeneralizations(){    
         $generalizations = array();
@@ -288,7 +311,8 @@ class Concept {
     
     /**
      * Array of all concepts of which this concept is a generalization including the concept itself.
-     * @return Concept[]
+     * 
+     * @return \Ampersand\Core\Concept[]
      */
     public function getSpecializationsIncl(){
         $specializations = $this->getSpecializations();
@@ -298,7 +322,8 @@ class Concept {
     
     /**
      * Array of all concepts of which this concept is a specialization including the concept itself.
-     * @return Concept[]
+     * 
+     * @return \Ampersand\Core\Concept[]
      */
     public function getGeneralizationsIncl(){
         $generalizations = $this->getGeneralizations();
@@ -308,7 +333,8 @@ class Concept {
     
     /**
      * Returns largest generalization concept (can be itself)
-     * @return Concept
+     * 
+     * @return \Ampersand\Core\Concept
      */
     public function getLargestConcept(){
         return Concept::getConcept($this->largestConceptId);
@@ -316,7 +342,8 @@ class Concept {
     
     /**
      * Returns default view for this concept (or null if no default view defined)
-     * @return View|NULL
+     * 
+     * @return \Ampersand\Interfacing\View|NULL
      */
     public function getDefaultView(){
         return $this->defaultView;
@@ -324,7 +351,8 @@ class Concept {
     
     /**
      * Returns array with signal conjuncts that are affected by creating or deleting an atom of this concept
-     * @return Conjunct[]
+     * 
+     * @return \Ampersand\Rule\Conjunct[]
      */
     public function getRelatedConjuncts(){
         return $this->relatedConjuncts;
@@ -332,8 +360,9 @@ class Concept {
     
     /**
      * Returns database table info for concept
-     * @throws Exception if no database table is defined
-     * @return DatabaseTable
+     * 
+     * @throws \Exception if no database table is defined
+     * @return \Ampersand\Plugs\MysqlDB\MysqlDBTable
      */
     public function getConceptTableInfo(){
         return $this->mysqlConceptTable;
@@ -341,7 +370,7 @@ class Concept {
     
     /**
      * 
-     * @return InterfaceObject[]
+     * @return \Ampersand\Interfacing\InterfaceObject[]
      */
     public function getInterfaces(){
         $interfaces = array();
@@ -358,7 +387,19 @@ class Concept {
      * @return \Ampersand\Plugs\ConceptPlugInterface[]
      */
     public function getPlugs(){
+        if(empty($this->plugs)) throw new Exception("No plug(s) provided for concept {$this}", 500);
         return $this->plugs;
+    }
+
+    /**
+     * Add plug for this concept
+     *
+     * @param \Ampersand\Plugs\ConceptPlugInterface $plug
+     * @return void
+     */
+    protected function addPlug(ConceptPlugInterface $plug){
+        if(!in_array($plug, $this->plugs)) $this->plugs[] = $plug;
+        if(count($this->plugs) === 1) $this->primaryPlug = $plug;
     }
 
     /**
@@ -374,7 +415,7 @@ class Concept {
      * Generate a new atom identifier for this concept
      * @return string
      */
-    public function createNewAtomId(){
+    public function createNewAtomId(): string {
         static $prevTimeSeconds = null;
         static $prevTimeMicros  = null;
 
@@ -413,17 +454,19 @@ class Concept {
      * Instantiate new Atom object in backend
      * NB! this does not result automatically in a database insert
      *
-     * @return Atom
+     * @return \Ampersand\Core\Atom
      */
-    public function createNewAtom(){
+    public function createNewAtom(): Atom {
         return new Atom($this->createNewAtomId(), $this);
     }
     
     /**
-     * @param Atom $atom
-     * @return boolean
+     * Check if atom exists
+     * 
+     * @param \Ampersand\Core\Atom $atom
+     * @return bool
      */
-    public function atomExists(Atom $atom){
+    public function atomExists(Atom $atom): bool {
         if(in_array($atom->id, $this->atomCache, true)){ // strict mode to prevent 'Nesting level too deep' error
             return true;
         }elseif($atom->id === '_NEW'){
@@ -439,25 +482,26 @@ class Concept {
     /**
      * Return content of all atoms for this concept
      * TODO: refactor when resources (e.g. for update field in UI) can be requested with interface definition
-     * @return Atom[]
+     * 
+     * @return \Ampersand\Core\Atom[]
      */
-     public function getAllAtomObjects(){
+     public function getAllAtomObjects(): array {
         return $this->primaryPlug->getAllAtoms($this);
     }
     
     /**
      * Rename atom
      *
-     * @param Atom $atom
+     * @param \Ampersand\Core\Atom $atom
      * @param string $newAtomId
      * @return void
      */
-    public function renameAtom(Atom $atom, $newAtomId){
+    public function renameAtom(Atom $atom, string $newAtomId){
         if($atom->concept != $this) throw new Exception("Cannot rename atom '{$atom}', because it does not match concept '{$this}'", 500);
 
         // Rename atom in concept set
         Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
-        foreach($this->plugs as $plug) $plug->renameAtom($atom, $newAtomId);
+        foreach($this->getPlugs() as $plug) $plug->renameAtom($atom, $newAtomId);
 
         // Rename atom in relation sets
         $newAtom = new Atom($newAtomId, $this);
@@ -490,7 +534,8 @@ class Concept {
     /**
      * Creating and adding a new atom to the plug 
      * ór adding an existing atom to another concept set (making it a specialization)
-     * @param Atom $atom
+     * 
+     * @param \Ampersand\Core\Atom $atom
      * @return void
      */
     public function addAtom(Atom $atom){
@@ -502,7 +547,7 @@ class Concept {
                 $this->logger->debug("Add atom {$atom} to plug");
                 Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
                 
-                foreach($this->plugs as $plug) $plug->addAtom($atom); // Add to plug
+                foreach($this->getPlugs() as $plug) $plug->addAtom($atom); // Add to plug
                 $this->atomCache[] = $atom->id; // Add to cache
             }
         // Adding atom[A] to another concept [B] ($this)
@@ -520,7 +565,8 @@ class Concept {
     
     /**
      * Remove an existing atom from a concept set (i.e. removing specialization)
-     * @param Atom $atom
+     * 
+     * @param \Ampersand\Core\Atom $atom
      * @return void
      */
     public function removeAtom(Atom $atom){
@@ -535,7 +581,7 @@ class Concept {
             $this->logger->debug("Remove atom {$atom} from {$this} in plug");
             Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
             
-            foreach($this->plugs as $plug) $plug->removeAtom($atom); // Remove from concept in plug
+            foreach($this->getPlugs() as $plug) $plug->removeAtom($atom); // Remove from concept in plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
             
             // Delete all links where $atom is used as src or tgt atom
@@ -547,7 +593,9 @@ class Concept {
     }
     
     /**
-     * @param Atom $atom
+     * Completely delete and atom and all connected links
+     * 
+     * @param \Ampersand\Core\Atom $atom
      * @return void
      */
     public function deleteAtom(Atom $atom){
@@ -555,7 +603,7 @@ class Concept {
             $this->logger->debug("Delete atom {$atom} from plug");
             Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
             
-            foreach($this->plugs as $plug) $plug->deleteAtom($atom); // Delete from plug
+            foreach($this->getPlugs() as $plug) $plug->deleteAtom($atom); // Delete from plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
             
             // Delete all links where $atom is used as src or tgt atom
@@ -570,8 +618,8 @@ class Concept {
      * All link from/to the $rightAtom are merged into the $leftAtom
      * The $rightAtom itself is deleted afterwards
      *
-     * @param Atom $leftAtom
-     * @param Atom $rightAtom
+     * @param \Ampersand\Core\Atom $leftAtom
+     * @param \Ampersand\Core\Atom $rightAtom
      * @return void
      */
     static function mergeAtoms(Atom $leftAtom, Atom $rightAtom){        
@@ -604,11 +652,12 @@ class Concept {
     
     /**
      * Return concept object given a concept identifier
+     * 
      * @param string $conceptId Escaped concept name
-     * @throws Exception if concept is not defined
-     * @return Concept
+     * @throws \Exception if concept is not defined
+     * @return \Ampersand\Core\Concept
      */
-    public static function getConcept($conceptId){
+    public static function getConcept(string $conceptId): Concept {
         if(!array_key_exists($conceptId, $concepts = self::getAllConcepts())) throw new Exception("Concept '{$conceptId}' is not defined", 500);
          
         return $concepts[$conceptId];
@@ -616,11 +665,12 @@ class Concept {
     
     /**
      * Return concept object given a concept label
+     * 
      * @param string $conceptLabel Unescaped concept name
-     * @throws Exception if concept is not defined
-     * @return Concept
+     * @throws \Exception if concept is not defined
+     * @return \Ampersand\Core\Concept
      */
-    public static function getConceptByLabel($conceptLabel){
+    public static function getConceptByLabel($conceptLabel): Concept {
         foreach(self::getAllConcepts() as $concept)
             if($concept->label == $conceptLabel) return $concept;
         
@@ -632,27 +682,53 @@ class Concept {
     }
     
     /**
-     * Returns array with all concept objects
-     * @return Concept[]
+     * Returns list with all concept objects
+     * 
+     * @return \Ampersand\Core\Concept[]
      */
-    public static function getAllConcepts(){
-        if(!isset(self::$allConcepts)) self::setAllConcepts();
+    public static function getAllConcepts(): array {
+        if(!isset(self::$allConcepts)) throw new Exception("Concept definitions not loaded yet", 500);
         
         return self::$allConcepts;
     }
-    
+
     /**
-     * Import all concept definitions from json file and create and save Concept objects
+     * Register plug for specified concepts
+     *
+     * @param \Ampersand\Plugs\ConceptPlugInterface $plug
+     * @param array $conceptLabels
      * @return void
      */
-    private static function setAllConcepts(){
-        self::$allConcepts = array();
-         
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'concepts.json');
-        $allConceptDefs = (array)json_decode($file, true);
-        $plugs = [Database::singleton()];
+    public static function registerPlug(ConceptPlugInterface $plug, array $conceptLabels = null){
+        // Add plugs for all concepts
+        if (is_null($conceptLabels)) {
+            foreach (self::getAllConcepts() as $cpt) {
+                $cpt->addPlug($plug);
+            }
+        }
+
+        // Only for specific concepts
+        else {
+            foreach ($conceptLabels as $label) {
+                (self::getConceptByLabel($label))->addPlug($plug);
+            }
+        }
+    }
     
-        foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $plugs);
+    /**
+     * Import all concept definitions from json file and instantiate Concept objects
+     * 
+     * @param string $fileName containing the Ampersand concept definitions
+     * @param \Ampersand\Plugs\ConceptPlugInterface $defaultPlug
+     * @return void
+     */
+    public static function setAllConcepts(string $fileName, ConceptPlugInterface $defaultPlug = null){
+        self::$allConcepts = [];
+        
+        $allConceptDefs = (array)json_decode(file_get_contents($fileName), true);
+    
+        foreach ($allConceptDefs as $conceptDef) {
+            self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $defaultPlug);
+        }
     }
 }

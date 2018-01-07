@@ -3,19 +3,22 @@
 namespace Ampersand\Extension\OAuthLogin;
 
 use Exception;
-use Ampersand\AngularApp;
 use Ampersand\Misc\Config;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Transaction;
-use Ampersand\AmpersandApp;
+
+/** 
+ * @var \Pimple\Container $container
+ */
+global $container;
 
 // UI
-AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', 
+$container['angular_app']->addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', 
     function($app){ 
         return true;
     });
-AngularApp::addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
+$container['angular_app']->addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
 
 // API
 $GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'oauthlogin.php';
@@ -177,6 +180,9 @@ class OAuthLoginController {
     }
     
     private function login($email){
+        /** @var \Pimple\Container $container */
+        global $container;
+
         if(empty($email)) throw new Exception("No emailaddress provided to login", 500);
         
         $accounts = (new Resource($email, 'UserID'))->all('AccountForUserid');
@@ -200,7 +206,7 @@ class OAuthLoginController {
         }
         
         // Login account
-        AmpersandApp::singleton()->login($account); // Automatically closes transaction
+        $container['ampersand_app']->login($account); // Automatically closes transaction
 
         if(Transaction::getCurrentTransaction()->isCommitted()) Logger::getUserLogger()->notice("Login successfull");
     }

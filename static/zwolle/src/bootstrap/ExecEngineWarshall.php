@@ -30,13 +30,18 @@
 
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
-use Ampersand\Database\Database;
 use Ampersand\Core\Relation;
 use Ampersand\Rule\ExecEngine;
 
-ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = function($relationName, $conceptName){
+/** 
+ * @var \Pimple\Container $container
+ */
+global $container;
+
+
+ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = function($relationName, $conceptName) use ($container) {
     try{
-        $database = Database::singleton();
+        $database = $container['mysql_database'];
         
         $concept = Concept::getConceptByLabel($conceptName);
         $relation = Relation::getRelation($relationName, $concept, $concept);
@@ -60,9 +65,9 @@ ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = functio
 });
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
-ExecEngine::registerFunction('OverwritePopulation', $OverwritePopulation = function($rArray, $relationName, $conceptName){
+ExecEngine::registerFunction('OverwritePopulation', $OverwritePopulation = function($rArray, $relationName, $conceptName) use ($container){
     try{
-        $database = Database::singleton();
+        $database = $container['mysql_database'];
         
         $concept = Concept::getConceptByLabel($conceptName);
         $relation = Relation::getRelation($relationName, $concept, $concept);

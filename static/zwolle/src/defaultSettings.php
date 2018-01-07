@@ -1,7 +1,6 @@
 <?php
 
 use Ampersand\Misc\Config;
-use Ampersand\AngularApp;
 
 try{
     Config::set('pathToGeneratedFiles', 'global', dirname(dirname(__FILE__)) . '/generics/');
@@ -69,34 +68,6 @@ try{
     Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
     Config::set('autoRerun', 'execEngine', true);
     Config::set('maxRunCount', 'execEngine', 10);
-    
-    // Navigation menu settings
-    AngularApp::addMenuItem('refresh', 'app/views/menu/installer.html', 
-        function($app){
-            return !Config::get('productionEnv');
-        });
-    
-    AngularApp::addMenuItem('refresh', 'app/views/menu/checkAllRules.html',
-        function($app){
-            return !Config::get('productionEnv');
-        });
-    
-    AngularApp::addMenuItem('refresh', 'app/views/menu/execEngine.html',
-        function(\Ampersand\AmpersandApp $app){
-            $roles = Config::get('allowedRolesForRunFunction','execEngine');
-            return $app->hasActiveRole($roles);
-        });
-
-    AngularApp::addMenuItem('ext', 'app/views/menu/importer.html', 
-        function(\Ampersand\AmpersandApp $app){
-            $roles = Config::get('allowedRolesForImporter');
-            return $app->hasActiveRole($roles);
-        });
-    
-    AngularApp::addMenuItem('ext', 'app/views/menu/exporter.html',
-        function($app){
-            return !Config::get('productionEnv');
-        });
 
 }catch(Exception $e){
     throw $e;

@@ -20,6 +20,11 @@ use Ampersand\Core\Atom;
 use Ampersand\AngularApp;
 use Ampersand\Rule\ExecEngine;
 
+/** 
+ * @var \Pimple\Container $container
+ */
+global $container;
+
 /*
    Example of rule that automatically inserts pairs into a relation (analogous stuff holds for DelPair):
    ROLE ExecEngine MAINTAINS "New Customers"
@@ -343,24 +348,24 @@ ExecEngine::registerFunction('SetConceptCond', function($conceptA, $conceptB, $a
 	}
 });
 
-ExecEngine::registerFunction('SetNavToOnCommit', function($navTo){
+ExecEngine::registerFunction('SetNavToOnCommit', function($navTo) use ($container){
 	Logger::getLogger('EXECENGINE')->info("setNavToOnCommit($navTo)");
 	
 	if(strpos($navTo, '_NEW') !== false){
 		$navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
 		Logger::getLogger('EXECENGINE')->debug("replaced navTo string with '{$navTo}'");
 	}
-	
-	AngularApp::setNavToResponse($navTo, 'COMMIT');
+    
+    $container['angular_app']->setNavToResponse($navTo, 'COMMIT');
 });
     
-ExecEngine::registerFunction('SetNavToOnRollback', function($navTo){
+ExecEngine::registerFunction('SetNavToOnRollback', function($navTo) use ($container){
 	Logger::getLogger('EXECENGINE')->info("setNavToOnRollback($navTo)");
 	
 	if(strpos($navTo, '_NEW') !== false){
 		$navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
 		Logger::getLogger('EXECENGINE')->debug("replaced navTo string with '{$navTo}'");
 	}
-	
-	AngularApp::setNavToResponse($navTo, 'ROLLBACK');
+    
+    $container['angular_app']->setNavToResponse($navTo, 'ROLLBACK');
 });

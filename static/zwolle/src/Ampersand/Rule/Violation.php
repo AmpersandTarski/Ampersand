@@ -9,7 +9,6 @@ namespace Ampersand\Rule;
 
 use Exception;
 use Ampersand\Core\Atom;
-use Ampersand\AmpersandApp;
 use Ampersand\Rule\Rule;
 
 /**
@@ -118,17 +117,18 @@ class Violation {
      * @return \Ampersand\Interfacing\InterfaceObject[]
      */
     public function getInterfaces($srcOrTgt = null): array {
-        $ampersandApp = AmpersandApp::singleton();
+        /** @var \Pimple\Container $container */
+        global $container;
         
         switch ($srcOrTgt) {
             case 'src':
-                return $ampersandApp->getInterfacesToReadConcepts([$this->src->concept]);
+                return $container['ampersand_app']->getInterfacesToReadConcepts([$this->src->concept]);
                 break;
             case 'tgt':
-                return $ampersandApp->getInterfacesToReadConcepts([$this->tgt->concept]);
+                return $container['ampersand_app']->getInterfacesToReadConcepts([$this->tgt->concept]);
                 break;
             default:
-                return $ampersandApp->getInterfacesToReadConcepts([$this->src->concept, $this->tgt->concept]);
+                return $container['ampersand_app']->getInterfacesToReadConcepts([$this->src->concept, $this->tgt->concept]);
                 break;
         }
     }

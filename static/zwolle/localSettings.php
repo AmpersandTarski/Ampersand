@@ -3,8 +3,7 @@
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Misc\Config;
-use Ampersand\AmpersandApp;
-use Ampersand\Database\Database;
+use Ampersand\Plugs\MysqlDB\MysqlDB;
 
 define ('LOCALSETTINGS_VERSION', 1.6);
 
@@ -54,11 +53,16 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * DATABASE settings
  *************************************************************************************************/
-// Config::set('dbHost', 'mysqlDatabase', '127.0.0.1');
-// Config::set('dbUser', 'mysqlDatabase', 'ampersand');
-// Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
-// Config::set('dbName', 'mysqlDatabase', '');
-
+$container['mysql_database'] = function($c) {
+    $dbHost = Config::get('dbHost', 'mysqlDatabase');
+    $dbUser = Config::get('dbUser', 'mysqlDatabase');
+    $dbPass = Config::get('dbPassword', 'mysqlDatabase');
+    $dbName = Config::get('dbName', 'mysqlDatabase');
+    return new MysqlDB($dbHost, $dbUser, $dbPass, $dbName);
+};
+$container['default_plug'] = function ($c) {
+    return $c['mysql_database'];
+};
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY
@@ -85,7 +89,3 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
  * EXTENSIONS
  *************************************************************************************************/
 
-// First initiation of Ampersand application
-AmpersandApp::singleton([
-    'storages' => [Database::singleton()]
-]);

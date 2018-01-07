@@ -8,7 +8,6 @@
 namespace Ampersand\Rule;
 
 use Exception;
-use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
 use Ampersand\Misc\Config;
 
@@ -22,7 +21,7 @@ class Conjunct {
     /**
      * List of all conjuncts
      * 
-     * @var Conjunct[]
+     * @var \Ampersand\Rule\Conjunct[]
      */
     private static $allConjuncts;
     
@@ -163,7 +162,9 @@ class Conjunct {
 
             // Otherwise evaluate conjunct, cache and return violations
             else{
-                $db = Database::singleton();
+                /** @var \Pimple\Container $container */
+                global $container;
+                $db = $container['mysql_database'];
                 $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
                 $violations = array();
     
@@ -225,23 +226,24 @@ class Conjunct {
      * @return \Ampersand\Rule\Conjunct[]
      */
     public static function getAllConjuncts(): array {
-        if(!isset(self::$allConjuncts)) self::setAllConjuncts();
+        if(!isset(self::$allConjuncts)) throw new Exception("Conjunct definitions not loaded yet", 500);
          
         return self::$allConjuncts;
     }
     
     /**
-     * Import all conjunct definitions from json file and create and save Conjunct objects
+     * Import all role definitions from json file and instantiate Conjunct objects
      * 
+     * @param string $fileName containing the Ampersand conjunct definitions
      * @return void
      */
-    private static function setAllConjuncts(){
+    public static function setAllConjuncts(string $fileName){
         self::$allConjuncts = array();
+        
+        $allConjDefs = (array)json_decode(file_get_contents($fileName), true);
     
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'conjuncts.json');
-        $allConjDefs = (array)json_decode($file, true);
-    
-        foreach ($allConjDefs as $conjDef) self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef);
+        foreach ($allConjDefs as $conjDef) {
+            self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef);
+        }
     }
 }

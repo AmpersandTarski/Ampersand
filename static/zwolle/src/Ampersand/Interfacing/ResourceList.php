@@ -13,7 +13,6 @@ use IteratorAggregate;
 use Ampersand\Misc\Config;
 use Ampersand\Core\Atom;
 use Ampersand\Log\Logger;
-use Ampersand\AmpersandApp;
 
 /**
  *
@@ -45,9 +44,11 @@ class ResourceList implements IteratorAggregate {
     
     
     public function __construct(Resource $src, InterfaceObject $parentIfc){
+        /** @var \Pimple\Container $container */
+        global $container;
         $this->logger = Logger::getLogger('INTERFACING');
         
-        if($parentIfc->isRoot() && !AmpersandApp::singleton()->isAccessibleIfc($parentIfc)) throw new Exception("Unauthorized to access interface {$parentIfc->label}", 401); // 401: Unauthorized
+        if($parentIfc->isRoot() && !$container['ampersand_app']->isAccessibleIfc($parentIfc)) throw new Exception("Unauthorized to access interface {$parentIfc->label}", 401); // 401: Unauthorized
         
         $this->src = $src;
         $this->ifc = $parentIfc;

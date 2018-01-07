@@ -1,7 +1,8 @@
 <?php
 
 use Ampersand\AmpersandApp;
-use Ampersand\Session;
+use Pimple\Container;
+use Ampersand\AngularApp;
 
 register_shutdown_function(function (){
     $error = error_get_last();
@@ -26,6 +27,15 @@ session_start();
 // Composer Autoloader
 require_once(__DIR__ . '/../lib/autoload.php');
 
+// New Pimple Dependency Injection Container
+$container = new Container();
+$container['ampersand_app'] = function ($c) {
+    return new AmpersandApp($c);
+};
+$container['angular_app'] = function($c) {
+    return new AngularApp($c['ampersand_app']);
+};
+
 // Include/set default settings
 require_once(__DIR__ . '/defaultSettings.php');
 
@@ -33,7 +43,8 @@ require_once(__DIR__ . '/defaultSettings.php');
 require_once (__DIR__ . '/../localSettings.php');
 if(!defined('LOCALSETTINGS_VERSION') || AmpersandApp::REQ_LOCALSETTINGS_VERSION > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to format of v" . number_format (AmpersandApp::REQ_LOCALSETTINGS_VERSION, 1), 500);
 
-// Include built-in ExecEngine function
+// More bootstrapping
+require_once(__DIR__ . '/bootstrap/NavigationMenu.php');
 require_once(__DIR__ . '/bootstrap/ExecEngineFunctions.php');
 // require_once(__DIR__ . '/bootstrap/ExecEngineDateTime.php');
 // require_once(__DIR__ . '/bootstrap/ExecEngineWarshall.php');

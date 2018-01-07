@@ -17,6 +17,10 @@ use Ampersand\Role;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Log\Notifications;
 use Ampersand\IO\JSONReader;
+use Ampersand\Interfacing\View;
+use Ampersand\Rule\Rule;
+use Ampersand\Core\Relation;
+use Pimple\Container;
 
 class AmpersandApp
 {
@@ -73,33 +77,30 @@ class AmpersandApp
     
     /**
      * 
-     * @param array $depInj dependency injection for Ampersand application
+     * @param \Pimple\Container $container dependency injection container
      */
-    private function __construct(array $depInj = []){
+    public function __construct(Container $container){
         $this->logger = Logger::getLogger('APPLICATION');
 
+        $genericsFolder = Config::get('pathToGeneratedFiles');
+
+        // Instantiate object definitions from generated files
+        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json');
+        View::setAllViews($genericsFolder . 'views.json', $container['default_plug']);
+        Concept::setAllConcepts($genericsFolder . 'concepts.json', $container['default_plug']);
+        Relation::setAllRelations($genericsFolder . 'relations.json', $container['default_plug']);
+        InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $container['default_plug']);
+        Rule::setAllRules($genericsFolder . 'rules.json', $container['default_plug']);
+        Role::setAllRoles($genericsFolder . 'roles.json');
+
         // Register storages
-        if(isset($depInj['storages'])) foreach($depInj['storages'] as $storage) $this->registerStorage($storage);
+        $this->registerStorage($container['default_plug']);
 
         // Initiate session
         $this->setSession();
 
         // Add public interfaces
         $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
-    }
-
-    /**
-     * private method to prevent any copy of this object
-     */
-    private function __clone(){}
-        
-    /**
-     * @param array $depInj dependency injection for Ampersand application
-     * @return AmpersandApp
-     */
-    public static function singleton(array $depInj = []){
-        if(is_null(self::$_instance)) self::$_instance = new AmpersandApp($depInj);
-        return self::$_instance;
     }
     
     public function registerStorage(StorageInterface $storage){

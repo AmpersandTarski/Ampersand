@@ -10,8 +10,6 @@ namespace Ampersand\Rule;
 use Exception;
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
-use Ampersand\Misc\Config;
-use Ampersand\Database\Database;
 use Ampersand\Plugs\ViewPlugInterface;
 
 /**
@@ -269,7 +267,7 @@ class Rule {
      * @return Rule[]
      */
     public static function getAllRules(): array {
-        if(!isset(self::$allRules)) self::setAllRules();
+        if(!isset(self::$allRules)) throw new Exception("Rule definitions not loaded yet", 500);
          
         return self::$allRules;
     }
@@ -277,26 +275,24 @@ class Rule {
     /**
      * Import all rule definitions from json file and instantiate Rule objects
      * 
+     * @param string $fileName containing the Ampersand rule definitions
+     * @param \Ampersand\Plugs\ViewPlugInterface $defaultPlug
      * @return void
      */
-    private static function setAllRules(){
-        self::$allRules = array();
+    public static function setAllRules(string $fileName, ViewPlugInterface $defaultPlug){
+        self::$allRules = [];
 
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'rules.json');
-        $allRuleDefs = (array)json_decode($file, true);
-
-        $plug = Database::singleton();
+        $allRuleDefs = (array) json_decode(file_get_contents($fileName), true);
         
         // Signal rules
         foreach ($allRuleDefs['signals'] as $ruleDef){
-            $rule = new Rule($ruleDef, $plug, 'sig');
+            $rule = new Rule($ruleDef, $defaultPlug, 'sig');
             self::$allRules[$rule->id] = $rule;
         }
         
         // Invariant rules
         foreach ($allRuleDefs['invariants'] as $ruleDef){
-            $rule = new Rule($ruleDef, $plug, 'inv');
+            $rule = new Rule($ruleDef, $defaultPlug, 'inv');
             self::$allRules[$rule->id] = $rule;
         }
     }

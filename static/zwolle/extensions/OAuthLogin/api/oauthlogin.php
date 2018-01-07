@@ -3,9 +3,16 @@
 use Ampersand\Misc\Config;
 use Ampersand\Log\Logger;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
-use Ampersand\AmpersandApp;
 
+/**
+ * @var \Slim\Slim $app
+ */
 global $app;
+
+/** 
+ * @var \Pimple\Container $container
+ */
+global $container;
 
 // Path to API is 'api/v1/oauthlogin/login'
 $app->get('/oauthlogin/login', function () use ($app){
@@ -39,8 +46,8 @@ $app->get('/oauthlogin/login', function () use ($app){
 });
 
 // Path to API is 'api/v1/oauthlogin/logout'
-$app->get('/oauthlogin/logout', function () use ($app){
-    $ampersandApp = AmpersandApp::singleton();
+$app->get('/oauthlogin/logout', function () use ($app, $container){
+    $ampersandApp = $container['ampersand_app'];
     $ampersandApp->logout();
 
     $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
