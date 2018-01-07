@@ -3,7 +3,7 @@
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Misc\Config;
-use Ampersand\Database\Database;
+use Ampersand\Plugs\MysqlDB\MysqlDB;
 
 define ('LOCALSETTINGS_VERSION', 1.6);
 
@@ -58,7 +58,7 @@ $container['mysql_database'] = function($c) {
     $dbUser = Config::get('dbUser', 'mysqlDatabase');
     $dbPass = Config::get('dbPassword', 'mysqlDatabase');
     $dbName = Config::get('dbName', 'mysqlDatabase');
-    return new Database($dbHost, $dbUser, $dbPass, $dbName);
+    return new MysqlDB($dbHost, $dbUser, $dbPass, $dbName);
 };
 $container['default_plug'] = function ($c) {
     return $c['mysql_database'];

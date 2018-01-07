@@ -5,7 +5,8 @@
  *
  */
 
-namespace Ampersand\Database;
+namespace Ampersand\Plugs\MysqlDB;
+
 use mysqli;
 use DateTime;
 use Exception;
@@ -31,7 +32,7 @@ use Ampersand\Rule\Conjunct;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInterface, ViewPlugInterface {
+class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInterface, ViewPlugInterface {
     /**
      * Logger
      * 

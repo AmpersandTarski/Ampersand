@@ -5,16 +5,17 @@
  *
  */
 
-namespace Ampersand\Database;
+namespace Ampersand\Plugs\MysqlDB;
 
 use Exception;
+use Ampersand\Plugs\MysqlDB\MysqlDBTableCol;
 
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class DatabaseTable
+class MysqlDBTable
 {
     /**
      *
@@ -36,37 +37,41 @@ class DatabaseTable
 
     /**
      * Constructor of Database table
+     * 
      * @param string $name
      */
-    public function __construct($name){
+    public function __construct(string $name){
         if($name == '') throw new Exception ("Database table name is an empty string" ,500);
         $this->name = $name;
     }
 
     /**
      * Add database table column object to this table
-     * @param DatabaseTableCol $col
-     * return void
+     * 
+     * @param \Ampersand\Plugs\MysqlDB\MysqlDBTableCol $col
+     * @return void
      */
-    public function addCol($col){
+    public function addCol(MysqlDBTableCol $col){
         $this->cols[$col->name] = $col;
     }
 
     /**
      * Get all col objects for this table
-     * @throws Exception when no columns are defined for this table
-     * @return DatabaseTableCol[]
+     * 
+     * @throws \Exception when no columns are defined for this table
+     * @return \Ampersand\Plugs\MysqlDB\MysqlDBTableCol[]
      */
-    public function getCols(){
+    public function getCols(): array {
         if (empty($this->cols)) throw new Exception("No column defined for table '{$this->name}'", 500);
         return $this->cols;
     }
 
     /**
      * Returns names of all table cols
+     * 
      * @return string[]
      */
-    public function getColNames(){
+    public function getColNames(): array {
         $colNames = array();
         foreach($this->getCols() as $col) $colNames[] = $col->name;
         return $colNames;
@@ -74,20 +79,22 @@ class DatabaseTable
 
     /**
      * Return col object with given column name
+     * 
      * @param string $colName
-     * @throws Exception when col does not exists
-     * @return DatabaseTableCol[]
+     * @throws \Exception when col does not exists
+     * @return \Ampersand\Plugs\MysqlDB\MysqlDBTableCol
      */
-    public function getCol($colName){
+    public function getCol(string $colName): MysqlDBTableCol {
         if(!array_key_exists($colName, $this->getCols())) throw new Exception ("Col '{$colName}' does not exists in table '{$this->name}'", 500);
         return $this->getCols()[$colName];
     }
 
     /**
      * Return first registered col object
-     * @return DatabaseTableCol
+     * 
+     * @return \Ampersand\Plugs\MysqlDB\MysqlDBTableCol
      */
-    public function getFirstCol(){
+    public function getFirstCol(): MysqlDBTableCol {
         return current($this->getCols());
     }
 }

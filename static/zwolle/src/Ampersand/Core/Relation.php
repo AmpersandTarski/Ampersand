@@ -8,8 +8,8 @@
 namespace Ampersand\Core;
 
 use Exception;
-use Ampersand\Database\DatabaseTableCol;
-use Ampersand\Database\RelationTable;
+use Ampersand\Plugs\MysqlDB\MysqlDBTableCol;
+use Ampersand\Plugs\MysqlDB\MysqlDBRelationTable;
 use Ampersand\Core\Concept;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
@@ -112,7 +112,7 @@ class Relation {
     
     /**
      * 
-     * @var RelationTable
+     * @var \Ampersand\Plugs\MysqlDB\MysqlDBRelationTable
      */
     private $mysqlTable;
     
@@ -145,13 +145,13 @@ class Relation {
         if(!is_null($defaultPlug)) $this->addPlug($defaultPlug);
 
         // Specify mysql table information
-        $this->mysqlTable = new RelationTable($relationDef['mysqlTable']['name'], $relationDef['mysqlTable']['tableOf']);
+        $this->mysqlTable = new MysqlDBRelationTable($relationDef['mysqlTable']['name'], $relationDef['mysqlTable']['tableOf']);
         
         $srcCol = $relationDef['mysqlTable']['srcCol'];
         $tgtCol = $relationDef['mysqlTable']['tgtCol'];
         
-        $this->mysqlTable->addSrcCol(new DatabaseTableCol($srcCol['name'], $srcCol['null'], $srcCol['unique']));
-        $this->mysqlTable->addTgtCol(new DatabaseTableCol($tgtCol['name'], $tgtCol['null'], $tgtCol['unique']));
+        $this->mysqlTable->addSrcCol(new MysqlDBTableCol($srcCol['name'], $srcCol['null'], $srcCol['unique']));
+        $this->mysqlTable->addTgtCol(new MysqlDBTableCol($tgtCol['name'], $tgtCol['null'], $tgtCol['unique']));
     }
     
     /**
@@ -180,9 +180,9 @@ class Relation {
     
     /**
      * 
-     * @return RelationTable
+     * @return \Ampersand\Plugs\MysqlDB\MysqlDBRelationTable
      */
-    public function getMysqlTable(){
+    public function getMysqlTable(): MysqlDBRelationTable {
         return $this->mysqlTable;
     }
 

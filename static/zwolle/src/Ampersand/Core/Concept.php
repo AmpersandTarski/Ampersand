@@ -8,8 +8,8 @@
 namespace Ampersand\Core;
 
 use Exception;
-use Ampersand\Database\DatabaseTable;
-use Ampersand\Database\DatabaseTableCol;
+use Ampersand\Plugs\MysqlDB\MysqlDBTable;
+use Ampersand\Plugs\MysqlDB\MysqlDBTableCol;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Interfacing\View;
@@ -184,9 +184,9 @@ class Concept {
         
         if(!is_null($conceptDef['defaultViewId'])) $this->defaultView = View::getView($conceptDef['defaultViewId']);
         
-        $this->mysqlConceptTable = new DatabaseTable($conceptDef['conceptTable']['name']);
+        $this->mysqlConceptTable = new MysqlDBTable($conceptDef['conceptTable']['name']);
         foreach ($conceptDef['conceptTable']['cols'] as $colName){
-            $this->mysqlConceptTable->addCol(new DatabaseTableCol($colName));
+            $this->mysqlConceptTable->addCol(new MysqlDBTableCol($colName));
         }
         
         // All atoms query is a hack which allows to manually add a more efficient query to get all atoms in Concepts.json

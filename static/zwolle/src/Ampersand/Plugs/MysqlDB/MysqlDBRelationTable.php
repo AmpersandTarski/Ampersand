@@ -5,9 +5,10 @@
  *
  */
 
-namespace Ampersand\Database;
+namespace Ampersand\Plugs\MysqlDB;
 
 use Exception;
+use Ampersand\Plugs\MysqlDB\MysqlDBTableCol;
 
 /**
  *
@@ -15,33 +16,35 @@ use Exception;
  *
  */
 
-class RelationTable extends DatabaseTable
+class MysqlDBRelationTable extends MysqlDBTable
 {
 
     /**
      *
-     * @var DatabaseTableCol
+     * @var \Ampersand\Plugs\MysqlDB\MysqlDBTableCol
      */
     private $srcCol = null;
 
     /**
      *
-     * @var DatabaseTableCol
+     * @var \Ampersand\Plugs\MysqlDB\MysqlDBTableCol
      */
     private $tgtCol = null;
 
     /**
      * Specifies if this relation is administrated in the table of the src concept ('src'), the tgt concept ('tgt') or its own n-n table (null)
+     * 
      * @var string
      */
     public $tableOf;
 
     /**
      * Constructor of RelationTable
+     * 
      * @param string $name
      * @param string|null $tableOf ('src', 'tgt' or null)
      */
-    public function __construct($name, $tableOf){
+    public function __construct(string $name, string $tableOf = null){
         parent::__construct($name);
 
         switch ($tableOf){
@@ -57,40 +60,40 @@ class RelationTable extends DatabaseTable
 
     /**
      *
-     * @param DatabaseTableCol $col
+     * @param \Ampersand\Plugs\MysqlDB\MysqlDBTableCol $col
      * @return void
      */
-    public function addSrcCol($col){
+    public function addSrcCol(MysqlDBTableCol $col){
         $this->srcCol = $col;
         $this->cols[$col->name] = $col;
     }
 
     /**
      *
-     * @param DatabaseTableCol $col
+     * @param \Ampersand\Plugs\MysqlDB\MysqlDBTableCol $col
      * @return void
      */
-    public function addTgtCol($col){
+    public function addTgtCol(MysqlDBTableCol $col){
         $this->tgtCol = $col;
         $this->cols[$col->name] = $col;
     }
 
     /**
      *
-     * @throws Exception when src column is not defined
-     * @return DatabaseTableCol
+     * @throws \Exception when src column is not defined
+     * @return \Ampersand\Plugs\MysqlDB\MysqlDBTableCol
      */
-    public function srcCol(){
+    public function srcCol(): MysqlDBTableCol {
         if(is_null($this->srcCol)) throw new Exception ("Src column for RelationTable {$this->name} not defined", 500);
         return $this->srcCol;
     }
 
     /**
      *
-     * @throws Exception when tgt column is not defined
-     * @return DatabaseTableCol
+     * @throws \Exception when tgt column is not defined
+     * @return MysqlDBTableCol
      */
-    public function tgtCol(){
+    public function tgtCol(): MysqlDBTableCol {
         if(is_null($this->tgtCol)) throw new Exception ("Tgt column for RelationTable {$this->name} not defined", 500);
         return $this->tgtCol;
     }
