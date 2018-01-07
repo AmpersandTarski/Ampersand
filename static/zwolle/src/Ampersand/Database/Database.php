@@ -33,45 +33,52 @@ use Ampersand\Rule\Conjunct;
  */
 class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInterface, ViewPlugInterface {
     /**
+     * Logger
      * 
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
     
     /**
-     * Contains a connection to the mysql database
+     * A connection to the mysql database
+     * 
      */
-    private $dbLink;
+    protected $dbLink;
     
     /**
      * Host/server of mysql database
+     * 
      * @var string
      */
-    private $dbHost;
+    protected $dbHost;
     
     /**
      * Username for mysql database
+     * 
      * @var string
      */
-    private $dbUser;
+    protected $dbUser;
     
     /**
      * Password for mysql database
+     * 
      * @var string
      */
-    private $dbPass;
+    protected $dbPass;
     
     /**
      * Database name
+     * 
      * @var string
      */
-    private $dbName;
+    protected $dbName;
     
     /**
      * Specifies if database transaction is active
-     * @var boolean $dbTransactionActive
+     * 
+     * @var bool
      */
-    private $dbTransactionActive = false;
+    protected $dbTransactionActive = false;
 
     /**
      * Contains the last executed query
@@ -79,12 +86,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @var $string
      */
     protected $lastQuery = null;
-    
-    /**
-     * Contains reference to database instance (singleton pattern)
-     * @var Database
-     */
-    private static $_instance = null;
     
     /**
      * Constructor of database class
@@ -118,7 +119,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         $this->selectDB();
     }
 
-    private function selectDB(){
+    protected function selectDB(){
         try {
             $this->dbLink->select_db($this->dbName);
         }catch (Exception $e){
@@ -142,7 +143,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      *
      * @return void
      */
-    private function createDB(){
+    protected function createDB(){
         // Drop database
         $this->logger->info("Drop database if exists: '{$this->dbName}'");
         $this->dbLink->query("DROP DATABASE IF EXISTS {$this->dbName}");
@@ -154,6 +155,11 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         $this->dbLink->select_db($this->dbName);
     }
 
+    /**
+     * The database is dropped, created again and all tables are created
+     *
+     * @return void
+     */
     public function reinstallStorage(){
         $this->createDB();
         $structure = file_get_contents(Config::get('pathToGeneratedFiles') . 'database.sql');
@@ -163,10 +169,11 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Return escaped mysql representation of Atom (identifier) according to Ampersand technical types (TTypes)
+     * 
      * @throws Exception when technical type is not (yet) supported
      * @return mixed
      */
-    public function getDBRepresentation($atom){
+    protected function getDBRepresentation($atom){
         if(is_null($atom->id)) return null;
         
         switch($atom->concept->type){
@@ -224,12 +231,13 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Execute query on database.
+     * 
      * @param string $query
-     * @param boolean $multiQuery specifies if query is a single command or multiple commands concatenated by a semicolon 
+     * @param bool $multiQuery specifies if query is a single command or multiple commands concatenated by a semicolon 
      * @return mixed
      * @throws Exception
      */
-    private function doQuery($query, $multiQuery = false){
+    protected function doQuery($query, $multiQuery = false){
         $this->lastQuery = $query;
         try{
             if($multiQuery){
@@ -261,7 +269,8 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     }
     
     /**
-     * Function to escape identifiers for use in database queries 
+     * Escape identifier for use in database queries 
+     * 
      * @param string $escapestr
      * @return NULL|string
      * 
@@ -333,8 +342,9 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
 
     /**
     * Check if atom exists in database
-    * @param Atom $atom
-    * @return boolean
+
+    * @param \Ampersand\Core\Atom $atom
+    * @return bool
     */
     public function atomExists(Atom $atom){
         $tableInfo = $atom->concept->getConceptTableInfo();
@@ -350,8 +360,9 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Get all atoms for given concept
-     * @param Concept $concept
-     * @return Atom[]
+     * 
+     * @param \Ampersand\Core\Concept $concept
+     * @return \Ampersand\Core\Atom[]
      */
     public function getAllAtoms(Concept $concept){
         $tableInfo = $concept->getConceptTableInfo();
@@ -374,7 +385,8 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Add atom to database
-     * @param Atom $atom
+     * 
+     * @param \Ampersand\Core\Atom $atom
      * @return void
      */
     public function addAtom(Atom $atom){
@@ -405,9 +417,10 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     }
     
     /**
-     * Removing an atom as member from a concept set. 
-     * @param Atom $atom
-     * @throws Exception
+     * Removing an atom as member from a concept set.
+     * 
+     * @param \Ampersand\Core\Atom $atom
+     * @throws \Exception
      * @return void
      */
     public function removeAtom(Atom $atom){
@@ -436,6 +449,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Delete atom from concept table in the database
+     * 
      * @param \Ampersand\Core\Atom $atom
      * @return void
      */
@@ -454,7 +468,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     /**
      * Rename an atom in the concept set (incl all specializations and generalizations)
      *
-     * @param Atom $atom
+     * @param \Ampersand\Core\Atom $atom
      * @param string $newAtom
      * @return void
      */
@@ -485,8 +499,9 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
     * Check if link exists in database
-    * @param Link $link
-    * @return boolean
+
+    * @param \Ampersand\Core\Link $link
+    * @return bool
     */
     public function linkExists(Link $link){
         $relTable = $link->relation()->getMysqlTable();
@@ -501,10 +516,11 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
     * Get all links given a relation
-    * @param Relation $relation
-    * @param Atom $srcAtom if specified get all links with $srcAtom as source
-    * @param Atom $tgtAtom if specified get all links with $tgtAtom as tgt
-    * @return Link[]
+
+    * @param \Ampersand\Core\Relation $relation
+    * @param \Ampersand\Core\Atom $srcAtom if specified get all links with $srcAtom as source
+    * @param \Ampersand\Core\Atom $tgtAtom if specified get all links with $tgtAtom as tgt
+    * @return \Ampersand\Core\Link[]
     */
     public function getAllLinks(Relation $relation, Atom $srcAtom = null, Atom $tgtAtom = null){
         $relTable = $relation->getMysqlTable();
@@ -529,7 +545,8 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Add link (srcAtom,tgtAtom) into database table for relation r
-     * @param Link $link
+     * 
+     * @param \Ampersand\Core\Link $link
      * @return void
      */
     public function addLink(Link $link){
@@ -559,7 +576,8 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Delete link (srcAtom,tgtAtom) into database table for relation r
-     * @param Link $link
+     * 
+     * @param \Ampersand\Core\Link $link
      * @return void
      */
     public function deleteLink(Link $link){
@@ -602,8 +620,10 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     }
     
     /**
-     * @param Relation $relation relation from which to delete all links
-     * @param Atom $atom atom for which to delete all links
+     * 
+     * 
+     * @param \Ampersand\Core\Relation $relation relation from which to delete all links
+     * @param \Ampersand\Core\Atom $atom atom for which to delete all links
      * @param string $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
      * @return void
      */
@@ -673,8 +693,10 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
  *************************************************************************************************/
     
     /**
-     * @param InterfaceObject $ifc
-     * @param Atom $srcAtom
+     * Execute query for given interface expression and source atom
+     * 
+     * @param \Ampersand\Interfacing\InterfaceObject $ifc
+     * @param \Ampersand\Core\Atom $srcAtom
      * @return mixed
      */
     public function executeIfcExpression(InterfaceObject $ifc, Atom $srcAtom = null){
@@ -690,8 +712,10 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     }
     
     /**
-     * @param ViewSegment $view
-     * @param Atom $srcAtom
+     * Execute query for giver view segement and source atom
+     * 
+     * @param \Ampersand\Interfacing\ViewSegment $view
+     * @param \Ampersand\Core\Atom $srcAtom
      * @return array
      */
     public function executeViewExpression(ViewSegment $view, Atom $srcAtom = null): array {
@@ -710,10 +734,11 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Check if insert/update/delete function resulted in updated record(s). If not, report warning (or throw exception) to indicate that something is going wrong
-     * @throws Exception when no records are affected and application is not in production mode
+     * 
+     * @throws \Exception when no records are affected and application is not in production mode
      * @return void
      */
-    private function checkForAffectedRows(){
+    protected function checkForAffectedRows(){
         if($this->dbLink->affected_rows == 0){
             if(Config::get('productionEnv')){
                 $this->logger->warning("No recors affected with query '{$this->lastQuery}'");
