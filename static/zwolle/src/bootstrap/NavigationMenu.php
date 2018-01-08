@@ -1,5 +1,7 @@
 <?php
 
+use Ampersand\Misc\Config;
+
 /** 
  * @var \Pimple\Container $container
  */
