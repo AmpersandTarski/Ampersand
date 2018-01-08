@@ -32,7 +32,6 @@ $app->response->headers->set('Content-Type', 'application/json');
 
 // Error handler
 $app->error(function (Exception $e) use ($app, $container) {
-    /** @var \Slim\Slim $app */
     try{
         Logger::getLogger("API")->error($e->getMessage());
         
@@ -67,7 +66,6 @@ $app->error(function (Exception $e) use ($app, $container) {
 
 // Not found handler
 $app->notFound(function () use ($app) {
-    /** @var \Slim\Slim $app */
     $app->response->setStatus(404);
     print json_encode(array('error' => 404, 'msg' => "API endpoint not found: {$app->request->getMethod()} {$app->request->getPathInfo()}. Note! virtual path is case sensitive"));
 });

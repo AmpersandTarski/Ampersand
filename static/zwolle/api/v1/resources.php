@@ -26,7 +26,6 @@ global $container;
  *************************************************************************************************/
 
 $app->get('/resources', function() use ($app, $container) {
-    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
     
     $content = array_values(
@@ -40,7 +39,6 @@ $app->get('/resources', function() use ($app, $container) {
 });
 
 $app->get('/resources/:resourceType', function ($resourceType) use ($app, $container) {
-    /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
     
     $roleIds = $app->request->params('roleIds');
@@ -59,7 +57,6 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app, $conta
 
 
 $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app, $container) {
-    /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
 
     $roleIds = $app->request->params('roleIds');
@@ -82,7 +79,6 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
  *************************************************************************************************/
 
 $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
-    /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
 
     $roleIds = $app->request->params('roleIds');
@@ -103,7 +99,6 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 });
 
 $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
-    /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
@@ -141,7 +136,6 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 });
 
 $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app, $container) {
-    /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
@@ -182,7 +176,6 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 });
 
 $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
-    /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
@@ -221,7 +214,6 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 });
 
 $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
-    /** @var \Slim\Slim $app */
     $ampersandApp = $container['ampersand_app'];
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
