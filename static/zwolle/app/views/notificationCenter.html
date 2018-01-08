@@ -66,7 +66,7 @@
                             <a href="" class="dropdown-toggle" data-toggle="dropdown">{{violation.message}}</a>
                             <ul class="dropdown-menu" role="menu">
                                 <li ng-repeat="ifc in violation.ifcs">
-                                    <a ng-href="{{ifc.link}}" data-toggle="collapse" data-target="#violation-{{key}}">{{ifc.label}}</a>
+                                    <a ng-href="{{ifc.link}}" data-toggle="collapse" data-target="#violation-{{key}}"><small>View</small> {{ifc.label}}</a>
                                 </li>
                             </ul>
                         </div>
