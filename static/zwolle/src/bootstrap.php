@@ -30,7 +30,7 @@ require_once(__DIR__ . '/../lib/autoload.php');
 // New Pimple Dependency Injection Container
 $container = new Container();
 $container['ampersand_app'] = function ($c) {
-    return new AmpersandApp($c);
+    return new AmpersandApp($c['default_plug']);
 };
 $container['angular_app'] = function($c) {
     return new AngularApp($c['ampersand_app']);

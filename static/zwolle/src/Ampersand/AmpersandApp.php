@@ -20,7 +20,6 @@ use Ampersand\IO\JSONReader;
 use Ampersand\Interfacing\View;
 use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;
-use Pimple\Container;
 
 class AmpersandApp
 {
@@ -76,25 +75,26 @@ class AmpersandApp
     private static $_instance = null;
     
     /**
+     * Constructor
      * 
-     * @param \Pimple\Container $container dependency injection container
+     * @param \Ampersand\Plugs\StorageInterface $defaultPlug
      */
-    public function __construct(Container $container){
+    public function __construct(StorageInterface $defaultPlug){
         $this->logger = Logger::getLogger('APPLICATION');
 
         $genericsFolder = Config::get('pathToGeneratedFiles');
 
         // Instantiate object definitions from generated files
         Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json');
-        View::setAllViews($genericsFolder . 'views.json', $container['default_plug']);
-        Concept::setAllConcepts($genericsFolder . 'concepts.json', $container['default_plug']);
-        Relation::setAllRelations($genericsFolder . 'relations.json', $container['default_plug']);
-        InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $container['default_plug']);
-        Rule::setAllRules($genericsFolder . 'rules.json', $container['default_plug']);
+        View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
+        Concept::setAllConcepts($genericsFolder . 'concepts.json', $defaultPlug);
+        Relation::setAllRelations($genericsFolder . 'relations.json', $defaultPlug);
+        InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $defaultPlug);
+        Rule::setAllRules($genericsFolder . 'rules.json', $defaultPlug);
         Role::setAllRoles($genericsFolder . 'roles.json');
 
         // Register storages
-        $this->registerStorage($container['default_plug']);
+        $this->registerStorage($defaultPlug);
 
         // Initiate session
         $this->setSession();
