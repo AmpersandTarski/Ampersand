@@ -184,21 +184,30 @@ ExecEngine::registerFunction('NewStruct', function() use ($InsPair){ // arglist:
 });
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
-ExecEngine::registerFunction('InsAtom', function($conceptName){
-    Logger::getLogger('EXECENGINE')->info("InsAtom($conceptName)");
-    if(func_num_args() != 1) throw new Exception("InsAtom() expects 1 argument, but you have provided ".func_num_args(), 500);
+ExecEngine::registerFunction('InsAtom', function(string $conceptName, string $atomId = null){
+    Logger::getLogger('EXECENGINE')->info("InsAtom({$conceptName},{$atomId})");
+    if(func_num_args() > 2) throw new Exception("InsAtom() expects max 2 arguments, but you have provided " . func_num_args(), 500);
+
     try{
         $concept = Concept::getConceptByLabel($conceptName);
-        $atom = $concept->createNewAtom();
+
+        if (is_null($atomId)) {
+            $atom = $concept->createNewAtom();
+        } else {
+            $atom = new Atom($atomId, $concept);
+        }
+
+        // Add atom to concept set
         $atom->add();
         
-		// Make newly created atom available within scope of violation for use of other functions
-		ExecEngine::$_NEW = $atom;
-		
+        // Make (newly created) atom available within scope of violation for use of other functions
+        ExecEngine::$_NEW = $atom;
+
+        Logger::getLogger('EXECENGINE')->debug("Atom '{$atom}' added");
         
     }catch(Exception $e){
         Logger::getUserLogger()->error('InsAtom: ' . $e->getMessage());
-    } 
+    }
 });
 
 /* 
