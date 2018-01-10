@@ -269,7 +269,7 @@ ExecEngine::registerFunction('MrgAtoms', function($conceptA, $srcAtomId, $concep
  VIOLATION (TXT "SetConcept;ConceptA;ConceptB;" SRC I)
  */
 // Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atomId>")
-ExecEngine::registerFunction('SetConcept', function($conceptA, $conceptB, $atomId){
+ExecEngine::registerFunction('SetConcept', $SetConcept = function($conceptA, $conceptB, $atomId){
 	Logger::getLogger('EXECENGINE')->info("SetConcept($conceptA,$conceptB,$atomId)");
     if(func_num_args() != 3) throw new Exception("SetConcept() expects 3 arguments, but you have provided ".func_num_args(), 500);
     try{
@@ -337,7 +337,7 @@ ExecEngine::registerFunction('InsPairCond', function($relationName, $srcConceptN
 });
 
 // SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
-ExecEngine::registerFunction('SetConceptCond', function($conceptA, $conceptB, $atom, $bool){
+ExecEngine::registerFunction('SetConceptCond', function($conceptA, $conceptB, $atom, $bool) use ($SetConcept){
 	Logger::getLogger('EXECENGINE')->info("SetConceptCond($conceptA, $conceptB, $atom, $bool)");
     
 	try{
@@ -350,11 +350,11 @@ ExecEngine::registerFunction('SetConceptCond', function($conceptA, $conceptB, $a
             return;
         }
         
-        SetConcept($conceptA, $conceptB, $atom);
 	
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('SetConceptCond: ' . $e->getMessage());
 	}
+    $SetConcept($conceptA, $conceptB, $atom);
 });
 
 ExecEngine::registerFunction('SetNavToOnCommit', function($navTo) use ($container){
