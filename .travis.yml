@@ -31,7 +31,7 @@ matrix:
     compiler: ": #stack 8.2.2"
     addons: {apt: {packages: [ cabal-install-1.24
                              , ghc-8.2.2
-                             , libpthread-stubs0-dev
+                             , libgmp-dev
                              , mysql-server-5.6
                              , mysql-client-core-5.6
                              , mysql-client-5.6
