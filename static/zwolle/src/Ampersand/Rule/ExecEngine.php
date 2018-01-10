@@ -190,6 +190,7 @@ class ExecEngine extends RuleEngine {
             
             if(array_key_exists($functionName, self::$callables)){
                 try {
+                    $logger->info("{$functionName}(" . implode(',', $params) . ")");
                     call_user_func_array(self::$callables[$functionName], $params);
                 
                 // Catch exceptions from ExecEngine functions and log to user
