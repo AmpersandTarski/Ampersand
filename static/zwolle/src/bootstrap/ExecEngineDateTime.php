@@ -6,6 +6,7 @@ The date and time formats that can be used are pretty much arbitrary. A precise 
    http://www.php.net/manual/en/datetime.formats.time.php
 */
 
+use Exception;
 use Ampersand\Log\Logger; 
 use Ampersand\Rule\ExecEngine;
 
@@ -46,7 +47,7 @@ VIOLATION (TXT "{EX} DateDifferencePlusOne" -- Result = 1 + MAX(0, (RentalEndDat
 ExecEngine::registerFunction('DateDifferencePlusOne', function($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate){
     Logger::getLogger('EXECENGINE')->debug("DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate)");
     $datediff = strtotime($latestDate) - strtotime($earliestDate);
-    if ($datediff < 0) Logger::getUserLogger()->error("DateDifferencePlusOne: first arg (earliestDate) must be smaller than second arg (latestDate).");
+    if ($datediff < 0) throw new Exception("First arg (earliestDate) must be smaller than second arg (latestDate).", 500);
     
     $result = 1 + max(0, floor($datediff/(60*60*24)));
     InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
@@ -65,7 +66,7 @@ VIOLATION (TXT "{EX} DateDifference"
 ExecEngine::registerFunction('DateDifference', function($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate){
     Logger::getLogger('EXECENGINE')->debug("DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate)");
     $datediff = strtotime($lastDate) - strtotime($firstDate);
-    if ($datediff < 0) Logger::getUserLogger()->error("DateDifference: first arg (earliestDate) must be smaller than second arg (latestDate).");
+    if ($datediff < 0) throw new Exception("First arg (earliestDate) must be smaller than second arg (latestDate).", 500);
     
     $result = max(0, floor($datediff/(60*60*24)));
     InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
@@ -105,8 +106,8 @@ ExecEngine::registerFunction('DateDifference', function($relation,$srcConcept,$s
 // VIOLATION (TXT "{EX} datimeEQL;DateTime;" SRC I, TXT ";", TGT I)
 ExecEngine::registerFunction('datimeEQL', function($eqlRelation,$DateConcept,$srcAtom,$tgtAtom){
     Logger::getLogger('EXECENGINE')->debug("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)");
-    if (($dt1 = strtotime($srcAtom)) === false) Logger::getUserLogger()->error("datimeEQL: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-    if (($dt2 = strtotime($tgtAtom)) === false) Logger::getUserLogger()->error("datimeEQL: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+    if (($dt1 = strtotime($srcAtom)) === false) throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
+    if (($dt2 = strtotime($tgtAtom)) === false) throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
     
     if ($dt1 == $dt2){
         InsPair($eqlRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
@@ -122,8 +123,8 @@ ExecEngine::registerFunction('datimeEQL', function($eqlRelation,$DateConcept,$sr
 // VIOLATION (TXT "{EX} datimeNEQ;DateTime;" SRC I, TXT ";", TGT I)
 ExecEngine::registerFunction('datimeNEQ', function($neqRelation,$DateConcept,$srcAtom,$tgtAtom){     
     Logger::getLogger('EXECENGINE')->debug("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)");
-    if (($dt1 = strtotime($srcAtom)) === false) Logger::getUserLogger()->error("datimeNEQ: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-    if (($dt2 = strtotime($tgtAtom)) === false) Logger::getUserLogger()->error("datimeNEQ: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+    if (($dt1 = strtotime($srcAtom)) === false) throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
+    if (($dt2 = strtotime($tgtAtom)) === false) throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
     
     if ($dt1 != $dt2){
         InsPair($neqRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
@@ -135,8 +136,8 @@ ExecEngine::registerFunction('datimeNEQ', function($neqRelation,$DateConcept,$sr
 // VIOLATION (TXT "{EX} datimeLT;DateTime;" SRC I, TXT ";", TGT I)
 ExecEngine::registerFunction('datimeLT', function($ltRelation,$DateConcept,$srcAtom,$tgtAtom){
     Logger::getLogger('EXECENGINE')->debug("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)");
-    if (($dt1 = strtotime($srcAtom)) === false) Logger::getUserLogger()->error("datimeLT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-    if (($dt2 = strtotime($tgtAtom)) === false) Logger::getUserLogger()->error("datimeLT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+    if (($dt1 = strtotime($srcAtom)) === false) throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
+    if (($dt2 = strtotime($tgtAtom)) === false) throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
     if ($dt1 == $dt2) return;
     
     if ($dt1 < $dt2){
@@ -150,8 +151,8 @@ ExecEngine::registerFunction('datimeLT', function($ltRelation,$DateConcept,$srcA
 // VIOLATION (TXT "{EX} datimeGT;DateTime;" SRC I, TXT ";", TGT I)
 ExecEngine::registerFunction('datimeGT', function($gtRelation,$DateConcept,$srcAtom,$tgtAtom){
     Logger::getLogger('EXECENGINE')->debug("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)");
-    if (($dt1 = strtotime($srcAtom)) === false) Logger::getUserLogger()->error("datimeGT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-    if (($dt2 = strtotime($tgtAtom)) === false) Logger::getUserLogger()->error("datimeGT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+    if (($dt1 = strtotime($srcAtom)) === false) throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
+    if (($dt2 = strtotime($tgtAtom)) === false) throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
     if ($dt1 == $dt2) return;
     
     if ($dt1 > $dt2){
