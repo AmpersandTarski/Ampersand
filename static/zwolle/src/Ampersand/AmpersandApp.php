@@ -183,9 +183,9 @@ class AmpersandApp
      * Function to reinstall the application. This includes database structure and load default population
      * 
      * @param boolean $installDefaultPop specifies whether or not to install the default population
-     * @return void
+     * @return \Ampersand\Transaction in which application is reinstalled
      */
-    public function reinstall($installDefaultPop = true){
+    public function reinstall($installDefaultPop = true): Transaction {
         $this->logger->info("Start application reinstall");
 
         foreach($this->storages as $storage) $storage->reinstallStorage();
@@ -207,13 +207,14 @@ class AmpersandApp
         // Close transaction
         $transaction = Transaction::getCurrentTransaction()->close(true);
         $this->logger->info("End application reinstall");
-        if($transaction->isCommitted()) Logger::getUserLogger()->notice("Application successfully reinstalled");
 
         // Initial conjunct evaluation
         $this->logger->info("Initial evaluation of all conjuncts after application reinstallation");
         foreach(Conjunct::getAllConjuncts() as $conjunct) $conjunct->evaluateConjunct(true); // Evaluate, cache and store all conjuncts
 
         $this->setSession(); // Initiate session again
+
+        return $transaction;
     }
 
     /**

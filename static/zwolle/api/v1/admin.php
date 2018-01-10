@@ -31,8 +31,10 @@ $app->get('/admin/installer', function () use ($app, $container){
     $defaultPop = filter_var($app->request->params('defaultPop'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE); 
     if(is_null($defaultPop)) $defaultPop = true;
 
+    /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
-    $ampersandApp->reinstall($defaultPop);
+    $transaction = $ampersandApp->reinstall($defaultPop);
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Application successfully reinstalled");
 
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
