@@ -1,14 +1,15 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
-module Ampersand.Test.Parser.QuickChecks (parserQuickChecks) where
+module Ampersand.Test.Parser.QuickChecks
+    ( parserQuickChecks
+    ) where
 
-import Ampersand.Test.Parser.ParserTest (parseReparse)
-import Ampersand.Test.Parser.ArbitraryTree()
 import Ampersand.ADL1.PrettyPrinters(prettyPrint)
+import Ampersand.Basics
 import Ampersand.Core.ParseTree (P_Context)
 import Ampersand.Input.ADL1.CtxError (Guarded(..))
-
+import Ampersand.Test.Parser.ArbitraryTree()
+import Ampersand.Test.Parser.ParserTest (parseReparse)
 import Test.QuickCheck(Args(..), quickCheckWithResult, Testable, Result(..))
-import Debug.Trace
 
 -- Tries to parse a string, and if successful, tests the result with the given function
 testParse :: String -> (P_Context -> Bool) -> Bool

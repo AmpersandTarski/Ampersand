@@ -1,7 +1,6 @@
 module Main where
 
 import Data.List
-import Prelude hiding (putStr)
 import Ampersand
 
 main :: IO ()

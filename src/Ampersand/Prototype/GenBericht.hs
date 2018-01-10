@@ -1,17 +1,16 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module Ampersand.Prototype.GenBericht (doGenBericht) where
 
-import Prelude hiding (writeFile)
-import Data.List
-import Text.CSV
-import System.FilePath
-import System.Directory
 import Ampersand.Basics
 import Ampersand.Classes
-import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
+import Ampersand.FSpec
 import Ampersand.Misc
+import Data.List
+import System.FilePath
+import System.Directory
+import Text.CSV
 
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
@@ -81,16 +80,6 @@ allEntitiesToCSV entities = ["Naam", "Card.", "Definitie", "Type"] :
 entityToCSV :: Entity -> CSV
 entityToCSV (Entity nm dpth card defin refTp props) =
   [ concat (replicate dpth ". ") ++ nm, card, defin, refTp] : concatMap entityToCSV props
-
--- Utils
-
-layout :: [[String]] -> String
-layout linez =
-  let columns = transpose linez
-      formatColumn col = let width = maximum . map length $ col
-                         in  map (fill width) col
-  in  unlines . map unwords . transpose . map formatColumn $ columns
- where fill i str = str ++ take (i - length str) (replicate i ' ')
 
 -- Modified version of Text.CSV.printCSV
 printSemicolonSeparated :: CSV -> String

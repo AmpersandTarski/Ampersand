@@ -1,0 +1,2 @@
+command : ampersand --verbose --validate --sqlLogin="root" --sqlPwd="" 
+shouldSucceed :  yes

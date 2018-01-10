@@ -7,31 +7,30 @@ module Ampersand.Components
    , generateAmpersandOutput
   )
 where
-import Prelude hiding (putStr,putStrLn,readFile,writeFile)
-import Ampersand.Misc
-import Text.Pandoc
-import Text.Pandoc.Builder
-import Ampersand.Basics
-import Ampersand.FSpec
-import Ampersand.FSpec.GenerateUML
-import Ampersand.Graphic.Graphics (writePicture)
-import Ampersand.Output
-import Control.Monad
-import System.FilePath
-import System.Directory
-import Data.Time.Clock.POSIX
+import           Ampersand.Basics
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.FSpec
+import           Ampersand.FSpec.GenerateUML
+import           Ampersand.Graphic.Graphics (writePicture)
+import           Ampersand.Misc
+import           Ampersand.Output
+import           Ampersand.Prototype.GenBericht  (doGenBericht)
+import           Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
+import           Ampersand.Prototype.ProtoUtil   (installComposerLibs)
+import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
+import           Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
+import           Control.Monad
 import qualified Data.ByteString.Lazy as L
-import Data.List
-import qualified Data.Text.IO as Text
-import Data.Function (on)
-import Data.Maybe (maybeToList)
-import Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ShowAStruct
-import Ampersand.Prototype.GenBericht  (doGenBericht)
-import Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
-import Ampersand.Prototype.ProtoUtil   (installComposerLibs)
+import           Data.Function (on)
+import           Data.List
+import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
+import           Data.Time.Clock.POSIX
+import           Data.Maybe (maybeToList)
+import           System.Directory
+import           System.FilePath
+import           Text.Pandoc
+import           Text.Pandoc.Builder
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
@@ -97,7 +96,7 @@ generateAmpersandOutput multi = do
        ; verboseLn opts $ "SQL queries dumpfile written into " ++ outputFile ++ "."
        }
     where outputFile = dirOutput opts </> baseName opts ++ "_dump" -<.> ".sql"
-
+   
    doGenUML :: IO()
    doGenUML =
     do { verboseLn opts "Generating UML..."
@@ -158,6 +157,7 @@ generateAmpersandOutput multi = do
              else [ verboseLn opts "Generating prototype..."
                   , clearTemplateDirs fSpec
                   , writeStaticFiles opts
+                  , generateDatabaseFile multi
                   , generateJSONfiles multi
                   , doGenFrontend fSpec
                   , verboseLn opts "\n"

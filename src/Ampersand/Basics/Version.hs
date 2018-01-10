@@ -1,9 +1,14 @@
 {-# LANGUAGE ImplicitParams #-}
 -- | This module contains Version of Ampersand
-module Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr, fatal) where
-import GHC.Stack
+module Ampersand.Basics.Version 
+       ( ampersandVersionStr
+       , ampersandVersionWithoutBuildTimeStr
+       , fatal
+       ) where
 import Ampersand.Basics.BuildInfo_Generated
 import Ampersand.Basics.Exit
+import Ampersand.Basics.Prelude
+import GHC.Stack
 maxLen :: Int
 maxLen = 1500000 -- This trick is to make sure the process is terminated after the error.
                   -- If the string is too long, it seems that the sentinel `hangs`.

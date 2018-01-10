@@ -4,14 +4,14 @@ module Ampersand.Prototype.Generate
   )
 where
 
-import Ampersand.Core.AbstractSyntaxTree 
-import Prelude hiding (writeFile,readFile,getContents,exp)
-import Data.Maybe
-import Data.Monoid
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree 
+import           Ampersand.FSpec
+import           Ampersand.FSpec.SQL
+import           Ampersand.Prototype.TableSpec
+import           Data.Maybe
+import           Data.Monoid
 import qualified Data.Text as Text
-import Ampersand.FSpec
-import Ampersand.Prototype.TableSpec
-import Ampersand.FSpec.SQL
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment 
@@ -20,19 +20,19 @@ generateDBstructQueries fSpec withComment
             ++ [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
            )
     <> additionalDatabaseSettings 
-generateInitialPopQueries :: FSpec -> [SqlQuery]
-generateInitialPopQueries fSpec 
+generateInitialPopQueries :: FSpec -> Bool -> [SqlQuery]
+generateInitialPopQueries fSpec withComments
   = fillSignalTable (initialConjunctSignals fSpec) <>
-    populateTablesWithPops fSpec
+    populateTablesWithPops withComments fSpec
   where
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [SqlQuery]
-    fillSignalTable = catMaybes . map fillWithSignal
+    fillSignalTable = mapMaybe fillWithSignal
     fillWithSignal :: (Conjunct, [AAtomPair]) -> Maybe SqlQuery
     fillWithSignal (conj, violations) 
      = case violations of
         []    -> Nothing
         viols -> Just query
-          where query = insertQuery tableName attrNames tblRecords
+          where query = insertQuery withComments tableName attrNames tblRecords
                 tableName = getTableName signalTableSpec
                 attrNames = ["conjId","src","tgt"]
                 tblRecords = map mkRecord viols
@@ -40,9 +40,9 @@ generateInitialPopQueries fSpec
                     mkRecord p = 
                        map Just ["'"++rc_id conj++"'", showValSQL (apLeft p), showValSQL (apRight p)]
 
-populateTablesWithPops :: FSpec -> [SqlQuery]
-populateTablesWithPops fSpec =
-      catMaybes . map populatePlug $ [p | InternalPlug p <- plugInfos fSpec]
+populateTablesWithPops :: Bool -> FSpec -> [SqlQuery]
+populateTablesWithPops withComments fSpec =
+      mapMaybe populatePlug [p | InternalPlug p <- plugInfos fSpec]
       where
         populatePlug :: PlugSQL -> Maybe SqlQuery
         populatePlug plug 
@@ -50,7 +50,7 @@ populateTablesWithPops fSpec =
              []  -> Nothing
              tblRecords 
                  -> Just query
-               where query = insertQuery tableName attrNames tblRecords
+               where query = insertQuery withComments tableName attrNames tblRecords
                      tableName = Text.pack . name $ plug
                      attrNames = map (Text.pack . attName) . plugAttributes $ plug
 

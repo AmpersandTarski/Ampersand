@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.9.0
+version:        3.9.1
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -35,13 +35,13 @@ source-repository head
 library
   hs-source-dirs:    src
   ghc-options:       -Wall
+  default-extensions:NoImplicitPrelude
   default-language:  Haskell2010
   build-depends:     aeson == 1.1.2.*,
                      aeson-pretty == 0.8.*,
                      base == 4.9.*,
                      bytestring == 0.10.*,
                      conduit == 1.2.*,
-                     conduit-extra == 1.1.16.*,
                      conduit-combinators == 1.1.*,
                      containers == 0.5.*,
                      csv == 0.1.*,
@@ -71,7 +71,6 @@ library
                      yaml-config == 0.4.*,
                      xlsx == 0.6.*,
                      zlib == 0.6.*
-
   exposed-modules:   Ampersand,
                      Ampersand.ADL1,
                      Ampersand.ADL1.Disambiguate,
@@ -87,6 +86,7 @@ library
                      Ampersand.Basics.Exit,
                      Ampersand.Basics.Languages,
                      Ampersand.Basics.PandocExtended,
+                     Ampersand.Basics.Prelude,
                      Ampersand.Basics.String,
                      Ampersand.Basics.Unique,
                      Ampersand.Basics.UTF8,
@@ -189,6 +189,7 @@ executable ampersand
   main-is:           Main.hs
   default-language:  Haskell2010
   ghc-options:       -Wall
+  default-extensions:NoImplicitPrelude
   build-depends:     base == 4.9.*,
                      ampersand
 
@@ -198,14 +199,13 @@ Test-Suite regression-test
   hs-source-dirs:    app
   default-language:  Haskell2010
   ghc-options:       -Wall
+  default-extensions:NoImplicitPrelude
   build-depends:     ampersand,
                      base == 4.9.*,
                      conduit == 1.2.*,
                      conduit-combinators == 1.1.*,
                      directory == 1.3.*,
-                     filepath == 1.4.*,
-                     process == 1.4.*,
-                     yaml == 0.8.23.*
+                     filepath == 1.4.*
                     
 Test-Suite ampersand-test
   type:              exitcode-stdio-1.0
@@ -213,36 +213,7 @@ Test-Suite ampersand-test
   hs-source-dirs:    app
   default-language:  Haskell2010
   ghc-options:       -Wall
+  default-extensions:NoImplicitPrelude
   build-depends:     ampersand,
-                     base == 4.9.*,
-                     aeson == 1.1.*,
-                     aeson-pretty == 0.8.*,
-                     bytestring == 0.10.*,
-                     conduit == 1.2.*,
-                     conduit-combinators == 1.1.*,
-                     containers == 0.5.*,
-                     data-default == 0.7.*,
-                     directory == 1.3.*,
-                     filepath == 1.4.*,
-                     graphviz == 2999.18.*,
-                     hashable == 1.2.*,
-                     lens == 4.15.*,
-                     MissingH == 1.4.*,
-                     mtl == 2.2.*,
-                     pandoc == 1.19.*,
-                     pandoc-types == 1.17.*,
-                     parsec == 3.1.*,
-                     process == 1.4.*,
-                     QuickCheck == 2.9.*,
-                     simple-sql-parser == 0.4.3,
-                     SpreadsheetML ==0.1.*,
-                     split == 0.2.*,
-                     text == 1.2.*,
-                     time == 1.6.*,
-                     utf8-string == 1.0.*,
-                     wl-pprint == 1.2.*,
-                     xlsx == 0.6.*,
-                     yaml == 0.8.23.*,
-                     yaml-config == 0.4.*,
-                     zlib == 0.6.*
+                     base == 4.9.*
 

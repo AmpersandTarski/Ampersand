@@ -1,14 +1,12 @@
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
-import Prelude hiding (exp,putStrLn,putStr)
-import Data.List
-import System.IO (hSetBuffering,stdout,BufferMode(NoBuffering))
 import Ampersand.Basics
-import Ampersand.Misc
-import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ShowAStruct
+import Ampersand.FSpec
+import Ampersand.Misc
 import Ampersand.Prototype.PHP
+import Data.List
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
@@ -71,7 +69,7 @@ getAllRuleExps fSpec = map getRuleExp $ vrules fSpec ++ grules fSpec
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fSpec
  where getPairViewExps r@Ru{rrviol = Just (PairView pvsegs)} =
-         [ (exp, "violation view for rule "++show (name r)) | PairViewExp _ _ exp <- pvsegs ]
+         [ (expr, "violation view for rule "++show (name r)) | PairViewExp _ _ expr <- pvsegs ]
        getPairViewExps _    = []
 
 getAllIdExps :: FSpec -> [ValidationExp]
@@ -88,7 +86,7 @@ type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we
 -- obtained it from (e.g. rule/interface/..)
 showVExp :: (Expression, String) -> String
-showVExp (exp, orig) = "Origin: "++orig++", expression: "++showA exp
+showVExp (expr, orig) = "Origin: "++orig++", expression: "++showA expr
 
 -- validate a single expression and report the results
 validateExp :: FSpec -> ValidationExp -> IO (ValidationExp, Bool)
@@ -96,9 +94,9 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
  do { putStr "."
     ; return (vExp, True)
     }
-validateExp fSpec vExp@(exp, orig) =
- do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) exp
-    ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- pairsInExpr fSpec exp]
+validateExp fSpec vExp@(expr, orig) =
+ do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) expr
+    ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- pairsInExpr fSpec expr]
     ; if sort violationsSQL == sort violationsAmp
       then
        do { putStr "."
@@ -106,7 +104,7 @@ validateExp fSpec vExp@(exp, orig) =
           }
       else
        do { putStrLn ""
-          ; putStrLn $ "Checking "++orig ++": expression = "++showA exp
+          ; putStrLn $ "Checking "++orig ++": expression = "++showA expr
           ; putStrLn ""
           ; putStrLn "Mismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp

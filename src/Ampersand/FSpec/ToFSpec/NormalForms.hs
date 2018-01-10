@@ -5,22 +5,22 @@ module Ampersand.FSpec.ToFSpec.NormalForms
   , makeAllConjs, conjuncts
   ) where
   
-import Data.Set (Set)
+import           Ampersand.ADL1.Expression
+import           Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
+import           Ampersand.Basics
+import           Ampersand.Classes.Relational
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.Core.ShowPStruct
+import           Ampersand.Input (parseRule)
+import           Ampersand.Misc
+import           Data.Hashable
+import           Data.List (nub, intercalate, permutations,partition)
+import           Data.Set (Set)
 import qualified Data.Set as Set
-import Data.List (nub, intercalate, permutations,partition)
-import Ampersand.Basics
-import Ampersand.ADL1.Expression
-import Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
-import Ampersand.Classes.Relational
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ParseTree
-import Ampersand.Core.ShowAStruct
-import Ampersand.Core.ShowPStruct
-import Ampersand.Misc
-import Ampersand.Input (parseRule)
-import Data.Hashable
-import Data.Text (pack)
-import Prelude hiding (head)
+import           Data.Text (pack)
+
 
 {- SJC:
 Ideas for future work:
@@ -1044,10 +1044,6 @@ taeDerivRules = concatMap (dRule.parseRule)
  , "(r[A*B]\\q[A*C])\\/-s[B*C] = -(r[A*B];s[B*C])\\/q[A*C]"    -- T{ (r\\q)\\/-s)} = [B*C] ; T{ -(r;s)\\/q} = [A*C] ; remove right residual (\\)
  ]
 -}
-
-head :: [a] -> a
-head [] = fatal "head must not be used on an empty list!"
-head (a:_) = a
 
 -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
 delta :: Signature -> Expression

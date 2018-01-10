@@ -7,18 +7,18 @@ module Ampersand.Basics.PandocExtended
    )
 where 
 
-import Data.Typeable
+import Ampersand.Basics.Languages
+import Ampersand.Basics.Prelude
+import Ampersand.Basics.Version
 import Data.Data
 import Text.Pandoc hiding (Meta)
-import Ampersand.Basics.Languages
-import Ampersand.Basics.Version
 
 data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
 
 data Markup =
     Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
              , amPandoc :: [Block]
-             } deriving (Show, Eq, Prelude.Ord, Typeable, Data)
+             } deriving (Show, Eq, Ord, Typeable, Data)
 
 aMarkup2String :: PandocFormat -> Markup -> String
 aMarkup2String fmt a = blocks2String fmt False (amPandoc a)

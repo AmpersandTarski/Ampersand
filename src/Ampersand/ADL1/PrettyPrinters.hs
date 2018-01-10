@@ -2,13 +2,13 @@
 module Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
-import Text.PrettyPrint.Leijen
-import Ampersand.Basics(fatal,Lang(..),PandocFormat(..))
+import Ampersand.Basics hiding (empty)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer(keywords)
+import Data.Char (toUpper)
 import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
-import Data.Char (toUpper)
+import Text.PrettyPrint.Leijen
 
 prettyPrint :: Pretty a => a -> String
 prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
@@ -114,8 +114,8 @@ instance Pretty P_Context where
                <+\> text "ENDCONTEXT"
              
 instance Pretty Meta where
-    pretty (Meta _ obj name val) =
-        text "META" <~> obj <+> quote name <+> quote val
+    pretty (Meta _ obj nm val) =
+        text "META" <~> obj <+> quote nm <+> quote val
 
 instance Pretty MetaObj where
     pretty ContextMeta = empty -- for the context meta we don't need a keyword
@@ -129,8 +129,8 @@ instance Pretty P_RoleRule where
         text "ROLE" <+> listOf roles <+> text "MAINTAINS" <+> commas (map maybeQuote rules)
 
 instance Pretty Role where
-    pretty (Role name) = maybeQuote name
-    pretty (Service name) = maybeQuote name
+    pretty (Role nm) = maybeQuote nm
+    pretty (Service nm) = maybeQuote nm
 
 instance Pretty P_Pattern where
     pretty (P_Pat _ nm rls gns dcs rruls rrels reprs cds ids vds xps pop _) =
@@ -222,12 +222,12 @@ instance Pretty SrcOrTgt where
 
 instance Pretty a => Pretty (P_Rule a) where
     pretty (P_Ru _ nm expr mean msg viol) =
-                text "RULE" <+> name <~>
+                text "RULE" <+> rName <~>
                 expr <+\>
                 perline mean <+\>
                 perline msg <~\>
                 viol
-            where name = if null nm then empty
+           where rName = if null nm then empty
                          else maybeQuote nm <> text ":"
 
 instance Pretty ConceptDef where
@@ -250,8 +250,8 @@ instance Pretty TType where
     pretty = text . show
       
 instance Pretty P_Interface where
-    pretty (P_Ifc name roles obj _ _) =
-        text "INTERFACE" <+> maybeQuote name 
+    pretty (P_Ifc nm roles obj _ _) =
+        text "INTERFACE" <+> maybeQuote nm 
                <+> iroles
                <+> text ":" <~\> obj_ctx obj <~> obj_msub obj
                  where iroles = if null roles then empty
@@ -333,7 +333,7 @@ instance Pretty PMessage where
     pretty (PMessage markup) = text "MESSAGE" <~> markup
 
 instance Pretty P_Concept where
-    pretty (PCpt name) = quoteConcept name
+    pretty (PCpt nm)   = quoteConcept nm
     pretty P_Singleton = text "ONE"
 
 instance Pretty P_Sign where
