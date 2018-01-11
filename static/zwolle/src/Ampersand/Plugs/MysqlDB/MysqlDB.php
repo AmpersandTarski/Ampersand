@@ -24,8 +24,8 @@ use Ampersand\Plugs\IfcPlugInterface;
 use Ampersand\Plugs\RelationPlugInterface;
 use Ampersand\Plugs\ViewPlugInterface;
 use Ampersand\Transaction;
-use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
+use Psr\Log\LoggerInterface;
 
 /**
  *
@@ -89,12 +89,17 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     protected $lastQuery = null;
     
     /**
-     * Constructor of database class
-     * 
+     * Constructor
+     *
+     * @param string $dbHost
+     * @param string $dbUser
+     * @param string $dbPass
+     * @param string $dbName
+     * @param \Psr\Log\LoggerInterface $logger
      */
-    public function __construct($dbHost, $dbUser, $dbPass, $dbName){
-        $this->logger = Logger::getLogger('DATABASE');
-        
+    public function __construct(string $dbHost, string $dbUser, string $dbPass, string $dbName, LoggerInterface $logger){
+        $this->logger = $logger;   
+
         $this->dbHost = $dbHost;
         $this->dbUser = $dbUser;
         $this->dbPass = $dbPass;
@@ -127,7 +132,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
             if(!Config::get('productionEnv')){
                 switch ($e->getCode()){
                     case 1049 : // Error: 1049 SQLSTATE: 42000 (ER_BAD_DB_ERROR) --> Database ($this->dbName) does not (yet) exist
-                        Logger::getLogger('DATABASE')->info("Automatically creating new database, because it does not exist");
+                        $this->logger->info("Automatically creating new database, because it does not exist");
                         $this->reinstallStorage();
                         break;
                     default : 

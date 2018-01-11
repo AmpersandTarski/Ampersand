@@ -58,7 +58,7 @@ $container['mysql_database'] = function($c) {
     $dbUser = Config::get('dbUser', 'mysqlDatabase');
     $dbPass = Config::get('dbPassword', 'mysqlDatabase');
     $dbName = Config::get('dbName', 'mysqlDatabase');
-    return new MysqlDB($dbHost, $dbUser, $dbPass, $dbName);
+    return new MysqlDB($dbHost, $dbUser, $dbPass, $dbName, Logger::getLogger('DATABASE'));
 };
 $container['default_plug'] = function ($c) {
     return $c['mysql_database'];
