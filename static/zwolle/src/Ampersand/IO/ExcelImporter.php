@@ -7,12 +7,12 @@ use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Relation;
-use Ampersand\Log\Logger;
 use PHPExcel_Cell;
 use PHPExcel_Shared_Date;
 use PHPExcel_IOFactory;
 use PHPExcel_Worksheet;
 use PHPExcel_Worksheet_Row;
+use Psr\Log\LoggerInterface;
 
 class ExcelImporter {
     /**
@@ -23,9 +23,11 @@ class ExcelImporter {
 
     /**
      * Constructor
+     * 
+     * @param \Psr\Log\LoggerInterface $logger
      */
-    function __construct(){
-        $this->logger = Logger::getLogger('IO');
+    function __construct(LoggerInterface $logger){
+        $this->logger = $logger;
     }
     
     /**

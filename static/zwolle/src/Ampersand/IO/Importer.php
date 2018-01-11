@@ -12,7 +12,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Link;
-use Ampersand\Log\Logger;
+use Psr\Log\LoggerInterface;
 
 class Importer {
 
@@ -34,10 +34,11 @@ class Importer {
      * Constructor
      *
      * @param \Ampersand\IO\AbstractReader $reader
+     * @param \Psr\Log\LoggerInterface $logger
      * @param array $options
      */
-    public function __construct(AbstractReader $reader, array $options = []){
-        $this->logger = Logger::getLogger('IO');
+    public function __construct(AbstractReader $reader, LoggerInterface $logger, array $options = []){
+        $this->logger = $logger;
         $this->reader = $reader;
     }
     

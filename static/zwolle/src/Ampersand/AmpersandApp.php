@@ -198,7 +198,7 @@ class AmpersandApp
 
             $reader = new JSONReader();
             $reader->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
-            $importer = new Importer($reader);
+            $importer = new Importer($reader, Logger::getLogger('IO'));
             $importer->importPopulation();
         }else{
             $this->logger->info("Skip default population");

@@ -87,7 +87,7 @@ $app->get('/admin/export/all', function () use ($app, $container){
     $app->response->headers->set('Content-Type', 'application/json; charset=utf-8');
 
     // Output response
-    $exporter = new Exporter(new JSONWriter());
+    $exporter = new Exporter(new JSONWriter(), Logger::getLogger('IO'));
     $exporter->exportAllPopulation();
 });
 
@@ -106,13 +106,13 @@ $app->post('/admin/import', function () use ($app, $container){
             case 'json':
                 $reader = new JSONReader();
                 $reader->loadFile($_FILES['file']['tmp_name']);
-                $importer = new Importer($reader);
+                $importer = new Importer($reader, Logger::getLogger('IO'));
                 $importer->importPopulation();
                 break;
             case 'xls':
             case 'xlsx':
             case 'ods':
-                $importer = new ExcelImporter();
+                $importer = new ExcelImporter(Logger::getLogger('IO'));
                 $importer->parseFile($_FILES['file']['tmp_name']);
                 break;
             default:

@@ -10,8 +10,8 @@ namespace Ampersand\IO;
 use Exception;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
-use Ampersand\Log\Logger;
 use Ampersand\IO\AbstractWriter;
+use Psr\Log\LoggerInterface;
 
 class Exporter {
 
@@ -33,10 +33,11 @@ class Exporter {
      * Constructor
      *
      * @param \Ampersand\IO\AbstractWriter $writer
+     * @param \Psr\Log\LoggerInterface $logger
      * @param array $options
      */
-    public function __construct(AbstractWriter $writer, array $options = []){
-        $this->logger = Logger::getLogger('IO');
+    public function __construct(AbstractWriter $writer, LoggerInterface $logger, array $options = []){
+        $this->logger = $logger;
         $this->writer = $writer;
     }
 
