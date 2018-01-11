@@ -7,7 +7,6 @@ The date and time formats that can be used are pretty much arbitrary. A precise 
 */
 
 use Exception;
-use Ampersand\Log\Logger; 
 use Ampersand\Rule\ExecEngine;
 
 /* sessionToday :: SESSION * Date -- or whatever the DateTime concept is called
@@ -21,8 +20,6 @@ use Ampersand\Rule\ExecEngine;
 ExecEngine::registerFunction('SetToday', function($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y'){
     $curdate = date($formatSpec);
     InsPair($relation,$srcConcept,$srcAtom,$dateConcept,$curdate);
-    
-    Logger::getLogger('EXECENGINE')->debug("Today's date set to {$curdate}");
 });
 
 
@@ -30,8 +27,6 @@ ExecEngine::registerFunction('SetToday', function($relation,$srcConcept,$srcAtom
 ExecEngine::registerFunction('datimeStdFormat', function($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec){
     $date = new DateTime($srcAtom);
     InsPair($relation,$DateConcept,$srcAtom,$StdFormatConcept,$date->format($formatSpec));
-    
-    Logger::getLogger('EXECENGINE')->debug("Date format $srcAtom changed to {$date->format($formatSpec)}");
 });
 
 
@@ -48,8 +43,6 @@ ExecEngine::registerFunction('DateDifferencePlusOne', function($relation,$srcCon
     
     $result = 1 + max(0, floor($datediff/(60*60*24)));
     InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
-    
-    Logger::getLogger('EXECENGINE')->debug("Date difference + 1 calculated for $latestDate - $earliestDate");
 });
 
 
@@ -66,8 +59,6 @@ ExecEngine::registerFunction('DateDifference', function($relation,$srcConcept,$s
     
     $result = max(0, floor($datediff/(60*60*24)));
     InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
-    
-    Logger::getLogger('EXECENGINE')->debug("Date difference calculated for $lastDate - $firstDate");
 });
 
 

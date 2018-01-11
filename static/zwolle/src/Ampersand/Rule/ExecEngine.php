@@ -61,6 +61,15 @@ class ExecEngine extends RuleEngine {
 	public static $_NEW = null;
     
     /**
+     * Get logger for ExecEngine
+     *
+     * @return \Psr\Log\LoggerInterface
+     */
+    public static function getLogger(){
+        return Logger::getLogger('EXECENGINE');
+    }
+    
+    /**
      * Run all ExecEngine roles
      * Default/standard role used in Ampersand scripts is 'ExecEngine', but other roles can be configured
      *
@@ -68,7 +77,7 @@ class ExecEngine extends RuleEngine {
      * @return void
      */
     public static function run(bool $allRules = false){
-        $logger = Logger::getLogger('EXECENGINE');
+        $logger = self::getLogger();
 
         self::$maxRunCount = Config::get('maxRunCount', 'execEngine');
         self::$autoRerun = Config::get('autoRerun', 'execEngine');
@@ -118,7 +127,7 @@ class ExecEngine extends RuleEngine {
      * @return string[]
      */
     protected static function runForRole(Role $role, bool $allRules): array {
-        $logger = Logger::getLogger('EXECENGINE');
+        $logger = self::getLogger();
         
         $rulesFixed = [];
         $rulesToCheck = $allRules ? $role->maintains() : Transaction::getCurrentTransaction()->getAffectedRules($role->maintains());
@@ -149,7 +158,7 @@ class ExecEngine extends RuleEngine {
      * @return void
      */
     protected static function fixViolation(Violation $violation){
-        $logger = Logger::getLogger('EXECENGINE');
+        $logger = self::getLogger();
         
         // Newly created atom (e.g. by NewStruct function) can be (re)used inside the scope of the violation in which it was created.     
         self::$_NEW = null;
@@ -214,6 +223,6 @@ class ExecEngine extends RuleEngine {
         if(empty($name)) throw new Exception("ExecEngine function must be given a name. Empty string/0/null provided", 500);
         if(array_key_exists($name, self::$callables)) throw new Exception("ExecEngine function '{$name}' already exists", 500);
         self::$callables[$name] = $callable;
-        Logger::getLogger('EXECENGINE')->debug("ExecEngine function '{$name}' registered");
+        self::getLogger()->debug("ExecEngine function '{$name}' registered");
     }
 }
