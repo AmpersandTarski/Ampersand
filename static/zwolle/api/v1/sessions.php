@@ -23,6 +23,17 @@ $app->get('/admin/sessions/delete/expired', function () use ($app, $container) {
     Session::deleteExpiredSessions();
 });
 
+$app->put('/session/roles', function () use ($app, $container){
+    /** @var \Ampersand\AmpersandApp $ampersandApp */
+    $ampersandApp = $container['ampersand_app'];
+    $angularApp = $container['angular_app'];
+
+    $roles = (array) $app->request()->getBody();
+    $ampersandApp->setActiveRoles($roles);
+
+    print json_encode($ampersandApp->getSessionRoles(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
 $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];

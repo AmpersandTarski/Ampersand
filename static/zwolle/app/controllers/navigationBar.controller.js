@@ -6,6 +6,16 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
     
     $rootScope.loadingNavBar = []; // initialize an array for promises, used by angular-busy module (loading indicator)
     
+    $rootScope.setActiveRoles = function(){
+        $rootScope.loadingNavBar.push(
+            Restangular.one('session/roles')
+            .get()
+            .then(function(data){
+                $rootScope.refreshNavBar();
+            })
+        );
+    };
+    
     $rootScope.refreshNavBar = function(){
         $rootScope.loadingNavBar = [];
         $rootScope.loadingNavBar.push(
