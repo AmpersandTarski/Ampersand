@@ -185,18 +185,18 @@ class OAuthLoginController {
 
         if(empty($email)) throw new Exception("No emailaddress provided to login", 500);
         
-        $accounts = (new Resource($email, 'UserID'))->all('AccountForUserid');
+        $accounts = Resource::makeResource($email, 'UserID')->all('AccountForUserid');
         
         // Create new account
         if(iterator_count($accounts) == 0){
-            $account = new Resource(null, 'Account');
+            $account = Resource::makeResource(null, 'Account');
             
             // Save email as accUserid
             $account->link($email, 'accUserid[Account*UserID]')->add();
             
             // If possible, add account to organization(s) based on domain name
             $domain = explode('@', $email)[1];
-            $orgs = (new Resource($domain, 'Domain'))->all('DomainOrgs');
+            $orgs = Resource::makeResource($domain, 'Domain')->all('DomainOrgs');
             foreach ($orgs as $org) $account->link($org, 'accOrg[Account*Organization]')->add();
 
         }elseif(iterator_count($accounts) == 1){

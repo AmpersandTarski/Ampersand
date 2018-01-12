@@ -56,16 +56,16 @@ class Resource extends Atom {
     private $ifcData = [];
     
     /**
+     * Constructor
+     * 
      * @param string $resourceId Ampersand atom identifier
-     * @param string $resourceType Ampersand concept name
-     * @param ResourceList $parentList
+     * @param \Ampersand\Core\Concept $cpt
+     * @param \Ampersand\Interfacing\ResourceList $parentList
      */
-    public function __construct($resourceId, $resourceType, ResourceList $parentList = null){
+    public function __construct($resourceId, Concept $cpt, ResourceList $parentList = null){
         // Set parentList
         $this->parentList = $parentList;
         
-        // Get Ampersand concept for this resourceType
-        $cpt = Concept::getConcept($resourceType);
         if(!$cpt->isObject()) throw new Exception ("Cannot instantiate resource given non-object concept {$cpt->name}.");
         
         // Call Atom constructor
@@ -440,11 +440,22 @@ class Resource extends Atom {
         
         $resources = [];
         foreach ($concept->getAllAtomObjects() as $atom) {
-            $r = new Resource($atom->id, $concept->name);
+            $r = new Resource($atom->id, $concept);
             $r->setQueryData($atom->getQueryData());
             $resources[] = $r;
         }
         
         return $resources;
+    }
+
+    /**
+     * Factory function for Resource class
+     *
+     * @param string $id
+     * @param string $conceptName
+     * @return \Ampersand\Interfacing\Resource
+     */
+    public static function makeResource(string $id, string $conceptName): Resource {
+        return new Resource($id, Concept::getConcept($conceptName));
     }
 }

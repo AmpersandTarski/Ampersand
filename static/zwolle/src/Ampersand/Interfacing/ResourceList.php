@@ -106,16 +106,16 @@ class ResourceList implements IteratorAggregate {
             $this->tgtResources = [];
             // If interface isIdent (i.e. expr = I[Concept]) we can return the src
             if($this->ifc->isIdent()){
-                $this->tgtResources[$this->src->id] = new Resource($this->src->id, $this->ifc->tgtConcept->name, $this);
+                $this->tgtResources[$this->src->id] = $this->makeResource($this->src->id);
                 
             // Else try to get tgt atom from src query data (in case of uni relation in same table)
             }else{
-                $tgt = $this->src->getQueryData('ifc_' . $this->ifc->id, $exists); // column is prefixed with ifc_ in query data
+                $tgtId = $this->src->getQueryData('ifc_' . $this->ifc->id, $exists); // column is prefixed with ifc_ in query data
                 if($exists){
-                    if(!is_null($tgt)) $this->tgtResources[$tgt] = new Resource($tgt, $this->ifc->tgtConcept->name, $this);
+                    if(!is_null($tgtId)) $this->tgtResources[$tgtId] = $this->makeResource($tgtId);
                 }else{
                     foreach ($this->ifc->getIfcData($this->src) as $row) {
-                        $r = new Resource($row['tgt'], $this->ifc->tgtConcept->name, $this);
+                        $r = $this->makeResource($row['tgt']);
                         $r->setQueryData($row);
                         $this->tgtResources[$r->id] = $r;
                     }
@@ -148,6 +148,16 @@ class ResourceList implements IteratorAggregate {
             return $tgtAtoms;
         }
         
+    }
+
+    /**
+     * Resource factory. Instantiates a new target resource
+     *
+     * @param string $tgtId
+     * @return \Ampersand\Interfacing\Resource
+     */
+    protected function makeResource(string $tgtId): Resource {
+        return new Resource($tgtId, $this->ifc->tgtConcept, $this);
     }
 
 /**************************************************************************************************
@@ -203,10 +213,10 @@ class ResourceList implements IteratorAggregate {
         
         // Use attribute '_id_' if provided
         if(isset($resourceToPost->_id_)){
-            $resource = new Resource($resourceToPost->_id_, $this->ifc->tgtConcept->name, $this);
+            $resource = $this->makeResource($resourceToPost->_id_);
             if($resource->exists()) throw new Exception ("Cannot create resource that already exists", 400);
         }else{
-            $resource = new Resource(null, $this->ifc->tgtConcept->name, $this);
+            $resource = $this->makeResource(null);
         }
         
         // If interface is editable, also add tuple(src, tgt) in interface relation
