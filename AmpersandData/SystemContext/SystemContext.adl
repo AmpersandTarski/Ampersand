@@ -40,7 +40,10 @@ PATTERN SystemSpecific
   {+Gedurende een sessie kan een gebruiker over de permissies van specifieke rollen beschikken.+}
   PURPOSE RELATION sessionActiveRoles IN ENGLISH
   {+During a session the user can have roles, that grants permission for specific events.+}
-
+  
+  -- The following rule is required for the access control mechanism. It ensures that only allowed roles can be activated
+  RULE "Active roles MUST be a subset of allowed roles" : sessionActiveRoles |- sessionAllowedRoles
+  
   RELATION sessionAccount[SESSION*Account] [UNI]
   RELATION accMostRecentLogin[Account*DateTime] [UNI]
   RELATION accLoginTimestamps[Account*DateTime]

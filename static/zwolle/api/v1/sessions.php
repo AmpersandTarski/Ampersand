@@ -24,7 +24,9 @@ $app->get('/admin/sessions/delete/expired', function () use ($app, $container) {
 });
 
 $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $container) {
+    /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
+    /** @var \Ampersand\AngularApp $angularApp */
     $angularApp = $container['angular_app'];
     
     $ampersandApp->checkProcessRules();
@@ -43,7 +45,7 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $conta
                      ,'session' => array ('id' => $session->getId()
                                          ,'loggedIn' => $session->sessionUserLoggedIn()
                                          )
-                     ,'sessionRoles' => array_values($ampersandApp->getAllowedRoles()) // return numeric array
+                     ,'sessionRoles' => $ampersandApp->getSessionRoles()
                      ,'sessionVars' => $session->getSessionVars()
                      );
     

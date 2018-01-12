@@ -64,13 +64,6 @@ class AmpersandApp
     protected $rulesToMaintain = []; // rules that are maintained by active roles
 
     /**
-     * List of allowed roles for the user of this Ampersand application
-     *
-     * @var \Ampersand\Role[]
-     */
-    protected $allowedRoles = [];
-
-    /**
      * @var AmpersandApp $_instance needed for singleton() pattern of this class
      */
     private static $_instance = null;
@@ -101,8 +94,8 @@ class AmpersandApp
         // Initiate session
         $this->setSession();
 
-        // Add public interfaces
-        $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
+        // Set accessible interfaces and rules to maintain
+        $this->setInterfacesAndRules();
     }
     
     public function registerStorage(StorageInterface $storage){
@@ -113,17 +106,22 @@ class AmpersandApp
     protected function setSession(){
         $this->session = new Session(Logger::getLogger('SESSION'));
         $this->session->initSessionAtom();
+    }
 
-        if(Config::get('loginEnabled')){
-            $sessionRoleLabels = $this->session->getSessionRoleLabels();
+    protected function setInterfacesAndRules(){
+        // Add public interfaces
+        $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
 
-            $sessionRoles = [];
-            foreach(Role::getAllRoles() as $role){
-                if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
-            }
-            $this->allowedRoles = $sessionRoles;
-        } 
-        else $this->allowedRoles = Role::getAllRoles();
+        // Add interfaces and rules for all active session roles
+        foreach ($this->getActiveRoles() as $roleAtom){
+            $role = Role::getRoleByName($roleAtom->id);
+            $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
+            $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
+        }
+
+        // Remove duplicates
+        $this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
+        $this->rulesToMaintain = array_unique($this->rulesToMaintain);
     }
 
     /**
@@ -165,6 +163,8 @@ class AmpersandApp
         // Commit transaction (exec-engine kicks also in)
         Transaction::getCurrentTransaction()->close(true);
 
+        // Set (new) interfaces and rules
+        $this->setInterfacesAndRules();
     }
 
     /**
@@ -174,6 +174,7 @@ class AmpersandApp
      */
     public function logout(){
         $this->session->reset();
+        $this->setInterfacesAndRules();
     }
 
     /**
@@ -215,77 +216,84 @@ class AmpersandApp
     }
 
     /**
-     * Activatie provided roles (if allowed)
-     * @param array $roleIds list of role ids that must be activated
+     * (De)activate session roles
+     *
+     * @param array $roles
      * @return void
      */
-    public function activateRoles($roleIds = null){
-        if(empty($this->allowedRoles)){
-            $this->logger->debug("No roles available to activate");    
-        }elseif(is_null($roleIds)){
-            $this->logger->debug("Activate default roles");
-            foreach($this->allowedRoles as &$role) $this->activateRole($role);
-        }elseif(empty($roleIds)){
-            $this->logger->debug("No roles provided to activate");
-        }else{
-            if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
-            foreach($this->allowedRoles as &$role){
-                if(in_array($role->id, $roleIds)) $this->activateRole($role);
-            }
+    public function setActiveRoles(array $roles) {
+        foreach ($roles as $role) {
+            // Set sessionActiveRoles[SESSION*Role]
+            $this->session->toggleActiveRole(Concept::makeRoleAtom($role->label), $role->active);
         }
         
-        // If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
-        if(Config::get('loginEnabled')){
-            foreach($roles as $role){
-                $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-            }
-        }
-        
-        // Filter duplicate values
-        $this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
-        $this->rulesToMaintain = array_unique($this->rulesToMaintain);
-    }
-    
-    /**
-     * Activate provided role
-     * @param \Ampersand\Role $role
-     * @return void
-     */
-    protected function activateRole(Role &$role){
-        $role->active = true;
-        $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-        $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
-        
-        $this->logger->info("Role '{$role->id}' is activated");
+        // Commit transaction (exec-engine kicks also in)
+        Transaction::getCurrentTransaction()->close(true);
+
+        $this->setInterfacesAndRules();
     }
 
     /**
      * Get allowed roles
      * 
-     * @return \Ampersand\Role[]
+     * @return \Ampersand\Core\Atom[]
      */
     public function getAllowedRoles(){
-        return $this->allowedRoles;
+        return $this->session->getSessionAllowedRoles();
     }
 
     /**
      * Get active roles
-     * @return \Ampersand\Role[]
+     * 
+     * @return \Ampersand\Core\Atom[]
      */
     public function getActiveRoles(){
-        $activeRoles = [];
-        foreach ($this->allowedRoles as $role){
-            if($role->active) $activeRoles[] = $role; 
-        }
-        return $activeRoles;
+        $this->session->getSessionActiveRoles();
     }
 
-    public function hasRole(array $roles = null){
-        return (!empty(array_intersect($this->getAllowedRoles(), (array)$roles)) || is_null($roles));
+    /**
+     * Get session roles with their id, label and state (active or not)
+     *
+     * @return array
+     */
+    public function getSessionRoles(): array {
+        $activeRoleIds = array_column($this->getActiveRoles(), 'id');
+        
+        return array_map(function(Atom $roleAtom) use ($activeRoleIds){
+            return (object) ['id' => $roleAtom->id
+                            ,'label' => $roleAtom->label
+                            ,'active' => in_array($roleAtom->id, $activeRoleIds)
+                            ];
+        }, $this->getAllowedRoles());
     }
 
-    public function hasActiveRole(array $roles = null){
-        return (!empty(array_intersect($this->getActiveRoles(), (array)$roles)) || is_null($roles));
+    /**
+     * Check if session has any of the provided roles
+     *
+     * @param string[] $roles
+     * @return bool
+     */
+    public function hasRole(array $roles = null): bool {
+        // If provided roles is null (i.e. NOT empty array), then true
+        if(is_null($roles)) return true;
+
+        // Check for allowed roles
+        return array_reduce($this->getAllowedRoles(), function(bool $carry, Atom $role){
+            return in_array($role->id, $roles) || $carry;
+        }, false);
+    }
+
+    /**
+     * Check if session has any of the provided roles active
+     *
+     * @param string[] $roles
+     * @return bool
+     */
+    public function hasActiveRole(array $roles = null): bool {
+        // Check for active roles
+        return array_reduce($this->getActiveRoles(), function(bool $carry, Atom $role){
+            return in_array($role->id, $roles) || $carry;
+        }, false);
     }
 
     /**
@@ -333,7 +341,7 @@ class AmpersandApp
      * @return void
      */
     public function checkProcessRules(){
-        $this->logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'label')));
+        $this->logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'id')));
         
         // Check rules and signal notifications for all violations
         foreach (RuleEngine::checkRules($this->getRulesToMaintain(), false) as $violation) Notifications::addSignal($violation);

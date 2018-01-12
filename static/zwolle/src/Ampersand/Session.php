@@ -45,11 +45,6 @@ class Session {
     public $sessionResource;
     
     /**
-     * @var Atom|false $sessionAccount
-     */
-    private $sessionAccount;
-    
-    /**
      * Constructor of Session class
      * 
      * @param \Psr\Log\LoggerInterface $logger
@@ -92,6 +87,19 @@ class Session {
         // Create a new Ampersand session atom if not yet in SESSION table (i.e. new php session)
         if (!$this->sessionAtom->exists()){ 
             $this->sessionAtom->add();
+
+            // If login functionality is not enabled, add all defined roles as allowed roles
+            // TODO: can be removed when meat-grinder populates this meta-relation by itself
+            if(!Config::get('loginEnabled')) {
+                foreach (Role::getAllRoles() as $role) {
+                    $this->sessionAtom->link(Concept::makeRoleAtom($role->label), 'sessionAllowedRoles[SESSION*Role]')->add();
+                }
+            }
+
+            // Activate all allowed roles by default
+            foreach ($this->getSessionAllowedRoles() as $atom) {
+                $this->toggleActiveRole($atom, true);
+            }
         }else{
             $experationTimeStamp = time() - Config::get('sessionExpirationTime');
             $lastAccessTime = $this->sessionAtom->getLinks('lastAccess[SESSION*DateTime]'); // lastAccess is UNI, therefore we expect max one DateTime from getLinks()
@@ -110,44 +118,85 @@ class Session {
         
         Transaction::getCurrentTransaction()->close(true);
     }
-    
+
     /**
-     * Get session roles
+     * (De)activate a session role
+     *
+     * This function to (de)activate roles depend on the invariant as defined in SystemContext.adl
+     * RULE sessionActiveRole |- sessionAllowedRole
      * 
-     * @return string[]
+     * @param \Ampersand\Core\Atom $roleAtom
+     * @param boolean $setActive
+     * @return \Ampersand\Core\Atom
      */
-    public function getSessionRoleLabels(){
-        return array_map(
-            function($role){
-                return $role->id;
-            }, $this->sessionResource->all('SessionRoles')->get()
-        );
+    public function toggleActiveRole(Atom $roleAtom, bool $setActive = null): Atom {
+        // Check/prevent unexisting role atoms
+        if(!$roleAtom->exists()) throw new Exception("Role {$roleAtom} is not defined", 500);
+
+        $link = $this->sessionAtom->link($roleAtom, 'sessionActiveRoles[SESSION*Role]');
+        switch ($setActive) {
+            case true:
+                $link->add();    
+                break;
+            case false:
+                $link->delete();
+                break;
+            case null:
+                if ($link->exists()) $link->delete();
+                else $link->add();
+                break;
+        }
+
+        return $roleAtom;
     }
     
     /**
-     * Get session account
+     * Get allowed roles for this session
+     * 
+     * @return \Ampersand\Core\Atom[]
+     */
+    public function getSessionAllowedRoles(){
+        return array_map(function(Link $link){
+            return $link->tgt();
+        }, $this->sessionAtom->getLinks('sessionAllowedRoles[SESSION*Role]'));
+    }
+
+    /**
+     * Get active roles for this session
+     *
+     * @return \Ampersand\Core\Atom[]
+     */
+    public function getSessionActiveRoles(){
+        return array_map(function(Link $link){
+            return $link->tgt();
+        }, $this->sessionAtom->getLinks('sessionActiveRoles[SESSION*Role]'));
+    }
+    
+    /**
+     * Get session account or false
+     * 
      * @return Atom|false returns Ampersand account atom when there is a session account or false otherwise
      */
-    public function getSessionAccount(){
-        if(!isset($this->sessionAccount)){
-            if(!Config::get('loginEnabled')){
-                $this->sessionAccount = false;
-                $this->logger->debug("Set sessionAccount: login not enabled");
+    public function getSessionAccount() {
+        $this->logger->debug("Getting sessionAccount");
+
+        if(!Config::get('loginEnabled')){
+            $this->logger->debug("No session account, because login functionality is not enabled");
+            return false;
+
+        }else{
+            $sessionAccounts = $this->sessionAtom->getLinks('sessionAccount[SESSION*Account]');
+            
+            // Relation sessionAccount is UNI
+            if(empty($sessionAccounts)){
+                $this->logger->debug("No session account, because user is not logged in");
+                return false;
             }else{
-                $this->logger->debug("Getting interface 'SessionAccount' for {$this->sessionResource}");
-                $sessionAccounts = $this->sessionResource->all('SessionAccount')->get();
-                
-                if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
-                if(empty($sessionAccounts)){
-                    $this->sessionAccount = false;
-                    $this->logger->debug("Set sessionAccount: no session account");
-                }else{
-                    $this->sessionAccount = current($sessionAccounts);
-                    $this->logger->debug("Set sessionAccount: '{$this->sessionAccount->id}'");
-                }
+                $account = current($sessionAccounts);
+                $this->logger->debug("Session account is: '{$account}'");
+                return $account;
             }
         }
-        return $this->sessionAccount;
     }
 
     /**
