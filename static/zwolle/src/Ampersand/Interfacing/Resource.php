@@ -23,7 +23,7 @@ class Resource extends Atom {
     
     const
         /** Default options */
-        DEFAULT_OPTIONS     = 0b00000000,
+        DEFAULT_OPTIONS     = 0b00000111,
         
         INCLUDE_META_DATA   = 0b00000001,
         
