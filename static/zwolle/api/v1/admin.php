@@ -36,9 +36,6 @@ $app->get('/admin/installer', function () use ($app, $container){
     $transaction = $ampersandApp->reinstall($defaultPop);
     if($transaction->isCommitted()) Logger::getUserLogger()->notice("Application successfully reinstalled");
 
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
-
     $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
     $content = Notifications::getAll(); // Return all notifications
@@ -49,9 +46,6 @@ $app->get('/admin/installer', function () use ($app, $container){
 
 $app->get('/admin/execengine/run', function () use ($app, $container){
     $ampersandApp = $container['ampersand_app'];
-    
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
     
     // Check for required role
     if(!$ampersandApp->hasRole(Config::get('allowedRolesForRunFunction','execEngine'))) throw new Exception("You do not have access to run the exec engine", 401);
@@ -93,9 +87,6 @@ $app->get('/admin/export/all', function () use ($app, $container){
 
 $app->post('/admin/import', function () use ($app, $container){
     $ampersandApp = $container['ampersand_app'];
-
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
 
     // Check for required role
     if(!$ampersandApp->hasRole(Config::get('allowedRolesForImporter'))) throw new Exception("You do not have access to import population", 401);

@@ -41,9 +41,6 @@ $app->get('/resources', function() use ($app, $container) {
 $app->get('/resources/:resourceType', function ($resourceType) use ($app, $container) {
     $ampersandApp = $container['ampersand_app'];
     
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
-    
     $concept = Concept::getConcept($resourceType);
     
     // Checks
@@ -58,9 +55,6 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app, $conta
 
 $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app, $container) {
     $ampersandApp = $container['ampersand_app'];
-
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
     
     $resource = Resource::makeResource($resourceId, $resourceType);
     
@@ -80,9 +74,6 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 
 $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     $ampersandApp = $container['ampersand_app'];
-
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
     
     // Options
     $rcOptions = $ifcOptions = 0;
@@ -102,11 +93,6 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $ampersandApp = $container['ampersand_app'];
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
-    
-    $roleIds = $app->request->params('roleIds');
-    $options = $app->request->params();
-    
-    $ampersandApp->activateRoles($roleIds);
     
     // Options
     $rcOptions = $ifcOptions = 0;
@@ -139,11 +125,6 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     $ampersandApp = $container['ampersand_app'];
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
-    
-    $roleIds = $app->request->params('roleIds');
-    $options = $app->request->params();
-    
-    $ampersandApp->activateRoles($roleIds);
     
     // Options
     $rcOptions = $ifcOptions = 0;
@@ -179,11 +160,6 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     $ampersandApp = $container['ampersand_app'];
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
-
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
-
-    $options = $app->request->params();
     
     // Options
     $rcOptions = $ifcOptions = 0;
@@ -217,11 +193,6 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     $ampersandApp = $container['ampersand_app'];
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
-
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
-
-    $options = $app->request->params();
     
     // Perform delete
     $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();

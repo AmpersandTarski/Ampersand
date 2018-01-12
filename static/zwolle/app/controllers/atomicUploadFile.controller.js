@@ -3,7 +3,7 @@ angular.module('AmpersandApp').controller('AtomicUploadFileController', function
     // File uploader stuff
     $scope.FileUploader = new FileUploader({
         alias : 'file', // fieldname as used in $_FILES['file']
-        formData : [{'roleId[]' : RoleService.getActiveRoleIds()}], // the '[]' in param 'roleIds[]' is needed by the API to process it as array
+        formData : [],
         removeAfterUpload : true,
         autoUpload : true
     });

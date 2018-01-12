@@ -30,7 +30,6 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     $sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
         
     Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params){
-        params['roleIds[]'] = RoleService.getActiveRoleIds(); // the '[]' in param 'roleIds[]' is needed by the API to process it as array
         params.navIfc = true;
         params.metaData = true;
         return params;

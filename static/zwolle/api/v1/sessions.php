@@ -27,9 +27,6 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $conta
     $ampersandApp = $container['ampersand_app'];
     $angularApp = $container['angular_app'];
     
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
-    
     $ampersandApp->checkProcessRules();
     
     $session = $ampersandApp->getSession();
@@ -56,9 +53,6 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $conta
 
 $app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app, $container) {
     $ampersandApp = $container['ampersand_app'];
-    
-    $roleIds = $app->request->params('roleIds');
-    $ampersandApp->activateRoles($roleIds);
     
     $ampersandApp->checkProcessRules();
     
