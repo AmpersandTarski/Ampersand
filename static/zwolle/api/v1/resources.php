@@ -6,8 +6,8 @@ use Ampersand\Core\Atom;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
-use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Transaction;
+use Ampersand\Misc\Options;
 
 /**
  * @var \Slim\Slim $app
@@ -79,14 +79,12 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $ampersandApp = $container['ampersand_app'];
     
     // Options
-    $rcOptions = $ifcOptions = 0;
-    if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
-    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
-    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
-    $depth = $app->request->params('depth');
+    $rcOptions = Options::getResourceOptions($app->request()->params());
+    $ifcOptions = Options::getInterfaceOptions($app->request()->params());
+    $depth = (int)$app->request->params('depth');
 
     // Get content
-    $content = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath)->get($rcOptions, $ifcOptions);
+    $content = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath)->get($rcOptions, $ifcOptions, $depth);
 
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
@@ -100,15 +98,13 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $transaction = Transaction::getCurrentTransaction();
     
     // Options
-    $rcOptions = $ifcOptions = 0;
-    if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
-    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
-    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
-    $depth = $app->request->params('depth');
+    $rcOptions = Options::getResourceOptions($app->request()->params());
+    $ifcOptions = Options::getInterfaceOptions($app->request()->params());
+    $depth = (int)$app->request->params('depth');
     
     // Perform put
     $obj = $app->request->getBody();
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($obj)->get($rcOptions, $ifcOptions);
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($obj)->get($rcOptions, $ifcOptions, $depth);
     
     // Close transaction
     $transaction->close();
@@ -134,15 +130,13 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     $transaction = Transaction::getCurrentTransaction();
     
     // Options
-    $rcOptions = $ifcOptions = 0;
-    if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
-    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
-    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
-    $depth = $app->request->params('depth');
+    $rcOptions = Options::getResourceOptions($app->request()->params());
+    $ifcOptions = Options::getInterfaceOptions($app->request()->params());
+    $depth = (int)$app->request->params('depth');
     
     // Perform patch(es)
     $patches = $app->request->getBody();
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches)->get($rcOptions, $ifcOptions);
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches)->get($rcOptions, $ifcOptions, $depth);
     
     // Close transaction
     $transaction->close();
@@ -171,15 +165,13 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     $transaction = Transaction::getCurrentTransaction();
     
     // Options
-    $rcOptions = $ifcOptions = 0;
-    if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
-    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
-    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
-    $depth = $app->request->params('depth');
+    $rcOptions = Options::getResourceOptions($app->request()->params());
+    $ifcOptions = Options::getInterfaceOptions($app->request()->params());
+    $depth = (int)$app->request->params('depth');
     
     // Perform create
     $obj = $app->request->getBody();
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($obj)->get($rcOptions, $ifcOptions);
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($obj)->get($rcOptions, $ifcOptions, $depth);
     
     // Close transaction
     $transaction->close();
