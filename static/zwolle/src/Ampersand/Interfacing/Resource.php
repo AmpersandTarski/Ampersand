@@ -229,7 +229,7 @@ class Resource extends Atom {
      * @param array $recursionArr
      * @return Resource $this
      */
-    public function get($rcOptions = self::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
+    public function get($rcOptions = self::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, int $depth = null, $recursionArr = []){
         $this->logger->debug("get() called for {$this}");
         if(isset($this->parentList)){
             $parentIfc = $this->parentList->getIfc();
@@ -366,7 +366,7 @@ class Resource extends Atom {
      * @param string $ifcId
      * @return array representation of resource content of given interface
      */
-    public function getList($ifcId, $rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
+    public function getList($ifcId, $rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, int $depth = null, $recursionArr = []){
         return $this->all($ifcId)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
     }
     

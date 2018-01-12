@@ -81,7 +81,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     // Options
     $rcOptions = Options::getResourceOptions($app->request()->params());
     $ifcOptions = Options::getInterfaceOptions($app->request()->params());
-    $depth = (int)$app->request->params('depth');
+    $depth = $app->request->params('depth');
 
     // Get content
     $content = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath)->get($rcOptions, $ifcOptions, $depth);
@@ -100,7 +100,7 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     // Options
     $rcOptions = Options::getResourceOptions($app->request()->params());
     $ifcOptions = Options::getInterfaceOptions($app->request()->params());
-    $depth = (int)$app->request->params('depth');
+    $depth = $app->request->params('depth');
     
     // Perform put
     $obj = $app->request->getBody();
@@ -132,7 +132,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     // Options
     $rcOptions = Options::getResourceOptions($app->request()->params());
     $ifcOptions = Options::getInterfaceOptions($app->request()->params());
-    $depth = (int)$app->request->params('depth');
+    $depth = $app->request->params('depth');
     
     // Perform patch(es)
     $patches = $app->request->getBody();
@@ -167,7 +167,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     // Options
     $rcOptions = Options::getResourceOptions($app->request()->params());
     $ifcOptions = Options::getInterfaceOptions($app->request()->params());
-    $depth = (int)$app->request->params('depth');
+    $depth = $app->request->params('depth');
     
     // Perform create
     $obj = $app->request->getBody();

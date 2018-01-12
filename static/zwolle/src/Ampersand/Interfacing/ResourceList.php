@@ -171,7 +171,7 @@ class ResourceList implements IteratorAggregate {
      * @param array $recursionArr
      * @return mixed[]
      */
-    public function get($rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
+    public function get($rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, int $depth = null, $recursionArr = []){
         $this->logger->debug("get() called for {$this->src} / {$this->ifc}");
         if(!$this->ifc->crudR()) throw new Exception ("Read not allowed for ". $this->ifc->getPath(), 405);
         

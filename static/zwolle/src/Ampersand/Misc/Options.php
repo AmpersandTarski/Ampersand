@@ -29,7 +29,7 @@ class Options {
                       ,'navIfc' => Resource::INCLUDE_NAV_IFCS
                       ];
         
-        return self::processOptionsMap($optionsMap, Resource::DEFAULT_OPTIONS);
+        return self::processOptionsMap($optionsMap, $params, Resource::DEFAULT_OPTIONS);
     }
 
     public static function getInterfaceOptions(array $params): int {
@@ -38,10 +38,10 @@ class Options {
                       ];
 
         // Set default
-        return self::processOptionsMap($optionsMap, InterfaceObject::DEFAULT_OPTIONS);
+        return self::processOptionsMap($optionsMap, $params, InterfaceObject::DEFAULT_OPTIONS);
     }
 
-    protected static function processOptionsMap(array $optionsMap, int $result = 0): int {
+    protected static function processOptionsMap(array $optionsMap, array $params, int $result = 0): int {
         foreach ($optionsMap as $option => $value) {
             if(!isset($params[$option])) continue; // Don't change the default setting
 
