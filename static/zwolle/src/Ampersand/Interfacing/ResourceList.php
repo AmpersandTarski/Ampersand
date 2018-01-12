@@ -28,7 +28,9 @@ class ResourceList implements IteratorAggregate {
     protected $logger;
     
     /**
-     * @var Resource $src source of resource list
+     * Source Atom/Resource of this Resourcelist
+     * 
+     * @var \Ampersand\Interfacing\Resource $src
      */
     private $src = null;
     
@@ -86,30 +88,11 @@ class ResourceList implements IteratorAggregate {
      */
     public function one($tgtId = null){
         // If no tgtId is provided, the srcId is used. Usefull for ident interface expressions (I[Concept])
-        if(!isset($tgtId)) $tgtId = $this->src->id;
+        if(is_null($tgtId)) $tgtId = $this->src->id;
         
         $arr = $this->getTgtResources();
         
-        // Functionality to automatically add/create resource if allowed
-        if(!array_key_exists($tgtId, $arr)){
-            $resource = new Resource($tgtId, $this->ifc->tgtConcept->name);
-            
-            // If resource already exists and may be added (crudU)
-            if($this->ifc->crudU() && $resource->exists()) $this->add($resource->id);
-            
-            // Elseif resource not yet exists and may be created (crudC) 
-            elseif($this->ifc->crudC() && !$resource->exists()){
-                $obj = new stdClass();
-                $obj->_id_ = $resource->id;
-                $this->post($obj);
-            }
-            
-            // Else: return not found
-            else throw new Exception ("Resource '{$resource}' not found", 404);
-            
-            // Reevaluate interface expression, tgt should now be there, otherwise throw exception
-            if(!array_key_exists($tgtId, $arr = $this->getTgtResources(false))) throw new Exception ("Oeps.. something went wrong", 500);
-        }
+        if(!array_key_exists($tgtId, $arr)) throw new Exception ("Resource '{$resource}' not found", 404);
         
         return $arr[$tgtId];
     }
@@ -345,6 +328,7 @@ class ResourceList implements IteratorAggregate {
         $tgt = new Atom($value, $this->ifc->tgtConcept);
         if($tgt->concept->isObject() && !$this->ifc->crudC() && !$tgt->exists()) throw new Exception ("Create not allowed for " . $this->ifc->getPath(), 405);
         
+        $tgt->add();
         $this->src->link($tgt, $this->ifc->relation(), $this->ifc->relationIsFlipped)->add();
         
         return true;
