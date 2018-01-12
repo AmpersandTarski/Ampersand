@@ -23,7 +23,7 @@ $app->get('/admin/sessions/delete/expired', function () use ($app, $container) {
     Session::deleteExpiredSessions();
 });
 
-$app->put('/session/roles', function () use ($app, $container){
+$app->patch('/session/roles', function () use ($app, $container){
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     /** @var \Ampersand\AngularApp $angularApp */

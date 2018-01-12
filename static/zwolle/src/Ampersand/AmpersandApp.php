@@ -247,8 +247,8 @@ class AmpersandApp
      * 
      * @return \Ampersand\Core\Atom[]
      */
-    public function getActiveRoles(){
-        $this->session->getSessionActiveRoles();
+    public function getActiveRoles(): array {
+        return $this->session->getSessionActiveRoles();
     }
 
     /**
@@ -261,7 +261,7 @@ class AmpersandApp
         
         return array_map(function(Atom $roleAtom) use ($activeRoleIds){
             return (object) ['id' => $roleAtom->id
-                            ,'label' => $roleAtom->label
+                            ,'label' => $roleAtom->getLabel()
                             ,'active' => in_array($roleAtom->id, $activeRoleIds)
                             ];
         }, $this->getAllowedRoles());
@@ -278,7 +278,7 @@ class AmpersandApp
         if(is_null($roles)) return true;
 
         // Check for allowed roles
-        return array_reduce($this->getAllowedRoles(), function(bool $carry, Atom $role){
+        return array_reduce($this->getAllowedRoles(), function(bool $carry, Atom $role) use ($roles) {
             return in_array($role->id, $roles) || $carry;
         }, false);
     }
@@ -290,8 +290,11 @@ class AmpersandApp
      * @return bool
      */
     public function hasActiveRole(array $roles = null): bool {
+        // If provided roles is null (i.e. NOT empty array), then true
+        if(is_null($roles)) return true;
+
         // Check for active roles
-        return array_reduce($this->getActiveRoles(), function(bool $carry, Atom $role){
+        return array_reduce($this->getActiveRoles(), function(bool $carry, Atom $role) use ($roles) {
             return in_array($role->id, $roles) || $carry;
         }, false);
     }
