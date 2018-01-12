@@ -11,6 +11,7 @@ use Exception;
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
 use Ampersand\Plugs\ViewPlugInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  *
@@ -118,8 +119,8 @@ class Rule {
      * @param \Ampersand\Plugs\ViewPlugInterface $plug
      * @param string $type specifies if it is a signal (sig) or invariant (inv) rule
     */
-    private function __construct(array $ruleDef, ViewPlugInterface $plug, string $type){
-        $this->logger = Logger::getLogger('RULE');
+    private function __construct(array $ruleDef, ViewPlugInterface $plug, string $type, LoggerInterface $logger){
+        $this->logger = $logger;
 
         $this->plug = $plug;
         
@@ -264,22 +265,23 @@ class Rule {
      * 
      * @param string $fileName containing the Ampersand rule definitions
      * @param \Ampersand\Plugs\ViewPlugInterface $defaultPlug
+     * @param \Psr\Log\LoggerInterface $logger
      * @return void
      */
-    public static function setAllRules(string $fileName, ViewPlugInterface $defaultPlug){
+    public static function setAllRules(string $fileName, ViewPlugInterface $defaultPlug, LoggerInterface $logger){
         self::$allRules = [];
 
         $allRuleDefs = (array) json_decode(file_get_contents($fileName), true);
         
         // Signal rules
         foreach ($allRuleDefs['signals'] as $ruleDef){
-            $rule = new Rule($ruleDef, $defaultPlug, 'signal');
+            $rule = new Rule($ruleDef, $defaultPlug, 'signal', $logger);
             self::$allRules[$rule->id] = $rule;
         }
         
         // Invariant rules
         foreach ($allRuleDefs['invariants'] as $ruleDef){
-            $rule = new Rule($ruleDef, $defaultPlug, 'invariant');
+            $rule = new Rule($ruleDef, $defaultPlug, 'invariant', $logger);
             self::$allRules[$rule->id] = $rule;
         }
     }

@@ -8,7 +8,6 @@
 namespace Ampersand\Interfacing;
 
 use Exception;
-use Ampersand\Log\Logger;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;
 use Ampersand\Interfacing\View;
@@ -42,12 +41,6 @@ class InterfaceObject {
      * @var \Ampersand\Plugs\IfcPlugInterface
      */
     private $plug;
-    
-    /**
-     *
-     * @var \Psr\Log\LoggerInterface
-     */
-    private $logger;
     
     /**
      * Interface id (i.e. safe name) to use in framework
@@ -184,8 +177,6 @@ class InterfaceObject {
      * @param bool $rootIfc Specifies if this interface object is a toplevel interface (true) or subinterface (false)
      */
     private function __construct(array $ifcDef, IfcPlugInterface $plug, string $pathEntry = null, bool $rootIfc = false){
-        $this->logger = Logger::getLogger('INTERFACING');
-        
         $this->plug = $plug;
         $this->isRoot = $rootIfc;
         

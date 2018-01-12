@@ -13,12 +13,12 @@ use Ampersand\Plugs\MysqlDB\MysqlDBTableCol;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Interfacing\View;
-use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Atom;
 use Ampersand\Misc\Config;
 use Ampersand\Transaction;
 use Ampersand\Plugs\ConceptPlugInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * 
@@ -158,10 +158,11 @@ class Concept {
      * Private function to prevent outside instantiation of concepts. Use Concept::getConcept($conceptName)
      * 
      * @param array $conceptDef
+     * @param \Psr\Log\LoggerInterface $logger
      * @param \Ampersand\Plugs\ConceptPlugInterface $defaultPlug
      */
-    private function __construct(array $conceptDef, ConceptPlugInterface $defaultPlug = null){
-        $this->logger = Logger::getLogger('CORE');
+    private function __construct(array $conceptDef, LoggerInterface $logger, ConceptPlugInterface $defaultPlug = null){
+        $this->logger = $logger;
         
         $this->def = $conceptDef;
         if(!is_null($defaultPlug)) $this->addPlug($defaultPlug);
@@ -622,13 +623,13 @@ class Concept {
      * @param \Ampersand\Core\Atom $rightAtom
      * @return void
      */
-    static function mergeAtoms(Atom $leftAtom, Atom $rightAtom){        
+    public function mergeAtoms(Atom $leftAtom, Atom $rightAtom){        
         // Check that left and right atoms are in the same typology.
         if(!$leftAtom->concept->inSameClassificationTree($rightAtom->concept)) throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because they not in the same classification tree", 500);
 
         // Skip when left and right atoms are the same
         if($leftAtom->id === $rightAtom->id){
-            Logger::getLogger('CORE')->warning("Cannot merge leftAtom and rightAtom, because they are both '{$leftAtom}'");
+            $this->logger->warning("Cannot merge leftAtom and rightAtom, because they are both '{$leftAtom}'");
             return;
         }
 
@@ -719,16 +720,17 @@ class Concept {
      * Import all concept definitions from json file and instantiate Concept objects
      * 
      * @param string $fileName containing the Ampersand concept definitions
+     * @param \Psr\Log\LoggerInterface $logger
      * @param \Ampersand\Plugs\ConceptPlugInterface $defaultPlug
      * @return void
      */
-    public static function setAllConcepts(string $fileName, ConceptPlugInterface $defaultPlug = null){
+    public static function setAllConcepts(string $fileName, LoggerInterface $logger, ConceptPlugInterface $defaultPlug = null){
         self::$allConcepts = [];
         
         $allConceptDefs = (array)json_decode(file_get_contents($fileName), true);
     
         foreach ($allConceptDefs as $conceptDef) {
-            self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $defaultPlug);
+            self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $logger, $defaultPlug);
         }
     }
 }

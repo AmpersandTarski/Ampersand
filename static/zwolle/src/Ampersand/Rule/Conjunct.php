@@ -10,6 +10,7 @@ namespace Ampersand\Rule;
 use Exception;
 use Ampersand\Log\Logger;
 use Ampersand\Misc\Config;
+use Psr\Log\LoggerInterface;
 
 /**
  *
@@ -73,9 +74,10 @@ class Conjunct {
      * Private function to prevent outside instantiation of conjuncts. Use Conjunct::getConjunct($conjId)
      *
      * @param array $conjDef
+     * @param \Psr\Log\LoggerInterface $logger
      */
-    private function __construct(array $conjDef){
-        $this->logger = Logger::getLogger('RULE');
+    private function __construct(array $conjDef, LoggerInterface $logger){
+        $this->logger = $logger;
         
         $this->id = $conjDef['id'];
         $this->query = $conjDef['violationsSQL'];
@@ -235,15 +237,16 @@ class Conjunct {
      * Import all role definitions from json file and instantiate Conjunct objects
      * 
      * @param string $fileName containing the Ampersand conjunct definitions
+     * @param \Psr\Log\LoggerInterface $logger
      * @return void
      */
-    public static function setAllConjuncts(string $fileName){
+    public static function setAllConjuncts(string $fileName, LoggerInterface $logger){
         self::$allConjuncts = array();
         
         $allConjDefs = (array)json_decode(file_get_contents($fileName), true);
     
         foreach ($allConjDefs as $conjDef) {
-            self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef);
+            self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef, $logger);
         }
     }
 }

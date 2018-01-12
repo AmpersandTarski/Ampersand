@@ -12,10 +12,10 @@ use Ampersand\Plugs\MysqlDB\MysqlDBTableCol;
 use Ampersand\Plugs\MysqlDB\MysqlDBRelationTable;
 use Ampersand\Core\Concept;
 use Ampersand\Rule\Conjunct;
-use Ampersand\Log\Logger;
 use Ampersand\Misc\Config;
 use Ampersand\Transaction;
 use Ampersand\Plugs\RelationPlugInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  *
@@ -121,9 +121,11 @@ class Relation {
      * Private function to prevent outside instantiation of Relations. Use Relation::getRelation($relationSignature)
      *
      * @param array $relationDef
+     * @param \Psr\Log\LoggerInterface $logger
+     * @param \Ampersand\Plugs\RelationPlugInterface $defaultPlug
      */
-    public function __construct($relationDef, RelationPlugInterface $defaultPlug = null){
-        $this->logger = Logger::getLogger('CORE');
+    public function __construct($relationDef, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null){
+        $this->logger = $logger;
 
         $this->name = $relationDef['name'];
         $this->srcConcept = Concept::getConcept($relationDef['srcConceptId']);
@@ -378,17 +380,18 @@ class Relation {
      * Import all Relation definitions from json file and instantiate Relation objects
      * 
      * @param string $fileName containing the Ampersand relation definitions
+     * @param \Psr\Log\LoggerInterface $logger
      * @param \Ampersand\Plugs\RelationPlugInterface $defaultPlug
      * @return void
      */
-    public static function setAllRelations(string $fileName, RelationPlugInterface $defaultPlug = null){
+    public static function setAllRelations(string $fileName, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null){
         self::$allRelations = [];
     
         // Import json file
         $allRelationDefs = (array)json_decode(file_get_contents($fileName), true);
     
         foreach ($allRelationDefs as $relationDef){
-            $relation = new Relation($relationDef, $defaultPlug);
+            $relation = new Relation($relationDef, $logger, $defaultPlug);
             self::$allRelations[$relation->signature] = $relation; 
         }
     }

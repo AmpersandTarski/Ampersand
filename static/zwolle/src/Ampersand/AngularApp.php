@@ -9,10 +9,10 @@ namespace Ampersand;
 
 use Exception;
 use Ampersand\Core\Concept;
-use Ampersand\Log\Logger;
 use function Ampersand\Misc\getDirectoryList;
 use Ampersand\AmpersandApp;
 use Ampersand\Misc\Config;
+use Psr\Log\LoggerInterface;
 
 /**
  *
@@ -82,9 +82,10 @@ class AngularApp {
      * Undocumented function
      *
      * @param \Ampersand\AmpersandApp $ampersandApp
+     * @param \Psr\Log\LoggerInterface $logger
      */
-    public function __construct(AmpersandApp $ampersandApp){
-        $this->logger = Logger::getLogger('APP');
+    public function __construct(AmpersandApp $ampersandApp, LoggerInterface $logger){
+        $this->logger = $logger;
         $this->logger->debug("## BUILD ANGULAR APP ##################################################");
         $this->ampersandApp = $ampersandApp;
     }

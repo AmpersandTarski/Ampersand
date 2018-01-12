@@ -7,7 +7,6 @@ use Ampersand\IO\Importer;
 use Ampersand\Transaction;
 use Ampersand\Plugs\StorageInterface;
 use Ampersand\Rule\Conjunct;
-use Ampersand\Log\Logger;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
 use Exception;
@@ -20,6 +19,8 @@ use Ampersand\IO\JSONReader;
 use Ampersand\Interfacing\View;
 use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;
+use Psr\Log\LoggerInterface;
+use Ampersand\Log\Logger;
 
 class AmpersandApp
 {
@@ -78,19 +79,20 @@ class AmpersandApp
      * Constructor
      * 
      * @param \Ampersand\Plugs\StorageInterface $defaultPlug
+     * @param \Psr\Log\LoggerInterface $logger
      */
-    public function __construct(StorageInterface $defaultPlug){
-        $this->logger = Logger::getLogger('APPLICATION');
+    public function __construct(StorageInterface $defaultPlug, LoggerInterface $logger){
+        $this->logger = $logger;
 
         $genericsFolder = Config::get('pathToGeneratedFiles');
 
         // Instantiate object definitions from generated files
-        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json');
+        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'));
         View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
-        Concept::setAllConcepts($genericsFolder . 'concepts.json', $defaultPlug);
-        Relation::setAllRelations($genericsFolder . 'relations.json', $defaultPlug);
+        Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'), $defaultPlug);
+        Relation::setAllRelations($genericsFolder . 'relations.json', Logger::getLogger('CORE'), $defaultPlug);
         InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $defaultPlug);
-        Rule::setAllRules($genericsFolder . 'rules.json', $defaultPlug);
+        Rule::setAllRules($genericsFolder . 'rules.json', $defaultPlug, Logger::getLogger('RULE'));
         Role::setAllRoles($genericsFolder . 'roles.json');
 
         // Register storages
@@ -109,7 +111,7 @@ class AmpersandApp
     }
 
     protected function setSession(){
-        $this->session = new Session();
+        $this->session = new Session(Logger::getLogger('SESSION'));
         $this->session->initSessionAtom();
 
         if(Config::get('loginEnabled')){

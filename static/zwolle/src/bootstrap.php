@@ -3,6 +3,7 @@
 use Ampersand\AmpersandApp;
 use Pimple\Container;
 use Ampersand\AngularApp;
+use Ampersand\Log\Logger;
 
 register_shutdown_function(function (){
     $error = error_get_last();
@@ -30,10 +31,10 @@ require_once(__DIR__ . '/../lib/autoload.php');
 // New Pimple Dependency Injection Container
 $container = new Container();
 $container['ampersand_app'] = function ($c) {
-    return new AmpersandApp($c['default_plug']);
+    return new AmpersandApp($c['default_plug'], Logger::getLogger('APPLICATION'));
 };
 $container['angular_app'] = function($c) {
-    return new AngularApp($c['ampersand_app']);
+    return new AngularApp($c['ampersand_app'], Logger::getLogger('APP'));
 };
 
 // Include/set default settings

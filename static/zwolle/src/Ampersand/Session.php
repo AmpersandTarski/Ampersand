@@ -12,9 +12,9 @@ use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
-use Ampersand\Log\Logger;
 use Ampersand\Transaction;
 use Ampersand\Misc\Config;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class of session objects
@@ -50,10 +50,11 @@ class Session {
     
     /**
      * Constructor of Session class
-     * private to prevent any outside instantiation of this object
+     * 
+     * @param \Psr\Log\LoggerInterface $logger
      */
-    public function __construct(){
-        $this->logger = Logger::getLogger('SESSION');
+    public function __construct(LoggerInterface $logger){
+        $this->logger = $logger;
        
         $this->setId();
     }
@@ -97,7 +98,7 @@ class Session {
             // strtotime() returns Unix timestamp of lastAccessTime (in UTC). time() does also. Those can be compared
             if(count($lastAccessTime) && strtotime(current($lastAccessTime)->tgt()->getLabel()) < $experationTimeStamp){
                 $this->logger->debug("Session expired");
-                if(Config::get('loginEnabled')) Logger::getUserLogger()->warning("Your session has expired, please login again");
+                // if(Config::get('loginEnabled')) \Ampersand\Log\Logger::getUserLogger()->warning("Your session has expired, please login again");
                 $this->reset();
                 return;
             }

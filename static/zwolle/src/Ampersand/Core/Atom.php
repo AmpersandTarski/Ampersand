@@ -11,7 +11,6 @@ use Exception;
 use DateTime;
 use DateTimeZone;
 use JsonSerializable;
-use Ampersand\Log\Logger;
 
 /**
  * 
@@ -19,12 +18,6 @@ use Ampersand\Log\Logger;
  *
  */
 class Atom implements JsonSerializable {
-    /**
-     *
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-    
     /**
      * Ampersand identifier of the atom
      * @var string
@@ -49,8 +42,6 @@ class Atom implements JsonSerializable {
      * @return void
      */
     public function __construct($atomId, Concept $concept){
-        $this->logger = Logger::getLogger('ATOM');
-        
         $this->concept = $concept;
         
         switch($this->concept->type){
@@ -187,7 +178,7 @@ class Atom implements JsonSerializable {
      * @return Atom $this
      */
     public function merge(Atom $anotherAtom){
-        Concept::mergeAtoms($this, $anotherAtom);
+        $this->concept->mergeAtoms($this, $anotherAtom);
         return $this;
     }
     

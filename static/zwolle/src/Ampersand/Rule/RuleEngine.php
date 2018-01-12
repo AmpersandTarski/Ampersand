@@ -31,6 +31,7 @@ class RuleEngine {
         if($forceEvaluate){
             $violations = [];
             foreach ($rules as $rule){
+                /** @var \Ampersand\Rule\Rule $rule */
                 $violations = array_merge($violations, $rule->checkRule(true)); // cache conjunct = true, because multiple rules can share the same conjunct
             }
             return $violations;

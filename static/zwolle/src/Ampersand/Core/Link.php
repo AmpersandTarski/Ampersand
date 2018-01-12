@@ -9,7 +9,6 @@ namespace Ampersand\Core;
 
 use Exception;
 use JsonSerializable;
-use Ampersand\Log\Logger;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Relation;
 
