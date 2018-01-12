@@ -62,11 +62,6 @@ class AmpersandApp
      * @var \Ampersand\Rule\Rule[] $rulesToMaintain
      */
     protected $rulesToMaintain = []; // rules that are maintained by active roles
-
-    /**
-     * @var AmpersandApp $_instance needed for singleton() pattern of this class
-     */
-    private static $_instance = null;
     
     /**
      * Constructor
