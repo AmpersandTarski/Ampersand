@@ -104,16 +104,11 @@ class Rule {
     protected $violationSegments = [];
     
     /**
+     * Specifies the type of rule (signal or invariant)
      * 
-     * @var bool
+     * @var string
      */
-    protected $isSignal = null;
-    
-    /**
-     * 
-     * @var bool
-     */
-    protected $isInvariant = null;
+    protected $type;
     
     /**
      * Rule constructor
@@ -123,7 +118,7 @@ class Rule {
      * @param \Ampersand\Plugs\ViewPlugInterface $plug
      * @param string $type specifies if it is a signal (sig) or invariant (inv) rule
     */
-    private function __construct(array $ruleDef, ViewPlugInterface $plug, string $type = null){
+    private function __construct(array $ruleDef, ViewPlugInterface $plug, string $type){
         $this->logger = Logger::getLogger('RULE');
 
         $this->plug = $plug;
@@ -149,17 +144,9 @@ class Rule {
             $this->violationSegments[] = new ViolationSegment($segment, $this);
         }
         
-        switch($type){
-            case 'sig' :
-                $this->isSignal = true;
-                break;
-            case 'inv' :
-                $this->isInvariant = true;
-                break;
-            case null :
-                break;
-            default : throw new Exception ("Unknown/unsupported rule type. Allowed types are signal or invariant", 500);
-        }
+        // Set type of rule
+        if(!in_array($type, ['signal', 'invariant'])) throw new Exception ("Unsupported rule type. Allowed types are signal or invariant", 500);
+        $this->type = $type;
     }
     
     /**
@@ -244,7 +231,7 @@ class Rule {
     public static function getAllInvRules(): array {
         $invRules = array();
         foreach (self::getAllRules() as $rule){
-            if($rule->isInvariant) $invRules[] = $rule;            
+            if($rule->type === 'invariant') $invRules[] = $rule;            
         }
         return $invRules;
     }
@@ -256,7 +243,7 @@ class Rule {
     public static function getAllSigRules(): array {
         $sigRules = array();
         foreach (self::getAllRules() as $rule){
-            if($rule->isSignal) $sigRules[] = $rule;
+            if($rule->type === 'signal') $sigRules[] = $rule;
         }
         return $sigRules;
     }
@@ -286,13 +273,13 @@ class Rule {
         
         // Signal rules
         foreach ($allRuleDefs['signals'] as $ruleDef){
-            $rule = new Rule($ruleDef, $defaultPlug, 'sig');
+            $rule = new Rule($ruleDef, $defaultPlug, 'signal');
             self::$allRules[$rule->id] = $rule;
         }
         
         // Invariant rules
         foreach ($allRuleDefs['invariants'] as $ruleDef){
-            $rule = new Rule($ruleDef, $defaultPlug, 'inv');
+            $rule = new Rule($ruleDef, $defaultPlug, 'invariant');
             self::$allRules[$rule->id] = $rule;
         }
     }
