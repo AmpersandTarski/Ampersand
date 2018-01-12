@@ -15,6 +15,7 @@ use Ampersand\Core\Atom;
 use Ampersand\Transaction;
 use Ampersand\Misc\Config;
 use Psr\Log\LoggerInterface;
+use Ampersand\Core\Link;
 
 /**
  * Class of session objects
@@ -147,6 +148,25 @@ class Session {
             }
         }
         return $this->sessionAccount;
+    }
+
+    /**
+     * Set session account and register login timestamps
+     *
+     * @param \Ampersand\Core\Atom $accountAtom
+     * @return \Ampersand\Core\Atom
+     */
+    public function setSessionAccount(Atom $accountAtom): Atom {
+        if(!$accountAtom->exists()) throw new Exception("Account does not exist", 500);
+
+        $this->sessionAtom->link($accountAtom, 'sessionAccount[SESSION*Account]')->add();
+        
+        // Login timestamps
+        $ts = date(DATE_ISO8601);
+        $accountAtom->link($ts, 'accMostRecentLogin[Account*DateTime]')->add();
+        $accountAtom->link($ts, 'accLoginTimestamps[Account*DateTime]')->add();
+
+        return $accountAtom;
     }
     
     /**

@@ -160,16 +160,11 @@ class AmpersandApp
      */
     public function login(Atom $account){
         // Set sessionAccount
-        $this->session->sessionAtom->link($account, 'sessionAccount[SESSION*Account]')->add();
-        
-        // Login timestamps
-        $ts = date(DATE_ISO8601);
-        $account->link($ts, 'accMostRecentLogin[Account*DateTime]')->add();
-        $account->link($ts, 'accLoginTimestamps[Account*DateTime]')->add();
+        $this->session->setSessionAccount($account);
 
+        // Commit transaction (exec-engine kicks also in)
         Transaction::getCurrentTransaction()->close(true);
 
-        $this->setSession();
     }
 
     /**
