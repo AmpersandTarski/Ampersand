@@ -13,6 +13,7 @@ use function Ampersand\Misc\getDirectoryList;
 use Ampersand\AmpersandApp;
 use Ampersand\Misc\Config;
 use Psr\Log\LoggerInterface;
+use Ampersand\Interfacing\InterfaceObject;
 
 /**
  *
@@ -159,11 +160,10 @@ class AngularApp {
         global $container;
 
         // Filter interfaces for requested part of navbar
-        $sessionCpt = Concept::getSessionConcept();
-        $interfaces = array_filter($container['ampersand_app']->getAccessibleInterfaces(), function($ifc) use ($menu, $sessionCpt){
+        $interfaces = array_filter($container['ampersand_app']->getAccessibleInterfaces(), function(InterfaceObject $ifc) use ($menu){
             switch ($menu) {
                 case 'top':
-                    if(($ifc->srcConcept == $sessionCpt || $ifc->srcConcept->name == 'ONE') && $ifc->crudR()) return true;
+                    if(($ifc->srcConcept->isSession() || $ifc->srcConcept->name == 'ONE') && $ifc->crudR()) return true;
                     else return false;
                 case 'new':
                     // crudC, otherwise the atom cannot be created

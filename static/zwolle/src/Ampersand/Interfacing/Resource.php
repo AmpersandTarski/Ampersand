@@ -458,4 +458,14 @@ class Resource extends Atom {
     public static function makeResource(string $id, string $conceptName): Resource {
         return new Resource($id, Concept::getConcept($conceptName));
     }
+
+    /**
+     * Factory function to create a Resource object using an Atom object
+     *
+     * @param \Ampersand\Core\Atom $atom
+     * @return \Ampersand\Interfacing\Resource
+     */
+    public static function makeResourceFromAtom(Atom $atom): Resource {
+        return new Resource($atom->id, $atom->concept);
+    }
 }

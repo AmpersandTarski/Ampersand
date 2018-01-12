@@ -678,8 +678,9 @@ class Concept {
         throw new Exception("Concept '{$conceptLabel}' is not defined", 500);
     }
     
-    public static function getSessionConcept(){
-        return self::getConcept('SESSION');
+    public static function makeSessionAtom($atomId){
+        return new Atom($atomId, self::getConcept('SESSION'));
+    }
     }
     
     /**
