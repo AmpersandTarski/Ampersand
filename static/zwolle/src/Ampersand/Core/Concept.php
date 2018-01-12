@@ -681,6 +681,9 @@ class Concept {
     public static function makeSessionAtom($atomId){
         return new Atom($atomId, self::getConcept('SESSION'));
     }
+
+    public static function makeRoleAtom($atomId){
+        return new Atom($atomId, self::getConcept('Role'));
     }
     
     /**
