@@ -15,8 +15,8 @@ global $app;
 global $container;
 
 $app->get('/admin/sessions/delete/all', function () use ($app, $container) {
-    throw new Exception("Not implemented", 501);
     if(Config::get('productionEnv')) throw new Exception ("Deleting all sessions is not allowed in production environment", 403);
+    throw new Exception("Not implemented", 501);
 });
 
 $app->get('/admin/sessions/delete/expired', function () use ($app, $container) {
@@ -26,6 +26,7 @@ $app->get('/admin/sessions/delete/expired', function () use ($app, $container) {
 $app->put('/session/roles', function () use ($app, $container){
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
+    /** @var \Ampersand\AngularApp $angularApp */
     $angularApp = $container['angular_app'];
 
     $roles = (array) $app->request()->getBody();
@@ -34,7 +35,7 @@ $app->put('/session/roles', function () use ($app, $container){
     print json_encode($ampersandApp->getSessionRoles(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $container) {
+$app->get('/session/navbar', function () use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     /** @var \Ampersand\AngularApp $angularApp */
@@ -64,7 +65,8 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app, $conta
 });
 
 
-$app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app, $container) {
+$app->get('/session/notifications', function () use ($app, $container) {
+     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
     $ampersandApp->checkProcessRules();

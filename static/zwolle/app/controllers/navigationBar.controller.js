@@ -19,7 +19,7 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
     $rootScope.refreshNavBar = function(){
         $rootScope.loadingNavBar = [];
         $rootScope.loadingNavBar.push(
-            Restangular.one('sessions', $scope.$sessionStorage.session.id).one('navbar')
+            Restangular.one('session/navbar')
                 .get()
                 .then(function(data){
                     data = data.plain();
