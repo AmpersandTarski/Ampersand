@@ -62,7 +62,7 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
     
-    $resource = new Resource($resourceId, $resourceType);
+    $resource = Resource::makeResource($resourceId, $resourceType);
     
     // Checks
     if(!$ampersandApp->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
@@ -92,7 +92,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $depth = $app->request->params('depth');
 
     // Get content
-    $content = (new Resource($resourceId, $resourceType))->walkPath($ifcPath)->get($rcOptions, $ifcOptions);
+    $content = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath)->get($rcOptions, $ifcOptions);
 
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
@@ -117,7 +117,7 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     
     // Perform put
     $obj = $app->request->getBody();
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($obj)->get($rcOptions, $ifcOptions);
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($obj)->get($rcOptions, $ifcOptions);
     
     // Close transaction
     $transaction->close();
@@ -154,7 +154,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     
     // Perform patch(es)
     $patches = $app->request->getBody();
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches)->get($rcOptions, $ifcOptions);
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches)->get($rcOptions, $ifcOptions);
     
     // Close transaction
     $transaction->close();
@@ -194,7 +194,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     
     // Perform create
     $obj = $app->request->getBody();
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($obj)->get($rcOptions, $ifcOptions);
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($obj)->get($rcOptions, $ifcOptions);
     
     // Close transaction
     $transaction->close();
@@ -224,7 +224,7 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     $options = $app->request->params();
     
     // Perform delete
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();
     
     // Close transaction
     $transaction->close();
