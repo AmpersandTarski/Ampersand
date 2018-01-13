@@ -32,6 +32,13 @@ class Transaction {
      * @var \Ampersand\Transaction
      */
     private static $_currentTransaction = null;
+
+    /**
+     * List of all transactions (open or closed)
+     *
+     * @var \Ampersand\Transaction[]
+     */
+    protected static $transactions = [];
     
     /**
      * Transaction number (random int)
@@ -60,15 +67,6 @@ class Transaction {
      * @var \Ampersand\Core\Relation[]
      */
     private $affectedRelations = [];
-    
-    /**
-     * Flag that is set when session variable is changed
-     * A session variable is a relation with SESSION as src or tgt concept
-     * This flag is e.g. used to trigger a navigation bar refresh in the frontend application (e.g. after a user login)
-     * 
-     * @var bool
-     */
-    private $sessionVarAffected = false;
     
     /**
      * Specifies if invariant rules hold. Null if no transaction has occurred (yet)
@@ -108,8 +106,17 @@ class Transaction {
      * @return \Ampersand\Transaction
      */
     public static function getCurrentTransaction(){
-        if(!isset(self::$_currentTransaction)) self::$_currentTransaction = new Transaction();
+        if(!isset(self::$_currentTransaction)) self::$transactions[] = self::$_currentTransaction = new Transaction();
         return self::$_currentTransaction;
+    }
+
+    /**
+     * Return all transaction object
+     *
+     * @return \Ampersand\Transaction[]
+     */
+    public static function getTransactions() {
+        return self::$transactions;
     }
 
     /**
@@ -215,8 +222,6 @@ class Transaction {
      * @return void
      */
     public function addAffectedRelations(Relation $relation){
-        static $skipRels = ['lastAccess[SESSION*DateTime]']; // these relations do not result in a session refresh advice
-        
         if(!in_array($relation, $this->affectedRelations)){
             $this->logger->debug("Mark relation '{$relation}' as affected relation");
 
@@ -227,10 +232,6 @@ class Transaction {
 
             $this->affectedRelations[] = $relation;
         }
-        
-        // Flag session var as affected when src or tgt concept of this relation is SESSION
-        if(($relation->srcConcept->isSession() || $relation->tgtConcept->isSession())
-            && !in_array($relation->getSignature(), $skipRels)) $this->sessionVarAffected = true;
     }
 
     /**
@@ -307,17 +308,5 @@ class Transaction {
     
     public function isClosed(){
         return $this->isCommitted !== null;
-    }
-    
-    /**
-     * Returns if session refresh is adviced in frontend
-     * True when session variable is affected AND transaction is committed
-     * False otherwise
-     * @return boolean
-     */
-    public function getSessionRefreshAdvice(){
-        if($this->isOpen()) throw new Exception("Cannot determine session refresh advice, because transaction is not closed (yet).", 500);
-        
-        return $this->sessionVarAffected && $this->isCommitted();
     }
 }

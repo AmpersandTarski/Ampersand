@@ -206,6 +206,32 @@ class AngularApp {
         }
     }
 
+    /**
+     * Determine if frontend app needs to refresh the session information (like navigation bar, roles, etc)
+     * 
+     * True when session variable is affected in a committed transaction
+     * False otherwise
+     * 
+     * @return boolean
+     */
+    public function getSessionRefreshAdvice(): bool {
+        static $skipRels = ['lastAccess[SESSION*DateTime]']; // these relations do not result in a session refresh advice
+
+        $affectedRelations = [];
+        foreach (Transaction::getTransactions() as $transaction) {
+            if(!$transaction->isCommitted()) continue;
+            $affectedRelations = array_merge($affectedRelations, $transaction->getAffectedRelations());
+        }
+        
+        foreach (array_unique($affectedRelations) as $relation) {
+            // Advise session refresh when src or tgt concept of this relation is SESSION
+            if(($relation->srcConcept->isSession() || $relation->tgtConcept->isSession())
+                && !in_array($relation->getSignature(), $skipRels)) return true;
+        }
+
+        return false;
+    }
+
     public function buildHtml(){
         $this->addHtmlLine("<!doctype html>");
         $this->addHtmlLine('<html ng-app="AmpersandApp">');
