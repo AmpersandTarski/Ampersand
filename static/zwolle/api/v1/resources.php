@@ -79,7 +79,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
-    // Options
+    // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
 
@@ -97,12 +97,12 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
     
-    // Options
+    // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
+    $obj = $app->request->getBody();
     
     // Perform put
-    $obj = $app->request->getBody();
     $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($obj)->get($options, $depth);
     
     // Close transaction
@@ -112,12 +112,12 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
     // Return result
-    $result =   [ 'content'             => $resource
-                , 'notifications'       => Notifications::getAll()
-                , 'invariantRulesHold'  => $transaction->invariantRulesHold()
-                , 'sessionRefreshAdvice' => $angularApp->getSessionRefreshAdvice()
-                , 'navTo'				=> $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
-                ];
+    $result = [ 'content'               => $resource
+              , 'notifications'         => Notifications::getAll()
+              , 'invariantRulesHold'    => $transaction->invariantRulesHold()
+              , 'sessionRefreshAdvice'  => $angularApp->getSessionRefreshAdvice()
+              , 'navTo'				    => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+              ];
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
@@ -128,7 +128,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
     
-    // Options
+    // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
     
@@ -143,16 +143,15 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
     // Return result
-    $result = array ( 'patches'                => $app->request->getBody()
-                    , 'content'             => $resource
-                    , 'notifications'         => Notifications::getAll()
-                    , 'invariantRulesHold'    => $transaction->invariantRulesHold()
-                    , 'sessionRefreshAdvice' => $angularApp->getSessionRefreshAdvice()
-					, 'navTo'				=> $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
-                    );
+    $result = [ 'patches'               => $app->request->getBody()
+              , 'content'               => $resource
+              , 'notifications'         => Notifications::getAll()
+              , 'invariantRulesHold'    => $transaction->invariantRulesHold()
+              , 'sessionRefreshAdvice'  => $angularApp->getSessionRefreshAdvice()
+			  , 'navTo'				    => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+              ];
     
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    
 });
 
 $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
@@ -162,12 +161,12 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     $angularApp = $container['angular_app'];
     $transaction = Transaction::getCurrentTransaction();
     
-    // Options
+    // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
+    $obj = $app->request->getBody();
     
     // Perform create
-    $obj = $app->request->getBody();
     $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($obj)->get($options, $depth);
     
     // Close transaction
@@ -177,12 +176,12 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
     // Return result
-    $result = array ( 'content'             => $resource
-                    , 'notifications'         => Notifications::getAll()
-                    , 'invariantRulesHold'    => $transaction->invariantRulesHold()
-                    , 'sessionRefreshAdvice' => $angularApp->getSessionRefreshAdvice()
-					, 'navTo'				=> $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
-                    );
+    $result = [ 'content'               => $resource
+              , 'notifications'         => Notifications::getAll()
+              , 'invariantRulesHold'    => $transaction->invariantRulesHold()
+              , 'sessionRefreshAdvice'  => $angularApp->getSessionRefreshAdvice()
+              , 'navTo'				    => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+              ];
 
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
@@ -204,12 +203,11 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
     
     // Return result
-    $result = array ( 'notifications'         => Notifications::getAll()
-                    , 'invariantRulesHold'    => $transaction->invariantRulesHold()
-                    , 'sessionRefreshAdvice'  => $angularApp->getSessionRefreshAdvice()
-					, 'navTo'				  => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
-                    );
+    $result = [ 'notifications'         => Notifications::getAll()
+              , 'invariantRulesHold'    => $transaction->invariantRulesHold()
+              , 'sessionRefreshAdvice'  => $angularApp->getSessionRefreshAdvice()
+			  , 'navTo'				    => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+              ];
 
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
 });
