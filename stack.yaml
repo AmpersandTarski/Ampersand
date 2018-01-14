@@ -15,6 +15,7 @@ extra-deps:
 - yaml-config-0.4.0
 - pandoc-crossref-0.3.0.0
 - roman-numerals-0.5.1.5
+- process-1.6.2.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
