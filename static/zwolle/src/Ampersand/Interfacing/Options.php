@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand\Misc;
+namespace Ampersand\Interfacing;
 
 use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\InterfaceObject;

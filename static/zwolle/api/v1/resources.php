@@ -7,7 +7,7 @@ use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Transaction;
-use Ampersand\Misc\Options;
+use Ampersand\Interfacing\Options;
 
 /**
  * @var \Slim\Slim $app
