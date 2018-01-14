@@ -10,28 +10,26 @@ $endif$*/
 angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, \$sessionStorage, ResourceService) {
     const resourceType = '$source$';
     const ifcName = '$interfaceName$';
-    let resourceId;
+    let resource;
     
-    if(\$routeParams['new'] && '$source$' == '$target$') resourceId = '_NEW'; // Set resourceId to special '_NEW' value in case new resource must be created 
-    else if(resourceType == 'SESSION') resourceId = \$sessionStorage.session.id;
-    else if (resourceType == 'ONE') resourceId = '1';
-    else resourceId = \$routeParams.resourceId;
+    // Set resourceId to special '_NEW' value in case new resource must be created
+    if(\$routeParams['new'] && '$source$' == '$target$') 
+        \$scope.resource = { _id_ : '_NEW', _path_ : 'resources/' + resourceType + '/_NEW', _isRoot_ : true };
+
+    // Toplevel interface
+    else if(resourceType == 'SESSION') 
+        \$scope.resource = { _id_ : \$sessionStorage.session.id, _path_ : 'session', _isRoot_ : true };
+
+    // Get requested resource
+    else \$scope.resource = { _id_ : \$routeParams.resourceId, _path_ : 'resources/' + resourceType + '/' + \$routeParams.resourceId , _isRoot_ : true };
     
-    \$scope.switchResource = function(resourceId){
-        \$location.url('/$interfaceName$/' + resourceId);
-    }
-	
-    
-    \$scope.resource = { '_id_' : resourceId,
-                        '_path_' : 'resources/' + resourceType + '/' + resourceId,
-                        '_isRoot_' : true,
-                      };
     \$scope.resource[ifcName] = $if(exprIsUni)$null$else$[]$endif$;
     \$scope.patchResource = \$scope.resource;
     
     \$scope.createResource = function(){ ResourceService.createResource(\$scope.resource, ifcName, \$scope.patchResource);};
     \$scope.resource.get = function(){ ResourceService.getResource(\$scope.resource, ifcName, \$scope.patchResource);};
     \$scope.saveResource = ResourceService.saveResource;
+    \$scope.switchResource = function(resourceId){ \$location.url('/$interfaceName$/' + resourceId);};
     
     // Create new or get resource
     if(\$routeParams['new']) \$scope.createResource();

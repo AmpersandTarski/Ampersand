@@ -2,12 +2,9 @@
 
 use Ampersand\Misc\Config;
 use Ampersand\Core\Concept;
-use Ampersand\Core\Atom;
 use Ampersand\Interfacing\Resource;
-use Ampersand\Log\Logger;
-use Ampersand\Log\Notifications;
-use Ampersand\Transaction;
 use Ampersand\Interfacing\Options;
+use Ampersand\Interfacing\InterfaceController;
 
 /**
  * @var \Slim\Slim $app
@@ -75,139 +72,104 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
  *
  *************************************************************************************************/
 
+// GET for interfaces with expr[SESSION*..]
+$app->get('/session/:ifcPath+', function($ifcPath) use ($app, $container) {
+    // Input
+    $options = Options::getFromRequestParams($app->request()->params());
+    $depth = $app->request->params('depth');
+
+    // Prepare
+    $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
+    $resource = $container['ampersand_app']->getSession()->getSessionResource();
+
+    // Output
+    print json_encode($controller->get($resource, $ifcPath, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
+// GET for interfaces that start with other resource
 $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
-    
     // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
+    
+    // Prepare
+    $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
+    $resource = Resource::makeResource($resourceId, $resourceType);
 
-    // Get content
-    $content = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath)->get($options, $depth);
-
-    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
+    // Output
+    print json_encode($controller->get($resource, $ifcPath, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
-    /** @var \Ampersand\AngularApp $angularApp */
-    $angularApp = $container['angular_app'];
-    $transaction = Transaction::getCurrentTransaction();
-    
+// PUT, PATCH, POST for interfaces with expr[SESSION*..]
+$app->map('/session/:ifcPath+', function ($ifcPath) use ($app, $container) {
     // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
-    $obj = $app->request->getBody();
+    $body = $app->request->getBody();
     
-    // Perform put
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($obj)->get($options, $depth);
-    
-    // Close transaction
-    $transaction->close();
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " updated");
-    
-    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
+    // Prepare
+    $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
+    $resource = $container['ampersand_app']->getSession()->getSessionResource();
 
-    // Return result
-    $result = [ 'content'               => $resource
-              , 'notifications'         => Notifications::getAll()
-              , 'invariantRulesHold'    => $transaction->invariantRulesHold()
-              , 'sessionRefreshAdvice'  => $angularApp->getSessionRefreshAdvice()
-              , 'navTo'				    => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
-              ];
-    print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-});
+    // Output
+    switch ($app->request()->getMethod()) {
+        case 'PUT':
+            print json_encode($controller->put($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            break;
+        case 'PATCH':
+            print json_encode($controller->patch($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            break;
+        case 'POST':
+            print json_encode($controller->post($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            break;
+        default:
+            throw new Exception("Unsupported HTTP method", 500);
+            break;
+    }
+})->via('PUT', 'PATCH', 'POST');
 
-$app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app, $container) {
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
-    /** @var \Ampersand\AngularApp $angularApp */
-    $angularApp = $container['angular_app'];
-    $transaction = Transaction::getCurrentTransaction();
-    
+// PUT, PATCH, POST for interfaces that start with other resource
+$app->map('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
+    $body = $app->request->getBody();
     
-    // Perform patch(es)
-    $patches = $app->request->getBody();
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches)->get($options, $depth);
-    
-    // Close transaction
-    $transaction->close();
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " updated");
-    
-    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
+    // Prepare
+    $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
+    $resource = Resource::makeResource($resourceId, $resourceType);
 
-    // Return result
-    $result = [ 'patches'               => $app->request->getBody()
-              , 'content'               => $resource
-              , 'notifications'         => Notifications::getAll()
-              , 'invariantRulesHold'    => $transaction->invariantRulesHold()
-              , 'sessionRefreshAdvice'  => $angularApp->getSessionRefreshAdvice()
-			  , 'navTo'				    => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
-              ];
-    
-    print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-});
+    // Output
+    switch ($app->request()->getMethod()) {
+        case 'PUT':
+            print json_encode($controller->put($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            break;
+        case 'PATCH':
+            print json_encode($controller->patch($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            break;
+        case 'POST':
+            print json_encode($controller->post($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            break;
+        default:
+            throw new Exception("Unsupported HTTP method", 500);
+            break;
+    }
+})->via('PUT', 'PATCH', 'POST');
 
-$app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
+$app->delete('/session/:ifcPath+', function ($ifcPath) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
-    /** @var \Ampersand\AngularApp $angularApp */
-    $angularApp = $container['angular_app'];
-    $transaction = Transaction::getCurrentTransaction();
-    
-    // Input
-    $options = Options::getFromRequestParams($app->request()->params());
-    $depth = $app->request->params('depth');
-    $obj = $app->request->getBody();
-    
-    // Perform create
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($obj)->get($options, $depth);
-    
-    // Close transaction
-    $transaction->close();
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " created");
-    
-    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
+    $resource = $ampersandApp->getSession()->getSessionResource();
 
-    // Return result
-    $result = [ 'content'               => $resource
-              , 'notifications'         => Notifications::getAll()
-              , 'invariantRulesHold'    => $transaction->invariantRulesHold()
-              , 'sessionRefreshAdvice'  => $angularApp->getSessionRefreshAdvice()
-              , 'navTo'				    => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
-              ];
+    $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
 
-    print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    print json_encode($controller->delete($resource, $ifcPath), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
-    /** @var \Ampersand\AngularApp $angularApp */
-    $angularApp = $container['angular_app'];
-    $transaction = Transaction::getCurrentTransaction();
-    
-    // Perform delete
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();
-    
-    // Close transaction
-    $transaction->close();
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Resource deleted");
-    
-    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
-    
-    // Return result
-    $result = [ 'notifications'         => Notifications::getAll()
-              , 'invariantRulesHold'    => $transaction->invariantRulesHold()
-              , 'sessionRefreshAdvice'  => $angularApp->getSessionRefreshAdvice()
-			  , 'navTo'				    => $angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
-              ];
+    $resource = Resource::makeResource($resourceId, $resourceType);
 
-    print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
+
+    print json_encode($controller->delete($resource, $ifcPath), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });

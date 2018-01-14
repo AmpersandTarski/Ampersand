@@ -129,12 +129,18 @@ class Resource extends Atom {
              * By skipping ident expressions the paths are more concise without loosing information
              * e.g.: pathToApi/resource/Person/John/Person/PersonDetails/Name
              */
-            if($this->parentList->getIfc()->isIdent()) return $this->parentList->getPath();
-            else return $this->parentList->getPath() . '/' . $this->id;
-            
-            return $this->parentList->getPath() . '/' . $this->id;
+            if ($this->parentList->getIfc()->isIdent()) {
+                return $this->parentList->getPath();
+            } else {
+                return $this->parentList->getPath() . '/' . $this->id;
+            }
+        } else {
+            if ($this->concept->isSession()) {
+                return "session"; // Don't put session id here, this is implicit
+            } else {
+                return "resources/{$this->concept->name}/" . $this->id;
+            }
         }
-        else return "resources/{$this->concept->name}/" . $this->id;
     }
     
     public function getURL(){
