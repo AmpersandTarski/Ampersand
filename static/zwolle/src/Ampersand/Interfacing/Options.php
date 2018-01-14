@@ -17,6 +17,20 @@ use Ampersand\Interfacing\InterfaceObject;
  */
 class Options {
 
+    const
+    /** Default options */
+    DEFAULT_OPTIONS     = 0b00001111,
+    
+    INCLUDE_META_DATA   = 0b00000001,
+    
+    INCLUDE_NAV_IFCS    = 0b00000010,
+    
+    INCLUDE_SORT_DATA   = 0b00000100,
+
+    INCLUDE_REF_IFCS    = 0b00001000,
+    
+    INCLUDE_LINKTO_IFCS = 0b00011000; // linkto ifcs are ref(erence) interfaces
+
     /**
      * Get resource options using API params
      *
@@ -24,21 +38,21 @@ class Options {
      * @return integer
      */
     public static function getResourceOptions(array $params): int {
-        $optionsMap = ['metaData' => Resource::INCLUDE_META_DATA 
-                      ,'sortData' => Resource::INCLUDE_SORT_DATA
-                      ,'navIfc' => Resource::INCLUDE_NAV_IFCS
+        $optionsMap = ['metaData' => self::INCLUDE_META_DATA 
+                      ,'sortData' => self::INCLUDE_SORT_DATA
+                      ,'navIfc' => self::INCLUDE_NAV_IFCS
                       ];
         
-        return self::processOptionsMap($optionsMap, $params, Resource::DEFAULT_OPTIONS);
+        return self::processOptionsMap($optionsMap, $params, self::DEFAULT_OPTIONS);
     }
 
     public static function getInterfaceOptions(array $params): int {
-        $optionsMap = ['inclLinktoData' => InterfaceObject::INCLUDE_LINKTO_IFCS
-                      //,'inclRefIfcs' => InterfaceObject::INCLUDE_REF_IFCS // not a user option!
+        $optionsMap = ['inclLinktoData' => self::INCLUDE_LINKTO_IFCS
+                      //,'inclRefIfcs' => self::INCLUDE_REF_IFCS // not a user option!
                       ];
 
         // Set default
-        return self::processOptionsMap($optionsMap, $params, InterfaceObject::DEFAULT_OPTIONS);
+        return self::processOptionsMap($optionsMap, $params, self::DEFAULT_OPTIONS);
     }
 
     protected static function processOptionsMap(array $optionsMap, array $params, int $result = 0): int {

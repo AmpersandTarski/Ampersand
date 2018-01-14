@@ -14,6 +14,7 @@ use Ampersand\Interfacing\View;
 use Ampersand\Core\Atom;
 use Ampersand\Misc\Config;
 use Ampersand\Plugs\IfcPlugInterface;
+use Ampersand\Interfacing\Options;
 
 /**
  *
@@ -21,14 +22,6 @@ use Ampersand\Plugs\IfcPlugInterface;
  *
  */
 class InterfaceObject {
-    
-    const
-        /** Default options */
-        DEFAULT_OPTIONS     = 0b00000001,
-        
-        INCLUDE_REF_IFCS    = 0b00000001,
-        
-        INCLUDE_LINKTO_IFCS = 0b00000011; // linkto ifcs are ref(erence) interfaces
     
     /**
      * Contains all interface definitions
@@ -265,7 +258,7 @@ class InterfaceObject {
         if($this->crudU() && $this->tgtConcept->isObject()) $arr[] = $this->tgtConcept;
         
         // Add editable concepts for subinterfaces
-        foreach($this->getSubinterfaces(self::DEFAULT_OPTIONS | self::INCLUDE_REF_IFCS) as $ifc){
+        foreach($this->getSubinterfaces(Options::DEFAULT_OPTIONS | Options::INCLUDE_REF_IFCS) as $ifc){
             $arr = array_merge($arr, $ifc->getEditableConcepts());
         }
         
@@ -432,7 +425,7 @@ class InterfaceObject {
      */
     public function getInterfaceFlattened(){
         $arr = [$this];
-        foreach ($this->getSubinterfaces(self::DEFAULT_OPTIONS & ~self::INCLUDE_REF_IFCS) as $ifc){
+        foreach ($this->getSubinterfaces(Options::DEFAULT_OPTIONS & ~Options::INCLUDE_REF_IFCS) as $ifc){
             $arr = array_merge($arr, $ifc->getInterfaceFlattened());
         }
         return $arr;
@@ -442,9 +435,9 @@ class InterfaceObject {
      * @param int $options
      * @return InterfaceObject[] 
      */
-    public function getSubinterfaces($options = self::DEFAULT_OPTIONS){
-        if($this->isRef() && ($options & self::INCLUDE_REF_IFCS) // if ifc is reference to other root ifc, option to include refs must be set (= default)
-            && (!$this->isLinkTo() || ($options & self::INCLUDE_LINKTO_IFCS))) // this ref ifc must not be a LINKTO ór option is set to explicitly include linkto ifcs
+    public function getSubinterfaces($options = Options::DEFAULT_OPTIONS){
+        if($this->isRef() && ($options & Options::INCLUDE_REF_IFCS) // if ifc is reference to other root ifc, option to include refs must be set (= default)
+            && (!$this->isLinkTo() || ($options & Options::INCLUDE_LINKTO_IFCS))) // this ref ifc must not be a LINKTO ór option is set to explicitly include linkto ifcs
         {
             /* Return the subinterfaces of the reference interface. This skips the referenced toplevel interface. 
              * e.g.:
