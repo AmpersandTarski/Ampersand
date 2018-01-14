@@ -70,14 +70,10 @@ class Session {
         $this->logger->debug("Session id set to: {$this->id}");
     }
 
-    private function resetId(){
-        session_regenerate_id(); // Create new php session identifier
-        $this->setId();
-    }
-
     public function reset(){
         $this->sessionAtom->delete(); // Delete Ampersand representation of session
-        $this->resetId();
+        session_regenerate_id(); // Create new php session identifier
+        $this->setId();
         $this->initSessionAtom();
     }
     
