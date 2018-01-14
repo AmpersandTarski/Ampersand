@@ -214,13 +214,12 @@ class Resource extends Atom {
  *************************************************************************************************/
  
     /**
-     * @param int $rcOptions
-     * @param int $ifcOptions
+     * @param int $options
      * @param int $depth
      * @param array $recursionArr
      * @return Resource $this
      */
-    public function get($rcOptions = Options::DEFAULT_OPTIONS, $ifcOptions = Options::DEFAULT_OPTIONS, int $depth = null, $recursionArr = []){
+    public function get(int $options = Options::DEFAULT_OPTIONS, int $depth = null, array $recursionArr = []){
         $this->logger->debug("get() called for {$this}");
         if(isset($this->parentList)){
             $parentIfc = $this->parentList->getIfc();
@@ -228,10 +227,10 @@ class Resource extends Atom {
         }
         
         // Meta data
-        if($rcOptions & Options::INCLUDE_META_DATA) $this->ifcData['_path_'] = $this->getPath();
+        if($options & Options::INCLUDE_META_DATA) $this->ifcData['_path_'] = $this->getPath();
         
         // Interface(s) to navigate to for this resource
-        if(($rcOptions & Options::INCLUDE_NAV_IFCS) && isset($parentIfc)){
+        if(($options & Options::INCLUDE_NAV_IFCS) && isset($parentIfc)){
             $this->ifcData['_ifcs_'] = array_map(function($o) {
                    return array('id' => $o->id, 'label' => $o->label);
             }, $parentIfc->getNavInterfacesForTgt());
@@ -250,14 +249,14 @@ class Resource extends Atom {
             }
             
             // 
-            foreach($parentIfc->getSubinterfaces($ifcOptions) as $subifc){
+            foreach($parentIfc->getSubinterfaces($options) as $subifc){
                 if(!$subifc->crudR()) continue; // skip subinterface if not given read rights (otherwise exception will be thrown when getting content)
                     
                 // Add content of subifc
-                $this->ifcData[$subifc->id] = $subcontent = $this->all($subifc->id)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
+                $this->ifcData[$subifc->id] = $subcontent = $this->all($subifc->id)->get($options, $depth, $recursionArr);
                 
                 // Add sort data if subIfc is univalent
-                if($subifc->isUni() && ($rcOptions & Options::INCLUDE_SORT_DATA)){
+                if($subifc->isUni() && ($options & Options::INCLUDE_SORT_DATA)){
                     $this->ifcData['_sortValues_'] = [];
                     
                     // If subifc is PROP (i.e. content is boolean)
@@ -355,10 +354,13 @@ class Resource extends Atom {
     
     /**
      * @param string $ifcId
+     * @param int $options
+     * @param int $depth
+     * @param array $recursionArr
      * @return array representation of resource content of given interface
      */
-    public function getList($ifcId, $rcOptions = Options::DEFAULT_OPTIONS, $ifcOptions = Options::DEFAULT_OPTIONS, int $depth = null, $recursionArr = []){
-        return $this->all($ifcId)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
+    public function getList(string $ifcId, int $options = Options::DEFAULT_OPTIONS, int $depth = null, array $recursionArr = []){
+        return $this->all($ifcId)->get($options, $options, $depth, $recursionArr);
     }
     
     /**

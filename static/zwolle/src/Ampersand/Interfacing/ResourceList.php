@@ -166,13 +166,12 @@ class ResourceList implements IteratorAggregate {
  *************************************************************************************************/
      
     /**
-     * @param int $rcOptions
-     * @param int $ifcOptions
+     * @param int $options
      * @param int $depth
      * @param array $recursionArr
      * @return mixed[]
      */
-    public function get($rcOptions = Options::DEFAULT_OPTIONS, $ifcOptions = Options::DEFAULT_OPTIONS, int $depth = null, $recursionArr = []){
+    public function get($options = Options::DEFAULT_OPTIONS, int $depth = null, $recursionArr = []){
         $this->logger->debug("get() called for {$this->src} / {$this->ifc}");
         if(!$this->ifc->crudR()) throw new Exception ("Read not allowed for ". $this->ifc->getPath(), 405);
         
@@ -183,7 +182,7 @@ class ResourceList implements IteratorAggregate {
         if($this->ifc->tgtConcept->isObject()){
             
             foreach ($this->getTgtResources() as $resource){
-                $result[] = $resource->get($rcOptions, $ifcOptions, $depth, $recursionArr); // for json_encode $resource->jsonSerializable() is called
+                $result[] = $resource->get($options, $depth, $recursionArr); // for json_encode $resource->jsonSerializable() is called
             }
             
             // Special case for leave PROP: return false when result is empty, otherwise true (i.e. I atom must be present)

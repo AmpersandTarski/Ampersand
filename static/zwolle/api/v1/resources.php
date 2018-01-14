@@ -80,12 +80,11 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $ampersandApp = $container['ampersand_app'];
     
     // Options
-    $rcOptions = Options::getResourceOptions($app->request()->params());
-    $ifcOptions = Options::getInterfaceOptions($app->request()->params());
+    $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
 
     // Get content
-    $content = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath)->get($rcOptions, $ifcOptions, $depth);
+    $content = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath)->get($options, $depth);
 
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
@@ -99,13 +98,12 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $transaction = Transaction::getCurrentTransaction();
     
     // Options
-    $rcOptions = Options::getResourceOptions($app->request()->params());
-    $ifcOptions = Options::getInterfaceOptions($app->request()->params());
+    $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
     
     // Perform put
     $obj = $app->request->getBody();
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($obj)->get($rcOptions, $ifcOptions, $depth);
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($obj)->get($options, $depth);
     
     // Close transaction
     $transaction->close();
@@ -131,13 +129,12 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     $transaction = Transaction::getCurrentTransaction();
     
     // Options
-    $rcOptions = Options::getResourceOptions($app->request()->params());
-    $ifcOptions = Options::getInterfaceOptions($app->request()->params());
+    $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
     
     // Perform patch(es)
     $patches = $app->request->getBody();
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches)->get($rcOptions, $ifcOptions, $depth);
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches)->get($options, $depth);
     
     // Close transaction
     $transaction->close();
@@ -166,13 +163,12 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     $transaction = Transaction::getCurrentTransaction();
     
     // Options
-    $rcOptions = Options::getResourceOptions($app->request()->params());
-    $ifcOptions = Options::getInterfaceOptions($app->request()->params());
+    $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
     
     // Perform create
     $obj = $app->request->getBody();
-    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($obj)->get($rcOptions, $ifcOptions, $depth);
+    $resource = Resource::makeResource($resourceId, $resourceType)->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($obj)->get($options, $depth);
     
     // Close transaction
     $transaction->close();
