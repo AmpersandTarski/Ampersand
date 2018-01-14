@@ -100,7 +100,6 @@ class AmpersandApp
 
     protected function setSession(){
         $this->session = new Session(Logger::getLogger('SESSION'));
-        $this->session->initSessionAtom();
     }
 
     protected function setInterfacesAndRules(){

@@ -53,6 +53,7 @@ class Session {
         $this->logger = $logger;
        
         $this->setId();
+        $this->initSessionAtom();
     }
 
     /**
@@ -80,7 +81,7 @@ class Session {
         $this->initSessionAtom();
     }
     
-    public function initSessionAtom(){
+    protected function initSessionAtom(){
         $this->sessionAtom = Concept::makeSessionAtom($this->id);
         $this->sessionResource = Resource::makeResourceFromAtom($this->sessionAtom);
         
