@@ -32,17 +32,21 @@ class Session {
     /**
      * @var string $id session identifier
      */
-    private $id;
+    protected $id;
     
     /**
-     * @var Atom $sessionAtom reference to corresponding session object (Atom) in &-domain
+     * Reference to corresponding session object (Atom) in &-domain
+     * 
+     * @var Atom $sessionAtom
      */
-    public $sessionAtom;
+    protected $sessionAtom;
     
     /**
-     * @var Resource $sessionResource reference to corresponding session object which can be used with interfaces
+     * Reference to corresponding session object which can be used with interfaces
+     * 
+     * @var Resource $sessionResource
      */
-    public $sessionResource;
+    protected $sessionResource;
     
     /**
      * Constructor of Session class
@@ -114,6 +118,15 @@ class Session {
         $this->sessionAtom->link(date(DATE_ATOM), 'lastAccess[SESSION*DateTime]', false)->add(); 
         
         Transaction::getCurrentTransaction()->close(true);
+    }
+
+    /**
+     * Get session object which can be used with interfaces
+     *
+     * @return \Ampersand\Interfacing\Resource
+     */
+    public function getSessionResource() {
+        return $this->sessionResource;
     }
 
     /**
