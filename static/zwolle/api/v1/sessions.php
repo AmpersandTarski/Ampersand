@@ -23,7 +23,7 @@ $app->get('/admin/sessions/delete/expired', function () use ($app, $container) {
     Session::deleteExpiredSessions();
 });
 
-$app->patch('/session/roles', function () use ($app, $container){
+$app->patch('/app/roles', function () use ($app, $container){
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     /** @var \Ampersand\AngularApp $angularApp */
@@ -35,7 +35,7 @@ $app->patch('/session/roles', function () use ($app, $container){
     print json_encode($ampersandApp->getSessionRoles(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/session/navbar', function () use ($app, $container) {
+$app->get('/app/navbar', function () use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     /** @var \Ampersand\AngularApp $angularApp */
@@ -65,7 +65,7 @@ $app->get('/session/navbar', function () use ($app, $container) {
 });
 
 
-$app->get('/session/notifications', function () use ($app, $container) {
+$app->get('/app/notifications', function () use ($app, $container) {
      /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     

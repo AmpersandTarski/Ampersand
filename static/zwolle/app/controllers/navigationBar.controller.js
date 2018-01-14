@@ -9,7 +9,7 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
     $rootScope.setActiveRoles = function(){
         $rootScope.loadingNavBar = [];
         $rootScope.loadingNavBar.push(
-            Restangular.all('session/roles')
+            Restangular.all('app/roles')
             .patch($sessionStorage.sessionRoles)
             .then(function(data){
                 $rootScope.refreshNavBar();
@@ -20,7 +20,7 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
     $rootScope.refreshNavBar = function(){
         $rootScope.loadingNavBar = [];
         $rootScope.loadingNavBar.push(
-            Restangular.one('session/navbar')
+            Restangular.one('app/navbar')
                 .get()
                 .then(function(data){
                     data = data.plain();
