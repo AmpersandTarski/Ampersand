@@ -588,7 +588,7 @@ bulletList [] = mempty
 bulletList xs = BuggyBuilder.bulletList xs
 
 math :: String -> Inlines
-math s = BuggyBuilder.math ("{"++s++"}")
+math s = BuggyBuilder.math s -- ("{"++s++"}")
 
 violation2Inlines :: FSpec -> PairView Expression -> Inlines
 violation2Inlines fSpec _ = (text.l) (NL "<meldingstekst moet hier nog worden gegenereerd>"

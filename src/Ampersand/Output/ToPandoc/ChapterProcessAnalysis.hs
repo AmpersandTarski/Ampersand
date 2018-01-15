@@ -1,16 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Ampersand.Output.ToPandoc.ChapterProcessAnalysis
+module Ampersand.Output.ToPandoc.ChapterProcessAnalysis(chpProcessAnalysis)
 where
 import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.List
-
---DESCR -> the process analysis contains a section for each process in the fSpec
--- If an Ampersand script contains no reference to any role whatsoever, a process analysis is meaningless.
--- In that case it will not be printed. To detect whether this is the case, we can look whether the
--- mayEdit attributes remain empty.
-noProcesses :: FSpec -> Bool
-noProcesses fSpec = null (fRoles fSpec)
 
 chpProcessAnalysis :: FSpec -> Blocks
 chpProcessAnalysis fSpec
@@ -30,39 +23,33 @@ chpProcessAnalysis fSpec
   headerBlocks
    = xDefBlck fSpec ProcessAnalysis <>
      purposes2Blocks (getOpts fSpec) purps <> -- This explains the purpose of this context.
-     fromList(
-     [ case fsLang fSpec of
-         Dutch   ->
-            Plain [ Str $ upCap (name fSpec)++" benoemt geen enkele rol. "
-                  , Str "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
-                  ]
-         English ->
-            Plain [ Str $ upCap (name fSpec)++" does not mention any role. "
-                  , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
-                  ]
-     | null (fRoles fSpec)] ++
-     [ case fsLang fSpec of
-         Dutch   ->
-            Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
-                  , Str ""
-                  ]
-         English ->
-            Plain [ Str $ upCap (name fSpec)++" does not specify which roles may change the contents of which relations. "
-                  , Str ""
-                  ]
-     | null (fRoleRels fSpec)])
+     if null (fRoles fSpec)
+     then
+      plain (  fnm
+            <> (str.l) (NL " benoemt geen enkele rol. "
+                       ,EN " does not mention any role. ")
+            <> (str.l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
+                       ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process.")
+            ) 
+     else
+      plain (  fnm
+            <> (str.l) (NL " specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
+                       ,EN " does not specify which roles may change the contents of which relations. ")
+            )
      where purps = purposesDefinedIn fSpec (fsLang fSpec) fSpec
-
+           
+  fnm :: Inlines
+  fnm   = str . upCap . name $ fSpec
   roleRuleBlocks :: Blocks
   roleRuleBlocks
    = if null (fRoleRuls fSpec) && (not.null.vrules) fSpec then mempty else
       (case fsLang fSpec of
           Dutch   ->
-            para ( (str.upCap.name) fSpec <> " kent regels aan rollen toe. "
+            para ( fnm <> " kent regels aan rollen toe. "
                  <> "De volgende tabel toont de regels die door een bepaalde rol worden gehandhaafd."
                  )
           English ->
-            para ( (str.upCap.name) fSpec <> " assigns rules to roles. "
+            para ( fnm <> " assigns rules to roles. "
                  <> "The following table shows the rules that are being maintained by a given role."
                  )
 -- the table containing the role-rule assignments

@@ -10,7 +10,6 @@ import Ampersand.Graphic.Fspec2ClassDiagrams
 import Data.Char
 import Data.List
 import Data.Function (on)
-import qualified Text.Pandoc.Builder
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
@@ -360,7 +359,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
        , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) rule
        , fromList $ meaning2Blocks (fsLang fSpec) rule
        , para (showMath rule)
-       , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
        , if isSignal rule
          then mempty
          else case rrviol rule of

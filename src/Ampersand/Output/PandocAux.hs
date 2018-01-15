@@ -290,7 +290,8 @@ instance ShowMath Rule where
 
 instance ShowMath Expression where
  showMath = math . showExpr . insParentheses
-   where  showExpr (EEqu (l,r)) = showExpr l++inMathEquals++showExpr r
+   where  showExpr :: Expression -> String
+          showExpr (EEqu (l,r)) = showExpr l++inMathEquals++showExpr r
           showExpr (EInc (l,r)) = showExpr l++inMathInclusion++showExpr r
           showExpr (EIsc (l,r)) = showExpr l++inMathIntersect++showExpr r
           showExpr (EUni (l,r)) = showExpr l++inMathUnion++showExpr r
@@ -542,98 +543,6 @@ texOnlyMarginNote :: String -> String
 texOnlyMarginNote mgn = 
    "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "++mgn++"}\\end{minipage}}"
 
--------------------------------------------------
----temporary from Pandoc:
-------------------------------------------
-
--- makePDF :: (WriterOptions -> Pandoc -> Text.Text)  -- ^ writer
---         -> WriterOptions       -- ^ options
---         -> Pandoc              -- ^ document
---         -> FSpec
---         -> IO (Either BL.ByteString BL.ByteString)
--- makePDF writer wOpts pandoc fSpec = 
---   tex2pdf' (dirOutput (getOpts fSpec))
-  
---   where 
---     wVerbose = writerVerbose wOpts
---     program  = "pdflatex" 
---     args     = writerLaTeXArgs wOpts
---     wSource  = writer wOpts pandoc
---     tex2pdf' :: FilePath                        -- ^ temp directory for output
---              -> IO (Either BL.ByteString BL.ByteString)
---     tex2pdf' tmpDir = do
---       let numruns = if "\\tableofcontents" `isInfixOf` wSource
---                        then 3  -- to get page numbers
---                        else 2  -- 1 run won't give you PDF bookmarks
---       (exit, log', mbPdf) <- runTeXProgram 1 numruns tmpDir
---       case (exit, mbPdf) of
---            (SE.ExitFailure _, _)      -> do
---               let logmsg = extractMsg log'
---               return $ Left logmsg
---            (SE.ExitSuccess, Nothing)  -> return $ Left ""
---            (SE.ExitSuccess, Just pdf) -> return $ Right pdf
-
--- -- running tex programs
-
--- -- Run a TeX program on an input bytestring and return (exit code,
--- -- contents of stdout, contents of produced PDF if any).  Rerun
--- -- a fixed number of times to resolve references.
---     runTeXProgram :: Int -> Int -> FilePath
---                   -> IO (SE.ExitCode, BL.ByteString, Maybe BL.ByteString)
---     runTeXProgram runNumber numRuns tmpDir = do
---         let file = dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ".ltx"
---         exists <- doesFileExist file
---         unless exists $ fatal ("File should be written by now:\n  "++file)
--- #ifdef _WINDOWS
---         -- note:  we want / even on Windows, for TexLive
---         let tmpDir' = changePathSeparators tmpDir
---         let file' = changePathSeparators file
--- #else
---         let tmpDir' = tmpDir
---         let file' = file
--- #endif
---         let programArgs = ["-halt-on-error", "-interaction", "nonstopmode",
---              "-output-directory", tmpDir'] ++ args ++ [file']
---         env' <- getEnvironment
---         let sep = [searchPathSeparator]
---         let texinputs = maybe (tmpDir' ++ sep) ((tmpDir' ++ sep) ++)
---               $ lookup "TEXINPUTS" env'
---         let env'' = ("TEXINPUTS", texinputs) :
---                       [(k,v) | (k,v) <- env', k /= "TEXINPUTS"]
---         when (wVerbose && runNumber == 1) $ do
---           putStrLn "[makePDF] temp dir:"
---           putStrLn tmpDir'
---           putStrLn "[makePDF] Command line:"
---           putStrLn $ program ++ " " ++ unwords (map show programArgs)
---           putStr "\n"
---           putStrLn $ "[makePDF] Processing: " ++ file'
---           putStr "\n"
---         (exit, out) <- pipeProcess (Just env'') program programArgs BL.empty
---         when wVerbose $ do
---           putStrLn $ "[makePDF] Run #" ++ show runNumber
---           BL.hPutStr stdout out
---           putStr "\n"
---         if runNumber <= numRuns
---            then runTeXProgram (runNumber + 1) numRuns tmpDir
---            else do
---              let pdfFile = replaceDirectory (replaceExtension file ".pdf") tmpDir
---              pdfExists <- doesFileExist pdfFile
---              pdf <- if pdfExists
---                        -- We read PDF as a strict bytestring to make sure that the
---                        -- temp directory is removed on Windows.
---                        -- See https://github.com/jgm/pandoc/issues/1192.
---                        then (Just . BL.fromChunks . (:[])) `fmap` BS.readFile pdfFile
---                        else return Nothing
---              -- Note that some things like Missing character warnings
---              -- appear in the log but not on stderr, so we prefer the log:
---              let logFile = replaceExtension file ".log"
---              logExists <- doesFileExist logFile
---              log' <- if logExists
---                         then BL.readFile logFile
---                         else return out
---              return (exit, log', pdf)
-
--- parsing output
 
 commaPandocAnd :: Lang -> [Inlines] -> Inlines
 commaPandocAnd Dutch = commaNLPandoc "en"
