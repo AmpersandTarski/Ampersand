@@ -982,11 +982,26 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                  , "as representation of an atom in concept `"++name c++"`."
                  , "However, the representation-type of that concept is "++implicitly
                  , "defined as "++show expected++". The found value does not match that type."
-                 ]
+                 ]++ example
         where
           c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
           expected = if typ == Object then Alphanumeric else typ
           implicitly = if typ == Object then "(implicitly) " else ""
+          example :: [String]
+          example = case typ of
+              Alphanumeric     -> ["ALPHANUMERIC types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
+              BigAlphanumeric  -> ["BIGALPHANUMERIC types are texts (max 64k chars) surrounded with double quotes (\"-characters)."]
+              BigBinary        -> ["There currently is no syntax to denote BIGBINARY values"]
+              Binary           -> ["There currently is no syntax to denote BINARY values"]
+              Boolean          -> ["BOOLEAN types can have the value TRUE or FALSE (without surrounding quotes)."]
+              Date             -> ["DATE types are defined by ISO8601, e.g. 2013-07-04 (without surrounding quotes)."]
+              DateTime         -> ["DATETIME types follow ISO 8601 format, e.g. 2013-07-04T11:11:11+00:00 or 2015-06-03T13:21:58Z (without surrounding quotes)."]
+              Float            -> ["FLOAT type are floating point numbers. There should be a dot character (.) in it."]
+              HugeAlphanumeric -> ["HUGEALPHANUMERIC types are texts (max 16M chars) surrounded with double quotes (\"-characters)."]
+              HugeBinary       -> ["There currently is no syntax to denote HUGEBINARY values"]
+              Integer          -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
+              Password         -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
+              _                -> fatal $ "There is no example denotational syntax for a value of type `"++show typ++"`." 
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      maybeRead :: Read a => String -> Maybe a
      maybeRead = fmap fst . listToMaybe . reads

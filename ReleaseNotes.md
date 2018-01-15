@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 
+* [Issue #739](https://github.com/AmpersandTarski/Ampersand/issues/739) Better parser error message for mismatch of values
+
 ## v3.9.1 (22 december 2017)
 
 * Security fix: use PHP session strict mode. This prevents a user defined session ID that is never generated
