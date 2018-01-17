@@ -62,7 +62,7 @@ makeFSpec opts context
               , allConjsPerDecl = fSpecAllConjsPerDecl
               , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
-              , allUsedDecls = relsUsedIn context
+              , allUsedDecls = bindedRelationsIn context
               , vrels        = calculatedDecls
               , allConcepts  = fSpecAllConcepts
               , cptTType     = representationOf contextinfo
@@ -159,7 +159,7 @@ makeFSpec opts context
      allConjs = makeAllConjs opts allrules
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
      fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
-     fSpecAllConjsPerDecl = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
+     fSpecAllConjsPerDecl = converse [ (conj, bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = 
            converse [ (conj, smaller (source e) `uni` smaller (target e)) 
                     | conj <- allConjs
@@ -359,7 +359,7 @@ makeFSpec opts context
           not (length objattributes==1 && isIdent(objExpression(head objattributes)))
         , let e0=head cl, not (null e0) || fatal "null e0"
         , let c=source (head e0)
-        , let params = nub . concatMap relsMentionedIn . expressionsIn $ objattributes
+        , let params = nub . concatMap bindedRelationsIn . expressionsIn $ objattributes
         ]
      --end otherwise: default theme
      --end stap4a

@@ -9,40 +9,27 @@ import Ampersand.Classes.ViewPoint
 import Data.List
 import Data.Maybe
 
-{- TODO: Interface parameters (of type Relation) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
-   (implemented using primsMentionedIn, which calls expressionsIn). A more correct way to do this would be to not use expressionsIn, but
-   define relsMentionedIn directly.
-   
-   Another improvement would be to factorize the prim constructors from the Expression data type, so expressionsIn won't need to be partial
-   anymore.
--}
-
 class ConceptStructure a where
-  concs ::      a -> [A_Concept]               -- ^ the set of all concepts used in data structure a
-  relsUsedIn :: a -> [Relation]             -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
-  relsUsedIn a = relsMentionedIn a
-  relsMentionedIn :: a -> [Relation]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
-  relsMentionedIn = nub . mapMaybe prim2rel . primsMentionedIn
-  primsMentionedIn :: a -> [Expression]
+  concs                 ::      a -> [A_Concept]               -- ^ the set of all concepts used in data structure a
+  expressionsIn         :: a -> [Expression] -- ^ The set of all expressions within data structure a
+  bindedRelationsIn     :: a -> [Relation]             -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
+  bindedRelationsIn = nub . catMaybes . map bindedRelation . primsMentionedIn
+    where 
+      bindedRelation :: Expression -> Maybe Relation
+      bindedRelation primExpr =
+        case primExpr of
+         EDcD d -> Just d
+         _      -> Nothing
+  primsMentionedIn      :: a -> [Expression]
   primsMentionedIn = nub . concatMap primitives . expressionsIn
-  expressionsIn :: a -> [Expression] -- ^ The set of all expressions within data structure a
   modifyablesByInsOrDel :: a -> [Expression] -- ^ the set of expressions of which population could be modified directy by Insert or Delete
-  modifyablesByInsOrDel = filter affectedByInsOrDel . primsMentionedIn 
+  modifyablesByInsOrDel = nub . filter affectedByInsOrDel . primsMentionedIn 
     where affectedByInsOrDel e
             = case e of
                 EDcD{} -> True
                 EDcI{} -> True
                 EDcV{} -> True
                 _      -> False
-
-prim2rel :: Expression -> Maybe Relation
-prim2rel e
- = case e of
-    EDcD d       -> Just d
-    EDcI _       -> Nothing
-    EDcV _       -> Nothing
-    EMp1 _ _     -> Nothing
-    _            -> fatal ("only primitive expressions should be found here.\nHere we see: " ++ show e)
 
 instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
   concs    (a,b) = concs a `uni` concs b
