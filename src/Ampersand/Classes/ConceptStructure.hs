@@ -26,7 +26,15 @@ class ConceptStructure a where
   primsMentionedIn :: a -> [Expression]
   primsMentionedIn = nub . concatMap primitives . expressionsIn
   expressionsIn :: a -> [Expression] -- ^ The set of all expressions within data structure a
-  
+  modifyablesByInsOrDel :: a -> [Expression] -- ^ the set of expressions of which population could be modified directy by Insert or Delete
+  modifyablesByInsOrDel = filter affectedByInsOrDel . primsMentionedIn 
+    where affectedByInsOrDel e
+            = case e of
+                EDcD{} -> True
+                EDcI{} -> True
+                EDcV{} -> True
+                _      -> False
+
 prim2rel :: Expression -> Maybe Relation
 prim2rel e
  = case e of
