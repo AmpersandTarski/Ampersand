@@ -160,9 +160,13 @@ makeFSpec opts context
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
      fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
-     fSpecAllConjsPerConcept = converse [ (conj, smaller (source r) `uni` smaller (target r)) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ]
-                               where smaller :: A_Concept -> [A_Concept]
-                                     smaller cpt = [cpt] `uni` smallerConcepts (gens context) cpt
+     fSpecAllConjsPerConcept = 
+           converse [ (conj, smaller (source e) `uni` smaller (target e)) 
+                    | conj <- allConjs
+                    , e    <- modifyablesByInsOrDel . rc_conjunct $ conj ]
+               where 
+                 smaller :: A_Concept -> [A_Concept]
+                 smaller cpt = [cpt] `uni` smallerConcepts (gens context) cpt
      allQuads = quadsOfRules opts allrules 
      
      allrules = map setIsSignal (allRules context)
@@ -355,7 +359,7 @@ makeFSpec opts context
           not (length objattributes==1 && isIdent(objExpression(head objattributes)))
         , let e0=head cl, not (null e0) || fatal "null e0"
         , let c=source (head e0)
-        , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]
+        , let params = nub . concatMap relsMentionedIn . expressionsIn $ objattributes
         ]
      --end otherwise: default theme
      --end stap4a
