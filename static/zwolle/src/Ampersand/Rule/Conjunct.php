@@ -205,7 +205,7 @@ class Conjunct {
             // Add new conjunct violation to database
             $query = "INSERT IGNORE INTO \"{$dbsignalTableName}\" (\"conjId\", \"src\", \"tgt\") VALUES ";
             $values = [];
-            foreach ($violations as $violation) $values[] = "('{$this->id}', '" . $this->database->escape($violation['src']) . "', '" . $this->database->escape($violation['tgt']) . "')";
+            foreach ($this->conjunctViolations as $violation) $values[] = "('{$this->id}', '" . $this->database->escape($violation['src']) . "', '" . $this->database->escape($violation['tgt']) . "')";
             $query .= implode(',', $values);
             $this->database->Exe($query);
         }
