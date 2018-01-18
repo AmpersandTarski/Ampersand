@@ -200,6 +200,26 @@ class Conjunct {
         }catch (Exception $e){
             Logger::getUserLogger()->error("While checking conjunct '{$this->id}': " . $e->getMessage());
             return array();
+    }
+
+    public function saveCache(){
+        /** @var \Pimple\Container $container */
+        global $container;
+        $db = $container['mysql_database'];
+        $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
+
+        // Delete existing conjunct violation cache
+        $query = "DELETE FROM \"{$dbsignalTableName}\" WHERE \"conjId\" = '{$this->id}'";
+        $db->Exe($query);
+        
+        // Save new violations (if any)
+        if(!empty($this->conjunctViolations)) {
+            // Add new conjunct violation to database
+            $query = "INSERT IGNORE INTO \"{$dbsignalTableName}\" (\"conjId\", \"src\", \"tgt\") VALUES ";
+            $values = [];
+            foreach ($violations as $violation) $values[] = "('{$this->id}', '" . $db->escape($violation['src']) . "', '" . $db->escape($violation['tgt']) . "')";
+            $query .= implode(',', $values);
+            $db->Exe($query);
         }
     }
     
