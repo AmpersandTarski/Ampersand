@@ -202,7 +202,12 @@ class AmpersandApp
 
         // Initial conjunct evaluation
         $this->logger->info("Initial evaluation of all conjuncts after application reinstallation");
-        foreach(Conjunct::getAllConjuncts() as $conjunct) $conjunct->evaluateConjunct(true); // Evaluate, cache and store all conjuncts
+        
+        // Evaluate all conjunct and save cache
+        foreach(Conjunct::getAllConjuncts() as $conj){
+            $conj->evaluate(true);
+            $conj->saveCache();
+        }
 
         $this->setSession(); // Initiate session again
 

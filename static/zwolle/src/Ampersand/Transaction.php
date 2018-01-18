@@ -143,7 +143,10 @@ class Transaction {
 
         // Run ExecEngine
         ExecEngine::run();
-        
+
+        // (Re)evaluate affected conjuncts
+        foreach($this->getAffectedConjuncts() as $conj) $conj->evaluate(false);
+
         // Check invariant rules
         $violations = $this->getInvariantViolations();
         $this->invariantRulesHold = empty($violations) ? true : false;
@@ -151,11 +154,19 @@ class Transaction {
         
         // Decide action (commit or rollback)
         if($this->invariantRulesHold && $commit){
+            // Cache conjuncts
+            foreach($this->getAffectedConjuncts() as $conj) $conj->saveCache();
+
+            // Commit transaction
             $this->logger->info("Commit transaction");
             foreach($this->storages as $storage) $storage->commitTransaction($this); // Commit transaction for each registered storage
             $this->isCommitted = true;
             
         }elseif(Config::get('ignoreInvariantViolations', 'transactions') && $commit){
+            // Cache conjuncts
+            foreach($this->getAffectedConjuncts() as $conj) $conj->saveCache();
+
+            // Commit transaction
             $this->logger->warning("Commit transaction with invariant violations");
             foreach($this->storages as $storage) $storage->commitTransaction($this); // Commit transaction for each registered storage
             $this->isCommitted = true;
