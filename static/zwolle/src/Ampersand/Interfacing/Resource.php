@@ -138,7 +138,7 @@ class Resource extends Atom {
             if ($this->concept->isSession()) {
                 return "session"; // Don't put session id here, this is implicit
             } else {
-                return "resources/{$this->concept->name}/" . $this->id;
+                return "resource/{$this->concept->name}/" . $this->id;
             }
         }
     }
@@ -148,7 +148,7 @@ class Resource extends Atom {
     }
     
     public function getURI(){
-        return Config::get('serverURL') . Config::get('apiPath') . "/resources/{$this->concept->name}/" . $this->id;
+        return Config::get('serverURL') . Config::get('apiPath') . "/resource/{$this->concept->name}/" . $this->id;
     }
     
     /**

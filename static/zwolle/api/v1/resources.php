@@ -22,7 +22,7 @@ global $container;
  *
  *************************************************************************************************/
 
-$app->get('/resources', function() use ($app, $container) {
+$app->get('/resource', function() use ($app, $container) {
     if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
     
     $content = array_values(
@@ -35,7 +35,7 @@ $app->get('/resources', function() use ($app, $container) {
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/resources/:resourceType', function ($resourceType) use ($app, $container) {
+$app->get('/resource/:resourceType', function ($resourceType) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
@@ -52,7 +52,7 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app, $conta
 });
 
 
-$app->get('/resources/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app, $container) {
+$app->get('/resource/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
@@ -87,7 +87,7 @@ $app->get('/session/:ifcPath+', function($ifcPath) use ($app, $container) {
 });
 
 // GET for interfaces that start with other resource
-$app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
+$app->get('/resource/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
@@ -129,7 +129,7 @@ $app->map('/session/:ifcPath+', function ($ifcPath) use ($app, $container) {
 })->via('PUT', 'PATCH', 'POST');
 
 // PUT, PATCH, POST for interfaces that start with other resource
-$app->map('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
+$app->map('/resource/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
@@ -166,7 +166,7 @@ $app->delete('/session/:ifcPath+', function ($ifcPath) use ($app, $container) {
     print json_encode($controller->delete($resource, $ifcPath), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
+$app->delete('/resource/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
     $resource = Resource::makeResource($resourceId, $resourceType);
 
     $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);

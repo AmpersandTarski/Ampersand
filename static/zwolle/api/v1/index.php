@@ -70,7 +70,7 @@ $app->notFound(function () use ($app) {
     print json_encode(array('error' => 404, 'msg' => "API endpoint not found: {$app->request->getMethod()} {$app->request->getPathInfo()}. Note! virtual path is case sensitive"));
 });
 
-include (__DIR__ . '/resources.php'); // API calls starting with '/resources/'
+include (__DIR__ . '/resources.php'); // API calls starting with '/resource/'
 include (__DIR__ . '/admin.php'); // API calls starting with '/admin/'
 include (__DIR__ . '/sessions.php'); // API calls starting with '/sessions/'
 

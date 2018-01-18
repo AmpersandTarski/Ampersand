@@ -21,7 +21,7 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', function(
     $scope.getTypeahead = function(resourceType){
         // Only if not yet set
         if(typeof $scope.typeahead[resourceType] === 'undefined'){
-            $scope.typeahead[resourceType] = Restangular.all('resources/' + resourceType).getList().$object;
+            $scope.typeahead[resourceType] = Restangular.all('resource/' + resourceType).getList().$object;
         }
     };
     

@@ -14,14 +14,14 @@ angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', functi
     
     // Set resourceId to special '_NEW' value in case new resource must be created
     if(\$routeParams['new'] && '$source$' == '$target$') 
-        \$scope.resource = { _id_ : '_NEW', _path_ : 'resources/' + resourceType + '/_NEW', _isRoot_ : true };
+        \$scope.resource = { _id_ : '_NEW', _path_ : 'resource/' + resourceType + '/_NEW', _isRoot_ : true };
 
     // Toplevel interface
     else if(resourceType == 'SESSION') 
         \$scope.resource = { _id_ : \$sessionStorage.session.id, _path_ : 'session', _isRoot_ : true };
 
     // Get requested resource
-    else \$scope.resource = { _id_ : \$routeParams.resourceId, _path_ : 'resources/' + resourceType + '/' + \$routeParams.resourceId , _isRoot_ : true };
+    else \$scope.resource = { _id_ : \$routeParams.resourceId, _path_ : 'resource/' + resourceType + '/' + \$routeParams.resourceId , _isRoot_ : true };
     
     \$scope.resource[ifcName] = $if(exprIsUni)$null$else$[]$endif$;
     \$scope.patchResource = \$scope.resource;
