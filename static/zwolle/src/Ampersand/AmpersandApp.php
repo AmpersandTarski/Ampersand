@@ -75,7 +75,7 @@ class AmpersandApp
         $genericsFolder = Config::get('pathToGeneratedFiles');
 
         // Instantiate object definitions from generated files
-        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'));
+        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug);
         View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
         Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'), $defaultPlug);
         Relation::setAllRelations($genericsFolder . 'relations.json', Logger::getLogger('CORE'), $defaultPlug);

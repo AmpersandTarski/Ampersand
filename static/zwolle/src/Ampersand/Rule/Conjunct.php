@@ -11,6 +11,7 @@ use Exception;
 use Ampersand\Log\Logger;
 use Ampersand\Misc\Config;
 use Psr\Log\LoggerInterface;
+use Ampersand\Plugs\MysqlDB\MysqlDB;
 
 /**
  *
@@ -32,6 +33,13 @@ class Conjunct {
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
+
+    /**
+     * Database to evaluate conjuncts and store violation cache
+     *
+     * @var \Ampersand\Plugs\MysqlDB\MysqlDB
+     */
+    protected $database;
     
     /**
      * Conjunct identifier
@@ -76,8 +84,10 @@ class Conjunct {
      * @param array $conjDef
      * @param \Psr\Log\LoggerInterface $logger
      */
-    private function __construct(array $conjDef, LoggerInterface $logger){
+    private function __construct(array $conjDef, LoggerInterface $logger, MysqlDB $database){
         $this->logger = $logger;
+
+        $this->database = $database;
         
         $this->id = $conjDef['id'];
         $this->query = $conjDef['violationsSQL'];
@@ -203,23 +213,20 @@ class Conjunct {
     }
 
     public function saveCache(){
-        /** @var \Pimple\Container $container */
-        global $container;
-        $db = $container['mysql_database'];
         $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 
         // Delete existing conjunct violation cache
         $query = "DELETE FROM \"{$dbsignalTableName}\" WHERE \"conjId\" = '{$this->id}'";
-        $db->Exe($query);
+        $this->database->Exe($query);
         
         // Save new violations (if any)
         if(!empty($this->conjunctViolations)) {
             // Add new conjunct violation to database
             $query = "INSERT IGNORE INTO \"{$dbsignalTableName}\" (\"conjId\", \"src\", \"tgt\") VALUES ";
             $values = [];
-            foreach ($violations as $violation) $values[] = "('{$this->id}', '" . $db->escape($violation['src']) . "', '" . $db->escape($violation['tgt']) . "')";
+            foreach ($violations as $violation) $values[] = "('{$this->id}', '" . $this->database->escape($violation['src']) . "', '" . $this->database->escape($violation['tgt']) . "')";
             $query .= implode(',', $values);
-            $db->Exe($query);
+            $this->database->Exe($query);
         }
     }
     
@@ -258,15 +265,16 @@ class Conjunct {
      * 
      * @param string $fileName containing the Ampersand conjunct definitions
      * @param \Psr\Log\LoggerInterface $logger
+     * @param \Ampersand\Plugs\MysqlDB\MysqlDB $database
      * @return void
      */
-    public static function setAllConjuncts(string $fileName, LoggerInterface $logger){
+    public static function setAllConjuncts(string $fileName, LoggerInterface $logger, MysqlDB $database){
         self::$allConjuncts = array();
         
         $allConjDefs = (array)json_decode(file_get_contents($fileName), true);
     
         foreach ($allConjDefs as $conjDef) {
-            self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef, $logger);
+            self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef, $logger, $database);
         }
     }
 }
