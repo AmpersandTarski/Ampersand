@@ -180,10 +180,10 @@ class Rule {
     /**
      * Check rule and return violations
      * 
-     * @param bool $cacheConjuncts
+     * @param bool $fromCache
      * @return \Ampersand\Rule\Violation[]
      */
-    public function checkRule(bool $cacheConjuncts = true): array {
+    public function checkRule(bool $fromCache = true): array {
         $this->logger->debug("Checking rule '{$this->id}'");
          
         try{
@@ -191,7 +191,7 @@ class Rule {
     
             // Evaluate conjuncts of this rule
             foreach($this->conjuncts as $conjunct) 
-                foreach ($conjunct->evaluateConjunct($cacheConjuncts) as $violation) 
+                foreach ($conjunct->evaluate($fromCache) as $violation) 
                     $violations[] = new Violation($this, $violation['src'], $violation['tgt']);
                 
             // If no violations => rule holds

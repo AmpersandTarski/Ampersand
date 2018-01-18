@@ -75,7 +75,7 @@ class AmpersandApp
         $genericsFolder = Config::get('pathToGeneratedFiles');
 
         // Instantiate object definitions from generated files
-        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'));
+        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug);
         View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
         Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'), $defaultPlug);
         Relation::setAllRelations($genericsFolder . 'relations.json', Logger::getLogger('CORE'), $defaultPlug);
@@ -202,7 +202,12 @@ class AmpersandApp
 
         // Initial conjunct evaluation
         $this->logger->info("Initial evaluation of all conjuncts after application reinstallation");
-        foreach(Conjunct::getAllConjuncts() as $conjunct) $conjunct->evaluateConjunct(true); // Evaluate, cache and store all conjuncts
+        
+        // Evaluate all conjunct and save cache
+        foreach(Conjunct::getAllConjuncts() as $conj){
+            $conj->evaluate(true);
+            $conj->saveCache();
+        }
 
         $this->setSession(); // Initiate session again
 
@@ -341,6 +346,6 @@ class AmpersandApp
         $this->logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'id')));
         
         // Check rules and signal notifications for all violations
-        foreach (RuleEngine::checkRules($this->getRulesToMaintain(), false) as $violation) Notifications::addSignal($violation);
+        foreach (RuleEngine::checkRules($this->getRulesToMaintain(), true) as $violation) Notifications::addSignal($violation);
     }
 }
