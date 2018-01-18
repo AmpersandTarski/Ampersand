@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 * [Issue #739](https://github.com/AmpersandTarski/Ampersand/issues/739) Better parser error message for mismatch of values
+* [Issue #744](https://github.com/AmpersandTarski/Ampersand/issues/744) Better lexer error message for unterminated string
 
 ## v3.9.1 (22 december 2017)
 
