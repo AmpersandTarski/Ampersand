@@ -75,7 +75,7 @@ class Conjunct {
      * 
      * @var array $conjunctViolations
      */
-    private $conjunctViolations;
+    private $conjunctViolations = null;
     
     /**
      * Conjunct constructor
@@ -154,11 +154,11 @@ class Conjunct {
     /**
      * Evaluate conjunct and return array with violation pairs
      * 
-     * @param bool $cacheConjuncts
+     * @param bool $fromCache
      * @return array[] array(array('src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
      */
-    public function evaluateConjunct(bool $cacheConjuncts = true): array {
-        $this->logger->debug("Checking conjunct '{$this->id}' cache:" . var_export($cacheConjuncts, true));
+    public function evaluate(bool $fromCache = true): array {
+        $this->logger->debug("Checking conjunct '{$this->id}' (fromCache:" . var_export($fromCache, true) . ")");
         try{
             // Skipping evaluation of UNI and INJ conjuncts. TODO: remove after fix for issue #535
             if(Config::get('skipUniInjConjuncts', 'transactions') && $this->isUniOrInjConj()){
@@ -167,49 +167,30 @@ class Conjunct {
             }
             
             // If conjunct is already evaluated and conjunctCach may be used -> return violations
-            elseif(isset($this->conjunctViolations) && $cacheConjuncts){
+            elseif(isset($this->conjunctViolations) && $fromCache){
                 $this->logger->debug("Conjunct is already evaluated, getting violations from cache");
                 return $this->conjunctViolations;
             }
 
             // Otherwise evaluate conjunct, cache and return violations
             else{
-                /** @var \Pimple\Container $container */
-                global $container;
-                $db = $container['mysql_database'];
-                $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
-                $violations = array();
-    
                 // Execute conjunct query
-                $violations = (array)$db->Exe($this->getQuery());
+                $this->conjunctViolations = (array) $this->database->Exe($this->getQuery());
                 
-                // Cache violations in php Conjunct object
-                if($cacheConjuncts) $this->conjunctViolations = $violations;
-                
-                // Remove "old" conjunct violations from database
-                $query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '{$this->id}'";
-                $db->Exe($query);
-                
-                if(count($violations) == 0){
+                if($count = count($violations) == 0) {
                     $this->logger->debug("Conjunct '{$this->id}' holds");
-                    
-                }else{
-                    $this->logger->debug("Conjunct '{$this->id}' broken, updating violations in database");
-                        
-                    // Add new conjunct violation to database
-                    $query = "INSERT IGNORE INTO `$dbsignalTableName` (`conjId`, `src`, `tgt`) VALUES ";
-                    $values = array();
-                    foreach ($violations as $violation) $values[] = "('{$this->id}', '".$db->escape($violation['src'])."', '".$db->escape($violation['tgt'])."')";
-                    $query .= implode(',', $values);
-                    $db->Exe($query);
+                } else {
+                    $this->logger->debug("Conjunct '{$this->id}' broken: {$count} violations");
                 }
-    
-                return $violations;
+
+                return $this->conjunctViolations;
             }
                 
         }catch (Exception $e){
-            Logger::getUserLogger()->error("While checking conjunct '{$this->id}': " . $e->getMessage());
-            return array();
+            Logger::getUserLogger()->error("Error while checking conjunct '{$this->id}'");
+            $this->logger->error($e->getMessage());
+            return [];
+        }
     }
 
     public function saveCache(){
