@@ -23,7 +23,7 @@ class ConceptStructure a where
   primsMentionedIn      :: a -> [Expression]
   primsMentionedIn = nub . concatMap primitives . expressionsIn
   modifyablesByInsOrDel :: a -> [Expression] -- ^ the set of expressions of which population could be modified directy by Insert or Delete
-  modifyablesByInsOrDel = nub . filter affectedByInsOrDel . primsMentionedIn 
+  modifyablesByInsOrDel = filter affectedByInsOrDel . primsMentionedIn -- if primsMentionedIn contains no duplicates, neither does modifyablesByInsOrDel.
     where affectedByInsOrDel e
             = case e of
                 EDcD{} -> True
