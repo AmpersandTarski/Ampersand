@@ -64,8 +64,8 @@ $app->get('/admin/execengine/run', function () use ($app, $container){
 $app->get('/admin/ruleengine/evaluate/all', function() use ($app, $container){
     if(Config::get('productionEnv')) throw new Exception ("Evaluation of all rules not allowed in production environment", 403);
     
-    foreach (RuleEngine::checkRules(Rule::getAllInvRules(), true) as $violation) Notifications::addInvariant($violation);
-    foreach (RuleEngine::checkRules(Rule::getAllSigRules(), true) as $violation) Notifications::addSignal($violation);
+    foreach (RuleEngine::checkRules(Rule::getAllInvRules(), false) as $violation) Notifications::addInvariant($violation);
+    foreach (RuleEngine::checkRules(Rule::getAllSigRules(), false) as $violation) Notifications::addSignal($violation);
     
     $content = Notifications::getAll(); // Return all notifications
     

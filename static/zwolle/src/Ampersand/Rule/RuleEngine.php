@@ -22,17 +22,17 @@ class RuleEngine {
      * By default, violations are queries from cache in the database
      *
      * @param \Ampersand\Rule\Rule[] $rules set of rules to check
-     * @param bool $forceEvaluate force (re)evaluation of rule
+     * @param bool $fromDatabaseCache
      * @return \Ampersand\Rule\Violation[]
      */
-    public static function checkRules(array $rules, bool $forceEvaluate = false): array {
+    public static function checkRules(array $rules, bool $fromDatabaseCache = false): array {
         
         // Evaluate rules
-        if($forceEvaluate){
+        if(!$fromDatabaseCache){
             $violations = [];
             foreach ($rules as $rule){
                 /** @var \Ampersand\Rule\Rule $rule */
-                $violations = array_merge($violations, $rule->checkRule(true)); // cache conjunct = true, because multiple rules can share the same conjunct
+                $violations = array_merge($violations, $rule->checkRule(true)); // param fromCache = true, because multiple rules can share the same conjunct
             }
             return $violations;
         }

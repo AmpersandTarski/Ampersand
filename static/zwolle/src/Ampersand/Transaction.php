@@ -298,7 +298,7 @@ class Transaction {
         
         $affectedInvRules = $this->getAffectedRules(Rule::getAllInvRules());
 
-        return RuleEngine::checkRules($affectedInvRules, true);
+        return RuleEngine::checkRules($affectedInvRules, false); // force evaluation, because conjunct violations are not (yet) saved in database
     }
     
     public function invariantRulesHold(){
