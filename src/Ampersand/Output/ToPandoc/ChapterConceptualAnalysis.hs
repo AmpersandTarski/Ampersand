@@ -162,7 +162,7 @@ chpConceptualAnalysis lev fSpec = (
                     <> mconcat (intersperse  (str ", ")
                                 [   xRef (XRefConceptualAnalysisRelation d)
                                  <> text (" ("++name d++")")
-                                | d<-relsMentionedIn r])
+                                | d<-bindedRelationsIn r])
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
                    )

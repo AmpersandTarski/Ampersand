@@ -110,10 +110,14 @@ lexerStillOpenAtEOF xs = select language
     ]
 
 -- | Gives string examples in the chosen language
-lexerCorrectStrings :: String -- ^ The translated string
+lexerCorrectStrings :: [String] -- ^ The translated string
 lexerCorrectStrings = select language
-    [ English :-> "Correct examples of Strings: \"Ampersand (&) is cool\" \"Helium is cool too!\" \"abc\\ndef\" \"\""
-    , Dutch   :-> "Correcte voorbeelden van teksten: \"Ampersand (&) is geweldig\" \"Helium is ook geweldig!\" \"abc\\ndef\" \"\""
+    [ English :-> [ "Correct examples of Strings: \"Ampersand (&) is cool\" \"Helium is cool too!\" \"abc\\ndef\" \"\""
+                  , "This error may be caused by a missing quote-character ('\"'), or by the inadvertent use of the escape character ('\\')."
+                  ]
+    , Dutch   :-> [ "Correcte voorbeelden van teksten: \"Ampersand (&) is geweldig\" \"Helium is ook geweldig!\" \"abc\\ndef\" \"\""
+                  , "Deze fout kan worden veroorzaakt door een missende quote ('\"'), of door verkeerd gebruik van het escape character ('\\')."
+                  ]
     ]
 
 -- | Translates 'Tab character encountered' into the chosen language

@@ -201,7 +201,7 @@ refStuff x  =
      XRefSharedLangRelation d 
        -> RefStuff { typeOfSection    = "relation"
                    , chapterOfSection = SharedLang
-                   , nameOfThing      = fullName d
+                   , nameOfThing      = showRel d
                    , xrefPrefix       = "lst:"
                    }
      XRefDataAnalysisRule r
@@ -231,7 +231,7 @@ refStuff x  =
      XRefConceptualAnalysisRelation d
        -> RefStuff { typeOfSection    = "relation"
                    , chapterOfSection = ConceptualAnalysis
-                   , nameOfThing      = fullName d
+                   , nameOfThing      = showRel d
                    , xrefPrefix       = "eq:"
                    }
      XRefConceptualAnalysisRule r 
@@ -260,8 +260,6 @@ refStuff x  =
                                           Just t  -> name t
                    , xrefPrefix       = "sec:"
                    }
-    where
-      fullName = showDcl True
 
 
 class NumberedThing a where
@@ -277,9 +275,9 @@ instance NumberedThing Rule where
           isTheOne = (r ==) . cRul . theLoad
 instance NumberedThing Relation where
   numberOf fSpec d = case filter isTheOne ns of
-                      [] -> Nothing -- fatal ("Relation has not been numbered: "++showDcl d)
+                      [] -> Nothing -- fatal ("Relation has not been numbered: "++showRel d)
                       [nr] -> Just $ theNr nr 
-                      _ -> fatal ("Relation has been numbered multiple times: "++showDcl True d)
+                      _ -> fatal ("Relation has been numbered multiple times: "++showRel d)
     where ns = concatMap dclsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered DeclCont -> Bool
           isTheOne = (d ==) . cDcl . theLoad
@@ -444,7 +442,7 @@ orderingByTheme fSpec
      where
        (thmRuls,restRuls) = partition (inThisTheme ptrls) ruls
        (themeDcls,restDcls) = partition (inThisTheme relsInTheme) rels
-          where relsInTheme p = relsDefdIn p `uni` relsMentionedIn p
+          where relsInTheme p = relsDefdIn p `uni` bindedRelationsIn p
        (themeCpts,restCpts) = partition (inThisTheme concs) cpts
        inThisTheme :: Eq a => (Pattern -> [a]) -> a -> Bool
        inThisTheme allElemsOf x
@@ -522,11 +520,11 @@ dpRule' fSpec = dpR
                         )
             )
         showRef :: Relation -> Inlines
-        showRef dcl = xRef (XRefConceptualAnalysisRelation dcl) <> "(" <> (str.showDcl False) dcl <> ")"
+        showRef dcl = xRef (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . showRel) dcl <> ")"
         
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
-        ds  = relsUsedIn r
+        ds  = bindedRelationsIn r
         nds = ds >- seenRelations     -- newly seen relations
         rds = ds `isc` seenRelations  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenRelations)

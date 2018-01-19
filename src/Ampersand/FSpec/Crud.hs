@@ -77,7 +77,7 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
                                 , or [isC, isR, isU, isD]
                                 ]                            
           where crudCreateCncpts = editableTgts
-                crudReadCncpts   = concs (relsUsedIn ifc) -- NOTE: this includes interface params, even if they do not appear in any of the field expressions
+                crudReadCncpts   = concs (bindedRelationsIn ifc) -- NOTE: this includes interface params, even if they do not appear in any of the field expressions
                 crudDeleteCncpts = crudCreateCncpts -- We can't currently distinguish between these two.
                 crudUpdateCncpts = concatMap getCrudUpdateConcpts editableDecls
                 (editableDecls, editableTgts) = unzip $ getEditableDeclsAndTargets allIfcs ifc

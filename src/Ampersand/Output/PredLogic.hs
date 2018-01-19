@@ -424,8 +424,8 @@ assemble expr
    relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic
    relFun exclVars lhs e rhs
      = case e of
-         EDcD dcl        -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-relsMentionedIn t']) dcl (Funs (fst tv) [r | t'<-reverse rhs, r<-relsMentionedIn t'])
-         EFlp (EDcD dcl) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-relsMentionedIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-relsMentionedIn t'])
+         EDcD dcl        -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-bindedRelationsIn t']) dcl (Funs (fst tv) [r | t'<-reverse rhs, r<-bindedRelationsIn t'])
+         EFlp (EDcD dcl) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-bindedRelationsIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-bindedRelationsIn t'])
          EMp1 val _      -> \_ _-> Atom . showP $ val
          EFlp EMp1{}     -> relFun exclVars lhs e rhs
          _               -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)

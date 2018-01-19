@@ -84,7 +84,7 @@ chpDiagnosis fSpec
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role',rul)
          | (role',rul)<-fRoleRuls fSpec
-         , (not.or) (map (mayedit role') (relsUsedIn rul))
+         , (not.or) (map (mayedit role') (bindedRelationsIn rul))
          ]
 
   roleomissions :: Blocks
@@ -201,7 +201,7 @@ chpDiagnosis fSpec
            purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  $ decls
            meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) $ decls
            decls = vrels fSpec
-           showDclMath = math . showDcl False
+           showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
   hasMeaning :: Meaning a => a -> Bool
@@ -212,7 +212,7 @@ chpDiagnosis fSpec
   (relsNotUsed,pics)
    = (  
         case notUsed of
-          []  -> if (null.relsMentionedIn.vrules) fSpec
+          []  -> if (null.bindedRelationsIn.vrules) fSpec
                    then mempty
                    else (para .str.l)
                             (NL "Alle relaties in dit document worden in één of meer regels gebruikt."
@@ -249,10 +249,10 @@ chpDiagnosis fSpec
            notUsed = [ showMath (EDcD d)
                      | d <- nub (vrels fSpec) -- only relations that are used or defined in the selected themes
                      , decusr d
-                     , d `notElem` (relsMentionedIn . vrules) fSpec
+                     , d `notElem` (bindedRelationsIn . vrules) fSpec
                      ]
            pats  = [ pat | pat<-vpatterns fSpec
-                         , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
+                         , (not.null) (relsDefdIn pat>-bindedRelationsIn pat) ]
            pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
 
   missingRules :: Blocks
