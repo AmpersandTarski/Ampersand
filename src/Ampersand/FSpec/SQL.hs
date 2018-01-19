@@ -366,7 +366,10 @@ nonSpecialSelectExpr fSpec expr=
                                                         , BinOp (Iden[iSect n,targetAlias]) [Name "="] (Iden[iSect 0,targetAlias])
                                                         ]
 
-    EUni (l,r) -> BQEComment [BlockComment $ "case: EUni (l,r)"++showA expr++" ("++show (sign expr)++")"]
+    EUni (l,r) -> BQEComment [BlockComment   "case: EUni (l,r)"
+                             ,BlockComment $ "   Expression: "++showA expr
+                             ,BlockComment $ "   Signature : "++show (sign expr)
+                             ]
                   BCQE { bseSetQuantifier = SQDefault
                        , bcqeOper = Union
                        , bcqe0    = selectExpr fSpec l
