@@ -581,13 +581,17 @@ class Concept {
      * @param \Ampersand\Core\Atom $rightAtom
      * @return void
      */
-    public function mergeAtoms(Atom $leftAtom, Atom $rightAtom){        
+    public function mergeAtoms(Atom $leftAtom, Atom $rightAtom){
+        $this->logger->debug("Request to merge '{$rightAtom}' into '{$leftAtom}'");
+
+        if($leftAtom->concept != $this) throw new Exception("Cannot merge atom '{$leftAtom}', because it does not match concept '{$this}'", 500);
+        
         // Check that left and right atoms are in the same typology.
         if(!$leftAtom->concept->inSameClassificationTree($rightAtom->concept)) throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because they not in the same classification tree", 500);
 
         // Skip when left and right atoms are the same
         if($leftAtom->id === $rightAtom->id){
-            $this->logger->warning("Cannot merge leftAtom and rightAtom, because they are both '{$leftAtom}'");
+            $this->logger->warning("Merge not needed, because leftAtom and rightAtom are already the same '{$leftAtom}'");
             return;
         }
 
@@ -595,12 +599,32 @@ class Concept {
         if(!$leftAtom->exists()) throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because '{$leftAtom}' does not exists", 500);
         if(!$rightAtom->exists()) throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because '{$rightAtom}' does not exists", 500);
 
-        // Merge step 1: rename right atom by left atom
-        $rightAtom->concept->renameAtom($rightAtom, $leftAtom->id);
-
-        // Merge step 2: if right atom is more specific, make left atom also more specific
+        // Merge step 1: if right atom is more specific, make left atom also more specific
         if ($leftAtom->concept->hasSpecialization($rightAtom->concept)) $rightAtom->concept->addAtom($leftAtom);
-        
+
+        // Merge step 2: rename right atom by left atom in relation sets
+        foreach (Relation::getAllRelations() as $relation){
+            // Source
+            if($this->inSameClassificationTree($relation->srcConcept)){
+                // Delete and add links where atom is the source
+                foreach($relation->getAllLinks($rightAtom, null) as $link){
+                    $relation->deleteLink($link); // Delete old link
+                    $relation->addLink(new Link($relation, $leftAtom, $link->tgt())); // Add new link
+                }
+            }
+            
+            // Target
+            if($this->inSameClassificationTree($relation->tgtConcept)){
+                // Delete and add links where atom is the source
+                foreach($relation->getAllLinks(null, $rightAtom) as $link){
+                    $relation->deleteLink($link); // Delete old link
+                    $relation->addLink(new Link($relation, $link->src(), $leftAtom)); // Add new link
+                }
+            }
+        }
+
+        // Merge step 3: delete rightAtom
+        $this->deleteAtom($rightAtom);
     }
     
     /**********************************************************************************************

@@ -183,6 +183,7 @@ class Atom implements JsonSerializable {
         if($newAtom->exists()) {
             throw new Exception ("Cannot change atom identifier, because id is already used by another atom of the same concept", 500);
         } else {
+            $newAtom->add();
             return $newAtom->merge($this);
         }
     }
