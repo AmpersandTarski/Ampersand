@@ -44,6 +44,30 @@ class Atom implements JsonSerializable {
     public function __construct($atomId, Concept $concept){
         $this->concept = $concept;
         
+        $this->setId($atomId);
+        
+    }
+    
+    /**
+     * Function is called when object is treated as a string
+     * @return string
+     */
+    public function __toString(){
+        // if atom id is longer than 40 chars, display first and last 20 chars
+        $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
+        return "{$id}[{$this->concept}]";
+    }
+
+    /**
+     * Return label of atom to be displayed in user interfaces
+     * for Atoms this is the same as the Atom identifier
+     * @return string
+     */
+    public function getLabel(){
+        return $this->id;
+    }
+
+    protected function setId($atomId){
         switch($this->concept->type){
             case "ALPHANUMERIC" :
             case "BIGALPHANUMERIC" :
@@ -73,40 +97,6 @@ class Atom implements JsonSerializable {
             default :
                 throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
         }
-    }
-    
-    /**
-     * Function is called when object is treated as a string
-     * @return string
-     */
-    public function __toString(){
-        // if atom id is longer than 40 chars, display first and last 20 chars
-        $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
-        return "{$id}[{$this->concept}]";
-    }
-
-    /**
-     * Return label of atom to be displayed in user interfaces
-     * for Atoms this is the same as the Atom identifier
-     * @return string
-     */
-    public function getLabel(){
-        return $this->id;
-    }
-
-    public function setId($newAtomId){
-        // Skip if no change
-        if($this->id === $newAtomId) return;
-
-        $newAtom = new Atom($newAtomId, $this);
-        if($newAtom->exists()){
-            throw new Exception ("Cannot change atom identifier, because id is already used by another atom of the same concept", 500);
-        }else{
-            $this->concept->renameAtom($this, $newAtomId);
-        }
-        
-        $this->id = $newAtomId;
-
         return $this;
     }
     
@@ -180,6 +170,21 @@ class Atom implements JsonSerializable {
     public function merge(Atom $anotherAtom){
         $this->concept->mergeAtoms($this, $anotherAtom);
         return $this;
+    }
+
+    /**
+     * Rename an atom identifier
+     *
+     * @param string $newAtomId
+     * @return \Ampersand\Core\Atom
+     */
+    public function rename($newAtomId): Atom {
+        $newAtom = new Atom($newAtomId, $this->concept);
+        if($newAtom->exists()) {
+            throw new Exception ("Cannot change atom identifier, because id is already used by another atom of the same concept", 500);
+        } else {
+            return $newAtom->merge($this);
+        }
     }
     
     /**
