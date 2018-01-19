@@ -26,13 +26,4 @@ interface ConceptPlugInterface extends StorageInterface {
     public function removeAtom(Atom $atom);
     
     public function deleteAtom(Atom $atom);
-
-    /**
-     * Rename an atom in the concept set (incl all specializations and generalizations)
-     *
-     * @param Atom $atom
-     * @param string $newAtom
-     * @return void
-     */
-    public function renameAtom(Atom $atom, $newAtomId);
 }

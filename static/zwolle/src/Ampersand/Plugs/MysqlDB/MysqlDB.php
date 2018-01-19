@@ -470,32 +470,6 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         // Check if query resulted in an affected row
         $this->checkForAffectedRows();
     }
-
-    /**
-     * Rename an atom in the concept set (incl all specializations and generalizations)
-     *
-     * @param \Ampersand\Core\Atom $atom
-     * @param string $newAtom
-     * @return void
-     */
-    public function renameAtom(Atom $atom, $newAtomId){
-        $atomId = $this->getDBRepresentation($atom);
-
-        // Get table properties
-        $table = $atom->concept->getConceptTableInfo()->name;
-        $colNames = [];
-        foreach($atom->concept->getGeneralizationsIncl() as $concept){
-            $cols = $concept->getConceptTableInfo()->getColNames();
-            $colNames[] = reset($cols);
-        }
-        $firstCol = reset($colNames);
-
-        // Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
-        $queryString = "\"" . implode("\" = '{$newAtomId}', \"", $colNames) . "\" = '{$newAtomId}'";
-
-        $this->Exe("UPDATE \"$table\" SET $queryString WHERE \"{$firstCol}\" = '{$atomId}'");
-
-    }
     
 /**************************************************************************************************
  *
