@@ -470,8 +470,6 @@ class Concept {
     public function atomExists(Atom $atom): bool {
         if(in_array($atom->id, $this->atomCache, true)){ // strict mode to prevent 'Nesting level too deep' error
             return true;
-        }elseif($atom->id === '_NEW'){
-            return true; // Return true if id is '_NEW' (special case)
         }elseif($this->primaryPlug->atomExists($atom)){
             $this->atomCache[] = $atom->id; // Add to cache
             return true;
