@@ -51,6 +51,25 @@ $app->get('/resource/:resourceType', function ($resourceType) use ($app, $contai
     print json_encode($resources, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
+$app->post('/resource/:resourceType', function ($resourceType) use ($app, $container) {
+    /** @var \Ampersand\AmpersandApp $ampersandApp */
+    $ampersandApp = $container['ampersand_app'];
+    
+    $resource = Resource::makeNewResource($resourceType);
+
+    $allowed = false;
+    foreach ($ampersandApp->getAccessibleInterfaces() as $ifc) {
+        if ($ifc->isRoot() && $ifc->crudC() && $ifc->tgtConcept == $resource->concept) {
+            $allowed = true;
+            break;
+        }
+    }
+    if(!$allowed) throw new Exception ("You do not have access for this call", 403);
+    
+    // Don't save/commit new resource (yet)
+    
+    print json_encode($resource, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
 
 $app->get('/resource/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */

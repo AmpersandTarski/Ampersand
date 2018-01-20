@@ -459,6 +459,25 @@ class Resource extends Atom {
     }
 
     /**
+     * Factory function for new resource object
+     *
+     * @param string $conceptName
+     * @return \Ampersand\Interfacing\Resource
+     */
+    public static function makeNewResource(string $conceptName): Resource {
+        try {
+            $concept = Concept::getConcept($conceptName);
+        } catch (Exception $e) {
+            throw new Exception ("Resource type not found", 404);
+        }
+        
+        if(!$concept->isObject()) throw new Exception ("Resource type not found", 404); // Only non-scalar concepts can be used as resource
+        if($concept->isSession()) throw new Exception ("Resource type not found", 404); // Prevent users create other sessions
+        
+        return new Resource($concept->createNewAtomId(), $concept);
+    }
+
+    /**
      * Factory function to create a Resource object using an Atom object
      *
      * @param \Ampersand\Core\Atom $atom
