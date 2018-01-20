@@ -71,7 +71,18 @@
                     <span class="glyphicon glyphicon-plus"></span>
                 </a>
                 <ul class="dropdown-menu" role="menu">
-                    <li><a href="" ng-repeat="ifc in navbar.new" ng-click="createNewResource(ifc.resourceType, ifc.link);">{{ifc.label}}</a></li>
+                    <li ng-repeat="item in navbar.new" ng-class="{'dropdown-submenu' : item.ifcs.length > 1}">
+                        <!--<a  style="position:relative; display:inline-block;">-->
+                        <a ng-if="item.ifcs.length > 1" tabindex="-1" href="#">{{item.label}}</a>
+                        <ul ng-if="item.ifcs.length > 1" class="dropdown-menu" role="menu">
+                            <li ng-repeat="ifc in item.ifcs">
+                                <a tabindex="-1" href="#" ng-click="createNewResource(ifc.resourceType, ifc.link);">{{ifc.label}}</a>
+                            </li>
+                        </ul>
+                        
+                        <a ng-if="item.ifcs.length == 1" href="" ng-click="createNewResource(item.ifcs[0].resourceType, item.ifcs[0].link);">{{item.label}}</a>
+                        <span ng-if="item.ifcs.length == 0">{{item.label}}</span>
+                    </li>
                 </ul>
             </li>
             

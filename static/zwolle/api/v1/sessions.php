@@ -44,22 +44,22 @@ $app->get('/app/navbar', function () use ($app, $container) {
     $ampersandApp->checkProcessRules();
     
     $session = $ampersandApp->getSession();
-    $content = array ('top' => $angularApp->getNavBarIfcs('top')
-                     ,'new' => $angularApp->getNavBarIfcs('new')
-                     ,'refreshMenu' => $angularApp->getMenuItems('refresh')
-                     ,'extMenu' => $angularApp->getMenuItems('ext')
-                     ,'roleMenu' => $angularApp->getMenuItems('role')
-                     ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
-                                                 ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
-                                                 ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
-                                                 )
-                     ,'notifications' => Notifications::getAll()
-                     ,'session' => array ('id' => $session->getId()
-                                         ,'loggedIn' => $session->sessionUserLoggedIn()
-                                         )
-                     ,'sessionRoles' => $ampersandApp->getSessionRoles()
-                     ,'sessionVars' => $session->getSessionVars()
-                     );
+    $content = ['top' => $angularApp->getMenuItems('top')
+               ,'new' => $angularApp->getMenuItems('new')
+               ,'refreshMenu' => $angularApp->getMenuItems('refresh')
+               ,'extMenu' => $angularApp->getMenuItems('ext')
+               ,'roleMenu' => $angularApp->getMenuItems('role')
+               ,'defaultSettings' => ['notifications' => Notifications::getDefaultSettings()
+                                     ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
+                                     ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
+                                     ]
+               ,'notifications' => Notifications::getAll()
+               ,'session' => ['id' => $session->getId()
+                             ,'loggedIn' => $session->sessionUserLoggedIn()
+                             ]
+               ,'sessionRoles' => $ampersandApp->getSessionRoles()
+               ,'sessionVars' => $session->getSessionVars()
+               ];
     
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
