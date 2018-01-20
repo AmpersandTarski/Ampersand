@@ -176,9 +176,8 @@ class AngularApp {
             case 'top':
                 $result = array_map(function(InterfaceObject $ifc){
                     return [ 'id' => $ifc->id
-                           , 'label' => "New {$ifc->tgtConcept->label}"
+                           , 'label' => $ifc->label
                            , 'link' => '/' . $ifc->id
-                           , 'resourceType' => $ifc->tgtConcept->name
                            ];
                 }, $this->getNavBarIfcs('top'));
                 break;
