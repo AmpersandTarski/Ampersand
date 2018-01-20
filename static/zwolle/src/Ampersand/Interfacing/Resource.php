@@ -183,15 +183,22 @@ class Resource extends Atom {
      * @return Resource|ResourceList
      */
     public function walkPath($path, $returnType = null){
-        if(!$this->exists()) throw new Exception ("Resource '{$this}' not found", 404);
-        
         // Prepare path list
         if(is_array($path)) $path = implode ('/', $path);
         $path = trim($path, '/'); // remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
-        if($path == '') return $this; // if no path is specified, return $this (atom)
         $pathList = explode('/', $path);
-        
-        $r = $this;
+
+        // Check if entry resource ($this) exists
+        if(!$this->exists()){
+            $ifc = InterfaceObject::getInterface(reset($pathList));
+            
+            // Automatically create if allowed
+            if($ifc->crudC() && $ifc->isIdent()) $this->add();
+            else throw new Exception ("Resource '{$this}' not found", 404);
+        }
+
+        // Walk path by alternating between $r = Resource and $r = ResourceList
+        $r = $this; // start with resource ($this)
         while (count($pathList)){
             switch(get_class($r)){
                 case 'Ampersand\Interfacing\Resource' :
@@ -207,11 +214,13 @@ class Resource extends Atom {
             }
         }
         
+        // Check if correct object is returned (Resource vs ResourceList)
         if(isset($returnType) && $returnType != get_class($r)){
             if(get_class($r) == 'Ampersand\Interfacing\ResourceList' && $r->getIfc()->isIdent()) $r = $r->one();
             else throw new Exception ("Provided path results in '" . get_class($r) . "'. This must be '{$returnType}'", 400);
         }
         
+        // Return
         return $r;
     }
 
