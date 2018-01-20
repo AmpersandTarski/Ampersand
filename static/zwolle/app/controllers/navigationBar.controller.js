@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('NavigationBarController', function ($scope, $rootScope, $route, Restangular, $localStorage, $sessionStorage, $timeout, NotificationService, RoleService) {
+angular.module('AmpersandApp').controller('NavigationBarController', function ($scope, $rootScope, $route, Restangular, $localStorage, $sessionStorage, $timeout, $location, NotificationService, RoleService) {
     
     $scope.$storage = $localStorage;
     $scope.$sessionStorage = $sessionStorage;
@@ -56,6 +56,17 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
     $scope.reload = function(){
         $scope.refreshNavBar();
         $route.reload();
+    };
+
+    $scope.createNewResource = function(resourceType, openWithIfc){
+        Restangular.one('resource').all(resourceType)
+        .post({}, {})
+        .then(
+            function(data){
+                // Jumps to interface and requests newly created resource
+                $location.url(openWithIfc + '/' + data._id_);
+            }
+        )
     };
     
     $scope.resetSettings = function(){

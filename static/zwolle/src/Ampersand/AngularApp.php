@@ -176,8 +176,8 @@ class AngularApp {
         });
         
         // Create return object
-        $result = array_map(function($ifc){
-            return array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
+        $result = array_map(function(InterfaceObject $ifc){
+            return array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id, 'resourceType' => $ifc->tgtConcept->name);
         }, $interfaces);
         
         return array_values($result); // reindex array
