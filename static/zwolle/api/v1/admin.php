@@ -14,6 +14,7 @@ use Ampersand\IO\Importer;
 use Ampersand\IO\JSONReader;
 use Ampersand\IO\ExcelImporter;
 use Ampersand\Misc\Reporter;
+use Ampersand\Interfacing\Resource;
 
 /**
  * @var \Slim\Slim $app
@@ -24,6 +25,24 @@ global $app;
  * @var \Pimple\Container $container
  */
 global $container;
+
+$app->POST('/admin/resource/:resourceType/rename', function ($resourceType) use ($app, $container){
+    $ampersandApp = $container['ampersand_app'];
+    
+    $list = $app->request->getBody();
+    if(!is_array($list)) throw new Exception("Body must be array. Non-array provided", 500);
+
+    $transaction = Transaction::getCurrentTransaction();
+
+    foreach ($body as $item) {
+        $resource = Resource::makeResource($item->oldId, $resourceType);
+        $resource->rename($item->newId);
+    }
+    
+    $transaction->close();
+
+	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
 
 $app->get('/admin/installer', function () use ($app, $container){
     if(Config::get('productionEnv')) throw new Exception ("Reinstallation of application not allowed in production environment", 403);
