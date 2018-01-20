@@ -62,12 +62,12 @@ class ViolationSegment extends ViewSegment {
      * 
      * @param Atom $srcAtom
      * @param Atom $tgtAtom
-     * @return mixed
+     * @return array
      */
-    public function getData(Atom $srcAtom, Atom $tgtAtom = null){ // Second param is declared optional, because the method must be compatible with the parent method it overwrites (i.e. ViewSegment::getData())
+    public function getData(Atom $srcAtom, Atom $tgtAtom = null): array { // Second param is declared optional, because the method must be compatible with the parent method it overwrites (i.e. ViewSegment::getData())
         switch ($this->segType){
             case "Text":
-                return $this->text;
+                return [$this->text];
                 break;
             case "Exp":
                 // select starting atom depending on whether the segment uses the src of tgt atom.
