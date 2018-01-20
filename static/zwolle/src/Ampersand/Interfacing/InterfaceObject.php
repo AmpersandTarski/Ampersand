@@ -235,7 +235,7 @@ class InterfaceObject {
      * @return Relation|Exception
      */
     public function relation(){
-        if(is_null($this->relation)) throw new Exception ("Interface expression for '{$this->path}' is not a relation", 500);
+        if(is_null($this->relation)) throw new Exception ("Interface expression for '{$this->label}' is not an (editable) relation", 500);
         else return $this->relation;
     }
     

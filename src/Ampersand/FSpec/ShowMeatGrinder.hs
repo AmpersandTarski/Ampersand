@@ -70,11 +70,11 @@ extractFromPop formalAmpersand pop =
                           Checked _ -> x
                           Errors err -> fatal $
                               "ERROR in tupels that are generated in the meatgrinder for relation\n"
-                            ++"  "++showDcl True (popRelation pop)
+                            ++"  "++showRel (popRelation pop)
                             ++intercalate (replicate 30 '=') (map showErr err)
             Errors err -> fatal $ 
                               "ERROR in tupels that are generated in the meatgrinder for relation\n"
-                            ++"  "++showDcl True (popRelation pop)
+                            ++"  "++showRel (popRelation pop)
                             ++intercalate (replicate 30 '=') (map showErr err)
       checkAtomValues :: Relation -> [PAtomPair] -> Guarded [AAtomPair]
       checkAtomValues rel pps = sequence $ map fun pps
@@ -157,7 +157,7 @@ makeMetaFile formalAmpersand userFspec
        . sort
        . map (lines . showPop )
        . concatMap popsOfRelation
-       . sortOn (showDcl True)
+       . sortOn showRel
        . instances $ formalAmpersand
     listOfConcepts :: [String]
     listOfConcepts = map ("-- "++) (intercalate [""] (map showCpt cpts))
@@ -191,7 +191,7 @@ grindedPops formalAmpersand userFspec rel =
               ,"   Violations:"
               ] ++ map ("      "++) viols
             where 
-              viols = map (showDcl True) 
+              viols = map showRel 
                     . filter hasNoTransformer 
                     . instances $ formalAmpersand
               hasNoTransformer :: Relation -> Bool

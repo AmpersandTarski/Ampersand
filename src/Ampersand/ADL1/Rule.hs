@@ -30,7 +30,7 @@ consequent r
 rulefromProp :: Prop -> Relation -> Maybe Rule
 rulefromProp prp d =
   Just
-     Ru { rrnm  = show prp++" "++showDcl'
+     Ru { rrnm  = show prp++" "++showDcl
         , formalExpression = rExpr
         , rrfps = origin d
         , rrmean = AMeaning $ explain prp
@@ -43,7 +43,7 @@ rulefromProp prp d =
         , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
        where
-        showDcl' = showDcl True d
+        showDcl = showRel d
         r:: Expression
         r = EDcD d
         rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
@@ -62,7 +62,7 @@ rulefromProp prp d =
         explain prop = [ explang lang | lang <-[English,Dutch]]
           where 
             explang lang = Markup lang (string2Blocks ReST $ f lang)
-            f English = showDcl'++" is "++
+            f English = showDcl++" is "++
                   case prop of
                     Sym-> "symmetric"
                     Asy-> "antisymmetric"
@@ -74,7 +74,7 @@ rulefromProp prp d =
                     Inj-> "injective"
                     Tot-> "total"
                     Prop -> fatal "Prop should have been converted by the parser"
-            f Dutch = showDcl'++" is "++
+            f Dutch = showDcl++" is "++
                   case prop of
                     Sym-> "symmetrisch"
                     Asy-> "antisymmetrisch"
@@ -94,11 +94,11 @@ rulefromProp prp d =
             msg lang = Markup lang (string2Blocks ReST $ f lang)
             f English =
                   case prop of
-                    Sym-> showDcl'++" is "++"symmetric"
-                    Asy-> showDcl'++" is "++"antisymmetric"
-                    Trn-> showDcl'++" is "++"transitive"
-                    Rfx-> showDcl'++" is "++"reflexive"
-                    Irf-> showDcl'++" is "++"irreflexive"
+                    Sym-> showDcl++" is "++"symmetric"
+                    Asy-> showDcl++" is "++"antisymmetric"
+                    Trn-> showDcl++" is "++"transitive"
+                    Rfx-> showDcl++" is "++"reflexive"
+                    Irf-> showDcl++" is "++"irreflexive"
                     Uni-> "Each " ++s++" may only have one "++t++"" ++" in the relation "++name d
                     Inj-> "Each " ++t++" may only have one "++s++"" ++" in the relation "++name d
                     Tot ->"Every "++s++" must have a "      ++t++"" ++" in the relation "++name d
@@ -106,11 +106,11 @@ rulefromProp prp d =
                     Prop -> fatal "Prop should have been converted by the parser"
             f Dutch =
                   case prop of
-                    Sym-> showDcl'++" is "++"symmetrisch"
-                    Asy-> showDcl'++" is "++"antisymmetrisch"
-                    Trn-> showDcl'++" is "++"transitief"
-                    Rfx-> showDcl'++" is "++"reflexief"
-                    Irf-> showDcl'++" is "++"irreflexief"
+                    Sym-> showDcl++" is "++"symmetrisch"
+                    Asy-> showDcl++" is "++"antisymmetrisch"
+                    Trn-> showDcl++" is "++"transitief"
+                    Rfx-> showDcl++" is "++"reflexief"
+                    Irf-> showDcl++" is "++"irreflexief"
                     Uni-> "Elke "++s++" mag slechts één "++t++   " hebben" ++" in de relatie "++name d
                     Inj-> "Elke "++t++" mag slechts één "++s++   " hebben" ++" in de relatie "++name d
                     Tot-> "Elke "++s++" dient één "      ++t++" te hebben" ++" in de relatie "++name d

@@ -10,6 +10,15 @@
 * PHP Backend: mysql database class placed under Plug namespace
 * PHP Backend: added function/method parameter and return type specifications
 
+
+## v3.9.2 (19 january 2018)
+
+* [Issue #739](https://github.com/AmpersandTarski/Ampersand/issues/739) Better parser error message for mismatch of values
+* [Issue #744](https://github.com/AmpersandTarski/Ampersand/issues/744) Better lexer error message for unterminated string
+* [Issue #741](https://github.com/AmpersandTarski/Ampersand/issues/741) Solved a bug that could cause invalid database state during runtime of a prototype
+
+## v3.9.1 (22 december 2017)
+
 * Security fix: use PHP session strict mode. This prevents a user defined session ID that is never generated
 * [Issue #707](https://github.com/AmpersandTarski/Ampersand/issues/707) Bugfix issue where user input '_SESSION' was also replaced by the session id
 * [Issue #723](https://github.com/AmpersandTarski/Ampersand/issues/723) THEMES have been removed from the syntax.

@@ -87,7 +87,7 @@ cdAnalysis fSpec =
       attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
 
    ooAttr :: Expression -> CdAttribute
-   ooAttr r = OOAttr { attNm = (name . head . relsMentionedIn) r
+   ooAttr r = OOAttr { attNm = (name . head . bindedRelationsIn) r
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
@@ -209,7 +209,7 @@ tdAnalysis fSpec =
                     , asslhr = attName f
                     , assTgt = name . getConceptTableFor fSpec . target $ expr
                     , assrhm = mults expr
-                    , assrhr = case [name d | d<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
+                    , assrhr = case [name d | d<-bindedRelationsIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
                     , assmdcl = Nothing
                     }
 
