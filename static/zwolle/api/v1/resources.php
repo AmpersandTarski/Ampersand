@@ -43,7 +43,7 @@ $app->get('/resource/:resourceType', function ($resourceType) use ($app, $contai
     
     // Checks
     if(!$concept->isObject()) throw new Exception ("Resource type not found", 404);
-    if($concept->isSession()) throw new Exception ("Resource type not found", 404); // Prevent users to list other session
+    if($concept->isSession()) throw new Exception ("Resource type not found", 404); // Prevent users to list other sessions
     if(!$ampersandApp->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
     
     $resources = Resource::getAllResources($resourceType);
