@@ -26,10 +26,6 @@ class Reporter {
         $this->writer = $writer;
     }
 
-    public function __toString(){
-        return $this->writer->getContent();
-    }
-
     /**
      * Write and return relation definition report
      * 
@@ -64,7 +60,7 @@ class Reporter {
 
         $this->writer->write($content);
         
-        return $content;
+        return $this;
     }
 
     /**
@@ -102,7 +98,7 @@ class Reporter {
 
         $this->writer->write($content);
 
-        return $content;
+        return $this;
     }
 
     /**
@@ -158,7 +154,7 @@ class Reporter {
 
         $this->writer->write($content);
         
-        return $content;
+        return $this;
     }
 
     /**
@@ -178,7 +174,7 @@ class Reporter {
 
         $this->writer->write($content);
 
-        return $content;
+        return $this;
     }
 
     /**
@@ -213,7 +209,7 @@ class Reporter {
 
         $this->writer->write($content);
 
-        return $content;
+        return $this;
     }
 
 }

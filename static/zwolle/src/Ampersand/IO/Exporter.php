@@ -60,8 +60,6 @@ class Exporter {
 
         $this->writer->write(['atoms' => $conceptPop, 'links' => $relationPop]);
 
-        $this->writer->print();
-
-        $this->writer->close();
+        return $this;
     }
 }
