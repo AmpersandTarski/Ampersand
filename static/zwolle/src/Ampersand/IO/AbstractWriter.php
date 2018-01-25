@@ -2,21 +2,23 @@
 
 namespace Ampersand\IO;
 
+use Psr\Http\Message\StreamInterface;
+
 abstract class AbstractWriter {
     
     /**
      * The stream used to output
      *
-     * @var stream
+     * @var \Psr\Http\Message\StreamInterface
      */
     protected $stream = null;
     
     /**
      *
-     * @param stream $stream (e.g. stream)
+     * @param \Psr\Http\Message\StreamInterface $stream (e.g. stream)
      * @param array $options Configuration options
      */
-    public function __construct($stream = null, $options = []){
+    public function __construct(StreamInterface $stream = null, array $options = []){
         if (is_null($stream)) {
             $this->stream = fopen('php://temp', 'w+');
         } else {
@@ -25,18 +27,14 @@ abstract class AbstractWriter {
     }
 
     public function write($data){
-        fwrite($this->stream, $data);
+        $this->stream->write($data);
     }
 
     public function getContent(){
-        return stream_get_contents($this->stream, -1, 0);
-    }
-
-    public function print(){
-        print $this->getContent();
+        return $this->stream->getContents();
     }
 
     public function close(){
-        fclose($this->stream);
+        $this->stream->close();
     }
 }

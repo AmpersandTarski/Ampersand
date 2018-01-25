@@ -11,6 +11,7 @@ use Exception;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\IO\AbstractWriter;
 use Ampersand\Rule\Conjunct;
+use Ampersand\Core\Relation;
 
 class Reporter {
 
@@ -25,10 +26,6 @@ class Reporter {
         $this->writer = $writer;
     }
 
-    public function __toString(){
-        return $this->writer->getContent();
-    }
-
     /**
      * Write and return relation definition report
      * 
@@ -37,7 +34,7 @@ class Reporter {
      * @return array
      */
     public function reportRelationDefinitions(){
-        $content = array_map(function($relation){
+        $content = array_map(function(Relation $relation){
             $relArr = [];
             
             $relArr['signature'] = $relation->signature;
@@ -51,7 +48,7 @@ class Reporter {
             $relArr['constraints'] = empty($constraints) ? "no constraints" : implode(',', $constraints);
             
             $relArr['affectedConjuncts'] = [];
-            foreach($relation->affectedConjuncts as $conjunct){
+            foreach($relation->getRelatedConjuncts() as $conjunct){
                 $relArr['affectedConjuncts'][$conjunct->id] = [];
                 foreach ($conjunct->invRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['invRules'][] = $ruleName;
                 foreach ($conjunct->sigRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['sigRules'][] = $ruleName;
@@ -63,7 +60,7 @@ class Reporter {
 
         $this->writer->write($content);
         
-        return $content;
+        return $this;
     }
 
     /**
@@ -101,7 +98,7 @@ class Reporter {
 
         $this->writer->write($content);
 
-        return $content;
+        return $this;
     }
 
     /**
@@ -157,7 +154,7 @@ class Reporter {
 
         $this->writer->write($content);
         
-        return $content;
+        return $this;
     }
 
     /**
@@ -177,7 +174,7 @@ class Reporter {
 
         $this->writer->write($content);
 
-        return $content;
+        return $this;
     }
 
     /**
@@ -212,7 +209,7 @@ class Reporter {
 
         $this->writer->write($content);
 
-        return $content;
+        return $this;
     }
 
 }

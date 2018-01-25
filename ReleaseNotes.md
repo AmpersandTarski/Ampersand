@@ -9,6 +9,7 @@
 * PHP Backend: refactored creation of AngularApp, AmpersandApp and MysqlDB using Pimple container 
 * PHP Backend: mysql database class placed under Plug namespace
 * PHP Backend: added function/method parameter and return type specifications
+* PHP Backend: update from Slim v2 to v3 api framework
 
 
 ## v3.9.2 (19 january 2018)
