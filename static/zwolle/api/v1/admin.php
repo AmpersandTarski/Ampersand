@@ -17,6 +17,7 @@ use Ampersand\Misc\Reporter;
 use Ampersand\Interfacing\Resource;
 use Slim\Http\Request;
 use Slim\Http\Response;
+use Ampersand\Session;
 
 /**
  * @var \Slim\App $app
@@ -29,6 +30,10 @@ global $app;
 global $container;
 
 $app->group('/admin', function () {
+
+    $this->get('/sessions/delete/expired', function (Request $request, Response $response, $args = []) use ($container) {
+        Session::deleteExpiredSessions();
+    });
     
     $this->post('/resource/{resourceType}/rename', function (Request $request, Response $response, $args = []) use ($container){
         $resourceType = $args['resourceType'];
