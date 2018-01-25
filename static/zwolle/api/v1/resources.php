@@ -125,7 +125,7 @@ $app->group('/resource', function () use ($container) {
     });
 
     // PUT, PATCH, POST for interfaces with expr[SESSION*..]
-    $this->map('/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
+    $this->map(['PUT', 'PATCH', 'POST'], '/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
@@ -147,10 +147,10 @@ $app->group('/resource', function () use ($container) {
             default:
                 throw new Exception("Unsupported HTTP method", 500);
         }
-    })->via('PUT', 'PATCH', 'POST')->add($middleWare1);
+    })->add($middleWare1);
 
     // PUT, PATCH, POST for interfaces that start with other resource
-    $this->map('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
+    $this->map(['PUT', 'PATCH', 'POST'], '/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
@@ -172,7 +172,7 @@ $app->group('/resource', function () use ($container) {
             default:
                 throw new Exception("Unsupported HTTP method", 500);
         }
-    })->via('PUT', 'PATCH', 'POST')->add($middleWare1);
+    })->add($middleWare1);
 
     $this->delete('/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
