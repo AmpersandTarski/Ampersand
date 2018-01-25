@@ -128,7 +128,14 @@ class OAuthLoginController {
         else return $this->dataObj;
     }
     
-    public static function callback($code, $idp){
+    /**
+     * Process authentication request
+     *
+     * @param string $code
+     * @param string $idp
+     * @return bool
+     */
+    public static function authenticate(string $code, string $idp): bool {
         $identityProviders = Config::get('identityProviders', 'OAuthLogin');
 
         if(empty($code)) throw new Exception("Oops. Someting went wrong during login. Please try again", 401);
@@ -170,16 +177,24 @@ class OAuthLoginController {
                         break;
                 }
                 
-                $authController->login($email);
-
+                return $authController->login($email);
+            } else {
+                return false;
             }
+        } else {
+            return false;
         }
 
-        header('Location: '. Config::get('redirectAfterLogin', 'OAuthLogin'));
-        exit;
     }
     
-    private function login($email){
+    /**
+     * Login user by verified emailadres
+     * Return true on login, false otherwise
+     *
+     * @param string $email
+     * @return boolean
+     */
+    private function login(string $email): bool {
         /** @var \Pimple\Container $container */
         global $container;
 
@@ -208,6 +223,12 @@ class OAuthLoginController {
         // Login account
         $container['ampersand_app']->login($account); // Automatically closes transaction
 
-        if(Transaction::getCurrentTransaction()->isCommitted()) Logger::getUserLogger()->notice("Login successfull");
+        if(Transaction::getCurrentTransaction()->isCommitted()) {
+            Logger::getUserLogger()->notice("Login successfull");
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 }

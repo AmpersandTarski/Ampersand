@@ -11,7 +11,8 @@ The OAuthLogin extension allows you to easily add a user (account) registration 
 Add and configure supported identity providers in your `localSettings.php` file.
 ```php
 require_once(__DIR__ . '/extensions/OAuthLogin/OAuthLogin.php');
-    Config::set('redirectAfterLogin', 'OAuthLogin', 'https://[server]/#/');
+	Config::set('redirectAfterLogin', 'OAuthLogin', 'https://[server]/#/');
+	Config::set('redirectAfterLoginFailure', 'OAuthLogin', 'https://[server]/#/');
 	Config::set('identityProviders', 'OAuthLogin', 
 					    ['linkedin' => 
 							    ['name' => 'LinkedIn'
