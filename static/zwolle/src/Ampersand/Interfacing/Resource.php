@@ -136,7 +136,7 @@ class Resource extends Atom {
             }
         } else {
             if ($this->concept->isSession()) {
-                return "session"; // Don't put session id here, this is implicit
+                return "resource/session"; // Don't put session id here, this is implicit
             } else {
                 return "resource/{$this->concept->name}/" . $this->id;
             }
