@@ -24,6 +24,14 @@ global $container;
  *
  *************************************************************************************************/
 
+$middleWare1 = function (Request $request, Response $response, callable $next) {
+    // Overwrite default media type parser for application/json
+    $request->registerMediaTypeParser('application/json', function ($input) {
+        return json_decode($input, false); // set accoc param to false, this will return php stdClass object instead of array for json objects {}
+    });
+    return $next($request, $response);
+};
+
 $app->get('/resource', function(Request $request, Response $response, $args = []) use ($app, $container) {
     if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
     
@@ -147,7 +155,7 @@ $app->map('/session/:ifcPath+', function (Request $request, Response $response, 
             throw new Exception("Unsupported HTTP method", 500);
             break;
     }
-})->via('PUT', 'PATCH', 'POST');
+})->via('PUT', 'PATCH', 'POST')->add($middleWare1);
 
 // PUT, PATCH, POST for interfaces that start with other resource
 $app->map('/resource/:resourceType/:resourceId/:ifcPath+', function (Request $request, Response $response, $args = []) use ($app, $container) {
@@ -175,7 +183,7 @@ $app->map('/resource/:resourceType/:resourceId/:ifcPath+', function (Request $re
             throw new Exception("Unsupported HTTP method", 500);
             break;
     }
-})->via('PUT', 'PATCH', 'POST');
+})->via('PUT', 'PATCH', 'POST')->add($middleWare1);
 
 $app->delete('/session/:ifcPath+', function (Request $request, Response $response, $args = []) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
