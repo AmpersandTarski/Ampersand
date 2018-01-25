@@ -1,8 +1,9 @@
 <?php
 
-use Ampersand\Session;
 use Ampersand\Log\Notifications;
 use Ampersand\Misc\Config;
+use Slim\Http\Request;
+use Slim\Http\Response;
 
 /**
  * @var \Slim\Slim $app
@@ -14,64 +15,45 @@ global $app;
  */
 global $container;
 
-$app->get('/admin/sessions/delete/all', function () use ($app, $container) {
-    if(Config::get('productionEnv')) throw new Exception ("Deleting all sessions is not allowed in production environment", 403);
-    throw new Exception("Not implemented", 501);
-});
+$app->group('/app', function () use ($container) {
 
-$app->get('/admin/sessions/delete/expired', function () use ($app, $container) {
-    Session::deleteExpiredSessions();
-});
-
-$app->patch('/app/roles', function () use ($app, $container){
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
+
     /** @var \Ampersand\AngularApp $angularApp */
     $angularApp = $container['angular_app'];
 
-    $roles = (array) $app->request()->getBody();
-    $ampersandApp->setActiveRoles($roles);
+    $this->patch('/roles', function (Request $request, Response $response, $args = []) use ($ampersandApp){
+        $ampersandApp->setActiveRoles((array) $request->getParsedBody());
+        return $response->withJson($ampersandApp->getSessionRoles(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
 
-    print json_encode($ampersandApp->getSessionRoles(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-});
+    $this->get('/navbar', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {    
+        $ampersandApp->checkProcessRules();
+        
+        $session = $ampersandApp->getSession();
+        $content =  ['top' => $angularApp->getMenuItems('top')
+                    ,'new' => $angularApp->getMenuItems('new')
+                    ,'refreshMenu' => $angularApp->getMenuItems('refresh')
+                    ,'extMenu' => $angularApp->getMenuItems('ext')
+                    ,'roleMenu' => $angularApp->getMenuItems('role')
+                    ,'defaultSettings' => ['notifications' => Notifications::getDefaultSettings()
+                                          ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
+                                          ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
+                                          ]
+                    ,'notifications' => Notifications::getAll()
+                    ,'session' =>   ['id' => $session->getId()
+                                    ,'loggedIn' => $session->sessionUserLoggedIn()
+                                    ]
+                    ,'sessionRoles' => $ampersandApp->getSessionRoles()
+                    ,'sessionVars' => $session->getSessionVars()
+                    ];
+        return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
 
-$app->get('/app/navbar', function () use ($app, $container) {
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
-    /** @var \Ampersand\AngularApp $angularApp */
-    $angularApp = $container['angular_app'];
-    
-    $ampersandApp->checkProcessRules();
-    
-    $session = $ampersandApp->getSession();
-    $content = ['top' => $angularApp->getMenuItems('top')
-               ,'new' => $angularApp->getMenuItems('new')
-               ,'refreshMenu' => $angularApp->getMenuItems('refresh')
-               ,'extMenu' => $angularApp->getMenuItems('ext')
-               ,'roleMenu' => $angularApp->getMenuItems('role')
-               ,'defaultSettings' => ['notifications' => Notifications::getDefaultSettings()
-                                     ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
-                                     ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
-                                     ]
-               ,'notifications' => Notifications::getAll()
-               ,'session' => ['id' => $session->getId()
-                             ,'loggedIn' => $session->sessionUserLoggedIn()
-                             ]
-               ,'sessionRoles' => $ampersandApp->getSessionRoles()
-               ,'sessionVars' => $session->getSessionVars()
-               ];
-    
-    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-});
+    $this->get('/notifications', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
+        $ampersandApp->checkProcessRules();
+        return $response->withJson(Notifications::getAll(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
 
-
-$app->get('/app/notifications', function () use ($app, $container) {
-     /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
-    
-    $ampersandApp->checkProcessRules();
-    
-    $content = Notifications::getAll();
-    
-    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
