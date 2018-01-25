@@ -29,7 +29,7 @@ global $app;
  */
 global $container;
 
-$app->group('/admin', function () {
+$app->group('/admin', function () use ($container) {
 
     $this->get('/sessions/delete/expired', function (Request $request, Response $response, $args = []) use ($container) {
         Session::deleteExpiredSessions();
@@ -154,7 +154,7 @@ $app->group('/admin', function () {
 
 });
 
-$app->group('/admin/report', function () {
+$app->group('/admin/report', function () use ($container) {
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
 
     $this->get('/relations', function (Request $request, Response $response, $args = []) use ($container){
