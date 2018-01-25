@@ -5,6 +5,8 @@ use Ampersand\Core\Concept;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\Options;
 use Ampersand\Interfacing\InterfaceController;
+use Slim\Http\Request;
+use Slim\Http\Response;
 
 /**
  * @var \Slim\Slim $app
@@ -22,7 +24,7 @@ global $container;
  *
  *************************************************************************************************/
 
-$app->get('/resource', function() use ($app, $container) {
+$app->get('/resource', function(Request $request, Response $response, $args = []) use ($app, $container) {
     if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
     
     $content = array_values(
@@ -35,7 +37,7 @@ $app->get('/resource', function() use ($app, $container) {
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/resource/:resourceType', function ($resourceType) use ($app, $container) {
+$app->get('/resource/:resourceType', function (Request $request, Response $response, $args = []) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
@@ -51,7 +53,7 @@ $app->get('/resource/:resourceType', function ($resourceType) use ($app, $contai
     print json_encode($resources, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->post('/resource/:resourceType', function ($resourceType) use ($app, $container) {
+$app->post('/resource/:resourceType', function (Request $request, Response $response, $args = []) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
@@ -71,7 +73,7 @@ $app->post('/resource/:resourceType', function ($resourceType) use ($app, $conta
     print json_encode($resource, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/resource/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app, $container) {
+$app->get('/resource/:resourceType/:resourceId', function (Request $request, Response $response, $args = []) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
@@ -92,7 +94,7 @@ $app->get('/resource/:resourceType/:resourceId', function ($resourceType, $resou
  *************************************************************************************************/
 
 // GET for interfaces with expr[SESSION*..]
-$app->get('/session/:ifcPath+', function($ifcPath) use ($app, $container) {
+$app->get('/session/:ifcPath+', function(Request $request, Response $response, $args = []) use ($app, $container) {
     // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
@@ -106,7 +108,7 @@ $app->get('/session/:ifcPath+', function($ifcPath) use ($app, $container) {
 });
 
 // GET for interfaces that start with other resource
-$app->get('/resource/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
+$app->get('/resource/:resourceType/:resourceId/:ifcPath+', function (Request $request, Response $response, $args = []) use ($app, $container) {
     // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
@@ -120,7 +122,7 @@ $app->get('/resource/:resourceType/:resourceId/:ifcPath+', function ($resourceTy
 });
 
 // PUT, PATCH, POST for interfaces with expr[SESSION*..]
-$app->map('/session/:ifcPath+', function ($ifcPath) use ($app, $container) {
+$app->map('/session/:ifcPath+', function (Request $request, Response $response, $args = []) use ($app, $container) {
     // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
@@ -148,7 +150,7 @@ $app->map('/session/:ifcPath+', function ($ifcPath) use ($app, $container) {
 })->via('PUT', 'PATCH', 'POST');
 
 // PUT, PATCH, POST for interfaces that start with other resource
-$app->map('/resource/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
+$app->map('/resource/:resourceType/:resourceId/:ifcPath+', function (Request $request, Response $response, $args = []) use ($app, $container) {
     // Input
     $options = Options::getFromRequestParams($app->request()->params());
     $depth = $app->request->params('depth');
@@ -175,7 +177,7 @@ $app->map('/resource/:resourceType/:resourceId/:ifcPath+', function ($resourceTy
     }
 })->via('PUT', 'PATCH', 'POST');
 
-$app->delete('/session/:ifcPath+', function ($ifcPath) use ($app, $container) {
+$app->delete('/session/:ifcPath+', function (Request $request, Response $response, $args = []) use ($app, $container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     $resource = $ampersandApp->getSession()->getSessionResource();
@@ -185,7 +187,7 @@ $app->delete('/session/:ifcPath+', function ($ifcPath) use ($app, $container) {
     print json_encode($controller->delete($resource, $ifcPath), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->delete('/resource/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app, $container) {
+$app->delete('/resource/:resourceType/:resourceId/:ifcPath+', function (Request $request, Response $response, $args = []) use ($app, $container) {
     $resource = Resource::makeResource($resourceId, $resourceType);
 
     $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
