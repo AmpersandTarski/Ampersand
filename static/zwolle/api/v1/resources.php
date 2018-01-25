@@ -33,8 +33,13 @@ $middleWare1 = function (Request $request, Response $response, callable $next) {
 };
 
 $app->group('/resource', function () use ($container) {
+    /** @var \Ampersand\AmpersandApp $ampersandApp */
+    $ampersandApp = $container['ampersand_app'];
 
-    $this->get('', function(Request $request, Response $response, $args = []) use ($container) {
+    /** @var \Ampersand\AngularApp $angularApp */
+    $angularApp = $container['angular_app'];
+
+    $this->get('', function(Request $request, Response $response, $args = []) {
         if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
         
         $content = array_values(
@@ -47,10 +52,7 @@ $app->group('/resource', function () use ($container) {
         return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/{resourceType}', function (Request $request, Response $response, $args = []) use ($container) {
-        /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $container['ampersand_app'];
-        
+    $this->get('/{resourceType}', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
         $concept = Concept::getConcept($args['resourceType']);
         
         // Checks
@@ -63,10 +65,7 @@ $app->group('/resource', function () use ($container) {
         return $response->withJson($resources, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->post('/{resourceType}', function (Request $request, Response $response, $args = []) use ($container) {
-        /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $container['ampersand_app'];
-        
+    $this->post('/{resourceType}', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
         $resource = Resource::makeNewResource($args['resourceType']);
 
         $allowed = false;
@@ -79,14 +78,10 @@ $app->group('/resource', function () use ($container) {
         if(!$allowed) throw new Exception ("You do not have access for this call", 403);
         
         // Don't save/commit new resource (yet)
-        
         return $response->withJson($resource, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/{resourceType}/{resourceId}', function (Request $request, Response $response, $args = []) use ($container) {
-        /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $container['ampersand_app'];
-        
+    $this->get('/{resourceType}/{resourceId}', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
         
         // Checks
@@ -97,27 +92,27 @@ $app->group('/resource', function () use ($container) {
     });
 
     // GET for interfaces with expr[SESSION*..]
-    $this->get('/session/{ifcPath:.*}', function(Request $request, Response $response, $args = []) use ($container) {
+    $this->get('/session/{ifcPath:.*}', function(Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
 
         // Prepare
-        $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
-        $resource = $container['ampersand_app']->getSession()->getSessionResource();
+        $controller = new InterfaceController($ampersandApp, $angularApp);
+        $resource = $ampersandApp->getSession()->getSessionResource();
 
         // Output
         return $response->withJson($controller->get($resource, $args['ifcPath'], $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
     // GET for interfaces that start with other resource
-    $this->get('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
+    $this->get('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
         
         // Prepare
-        $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
+        $controller = new InterfaceController($ampersandApp, $angularApp);
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
         // Output
@@ -125,7 +120,7 @@ $app->group('/resource', function () use ($container) {
     });
 
     // PUT, PATCH, POST for interfaces with expr[SESSION*..]
-    $this->map(['PUT', 'PATCH', 'POST'], '/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
+    $this->map(['PUT', 'PATCH', 'POST'], '/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
@@ -133,8 +128,8 @@ $app->group('/resource', function () use ($container) {
         $ifcPath = $args['ifcPath'];
         
         // Prepare
-        $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
-        $resource = $container['ampersand_app']->getSession()->getSessionResource();
+        $controller = new InterfaceController($ampersandApp, $angularApp);
+        $resource = $ampersandApp->getSession()->getSessionResource();
 
         // Output
         switch ($request->getMethod()) {
@@ -150,7 +145,7 @@ $app->group('/resource', function () use ($container) {
     })->add($middleWare1);
 
     // PUT, PATCH, POST for interfaces that start with other resource
-    $this->map(['PUT', 'PATCH', 'POST'], '/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
+    $this->map(['PUT', 'PATCH', 'POST'], '/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
@@ -158,7 +153,7 @@ $app->group('/resource', function () use ($container) {
         $ifcPath = $args['ifcPath'];
         
         // Prepare
-        $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
+        $controller = new InterfaceController($ampersandApp, $angularApp);
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
         // Output
@@ -174,20 +169,18 @@ $app->group('/resource', function () use ($container) {
         }
     })->add($middleWare1);
 
-    $this->delete('/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
-        /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $container['ampersand_app'];
+    $this->delete('/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         $resource = $ampersandApp->getSession()->getSessionResource();
 
-        $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
+        $controller = new InterfaceController($ampersandApp, $angularApp);
 
         return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->delete('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
+    $this->delete('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
-        $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
+        $controller = new InterfaceController($ampersandApp, $angularApp);
 
         return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
