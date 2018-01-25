@@ -42,7 +42,7 @@ $app->get('/resource', function(Request $request, Response $response, $args = []
             return $cpt->isObject(); // filter concepts without a representation (i.e. resource types)
     })));
     
-    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->get('/resource/{resourceType}', function (Request $request, Response $response, $args = []) use ($container) {
@@ -58,7 +58,7 @@ $app->get('/resource/{resourceType}', function (Request $request, Response $resp
     
     $resources = Resource::getAllResources($args['resourceType']);
     
-    print json_encode($resources, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return $response->withJson($resources, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->post('/resource/{resourceType}', function (Request $request, Response $response, $args = []) use ($container) {
@@ -78,7 +78,7 @@ $app->post('/resource/{resourceType}', function (Request $request, Response $res
     
     // Don't save/commit new resource (yet)
     
-    print json_encode($resource, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return $response->withJson($resource, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->get('/resource/{resourceType}/{resourceId}', function (Request $request, Response $response, $args = []) use ($container) {
@@ -91,7 +91,7 @@ $app->get('/resource/{resourceType}/{resourceId}', function (Request $request, R
     if(!$ampersandApp->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
     if(!$resource->exists()) throw new Exception("Resource '{$resource}' not found", 404);
 
-    print json_encode($resource, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return $response->withJson($resource, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 
@@ -112,7 +112,7 @@ $app->get('/session/{ifcPath:.*}', function(Request $request, Response $response
     $resource = $container['ampersand_app']->getSession()->getSessionResource();
 
     // Output
-    print json_encode($controller->get($resource, $args['ifcPath'], $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return $response->withJson($controller->get($resource, $args['ifcPath'], $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 // GET for interfaces that start with other resource
@@ -126,7 +126,7 @@ $app->get('/resource/{resourceType}/{resourceId}/{ifcPath:.*}', function (Reques
     $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
     // Output
-    print json_encode($controller->get($resource, $args['ifcPath'], $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return $response->withJson($controller->get($resource, $args['ifcPath'], $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 // PUT, PATCH, POST for interfaces with expr[SESSION*..]
@@ -144,17 +144,13 @@ $app->map('/session/{ifcPath:.*}', function (Request $request, Response $respons
     // Output
     switch ($request->getMethod()) {
         case 'PUT':
-            print json_encode($controller->put($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            break;
+            return $response->withJson($controller->put($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         case 'PATCH':
-            print json_encode($controller->patch($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            break;
+            return $response->withJson($controller->patch($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         case 'POST':
-            print json_encode($controller->post($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            break;
+            return $response->withJson($controller->post($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         default:
             throw new Exception("Unsupported HTTP method", 500);
-            break;
     }
 })->via('PUT', 'PATCH', 'POST')->add($middleWare1);
 
@@ -173,17 +169,13 @@ $app->map('/resource/{resourceType}/{resourceId}/{ifcPath:.*}', function (Reques
     // Output
     switch ($request->getMethod()) {
         case 'PUT':
-            print json_encode($controller->put($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            break;
+            return $response->withJson($controller->put($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         case 'PATCH':
-            print json_encode($controller->patch($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            break;
+            return $response->withJson($controller->patch($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         case 'POST':
-            print json_encode($controller->post($resource, $ifcPath, $body, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            break;
+            return $response->withJson($controller->post($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         default:
             throw new Exception("Unsupported HTTP method", 500);
-            break;
     }
 })->via('PUT', 'PATCH', 'POST')->add($middleWare1);
 
@@ -194,7 +186,7 @@ $app->delete('/session/{ifcPath:.*}', function (Request $request, Response $resp
 
     $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
 
-    print json_encode($controller->delete($resource, $args['ifcPath']), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->delete('/resource/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
@@ -202,5 +194,5 @@ $app->delete('/resource/{resourceType}/{resourceId}/{ifcPath:.*}', function (Req
 
     $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
 
-    print json_encode($controller->delete($resource, $args['ifcPath']), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
