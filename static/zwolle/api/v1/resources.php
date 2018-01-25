@@ -91,20 +91,6 @@ $app->group('/resource', function () use ($container) {
         return $response->withJson($resource, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    // GET for interfaces with expr[SESSION*..]
-    $this->get('/session/{ifcPath:.*}', function(Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
-        // Input
-        $options = Options::getFromRequestParams($request->getQueryParams());
-        $depth = $request->getQueryParam('depth');
-
-        // Prepare
-        $controller = new InterfaceController($ampersandApp, $angularApp);
-        $resource = $ampersandApp->getSession()->getSessionResource();
-
-        // Output
-        return $response->withJson($controller->get($resource, $args['ifcPath'], $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    });
-
     // GET for interfaces that start with other resource
     $this->get('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         // Input
@@ -118,31 +104,6 @@ $app->group('/resource', function () use ($container) {
         // Output
         return $response->withJson($controller->get($resource, $args['ifcPath'], $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
-
-    // PUT, PATCH, POST for interfaces with expr[SESSION*..]
-    $this->map(['PUT', 'PATCH', 'POST'], '/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
-        // Input
-        $options = Options::getFromRequestParams($request->getQueryParams());
-        $depth = $request->getQueryParam('depth');
-        $body = $request->getParsedBody();
-        $ifcPath = $args['ifcPath'];
-        
-        // Prepare
-        $controller = new InterfaceController($ampersandApp, $angularApp);
-        $resource = $ampersandApp->getSession()->getSessionResource();
-
-        // Output
-        switch ($request->getMethod()) {
-            case 'PUT':
-                return $response->withJson($controller->put($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            case 'PATCH':
-                return $response->withJson($controller->patch($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            case 'POST':
-                return $response->withJson($controller->post($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            default:
-                throw new Exception("Unsupported HTTP method", 500);
-        }
-    })->add($middleWare1);
 
     // PUT, PATCH, POST for interfaces that start with other resource
     $this->map(['PUT', 'PATCH', 'POST'], '/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
@@ -167,7 +128,7 @@ $app->group('/resource', function () use ($container) {
             default:
                 throw new Exception("Unsupported HTTP method", 500);
         }
-    })->add($middleWare1);
+    });
 
     $this->delete('/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         $resource = $ampersandApp->getSession()->getSessionResource();
@@ -185,4 +146,51 @@ $app->group('/resource', function () use ($container) {
         return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-});
+})->add($middleWare1);
+
+$app->group('/session', function () use ($container, $middleWare1) {
+    /** @var \Ampersand\AmpersandApp $ampersandApp */
+    $ampersandApp = $container['ampersand_app'];
+    
+    /** @var \Ampersand\AngularApp $angularApp */
+    $angularApp = $container['angular_app'];
+
+    // GET for interfaces with expr[SESSION*..]
+    $this->get('/{ifcPath:.*}', function(Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+        // Input
+        $options = Options::getFromRequestParams($request->getQueryParams());
+        $depth = $request->getQueryParam('depth');
+
+        // Prepare
+        $controller = new InterfaceController($ampersandApp, $angularApp);
+        $resource = $ampersandApp->getSession()->getSessionResource();
+
+        // Output
+        return $response->withJson($controller->get($resource, $args['ifcPath'], $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
+
+    // PUT, PATCH, POST for interfaces with expr[SESSION*..]
+    $this->map(['PUT', 'PATCH', 'POST'], '/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+        // Input
+        $options = Options::getFromRequestParams($request->getQueryParams());
+        $depth = $request->getQueryParam('depth');
+        $body = $request->getParsedBody();
+        $ifcPath = $args['ifcPath'];
+        
+        // Prepare
+        $controller = new InterfaceController($ampersandApp, $angularApp);
+        $resource = $ampersandApp->getSession()->getSessionResource();
+
+        // Output
+        switch ($request->getMethod()) {
+            case 'PUT':
+                return $response->withJson($controller->put($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            case 'PATCH':
+                return $response->withJson($controller->patch($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            case 'POST':
+                return $response->withJson($controller->post($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            default:
+                throw new Exception("Unsupported HTTP method", 500);
+        }
+    });
+})->add($middleWare1);

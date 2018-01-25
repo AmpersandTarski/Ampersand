@@ -13,7 +13,7 @@ angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', functi
 
     // If entry resource is session
     if(resourceType == 'SESSION') 
-        \$scope.resource = { _id_ : \$sessionStorage.session.id, _path_ : 'resource/session', _isRoot_ : true };
+        \$scope.resource = { _id_ : \$sessionStorage.session.id, _path_ : 'session', _isRoot_ : true };
 
     // Else entry resource is other type
     else \$scope.resource = { _id_ : \$routeParams.resourceId, _path_ : 'resource/' + resourceType + '/' + \$routeParams.resourceId , _isRoot_ : true };
