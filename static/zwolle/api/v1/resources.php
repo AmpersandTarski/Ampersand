@@ -45,27 +45,27 @@ $app->get('/resource', function(Request $request, Response $response, $args = []
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/resource/:resourceType', function (Request $request, Response $response, $args = []) use ($container) {
+$app->get('/resource/{resourceType}', function (Request $request, Response $response, $args = []) use ($container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
-    $concept = Concept::getConcept($resourceType);
+    $concept = Concept::getConcept($args['resourceType']);
     
     // Checks
     if(!$concept->isObject()) throw new Exception ("Resource type not found", 404);
     if($concept->isSession()) throw new Exception ("Resource type not found", 404); // Prevent users to list other sessions
     if(!$ampersandApp->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
     
-    $resources = Resource::getAllResources($resourceType);
+    $resources = Resource::getAllResources($args['resourceType']);
     
     print json_encode($resources, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->post('/resource/:resourceType', function (Request $request, Response $response, $args = []) use ($container) {
+$app->post('/resource/{resourceType}', function (Request $request, Response $response, $args = []) use ($container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
-    $resource = Resource::makeNewResource($resourceType);
+    $resource = Resource::makeNewResource($args['resourceType']);
 
     $allowed = false;
     foreach ($ampersandApp->getAccessibleInterfaces() as $ifc) {
@@ -81,11 +81,11 @@ $app->post('/resource/:resourceType', function (Request $request, Response $resp
     print json_encode($resource, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/resource/:resourceType/:resourceId', function (Request $request, Response $response, $args = []) use ($container) {
+$app->get('/resource/{resourceType}/{resourceId}', function (Request $request, Response $response, $args = []) use ($container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     
-    $resource = Resource::makeResource($resourceId, $resourceType);
+    $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
     
     // Checks
     if(!$ampersandApp->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
@@ -102,7 +102,7 @@ $app->get('/resource/:resourceType/:resourceId', function (Request $request, Res
  *************************************************************************************************/
 
 // GET for interfaces with expr[SESSION*..]
-$app->get('/session/:ifcPath+', function(Request $request, Response $response, $args = []) use ($container) {
+$app->get('/session/{ifcPath:.*}', function(Request $request, Response $response, $args = []) use ($container) {
     // Input
     $options = Options::getFromRequestParams($request->getQueryParams());
     $depth = $request->getQueryParam('depth');
@@ -112,29 +112,30 @@ $app->get('/session/:ifcPath+', function(Request $request, Response $response, $
     $resource = $container['ampersand_app']->getSession()->getSessionResource();
 
     // Output
-    print json_encode($controller->get($resource, $ifcPath, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    print json_encode($controller->get($resource, $args['ifcPath'], $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 // GET for interfaces that start with other resource
-$app->get('/resource/:resourceType/:resourceId/:ifcPath+', function (Request $request, Response $response, $args = []) use ($container) {
+$app->get('/resource/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
     // Input
     $options = Options::getFromRequestParams($request->getQueryParams());
     $depth = $request->getQueryParam('depth');
     
     // Prepare
     $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
-    $resource = Resource::makeResource($resourceId, $resourceType);
+    $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
     // Output
-    print json_encode($controller->get($resource, $ifcPath, $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    print json_encode($controller->get($resource, $args['ifcPath'], $options, $depth), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 // PUT, PATCH, POST for interfaces with expr[SESSION*..]
-$app->map('/session/:ifcPath+', function (Request $request, Response $response, $args = []) use ($container) {
+$app->map('/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
     // Input
     $options = Options::getFromRequestParams($request->getQueryParams());
     $depth = $request->getQueryParam('depth');
     $body = $request->getParsedBody();
+    $ifcPath = $args['ifcPath'];
     
     // Prepare
     $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
@@ -158,15 +159,16 @@ $app->map('/session/:ifcPath+', function (Request $request, Response $response, 
 })->via('PUT', 'PATCH', 'POST')->add($middleWare1);
 
 // PUT, PATCH, POST for interfaces that start with other resource
-$app->map('/resource/:resourceType/:resourceId/:ifcPath+', function (Request $request, Response $response, $args = []) use ($container) {
+$app->map('/resource/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
     // Input
     $options = Options::getFromRequestParams($request->getQueryParams());
     $depth = $request->getQueryParam('depth');
     $body = $request->getParsedBody();
+    $ifcPath = $args['ifcPath'];
     
     // Prepare
     $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
-    $resource = Resource::makeResource($resourceId, $resourceType);
+    $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
     // Output
     switch ($request->getMethod()) {
@@ -185,20 +187,20 @@ $app->map('/resource/:resourceType/:resourceId/:ifcPath+', function (Request $re
     }
 })->via('PUT', 'PATCH', 'POST')->add($middleWare1);
 
-$app->delete('/session/:ifcPath+', function (Request $request, Response $response, $args = []) use ($container) {
+$app->delete('/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     $resource = $ampersandApp->getSession()->getSessionResource();
 
     $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
 
-    print json_encode($controller->delete($resource, $ifcPath), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    print json_encode($controller->delete($resource, $args['ifcPath']), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->delete('/resource/:resourceType/:resourceId/:ifcPath+', function (Request $request, Response $response, $args = []) use ($container) {
-    $resource = Resource::makeResource($resourceId, $resourceType);
+$app->delete('/resource/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($container) {
+    $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
     $controller = new InterfaceController($container['ampersand_app'], $container['angular_app']);
 
-    print json_encode($controller->delete($resource, $ifcPath), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    print json_encode($controller->delete($resource, $args['ifcPath']), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
