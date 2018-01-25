@@ -78,7 +78,7 @@ $app->add(function (Request $req,  Response $res, callable $next) {
 
 include (__DIR__ . '/resources.php'); // API calls starting with '/resource/'
 include (__DIR__ . '/admin.php'); // API calls starting with '/admin/'
-include (__DIR__ . '/sessions.php'); // API calls starting with '/sessions/'
+include (__DIR__ . '/app.php'); // API calls starting with '/app/'
 
 foreach((array)$GLOBALS['api']['files'] as $apiFile) include_once ($apiFile); // include api path added by extensions
 
