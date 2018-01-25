@@ -30,7 +30,7 @@ global $container;
 
 $app->group('/admin', function () {
     
-    $this->post('/resource/{resourceType}/rename', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->post('/resource/{resourceType}/rename', function (Request $request, Response $response, $args = []) use ($container){
         $resourceType = $args['resourceType'];
         
         $ampersandApp = $container['ampersand_app'];
@@ -50,7 +50,7 @@ $app->group('/admin', function () {
         return $response->withJson($list, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/installer', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->get('/installer', function (Request $request, Response $response, $args = []) use ($container){
         if(Config::get('productionEnv')) throw new Exception ("Reinstallation of application not allowed in production environment", 403);
         
         $defaultPop = filter_var($request->getQueryParam('defaultPop', true), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE); 
@@ -68,7 +68,7 @@ $app->group('/admin', function () {
         return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/execengine/run', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->get('/execengine/run', function (Request $request, Response $response, $args = []) use ($container){
         $ampersandApp = $container['ampersand_app'];
         
         // Check for required role
@@ -85,7 +85,7 @@ $app->group('/admin', function () {
         return $response->withJson(Notifications::getAll(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/ruleengine/evaluate/all', function(Request $request,  Response $response, $args = []) use ($container){
+    $this->get('/ruleengine/evaluate/all', function(Request $request, Response $response, $args = []) use ($container){
         if(Config::get('productionEnv')) throw new Exception ("Evaluation of all rules not allowed in production environment", 403);
         
         foreach (RuleEngine::checkRules(Rule::getAllInvRules(), false) as $violation) Notifications::addInvariant($violation);
@@ -94,7 +94,7 @@ $app->group('/admin', function () {
         return $response->withJson(Notifications::getAll(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/export/all', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->get('/export/all', function (Request $request, Response $response, $args = []) use ($container){
         if(Config::get('productionEnv')) throw new Exception ("Export not allowed in production environment", 403);
         
         // Export population to response body
@@ -107,7 +107,7 @@ $app->group('/admin', function () {
                         ->withHeader('Content-Type', 'application/json;charset=utf-8');
     });
 
-    $this->post('/import', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->post('/import', function (Request $request, Response $response, $args = []) use ($container){
         $ampersandApp = $container['ampersand_app'];
 
         // Check for required role
@@ -152,7 +152,7 @@ $app->group('/admin', function () {
 $app->group('/admin/report', function () {
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
 
-    $this->get('/relations', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->get('/relations', function (Request $request, Response $response, $args = []) use ($container){
         // Get report
         $reporter = new Reporter(new JSONWriter($response->getBody()));
         $reporter->reportRelationDefinitions();
@@ -161,7 +161,7 @@ $app->group('/admin/report', function () {
         return $response->withHeader('Content-Type', 'application/json;charset=utf-8');
     });
 
-    $this->get('/conjuncts/usage', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->get('/conjuncts/usage', function (Request $request, Response $response, $args = []) use ($container){
         // Get report
         $reporter = new Reporter(new JSONWriter($response->getBody()));
         $reporter->reportConjunctUsage();
@@ -170,7 +170,7 @@ $app->group('/admin/report', function () {
         return $response->withHeader('Content-Type', 'application/json;charset=utf-8');
     });
 
-    $this->get('/conjuncts/performance', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->get('/conjuncts/performance', function (Request $request, Response $response, $args = []) use ($container){
         // Get report
         $reporter = new Reporter(new CSVWriter($response->getBody()));
         $reporter->reportConjunctPerformance(Conjunct::getAllConjuncts());
@@ -181,7 +181,7 @@ $app->group('/admin/report', function () {
                         ->withHeader('Content-Type', 'text/csv; charset=utf-8');
     });
 
-    $this->get('/interfaces', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->get('/interfaces', function (Request $request, Response $response, $args = []) use ($container){
         // Get report
         $reporter = new Reporter(new CSVWriter($response->getBody()));
         $reporter->reportInterfaceDefinitions();
@@ -192,7 +192,7 @@ $app->group('/admin/report', function () {
                         ->withHeader('Content-Type', 'text/csv; charset=utf-8');
     });
 
-    $this->get('/interfaces/issues', function (Request $request,  Response $response, $args = []) use ($container){
+    $this->get('/interfaces/issues', function (Request $request, Response $response, $args = []) use ($container){
         // Get report
         $reporter = new Reporter(new CSVWriter($response->getBody()));
         $reporter->reportInterfaceIssues();
