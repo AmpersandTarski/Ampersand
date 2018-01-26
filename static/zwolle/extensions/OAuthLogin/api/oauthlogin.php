@@ -54,23 +54,23 @@ $app->get('/oauthlogin/logout', function () use ($app){
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-// Path to API is 'api/v1/oauthlogin/callback/google'
-$app->get('/oauthlogin/callback/google', function () use ($app){
-    $code = $app->request->params('code');
-    OAuthLoginController::callback($code, 'google');
-});
-
-// Path to API is 'api/v1/oauthlogin/callback/linkedin'
-$app->get('/oauthlogin/callback/linkedin', function () use ($app){
-    // TODO: add check $state variable, to prevent CSPF attack
-    $code = $app->request->params('code');
-    OAuthLoginController::callback($code, 'linkedin');
-});
-
 // Path to API is 'api/v1/oauthlogin/callback/github'
-$app->get('/oauthlogin/callback/github', function () use ($app){
+$app->get('/oauthlogin/callback/:idp', function ($idp) use ($app){
     // TODO: add check $state variable, to prevent CSPF attack
-    $code = $app->request->params('code');
-    OAuthLoginController::callback($code, 'github');
+    if($error = $app->request->params('error')) {
+        // $error_description = $app->request->params('error');
+        // $error_uri = $app->request->params('error_uri');
+        throw new Exception("An error occured: {$error}");
+    } else {
+        switch ($idp) {
+            case 'google':
+            case 'linkedin':
+            case 'github':
+                OAuthLoginController::callback($app->request->params('code'), $idp);
+                break;
+            default:
+                throw new Exception("Unsupported identity provider", 500);
+        }
+    }
 });
 ?>
