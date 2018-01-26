@@ -16,7 +16,7 @@ class Language a where
   relsDefdIn :: a -> [Relation]   -- ^ all relations that are declared in the scope of this viewpoint.
                                      --   These are user defined relations and all generated relarations,
                                      --   i.e. one relation for each GEN and one for each signal rule.
-                                     --   Don't confuse relsDefdIn with relsUsedIn, which gives the relations that are
+                                     --   Don't confuse relsDefdIn with bindedRelationsIn, which gives the relations that are
                                      --   used in a.)
   udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.

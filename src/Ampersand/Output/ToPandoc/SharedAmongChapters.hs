@@ -442,7 +442,7 @@ orderingByTheme fSpec
      where
        (thmRuls,restRuls) = partition (inThisTheme ptrls) ruls
        (themeDcls,restDcls) = partition (inThisTheme relsInTheme) rels
-          where relsInTheme p = relsDefdIn p `uni` relsMentionedIn p
+          where relsInTheme p = relsDefdIn p `uni` bindedRelationsIn p
        (themeCpts,restCpts) = partition (inThisTheme concs) cpts
        inThisTheme :: Eq a => (Pattern -> [a]) -> a -> Bool
        inThisTheme allElemsOf x
@@ -524,7 +524,7 @@ dpRule' fSpec = dpR
         
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
-        ds  = relsUsedIn r
+        ds  = bindedRelationsIn r
         nds = ds >- seenRelations     -- newly seen relations
         rds = ds `isc` seenRelations  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenRelations)

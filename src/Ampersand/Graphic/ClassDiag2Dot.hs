@@ -107,7 +107,7 @@ classdiagram2dot opts cd
 --                    [r |r<-rels, isUni r,      isInj r, isSur r]++[flp r |r<-rels,      isUni r , isInj r, not (isSur r)]
 ---- assRels contains all relations that do not occur as attributes in classes
 --       assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
---       attrs rs   = [ OOAttr ((name.head.relsMentionedIn) r) (name (target r)) (not(isTot r))
+--       attrs rs   = [ OOAttr ((name.head.bindedRelationsIn) r) (name (target r)) (not(isTot r))
 --                    | r<-rs, not (isPropty r)]
 --       isPropty r = null([Sym,Asy]>-properties r)
 
