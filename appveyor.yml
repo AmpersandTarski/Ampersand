@@ -23,7 +23,7 @@ environment:
 before_build:
 - curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
 - 7z x stack.zip stack.exe
-- set PATH=%PATH%;C:\stack\
+- set PATH=%PATH%;C:\stack\;C:\Users\appveyor\AppData\Roaming\local\bin
 
 # prevent AppVeyor from building when it sees a new tag (later
 # in this script we end up making a new tag when we push a release)
@@ -40,6 +40,13 @@ build_script:
 - stack setup --no-terminal > nul
 - stack build --only-snapshot --no-terminal
 - stack --local-bin-path . install ampersand
+
+# Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
+- stack install weeder --resolver=nightly
+- weeder --version
+- weeder . --build
+# - ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('.')
+
 # Set a magical environment variable
 - cmd: for /f %%i in ('stack exec -- ampersand -v') do set AMPERSAND_VERSION=%%i
 

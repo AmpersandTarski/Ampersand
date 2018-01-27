@@ -676,7 +676,7 @@ transformers fSpec = map toTransformer [
       , if atlasWithoutExpressions opts then [] else
         [(dirtyId rel, dirtyId expr)
         | expr::Expression <- instances fSpec
-        , rel::Relation <- relsUsedIn expr
+        , rel::Relation <- bindedRelationsIn expr
         ]
       )
      ,("userCpt"               , "Epsilon"                     , "Concept" 
