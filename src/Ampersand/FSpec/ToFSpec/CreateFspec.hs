@@ -41,7 +41,8 @@ createMulti opts =
         then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
-     userP_Ctx:: Guarded P_Context <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
+     userP_Ctx:: Guarded P_Context <- 
+           parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      systemP_Ctx:: Guarded P_Context <- parseSystemContext opts
 
      let fAmpFSpec :: FSpec
@@ -64,15 +65,19 @@ createMulti opts =
             where
               noPopulation :: P_Relation -> P_Relation
               noPopulation rel = rel{dec_popu =[]}
-
+         userP_CtxPlus :: Guarded P_Context
+         userP_CtxPlus =
+           if genMetaTables opts || genRapRelationsOnly opts 
+           then addSemanticModel <$> userP_Ctx
+           else                      userP_Ctx
          userGFSpec :: Guarded FSpec
-         userGFSpec = pCtx2Fspec . (if genMetaTables opts || genRapRelationsOnly opts then addSemanticModel else id) $ 
-                         mergeContexts <$> userP_Ctx   -- the FSpec resuting from the user's souceFile
+         userGFSpec = pCtx2Fspec $ 
+                         mergeContexts <$> userP_CtxPlus   -- the FSpec resuting from the user's souceFile
                                        <*> systemP_Ctx -- the system artifacts required for all ampersand prototypes
          
          result :: Guarded MultiFSpecs
          result = 
-           if genMetaTables opts || genRapPopulationOnly opts
+           if genRapPopulationOnly opts
            then case userGFSpec of 
                   Errors err -> Errors err  
                   Checked usrFSpec
@@ -82,7 +87,7 @@ createMulti opts =
                                   metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
                                   metaPopFSpec :: Guarded FSpec
                                   metaPopFSpec = pCtx2Fspec metaPopPCtx
-                              in MultiFSpecs <$> (pCtx2Fspec $ mergeContexts <$> userP_Ctx <*> pure grinded)
+                              in MultiFSpecs <$> (pCtx2Fspec $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
                                              <*> (Just <$> metaPopFSpec)
            else MultiFSpecs <$> userGFSpec <*> pure Nothing
      res <- if genMetaFile opts
