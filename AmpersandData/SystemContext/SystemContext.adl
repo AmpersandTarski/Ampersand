@@ -13,7 +13,7 @@ PATTERN SystemSpecific
   {+We need roles to implement a basic form of security based on permissions. +}
   CONCEPT DateTime "een specifiek moment, tijdstip"
   PURPOSE CONCEPT DateTime IN DUTCH
-  {+om bewerkingen te kunnen plaatsen in de tijd is het nodig om het over specifieke momenten te kunnen hebben+}
+  {+Om bewerkingen te kunnen plaatsen in de tijd is het nodig om het over specifieke momenten te kunnen hebben.+}
   PURPOSE CONCEPT DateTime IN ENGLISH
   {+Telling the time enables some ordering of events in time.+}
   
