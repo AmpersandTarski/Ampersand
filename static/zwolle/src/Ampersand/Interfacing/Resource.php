@@ -184,17 +184,21 @@ class Resource extends Atom {
      */
     public function walkPath($path, $returnType = null){
         // Prepare path list
-        if(is_array($path)) $path = implode ('/', $path);
+        if(is_array($path)) $path = implode('/', $path);
         $path = trim($path, '/'); // remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
-        $pathList = explode('/', $path);
+        
+        if($path === '') $pathList = []; // support no path
+        else $pathList = explode('/', $path);
 
         // Check if entry resource ($this) exists
         if(!$this->exists()){
+            if(empty($pathList)) throw new Exception("Resource '{$this}' not found", 404);
+            
             $ifc = InterfaceObject::getInterface(reset($pathList));
             
             // Automatically create if allowed
             if($ifc->crudC() && $ifc->isIdent()) $this->add();
-            else throw new Exception ("Resource '{$this}' not found", 404);
+            else throw new Exception("Resource '{$this}' not found", 404);
         }
 
         // Walk path by alternating between $r = Resource and $r = ResourceList
