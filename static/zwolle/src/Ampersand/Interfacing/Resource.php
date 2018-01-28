@@ -78,22 +78,26 @@ class Resource extends Atom {
     
     /**
      * Function is called when object encoded to json with json_encode()
-     * @return array
+     * 
+     * @return array|string
      */
     public function jsonSerialize(){
-        $content = [];
-        
-        // Add Ampersand atom attributes
-        $content['_id_'] = $this->id;
-        $content['_label_'] = $this->getLabel();
-        
-        // Add view data if array is assoc (i.e. not sequential)
-        $data = $this->getView();
-        if(!isSequential($data)) $content['_view_'] = $data;
-        
-        // Merge with interface data (only when get() method is called before)
-        return array_merge($content, $this->ifcData);
-        
+        if($this->concept->isObject()) {
+            $content = [];
+            
+            // Add Ampersand atom attributes
+            $content['_id_'] = $this->id;
+            $content['_label_'] = $this->getLabel();
+            
+            // Add view data if array is assoc (i.e. not sequential)
+            $data = $this->getView();
+            if(!isSequential($data)) $content['_view_'] = $data;
+            
+            // Mterge with inerface data (which is set when get() method is called before)
+            return array_merge($content, $this->ifcData);
+        } else {
+            return parent::jsonSerialize();
+        }
     }
     
     /**
