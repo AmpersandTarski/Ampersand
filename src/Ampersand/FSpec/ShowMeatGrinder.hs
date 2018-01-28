@@ -160,7 +160,9 @@ makeMetaFile formalAmpersand userFspec
        . sortOn showRel
        . instances $ formalAmpersand
     listOfConcepts :: [String]
-    listOfConcepts = map ("-- "++) (intercalate [""] (map showCpt cpts))
+    listOfConcepts = map ("-- "++) .
+                     intercalate [""] . 
+                     map showCpt $ cpts
        where
         showCpt :: A_Concept -> [String]
         showCpt cpt = [name cpt] ++ ( map ("  "++)
