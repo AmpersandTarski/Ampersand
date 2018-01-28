@@ -57,7 +57,7 @@ class Resource extends Atom {
         // Set parentList
         $this->parentList = $parentList;
         
-        if(!$cpt->isObject()) throw new Exception ("Cannot instantiate resource given non-object concept {$cpt->name}.");
+        if(!$cpt->isObject()) throw new Exception ("Cannot instantiate resource given non-object concept {$cpt->name}.", 500);
         
         // Call Atom constructor
         if(is_null($resourceId)) $resourceId = $cpt->createNewAtomId();

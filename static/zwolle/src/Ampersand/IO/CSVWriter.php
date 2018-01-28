@@ -30,7 +30,7 @@ class CSVWriter extends AbstractWriter {
                 if (isset($row[$col])) {
                     switch (gettype($row[$col])) {
                         case "array":
-                            throw new Exception("Cannot output multi layer arrays to CSV"); // TODO, replace with functionality to comma separate content one level deeper
+                            throw new Exception("Cannot output multi layer arrays to CSV", 500); // TODO, replace with functionality to comma separate content one level deeper
                         case "boolean":
                         case "integer":
                         case "double": // = float
@@ -44,7 +44,7 @@ class CSVWriter extends AbstractWriter {
                         case "resource":
                         case "resource (closed)": //as of PHP 7.2.0
                         case "unknown type":
-                            throw new Exception("Cannot output variable of type '" . gettype($row[$col] . "' to CSV"));
+                            throw new Exception("Cannot output variable of type '" . gettype($row[$col] . "' to CSV"), 500);
                     }
                 } else {
                     $fields[] = null;

@@ -32,13 +32,13 @@ abstract class AbstractReader {
     public function loadFile($filePath){
         // Check if file exists
         if (!file_exists($filePath) || !is_readable($filePath)) {
-            throw new Exception("Could not open {$filePath}. File does not exist");
+            throw new Exception("Could not open {$filePath}. File does not exist", 500);
         }
 
         // Open file
         $this->stream = fopen($filePath, 'r');
         if ($this->stream === FALSE) {
-            throw new Exception("Could not open {$filePath}");
+            throw new Exception("Could not open {$filePath}", 500);
         }
     }
 }
