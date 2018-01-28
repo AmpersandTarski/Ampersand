@@ -35,7 +35,6 @@ createMulti :: Options  -- ^The options derived from the command line
 createMulti opts =
   do fAmpP_Ctx :: Guarded P_Context <-
         if genMetaFile opts ||
-           genMetaTables opts ||
            genRapPopulationOnly opts ||
            addSemanticMetamodel opts
         then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
@@ -67,7 +66,7 @@ createMulti opts =
               noPopulation rel = rel{dec_popu =[]}
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =
-           if genMetaTables opts || addSemanticMetamodel opts 
+           if addSemanticMetamodel opts 
            then addSemanticModel <$> userP_Ctx
            else                      userP_Ctx
          userGFSpec :: Guarded FSpec
