@@ -36,9 +36,9 @@ class ResourceList implements IteratorAggregate {
     private $src = null;
     
     /**
-     * @var InterfaceObject $parentIfc [description]
+     * @var InterfaceObject
      */
-    private $parentIfc = null;
+    private $ifc = null;
     
     /**
      * @var array $tgtResources list with target resources

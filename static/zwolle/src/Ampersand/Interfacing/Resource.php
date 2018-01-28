@@ -107,7 +107,7 @@ class Resource extends Atom {
         if(!isset($this->viewData)){
             $this->logger->debug("Get view for atom '{$this}'");
             
-            if(isset($this->parentList)) $viewDef = $this->parentList->ifc->getView(); // if parentList is defined, use view of ifc (can be null)
+            if(isset($this->parentList)) $viewDef = $this->parentList->getIfc()->getView(); // if parentList is defined, use view of ifc (can be null)
             else $viewDef = $this->concept->getDefaultView(); // else use default view of concept (can be null)
             
             if(!is_null($viewDef)) $this->viewData = $viewDef->getViewData($this); // if there is a view definition
