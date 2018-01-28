@@ -29,21 +29,25 @@ class ResourceList implements IteratorAggregate {
     protected $logger;
     
     /**
-     * Source Atom/Resource of this Resourcelist
+     * The source Resource (i.e. Atom) of this resource list
      * 
-     * @var \Ampersand\Interfacing\Resource $src
+     * @var \Ampersand\Interfacing\Resource
      */
-    private $src = null;
+    protected $src = null;
     
     /**
-     * @var InterfaceObject
+     * The Interface that is the base of this resource list
+     * 
+     * @var \Ampersand\Interfacing\InterfaceObject
      */
-    private $ifc = null;
+    protected $ifc = null;
     
     /**
-     * @var array $tgtResources list with target resources
+     * List with target resources
+     * 
+     * @var \Ampersand\Interfacing\Resource[] 
      */
-    private $tgtResources = null;
+    protected $tgts = null;
     
     
     public function __construct(Resource $src, InterfaceObject $parentIfc){
@@ -61,8 +65,7 @@ class ResourceList implements IteratorAggregate {
      * @return ArrayIterator
      */
     public function getIterator(){
-        if($this->ifc->tgtConcept->isObject()) return new ArrayIterator($this->getTgtResources());
-        else return new ArrayIterator($this->getTgtAtoms());
+        return new ArrayIterator($this->getTgtResources());
     }
     
     public function getSrc(){
@@ -91,64 +94,43 @@ class ResourceList implements IteratorAggregate {
         // If no tgtId is provided, the srcId is used. Usefull for ident interface expressions (I[Concept])
         if(is_null($tgtId)) $tgtId = $this->src->id;
         
-        $arr = $this->getTgtResources();
+        foreach ($this->getTgtResources() as $resource) {
+            if($resource->id == $tgtId) return $resource;
+        }
         
-        if(!array_key_exists($tgtId, $arr)) throw new Exception ("Resource '{$resource}' not found", 404);
-        
-        return $arr[$tgtId];
+        // When not found
+        throw new Exception ("Resource not found", 404);
     }
     
     /**
-     * @param boolean $fromCache specifies if target resources may be get from cache (true) or recalculated (false)
-     * @return Resource[]
+     * Return list of target resources
+     * 
+     * @param bool $fromCache specifies if target resources may be get from cache (true) or recalculated (false)
+     * @return \Ampersand\Interfacing\Resource[]
      */
-    private function getTgtResources($fromCache = true){
-        if(!isset($this->tgtResources) || !$fromCache){
-            $this->tgtResources = [];
+    protected function getTgtResources(bool $fromCache = true){
+        if(!isset($this->tgts) || !$fromCache){
+            $this->tgts = [];
             // If interface isIdent (i.e. expr = I[Concept]) we can return the src
             if($this->ifc->isIdent()){
-                $this->tgtResources[$this->src->id] = $this->makeResource($this->src->id);
+                $this->tgts[] = $this->makeResource($this->src->id);
                 
             // Else try to get tgt atom from src query data (in case of uni relation in same table)
             }else{
                 $tgtId = $this->src->getQueryData('ifc_' . $this->ifc->id, $exists); // column is prefixed with ifc_ in query data
                 if($exists){
-                    if(!is_null($tgtId)) $this->tgtResources[$tgtId] = $this->makeResource($tgtId);
+                    if(!is_null($tgtId)) $this->tgts[] = $this->makeResource($tgtId);
                 }else{
                     foreach ($this->ifc->getIfcData($this->src) as $row) {
                         $r = $this->makeResource($row['tgt']);
                         $r->setQueryData($row);
-                        $this->tgtResources[$r->id] = $r;
+                        $this->tgts[] = $r;
                     }
                 }
             }
         }
         
-        return $this->tgtResources;
-    }
-    
-    
-    /**
-     * Codes below look similar to getTgtResources() function above, but returns list of Atoms instead of Resources
-     * @return Atom[]
-     */
-    private function getTgtAtoms($fromCache = true){
-        if(isset($this->tgtResources) && $fromCache) return $this->tgtResources;
-        elseif($this->ifc->tgtConcept->isObject()) return $this->getTgtResources($fromCache);
-        
-        // Otherwise (i.e. non-object atoms) get atoms from database. This is never cached. We only cache resources (i.e. object atoms)
-        else{
-            $tgtAtoms = [];
-            // Try to get tgt atom from src query data (in case of uni relation in same table)
-            $tgt = $this->src->getQueryData('ifc_' . $this->ifc->id, $exists); // column is prefixed with ifc_ in query data
-            if($exists){
-                if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->ifc->tgtConcept);
-            }else{
-                foreach ($this->ifc->getIfcData($this->src) as $row) $tgtAtoms[] = new Atom($row['tgt'], $this->ifc->tgtConcept);
-            }
-            return $tgtAtoms;
-        }
-        
+        return $this->tgts;
     }
 
     /**
@@ -196,9 +178,10 @@ class ResourceList implements IteratorAggregate {
                 else return true;
             }
             
-        // Non-object nodes (leaves, because subinterfaces are not allowed for non-objects)
+        // Non-object nodes (i.e. leaves, because subinterfaces are not allowed for non-objects)
+        // Notice that ->get() is not called on $resource. The interface stops here.
         }else{
-            foreach ($this->getTgtAtoms() as $atom) $result[] = $atom; // for json_encode $atom->jsonSerializable() is called
+            foreach ($this->getTgtResources() as $resource) $result[] = $resource; // for json_encode $resource->jsonSerializable() is called
         }
         
         // Return result using UNI-aspect (univalent-> value/object, non-univalent -> list of values/objects)
@@ -370,7 +353,7 @@ class ResourceList implements IteratorAggregate {
         if(!$this->ifc->isEditable()) throw new Exception ("Interface is not editable " . $this->ifc->getPath(), 405);
         if(!$this->ifc->crudU()) throw new Exception ("Update not allowed for " . $this->ifc->getPath(), 405);
         
-        foreach ($this->getTgtAtoms() as $tgt) {
+        foreach ($this->getTgtResources() as $tgt) {
             $this->src->link($tgt, $this->ifc->relation(), $this->ifc->relationIsFlipped)->delete();
         }
     }
