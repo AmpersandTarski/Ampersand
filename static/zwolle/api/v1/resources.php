@@ -130,14 +130,6 @@ $app->group('/resource', function () use ($container) {
         }
     });
 
-    $this->delete('/session/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
-        $resource = $ampersandApp->getSession()->getSessionResource();
-
-        $controller = new InterfaceController($ampersandApp, $angularApp);
-
-        return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    });
-
     $this->delete('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
@@ -192,5 +184,13 @@ $app->group('/session', function () use ($container, $middleWare1) {
             default:
                 throw new Exception("Unsupported HTTP method", 500);
         }
+    });
+
+    $this->delete('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+        $resource = $ampersandApp->getSession()->getSessionResource();
+
+        $controller = new InterfaceController($ampersandApp, $angularApp);
+
+        return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 })->add($middleWare1);
