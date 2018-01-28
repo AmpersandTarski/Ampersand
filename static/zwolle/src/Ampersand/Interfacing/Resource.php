@@ -57,8 +57,6 @@ class Resource extends Atom {
         // Set parentList
         $this->parentList = $parentList;
         
-        if(!$cpt->isObject()) throw new Exception ("Cannot instantiate resource given non-object concept {$cpt->name}.", 500);
-        
         // Call Atom constructor
         if(is_null($resourceId)) $resourceId = $cpt->createNewAtomId();
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
@@ -239,7 +237,8 @@ class Resource extends Atom {
      * @return Resource $this
      */
     public function get(int $options = Options::DEFAULT_OPTIONS, int $depth = null, array $recursionArr = []){
-        $this->logger->debug("get() called for {$this}");
+        if(!$this->concept->isObject()) throw new Exception ("Cannot get resource, because it is a non-object concept {$concept}.", 400);
+
         if(isset($this->parentList)){
             $parentIfc = $this->parentList->getIfc();
             if(!$parentIfc->crudR()) throw new Exception ("Read not allowed for ". $parentIfc->getPath(), 405);
@@ -298,6 +297,7 @@ class Resource extends Atom {
      * @return Resource $this
      */
     public function put(stdClass $resourceToPut = null){
+        if(!$this->concept->isObject()) throw new Exception ("Cannot put resource, because it is a non-object concept {$concept}.", 400);
         if(!isset($this->parentList)) throw new Exception("Cannot perform put without interface specification", 400);
         if(!isset($resourceToPut)) return $this; // nothing to do
         
@@ -325,6 +325,8 @@ class Resource extends Atom {
      * @return Resource $this
      */
     public function patch(array $patches){
+        if(!$this->concept->isObject()) throw new Exception ("Cannot patch resource, because it is a non-object concept {$concept}.", 400);
+
         foreach ($patches as $key => $patch){
             if(!property_exists($patch, 'op')) throw new Exception ("No 'op' (i.e. operation) specfied for patch #{$key}", 400);
             if(!property_exists($patch, 'path')) throw new Exception ("No 'path' specfied for patch #{$key}", 400);
@@ -358,6 +360,8 @@ class Resource extends Atom {
      * @return Resource $this
      */
     public function delete(){
+        if(!$this->concept->isObject()) throw new Exception ("Cannot delete resource, because it is a non-object concept {$concept}.", 400);
+
         if(!isset($this->parentList)) throw new Exception("Cannot perform delete without interface specification", 400);
         if(!$this->parentList->getIfc()->crudD()) throw new Exception ("Delete not allowed for ". $this->parentList->getIfc()->getPath(), 405);
         
@@ -449,6 +453,8 @@ class Resource extends Atom {
      */
     public static function getAllResources($resourceType){
         $concept = Concept::getConcept($resourceType);
+        
+        if(!$concept->isObject()) throw new Exception ("Cannot get resource(s) given non-object concept {$concept}.", 500);
         
         $resources = [];
         foreach ($concept->getAllAtomObjects() as $atom) {
