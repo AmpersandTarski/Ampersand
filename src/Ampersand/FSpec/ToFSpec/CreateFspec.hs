@@ -37,7 +37,7 @@ createMulti opts =
         if genMetaFile opts ||
            genMetaTables opts ||
            genRapPopulationOnly opts ||
-           genRapRelationsOnly opts
+           addSemanticMetamodel opts
         then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
@@ -67,7 +67,7 @@ createMulti opts =
               noPopulation rel = rel{dec_popu =[]}
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =
-           if genMetaTables opts || genRapRelationsOnly opts 
+           if genMetaTables opts || addSemanticMetamodel opts 
            then addSemanticModel <$> userP_Ctx
            else                      userP_Ctx
          userGFSpec :: Guarded FSpec
