@@ -852,11 +852,10 @@ mergeContexts ctx1 ctx2 =
     where contexts = [ctx1,ctx2]
 
 nubSortConcatMap :: Ord b => (a -> [b]) -> [a] -> [b]
-nubSortConcatMap _ [] = []
-nubSortConcatMap f lst = cleverNubsort (map f lst)
+nubSortConcatMap f = cleverNubsort . map f
 
 cleverNubsort :: Ord b => [[b]] -> [b]
-cleverNubsort lst = Set.toList (Set.unions (map Set.fromList lst))
+cleverNubsort = Set.toList . Set.unions . map Set.fromList
 
 mkContextOfPopsOnly :: [P_Population] -> P_Context
 mkContextOfPopsOnly pops =
