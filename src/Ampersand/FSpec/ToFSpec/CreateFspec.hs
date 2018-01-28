@@ -52,15 +52,16 @@ createMulti opts =
                            ++  intersperse (replicate 30 '=') (map showErr errs)
          -- | When the semantic model of Formal Ampersand is added to the user's model, we add
          --   the relations as wel as the generalisations to it, so they are available to the user
-         --   in an implicit way. 
-         --   TODO: Do we want other things, like Idents and Views available too?
-         addSemanticModel :: Guarded P_Context -> Guarded P_Context
-         addSemanticModel ctx = fmap f ctx
+         --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
+         addSemanticModel :: P_Context -> P_Context
+         addSemanticModel pCtx  
+              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (instances fAmpFSpec)
+                     ,ctx_gs = ctx_gs pCtx ++ map aGen2pGen (instances fAmpFSpec)
+                     ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (instances fAmpFSpec)
+                     ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (instances fAmpFSpec)
+                     ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)
+                     }
             where
-              f pCtx = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (instances fAmpFSpec)
-                            ,ctx_gs = ctx_gs pCtx ++ map aGen2pGen (instances fAmpFSpec)
-                            ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)
-                            }
               noPopulation :: P_Relation -> P_Relation
               noPopulation rel = rel{dec_popu =[]}
 
