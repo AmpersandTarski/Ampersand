@@ -321,6 +321,8 @@ class Resource extends Atom {
     
     /**
      * Patch this resource with provided patches
+     * Use JSONPatch specification for $patches (see: http://jsonpatch.com/)
+     * 
      * @param array $patches
      * @return Resource $this
      */
