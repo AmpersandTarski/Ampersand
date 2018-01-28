@@ -8,7 +8,7 @@ PATTERN SystemSpecific
   {+Sessions are required to allow for associating information with individual visitors+}
   CONCEPT Role "een functie of onderdeel die speciaal in een bepaalde bewerking of proces wordt uitgevoerd"
   PURPOSE CONCEPT Role IN DUTCH
-  {+We need roles to implement a basic form of security based on permissions. +}
+  {+We hebben rollen nodig om een basale vorm van beveiliging te implementeren, gebaseerd op permissies. +}
   PURPOSE CONCEPT Role IN ENGLISH
   {+We need roles to implement a basic form of security based on permissions. +}
   CONCEPT DateTime "een specifiek moment, tijdstip"
@@ -40,6 +40,11 @@ PATTERN SystemSpecific
   {+Gedurende een sessie kan een gebruiker over de permissies van specifieke rollen beschikken.+}
   PURPOSE RELATION sessionActiveRoles IN ENGLISH
   {+During a session the user can have roles, that grants permission for specific events.+}
+
+  PURPOSE CONCEPT "ONE" IN DUTCH
+  {+De universele singleton+}
+  PURPOSE CONCEPT "ONE" IN ENGLISH
+  {+The universal singleton+}
 ENDPATTERN
   
 ENDCONTEXT
