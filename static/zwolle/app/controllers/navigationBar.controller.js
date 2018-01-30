@@ -71,9 +71,9 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
     
     $scope.resetSettings = function(){
         // all off
-        $.each($scope.$storage.notificationPrefs, 
-            function(index, value){
-                $scope.$storage.notificationPrefs[index] = false;
+        angular.forEach($scope.$storage.notificationPrefs, 
+            function(value, index, obj){
+                obj[index] = false;
             }
         );
         $scope.$storage.switchAutoSave = false;
@@ -86,7 +86,7 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
     };
     
     $scope.resetNotificationSettings = function(){
-        $scope.$storage.notificationPrefs = $.extend($scope.$storage.notificationPrefs, $scope.defaultSettings.notifications);
+        $scope.$storage.notificationPrefs = angular.extend($scope.$storage.notificationPrefs, $scope.defaultSettings.notifications);
     };
     
     $scope.resetSwitchAutoSave = function(){
