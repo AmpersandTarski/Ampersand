@@ -351,7 +351,21 @@ class Resource extends Atom {
                     $this->walkPath($patch->path, 'Ampersand\Interfacing\ResourceList')->add($patch->value);
                     break;
                 case "remove" :
-                    $this->walkPath($patch->path, 'Ampersand\Interfacing\Resource')->remove();
+                    $r = $this->walkPath($patch->path);
+                    switch (get_class($r)) {
+                        // Regular json patch remove operation, uses last part of 'path' attribuut as resource to remove from list
+                        case 'Ampersand\Interfacing\Resource':
+                            if(property_exists($patch, 'value')) throw new Exception("Patch 'value' specified for patch #{$key}. Value MUST NOT be provided when path ends with a resource", 400);
+                            $r->remove();
+                            break;
+                        // Not part of official json path specification. Uses 'value' attribute that must be removed from list
+                        case 'Ampersand\Interfacing\ResourceList':
+                            if(!property_exists($patch, 'value')) throw new Exception("Cannot patch remove from list. No 'value' specfied for patch #{$key}", 400);
+                            $r->remove($patch->value);
+                            break;
+                        default:
+                            throw new Exception("Unsupported resource type", 500);
+                    }
                     break;
                 default :
                     throw new Exception("Unknown patch operation '{$patch->op}'. Supported are: 'replace', 'add' and 'remove'", 501);

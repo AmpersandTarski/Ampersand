@@ -138,13 +138,13 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
         
         // Function to remove an item from an interface list
         removeItem : function(resource, ifc, index, patchResource){
-            // Adapt js model
-            value = resource[ifc][index];
-            resource[ifc].splice(index, 1);
-            
             // Construct patch(es)
+            value = resource[ifc][index];
             patch = ResourceService.createPatch('remove', resource, patchResource, ifc, value);
             ResourceService.addPatches(patchResource, [patch]);
+
+            // Adapt js model
+            resource[ifc].splice(index, 1);
         },
         
         checkRequired : function(){ 
