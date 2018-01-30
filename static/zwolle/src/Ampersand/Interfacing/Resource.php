@@ -185,6 +185,9 @@ class Resource extends Atom {
      * @return Resource|ResourceList
      */
     public function walkPath($path, $returnType = null){
+        $typeMap = [ 'Ampersand\Interfacing\Resource' => 'Resource', 'Ampersand\Interfacing\ResourceList' => 'ResourceList' ];
+        if(isset($returnType) && !array_key_exists($returnType, $typeMap)) throw new Exception("Unsupported return type", 500);
+
         // Prepare path list
         if(is_array($path)) $path = implode('/', $path);
         $path = trim($path, '/'); // remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
@@ -223,7 +226,7 @@ class Resource extends Atom {
         // Check if correct object is returned (Resource vs ResourceList)
         if(isset($returnType) && $returnType != get_class($r)){
             if(get_class($r) == 'Ampersand\Interfacing\ResourceList' && $r->getIfc()->isIdent()) $r = $r->one();
-            else throw new Exception ("Provided path results in '" . get_class($r) . "'. This must be '{$returnType}'", 400);
+            else throw new Exception ("Provided path '{$path}' MUST end with {$typeMap[$returnType]}", 400);
         }
         
         // Return
