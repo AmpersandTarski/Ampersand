@@ -1,6 +1,6 @@
 $if(verbose)$<!-- Atomic-OBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
 $endif$$if(crudR)$<div ng-controller="AtomicController">
-    <div $if(exprIsUni)$my-alias="resource['$name$'] as obj"$else$ng-repeat="obj in resource['$name$']"$endif$>
+    <div $if(exprIsUni)$ng-repeat="obj in [resource['$name$']]"$else$ng-repeat="obj in resource['$name$']"$endif$>
         <div>$if(crudU)$
             <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="remove(resource, '$name$', obj, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$$if(crudD)$
             <span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="delete(resource, '$name$', obj)" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
