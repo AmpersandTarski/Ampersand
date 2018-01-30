@@ -12,7 +12,7 @@ $endif$$if(crudR)$<div class="box cols" ng-controller="BoxController" ng-init="p
             </tr>
         </thead>
         <tbody>
-            <tr $if(exprIsUni)$my-alias="resource['$name$'] as resource"$else$ng-repeat="resource in resource['$name$']"$endif$ ng-class="resource._status_"$if(isRoot)$ ng-init="patchResource = resource;"$endif$>$subObjects:{subObj|
+            <tr $if(exprIsUni)$ng-repeat="resource in [resource['$name$']]"$else$ng-repeat="resource in resource['$name$']"$endif$ ng-class="resource._status_"$if(isRoot)$ ng-init="patchResource = resource;"$endif$>$subObjects:{subObj|
                 $if(verbose)$<!-- $subObj.subObjLabel$ -->
                 $endif$<td class="row-content">
                     $subObj.subObjContents$
