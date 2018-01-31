@@ -209,7 +209,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
         // Init/reset resource meta data
         initResourceMetaData : function(resource){
             resource._showButtons_ = {'save' : false, 'cancel' : false};
-            resource._patchesCache = [];
+            resource._patchesCache_ = [];
             ResourceService.setResourceStatus(resource, 'default');
         },
         
