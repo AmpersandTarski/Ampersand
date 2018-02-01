@@ -263,13 +263,18 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
                     case 1146 : // Error: 1146 SQLSTATE: 42S02 (ER_NO_SUCH_TABLE)
                     case 1054 : // Error: 1054 SQLSTATE: 42S22 (ER_BAD_FIELD_ERROR)
                         throw new Exception("{$e->getMessage()}. Try <a href=\"#/admin/installer\" class=\"alert-link\">reinstalling database</a>",500);
-                        break;
+                    case 1406 : // Error: 1406 Data too long
+                        throw new Exception("Data entry is too long ", 400);
                     default:
                         throw new Exception("MYSQL error " . $e->getCode() . ": " . $e->getMessage() . " in query:" . $query, 500);
-                        break;
                 }
             }else{
-                throw new Exception("Error in database query", 500);
+                switch ($e->getCode()){
+                    case 1406 : // Error: 1406 Data too long
+                        throw new Exception("Data entry is too long", 400);
+                    default:
+                        throw new Exception("Error in database query", 500);
+                }
             }
         }
     }
