@@ -34,10 +34,12 @@ $app->group('/admin', function () use ($container) {
     $ampersandApp = $container['ampersand_app'];
 
     $this->get('/sessions/delete/expired', function (Request $request, Response $response, $args = []) {
+        if(Config::get('productionEnv')) throw new Exception ("Not allowed in production environment", 403);
         Session::deleteExpiredSessions();
     });
     
     $this->post('/resource/{resourceType}/rename', function (Request $request, Response $response, $args = []) {
+        if(Config::get('productionEnv')) throw new Exception ("Not allowed in production environment", 403);
         $resourceType = $args['resourceType'];
         
         $list = $request->getParsedBody();
@@ -149,9 +151,10 @@ $app->group('/admin', function () use ($container) {
 });
 
 $app->group('/admin/report', function () use ($container) {
-    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
 
     $this->get('/relations', function (Request $request, Response $response, $args = []) {
+        if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+
         // Get report
         $reporter = new Reporter(new JSONWriter($response->getBody()));
         $reporter->reportRelationDefinitions();
@@ -161,6 +164,8 @@ $app->group('/admin/report', function () use ($container) {
     });
 
     $this->get('/conjuncts/usage', function (Request $request, Response $response, $args = []) {
+        if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+
         // Get report
         $reporter = new Reporter(new JSONWriter($response->getBody()));
         $reporter->reportConjunctUsage();
@@ -170,6 +175,8 @@ $app->group('/admin/report', function () use ($container) {
     });
 
     $this->get('/conjuncts/performance', function (Request $request, Response $response, $args = []) {
+        if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+
         // Get report
         $reporter = new Reporter(new CSVWriter($response->getBody()));
         $reporter->reportConjunctPerformance(Conjunct::getAllConjuncts());
@@ -181,6 +188,8 @@ $app->group('/admin/report', function () use ($container) {
     });
 
     $this->get('/interfaces', function (Request $request, Response $response, $args = []) {
+        if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+
         // Get report
         $reporter = new Reporter(new CSVWriter($response->getBody()));
         $reporter->reportInterfaceDefinitions();
@@ -192,6 +201,8 @@ $app->group('/admin/report', function () use ($container) {
     });
 
     $this->get('/interfaces/issues', function (Request $request, Response $response, $args = []) {
+        if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+
         // Get report
         $reporter = new Reporter(new CSVWriter($response->getBody()));
         $reporter->reportInterfaceIssues();
