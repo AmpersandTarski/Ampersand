@@ -88,6 +88,19 @@ class View {
         foreach ($this->segments as $viewSegment) $viewData[$viewSegment->getLabel()] = $viewSegment->getData($srcAtom);
         return $viewData;
     }
+
+    /**
+     * Get specific view segment
+     *
+     * @param string|int $label
+     * @return \Ampersand\Interfacing\ViewSegment
+     */
+    public function getSegment($label): ViewSegment {
+        foreach ($this->segments as $segment) {
+            if ($segment->getLabel() == $label) return $segment;
+        }
+        throw new Exception("View segment '{$this->label}:{$label}' not found", 500);
+    }
     
     /**********************************************************************************************
      *

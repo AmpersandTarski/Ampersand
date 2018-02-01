@@ -118,4 +118,15 @@ class ViewSegment {
     public function getQuery(){
         return str_replace('_SESSION', session_id(), $this->expSQL); // Replace _SESSION var with current session id.
     }
+
+    /**
+     * Function to manually set optimized query expression
+     *
+     * @param string $query
+     * @return void
+     */
+    public function setQuery(string $query){
+        $this->segType = 'Exp';
+        $this->expSQL = $query;
+    }
 }

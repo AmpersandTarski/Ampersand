@@ -189,12 +189,20 @@ class Concept {
         foreach ($conceptDef['conceptTable']['cols'] as $colName){
             $this->mysqlConceptTable->addCol(new MysqlDBTableCol($colName));
         }
-        
-        // All atoms query is a hack which allows to manually add a more efficient query to get all atoms in Concepts.json
-        // E.g. to include already some (default) view variables
-        // TODO: replace hack by propert implementation
-        if(isset($this->def['allAtomsQuery'])) $this->mysqlConceptTable->allAtomsQuery = $this->def['allAtomsQuery'];
-        
+    }
+
+    /**
+     * Temporary function to manually add a more optimize query for getting all atoms at once
+     * Default view and query belong together
+     * TODO: replace hack by proper implementation in Ampersand generator
+     *
+     * @param string $viewId
+     * @param string $query
+     * @return void
+     */
+    public function setAllAtomsQuery(string $viewId, string $query){
+        $this->defaultView = View::getView($viewId);
+        $this->mysqlConceptTable->allAtomsQuery = $query;
     }
     
     /**
