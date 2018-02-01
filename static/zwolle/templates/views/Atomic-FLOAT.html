@@ -2,13 +2,7 @@ $if(verbose)$<!-- Atomic-FLOAT.html "$label$" : $expAdl$ :: $source$ * $target$ 
 $endif$$if(crudR)$<div ng-controller="AtomicController">$if(crudU)$
     <div class="input-group" style="min-width:60px;">$if(exprIsUni)$
         <input ng-model="resource['$name$']" my-bluronenter type="number" placeholder="0.00" class="form-control input-sm" ng-blur="saveItem(resource, '$name$', patchResource)">$else$
-        <div ng-repeat="row in resource['$name$'] track by \$index">
-            <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(resource, '$name$', \$index, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
-            <span>{{row}}</span>
-        </div>
-        <div>
-            <input ng-model="selected.value" my-bluronenter type="number" placeholder="0.00" class="form-control input-sm" ng-blur="addItem(resource, '$name$', selected, patchResource)">
-        </div>$endif$
+        <span><i>not supported</i></span>$endif$
     </div>$else$$if(exprIsUni)$
     <div>{{resource['$name$']}}</div>$else$
     <div ng-repeat="row in resource['$name$'] track by \$index">{{row}}</div>$endif$$endif$
