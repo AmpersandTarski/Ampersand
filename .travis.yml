@@ -80,8 +80,6 @@ matrix:
 
 
   allow_failures:
-  # Temporary allow cabal to fail, will be fixed in time. 
-  - env: BUILD=cabal GHCVER=8.2.2 CABALVER=1.24
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
   - env: BUILD=cabal GHCVER=head  CABALVER=head
@@ -154,6 +152,8 @@ script:
     ./travis_long cabal test
       ;;
   esac
+# Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
+# - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
 deploy:
   provider: releases

@@ -129,6 +129,7 @@ mkCyclesInGensError :: [[A_Gen]] -> Guarded a
 mkCyclesInGensError cycles = Errors (map mkErr cycles)
  where 
   mkErr :: [A_Gen] -> CtxError
+  mkErr [] = fatal "Nothing to report about!" 
   mkErr gs = CTXE o msg
     where
       o = origin (head gs)
@@ -162,7 +163,10 @@ class GetOneGuarded a where
   getOneExactly :: (Traced a1, PStruct a1) => a1 -> [a] -> Guarded a
   getOneExactly _ [a] = Checked a
   getOneExactly o []  = hasNone o
-  getOneExactly o _ = Errors [CTXE o'$ "Found too many:\n  "++s | CTXE o' s <- errors (hasNone o :: Guarded a)]
+  getOneExactly o _ = 
+      case [CTXE o'$ "Found too many:\n  "++s | CTXE o' s <- errors (hasNone o :: Guarded a)] of
+        [] -> fatal "No error message!"
+        errs -> Errors errs
   hasNone :: (Traced a1, PStruct a1) => a1  -- the object where the problem is arising
                                      -> Guarded a
   hasNone o = getOneExactly o []
@@ -263,7 +267,9 @@ mkInvalidCRUDError :: Origin -> String -> CtxError
 mkInvalidCRUDError o str = CTXE o $ "Invalid CRUD annotation. (doubles and other characters than crud are not allowed): `"++str++"`."
 
 mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
-mkIncompatibleAtomValueError pav = CTXE (origin pav)
+mkIncompatibleAtomValueError pav msg = CTXE (origin pav) (case msg of 
+                                                            "" -> fatal "Error message must not be empty."
+                                                            _  -> msg)
 
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal "mkInterfaceRefCycleError called on []"

@@ -181,9 +181,7 @@ class OAuthLoginController {
         $db = Database::singleton();
         
         $conceptUserID = Concept::getConceptByLabel('UserID');
-        $conceptDomain = Concept::getConceptByLabel('Domain');
         $conceptDateTime = Concept::getConceptByLabel('DateTime');
-        $conceptOrg = Concept::getConceptByLabel('Organization');
         $conceptAccount = Concept::getConceptByLabel('Account');
         $conceptSession = Concept::getConceptByLabel('SESSION');
         
@@ -200,12 +198,19 @@ class OAuthLoginController {
             $relAccUserid->addLink($newAccount, new Atom($email, $conceptUserID), false, 'OAuthLoginExtension');
 
             // If possible, add account to organization(s) based on domain name
-            $domain = explode('@', $email)[1];
-            $atom = new Atom($domain, $conceptDomain);
-            $orgs = $atom->ifc('DomainOrgs')->getTgtAtoms();
-            $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept, $conceptOrg);
-            foreach ($orgs as $org){
-                $relAccOrg->addLink($newAccount, $org, false, 'OAuthLoginExtension');
+            try {
+                $conceptOrg = Concept::getConceptByLabel('Organization');
+                $conceptDomain = Concept::getConceptByLabel('Domain');
+                
+                $domain = explode('@', $email)[1];
+                $atom = new Atom($domain, $conceptDomain);
+                $orgs = $atom->ifc('DomainOrgs')->getTgtAtoms();
+                $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept, $conceptOrg);
+                foreach ($orgs as $org){
+                    $relAccOrg->addLink($newAccount, $org, false, 'OAuthLoginExtension');
+                }
+            } catch (Exception $e) {
+                // Skip this part
             }
             
             // Account created, add to $accounts list (used lateron)

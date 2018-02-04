@@ -76,6 +76,8 @@ dumpSQLqueries multi
      showConjunct conj 
         = header (Text.pack$ rc_id conj)
         <>["/*"
+          ,"Conjunct expression:"
+          ,"  " <> (Text.pack . showA . rc_conjunct $ conj)
           ,"Rules for this conjunct:"]
         <>map showRule (rc_orgRules conj)
         <>["*/"

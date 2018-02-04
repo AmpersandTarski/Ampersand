@@ -134,7 +134,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               rs    = [r | r<-vrules fSpec, c `elem` concs r]
           in
           CStruct { csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
-                  , csRels = filter (not . isProp) (relsMentionedIn rs)   -- the use of "relsMentionedIn" restricts relations to those actually used in rs
+                  , csRels = filter (not . isProp) (bindedRelationsIn rs)   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
         --  PTCDPattern makes a picture of at least the relations within pat;
@@ -150,7 +150,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               gs   = fsisa fSpec
               cpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
               cpts' = concs pat `uni` concs rels
-              rels = filter (not . isProp) (relsMentionedIn pat)
+              rels = filter (not . isProp) (bindedRelationsIn pat)
           in
           CStruct { csCpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
                   , csRels = rels `uni` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
@@ -161,7 +161,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         PTDeclaredInPat pat ->
           let gs   = fsisa fSpec
               cpts = concs decs `uni` concs (gens pat)
-              decs = relsDefdIn pat `uni` relsMentionedIn (udefrules pat)
+              decs = relsDefdIn pat `uni` bindedRelationsIn (udefrules pat)
           in
           CStruct { csCpts = cpts
                   , csRels = [r | r <- decs
@@ -175,7 +175,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
           in
           CStruct { csCpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
-                  , csRels = [d | d<-relsMentionedIn r, decusr d
+                  , csRels = [d | d<-bindedRelationsIn r, decusr d
                              , not (isProp d)    -- d is not a property
                              ]
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules

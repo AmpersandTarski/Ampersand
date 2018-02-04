@@ -47,20 +47,20 @@ showLexerErrorInfo :: LexerErrorInfo -- ^ The error information
                    -> [String] -- ^ The error messages
 showLexerErrorInfo info =
     case info of
-        UnterminatedComment          -> [ Texts.lexerUnterminatedComment               ]
-        UnterminatedMarkup           -> [ Texts.lexerUnterminatedMarkup               ]
-        UnterminatedAtom             -> [ Texts.lexerUnterminatedAtom                  ]
-        UnexpectedChar c             -> [ Texts.lexerUnexpectedChar c                  ]
-        NonTerminatedString _        -> [ Texts.lexerNonTerminatedString, correctStrings ]
-        TooManyClose c                 -> [ Texts.lexerTooManyClose c ]
-        UnexpectedClose c1 _ c2        ->   Texts.lexerUnexpectedClose c1 c2
-        StillOpenAtEOF [b]             -> [ Texts.lexerStillOpenAtEOF [ show (snd b) ] ]
-        StillOpenAtEOF bs              -> [ Texts.lexerStillOpenAtEOF (reverse (map (show.snd) bs)) ]
-            -- 'reverse' because positions will be sorted and brackets are
-            -- reported in reversed order
-        ProblematicISO8601DateTime   -> [ Texts.lexerProblematicISO8601DateTime        ]
-correctStrings :: String
-correctStrings = Texts.lexerCorrectStrings
+        UnterminatedComment        -> [Texts.lexerUnterminatedComment]
+        UnterminatedMarkup         -> [Texts.lexerUnterminatedMarkup]
+        UnterminatedAtom           -> [Texts.lexerUnterminatedAtom]
+        UnexpectedChar c           -> [Texts.lexerUnexpectedChar c]
+        NonTerminatedString _      -> Texts.lexerNonTerminatedString : Texts.lexerCorrectStrings
+        TooManyClose c             -> [Texts.lexerTooManyClose c]
+        UnexpectedClose c1 _ c2    -> Texts.lexerUnexpectedClose c1 c2
+        StillOpenAtEOF [b]         -> [Texts.lexerStillOpenAtEOF [show (snd b)]]
+        StillOpenAtEOF bs          -> [Texts.lexerStillOpenAtEOF
+                                      . reverse -- 'reverse' because positions will be sorted and brackets are
+                                                -- reported in reversed order
+                                      . map (show.snd) $ bs
+                                      ]
+        ProblematicISO8601DateTime -> [Texts.lexerProblematicISO8601DateTime]
 
 -- | Defines a lexer warning
 data LexerWarning =
