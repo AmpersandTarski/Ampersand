@@ -18,9 +18,11 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', function(
      * Typeahead functionality
      * $scope.typeahead is initiated in InterfaceController to be able to reuse typeahead data
      */
-    $scope.getTypeahead = function(resourceType){
+    $scope.getTypeahead = function(resourceType, forceGetCall){
+        forceGetCall = typeof forceGetCall !== 'undefined' ? forceGetCall : false;
+
         // Only if not yet set
-        if(typeof $scope.typeahead[resourceType] === 'undefined'){
+        if(typeof $scope.typeahead[resourceType] === 'undefined' || forceGetCall){
             $scope.typeahead[resourceType] = Restangular.all('resource/' + resourceType).getList().$object;
         }
     };
@@ -53,12 +55,18 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', function(
         $scope.selected.value = '';
     };
     
-    $scope.typeAheadCreate = function (resource, ifc, selected, patchResource){
-        if(Array.isArray(resource[ifc])) ResourceService.addItem(resource, ifc, selected, patchResource);
-        else if(resource[ifc] === null){
+    $scope.typeAheadCreate = function (resource, ifc, selected, patchResource, resourceType){
+        if(Array.isArray(resource[ifc])) { 
+            ResourceService.addItem(resource, ifc, selected, patchResource).then(
+                function(){
+                    $scope.getTypeahead(resourceType, true);
+                }
+            );
+        } else if(resource[ifc] === null) {
             resource[ifc] = selected.value;
             ResourceService.saveItem(resource, ifc, patchResource);
+        } else {
+            console.log('Error: Property already set and/or not defined');
         }
-        else console.log('Error: Property already set and/or not defined');
     };
 });
