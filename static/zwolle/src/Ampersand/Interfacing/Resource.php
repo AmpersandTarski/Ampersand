@@ -57,8 +57,6 @@ class Resource extends Atom {
         // Set parentList
         $this->parentList = $parentList;
         
-        if(!$cpt->isObject()) throw new Exception ("Cannot instantiate resource given non-object concept {$cpt->name}.");
-        
         // Call Atom constructor
         if(is_null($resourceId)) $resourceId = $cpt->createNewAtomId();
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
@@ -80,22 +78,26 @@ class Resource extends Atom {
     
     /**
      * Function is called when object encoded to json with json_encode()
-     * @return array
+     * 
+     * @return array|string
      */
     public function jsonSerialize(){
-        $content = [];
-        
-        // Add Ampersand atom attributes
-        $content['_id_'] = $this->id;
-        $content['_label_'] = $this->getLabel();
-        
-        // Add view data if array is assoc (i.e. not sequential)
-        $data = $this->getView();
-        if(!isSequential($data)) $content['_view_'] = $data;
-        
-        // Merge with interface data (only when get() method is called before)
-        return array_merge($content, $this->ifcData);
-        
+        if($this->concept->isObject()) {
+            $content = [];
+            
+            // Add Ampersand atom attributes
+            $content['_id_'] = $this->id;
+            $content['_label_'] = $this->getLabel();
+            
+            // Add view data if array is assoc (i.e. not sequential)
+            $data = $this->getView();
+            if(!isSequential($data)) $content['_view_'] = $data;
+            
+            // Mterge with inerface data (which is set when get() method is called before)
+            return array_merge($content, $this->ifcData);
+        } else {
+            return parent::jsonSerialize();
+        }
     }
     
     /**
@@ -107,7 +109,7 @@ class Resource extends Atom {
         if(!isset($this->viewData)){
             $this->logger->debug("Get view for atom '{$this}'");
             
-            if(isset($this->parentList)) $viewDef = $this->parentList->ifc->getView(); // if parentList is defined, use view of ifc (can be null)
+            if(isset($this->parentList)) $viewDef = $this->parentList->getIfc()->getView(); // if parentList is defined, use view of ifc (can be null)
             else $viewDef = $this->concept->getDefaultView(); // else use default view of concept (can be null)
             
             if(!is_null($viewDef)) $this->viewData = $viewDef->getViewData($this); // if there is a view definition
@@ -183,18 +185,25 @@ class Resource extends Atom {
      * @return Resource|ResourceList
      */
     public function walkPath($path, $returnType = null){
+        $typeMap = [ 'Ampersand\Interfacing\Resource' => 'Resource', 'Ampersand\Interfacing\ResourceList' => 'ResourceList' ];
+        if(isset($returnType) && !array_key_exists($returnType, $typeMap)) throw new Exception("Unsupported return type", 500);
+
         // Prepare path list
-        if(is_array($path)) $path = implode ('/', $path);
+        if(is_array($path)) $path = implode('/', $path);
         $path = trim($path, '/'); // remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
-        $pathList = explode('/', $path);
+        
+        if($path === '') $pathList = []; // support no path
+        else $pathList = explode('/', $path);
 
         // Check if entry resource ($this) exists
         if(!$this->exists()){
+            if(empty($pathList)) throw new Exception("Resource '{$this}' not found", 404);
+            
             $ifc = InterfaceObject::getInterface(reset($pathList));
             
             // Automatically create if allowed
             if($ifc->crudC() && $ifc->isIdent()) $this->add();
-            else throw new Exception ("Resource '{$this}' not found", 404);
+            else throw new Exception("Resource '{$this}' not found", 404);
         }
 
         // Walk path by alternating between $r = Resource and $r = ResourceList
@@ -217,7 +226,7 @@ class Resource extends Atom {
         // Check if correct object is returned (Resource vs ResourceList)
         if(isset($returnType) && $returnType != get_class($r)){
             if(get_class($r) == 'Ampersand\Interfacing\ResourceList' && $r->getIfc()->isIdent()) $r = $r->one();
-            else throw new Exception ("Provided path results in '" . get_class($r) . "'. This must be '{$returnType}'", 400);
+            else throw new Exception ("Provided path '{$path}' MUST end with {$typeMap[$returnType]}", 400);
         }
         
         // Return
@@ -235,7 +244,8 @@ class Resource extends Atom {
      * @return Resource $this
      */
     public function get(int $options = Options::DEFAULT_OPTIONS, int $depth = null, array $recursionArr = []){
-        $this->logger->debug("get() called for {$this}");
+        if(!$this->concept->isObject()) throw new Exception ("Cannot get resource, because it is a non-object concept {$concept}.", 400);
+
         if(isset($this->parentList)){
             $parentIfc = $this->parentList->getIfc();
             if(!$parentIfc->crudR()) throw new Exception ("Read not allowed for ". $parentIfc->getPath(), 405);
@@ -294,6 +304,7 @@ class Resource extends Atom {
      * @return Resource $this
      */
     public function put(stdClass $resourceToPut = null){
+        if(!$this->concept->isObject()) throw new Exception ("Cannot put resource, because it is a non-object concept {$concept}.", 400);
         if(!isset($this->parentList)) throw new Exception("Cannot perform put without interface specification", 400);
         if(!isset($resourceToPut)) return $this; // nothing to do
         
@@ -317,10 +328,14 @@ class Resource extends Atom {
     
     /**
      * Patch this resource with provided patches
+     * Use JSONPatch specification for $patches (see: http://jsonpatch.com/)
+     * 
      * @param array $patches
      * @return Resource $this
      */
     public function patch(array $patches){
+        if(!$this->concept->isObject()) throw new Exception ("Cannot patch resource, because it is a non-object concept {$concept}.", 400);
+
         foreach ($patches as $key => $patch){
             if(!property_exists($patch, 'op')) throw new Exception ("No 'op' (i.e. operation) specfied for patch #{$key}", 400);
             if(!property_exists($patch, 'path')) throw new Exception ("No 'path' specfied for patch #{$key}", 400);
@@ -336,7 +351,21 @@ class Resource extends Atom {
                     $this->walkPath($patch->path, 'Ampersand\Interfacing\ResourceList')->add($patch->value);
                     break;
                 case "remove" :
-                    $this->walkPath($patch->path, 'Ampersand\Interfacing\Resource')->remove();
+                    $r = $this->walkPath($patch->path);
+                    switch (get_class($r)) {
+                        // Regular json patch remove operation, uses last part of 'path' attribuut as resource to remove from list
+                        case 'Ampersand\Interfacing\Resource':
+                            if(property_exists($patch, 'value')) throw new Exception("Patch 'value' specified for patch #{$key}. Value MUST NOT be provided when path ends with a resource", 400);
+                            $r->remove();
+                            break;
+                        // Not part of official json path specification. Uses 'value' attribute that must be removed from list
+                        case 'Ampersand\Interfacing\ResourceList':
+                            if(!property_exists($patch, 'value')) throw new Exception("Cannot patch remove from list. No 'value' specfied for patch #{$key}", 400);
+                            $r->remove($patch->value);
+                            break;
+                        default:
+                            throw new Exception("Unsupported resource type", 500);
+                    }
                     break;
                 default :
                     throw new Exception("Unknown patch operation '{$patch->op}'. Supported are: 'replace', 'add' and 'remove'", 501);
@@ -354,6 +383,8 @@ class Resource extends Atom {
      * @return Resource $this
      */
     public function delete(){
+        if(!$this->concept->isObject()) throw new Exception ("Cannot delete resource, because it is a non-object concept {$concept}.", 400);
+
         if(!isset($this->parentList)) throw new Exception("Cannot perform delete without interface specification", 400);
         if(!$this->parentList->getIfc()->crudD()) throw new Exception ("Delete not allowed for ". $this->parentList->getIfc()->getPath(), 405);
         
@@ -445,6 +476,8 @@ class Resource extends Atom {
      */
     public static function getAllResources($resourceType){
         $concept = Concept::getConcept($resourceType);
+        
+        if(!$concept->isObject()) throw new Exception ("Cannot get resource(s) given non-object concept {$concept}.", 500);
         
         $resources = [];
         foreach ($concept->getAllAtomObjects() as $atom) {

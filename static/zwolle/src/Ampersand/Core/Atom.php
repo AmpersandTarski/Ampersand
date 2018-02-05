@@ -69,7 +69,7 @@ class Atom implements JsonSerializable {
 
     protected function setId($atomId){
         // TODO: check can be removed when _NEW is replaced by other mechanism
-        if($atomId == '_NEW') throw new Exception("Replace _NEW with intended atom id before instantiating Atom object", 500);
+        if($atomId === '_NEW') throw new Exception("Replace _NEW with intended atom id before instantiating Atom object", 500);
         
         switch($this->concept->type){
             case "ALPHANUMERIC" :

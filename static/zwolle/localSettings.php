@@ -7,13 +7,13 @@ use Ampersand\Plugs\MysqlDB\MysqlDB;
 
 define ('LOCALSETTINGS_VERSION', 1.6);
 
-date_default_timezone_set('Europe/Amsterdam');
+date_default_timezone_set('Europe/Amsterdam'); // See http://php.net/manual/en/timezones.php for a list of supported timezones
 
 /**************************************************************************************************
  * LOGGING functionality
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
-ini_set("display_errors", true);
+ini_set("display_errors", false);
 
 /**************************************************************************************************
  * Execution time limit is set to a default of 30 seconds. Use 0 to have no time limit. (not advised)

@@ -67,7 +67,18 @@ class InterfaceController {
                ];
     }
 
-    public function patch(Resource $resource, $ifcPath, $patches, $options, $depth): array {
+    /**
+     * Patch resource with provided patches 
+     * Use JSONPatch specification for $patches (see: http://jsonpatch.com/)
+     *
+     * @param \Ampersand\Interfacing\Resource $resource
+     * @param string|array $ifcPath
+     * @param array $patches
+     * @param int $options
+     * @param int $depth
+     * @return array
+     */
+    public function patch(Resource $resource, $ifcPath, array $patches, int $options, int $depth = null): array {
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform patch(es)
