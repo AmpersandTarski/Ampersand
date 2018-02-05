@@ -9,7 +9,7 @@ $if(verbose)$<!-- View-FILEOBJECT.html "$label$" : $expAdl$ :: $source$ * $targe
       REPRESENT FileName TYPE ALPHANUMERIC
 -->
 $endif$$if(crudR)$<div class="input-group" ng-controller="AtomicController">
-    <div $if(exprIsUni)$ng-repeat="obj in [resource['$name$']]"$else$ng-repeat="obj in resource['$name$']"$endif$>$if(crudU)$
+    <div $if(exprIsUni)$ng-repeat="obj in (resource['$name$'] === null ? [] : [resource['$name$']])"$else$ng-repeat="obj in resource['$name$']"$endif$>$if(crudU)$
         <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="remove(resource, '$name$', obj, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
         <a href="{{obj._view_.filePath}}" target="_blank">{{obj._view_.fileName}}</a>
     </div>$if(crudU)$$if(verbose)$

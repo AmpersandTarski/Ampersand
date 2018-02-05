@@ -1,6 +1,6 @@
 $if(verbose)$<!-- Box-PANELS.html "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
 $endif$$if(crudR)$<div class="box" ng-controller="BoxController" ng-init="parent = resource">
-    <div $if(exprIsUni)$ng-repeat="resource in [resource['$name$']]"$else$ng-repeat="resource in resource['$name$']"$endif$>
+    <div $if(exprIsUni)$ng-repeat="resource in (resource['$name$'] === null ? [] : [resource['$name$']])"$else$ng-repeat="resource in resource['$name$']"$endif$>
         <div class="panel panel-default" ng-class="{'panel-default' : resource._status_.default, 'panel-warning' : resource._status_.warning, 'panel-danger' : resource._status_.danger, 'panel-success' : resource._status_.success}">
             <div class="panel-heading"$if(isRoot)$ ng-init="patchResource = resource"$endif$>
                 <div class="pull-right panel-heading-options">
