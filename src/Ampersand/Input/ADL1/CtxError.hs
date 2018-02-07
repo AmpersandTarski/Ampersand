@@ -39,7 +39,7 @@ import Ampersand.Core.ShowPStruct
 import Ampersand.Basics
 import Data.Maybe
 import qualified Data.List as L   (intercalate)
-import qualified Data.List.NonEmpty as NEL 
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
 import GHC.Exts (groupWith)
 import Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)

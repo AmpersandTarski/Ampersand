@@ -25,6 +25,7 @@ import           Data.Foldable (toList)
 import           Data.Function
 import           Data.Hashable
 import           Data.List as Lst
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
 import qualified Data.Map as Map
 import           Data.Maybe
 import qualified Data.Set as Set
@@ -90,7 +91,11 @@ checkPurposes ctx = let topLevelPurposes = ctxps ctx
                         purposesInPatterns = concatMap ptxps (ctxpats ctx)
                         allPurposes = topLevelPurposes ++ purposesInPatterns
                         danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
-                    in  if null danglingPurposes then pure () else Errors $ map mkDanglingPurposeError danglingPurposes
+                    in  case danglingPurposes of
+                      []   -> pure () 
+                      x:xs -> Errors $ 
+                                    mkDanglingPurposeError x NEL.:|
+                                map mkDanglingPurposeError xs
 
 -- Return True if the ExplObj in this Purpose does not exist.
 isDanglingPurpose :: A_Context -> Purpose -> Bool
