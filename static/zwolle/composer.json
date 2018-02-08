@@ -21,5 +21,8 @@
                 "extensions/*/composer.json"
             ]
         }
+    },
+    "require-dev": {
+        "phan/phan": "^0.10.3"
     }
 }
