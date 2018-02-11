@@ -411,7 +411,12 @@ pCtx2aCtx opts
                          x:xs -> x NEL.:| xs
              where 
                isSpecific :: A_Concept -> Bool
-               isSpecific cpt = cpt `elem` map genspc gns
+               isSpecific cpt = cpt `elem` map genspc (filter (not . isTrivial) gns)
+                 where 
+                   isTrivial g =
+                      case g of 
+                        Isa{} -> gengen g == genspc g
+                        IsE{} -> genrhs g == [genspc g]
                isInvolved :: A_Gen -> Bool
                isInvolved gn = not . null $ concs gn `isc` cs
 
