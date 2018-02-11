@@ -283,12 +283,14 @@ mkIncompatibleAtomValueError pav msg = CTXE (origin pav) (case msg of
                                                             "" -> fatal "Error message must not be empty."
                                                             _  -> msg)
 
-mkInterfaceRefCycleError :: [Interface] -> CtxError
-mkInterfaceRefCycleError []                 = fatal "mkInterfaceRefCycleError called on []"
-mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least one) as the origin of the error
-  CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
-                      unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ]
-
+mkInterfaceRefCycleError :: NEL.NonEmpty Interface -> CtxError
+mkInterfaceRefCycleError cyclicIfcs =
+  CTXE (origin (NEL.head cyclicIfcs)) $
+             "Interfaces form a reference cycle:\n" ++
+             (unlines . NEL.toList $ fmap showIfc cyclicIfcs)
+    where
+      showIfc :: Interface -> String
+      showIfc i = "- " ++ show (name i) ++ " at position " ++ show (origin i)
 mkIncompatibleInterfaceError :: P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError
 mkIncompatibleInterfaceError objDef expTgt refSrc ref =
   CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++ " at field " ++ show (name objDef) ++

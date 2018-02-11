@@ -3,19 +3,20 @@ module Ampersand.FSpec.ToFSpec.CreateFspec
   (createMulti)
 
 where
-import Ampersand.Basics
-import Ampersand.Misc
-import Ampersand.ADL1
-import Ampersand.ADL1.P2A_Converters
-import Ampersand.Core.A2P_Converters
-import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.Transformers 
-import Ampersand.FSpec.ShowMeatGrinder
-import Ampersand.Input
-import Ampersand.FSpec.ToFSpec.ADL2FSpec
-import Data.List
-import System.FilePath
-import Control.Monad
+import           Ampersand.ADL1
+import           Ampersand.ADL1.P2A_Converters
+import           Ampersand.Basics
+import           Ampersand.Core.A2P_Converters
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.ShowMeatGrinder
+import           Ampersand.FSpec.ToFSpec.ADL2FSpec
+import           Ampersand.FSpec.Transformers 
+import           Ampersand.Input
+import           Ampersand.Misc
+import           Control.Monad
+import           Data.List
+import qualified Data.List.NonEmpty as NEL (toList)
+import           System.FilePath
 
 -- | create an FSpec, based on the provided command-line options.
 --   Without the command-line switch "--meta-tables", 
@@ -46,10 +47,10 @@ createMulti opts =
 
      let fAmpFSpec :: FSpec
          fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
-                       Checked f  -> f
-                       Errors errs-> fatal . unlines
-                         $ ["The FormalAmpersand ADL scripts are not type correct:"] 
-                           ++  intersperse (replicate 30 '=') (map showErr errs)
+                       Checked f   -> f
+                       Errors errs -> fatal . unlines $
+                            "The FormalAmpersand ADL scripts are not type correct:"
+                          : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
          -- | When the semantic model of Formal Ampersand is added to the user's model, we add
          --   the relations as wel as the generalisations to it, so they are available to the user
          --   in an implicit way. 
