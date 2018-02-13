@@ -17,10 +17,37 @@ global $container;
 
 $apiContainer = new Container();
 
-// Custom NotFound handler
+function stackTrace(Throwable $throwable): string {
+    $html = sprintf('<div><strong>Type:</strong> %s</div>', get_class($throwable));
+    
+    if (($code = $throwable->getCode())) {
+        $html .= sprintf('<div><strong>Code:</strong> %s</div>', $code);
+    }
+
+    if (($message = $throwable->getMessage())) {
+        $html .= sprintf('<div><strong>Message:</strong> %s</div>', htmlentities($message));
+    }
+
+    if (($file = $throwable->getFile())) {
+        $html .= sprintf('<div><strong>File:</strong> %s</div>', $file);
+    }
+
+    if (($line = $throwable->getLine())) {
+        $html .= sprintf('<div><strong>Line:</strong> %s</div>', $line);
+    }
+
+    if (($trace = $throwable->getTraceAsString())) {
+        $html .= '<h2>Trace</h2>';
+        $html .= sprintf('<pre>%s</pre>', htmlentities($trace));
+    }
+    return $html;
+}
+
+// Custom NotFound handler when API path-method is not found. 
+// The application can also return a Resource not found, this is handled by the errorHandler below
 $apiContainer['notFoundHandler'] = function($c){
-    return function(Request $request, Response $response) use ($c) {
-        return $c['response']
+    return function(Request $request, Response $response) {
+        return $response
             ->withStatus(404)
             ->withHeader('Content-Type', 'application/json')
             ->write(json_encode(
@@ -32,11 +59,12 @@ $apiContainer['notFoundHandler'] = function($c){
 };
 
 $apiContainer['errorHandler'] = function ($c) use ($container) {
-    return function (Request $request, Response $response, Exception $e) use ($c, $container) {
+    return function (Request $request, Response $response, Exception $exception) use ($container) {
         try{
-            Logger::getLogger("API")->error($e->getMessage());
+            Logger::getLogger("API")->error($exception->getMessage());
+            $debugMode = Config::get('debugMode');
             
-            switch ($e->getCode()) {
+            switch ($exception->getCode()) {
                 case 401: // Unauthorized
                 case 403: // Forbidden
                     if(Config::get('loginEnabled') && !$container['ampersand_app']->getSession()->sessionUserLoggedIn()){
@@ -47,18 +75,57 @@ $apiContainer['errorHandler'] = function ($c) use ($container) {
                         $message = "You do not have access to this page";
                     }
                     break;
+                case 404: // Not found
+                    $code = $debugMode ? 500 : 404;
+                    $message = $exception->getMessage();
+                    break;
+                case 500:
+                    $code = 500;
+                    $message = $debugMode ? $exception->getMessage() : "An error occured. Sorry for the temporary inconvenience";
                 default:
-                    $code = $e->getCode();
-                    $message = $e->getMessage();
+                    $code = $exception->getCode();
+                    $message = $exception->getMessage();
                     break;
             }
             
-            return $c['response']->withJson(['error' => $code, 'msg' => $message, 'notifications' => Notifications::getAll()], $code, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            return $response->withJson(
+                [ 'error' => $code
+                , 'msg' => $message
+                , 'notifications' => Notifications::getAll()
+                , 'html' => $debugMode ? stackTrace($exception) : null
+                ], $code, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-        }catch(Exception $b){
-            Logger::getLogger("API")->error($b->getMessage());
+        }catch(Throwable $throwable){ // catches both errors and exceptions
+            Logger::getLogger("API")->critical($throwable->getMessage());
+            return $response->withJson(
+                [ 'error' => 500
+                , 'msg' => Config::get('debugMode') ? $throwable->getMessage() : "Something went wrong in returning an error message"
+                , 'html' => "Please contact the application administrator for more information"
+                ], 500, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        }
+    };
+};
 
-            return $c['response']->withJson(['error' => $b->getCode(), 'msg' => $b->getMessage(), 'notifications' => []], 500, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+$apiContainer['phpErrorHandler'] = function ($c) {
+    return function (Request $request, Response $response, Error $error) {
+        try{
+            Logger::getLogger("API")->critical($error->getMessage());
+            $debugMode = Config::get('debugMode');
+
+            return $response->withJson(
+                [ 'error' => 500
+                , 'msg' => $debugMode ? $error->getMessage() : "An error occured. Sorry for the temporary inconvenience"
+                , 'notifications' => Notifications::getAll()
+                , 'html' => $debugMode ? stackTrace($error) : "Please contact the application administrator for more information"
+                ], 500, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            
+        }catch(Throwable $throwable){ // catches both errors and exceptions
+            Logger::getLogger("API")->critical($throwable->getMessage());
+            return $response->withJson(
+                [ 'error' => 500
+                , 'msg' => Config::get('debugMode') ? $throwable->getMessage() : "Something went wrong in returning an error message"
+                , 'html' => "Please contact the application administrator for more information"
+                ], 500, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         }
     };
 };

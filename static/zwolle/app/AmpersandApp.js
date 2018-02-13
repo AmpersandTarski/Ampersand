@@ -43,9 +43,8 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     });
     
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-        
-        // 401: Unauthorized, 440: Login Timeout
-        if(response.status == 401 || response.status == 440) {
+        // 401: Unauthorized
+        if(response.status == 401) {
             RoleService.deactivateAllRoles();
             $location.path(''); // TODO: redirect to login page (if exists)
         }
@@ -53,8 +52,12 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
         var message;
         var details;
         if(typeof response.data === 'object'){
-            message = response.data.msg || response.statusText; // if empty response message, take statusText
-            NotificationService.addError(message, response.status, true);
+            if(response.data.error == 404) {
+                NotificationService.addInfo(response.data.msg || 'Resource not found');
+            } else {
+                message = response.data.msg || response.statusText; // if empty response message, take statusText
+                NotificationService.addError(message, response.status, true, response.data.html);
+            }
             
             if(response.data.notifications !== undefined) NotificationService.updateNotifications(response.data.notifications); 
         }else{

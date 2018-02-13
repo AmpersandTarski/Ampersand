@@ -35,9 +35,9 @@ angular.module('AmpersandApp').service('NotificationService', function($localSto
             // Overwrite
             notifications.signals = data.signals;
             notifications.invariants = data.invariants;
-            notifications.infos = data.infos;
             
             // Merge
+            notifications.infos = notifications.infos.concat(data.infos);
             notifications.successes = notifications.successes.concat(data.successes);
             notifications.warnings = notifications.warnings.concat(data.warnings);
             notifications.errors = notifications.errors.concat(data.errors);
