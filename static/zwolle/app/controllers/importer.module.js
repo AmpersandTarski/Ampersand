@@ -1,31 +1,24 @@
-// Add angularFileUpload module to dependency list
 var app = angular.module('AmpersandApp');
-app.requires[app.requires.length] = 'angularFileUpload';
-
-angular.module('AmpersandApp').config(function($routeProvider) {
+app.requires[app.requires.length] = 'angularFileUpload'; // add angularFileUpload to dependency list
+app.config(function($routeProvider) {
     $routeProvider
-        // default start page
         .when('/ext/importer', {
             controller : 'PopulationImportController',
             templateUrl : 'app/views/importer.html',
             interfaceLabel : 'Population importer'
         });
-}).controller('PopulationImportController', function ($scope, $rootScope, FileUploader, NotificationService) {
-    // $rootScope, so that all information and uploaded files are kept while browsing in the application
-    if (typeof $rootScope.uploader == 'undefined') {
-        $rootScope.uploader = new FileUploader({
-             url: 'api/v1/admin/import'
-        });
-    }
-    
-    $rootScope.uploader.onSuccessItem = function(fileItem, response, status, headers) {
+}).service('ImportService', function(FileUploader, NotificationService){
+    let uploader = new FileUploader({
+        url: 'api/v1/admin/import'
+    });
+
+    uploader.onSuccessItem = function(fileItem, response, status, headers) {
         NotificationService.updateNotifications(response.notifications);
-        // console.info('onSuccessItem', fileItem, response, status, headers);
     };
     
-    var message;
-    var details;
-    $rootScope.uploader.onErrorItem = function(item, response, status, headers){
+    uploader.onErrorItem = function(item, response, status, headers){
+        let message;
+        let details;
         if(typeof response === 'object'){
             message = response.msg || 'Error while importing';
             NotificationService.addError(message, status, true);
@@ -37,4 +30,8 @@ angular.module('AmpersandApp').config(function($routeProvider) {
             NotificationService.addError(message, status, true, details);
         }
     };
+    
+    return {uploader : uploader};
+}).controller('PopulationImportController', function ($scope, ImportService) {
+    uploader = ImportService.uploader;
 });
