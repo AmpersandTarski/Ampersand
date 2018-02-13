@@ -277,9 +277,6 @@ class AngularApp {
         $this->addHtmlLine('<meta http-equiv="Expires" content="0"/>');
         $this->addHtmlLine('<meta http-equiv="Cache-Control" content="no-store"/>');
 
-        // initSessionId
-        $this->addHtmlLine('<script type="text/javascript">var initSessionId = \'' . session_id() . '\';</script>');
-
         // JQuery
         $this->addHtmlLine('<script src="app/lib/jquery/jquery-1.11.0.min.js"></script>');
         //$this->addHtmlLine('<script src="app/lib/jquery/jquery-migrate-1.2.1.js"></script>');

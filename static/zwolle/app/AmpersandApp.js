@@ -25,10 +25,8 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     // RestangularProvider.setPlainByDefault(true); available from Restangular v1.5.3
     
-}).run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route, NotificationService, RoleService){
-    
-    $sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
-        
+}).run(function(Restangular, $rootScope, $location, $route, NotificationService, RoleService){
+
     Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params){
         //params.navIfc = true;
         //params.metaData = true;

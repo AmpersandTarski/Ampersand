@@ -7,13 +7,13 @@ INTERFACE "$interfaceName$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UN
 Roles: [$roles;separator=", "$]
 $endif$*/
 /* jshint ignore:start */
-angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, \$sessionStorage, ResourceService) {
+angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', function (\$scope, \$route, \$routeParams, ResourceService) {
     const resourceType = '$source$';
     const ifcName = '$interfaceName$';
 
     // If entry resource is session
     if(resourceType == 'SESSION') 
-        \$scope.resource = { _id_ : \$sessionStorage.session.id, _path_ : 'session', _isRoot_ : true };
+        \$scope.resource = { _id_ : null : 'session', _isRoot_ : true };
 
     // Else entry resource is other type
     else \$scope.resource = { _id_ : \$routeParams.resourceId, _path_ : 'resource/' + resourceType + '/' + \$routeParams.resourceId , _isRoot_ : true };
