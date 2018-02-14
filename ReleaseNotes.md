@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 * [Issue #752](https://github.com/AmpersandTarski/Ampersand/issues/752) Fixed a bug that could cause failure without proper error message
+* Better (more uniform) diagnostic comments in SQL output
 
 ## v3.9.2 (19 january 2018)
 
