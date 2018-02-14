@@ -145,10 +145,12 @@ maybeSpecialCase :: FSpec -> Expression -> Maybe BinQueryExpr
 maybeSpecialCase fSpec expr = 
   case expr of 
     EIsc (EDcI a , ECpl (ECps (EDcD r,EFlp (EDcD r')) )) 
-      | r == r'   -> Just . BQEComment 
-                              [ BlockComment $ "Optimized case for: "++name r++showSign r++" [TOT]."
-                              , BlockComment $ "   "++showA expr++" ("++show (sign expr)++")"
-                              ] $ 
+      | r == r'   -> Just 
+                   . (traceComment . unlines $
+                         [ "case: EIsc (EDcI a , ECpl (ECps (EDcD r,EFlp (EDcD r')) ))"
+                         , "  this is an optimized case for: "++name r++showSign r++" [TOT]."
+                         ]
+                     ) $ 
                                  let col = Col { cTable = [Name "notIns"]
                                                , cCol   = [sqlAttConcept fSpec a]
                                                , cAlias = []
@@ -178,10 +180,10 @@ maybeSpecialCase fSpec expr =
                   -> go True expr2 expr1
     _ -> Nothing 
   where 
+    traceComment = traceExprComment expr
     go :: Bool -> Expression -> Expression -> Maybe BinQueryExpr
     go isFlipped expr1 expr2 = Just .
-      BQEComment
-        [ BlockComment . unlines $
+       traceComment ( unlines 
              [ "Optimized case for: <expr1> intersect with the "
                    ++(if isFlipped then "flipped " else "")
                    ++"complement of "++(case expr2 of 
@@ -189,11 +191,10 @@ maybeSpecialCase fSpec expr =
                                            _          -> "<expr2>"
                                         )++"."
              , "where "
-             , "  <expr1> = "++showA expr1++" ("++show (sign expr1)++")"
-             , "  <expr2> = "++showA expr2++" ("++show (sign expr2)++")"
-             , "   "++showA expr++" ("++show (sign expr)++")"
-             ]
-        ] $ BSE { bseSetQuantifier = SQDefault
+             , "  <expr1> = "++showA expr1++" (sign: "++show (sign expr1)++")"
+             , "  <expr2> = "++showA expr2++" (sign: "++show (sign expr2)++")"
+             ]) $
+            BSE { bseSetQuantifier = SQDefault
                 , bseSrc = Col { cTable = [table1]
                                , cCol   = [sourceAlias]
                                , cAlias = []
@@ -265,13 +266,7 @@ nonSpecialSelectExpr fSpec expr=
                       -> [Expression] -- subexpressions of the intersection.  Mp1{} nor ECpl(Mp1{}) are allowed elements of this list.  
                       -> BinQueryExpr
                   f specificValue subTerms 
-                     = BQEComment [BlockComment . unlines $
-                                       ("case: (EIsc "++showA expr++" ("++show (sign expr)++")")
-                                       :
-                                       case expr of 
-                                          EIsc (a,b) -> [show a, show b]
-                                          _ -> fatal ("Not expecting anything else here than EIsc!\n  " ++ show expr)
-                                  ] $
+                     = traceComment "case: EIsc{}" $
                         case subTerms of
                           [] -> case specificValue of 
                                  Nothing  -> emptySet -- case might occur with only negMp1Terms??
@@ -366,10 +361,7 @@ nonSpecialSelectExpr fSpec expr=
                                                         , BinOp (Iden[iSect n,targetAlias]) [Name "="] (Iden[iSect 0,targetAlias])
                                                         ]
 
-    EUni (l,r) -> BQEComment [BlockComment   "case: EUni (l,r)"
-                             ,BlockComment $ "   Expression: "++showA expr
-                             ,BlockComment $ "   Signature : "++show (sign expr)
-                             ]
+    EUni (l,r) -> traceComment "case: EUni (l,r)" $
                   BCQE { bseSetQuantifier = SQDefault
                        , bcqeOper = Union
                        , bcqe0    = selectExpr fSpec l
@@ -379,7 +371,7 @@ nonSpecialSelectExpr fSpec expr=
     ECps{}  ->
        case exprCps2list expr of
           [] -> fatal ("impossible outcome of exprCps2list: "++showA expr)
-          [e]-> selectExpr fSpec e -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
+          [e]-> traceComment "case: ECps{}" $ selectExpr fSpec e -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
 {-  We can treat the ECps expressions as poles-and-fences, with at least two fences.
     We start numbering the fences with 0. Each fence is connected to the previous fence with a pole.
     the pole holds the constraints of the connection of the fence to the previous fence. Only pole 0 has no previous 
@@ -462,10 +454,10 @@ nonSpecialSelectExpr fSpec expr=
                              (Nothing, Nothing) -> 
                                   -- This must be the special case: ...;V[A*B];V[B*C];....
                                  Just . SubQueryExpr SqExists . toSQL 
-                                  . BQEComment [BlockComment "Case: ...;V[A*B];V[B*C];...."]
+                                  . traceComment "Case: ...;V[A*B];V[B*C];...."
                                   . selectExpr fSpec . EDcI . target . fenceExpr $ i
 
-                in BQEComment [BlockComment $ "case: (ECps es), with two or more elements in es."++showA expr]
+                in traceComment "case: (ECps es), with two or more elements in es." $
                    BSE { bseSetQuantifier = SQDefault
                        , bseSrc = if source (head es) == ONE -- the first expression is V[ONE*someConcept]
                                   then theONESingleton
@@ -488,7 +480,7 @@ nonSpecialSelectExpr fSpec expr=
                  where 
                    fTable = Name "flipped"
                    flipped se =
-                     BQEComment [BlockComment ("Flipped: "++show x)] $
+                     traceComment "case: EFlp x" $
                         case se of 
                          BSE{}  -> BSE { bseSetQuantifier = bseSetQuantifier se
                                        , bseSrc = bseTrg se
@@ -518,26 +510,25 @@ nonSpecialSelectExpr fSpec expr=
                                 -> case flipped e of
                                     BQEComment (_:c') fe -> BQEComment (c++c') fe
                                     _ -> fatal "A flipped expression will always start with the comment `Flipped: ..."
-    (EMp1 val c) -> let cAtt = Iden [sqlAttConcept fSpec c]
-                    in BQEComment [BlockComment "case: EMp1 val c"]
-                         BSE { bseSetQuantifier = SQDefault
-                             , bseSrc = Col { cTable = []
-                                            , cCol   = [sqlAttConcept fSpec c]
-                                            , cAlias = []
-                                            , cSpecial = Nothing}
-                             , bseTrg = Col { cTable = []
-                                            , cCol   = [sqlAttConcept fSpec c]
-                                            , cAlias = []
-                                            , cSpecial = Nothing}
-                             , bseTbl = [sqlConceptTable fSpec c]
-                             , bseWhr = Just $ BinOp cAtt [Name "="] (singleton2SQL c val)
-                             } 
+    (EMp1 val c) -> traceComment "case: EMp1 val c" $
+                      BSE { bseSetQuantifier = SQDefault
+                          , bseSrc = Col { cTable = []
+                                         , cCol   = [sqlAttConcept fSpec c]
+                                         , cAlias = []
+                                         , cSpecial = Nothing}
+                          , bseTrg = Col { cTable = []
+                                         , cCol   = [sqlAttConcept fSpec c]
+                                         , cAlias = []
+                                         , cSpecial = Nothing}
+                          , bseTbl = [sqlConceptTable fSpec c]
+                          , bseWhr = Just $ BinOp (Iden [sqlAttConcept fSpec c]) [Name "="] (singleton2SQL c val)
+                          } 
     (EDcV (Sign s t))    -> 
                  let (psrc,fsrc) = (QName (name plug), QName (name att))
                                      where (plug,att) = getConceptTableInfo fSpec s
                      (ptgt,ftgt) = (QName (name plug), QName (name att))
                                      where (plug,att) = getConceptTableInfo fSpec t
-                 in BQEComment [BlockComment $ "case: (EDcV (Sign s t))   V"++show (Sign s t)++""] $
+                 in traceComment "case: (EDcV (Sign s t))" $
                     case (s,t) of
                      (ONE, ONE) -> one
                      (_  , ONE) -> BSE { bseSetQuantifier = SQDefault
@@ -577,7 +568,7 @@ nonSpecialSelectExpr fSpec expr=
                                   first = Name "fst"
                                   secnd = Name "snd"
     
-    (EDcI c)             -> BQEComment [BlockComment $ "I["++name c++"]"] $
+    (EDcI c)             -> traceComment "case: EDcI c" $
                              case c of
                               ONE ->   BSE { bseSetQuantifier = SQDefault
                                            , bseSrc = theONESingleton
@@ -602,7 +593,7 @@ nonSpecialSelectExpr fSpec expr=
 
 
     -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
-    (EEps c sgn)     -> BQEComment [BlockComment $ "epsilon "++name c++" "++showSign sgn] $
+    (EEps c _ )     -> traceComment "case: EEps c _" $
                          case c of -- select the population of the most specific concept, which is the source.
                               ONE ->   BSE { bseSetQuantifier = SQDefault
                                            , bseSrc = theONESingleton
@@ -630,9 +621,10 @@ nonSpecialSelectExpr fSpec expr=
 
     (ECpl e)
       -> case e of
-           EDcV _        -> emptySet
+           EDcV _        -> traceComment "case ECpl (EDcV _)"
+                            emptySet
            EDcI ONE      -> fatal "EDcI ONE must not be seen at this place."
-           EDcI c        -> BQEComment [BlockComment $ "case: ECpl (EDcI "++name c++")"]
+           EDcI c        -> traceComment "case: ECpl (EDcI c)" 
                              BSE { bseSetQuantifier = SQDefault
                                  , bseSrc = Col { cTable = [QName "concept0"]
                                                 , cCol   = [concpt]
@@ -651,7 +643,7 @@ nonSpecialSelectExpr fSpec expr=
                                                  )
                                  }
                              where concpt = sqlAttConcept fSpec c
-           _             -> BQEComment (map BlockComment [ "case: ECpl e", "ECpl ( \""++showA e++"\" )"])
+           _             -> traceComment "case: ECpl e"
                             BSE { bseSetQuantifier = SQDefault
                                 , bseSrc = Col { cTable = [closedWorldName]
                                                , cCol   = [sourceAlias]
@@ -680,18 +672,19 @@ nonSpecialSelectExpr fSpec expr=
                         
     EKl0 _               -> fatal "Sorry, there currently is no database support for * (Kleene star).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
     EKl1 _               -> fatal "Sorry, there currently is no database support for + (Kleene plus).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
-    (EDif (EDcV _,x)) -> BQEComment [BlockComment $ "case: EDif V x"++"EDif V ( \""++showA x++"\" ) \""++show (sign expr)++"\""]
-                                    (selectExpr fSpec (notCpl x))
+    (EDif (EDcV _,x)) 
+      -> traceComment "case: EDif (EDcV _,x)" $
+         selectExpr fSpec (notCpl x)
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
 -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
     EEqu (l,r)
-      -> BQEComment [BlockComment $ "case: EEqu (l,r) "++showA expr++" ("++show (sign expr)++")"] $
+      -> traceComment "case: EEqu (l,r) " $
          selectExpr fSpec ((ECpl l .\/. r) ./\. (ECpl r .\/. l))
     EInc (l,r)
-      -> BQEComment [BlockComment $ "case: EInc (l,r) "++showA expr++" ("++show (sign expr)++")"] $
+      -> traceComment "case: EInc (l,r) " $
          selectExpr fSpec (ECpl l .\/. r)
     EDif (l,r)
-      -> BQEComment [BlockComment $ "case: EDif (l,r) "++showA expr++" ("++show (sign expr)++")"] $
+      -> traceComment "case: EDif (l,r) " $
          selectExpr fSpec (l ./\. ECpl r)
     ERrs (l,r) -- The right residual l\r is defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
 {- In order to obtain an SQL-query, we make a Haskell derivation of the right residual:
@@ -762,29 +755,37 @@ Based on this derivation:
              rhs  = Name "rhs"
              lCode = toTableRef $ selectExpr fSpec l -- selectExprInFROM fSpec sourceAlias targetAlias l
              rCode = toTableRef $ selectExpr fSpec r -- selectExprInFROM fSpec sourceAlias targetAlias r
-         in BQEComment [BlockComment $ "case: ERrs (l,r)"++showA expr++" ("++show (sign expr)++")"]
+         in traceComment "case: ERrs (l,r)" $
                          rResiduClause
     ELrs (l,r)
-      -> BQEComment [BlockComment $ "case: ELrs (l,r)"++showA expr++" ("++show (sign expr)++")"] $
+      -> traceComment "case: ELrs (l,r)" $
          selectExpr fSpec (EFlp (flp r .\. flp l))
     EDia (l,r)
-      -> BQEComment [BlockComment $ "case: EDia (l,r)"++showA expr++" ("++show (sign expr)++")"] $
+      -> traceComment "case: EDia (l,r)" $
          selectExpr fSpec ((flp l .\. r) ./\. (l ./. flp r))
     ERad (l,ECpl r) 
-      -> BQEComment [BlockComment $ "case: ERad (l, ECpl r)"++showA expr++" ("++show (sign expr)++")"] $
+      -> traceComment "case: ERad (l, ECpl r)" $
         selectExpr fSpec (EFlp (r .\. flp l))
     ERad (l,r) 
-      -> BQEComment [BlockComment $ "case: ERad (l,r)"++showA expr++" ("++show (sign expr)++")"] $
+      -> traceComment  "case: ERad (l,r)" $
         selectExpr fSpec (flp (notCpl l) .\. r)
     EPrd (l,r)
      -> let v = EDcV (Sign (target l) (source r))
-        in BQEComment [BlockComment $ "case: EPrd (l,r)"++showA expr++" ("++show (sign expr)++")"] $
+        in traceComment "case: EPrd (l,r)" $
            selectExpr fSpec (foldr1 (.:.) [l,v,r])
 
   where
+   traceComment = traceExprComment expr
    singleton2SQL :: A_Concept -> PSingleton -> ValueExpr
    singleton2SQL cpt singleton = 
      atomVal2InSQL (safePSingleton2AAtomVal (fcontextInfo fSpec) cpt singleton)
+
+traceExprComment :: Expression -> String -> BinQueryExpr -> BinQueryExpr
+traceExprComment expr caseStr = 
+    BQEComment [ BlockComment   caseStr
+               , BlockComment $ "   Expression: "++showA expr
+               , BlockComment $ "   Signature : "++show (sign expr)
+               ] 
 
 atomVal2InSQL :: AAtomValue -> ValueExpr
 atomVal2InSQL val =
