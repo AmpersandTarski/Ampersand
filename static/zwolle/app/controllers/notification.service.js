@@ -27,6 +27,21 @@ angular.module('AmpersandApp').service('NotificationService', function($localSto
                 }
             );
         },
+
+        checkAllRules : function(){
+            return Restangular
+            .one('admin/ruleengine/evaluate/all')
+            .get()
+            .then(
+                function(data){
+                    data = data.plain();
+                    NotificationService.addSuccess('Evaluated all rules.');
+                    NotificationService.updateNotifications(data);
+                },function(){
+                    NotificationService.addError('Something went wrong while evaluating all rules');
+                }
+            );
+        },
         
         // Function to update notifications after api response
         updateNotifications : function(data){

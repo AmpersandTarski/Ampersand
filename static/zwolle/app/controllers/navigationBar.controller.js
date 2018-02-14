@@ -58,6 +58,8 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
         $route.reload();
     };
 
+    $scope.checkAllRules = NotificationService.checkAllRules;
+
     $scope.createNewResource = function(resourceType, openWithIfc){
         Restangular.one('resource').all(resourceType)
         .post({}, {})

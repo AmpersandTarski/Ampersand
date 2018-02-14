@@ -3,21 +3,6 @@ angular.module('AmpersandApp').controller('NotificationCenterController', functi
     $scope.localStorage = $localStorage;
     $scope.notifications = NotificationService.notifications;
     
-    $rootScope.checkAllRules = function(){
-        Restangular
-        .all('admin/ruleengine/evaluate').one('all')
-        .get()
-        .then(
-            function(data){
-                data = data.plain();
-                NotificationService.addSuccess('Evaluated all rules.');
-                NotificationService.updateNotifications(data);
-            },function(){
-                NotificationService.addError('Something went wrong while evaluating all rules');
-            }
-        );
-    };
-    
     // Hide success-, error-, warnings-, info- and invariant violation messages (not signals) upon route change
     $scope.$on("$routeChangeSuccess", function(){
         $scope.notifications.successes = [];
