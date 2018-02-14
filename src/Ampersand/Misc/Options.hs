@@ -73,9 +73,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , genTime :: LocalTime
                        , export2adl :: Bool
                        , test :: Bool
-                       , genMetaTables :: Bool -- When set, generate the meta-tables of AST into the prototype
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
-                       , genRapRelationsOnly :: Bool -- When set, the user can use all relations defined in Formal Ampersand, without the need to specify them explicitly
+                       , addSemanticMetamodel :: Bool -- When set, the user can use all artefacts defined in Formal Ampersand, without the need to specify them explicitly
                        , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , atlasWithoutExpressions :: Bool -- Temporary switch to leave out expressions in meatgrinder output.
                        , sqlHost ::  String  -- do database queries to the specified host
@@ -253,9 +252,8 @@ getOptions' envOpts =
                       , baseName         = takeBaseName fName
                       , export2adl       = False
                       , test             = False
-                      , genMetaTables    = False
                       , genMetaFile      = False
-                      , genRapRelationsOnly = False
+                      , addSemanticMetamodel = False
                       , genRapPopulationOnly = False
                       , atlasWithoutExpressions = False
                       , sqlHost          = "localhost"
@@ -554,19 +552,15 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{test = True}))
                "Used for test purposes only."
             , Hidden)
-          , (Option []        ["meta-tables"]
-               (NoArg (\opts -> opts{genMetaTables = True}))
-               "When set, generate the meta-tables of ampersand into the prototype"
-            , Hidden)
           , (Option []        ["meta-file"]
                (NoArg (\opts -> opts{genMetaFile = True}))
                ("Generate an .adl file that contains the relations of formal-ampersand, "++
                 "populated with the the meta-population of your own .adl model.")
             , Hidden)
-          , (Option []        ["add-semantic-metamodel"]
-               (NoArg (\opts -> opts{genRapRelationsOnly = True}))
-               ("When you use this switch, all relations from formal-ampersand will be available for "++
-                "use in your model. These relations do not have to be declared explicitly in your own model.")
+          , (Option []        ["add-semantic-metamodel","meta-tables"]
+               (NoArg (\opts -> opts{addSemanticMetamodel = True}))
+               ("All relations, views, idents etc. from formal-ampersand will be available for "++
+                "use in your model. These artefacts do not have to be declared explicitly in your own model.")
             , Hidden)
           , (Option []        ["gen-as-rap-model"]
                (NoArg (\opts -> opts{genRapPopulationOnly = True}))

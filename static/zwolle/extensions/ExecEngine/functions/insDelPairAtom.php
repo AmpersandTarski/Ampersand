@@ -191,26 +191,37 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 	}
 }
 
-// Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
-function InsAtom($conceptName){
-	Logger::getLogger('EXECENGINE')->info("InsAtom($conceptName)");
-    if(func_num_args() != 1) throw new Exception("InsAtom() expects 1 argument, but you have provided ".func_num_args(), 500);
+/**
+ * ExecEngine function to add a new atom to a given concept
+ * 
+ * Use: VIOLATION (TXT "InsAtom;<concept>;<atom>")
+ * 
+ * @param string $concept
+ * @param string $atomId
+ * @return void
+ */
+function InsAtom($concept, $atomId = null){
+	Logger::getLogger('EXECENGINE')->info("InsAtom($concept,$atomId)");
+    if(func_num_args() > 2) throw new Exception("InsAtom() expects max 2 arguments, but you have provided " . func_num_args(), 500);
+	
 	try{
-		$database = Database::singleton();
+	    if (is_null($atomId)) {
+			$atom = Concept::getConceptByLabel($concept)->createNewAtom();
+		} else {
+			$atom = new Atom($atomId, Concept::getConceptByLabel($concept));
+		}
 		
-		$concept = Concept::getConceptByLabel($conceptName);
-        $atom = $concept->createNewAtom();
-		$atom->addAtom(); // insert new atom in database
-		
-		// Make newly created atom available within scope of violation for use of other functions
+		// Add atom to concept set
+		$atom->addAtom();
+
+		// Make (newly created) atom available within scope of violation for use of other functions
 		ExecEngine::$_NEW = $atom;
-		
-		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' created and added to database");
+
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom}' added to database");
 		
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('InsAtom: ' . $e->getMessage());
 	}
-	
 }
 
 /* 

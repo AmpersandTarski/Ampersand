@@ -148,7 +148,7 @@ generateAmpersandOutput multi = do
    doGenProto :: IO ()
    doGenProto =
     sequence_ $
-       [ verboseLn opts "Checking on rule violations..."
+       [ verboseLn opts "Checking for rule violations..."
        , reportViolations violationsOfInvariants
        , reportSignals (initialConjunctSignals fSpec)
        ]++
