@@ -1,60 +1,14 @@
-angular.module('AmpersandApp').controller('NavigationBarController', function ($scope, $rootScope, $route, Restangular, $localStorage, $sessionStorage, $timeout, $location, NotificationService, RoleService) {
+angular.module('AmpersandApp').controller('NavigationBarController', function ($scope, $route, Restangular, $localStorage, $sessionStorage, $timeout, $location, NotificationService, RoleService, NavigationBarService) {
     
     $scope.$storage = $localStorage;
     $scope.$sessionStorage = $sessionStorage;
-    $scope.defaultSettings = {};
-    
-    $rootScope.loadingNavBar = []; // initialize an array for promises, used by angular-busy module (loading indicator)
-    
-    $rootScope.setActiveRoles = function(){
-        $rootScope.loadingNavBar = [];
-        $rootScope.loadingNavBar.push(
-            Restangular.all('app/roles')
-            .patch($sessionStorage.sessionRoles)
-            .then(function(data){
-                $rootScope.refreshNavBar();
-            })
-        );
-    };
-    
-    $rootScope.refreshNavBar = function(){
-        $rootScope.loadingNavBar = [];
-        $rootScope.loadingNavBar.push(
-            Restangular.one('app/navbar')
-                .get()
-                .then(function(data){
-                    data = data.plain();
-                    $rootScope.navbar = data;
-                    $scope.$sessionStorage.session = data.session;
-                    $scope.$sessionStorage.sessionRoles = data.sessionRoles;
-                    $scope.$sessionStorage.sessionVars = data.sessionVars;
-                    
-                    $scope.defaultSettings = data.defaultSettings;
-                    
-                    // Default settings for notificationPrefs
-                    if($scope.$storage.notificationPrefs === undefined){
-                        $scope.resetNotificationSettings();
-                    }
-                    // Default setting for switchAutoSave
-                    if($scope.$storage.switchAutoSave === undefined){
-                        $scope.resetSwitchAutoSave();
-                    }
-                    
-                    // Default setting for cacheGetCalls
-                    if($scope.$storage.cacheGetCalls === undefined){
-                        $scope.$storage.cacheGetCalls = $scope.defaultSettings.cacheGetCalls;
-                    }
-                    
-                    // Update notifications
-                    NotificationService.updateNotifications(data.notifications);
-                }, function(error){
-                    // on error
-                })
-        );
-    };
+    $scope.defaultSettings = NavigationBarService.defaultSettings;
+    $scope.loadingNavBar = [];
+    $scope.navbar = NavigationBarService.navbar;
     
     $scope.reload = function(){
-        $scope.refreshNavBar();
+        $scope.loadingNavBar = [];
+        $scope.loadingNavBar.push(NavigationBarService.refreshNavBar());
         $route.reload();
     };
 
@@ -68,7 +22,7 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
                 // Jumps to interface and requests newly created resource
                 $location.url(openWithIfc + '/' + data._id_);
             }
-        )
+        );
     };
     
     $scope.resetSettings = function(){
@@ -99,8 +53,8 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
         Restangular.setDefaultHttpFields({cache: $scope.$storage.cacheGetCalls });
     });
     
-    $rootScope.refreshNavBar(); // initialize navbar
-}).directive('myNavbarResize', function ($window, $rootScope, $timeout) {
+    $scope.loadingNavBar.push(NavigationBarService.refreshNavBar());
+}).directive('myNavbarResize', function ($window, $timeout, NavigationBarService) {
     return function (scope, element) {
         var w = angular.element($window);
         
@@ -126,7 +80,7 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
         };
         
         // watch navbar
-        $rootScope.$watch('navbar', function() {
+        scope.$watch('NavigationBarService.navbar', function() {
             resizeNavbar();
         });
         

@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').service('RoleService', function($sessionStorage){
+angular.module('AmpersandApp').service('RoleService', function($sessionStorage, Restangular){
     
     /*
      * Available roles are registered in $sessionStorage.sessionRoles
@@ -39,6 +39,10 @@ angular.module('AmpersandApp').service('RoleService', function($sessionStorage){
             angular.forEach($sessionStorage.sessionRoles, function(role) {
                 role.active = false;
             });
+        },
+        
+        setActiveRoles : function(){
+            return Restangular.all('app/roles').patch($sessionStorage.sessionRoles);
         }
     };
     

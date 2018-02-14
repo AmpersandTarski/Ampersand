@@ -13,7 +13,7 @@
     float: left;
 }
 </style>
-<nav class="navbar navbar-default" role="navigation" ng-controller="NavigationBarController">
+<nav class="navbar navbar-default" role="navigation" ng-controller="NavigationBarController" cg-busy="{promise:loadingNavBar}">
     <div id="navbar-wrapper" class="container">
         <ul class="nav navbar-nav" id="navbar-interfaces" my-navbar-resize>
             <li><a href="#/"><span class="glyphicon glyphicon-home"></span></a></li>

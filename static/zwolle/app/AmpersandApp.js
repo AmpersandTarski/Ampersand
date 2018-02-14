@@ -25,7 +25,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     // RestangularProvider.setPlainByDefault(true); available from Restangular v1.5.3
     
-}).run(function(Restangular, $rootScope, $location, $route, NotificationService, RoleService){
+}).run(function(Restangular, $rootScope, $location, $route, NotificationService, RoleService, NavigationBarService){
 
     Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params){
         //params.navIfc = true;
@@ -34,7 +34,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     });
     
     Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
-        if(operation != 'get' && operation != 'getList' && data.sessionRefreshAdvice) $rootScope.refreshNavBar();
+        if(operation != 'get' && operation != 'getList' && data.sessionRefreshAdvice) NavigationBarService.refreshNavBar();
 		if(data.navTo != null) $location.url(data.navTo);
         
         return data;

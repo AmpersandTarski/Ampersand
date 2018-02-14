@@ -33,5 +33,5 @@ app.config(function($routeProvider) {
     
     return {uploader : uploader};
 }).controller('PopulationImportController', function ($scope, ImportService) {
-    uploader = ImportService.uploader;
+    $scope.uploader = ImportService.uploader;
 });

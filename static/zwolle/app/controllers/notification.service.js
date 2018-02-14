@@ -14,7 +14,7 @@ angular.module('AmpersandApp').service('NotificationService', function($localSto
         
         // Function to get notifications again
         getNotifications : function(){
-            Restangular
+            return Restangular
             .one('app/notifications')
             .get()
             .then(
