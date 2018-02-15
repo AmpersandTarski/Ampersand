@@ -4,7 +4,7 @@ app.config(function($routeProvider) {
     $routeProvider
         .when('/ext/importer', {
             controller : 'PopulationImportController',
-            templateUrl : 'app/components/importer/importer.html',
+            templateUrl : 'app/src/importer/importer.html',
             interfaceLabel : 'Population importer'
         });
 }).service('ImportService', function(FileUploader, NotificationService){
