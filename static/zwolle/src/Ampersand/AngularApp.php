@@ -353,10 +353,10 @@ class AngularApp {
          *
         */
         // AmpersandApp
-        $this->addHtmlLine('<script src="app/AmpersandApp.js"></script>');
+        $this->addHtmlLine('<script src="app/dist/app.js"></script>');
         $this->addHtmlLine('<script src="app/RouteProvider.js"></script>');
 
-        // AngularApp controler files (both static and generated)
+        // Generated angular controlers for interfaces
         $files = getDirectoryList(Config::get('pathToAppFolder') . 'controllers');
         foreach ((array)$files as $file){
             if (substr($file,-2) !== 'js') continue;
