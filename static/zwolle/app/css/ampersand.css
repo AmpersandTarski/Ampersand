@@ -304,11 +304,6 @@ input .ng-invalid .ng-dirty {
 	color				: #428bca;
 }
 
-/*********** BREADCRUMB ****************/
-#breadcrumb ol {
-	margin-bottom		: 10px;
-}
-
 /********* NOTIFICATION CENTRE **************/
 #notificationCenter {
 	position			: relative; // fixed;
