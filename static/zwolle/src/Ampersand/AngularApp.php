@@ -363,13 +363,6 @@ class AngularApp {
             $this->addHtmlLine('<script src="app/controllers/'.$file.'"></script>');
         }
 
-        // Javascript files
-        $files = getDirectoryList(Config::get('pathToAppFolder') . 'js');
-        foreach ((array)$files as $file){
-            if (substr($file,-2) !== 'js') continue;
-            $this->addHtmlLine('<script src="app/js/'.$file.'"></script>');
-        }
-
         // Add js files to html output
         foreach ($this->jsFiles as $file) $this->addHtmlLine('<script src="'.$file.'"></script>');
 
