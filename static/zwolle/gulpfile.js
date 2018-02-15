@@ -18,5 +18,5 @@ gulp.task('js', function () {
 })
 
 gulp.task('watch', ['js'], function () {
-  gulp.watch('app/**/*.js', ['js'])
+  gulp.watch(['app/**/*.js', '!app/dist/*.js'], ['js'])
 })
