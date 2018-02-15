@@ -1,0 +1,21 @@
+{
+  "name": "ampersand-prototype",
+  "version": "0.9.1",
+  "description": "Package for the front-end application of a Ampersand prototype.",
+  "main": "app/AmpersandApp.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "GPL",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-ng-annotate": "^2.1.0",
+    "gulp-sourcemaps": "^2.6.4",
+    "gulp-uglify-es": "^1.0.0"
+  }
+}
