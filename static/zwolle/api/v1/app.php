@@ -38,7 +38,6 @@ $app->group('/app', function () use ($container) {
                     ,'extMenu' => $angularApp->getMenuItems('ext')
                     ,'roleMenu' => $angularApp->getMenuItems('role')
                     ,'defaultSettings' => ['notifications' => Notifications::getDefaultSettings()
-                                          ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
                                           ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
                                           ]
                     ,'notifications' => Notifications::getAll()

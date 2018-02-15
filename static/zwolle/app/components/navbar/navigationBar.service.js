@@ -28,11 +28,6 @@ angular.module('AmpersandApp').service('NavigationBarService', function(Restangu
                     $scope.resetSwitchAutoSave();
                 }
                 
-                // Default setting for cacheGetCalls
-                if($localStorage.cacheGetCalls === undefined){
-                    $localStorage.cacheGetCalls = defaultSettings.cacheGetCalls;
-                }
-                
                 // Update notifications
                 NotificationService.updateNotifications(data.notifications);
             }, function(error){

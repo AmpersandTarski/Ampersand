@@ -49,10 +49,6 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
         $scope.$storage.switchAutoSave = $scope.defaultSettings.switchAutoSave;
     };
     
-    $scope.$watch('$storage.cacheGetCalls', function() {
-        Restangular.setDefaultHttpFields({cache: $scope.$storage.cacheGetCalls });
-    });
-    
     $scope.loadingNavBar.push(NavigationBarService.refreshNavBar());
 }).directive('myNavbarResize', function ($window, $timeout, NavigationBarService) {
     return function (scope, element) {
