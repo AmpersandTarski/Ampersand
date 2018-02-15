@@ -306,10 +306,8 @@ input .ng-invalid .ng-dirty {
 
 /********* NOTIFICATION CENTRE **************/
 #notificationCenter {
-	position			: relative; // fixed;
+	position			: relative;
 	margin-bottom		: 10px;
-	// right			: 0px;
-	// z-index			: 999;
 }
 
 #successes {

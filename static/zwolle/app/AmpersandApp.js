@@ -5,17 +5,17 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
         // default start page
         .when('/', { 
             controller : '',
-            templateUrl : 'app/views/home.html',
+            templateUrl : 'app/components/shared/home.html',
             interfaceLabel : 'Home'
             })
         // installer page
         .when('/admin/installer', {
             controller : 'InstallerController',
-            templateUrl : 'app/views/installer.html',
+            templateUrl : 'app/components/admin/installer.html',
             interfaceLabel : 'Installer'
             })
         .when('/404', {
-            templateUrl: 'app/views/404.html',
+            templateUrl: 'app/components/shared/404.html',
             interfaceLabel: '404'
             })
         .otherwise({redirectTo: '/404'});
@@ -136,14 +136,14 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     return {
         restrict : 'E',
         scope : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        templateUrl : 'app/views/partials/myNavToInterfaces.html',
+        templateUrl : 'app/components/shared/partials/myNavToInterfaces.html',
         transclude : true
     };
 }).directive('myNavToOtherInterfaces', function(){
     return {
         restrict : 'E',
         scope  : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        templateUrl : 'app/views/partials/myNavToOtherInterfaces.html'
+        templateUrl : 'app/components/shared/partials/myNavToOtherInterfaces.html'
     };
 }).filter('unsafe', function($sce){
     return $sce.trustAsHtml;
