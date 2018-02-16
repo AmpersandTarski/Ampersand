@@ -330,28 +330,9 @@ class AngularApp {
         $this->addHtmlLine('<script src="app/bower_components/marked/lib/marked.js"></script>');
         $this->addHtmlLine('<script src="app/bower_components/angular-marked/dist/angular-marked.js"></script>');
 
-        /*
-         ********** CSS *********************************
-         *
-        */
-        // CSS files from app directory
-        $files = getDirectoryList(Config::get('pathToAppFolder') . 'css');
-        $cssFiles = [];
-        foreach ((array)$files as $file){
-            if (substr($file,-3) !== 'css') continue;
-            if ($file == 'ampersand.css') array_unshift($cssFiles, 'app/css/' . $file); // make sure ampersand.css is listed first
-            else $cssFiles[] = 'app/css/' . $file;
-        }
         // Add css files to html output
-        foreach ($cssFiles as $file) $this->addHtmlLine('<link href="'.$file.'" rel="stylesheet" media="screen" type="text/css">');
-            
-        // Other css files (from extensions)
-        foreach ($this->cssFiles as $file) $this->addHtmlLine('<link href="'.$file.'" rel="stylesheet" media="screen" type="text/css">');
-
-        /*
-         ********** App specific javascript ***************
-         *
-        */
+        $this->addHtmlLine('<link href="app/dist/ampersand.css" rel="stylesheet" media="screen" type="text/css">');
+        
         // AmpersandApp
         $this->addHtmlLine('<script src="app/dist/app.js"></script>');
         $this->addHtmlLine('<script src="app/RouteProvider.js"></script>');
@@ -363,8 +344,9 @@ class AngularApp {
             $this->addHtmlLine('<script src="app/controllers/'.$file.'"></script>');
         }
 
-        // Add js files to html output
+        // Add js/css files to html output
         foreach ($this->jsFiles as $file) $this->addHtmlLine('<script src="'.$file.'"></script>');
+        foreach ($this->cssFiles as $file) $this->addHtmlLine('<link href="'.$file.'" rel="stylesheet" media="screen" type="text/css">');
 
         $this->addHtmlLine('</head>');
 

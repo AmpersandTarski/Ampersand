@@ -1,0 +1,349 @@
+html {
+	position			: relative;
+	min-height			: 100%;
+}
+
+body {
+    font-size           : 12px;
+}
+
+.dropdown-submenu{position:relative;}
+.dropdown-submenu>.dropdown-menu{top:0;left:100%;margin-top:-6px;margin-left:-1px;-webkit-border-radius:0 6px 6px 6px;-moz-border-radius:0 6px 6px 6px;border-radius:0 6px 6px 6px;}
+.dropdown-submenu:hover>.dropdown-menu{display:block;}
+.dropdown-submenu>a:after{display:block;content:" ";float:right;width:0;height:0;border-color:transparent;border-style:solid;border-width:5px 0 5px 5px;border-left-color:#cccccc;margin-top:5px;margin-right:-10px;}
+.dropdown-submenu:hover>a:after{border-left-color:#ffffff;}
+.dropdown-submenu.pull-left{float:none;}
+.dropdown-submenu.pull-left>.dropdown-menu{left:-100%;margin-left:10px;-webkit-border-radius:6px 0 6px 6px;-moz-border-radius:6px 0 6px 6px;border-radius:6px 0 6px 6px;}
+
+/********* HEADER *****************/
+
+#header {
+	position			: fixed;
+	height				: 40px;
+	margin-top			: 3px;
+	left				: 0;
+	right				: 0;
+	z-index				: 1030;
+	height				: 45px;
+	background-color	: white;
+}
+
+/********* NAVBAR *****************/
+
+#navbar {
+	position			: fixed;
+	top					: 0px;
+	left				: 0;
+	right				: 0;
+	z-index				: 1030;
+	background-color	: white;
+}
+
+.navbar {
+	min-height			: initial;
+	margin-bottom		: 0px;
+}
+
+.navbar-header > .navbar-brand {
+	height				: 40px;
+	margin-left			: 0px;
+	padding				: 10px;
+	font-size			: 14px;
+}
+
+.navbar-toggle {
+	padding				: 0px;
+}
+
+.navbar-collapse {
+	padding-left		: 0px;
+}
+
+.navbar-nav > li > a {
+	padding-top			: 10px;
+	padding-bottom		: 10px;
+}
+
+/********* NAVBAR STYLE *****************/
+/* navbar */
+.navbar-default {
+    background-color: #F8F8F8;
+    border-color: #E7E7E7;
+}
+/* title */
+.navbar-default .navbar-brand {
+    color: #428bca;
+}
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-brand:focus {
+    color: #5E5E5E;
+}
+/* link */
+.navbar-default .navbar-nav > li > a {
+    color: #428bca;
+}
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+    color: #333;
+}
+.navbar-default .navbar-nav > .active > a, 
+.navbar-default .navbar-nav > .active > a:hover, 
+.navbar-default .navbar-nav > .active > a:focus {
+    color: #555;
+    background-color: #E7E7E7;
+}
+.navbar-default .navbar-nav > .open > a, 
+.navbar-default .navbar-nav > .open > a:hover, 
+.navbar-default .navbar-nav > .open > a:focus {
+    color: #555;
+    background-color: #D5D5D5;
+}
+/* caret */
+.navbar-default .navbar-nav > .dropdown > a .caret {
+    border-top-color: #428bca;
+    border-bottom-color: #428bca;
+}
+.navbar-default .navbar-nav > .dropdown > a:hover .caret,
+.navbar-default .navbar-nav > .dropdown > a:focus .caret {
+    border-top-color: #333;
+    border-bottom-color: #333;
+}
+.navbar-default .navbar-nav > .open > a .caret, 
+.navbar-default .navbar-nav > .open > a:hover .caret, 
+.navbar-default .navbar-nav > .open > a:focus .caret {
+    border-top-color: #555;
+    border-bottom-color: #555;
+}
+/* mobile version */
+.navbar-default .navbar-toggle {
+    border-color: #DDD;
+}
+.navbar-default .navbar-toggle:hover,
+.navbar-default .navbar-toggle:focus {
+    background-color: #DDD;
+}
+.navbar-default .navbar-toggle .icon-bar {
+    background-color: #CCC;
+}
+@media (max-width: 767px) {
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+        color: #428bca;
+    }
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a:hover,
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
+        color: #333;
+    }
+}
+
+/********* MAIN *****************/
+#main {
+	display				: block;
+	margin				: 0 auto 60px; /* Margin bottom by footer height */
+  	padding				: 50px 15px 50px 15px;
+	min-height			: 100%;
+}
+
+/********* FOOTER *****************/
+
+#footer {
+	position			: absolute;
+	bottom				: 0px;
+	width				: 100%;
+	height				: auto;
+	padding-top			: 10px;
+	background-color	: #f8f8f8;
+}
+
+#ampersand-footer img {
+	height				: 30px;
+}
+
+#ampersand-footer-logos img {
+	height				: 20px;
+	margin				: 2px;
+}
+
+
+/********* INTERFACES *****************/
+.interface table {
+	width				: auto;
+	margin-bottom		: 0px;	/* Overrides margin-bottom set to 20px by bootstrap.min.css */
+}
+.interface .CRUDbuttons {
+	font-size			: 14px;
+	margin-top			: 5px;
+	padding 			: 5px;
+}
+.interface .glyphicon-plus {
+	color				: green; 
+}
+
+fieldset {
+	padding				: 10px;
+}
+
+.tab-pane {
+	padding				: 15px;
+}
+
+.box .row {
+	margin-bottom		: 15px;
+}
+
+.interface .cols .options {
+    text-align: right;
+}
+
+.interface .interface-opt {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.interface .interface-opt .btn {
+    margin: 5px 0px 5px 2px;
+}
+
+.interface .box-rows .box-rows-opt {
+    display: flex;
+    justify-content: flex-end;
+}
+.box-rows-opt .btn {
+    margin: 5px 0px 5px 2px;
+}
+
+.interface .box-rows .box-rows-li-opt {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+    display: block;
+    padding: 5px 8px;
+    font-size: 12px;
+    /*
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-bottom-left-radius: 4px;
+    */
+}
+.box-rows-li-opt .btn {
+    margin-left: 2px;
+}
+
+.interface .panel-heading {
+	padding-top			: 1px;
+	padding-bottom		: 1px;
+}
+
+.interface .panel-heading-options {
+	height				: 38px;
+	display				: flex;
+	align-items			: center;
+}
+
+.interface .panel-heading-options .btn {
+	margin				: 3px;
+}
+
+.wordwrap {
+	/* source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
+	white-space			: pre-wrap;		/* CSS3 */
+	white-space			: -moz-pre-wrap;/* Firefox */
+	white-space			: -pre-wrap;	/* Opera <7 */
+	white-space			: -o-pre-wrap;	/* Opera 7 */
+	word-wrap			: break-word;	/* IE */	
+}
+
+.sortable-col {
+	min-width			: 35px;
+}
+
+.bigalphanumeric .hugealphanumeric {
+    padding				: 5px 10px 5px 0px;
+    width				: 100%;
+}
+
+.hugealphanumeric:hover {
+	border-width		: 1px;
+	border-style		: solid;
+	border-color		: lightgray;
+	padding-left		: 10px;
+    margin-bottom       : 1px;
+}
+
+/********* FORMS, INPUTS, ETC **************/
+input .ng-invalid .ng-dirty {
+	border				: 2px solid red;
+}
+
+.pointer {
+	cursor				: pointer;
+}
+
+/********* GLYPHICONS **************/
+.glyphicon {
+	cursor				: pointer;
+}
+
+.glyphicon-remove {
+	color				: red; 
+}
+
+.glyphicon-minus {
+	color				: red;
+}
+
+.glyphicon-ok {
+	color				: green; 
+}
+
+.glyphicon-orange {
+	color				: orange;
+}
+
+.glyphicon-blue {
+	color				: #428bca;
+}
+
+/********* NOTIFICATION CENTRE **************/
+#notificationCenter {
+	position			: relative;
+	margin-bottom		: 10px;
+}
+
+#successes {
+	position			: absolute;
+	width				: 100%;
+	z-index				: 999;
+}
+
+#notificationCenter .alert {
+	margin-bottom		: 2px;
+	padding-top			: 5px;
+	padding-bottom		: 5px;
+}
+
+#notificationCenter .panel {
+	margin-bottom		: 2px;
+}
+
+#notificationCenter .panel-heading {
+	padding-top			: 5px;
+	padding-bottom		: 5px;
+}
+
+#notificationCenter .panel .list-group-item {
+	padding-top			: 5px;
+	padding-bottom		: 5px;
+}
+
+#notificationCenter p {
+	margin              : 0px;
+}
+
+/* Original Bootstrap's CSS depends on empty href attributes to style cursors 
+for several components (pagination, tabs etc.). But in AngularJS adding empty 
+href attributes to link tags will cause unwanted route changes. This is why we 
+need to remove empty href attributes from directive templates and as a result 
+styling is not applied correctly. The remedy is simple, just add the following 
+styling to your application: */
+.nav, .pagination, .carousel, .panel-title a { cursor: pointer; }

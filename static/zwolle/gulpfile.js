@@ -16,6 +16,11 @@ gulp.task('js', function () {
     .pipe(sourcemaps.write())
     .pipe(gulp.dest('app/dist'))
 })
+gulp.task('css', function () {
+    gulp.src(['app/src/module.css', 'app/src/**/*.css', 'app/css/**/*.js'])
+      .pipe(concat('ampersand.css'))
+      .pipe(gulp.dest('app/dist'))
+  })
 
 gulp.task('watch', ['js'], function () {
   gulp.watch(['app/src/**/*.js', 'app/js/**/*.js'], ['js'])
