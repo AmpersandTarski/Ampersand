@@ -6,9 +6,18 @@ var ngAnnotate = require('gulp-ng-annotate')
 var minifycss = require('gulp-minify-css')
 var rename = require('gulp-rename')
 var filter = require('gulp-filter')
+var templateCache = require('gulp-angular-templatecache')
+var addStream = require('add-stream')
+
+function prepareTemplates() {
+  return gulp.src('app/src/**/*.html')
+    //.pipe(minify and preprocess the template html here)
+    .pipe(templateCache('templates.js', {root: 'app/src/', module: 'AmpersandApp'}));
+}
 
 gulp.task('js', function () {
   gulp.src(['app/src/module.js', 'app/src/**/*.js', 'app/project/**/*.js'])
+    .pipe(addStream.obj(prepareTemplates()))
     .pipe(sourcemaps.init())
     .pipe(concat('ampersand.js'))
     .pipe(ngAnnotate())

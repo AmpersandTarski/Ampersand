@@ -12,7 +12,9 @@
   "author": "",
   "license": "GPL",
   "devDependencies": {
+    "add-stream": "^1.0.0",
     "gulp": "^3.9.1",
+    "gulp-angular-templatecache": "^2.2.0",
     "gulp-concat": "^2.6.1",
     "gulp-filter": "^5.1.0",
     "gulp-minify-css": "^1.2.4",
