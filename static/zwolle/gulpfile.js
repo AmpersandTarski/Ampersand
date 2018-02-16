@@ -8,41 +8,87 @@ var rename = require('gulp-rename')
 var filter = require('gulp-filter')
 var templateCache = require('gulp-angular-templatecache')
 var addStream = require('add-stream')
+var mainBowerFiles = require('gulp-main-bower-files')
+var flatten = require('gulp-flatten')
+var clean = require('gulp-clean')
 
 function prepareTemplates() {
-  return gulp.src('app/src/**/*.html')
-    //.pipe(minify and preprocess the template html here)
-    .pipe(templateCache('templates.js', {root: 'app/src/', module: 'AmpersandApp'}));
+    return gulp.src('app/src/**/*.html')
+        //.pipe(minify and preprocess the template html here)
+        .pipe(templateCache('templates.js', { root: 'app/src/', module: 'AmpersandApp' }));
 }
 
-gulp.task('js', function () {
-  gulp.src(['app/src/module.js', 'app/src/**/*.js', 'app/project/**/*.js'])
-    .pipe(addStream.obj(prepareTemplates()))
-    .pipe(sourcemaps.init())
-    .pipe(concat('ampersand.js'))
-    .pipe(ngAnnotate())
-    .pipe(sourcemaps.write('.'))
-    .pipe(gulp.dest('app/dist'))
-    .pipe(filter('**/*.js')) // only .js files go through
-    .pipe(rename({suffix: '.min'}))
-    .pipe(uglify())
-    .on('error', function(err){
-        console.error(err.toString());
-    })
-    .pipe(sourcemaps.write('.'))
-    .pipe(gulp.dest('app/dist'))
+// https://github.com/mauricedb/gulp-main-bower-files
+gulp.task('libjs', function () {
+    var filterJS = filter('**/*.js', { restore: true })
+    var filterCSS = filter('**/*.css', { restore: true })
+    var filterFonts = filter('**/fonts/*.*', { restore: true })
+
+    gulp.src('./bower.json') // point to bower.json
+        .pipe(mainBowerFiles({
+            overrides: {
+                bootstrap: {
+                    main: [
+                        './dist/js/bootstrap.js',
+                        './dist/css/*.min.css',
+                        './dist/fonts/*.*'
+                    ]
+                }
+            }
+        }))
+        // library javascript
+        .pipe(filterJS)
+        .pipe(concat('lib.min.js'))
+        .pipe(uglify())
+        .pipe(gulp.dest('app/dist/lib'))
+        .pipe(filterJS.restore)
+        // library css
+        .pipe(filterCSS)
+        .pipe(concat('lib.min.css'))
+        .pipe(minifycss())
+        .pipe(gulp.dest('app/dist/lib'))
+        .pipe(filterCSS.restore)
+        // library fonts
+        .pipe(filterFonts)
+        .pipe(flatten())
+        .pipe(gulp.dest('app/dist/fonts'))
+        .pipe(filterFonts.restore)
 })
+
+gulp.task('js', function () {
+    gulp.src(['app/src/module.js', 'app/src/**/*.js', 'app/project/**/*.js'])
+        .pipe(addStream.obj(prepareTemplates()))
+        .pipe(sourcemaps.init())
+        .pipe(concat('ampersand.js'))
+        .pipe(ngAnnotate())
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('app/dist'))
+        .pipe(filter('**/*.js')) // only .js files go through
+        .pipe(rename({ suffix: '.min' }))
+        .pipe(uglify())
+        .on('error', function (err) {
+            console.error(err.toString());
+        })
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('app/dist'))
+})
+
 gulp.task('css', function () {
     gulp.src(['app/src/module.css', 'app/src/**/*.css', 'app/project/**/*.css'])
-      .pipe(concat('ampersand.css'))
-      .pipe(gulp.dest('app/dist'))
-      .pipe(rename({suffix: '.min'}))
-      .pipe(minifycss())
-      .pipe(gulp.dest('app/dist'))
-  })
-
-gulp.task('watch', ['js'], function () {
-  gulp.watch(['app/src/**/*.js', 'app/js/**/*.js'], ['js'])
+        .pipe(concat('ampersand.css'))
+        .pipe(gulp.dest('app/dist'))
+        .pipe(rename({ suffix: '.min' }))
+        .pipe(minifycss())
+        .pipe(gulp.dest('app/dist'))
 })
 
-gulp.task('default', ['css', 'js'])
+gulp.task('watch', ['js'], function () {
+    gulp.watch(['app/src/**/*.js', 'app/js/**/*.js'], ['js'])
+})
+
+gulp.task('clean', function () {
+    gulp.src('app/dist', { read: false })
+        .pipe(clean())
+})
+
+gulp.task('default', ['clean', 'css', 'js', 'libjs'])
