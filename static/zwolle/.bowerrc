@@ -1,4 +1,4 @@
 {
-    "directory": "/app/lib",
+    "directory": "/app/lib/",
     "timeout": 120000
 }

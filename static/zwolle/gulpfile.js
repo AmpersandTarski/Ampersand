@@ -24,7 +24,7 @@ gulp.task('libjs', function (done) {
     var filterCSS = filter('**/*.css', { restore: true })
     var filterFonts = filter('**/fonts/*.*', { restore: true })
 
-    gulp.src('./bower.json') // point to bower.json
+    gulp.src('bower.json') // point to bower.json
         .pipe(mainBowerFiles({
             overrides: {
                 bootstrap: {

@@ -13,6 +13,7 @@
   "license": "GPL",
   "devDependencies": {
     "add-stream": "^1.0.0",
+    "bower": "^1.8.2",
     "gulp": "^4.0",
     "gulp-angular-templatecache": "^2.2.0",
     "gulp-clean": "^0.4.0",
