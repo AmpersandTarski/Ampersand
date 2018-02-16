@@ -37,7 +37,10 @@ info x =
     Succes    -> (SE.ExitSuccess     , [])
     Fatal msg -> (SE.ExitFailure   2 , msg) -- These specific errors are due to some bug in the Ampersand code. Please report such bugs!
     NoValidFSpec msg
-              -> (SE.ExitFailure  10 , msg) 
+              -> (SE.ExitFailure  10 , case msg of
+                                         [] -> ["ERROR Something is wrong with your script. See https://github.com/AmpersandTarski/Ampersand/issues/751"]
+                                         _  -> msg
+                 ) 
     ViolationsInDatabase viols
               -> (SE.ExitFailure  10 , "ERROR: The population would violate invariants. Could not generate your database." : concatMap showViolatedRule viols)
     InvalidSQLExpression msg

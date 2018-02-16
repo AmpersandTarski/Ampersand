@@ -47,10 +47,29 @@ createMulti opts =
 
      let fAmpFSpec :: FSpec
          fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
+<<<<<<< HEAD
                        Checked f   -> f
                        Errors errs -> fatal . unlines $
                             "The FormalAmpersand ADL scripts are not type correct:"
                           : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+         -- | When the semantic model of Formal Ampersand is added to the user's model, we add
+         --   the relations as wel as the generalisations to it, so they are available to the user
+         --   in an implicit way. 
+         --   TODO: Do we want other things, like Idents and Views available too?
+         addSemanticModel :: Guarded P_Context -> Guarded P_Context
+         addSemanticModel ctx = fmap f ctx
+            where
+              f pCtx = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (instances fAmpFSpec)
+                            ,ctx_gs = ctx_gs pCtx ++ map aGen2pGen (instances fAmpFSpec)
+                            ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)
+                            }
+              noPopulation :: P_Relation -> P_Relation
+              noPopulation rel = rel{dec_popu =[]}
+=======
+                       Checked f  -> f
+                       Errors errs-> fatal . unlines
+                         $ ["The FormalAmpersand ADL scripts are not type correct:"] 
+                           ++  intersperse (replicate 30 '=') (map showErr errs)
 
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =
@@ -71,6 +90,7 @@ createMulti opts =
                      }
             noPopulation :: P_Relation -> P_Relation
             noPopulation rel = rel{dec_popu =[]}
+>>>>>>> FormalAmpersand
 
          userGFSpec :: Guarded FSpec
          userGFSpec = pCtx2Fspec $ 

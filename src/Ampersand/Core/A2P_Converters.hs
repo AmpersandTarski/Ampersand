@@ -1,14 +1,16 @@
 {-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.Core.A2P_Converters (
-    aCtx2pCtx
-  , aRelation2pRelation
-  , aAtomValue2pAtomValue
+    aAtomValue2pAtomValue
   , aConcept2pConcept
+  , aCtx2pCtx
   , aExpression2pTermPrim
   , aExplObj2PRef2Obj
-  , aObjectDef2pObjectDef
   , aGen2pGen
+  , aIdentityDef2pIdentityDef
+  , aObjectDef2pObjectDef
+  , aRelation2pRelation
   , aRule2pRule
+  , aViewDef2pViewDef
 ) 
 where
 import Ampersand.ADL1.Expression
@@ -32,7 +34,7 @@ aCtx2pCtx ctx =
       , ctx_ks     = map aIdentityDef2pIdentityDef . ctxks $ ctx
       , ctx_rrules = map aRoleRule2pRoleRule  .ctxrrules $ ctx
       , ctx_rrels  = map aRoleRelation2pRoleRelation . ctxRRels $ ctx
-      , ctx_reprs  = fatal "Todo" -- ctxreprs ctx
+      , ctx_reprs  = reprList (ctxInfo ctx)
       , ctx_vs     = map aViewDef2pViewDef . ctxvs $ ctx
       , ctx_gs     = map aGen2pGen . ctxgs $ ctx
       , ctx_ifcs   = map aInterface2pInterface . ctxifcs $ ctx
@@ -42,7 +44,7 @@ aCtx2pCtx ctx =
       , ctx_php    = map aObjectDef2pObjectDef . ctxphp $ ctx
       , ctx_metas  = ctxmetas ctx
       }
-
+  
 aPattern2pPattern :: Pattern -> P_Pattern
 aPattern2pPattern pat = 
  P_Pat { pos   = ptpos pat

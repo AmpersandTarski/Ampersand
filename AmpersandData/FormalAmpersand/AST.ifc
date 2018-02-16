@@ -2,11 +2,30 @@ CONTEXT "AST Interface" IN ENGLISH
 
 
 
-INTERFACE Ampersand FOR Ampersand : "_SESSION";V[SESSION*Context]
-BOX <SHCOLS>
-    [ "Context" : I
-    , "name" : name[Context*ContextName]
+--INTERFACE Contexts FOR Ampersand : "_SESSION";V[SESSION*Context]
+--BOX <SHCOLS>
+--    [ "Context" : I
+--    , "name" : name[Context*ContextName]
+--    ]
+
+INTERFACE Overview FOR Ampersand : I[SESSION];"_SESSION"
+TABS[ Concepts : V[SESSION*Concept]
+    COLS [ "Concept" : I 
+         , name : name[Concept*ConceptName]
+         ]
+    , Relations : V[SESSION*Relation]
+    COLS [ "Relation" : I 
+         , source : source[Relation*Concept]
+         , target : target[Relation*Concept]
+         ]
+    , Rules : V[SESSION*Rule]
+    COLS [ "Rule" : I
+         ]
     ]
+    
+
+
+
 INTERFACE "Context" FOR Ampersand : I[Context] TABS
   [ "About" : I BOX
     [ "name"  : name[Context*ContextName]
@@ -107,29 +126,7 @@ BOX [ Signature: I[Signature]
     , "sign~ (Relation)" : sign[Relation*Signature]~ LINKTO INTERFACE "Relation"
     , "sign~ (Rule)" : sign[Rule*Signature]~ LINKTO INTERFACE "Rule"
     ] 
-INTERFACE Atoms FOR Ampersand : I[SESSION];"_SESSION"
-TABS[ Atoms : V[SESSION*Atom]
-    COLS [ "Atom" : I
-         ]
-{- HJO, 20161002: Excluded, for these relations are from Tables
-    , Pairs  : V[SESSION*Pair]
-    COLS [ "Pair" : I
-         , lAtom : lAtom
-         , rAtom : rAtom
-         , in : in[Pair*Relation]
-         ]
--}
-    , Relations : V[SESSION*Relation]
-    COLS [ "Relation" : I 
-         , source : source[Relation*Concept]
-         , target : target[Relation*Concept]
-         ]
-    , Concepts : V[SESSION*Concept]
-    COLS [ "Concept" : I 
-         , name : name[Concept*ConceptName]
-         ]
-    ]
-    
+
 
 INTERFACE PropertyRule FOR Ampersand : I[PropertyRule]
 BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]

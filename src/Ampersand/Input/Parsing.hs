@@ -11,23 +11,24 @@ module Ampersand.Input.Parsing (
     , runParser
 ) where
 
-import Ampersand.ADL1
-import Ampersand.Basics
-import Ampersand.Core.ParseTree (mkContextOfPopsOnly)
-import Ampersand.Input.ADL1.CtxError
-import Ampersand.Input.ADL1.Lexer
-import Ampersand.Input.ADL1.Parser
-import Ampersand.Input.Xslx.XLSX
-import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
-import Ampersand.Misc
-import Control.Exception
-import Data.Char(toLower)
-import Data.List
-import Data.Maybe
-import System.Directory
-import System.FilePath
-import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
-import Text.Parsec.Prim (runP)
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree (mkContextOfPopsOnly)
+import           Ampersand.Input.ADL1.CtxError
+import           Ampersand.Input.ADL1.Lexer
+import           Ampersand.Input.ADL1.Parser
+import           Ampersand.Input.Xslx.XLSX
+import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
+import           Ampersand.Misc
+import           Control.Exception
+import           Data.Char(toLower)
+import           Data.List
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
+import           Data.Maybe
+import           System.Directory
+import           System.FilePath
+import           Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
+import           Text.Parsec.Prim (runP)
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL :: Options                    -- ^ The options given through the command line
@@ -153,8 +154,8 @@ parseSingleADL opts pc
                  where f :: SomeException -> IO a
                        f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "++show exception)
 
-parseErrors :: Lang -> ParseError -> [CtxError]
-parseErrors lang err = [PE (Message msg)]
+parseErrors :: Lang -> ParseError -> NEL.NonEmpty CtxError
+parseErrors lang err = pure $ PE (Message msg)
                 where msg :: String
                       msg = "In file " ++ show (errorPos err) ++ ":" ++ showLang lang (errorMessages err)
                       showLang :: Lang -> [Message] -> String
@@ -189,7 +190,7 @@ runParser parser filename input =
   --TODO: Give options to the lexer
   let lexed = lexer [] filename input
   in case lexed of
-    Left err -> Errors [lexerError2CtxError err]
+    Left err -> Errors . pure $ lexerError2CtxError err
     --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
     Right (tokens, _)  -> whenChecked (parse parser filename tokens) Checked
 

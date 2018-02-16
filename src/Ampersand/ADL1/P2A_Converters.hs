@@ -18,13 +18,14 @@ import           Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Control.Arrow(first)
-import           Control.Monad (join,unless)
+import           Control.Monad (join)
 import           Data.Char(toUpper,toLower)
 import           Data.Either
 import           Data.Foldable (toList)
 import           Data.Function
 import           Data.Hashable
 import           Data.List as Lst
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),nonEmpty)
 import qualified Data.Map as Map
 import           Data.Maybe
 import qualified Data.Set as Set
@@ -90,7 +91,11 @@ checkPurposes ctx = let topLevelPurposes = ctxps ctx
                         purposesInPatterns = concatMap ptxps (ctxpats ctx)
                         allPurposes = topLevelPurposes ++ purposesInPatterns
                         danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
-                    in  if null danglingPurposes then pure () else Errors $ map mkDanglingPurposeError danglingPurposes
+                    in  case danglingPurposes of
+                      []   -> pure () 
+                      x:xs -> Errors $ 
+                                    mkDanglingPurposeError x NEL.:|
+                                map mkDanglingPurposeError xs
 
 -- Return True if the ExplObj in this Purpose does not exist.
 isDanglingPurpose :: A_Context -> Purpose -> Bool
@@ -108,57 +113,71 @@ isDanglingPurpose ctx purp =
                                   -- TODO: fix this when we pick up working on multiple contexts.
 -- Check that interface references are not cyclic
 checkInterfaceCycles :: A_Context -> Guarded ()
-checkInterfaceCycles ctx = unless (null interfaceCycles) $
-                             Errors $ map mkInterfaceRefCycleError interfaceCycles
-      where interfaceCycles = [ map lookupInterface iCycle | iCycle <- getCycles refsPerInterface ]
-            refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
-            getDeepIfcRefs obj = case objmsub obj of
-                                   Nothing                  -> []
-                                   Just si -> case si of 
-                                               InterfaceRef{} -> if siIsLink si
-                                                                 then []
-                                                                 else [siIfcId si]
-                                               Box{}          -> concatMap getDeepIfcRefs (siObjs si)
-            lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
-                                   [ifc] -> ifc
-                                   _     -> fatal "Interface lookup returned zero or more than one result"
+checkInterfaceCycles ctx = 
+   case interfaceCycles of
+     []   -> return ()
+     x:xs -> Errors $ fmap mkInterfaceRefCycleError (x NEL.:| xs)
+  where interfaceCycles :: [NEL.NonEmpty Interface]
+        interfaceCycles = map ( fmap lookupInterface
+                              . fromMaybe (fatal "Empty list of interfacenames is unexpected here.")
+                              . NEL.nonEmpty
+                              ) 
+                        . getCycles $ refsPerInterface
+        refsPerInterface :: [(String, [String])]
+        refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
+        getDeepIfcRefs :: ObjectDef -> [String]
+        getDeepIfcRefs obj = case objmsub obj of
+                               Nothing -> []
+                               Just si -> case si of 
+                                           InterfaceRef{} -> if siIsLink si
+                                                             then []
+                                                             else [siIfcId si]
+                                           Box{}          -> concatMap getDeepIfcRefs (siObjs si)
+        lookupInterface :: String -> Interface
+        lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
+                               [ifc] -> ifc
+                               _     -> fatal "Interface lookup returned zero or more than one result"
 
 -- Check whether each concept has at most one default view
 checkMultipleDefaultViews :: A_Context -> Guarded ()
-checkMultipleDefaultViews ctx = let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
-                                in  (unless (null conceptsWithMultipleViews) $
-                                       Errors $ map mkMultipleDefaultError conceptsWithMultipleViews)
-
+checkMultipleDefaultViews ctx = 
+   case conceptsWithMultipleViews of
+     []   -> return ()
+     x:xs -> Errors $ fmap mkMultipleDefaultError (x NEL.:| xs)
+  where
+    conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
 checkDanglingRulesInRuleRoles :: A_Context -> Guarded ()
-checkDanglingRulesInRuleRoles ctx = case [mkDanglingRefError "Rule" nm (arPos rr)  
-                                         | rr <- ctxrrules ctx
-                                         , nm <- arRules rr
-                                         , nm `notElem` map name (allRules ctx)
-                                         ] of
-                                      [] -> return ()
-                                      errs -> Errors errs
+checkDanglingRulesInRuleRoles ctx = 
+   case [mkDanglingRefError "Rule" nm (arPos rr)  
+        | rr <- ctxrrules ctx
+        , nm <- arRules rr
+        , nm `notElem` map name (allRules ctx)
+        ] of
+     [] -> return ()
+     x:xs -> Errors (x NEL.:| xs)
 checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
-checkOtherAtomsInSessionConcept ctx = case [mkOtherAtomInSessionError atom
-                                           | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
-                                           , name cpt == "SESSION"
-                                           , atom <- popas pop
-                                           -- SJC: I think we should not allow _SESSION in a POPULATION statement, as there is no current session at that time (_SESSION should only be allowed as Atom in expressions)
-                                           , not (_isPermittedSessionValue atom)
-                                           ] ++
-                                           [ mkOtherTupleInSessionError d pr
-                                           | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
-                                           , name src == "SESSION" || name tgt == "SESSION"
-                                           , pr <- ps
-                                           , (name src == "SESSION" && not (_isPermittedSessionValue (apLeft pr)))
-                                             ||
-                                             (name tgt == "SESSION" && not (_isPermittedSessionValue (apRight pr)))
-                                           ]
-                                           of
-                                        [] -> return ()
-                                        errs -> Errors errs
-        where _isPermittedSessionValue :: AAtomValue -> Bool
-              _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
-              _isPermittedSessionValue _                 = False
+checkOtherAtomsInSessionConcept ctx = 
+   case [mkOtherAtomInSessionError atom
+        | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
+        , name cpt == "SESSION"
+        , atom <- popas pop
+        -- SJC: I think we should not allow _SESSION in a POPULATION statement, as there is no current session at that time (_SESSION should only be allowed as Atom in expressions)
+        , not (_isPermittedSessionValue atom)
+        ] ++
+        [ mkOtherTupleInSessionError d pr
+        | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
+        , name src == "SESSION" || name tgt == "SESSION"
+        , pr <- ps
+        , (name src == "SESSION" && not (_isPermittedSessionValue (apLeft pr)))
+          ||
+          (name tgt == "SESSION" && not (_isPermittedSessionValue (apRight pr)))
+        ]
+        of
+    [] -> return ()
+    x:xs -> Errors (x NEL.:| xs)
+  where _isPermittedSessionValue :: AAtomValue -> Bool
+        _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
+        _isPermittedSessionValue _                 = False
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -370,7 +389,9 @@ pCtx2aCtx opts
           mkTypology cs = 
             case filter (not . isSpecific) cs of
                []  -> -- there must be at least one cycle in the CLASSIFY statements.
-                      mkCyclesInGensError (nub cycles)
+                      case nub cycles of
+                        []  -> fatal "No cycles found!"
+                        x:xs -> mkCyclesInGensError (x NEL.:| xs)
                         where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
                                 where
                                   f :: A_Gen -> [A_Gen]
@@ -384,10 +405,18 @@ pCtx2aCtx opts
                           Typology { tyroot = r
                                    , tyCpts = reverse . sortSpecific2Generic gns $ cs
                                    }
-               rs  -> mkMultipleRootsError rs $ filter isInvolved gns
+               rs -> mkMultipleRootsError rs $
+                       case filter isInvolved gns of
+                         []  -> fatal "No involved gens"
+                         x:xs -> x NEL.:| xs
              where 
                isSpecific :: A_Concept -> Bool
-               isSpecific cpt = cpt `elem` map genspc gns
+               isSpecific cpt = cpt `elem` map genspc (filter (not . isTrivial) gns)
+                 where 
+                   isTrivial g =
+                      case g of 
+                        Isa{} -> gengen g == genspc g
+                        IsE{} -> genrhs g == [genspc g]
                isInvolved :: A_Gen -> Bool
                isInvolved gn = not . null $ concs gn `isc` cs
 
@@ -506,11 +535,11 @@ pCtx2aCtx opts
       decSign = pSign2aSign (dec_sign pd)
       checkEndoProps :: Guarded ()
       checkEndoProps
-        | dclIsEndo  = pure ()
-        | null endos = pure ()
-        | otherwise  = Errors [mkEndoPropertyError (origin pd) endos]
-        where dclIsEndo = source decSign == target decSign
-              endos = [Prop,Sym,Asy,Trn,Rfx,Irf] `isc` dec_prps pd
+        | source decSign == target decSign
+                    = pure ()
+        | otherwise = case [Prop,Sym,Asy,Trn,Rfx,Irf] `isc` dec_prps pd of
+                        []  -> pure ()
+                        xs -> Errors . pure $ mkEndoPropertyError (origin pd) xs
               
     pGen2aGen :: P_Gen -> A_Gen
     pGen2aGen pg =
@@ -579,7 +608,7 @@ pCtx2aCtx opts
     pAtomValue2aAtomValue :: ContextInfo -> A_Concept -> PAtomValue -> Guarded AAtomValue
     pAtomValue2aAtomValue contextInfo cpt pav =
        case unsafePAtomVal2AtomValue typ (Just cpt) pav of
-        Left msg -> Errors [mkIncompatibleAtomValueError pav msg]
+        Left msg -> Errors . pure $ mkIncompatibleAtomValueError pav msg
         Right av -> pure av
       where typ = representationOf contextInfo cpt
                
@@ -669,8 +698,11 @@ pCtx2aCtx opts
           Just vd -> let viewAnnCptStr = aConcToType $ target objExpr
                          viewDefCptStr = pConcToType $ vd_cpt vd
                          viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
-                     in  if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr]
-          Nothing -> Errors [mkUndeclaredError "view" o viewId] 
+                     in  if viewIsCompatible 
+                         then pure ()
+                         else Errors . pure $ 
+                                mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr
+          Nothing -> Errors . pure $ mkUndeclaredError "view" o viewId
       obj crud (e,sr) s
        = ( Obj { objnm = nm
                , objpos = orig
@@ -693,7 +725,7 @@ pCtx2aCtx opts
          Nothing -> build (Origin "default for Cruds") ""
          Just (P_Cruds org str ) -> if (length . nub . map toUpper) str == length str && all (`elem` "cCrRuUdD") str
                                     then build org str 
-                                    else Errors [mkInvalidCRUDError org str]
+                                    else Errors . pure $ mkInvalidCRUDError org str
       where (defC, defR, defU, defD) = defaultCrud opts
             build org str 
              = pure Cruds { crudOrig = org
@@ -723,7 +755,7 @@ pCtx2aCtx opts
          P_InterfaceRef{si_str = ifcId} 
            ->  do (refIfcExpr,_) <- case lookupDisambIfcObj declMap ifcId of
                                          Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
-                                         Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
+                                         Nothing        -> Errors . pure $ mkUndeclaredError "interface" o ifcId
                   cs <- pCruds2aCruds (si_crud x)
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
                   return (objExprEps,InterfaceRef{ siIsLink = si_isLink x
@@ -753,7 +785,7 @@ pCtx2aCtx opts
           refIsCompatible = expTarget `isaC` ifcSource || ifcSource `isaC` expTarget
       in  if refIsCompatible 
           then pure $ addEpsilonRight ifcSource objExpr 
-          else Errors [mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef ]
+          else Errors . pure $ mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef
     lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
     lookupDisambIfcObj declMap ifcId =
       case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId ] of
