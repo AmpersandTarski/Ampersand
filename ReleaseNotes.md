@@ -1,5 +1,9 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
+## v3.9.3 (16 february 2018)
+
 * [Issue #752](https://github.com/AmpersandTarski/Ampersand/issues/752) Fixed a bug that could cause failure without proper error message
 * Better (more uniform) diagnostic comments in SQL output
 
