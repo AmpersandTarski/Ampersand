@@ -1,0 +1,38 @@
+.switch {
+  background		: #fff;
+  border			: 1px solid #dfdfdf;
+  position			: relative;
+  display			: inline-block;
+  vertical-align	: middle;
+  box-sizing		: content-box;
+  overflow			: visible;
+  width				: 30px;
+  height			: 15px;
+  padding			: 0px;
+  margin			: 3px;
+  border-radius		: 20px;
+  cursor			: pointer;
+  box-shadow		: rgb(223, 223, 223) 0px 0px 0px 0px inset;
+  transition		: 0.3s ease-out all;
+  -webkit-transition: 0.3s ease-out all;
+  top				: -1px;
+}
+.switch small {
+  background: #fff;
+  border-radius: 100%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  width: 15px;
+  height: 15px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  transition: 0.3s ease-out all;
+  -webkit-transition: 0.3s ease-out all;
+}
+.switch.checked {
+  background: #428bca;
+  border-color: #428bca;
+}
+.switch.checked small {
+  left: 15px;
+}
