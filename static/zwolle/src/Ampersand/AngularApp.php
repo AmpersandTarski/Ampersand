@@ -301,11 +301,7 @@ class AngularApp {
 
         $this->addHtmlLine('</head>');
 
-        $this->addHtmlLine('<body>');
-
-        $this->addHtmlLine(file_get_contents(Config::get('pathToAppFolder') . 'AmpersandApp.html'));
-
-        $this->addHtmlLine('</body>');
+        $this->addHtmlLine('<body ng-include="\'app/src/app.html\'"></body>');
 
         $this->addHtmlLine('</html>');
 
@@ -313,7 +309,7 @@ class AngularApp {
     }
 
     private function addHtmlLine($htmlLine){
-        $this->html .= $htmlLine;
+        $this->html .= $htmlLine . PHP_EOL;
     }
 
 }
