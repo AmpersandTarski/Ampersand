@@ -331,7 +331,7 @@ class AngularApp {
         $this->addHtmlLine('<script src="app/bower_components/angular-marked/dist/angular-marked.js"></script>');
 
         // Add css files to html output
-        $this->addHtmlLine('<link href="app/dist/ampersand.css" rel="stylesheet" media="screen" type="text/css">');
+        $this->addHtmlLine('<link href="app/dist/ampersand.min.css" rel="stylesheet" media="screen" type="text/css">');
         
         // AmpersandApp
         $this->addHtmlLine('<script src="app/dist/app.js"></script>');

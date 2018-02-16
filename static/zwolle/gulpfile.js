@@ -3,6 +3,9 @@ var concat = require('gulp-concat')
 var sourcemaps = require('gulp-sourcemaps')
 var uglify = require('gulp-uglify-es').default
 var ngAnnotate = require('gulp-ng-annotate')
+var minifycss = require('gulp-minify-css')
+var rename = require('gulp-rename')
+var filter = require('gulp-filter')
 
 gulp.task('js', function () {
   gulp.src(['app/src/module.js', 'app/src/**/*.js', 'app/project/**/*.js'])
@@ -19,6 +22,9 @@ gulp.task('js', function () {
 gulp.task('css', function () {
     gulp.src(['app/src/module.css', 'app/src/**/*.css', 'app/project/**/*.css'])
       .pipe(concat('ampersand.css'))
+      .pipe(gulp.dest('app/dist'))
+      .pipe(rename({suffix: '.min'}))
+      .pipe(minifycss())
       .pipe(gulp.dest('app/dist'))
   })
 
