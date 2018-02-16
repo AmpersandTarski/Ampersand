@@ -10,13 +10,17 @@ var filter = require('gulp-filter')
 gulp.task('js', function () {
   gulp.src(['app/src/module.js', 'app/src/**/*.js', 'app/project/**/*.js'])
     .pipe(sourcemaps.init())
-      .pipe(concat('app.js'))
-      .pipe(ngAnnotate())
-      .pipe(uglify())
-      .on('error', function(err){
-          console.error(err.toString());
-      })
-    .pipe(sourcemaps.write())
+    .pipe(concat('ampersand.js'))
+    .pipe(ngAnnotate())
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest('app/dist'))
+    .pipe(filter('**/*.js')) // only .js files go through
+    .pipe(rename({suffix: '.min'}))
+    .pipe(uglify())
+    .on('error', function(err){
+        console.error(err.toString());
+    })
+    .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('app/dist'))
 })
 gulp.task('css', function () {

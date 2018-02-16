@@ -334,7 +334,7 @@ class AngularApp {
         $this->addHtmlLine('<link href="app/dist/ampersand.min.css" rel="stylesheet" media="screen" type="text/css">');
         
         // AmpersandApp
-        $this->addHtmlLine('<script src="app/dist/app.js"></script>');
+        $this->addHtmlLine('<script src="app/dist/ampersand.min.js"></script>');
         $this->addHtmlLine('<script src="app/RouteProvider.js"></script>');
 
         // Generated angular controlers for interfaces
