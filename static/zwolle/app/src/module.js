@@ -1,6 +1,6 @@
 // when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
-angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload', 'ui.bootstrap.datetimepicker', 'hc.marked'])
-.config(function($routeProvider) {
+angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ui.codemirror', 'ngStorage', 'angularFileUpload', 'ui.bootstrap.datetimepicker', 'hc.marked'])
+.config(function($routeProvider, $locationProvider) {
     $routeProvider
         // default start page
         .when('/', { 
@@ -19,6 +19,8 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
             interfaceLabel: '404'
             })
         .otherwise({redirectTo: '/404'});
+    
+    $locationProvider.hashPrefix(''); // see: https://stackoverflow.com/questions/41211875/angularjs-1-6-0-latest-now-routes-not-working
 }).config(function(RestangularProvider) {
     
     RestangularProvider.setBaseUrl('api/v1'); // Generate: path to API folder
