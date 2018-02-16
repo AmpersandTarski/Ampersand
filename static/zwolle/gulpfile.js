@@ -5,7 +5,7 @@ var uglify = require('gulp-uglify-es').default
 var ngAnnotate = require('gulp-ng-annotate')
 
 gulp.task('js', function () {
-  gulp.src(['app/src/module.js', 'app/src/**/*.js', 'app/js/**/*.js'])
+  gulp.src(['app/src/module.js', 'app/src/**/*.js', 'app/project/**/*.js'])
     .pipe(sourcemaps.init())
       .pipe(concat('app.js'))
       .pipe(ngAnnotate())
@@ -17,7 +17,7 @@ gulp.task('js', function () {
     .pipe(gulp.dest('app/dist'))
 })
 gulp.task('css', function () {
-    gulp.src(['app/src/module.css', 'app/src/**/*.css', 'app/css/**/*.js'])
+    gulp.src(['app/src/module.css', 'app/src/**/*.css', 'app/project/**/*.css'])
       .pipe(concat('ampersand.css'))
       .pipe(gulp.dest('app/dist'))
   })
@@ -25,3 +25,5 @@ gulp.task('css', function () {
 gulp.task('watch', ['js'], function () {
   gulp.watch(['app/src/**/*.js', 'app/js/**/*.js'], ['js'])
 })
+
+gulp.task('default', ['css', 'js'])
