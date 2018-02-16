@@ -277,64 +277,15 @@ class AngularApp {
         $this->addHtmlLine('<meta http-equiv="Expires" content="0"/>');
         $this->addHtmlLine('<meta http-equiv="Cache-Control" content="no-store"/>');
 
-        // JQuery
-        $this->addHtmlLine('<script src="app/lib/jquery/jquery-1.11.0.min.js"></script>');
-        //$this->addHtmlLine('<script src="app/lib/jquery/jquery-migrate-1.2.1.js"></script>');
-        $this->addHtmlLine('<script src="app/lib/jquery/jquery-ui-1.10.4.custom.js"></script>');
-
-        // Bootstrap (requires Jquery, loaded above)
-        $this->addHtmlLine('<link href="app/lib/bootstrap-3.3.5-dist/css/bootstrap.min.css" rel="stylesheet" media="screen">'); // load boostrap.css before app specific css files that overwrite bootstrap.css
-        $this->addHtmlLine('<script src="app/lib/bootstrap-3.3.5-dist/js/bootstrap.min.js"></script>');
-
-        /*
-         ********** Angular *********************************
-         *
-        */
-        $this->addHtmlLine('<script src="app/lib/angular/angular.min.js"></script>');
-        $this->addHtmlLine('<script src="app/lib/angular/angular-resource.min.js"></script>');
-        $this->addHtmlLine('<script src="app/lib/angular/angular-route.min.js"></script>');
-        $this->addHtmlLine('<script src="app/lib/angular/angular-sanitize.min.js"></script>');
-        /* Third party directives/libraries for angular */
-        // angular-ui-switch
-        $this->addHtmlLine('<script src="app/lib/angular/angular-ui-switch/angular-ui-switch-adapted.js"></script>');
-        $this->addHtmlLine('<link href="app/lib/angular/angular-ui-switch/angular-ui-switch.css" rel="stylesheet" media="screen" type="text/css">');
-            
-        // angular-busy
-        $this->addHtmlLine('<script src="app/lib/angular/angular-busy/angular-busy.min.js"></script>');
-        $this->addHtmlLine('<link href="app/lib/angular/angular-busy/angular-busy.min.css" rel="stylesheet" media="screen" type="text/css">');
-
-        // si-table
-        $this->addHtmlLine('<script src="app/lib/angular/si-table/si-table.js"></script>');
-
-        // angular-code-mirror
-        $this->addHtmlLine('<script src="app/lib/angular/angular-code-mirror/angular-code-mirror.min.js"></script>');
-        $this->addHtmlLine('<link href="app/lib/angular/angular-code-mirror/angular-code-mirror.css" rel="stylesheet" media="screen" type="text/css">');
-
-        // ng-storage
-        $this->addHtmlLine('<script src="app/lib/angular/angular-ng-storage/ngStorage.min.js"></script>');
-
-        // angular-file-upload
-        $this->addHtmlLine('<script src="app/lib/angular/angular-file-upload/angular-file-upload.min.js"></script>');
-
-        // Restangular (with depency for lodash)
-        $this->addHtmlLine('<script src="app/lib/restangular/restangular.min.js"></script>');
-        $this->addHtmlLine('<script src="app/lib/restangular/lodash.min.js"></script>');
-
-        // jquery UI & bootstrap in native AngularJS
-        $this->addHtmlLine('<script src="app/lib/ui-bootstrap/ui-bootstrap-tpls-0.14.3.min.js"></script>');
-        // datetimepicker
-        $this->addHtmlLine('<script src="app/lib/ui-bootstrap/datetimepicker/datetimepicker.js"></script>');
-        $this->addHtmlLine('<link href="app/lib/ui-bootstrap/datetimepicker/datetimepicker.css" rel="stylesheet" media="screen" type="text/css">');
+        // Libraries
+        $this->addHtmlLine('<link href="app/dist/lib/lib.min.css" rel="stylesheet" media="screen" type="text/css">');
+        $this->addHtmlLine('<script src="app/dist/lib/lib.min.js"></script>');
         
-        // markdown support
-        $this->addHtmlLine('<script src="app/bower_components/marked/lib/marked.js"></script>');
-        $this->addHtmlLine('<script src="app/bower_components/angular-marked/dist/angular-marked.js"></script>');
-
-        // Add css files to html output
+        // Ampersand
         $this->addHtmlLine('<link href="app/dist/ampersand.min.css" rel="stylesheet" media="screen" type="text/css">');
-        
-        // AmpersandApp
         $this->addHtmlLine('<script src="app/dist/ampersand.min.js"></script>');
+
+        // Project specific files
         $this->addHtmlLine('<script src="app/RouteProvider.js"></script>');
 
         // Generated angular controlers for interfaces
