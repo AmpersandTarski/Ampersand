@@ -19,7 +19,7 @@ function prepareTemplates() {
 }
 
 // https://github.com/mauricedb/gulp-main-bower-files
-gulp.task('libjs', function () {
+gulp.task('libjs', function (done) {
     var filterJS = filter('**/*.js', { restore: true })
     var filterCSS = filter('**/*.css', { restore: true })
     var filterFonts = filter('**/fonts/*.*', { restore: true })
@@ -53,9 +53,10 @@ gulp.task('libjs', function () {
         .pipe(flatten())
         .pipe(gulp.dest('app/dist/fonts'))
         .pipe(filterFonts.restore)
+    done()
 })
 
-gulp.task('js', function () {
+gulp.task('js', function (done) {
     gulp.src(['app/src/module.js', 'app/src/**/*.js', 'app/project/**/*.js'])
         .pipe(addStream.obj(prepareTemplates()))
         .pipe(sourcemaps.init())
@@ -71,24 +72,28 @@ gulp.task('js', function () {
         })
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('app/dist'))
+    done()
 })
 
-gulp.task('css', function () {
+gulp.task('css', function (done) {
     gulp.src(['app/src/module.css', 'app/src/**/*.css', 'app/project/**/*.css'])
         .pipe(concat('ampersand.css'))
         .pipe(gulp.dest('app/dist'))
         .pipe(rename({ suffix: '.min' }))
         .pipe(minifycss())
         .pipe(gulp.dest('app/dist'))
+    done()
 })
 
-gulp.task('watch', ['js'], function () {
+gulp.task('watch', function (done) {
     gulp.watch(['app/src/**/*.js', 'app/js/**/*.js'], ['js'])
+    done()
 })
 
-gulp.task('clean', function () {
-    gulp.src('app/dist', { read: false })
+gulp.task('clean', function (done) {
+    gulp.src('app/dist', { read: false, allowEmpty: true })
         .pipe(clean())
+    done()
 })
 
-gulp.task('default', ['clean', 'css', 'js', 'libjs'])
+gulp.task('default', gulp.series('clean', 'css', 'js', 'libjs'))
