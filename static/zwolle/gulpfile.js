@@ -84,14 +84,14 @@ gulp.task('css', function (done) {
 
 gulp.task('project', function (done) {
     // css
-    gulp.src(['app/project/**/*.css'])
+    gulp.src(['app/project/**/*.css', 'extensions/**/*.css'])
         .pipe(concat('project.css'))
         .pipe(gulp.dest('app/dist'))
         .pipe(rename({ suffix: '.min' }))
         .pipe(minifycss())
         .pipe(gulp.dest('app/dist'))
     // js
-    gulp.src(['app/project/**/*.js'])
+    gulp.src(['app/project/**/*.js', 'extensions/**/*.js'])
         .pipe(sourcemaps.init())
         .pipe(concat('project.js'))
         .pipe(ngAnnotate())

@@ -31,20 +31,6 @@ class AngularApp {
     private $logger;
     
     /**
-     * List of css files that must be included in the Angular webapplication
-     *
-     * @var array
-     */
-    protected $cssFiles = [];
-
-    /**
-     * List of javascript files that must be included in the Angular webapplication
-     *
-     * @var array
-     */
-    protected $jsFiles = [];
-    
-    /**
      * List of items for the extensions menu (in navbar)
      * 
      * @var array 
@@ -97,14 +83,6 @@ class AngularApp {
      */
     public function __toString(){
         return $this->html;
-    }
-
-    public function addCSS($relativePath){
-        $this->cssFiles[] = $relativePath;
-    }
-
-    public function addJS($relativePath){
-        $this->jsFiles[] = $relativePath;
     }
     
     /**
@@ -288,10 +266,6 @@ class AngularApp {
         // Project specific
         $this->addHtmlLine('<link href="app/dist/project.min.css" rel="stylesheet" media="screen" type="text/css">');
         $this->addHtmlLine('<script src="app/dist/project.min.js"></script>');
-
-        // Add js/css files to html output
-        foreach ($this->jsFiles as $file) $this->addHtmlLine('<script src="'.$file.'"></script>');
-        foreach ($this->cssFiles as $file) $this->addHtmlLine('<link href="'.$file.'" rel="stylesheet" media="screen" type="text/css">');
 
         $this->addHtmlLine('</head>');
 
