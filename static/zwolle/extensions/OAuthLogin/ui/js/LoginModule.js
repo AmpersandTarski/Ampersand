@@ -1,4 +1,4 @@
-angular.module('AmpersandApp')
+app = angular.module('AmpersandApp')
 .config(function($routeProvider) {
     $routeProvider
         // default start page
@@ -8,10 +8,8 @@ angular.module('AmpersandApp')
             interfaceLabel : 'Login'
         });
 });
-
 // Add Login module to dependency list
-app = angular.module('AmpersandApp');
-app.requires[app.requires.length] = 'LoginModule'; // add ur.file module to dependencies
+app.requires[app.requires.length] = 'LoginModule'; // add LoginModule to dependencies
 
 // LoginModule declaration
 angular.module('LoginModule', ['ngRoute', 'restangular'])
