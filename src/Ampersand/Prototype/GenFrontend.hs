@@ -222,7 +222,7 @@ buildInterface fSpec allIfcs ifc =
                               -> return $ Just ("views" </> fName, mapMaybe vsmlabel viewSegs)
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                             do { let templatePath = "views" </> "Atomic-" ++ escapeIdentifier (name tgt) ++ ".html"
+                             do { let templatePath = "Atomic-" ++ escapeIdentifier (name tgt) ++ ".html"
                                 ; hasSpecificTemplate <- doesTemplateExist fSpec templatePath
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
@@ -244,7 +244,7 @@ buildInterface fSpec allIfcs ifc =
                      (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
                      [i]     -> 
                            if siIsLink si
-                           then do { let templatePath = "views" </> "View-LINKTO.html"
+                           then do { let templatePath = "View-LINKTO.html"
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
                                             , iExp)
                                    }
@@ -285,7 +285,7 @@ buildInterface fSpec allIfcs ifc =
 genRouteProvider :: FSpec -> [FEInterface] -> IO ()
 genRouteProvider fSpec ifcs =
  do { --verboseLn opts $ show $ map name (interfaceS fSpec)
-    ; template <- readTemplate fSpec "RouteProvider.js"
+    ; template <- readTemplate fSpec "routeProvider.config.js"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (fsName fSpec)
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
@@ -304,7 +304,7 @@ genViewInterfaces fSpec = mapM_ (genViewInterface fSpec)
 genViewInterface :: FSpec -> FEInterface -> IO ()
 genViewInterface fSpec interf =
  do { lns <- genViewObject fSpec 0 (_ifcObj interf)
-    ; template <- readTemplate fSpec "views/Interface.html"
+    ; template <- readTemplate fSpec "interface.html"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                      . setAttribute "isTopLevel"          ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -372,7 +372,7 @@ genViewObject fSpec depth obj =
          do { subObjAttrs <- mapM genView_SubObject subObjs
                     
             ; let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" ++ cl ++ ".html") mClass
-            ; parentTemplate <- readTemplate fSpec $ "views" </> clssStr
+            ; parentTemplate <- readTemplate fSpec clssStr
             
             ; return . indentation
                      . lines 
@@ -394,16 +394,15 @@ genViewObject fSpec depth obj =
         getTemplateForObject :: IO FilePath
         getTemplateForObject 
            | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
-                       = return $  templatePath </> "View-PROPERTY"++".html"
+                       = return "View-PROPERTY"++".html"
            | otherwise = getTemplateForConcept (objTarget obj)
         getTemplateForConcept :: A_Concept -> IO FilePath
         getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
                                        return $ if exists
                                                 then cptfn
-                                                else templatePath </> "Atomic-"++show ttp++".html" 
+                                                else "Atomic-"++show ttp++".html" 
            where ttp = cptTType fSpec cpt
-                 cptfn = templatePath </> "Concept-"++name cpt++".html" 
-        templatePath = "views"     
+                 cptfn = "Concept-"++name cpt++".html" 
 ------ Generate controller JavaScript code
 
 genControllerInterfaces :: FSpec -> [FEInterface] -> IO ()
@@ -412,7 +411,7 @@ genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 genControllerInterface :: FSpec -> FEInterface -> IO ()
 genControllerInterface fSpec interf =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
-    ; let controlerTemplateName = "controllers/controller.js"
+    ; let controlerTemplateName = "interface.controller.js"
     ; template <- readTemplate fSpec controlerTemplateName
     ; let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
