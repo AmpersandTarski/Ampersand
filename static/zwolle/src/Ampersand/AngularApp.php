@@ -285,12 +285,9 @@ class AngularApp {
         $this->addHtmlLine('<link href="app/dist/ampersand.min.css" rel="stylesheet" media="screen" type="text/css">');
         $this->addHtmlLine('<script src="app/dist/ampersand.min.js"></script>');
 
-        // Generated angular controlers for interfaces
-        $files = getDirectoryList(Config::get('pathToAppFolder') . 'project');
-        foreach ((array)$files as $file){
-            if (substr($file,-2) !== 'js') continue;
-            $this->addHtmlLine('<script src="app/project/'.$file.'"></script>');
-        }
+        // Project specific
+        $this->addHtmlLine('<link href="app/dist/project.min.css" rel="stylesheet" media="screen" type="text/css">');
+        $this->addHtmlLine('<script src="app/dist/project.min.js"></script>');
 
         // Add js/css files to html output
         foreach ($this->jsFiles as $file) $this->addHtmlLine('<script src="'.$file.'"></script>');

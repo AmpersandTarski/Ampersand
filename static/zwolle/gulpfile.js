@@ -57,7 +57,7 @@ gulp.task('libjs', function (done) {
 })
 
 gulp.task('js', function (done) {
-    gulp.src(['app/src/module.js', 'app/src/**/*.js', 'app/project/**/*.js'])
+    gulp.src(['app/src/module.js', 'app/src/**/*.js'])
         .pipe(addStream.obj(prepareTemplates()))
         .pipe(sourcemaps.init())
         .pipe(concat('ampersand.js'))
@@ -67,20 +67,40 @@ gulp.task('js', function (done) {
         .pipe(filter('**/*.js')) // only .js files go through
         .pipe(rename({ suffix: '.min' }))
         .pipe(uglify())
-        .on('error', function (err) {
-            console.error(err.toString());
-        })
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('app/dist'))
     done()
 })
 
 gulp.task('css', function (done) {
-    gulp.src(['app/src/module.css', 'app/src/**/*.css', 'app/project/**/*.css'])
+    gulp.src(['app/src/module.css', 'app/src/**/*.css'])
         .pipe(concat('ampersand.css'))
         .pipe(gulp.dest('app/dist'))
         .pipe(rename({ suffix: '.min' }))
         .pipe(minifycss())
+        .pipe(gulp.dest('app/dist'))
+    done()
+})
+
+gulp.task('project', function (done) {
+    // css
+    gulp.src(['app/project/**/*.css'])
+        .pipe(concat('project.css'))
+        .pipe(gulp.dest('app/dist'))
+        .pipe(rename({ suffix: '.min' }))
+        .pipe(minifycss())
+        .pipe(gulp.dest('app/dist'))
+    // js
+    gulp.src(['app/project/**/*.js'])
+        .pipe(sourcemaps.init())
+        .pipe(concat('project.js'))
+        .pipe(ngAnnotate())
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('app/dist'))
+        .pipe(filter('**/*.js')) // only .js files go through
+        .pipe(rename({ suffix: '.min' }))
+        .pipe(uglify())
+        .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('app/dist'))
     done()
 })
