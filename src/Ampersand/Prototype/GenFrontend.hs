@@ -82,6 +82,7 @@ doGenFrontend fSpec =
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
     ; copyCustomizations fSpec
+    ; deleteTemplateDir fSpec
     ; putStrLn "Frontend generated.\n"
     }
 
@@ -112,6 +113,9 @@ copyCustomizations fSpec =
       else
         verboseLn (getOpts fSpec) $ "No customizations (there is no directory " ++ custDir ++ ")"
     }
+
+deleteTemplateDir :: FSpec -> IO ()
+deleteTemplateDir fSpec = removeDirectoryRecursive $ dirPrototype (getOpts fSpec) </> "templates"
 
 ------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
