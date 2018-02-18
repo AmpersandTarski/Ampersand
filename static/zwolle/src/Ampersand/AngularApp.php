@@ -21,8 +21,6 @@ use Ampersand\Interfacing\InterfaceObject;
  *
  */
 class AngularApp {
-
-    protected $html;
     
     /**
      * 
@@ -75,14 +73,6 @@ class AngularApp {
         $this->logger = $logger;
         $this->logger->debug("## BUILD ANGULAR APP ##################################################");
         $this->ampersandApp = $ampersandApp;
-    }
-
-    /**
-     * Function is called when object is treated as a string
-     * @return string
-     */
-    public function __toString(){
-        return $this->html;
     }
     
     /**
@@ -241,43 +231,4 @@ class AngularApp {
 
         return false;
     }
-
-    public function buildHtml(){
-        $this->addHtmlLine("<!doctype html>");
-        $this->addHtmlLine('<html ng-app="AmpersandApp">');
-        $this->addHtmlLine('<head>');
-
-        $this->addHtmlLine('<title>'.Config::get('contextName').'</title>');
-
-        // Meta tags
-        $this->addHtmlLine('<meta name="viewport" content="width=device-width, initial-scale=1.0"/>');
-        $this->addHtmlLine('<meta charset="UTF-8">');
-        $this->addHtmlLine('<meta http-equiv="Expires" content="0"/>');
-        $this->addHtmlLine('<meta http-equiv="Cache-Control" content="no-store"/>');
-
-        // Libraries
-        $this->addHtmlLine('<link href="app/dist/lib/lib.min.css" rel="stylesheet" media="screen" type="text/css">');
-        $this->addHtmlLine('<script src="app/dist/lib/lib.min.js"></script>');
-        
-        // Ampersand
-        $this->addHtmlLine('<link href="app/dist/ampersand.min.css" rel="stylesheet" media="screen" type="text/css">');
-        $this->addHtmlLine('<script src="app/dist/ampersand.min.js"></script>');
-
-        // Project specific
-        $this->addHtmlLine('<link href="app/dist/project.min.css" rel="stylesheet" media="screen" type="text/css">');
-        $this->addHtmlLine('<script src="app/dist/project.min.js"></script>');
-
-        $this->addHtmlLine('</head>');
-
-        $this->addHtmlLine('<body ng-include="\'app/src/app.html\'"></body>');
-
-        $this->addHtmlLine('</html>');
-
-        return $this->html;
-    }
-
-    private function addHtmlLine($htmlLine){
-        $this->html .= $htmlLine . PHP_EOL;
-    }
-
 }
