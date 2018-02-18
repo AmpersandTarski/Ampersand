@@ -143,6 +143,14 @@ $app->add(function (Request $req,  Response $res, callable $next) {
     return $newResponse;
 });
 
+$middleWare1 = function (Request $request, Response $response, callable $next) {
+    // Overwrite default media type parser for application/json
+    $request->registerMediaTypeParser('application/json', function ($input) {
+        return json_decode($input, false); // set accoc param to false, this will return php stdClass object instead of array for json objects {}
+    });
+    return $next($request, $response);
+};
+
 include (__DIR__ . '/resources.php'); // API calls starting with '/resource/'
 include (__DIR__ . '/admin.php'); // API calls starting with '/admin/'
 include (__DIR__ . '/app.php'); // API calls starting with '/app/'

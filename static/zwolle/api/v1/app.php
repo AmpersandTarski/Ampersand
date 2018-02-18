@@ -55,4 +55,4 @@ $app->group('/app', function () use ($container) {
         return $response->withJson(Notifications::getAll(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-});
+})->add($middleWare1);

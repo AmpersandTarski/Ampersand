@@ -24,14 +24,6 @@ global $container;
  *
  *************************************************************************************************/
 
-$middleWare1 = function (Request $request, Response $response, callable $next) {
-    // Overwrite default media type parser for application/json
-    $request->registerMediaTypeParser('application/json', function ($input) {
-        return json_decode($input, false); // set accoc param to false, this will return php stdClass object instead of array for json objects {}
-    });
-    return $next($request, $response);
-};
-
 $app->group('/resource', function () use ($container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
