@@ -12,6 +12,17 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
         $route.reload();
     };
 
+    $scope.toggleRole = function(roleId, set){
+        RoleService.toggleRole(roleId, set);
+        $scope.loadingNavBar = [];
+        $scope.loadingNavBar.push(
+            RoleService.setActiveRoles()
+            .then(function(data){
+                NavigationBarService.refreshNavBar();
+            })
+        );
+    };
+
     $scope.checkAllRules = NotificationService.checkAllRules;
 
     $scope.createNewResource = function(resourceType, openWithIfc){
