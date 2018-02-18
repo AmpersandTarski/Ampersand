@@ -12,19 +12,22 @@ var mainBowerFiles = require('gulp-main-bower-files')
 var flatten = require('gulp-flatten')
 var clean = require('gulp-clean')
 
-function prepareTemplates() {
-    return gulp.src('app/src/**/*.html')
+function prepareTemplates(folder) {
+    return gulp.src(folder + '**/*.html')
         //.pipe(minify and preprocess the template html here)
-        .pipe(templateCache('templates.js', { root: 'app/src/', module: 'AmpersandApp' }));
+        .pipe(templateCache('templates.js', { root: folder, module: 'AmpersandApp' }));
 }
 
-// https://github.com/mauricedb/gulp-main-bower-files
-gulp.task('libjs', function (done) {
+/**
+ * Gather external library js/css/fonts into dist/lib folder
+ */
+gulp.task('build-lib', function (done) {
     var filterJS = filter('**/*.js', { restore: true })
     var filterCSS = filter('**/*.css', { restore: true })
     var filterFonts = filter('**/fonts/*.*', { restore: true })
 
     gulp.src('bower.json') // point to bower.json
+        // https://github.com/mauricedb/gulp-main-bower-files
         .pipe(mainBowerFiles({
             overrides: {
                 bootstrap: {
@@ -56,9 +59,13 @@ gulp.task('libjs', function (done) {
     done()
 })
 
-gulp.task('js', function (done) {
+/**
+ * Gather ampersand js/css/html into dist folder
+ */
+gulp.task('build-ampersand', function (done) {
+    // js
     gulp.src(['app/src/module.js', 'app/src/**/*.js'])
-        .pipe(addStream.obj(prepareTemplates()))
+        .pipe(addStream.obj(prepareTemplates('app/src/')))
         .pipe(sourcemaps.init())
         .pipe(concat('ampersand.js'))
         .pipe(ngAnnotate())
@@ -69,10 +76,7 @@ gulp.task('js', function (done) {
         .pipe(uglify())
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('app/dist'))
-    done()
-})
-
-gulp.task('css', function (done) {
+    // css
     gulp.src(['app/src/module.css', 'app/src/**/*.css'])
         .pipe(concat('ampersand.css'))
         .pipe(gulp.dest('app/dist'))
@@ -82,7 +86,10 @@ gulp.task('css', function (done) {
     done()
 })
 
-gulp.task('project', function (done) {
+/**
+ * Gulp function to build the application after Ampersand has generated the prototype
+ */
+gulp.task('build-project', function (done) {
     // css
     gulp.src(['app/project/**/*.css', 'extensions/**/*.css'])
         .pipe(concat('project.css'))
@@ -92,6 +99,7 @@ gulp.task('project', function (done) {
         .pipe(gulp.dest('app/dist'))
     // js
     gulp.src(['app/project/**/*.js', 'extensions/**/*.js'])
+        .pipe(addStream.obj(prepareTemplates('app/project/')))
         .pipe(sourcemaps.init())
         .pipe(concat('project.js'))
         .pipe(ngAnnotate())
@@ -105,15 +113,10 @@ gulp.task('project', function (done) {
     done()
 })
 
-gulp.task('watch', function (done) {
-    gulp.watch(['app/src/**/*.js', 'app/js/**/*.js'], ['js'])
-    done()
-})
-
 gulp.task('clean', function (done) {
     gulp.src('app/dist', { read: false, allowEmpty: true })
         .pipe(clean())
     done()
 })
 
-gulp.task('default', gulp.series('clean', 'css', 'js', 'libjs'))
+gulp.task('dist', gulp.series('clean', 'build-lib', 'build-ampersand'))
