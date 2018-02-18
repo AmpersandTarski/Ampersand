@@ -52,23 +52,6 @@ This is considered editable iff the composition rel;relRef yields an editable re
 
 -}
 
-data Include = Include { fileOrDir :: FileOrDir
-                       , includeSrc :: String
-                       , includeTgt :: String
-                       } deriving Show
-
-data FileOrDir = File | Dir deriving Show
-
--- Files/directories that will be copied to the prototype, if present in $adlSourceDir/includes/
-allowedIncludeSubDirs :: [Include]
-allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
-                        , Include Dir  "app"               "app"
-                        , Include Dir  "extensions"        "extensions"
-                        , Include File "localSettings.php" "localSettings.php"
-                        , Include File "composer.json"     "composer.json"
-                        , Include File "composer.local.json" "composer.local.json"
-                        ]
-
 getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 
@@ -93,7 +76,7 @@ clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStr "Generating frontend..\n" 
-    ; copyIncludes fSpec
+    ; copyTemplates fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
@@ -102,51 +85,29 @@ doGenFrontend fSpec =
     ; putStrLn "Frontend generated.\n"
     }
 
-copyIncludes :: FSpec -> IO ()
-copyIncludes fSpec =
+copyTemplates :: FSpec -> IO ()
+copyTemplates fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          includeDir = adlSourceDir </> dirInclude (getOpts fSpec)
-          protoDir = dirPrototype (getOpts fSpec)
-    ; includeDirExists <- doesDirectoryExist includeDir
-    ; if includeDirExists then
-       do { verboseLn (getOpts fSpec) $ "Copying user includes from " ++ includeDir 
-          ; includeDirContents <- map (includeDir </>) <$> getProperDirectoryContents includeDir
-          
-          ; let absIncludes = [ Include { fileOrDir = fileOrDir incl
-                                        , includeSrc = absSd
-                                        , includeTgt = protoDir </> includeTgt incl
-                                        }
-                              | incl <- allowedIncludeSubDirs
-                              , let absSd = includeDir </> includeSrc incl
-                              , absSd `elem` includeDirContents
-                              ]
-                              
-          ; sequence_ (fmap copyInclude absIncludes) -- recursively copy all includes
-                      
-          ; let ignoredPaths = includeDirContents \\ map includeSrc absIncludes
-          ; when (any (\ str -> head str /= '.') ignoredPaths) $  --filter paths starting with a dot, because on mac this is very common and it is a nuisance to avoid (see issue #
-             do { putStrLn $ "\nWARNING: only the following include paths are allowed:\n  " ++ show (map includeSrc allowedIncludeSubDirs) ++ "\n"
-                ; mapM_ (\d -> putStrLn $ "  Ignored " ++ d) ignoredPaths
-                }
-          }
+          tempDir = adlSourceDir </> "templates"
+          toDir = (dirPrototype (getOpts fSpec)) </> "templates"
+    ; tempDirExists <- doesDirectoryExist tempDir
+    ; if tempDirExists then
+        do { verboseLn (getOpts fSpec) $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
+           ; copyDirRecursively tempDir toDir (getOpts fSpec) -- recursively copy all templates
+           }
       else
-        verboseLn (getOpts fSpec) $ "No user includes (there is no directory " ++ includeDir ++ ")"
-    } 
-  where copyInclude :: Include -> IO()
-        copyInclude incl =
-          case fileOrDir incl of
-            File -> copyDeepFile (includeSrc incl) (includeTgt incl) (getOpts fSpec)
-            Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl) (getOpts fSpec)
-          
+        verboseLn (getOpts fSpec) $ "No project specific templates (there is no directory " ++ tempDir ++ ")"
+    }
+
 copyCustomizations :: FSpec -> IO ()
 copyCustomizations fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          custDir = adlSourceDir </> "customizations"
+          custDir = adlSourceDir </> dirCustomizations (getOpts fSpec)
           protoDir = dirPrototype (getOpts fSpec)
     ; custDirExists <- doesDirectoryExist custDir
     ; if custDirExists then
         do { verboseLn (getOpts fSpec) $ "Copying customizations from " ++ custDir ++ " -> " ++ protoDir
-           ; copyDirRecursively custDir protoDir (getOpts fSpec) -- recursively copy all includes
+           ; copyDirRecursively custDir protoDir (getOpts fSpec) -- recursively copy all customizations
            }
       else
         verboseLn (getOpts fSpec) $ "No customizations (there is no directory " ++ custDir ++ ")"

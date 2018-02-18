@@ -37,7 +37,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
-                       , dirInclude :: String -- the directory that is included in the generated prototype
+                       , dirCustomizations :: String -- the directory that is copied after generating the prototype
                        , allInterfaces :: Bool
                        , dbName :: String
                        , namespace :: String
@@ -208,7 +208,7 @@ getOptions' envOpts =
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfile       = fatal "No monadic options available."
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
-                      , dirInclude       = "include"
+                      , dirCustomizations = "customizations"
                       , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
                       , preVersion       = fromMaybe "" $ envPreVersion envOpts
@@ -385,11 +385,11 @@ options = [ (Option ['v']   ["version"]
                        ) "DIRECTORY")
                ("generate a functional prototype (This overrules environment variable "++ dirPrototypeVarName ++ ").")
             , Public)
-          , (Option []     ["include"]
-               (ReqArg (\nm opts -> opts {dirInclude = nm
+          , (Option []     ["customizations"]
+               (ReqArg (\nm opts -> opts {dirCustomizations = nm
                                                 ,genPrototype = True}
                        ) "DIRECTORY")
-               "include a directory into the generated prototype, instead of the default."
+               "copy a directory into the generated prototype, instead of the default."
             , Public)
           , (Option ['d']  ["dbName"]
                (ReqArg (\nm opts -> opts{dbName = if nm == ""
