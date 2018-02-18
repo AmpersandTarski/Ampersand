@@ -6,6 +6,8 @@ The OAuthLogin extension allows you to easily add a user (account) registration 
 * add session variables, and use them for controlling access to data.
 
 ## How to INSTALL the extension
+* Run 'gulp project' command after generating the prototype
+* Enable the extension in your localSettings.php file. See below
 
 ## How to CONFIGURE the extension
 Add and configure supported identity providers in your `localSettings.php` file.

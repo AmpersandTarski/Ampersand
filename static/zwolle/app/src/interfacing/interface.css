@@ -1,0 +1,146 @@
+.interface table {
+    width: auto;
+    margin-bottom: 0px;
+    /* Overrides margin-bottom set to 20px by bootstrap.min.css */
+}
+
+.interface .CRUDbuttons {
+    font-size: 14px;
+    margin-top: 5px;
+    padding: 5px;
+}
+
+.interface .glyphicon-plus {
+    color: green;
+}
+
+fieldset {
+    padding: 10px;
+}
+
+.tab-pane {
+    padding: 15px;
+}
+
+.box .row {
+    margin-bottom: 15px;
+}
+
+.interface .cols .options {
+    text-align: right;
+}
+
+.interface .interface-opt {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.interface .interface-opt .btn {
+    margin: 5px 0px 5px 2px;
+}
+
+.interface .box-rows .box-rows-opt {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.box-rows-opt .btn {
+    margin: 5px 0px 5px 2px;
+}
+
+.interface .box-rows .box-rows-li-opt {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+    display: block;
+    padding: 5px 8px;
+    font-size: 12px;
+    /*
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-bottom-left-radius: 4px;
+    */
+}
+
+.box-rows-li-opt .btn {
+    margin-left: 2px;
+}
+
+.interface .panel-heading {
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+
+.interface .panel-heading-options {
+    height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+.interface .panel-heading-options .btn {
+    margin: 3px;
+}
+
+.wordwrap {
+    /* source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
+    white-space: pre-wrap;
+    /* CSS3 */
+    white-space: -moz-pre-wrap;
+    /* Firefox */
+    white-space: -pre-wrap;
+    /* Opera <7 */
+    white-space: -o-pre-wrap;
+    /* Opera 7 */
+    word-wrap: break-word;
+    /* IE */
+}
+
+.sortable-col {
+    min-width: 35px;
+}
+
+.bigalphanumeric .hugealphanumeric {
+    padding: 5px 10px 5px 0px;
+    width: 100%;
+}
+
+.hugealphanumeric:hover {
+    border-width: 1px;
+    border-style: solid;
+    border-color: lightgray;
+    padding-left: 10px;
+    margin-bottom: 1px;
+}
+
+input .ng-invalid .ng-dirty {
+    border: 2px solid red;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.glyphicon {
+    cursor: pointer;
+}
+
+.glyphicon-remove {
+    color: red;
+}
+
+.glyphicon-minus {
+    color: red;
+}
+
+.glyphicon-ok {
+    color: green;
+}
+
+.glyphicon-orange {
+    color: orange;
+}
+
+.glyphicon-blue {
+    color: #428bca;
+}

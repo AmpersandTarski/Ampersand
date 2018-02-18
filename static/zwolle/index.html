@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html ng-app="AmpersandApp">
+    <head>
+        <title>My application</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta charset="UTF-8"/>
+        <meta http-equiv="Expires" content="0"/>
+        <meta http-equiv="Cache-Control" content="no-store"/>
+        <!-- include libraries -->
+        <link href="app/dist/lib/lib.min.css" rel="stylesheet" media="screen" type="text/css"/>
+        <script src="app/dist/lib/lib.min.js"></script>
+        <!-- include ampersand framework -->
+        <link href="app/dist/ampersand.min.css" rel="stylesheet" media="screen" type="text/css"/>
+        <script src="app/dist/ampersand.min.js"></script>
+        <!-- include project application -->
+        <link href="app/dist/project.min.css" rel="stylesheet" media="screen" type="text/css"/>
+        <script src="app/dist/project.min.js"></script>
+    </head>
+    <body>
+        <!-- HEADER -->
+        <div id="header"></div>
+
+        <!-- NAVIGATION BAR -->
+        <div id="navbar" ng-include="'app/src/navbar/navigationBar.html'"></div>
+
+        <!-- MAIN -->
+        <div id="main" class="container">
+            <!--  Notification center -->
+            <div ng-include="'app/src/notifications/notificationCenter.html'"></div>
+            
+            <!-- Placeholder for views (user interfaces) -->
+            <div ng-view></div>
+        </div>
+
+        <!-- FOOTER -->
+        <div id="footer">
+            <div id="ampersand-footer" class="container">
+                <div id="ampersand-footer-logos" class="pull-right">
+                    <a href="http://www.ou.nl"><img src="app/images/logos/logo-ou.png" alt="Open Universiteit" style="height:25px"/></a>
+                    <a href="http://www.tno.nl"><img src="app/images/logos/logo-tno.png" alt="TNO"/></a>
+                    <a href="http://www.ordina.nl"><img src="app/images/logos/logo-ordina.png" alt="Ordina"/></a>
+                </div>
+                <p class="text-muted">This application is developed with <a href="https://github.com/AmpersandTarski/ampersand" target="_blank"><img src="app/images/ampersand.png"/> Ampersand technology</a>.</p>
+            </div>
+        </div>
+    </body>
+</html>

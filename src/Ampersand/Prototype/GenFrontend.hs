@@ -52,23 +52,6 @@ This is considered editable iff the composition rel;relRef yields an editable re
 
 -}
 
-data Include = Include { fileOrDir :: FileOrDir
-                       , includeSrc :: String
-                       , includeTgt :: String
-                       } deriving Show
-
-data FileOrDir = File | Dir deriving Show
-
--- Files/directories that will be copied to the prototype, if present in $adlSourceDir/includes/
-allowedIncludeSubDirs :: [Include]
-allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
-                        , Include Dir  "app"               "app"
-                        , Include Dir  "extensions"        "extensions"
-                        , Include File "localSettings.php" "localSettings.php"
-                        , Include File "composer.json"     "composer.json"
-                        , Include File "composer.local.json" "composer.local.json"
-                        ]
-
 getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 
@@ -93,7 +76,7 @@ clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStr "Generating frontend..\n" 
-    ; copyIncludes fSpec
+    ; copyTemplates fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
@@ -102,51 +85,29 @@ doGenFrontend fSpec =
     ; putStrLn "Frontend generated.\n"
     }
 
-copyIncludes :: FSpec -> IO ()
-copyIncludes fSpec =
+copyTemplates :: FSpec -> IO ()
+copyTemplates fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          includeDir = adlSourceDir </> dirInclude (getOpts fSpec)
-          protoDir = dirPrototype (getOpts fSpec)
-    ; includeDirExists <- doesDirectoryExist includeDir
-    ; if includeDirExists then
-       do { verboseLn (getOpts fSpec) $ "Copying user includes from " ++ includeDir 
-          ; includeDirContents <- map (includeDir </>) <$> getProperDirectoryContents includeDir
-          
-          ; let absIncludes = [ Include { fileOrDir = fileOrDir incl
-                                        , includeSrc = absSd
-                                        , includeTgt = protoDir </> includeTgt incl
-                                        }
-                              | incl <- allowedIncludeSubDirs
-                              , let absSd = includeDir </> includeSrc incl
-                              , absSd `elem` includeDirContents
-                              ]
-                              
-          ; sequence_ (fmap copyInclude absIncludes) -- recursively copy all includes
-                      
-          ; let ignoredPaths = includeDirContents \\ map includeSrc absIncludes
-          ; when (any (\ str -> head str /= '.') ignoredPaths) $  --filter paths starting with a dot, because on mac this is very common and it is a nuisance to avoid (see issue #
-             do { putStrLn $ "\nWARNING: only the following include paths are allowed:\n  " ++ show (map includeSrc allowedIncludeSubDirs) ++ "\n"
-                ; mapM_ (\d -> putStrLn $ "  Ignored " ++ d) ignoredPaths
-                }
-          }
+          tempDir = adlSourceDir </> "templates"
+          toDir = (dirPrototype (getOpts fSpec)) </> "templates"
+    ; tempDirExists <- doesDirectoryExist tempDir
+    ; if tempDirExists then
+        do { verboseLn (getOpts fSpec) $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
+           ; copyDirRecursively tempDir toDir (getOpts fSpec) -- recursively copy all templates
+           }
       else
-        verboseLn (getOpts fSpec) $ "No user includes (there is no directory " ++ includeDir ++ ")"
-    } 
-  where copyInclude :: Include -> IO()
-        copyInclude incl =
-          case fileOrDir incl of
-            File -> copyDeepFile (includeSrc incl) (includeTgt incl) (getOpts fSpec)
-            Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl) (getOpts fSpec)
-          
+        verboseLn (getOpts fSpec) $ "No project specific templates (there is no directory " ++ tempDir ++ ")"
+    }
+
 copyCustomizations :: FSpec -> IO ()
 copyCustomizations fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          custDir = adlSourceDir </> "customizations"
+          custDir = adlSourceDir </> dirCustomizations (getOpts fSpec)
           protoDir = dirPrototype (getOpts fSpec)
     ; custDirExists <- doesDirectoryExist custDir
     ; if custDirExists then
         do { verboseLn (getOpts fSpec) $ "Copying customizations from " ++ custDir ++ " -> " ++ protoDir
-           ; copyDirRecursively custDir protoDir (getOpts fSpec) -- recursively copy all includes
+           ; copyDirRecursively custDir protoDir (getOpts fSpec) -- recursively copy all customizations
            }
       else
         verboseLn (getOpts fSpec) $ "No customizations (there is no directory " ++ custDir ++ ")"
@@ -219,10 +180,10 @@ buildInterface fSpec allIfcs ifc =
                   ; mSpecificTemplatePath <-
                           case mView of
                             Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                              -> return $ Just ("views" </> fName, mapMaybe vsmlabel viewSegs)
+                              -> return $ Just (fName, mapMaybe vsmlabel viewSegs)
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                             do { let templatePath = "views" </> "Atomic-" ++ escapeIdentifier (name tgt) ++ ".html"
+                             do { let templatePath = "Atomic-" ++ escapeIdentifier (name tgt) ++ ".html"
                                 ; hasSpecificTemplate <- doesTemplateExist fSpec templatePath
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
@@ -244,7 +205,7 @@ buildInterface fSpec allIfcs ifc =
                      (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
                      [i]     -> 
                            if siIsLink si
-                           then do { let templatePath = "views" </> "View-LINKTO.html"
+                           then do { let templatePath = "View-LINKTO.html"
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
                                             , iExp)
                                    }
@@ -285,14 +246,14 @@ buildInterface fSpec allIfcs ifc =
 genRouteProvider :: FSpec -> [FEInterface] -> IO ()
 genRouteProvider fSpec ifcs =
  do { --verboseLn opts $ show $ map name (interfaceS fSpec)
-    ; template <- readTemplate fSpec "RouteProvider.js"
+    ; template <- readTemplate fSpec "routeProvider.config.js"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (fsName fSpec)
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "ifcs"                ifcs
                      . setAttribute "verbose"             (verboseP opts)
 
-    ; writePrototypeAppFile opts "RouteProvider.js" contents 
+    ; writePrototypeAppFile opts "routeProvider.config.js" contents 
     }
   where opts = getOpts fSpec
     
@@ -304,7 +265,7 @@ genViewInterfaces fSpec = mapM_ (genViewInterface fSpec)
 genViewInterface :: FSpec -> FEInterface -> IO ()
 genViewInterface fSpec interf =
  do { lns <- genViewObject fSpec 0 (_ifcObj interf)
-    ; template <- readTemplate fSpec "views/Interface.html"
+    ; template <- readTemplate fSpec "interface.html"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                      . setAttribute "isTopLevel"          ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -323,7 +284,7 @@ genViewInterface fSpec interf =
                      . setAttribute "verbose"             (verboseP opts)
 
     ; let filename = "ifc" ++ ifcName interf ++ ".view.html" 
-    ; writePrototypeAppFile opts ("views" </> filename) contents 
+    ; writePrototypeAppFile opts filename contents 
     }
    where opts = getOpts fSpec
 -- Helper data structure to pass attribute values to HStringTemplate
@@ -372,7 +333,7 @@ genViewObject fSpec depth obj =
          do { subObjAttrs <- mapM genView_SubObject subObjs
                     
             ; let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" ++ cl ++ ".html") mClass
-            ; parentTemplate <- readTemplate fSpec $ "views" </> clssStr
+            ; parentTemplate <- readTemplate fSpec clssStr
             
             ; return . indentation
                      . lines 
@@ -394,16 +355,15 @@ genViewObject fSpec depth obj =
         getTemplateForObject :: IO FilePath
         getTemplateForObject 
            | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
-                       = return $  templatePath </> "View-PROPERTY"++".html"
+                       = return $ "View-PROPERTY"++".html"
            | otherwise = getTemplateForConcept (objTarget obj)
         getTemplateForConcept :: A_Concept -> IO FilePath
         getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
                                        return $ if exists
                                                 then cptfn
-                                                else templatePath </> "Atomic-"++show ttp++".html" 
+                                                else "Atomic-"++show ttp++".html" 
            where ttp = cptTType fSpec cpt
-                 cptfn = templatePath </> "Concept-"++name cpt++".html" 
-        templatePath = "views"     
+                 cptfn = "Concept-"++name cpt++".html" 
 ------ Generate controller JavaScript code
 
 genControllerInterfaces :: FSpec -> [FEInterface] -> IO ()
@@ -412,7 +372,7 @@ genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 genControllerInterface :: FSpec -> FEInterface -> IO ()
 genControllerInterface fSpec interf =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
-    ; let controlerTemplateName = "controllers/controller.js"
+    ; let controlerTemplateName = "interface.controller.js"
     ; template <- readTemplate fSpec controlerTemplateName
     ; let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
@@ -432,7 +392,7 @@ genControllerInterface fSpec interf =
                      . setAttribute "verbose"                  (verboseP opts)
                      . setAttribute "usedTemplate"             controlerTemplateName
     ; let filename = "ifc" ++ ifcName interf ++ ".controller.js"
-    ; writePrototypeAppFile opts ("controllers" </> filename) contents 
+    ; writePrototypeAppFile opts filename contents 
     }
     where 
       opts = getOpts fSpec

@@ -14,11 +14,9 @@ use Ampersand\Transaction;
 global $container;
 
 // UI
-$container['angular_app']->addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', 
-    function($app){ 
-        return true;
-    });
-$container['angular_app']->addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
+$container['angular_app']->addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function($app){ 
+    return true;
+});
 
 // API
 $GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'oauthlogin.php';
