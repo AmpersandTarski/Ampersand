@@ -11,6 +11,7 @@ var addStream = require('add-stream')
 var mainBowerFiles = require('gulp-main-bower-files')
 var flatten = require('gulp-flatten')
 var clean = require('gulp-clean')
+const jsValidate = require('gulp-jsvalidate')
 
 function prepareTemplates(folder) {
     return gulp.src(folder + '**/*.html')
@@ -68,6 +69,7 @@ gulp.task('build-ampersand', function (done) {
         .pipe(addStream.obj(prepareTemplates('app/src/')))
         .pipe(sourcemaps.init())
         .pipe(concat('ampersand.js'))
+        .pipe(jsValidate())
         .pipe(ngAnnotate())
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('app/dist'))
@@ -102,6 +104,7 @@ gulp.task('build-project', function (done) {
         .pipe(addStream.obj(prepareTemplates('app/project/')))
         .pipe(sourcemaps.init())
         .pipe(concat('project.js'))
+        .pipe(jsValidate())
         .pipe(ngAnnotate())
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('app/dist'))
