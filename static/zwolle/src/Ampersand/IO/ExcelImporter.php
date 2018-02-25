@@ -26,7 +26,8 @@ class ExcelImporter {
      * 
      * @param \Psr\Log\LoggerInterface $logger
      */
-    function __construct(LoggerInterface $logger){
+    public function __construct(LoggerInterface $logger)
+    {
         $this->logger = $logger;
     }
     

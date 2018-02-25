@@ -630,7 +630,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
                 case null:
                     $cols[] = $relationTable->srcCol();
                     $cols[] = $relationTable->tgtCol();
-                    breal;
+                    break;
                 default:
                     throw new Exception("Unknown/unsupported param option '{$srcOrTgt}'. Supported options are 'src', 'tgt' or null", 500);
                     break;

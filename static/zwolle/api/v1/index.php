@@ -82,6 +82,7 @@ $apiContainer['errorHandler'] = function ($c) use ($container) {
                 case 500:
                     $code = 500;
                     $message = $debugMode ? $exception->getMessage() : "An error occured. Sorry for the temporary inconvenience";
+                    break;
                 default:
                     $code = $exception->getCode();
                     $message = $exception->getMessage();
