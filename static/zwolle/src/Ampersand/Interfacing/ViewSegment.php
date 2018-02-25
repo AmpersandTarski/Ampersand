@@ -14,7 +14,8 @@ use Ampersand\Core\Atom;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class ViewSegment {
+class ViewSegment
+{
 
     /**
      * The view to which this segment belongs to
@@ -62,7 +63,8 @@ class ViewSegment {
      * Constructor of view segments
      * @param array $viewSegmentDef
      */
-    public function __construct($viewSegmentDef, View $view){
+    public function __construct($viewSegmentDef, View $view)
+    {
         $this->view = $view;
         $this->seqNr = $viewSegmentDef['seqNr'];
         $this->label = is_null($viewSegmentDef['label']) ? $viewSegmentDef['seqNr'] : $viewSegmentDef['label'];
@@ -71,18 +73,23 @@ class ViewSegment {
         $this->expADL = $viewSegmentDef['expADL'];
         $this->expSQL = $viewSegmentDef['expSQL'];
         
-        if(!($this->segType === 'Text' || $this->segType === 'Exp')) throw new Exception("Unsupported segmentType '{$this->segType}' in VIEW segment <{$this}>", 501); // 501: Not implemented
+        if (!($this->segType === 'Text' || $this->segType === 'Exp')) {
+            throw new Exception("Unsupported segmentType '{$this->segType}' in VIEW segment <{$this}>", 501); // 501: Not implemented
+        }
     }
     
-    public function __toString(){
+    public function __toString()
+    {
         return $this->view->getLabel() . ":{$this->label}";
     }
 
-    public function getLabel(){
+    public function getLabel()
+    {
         return $this->label;
     }
 
-    public function getType(){
+    public function getType()
+    {
         return $this->segType;
     }
     
@@ -90,17 +97,18 @@ class ViewSegment {
      * @param Atom $srcAtom
      * @return mixed
      */
-    public function getData(Atom $srcAtom){
-        switch ($this->segType){
+    public function getData(Atom $srcAtom)
+    {
+        switch ($this->segType) {
             case "Text":
                 return $this->text;
                 break;
             case "Exp":
                 // Try to get view segment from atom query data
                 $data = $srcAtom->getQueryData('view_' . $this->label, $exists); // column is prefixed with view_
-                if($exists){
+                if ($exists) {
                     return $data;
-                }else{
+                } else {
                     $tgtAtoms = $this->view->plug->executeViewExpression($this, $srcAtom);
                     return count($tgtAtoms) ? $tgtAtoms[0] : null;
                 }
@@ -115,7 +123,8 @@ class ViewSegment {
      * Returns query of view segment
      * @return string
      */
-    public function getQuery(){
+    public function getQuery()
+    {
         return str_replace('_SESSION', session_id(), $this->expSQL); // Replace _SESSION var with current session id.
     }
 
@@ -125,7 +134,8 @@ class ViewSegment {
      * @param string $query
      * @return void
      */
-    public function setQuery(string $query){
+    public function setQuery(string $query)
+    {
         $this->segType = 'Exp';
         $this->expSQL = $query;
     }

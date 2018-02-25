@@ -44,32 +44,33 @@ class AmpersandApp
 
     /**
      * The session between AmpersandApp and user
-     * 
+     *
      * @var Session
      */
     protected $session = null;
 
     /**
      * List of accessible interfaces for the user of this Ampersand application
-     * 
+     *
      * @var \Ampersand\Interfacing\InterfaceObject[] $accessibleInterfaces
      */
     protected $accessibleInterfaces = [];
     
     /**
      * List with rules that are maintained by the activated roles in this Ampersand application
-     * 
+     *
      * @var \Ampersand\Rule\Rule[] $rulesToMaintain
      */
     protected $rulesToMaintain = []; // rules that are maintained by active roles
     
     /**
      * Constructor
-     * 
+     *
      * @param \Ampersand\Plugs\StorageInterface $defaultPlug
      * @param \Psr\Log\LoggerInterface $logger
      */
-    public function __construct(StorageInterface $defaultPlug, LoggerInterface $logger){
+    public function __construct(StorageInterface $defaultPlug, LoggerInterface $logger)
+    {
         $this->logger = $logger;
 
         $genericsFolder = Config::get('pathToGeneratedFiles');
@@ -93,21 +94,24 @@ class AmpersandApp
         $this->setInterfacesAndRules();
     }
     
-    public function registerStorage(StorageInterface $storage){
+    public function registerStorage(StorageInterface $storage)
+    {
         $this->logger->debug("Add storage: " . $storage->getLabel());
         $this->storages[] = $storage;
     }
 
-    protected function setSession(){
+    protected function setSession()
+    {
         $this->session = new Session(Logger::getLogger('SESSION'));
     }
 
-    protected function setInterfacesAndRules(){
+    protected function setInterfacesAndRules()
+    {
         // Add public interfaces
         $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
 
         // Add interfaces and rules for all active session roles
-        foreach ($this->getActiveRoles() as $roleAtom){
+        foreach ($this->getActiveRoles() as $roleAtom) {
             $role = Role::getRoleByName($roleAtom->id);
             $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
             $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
@@ -123,7 +127,8 @@ class AmpersandApp
      *
      * @return Session
      */
-    public function getSession(){
+    public function getSession()
+    {
         return $this->session;
     }
 
@@ -132,7 +137,8 @@ class AmpersandApp
      *
      * @return \Ampersand\Interfacing\InterfaceObject[]
      */
-    public function getAccessibleInterfaces(){
+    public function getAccessibleInterfaces()
+    {
         return $this->accessibleInterfaces;
     }
 
@@ -141,7 +147,8 @@ class AmpersandApp
      *
      * @return \Ampersand\Rule\Rule[]
      */
-    public function getRulesToMaintain(){
+    public function getRulesToMaintain()
+    {
         return $this->rulesToMaintain;
     }
 
@@ -150,7 +157,8 @@ class AmpersandApp
      *
      * @return void
      */
-    public function login(Atom $account){
+    public function login(Atom $account)
+    {
         // Set sessionAccount
         $this->session->setSessionAccount($account);
 
@@ -166,33 +174,39 @@ class AmpersandApp
      *
      * @return void
      */
-    public function logout(){
+    public function logout()
+    {
         $this->session->reset();
         $this->setInterfacesAndRules();
     }
 
     /**
      * Function to reinstall the application. This includes database structure and load default population
-     * 
+     *
      * @param boolean $installDefaultPop specifies whether or not to install the default population
      * @return \Ampersand\Transaction in which application is reinstalled
      */
-    public function reinstall($installDefaultPop = true): Transaction {
+    public function reinstall($installDefaultPop = true): Transaction
+    {
         $this->logger->info("Start application reinstall");
 
-        foreach($this->storages as $storage) $storage->reinstallStorage();
+        foreach ($this->storages as $storage) {
+            $storage->reinstallStorage();
+        }
 
         // Clear atom cache
-        foreach(Concept::getAllConcepts() as $cpt) $cpt->clearAtomCache();
+        foreach (Concept::getAllConcepts() as $cpt) {
+            $cpt->clearAtomCache();
+        }
 
-        if($installDefaultPop){
+        if ($installDefaultPop) {
             $this->logger->info("Install default population");
 
             $reader = new JSONReader();
             $reader->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
             $importer = new Importer($reader, Logger::getLogger('IO'));
             $importer->importPopulation();
-        }else{
+        } else {
             $this->logger->info("Skip default population");
         }
 
@@ -204,7 +218,7 @@ class AmpersandApp
         $this->logger->info("Initial evaluation of all conjuncts after application reinstallation");
         
         // Evaluate all conjunct and save cache
-        foreach(Conjunct::getAllConjuncts() as $conj){
+        foreach (Conjunct::getAllConjuncts() as $conj) {
             $conj->evaluate(true);
             $conj->saveCache();
         }
@@ -220,7 +234,8 @@ class AmpersandApp
      * @param array $roles
      * @return void
      */
-    public function setActiveRoles(array $roles) {
+    public function setActiveRoles(array $roles)
+    {
         foreach ($roles as $role) {
             // Set sessionActiveRoles[SESSION*Role]
             $this->session->toggleActiveRole(Concept::makeRoleAtom($role->label), $role->active);
@@ -234,19 +249,21 @@ class AmpersandApp
 
     /**
      * Get allowed roles
-     * 
+     *
      * @return \Ampersand\Core\Atom[]
      */
-    public function getAllowedRoles(){
+    public function getAllowedRoles()
+    {
         return $this->session->getSessionAllowedRoles();
     }
 
     /**
      * Get active roles
-     * 
+     *
      * @return \Ampersand\Core\Atom[]
      */
-    public function getActiveRoles(): array {
+    public function getActiveRoles(): array
+    {
         return $this->session->getSessionActiveRoles();
     }
 
@@ -255,10 +272,11 @@ class AmpersandApp
      *
      * @return array
      */
-    public function getSessionRoles(): array {
+    public function getSessionRoles(): array
+    {
         $activeRoleIds = array_column($this->getActiveRoles(), 'id');
         
-        return array_map(function(Atom $roleAtom) use ($activeRoleIds){
+        return array_map(function (Atom $roleAtom) use ($activeRoleIds) {
             return (object) ['id' => $roleAtom->id
                             ,'label' => $roleAtom->getLabel()
                             ,'active' => in_array($roleAtom->id, $activeRoleIds)
@@ -272,12 +290,15 @@ class AmpersandApp
      * @param string[] $roles
      * @return bool
      */
-    public function hasRole(array $roles = null): bool {
+    public function hasRole(array $roles = null): bool
+    {
         // If provided roles is null (i.e. NOT empty array), then true
-        if(is_null($roles)) return true;
+        if (is_null($roles)) {
+            return true;
+        }
 
         // Check for allowed roles
-        return array_reduce($this->getAllowedRoles(), function(bool $carry, Atom $role) use ($roles) {
+        return array_reduce($this->getAllowedRoles(), function (bool $carry, Atom $role) use ($roles) {
             return in_array($role->id, $roles) || $carry;
         }, false);
     }
@@ -288,12 +309,15 @@ class AmpersandApp
      * @param string[] $roles
      * @return bool
      */
-    public function hasActiveRole(array $roles = null): bool {
+    public function hasActiveRole(array $roles = null): bool
+    {
         // If provided roles is null (i.e. NOT empty array), then true
-        if(is_null($roles)) return true;
+        if (is_null($roles)) {
+            return true;
+        }
 
         // Check for active roles
-        return array_reduce($this->getActiveRoles(), function(bool $carry, Atom $role) use ($roles) {
+        return array_reduce($this->getActiveRoles(), function (bool $carry, Atom $role) use ($roles) {
             return in_array($role->id, $roles) || $carry;
         }, false);
     }
@@ -303,14 +327,17 @@ class AmpersandApp
      * @param \Ampersand\Core\Concept[] $concepts
      * @return \Ampersand\Interfacing\InterfaceObject[]
      */
-    public function getInterfacesToReadConcepts($concepts){
+    public function getInterfacesToReadConcepts($concepts)
+    {
         return array_values(
-            array_filter($this->accessibleInterfaces, function($ifc) use ($concepts) {
-                foreach($concepts as $cpt){
-                    if($ifc->srcConcept->hasSpecialization($cpt, true)
+            array_filter($this->accessibleInterfaces, function ($ifc) use ($concepts) {
+                foreach ($concepts as $cpt) {
+                    if ($ifc->srcConcept->hasSpecialization($cpt, true)
                         && $ifc->crudR()
                         && (!$ifc->crudC() or ($ifc->crudU() or $ifc->crudD()))
-                        ) return true;
+                        ) {
+                        return true;
+                    }
                 }
                 return false;
             })
@@ -322,8 +349,9 @@ class AmpersandApp
      * @param \Ampersand\Core\Concept $concept
      * @return boolean
      */
-    public function isEditableConcept(Concept $concept){
-        return array_reduce($this->accessibleInterfaces, function($carry, $ifc) use ($concept){
+    public function isEditableConcept(Concept $concept)
+    {
+        return array_reduce($this->accessibleInterfaces, function ($carry, $ifc) use ($concept) {
             return ($carry || in_array($concept, $ifc->getEditableConcepts()));
         }, false);
     }
@@ -333,19 +361,23 @@ class AmpersandApp
      * @param \Ampersand\Interfacing\InterfaceObject $ifc
      * @return boolean
      */
-    public function isAccessibleIfc(InterfaceObject $ifc){
+    public function isAccessibleIfc(InterfaceObject $ifc)
+    {
         return in_array($ifc, $this->accessibleInterfaces, true);
     }
 
     /**
      * Evaluate and signal violations for all rules that are maintained by the activated roles
-     * 
+     *
      * @return void
      */
-    public function checkProcessRules(){
+    public function checkProcessRules()
+    {
         $this->logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'id')));
         
         // Check rules and signal notifications for all violations
-        foreach (RuleEngine::checkRules($this->getRulesToMaintain(), true) as $violation) Notifications::addSignal($violation);
+        foreach (RuleEngine::checkRules($this->getRulesToMaintain(), true) as $violation) {
+            Notifications::addSignal($violation);
+        }
     }
 }

@@ -4,7 +4,8 @@ namespace Ampersand\IO;
 
 use Psr\Http\Message\StreamInterface;
 
-abstract class AbstractWriter {
+abstract class AbstractWriter
+{
     
     /**
      * The stream used to output
@@ -18,7 +19,8 @@ abstract class AbstractWriter {
      * @param \Psr\Http\Message\StreamInterface $stream (e.g. stream)
      * @param array $options Configuration options
      */
-    public function __construct(StreamInterface $stream = null, array $options = []){
+    public function __construct(StreamInterface $stream = null, array $options = [])
+    {
         if (is_null($stream)) {
             $this->stream = fopen('php://temp', 'w+');
         } else {
@@ -26,15 +28,18 @@ abstract class AbstractWriter {
         }
     }
 
-    public function write($data){
+    public function write($data)
+    {
         $this->stream->write($data);
     }
 
-    public function getContent(){
+    public function getContent()
+    {
         return $this->stream->getContents();
     }
 
-    public function close(){
+    public function close()
+    {
         $this->stream->close();
     }
 }

@@ -22,7 +22,8 @@ use Psr\Log\LoggerInterface;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Relation {
+class Relation
+{
     
     /**
      * Contains all relation definitions
@@ -39,7 +40,7 @@ class Relation {
     /**
      * Dependency injection of plug implementation
      * There must at least be one plug for every relation
-     * 
+     *
      * @var \Ampersand\Plug\RelationPlugInterface[]
      */
     protected $plugs = [];
@@ -51,25 +52,25 @@ class Relation {
     protected $primaryPlug;
     
     /**
-     * 
+     *
      * @var string
      */
     public $signature;
     
     /**
-     * 
+     *
      * @var string
      */
     public $name;
     
     /**
-     * 
+     *
      * @var Concept
      */
     public $srcConcept;
     
     /**
-     * 
+     *
      * @var Concept
      */
     public $tgtConcept;
@@ -80,38 +81,38 @@ class Relation {
     public $isUni;
     
     /**
-     * 
+     *
      * @var boolean
      */
     public $isTot;
     
     /**
-     * 
+     *
      * @var boolean
      */
     public $isInj;
     
     /**
-     * 
+     *
      * @var boolean
      */
     public $isSur;
     
     /**
-     * 
+     *
      * @var boolean
      */
     public $isProp;
     
     /**
      * List of conjuncts that are affected by adding or removing a link in this relation
-     * 
+     *
      * @var \Ampersand\Rule\Conjunct[]
      */
     public $relatedConjuncts = [];
     
     /**
-     * 
+     *
      * @var \Ampersand\Plugs\MysqlDB\MysqlDBRelationTable
      */
     private $mysqlTable;
@@ -124,7 +125,8 @@ class Relation {
      * @param \Psr\Log\LoggerInterface $logger
      * @param \Ampersand\Plugs\RelationPlugInterface $defaultPlug
      */
-    public function __construct($relationDef, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null){
+    public function __construct($relationDef, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null)
+    {
         $this->logger = $logger;
 
         $this->name = $relationDef['name'];
@@ -139,12 +141,14 @@ class Relation {
         $this->isSur = $relationDef['sur'];
         $this->isProp = $relationDef['prop'];
         
-        foreach((array)$relationDef['affectedConjuncts'] as $conjId){
+        foreach ((array)$relationDef['affectedConjuncts'] as $conjId) {
             $conj = Conjunct::getConjunct($conjId);
             $this->relatedConjuncts[] = $conj;
         }
         
-        if(!is_null($defaultPlug)) $this->addPlug($defaultPlug);
+        if (!is_null($defaultPlug)) {
+            $this->addPlug($defaultPlug);
+        }
 
         // Specify mysql table information
         $this->mysqlTable = new MysqlDBRelationTable($relationDef['mysqlTable']['name'], $relationDef['mysqlTable']['tableOf']);
@@ -160,7 +164,8 @@ class Relation {
      * Function is called when object is treated as a string
      * @return string
      */
-    public function __toString(){
+    public function __toString()
+    {
         return $this->getSignature();
     }
     
@@ -168,7 +173,8 @@ class Relation {
      * Return signature of relation (format: relName[srcConceptName*tgtConceptName])
      * @return string
      */
-    public function getSignature(){
+    public function getSignature()
+    {
         return "{$this->name}[{$this->srcConcept}*{$this->tgtConcept}]";
     }
     
@@ -176,15 +182,17 @@ class Relation {
      * Returns array with signal conjuncts that are affected by updating this Relation
      * @return Conjunct[]
      */
-    public function getRelatedConjuncts(){
+    public function getRelatedConjuncts()
+    {
         return $this->relatedConjuncts;
     }
     
     /**
-     * 
+     *
      * @return \Ampersand\Plugs\MysqlDB\MysqlDBRelationTable
      */
-    public function getMysqlTable(): MysqlDBRelationTable {
+    public function getMysqlTable(): MysqlDBRelationTable
+    {
         return $this->mysqlTable;
     }
 
@@ -193,8 +201,11 @@ class Relation {
      *
      * @return \Ampersand\Plugs\RelationPlugInterface[]
      */
-    public function getPlugs(){
-        if(empty($this->plugs)) throw new Exception("No plug(s) provided for relation {$this->getSignature()}", 500);
+    public function getPlugs()
+    {
+        if (empty($this->plugs)) {
+            throw new Exception("No plug(s) provided for relation {$this->getSignature()}", 500);
+        }
         return $this->plugs;
     }
 
@@ -204,9 +215,14 @@ class Relation {
      * @param \Ampersand\Plugs\RelationPlugInterface $plug
      * @return void
      */
-    protected function addPlug(RelationPlugInterface $plug){
-        if(!in_array($plug, $this->plugs)) $this->plugs[] = $plug;
-        if(count($this->plugs) === 1) $this->primaryPlug = $plug;
+    protected function addPlug(RelationPlugInterface $plug)
+    {
+        if (!in_array($plug, $this->plugs)) {
+            $this->plugs[] = $plug;
+        }
+        if (count($this->plugs) === 1) {
+            $this->primaryPlug = $plug;
+        }
     }
     
     /**
@@ -214,7 +230,8 @@ class Relation {
      * @param Link $link
      * @return boolean
      */
-    public function linkExists(Link $link){
+    public function linkExists(Link $link)
+    {
         $this->logger->debug("Checking if link {$link} exists in plug");
         
         return $this->primaryPlug->linkExists($link);
@@ -226,7 +243,8 @@ class Relation {
     * @param Atom $tgtAtom if specified get all links with $tgtAtom as tgt
     * @return Link[]
     */
-    public function getAllLinks(Atom $srcAtom = null, Atom $tgtAtom = null){
+    public function getAllLinks(Atom $srcAtom = null, Atom $tgtAtom = null)
+    {
         return $this->primaryPlug->getAllLinks($this, $srcAtom, $tgtAtom);
     }
     
@@ -235,7 +253,8 @@ class Relation {
      * @param Link $link
      * @return void
      */
-    public function addLink(Link $link){
+    public function addLink(Link $link)
+    {
         $this->logger->debug("Add link {$link} to plug");
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation and transaction management
         
@@ -243,7 +262,9 @@ class Relation {
         $link->src()->add(); // TODO: remove when we know for sure that this is guaranteed by calling functions
         $link->tgt()->add(); // TODO: remove when we know for sure that this is guaranteed by calling functions
         
-        foreach($this->getPlugs() as $plug) $plug->addLink($link);
+        foreach ($this->getPlugs() as $plug) {
+            $plug->addLink($link);
+        }
     }
     
     /**
@@ -251,11 +272,14 @@ class Relation {
      * @param Link $link
      * @return void
      */
-    public function deleteLink(Link $link){
+    public function deleteLink(Link $link)
+    {
         $this->logger->debug("Delete link {$link} from plug");
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation and transaction management
         
-        foreach($this->getPlugs() as $plug) $plug->deleteLink($link);
+        foreach ($this->getPlugs() as $plug) {
+            $plug->deleteLink($link);
+        }
     }
     
     /**
@@ -263,20 +287,27 @@ class Relation {
      * @param string $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
      * @return void
      */
-    public function deleteAllLinks(Atom $atom, $srcOrTgt = null){
+    public function deleteAllLinks(Atom $atom, $srcOrTgt = null)
+    {
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation and transaction management
         switch ($srcOrTgt) {
             case 'src':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src");
-                foreach($this->getPlugs() as $plug) $plug->deleteAllLinks($this, $atom, 'src');
+                foreach ($this->getPlugs() as $plug) {
+                    $plug->deleteAllLinks($this, $atom, 'src');
+                }
                 break;
             case 'tgt':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as tgt");
-                foreach($this->getPlugs() as $plug) $plug->deleteAllLinks($this, $atom, 'tgt');
+                foreach ($this->getPlugs() as $plug) {
+                    $plug->deleteAllLinks($this, $atom, 'tgt');
+                }
                 break;
             case null:
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src or tgt");
-                foreach($this->getPlugs() as $plug) $plug->deleteAllLinks($this, $atom, null);
+                foreach ($this->getPlugs() as $plug) {
+                    $plug->deleteAllLinks($this, $atom, null);
+                }
                 break;
             default:
                 throw new Exception("Unknown/unsupported param option '{$srcOrTgt}'. Supported options are 'src', 'tgt' or null", 500);
@@ -290,17 +321,27 @@ class Relation {
      *
      *********************************************************************************************/
     
-    public static function deleteAllLinksWithAtom(Atom $atom){
-        foreach (self::getAllRelations() as $relation){
-            if($relation->srcConcept->inSameClassificationTree($atom->concept)) $relation->deleteAllLinks($atom, 'src');
-            if($relation->tgtConcept->inSameClassificationTree($atom->concept)) $relation->deleteAllLinks($atom, 'tgt');
+    public static function deleteAllLinksWithAtom(Atom $atom)
+    {
+        foreach (self::getAllRelations() as $relation) {
+            if ($relation->srcConcept->inSameClassificationTree($atom->concept)) {
+                $relation->deleteAllLinks($atom, 'src');
+            }
+            if ($relation->tgtConcept->inSameClassificationTree($atom->concept)) {
+                $relation->deleteAllLinks($atom, 'tgt');
+            }
         }
     }
     
-    public static function deleteAllSpecializationLinks(Atom $atom){
-        foreach (self::getAllRelations() as $relation){
-            if($relation->srcConcept->hasSpecialization($atom->concept)) $relation->deleteAllLinks($atom, 'src');
-            if($relation->tgtConcept->hasSpecialization($atom->concept)) $relation->deleteAllLinks($atom, 'tgt');
+    public static function deleteAllSpecializationLinks(Atom $atom)
+    {
+        foreach (self::getAllRelations() as $relation) {
+            if ($relation->srcConcept->hasSpecialization($atom->concept)) {
+                $relation->deleteAllLinks($atom, 'src');
+            }
+            if ($relation->tgtConcept->hasSpecialization($atom->concept)) {
+                $relation->deleteAllLinks($atom, 'tgt');
+            }
         }
     }
     
@@ -312,30 +353,41 @@ class Relation {
      * @throws Exception if Relation is not defined
      * @return Relation
      */
-    public static function getRelation($relationSignature, Concept $srcConcept = null, Concept $tgtConcept = null){
+    public static function getRelation($relationSignature, Concept $srcConcept = null, Concept $tgtConcept = null)
+    {
         $relations = self::getAllRelations();
         
-        if(isset($srcConcept) && !($srcConcept instanceof Concept)) $srcConcept = Concept::getConceptByLabel($srcConcept);
-        if(isset($srcConcept) && !($tgtConcept instanceof Concept)) $tgtConcept = Concept::getConceptByLabel($tgtConcept);
+        if (isset($srcConcept) && !($srcConcept instanceof Concept)) {
+            $srcConcept = Concept::getConceptByLabel($srcConcept);
+        }
+        if (isset($srcConcept) && !($tgtConcept instanceof Concept)) {
+            $tgtConcept = Concept::getConceptByLabel($tgtConcept);
+        }
         
         // If relation can be found by its fullRelationSignature return the relation
-        if(array_key_exists($relationSignature, $relations)){
+        if (array_key_exists($relationSignature, $relations)) {
             $relation = $relations[$relationSignature];
             
             // If srcConceptName and tgtConceptName are provided, check that they match the found relation
-            if(!is_null($srcConcept) && !in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())) throw new Exception("Provided src concept '{$srcConcept}' does not match the relation '{$relation}'", 500);  
-            if(!is_null($tgtConcept) && !in_array($tgtConcept, $relation->tgtConcept->getSpecializationsIncl())) throw new Exception("Provided tgt concept '{$tgtConcept}' does not match the relation '{$relation}'", 500);
+            if (!is_null($srcConcept) && !in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())) {
+                throw new Exception("Provided src concept '{$srcConcept}' does not match the relation '{$relation}'", 500);
+            }
+            if (!is_null($tgtConcept) && !in_array($tgtConcept, $relation->tgtConcept->getSpecializationsIncl())) {
+                throw new Exception("Provided tgt concept '{$tgtConcept}' does not match the relation '{$relation}'", 500);
+            }
             
             return $relation;
         }
         
         // Else try to find the relation by its name, srcConcept and tgtConcept
-        if(!is_null($srcConcept) && !is_null($tgtConcept)){
-            foreach ($relations as $relation){
-                if($relation->name == $relationSignature 
+        if (!is_null($srcConcept) && !is_null($tgtConcept)) {
+            foreach ($relations as $relation) {
+                if ($relation->name == $relationSignature
                         && in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())
                         && in_array($tgtConcept, $relation->tgtConcept->getSpecializationsIncl())
-                  ) return $relation;
+                  ) {
+                    return $relation;
+                }
             }
         }
         
@@ -347,8 +399,11 @@ class Relation {
      * Returns array with all Relation objects
      * @return Relation[]
      */
-    public static function getAllRelations(){
-        if(!isset(self::$allRelations)) throw new Exception("Relation definitions not loaded yet", 500);
+    public static function getAllRelations()
+    {
+        if (!isset(self::$allRelations)) {
+            throw new Exception("Relation definitions not loaded yet", 500);
+        }
          
         return self::$allRelations;
     }
@@ -360,15 +415,14 @@ class Relation {
      * @param array $relationSignatures
      * @return void
      */
-    public static function registerPlug(RelationPlugInterface $plug, array $relationSignatures = null){
+    public static function registerPlug(RelationPlugInterface $plug, array $relationSignatures = null)
+    {
         // Add plugs for all relations
         if (is_null($relationSignatures)) {
             foreach (self::getAllRelations() as $rel) {
                 $rel->addPlug($plug);
             }
-        }
-
-        // Only for specific relations
+        } // Only for specific relations
         else {
             foreach ($relationSignatures as $rel) {
                 (self::getRelation($rel))->addPlug($plug);
@@ -378,21 +432,22 @@ class Relation {
     
     /**
      * Import all Relation definitions from json file and instantiate Relation objects
-     * 
+     *
      * @param string $fileName containing the Ampersand relation definitions
      * @param \Psr\Log\LoggerInterface $logger
      * @param \Ampersand\Plugs\RelationPlugInterface $defaultPlug
      * @return void
      */
-    public static function setAllRelations(string $fileName, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null){
+    public static function setAllRelations(string $fileName, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null)
+    {
         self::$allRelations = [];
     
         // Import json file
         $allRelationDefs = (array)json_decode(file_get_contents($fileName), true);
     
-        foreach ($allRelationDefs as $relationDef){
+        foreach ($allRelationDefs as $relationDef) {
             $relation = new Relation($relationDef, $logger, $defaultPlug);
-            self::$allRelations[$relation->signature] = $relation; 
+            self::$allRelations[$relation->signature] = $relation;
         }
     }
 }

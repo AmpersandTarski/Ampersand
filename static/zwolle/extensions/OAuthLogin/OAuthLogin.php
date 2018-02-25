@@ -8,20 +8,21 @@ use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Transaction;
 
-/** 
+/**
  * @var \Pimple\Container $container
  */
 global $container;
 
 // UI
-$container['angular_app']->addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function($app){ 
+$container['angular_app']->addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function ($app) {
     return true;
 });
 
 // API
 $GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'oauthlogin.php';
 
-class OAuthLoginController {
+class OAuthLoginController
+{
 
     private $token_url;
     private $client_id;
@@ -31,14 +32,16 @@ class OAuthLoginController {
     private $tokenObj;
     private $dataObj;
 
-    function __construct($client_id,$client_secret,$redirect_uri,$token_url){
+    public function __construct($client_id, $client_secret, $redirect_uri, $token_url)
+    {
         $this->client_id = $client_id;
         $this->client_secret = $client_secret;
         $this->redirect_uri = $redirect_uri;
         $this->token_url = $token_url;
     }
 
-    public function requestToken($code){
+    public function requestToken($code)
+    {
         // Setup token request
         $token_request = array(
                 'token_url' => $this->token_url,
@@ -53,22 +56,25 @@ class OAuthLoginController {
 
         // Make HTTP POST request to OAUTH host to get token
         $curl = curl_init();
-        curl_setopt_array($curl, 
+        curl_setopt_array(
+            $curl,
             array( CURLOPT_RETURNTRANSFER => 1
                  , CURLOPT_URL => $token_request['token_url']
                  , CURLOPT_USERAGENT => Config::get('contextName')
                  , CURLOPT_POST => 1
-                 , CURLOPT_POSTFIELDS => http_build_query ($token_request['arguments'])
+                 , CURLOPT_POSTFIELDS => http_build_query($token_request['arguments'])
                  , CURLOPT_HTTPHEADER => array('Content-Type: application/x-www-form-urlencoded', 'Accept: application/json')
                  , CURLOPT_CAINFO => __DIR__ . '/cacert.pem'
                  )
-            );
+        );
 
         // Send the request & save response to $resp
         $token_resp = curl_exec($curl);
 
         // Check if response is received:
-        if(!$token_resp) throw new Exception('Error: "' . curl_error($curl) . '" - Code: ' . curl_errno($curl), 500);
+        if (!$token_resp) {
+            throw new Exception('Error: "' . curl_error($curl) . '" - Code: ' . curl_errno($curl), 500);
+        }
 
         // Close request to clear up some resources
         curl_close($curl);
@@ -76,10 +82,9 @@ class OAuthLoginController {
         // Decode token JSON response to stdObj and return
         $this->tokenObj = json_decode($token_resp);
         
-        if(!isset($this->tokenObj->access_token)){
-            
+        if (!isset($this->tokenObj->access_token)) {
             $error = "Error: Someting went wrong getting token, '" . $this->tokenObj->error . "'";
-            if(isset($this->tokenObj->error_description)){
+            if (isset($this->tokenObj->error_description)) {
                 $error .= " Description: '" . $this->tokenObj->error_description . "'";
             }
             throw new Exception($error, 500);
@@ -88,26 +93,32 @@ class OAuthLoginController {
         return true;
     }
 
-    public function requestData($api_url){
+    public function requestData($api_url)
+    {
         
-        if(!isset($this->tokenObj)) throw new Exception("Error: No token set", 500);
+        if (!isset($this->tokenObj)) {
+            throw new Exception("Error: No token set", 500);
+        }
         
         // Do a HTTP HEADER request to the API_URL
         $curl = curl_init();
-        curl_setopt_array($curl, 
+        curl_setopt_array(
+            $curl,
             array( CURLOPT_RETURNTRANSFER => 1
                  , CURLOPT_URL => $api_url
                  , CURLOPT_USERAGENT => Config::get('contextName')
                  , CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . $this->tokenObj->access_token, 'x-li-format: json')
                  , CURLOPT_CAINFO => __DIR__ . '/cacert.pem'
                  )
-            );
+        );
 
         // Execute request
         $data_resp = curl_exec($curl);
         
         // Check if response is received:
-        if(!$data_resp) throw new Exception('Error: "' . curl_error($curl) . '" - Code: ' . curl_errno($curl), 500);
+        if (!$data_resp) {
+            throw new Exception('Error: "' . curl_error($curl) . '" - Code: ' . curl_errno($curl), 500);
+        }
         
         // Close request to clear up some resources
         curl_close($curl);
@@ -116,14 +127,22 @@ class OAuthLoginController {
         return $this->dataObj = json_decode($data_resp);
     }
 
-    public function getToken(){
-        if(!isset($this->tokenObj)) return false;
-        else return $this->tokenObj;
+    public function getToken()
+    {
+        if (!isset($this->tokenObj)) {
+            return false;
+        } else {
+            return $this->tokenObj;
+        }
     }
 
-    public function getData(){
-        if(!isset($this->dataObj)) return false;
-        else return $this->dataObj;
+    public function getData()
+    {
+        if (!isset($this->dataObj)) {
+            return false;
+        } else {
+            return $this->dataObj;
+        }
     }
     
     /**
@@ -133,12 +152,17 @@ class OAuthLoginController {
      * @param string $idp
      * @return bool
      */
-    public static function authenticate(string $code, string $idp): bool {
+    public static function authenticate(string $code, string $idp): bool
+    {
         $identityProviders = Config::get('identityProviders', 'OAuthLogin');
 
-        if(empty($code)) throw new Exception("Oops. Someting went wrong during login. Please try again", 401);
+        if (empty($code)) {
+            throw new Exception("Oops. Someting went wrong during login. Please try again", 401);
+        }
 
-        if(!isset($identityProviders[$idp])) throw new Exception("Unknown identity provider", 500);
+        if (!isset($identityProviders[$idp])) {
+            throw new Exception("Unknown identity provider", 500);
+        }
 
         $client_id         = $identityProviders[$idp]['clientId'];
         $client_secret     = $identityProviders[$idp]['clientSecret'];
@@ -147,12 +171,12 @@ class OAuthLoginController {
         $api_url         = $identityProviders[$idp]['apiUrl'];
 
         // instantiate authController
-        $authController = new OAuthLoginController($client_id,$client_secret,$redirect_uri,$token_url);
+        $authController = new OAuthLoginController($client_id, $client_secret, $redirect_uri, $token_url);
 
         // request token
-        if($authController->requestToken($code)){
+        if ($authController->requestToken($code)) {
             // request data
-            if($authController->requestData($api_url)){
+            if ($authController->requestData($api_url)) {
                 // Get email here
                 $email = null;
                 switch ($idp) {
@@ -162,13 +186,19 @@ class OAuthLoginController {
                         break;
                     case 'google':
                         $email = $authController->getData()->email;
-                        if(!$authController->getData()->verified_email) throw new Exception("Google emailaddress is not verified", 500);
+                        if (!$authController->getData()->verified_email) {
+                            throw new Exception("Google emailaddress is not verified", 500);
+                        }
                         break;
                     case 'github':
                         foreach ($authController->getData() as $data) {
-                            if($data->primary && $data->verified) $email = $data->email;
+                            if ($data->primary && $data->verified) {
+                                $email = $data->email;
+                            }
                         }
-                        if(is_null($email)) throw new Exception("Github primary emailaddress is not verified", 500);
+                        if (is_null($email)) {
+                            throw new Exception("Github primary emailaddress is not verified", 500);
+                        }
                         break;
                     default:
                         throw new Exception("Unknown identity provider", 500);
@@ -182,7 +212,6 @@ class OAuthLoginController {
         } else {
             return false;
         }
-
     }
     
     /**
@@ -192,16 +221,19 @@ class OAuthLoginController {
      * @param string $email
      * @return boolean
      */
-    private function login(string $email): bool {
+    private function login(string $email): bool
+    {
         /** @var \Pimple\Container $container */
         global $container;
 
-        if(empty($email)) throw new Exception("No emailaddress provided to login", 500);
+        if (empty($email)) {
+            throw new Exception("No emailaddress provided to login", 500);
+        }
         
         $accounts = Resource::makeResource($email, 'UserID')->all('AccountForUserid');
         
         // Create new account
-        if(iterator_count($accounts) == 0){
+        if (iterator_count($accounts) == 0) {
             $account = Resource::makeResource(null, 'Account');
             
             // Save email as accUserid
@@ -211,25 +243,25 @@ class OAuthLoginController {
                 // If possible, add account to organization(s) based on domain name
                 $domain = explode('@', $email)[1];
                 $orgs = Resource::makeResource($domain, 'Domain')->all('DomainOrgs');
-                foreach ($orgs as $org) $account->link($org, 'accOrg[Account*Organization]')->add();
+                foreach ($orgs as $org) {
+                    $account->link($org, 'accOrg[Account*Organization]')->add();
+                }
             } catch (Exception $e) {
                 // Domain orgs not supported => skip
             }
-
-        }elseif(iterator_count($accounts) == 1){
+        } elseif (iterator_count($accounts) == 1) {
             $account = current($accounts);
-        }else{
+        } else {
             throw new Exception("Multiple users registered with email $email", 401);
         }
         
         // Login account
         $container['ampersand_app']->login($account); // Automatically closes transaction
 
-        if(Transaction::getCurrentTransaction()->isCommitted()) {
+        if (Transaction::getCurrentTransaction()->isCommitted()) {
             Logger::getUserLogger()->notice("Login successfull");
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }

@@ -16,7 +16,8 @@ use Ampersand\Rule\Rule;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Role {
+class Role
+{
     /**
      * Contains all role definitions
      * @var Role[]
@@ -56,46 +57,50 @@ class Role {
     /**
      * Constructor of role
      * Private function to prevent outside instantiation of roles. Use Role::getRoleById($roleId) or Role::getRoleByName($roleName)
-     * 
+     *
      * @param array $roleDef
      */
-    private function __construct($roleDef){
+    private function __construct($roleDef)
+    {
         $this->id = $roleDef['id'];
         $this->label = $roleDef['name'];
         
-        foreach((array)$roleDef['maintains'] as $ruleName){
+        foreach ((array)$roleDef['maintains'] as $ruleName) {
             $this->maintains[] = Rule::getRule($ruleName);
         }
         
-        foreach ($roleDef['interfaces'] as $ifcId){
+        foreach ($roleDef['interfaces'] as $ifcId) {
             $this->interfaces[] = InterfaceObject::getInterface($ifcId);
         }
     }
     
     /**
      * Function is called when object is treated as a string
-     * 
+     *
      * @return string
      */
-    public function __toString(): string {
+    public function __toString(): string
+    {
         return $this->label;
     }
     
     /**
      * Get list of rules that are maintained by this role
-     * 
+     *
      * @return \Ampersand\Rule\Rule[]
      */
-    public function maintains(): array {
+    public function maintains(): array
+    {
         return $this->maintains;
     }
     
     /**
      * Get list of interfaces that are accessible for this role
-     * 
+     *
      * @return \Ampersand\Interfacing\InterfaceObject[]
      */
-    public function interfaces(): array {
+    public function interfaces(): array
+    {
         return $this->interfaces;
     }
     
@@ -111,11 +116,16 @@ class Role {
      * @throws Exception
      * return Role
      */
-    public static function getRoleById($roleId){
-        if(!is_int($roleId)) throw new Exception("No valid role id provided. Role id must be an integer", 500);
+    public static function getRoleById($roleId)
+    {
+        if (!is_int($roleId)) {
+            throw new Exception("No valid role id provided. Role id must be an integer", 500);
+        }
         
-        foreach(self::getAllRoles() as $role){
-            if($role->id == $roleId) return $role;
+        foreach (self::getAllRoles() as $role) {
+            if ($role->id == $roleId) {
+                return $role;
+            }
         }
         
         throw new Exception("Role with id '{$roleId}' is not defined", 500);
@@ -127,8 +137,11 @@ class Role {
      * @throws Exception if role is not defined
      * @return Role
      */
-    public static function getRoleByName($roleName){
-        if(!array_key_exists($roleName, $roles = self::getAllRoles())) throw new Exception("Role '{$roleName}' is not defined", 500);
+    public static function getRoleByName($roleName)
+    {
+        if (!array_key_exists($roleName, $roles = self::getAllRoles())) {
+            throw new Exception("Role '{$roleName}' is not defined", 500);
+        }
     
         return $roles[$roleName];
     }
@@ -137,19 +150,23 @@ class Role {
      * Returns array with all role objects
      * @return Role[]
      */
-    public static function getAllRoles(){
-        if(!isset(self::$allRoles)) throw new Exception("Role definitions not loaded yet", 500);
+    public static function getAllRoles()
+    {
+        if (!isset(self::$allRoles)) {
+            throw new Exception("Role definitions not loaded yet", 500);
+        }
          
         return self::$allRoles;
     }
     
     /**
      * Import all role definitions from json file and instantiate Role objects
-     * 
+     *
      * @param string $fileName containing the Ampersand role definitions
      * @return void
      */
-    public static function setAllRoles(string $fileName){
+    public static function setAllRoles(string $fileName)
+    {
         self::$allRoles = [];
 
         $allRoleDefs = (array) json_decode(file_get_contents($fileName), true);

@@ -1,4 +1,4 @@
-<?php 
+<?php
 /* This file defines a limited number of functions that deal with dates and times. They include functions for comparing dates and times (equal, less than etc.), for setting today's date, and more. This file may be extended, but only with functions that can be used generically. 
 
 The date and time formats that can be used are pretty much arbitrary. A precise description is given at:
@@ -17,16 +17,16 @@ use Ampersand\Rule\ExecEngine;
    For $formatSpec see http://php.net/manual/en/function.date.php
    Default is 'd-m-Y' -> e.g: "01-01-2015", other examples include time, like 'd-m-Y G:i:s' -> e.g.: "01-01-2015 1:00:00"
 */
-ExecEngine::registerFunction('SetToday', function($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y'){
+ExecEngine::registerFunction('SetToday', function ($relation, $srcConcept, $srcAtom, $dateConcept, $formatSpec = 'd-m-Y') {
     $curdate = date($formatSpec);
-    InsPair($relation,$srcConcept,$srcAtom,$dateConcept,$curdate);
+    InsPair($relation, $srcConcept, $srcAtom, $dateConcept, $curdate);
 });
 
 
 // VIOLATION (TXT "{EX} datimeStdFormat;standardizeDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;", TGT I)
-ExecEngine::registerFunction('datimeStdFormat', function($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec){
+ExecEngine::registerFunction('datimeStdFormat', function ($relation, $DateConcept, $srcAtom, $StdFormatConcept, $formatSpec) {
     $date = new DateTime($srcAtom);
-    InsPair($relation,$DateConcept,$srcAtom,$StdFormatConcept,$date->format($formatSpec));
+    InsPair($relation, $DateConcept, $srcAtom, $StdFormatConcept, $date->format($formatSpec));
 });
 
 
@@ -37,12 +37,14 @@ VIOLATION (TXT "{EX} DateDifferencePlusOne" -- Result = 1 + MAX(0, (RentalEndDat
                , TXT ";", SRC latestDate   -- = Rental end date
           )
 */
-ExecEngine::registerFunction('DateDifferencePlusOne', function($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate){
+ExecEngine::registerFunction('DateDifferencePlusOne', function ($relation, $srcConcept, $srcAtom, $integerConcept, $earliestDate, $latestDate) {
     $datediff = strtotime($latestDate) - strtotime($earliestDate);
-    if ($datediff < 0) throw new Exception("First arg (earliestDate) must be smaller than second arg (latestDate).", 500);
+    if ($datediff < 0) {
+        throw new Exception("First arg (earliestDate) must be smaller than second arg (latestDate).", 500);
+    }
     
     $result = 1 + max(0, floor($datediff/(60*60*24)));
-    InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
+    InsPair($relation, $srcConcept, $srcAtom, $integerConcept, $result);
 });
 
 
@@ -53,12 +55,14 @@ VIOLATION (TXT "{EX} DateDifference"
                , TXT ";", SRC lastDate
           )
 */
-ExecEngine::registerFunction('DateDifference', function($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate){
+ExecEngine::registerFunction('DateDifference', function ($relation, $srcConcept, $srcAtom, $integerConcept, $firstDate, $lastDate) {
     $datediff = strtotime($lastDate) - strtotime($firstDate);
-    if ($datediff < 0) throw new Exception("First arg (earliestDate) must be smaller than second arg (latestDate).", 500);
+    if ($datediff < 0) {
+        throw new Exception("First arg (earliestDate) must be smaller than second arg (latestDate).", 500);
+    }
     
     $result = max(0, floor($datediff/(60*60*24)));
-    InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
+    InsPair($relation, $srcConcept, $srcAtom, $integerConcept, $result);
 });
 
 
@@ -91,56 +95,76 @@ ExecEngine::registerFunction('DateDifference', function($relation,$srcConcept,$s
    to check for violations. So do not use that many...
 */
 // VIOLATION (TXT "{EX} datimeEQL;DateTime;" SRC I, TXT ";", TGT I)
-ExecEngine::registerFunction('datimeEQL', function($eqlRelation,$DateConcept,$srcAtom,$tgtAtom){
-    if (($dt1 = strtotime($srcAtom)) === false) throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
-    if (($dt2 = strtotime($tgtAtom)) === false) throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
+ExecEngine::registerFunction('datimeEQL', function ($eqlRelation, $DateConcept, $srcAtom, $tgtAtom) {
+    if (($dt1 = strtotime($srcAtom)) === false) {
+        throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
+    }
+    if (($dt2 = strtotime($tgtAtom)) === false) {
+        throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
+    }
     
-    if ($dt1 == $dt2){
-        InsPair($eqlRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
+    if ($dt1 == $dt2) {
+        InsPair($eqlRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
         
         // Accommodate for different representations of the same time:
-        if ($srcAtom != $tgtAtom){
-            InsPair($eqlRelation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
+        if ($srcAtom != $tgtAtom) {
+            InsPair($eqlRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
         }
     }
 });
 
 
 // VIOLATION (TXT "{EX} datimeNEQ;DateTime;" SRC I, TXT ";", TGT I)
-ExecEngine::registerFunction('datimeNEQ', function($neqRelation,$DateConcept,$srcAtom,$tgtAtom){     
-    if (($dt1 = strtotime($srcAtom)) === false) throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
-    if (($dt2 = strtotime($tgtAtom)) === false) throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
+ExecEngine::registerFunction('datimeNEQ', function ($neqRelation, $DateConcept, $srcAtom, $tgtAtom) {
+    if (($dt1 = strtotime($srcAtom)) === false) {
+        throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
+    }
+    if (($dt2 = strtotime($tgtAtom)) === false) {
+        throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
+    }
     
-    if ($dt1 != $dt2){
-        InsPair($neqRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
-        InsPair($neqRelation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
+    if ($dt1 != $dt2) {
+        InsPair($neqRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+        InsPair($neqRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
     }
 });
 
 
 // VIOLATION (TXT "{EX} datimeLT;DateTime;" SRC I, TXT ";", TGT I)
-ExecEngine::registerFunction('datimeLT', function($ltRelation,$DateConcept,$srcAtom,$tgtAtom){
-    if (($dt1 = strtotime($srcAtom)) === false) throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
-    if (($dt2 = strtotime($tgtAtom)) === false) throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
-    if ($dt1 == $dt2) return;
+ExecEngine::registerFunction('datimeLT', function ($ltRelation, $DateConcept, $srcAtom, $tgtAtom) {
+    if (($dt1 = strtotime($srcAtom)) === false) {
+        throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
+    }
+    if (($dt2 = strtotime($tgtAtom)) === false) {
+        throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
+    }
+    if ($dt1 == $dt2) {
+        return;
+    }
     
-    if ($dt1 < $dt2){
-        InsPair($ltRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
-    }else{
-        InsPair($ltRelation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
+    if ($dt1 < $dt2) {
+        InsPair($ltRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+    } else {
+        InsPair($ltRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
     }
 });
 
 
 // VIOLATION (TXT "{EX} datimeGT;DateTime;" SRC I, TXT ";", TGT I)
-ExecEngine::registerFunction('datimeGT', function($gtRelation,$DateConcept,$srcAtom,$tgtAtom){
-    if (($dt1 = strtotime($srcAtom)) === false) throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
-    if (($dt2 = strtotime($tgtAtom)) === false) throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
-    if ($dt1 == $dt2) return;
+ExecEngine::registerFunction('datimeGT', function ($gtRelation, $DateConcept, $srcAtom, $tgtAtom) {
+    if (($dt1 = strtotime($srcAtom)) === false) {
+        throw new Exception("Illegal date '{$dt1}' specified in srcAtom (3rd arg)", 500);
+    }
+    if (($dt2 = strtotime($tgtAtom)) === false) {
+        throw new Exception("Illegal date '{$dt2}' specified in tgtAtom (4th arg)", 500);
+    }
+    if ($dt1 == $dt2) {
+        return;
+    }
     
-    if ($dt1 > $dt2){
-        InsPair($gtRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
-    }else{
-        InsPair($gtRelation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
+    if ($dt1 > $dt2) {
+        InsPair($gtRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+    } else {
+        InsPair($gtRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
     }
 });

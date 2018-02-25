@@ -5,13 +5,13 @@ use Pimple\Container;
 use Ampersand\AngularApp;
 use Ampersand\Log\Logger;
 
-register_shutdown_function(function (){
+register_shutdown_function(function () {
     $error = error_get_last();
     if ($error['type'] & (E_ERROR | E_PARSE)) {
         $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
         http_response_code(500);
         header("{$protocol}  500 {$error['message']}");
-        print json_encode( ['error' => 500
+        print json_encode(['error' => 500
                            , 'msg' => "{$error['message']} in {$error['file']}:{$error['line']}"
                            ]);
         exit;
@@ -35,7 +35,7 @@ $container = new Container();
 $container['ampersand_app'] = function ($c) {
     return new AmpersandApp($c['default_plug'], Logger::getLogger('APPLICATION'));
 };
-$container['angular_app'] = function($c) {
+$container['angular_app'] = function ($c) {
     return new AngularApp($c['ampersand_app'], Logger::getLogger('APP'));
 };
 
@@ -43,8 +43,10 @@ $container['angular_app'] = function($c) {
 require_once(__DIR__ . '/defaultSettings.php');
 
 // Include project specific settings (i.e. localSettings.php file)
-require_once (__DIR__ . '/../localSettings.php');
-if(!defined('LOCALSETTINGS_VERSION') || AmpersandApp::REQ_LOCALSETTINGS_VERSION > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to format of v" . number_format (AmpersandApp::REQ_LOCALSETTINGS_VERSION, 1), 500);
+require_once(__DIR__ . '/../localSettings.php');
+if (!defined('LOCALSETTINGS_VERSION') || AmpersandApp::REQ_LOCALSETTINGS_VERSION > LOCALSETTINGS_VERSION) {
+    throw new Exception("New version of localSettings.php required. Please update to format of v" . number_format(AmpersandApp::REQ_LOCALSETTINGS_VERSION, 1), 500);
+}
 
 // More bootstrapping
 require_once(__DIR__ . '/bootstrap/NavigationMenu.php');

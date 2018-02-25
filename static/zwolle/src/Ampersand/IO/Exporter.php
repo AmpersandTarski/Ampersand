@@ -13,7 +13,8 @@ use Ampersand\Core\Relation;
 use Ampersand\IO\AbstractWriter;
 use Psr\Log\LoggerInterface;
 
-class Exporter {
+class Exporter
+{
 
     /**
      * Logger
@@ -36,22 +37,26 @@ class Exporter {
      * @param \Psr\Log\LoggerInterface $logger
      * @param array $options
      */
-    public function __construct(AbstractWriter $writer, LoggerInterface $logger, array $options = []){
+    public function __construct(AbstractWriter $writer, LoggerInterface $logger, array $options = [])
+    {
         $this->logger = $logger;
         $this->writer = $writer;
     }
 
-    public function exportAllPopulation(){
+    public function exportAllPopulation()
+    {
         $conceptPop = [];
-        foreach (Concept::getAllConcepts() as $concept){
+        foreach (Concept::getAllConcepts() as $concept) {
             $conceptPop[] = [
                 'concept' => $concept->name,
-                'atoms' => array_map(function($atom){ return $atom->id; }, $concept->getAllAtomObjects())
+                'atoms' => array_map(function ($atom) {
+                    return $atom->id;
+                }, $concept->getAllAtomObjects())
             ];
         }
         
         $relationPop = [];
-        foreach (Relation::getAllRelations() as $rel){
+        foreach (Relation::getAllRelations() as $rel) {
             $relationPop[] = [
                 'relation' => $rel->signature,
                 'links' => $rel->getAllLinks()

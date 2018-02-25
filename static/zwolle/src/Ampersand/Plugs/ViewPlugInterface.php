@@ -6,16 +6,18 @@
  */
 
 namespace Ampersand\Plugs;
+
 use Ampersand\Core\Atom;
 use Ampersand\Interfacing\ViewSegment;
 
 /**
  * Interface for a View plug implementations
- * 
+ *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-interface ViewPlugInterface extends PlugInterface{
+interface ViewPlugInterface extends PlugInterface
+{
     
     /**
      * @param ViewSegment $view
@@ -23,5 +25,4 @@ interface ViewPlugInterface extends PlugInterface{
      * @return array of target atom identifiers
      */
     public function executeViewExpression(ViewSegment $view, Atom $srcAtom = null): array;
-    
 }

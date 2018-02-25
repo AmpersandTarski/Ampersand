@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /*
    This file defines the functions:
@@ -19,7 +19,7 @@ use Ampersand\Core\Atom;
 use Ampersand\AngularApp;
 use Ampersand\Rule\ExecEngine;
 
-/** 
+/**
  * @var \Pimple\Container $container
  */
 global $container;
@@ -34,8 +34,10 @@ $execEngineLogger = ExecEngine::getLogger();
    VIOLATION (TXT "InsPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-ExecEngine::registerFunction('InsPair', $InsPair = function($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom) use ($execEngineLogger) {
-    if(func_num_args() != 5) throw new Exception("InsPair() expects 5 arguments, but you have provided ".func_num_args(), 500);
+ExecEngine::registerFunction('InsPair', $InsPair = function ($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom) use ($execEngineLogger) {
+    if (func_num_args() != 5) {
+        throw new Exception("InsPair() expects 5 arguments, but you have provided ".func_num_args(), 500);
+    }
 
     // Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
     $srcConcept = Concept::getConceptByLabel($srcConceptName);
@@ -43,20 +45,24 @@ ExecEngine::registerFunction('InsPair', $InsPair = function($relationName,$srcCo
     $relation = Relation::getRelation($relationName, $srcConcept, $tgtConcept);
     
     // if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
-    if($srcAtom == '_NULL' or $tgtAtom == '_NULL'){
+    if ($srcAtom == '_NULL' or $tgtAtom == '_NULL') {
         $execEngineLogger->debug("InsPair ignored because src and/or tgt atom is _NULL");
         return;
     }
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
-    if($srcAtom == "_NEW") $srcAtom = ExecEngine::$_NEW->id;
-    if($tgtAtom == "_NEW") $tgtAtom = ExecEngine::$_NEW->id;
+    if ($srcAtom == "_NEW") {
+        $srcAtom = ExecEngine::$_NEW->id;
+    }
+    if ($tgtAtom == "_NEW") {
+        $tgtAtom = ExecEngine::$_NEW->id;
+    }
     
     $srcAtomIds = explode('_AND', $srcAtom);
     $tgtAtomIds = explode('_AND', $tgtAtom);
-    foreach($srcAtomIds as $a){
+    foreach ($srcAtomIds as $a) {
         $src = new Atom($a, $srcConcept);
-        foreach($tgtAtomIds as $b){
+        foreach ($tgtAtomIds as $b) {
             $tgt = new Atom($b, $tgtConcept);
             $link = $src->link($tgt, $relation)->add();
             $execEngineLogger->debug("Added {$link}");
@@ -72,8 +78,10 @@ ExecEngine::registerFunction('InsPair', $InsPair = function($relationName,$srcCo
     VIOLATION (TXT "DelPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-ExecEngine::registerFunction('DelPair', function($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom) use ($execEngineLogger) {
-    if(func_num_args() != 5) throw new Exception("DelPair() expects 5 arguments, but you have provided ".func_num_args(), 500);     
+ExecEngine::registerFunction('DelPair', function ($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom) use ($execEngineLogger) {
+    if (func_num_args() != 5) {
+        throw new Exception("DelPair() expects 5 arguments, but you have provided ".func_num_args(), 500);
+    }
         
     // Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
     $srcConcept = Concept::getConceptByLabel($srcConceptName);
@@ -81,23 +89,31 @@ ExecEngine::registerFunction('DelPair', function($relationName,$srcConceptName,$
     $relation = Relation::getRelation($relationName, $srcConcept, $tgtConcept);
     
     // if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
-    if($srcAtom == '_NULL' or $tgtAtom == '_NULL'){
+    if ($srcAtom == '_NULL' or $tgtAtom == '_NULL') {
         $execEngineLogger->debug("DelPair ignored because src and/or tgt atom is _NULL");
         return;
     }
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
-    if($srcAtom == "_NEW") $srcAtom = ExecEngine::$_NEW->id;
-    if($tgtAtom == "_NEW") $tgtAtom = ExecEngine::$_NEW->id;
+    if ($srcAtom == "_NEW") {
+        $srcAtom = ExecEngine::$_NEW->id;
+    }
+    if ($tgtAtom == "_NEW") {
+        $tgtAtom = ExecEngine::$_NEW->id;
+    }
     
     $srcAtoms = explode('_AND', $srcAtom);
     $tgtAtoms = explode('_AND', $tgtAtom);
-    if(count($srcAtoms) > 1) throw new Exception('DelPair function call has more than one src atom', 501); // 501: Not implemented
-    if(count($tgtAtoms) > 1) throw new Exception('DelPair function call has more than one tgt atom', 501); // 501: Not implemented
+    if (count($srcAtoms) > 1) {
+        throw new Exception('DelPair function call has more than one src atom', 501); // 501: Not implemented
+    }
+    if (count($tgtAtoms) > 1) {
+        throw new Exception('DelPair function call has more than one tgt atom', 501); // 501: Not implemented
+    }
     
-    foreach($srcAtoms as $a){
+    foreach ($srcAtoms as $a) {
         $src = new Atom($a, $srcConcept);
-        foreach($tgtAtoms as $b){
+        foreach ($tgtAtoms as $b) {
             $tgt = new Atom($b, $tgtConcept);
             $link = $src->link($tgt, $relation)->delete();
             $execEngineLogger->debug("Deleted {$link}");
@@ -124,7 +140,8 @@ ExecEngine::registerFunction('DelPair', function($relationName,$srcConceptName,$
               )
 
 */
-ExecEngine::registerFunction('NewStruct', function() use ($InsPair, $execEngineLogger){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)      
+ExecEngine::registerFunction('NewStruct', function () use ($InsPair, $execEngineLogger) {
+ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
     // We start with parsing the first one or two arguments
     $c = Concept::getConceptByLabel(func_get_arg(0)); // Concept for which atom is to be created
     $atom = $c->createNewAtom(); // Default marker for atom-to-be-created.
@@ -132,9 +149,12 @@ ExecEngine::registerFunction('NewStruct', function() use ($InsPair, $execEngineL
     $execEngineLogger->info("Newstruct for concept '{$c}'");
     
     // Check if name of new atom is explicitly specified
-    if (func_num_args() % 5 == 2) $atom = new Atom(func_get_arg(1), $c); // If so, we'll be using this to create the new atom
-    // Check for valid number of arguments
-    elseif(func_num_args() % 5 != 1) throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
+    if (func_num_args() % 5 == 2) {
+        $atom = new Atom(func_get_arg(1), $c); // If so, we'll be using this to create the new atom
+    } // Check for valid number of arguments
+    elseif (func_num_args() % 5 != 1) {
+        throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
+    }
     
     // Add atom to concept
     $atom->add();
@@ -143,36 +163,47 @@ ExecEngine::registerFunction('NewStruct', function() use ($InsPair, $execEngineL
     ExecEngine::$_NEW = $atom;
 
     // Next, for every relation that follows in the argument list, we create a link
-    for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
-        
+    for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5) {
         $relation   = func_get_arg($i);
         $srcConcept = Concept::getConceptByLabel(func_get_arg($i+1));
         $srcAtomId    = func_get_arg($i+2);
         $tgtConcept = Concept::getConceptByLabel(func_get_arg($i+3));
         $tgtAtomId    = func_get_arg($i+4);
         
-        if($srcAtomId == "NULL" or $tgtAtomId == "NULL") throw new Exception("NewStruct: use of keyword NULL is deprecated, use '_NEW'", 500);
+        if ($srcAtomId == "NULL" or $tgtAtomId == "NULL") {
+            throw new Exception("NewStruct: use of keyword NULL is deprecated, use '_NEW'", 500);
+        }
         
         // NewStruct requires that atom $srcAtomId or $tgtAtomId must be _NEW
         // Note: when populating a [PROP] relation, both atoms can be new
-        if (!($srcAtomId == '_NEW' or $tgtAtomId == '_NEW')) throw new Exception("NewStruct: relation '{$relation}' requires that atom '{$srcAtomId}' or '{$tgtAtomId}' must be '_NEW'", 500);
+        if (!($srcAtomId == '_NEW' or $tgtAtomId == '_NEW')) {
+            throw new Exception("NewStruct: relation '{$relation}' requires that atom '{$srcAtomId}' or '{$tgtAtomId}' must be '_NEW'", 500);
+        }
         
         // NewStruct requires that concept $srcConcept or $tgtConcept must be concept $c
-        if (!in_array($srcConcept, $c->getGeneralizationsIncl()) && !in_array($tgtConcept, $c->getGeneralizationsIncl())) throw new Exception("NewStruct: relation '{$relation}' requires that src or tgt concept must be '{$c}' (or any of its generalizations)", 500);
+        if (!in_array($srcConcept, $c->getGeneralizationsIncl()) && !in_array($tgtConcept, $c->getGeneralizationsIncl())) {
+            throw new Exception("NewStruct: relation '{$relation}' requires that src or tgt concept must be '{$c}' (or any of its generalizations)", 500);
+        }
     
         // Replace atom by the newstruct atom if _NEW is used
-        if(in_array($srcConcept, $c->getGeneralizationsIncl()) && $srcAtomId == '_NEW') $srcAtomId = $atom->id;
-        if(in_array($tgtConcept, $c->getGeneralizationsIncl()) && $tgtAtomId == '_NEW') $tgtAtomId = $atom->id;
+        if (in_array($srcConcept, $c->getGeneralizationsIncl()) && $srcAtomId == '_NEW') {
+            $srcAtomId = $atom->id;
+        }
+        if (in_array($tgtConcept, $c->getGeneralizationsIncl()) && $tgtAtomId == '_NEW') {
+            $tgtAtomId = $atom->id;
+        }
         
         // Any logging is done by InsPair
-        $InsPair($relation,$srcConcept->name,$srcAtomId,$tgtConcept->name,$tgtAtomId);
+        $InsPair($relation, $srcConcept->name, $srcAtomId, $tgtConcept->name, $tgtAtomId);
     }
     $execEngineLogger->debug("Newstruct: atom '{$atom}' created");
 });
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
-ExecEngine::registerFunction('InsAtom', function(string $conceptName, string $atomId = null) use ($execEngineLogger) {
-    if(func_num_args() > 2) throw new Exception("InsAtom() expects max 2 arguments, but you have provided " . func_num_args(), 500);
+ExecEngine::registerFunction('InsAtom', function (string $conceptName, string $atomId = null) use ($execEngineLogger) {
+    if (func_num_args() > 2) {
+        throw new Exception("InsAtom() expects max 2 arguments, but you have provided " . func_num_args(), 500);
+    }
 
     $concept = Concept::getConceptByLabel($conceptName);
 
@@ -197,38 +228,49 @@ ExecEngine::registerFunction('InsAtom', function(string $conceptName, string $at
     VIOLATION (TXT "DelAtom;ConceptC;" SRC I) -- all links in other relations in which the atom occurs are deleted as well.
 */
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
-ExecEngine::registerFunction('DelAtom', function($concept, $atomId) use ($execEngineLogger) {
-    if(func_num_args() != 2) throw new Exception("DelAtom() expects 2 arguments, but you have provided ".func_num_args(), 500);
+ExecEngine::registerFunction('DelAtom', function ($concept, $atomId) use ($execEngineLogger) {
+    if (func_num_args() != 2) {
+        throw new Exception("DelAtom() expects 2 arguments, but you have provided ".func_num_args(), 500);
+    }
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
-    if($atomId == "_NEW") $atom = ExecEngine::$_NEW;
-    else $atom = new Atom($atomId, Concept::getConceptByLabel($concept));
+    if ($atomId == "_NEW") {
+        $atom = ExecEngine::$_NEW;
+    } else {
+        $atom = new Atom($atomId, Concept::getConceptByLabel($concept));
+    }
     
     $atom->deleteAtom(); // delete atom + all pairs shared with other atoms
     $execEngineLogger->debug("Atom '{$atom}' deleted");
 });
 
 /* 
-	ROLE ExecEngine MAINTAINS "Person" -- unify two atoms
-	RULE Person : name;name~ |- I
+    ROLE ExecEngine MAINTAINS "Person" -- unify two atoms
+    RULE Person : name;name~ |- I
     VIOLATION (TXT "{EX} MrgAtoms;Person;", SRC I, TXT ";Person;", TGT I )
-	 * Parameters
-	 * @param Concept $conceptA   -- The most specific concept A such that $srcAtomId pop A
-	 * @param Atom $srcAtomId     -- The atom to be made equal to $tgtAtomId
-	 * @param Concept $conceptB   -- The most specific concept B such that $tgtAtomId pop B
-	 * @param Atom $tgtAtomId     -- The atom to be made equal to $srcAtomId
-	 * @return void
+     * Parameters
+     * @param Concept $conceptA   -- The most specific concept A such that $srcAtomId pop A
+     * @param Atom $srcAtomId     -- The atom to be made equal to $tgtAtomId
+     * @param Concept $conceptB   -- The most specific concept B such that $tgtAtomId pop B
+     * @param Atom $tgtAtomId     -- The atom to be made equal to $srcAtomId
+     * @return void
 */
 // Use: VIOLATION (TXT "{EX} MrgAtoms;<conceptA>;", SRC I, TXT ";<conceptB>;", TGT I )
-ExecEngine::registerFunction('MrgAtoms', function($conceptA, $srcAtomId, $conceptB, $tgtAtomId) use ($execEngineLogger) {
-    if(func_num_args() != 4) throw new Exception("MrgAtoms() expects 4 arguments, but you have provided ".func_num_args(), 500);
+ExecEngine::registerFunction('MrgAtoms', function ($conceptA, $srcAtomId, $conceptB, $tgtAtomId) use ($execEngineLogger) {
+    if (func_num_args() != 4) {
+        throw new Exception("MrgAtoms() expects 4 arguments, but you have provided ".func_num_args(), 500);
+    }
     
     $srcAtom = new Atom($srcAtomId, Concept::getConceptByLabel($conceptA));
     $tgtAtom = new Atom($tgtAtomId, Concept::getConceptByLabel($conceptB));
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
-    if($srcAtomId == "_NEW") $srcAtom = ExecEngine::$_NEW;
-    if($tgtAtomId == "_NEW") $tgtAtom = ExecEngine::$_NEW;
+    if ($srcAtomId == "_NEW") {
+        $srcAtom = ExecEngine::$_NEW;
+    }
+    if ($tgtAtomId == "_NEW") {
+        $tgtAtom = ExecEngine::$_NEW;
+    }
     
     $srcAtom->merge($tgtAtom); // union of two records plus substitution in all occurences in binary relations.
     $execEngineLogger->debug("Atom '{$tgtAtom}' merged into '{$srcAtom}' and then deleted");
@@ -240,12 +282,17 @@ ExecEngine::registerFunction('MrgAtoms', function($conceptA, $srcAtomId, $concep
  VIOLATION (TXT "SetConcept;ConceptA;ConceptB;" SRC I)
  */
 // Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atomId>")
-ExecEngine::registerFunction('SetConcept', $SetConcept = function($conceptA, $conceptB, $atomId) use ($execEngineLogger) {
-    if(func_num_args() != 3) throw new Exception("SetConcept() expects 3 arguments, but you have provided ".func_num_args(), 500);
+ExecEngine::registerFunction('SetConcept', $SetConcept = function ($conceptA, $conceptB, $atomId) use ($execEngineLogger) {
+    if (func_num_args() != 3) {
+        throw new Exception("SetConcept() expects 3 arguments, but you have provided ".func_num_args(), 500);
+    }
 
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
-    if($atomId == "_NEW") $atom = ExecEngine::$_NEW;
-    else $atom = new Atom($atomId, Concept::getConceptByLabel($conceptA));
+    if ($atomId == "_NEW") {
+        $atom = ExecEngine::$_NEW;
+    } else {
+        $atom = new Atom($atomId, Concept::getConceptByLabel($conceptA));
+    }
     
     $conceptB = Concept::getConceptByLabel($conceptB);
     $conceptB->addAtom($atom);
@@ -258,14 +305,19 @@ ExecEngine::registerFunction('SetConcept', $SetConcept = function($conceptA, $co
  VIOLATION (TXT "ClearConcept;Concept;" SRC I)
  */
 // Use: VIOLATION (TXT "ClearConcept;<Concept>;<atom>")
-ExecEngine::registerFunction('ClearConcept', function($concept, $atomId) use ($execEngineLogger) {
-    if(func_num_args() != 2) throw new Exception("ClearConcept() expects 2 arguments, but you have provided ".func_num_args(), 500);
+ExecEngine::registerFunction('ClearConcept', function ($concept, $atomId) use ($execEngineLogger) {
+    if (func_num_args() != 2) {
+        throw new Exception("ClearConcept() expects 2 arguments, but you have provided ".func_num_args(), 500);
+    }
 
     $concept = Concept::getConceptByLabel($concept);
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
-    if($atomId == "_NEW") $atom = ExecEngine::$_NEW;
-    else $atom = new Atom($atomId, $concept);
+    if ($atomId == "_NEW") {
+        $atom = ExecEngine::$_NEW;
+    } else {
+        $atom = new Atom($atomId, $concept);
+    }
     
     $concept->removeAtom($atom);
     $execEngineLogger->debug("Atom '{$atom}' removed as member from concept '{$concept}'");
@@ -277,12 +329,14 @@ ExecEngine::registerFunction('ClearConcept', function($concept, $atomId) use ($e
  *************************************************************/
  
 // InsPairCond is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
-ExecEngine::registerFunction('InsPairCond', function($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool) use ($InsPair, $execEngineLogger){
-    if(func_num_args() != 6) throw new Exception("InsPairCond() expects 6 arguments, but you have provided ".func_num_args(), 500);
+ExecEngine::registerFunction('InsPairCond', function ($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool) use ($InsPair, $execEngineLogger) {
+    if (func_num_args() != 6) {
+        throw new Exception("InsPairCond() expects 6 arguments, but you have provided ".func_num_args(), 500);
+    }
     
-    // Skip when $bool evaluates to false or equals '_NULL'. 
+    // Skip when $bool evaluates to false or equals '_NULL'.
     // _Null is the exec-engine special for zero results from Ampersand expression
-    if(filter_var($bool, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === false || $bool === '_NULL'){
+    if (filter_var($bool, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === false || $bool === '_NULL') {
         $execEngineLogger->debug("InsPairCond skipped because bool evaluation results in false");
         return;
     }
@@ -291,12 +345,14 @@ ExecEngine::registerFunction('InsPairCond', function($relationName, $srcConceptN
 });
 
 // SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
-ExecEngine::registerFunction('SetConceptCond', function($conceptA, $conceptB, $atom, $bool) use ($SetConcept, $execEngineLogger){
-    if(func_num_args() != 4) throw new Exception("SetConceptCond() expects 4 arguments, but you have provided ".func_num_args(), 500);
+ExecEngine::registerFunction('SetConceptCond', function ($conceptA, $conceptB, $atom, $bool) use ($SetConcept, $execEngineLogger) {
+    if (func_num_args() != 4) {
+        throw new Exception("SetConceptCond() expects 4 arguments, but you have provided ".func_num_args(), 500);
+    }
     
-    // Skip when $bool evaluates to false or equals '_NULL'. 
+    // Skip when $bool evaluates to false or equals '_NULL'.
     // _Null is the exec-engine special for zero results from Ampersand expression
-    if(filter_var($bool, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === false || $bool === '_NULL'){
+    if (filter_var($bool, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === false || $bool === '_NULL') {
         $execEngineLogger->debug("SetConcept skipped because bool evaluation results in false");
         return;
     }
@@ -304,20 +360,20 @@ ExecEngine::registerFunction('SetConceptCond', function($conceptA, $conceptB, $a
     $SetConcept($conceptA, $conceptB, $atom);
 });
 
-ExecEngine::registerFunction('SetNavToOnCommit', function($navTo) use ($container, $execEngineLogger){
-	if(strpos($navTo, '_NEW') !== false){
-		$navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
-		$execEngineLogger->debug("replaced navTo string with '{$navTo}'");
-	}
+ExecEngine::registerFunction('SetNavToOnCommit', function ($navTo) use ($container, $execEngineLogger) {
+    if (strpos($navTo, '_NEW') !== false) {
+        $navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
+        $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
+    }
     
     $container['angular_app']->setNavToResponse($navTo, 'COMMIT');
 });
     
-ExecEngine::registerFunction('SetNavToOnRollback', function($navTo) use ($container, $execEngineLogger){
-	if(strpos($navTo, '_NEW') !== false){
-		$navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
-		$execEngineLogger->debug("replaced navTo string with '{$navTo}'");
-	}
+ExecEngine::registerFunction('SetNavToOnRollback', function ($navTo) use ($container, $execEngineLogger) {
+    if (strpos($navTo, '_NEW') !== false) {
+        $navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
+        $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
+    }
     
     $container['angular_app']->setNavToResponse($navTo, 'ROLLBACK');
 });

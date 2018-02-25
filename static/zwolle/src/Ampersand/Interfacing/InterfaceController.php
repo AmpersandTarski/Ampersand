@@ -15,7 +15,8 @@ use Ampersand\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 
-class InterfaceController {
+class InterfaceController
+{
 
     /**
      * Reference to the ampersand backend instance
@@ -37,16 +38,19 @@ class InterfaceController {
      * @param \Ampersand\AmpersandApp $ampersandApp
      * @param \Ampersand\AngularApp $angularApp
      */
-    public function __construct(AmpersandApp $ampersandApp, AngularApp $angularApp){
+    public function __construct(AmpersandApp $ampersandApp, AngularApp $angularApp)
+    {
         $this->ampersandApp = $ampersandApp;
         $this->angularApp = $angularApp;
     }
 
-    public function get(Resource $resource, $ifcPath, int $options, $depth) {
+    public function get(Resource $resource, $ifcPath, int $options, $depth)
+    {
         return $resource->walkPath($ifcPath)->get($options, $depth);
     }
 
-    public function put(Resource $resource, $ifcPath, $body, $options, $depth): array {
+    public function put(Resource $resource, $ifcPath, $body, $options, $depth): array
+    {
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform put
@@ -54,7 +58,9 @@ class InterfaceController {
         
         // Close transaction
         $transaction->close();
-        if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " updated");
+        if ($transaction->isCommitted()) {
+            Logger::getUserLogger()->notice($resource->getLabel() . " updated");
+        }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
@@ -63,12 +69,12 @@ class InterfaceController {
                , 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
-               , 'navTo'				 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                ];
     }
 
     /**
-     * Patch resource with provided patches 
+     * Patch resource with provided patches
      * Use JSONPatch specification for $patches (see: http://jsonpatch.com/)
      *
      * @param \Ampersand\Interfacing\Resource $resource
@@ -78,7 +84,8 @@ class InterfaceController {
      * @param int $depth
      * @return array
      */
-    public function patch(Resource $resource, $ifcPath, array $patches, int $options, int $depth = null): array {
+    public function patch(Resource $resource, $ifcPath, array $patches, int $options, int $depth = null): array
+    {
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform patch(es)
@@ -86,7 +93,9 @@ class InterfaceController {
         
         // Close transaction
         $transaction->close();
-        if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " updated");
+        if ($transaction->isCommitted()) {
+            Logger::getUserLogger()->notice($resource->getLabel() . " updated");
+        }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
     
@@ -100,7 +109,8 @@ class InterfaceController {
                ];
     }
 
-    public function post(Resource $resource, $ifcPath, $body, $options, $depth): array {
+    public function post(Resource $resource, $ifcPath, $body, $options, $depth): array
+    {
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform create
@@ -108,7 +118,9 @@ class InterfaceController {
         
         // Close transaction
         $transaction->close();
-        if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " created");
+        if ($transaction->isCommitted()) {
+            Logger::getUserLogger()->notice($resource->getLabel() . " created");
+        }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
     
@@ -117,7 +129,7 @@ class InterfaceController {
                , 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
-               , 'navTo'				 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                ];
     }
 
@@ -128,7 +140,8 @@ class InterfaceController {
      * @param string|array $ifcPath
      * @return array
      */
-    public function delete(Resource $resource, $ifcPath): array {
+    public function delete(Resource $resource, $ifcPath): array
+    {
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform delete
@@ -136,7 +149,9 @@ class InterfaceController {
         
         // Close transaction
         $transaction->close();
-        if($transaction->isCommitted()) Logger::getUserLogger()->notice("Resource deleted");
+        if ($transaction->isCommitted()) {
+            Logger::getUserLogger()->notice("Resource deleted");
+        }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
         
@@ -144,7 +159,7 @@ class InterfaceController {
         return [ 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
-               , 'navTo'				 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                ];
     }
 }

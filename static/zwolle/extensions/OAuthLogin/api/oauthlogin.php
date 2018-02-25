@@ -10,21 +10,25 @@ use Slim\Http\Response;
  */
 global $app;
 
-/** 
+/**
  * @var \Pimple\Container $container
  */
 global $container;
 
 // Path to API is 'api/v1/oauthlogin/login'
-$app->group('/oauthlogin', function() use ($container) {
+$app->group('/oauthlogin', function () use ($container) {
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
 
     $this->get('/login', function (Request $request, Response $response, $args = []) {
         // Get configured identity providers
         $identityProviders = Config::get('identityProviders', 'OAuthLogin');
-        if(is_null($identityProviders)) throw new Exception("No identity providers specified for OAuthLogin extension", 500);
-        if(!is_array($identityProviders)) throw new Exception("Identity providers must be specified as array", 500);
+        if (is_null($identityProviders)) {
+            throw new Exception("No identity providers specified for OAuthLogin extension", 500);
+        }
+        if (!is_array($identityProviders)) {
+            throw new Exception("Identity providers must be specified as array", 500);
+        }
         
         // Prepare list with identity providers for the UI
         $idps = [];
@@ -39,7 +43,7 @@ $app->group('/oauthlogin', function() use ($container) {
                         ];
             $url = $auth_url['auth_base'] . '?' . http_build_query($auth_url['arguments']);
             
-            $idps[] = [ 'name' => $idpSettings['name'] 
+            $idps[] = [ 'name' => $idpSettings['name']
                       , 'loginUrl' => $url
                       , 'logo' => $idpSettings['logoUrl']
                       ];
@@ -48,7 +52,7 @@ $app->group('/oauthlogin', function() use ($container) {
         return $response->withJson(['identityProviders' => $idps, 'notifications' => Notifications::getAll()], 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/logout', function (Request $request, Response $response, $args = []) use ($ampersandApp){
+    $this->get('/logout', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
         $ampersandApp->logout();
         $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
         return $response->withJson(['notifications' => Notifications::getAll()], 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -69,5 +73,4 @@ $app->group('/oauthlogin', function() use ($container) {
         $url = $isLoggedIn ? Config::get('redirectAfterLogin', 'OAuthLogin') : Config::get('redirectAfterLoginFailure', 'OAuthLogin');
         return $response->withRedirect($url, 403);
     });
-
 });

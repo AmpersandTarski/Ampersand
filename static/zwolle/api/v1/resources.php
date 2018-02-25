@@ -13,7 +13,7 @@ use Slim\Http\Response;
  */
 global $app;
 
-/** 
+/**
  * @var \Pimple\Container $container
  */
 global $container;
@@ -31,15 +31,18 @@ $app->group('/resource', function () use ($container) {
     /** @var \Ampersand\AngularApp $angularApp */
     $angularApp = $container['angular_app'];
 
-    $this->get('', function(Request $request, Response $response, $args = []) {
-        if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
+    $this->get('', function (Request $request, Response $response, $args = []) {
+        if (Config::get('productionEnv')) {
+            throw new Exception("List of all resource types is not available in production environment", 403);
+        }
         
         $content = array_values(
-            array_map(function($cpt){
+            array_map(function ($cpt) {
                 return $cpt->label; // only show label of resource types
-            }, array_filter(Concept::getAllConcepts(), function($cpt){
+            }, array_filter(Concept::getAllConcepts(), function ($cpt) {
                 return $cpt->isObject(); // filter concepts without a representation (i.e. resource types)
-        })));
+            }))
+        );
         
         return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
@@ -48,9 +51,15 @@ $app->group('/resource', function () use ($container) {
         $concept = Concept::getConcept($args['resourceType']);
         
         // Checks
-        if(!$concept->isObject()) throw new Exception ("Resource type not found", 404);
-        if($concept->isSession()) throw new Exception ("Resource type not found", 404); // Prevent users to list other sessions
-        if(!$ampersandApp->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
+        if (!$concept->isObject()) {
+            throw new Exception("Resource type not found", 404);
+        }
+        if ($concept->isSession()) {
+            throw new Exception("Resource type not found", 404); // Prevent users to list other sessions
+        }
+        if (!$ampersandApp->isEditableConcept($concept)) {
+            throw new Exception("You do not have access for this call", 403);
+        }
         
         $resources = Resource::getAllResources($args['resourceType']);
         
@@ -67,7 +76,9 @@ $app->group('/resource', function () use ($container) {
                 break;
             }
         }
-        if(!$allowed) throw new Exception ("You do not have access for this call", 403);
+        if (!$allowed) {
+            throw new Exception("You do not have access for this call", 403);
+        }
         
         // Don't save/commit new resource (yet)
         return $response->withJson($resource, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -77,8 +88,12 @@ $app->group('/resource', function () use ($container) {
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
         
         // Checks
-        if(!$ampersandApp->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
-        if(!$resource->exists()) throw new Exception("Resource '{$resource}' not found", 404);
+        if (!$ampersandApp->isEditableConcept($resource->concept)) {
+            throw new Exception("You do not have access for this call", 403);
+        }
+        if (!$resource->exists()) {
+            throw new Exception("Resource '{$resource}' not found", 404);
+        }
 
         return $response->withJson($resource, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
@@ -129,7 +144,6 @@ $app->group('/resource', function () use ($container) {
 
         return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
-
 })->add($middleWare1);
 
 $app->group('/session', function () use ($container, $middleWare1) {
@@ -140,7 +154,7 @@ $app->group('/session', function () use ($container, $middleWare1) {
     $angularApp = $container['angular_app'];
 
     // GET for interfaces with expr[SESSION*..]
-    $this->get('[/{ifcPath:.*}]', function(Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+    $this->get('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');

@@ -8,16 +8,17 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Container;
 
-require_once (__DIR__ . '/../../src/bootstrap.php');
+require_once(__DIR__ . '/../../src/bootstrap.php');
 
-/** 
+/**
  * @var \Pimple\Container $container
  */
 global $container;
 
 $apiContainer = new Container();
 
-function stackTrace(Throwable $throwable): string {
+function stackTrace(Throwable $throwable): string
+{
     $html = sprintf('<div><strong>Type:</strong> %s</div>', get_class($throwable));
     
     if (($code = $throwable->getCode())) {
@@ -43,10 +44,10 @@ function stackTrace(Throwable $throwable): string {
     return $html;
 }
 
-// Custom NotFound handler when API path-method is not found. 
+// Custom NotFound handler when API path-method is not found
 // The application can also return a Resource not found, this is handled by the errorHandler below
-$apiContainer['notFoundHandler'] = function($c){
-    return function(Request $request, Response $response) {
+$apiContainer['notFoundHandler'] = function ($c) {
+    return function (Request $request, Response $response) {
         return $response
             ->withStatus(404)
             ->withHeader('Content-Type', 'application/json')
@@ -60,17 +61,17 @@ $apiContainer['notFoundHandler'] = function($c){
 
 $apiContainer['errorHandler'] = function ($c) use ($container) {
     return function (Request $request, Response $response, Exception $exception) use ($container) {
-        try{
+        try {
             Logger::getLogger("API")->error($exception->getMessage());
             $debugMode = Config::get('debugMode');
             
             switch ($exception->getCode()) {
                 case 401: // Unauthorized
                 case 403: // Forbidden
-                    if(Config::get('loginEnabled') && !$container['ampersand_app']->getSession()->sessionUserLoggedIn()){
+                    if (Config::get('loginEnabled') && !$container['ampersand_app']->getSession()->sessionUserLoggedIn()) {
                         $code = 401;
                         $message = "Please login to access this page";
-                    }else{
+                    } else {
                         $code = 403;
                         $message = "You do not have access to this page";
                     }
@@ -94,22 +95,27 @@ $apiContainer['errorHandler'] = function ($c) use ($container) {
                 , 'msg' => $message
                 , 'notifications' => Notifications::getAll()
                 , 'html' => $debugMode ? stackTrace($exception) : null
-                ], $code, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-        }catch(Throwable $throwable){ // catches both errors and exceptions
+                ],
+                $code,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+            );
+        } catch (Throwable $throwable) { // catches both errors and exceptions
             Logger::getLogger("API")->critical($throwable->getMessage());
             return $response->withJson(
                 [ 'error' => 500
                 , 'msg' => Config::get('debugMode') ? $throwable->getMessage() : "Something went wrong in returning an error message"
                 , 'html' => "Please contact the application administrator for more information"
-                ], 500, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                ],
+                500,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+            );
         }
     };
 };
 
 $apiContainer['phpErrorHandler'] = function ($c) {
     return function (Request $request, Response $response, Error $error) {
-        try{
+        try {
             Logger::getLogger("API")->critical($error->getMessage());
             $debugMode = Config::get('debugMode');
 
@@ -118,15 +124,20 @@ $apiContainer['phpErrorHandler'] = function ($c) {
                 , 'msg' => $debugMode ? $error->getMessage() : "An error occured. Sorry for the temporary inconvenience"
                 , 'notifications' => Notifications::getAll()
                 , 'html' => $debugMode ? stackTrace($error) : "Please contact the application administrator for more information"
-                ], 500, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            
-        }catch(Throwable $throwable){ // catches both errors and exceptions
+                ],
+                500,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+            );
+        } catch (Throwable $throwable) { // catches both errors and exceptions
             Logger::getLogger("API")->critical($throwable->getMessage());
             return $response->withJson(
                 [ 'error' => 500
                 , 'msg' => Config::get('debugMode') ? $throwable->getMessage() : "Something went wrong in returning an error message"
                 , 'html' => "Please contact the application administrator for more information"
-                ], 500, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                ],
+                500,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+            );
         }
     };
 };
@@ -138,7 +149,7 @@ $apiContainer->get('settings')->replace(['displayErrorDetails' => Config::get('d
 $app = new App($apiContainer);
 
 // Add middleware to set default content type for response
-$app->add(function (Request $req,  Response $res, callable $next) {
+$app->add(function (Request $req, Response $res, callable $next) {
     $res = $res->withHeader('Content-Type', 'application/json;charset=utf-8');
     $newResponse = $next($req, $res);
     return $newResponse;
@@ -152,11 +163,13 @@ $middleWare1 = function (Request $request, Response $response, callable $next) {
     return $next($request, $response);
 };
 
-include (__DIR__ . '/resources.php'); // API calls starting with '/resource/'
-include (__DIR__ . '/admin.php'); // API calls starting with '/admin/'
-include (__DIR__ . '/app.php'); // API calls starting with '/app/'
+include(__DIR__ . '/resources.php'); // API calls starting with '/resource/'
+include(__DIR__ . '/admin.php'); // API calls starting with '/admin/'
+include(__DIR__ . '/app.php'); // API calls starting with '/app/'
 
-foreach((array)$GLOBALS['api']['files'] as $apiFile) include_once ($apiFile); // include api path added by extensions
+foreach ((array)$GLOBALS['api']['files'] as $apiFile) {
+    include_once($apiFile); // include api path added by extensions
+}
 
 // Run app
 $app->run();

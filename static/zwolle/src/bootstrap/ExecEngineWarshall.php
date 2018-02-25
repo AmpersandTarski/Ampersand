@@ -1,4 +1,4 @@
-<?php 
+<?php
 /* This file defines the (php) function 'TransitiveClosure', that computes the transitive closure of a relation.
 
    Suppose you have a relation r :: C * C, and that you need the transitive closure r+ of that relation.
@@ -32,14 +32,14 @@ use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
 use Ampersand\Rule\ExecEngine;
 
-/** 
+/**
  * @var \Pimple\Container $container
  */
 global $container;
 
 
-ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = function($relationName, $conceptName) use ($container) {
-    try{
+ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = function ($relationName, $conceptName) use ($container) {
+    try {
         $database = $container['mysql_database'];
         
         $concept = Concept::getConceptByLabel($conceptName);
@@ -53,19 +53,19 @@ ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = functio
         
         // initialization of 2-dimensional array
         $array = array();
-        foreach($result as $row){
+        foreach ($result as $row) {
             $array[$row[$srcCol->name]][$row[$tgtCol->name]] = !is_null($row[$tgtCol->name]);
         }
         
         return $array;
-    }catch(Exception $e){
+    } catch (Exception $e) {
         throw new Exception('RetrievePopulation: ' . $e->getMessage(), 500);
     }
 });
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
-ExecEngine::registerFunction('OverwritePopulation', $OverwritePopulation = function($rArray, $relationName, $conceptName) use ($container){
-    try{
+ExecEngine::registerFunction('OverwritePopulation', $OverwritePopulation = function ($rArray, $relationName, $conceptName) use ($container) {
+    try {
         $database = $container['mysql_database'];
         
         $concept = Concept::getConceptByLabel($conceptName);
@@ -77,30 +77,31 @@ ExecEngine::registerFunction('OverwritePopulation', $OverwritePopulation = funct
         $query = "DELETE FROM `{$relationTable->name}`"; // Do not use TRUNCATE statement, this causes an implicit commit
         $database->Exe($query);
         
-        foreach($rArray as $src => $tgtArray){
-            foreach($tgtArray as $tgt => $bool){
-                if($bool){
+        foreach ($rArray as $src => $tgtArray) {
+            foreach ($tgtArray as $tgt => $bool) {
+                if ($bool) {
                     $query = "INSERT INTO `{$relationTable->name}` (`{$srcCol->name}`, `{$tgtCol->name}`) VALUES ('$src','$tgt')";
                     $database->Exe($query);
                 }
             }
         }
-        
-    }catch(Exception $e){
+    } catch (Exception $e) {
         throw new Exception('OverwritePopulation: ' . $e->getMessage(), 500);
     }
 });
 
-ExecEngine::registerFunction('TransitiveClosure', function($r,$C,$rCopy,$rPlus) use ($RetrievePopulation, $OverwritePopulation){
-    if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
+ExecEngine::registerFunction('TransitiveClosure', function ($r, $C, $rCopy, $rPlus) use ($RetrievePopulation, $OverwritePopulation) {
+    if (func_num_args() != 4) {
+        throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
+    }
     
     $warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];
     $execEngineRunCount = ExecEngine::$runCount;
 
-    if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
-        if($warshallRunCount == $execEngineRunCount){
+    if ($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]) {
+        if ($warshallRunCount == $execEngineRunCount) {
             return;  // this is the case if we have executed this function already in this transaction
-        }        
+        }
     }
         
     $GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r] = true;
@@ -114,17 +115,19 @@ ExecEngine::registerFunction('TransitiveClosure', function($r,$C,$rCopy,$rPlus) 
     // Get all unique atoms from this population
     $atoms = array_keys($closure); // 'Src' (left) atoms of pairs in $closure
     
-    foreach ($closure as $tgtAtomsList){ // Loop to add 'Tgt' atoms that not yet exist
+    foreach ($closure as $tgtAtomsList) { // Loop to add 'Tgt' atoms that not yet exist
         $tgtAtoms = array_keys($tgtAtomsList);
-        foreach ($tgtAtoms as $tgtAtom){
-            if (!in_array($tgtAtom, $atoms)) $atoms[] = $tgtAtom;
+        foreach ($tgtAtoms as $tgtAtom) {
+            if (!in_array($tgtAtom, $atoms)) {
+                $atoms[] = $tgtAtom;
+            }
         }
     }
     
-    foreach ($atoms as $k){
-        foreach ($atoms as $i){
-            if ($closure[$i][$k]){
-                foreach ($atoms as $j){
+    foreach ($atoms as $k) {
+        foreach ($atoms as $i) {
+            if ($closure[$i][$k]) {
+                foreach ($atoms as $j) {
                     $closure[$i][$j] = $closure[$i][$j] || $closure[$k][$j];
                 }
             }

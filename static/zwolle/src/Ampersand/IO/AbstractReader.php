@@ -7,7 +7,8 @@
 
 namespace Ampersand\IO;
 
-abstract class AbstractReader {
+abstract class AbstractReader
+{
 
     /**
      * The stream used to input
@@ -18,18 +19,20 @@ abstract class AbstractReader {
 
     /**
      * Constructor
-     * 
+     *
      * @param array $options Configuration options
      */
-    public function __construct($options = []){
-        
+    public function __construct($options = [])
+    {
     }
 
-    public function getContent(){
+    public function getContent()
+    {
         return stream_get_contents($this->stream, -1, 0);
     }
 
-    public function loadFile($filePath){
+    public function loadFile($filePath)
+    {
         // Check if file exists
         if (!file_exists($filePath) || !is_readable($filePath)) {
             throw new Exception("Could not open {$filePath}. File does not exist", 500);
@@ -37,7 +40,7 @@ abstract class AbstractReader {
 
         // Open file
         $this->stream = fopen($filePath, 'r');
-        if ($this->stream === FALSE) {
+        if ($this->stream === false) {
             throw new Exception("Could not open {$filePath}", 500);
         }
     }

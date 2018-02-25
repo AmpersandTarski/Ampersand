@@ -9,10 +9,11 @@ namespace Ampersand\IO;
 
 use Ampersand\IO\AbstractReader;
 
-class JSONReader extends AbstractReader {
+class JSONReader extends AbstractReader
+{
 
-    public function getContent(){
+    public function getContent()
+    {
         return json_decode(stream_get_contents($this->stream, -1, 0));
     }
-
 }

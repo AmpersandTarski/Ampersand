@@ -20,38 +20,39 @@ use Ampersand\Interfacing\InterfaceObject;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class AngularApp {
+class AngularApp
+{
     
     /**
-     * 
+     *
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
     
     /**
      * List of items for the extensions menu (in navbar)
-     * 
-     * @var array 
+     *
+     * @var array
      */
     protected $extMenu = [];
     
     /**
      * List of items for the refresh menu (in navbar)
-     * 
+     *
      * @var array
      */
     protected $refreshMenu = [];
     
     /**
      * List of items for the role menu (in navbar)
-     * 
+     *
      * @var array
      */
     protected $roleMenu = [];
 
     /**
      * Contains information for the front-end to navigate the user in a certain case (e.g. after COMMIT)
-     * 
+     *
      * @var array
      */
     protected $navToResponse = [];
@@ -69,7 +70,8 @@ class AngularApp {
      * @param \Ampersand\AmpersandApp $ampersandApp
      * @param \Psr\Log\LoggerInterface $logger
      */
-    public function __construct(AmpersandApp $ampersandApp, LoggerInterface $logger){
+    public function __construct(AmpersandApp $ampersandApp, LoggerInterface $logger)
+    {
         $this->logger = $logger;
         $this->logger->debug("## BUILD ANGULAR APP ##################################################");
         $this->ampersandApp = $ampersandApp;
@@ -80,7 +82,8 @@ class AngularApp {
      * @param string $itemUrl location of html template to use as menu item
      * @param callable function which returns true/false determining to add the menu item or not
      */
-    public function addMenuItem(string $menu, string $itemUrl, callable $function){
+    public function addMenuItem(string $menu, string $itemUrl, callable $function)
+    {
         switch ($menu) {
             case 'ext':
                 $this->extMenu[] = ['url' => $itemUrl, 'function' => $function];
@@ -97,28 +100,29 @@ class AngularApp {
         }
     }
     
-    public function getMenuItems($menu){
+    public function getMenuItems($menu)
+    {
         global $container;
         $ampersandApp = $container['ampersand_app'];
 
         switch ($menu) {
             // Items for extension menu
             case 'ext':
-                $result = array_filter($this->extMenu, function($item) use ($ampersandApp){
+                $result = array_filter($this->extMenu, function ($item) use ($ampersandApp) {
                     return call_user_func_array($item['function'], [$ampersandApp]); // execute function which determines if item must be added or not
                 });
                 break;
             
             // Items for refresh menu
             case 'refresh':
-                $result = array_filter($this->refreshMenu, function($item) use ($ampersandApp){
+                $result = array_filter($this->refreshMenu, function ($item) use ($ampersandApp) {
                     return call_user_func_array($item['function'], [$ampersandApp]); // execute function which determines if item must be added or not
                 });
                 break;
             
             // Items for role menu
             case 'role':
-                $result = array_filter($this->roleMenu, function($item) use ($ampersandApp){
+                $result = array_filter($this->roleMenu, function ($item) use ($ampersandApp) {
                     return call_user_func_array($item['function'], [$ampersandApp]); // execute function which determines if item must be added or not
                 });
                 break;
@@ -130,7 +134,9 @@ class AngularApp {
                     /** @var \Ampersand\Interfacing\InterfaceObject $ifc */
                     $sort = $ifc->tgtConcept->name; // or sort by classification tree: $sort = $ifc->tgtConcept->getLargestConcept()->name;
 
-                    if(!isset($result[$sort])) $result[$sort] = ['label' => "New {$ifc->tgtConcept->label}", 'ifcs' => []];
+                    if (!isset($result[$sort])) {
+                        $result[$sort] = ['label' => "New {$ifc->tgtConcept->label}", 'ifcs' => []];
+                    }
 
                     $result[$sort]['ifcs'][] = ['id' => $ifc->id
                                                ,'label' => $ifc->label
@@ -142,7 +148,7 @@ class AngularApp {
             
             // Top level items in menu bar
             case 'top':
-                $result = array_map(function(InterfaceObject $ifc){
+                $result = array_map(function (InterfaceObject $ifc) {
                     return [ 'id' => $ifc->id
                            , 'label' => $ifc->label
                            , 'link' => '/' . $ifc->id
@@ -159,43 +165,55 @@ class AngularApp {
     
     /**
      * Get interfaces for certain use cases
-     
+
      * @param string $menu
      * @return \Ampersand\Interfacing\InterfaceObject[]
      */
-    protected function getNavBarIfcs(string $menu): array {
+    protected function getNavBarIfcs(string $menu): array
+    {
         global $container;
 
         // Filter interfaces for requested part of navbar
-        return array_filter($container['ampersand_app']->getAccessibleInterfaces(), function(InterfaceObject $ifc) use ($menu){
+        return array_filter($container['ampersand_app']->getAccessibleInterfaces(), function (InterfaceObject $ifc) use ($menu) {
             switch ($menu) {
                 case 'top':
-                    if(($ifc->srcConcept->isSession() || $ifc->srcConcept->name == 'ONE') && $ifc->crudR()) return true;
-                    else return false;
+                    if (($ifc->srcConcept->isSession() || $ifc->srcConcept->name == 'ONE') && $ifc->crudR()) {
+                        return true;
+                    } else {
+                        return false;
+                    }
                 case 'new':
                     // crudC, otherwise the atom cannot be created
                     // isIdent (interface expr = I[Concept]), because otherwise a src atom is necesarry, which we don't have wiht +-menu
-                    if($ifc->crudC() && $ifc->isIdent()) return true;
-                    else return false;
+                    if ($ifc->crudC() && $ifc->isIdent()) {
+                        return true;
+                    } else {
+                        return false;
+                    }
                 default:
                     throw new Exception("Cannot get navbar interfaces. Unknown menu: '{$menu}'", 500);
             }
         });
     }
 
-    public function getNavToResponse($case){
+    public function getNavToResponse($case)
+    {
         switch ($case) {
             case 'COMMIT':
             case 'ROLLBACK':
-                if(array_key_exists($case, $this->navToResponse)) return $this->navToResponse[$case];
-                else return null;
+                if (array_key_exists($case, $this->navToResponse)) {
+                    return $this->navToResponse[$case];
+                } else {
+                    return null;
+                }
                 break;
             default:
                 throw new Exception("Unsupported case '{$case}' to getNavToResponse", 500);
         }
     }
     
-    public function setNavToResponse($navTo, $case = 'COMMIT'){
+    public function setNavToResponse($navTo, $case = 'COMMIT')
+    {
         switch ($case) {
             case 'COMMIT':
             case 'ROLLBACK':
@@ -208,25 +226,30 @@ class AngularApp {
 
     /**
      * Determine if frontend app needs to refresh the session information (like navigation bar, roles, etc)
-     * 
+     *
      * True when session variable is affected in a committed transaction
      * False otherwise
-     * 
+     *
      * @return boolean
      */
-    public function getSessionRefreshAdvice(): bool {
+    public function getSessionRefreshAdvice(): bool
+    {
         static $skipRels = ['lastAccess[SESSION*DateTime]']; // these relations do not result in a session refresh advice
 
         $affectedRelations = [];
         foreach (Transaction::getTransactions() as $transaction) {
-            if(!$transaction->isCommitted()) continue;
+            if (!$transaction->isCommitted()) {
+                continue;
+            }
             $affectedRelations = array_merge($affectedRelations, $transaction->getAffectedRelations());
         }
         
         foreach (array_unique($affectedRelations) as $relation) {
             // Advise session refresh when src or tgt concept of this relation is SESSION
-            if(($relation->srcConcept->isSession() || $relation->tgtConcept->isSession())
-                && !in_array($relation->getSignature(), $skipRels)) return true;
+            if (($relation->srcConcept->isSession() || $relation->tgtConcept->isSession())
+                && !in_array($relation->getSignature(), $skipRels)) {
+                return true;
+            }
         }
 
         return false;

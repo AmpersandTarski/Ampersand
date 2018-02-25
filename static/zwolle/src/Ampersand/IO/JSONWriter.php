@@ -14,9 +14,11 @@ use Ampersand\IO\AbstractWriter;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class JSONWriter extends AbstractWriter {
+class JSONWriter extends AbstractWriter
+{
     
-    public function write($data){
+    public function write($data)
+    {
         $this->stream->write(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
 }

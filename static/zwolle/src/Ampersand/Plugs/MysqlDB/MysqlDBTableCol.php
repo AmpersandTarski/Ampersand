@@ -14,18 +14,18 @@ use Exception;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class MysqlDBTableCol 
+class MysqlDBTableCol
 {
     /**
      * Name/header of database column
-     * 
+     *
      * @var string
      */
     public $name;
 
     /**
      * Specifies if value in this database column can be NULL
-     * 
+     *
      * @var bool|NULL
      */
     public $null;
@@ -38,13 +38,16 @@ class MysqlDBTableCol
 
     /**
      * Constructor of Database table column
-     * 
+     *
      * @param string $name
      * @param bool $null
      * @param bool $unique
      */
-    public function __construct(string $name, bool $null = null, bool $unique = null){
-        if($name == '') throw new Exception ("Database table column name is an empty string" ,500);
+    public function __construct(string $name, bool $null = null, bool $unique = null)
+    {
+        if ($name == '') {
+            throw new Exception("Database table column name is an empty string", 500);
+        }
         $this->name = $name;
         $this->null = $null;
         $this->unique = $unique;

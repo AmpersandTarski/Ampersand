@@ -2,7 +2,7 @@
 
 use Ampersand\Misc\Config;
 
-try{
+try {
     Config::set('pathToGeneratedFiles', 'global', dirname(dirname(__FILE__)) . '/generics/');
     Config::set('pathToAppFolder', 'global', dirname(dirname(__FILE__)) . '/app/');
     
@@ -67,7 +67,6 @@ try{
     Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
     Config::set('autoRerun', 'execEngine', true);
     Config::set('maxRunCount', 'execEngine', 10);
-
-}catch(Exception $e){
+} catch (Exception $e) {
     throw $e;
 }

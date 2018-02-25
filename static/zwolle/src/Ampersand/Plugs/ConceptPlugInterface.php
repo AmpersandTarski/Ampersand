@@ -11,11 +11,12 @@ use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 
 /**
- * 
+ *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-interface ConceptPlugInterface extends StorageInterface {
+interface ConceptPlugInterface extends StorageInterface
+{
     
     public function atomExists(Atom $atom);
     

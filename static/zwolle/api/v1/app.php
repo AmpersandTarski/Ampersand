@@ -10,7 +10,7 @@ use Slim\Http\Response;
  */
 global $app;
 
-/** 
+/**
  * @var \Pimple\Container $container
  */
 global $container;
@@ -23,12 +23,12 @@ $app->group('/app', function () use ($container) {
     /** @var \Ampersand\AngularApp $angularApp */
     $angularApp = $container['angular_app'];
 
-    $this->patch('/roles', function (Request $request, Response $response, $args = []) use ($ampersandApp){
+    $this->patch('/roles', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
         $ampersandApp->setActiveRoles((array) $request->getParsedBody());
         return $response->withJson($ampersandApp->getSessionRoles(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/navbar', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {    
+    $this->get('/navbar', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
         $ampersandApp->checkProcessRules();
         
         $session = $ampersandApp->getSession();
@@ -54,5 +54,4 @@ $app->group('/app', function () use ($container) {
         $ampersandApp->checkProcessRules();
         return $response->withJson(Notifications::getAll(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
-
 })->add($middleWare1);

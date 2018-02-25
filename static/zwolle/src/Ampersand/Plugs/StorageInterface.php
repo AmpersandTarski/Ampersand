@@ -11,11 +11,12 @@ use Ampersand\Transaction;
 
 /**
  * Interface for storage implementations
- * 
+ *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-interface StorageInterface {
+interface StorageInterface
+{
     
     public function getLabel();
 

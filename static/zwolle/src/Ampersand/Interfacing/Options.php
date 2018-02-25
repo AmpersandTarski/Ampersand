@@ -12,7 +12,8 @@ namespace Ampersand\Interfacing;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Options {
+class Options
+{
 
     const
     /** Default options */
@@ -34,8 +35,9 @@ class Options {
      * @param array $params
      * @return integer
      */
-    public static function getFromRequestParams(array $params): int {
-        $optionsMap = ['metaData' => self::INCLUDE_META_DATA 
+    public static function getFromRequestParams(array $params): int
+    {
+        $optionsMap = ['metaData' => self::INCLUDE_META_DATA
                       ,'sortData' => self::INCLUDE_SORT_DATA
                       ,'navIfc' => self::INCLUDE_NAV_IFCS
                       ,'inclLinktoData' => self::INCLUDE_LINKTO_IFCS
@@ -53,9 +55,12 @@ class Options {
      * @param integer $options
      * @return integer
      */
-    protected static function processOptionsMap(array $optionsMap, array $params, int $options = 0): int {
+    protected static function processOptionsMap(array $optionsMap, array $params, int $options = 0): int
+    {
         foreach ($optionsMap as $option => $value) {
-            if(!isset($params[$option])) continue; // Don't change the default setting
+            if (!isset($params[$option])) {
+                continue; // Don't change the default setting
+            }
 
             // If true/false => set/unset the option
             $bool = filter_var($params[$option], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);

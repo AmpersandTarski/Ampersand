@@ -13,45 +13,60 @@ use Ampersand\IO\AbstractWriter;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Relation;
 
-class Reporter {
+class Reporter
+{
 
     /**
-     * Writer 
-     * 
+     * Writer
+     *
      * @var \Ampersand\IO\AbstractWriter
      */
     protected $writer;
 
-    public function __construct(AbstractWriter $writer){
+    public function __construct(AbstractWriter $writer)
+    {
         $this->writer = $writer;
     }
 
     /**
      * Write and return relation definition report
-     * 
+     *
      * Specifies multiplicity constraints, related conjuncts and other aspects of all relations
      *
      * @return array
      */
-    public function reportRelationDefinitions(){
-        $content = array_map(function(Relation $relation){
+    public function reportRelationDefinitions()
+    {
+        $content = array_map(function (Relation $relation) {
             $relArr = [];
             
             $relArr['signature'] = $relation->signature;
             
             // Get multiplicity constraints
             $constraints = [];
-            if($relation->isUni) $constraints[] = "[UNI]";
-            if($relation->isTot) $constraints[] = "[TOT]";
-            if($relation->isInj) $constraints[] = "[INJ]";
-            if($relation->isSur) $constraints[] = "[SUR]";
+            if ($relation->isUni) {
+                $constraints[] = "[UNI]";
+            }
+            if ($relation->isTot) {
+                $constraints[] = "[TOT]";
+            }
+            if ($relation->isInj) {
+                $constraints[] = "[INJ]";
+            }
+            if ($relation->isSur) {
+                $constraints[] = "[SUR]";
+            }
             $relArr['constraints'] = empty($constraints) ? "no constraints" : implode(',', $constraints);
             
             $relArr['affectedConjuncts'] = [];
-            foreach($relation->getRelatedConjuncts() as $conjunct){
+            foreach ($relation->getRelatedConjuncts() as $conjunct) {
                 $relArr['affectedConjuncts'][$conjunct->id] = [];
-                foreach ($conjunct->invRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['invRules'][] = $ruleName;
-                foreach ($conjunct->sigRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['sigRules'][] = $ruleName;
+                foreach ($conjunct->invRuleNames as $ruleName) {
+                    $relArr['affectedConjuncts'][$conjunct->id]['invRules'][] = $ruleName;
+                }
+                foreach ($conjunct->sigRuleNames as $ruleName) {
+                    $relArr['affectedConjuncts'][$conjunct->id]['sigRules'][] = $ruleName;
+                }
             }
             $relArr['srcOrTgtTable'] = $relation->getMysqlTable()->tableOf;
             
@@ -65,18 +80,19 @@ class Reporter {
 
     /**
      * Write and return interface report
-     * 
+     *
      * Specifies aspects for all interfaces (incl. subinterfaces), like path, label, crud-rights, etc
-     * 
+     *
      * @return array
      */
-    public function reportInterfaceDefinitions(){
+    public function reportInterfaceDefinitions()
+    {
         $content = [];
         foreach (InterfaceObject::getAllInterfaces() as $key => $ifc) {
             $content = array_merge($content, $ifc->getInterfaceFlattened());
         }
         
-        $content = array_map(function(InterfaceObject $ifc){
+        $content = array_map(function (InterfaceObject $ifc) {
             return array( 'path' => $ifc->getPath()
                         , 'label' => $ifc->label
                         , 'crudC' => $ifc->crudC()
@@ -93,7 +109,6 @@ class Reporter {
                         , 'public' => $ifc->isPublic()
                         , 'roles' => implode(',', $ifc->ifcRoleNames)
                     );
-            
         }, $content);
 
         $this->writer->write($content);
@@ -107,50 +122,54 @@ class Reporter {
      *
      * @return array
      */
-    public function reportInterfaceIssues(){
+    public function reportInterfaceIssues()
+    {
         $content = [];
         foreach (InterfaceObject::getAllInterfaces() as $key => $interface) {
-            foreach($interface->getInterfaceFlattened() as $ifc){
-                if($ifc->crudU() && !$ifc->isEditable()) {
+            foreach ($interface->getInterfaceFlattened() as $ifc) {
+                if ($ifc->crudU() && !$ifc->isEditable()) {
                     $content[] = [ 'interface' => $ifc->getPath()
                                  , 'message' => "Update rights (crUd) specified while interface expression is not an editable relation!"
                                  ];
                 }
 
-                if($ifc->crudC() && !$ifc->tgtConcept->isObject()) {
+                if ($ifc->crudC() && !$ifc->tgtConcept->isObject()) {
                     $content[] = [ 'interface' => $ifc->getPath()
                                  , 'message' => "Create rights (Crud) specified while target concept is a scalar. This has no affect!"
                                  ];
                 }
 
-                if($ifc->crudD() && !$ifc->tgtConcept->isObject()) {
+                if ($ifc->crudD() && !$ifc->tgtConcept->isObject()) {
                     $content[] = [ 'interface' => $ifc->getPath()
                                  , 'message' => "Delete rights (cruD) specified while target concept is a scalar. This has no affect!"
                                  ];
                 }
 
-                if(!$ifc->crudR()) {
+                if (!$ifc->crudR()) {
                     $content[] = [ 'interface' => $ifc->getPath()
                                  , 'message' => "No read rights specified. Are you sure?"
                                  ];
                 }
                 
                 // Check for unsupported patchReplace functionality due to missing 'old value'. Related with issue #318. TODO: still needed??
-                if($ifc->isEditable() && $ifc->crudU() && !$ifc->tgtConcept->isObject() && $ifc->isUni()){
+                if ($ifc->isEditable() && $ifc->crudU() && !$ifc->tgtConcept->isObject() && $ifc->isUni()) {
                     // Only applies to editable relations
                     // Only applies to crudU, because issue is with patchReplace, not with add/remove
                     // Only applies to scalar, because objects don't use patchReplace, but Remove and Add
                     // Only if interface expression (not! the relation) is univalent, because else a add/remove option is used in the UI
-                    if((!$ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'tgt')
-                            || ($ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'src'))
+                    if ((!$ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'tgt')
+                            || ($ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'src')) {
                         $content[] = [ 'interface' => $ifc->getPath()
                                      , 'message' => "Unsupported edit functionality due to combination of factors. See issue #318"
                                      ];
+                    }
                 }
             }
         }
 
-        if(empty($content)) $content[] = ['No issues found'];
+        if (empty($content)) {
+            $content[] = ['No issues found'];
+        }
 
         $this->writer->write($content);
         
@@ -159,17 +178,24 @@ class Reporter {
 
     /**
      * Write and return conjunct usage report
-     * 
+     *
      * Specifies which conjuncts are used by which rules, grouped by invariants, signals, and unused conjuncts
      *
      * @return array
      */
-    public function reportConjunctUsage(){
+    public function reportConjunctUsage()
+    {
         $content = [];
-        foreach(Conjunct::getAllConjuncts() as $conj){        
-            if($conj->isInvConj()) $content['invConjuncts'][] = $conj->__toString();
-            if($conj->isSigConj()) $content['sigConjuncts'][] = $conj->__toString();
-            if(!$conj->isInvConj() && !$conj->isSigConj()) $content['unused'][] = $conj->__toString();
+        foreach (Conjunct::getAllConjuncts() as $conj) {
+            if ($conj->isInvConj()) {
+                $content['invConjuncts'][] = $conj->__toString();
+            }
+            if ($conj->isSigConj()) {
+                $content['sigConjuncts'][] = $conj->__toString();
+            }
+            if (!$conj->isInvConj() && !$conj->isSigConj()) {
+                $content['unused'][] = $conj->__toString();
+            }
         }
 
         $this->writer->write($content);
@@ -183,16 +209,17 @@ class Reporter {
      * @param Conjunct[] $conjuncts
      * @return array
      */
-    public function reportConjunctPerformance(array $conjuncts){
+    public function reportConjunctPerformance(array $conjuncts)
+    {
         $content = [];
         
         // run all conjuncts (from - to)
-        foreach($conjuncts as $conjunct){
+        foreach ($conjuncts as $conjunct) {
             /** @var \Ampersand\Rule\Conjunct $conjunct */
             $startTimeStamp = microtime(true); // true means get as float instead of string
             $conjunct->evaluate(false);
             $endTimeStamp = microtime(true);
-            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter
+            set_time_limit((int) ini_get('max_execution_time')); // reset time limit counter
             
             $content = array( 'id' => $conjunct->id
                     , 'start' => round($startTimeStamp, 6)
@@ -203,7 +230,7 @@ class Reporter {
             );
         }
         
-        usort($content, function($a, $b){ 
+        usort($content, function ($a, $b) {
             return $b['duration'] <=> $a['duration']; // uses php7 spaceship operator
         });
 
@@ -211,5 +238,4 @@ class Reporter {
 
         return $this;
     }
-
 }

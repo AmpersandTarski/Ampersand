@@ -17,13 +17,14 @@ use Ampersand\Rule\Violation;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Notifications {
+class Notifications
+{
     
     private static $errors = array();
     private static $invariants = array();
     private static $warnings = array();
     private static $signals = array();
-    private static $infos = array();    
+    private static $infos = array();
     private static $successes = array();
 
 /**************************************************************************************************
@@ -40,24 +41,25 @@ class Notifications {
      * @return void
      * @throws Exception when notification level is not supported
      */
-    public static function addNotification($level, $message){
-        switch($level){
-            case 200 : // Info
+    public static function addNotification($level, $message)
+    {
+        switch ($level) {
+            case 200: // Info
                 self::addInfo($message);
                 break;
-            case 250 : // Notice
+            case 250: // Notice
                 self::addSuccess($message);
                 break;
-            case 300 : // Warning
+            case 300: // Warning
                 self::addWarning($message);
                 break;
-            case 400 : // Error
-            case 500 : // Critical
-            case 550 : // Alert
-            case 600 : // Emergency
+            case 400: // Error
+            case 500: // Critical
+            case 550: // Alert
+            case 600: // Emergency
                 self::addError($message);
                 break;
-            default :
+            default:
                 throw new Exception("Unsupported notification level: {$level}", 500);
         }
     }
@@ -67,12 +69,12 @@ class Notifications {
      * @param string $message
      * @return void
      */
-    private static function addError($message){
+    private static function addError($message)
+    {
         $errorHash = hash('md5', $message);
         
         self::$errors[$errorHash]['message'] = $message;
         self::$errors[$errorHash]['count']++;
-        
     }
     
     /**
@@ -80,7 +82,8 @@ class Notifications {
      * @param string $message
      * @return void
      */
-    private static function addWarning($message){
+    private static function addWarning($message)
+    {
         $hash = hash('md5', $message);
         
         self::$warnings[$hash]['message'] = $message;
@@ -92,31 +95,34 @@ class Notifications {
      * @param string $message
      * @return void
      */
-    private static function addSuccess($message){
+    private static function addSuccess($message)
+    {
         self::$successes[] = array('message' => $message);
     }
     
     /**
-     * Add info notification for user 
+     * Add info notification for user
      * @param string $message
      * @return void
      */
-    private static function addInfo($message){
+    private static function addInfo($message)
+    {
         self::$infos[] = array('message' => $message);
     }
 
 /**************************************************************************************************
- * 
+ *
  * Notifications for: invariant and signal rule violations
- * 
+ *
  *************************************************************************************************/
     /**
      * Undocumented function
-     * 
+     *
      * @param \Ampersand\Rule\Violation $violation
      * @return void
      */
-    public static function addInvariant(Violation $violation){
+    public static function addInvariant(Violation $violation)
+    {
         $hash = hash('md5', $violation->rule->id);
             
         self::$invariants[$hash]['ruleMessage'] = $violation->rule->getViolationMessage();
@@ -127,22 +133,27 @@ class Notifications {
     
     /**
      * Undocumented function
-     * 
+     *
      * @param \Ampersand\Rule\Violation $violation
      * @return void
      */
-    public static function addSignal(Violation $violation){
+    public static function addSignal(Violation $violation)
+    {
         $ruleHash = hash('md5', $violation->rule->id);
         
-        if(!isset(self::$signals[$ruleHash])){
+        if (!isset(self::$signals[$ruleHash])) {
             self::$signals[$ruleHash]['message'] = $violation->rule->getViolationMessage();
         }
         
         $ifcs = [];
-        foreach ($violation->getInterfaces('src') as $ifc) $ifcs[] = ['id' => $ifc->id, 'label' => $ifc->label, 'link' => "#/{$ifc->id}/{$violation->src->id}"];
-        if($violation->src->concept != $violation->tgt->concept || $violation->src->id != $violation->tgt->id)
-            foreach ($violation->getInterfaces('tgt') as $ifc) 
+        foreach ($violation->getInterfaces('src') as $ifc) {
+            $ifcs[] = ['id' => $ifc->id, 'label' => $ifc->label, 'link' => "#/{$ifc->id}/{$violation->src->id}"];
+        }
+        if ($violation->src->concept != $violation->tgt->concept || $violation->src->id != $violation->tgt->id) {
+            foreach ($violation->getInterfaces('tgt') as $ifc) {
                 $ifcs[] = ['id' => $ifc->id, 'label' => $ifc->label, 'link' => "#/{$ifc->id}/{$violation->tgt->id}"];
+            }
+        }
         $message = $violation->getViolationMessage();
         
         self::$signals[$ruleHash]['violations'][] = ['message' => $message
@@ -158,7 +169,8 @@ class Notifications {
  *
  *************************************************************************************************/
     
-    public static function getAll(){
+    public static function getAll()
+    {
         return array( 'errors' => array_values(self::$errors)
                     , 'warnings' => array_values(self::$warnings)
                     , 'infos' => array_values(self::$infos)
@@ -168,7 +180,8 @@ class Notifications {
                     );
     }
     
-    public static function getDefaultSettings(){
+    public static function getDefaultSettings()
+    {
         return array('switchShowSignals'         => Config::get('defaultShowSignals', 'notifications')
                     ,'switchShowInfos'            => Config::get('defaultShowInfos', 'notifications')
                     ,'switchShowSuccesses'        => Config::get('defaultShowSuccesses', 'notifications')

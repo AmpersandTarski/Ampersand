@@ -8,13 +8,13 @@ namespace Ampersand\Misc;
  * @return array
  */
 function getDirectoryList($dirPath)
-{   
+{
     $results = array(); // create an array to hold directory list
     $handler = opendir($dirPath); // create a handler for the directory
     
-    while ($file = readdir($handler)){ // open directory and walk through the filenames
+    while ($file = readdir($handler)) { // open directory and walk through the filenames
         // if file isn't this directory or its parent, add it to the results
-        if ($file != "." && $file != ".."){
+        if ($file != "." && $file != "..") {
             $results[] = $file;
         }
     }
@@ -29,6 +29,7 @@ function getDirectoryList($dirPath)
  * @param array $arr the array to check
  * @return boolean
  */
-function isSequential(array $arr){
+function isSequential(array $arr)
+{
     return array_keys($arr) === range(0, count($arr) - 1);
 }

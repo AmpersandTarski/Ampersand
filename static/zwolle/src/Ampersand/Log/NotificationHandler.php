@@ -17,7 +17,8 @@ use Ampersand\Log\Notifications;
  */
 class NotificationHandler extends AbstractProcessingHandler
 {
-    protected function write(array $record){
+    protected function write(array $record)
+    {
         Notifications::addNotification($record['level'], $record['message']);
     }
 }

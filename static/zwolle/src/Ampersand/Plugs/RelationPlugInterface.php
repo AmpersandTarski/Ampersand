@@ -12,11 +12,12 @@ use Ampersand\Core\Link;
 use Ampersand\Core\Relation;
 
 /**
- * 
+ *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-interface RelationPlugInterface extends StorageInterface {
+interface RelationPlugInterface extends StorageInterface
+{
     
     public function linkExists(Link $link);
     

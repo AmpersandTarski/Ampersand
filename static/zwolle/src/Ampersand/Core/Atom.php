@@ -13,11 +13,12 @@ use DateTimeZone;
 use JsonSerializable;
 
 /**
- * 
+ *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Atom implements JsonSerializable {
+class Atom implements JsonSerializable
+{
     /**
      * Ampersand identifier of the atom
      * @var string
@@ -41,18 +42,19 @@ class Atom implements JsonSerializable {
      * @param Concept $concept
      * @return void
      */
-    public function __construct($atomId, Concept $concept){
+    public function __construct($atomId, Concept $concept)
+    {
         $this->concept = $concept;
         
         $this->setId($atomId);
-        
     }
     
     /**
      * Function is called when object is treated as a string
      * @return string
      */
-    public function __toString(){
+    public function __toString()
+    {
         // if atom id is longer than 40 chars, display first and last 20 chars
         $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
         return "{$id}[{$this->concept}]";
@@ -63,41 +65,45 @@ class Atom implements JsonSerializable {
      * for Atoms this is the same as the Atom identifier
      * @return string
      */
-    public function getLabel(){
+    public function getLabel()
+    {
         return $this->id;
     }
 
-    protected function setId($atomId){
+    protected function setId($atomId)
+    {
         // TODO: check can be removed when _NEW is replaced by other mechanism
-        if($atomId === '_NEW') throw new Exception("Replace _NEW with intended atom id before instantiating Atom object", 500);
+        if ($atomId === '_NEW') {
+            throw new Exception("Replace _NEW with intended atom id before instantiating Atom object", 500);
+        }
         
-        switch($this->concept->type){
-            case "ALPHANUMERIC" :
-            case "BIGALPHANUMERIC" :
-            case "HUGEALPHANUMERIC" :
-            case "PASSWORD" :
-            case "TYPEOFONE" :
-            case "BOOLEAN" :
+        switch ($this->concept->type) {
+            case "ALPHANUMERIC":
+            case "BIGALPHANUMERIC":
+            case "HUGEALPHANUMERIC":
+            case "PASSWORD":
+            case "TYPEOFONE":
+            case "BOOLEAN":
                 $this->id = $atomId;
                 break;
-            case "DATE" :
+            case "DATE":
                 // In php backend, all Dates are kept in ISO-8601 format
                 $datetime = new DateTime($atomId);
                 $this->id = $datetime->format('Y-m-d'); // format in ISO-8601 standard
                 break;
-            case "DATETIME" :
+            case "DATETIME":
                 // In php backend, all DateTimes are kept in DateTimeZone::UTC and DateTime::ATOM format
                 // $atomId may contain a timezone, otherwise UTC is asumed.
                 $datetime = new DateTime($atomId, new DateTimeZone('UTC')); // The $timezone parameter is ignored when the $time parameter either is a UNIX timestamp (e.g. @946684800) or specifies a timezone (e.g. 2010-01-28T15:00:00+02:00).
                 $datetime->setTimezone(new DateTimeZone('UTC')); // if not yet UTC, convert to UTC
                 $this->id = $datetime->format(DateTime::ATOM); // format in ISO-8601 standard, i.e. 2005-08-15T15:52:01+00:00 (DateTime::ATOM)
                 break;
-            case "FLOAT" :
-            case "INTEGER" :
-            case "OBJECT" :
+            case "FLOAT":
+            case "INTEGER":
+            case "OBJECT":
                 $this->id = $atomId;
                 break;
-            default :
+            default:
                 throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
         }
         return $this;
@@ -109,31 +115,32 @@ class Atom implements JsonSerializable {
      * @throws Exception when technical type is not (yet) supported
      * @return mixed
      */
-    public function jsonSerialize(){
-        switch($this->concept->type){
-            case "ALPHANUMERIC" :
-            case "BIGALPHANUMERIC" :
-            case "HUGEALPHANUMERIC" :
-            case "PASSWORD" :
-            case "TYPEOFONE" :
+    public function jsonSerialize()
+    {
+        switch ($this->concept->type) {
+            case "ALPHANUMERIC":
+            case "BIGALPHANUMERIC":
+            case "HUGEALPHANUMERIC":
+            case "PASSWORD":
+            case "TYPEOFONE":
                 return (string) $this->id;
-            case "BOOLEAN" :
+            case "BOOLEAN":
                 return (bool) $this->id;
-            case "DATE" :
+            case "DATE":
                 $datetime = new DateTime($this->id);
                 return $datetime->format('Y-m-d'); // format in ISO-8601 standard
-            case "DATETIME" :
+            case "DATETIME":
                 // DateTime(s) may contain a timezone, otherwise UTC is asumed.
                 $datetime = new DateTime($this->id, new DateTimeZone('UTC')); // The $timezone parameter is ignored when the $time parameter either is a UNIX timestamp (e.g. @946684800) or specifies a timezone (e.g. 2010-01-28T15:00:00+02:00).
                 $datetime->setTimezone(new DateTimeZone(date_default_timezone_get())); // convert back to systemtime
                 return $datetime->format(DateTime::ATOM); // format in ISO-8601 standard, i.e. 2005-08-15T15:52:01+00:00 (DateTime::ATOM)
-            case "FLOAT" :
+            case "FLOAT":
                 return (float) $this->id;
-            case "INTEGER" :
+            case "INTEGER":
                 return (int) $this->id;
-            case "OBJECT" :
+            case "OBJECT":
                 return rawurlencode($this->id);
-            default :
+            default:
                 throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
         }
     }
@@ -142,7 +149,8 @@ class Atom implements JsonSerializable {
      * Checks if atom exists in storage
      * @return boolean
      */
-    public function exists(){
+    public function exists()
+    {
         return $this->concept->atomExists($this);
     }
     
@@ -150,7 +158,8 @@ class Atom implements JsonSerializable {
      * Add atom to concept
      * @return Atom $this
      */
-    public function add(){
+    public function add()
+    {
         $this->concept->addAtom($this);
         return $this;
     }
@@ -159,7 +168,8 @@ class Atom implements JsonSerializable {
      * Delete atom from concept
      * @return Atom $this
      */
-    public function delete(){
+    public function delete()
+    {
         $this->concept->deleteAtom($this);
         return $this;
     }
@@ -170,7 +180,8 @@ class Atom implements JsonSerializable {
      * @param Atom $anotherAtom
      * @return Atom $this
      */
-    public function merge(Atom $anotherAtom){
+    public function merge(Atom $anotherAtom)
+    {
         $this->concept->mergeAtoms($this, $anotherAtom);
         return $this;
     }
@@ -181,10 +192,11 @@ class Atom implements JsonSerializable {
      * @param string $newAtomId
      * @return \Ampersand\Core\Atom
      */
-    public function rename($newAtomId): Atom {
+    public function rename($newAtomId): Atom
+    {
         $newAtom = new Atom($newAtomId, $this->concept);
-        if($newAtom->exists()) {
-            throw new Exception ("Cannot change atom identifier, because id is already used by another atom of the same concept", 500);
+        if ($newAtom->exists()) {
+            throw new Exception("Cannot change atom identifier, because id is already used by another atom of the same concept", 500);
         } else {
             $newAtom->add();
             return $newAtom->merge($this);
@@ -197,12 +209,20 @@ class Atom implements JsonSerializable {
      * @param boolean $isFlipped specifies if $this and $tgtAtom must be flipped to match the relation
      * @return Link
      */
-    public function link($tgtAtom, $relation, $isFlipped = false){
-        if(!($relation instanceof Relation)) $relation = Relation::getRelation($relation);
-        if(!($tgtAtom instanceof Atom)) $tgtAtom = $isFlipped ? new Atom($tgtAtom, $relation->srcConcept) : new Atom($tgtAtom, $relation->tgtConcept);        
+    public function link($tgtAtom, $relation, $isFlipped = false)
+    {
+        if (!($relation instanceof Relation)) {
+            $relation = Relation::getRelation($relation);
+        }
+        if (!($tgtAtom instanceof Atom)) {
+            $tgtAtom = $isFlipped ? new Atom($tgtAtom, $relation->srcConcept) : new Atom($tgtAtom, $relation->tgtConcept);
+        }
         
-        if($isFlipped) return new Link($relation, $tgtAtom, $this);
-        else return new Link($relation, $this, $tgtAtom);
+        if ($isFlipped) {
+            return new Link($relation, $tgtAtom, $this);
+        } else {
+            return new Link($relation, $this, $tgtAtom);
+        }
     }
     
     /**
@@ -210,19 +230,26 @@ class Atom implements JsonSerializable {
      * @param boolean $isFlipped specifies if relation must be flipped
      * @return Link[]
      */
-    public function getLinks($relation, $isFlipped = false){
-        if(!($relation instanceof Relation)) $relation = Relation::getRelation($relation);
+    public function getLinks($relation, $isFlipped = false)
+    {
+        if (!($relation instanceof Relation)) {
+            $relation = Relation::getRelation($relation);
+        }
         
-        if($isFlipped) return $relation->getAllLinks(null, $this);
-        else return $relation->getAllLinks($this, null);
+        if ($isFlipped) {
+            return $relation->getAllLinks(null, $this);
+        } else {
+            return $relation->getAllLinks($this, null);
+        }
     }
     
     /**
      * Save query row data (can be used for subinterfaces)
-     * @param arry $queryData 
+     * @param arry $queryData
      * @return void
      */
-    public function setQueryData($data){
+    public function setQueryData($data)
+    {
         $this->queryData = $data;
     }
     
@@ -232,10 +259,11 @@ class Atom implements JsonSerializable {
      * @param boolean $exists reference var that returns if column exists
      * @return string|array
      */
-    public function getQueryData($colName = null, &$exists = null){
-        if(is_null($colName)){
+    public function getQueryData($colName = null, &$exists = null)
+    {
+        if (is_null($colName)) {
             return (array) $this->queryData;
-        }else{
+        } else {
             // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
             $exists = array_key_exists($colName, (array) $this->queryData);
             return $this->queryData[$colName];

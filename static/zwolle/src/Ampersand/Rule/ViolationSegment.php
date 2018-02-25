@@ -11,35 +11,36 @@ use Ampersand\Interfacing\ViewSegment;
 use Exception;
 use Ampersand\Core\Atom;
 
-
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class ViolationSegment extends ViewSegment {
+class ViolationSegment extends ViewSegment
+{
 
     /**
      * The view to which this segment belongs to
-     * 
+     *
      * @var \Ampersand\Rule\Rule $rule
      */
     protected $rule;
 
     /**
      * Specifies if expression is the ident relation (in case of an Expr segment type)
-     * 
+     *
      * @var bool|null $expIsIdent
      */
     protected $expIsIdent = null;
 
     /**
      * Constructor of violation segments
-     * 
+     *
      * @param array $segmentDef
      * @param \Ampersand\Rule\Rule $rule rule of which this segment is part of
      */
-    public function __construct(array $segmentDef, Rule $rule){
+    public function __construct(array $segmentDef, Rule $rule)
+    {
         $this->rule = $rule;
         $this->expIsIdent = $segmentDef['expIsIdent'];
 
@@ -50,32 +51,37 @@ class ViolationSegment extends ViewSegment {
         $this->text = $segmentDef['text'];
         $this->expSQL = $segmentDef['expSQL'];
         
-        if(!($this->segType === 'Text' || $this->segType === 'Exp')) throw new Exception("Unsupported segmentType '{$this->segType}' in RULE segment '{$this}'", 501); // 501: Not implemented
+        if (!($this->segType === 'Text' || $this->segType === 'Exp')) {
+            throw new Exception("Unsupported segmentType '{$this->segType}' in RULE segment '{$this}'", 501); // 501: Not implemented
+        }
     }
     
-    public function __toString(){
+    public function __toString()
+    {
         return $this->rule . ":{$this->label}";
     }
     
     /**
      * Undocumented function
-     * 
+     *
      * @param Atom $srcAtom
      * @param Atom $tgtAtom
      * @return array
      */
-    public function getData(Atom $srcAtom, Atom $tgtAtom = null): array { // Second param is declared optional, because the method must be compatible with the parent method it overwrites (i.e. ViewSegment::getData())
-        switch ($this->segType){
+    public function getData(Atom $srcAtom, Atom $tgtAtom = null): array
+    {
+ // Second param is declared optional, because the method must be compatible with the parent method it overwrites (i.e. ViewSegment::getData())
+        switch ($this->segType) {
             case "Text":
                 return [$this->text];
                 break;
             case "Exp":
                 // select starting atom depending on whether the segment uses the src of tgt atom.
                 $atom = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
-                if($this->expIsIdent){ 
+                if ($this->expIsIdent) {
                     // when segment expression isIdent (i.e. SRC I or TGT I), we don't have to evaluate the expression.
                     return [$atom->id];
-                }else{
+                } else {
                     return $this->rule->plug->executeViewExpression($this, $atom);
                 }
                 break;
