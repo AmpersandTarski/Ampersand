@@ -207,10 +207,14 @@ class OAuthLoginController {
             // Save email as accUserid
             $account->link($email, 'accUserid[Account*UserID]')->add();
             
-            // If possible, add account to organization(s) based on domain name
-            $domain = explode('@', $email)[1];
-            $orgs = Resource::makeResource($domain, 'Domain')->all('DomainOrgs');
-            foreach ($orgs as $org) $account->link($org, 'accOrg[Account*Organization]')->add();
+            try {
+                // If possible, add account to organization(s) based on domain name
+                $domain = explode('@', $email)[1];
+                $orgs = Resource::makeResource($domain, 'Domain')->all('DomainOrgs');
+                foreach ($orgs as $org) $account->link($org, 'accOrg[Account*Organization]')->add();
+            } catch (Exception $e) {
+                // Domain orgs not supported => skip
+            }
 
         }elseif(iterator_count($accounts) == 1){
             $account = current($accounts);

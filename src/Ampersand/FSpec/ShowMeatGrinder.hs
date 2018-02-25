@@ -22,6 +22,7 @@ import Ampersand.Input
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.ADL1.Parser
 import Data.List
+import qualified Data.List.NonEmpty as NEL (toList)
 import Data.Maybe
 
 -- ^ Create a P_Context that contains meta-information from 
@@ -68,14 +69,15 @@ extractFromPop formalAmpersand pop =
          case string2AValue . unwords . words . show . popPairs $ pop of
             Checked x -> case checkAtomValues (popRelation pop) x of
                           Checked _ -> x
-                          Errors err -> fatal $
-                              "ERROR in tupels that are generated in the meatgrinder for relation\n"
-                            ++"  "++showRel (popRelation pop)
-                            ++intercalate (replicate 30 '=') (map showErr err)
-            Errors err -> fatal $ 
-                              "ERROR in tupels that are generated in the meatgrinder for relation\n"
-                            ++"  "++showRel (popRelation pop)
-                            ++intercalate (replicate 30 '=') (map showErr err)
+                          Errors errs -> fatal . unlines $
+                             [ "ERROR in tupels that are generated in the meatgrinder for relation"
+                             , "  "++showRel (popRelation pop)
+                             ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+                             
+            Errors errs -> fatal . unlines $
+                             [ "ERROR in tupels that are generated in the meatgrinder for relation"
+                             , "  "++showRel (popRelation pop)
+                             ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
       checkAtomValues :: Relation -> [PAtomPair] -> Guarded [AAtomPair]
       checkAtomValues rel pps = sequence $ map fun pps
             where
@@ -86,7 +88,7 @@ extractFromPop formalAmpersand pop =
               pAtomValue2aAtomValue :: A_Concept -> PAtomValue -> Guarded AAtomValue
               pAtomValue2aAtomValue cpt pav =
                 case unsafePAtomVal2AtomValue typ (Just cpt) pav of
-                  Left msg -> Errors [mkIncompatibleAtomValueError pav msg]
+                  Left msg -> Errors . pure $ mkIncompatibleAtomValueError pav msg
                   Right av -> pure av
                 where typ = cptTType formalAmpersand cpt
             
@@ -160,7 +162,9 @@ makeMetaFile formalAmpersand userFspec
        . sortOn showRel
        . instances $ formalAmpersand
     listOfConcepts :: [String]
-    listOfConcepts = map ("-- "++) (intercalate [""] (map showCpt cpts))
+    listOfConcepts = map ("-- "++) .
+                     intercalate [""] . 
+                     map showCpt $ cpts
        where
         showCpt :: A_Concept -> [String]
         showCpt cpt = [name cpt] ++ ( map ("  "++)

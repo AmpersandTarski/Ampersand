@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
-  , showErr, makeError, addError
+  , showErr, makeError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
@@ -39,7 +39,8 @@ import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Basics
 import Data.Maybe
-import Data.List  (intercalate, nub)
+import qualified Data.List as L   (intercalate)
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
 import GHC.Exts (groupWith)
 import Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
@@ -48,21 +49,18 @@ import Data.Monoid
 
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
-              | PE Message deriving Eq
+              | PE Message
 
 instance Show CtxError where
     show (CTXE o s) = "CTXE " ++ show o ++ " " ++ show s
     show (PE msg)   = "PE " ++ messageString msg
 
-errors :: Guarded t -> [CtxError]
-errors (Checked _) = []
-errors (Errors lst) = lst
+errors :: Guarded t -> Maybe (NEL.NonEmpty CtxError)
+errors (Checked _) = Nothing
+errors (Errors lst) = Just lst
 
 makeError :: String -> Guarded a
-makeError msg = Errors [PE (Message msg)]
-
-addError :: String -> Guarded a -> Guarded b
-addError msg guard = Errors (PE (Message msg):errors guard)
+makeError msg = Errors (PE (Message msg) NEL.:| [])
 
 class TypeAware x where
   -- Need something of type "p x"? Use on of these: [x], Maybe x, Guarded x
@@ -87,7 +85,10 @@ instance TypeAware A_Concept where
 -- SJC, Note about Haskell: I'm using scoped type variables here, via the flag "ScopedTypeVariables"
 -- the result is that the b is bound by the type signature, so I can use `getADLType_a' with exactly that type
 unexpectedType :: forall a b. (TypeAware a, TypeAware b, PStruct a) => Origin -> a -> Guarded b
-unexpectedType o x = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showP x<>"\n  expecting "<>getADLType_a ([]::[b])]
+unexpectedType o x = 
+   Errors (CTXE o ("Unexpected "<>getADLType [x]<>": "<>showP x<>"\n  expecting "<>getADLType_a ([]::[b])) 
+           NEL.:| []
+          )
 -- There is a way to work around this without ScopedTypeVariables, but in my (SJC) view, this is less readable:
 -- unexpectedType :: (TypeAware a, TypeAware b, ShowADL a) => Origin -> a -> Guarded b
 -- unexpectedType o x = res
@@ -95,115 +96,129 @@ unexpectedType o x = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showP 
 -- There is no loop, since getADLType_a cannot inspect its first argument (res), and the chain of constructors: "Errors", (:) and CTXE, contains a lazy one (in fact, they are all lazy). In case all occurences of "getADLType_a" are non-strict in their first argument, that would already break a loop.
 mkErrorReadingINCLUDE :: Maybe Origin -> FilePath -> String -> Guarded a
 mkErrorReadingINCLUDE mo file str
- = Errors [CTXE (fromMaybe (Origin "command line argument") mo) msg]
+ = Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) msg
     where 
-      msg = intercalate "\n    " $
+      msg = L.intercalate "\n    " $
              ("While looking for file '"++file++"':" )
              : lines str
 
 mkMultipleRepresentTypesError :: A_Concept -> [(TType,Origin)] -> Guarded a
 mkMultipleRepresentTypesError cpt rs
- = Errors [CTXE o msg]
+ = Errors . pure $ CTXE o msg
     where 
       o = case rs of
            []  -> fatal "Call of mkMultipleRepresentTypesError with no Representations"
            (_,x):_ -> x
-      msg = intercalate "\n" $
+      msg = L.intercalate "\n" $
              [ "The Concept "++showA cpt++" was shown to be representable with multiple types."
              , "The following TYPEs are defined for it:"
              ]++
              [ "  - "++show t++" at "++showFullOrig orig | (t,orig)<-rs]
 mkMultipleTypesInTypologyError :: [(A_Concept,TType,[Origin])] -> Guarded a
 mkMultipleTypesInTypologyError tripls 
- = Errors [CTXE o msg]
+ = Errors . pure $ CTXE o msg
     where
       o = case tripls of
             (_,_,x:_):_ -> x
             _  -> fatal "No origin in list."
-      msg = intercalate "\n" $
+      msg = L.intercalate "\n" $
              [ "Concepts in the same typology must have the same TYPE."
              , "The following concepts are in the same typology, but not all"
              , "of them have the same TYPE:"
              ]++
              [ "  - REPRESENT "++name c++" TYPE "++show t++" at "++showFullOrig orig | (c,t,origs) <- tripls, orig <- origs]
-mkCyclesInGensError :: [[A_Gen]] -> Guarded a
-mkCyclesInGensError cycles = Errors (map mkErr cycles)
+mkCyclesInGensError :: NEL.NonEmpty [A_Gen] -> Guarded a
+mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
  where 
   mkErr :: [A_Gen] -> CtxError
+  mkErr [] = fatal "Nothing to report about!" 
   mkErr gs = CTXE o msg
     where
       o = origin (head gs)
-      msg = intercalate "\n" $
+      msg = L.intercalate "\n" $
              [ "Classifications must not contain cycles."
              , "The following CLASSIFY statements are cyclic:"
              ]++
              [ "  - "++showA gn++" at "++showFullOrig (origin gn) | gn <- gs]
 
-mkMultipleRootsError :: [A_Concept] -> [A_Gen] -> Guarded a
+mkMultipleRootsError :: [A_Concept] -> NEL.NonEmpty A_Gen -> Guarded a
 mkMultipleRootsError roots gs
- = Errors [CTXE o msg]
+ = Errors . pure $ CTXE o msg
     where 
-      o = case gs of
-           [] -> fatal "mkMultipleRootsError called with no A_Gen."
-           g:_ -> origin g
-      msg = intercalate "\n" $
+      o = origin (NEL.head gs)
+      msg = L.intercalate "\n" $
              [ "A typology must have at most one root concept."
              , "The following CLASSIFY statements define a typology with multiple root concepts: "
              ] ++
-             [ "  - "++showA x++" at "++showFullOrig (origin x) | x<-gs]++
+             [ "  - "++showA x++" at "++showFullOrig (origin x) | x<-NEL.toList gs]++
              [ "Parhaps you could add the following statements:"]++
              [ "  CLASSIFY "++name cpt++" ISA "++show rootName    | cpt<-roots]
           
-       where rootName = intercalate "_Or_" . map name $ roots 
+       where rootName = L.intercalate "_Or_" . map name $ roots 
 nonMatchingRepresentTypes :: (Traced a1, Show a2, Show a3) => a1 -> a2 -> a3 -> Guarded a
 nonMatchingRepresentTypes genStmt wrongType rightType
- = Errors [CTXE (origin genStmt)$ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "++show wrongType++" is not the same as "++show rightType]
+ = Errors . pure $
+      CTXE (origin genStmt)
+           $ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "
+             ++show wrongType++" is not the same as "++show rightType
 
 class GetOneGuarded a where
+  {-# MINIMAL getOneExactly | hasNone #-}  -- we don't want endless loops, do we?
   getOneExactly :: (Traced a1, PStruct a1) => a1 -> [a] -> Guarded a
   getOneExactly _ [a] = Checked a
   getOneExactly o []  = hasNone o
-  getOneExactly o _ = Errors [CTXE o'$ "Found too many:\n  "++s | CTXE o' s <- errors (hasNone o :: Guarded a)]
+  getOneExactly o _ = 
+    case errors (hasNone o :: Guarded a) of
+      Nothing -> fatal "No error message!"
+      Just (CTXE o' s NEL.:| _) -> Errors . pure $ CTXE o' $ "Found too many:\n  "++s
+      Just (PE _      NEL.:| _) -> fatal "Didn't expect a PE constructor here"
   hasNone :: (Traced a1, PStruct a1) => a1  -- the object where the problem is arising
                                      -> Guarded a
   hasNone o = getOneExactly o []
 
 instance GetOneGuarded (P_SubIfc a) where
-  hasNone o = Errors [CTXE (origin o)$ "Required: one P-subinterface in "++showP o]
+  hasNone o = Errors . pure $
+    CTXE (origin o)$ "Required: one P-subinterface in "++showP o
 
 instance GetOneGuarded SubInterface where
-  hasNone o = Errors [CTXE (origin o)$ "Required: one A-subinterface in "++showP o]
+  hasNone o = Errors . pure $
+    CTXE (origin o)$ "Required: one A-subinterface in "++showP o
 
 instance GetOneGuarded Relation where
   getOneExactly _ [d] = Checked d
-  getOneExactly o []  = Errors [CTXE (origin o)$ "No relation for "++showP o]
-  getOneExactly o lst = Errors [CTXE (origin o)$ "Too many relations match "++showP o++".\n  Be more specific. These are the matching relations:"++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]]
+  getOneExactly o []  = Errors . pure $ CTXE (origin o) $
+      "No relation for "++showP o
+  getOneExactly o lst = Errors . pure $ CTXE (origin o) $
+      "Too many relations match "++showP o
+    ++".\n  Be more specific. These are the matching relations:"
+    ++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]
 
 mkTypeMismatchError :: (Traced a2, Named a) => a2 -> Relation -> SrcOrTgt -> a -> Guarded a1
 mkTypeMismatchError o decl sot conc
- = Errors [CTXE (origin o) message]
+ = Errors . pure $ CTXE (origin o) message
  where
   message = "The "++showP sot++" for the population pairs, namely "++name conc
-            ++"\n  must be more specific or equal to that of the relation you wish to populate, namely: "++showEC (sot,decl)
-
+            ++"\n  must be more specific or equal to that of the "
+            ++"relation you wish to populate, namely: "
+            ++showEC (sot,decl)
 
 cannotDisambRel :: TermPrim -> [Expression] -> Guarded Expression
 cannotDisambRel o exprs
- = Errors [CTXE (origin o) message]
+ = Errors . pure $ CTXE (origin o) message
   where
    message =
     case exprs of
      [] -> "No relations match the relation: "++showP o
      _  -> case o of
              (PNamedR(PNamedRel _ _ Nothing))
-                -> intercalate "\n" $
+                -> L.intercalate "\n" $
                        ["Cannot disambiguate the relation: "++showP o
                        ,"  Please add a signature (e.g. [A*B]) to the relation."
                        ,"  Relations you may have intended:"
                        ]++
                        ["  "++showA e++"["++name (source e)++"*"++name (target e)++"]"
                        |e<-exprs]
-             _  -> intercalate "\n" $
+             _  -> L.intercalate "\n" $
                        ["Cannot disambiguate: "++showP o
                        ,"  Please add a signature."
                        ,"  You may have intended one of these:"
@@ -211,13 +226,14 @@ cannotDisambRel o exprs
                        ["  "++showA e|e<-exprs]
 
 cannotDisamb :: TermPrim -> Guarded Expression
-cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showP o++"\n  Please add a signature to it"]
+cannotDisamb o = Errors . pure $ CTXE (origin o) $
+  "Cannot disambiguate: "++showP o++"\n  Please add a signature to it"
 
 uniqueNames :: (Named a, Traced a) =>
                      [a] -> Guarded ()
-uniqueNames a = case (filter moreThanOne . groupWith name)  a of
-                  [] -> pure ()
-                  xs -> Errors (map messageFor xs)
+uniqueNames a = case (filter moreThanOne . groupWith name) a of
+                  []   -> pure ()
+                  x:xs -> Errors $ (messageFor x) NEL.:| (fmap messageFor xs)
     where
      moreThanOne (_:_:_) = True
      moreThanOne  _      = False
@@ -246,14 +262,14 @@ mkEndoPropertyError :: Origin -> [Prop] -> CtxError
 mkEndoPropertyError orig ps =
   CTXE orig msg
   where 
-    msg = intercalate "\n" $
+    msg = L.intercalate "\n" $
        case ps of
          []  -> fatal "What property is causing this error???"
          [p] -> ["Property "++show p++" can only be used for relations where"
                 ,"  source and target are equal."]
          _   -> ["Properties "++showAnd++" can only be used for relations where"
                 ,"  source and target are equal."]
-     where showAnd = intercalate ", " (map show . init $ ps)++" and "++(show . last) ps
+     where showAnd = L.intercalate ", " (map show . init $ ps)++" and "++(show . last) ps
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role' ifc duplicateIfcs =
@@ -267,14 +283,18 @@ mkCrudForRefInterfaceError :: Origin -> CtxError
 mkCrudForRefInterfaceError o = CTXE o $ "Crud specification is not allowed in combination with a reference to an interface."
 
 mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
-mkIncompatibleAtomValueError pav = CTXE (origin pav)
+mkIncompatibleAtomValueError pav msg = CTXE (origin pav) (case msg of 
+                                                            "" -> fatal "Error message must not be empty."
+                                                            _  -> msg)
 
-mkInterfaceRefCycleError :: [Interface] -> CtxError
-mkInterfaceRefCycleError []                 = fatal "mkInterfaceRefCycleError called on []"
-mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least one) as the origin of the error
-  CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
-                      unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ]
-
+mkInterfaceRefCycleError :: NEL.NonEmpty Interface -> CtxError
+mkInterfaceRefCycleError cyclicIfcs =
+  CTXE (origin (NEL.head cyclicIfcs)) $
+             "Interfaces form a reference cycle:\n" ++
+             (unlines . NEL.toList $ fmap showIfc cyclicIfcs)
+    where
+      showIfc :: Interface -> String
+      showIfc i = "- " ++ show (name i) ++ " at position " ++ show (origin i)
 mkIncompatibleInterfaceError :: P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError
 mkIncompatibleInterfaceError objDef expTgt refSrc ref =
   CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++ " at field " ++ show (name objDef) ++
@@ -341,37 +361,54 @@ instance (AStruct declOrExpr, Association declOrExpr) => ErrorConcept (SrcOrTgt,
 
 mustBeOrdered :: (ErrorConcept t1, ErrorConcept t2) => Origin -> t1 -> t2 -> Guarded a
 mustBeOrdered o a b
- = Errors [CTXE (origin o)$ "Type error, cannot match:\n  the concept "++showEC a
-                                          ++"\n  and concept "++showEC b
-                   ++"\n  if you think there is no type error, add an order between concepts "++showMini a++" and "++showMini b++"."]
+ = Errors . pure . CTXE (origin o) . unlines $
+     [ "Type error, cannot match:"
+     , "  the concept "++showEC a
+     , "  and concept "++showEC b
+     , "  if you think there is no type error, add an order between"
+     , "  concepts "++showMini a++" and "++showMini b++"."
+     ]
 
 mustBeOrderedLst :: (Traced o, PStruct o, PStruct a) => o -> [(A_Concept, SrcOrTgt, a)] -> Guarded b
 mustBeOrderedLst o lst
- = Errors [CTXE (origin o)$ "Type error in "++showP o++"\n  Cannot match:"++ concat
-             [ "\n  - concept "++showA c++", "++show st++" of "++showP a
-             | (c,st,a) <- lst ] ++
-             "\n  if you think there is no type error, add an order between the mismatched concepts."
-          ]
+ = Errors . pure . CTXE (origin o) . unlines $
+     [ "Type error in "++showP o
+     , "  Cannot match:"
+     ]++
+     [ "  - concept "++showA c++", "++show st++" of "++showP a
+     | (c,st,a) <- lst
+     ]++ 
+     [ "  if you think there is no type error, add an order between the mismatched concepts."
+     ]
 
 mustBeOrderedConcLst :: (Named a_conc) => Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[a_conc]] -> Guarded a
 mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
- = Errors [CTXE o$ "Ambiguous type when matching: "++show p1++" of "++showA e1++"\n"
-                                          ++" and "++show p2++" of "++showA e2++".\n"
-                   ++"  The type can be "++intercalate " or " (map (showP . Slash) cs)
-                   ++"\n  None of these concepts is known to be the smallest, you may want to add an order between them."]
+ = Errors . pure . CTXE (origin o) . unlines $
+    [ "Ambiguous type when matching: "++show p1++" of "++showA e1
+    , " and "++show p2++" of "++showA e2++"."
+    , "  The type can be "++L.intercalate " or " (map (showP . Slash) cs)
+    , "  None of these concepts is known to be the smallest, you may want to add an order between them."
+    ]
 
 newtype Slash a = Slash [a]
 instance Named a => PStruct (Slash a) where
-  showP (Slash x) = intercalate "/" (map name x)
+  showP (Slash x) = L.intercalate "/" (map name x)
 
 mustBeBound :: Origin -> [(SrcOrTgt, Expression)] -> Guarded a
 mustBeBound o [(p,e)]
- = Errors [CTXE o$ "An ambiguity arises in type checking. Be more specific by binding the "++show p++" of the expression "++showA e++".\n"++
-                   "  You could add more types inside the expression, or just write "++writeBind e++"."]
+ = Errors . pure . CTXE (origin o) . unlines $
+    [ "An ambiguity arises in type checking. Be more specific by binding the "++show p++" of the expression"
+    , "  "++showA e++"."
+    , "  You could add more types inside the expression, or just write"
+    , "  "++writeBind e++"."
+    ]
 mustBeBound o lst
- = Errors [CTXE o$ "An ambiguity arises in type checking. Be more specific in the expressions "++intercalate " and " (map (showA . snd) lst) ++".\n"++
-                   "  You could add more types inside the expression, or write:"++
-                   concat ["\n  "++writeBind e| (_,e)<-lst]]
+ = Errors . pure . CTXE (origin o) . unlines $
+    [ "An ambiguity arises in type checking. Be more specific in the expressions "
+    , "  "++L.intercalate " and " (map (showA . snd) lst) ++"."
+    , "  You could add more types inside the expression, or write:"
+    ]++
+    ["  "++writeBind e| (_,e)<-lst]
 
 writeBind :: Expression -> String
 writeBind (ECpl e)
@@ -379,7 +416,7 @@ writeBind (ECpl e)
 writeBind e
  = "("++showA e++") /\\ "++showA (EDcV (sign e))
 
-data Guarded a = Errors [CtxError] | Checked a deriving Show
+data Guarded a = Errors (NEL.NonEmpty CtxError) | Checked a deriving Show
 
 instance Functor Guarded where
  fmap _ (Errors a)  = Errors a
@@ -389,7 +426,7 @@ instance Applicative Guarded where
  (<*>) (Checked f) (Checked a) = Checked (f a)
  (<*>) (Errors  a) (Checked _) = Errors a
  (<*>) (Checked _) (Errors  b) = Errors b
- (<*>) (Errors  a) (Errors  b) = Errors . nub $(a ++ b) -- this line makes Guarded violate some (potential) applicative/monad laws
+ (<*>) (Errors  a) (Errors  b) = Errors (a >> b)
 instance Monad Guarded where
  (>>=) (Checked a) f = f a
  (>>=) (Errors x) _ = Errors x
@@ -403,7 +440,10 @@ whenCheckedIO ioGA fIOGB =
          Checked a  -> fIOGB a
 
 whenChecked :: Guarded a -> (a -> Guarded b) -> Guarded b
-whenChecked = (>>=)
+whenChecked ga fgb =
+      case ga of
+         Checked a  -> fgb a
+         Errors err -> Errors err
 
 whenError :: Guarded a -> Guarded a -> Guarded a
 whenError (Errors _) a = a

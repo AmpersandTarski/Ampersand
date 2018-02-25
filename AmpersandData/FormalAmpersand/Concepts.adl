@@ -44,7 +44,7 @@ PATTERN Specialization
 ENDPATTERN
 
 PROCESS "Compute Closures"
-    RELATION isa[Concept*Concept] [IRF,ASY]
+    RELATION isa[Concept*Concept] [ASY]
     MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
     RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
     MEANING "s isaStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  as well."

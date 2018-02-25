@@ -6,11 +6,15 @@
 * PHP Backend: added functionality to import json population files via UI of ExcelImporter
 * PHP Backend: now requires PHP 7.x (5.6 is not supported anymore)
 * PHP Backend: added [Pimple](https://pimple.symfony.com/) as Dependency Injection Container library 
-* PHP Backend: refactored creation of AngularApp, AmpersandApp and MysqlDB using Pimple container 
+* PHP Backend: refactored creation of AngularApp, AmpersandApp and MysqlDB using Pimple container
 * PHP Backend: mysql database class placed under Plug namespace
 * PHP Backend: added function/method parameter and return type specifications
 * PHP Backend: update from Slim v2 to v3 api framework
 
+## v3.9.3 (16 february 2018)
+
+* [Issue #752](https://github.com/AmpersandTarski/Ampersand/issues/752) Fixed a bug that could cause failure without proper error message
+* Better (more uniform) diagnostic comments in SQL output
 
 ## v3.9.2 (19 january 2018)
 
