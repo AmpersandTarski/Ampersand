@@ -2,5 +2,6 @@
 <ruleset name="PHP_CodeSniffer">
     <rule ref="PSR2">
         <exclude name="Generic.Files.LineLength" />
+        <exclude name="Generic.Files.LineEndings" />
     </rule>
 </ruleset>
