@@ -180,7 +180,7 @@ class Conjunct
             } // Otherwise evaluate conjunct, cache and return violations
             else {
                 // Execute conjunct query
-                $this->conjunctViolations = (array) $this->database->Exe($this->getQuery());
+                $this->conjunctViolations = (array) $this->database->execute($this->getQuery());
                 
                 if ($count = count($violations) == 0) {
                     $this->logger->debug("Conjunct '{$this->id}' holds");
@@ -203,7 +203,7 @@ class Conjunct
 
         // Delete existing conjunct violation cache
         $query = "DELETE FROM \"{$dbsignalTableName}\" WHERE \"conjId\" = '{$this->id}'";
-        $this->database->Exe($query);
+        $this->database->execute($query);
         
         // Save new violations (if any)
         if (!empty($this->conjunctViolations)) {
@@ -214,7 +214,7 @@ class Conjunct
                 $values[] = "('{$this->id}', '" . $this->database->escape($violation['src']) . "', '" . $this->database->escape($violation['tgt']) . "')";
             }
             $query .= implode(',', $values);
-            $this->database->Exe($query);
+            $this->database->execute($query);
         }
     }
     

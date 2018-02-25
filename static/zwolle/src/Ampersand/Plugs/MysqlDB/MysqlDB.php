@@ -227,7 +227,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
      * The public version should be allowed to only do SELECT queries.
      * This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
      */
-    public function Exe($query)
+    public function execute($query)
     {
         $result = $this->doQuery($query);
         $this->logger->debug($query);
@@ -335,7 +335,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     {
         if (!$this->dbTransactionActive) {
             $this->logger->info("Start mysql database transaction for {$transaction}");
-            $this->Exe("START TRANSACTION");
+            $this->execute("START TRANSACTION");
             return $this->dbTransactionActive = true; // set flag dbTransactionActive
         }
     }
@@ -349,7 +349,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     public function commitTransaction(Transaction $transaction)
     {
         $this->logger->info("Commit mysql database transaction for {$transaction}");
-        $this->Exe("COMMIT");
+        $this->execute("COMMIT");
         $this->dbTransactionActive = false;
     }
     
@@ -362,7 +362,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     public function rollbackTransaction(Transaction $transaction)
     {
         $this->logger->info("Rollback mysql database transaction for {$transaction}");
-        $this->Exe("ROLLBACK");
+        $this->execute("ROLLBACK");
         $this->dbTransactionActive = false;
     }
     
@@ -385,7 +385,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         $atomId = $this->getDBRepresentation($atom);
         
         $query = "/* Check if atom exists */ SELECT `$firstCol->name` FROM `{$tableInfo->name}` WHERE `$firstCol->name` = '{$atomId}'";
-        $result = $this->Exe($query);
+        $result = $this->execute($query);
         
         if (empty($result)) {
             return false;
@@ -413,7 +413,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         }
         
         $arr = [];
-        foreach ((array)$this->Exe($query) as $row) {
+        foreach ((array)$this->execute($query) as $row) {
             $tgtAtom = new Atom($row['atomId'], $concept);
             $tgtAtom->setQueryData($row);
             $arr[] = $tgtAtom;
@@ -450,7 +450,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         }
         $duplicateStatement = substr($str, 1);
         
-        $this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
+        $this->execute("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
                   ." ON DUPLICATE KEY UPDATE $duplicateStatement");
         
         // Check if query resulted in an affected row
@@ -483,7 +483,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         // Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
         $queryString = "\"" . implode("\" = NULL, \"", $colNames) . "\" = NULL";
         
-        $this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atomId}'");
+        $this->execute("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atomId}'");
         
         // Check if query resulted in an affected row
         $this->checkForAffectedRows();
@@ -502,7 +502,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         // Delete atom from concept table
         $conceptTable = $atom->concept->getConceptTableInfo();
         $query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atomId}' LIMIT 1";
-        $this->Exe($query);
+        $this->execute($query);
         
         // Check if query resulted in an affected row
         $this->checkForAffectedRows();
@@ -526,7 +526,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         $srcAtomId = $this->getDBRepresentation($link->src());
         $tgtAtomId = $this->getDBRepresentation($link->tgt());
         
-        $result = $this->Exe("/* Check if link exists */ SELECT * FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+        $result = $this->execute("/* Check if link exists */ SELECT * FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
         
         if (empty($result)) {
             return false;
@@ -564,7 +564,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         }
         
         $links = [];
-        foreach ((array)$this->Exe($query) as $row) {
+        foreach ((array)$this->execute($query) as $row) {
             $links[] = new Link($relation, new Atom($row['src'], $relation->srcConcept), new Atom($row['tgt'], $relation->tgtConcept));
         }
         
@@ -587,13 +587,13 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         
         switch ($relTable->tableOf) {
             case null: // Relation is administrated in n-n table
-                $this->Exe("REPLACE INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtomId}', '{$tgtAtomId}')");
+                $this->execute("REPLACE INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtomId}', '{$tgtAtomId}')");
                 break;
             case 'src': // Relation is administrated in concept table (wide) of source of relation
-                $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = '{$tgtAtomId}' WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
+                $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = '{$tgtAtomId}' WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
                 break;
             case 'tgt': //  Relation is administrated in concept table (wide) of target of relation
-                $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = '{$srcAtomId}' WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+                $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = '{$srcAtomId}' WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
                 break;
             default:
                 throw new Exception("Unknown 'tableOf' option for relation '{$relation}'", 500);
@@ -622,7 +622,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
                 if (is_null($srcAtomId) || is_null($tgtAtomId)) {
                     throw new Exception("Cannot delete from relation table '{$relTable->name}', because srcAtom or tgtAtom is null", 500);
                 }
-                $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+                $this->execute("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
                 break;
             case 'src': // Relation is administrated in concept table (wide) of source of relation
                 if (!$relTable->tgtCol()->null) {
@@ -631,10 +631,10 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
                 
                 // Source atom can be used in WHERE statement
                 if (!is_null($srcAtomId)) {
-                    $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
+                    $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
                 } // Target can be used in WHERE statement, because tgtCol is unique
                 elseif ($relTable->tgtCol()->unique) {
-                    $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+                    $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
                 } // Else update cannot be performed, because of missing target
                 else {
                     throw new Exception("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
@@ -647,10 +647,10 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
                 
                 // Target atom can be used in WHERE statement
                 if (!is_null(($tgtAtomId))) {
-                    $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+                    $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
                 } // Source can be used in WHERE statement, because srcCol is unique
                 elseif ($relTable->srcCol()->unique) {
-                    $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
+                    $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
                 } // Else update cannot be performed, because of missing target
                 else {
                     throw new Exception("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
@@ -708,7 +708,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
                     $query = "DELETE FROM `{$relationTable->name}` WHERE `{$col->name}` = '{$atomId}'";
                 }
                 
-                $this->Exe($query);
+                $this->execute($query);
             }
             
         // Delete all links
@@ -728,7 +728,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
                 $query = "UPDATE `{$relationTable->name}` SET `{$col->name}` = NULL";
             }
             
-            $this->Exe($query);
+            $this->execute($query);
         }
     }
     
@@ -755,7 +755,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         } else {
             $query = "SELECT DISTINCT * FROM ({$query}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
         }
-        return $this->Exe($query);
+        return $this->execute($query);
     }
     
     /**
@@ -771,7 +771,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         $viewSQL = $view->getQuery();
         
         $query = "SELECT DISTINCT `tgt` FROM ({$viewSQL}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
-        return array_column((array) $this->Exe($query), 'tgt');
+        return array_column((array) $this->execute($query), 'tgt');
     }
     
 /**************************************************************************************************

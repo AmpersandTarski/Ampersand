@@ -483,7 +483,7 @@ class Concept
             $firstCol = current($this->mysqlConceptTable->getCols());
             $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
              
-            $result = array_column((array)$this->primaryPlug->Exe($query), 'MAX');
+            $result = array_column((array)$this->primaryPlug->execute($query), 'MAX');
     
             if (empty($result)) {
                 $atomId = 1;
