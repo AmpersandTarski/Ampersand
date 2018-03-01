@@ -32,7 +32,7 @@ class Transaction
      *
      * @var \Ampersand\Transaction
      */
-    private static $_currentTransaction = null;
+    private static $currentTransaction = null;
 
     /**
      * List of all transactions (open or closed)
@@ -109,10 +109,10 @@ class Transaction
      */
     public static function getCurrentTransaction()
     {
-        if (!isset(self::$_currentTransaction)) {
-            self::$transactions[] = self::$_currentTransaction = new Transaction();
+        if (!isset(self::$currentTransaction)) {
+            self::$transactions[] = self::$currentTransaction = new Transaction();
         }
-        return self::$_currentTransaction;
+        return self::$currentTransaction;
     }
 
     /**
@@ -207,7 +207,7 @@ class Transaction
         
         Hook::callHooks('postCloseTransaction', get_defined_vars());
         
-        self::$_currentTransaction = null; // unset currentTransaction
+        self::$currentTransaction = null; // unset currentTransaction
         return $this;
     }
     

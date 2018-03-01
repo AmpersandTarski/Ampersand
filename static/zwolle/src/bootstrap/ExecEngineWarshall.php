@@ -9,11 +9,11 @@
    However, you then need to know that r is being (de)populated, so we need a copy of r.
 
    This leads to the following pattern:
-   
+
    relation :: Concept*Concept
    relationCopy :: Concept*Concept -- copied value of 'relation' allows for detecting modifcation events
    relationStar :: Concept*Concept -- transitive closure of relation
-   
+
    ROLE ExecEngine MAINTAINS "relationCompTransitiveClosure"
    RULE "relationCompTransitiveClosure": relation = relationCopy
    VIOLATION (TXT "{EX} TransitiveClosure;relation;Concept;relationCopy;relationStar")
