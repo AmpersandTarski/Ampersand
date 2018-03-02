@@ -32,20 +32,22 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', function(
         else if($item._id_ === '') console.log('Empty resource id provided');
         else{
             if(Array.isArray(resource[ifc])){
-                // Adapt in js model
-                resource[ifc].push(angular.copy($item));
-                
                 // Construct patch(es)
                 patch = ResourceService.createPatch('add', resource, patchResource, ifc, $item._id_);
-                ResourceService.addPatches(patchResource, [patch]);
+                ResourceService.addPatches(patchResource, [patch])
+                .then(function(data){
+                    // Adapt in js model
+                    resource[ifc].push(angular.copy($item));
+                });
                 
             }else if(resource[ifc] === null){
-                // Adapt js model
-                resource[ifc] = angular.copy($item);
-                
                 // Construct patch(es)
                 patch = ResourceService.createPatch('replace', resource, patchResource, ifc, $item._id_);
-                ResourceService.addPatches(patchResource, [patch]);
+                ResourceService.addPatches(patchResource, [patch])
+                .then(function(){
+                    // Adapt js model
+                    resource[ifc] = angular.copy($item);
+                });
             }
             else console.log('Error: Property already set and/or not defined');
             

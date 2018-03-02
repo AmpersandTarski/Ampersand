@@ -147,13 +147,17 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
          * @returns {Promise}
          */
         removeResource : function(parent, ifc, resource, patchResource){
-            // Adapt js model
-            if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
-            else parent[ifc] = null; // uni = object
-            
             // Construct patch(es)
             patch = ResourceService.createPatch('remove', resource, patchResource);
-            return ResourceService.addPatches(patchResource, [patch]);
+
+            // Execute patch
+            return ResourceService
+            .addPatches(patchResource, [patch])
+            .then(function(data){
+                // Adapt js model
+                if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
+                else parent[ifc] = null; // uni = object
+            });
         },
         
         /**
