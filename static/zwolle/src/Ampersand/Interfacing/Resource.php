@@ -55,15 +55,12 @@ class Resource extends Atom
      * @param \Ampersand\Core\Concept $cpt
      * @param \Ampersand\Interfacing\ResourceList $parentList
      */
-    public function __construct($resourceId, Concept $cpt, ResourceList $parentList = null)
+    public function __construct(string $resourceId, Concept $cpt, ResourceList $parentList = null)
     {
         // Set parentList
         $this->parentList = $parentList;
         
         // Call Atom constructor
-        if (is_null($resourceId)) {
-            $resourceId = $cpt->createNewAtomId();
-        }
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
         
         $this->logger = Logger::getLogger('INTERFACING');

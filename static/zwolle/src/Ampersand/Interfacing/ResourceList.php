@@ -161,6 +161,12 @@ class ResourceList implements IteratorAggregate
         return new Resource($tgtId, $this->ifc->tgtConcept, $this);
     }
 
+    protected function makeNewResource(): Resource
+    {
+        $cpt = $this->ifc->tgtConcept;
+        return new Resource($cpt->createNewAtomId(), $cpt, $this);
+    }
+
 /**************************************************************************************************
  * Methods to call on ResourceList
  *************************************************************************************************/
@@ -238,7 +244,7 @@ class ResourceList implements IteratorAggregate
                 throw new Exception("Cannot create resource that already exists", 400);
             }
         } else {
-            $resource = $this->makeResource(null);
+            $resource = $this->makeNewResource();
         }
         
         // If interface is editable, also add tuple(src, tgt) in interface relation
