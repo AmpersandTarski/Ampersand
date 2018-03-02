@@ -117,7 +117,7 @@ $app->group('/resource', function () use ($container) {
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
-        $body = $request->getParsedBody();
+        $body = $request->reparseBody()->getParsedBody();
         $ifcPath = $args['ifcPath'];
         
         // Prepare
@@ -172,7 +172,7 @@ $app->group('/session', function () use ($container, $middleWare1) {
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
-        $body = $request->getParsedBody();
+        $body = $request->reparseBody()->getParsedBody();
         $ifcPath = $args['ifcPath'];
         
         // Prepare
