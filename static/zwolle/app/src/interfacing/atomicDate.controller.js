@@ -1,4 +1,5 @@
-angular.module('AmpersandApp').controller('AtomicDateController', function ($scope, ResourceService) {
+angular.module('AmpersandApp')
+.controller('AtomicDateController', function ($scope, ResourceService) {
     
     $scope.isOpen = false;
     

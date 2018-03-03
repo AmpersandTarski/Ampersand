@@ -1,4 +1,5 @@
-angular.module('AmpersandApp').controller('BoxController', function($scope, ResourceService){
+angular.module('AmpersandApp')
+.controller('BoxController', function($scope, ResourceService){
     
     // Function to create a new resource (does a POST)
     $scope.createResource = ResourceService.createResource; // function(resource, ifc, callingObj, prepend)

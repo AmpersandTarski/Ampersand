@@ -1,4 +1,5 @@
-angular.module('AmpersandApp').service('NotificationService', function($localStorage, $sessionStorage, $timeout, Restangular){
+angular.module('AmpersandApp')
+.service('NotificationService', function($localStorage, $sessionStorage, $timeout, Restangular){
     // Initialize notifications container
     let notifications = {
         'signals' : [],

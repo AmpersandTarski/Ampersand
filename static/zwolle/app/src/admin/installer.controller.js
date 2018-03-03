@@ -1,4 +1,5 @@
-angular.module('AmpersandApp').controller('InstallerController', function ($scope, Restangular, NotificationService, RoleService) {
+angular.module('AmpersandApp')
+.controller('InstallerController', function ($scope, Restangular, NotificationService, RoleService) {
     $scope.installing = false;
     $scope.installed = false;
     
@@ -19,5 +20,4 @@ angular.module('AmpersandApp').controller('InstallerController', function ($scop
             $scope.installed = false;
         });
     };
-    
 });

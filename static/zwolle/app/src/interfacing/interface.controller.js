@@ -1,4 +1,5 @@
-angular.module('AmpersandApp').controller('InterfaceController', function($scope, $location, ResourceService){
+angular.module('AmpersandApp')
+.controller('InterfaceController', function($scope, $location, ResourceService){
     /*
      * An empty object for typeahead functionality.
      * Defined here so it can be reused in an interface

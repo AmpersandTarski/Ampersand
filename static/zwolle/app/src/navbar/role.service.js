@@ -1,4 +1,5 @@
-angular.module('AmpersandApp').service('RoleService', function($sessionStorage, Restangular){
+angular.module('AmpersandApp')
+.service('RoleService', function($sessionStorage, Restangular){
     
     /*
      * Available roles are registered in $sessionStorage.sessionRoles

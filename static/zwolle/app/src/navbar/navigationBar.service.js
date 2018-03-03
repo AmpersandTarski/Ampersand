@@ -1,4 +1,5 @@
-angular.module('AmpersandApp').service('NavigationBarService', function(Restangular, $localStorage, $sessionStorage, NotificationService){
+angular.module('AmpersandApp')
+.service('NavigationBarService', function(Restangular, $localStorage, $sessionStorage, NotificationService){
     let navbar = {};
     let defaultSettings = {};
 
