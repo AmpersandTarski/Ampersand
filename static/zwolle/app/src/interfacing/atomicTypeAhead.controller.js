@@ -37,16 +37,16 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', function(
                 ResourceService.addPatches(patchResource, [patch])
                 .then(function(data){
                     // Adapt in js model
-                    resource[ifc].push(angular.copy($item));
+                    if(!data.saved) resource[ifc].push(angular.copy($item));
                 });
                 
             }else if(resource[ifc] === null){
                 // Construct patch(es)
                 patch = ResourceService.createPatch('replace', resource, patchResource, ifc, $item._id_);
                 ResourceService.addPatches(patchResource, [patch])
-                .then(function(){
+                .then(function(data){
                     // Adapt js model
-                    resource[ifc] = angular.copy($item);
+                    if(!data.saved) resource[ifc] = angular.copy($item);
                 });
             }
             else console.log('Error: Property already set and/or not defined');

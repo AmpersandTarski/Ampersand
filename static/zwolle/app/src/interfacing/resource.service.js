@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').service('ResourceService', function($localStorage, $timeout, $location, Restangular, NotificationService){
+angular.module('AmpersandApp').service('ResourceService', function($localStorage, $timeout, $location, Restangular, NotificationService, $q){
     // http://blog.thoughtram.io/angular/2015/07/07/service-vs-factory-once-and-for-all.html
     
     let updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes (patches in cache)
@@ -56,7 +56,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 // Update visual feedback (notifications and buttons)
                 ResourceService.processResponse(resource, data);
 
-                return resource;
+                return {resource : resource, saved: true};
             });
 
             // Add promise to loading list
@@ -310,7 +310,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 // Update visual feedback
                 ResourceService.setResourceStatus(resource, 'warning');
                 resource._showButtons_ = {'save' : true, 'cancel' : true};
-                return $q.resolve(resource);
+                return $q.resolve({resource : resource, saved : false});
             }
         },
 
