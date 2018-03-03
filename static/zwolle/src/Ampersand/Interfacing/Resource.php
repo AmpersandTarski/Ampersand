@@ -186,12 +186,7 @@ class Resource extends Atom
     public function all($ifcId)
     {
         if (isset($this->parentList)) {
-            $parentIfc = $this->parentList->getIfc();
-            if (!$parentIfc->crudR()) {
-                throw new Exception("Read not allowed for " . $parentIfc->getPath(), 405);
-            }
-            
-            $ifc = $parentIfc->getSubinterface($ifcId);
+            $ifc = $this->parentList->getIfc()->getSubinterface($ifcId);
         } else {
             $ifc = InterfaceObject::getInterface($ifcId);
         }

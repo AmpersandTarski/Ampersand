@@ -101,6 +101,10 @@ class ResourceList implements IteratorAggregate
      */
     public function one($tgtId = null)
     {
+        if (!$this->ifc->crudR()) {
+            throw new Exception("Read not allowed for " . $this->ifc->getPath(), 405);
+        }
+
         // If no tgtId is provided, the srcId is used. Usefull for ident interface expressions (I[Concept])
         if (is_null($tgtId)) {
             $tgtId = $this->src->id;
