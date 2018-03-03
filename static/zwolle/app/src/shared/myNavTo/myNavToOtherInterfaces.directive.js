@@ -5,4 +5,4 @@ angular.module('AmpersandApp')
         scope  : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
         templateUrl : 'app/src/shared/myNavTo/myNavToOtherInterfaces.html'
     };
-})
+});

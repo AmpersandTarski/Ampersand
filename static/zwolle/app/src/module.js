@@ -94,31 +94,6 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     //delay: 500, // in ms
     minDuration: 500, // in ms
     // wrapperClass: 'my-class my-class2'
-}).directive('myShowonhoverBox', function (){
-    return {
-        link : function(scope, element, attrs) {
-            if(!element.closest('.box').hasClass('my-showonhover-box-show')) element.hide(); // default hide
-            
-            element.closest('.box').bind('mouseenter', function() {
-                element.closest('.box').addClass('my-showonhover-box-show');
-                element.show();
-            });
-            element.closest('.box').bind('mouseleave', function() {
-                element.closest('.box').removeClass('my-showonhover-box-show');
-                element.hide();
-            });
-        }
-    };
-}).directive('myBluronenter', function() {
-    return function(scope, element, attrs) {
-        element.bind("keydown keypress", function(event) {
-            if(event.which === 13) { // 13 = Carriage return
-                event.target.blur();
-
-                event.preventDefault();
-            }
-        });
-    };
 }).filter('unsafe', function($sce){
     return $sce.trustAsHtml;
 });

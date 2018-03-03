@@ -6,4 +6,4 @@ angular.module('AmpersandApp')
         templateUrl : 'app/src/shared/myNavTo/myNavToInterfaces.html',
         transclude : true
     };
-})
+});
