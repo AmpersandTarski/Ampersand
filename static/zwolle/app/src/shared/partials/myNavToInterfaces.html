@@ -7,4 +7,4 @@
     </ul>
 </div>
 <a ng-if="resource._ifcs_.length == 1" ng-href="#/{{resource._ifcs_[0].id}}/{{resource._id_}}" target="{{target}}"><ng-transclude></ng-transclude></a>
-<span ng-if="resource._ifcs_.length == 0"><ng-transclude></ng-transclude></span>
+<span ng-if="resource._ifcs_.length == 0 || resource._ifcs_ == undefined"><ng-transclude></ng-transclude></span>
