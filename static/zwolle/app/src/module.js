@@ -134,19 +134,6 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
           });
         }
       };
-}).directive('myNavToInterfaces', function(){
-    return {
-        restrict : 'E',
-        scope : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        templateUrl : 'app/src/shared/partials/myNavToInterfaces.html',
-        transclude : true
-    };
-}).directive('myNavToOtherInterfaces', function(){
-    return {
-        restrict : 'E',
-        scope  : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        templateUrl : 'app/src/shared/partials/myNavToOtherInterfaces.html'
-    };
 }).filter('unsafe', function($sce){
     return $sce.trustAsHtml;
 });
