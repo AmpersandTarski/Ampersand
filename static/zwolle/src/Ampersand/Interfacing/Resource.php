@@ -375,8 +375,7 @@ class Resource extends Atom
             try {
                 $rl = $this->all($ifcId);
             } catch (Exception $e) {
-                $this->logger->warning("Skipping unknown subinterface: '{$ifcId}'");
-                continue;
+                throw new Exception("Unknown attribute '{$ifcId}'", 400);
             }
             
             $rl->put($value);
