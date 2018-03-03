@@ -38,7 +38,7 @@ CONTEXT "Test UI"
     , "r" : r
     , "s" : s
     ]
-  INTERFACE "4AasCrud" : V[SESSION*A] CRUD COLS
+  INTERFACE "4Aas-Crud" : V[SESSION*A] Crud COLS
     [ "I" : I
     , "alpha" : alpha
     , "r" : r
@@ -55,7 +55,7 @@ CONTEXT "Test UI"
   INTERFACE "3r-cRUd" : r cRUd COLS
     [ "I" : I
     ]
-  INTERFACE "4rCrud" : r CRUD COLS
+  INTERFACE "4r-Crud" : r Crud COLS
     [ "I" : I
     ]
 
@@ -69,7 +69,7 @@ CONTEXT "Test UI"
   INTERFACE "3s-cRUd" : s cRUd COLS
     [ "I" : I
     ]
-  INTERFACE "4sCrud" : s CRUD COLS
+  INTERFACE "4s-Crud" : s Crud COLS
     [ "I" : I
     ]
 
