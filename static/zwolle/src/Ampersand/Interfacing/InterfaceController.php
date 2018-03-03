@@ -54,8 +54,14 @@ class InterfaceController
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform put
-        $resource = $resource->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($body)->get($options, $depth);
+        $resource = $resource->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($body);
         
+        try {
+            $content = $resource->get($options, $depth);
+        } catch (Exception $e) { // e.g. when read is not allowed
+            $content = $body;
+        }
+
         // Close transaction
         $transaction->close();
         if ($transaction->isCommitted()) {
@@ -65,7 +71,7 @@ class InterfaceController
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
         // Return result
-        return [ 'content'               => $resource
+        return [ 'content'               => $content
                , 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
@@ -89,8 +95,14 @@ class InterfaceController
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform patch(es)
-        $resource = $resource->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches)->get($options, $depth);
+        $resource = $resource->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches);
         
+        try {
+            $content = $resource->get($options, $depth);
+        } catch (Exception $e) { // e.g. when read is not allowed
+            $content = null;
+        }
+
         // Close transaction
         $transaction->close();
         if ($transaction->isCommitted()) {
@@ -101,7 +113,7 @@ class InterfaceController
     
         // Return result
         return [ 'patches'               => $patches
-               , 'content'               => $resource
+               , 'content'               => $content
                , 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
@@ -114,7 +126,13 @@ class InterfaceController
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform create
-        $resource = $resource->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($body)->get($options, $depth);
+        $resource = $resource->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($body);
+
+        try {
+            $content = $resource->get($options, $depth);
+        } catch (Exception $e) { // e.g. when read is not allowed
+            $content = $body;
+        }
         
         // Close transaction
         $transaction->close();
@@ -125,7 +143,7 @@ class InterfaceController
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
     
         // Return result
-        return [ 'content'               => $resource
+        return [ 'content'               => $content
                , 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
