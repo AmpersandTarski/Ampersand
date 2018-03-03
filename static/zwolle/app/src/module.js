@@ -85,6 +85,4 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
         }
         return original.apply($location, [url]);
     };
-}).filter('unsafe', function($sce){
-    return $sce.trustAsHtml;
 });
