@@ -277,9 +277,10 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
                     | otherwise            = ps
                   -- add Uni and Inj if ps has neither Sym nor Asy
                   conv :: Props -> Props
-                  conv ps 
-                    | Sym `Set.member` ps || Asy `Set.member` ps = ps
-                    | otherwise = Uni `Set.insert` (Inj `Set.insert` ps)
+                  conv ps = ps `uni`
+                    if Sym `Set.member` ps && Asy `Set.member` ps 
+                    then Set.fromList [Uni,Inj]
+                    else empty
 
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
