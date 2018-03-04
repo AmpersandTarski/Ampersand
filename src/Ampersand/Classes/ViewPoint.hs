@@ -61,7 +61,7 @@ rulesFromIdentity identity
             }
 
 instance (Eq a,Language a) => Language [a] where
-  relsDefdIn  = Set.unions . map relsDefdIn . elems
+  relsDefdIn  = Set.unions . map relsDefdIn 
   udefrules   =       concatMap udefrules 
   identities  =       concatMap identities
   viewDefs    =       concatMap viewDefs

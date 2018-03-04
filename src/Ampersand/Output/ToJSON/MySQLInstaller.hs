@@ -62,7 +62,7 @@ instance JSON (MultiFSpecs,Bool) Populations where
 instance JSON (A_Concept,Bool) AtomValuesOfConcept where
  fromAmpersand multi (cpt,doMeta) = AtomValuesOfConcept
    { avcJSONconcept = Text.pack (name cpt)
-   , avcJSONatoms   = map (Text.pack . showValADL) (atomsBySmallestConcept theFSpec cpt)
+   , avcJSONatoms   = map (Text.pack . showValADL) (elems $ atomsBySmallestConcept theFSpec cpt)
    }
   where 
    theFSpec 

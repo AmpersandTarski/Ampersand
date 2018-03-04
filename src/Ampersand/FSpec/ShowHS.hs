@@ -278,7 +278,7 @@ instance ShowHS FSpec where
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map showVal (sort (atomsInCptIncludingSmaller fSpec c))
+                    strs = map showVal . sort . elems . atomsInCptIncludingSmaller fSpec $ c
                       where showVal val= "`"++showValADL val++"`" 
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "

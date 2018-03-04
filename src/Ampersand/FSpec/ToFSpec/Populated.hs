@@ -39,23 +39,24 @@ largerConcepts gs cpt
 sortSpecific2Generic :: [A_Gen] -> [A_Concept] -> [A_Concept]
 sortSpecific2Generic gens = go []
   where go xs [] = xs
-        go xs (y:ys)
-          | null (smallerConcepts gens y `isc` ys) = go (xs++[y]) ys
-          | otherwise                              = go xs (ys++[y])
+        go xs (y:ys) = case [y' | y'<-nub ys, y' `Set.member` (Set.fromList $ smallerConcepts gens y)] of
+                          []  -> go (xs++[y]) ys
+                          _:_ -> go xs (ys++[y])
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
 atomValuesOf :: ContextInfo -- the relevant info of the context
         -> [Population]
         -> A_Concept    -- the concept from which the population is requested
-        -> [AAtomValue]     -- the elements in the concept's set of atoms
+        -> AAtomValues     -- the elements in the concept's set of atoms
 atomValuesOf ci pt c
  = case c of
-     ONE -> [AtomValueOfONE]
+     ONE -> Set.singleton AtomValueOfONE
      PlainConcept{}
          -> let smallerconcs = c:smallerConcepts (ctxiGens ci) c in
-            nub$ [apLeft p  | pop@ARelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- popps pop]
+            Set.fromList $
+                 [apLeft p  | pop@ARelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- popps pop]
                ++[apRight p | pop@ARelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- popps pop]
                ++[a         | pop@ACptPopu{} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
-pairsOf :: ContextInfo -> [Population] -> Relation -> Map.Map AAtomValue (Set.Set AAtomValue)
+pairsOf :: ContextInfo -> [Population] -> Relation -> Map.Map AAtomValue AAtomValues
 pairsOf ci ps dcl
  = Map.unionsWith Set.union
      [ Map.fromListWith Set.union [ (apLeft p,Set.singleton $ apRight p) | p<-popps pop]
@@ -72,11 +73,11 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
    inters = Map.mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c
                   where c=const Map.empty
    differ = Map.differenceWith (\l r->Just (Set.difference l r))
-   contents :: Expression -> Map.Map AAtomValue (Set.Set AAtomValue)
+   contents :: Expression -> Map.Map AAtomValue AAtomValues
    contents expr
     = let aVals = atomValuesOf ci ps 
-          lkp :: (Ord k) => k -> Map.Map k (Set.Set a) -> [a]
-          lkp x contMap = Set.toList (Map.findWithDefault Set.empty x contMap) in
+          lkp :: (Ord k) => k -> Map.Map k (Set.Set a) -> (Set.Set a)
+          lkp x contMap = (Map.findWithDefault Set.empty x contMap) in
       case expr of
          EEqu (l,r) -> contents ((l .|-. r) ./\. (r .|-. l))
          EInc (l,r) -> contents (notCpl l .\/. r)
@@ -85,25 +86,25 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
          EDif (l,r) -> differ (contents l) (contents r)
          -- The left residual l/r is defined by: for all x,y:  x(l/r)y  <=>  for all z in X, y r z implies x l z.
          ELrs (l,r) -> Map.fromListWith Set.union
-                       [(x,Set.singleton y) | x<-aVals (source l), y<-aVals (source r)
+                       [(x,Set.singleton y) | x<-elems $ aVals (source l), y<-elems $ aVals (source r)
                                 , null (lkp y (contents r) >- lkp x (contents l))
                                 ]
          -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
          ERrs (l,r) -> Map.fromListWith Set.union
-                       [(x,Set.singleton y) | x<-aVals (target l), y<-aVals (target r)
+                       [(x,Set.singleton y) | x<-elems $ aVals (target l), y<-elems $ aVals (target r)
                                 , null (lkp x (contents (EFlp l)) >- lkp y (contents (EFlp r)))
                                 ]
          EDia (l,r) -> Map.fromListWith Set.union
-                       [(x,Set.singleton y) | x <- aVals (source l), y <- aVals (target r)
+                       [(x,Set.singleton y) | x <-elems $ aVals (source l), y <- elems $ aVals (target r)
                                 , null (lkp y (contents (EFlp r)) >- lkp x (contents l))
                                 , null (lkp x (contents l) >- lkp y (contents (EFlp r)))
                                 ]
          ERad (l,r) -> Map.fromListWith Set.union
-                       [(x,Set.singleton y) | x<-aVals (source l), y<-aVals (target r)
+                       [(x,Set.singleton y) | x<-elems $ aVals (source l), y<-elems $ aVals (target r)
                                 , null (aVals (target l) >- (lkp x (contents l) `uni` lkp y (contents (EFlp r))))
                                 ]
          EPrd (l,r) -> Map.fromList
-                       [ (a,Set.fromList cod) | a <- aVals (source l), let cod=aVals (target r), not (null cod) ]
+                       [ (a,Set.fromList cod) | a <- elems $ aVals (source l), let cod=elems $ aVals (target r), not (null cod) ]
          ECps (l,r) -> Map.fromListWith Set.union
                        [(x,Set.singleton y) | (x,xv)<-Map.toList (contents l), (y,yv)<-Map.toList flipr
                                 , (not. Set.null) (xv `Set.intersection` yv)
@@ -118,9 +119,9 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
          ECpl x     -> contents (EDcV (sign x) .-. x)
          EBrk x     -> contents x
          EDcD dcl   -> pairsOf ci ps dcl
-         EDcI c     -> Map.fromList [(a, Set.singleton a) | a <- aVals c]
-         EEps i _   -> Map.fromList [(a, Set.singleton a) | a <- aVals i]
-         EDcV sgn   -> Map.fromList [(s, Set.fromList cod) | s <- aVals (source sgn), let cod=aVals (target sgn), not (null cod) ]
+         EDcI c     -> Map.fromList [(a, Set.singleton a) | a <- elems $ aVals c]
+         EEps i _   -> Map.fromList [(a, Set.singleton a) | a <- elems $ aVals i]
+         EDcV sgn   -> Map.fromList [(s, Set.fromList cod) | s <- elems $ aVals (source sgn), let cod=elems $ aVals (target sgn), not (null cod) ]
          EMp1 val c -> if name c == "SESSION" -- prevent populating SESSION with "_SESSION"
                           && show val == show "_SESSION"
                         then Map.empty

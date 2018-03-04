@@ -80,7 +80,8 @@ makeFSpec opts context
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
-              , atomsBySmallestConcept = \cpt -> map apLeft . pairsinexpr 
+              , atomsBySmallestConcept = \cpt -> Set.fromList 
+                                               . map apLeft . pairsinexpr 
                                                . foldl (.-.) (EDcI cpt) 
                                                . map (handleType cpt)
                                                . smallerConcepts (gens context) $ cpt
@@ -443,10 +444,10 @@ tblcontents ci ps plug
         case attributes plug of 
          []   -> fatal "no attributes in plug."
          f:fs -> (nub.transpose)
-                 ( map Just cAtoms
+                 ( map Just (elems cAtoms)
                  : [case fExp of
-                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
-                       _      -> [ (lkp att a . fullContents ci ps) fExp | a<-cAtoms ]
+                       EDcI c -> [ if a `eleM` atomValuesOf ci ps c then Just a else Nothing | a<-elems $ cAtoms ]
+                       _      -> [ (lkp att a . fullContents ci ps) fExp | a<-elems $ cAtoms ]
                    | att<-fs, let fExp=attExpr att
                    ]
                  )

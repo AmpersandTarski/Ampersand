@@ -38,7 +38,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Population(..)
  , Association(..)
  , Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..), mkAtomPair, PAtomValue(..)
+ , AAtomPair(..), AAtomValue(..), AAtomValues, mkAtomPair, PAtomValue(..)
  , ContextInfo(..)
  , showValADL,showValSQL
  , showSign
@@ -425,6 +425,7 @@ mkAtomPair = APair
 instance Unique AAtomPair where
   showUnique apair = "("++(showUnique.apLeft) apair ++","++ (showUnique.apRight) apair++")"
 
+type AAtomValues = Set.Set AAtomValue
 data AAtomValue
   = AAVString  { aavhash :: Int
                , aavtyp :: TType
