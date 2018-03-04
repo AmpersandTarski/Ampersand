@@ -13,8 +13,20 @@
         <link href="app/dist/ampersand.min.css" rel="stylesheet" media="screen" type="text/css"/>
         <script src="app/dist/ampersand.min.js"></script>
         <!-- include project application -->
-        <link href="app/dist/project.min.css" rel="stylesheet" media="screen" type="text/css"/>
-        <script src="app/dist/project.min.js"></script>
+<?php
+if (file_exists('app/dist/project.min.css')) {
+    echo "        <link href=\"app/dist/project.min.css\" rel=\"stylesheet\" media=\"screen\" type=\"text/css\"/>" . PHP_EOL;
+}
+if (file_exists('app/dist/project.min.js')) {
+    echo "        <script src=\"app/dist/project.min.js\"></script>" . PHP_EOL;
+} else {
+    if ($files = glob('app/project/*.js')) {
+        array_map(function ($filepath) {
+            echo "        <script src=\"{$filepath}\"></script>" . PHP_EOL;
+        }, $files);
+    }
+}
+?>
     </head>
     <body>
         <!-- HEADER -->
