@@ -23,29 +23,27 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , plainText
     , sortWith)
 where
-import Ampersand.Basics as X
-import Ampersand.Core.ParseTree as X
-     ( Role
-     )
-import Ampersand.Core.AbstractSyntaxTree as X hiding (Meta)
-import Ampersand.Core.ShowAStruct as X
-import Ampersand.ADL1 as X hiding (Meta)
-import Ampersand.Classes as X
-import Ampersand.FSpec as X
-import Text.Pandoc as X
-import Text.Pandoc.Builder hiding (bulletList,math)
-import qualified Text.Pandoc.Builder as  BuggyBuilder
-import Ampersand.Misc as X
-import Ampersand.Output.PandocAux as X
-import Data.List      --       (intercalate,partition)
-import Data.Monoid as X
-import Data.Maybe
-import Data.Ord
-import Data.Typeable
+import           Ampersand.Basics as X hiding (singleton)
+import           Ampersand.Core.AbstractSyntaxTree as X hiding (Meta)
+import           Ampersand.Core.ParseTree as X ( Role)
+import           Ampersand.Core.ShowAStruct as X
+import           Ampersand.ADL1 as X hiding (Meta)
+import           Ampersand.Classes as X
+import           Ampersand.FSpec as X hiding (singleton)
+import           Ampersand.Graphic.Graphics as X
+import           Ampersand.Misc as X
+import           Ampersand.Output.PandocAux as X
+import           Data.List      --       (intercalate,partition)
+import           Data.Maybe
+import           Data.Monoid as X
+import           Data.Ord
 import qualified Data.Time.Format as DTF
-import GHC.Exts(sortWith)
-import Ampersand.Graphic.Graphics as X
-import System.FilePath  -- (combine,addExtension,replaceExtension)
+import           Data.Typeable
+import           GHC.Exts(sortWith)
+import           System.FilePath  -- (combine,addExtension,replaceExtension)
+import           Text.Pandoc as X
+import           Text.Pandoc.Builder hiding (bulletList,math)
+import qualified Text.Pandoc.Builder as  BuggyBuilder
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]

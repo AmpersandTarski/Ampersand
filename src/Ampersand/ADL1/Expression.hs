@@ -1,13 +1,15 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Ampersand.ADL1.Expression (
-                       subst
+                       Expressions
+                      ,subst
                       ,primitives, subExpressions, isMp1, isEEps, isEDcD
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
 where
-import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree
+import qualified Data.Set as Set
 
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to an
@@ -38,8 +40,8 @@ subst (decl,expr) = subs
        subs e@EDcV{}     = e
        subs e@EMp1{}     = e
 
-
-primitives :: Expression -> [Expression]
+type Expressions = Set.Set Expression
+primitives :: Expression -> Expressions
 primitives expr =
   case expr of
     (EEqu (l,r)) -> primitives l `uni` primitives r
@@ -58,35 +60,35 @@ primitives expr =
     (EFlp e)     -> primitives e
     (ECpl e)     -> primitives e
     (EBrk e)     -> primitives e
-    EDcD{}       -> [expr]
-    EDcI{}       -> [expr]
-    EEps{}       -> []  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
-    EDcV{}       -> [expr]
-    EMp1{}       -> [expr]
-subExpressions :: Expression -> [Expression]
+    EDcD{}       -> singleton expr
+    EDcI{}       -> singleton expr
+    EEps{}       -> empty  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
+    EDcV{}       -> singleton expr
+    EMp1{}       -> singleton expr
+subExpressions :: Expression -> Expressions
 subExpressions expr = 
   case expr of
-    (EEqu (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (EInc (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (EIsc (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (EUni (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (EDif (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (ELrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (ERrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (EDia (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (ECps (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (ERad (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (EPrd (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (EKl0 e)     -> [expr] `uni` subExpressions e
-    (EKl1 e)     -> [expr] `uni` subExpressions e
-    (EFlp e)     -> [expr] `uni` subExpressions e
-    (ECpl e)     -> [expr] `uni` subExpressions e
-    (EBrk e)     -> [expr] `uni` subExpressions e
-    EDcD{}       -> [expr]
-    EDcI{}       -> [expr]
-    EEps{}       -> [expr]
-    EDcV{}       -> [expr]
-    EMp1{}       -> [expr]
+    (EEqu (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (EInc (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (EIsc (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (EUni (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (EDif (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (ELrs (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (ERrs (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (EDia (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (ECps (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (ERad (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (EPrd (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
+    (EKl0 e)     -> singleton expr `uni` subExpressions e
+    (EKl1 e)     -> singleton expr `uni` subExpressions e
+    (EFlp e)     -> singleton expr `uni` subExpressions e
+    (ECpl e)     -> singleton expr `uni` subExpressions e
+    (EBrk e)     -> singleton expr `uni` subExpressions e
+    EDcD{}       -> singleton expr
+    EDcI{}       -> singleton expr
+    EEps{}       -> singleton expr
+    EDcV{}       -> singleton expr
+    EMp1{}       -> singleton expr
 
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.

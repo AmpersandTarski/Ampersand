@@ -1,17 +1,20 @@
 {-# LANGUAGE FlexibleInstances,DuplicateRecordFields,OverloadedLabels #-}
-module Ampersand.FSpec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
-import Ampersand.Core.ParseTree
-import Ampersand.Core.AbstractSyntaxTree
-import Text.Pandoc hiding (Meta)
-import Data.Char                  (isAlphaNum)
-import Ampersand.Basics hiding (indent)
-import Ampersand.FSpec.FSpec
-import Ampersand.Core.ShowAStruct  (AStruct(..))  -- for traceability, we generate comments in the Haskell code.
-import Data.List
-import Ampersand.Misc
-import Data.Hashable
-import Data.Ord
-import Data.Function
+module           Ampersand.FSpec.ShowHS
+    (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
+where
+import           Ampersand.Basics hiding (indent)
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ShowAStruct  (AStruct(..))  -- for traceability, we generate comments in the Haskell code.
+import           Ampersand.FSpec.FSpec
+import           Ampersand.Misc
+import           Data.Char                  (isAlphaNum)
+import           Data.Function
+import           Data.Hashable
+import           Data.List
+import           Data.Ord
+import qualified Data.Set as Set
+import           Text.Pandoc hiding (Meta)
 
 fSpec2Haskell :: FSpec -> String
 fSpec2Haskell fSpec
@@ -194,7 +197,7 @@ instance ShowHS FSpec where
         , wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
         ,      ", metas         = allMetas"
         , wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
-        , wrap ", allExprs      = " indentA (showHS opts)    (allExprs fSpec)
+        , wrap ", allExprs      = " indentA (showHS opts)    (Set.toList $ allExprs fSpec)
         , "}"
         ] ++
     indent++"where"++
@@ -562,10 +565,10 @@ instance ShowHS Relation where
     = intercalate indent
                      ["Relation { decnm   = " ++ show (decnm d)
                      ,"         , decsgn  = " ++ showHS opts "" (sign d)
-                     ,"         , decprps = " ++ showL(map (showHS opts "") (decprps d))
+                     ,"         , decprps = " ++ showL(map (showHS opts "") (elems $ decprps d))
                      ,"         , decprps_calc = " ++ case decprps_calc d of
                                                  Nothing -> "Nothing"
-                                                 Just ps -> "Just "++showL(map (showHS opts "") ps)
+                                                 Just ps -> "Just "++showL(map (showHS opts "") (elems ps))
                      ,"         , decprL  = " ++ show (decprL d)
                      ,"         , decprM  = " ++ show (decprM d)
                      ,"         , decprR  = " ++ show (decprR d)

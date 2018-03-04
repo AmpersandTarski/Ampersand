@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
 module Ampersand.Input.ADL1.ParsingLib(
-    AmpParser, pIsThere, optList,
+    AmpParser, pIsThere, optList, optSet,
     -- Operators
     --TODO: Maybe we shouldn't export these here, but import in the parser directly
     (DF.<$>), (P.<|>), (P.<?>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
@@ -29,6 +29,7 @@ import           Control.Monad.Identity (Identity)
 import qualified Control.Applicative as CA
 import           Data.Char(toLower)
 import qualified Data.Functor as DF
+import qualified Data.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
 import           Data.Maybe
@@ -62,6 +63,12 @@ pIsThere p = (True <$ p) `opt` False
 optList :: AmpParser [a]
         -> AmpParser [a]
 optList p = p `opt` []
+
+-- | Optionally applies a Set parser, returning an empty Set if it doesn't succeed
+optSet :: Eq a => 
+           AmpParser (Set.Set a)
+        -> AmpParser (Set.Set a)
+optSet p = p `opt` empty
 
 -- | Tries to apply the given parser and encapsulates the result in Maybe
 pMaybe :: AmpParser a           -- ^ The parser to apply

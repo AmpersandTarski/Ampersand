@@ -8,7 +8,7 @@ module Ampersand.FSpec.Transformers
   , instances
   ) where
 
-import Ampersand.Basics
+import Ampersand.Basics hiding (singleton)
 import Ampersand.Classes
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
@@ -485,7 +485,7 @@ transformers fSpec = map toTransformer [
      ,("prop"                  , "Relation"              , "Property"
       , [(dirtyId rel, PopAlphaNumeric . show $ prop) 
         | rel::Relation <- instances fSpec
-        , prop <- decprps rel
+        , prop <- elems (decprps rel)
         ]
       )
      ,("propertyRule"          , "Relation"              , "PropertyRule"
@@ -745,7 +745,7 @@ instance Instances Conjunct where
 instance Instances Relation where
   instances fSpec = relsDefdIn (originalContext fSpec)
 instance Instances Expression where
-  instances fSpec = allExprs fSpec
+  instances fSpec = elems $ allExprs fSpec
 instance Instances IdentityDef where
   instances fSpec = ctxks (originalContext fSpec)
 instance Instances Interface where

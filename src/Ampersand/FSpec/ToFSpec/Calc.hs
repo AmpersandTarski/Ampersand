@@ -18,7 +18,7 @@ import Text.Pandoc.Builder
 
 testConfluence :: A_Context -> Blocks
 testConfluence context
- = let tcss = [(expr,tcs) | expr<-expressionsIn context, let tcs=dfProofs expr, length tcs>1]
+ = let tcss = [(expr,tcs) | expr<-elems $ expressionsIn context, let tcs=dfProofs expr, length tcs>1]
        sumt = sum (map (length.snd) tcss)
    in
    para ("Confluence analysis statistics from "<>(str.show.length.expressionsIn) context<>" expressions."<>linebreak)<>

@@ -10,7 +10,7 @@ module Ampersand.FSpec.SQL
 where
 import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.Pretty
-import Ampersand.Basics
+import Ampersand.Basics hiding (singleton)
 import Ampersand.Classes.ConceptStructure
 import Ampersand.Core.ParseTree
      ( PSingleton )

@@ -1,23 +1,24 @@
 module Ampersand.FSpec.ToFSpec.ADL2FSpec
    ( makeFSpec
    ) where
-import Ampersand.ADL1
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ParseTree ( Role)
-import Ampersand.Core.ShowAStruct
-import Ampersand.FSpec.Crud
-import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ToFSpec.ADL2Plug
-import Ampersand.FSpec.ToFSpec.Calc
-import Ampersand.FSpec.ToFSpec.NormalForms 
-import Ampersand.FSpec.ToFSpec.Populated 
-import Ampersand.Misc
-import Data.Char
-import Data.List
-import Data.Maybe
-import Data.Text (pack)
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree ( Role)
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec.Crud
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.ToFSpec.ADL2Plug
+import           Ampersand.FSpec.ToFSpec.Calc
+import           Ampersand.FSpec.ToFSpec.NormalForms 
+import           Ampersand.FSpec.ToFSpec.Populated 
+import           Ampersand.Misc
+import           Data.Char
+import           Data.List
+import           Data.Maybe
+import qualified Data.Set as Set
+import           Data.Text (pack)
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
@@ -163,7 +164,7 @@ makeFSpec opts context
      fSpecAllConjsPerConcept = 
            converse [ (conj, smaller (source e) `uni` smaller (target e)) 
                     | conj <- allConjs
-                    , e    <- modifyablesByInsOrDel . rc_conjunct $ conj ]
+                    , e    <- elems . modifyablesByInsOrDel . rc_conjunct $ conj ]
                where 
                  smaller :: A_Concept -> [A_Concept]
                  smaller cpt = [cpt] `uni` smallerConcepts (gens context) cpt
@@ -184,8 +185,8 @@ makeFSpec opts context
          Identity     -> False
      calcProps :: Relation -> Relation
      calcProps d = d{decprps_calc = Just calculated}
-         where calculated = decprps d `uni` [Tot | d `elem` totals]
-                                      `uni` [Sur | d `elem` surjectives]
+         where calculated = decprps d `uni` (if d `eleM` totals then singleton Tot else empty)
+                                      `uni` (if d `eleM` surjectives then singleton Sur else empty)
      calculatedDecls = map calcProps (relsDefdIn context)
   -- determine relations that are total (as many as possible, but not necessarily all)
      totals      = [ d |       EDcD d  <- totsurs ]
@@ -403,7 +404,7 @@ makeIfcControls :: [Relation] -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs
  = [ conj 
    | conj<-allConjs
-   , (not.null) (map EDcD params `isc` primsMentionedIn (rc_conjunct conj))
+   , (not.null) (Set.map EDcD (Set.fromList params) `isc` primsMentionedIn (rc_conjunct conj))
    -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
    -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
    -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).

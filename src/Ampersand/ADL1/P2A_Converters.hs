@@ -537,10 +537,10 @@ pCtx2aCtx opts
       checkEndoProps
         | source decSign == target decSign
                     = pure ()
-        | otherwise = case [Prop,Sym,Asy,Trn,Rfx,Irf] `isc` dec_prps pd of
-                        []  -> pure ()
-                        xs -> Errors . pure $ mkEndoPropertyError (origin pd) xs
-              
+        | Set.null xs
+                    = pure ()
+        | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (elems xs)
+       where xs = Set.fromList [Prop,Sym,Asy,Trn,Rfx,Irf] `isc` dec_prps pd
     pGen2aGen :: P_Gen -> A_Gen
     pGen2aGen pg =
       case pg of

@@ -2,13 +2,14 @@ module Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
 ) 
 where
-import Ampersand.ADL1
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.FSpec
-import Ampersand.Graphic.ClassDiagram
-import Data.Maybe
-import Data.Either
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.FSpec
+import           Ampersand.Graphic.ClassDiagram
+import           Data.Either
+import           Data.Maybe
+import qualified Data.Set as Set
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
@@ -38,7 +39,7 @@ clAnalysis fSpec =
                        , attOptional = attNull att
                        }
     inKernel :: SqlAttribute -> Bool
-    inKernel att = null([Uni,Inj,Sur]>-properties (attExpr att)) && not (isPropty att)
+    inKernel att = null(Set.fromList [Uni,Inj,Sur]>-properties (attExpr att)) && not (isPropty att)
     isPropty att = isProp (attExpr att)
 
 -- | This function, cdAnalysis, generates a conceptual data model.

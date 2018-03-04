@@ -1051,7 +1051,7 @@ delta sgn
  = EDcD Relation
               { decnm   = pack "Delta"
               , decsgn  = sgn
-              , decprps = []
+              , decprps = empty
               , decprps_calc = Nothing
               , decprL  = ""
               , decprM  = ""

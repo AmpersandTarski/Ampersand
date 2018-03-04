@@ -21,7 +21,7 @@ class Language a where
   udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-properties d]
+  multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-elems (properties d)]
   identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = concatMap rulesFromIdentity (identities x)
   allRules :: a -> [Rule]

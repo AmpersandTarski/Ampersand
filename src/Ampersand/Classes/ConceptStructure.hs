@@ -1,29 +1,30 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
-import Ampersand.ADL1.Expression(primitives,subExpressions)
-import Ampersand.Basics hiding (Ordering(..))
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ParseTree(ConceptDef)
-import Ampersand.Classes.ViewPoint
-import Data.List
-import Data.Maybe
+import           Ampersand.ADL1.Expression(primitives,subExpressions,Expressions)
+import           Ampersand.Basics hiding (Ordering(..))
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree(ConceptDef)
+import           Ampersand.Classes.ViewPoint
+import           Data.List
+import           Data.Maybe
+import qualified Data.Set as Set
 
 class ConceptStructure a where
-  concs                 ::      a -> [A_Concept]               -- ^ the set of all concepts used in data structure a
-  expressionsIn         :: a -> [Expression] -- ^ The set of all expressions within data structure a
-  bindedRelationsIn     :: a -> [Relation]             -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
-  bindedRelationsIn = nub . catMaybes . map bindedRelation . primsMentionedIn
+  concs                 :: a -> [A_Concept] -- ^ the set of all concepts used in data structure a
+  expressionsIn         :: a -> Expressions -- ^ The set of all expressions within data structure a
+  bindedRelationsIn     :: a -> [Relation]  -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
+  bindedRelationsIn = Set.toList . Set.map fromJust . Set.filter isJust . Set.map bindedRelation . primsMentionedIn
     where 
       bindedRelation :: Expression -> Maybe Relation
       bindedRelation primExpr =
         case primExpr of
          EDcD d -> Just d
          _      -> Nothing
-  primsMentionedIn      :: a -> [Expression]
-  primsMentionedIn = nub . concatMap primitives . expressionsIn
-  modifyablesByInsOrDel :: a -> [Expression] -- ^ the set of expressions of which population could be modified directy by Insert or Delete
-  modifyablesByInsOrDel = filter affectedByInsOrDel . primsMentionedIn -- if primsMentionedIn contains no duplicates, neither does modifyablesByInsOrDel.
+  primsMentionedIn      :: a -> Expressions
+  primsMentionedIn = Set.unions . Set.toList . Set.map primitives . expressionsIn
+  modifyablesByInsOrDel :: a -> Expressions -- ^ the set of expressions of which population could be modified directy by Insert or Delete
+  modifyablesByInsOrDel = Set.filter affectedByInsOrDel . primsMentionedIn -- if primsMentionedIn contains no duplicates, neither does modifyablesByInsOrDel.
     where affectedByInsOrDel e
             = case e of
                 EDcD{} -> True
@@ -36,12 +37,14 @@ instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  whe
   expressionsIn (a,b) = expressionsIn a `uni` expressionsIn b
 
 instance ConceptStructure a => ConceptStructure (Maybe a) where
-  concs = maybe [] concs
-  expressionsIn = maybe [] expressionsIn
+  concs = maybe empty concs
+  expressionsIn = maybe empty expressionsIn
 
 instance ConceptStructure a => ConceptStructure [a] where
   concs     = nub . concatMap concs
-  expressionsIn = foldr (uni . expressionsIn) []
+  expressionsIn = foldr (uni . expressionsIn) empty
+--instance ConceptStructure a => ConceptStructure (Set.Set a) where
+--  concs     = Set.toList . Set.union . concs
 
 instance ConceptStructure A_Context where
   concs ctx = foldr uni [ONE, makeConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
@@ -58,7 +61,7 @@ instance ConceptStructure A_Context where
               , (concs . ctxsql) ctx
               , (concs . ctxvs) ctx
               ]
-  expressionsIn ctx = foldr uni []
+  expressionsIn ctx = foldr uni empty
                       [ (expressionsIn . ctxifcs) ctx
                       , (expressionsIn . ctxks) ctx
                       , (expressionsIn . ctxpats) ctx
@@ -86,31 +89,31 @@ instance ConceptStructure ViewSegmentPayLoad where
   concs  (ViewExp e)  = concs e
   concs  ViewText{} = []
   expressionsIn (ViewExp e) = expressionsIn e
-  expressionsIn ViewText{}  = []
+  expressionsIn ViewText{}  = empty
 instance ConceptStructure Expression where
   concs (EDcD d    ) = concs d
-  concs (EDcI c    ) = [c]
+  concs (EDcI c    ) = singleton c
   concs (EEps i sgn) = nub (i:concs sgn)
   concs (EDcV   sgn) = concs sgn
-  concs (EMp1 _ c  ) = [c]
-  concs e            = concs (primitives e)
+  concs (EMp1 _ c  ) = singleton c
+  concs e            = concs . Set.toList . primitives $ e
   expressionsIn = subExpressions
 
 instance ConceptStructure A_Concept where
-  concs         c = [c]
-  expressionsIn _ = []
+  concs         c = singleton c
+  expressionsIn _ = empty
 
 instance ConceptStructure ConceptDef where
-  concs        cd = [makeConcept (name cd)]
-  expressionsIn _ = []
+  concs           = singleton . makeConcept . name
+  expressionsIn _ = empty
 
 instance ConceptStructure Signature where
-  concs (Sign s t) = nub [s,t]
-  expressionsIn _  = []
+  concs (Sign s t) = singleton s `uni` singleton t
+  expressionsIn _  = empty
 
 instance ConceptStructure ObjectDef where
-  concs     obj = [target (objExpression obj)] `uni` concs (objmsub obj)
-  expressionsIn obj = foldr uni []
+  concs     obj = (singleton . target . objExpression $ obj) `uni` concs (objmsub obj)
+  expressionsIn obj = foldr uni empty
                      [ (expressionsIn . objExpression) obj
                      , (expressionsIn . objmsub) obj
                      ]
@@ -119,10 +122,10 @@ instance ConceptStructure ObjectDef where
 instance ConceptStructure SubInterface where
   concs si = case si of
               Box{} -> concs (siObjs si)
-              InterfaceRef{} -> []
+              InterfaceRef{} -> empty
   expressionsIn si = case si of
               Box{} -> expressionsIn (siObjs si)
-              InterfaceRef{} -> []
+              InterfaceRef{} -> empty
 
 instance ConceptStructure Pattern where
   concs pat = foldr uni []
@@ -133,7 +136,7 @@ instance ConceptStructure Pattern where
               , (concs . ptids) pat
               , (concs . ptxps) pat
               ]
-  expressionsIn p = foldr uni []
+  expressionsIn p = foldr uni empty
                      [ (expressionsIn . ptrls) p
                      , (expressionsIn . ptids) p
                      , (expressionsIn . ptvds) p
@@ -141,7 +144,7 @@ instance ConceptStructure Pattern where
 
 instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
-  expressionsIn ifc = foldr uni []
+  expressionsIn ifc = foldr uni empty
                      [ (expressionsIn . ifcObj) ifc
                      ]
 
@@ -151,7 +154,7 @@ instance ConceptStructure Relation where
 
 instance ConceptStructure Rule where
   concs r   = concs (formalExpression r) `uni` concs (rrviol r)
-  expressionsIn r = foldr uni []
+  expressionsIn r = foldr uni empty
                    [ (expressionsIn . formalExpression ) r
                    , (expressionsIn . rrviol) r
                    ]
@@ -163,11 +166,11 @@ instance ConceptStructure (PairView Expression) where
 instance ConceptStructure Population where
   concs pop@ARelPopu{} = concs (popdcl pop)
   concs pop@ACptPopu{} = concs (popcpt pop)
-  expressionsIn _    = []
+  expressionsIn _    = empty
 
 instance ConceptStructure Purpose where
   concs pop@Expl{} = concs (explObj pop)
-  expressionsIn _ = []
+  expressionsIn _ = empty
 
 instance ConceptStructure ExplObj where
   concs (ExplConceptDef cd) = concs cd
@@ -179,14 +182,14 @@ instance ConceptStructure ExplObj where
   concs (ExplInterface _)   = [{-beware of loops...-}]
   concs (ExplContext _)     = [{-beware of loops...-}]
   
-  expressionsIn _ = []
+  expressionsIn _ = empty
 
 instance ConceptStructure (PairViewSegment Expression) where
   concs pvs = case pvs of
-      PairViewText{} -> []
+      PairViewText{} -> empty
       PairViewExp{}  -> concs (pvsExp pvs)
   expressionsIn pvs = case pvs of
-      PairViewText{} -> []
+      PairViewText{} -> empty
       PairViewExp{}  -> expressionsIn (pvsExp pvs)
 
 instance ConceptStructure A_Gen where

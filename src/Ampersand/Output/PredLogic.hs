@@ -2,15 +2,16 @@ module Ampersand.Output.PredLogic
          ( PredLogicShow(..), showLatex, showRtf, mkVar
          ) where
 
-import Data.List
-import Ampersand.Basics
-import Ampersand.ADL1
-import Ampersand.Classes
-import Ampersand.Core.ShowAStruct
-import Ampersand.Core.ShowPStruct
-import Data.Char
-import Data.Text (pack)
-import Ampersand.Output.PandocAux (latexEscShw,texOnlyId)
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.Core.ShowPStruct
+import           Ampersand.Output.PandocAux (latexEscShw,texOnlyId)
+import           Data.Char
+import           Data.List
+import qualified Data.Set as Set
+import           Data.Text (pack)
 
 --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
 data PredLogic
@@ -247,7 +248,7 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
       makeRel str
           = Relation { decnm   = pack str
                    , decsgn  = fatal "Do not refer to decsgn of this dummy relation"
-                   , decprps = [Uni,Tot]
+                   , decprps = Set.fromList [Uni,Tot]
                    , decprps_calc = Nothing
                    , decprL  = ""
                    , decprM  = ""
@@ -471,7 +472,7 @@ assemble expr
    denote :: Expression -> Notation
    denote e = case e of
       (EDcD d)
-        | null([Uni,Inj,Tot,Sur] >- properties d)  -> Rn
+        | null(elems (Set.fromList [Uni,Inj,Tot,Sur] >- properties d))  -> Rn
         | isUni d && isTot d                           -> Flr
         | isInj d && isSur d                           -> Frl
         | otherwise                                    -> Rn

@@ -2,13 +2,14 @@
 module Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
-import Ampersand.Basics hiding (empty)
-import Ampersand.Core.ParseTree
-import Ampersand.Input.ADL1.Lexer(keywords)
-import Data.Char (toUpper)
-import Data.List (intercalate,intersperse)
-import Data.List.Utils (replace)
-import Text.PrettyPrint.Leijen
+import           Ampersand.Basics hiding (empty)
+import           Ampersand.Core.ParseTree
+import           Ampersand.Input.ADL1.Lexer(keywords)
+import           Data.Char (toUpper)
+import           Data.List (intercalate,intersperse)
+import           Data.List.Utils (replace)
+import qualified Data.Set as Set
+import           Text.PrettyPrint.Leijen
 
 prettyPrint :: Pretty a => a -> String
 prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
@@ -153,8 +154,8 @@ instance Pretty P_Pattern where
 instance Pretty P_Relation where
     pretty (P_Sgn nm sign prps pragma mean popu _ plug) =
         text "RELATION" <+> text nm <~> sign <+> props <+> byplug <+\> pragmas <+\> prettyhsep mean <+\> content
-        where props   = if prps == [Sym, Asy] then text "[PROP]"
-                        else text "[" <> listOf prps <> text "]"
+        where props   = if prps == Set.fromList [Sym, Asy] then text "[PROP]"
+                        else text "[" <> listOf (Set.toList prps) <> text "]"
               byplug  | plug        = text "BYPLUG"
                       | otherwise   = empty
               pragmas | null pragma = empty

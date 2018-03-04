@@ -33,7 +33,7 @@ module Ampersand.FSpec.FSpec
 import Data.List
 import Data.Text (Text,unpack)
 import Data.Typeable
-import Ampersand.ADL1.Expression (notCpl)
+import Ampersand.ADL1.Expression (notCpl,Expressions)
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.Core.ParseTree
@@ -104,7 +104,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , pairsInExpr :: Expression -> [AAtomPair]   
                    , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
-                   , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
+                   , allExprs ::     Expressions             -- ^ All expressions in the fSpec
                    , fcontextInfo   :: ContextInfo 
                    , ftypologies   :: [Typology]
                    , typologyOf :: A_Concept -> Typology
