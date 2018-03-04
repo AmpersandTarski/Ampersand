@@ -102,7 +102,7 @@ isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
     ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (elems $ concs ctx )
-    ExplRelation decl -> let nm = name decl in nm `notElem` map name (relsDefdIn ctx) -- is already covered by type checker
+    ExplRelation decl -> not (name decl `eleM` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
     ExplRule nm -> nm `notElem` map name (udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
@@ -275,7 +275,7 @@ pCtx2aCtx opts
                      , ctxmarkup = deffrmtCtxt
                      , ctxpats = pats
                      , ctxrs = rules
-                     , ctxds = map fst declsAndPops
+                     , ctxds = Set.fromList $ map fst declsAndPops
                      , ctxpopus = Set.toList (Set.union (Set.fromList udpops) (Set.fromList (map snd declsAndPops)))
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
@@ -953,7 +953,7 @@ pCtx2aCtx opts
                    , ptend = pt_end ppat
                    , ptrls = rules'
                    , ptgns = map pGen2aGen (pt_gns ppat)
-                   , ptdcs = map fst declsAndPops
+                   , ptdcs = Set.fromList $ map fst declsAndPops
                    , ptups = pops' ++ map snd declsAndPops
                    , ptids = keys'
                    , ptvds = views'

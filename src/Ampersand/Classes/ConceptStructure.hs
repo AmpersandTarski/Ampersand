@@ -12,8 +12,8 @@ import qualified Data.Set as Set
 class ConceptStructure a where
   concs                 :: a -> A_Concepts -- ^ the set of all concepts used in data structure a
   expressionsIn         :: a -> Expressions -- ^ The set of all expressions within data structure a
-  bindedRelationsIn     :: a -> [Relation]  -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
-  bindedRelationsIn = Set.toList . Set.map fromJust . Set.filter isJust . Set.map bindedRelation . primsMentionedIn
+  bindedRelationsIn     :: a -> Relations  -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
+  bindedRelationsIn = Set.map fromJust . Set.filter isJust . Set.map bindedRelation . primsMentionedIn
     where 
       bindedRelation :: Expression -> Maybe Relation
       bindedRelation primExpr =
@@ -40,10 +40,11 @@ instance ConceptStructure a => ConceptStructure (Maybe a) where
   expressionsIn = maybe empty expressionsIn
 
 instance ConceptStructure a => ConceptStructure [a] where
-  concs     = Set.unions . map concs
-  expressionsIn = foldr (uni . expressionsIn) empty
---instance ConceptStructure a => ConceptStructure (Set.Set a) where
---  concs     = Set.toList . Set.union . concs
+  concs         = Set.unions . map concs
+  expressionsIn = Set.unions . map expressionsIn
+instance (Eq a ,ConceptStructure a) => ConceptStructure (Set.Set a) where
+  concs         = Set.unions . map concs         . elems
+  expressionsIn = Set.unions . map expressionsIn . elems
 
 instance ConceptStructure A_Context where
   concs ctx = Set.unions -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)

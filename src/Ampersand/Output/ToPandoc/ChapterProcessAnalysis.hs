@@ -118,9 +118,9 @@ chpProcessAnalysis fSpec
   procSections :: [Pattern] -> [Blocks]
   procSections fprocs = iterat [fp |fp<-fprocs, (not.null.udefrules) fp] 1 declaredConcepts  declaredRelations
    where
-    declaredRelations = concatMap relsDefdIn . vpatterns $ fSpec
+    declaredRelations = relsDefdIn . vpatterns $ fSpec
     declaredConcepts  = concs . vpatterns $ fSpec
-    iterat :: [Pattern] -> Int -> A_Concepts -> [Relation] -> [Blocks]
+    iterat :: [Pattern] -> Int -> A_Concepts -> Relations -> [Blocks]
     iterat [] _ _ _ = mempty
     iterat (fproc:fps) i seenConcepts seenRelations
      = (

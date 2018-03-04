@@ -336,8 +336,8 @@ data Counters
 orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec
  = f ( Counter 1 1 1 --the initial numbers of the countes
-     , (sortWith origin . filter rulMustBeShown . fallRules)  fSpec
-     , (sortWith origin . filter relMustBeShown . relsDefdIn) fSpec 
+     , (sortWith origin . filter rulMustBeShown . elems . fallRules)  fSpec
+     , (sortWith origin . filter relMustBeShown . elems . relsDefdIn) fSpec 
      , (sortBy conceptOrder . filter cptMustBeShown . elems . concs)  fSpec
      ) $
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
@@ -439,7 +439,7 @@ orderingByTheme fSpec
         )
      where
        (thmRuls,restRuls) = partition (inThisTheme ptrls) ruls
-       (themeDcls,restDcls) = partition (inThisTheme relsInTheme) rels
+       (themeDcls,restDcls) = partition (inThisTheme (elems . relsInTheme)) rels
           where relsInTheme p = relsDefdIn p `uni` bindedRelationsIn p
        (themeCpts,restCpts) = partition (inThisTheme (elems . concs)) cpts
        inThisTheme :: Eq a => (Pattern -> [a]) -> a -> Bool
@@ -449,8 +449,8 @@ orderingByTheme fSpec
              Just pat -> x `elem` allElemsOf pat
 
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
-dpRule' :: FSpec -> [Rule] -> Int -> A_Concepts -> [Relation]
-          -> ([(Inlines, [Blocks])], Int, A_Concepts, [Relation])
+dpRule' :: FSpec -> [Rule] -> Int -> A_Concepts -> Relations
+          -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
 dpRule' fSpec = dpR
  where
    l lstr = text $ localize (fsLang fSpec) lstr
@@ -467,8 +467,8 @@ dpRule' fSpec = dpR
         theBlocks :: Blocks
         theBlocks =
             purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-         <> purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
-         <> case (nds, fsLang fSpec) of
+         <> purposes2Blocks (getOpts fSpec) [p | d<-elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
+         <> case (elems nds, fsLang fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
              ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
@@ -476,9 +476,9 @@ dpRule' fSpec = dpR
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
              (_  ,English) -> plain ("To arrive at the formalization of "   <> xRef (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
-         <> (bulletList . map (plain . showRef) $ nds)
-         <> (case nds of
-              [] -> case rds of
+         <> (bulletList . map (plain . showRef) . elems $ nds)
+         <> (case elems nds of
+              [] -> case elems rds of
                        []   -> mempty
                        [rd] -> plain (  l (NL "Om dit te formalizeren maken we gebruik van relatie "
                                           ,EN "We use relation ")
@@ -487,8 +487,8 @@ dpRule' fSpec = dpR
                                      )
                        _    ->    plain (  l (NL "Dit formaliseren we door gebruik te maken van de volgende relaties: "
                                              ,EN "We formalize this using relations "))
-                               <> (bulletList  . map (plain . showRef) $ rds)
-              _  -> case rds of
+                               <> (bulletList  . map (plain . showRef) . elems $ rds)
+              _  -> case elems rds of
                        []   -> mempty
                        [rd] -> plain (  l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
                                       <> showRef rd 
@@ -501,7 +501,7 @@ dpRule' fSpec = dpR
                                       <> l (NL " te formaliseren, gebruiken we daarnaast ook de relaties: "
                                            ,EN " we also use relations ")
                                      ) <>
-                               (bulletList  . map (plain . showRef) $ rds)
+                               (bulletList  . map (plain . showRef) . elems $ rds)
            )
          <> plain (if isSignal r
                    then l ( NL "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "
@@ -525,7 +525,7 @@ dpRule' fSpec = dpR
         ds  = bindedRelationsIn r
         nds = ds >- seenRelations     -- newly seen relations
         rds = ds `isc` seenRelations  -- previously seen relations
-        ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `uni` seenConcs) (nds++seenRelations)
+        ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `uni` seenConcs) (nds `uni` seenRelations)
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
 purposes2Blocks opts ps

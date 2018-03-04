@@ -183,9 +183,9 @@ instance ShowHS FSpec where
         , wrap ", grules        = " indentA (const showHSName) (grules fSpec)
         , wrap ", invariants    = " indentA (const showHSName) (invariants fSpec)
         , wrap ", fallRules     = " indentA (const showHSName) (fallRules fSpec)
-        , wrap ", allUsedDecls  = " indentA (const showHSName) (allUsedDecls fSpec)
-        , wrap ", vrels         = " indentA (const showHSName) (vrels fSpec)
-        , wrap ", allConcepts   = " indentA (const showHSName) (Set.toList $ allConcepts fSpec)
+        , wrap ", allUsedDecls  = " indentA (const showHSName) (elems $ allUsedDecls fSpec)
+        , wrap ", vrels         = " indentA (const showHSName) (elems $ vrels fSpec)
+        , wrap ", allConcepts   = " indentA (const showHSName) (elems $ allConcepts fSpec)
         , wrap ", vIndices      = " indentA (const showHSName) (vIndices fSpec)
         , wrap ", vviews        = " indentA (const showHSName) (vviews fSpec)
         , wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
@@ -227,10 +227,10 @@ instance ShowHS FSpec where
      "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fSpec++" interfaces) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-interfaceG fSpec ]++"\n"
     )++
-    (let ds = vrels fSpec `uni` allUsedDecls fSpec `uni` (nub . map qDcl . vquads) fSpec in
+    (let ds = vrels fSpec `uni` allUsedDecls fSpec `uni` (Set.fromList . map qDcl . vquads) fSpec in
      if null ds then "" else
      "\n -- *** Declared relations (in total: "++(show.length) ds++" relations) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-ds]++"\n"
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-elems ds]++"\n"
     ) ++
     (if null (vIndices fSpec)     then "" else
      "\n -- *** Indices (total: "++(show.length.vIndices) fSpec++" indices) ***: "++
@@ -339,7 +339,7 @@ instance ShowHS Pattern where
      , ", ptend = "++showHS opts "" (ptend pat)
      , ", ptrls = [" ++intercalate ", " [showHSName r | r<-ptrls pat] ++ concat [" {- no rules -} "        | null (ptrls pat)] ++"]"
      , wrap ", ptgns = " indentB (showHS opts) (ptgns pat)
-     , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
+     , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-elems $ ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
      , wrap ", ptups = " indentB (showHS opts) (ptups pat)
      , wrap ", ptids = " indentB (showHS opts) (ptids pat)
      , wrap ", ptvds = " indentB (showHS opts) (ptvds pat)

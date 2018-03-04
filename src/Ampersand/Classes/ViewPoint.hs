@@ -1,19 +1,20 @@
 module Ampersand.Classes.ViewPoint 
    (Language(..)) 
 where
-import Ampersand.ADL1.Rule
-import Ampersand.Basics hiding (Ord(..))
-import Ampersand.Classes.Relational  (Relational(properties))
-import Ampersand.Core.ParseTree (origin)
-import Ampersand.Core.AbstractSyntaxTree
-import Data.List(nub)
-import Data.Maybe
+import           Ampersand.ADL1.Rule
+import           Ampersand.Basics hiding (Ord(..))
+import           Ampersand.Classes.Relational  (Relational(properties))
+import           Ampersand.Core.ParseTree (origin)
+import           Ampersand.Core.AbstractSyntaxTree
+import           Data.List(nub)
+import           Data.Maybe
+import qualified Data.Set as Set
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, relations, etc.)
 
 class Language a where
-  relsDefdIn :: a -> [Relation]   -- ^ all relations that are declared in the scope of this viewpoint.
+  relsDefdIn :: a -> Relations   -- ^ all relations that are declared in the scope of this viewpoint.
                                      --   These are user defined relations and all generated relarations,
                                      --   i.e. one relation for each GEN and one for each signal rule.
                                      --   Don't confuse relsDefdIn with bindedRelationsIn, which gives the relations that are
@@ -21,7 +22,7 @@ class Language a where
   udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-elems (properties d)]
+  multrules x   = catMaybes [rulefromProp p d |d<-elems $ relsDefdIn x, p<-elems (properties d)]
   identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = concatMap rulesFromIdentity (identities x)
   allRules :: a -> [Rule]
@@ -59,23 +60,32 @@ rulesFromIdentity identity
             , isSignal  = False       -- This is not a signal rule
             }
 
-instance Language a => Language [a] where
-  relsDefdIn  = nub . concatMap relsDefdIn
+instance (Eq a,Language a) => Language [a] where
+  relsDefdIn  = Set.unions . map relsDefdIn . elems
   udefrules   =       concatMap udefrules 
   identities  =       concatMap identities
   viewDefs    =       concatMap viewDefs
   gens        = nub . concatMap gens
   patterns    =       concatMap patterns
-
+instance (Eq a,Language a) => Language (Set.Set a) where
+  relsDefdIn  = Set.unions . map relsDefdIn . elems
+  udefrules   =       concatMap udefrules   . elems
+  identities  =       concatMap identities  . elems
+  viewDefs    =       concatMap viewDefs    . elems
+  gens        = nub . concatMap gens        . elems
+  patterns    =       concatMap patterns    . elems
+  
 instance Language A_Context where
-  relsDefdIn context = uniteRels (concatMap relsDefdIn (patterns context)
-                                ++ ctxds context)
+  relsDefdIn context = uniteRels ( relsDefdIn (patterns context)
+                                `uni` ctxds context)
      where
       -- relations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
       -- decpopu, decprps and decprps_calc are united, all others are taken from the head.
-      uniteRels :: [Relation] -> [Relation]
-      uniteRels [] = []
-      uniteRels ds = [ d | cl<-eqClass (==) ds
+      uniteRels :: Relations -> Relations
+      uniteRels ds
+        | null ds = empty
+        | otherwise = Set.fromList 
+                         [ d | cl<-eqClass (==) $ elems ds
                          , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
                                           , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl
                                           }]

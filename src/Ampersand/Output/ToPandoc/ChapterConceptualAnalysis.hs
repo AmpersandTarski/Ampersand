@@ -49,7 +49,7 @@ chpConceptualAnalysis lev fSpec = (
                    <> header (lev+3) "Declared relations"
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
-      <> definitionList (map caRelation (vrels fSpec))
+      <> definitionList (map caRelation (elems $ vrels fSpec))
      
   pictures = map pictOfPat (vpatterns fSpec)
           ++ map pictOfConcept (elems $ concs fSpec)
@@ -163,7 +163,7 @@ chpConceptualAnalysis lev fSpec = (
                     <> mconcat (intersperse  (str ", ")
                                 [   xRef (XRefConceptualAnalysisRelation d)
                                  <> text (" ("++name d++")")
-                                | d<-bindedRelationsIn r])
+                                | d<-elems $ bindedRelationsIn r])
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
                    )

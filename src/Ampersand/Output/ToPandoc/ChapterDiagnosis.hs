@@ -2,9 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
-import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Data.List(nub,partition)
-import Data.Maybe(isJust)
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import           Data.List(nub,partition)
+import           Data.Maybe(isJust)
+import qualified Data.Set as Set
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
@@ -84,7 +85,7 @@ chpDiagnosis fSpec
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role',rul)
          | (role',rul)<-fRoleRuls fSpec
-         , (not.or) (map (mayedit role') (bindedRelationsIn rul))
+         , (not.or) (map (mayedit role') (elems $ bindedRelationsIn rul))
          ]
 
   roleomissions :: Blocks
@@ -197,9 +198,9 @@ chpDiagnosis fSpec
                         )
           )
      where bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Relation]
-           bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) $ decls
-           purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  $ decls
-           meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) $ decls
+           bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) . elems $ decls
+           purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  . elems $ decls
+           meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) . elems $ decls
            decls = vrels fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
@@ -247,7 +248,7 @@ chpDiagnosis fSpec
      )
      where notUsed :: [Inlines]
            notUsed = [ showMath (EDcD d)
-                     | d <- nub (vrels fSpec) -- only relations that are used or defined in the selected themes
+                     | d <- elems (vrels fSpec) -- only relations that are used or defined in the selected themes
                      , decusr d
                      , d `notElem` (bindedRelationsIn . vrules) fSpec
                      ]
@@ -307,19 +308,19 @@ chpDiagnosis fSpec
              -- Content rows
              (   map mkTableRowPat (vpatterns fSpec)
               ++ [mempty] -- empty row
-              ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (filter decusr $ vrels fSpec) (vrules fSpec)]
+              ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (Set.filter decusr $ vrels fSpec) (vrules fSpec)]
              )
       
     where mkTableRow :: String  -- The name of the pattern / fSpec 
-                     -> [Relation] --The user-defined relations of the pattern / fSpec
+                     -> Relations --The user-defined relations of the pattern / fSpec
                      -> [Rule]  -- The user-defined rules of the pattern / fSpec
                      -> [Blocks]
           mkTableRowPat p = mkTableRow (name p) (relsDefdIn p) (udefrules p)
           mkTableRow nm rels ruls =
             map (plain.str) [ nm
-                            , (show.length) rels 
-                            , (show.length) (filter hasRef rels)
-                            , showPercentage (length rels) (length.filter hasRef $ rels)
+                            , (show . Set.size) rels 
+                            , (show . Set.size) (Set.filter hasRef rels)
+                            , showPercentage (Set.size rels) (Set.size . Set.filter hasRef $ rels)
                             , (show.length) ruls
                             , (show.length) (filter hasRef ruls)
                             , showPercentage (length ruls) (length.filter hasRef $ ruls)

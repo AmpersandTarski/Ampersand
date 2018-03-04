@@ -146,7 +146,7 @@ transformers fSpec = map toTransformer [
      ,("ctxds"                 , "Relation"              , "Context" 
       , [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context <- instances fSpec
-        , rel::Relation <- ctxds ctx
+        , rel::Relation <- elems $ ctxds ctx
         ]
       )
      ,("ctxrs"                 , "Rule"                  , "Context" 
@@ -161,13 +161,13 @@ transformers fSpec = map toTransformer [
      ,("declaredIn"            , "Relation"              , "Context" 
       , [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context <- instances fSpec
-        , rel::Relation <- relsDefdIn ctx
+        , rel::Relation <- elems $ relsDefdIn ctx
         ]
       )
      ,("declaredIn"            , "Relation"              , "Pattern" 
       , [(dirtyId rel, dirtyId pat) 
         | pat::Pattern <- instances fSpec
-        , rel::Relation <- relsDefdIn pat
+        , rel::Relation <- elems $ relsDefdIn pat
         ]
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
@@ -545,7 +545,7 @@ transformers fSpec = map toTransformer [
      ,("relsDefdIn"            , "Pattern"               , "Relation"
       , [(dirtyId pat, dirtyId rel) 
         | pat::Pattern <- instances fSpec
-        , rel            <- ptdcs pat
+        , rel            <- elems $ ptdcs pat
         ]
       )
      ,("right"                 , "Pair"                  , "Atom"    
@@ -676,7 +676,7 @@ transformers fSpec = map toTransformer [
       , if atlasWithoutExpressions opts then [] else
         [(dirtyId rel, dirtyId expr)
         | expr::Expression <- instances fSpec
-        , rel::Relation <- bindedRelationsIn expr
+        , rel::Relation <- elems $ bindedRelationsIn expr
         ]
       )
      ,("userCpt"               , "Epsilon"                     , "Concept" 
@@ -743,7 +743,7 @@ instance Instances A_Concept where
 instance Instances Conjunct where
   instances fSpec = allConjuncts fSpec
 instance Instances Relation where
-  instances fSpec = relsDefdIn (originalContext fSpec)
+  instances fSpec = elems $ relsDefdIn (originalContext fSpec)
 instance Instances Expression where
   instances fSpec = elems $ allExprs fSpec
 instance Instances IdentityDef where

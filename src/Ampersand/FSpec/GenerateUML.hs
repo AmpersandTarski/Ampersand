@@ -212,8 +212,8 @@ instance Meaning Req where
 
 requirements :: FSpec -> [Req]
 requirements fSpec
-   = [decl2req d | d <- vrels  fSpec]
-   ++[rule2req r | r <- vrules fSpec]
+   = map decl2req (elems $ vrels  fSpec) 
+   ++map rule2req (elems $ vrules fSpec)
   where
     decl2req d = Req { reqId = name d
                      , reqOrig = Right d

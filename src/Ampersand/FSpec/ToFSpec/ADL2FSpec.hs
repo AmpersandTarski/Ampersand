@@ -135,7 +135,7 @@ makeFSpec opts context
        where
           enrichIfc :: Interface -> Interface
           enrichIfc ifc
-           = ifc{ ifcControls = makeIfcControls [] allConjs
+           = ifc{ ifcControls = makeIfcControls empty allConjs
                 }
      fSpecRoleInterfaces :: Role -> [Interface]
      fSpecRoleInterfaces role' = filter (forThisRole role') fSpecAllInterfaces
@@ -160,7 +160,7 @@ makeFSpec opts context
      allConjs = makeAllConjs opts allrules
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
      fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
-     fSpecAllConjsPerDecl = converse [ (conj, bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
+     fSpecAllConjsPerDecl = converse [ (conj, elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = 
            converse [ (conj, smaller (source e) `uni` smaller (target e)) 
                     | conj <- allConjs
@@ -187,7 +187,8 @@ makeFSpec opts context
      calcProps d = d{decprps_calc = Just calculated}
          where calculated = decprps d `uni` (if d `eleM` totals then singleton Tot else empty)
                                       `uni` (if d `eleM` surjectives then singleton Sur else empty)
-     calculatedDecls = map calcProps (relsDefdIn context)
+     calculatedDecls :: Relations
+     calculatedDecls = Set.map calcProps (relsDefdIn context)
   -- determine relations that are total (as many as possible, but not necessarily all)
      totals      = [ d |       EDcD d  <- totsurs ]
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
@@ -297,12 +298,12 @@ makeFSpec opts context
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal relations are excluded)
-     cRels = [     EDcD d  | d<-calculatedDecls, isTot d, not$decplug d]++
-             [flp (EDcD d) | d<-calculatedDecls, not (isTot d) && isSur d, not$decplug d]
+     cRels = [     EDcD d  | d<-elems $ calculatedDecls, isTot d, not$decplug d] ++
+             [flp (EDcD d) | d<-elems $ calculatedDecls, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal relations are excluded)
-     dRels = [     EDcD d  | d<-calculatedDecls, isInj d, not$decplug d]++
-             [flp (EDcD d) | d<-calculatedDecls, not (isInj d) && isUni d, not$decplug d]
+     dRels = [     EDcD d  | d<-elems $ calculatedDecls, isInj d, not$decplug d]++
+             [flp (EDcD d) | d<-elems $ calculatedDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
@@ -360,7 +361,7 @@ makeFSpec opts context
           not (length objattributes==1 && isIdent(objExpression(head objattributes)))
         , let e0=head cl, not (null e0) || fatal "null e0"
         , let c=source (head e0)
-        , let params = nub . concatMap bindedRelationsIn . expressionsIn $ objattributes
+        , let params = bindedRelationsIn . expressionsIn $ objattributes
         ]
      --end otherwise: default theme
      --end stap4a
@@ -400,11 +401,11 @@ makeFSpec opts context
      ----------------------
      printingLanguage = fromMaybe (ctxlang context) (language opts)  -- The language for printing this specification is taken from the command line options (language opts). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
 
-makeIfcControls :: [Relation] -> [Conjunct] -> [Conjunct]
+makeIfcControls :: Relations -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs
  = [ conj 
    | conj<-allConjs
-   , (not.null) (Set.map EDcD (Set.fromList params) `isc` primsMentionedIn (rc_conjunct conj))
+   , (not.null) (Set.map EDcD params `isc` primsMentionedIn (rc_conjunct conj))
    -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
    -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
    -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).

@@ -90,13 +90,14 @@ cdAnalysis fSpec =
       attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
 
    ooAttr :: Expression -> CdAttribute
-   ooAttr r = OOAttr { attNm = (name . head . bindedRelationsIn) r
+   ooAttr r = OOAttr { attNm = (name . head . elems . bindedRelationsIn) r
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
    allDcls = vrels $ fSpec
    assocsAndAggrs = map decl2assocOrAggr 
-                  . filter dclIsShown $ allDcls
+                  . filter dclIsShown 
+                  . elems $ allDcls
      where
        dclIsShown :: Relation -> Bool
        dclIsShown d = 
@@ -127,7 +128,7 @@ cdAnalysis fSpec =
              , assrhr = name d
              , assmdcl = Just d
              }
-   attribDcls = [ d | d <- allDcls, isUni d || isInj d ]
+   attribDcls = [ d | d <- elems allDcls, isUni d || isInj d ]
     
 
 -- | This function generates a technical data model.
@@ -213,7 +214,7 @@ tdAnalysis fSpec =
                     , asslhr = attName f
                     , assTgt = name . getConceptTableFor fSpec . target $ expr
                     , assrhm = mults expr
-                    , assrhr = case [name d | d<-bindedRelationsIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
+                    , assrhr = case [name d | d<-elems $ bindedRelationsIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
                     , assmdcl = Nothing
                     }
 

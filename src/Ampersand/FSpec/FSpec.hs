@@ -71,8 +71,8 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                    , invariants ::   [Rule]                   -- ^ All invariant rules
                    , signals ::      [Rule]                   -- ^ All signal rules
-                   , allUsedDecls :: [Relation]            -- ^ All relations that are used in the fSpec
-                   , vrels ::        [Relation]            -- ^ All user defined and generated relations plus all defined and computed totals.
+                   , allUsedDecls :: Relations            -- ^ All relations that are used in the fSpec
+                   , vrels ::        Relations            -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and
                                                               --   one relation for each signal.
                    , allConcepts ::  A_Concepts              -- ^ All concepts in the fSpec

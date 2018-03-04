@@ -13,12 +13,12 @@ module Ampersand.Core.A2P_Converters (
   , aViewDef2pViewDef
 ) 
 where
-import Ampersand.ADL1.Expression
-import Ampersand.Basics
-import Ampersand.Core.ParseTree
-import Ampersand.Core.AbstractSyntaxTree
-import Data.Maybe
-import Data.Char
+import           Ampersand.ADL1.Expression
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.AbstractSyntaxTree
+import           Data.Maybe
+import           Data.Char
 import qualified Data.Text as T
 
 aCtx2pCtx :: A_Context -> P_Context
@@ -29,7 +29,7 @@ aCtx2pCtx ctx =
       , ctx_markup = Just $ ctxmarkup ctx
       , ctx_pats   = map aPattern2pPattern . ctxpats $ ctx
       , ctx_rs     = map aRule2pRule . ctxrs $ ctx
-      , ctx_ds     = map aRelation2pRelation . ctxds $ ctx
+      , ctx_ds     = map aRelation2pRelation . elems . ctxds $ ctx
       , ctx_cs     = ctxcds ctx
       , ctx_ks     = map aIdentityDef2pIdentityDef . ctxks $ ctx
       , ctx_rrules = map aRoleRule2pRoleRule  .ctxrrules $ ctx
@@ -51,7 +51,7 @@ aPattern2pPattern pat =
        , pt_nm    = ptnm pat
        , pt_rls   = map aRule2pRule (ptrls pat)
        , pt_gns   = map aGen2pGen (ptgns pat)
-       , pt_dcs   = map aRelation2pRelation (ptdcs pat)
+       , pt_dcs   = map aRelation2pRelation . elems . ptdcs $ pat
        , pt_RRuls = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_RRels = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_cds   = [] --TODO: should this be empty? There is nothing in the A-structure

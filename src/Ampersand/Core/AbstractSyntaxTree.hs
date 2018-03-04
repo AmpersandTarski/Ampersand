@@ -10,7 +10,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , PairViewSegment(..)
  , Rule(..)
  , RuleOrigin(..)
- , Relation(..), showRel
+ , Relation(..), Relations, showRel
  , IdentityDef(..)
  , IdentitySegment(..)
  , ViewDef(..)
@@ -82,7 +82,7 @@ data A_Context
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctxds :: [Relation]    -- ^ The relations that are declared in this context, outside the scope of patterns
+         , ctxds :: Relations        -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
          , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
@@ -122,7 +122,7 @@ data Pattern
            , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
            , ptrls :: [Rule]        -- ^ The user defined rules in this pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
-           , ptdcs :: [Relation] -- ^ The relations that are declared in this pattern
+           , ptdcs :: Relations     -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
@@ -198,6 +198,7 @@ instance Unique Conjunct where
 instance Ord Conjunct where
   compare = compare `on` rc_id
 
+type Relations = Set.Set Relation
 data Relation = Relation
       { decnm :: Text              -- ^ the name of the relation
       , decsgn :: Signature          -- ^ the source and target concepts of the relation

@@ -86,7 +86,7 @@ makeAllQuads conjsPerRule =
          , qRule    = rule
          , qConjuncts = conjs
          }
-  | (rule,conjs) <- conjsPerRule, d <-bindedRelationsIn rule
+  | (rule,conjs) <- conjsPerRule, d <-elems $ bindedRelationsIn rule
   ]
   
    
