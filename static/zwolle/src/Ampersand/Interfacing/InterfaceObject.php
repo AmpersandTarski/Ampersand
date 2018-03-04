@@ -218,7 +218,7 @@ class InterfaceObject
              * INTERFACE "A" : expr1;epxr2 BOX ["label" : expr3]
              */
             $this->refInterfaceId = $ifcDef['subinterfaces']['refSubInterfaceId'];
-            $this->isLinkTo = $ifcDef['subinterfaces']['refIsLinTo']; // not refIsLinkTo? no! typo in generics/interfaces.json
+            $this->isLinkTo = $ifcDef['subinterfaces']['refIsLinkTo'];
             $this->boxClass = $ifcDef['subinterfaces']['boxClass'];
             
             // Inline subinterface definitions
