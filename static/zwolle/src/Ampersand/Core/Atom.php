@@ -42,10 +42,9 @@ class Atom implements JsonSerializable
      * @param Concept $concept
      * @return void
      */
-    public function __construct($atomId, Concept $concept)
+    public function __construct(string $atomId, Concept $concept)
     {
         $this->concept = $concept;
-        
         $this->setId($atomId);
     }
     

@@ -186,7 +186,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     protected function getDBRepresentation($atom)
     {
         if (is_null($atom->id)) {
-            return null;
+            throw new Exception("Atom identifier MUST NOT be NULL", 500);
         }
         
         switch ($atom->concept->type) {
@@ -619,42 +619,21 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
          
         switch ($relTable->tableOf) {
             case null: // Relation is administrated in n-n table
-                if (is_null($srcAtomId) || is_null($tgtAtomId)) {
-                    throw new Exception("Cannot delete from relation table '{$relTable->name}', because srcAtom or tgtAtom is null", 500);
-                }
                 $this->execute("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
                 break;
             case 'src': // Relation is administrated in concept table (wide) of source of relation
                 if (!$relTable->tgtCol()->null) {
                     throw new Exception("Cannot delete link {$link} because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
                 }
-                
                 // Source atom can be used in WHERE statement
-                if (!is_null($srcAtomId)) {
-                    $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
-                } // Target can be used in WHERE statement, because tgtCol is unique
-                elseif ($relTable->tgtCol()->unique) {
-                    $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
-                } // Else update cannot be performed, because of missing target
-                else {
-                    throw new Exception("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
-                }
+                $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
                 break;
             case 'tgt': //  Relation is administrated in concept table (wide) of target of relation
                 if (!$relTable->srcCol()->null) {
                     throw new Exception("Cannot delete link {$link} because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
                 }
-                
                 // Target atom can be used in WHERE statement
-                if (!is_null(($tgtAtomId))) {
-                    $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
-                } // Source can be used in WHERE statement, because srcCol is unique
-                elseif ($relTable->srcCol()->unique) {
-                    $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
-                } // Else update cannot be performed, because of missing target
-                else {
-                    throw new Exception("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
-                }
+                $this->execute("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
                 break;
             default:
                 throw new Exception("Unknown 'tableOf' option for relation '{$relation}'", 500);
@@ -713,21 +692,21 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
             
         // Delete all links
         } else {
-            // If n-n table, remove all rows
-            if (is_null($relationTable->tableOf)) {
-                $query = "DELETE FROM `{$relationTable->name}`";
-            
-            // Else if in table of src concept, set tgt col to null
-            } elseif ($relationTable->tableOf == 'src') {
-                $col = $relationTable->tgtCol();
-                $query = "UPDATE `{$relationTable->name}` SET `{$col->name}` = NULL";
-            
-            // Else if in table of tgt concept, set src col to null
-            } elseif ($relationTable->tableOf == 'tgt') {
-                $col = $relationTable->srcCol();
-                $query = "UPDATE `{$relationTable->name}` SET `{$col->name}` = NULL";
+            switch ($relationTable->tableOf) {
+                case null: // If n-n table, remove all rows
+                    $query = "DELETE FROM `{$relationTable->name}`";
+                    break;
+                case 'src': // If in table of src concept, set tgt col to null
+                    $col = $relationTable->tgtCol();
+                    $query = "UPDATE `{$relationTable->name}` SET `{$col->name}` = NULL";
+                    break;
+                case 'tgt': // If in table of tgt concept, set src col to null
+                    $col = $relationTable->srcCol();
+                    $query = "UPDATE `{$relationTable->name}` SET `{$col->name}` = NULL";
+                    break;
+                default:
+                    throw new Exception("Unknown 'tableOf' option for relation '{$relation}'", 500);
             }
-            
             $this->execute($query);
         }
     }

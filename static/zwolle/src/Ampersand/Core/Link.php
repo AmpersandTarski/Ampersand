@@ -54,9 +54,6 @@ class Link implements JsonSerializable
         $this->tgt = $tgt;
         
         // Checks
-        if (is_null($this->src->id) || is_null($this->tgt->id)) {
-            throw new Exception("Cannot instantiate link {$this}, because src and/or tgt atom is not specified", 500);
-        }
         if (!in_array($this->src->concept, $this->rel->srcConcept->getSpecializationsIncl())) {
             throw new Exception("Cannot instantiate link {$this}, because source atom does not match relation source concept or any of its specializations", 500);
         }
