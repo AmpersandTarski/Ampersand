@@ -338,7 +338,7 @@ orderingByTheme fSpec
  = f ( Counter 1 1 1 --the initial numbers of the countes
      , (sortWith origin . filter rulMustBeShown . fallRules)  fSpec
      , (sortWith origin . filter relMustBeShown . relsDefdIn) fSpec 
-     , (sortBy conceptOrder . filter cptMustBeShown . concs)  fSpec
+     , (sortBy conceptOrder . filter cptMustBeShown . elems . concs)  fSpec
      ) $
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
      ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
@@ -441,7 +441,7 @@ orderingByTheme fSpec
        (thmRuls,restRuls) = partition (inThisTheme ptrls) ruls
        (themeDcls,restDcls) = partition (inThisTheme relsInTheme) rels
           where relsInTheme p = relsDefdIn p `uni` bindedRelationsIn p
-       (themeCpts,restCpts) = partition (inThisTheme concs) cpts
+       (themeCpts,restCpts) = partition (inThisTheme (elems . concs)) cpts
        inThisTheme :: Eq a => (Pattern -> [a]) -> a -> Bool
        inThisTheme allElemsOf x
          = case mPat of
@@ -449,8 +449,8 @@ orderingByTheme fSpec
              Just pat -> x `elem` allElemsOf pat
 
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
-dpRule' :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Relation]
-          -> ([(Inlines, [Blocks])], Int, [A_Concept], [Relation])
+dpRule' :: FSpec -> [Rule] -> Int -> A_Concepts -> [Relation]
+          -> ([(Inlines, [Blocks])], Int, A_Concepts, [Relation])
 dpRule' fSpec = dpR
  where
    l lstr = text $ localize (fsLang fSpec) lstr
@@ -521,11 +521,11 @@ dpRule' fSpec = dpR
         showRef dcl = xRef (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . showRel) dcl <> ")"
         
         ncs = concs r >- seenConcs            -- newly seen concepts
-        cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
+        cds = [(c,cd) | c<-elems ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = bindedRelationsIn r
         nds = ds >- seenRelations     -- newly seen relations
         rds = ds `isc` seenRelations  -- previously seen relations
-        ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenRelations)
+        ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `uni` seenConcs) (nds++seenRelations)
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
 purposes2Blocks opts ps

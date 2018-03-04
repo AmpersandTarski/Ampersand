@@ -2,22 +2,22 @@ module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
-import Ampersand.ADL1
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.FSpec.FSpec
-import Ampersand.Graphic.ClassDiag2Dot
-import Ampersand.Graphic.Fspec2ClassDiagrams
-import Ampersand.Misc
-import Data.GraphViz
-import Data.GraphViz.Attributes.Complete
-import Data.List
-import Data.String(fromString)
-
-import System.FilePath hiding (addExtension)
-import System.Directory
-import System.Process (callCommand)
-import Control.Exception (catch, IOException)
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.FSpec.FSpec
+import           Ampersand.Graphic.ClassDiag2Dot
+import           Ampersand.Graphic.Fspec2ClassDiagrams
+import           Ampersand.Misc
+import           Control.Exception (catch, IOException)
+import           Data.GraphViz
+import           Data.GraphViz.Attributes.Complete
+import           Data.List
+import qualified Data.Set as Set
+import           Data.String(fromString)
+import           System.Directory
+import           System.FilePath hiding (addExtension)
+import           System.Process (callCommand)
 
 data PictureReq = PTClassDiagram
                 | PTCDPattern Pattern
@@ -133,7 +133,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               cpts' = concs rs
               rs    = [r | r<-vrules fSpec, c `elem` concs r]
           in
-          CStruct { csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
+          CStruct { csCpts = nub$ elems cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
                   , csRels = filter (not . isProp) (bindedRelationsIn rs)   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
@@ -141,18 +141,18 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         --  extended with a limited number of more general concepts;
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTCDPattern pat ->
-          let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
+          let orphans = [c | c<-elems cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
               xrels = nub [r | c<-orphans, r<-vrels fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
-              idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
+              idgs = [(s,g) |(s,g)<-gs, g `eleM` cpts, s `eleM` cpts]    --  all isa edges within the concepts
               gs   = fsisa fSpec
-              cpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+              cpts = cpts' `uni` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
               cpts' = concs pat `uni` concs rels
               rels = filter (not . isProp) (bindedRelationsIn pat)
           in
-          CStruct { csCpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+          CStruct { csCpts = elems cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
                   , csRels = rels `uni` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
@@ -163,7 +163,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               cpts = concs decs `uni` concs (gens pat)
               decs = relsDefdIn pat `uni` bindedRelationsIn (udefrules pat)
           in
-          CStruct { csCpts = cpts
+          CStruct { csCpts = elems cpts
                   , csRels = [r | r <- decs
                              , not (isProp r), decusr r    -- r is not a property
                              ]
@@ -174,7 +174,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
           let idgs = [(s,g) | (s,g)<-fsisa fSpec
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
           in
-          CStruct { csCpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
+          CStruct { csCpts = elems $ concs r `uni` Set.fromList [c |(s,g)<-idgs, c<-[g,s]]
                   , csRels = [d | d<-bindedRelationsIn r, decusr d
                              , not (isProp d)    -- d is not a property
                              ]
@@ -276,8 +276,8 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
                                  }
                 }
        where
-        cpts = cpts' `uni` concs rels `uni` concs idgs
-        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<-cpts]
+        cpts = elems $ Set.fromList cpts' `uni` concs rels `uni` concs idgs
+        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<-elems cpts]
         (relationNodes,relationEdges) = (concat a, concat b)
               where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
         isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge opts | (s,g)<-idgs]

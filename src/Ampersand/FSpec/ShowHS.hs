@@ -185,7 +185,7 @@ instance ShowHS FSpec where
         , wrap ", fallRules     = " indentA (const showHSName) (fallRules fSpec)
         , wrap ", allUsedDecls  = " indentA (const showHSName) (allUsedDecls fSpec)
         , wrap ", vrels         = " indentA (const showHSName) (vrels fSpec)
-        , wrap ", allConcepts   = " indentA (const showHSName) (allConcepts fSpec)
+        , wrap ", allConcepts   = " indentA (const showHSName) (Set.toList $ allConcepts fSpec)
         , wrap ", vIndices      = " indentA (const showHSName) (vIndices fSpec)
         , wrap ", vviews        = " indentA (const showHSName) (vviews fSpec)
         , wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
@@ -271,7 +271,7 @@ instance ShowHS FSpec where
     (if null (allConcepts fSpec) then "" else
      "\n -- *** Concepts (total: "++(show.length.allConcepts) fSpec++" concepts) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x
-          ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (allConcepts fSpec)]++"\n"
+          ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (Set.toList $ allConcepts fSpec)]++"\n"
     )
         where indentA = indent ++"                       "
               indentB = indent ++"             "

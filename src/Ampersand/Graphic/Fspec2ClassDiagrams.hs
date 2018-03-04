@@ -16,11 +16,11 @@ import qualified Data.Set as Set
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
     OOclassdiagram { cdName  = "classification_"++name fSpec
-                   , classes = map classOf . concs . vgens $ fSpec
+                   , classes = map classOf . elems . concs . vgens $ fSpec
                    , assocs  = []
                    , aggrs   = []
                    , geners  = map OOGener . vgens $ fSpec
-                   , ooCpts  = concs fSpec
+                   , ooCpts  = elems . concs $ fSpec
                    }
 
  where
@@ -51,11 +51,13 @@ cdAnalysis fSpec =
   OOclassdiagram { cdName  = "logical_"++name fSpec
                  , classes = map buildClass 
                            . filter cptIsShown
+                           . elems 
                            . allConcepts $ fSpec
                  , assocs  = lefts assocsAndAggrs
                  , aggrs   = rights assocsAndAggrs
                  , geners  = map OOGener (vgens fSpec)
                  , ooCpts  = filter cptIsShown
+                           . elems 
                            . allConcepts $ fSpec
                  }
 
@@ -107,6 +109,7 @@ cdAnalysis fSpec =
              )      
           where nodeConcepts = concatMap (tyCpts . typologyOf fSpec)
                              . filter cptIsShown
+                             . elems 
                              . allConcepts $ fSpec
                             
 

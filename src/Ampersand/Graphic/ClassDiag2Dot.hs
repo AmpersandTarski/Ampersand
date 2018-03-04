@@ -199,5 +199,5 @@ instance CdNode Aggregation where
  nodes (OOAggr _ s t) = map name [s,t]
 
 instance CdNode Generalization where
- nodes g = map name ((concs.genAgen) g)
+ nodes = map name . elems . concs . genAgen
 

@@ -128,7 +128,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
             <> fromList (maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c)
            , mempty
            ]
-         | c <- sortBy (compare `on` name) . filter keyFilter . delete ONE $ concs fSpec
+         | c <- sortBy (compare `on` name) . filter keyFilter . delete ONE . elems $ concs fSpec
          ]
      where
        keyFilter :: A_Concept -> Bool

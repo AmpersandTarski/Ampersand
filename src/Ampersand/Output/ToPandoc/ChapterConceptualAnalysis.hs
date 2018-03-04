@@ -52,7 +52,7 @@ chpConceptualAnalysis lev fSpec = (
       <> definitionList (map caRelation (vrels fSpec))
      
   pictures = map pictOfPat (vpatterns fSpec)
-          ++ map pictOfConcept (concs fSpec)
+          ++ map pictOfConcept (elems $ concs fSpec)
           ++ map pictOfRule (vrules fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph

@@ -28,7 +28,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , ExplObj(..)
  , Expression(..)
  , getExpressionRelation
- , A_Concept(..)
+ , A_Concept(..), A_Concepts
  , AMeaning(..)
  , A_RoleRule(..)
  , A_RoleRelation(..)
@@ -47,8 +47,8 @@ module Ampersand.Core.AbstractSyntaxTree (
  , makeConcept
  , aavstr
  ) where
-import Ampersand.Basics
-import Ampersand.Core.ParseTree 
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree 
     ( Meta(..)
     , Role(..)
     , ConceptDef
@@ -67,6 +67,7 @@ import           Data.Function      (on)
 import           Data.Hashable      (Hashable(..),hashWithSalt)
 import           Data.List          (nub,intercalate)
 import           Data.Maybe         (fromMaybe,listToMaybe)
+import qualified Data.Set as Set
 import           Data.Text          (Text,unpack,pack)
 import           Data.Time.Calendar (showGregorian,Day, fromGregorian, addDays)
 import           Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
@@ -708,7 +709,7 @@ data A_Concept
                   }
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     deriving (Typeable,Data,Ord,Eq)
-
+type A_Concepts = Set.Set A_Concept
 {- -- this is faster, so if you think Eq on concepts is taking a long time, try this..
 instance Ord A_Concept where
   compare (PlainConcept{cpthash=v1}) (PlainConcept{cpthash=v2}) = compare v1 v2

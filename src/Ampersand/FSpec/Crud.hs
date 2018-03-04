@@ -38,10 +38,10 @@ getCrudObjectsForInterface crudInfo ifc =
   fromMaybe (fatal $ "NO CRUD objects for interface " ++ show (name ifc))
             (lookup ifc $ crudObjsPerInterface crudInfo) 
   
-mkCrudInfo :: [A_Concept] -> [Relation] -> [Interface] -> CrudInfo
+mkCrudInfo :: A_Concepts -> [Relation] -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
-  where allConcs = [ c | c <- allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
+  where allConcs = [ c | c <- elems allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
         nonCrudConcpts = [ source d | d <- decls, isUni d && isSur d ] ++
                          [ target d | d <- decls, isInj d && isTot d ]
         crudCncpts = allConcs \\ nonCrudConcpts

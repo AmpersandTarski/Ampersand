@@ -30,21 +30,22 @@ module Ampersand.FSpec.FSpec
           , showSQL
       --    , module Ampersand.Classes
           ) where
-import Data.List
-import Data.Text (Text,unpack)
-import Data.Typeable
-import Ampersand.ADL1.Expression (notCpl,Expressions)
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.Core.ParseTree
+import           Ampersand.ADL1.Expression (notCpl,Expressions)
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree
         ( Traced(..), Origin
         , Role
         , ConceptDef
         )
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec.Crud
-import Ampersand.Misc
-import Text.Pandoc.Builder (Blocks)
+import           Ampersand.FSpec.Crud
+import           Ampersand.Misc
+import           Data.List
+import qualified Data.Set as Set
+import           Data.Text (Text,unpack)
+import           Data.Typeable
+import           Text.Pandoc.Builder (Blocks)
 
 data MultiFSpecs = MultiFSpecs
                    { userFSpec :: FSpec        -- ^ The FSpec based on the user's script, potentionally extended with metadata.
@@ -74,7 +75,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , vrels ::        [Relation]            -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and
                                                               --   one relation for each signal.
-                   , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
+                   , allConcepts ::  A_Concepts              -- ^ All concepts in the fSpec
                    , cptTType :: A_Concept -> TType 
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
@@ -310,7 +311,7 @@ instance Unique (PlugSQL,SqlAttribute) where
 instance Ord SqlAttribute where
   compare x y = compare (attName x) (attName y)
 instance ConceptStructure SqlAttribute where
-  concs     f = [target e' |let e'=attExpr f,isSur e']
+  concs     f = Set.fromList [target e' |let e'=attExpr f,isSur e']
   expressionsIn   f = expressionsIn   (attExpr f)
 
 isPrimaryKey :: SqlAttribute -> Bool

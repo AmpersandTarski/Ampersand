@@ -101,7 +101,7 @@ checkPurposes ctx = let topLevelPurposes = ctxps ctx
 isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
-    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (concs ctx )
+    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (elems $ concs ctx )
     ExplRelation decl -> let nm = name decl in nm `notElem` map name (relsDefdIn ctx) -- is already covered by type checker
     ExplRule nm -> nm `notElem` map name (udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
@@ -311,7 +311,7 @@ pCtx2aCtx opts
     allReprs = p_representations++concatMap pt_Reprs p_patterns
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
-     = do let connectedConcepts = connect [] (map concs gns)
+     = do let connectedConcepts = connect [] (map (elems . concs) gns)
           typeMap <- mkTypeMap connectedConcepts allReprs
           let findR :: A_Concept -> TType
               findR cpt = fromMaybe
@@ -418,7 +418,7 @@ pCtx2aCtx opts
                         Isa{} -> gengen g == genspc g
                         IsE{} -> genrhs g == [genspc g]
                isInvolved :: A_Gen -> Bool
-               isInvolved gn = not . null $ concs gn `isc` cs
+               isInvolved gn = not . null $ concs gn `isc` Set.fromList cs
 
     
 {-

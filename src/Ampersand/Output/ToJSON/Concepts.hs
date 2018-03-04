@@ -51,7 +51,7 @@ instance ToJSON Segment where
 instance ToJSON TableCols where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Concepts where
- fromAmpersand multi _ = Concepts (map (fromAmpersand multi) (concs fSpec))
+ fromAmpersand multi _ = Concepts (map (fromAmpersand multi) (elems $ concs fSpec))
    where fSpec = userFSpec multi
 instance JSON A_Concept Concept where
  fromAmpersand multi cpt = Concept

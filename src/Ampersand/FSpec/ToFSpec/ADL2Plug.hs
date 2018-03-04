@@ -264,4 +264,6 @@ typologies context =
    (multiKernels . ctxInfo $ context) ++ 
    [Typology { tyroot = c
              , tyCpts = [c]
-             } | c <- concs context >- concs (gens context)]
+             } 
+   | c <- elems $ concs context >- concs (gens context)
+   ]

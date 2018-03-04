@@ -6,12 +6,11 @@ import           Ampersand.Basics hiding (Ordering(..))
 import           Ampersand.Core.AbstractSyntaxTree
 import           Ampersand.Core.ParseTree(ConceptDef)
 import           Ampersand.Classes.ViewPoint
-import           Data.List
 import           Data.Maybe
 import qualified Data.Set as Set
 
 class ConceptStructure a where
-  concs                 :: a -> [A_Concept] -- ^ the set of all concepts used in data structure a
+  concs                 :: a -> A_Concepts -- ^ the set of all concepts used in data structure a
   expressionsIn         :: a -> Expressions -- ^ The set of all expressions within data structure a
   bindedRelationsIn     :: a -> [Relation]  -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
   bindedRelationsIn = Set.toList . Set.map fromJust . Set.filter isJust . Set.map bindedRelation . primsMentionedIn
@@ -41,14 +40,16 @@ instance ConceptStructure a => ConceptStructure (Maybe a) where
   expressionsIn = maybe empty expressionsIn
 
 instance ConceptStructure a => ConceptStructure [a] where
-  concs     = nub . concatMap concs
+  concs     = Set.unions . map concs
   expressionsIn = foldr (uni . expressionsIn) empty
 --instance ConceptStructure a => ConceptStructure (Set.Set a) where
 --  concs     = Set.toList . Set.union . concs
 
 instance ConceptStructure A_Context where
-  concs ctx = foldr uni [ONE, makeConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
-              [ (concs . ctxcds) ctx
+  concs ctx = Set.unions -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
+              [ singleton ONE
+              , singleton (makeConcept "SESSION")
+              , (concs . ctxcds) ctx
               , (concs . ctxds) ctx
               , (concs . ctxgs) ctx
               , (concs . ctxifcs) ctx
@@ -74,11 +75,11 @@ instance ConceptStructure A_Context where
                       ]
 
 instance ConceptStructure IdentityDef where
-  concs       identity   = [idCpt identity] `uni` concs [objDef | IdentityExp objDef <- identityAts identity]
+  concs       identity   = singleton (idCpt identity) `uni` concs [objDef | IdentityExp objDef <- identityAts identity]
   expressionsIn identity = expressionsIn             [objDef | IdentityExp objDef <- identityAts identity]
 
 instance ConceptStructure ViewDef where
-  concs         vd = [vdcpt vd] `uni` concs (vdats vd)
+  concs         vd = singleton (vdcpt vd) `uni` concs (vdats vd)
   expressionsIn vd = expressionsIn (vdats vd)
 
 instance ConceptStructure ViewSegment where
@@ -87,13 +88,13 @@ instance ConceptStructure ViewSegment where
 
 instance ConceptStructure ViewSegmentPayLoad where
   concs  (ViewExp e)  = concs e
-  concs  ViewText{} = []
+  concs  ViewText{} = empty
   expressionsIn (ViewExp e) = expressionsIn e
   expressionsIn ViewText{}  = empty
 instance ConceptStructure Expression where
   concs (EDcD d    ) = concs d
   concs (EDcI c    ) = singleton c
-  concs (EEps i sgn) = nub (i:concs sgn)
+  concs (EEps i sgn) = singleton i `uni` concs sgn
   concs (EDcV   sgn) = concs sgn
   concs (EMp1 _ c  ) = singleton c
   concs e            = concs . Set.toList . primitives $ e
@@ -128,7 +129,7 @@ instance ConceptStructure SubInterface where
               InterfaceRef{} -> empty
 
 instance ConceptStructure Pattern where
-  concs pat = foldr uni []
+  concs pat = Set.unions
               [ (concs . ptrls) pat
               , (concs . ptgns) pat
               , (concs . ptdcs) pat
@@ -136,17 +137,15 @@ instance ConceptStructure Pattern where
               , (concs . ptids) pat
               , (concs . ptxps) pat
               ]
-  expressionsIn p = foldr uni empty
+  expressionsIn p = Set.unions
                      [ (expressionsIn . ptrls) p
                      , (expressionsIn . ptids) p
                      , (expressionsIn . ptvds) p
                      ]
 
 instance ConceptStructure Interface where
-  concs         ifc = concs (ifcObj ifc)
-  expressionsIn ifc = foldr uni empty
-                     [ (expressionsIn . ifcObj) ifc
-                     ]
+  concs         = concs         . ifcObj
+  expressionsIn = expressionsIn . ifcObj
 
 instance ConceptStructure Relation where
   concs         d = concs (sign d)
@@ -174,13 +173,13 @@ instance ConceptStructure Purpose where
 
 instance ConceptStructure ExplObj where
   concs (ExplConceptDef cd) = concs cd
-  concs (ExplRelation d) = concs d
-  concs (ExplRule _)        = [{-beware of loops...-}]
-  concs (ExplIdentityDef _) = [{-beware of loops...-}]
-  concs (ExplViewDef _)     = [{-beware of loops...-}]
-  concs (ExplPattern _)     = [{-beware of loops...-}]
-  concs (ExplInterface _)   = [{-beware of loops...-}]
-  concs (ExplContext _)     = [{-beware of loops...-}]
+  concs (ExplRelation d)    = concs d
+  concs (ExplRule _)        = empty {-beware of loops...-}
+  concs (ExplIdentityDef _) = empty {-beware of loops...-}
+  concs (ExplViewDef _)     = empty {-beware of loops...-}
+  concs (ExplPattern _)     = empty {-beware of loops...-}
+  concs (ExplInterface _)   = empty {-beware of loops...-}
+  concs (ExplContext _)     = empty {-beware of loops...-}
   
   expressionsIn _ = empty
 
@@ -193,8 +192,8 @@ instance ConceptStructure (PairViewSegment Expression) where
       PairViewExp{}  -> expressionsIn (pvsExp pvs)
 
 instance ConceptStructure A_Gen where
-  concs g@Isa{}  = nub [gengen g,genspc g]
-  concs g@IsE{}  = nub (genspc g: genrhs g)
+  concs g@Isa{}  = Set.fromList [gengen g,genspc g]
+  concs g@IsE{}  = singleton (genspc g) `uni` Set.fromList (genrhs g)
   expressionsIn g = fatal ("expressionsIn not allowed on A_Gen:\n"++show g)
 
 instance ConceptStructure Conjunct where

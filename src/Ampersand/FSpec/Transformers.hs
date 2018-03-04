@@ -104,7 +104,7 @@ transformers fSpec = map toTransformer [
      ,("concepts"              , "Pattern"               , "Concept" 
       , [(dirtyId pat, dirtyId cpt)
         | pat::Pattern <- instances fSpec
-        , cpt <- concs pat
+        , cpt <- elems (concs pat)
         ]
       )
      ,("conjunct"              , "Conjunct"              , "Expression"
@@ -739,7 +739,7 @@ instance Instances A_Context where
 instance Instances A_Gen where
   instances fSpec = gens (originalContext fSpec)
 instance Instances A_Concept where
-  instances fSpec = concs (originalContext fSpec)
+  instances fSpec = elems . concs . originalContext $ fSpec
 instance Instances Conjunct where
   instances fSpec = allConjuncts fSpec
 instance Instances Relation where

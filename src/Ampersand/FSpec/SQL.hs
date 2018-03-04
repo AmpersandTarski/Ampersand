@@ -980,7 +980,7 @@ sqlAttConcept fSpec c | c==ONE = QName "ONE"
                       | otherwise
              = if null cs then fatal ("A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\"") else
                QName (head cs)
-               where cs = [name f |f<-plugAttributes (sqlConceptPlug fSpec c), c'<-concs f,c==c']
+               where cs = [name f |f<-plugAttributes (sqlConceptPlug fSpec c), c'<-elems $ concs f,c==c']
 
 
 stringOfName :: Name -> String

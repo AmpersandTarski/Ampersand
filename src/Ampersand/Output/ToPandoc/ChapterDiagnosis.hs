@@ -132,10 +132,10 @@ chpDiagnosis fSpec
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
-         ccs = concs (vrels fSpec)
+         ccs = elems . concs . vrels $ fSpec
   unusedConceptDefs :: Blocks
   unusedConceptDefs
-   = case [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (concs fSpec)] of
+   = case [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (elems $ concs fSpec)] of
       []  -> if (null.conceptDefs) fSpec
              then mempty
              else para.str.l $

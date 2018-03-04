@@ -51,8 +51,8 @@ instance ToJSON JPair where
   toJSON = amp2Jason
 instance JSON (MultiFSpecs,Bool) Populations where
  fromAmpersand _ (multi,doMeta) = Populations
-   { epJSONatoms = map (fromAmpersand multi) (zip (allConcepts theFSpec) (repeat doMeta))
-   , epJSONlinks = map (fromAmpersand multi) (zip (vrels       theFSpec) (repeat doMeta))
+   { epJSONatoms = map (fromAmpersand multi) (zip (elems $ allConcepts theFSpec) (repeat doMeta))
+   , epJSONlinks = map (fromAmpersand multi) (zip (vrels               theFSpec) (repeat doMeta))
    }
   where 
    theFSpec 
