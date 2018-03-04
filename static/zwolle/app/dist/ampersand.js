@@ -37,7 +37,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     
     Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
         if(operation != 'get' && operation != 'getList' && data.sessionRefreshAdvice) NavigationBarService.refreshNavBar();
-		if(data.navTo != null) $location.url(data.navTo);
+		if((data || {}).navTo != null) $location.url(data.navTo);
         
         return data;
     });
@@ -85,73 +85,11 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
         }
         return original.apply($location, [url]);
     };
-    
-    
-}]).value('cgBusyDefaults',{
-    message:'Loading...',
-    backdrop: true,
-    //templateUrl: 'my_custom_template.html',
-    //delay: 500, // in ms
-    minDuration: 500, // in ms
-    // wrapperClass: 'my-class my-class2'
-}).directive('myShowonhoverBox', function (){
-    return {
-        link : function(scope, element, attrs) {
-            if(!element.closest('.box').hasClass('my-showonhover-box-show')) element.hide(); // default hide
-            
-            element.closest('.box').bind('mouseenter', function() {
-                element.closest('.box').addClass('my-showonhover-box-show');
-                element.show();
-            });
-            element.closest('.box').bind('mouseleave', function() {
-                element.closest('.box').removeClass('my-showonhover-box-show');
-                element.hide();
-            });
-        }
-    };
-}).directive('myBluronenter', function() {
-    return function(scope, element, attrs) {
-        element.bind("keydown keypress", function(event) {
-            if(event.which === 13) { // 13 = Carriage return
-                event.target.blur();
-
-                event.preventDefault();
-            }
-        });
-    };
-}).filter('toArray', function() {
-    // used from: https://github.com/petebacondarwin/angular-toArrayFilter
-    return function (obj, addKey) {
-        if (!obj) return obj;
-        if (Array.isArray(obj)) return obj; // obj is already an array
-        if ( addKey === false ) {
-          return Object.keys(obj).map(function(key) {
-            return obj[key];
-          });
-        } else {
-          return Object.keys(obj).map(function (key) {
-            return Object.defineProperty(obj[key], '$key', { enumerable: false, value: key});
-          });
-        }
-      };
-}).directive('myNavToInterfaces', function(){
-    return {
-        restrict : 'E',
-        scope : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        templateUrl : 'app/src/shared/partials/myNavToInterfaces.html',
-        transclude : true
-    };
-}).directive('myNavToOtherInterfaces', function(){
-    return {
-        restrict : 'E',
-        scope  : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        templateUrl : 'app/src/shared/partials/myNavToOtherInterfaces.html'
-    };
-}).filter('unsafe', ["$sce", function($sce){
-    return $sce.trustAsHtml;
 }]);
+
 // Controller for extension app in navigation bar
-angular.module('AmpersandApp').controller('ExecEngineController', ["$scope", "Restangular", "NotificationService", function ($scope, Restangular, NotificationService) {
+angular.module('AmpersandApp')
+.controller('ExecEngineController', ["$scope", "Restangular", "NotificationService", function ($scope, Restangular, NotificationService) {
     $scope.run = function (){
         Restangular.one('admin/execengine/run').get()
         .then(
@@ -162,7 +100,9 @@ angular.module('AmpersandApp').controller('ExecEngineController', ["$scope", "Re
         );
     };
 }]);
-angular.module('AmpersandApp').controller('InstallerController', ["$scope", "Restangular", "NotificationService", "RoleService", function ($scope, Restangular, NotificationService, RoleService) {
+
+angular.module('AmpersandApp')
+.controller('InstallerController', ["$scope", "Restangular", "NotificationService", "RoleService", function ($scope, Restangular, NotificationService, RoleService) {
     $scope.installing = false;
     $scope.installed = false;
     
@@ -183,8 +123,8 @@ angular.module('AmpersandApp').controller('InstallerController', ["$scope", "Res
             $scope.installed = false;
         });
     };
-    
 }]);
+
 angular.module('uiSwitch', [])
 
 .directive('switch', function(){
@@ -246,7 +186,9 @@ app.config(["$routeProvider", function($routeProvider) {
 }]).controller('PopulationImportController', ["$scope", "ImportService", function ($scope, ImportService) {
     $scope.uploader = ImportService.uploader;
 }]);
-angular.module('AmpersandApp').controller('AtomicController', ["$scope", "ResourceService", function($scope, ResourceService){
+
+angular.module('AmpersandApp')
+.controller('AtomicController', ["$scope", "ResourceService", function($scope, ResourceService){
     
     /*
      * Object to temporary store value/resourceId to add to list
@@ -264,7 +206,9 @@ angular.module('AmpersandApp').controller('AtomicController', ["$scope", "Resour
     
     $scope.delete = ResourceService.deleteResource; // function(ifc, resource)
 }]);
-angular.module('AmpersandApp').controller('AtomicDateController', ["$scope", "ResourceService", function ($scope, ResourceService) {
+
+angular.module('AmpersandApp')
+.controller('AtomicDateController', ["$scope", "ResourceService", function ($scope, ResourceService) {
     
     $scope.isOpen = false;
     
@@ -309,7 +253,9 @@ angular.module('AmpersandApp').controller('AtomicDateController', ["$scope", "Re
         }
     };
 }]);
-angular.module('AmpersandApp').controller('AtomicTypeAheadController', ["$scope", "Restangular", "ResourceService", function($scope, Restangular, ResourceService){
+
+angular.module('AmpersandApp')
+.controller('AtomicTypeAheadController', ["$scope", "Restangular", "ResourceService", function($scope, Restangular, ResourceService){
     
     /*
      * Object to temporary store value/resourceId to add to list
@@ -343,20 +289,22 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', ["$scope"
         else if($item._id_ === '') console.log('Empty resource id provided');
         else{
             if(Array.isArray(resource[ifc])){
-                // Adapt in js model
-                resource[ifc].push(angular.copy($item));
-                
                 // Construct patch(es)
                 patch = ResourceService.createPatch('add', resource, patchResource, ifc, $item._id_);
-                ResourceService.addPatches(patchResource, [patch]);
+                ResourceService.addPatches(patchResource, [patch])
+                .then(function(data){
+                    // Adapt in js model
+                    if(!data.saved) resource[ifc].push(angular.copy($item));
+                });
                 
             }else if(resource[ifc] === null){
-                // Adapt js model
-                resource[ifc] = angular.copy($item);
-                
                 // Construct patch(es)
                 patch = ResourceService.createPatch('replace', resource, patchResource, ifc, $item._id_);
-                ResourceService.addPatches(patchResource, [patch]);
+                ResourceService.addPatches(patchResource, [patch])
+                .then(function(data){
+                    // Adapt js model
+                    if(!data.saved) resource[ifc] = angular.copy($item);
+                });
             }
             else console.log('Error: Property already set and/or not defined');
             
@@ -381,7 +329,9 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', ["$scope"
         }
     };
 }]);
-angular.module('AmpersandApp').controller('AtomicUploadFileController', ["$scope", "FileUploader", "NotificationService", function($scope, FileUploader, NotificationService){
+
+angular.module('AmpersandApp')
+.controller('AtomicUploadFileController', ["$scope", "FileUploader", "NotificationService", function($scope, FileUploader, NotificationService){
     
     // File uploader stuff
     $scope.FileUploader = new FileUploader({
@@ -402,7 +352,9 @@ angular.module('AmpersandApp').controller('AtomicUploadFileController', ["$scope
         NotificationService.addError(response.error.message, response.error.code, true);
     };
 }]);
-angular.module('AmpersandApp').controller('BoxController', ["$scope", "ResourceService", function($scope, ResourceService){
+
+angular.module('AmpersandApp')
+.controller('BoxController', ["$scope", "ResourceService", function($scope, ResourceService){
     
     // Function to create a new resource (does a POST)
     $scope.createResource = ResourceService.createResource; // function(resource, ifc, callingObj, prepend)
@@ -419,7 +371,9 @@ angular.module('AmpersandApp').controller('BoxController', ["$scope", "ResourceS
     // Function to delete a resource
     $scope.delete = ResourceService.deleteResource; // function(ifc, resource)
 }]);
-angular.module('AmpersandApp').controller('InterfaceController', ["$scope", "$location", "ResourceService", function($scope, $location, ResourceService){
+
+angular.module('AmpersandApp')
+.controller('InterfaceController', ["$scope", "$location", "ResourceService", function($scope, $location, ResourceService){
     /*
      * An empty object for typeahead functionality.
      * Defined here so it can be reused in an interface
@@ -445,7 +399,40 @@ angular.module('AmpersandApp').controller('InterfaceController', ["$scope", "$lo
     // Function (reference) to check if there are pending promises for a resource
     $scope.pendingPromises = ResourceService.pendingPromises;
 }]);
-angular.module('AmpersandApp').service('ResourceService', ["$localStorage", "$timeout", "$location", "Restangular", "NotificationService", function($localStorage, $timeout, $location, Restangular, NotificationService){
+
+angular.module('AmpersandApp')
+.directive('myBluronenter', function() {
+    return function(scope, element, attrs) {
+        element.bind("keydown keypress", function(event) {
+            if(event.which === 13) { // 13 = Carriage return
+                event.target.blur();
+
+                event.preventDefault();
+            }
+        });
+    };
+});
+
+angular.module('AmpersandApp')
+.directive('myShowonhoverBox', function (){
+    return {
+        link : function(scope, element, attrs) {
+            if(!element.closest('.box').hasClass('my-showonhover-box-show')) element.hide(); // default hide
+            
+            element.closest('.box').bind('mouseenter', function() {
+                element.closest('.box').addClass('my-showonhover-box-show');
+                element.show();
+            });
+            element.closest('.box').bind('mouseleave', function() {
+                element.closest('.box').removeClass('my-showonhover-box-show');
+                element.hide();
+            });
+        }
+    };
+});
+
+angular.module('AmpersandApp')
+.service('ResourceService', ["$localStorage", "$timeout", "$location", "Restangular", "NotificationService", "$q", function($localStorage, $timeout, $location, Restangular, NotificationService, $q){
     // http://blog.thoughtram.io/angular/2015/07/07/service-vs-factory-once-and-for-all.html
     
     let updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes (patches in cache)
@@ -503,7 +490,7 @@ angular.module('AmpersandApp').service('ResourceService', ["$localStorage", "$ti
                 // Update visual feedback (notifications and buttons)
                 ResourceService.processResponse(resource, data);
 
-                return resource;
+                return {resource : resource, saved: true};
             });
 
             // Add promise to loading list
@@ -594,13 +581,17 @@ angular.module('AmpersandApp').service('ResourceService', ["$localStorage", "$ti
          * @returns {Promise}
          */
         removeResource : function(parent, ifc, resource, patchResource){
-            // Adapt js model
-            if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
-            else parent[ifc] = null; // uni = object
-            
             // Construct patch(es)
             patch = ResourceService.createPatch('remove', resource, patchResource);
-            return ResourceService.addPatches(patchResource, [patch]);
+
+            // Execute patch
+            return ResourceService
+            .addPatches(patchResource, [patch])
+            .then(function(data){
+                // Adapt js model
+                if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
+                else parent[ifc] = null; // uni = object
+            });
         },
         
         /**
@@ -753,7 +744,7 @@ angular.module('AmpersandApp').service('ResourceService', ["$localStorage", "$ti
                 // Update visual feedback
                 ResourceService.setResourceStatus(resource, 'warning');
                 resource._showButtons_ = {'save' : true, 'cancel' : true};
-                return $q.resolve(resource);
+                return $q.resolve({resource : resource, saved : false});
             }
         },
 
@@ -849,9 +840,51 @@ angular.module('AmpersandApp').service('ResourceService', ["$localStorage", "$ti
     };
     
     return ResourceService;
-    
 }]);
-angular.module('AmpersandApp').controller('NavigationBarController', ["$scope", "$route", "Restangular", "$localStorage", "$sessionStorage", "$timeout", "$location", "NotificationService", "RoleService", "NavigationBarService", function ($scope, $route, Restangular, $localStorage, $sessionStorage, $timeout, $location, NotificationService, RoleService, NavigationBarService) {
+
+angular.module('AmpersandApp')
+.directive('myNavbarResize', ["$window", "$timeout", "NavigationBarService", function ($window, $timeout, NavigationBarService) {
+    return function (scope, element) {
+        var w = angular.element($window);
+        
+        var resizeNavbar = function() {
+            $timeout(function(){
+                // moving ifc items from dropdown-menu to navbar itself
+                while($('#navbar-interfaces').width() < ($('#navbar-wrapper').width() - $('#navbar-options').width()) &&
+                        $('#navbar-interfaces-dropdown-menu').children().length > 0){
+                    $("#navbar-interfaces-dropdown-menu").children().first().appendTo("#navbar-interfaces");
+                }
+                
+                // moving ifc items from navbar to dropdown-menu
+                while($('#navbar-interfaces').width() > ($('#navbar-wrapper').width() - $('#navbar-options').width())){
+                    $("#navbar-interfaces").children().last().prependTo("#navbar-interfaces-dropdown-menu");
+                    
+                    // show/hide dropdown menu for more interfaces (must be inside loop, because it affects the width of the navbar
+                    $('#navbar-interfaces-dropdown').toggleClass('hidden', $('#navbar-interfaces-dropdown-menu').children().length <= 0);
+                }
+                
+                // show/hide dropdown menu when possible
+                $('#navbar-interfaces-dropdown').toggleClass('hidden', $('#navbar-interfaces-dropdown-menu').children().length <= 0);
+            });
+        };
+        
+        // watch navbar
+        scope.$watch('NavigationBarService.navbar', function() {
+            resizeNavbar();
+        });
+        
+        // when window size gets changed
+        w.bind('resize', function () {        
+            resizeNavbar();
+        });
+        
+        // when page loads
+        resizeNavbar();
+    };
+}]);
+
+angular.module('AmpersandApp')
+.controller('NavigationBarController', ["$scope", "$route", "Restangular", "$localStorage", "$sessionStorage", "$timeout", "$location", "NotificationService", "RoleService", "NavigationBarService", function ($scope, $route, Restangular, $localStorage, $sessionStorage, $timeout, $location, NotificationService, RoleService, NavigationBarService) {
     
     $scope.$storage = $localStorage;
     $scope.$sessionStorage = $sessionStorage;
@@ -914,46 +947,10 @@ angular.module('AmpersandApp').controller('NavigationBarController', ["$scope", 
     };
     
     $scope.loadingNavBar.push(NavigationBarService.refreshNavBar());
-}]).directive('myNavbarResize', ["$window", "$timeout", "NavigationBarService", function ($window, $timeout, NavigationBarService) {
-    return function (scope, element) {
-        var w = angular.element($window);
-        
-        var resizeNavbar = function() {
-            $timeout(function(){
-                // moving ifc items from dropdown-menu to navbar itself
-                while($('#navbar-interfaces').width() < ($('#navbar-wrapper').width() - $('#navbar-options').width()) &&
-                        $('#navbar-interfaces-dropdown-menu').children().length > 0){
-                    $("#navbar-interfaces-dropdown-menu").children().first().appendTo("#navbar-interfaces");
-                }
-                
-                // moving ifc items from navbar to dropdown-menu
-                while($('#navbar-interfaces').width() > ($('#navbar-wrapper').width() - $('#navbar-options').width())){
-                    $("#navbar-interfaces").children().last().prependTo("#navbar-interfaces-dropdown-menu");
-                    
-                    // show/hide dropdown menu for more interfaces (must be inside loop, because it affects the width of the navbar
-                    $('#navbar-interfaces-dropdown').toggleClass('hidden', $('#navbar-interfaces-dropdown-menu').children().length <= 0);
-                }
-                
-                // show/hide dropdown menu when possible
-                $('#navbar-interfaces-dropdown').toggleClass('hidden', $('#navbar-interfaces-dropdown-menu').children().length <= 0);
-            });
-        };
-        
-        // watch navbar
-        scope.$watch('NavigationBarService.navbar', function() {
-            resizeNavbar();
-        });
-        
-        // when window size gets changed
-        w.bind('resize', function () {        
-            resizeNavbar();
-        });
-        
-        // when page loads
-        resizeNavbar();
-    };
 }]);
-angular.module('AmpersandApp').service('NavigationBarService', ["Restangular", "$localStorage", "$sessionStorage", "NotificationService", function(Restangular, $localStorage, $sessionStorage, NotificationService){
+
+angular.module('AmpersandApp')
+.service('NavigationBarService', ["Restangular", "$localStorage", "$sessionStorage", "NotificationService", function(Restangular, $localStorage, $sessionStorage, NotificationService){
     let navbar = {};
     let defaultSettings = {};
 
@@ -993,7 +990,9 @@ angular.module('AmpersandApp').service('NavigationBarService', ["Restangular", "
     
     return service;
 }]);
-angular.module('AmpersandApp').service('RoleService', ["$sessionStorage", "Restangular", function($sessionStorage, Restangular){
+
+angular.module('AmpersandApp')
+.service('RoleService', ["$sessionStorage", "Restangular", function($sessionStorage, Restangular){
     
     /*
      * Available roles are registered in $sessionStorage.sessionRoles
@@ -1043,7 +1042,9 @@ angular.module('AmpersandApp').service('RoleService', ["$sessionStorage", "Resta
     
     return RoleService;
 }]);
-angular.module('AmpersandApp').service('NotificationService', ["$localStorage", "$sessionStorage", "$timeout", "Restangular", function($localStorage, $sessionStorage, $timeout, Restangular){
+
+angular.module('AmpersandApp')
+.service('NotificationService', ["$localStorage", "$sessionStorage", "$timeout", "Restangular", function($localStorage, $sessionStorage, $timeout, Restangular){
     // Initialize notifications container
     let notifications = {
         'signals' : [],
@@ -1176,7 +1177,8 @@ angular.module('AmpersandApp').service('NotificationService', ["$localStorage", 
     
     return NotificationService;
 }]);
-angular.module('AmpersandApp').controller('NotificationCenterController', ["$scope", "$route", "Restangular", "$localStorage", "NotificationService", function ($scope, $route, Restangular, $localStorage, NotificationService) {
+angular.module('AmpersandApp')
+.controller('NotificationCenterController', ["$scope", "$route", "Restangular", "$localStorage", "NotificationService", function ($scope, $route, Restangular, $localStorage, NotificationService) {
     
     $scope.localStorage = $localStorage;
     $scope.notifications = NotificationService.notifications;
@@ -1203,6 +1205,40 @@ angular.module('AmpersandApp').controller('NotificationCenterController', ["$sco
     
 }]);
 
+angular.module('AmpersandApp')
+.filter('unsafe', ["$sce", function($sce){
+    return $sce.trustAsHtml;
+}]);
+
+angular.module('AmpersandApp')
+.value('cgBusyDefaults',{
+    message:'Loading...',
+    backdrop: true,
+    //templateUrl: 'my_custom_template.html',
+    //delay: 500, // in ms
+    minDuration: 500, // in ms
+    // wrapperClass: 'my-class my-class2'
+});
+
+angular.module('AmpersandApp')
+.directive('myNavToInterfaces', function(){
+    return {
+        restrict : 'E',
+        scope : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+        templateUrl : 'app/src/shared/myNavTo/myNavToInterfaces.html',
+        transclude : true
+    };
+});
+
+angular.module('AmpersandApp')
+.directive('myNavToOtherInterfaces', function(){
+    return {
+        restrict : 'E',
+        scope  : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+        templateUrl : 'app/src/shared/myNavTo/myNavToOtherInterfaces.html'
+    };
+});
+
 angular.module('AmpersandApp').run(['$templateCache', function($templateCache) {$templateCache.put('app/src/admin/check-rules-menu-item.html','<a ng-click="checkAllRules()"><span class="glyphicon glyphicon-check"></span><span> (Re)evaluate all rules</span></a>');
 $templateCache.put('app/src/admin/execengine-menu-item.html','<a ng-controller="ExecEngineController" href="" ng-click="run()">\r\n\t<span class="glyphicon glyphicon-cog"></span><span> Run execution engine</span>\r\n</a>');
 $templateCache.put('app/src/admin/exporter-menu-item.html','<a ng-href="api/v1/admin/export/all">\r\n    <span class="glyphicon glyphicon-download"></span><span> Population export</span>\r\n</a>');
@@ -1214,7 +1250,7 @@ $templateCache.put('app/src/navbar/navigationBar.html','<nav class="navbar navba
 $templateCache.put('app/src/notifications/notificationCenter.html','<div class="container-fluid">\r\n    <div id="notificationCenter" ng-controller="NotificationCenterController">\r\n        \r\n        <div id="infos" ng-show="localStorage.notificationPrefs.switchShowInfos">\r\n            <div class="alert alert-info alert-dismissible" role="alert" ng-repeat="info in notifications.infos">\r\n                <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.infos, $index);"><span aria-hidden="true">&times;</span></button>\r\n                <span class="glyphicon glyphicon-info-sign"></span><span> {{info.message}}</span>\r\n            </div>\r\n        </div>\r\n        \r\n        <div id="warnings" ng-show="localStorage.notificationPrefs.switchShowWarnings">\r\n            <div class="alert alert-warning alert-dismissible" role="alert" ng-repeat="warning in notifications.warnings">\r\n                <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.warnings, $index);"><span aria-hidden="true">&times;</span></button>\r\n                <span class="glyphicon glyphicon-warning-sign"></span><span> {{warning.message}}</span>\r\n                <span class="badge pull-right" ng-show="warning.count > 1">{{warning.count}}</span>\r\n            </div>\r\n        </div>\r\n        \r\n        <div id="errors" ng-show="localStorage.notificationPrefs.switchShowErrors">\r\n            <div class="panel panel-danger" id="error-panel-{{key}}" ng-repeat="(key, error) in notifications.errors">\r\n                <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#error-body-{{key}}">\r\n                    <div class="text-left">\r\n                        <span class="glyphicon glyphicon-exclamation-sign"></span> <span ng-bind-html="error.message | unsafe"></span>\r\n                        <button type="button" class="close" data-target="#error-panel-{{key}}" data-dismiss="alert" aria-label="Dismiss" ng-click="closeAlert(notifications.errors, $index);">\r\n                            <span aria-hidden="true">&times;</span>\r\n                        </button>\r\n                        <span class="badge pull-right" ng-show="error.count > 1">{{error.count}}</span>\r\n                    </div>\r\n                </div>\r\n                <div class="panel-body collapse" id="error-body-{{key}}">\r\n                    <div ng-if="error.details" ng-bind-html="error.details | unsafe"></div>\r\n                </div>\r\n            </div>\r\n        </div>\r\n        \r\n        <div id="invariants" ng-show="localStorage.notificationPrefs.switchShowInvariants">\r\n            <div class="panel panel-danger" ng-repeat="(key, val) in notifications.invariants">\r\n                <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#invariant-{{key}}">\r\n                    <div class="text-left" style="display:flex; align-items:center;">\r\n                        <span class="glyphicon glyphicon-warning-sign"></span>\r\n                        <div marked="val.ruleMessage" style="display:inline-block; margin: 0px 10px;"></div> <!-- uses angular-marked directive -->\r\n                        <span class="badge" style="margin-left:auto;">{{val.tuples.length}}</span>\r\n                    </div>\r\n                </div>\r\n                <ul class="list-group collapse" id="invariant-{{key}}">\r\n                    <li class="list-group-item" ng-repeat="tuple in val.tuples track by $index">\r\n                        <span>{{tuple.violationMessage}}</span>\r\n                    </li>\r\n                </ul>\r\n            </div>\r\n        </div>\r\n                    \r\n        <div id="signals" ng-show="localStorage.notificationPrefs.switchShowSignals">\r\n            <div class="panel panel-warning" ng-repeat="(key, val) in notifications.signals">\r\n                <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">\r\n                    <div class="text-left" style="display:flex; align-items:center;">\r\n                        <span class="glyphicon glyphicon-warning-sign"></span>\r\n                        <div marked="val.message" style="display:inline-block; margin: 0px 10px;"></div> <!-- uses angular-marked directive -->\r\n                        <span class="badge" style="margin-left:auto;">{{val.violations.length}}</span>\r\n                    </div>\r\n                </div>\r\n                <ul class="list-group collapse" id="violation-{{key}}">\r\n                    <li class="dropdown list-group-item" ng-repeat="violation in val.violations track by $index">\r\n                        <div ng-if="violation.ifcs.length > 1">\r\n                            <a href="" class="dropdown-toggle" data-toggle="dropdown">{{violation.message}}</a>\r\n                            <ul class="dropdown-menu" role="menu">\r\n                                <li ng-repeat="ifc in violation.ifcs">\r\n                                    <a ng-href="{{ifc.link}}" data-toggle="collapse" data-target="#violation-{{key}}"><small>View</small> {{ifc.label}}</a>\r\n                                </li>\r\n                            </ul>\r\n                        </div>\r\n                        <a ng-if="violation.ifcs.length == 1" ng-href="{{violation.ifcs[0].link}}" data-toggle="collapse" data-target="#violation-{{key}}">{{violation.message}}</a>\r\n                        <span ng-if="violation.ifcs.length == 0">{{violation.message}}</span>\r\n                    </li>\r\n                </ul>\r\n            </div>\r\n        </div>\r\n        \r\n        <!-- Success notifications must be last in notifications center because of position:absolute -->\r\n        <div id="successes" ng-show="localStorage.notificationPrefs.switchShowSuccesses">\r\n            <div class="alert alert-success alert-dismissible" role="alert" ng-repeat="success in notifications.successes">\r\n                <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.successes, $index);"><span aria-hidden="true">&times;</span></button>\r\n                <span class="glyphicon glyphicon-ok-sign"></span><span> {{success.message}}</span>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</div>');
 $templateCache.put('app/src/shared/404.html','<!-- 404 page -->\r\n<div class="container-fluid" id="Interface">\r\n    <div class="row">\r\n        <div class="col-md-4">\r\n            <h1>404 Page not found</h1>\r\n            <p>The requested page does not exists.</p>\r\n            <p><a class="btn btn-primary btn-lg" href="#/" role="button">Goto startpage</a></p>\r\n        </div>\r\n        <div>\r\n            <img src="app/images/404-image.png">\r\n        </div>\r\n    </div>\r\n</div>');
 $templateCache.put('app/src/shared/home.html','<!-- Home screen -->\r\n<div class="container-fluid" id="Interface">\r\n    <div class="jumbotron">\r\n        <h1>Hello, world!</h1>\r\n        <p>You\'ve successfully generated your Ampersand prototype.</p>\r\n        <p><a class="btn btn-primary btn-lg" href="https://ampersandtarski.gitbooks.io/documentation" target="_blank" role="button">See our documentation &raquo;</a></p>\r\n    </div>\r\n</div>\r\n');
-$templateCache.put('app/src/shared/partials/loading.html','<img src="app/images/loading.gif" alt="Loading..." style="height:20px;"/>');
-$templateCache.put('app/src/shared/partials/myNavToInterfaces.html','<div ng-if="resource._ifcs_.length > 1" style="position:relative; display:inline-block;">\r\n    <a class="dropdown-toggle" data-toggle="dropdown"><ng-transclude></ng-transclude></a>\r\n    <ul class="dropdown-menu" role="menu">\r\n        <li ng-repeat="ifc in resource._ifcs_">\r\n            <a ng-href="#/{{ifc.id}}/{{resource._id_}}" target="{{target}}">{{ifc.label}}</a>\r\n        </li>\r\n    </ul>\r\n</div>\r\n<a ng-if="resource._ifcs_.length == 1" ng-href="#/{{resource._ifcs_[0].id}}/{{resource._id_}}" target="{{target}}"><ng-transclude></ng-transclude></a>\r\n<span ng-if="resource._ifcs_.length == 0"><ng-transclude></ng-transclude></span>');
-$templateCache.put('app/src/shared/partials/myNavToOtherInterfaces.html','<!-- Only when ifcs has more than 1 interface, otherwise, the user is already there -->\r\n<!-- This menu includes the interface where the user currently is -->\r\n<div ng-if="resource._ifcs_.length > 1" style="position:relative;">\r\n    <button type="button" class="btn btn-sm dropdown-toggle" data-toggle="dropdown">\r\n        <span class="glyphicon glyphicon-menu-hamburger"></span>\r\n    </button>\r\n    <ul class="dropdown-menu dropdown-menu-right" role="menu">\r\n        <li ng-repeat="ifc in resource._ifcs_">\r\n            <a ng-href="#/{{ifc.id}}/{{resource._id_}}" target="{{target}}">{{ifc.label}}</a>\r\n        </li>\r\n    </ul>\r\n</div>');}]);
+$templateCache.put('app/src/shared/loading/loading.html','<img src="app/images/loading.gif" alt="Loading..." style="height:20px;"/>');
+$templateCache.put('app/src/shared/myNavTo/myNavToInterfaces.html','<div ng-if="resource._ifcs_.length > 1" style="position:relative; display:inline-block;">\r\n    <a class="dropdown-toggle" data-toggle="dropdown"><ng-transclude></ng-transclude></a>\r\n    <ul class="dropdown-menu" role="menu">\r\n        <li ng-repeat="ifc in resource._ifcs_">\r\n            <a ng-href="#/{{ifc.id}}/{{resource._id_}}" target="{{target}}">{{ifc.label}}</a>\r\n        </li>\r\n    </ul>\r\n</div>\r\n<a ng-if="resource._ifcs_.length == 1" ng-href="#/{{resource._ifcs_[0].id}}/{{resource._id_}}" target="{{target}}"><ng-transclude></ng-transclude></a>\r\n<span ng-if="resource._ifcs_.length == 0 || resource._ifcs_ == undefined"><ng-transclude></ng-transclude></span>');
+$templateCache.put('app/src/shared/myNavTo/myNavToOtherInterfaces.html','<!-- Only when ifcs has more than 1 interface, otherwise, the user is already there -->\r\n<!-- This menu includes the interface where the user currently is -->\r\n<div ng-if="resource._ifcs_.length > 1" style="position:relative;">\r\n    <button type="button" class="btn btn-sm dropdown-toggle" data-toggle="dropdown">\r\n        <span class="glyphicon glyphicon-menu-hamburger"></span>\r\n    </button>\r\n    <ul class="dropdown-menu dropdown-menu-right" role="menu">\r\n        <li ng-repeat="ifc in resource._ifcs_">\r\n            <a ng-href="#/{{ifc.id}}/{{resource._id_}}" target="{{target}}">{{ifc.label}}</a>\r\n        </li>\r\n    </ul>\r\n</div>');}]);
 //# sourceMappingURL=ampersand.js.map
