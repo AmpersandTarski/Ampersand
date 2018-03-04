@@ -158,7 +158,30 @@ $app->add(function (Request $req, Response $res, callable $next) {
 $middleWare1 = function (Request $request, Response $response, callable $next) {
     // Overwrite default media type parser for application/json
     $request->registerMediaTypeParser('application/json', function ($input) {
-        return json_decode($input, false); // set accoc param to false, this will return php stdClass object instead of array for json objects {}
+        $data = json_decode($input, false); // set accoc param to false, this will return php stdClass object instead of array for json objects {}
+        switch (json_last_error()) {
+            case JSON_ERROR_NONE:
+                return $data;
+                break;
+            case JSON_ERROR_DEPTH:
+                throw new Exception("JSON error: Maximum stack depth exceeded", 400);
+                break;
+            case JSON_ERROR_STATE_MISMATCH:
+                throw new Exception("JSON error: Underflow or the modes mismatch", 400);
+                break;
+            case JSON_ERROR_CTRL_CHAR:
+                throw new Exception("JSON error: Unexpected control character found", 400);
+                break;
+            case JSON_ERROR_SYNTAX:
+                throw new Exception("JSON error: Syntax error, malformed JSON", 400);
+                break;
+            case JSON_ERROR_UTF8:
+                throw new Exception("JSON error: Malformed UTF-8 characters, possibly incorrectly encoded", 400);
+                break;
+            default:
+                throw new Exception("JSON error: Unknown error in JSON content", 400);
+                break;
+        }
     });
     return $next($request, $response);
 };
