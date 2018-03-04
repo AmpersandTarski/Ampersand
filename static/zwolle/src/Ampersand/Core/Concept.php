@@ -481,7 +481,7 @@ class Concept
         // TODO: remove this hack with _AI (autoincrement feature)
         if (strpos($this->name, '_AI') !== false && $this->isInteger()) {
             $firstCol = current($this->mysqlConceptTable->getCols());
-            $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
+            $query = "SELECT MAX(\"$firstCol->name\") as \"MAX\" FROM \"{$this->mysqlConceptTable->name}\"";
              
             $result = array_column((array)$this->primaryPlug->execute($query), 'MAX');
     

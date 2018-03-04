@@ -48,7 +48,7 @@ ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = functio
         $srcCol = $relationTable->srcCol();
         $tgtCol = $relationTable->tgtCol();
         
-        $query = "SELECT * FROM `{$relationTable->name}`";
+        $query = "SELECT * FROM \"{$relationTable->name}\"";
         $result = $database->execute($query);
         
         // initialization of 2-dimensional array
@@ -74,13 +74,13 @@ ExecEngine::registerFunction('OverwritePopulation', $OverwritePopulation = funct
         $srcCol = $relationTable->srcCol();
         $tgtCol = $relationTable->tgtCol();
         
-        $query = "DELETE FROM `{$relationTable->name}`"; // Do not use TRUNCATE statement, this causes an implicit commit
+        $query = "DELETE FROM \"{$relationTable->name}\""; // Do not use TRUNCATE statement, this causes an implicit commit
         $database->execute($query);
         
         foreach ($rArray as $src => $tgtArray) {
             foreach ($tgtArray as $tgt => $bool) {
                 if ($bool) {
-                    $query = "INSERT INTO `{$relationTable->name}` (`{$srcCol->name}`, `{$tgtCol->name}`) VALUES ('$src','$tgt')";
+                    $query = "INSERT INTO \"{$relationTable->name}\" (\"{$srcCol->name}\", \"{$tgtCol->name}\") VALUES ('$src','$tgt')";
                     $database->execute($query);
                 }
             }

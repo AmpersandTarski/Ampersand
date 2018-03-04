@@ -75,7 +75,7 @@ class RuleEngine
         $q = implode(',', array_map(function ($conj) {
             return "'{$conj->id}'";
         }, $conjuncts)); // returns string "<conjId1>,<conjId2>,<etc>"
-        $query = "SELECT * FROM `{$dbsignalTableName}` WHERE `conjId` IN ({$q})";
+        $query = "SELECT * FROM \"{$dbsignalTableName}\" WHERE \"conjId\" IN ({$q})";
         $result = $database->execute($query); // array(array('conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
 
         // Return violation
