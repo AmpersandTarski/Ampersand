@@ -144,6 +144,14 @@ class InterfaceObject
      * @var \Ampersand\Interfacing\View
      */
     private $view;
+
+    /**
+     * Specifies the class of the BOX (in case of BOX interface)
+     * e.g. in ADL script: INTERFACE "test" : expr BOX <SCOLS> []
+     * the boxClass is 'SCOLS'
+     * @var string
+     */
+    protected $boxClass = null;
     
     /**
      *
@@ -205,12 +213,13 @@ class InterfaceObject
              * e.g.:
              * INTERFACE "A" : expr1 INTERFACE "B"
              * INTERFACE "B" : expr2 BOX ["label" : expr3]
-             * 
+             *
              * is interpreted as:
              * INTERFACE "A" : expr1;epxr2 BOX ["label" : expr3]
              */
             $this->refInterfaceId = $ifcDef['subinterfaces']['refSubInterfaceId'];
             $this->isLinkTo = $ifcDef['subinterfaces']['refIsLinTo']; // not refIsLinkTo? no! typo in generics/interfaces.json
+            $this->boxClass = $ifcDef['subinterfaces']['boxClass'];
             
             // Inline subinterface definitions
             foreach ((array)$ifcDef['subinterfaces']['ifcObjects'] as $subIfcDef) {
@@ -379,6 +388,11 @@ class InterfaceObject
     {
         return $this->view;
     }
+
+    public function getBoxClass()
+    {
+        return $this->boxClass;
+    }
     
     public function crudC()
     {
@@ -497,7 +511,7 @@ class InterfaceObject
              * e.g.:
              * INTERFACE "A" : expr1 INTERFACE "B"
              * INTERFACE "B" : expr2 BOX ["label" : expr3]
-             * 
+             *
              * is interpreted as:
              * INTERFACE "A" : expr1;epxr2 BOX ["label" : expr3]
              */

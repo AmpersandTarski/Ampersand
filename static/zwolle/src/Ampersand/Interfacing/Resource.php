@@ -324,7 +324,14 @@ class Resource extends Atom
                 }
             }
             
-            //
+            // Init array for sorting in case of sorting boxes (i.e. SCOLS, SHCOLS, SPCOLS)
+            $addSortValues = false;
+            if (in_array($parentIfc->getBoxClass(), ['SCOLS', 'SHCOLS', 'SPCOLS']) && ($options & Options::INCLUDE_SORT_DATA)) {
+                $this->ifcData['_sortValues_'] = [];
+                $addSortValues = true;
+            }
+            
+            // Get sub interface data
             foreach ($parentIfc->getSubinterfaces($options) as $subifc) {
                 if (!$subifc->crudR()) {
                     continue; // skip subinterface if not given read rights (otherwise exception will be thrown when getting content)
@@ -334,9 +341,7 @@ class Resource extends Atom
                 $this->ifcData[$subifc->id] = $subcontent = $this->all($subifc->id)->get($options, $depth, $recursionArr);
                 
                 // Add sort data if subIfc is univalent
-                if ($subifc->isUni() && ($options & Options::INCLUDE_SORT_DATA)) {
-                    $this->ifcData['_sortValues_'] = [];
-                    
+                if ($subifc->isUni() && $addSortValues) {
                     // If subifc is PROP (i.e. content is boolean)
                     if (!isset($subcontent)) {
                         $this->ifcData['_sortValues_'][$subifc->id] = null;
