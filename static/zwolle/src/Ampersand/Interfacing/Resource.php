@@ -240,6 +240,11 @@ class Resource extends Atom
             switch (get_class($r)) {
                 case 'Ampersand\Interfacing\Resource':
                     $r = $r->all(array_shift($pathList));
+
+                    // See explaination at getPath() function above why this if construct is here
+                    if ($r->getIfc()->isIdent()) {
+                        $r = $r->one();
+                    }
                     break;
                 case 'Ampersand\Interfacing\ResourceList':
                     // See explaination at getPath() function above why this if/else construct is here
