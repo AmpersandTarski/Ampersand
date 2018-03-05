@@ -201,7 +201,10 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
        )
       where
         declsInTable typ = [ dcl | dcl <- elems dcls
-                           , not . null $ maybeToList (conceptTableOf dcl) `isc` tyCpts typ ]
+                           , case conceptTableOf dcl of
+                               Nothing -> False
+                               Just x  -> x `elem` tyCpts typ
+                           ]
         
         conceptTableOf :: Relation -> Maybe A_Concept
         conceptTableOf d = if sqlBinTables opts

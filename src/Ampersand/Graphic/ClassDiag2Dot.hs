@@ -31,7 +31,9 @@ classdiagram2dot opts cd
                                                    , MinLen 4
                                        ]           ]
                         , subGraphs = []
-                        , nodeStmts = allNodes (classes cd) (nodes cd >- nodes (classes cd))
+                        , nodeStmts = allNodes (classes cd) [n | n<- nodes cd
+                                                            , n `notElem` nodes (classes cd)
+                                                            ]
                         , edgeStmts = map association2edge (assocs cd)  ++
                                       map aggregation2edge (aggrs cd)  ++
                                       concatMap generalization2edges (geners cd)

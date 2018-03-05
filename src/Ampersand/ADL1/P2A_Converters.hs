@@ -330,7 +330,7 @@ pCtx2aCtx opts
           mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept , TType)]
           mkTypeMap groups reprs 
             = f <$> traverse typeOfGroup groups
-                <*> traverse typeOfSingle (conceptsOfReprs >- conceptsOfGroups)
+                <*> traverse typeOfSingle [c | c <- conceptsOfReprs, c `notElem` conceptsOfGroups]
             where 
               f :: [[(A_Concept,TType)]] -> [Maybe (A_Concept,TType,[Origin])] -> [(A_Concept , TType)]
               f typesOfGroups typesOfOthers
@@ -381,9 +381,10 @@ pCtx2aCtx opts
                     (t,rest) = g x xs 
                     g a as = case partition (hasConceptsOf a) as of
                               (_,[])   -> (a,as)
-                              (hs',hs) -> g (foldr uni a hs) hs'
+                              (hs',hs) -> g (nub $ a ++ concat hs) hs'
                     hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool
-                    hasConceptsOf a = null . isc a
+                    hasConceptsOf a b = or [ x' `elem` b | x' <- a]
+                                             
                           
           mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs = 
