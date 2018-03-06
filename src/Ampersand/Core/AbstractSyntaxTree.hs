@@ -38,7 +38,8 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Population(..)
  , Association(..)
  , Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..), AAtomValues, mkAtomPair, PAtomValue(..)
+ , AAtomPair(..), AAtomPairs
+ , AAtomValue(..), AAtomValues, mkAtomPair, PAtomValue(..)
  , ContextInfo(..)
  , showValADL,showValSQL
  , showSign
@@ -403,7 +404,7 @@ instance Traced Purpose where
 
 data Population -- The user defined populations
   = ARelPopu { popdcl :: Relation
-             , popps ::  [AAtomPair]     -- The user-defined pairs that populate the relation
+             , popps ::  AAtomPairs     -- The user-defined pairs that populate the relation
              , popsrc :: A_Concept -- potentially more specific types than the type of Relation
              , poptgt :: A_Concept
              }
@@ -415,6 +416,7 @@ instance Unique Population where
   showUnique pop@ARelPopu{} = (showUnique.popdcl) pop ++ (showUnique.popps) pop
   showUnique pop@ACptPopu{} = (showUnique.popcpt) pop ++ (showUnique.popas) pop
 
+type AAtomPairs = Set.Set AAtomPair
 data AAtomPair
   = APair { apLeft  :: AAtomValue
           , apRight :: AAtomValue

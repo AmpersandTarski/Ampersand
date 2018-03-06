@@ -203,7 +203,7 @@ chpNatLangReqs lev fSpec =
                            | sample <- samples]
         <> someWhiteSpace 
          where dcl = cDcl . theLoad $ nDcl
-               samples = take 3 . cDclPairs . theLoad $ nDcl
+               samples = take 3 . elems . cDclPairs . theLoad $ nDcl
 
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul

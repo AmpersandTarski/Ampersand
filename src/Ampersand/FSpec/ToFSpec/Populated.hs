@@ -53,21 +53,21 @@ atomValuesOf ci pt c
      PlainConcept{}
          -> let smallerconcs = c:smallerConcepts (ctxiGens ci) c in
             Set.fromList $
-                 [apLeft p  | pop@ARelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- popps pop]
-               ++[apRight p | pop@ARelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- popps pop]
+                 [apLeft p  | pop@ARelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- elems $ popps pop]
+               ++[apRight p | pop@ARelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- elems $ popps pop]
                ++[a         | pop@ACptPopu{} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
 pairsOf :: ContextInfo -> [Population] -> Relation -> Map.Map AAtomValue AAtomValues
 pairsOf ci ps dcl
  = Map.unionsWith Set.union
-     [ Map.fromListWith Set.union [ (apLeft p,Set.singleton $ apRight p) | p<-popps pop]
+     [ Map.fromListWith Set.union [ (apLeft p,Set.singleton $ apRight p) | p<-elems $ popps pop]
      | pop@ARelPopu{} <- ps
      , name dcl==name (popdcl pop)
      , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts (ctxiGens ci) (source dcl)
      , let t=target (popdcl pop) in t `elem` target dcl:smallerConcepts (ctxiGens ci) (target dcl)
      ]
 
-fullContents :: ContextInfo -> [Population] -> Expression -> [AAtomPair]
-fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.toList pairMap, b<-Set.toList bs ]
+fullContents :: ContextInfo -> [Population] -> Expression -> AAtomPairs
+fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.toList pairMap, b<-Set.toList bs ]
   where
    unions = Map.unionWith Set.union
    inters = Map.mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c

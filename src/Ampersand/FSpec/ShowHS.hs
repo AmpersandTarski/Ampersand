@@ -283,12 +283,14 @@ instance ShowHS FSpec where
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
-              showViolatedRule :: String -> (Rule,[AAtomPair]) -> String
+              showViolatedRule :: String -> (Rule,AAtomPairs) -> String
               showViolatedRule indent' (r,ps)
                  = intercalate indent'
                      [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++
-                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = "( "++ (show.showValADL.apLeft) p++", "++(show.showValADL.apRight) p++")"
-                                                                   in showPair) ps++
+                      indent'++" , "++ wrap "" (indent'++"   ") 
+                                               (let showPair _ p = "( "++ (show.showValADL.apLeft) p++", "++(show.showValADL.apRight) p++")"
+                                                in showPair
+                                               ) (elems ps)++
                       indent'++" )"
                      ]
 

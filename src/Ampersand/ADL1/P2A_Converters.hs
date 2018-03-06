@@ -167,7 +167,7 @@ checkOtherAtomsInSessionConcept ctx =
         [ mkOtherTupleInSessionError d pr
         | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
         , name src == "SESSION" || name tgt == "SESSION"
-        , pr <- ps
+        , pr <- elems ps
         , (name src == "SESSION" && not (_isPermittedSessionValue (apLeft pr)))
           ||
           (name tgt == "SESSION" && not (_isPermittedSessionValue (apRight pr)))
@@ -527,7 +527,7 @@ pCtx2aCtx opts
                      }
        in checkEndoProps >> 
           (\aps -> (dcl,ARelPopu { popdcl = dcl
-                                 , popps  = aps
+                                 , popps  = Set.fromList aps
                                  , popsrc = source dcl
                                  , poptgt = target dcl
                                  })
@@ -582,7 +582,7 @@ pCtx2aCtx opts
                src' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric (origin pop) dcl Src . userConcept) src
                tgt' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric (origin pop) dcl Tgt . userConcept) tgt
                return ARelPopu { popdcl = dcl
-                               , popps  = aps'
+                               , popps  = Set.fromList aps'
                                , popsrc = fromMaybe (source dcl) src'
                                , poptgt = fromMaybe (target dcl) tgt'
                                }

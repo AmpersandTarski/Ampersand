@@ -1,12 +1,12 @@
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
-import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ShowAStruct
-import Ampersand.FSpec
-import Ampersand.Misc
-import Ampersand.Prototype.PHP
-import Data.List
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec
+import           Ampersand.Misc
+import           Ampersand.Prototype.PHP
+import           Data.List
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
@@ -48,8 +48,8 @@ validateRulesSQL fSpec =
                              
                
     }
-stringify :: (Rule,[AAtomPair]) -> (String,[String])
-stringify (rule,pairs) = (name rule, map f pairs )
+stringify :: (Rule,AAtomPairs) -> (String,[String])
+stringify (rule,pairs) = (name rule, map f . elems $ pairs )
   where f pair = "("++showValADL (apLeft pair)++", "++showValADL (apRight pair)++")"
 
 
@@ -96,7 +96,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
     }
 validateExp fSpec vExp@(expr, orig) =
  do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) expr
-    ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- pairsInExpr fSpec expr]
+    ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- elems $ pairsInExpr fSpec expr]
     ; if sort violationsSQL == sort violationsAmp
       then
        do { putStr "."

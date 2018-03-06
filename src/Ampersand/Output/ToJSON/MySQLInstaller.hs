@@ -73,7 +73,7 @@ instance JSON (A_Concept,Bool) AtomValuesOfConcept where
 instance JSON (Relation,Bool) PairsOfRelation where
  fromAmpersand multi (dcl,doMeta) = PairsOfRelation
    { porJSONrelation = Text.pack . showRel $ dcl
-   , porJSONlinks = map (fromAmpersand multi) . pairsInExpr theFSpec $ EDcD dcl
+   , porJSONlinks = map (fromAmpersand multi) . elems . pairsInExpr theFSpec $ EDcD dcl
    }
   where 
    theFSpec 

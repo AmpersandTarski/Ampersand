@@ -406,14 +406,14 @@ chpDiagnosis fSpec
                           ,EN "This rule contains work (for ")
                 <>commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                 <>")"
-                <> if length ps == 1
+                <> if Set.size ps == 1
                    then   (str.l) (NL ", te weten ", EN " by ")
-                       <> oneviol r (head ps)
+                       <> oneviol r (Set.elemAt 0 ps)
                        <> "."
-                   else   (str.l) (NL $ ". De volgende tabel laat de "++(if length ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
-                                  ,EN $ "The following table shows the "++(if length ps>10 then "first ten " else "")++"items that require attention.")
+                   else   (str.l) (NL $ ". De volgende tabel laat de "++(if Set.size ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
+                                  ,EN $ "The following table shows the "++(if Set.size ps>10 then "first ten " else "")++"items that require attention.")
                )
-       <> if length ps <= 1
+       <> if Set.size ps <= 1
           then mempty -- iff there is a single violation, it is already shown in the previous paragraph
           else violtable r ps 
      | (r,ps)<- popwork ]
@@ -437,7 +437,7 @@ chpDiagnosis fSpec
          else    "("  <> (str.name.source) r <> (str.showValADL.apLeft) p 
               <> ", " <> (str.name.target) r <> (str.showValADL.apRight) p
               <> ")"
-      popwork :: [(Rule,[AAtomPair])]
+      popwork :: [(Rule,AAtomPairs)]
       popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r]
 
   violationReport :: Blocks
@@ -459,7 +459,7 @@ chpDiagnosis fSpec
      <> bulletList (map showViolatedRule processViolations)
     where
          (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
-         showViolatedRule :: (Rule,[AAtomPair]) -> Blocks
+         showViolatedRule :: (Rule,AAtomPairs) -> Blocks
          showViolatedRule (r,ps)
              =    (para.emph)
                       (  (str.l) (NL "Regel ", EN "Rule ")
@@ -488,11 +488,11 @@ chpDiagnosis fSpec
                         [ [(para.text.showValADL.apLeft) p
                           ,(para.text.showValADL.apRight) p
                           ]
-                        | p<- ps]
+                        | p<- elems ps]
 
 
 
-  violtable :: Rule -> [AAtomPair] -> Blocks
+  violtable :: Rule -> AAtomPairs -> Blocks
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
         then table -- No caption:
@@ -503,7 +503,7 @@ chpDiagnosis fSpec
                    [(plain.str.name.source) r]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p]
-                   | p <-take 10 ps --max 10 rows
+                   | p <-take 10 . elems $ ps --max 10 rows
                    ]
         else table -- No caption:
                    mempty
@@ -513,5 +513,5 @@ chpDiagnosis fSpec
                    [(plain.str.name.source) r , (plain.str.name.target) r ]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p,(plain.str.showValADL.apRight) p]
-                   | p <-take 10 ps --max 10 rows
+                   | p <-take 10 . elems $ ps --max 10 rows
                    ]

@@ -80,8 +80,8 @@ makeFSpec opts context
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
-              , atomsBySmallestConcept = \cpt -> Set.fromList 
-                                               . map apLeft . pairsinexpr 
+              , atomsBySmallestConcept = \cpt -> Set.map apLeft 
+                                               . pairsinexpr 
                                                . foldl (.-.) (EDcI cpt) 
                                                . map (handleType cpt)
                                                . smallerConcepts (gens context) $ cpt
@@ -117,16 +117,16 @@ makeFSpec opts context
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
            [t] -> t
            _   -> fatal ("concept "++name cpt++" should be in exactly one typology!")
-     pairsinexpr  :: Expression -> [AAtomPair]
+     pairsinexpr  :: Expression -> AAtomPairs
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
-     ruleviolations :: Rule -> [AAtomPair]
+     ruleviolations :: Rule -> AAtomPairs
      ruleviolations r = case formalExpression r of
-          EEqu{} -> (cra >- crc) ++ (crc >- cra)
+          EEqu{} -> (cra >- crc) `uni` (crc >- cra)
           EInc{} -> cra >- crc
           _      -> pairsinexpr (EDcV (sign (consequent r))) >- crc  --everything not in con
           where cra = pairsinexpr (antecedent r)
                 crc = pairsinexpr (consequent r)
-     conjunctViolations :: Conjunct -> [AAtomPair]
+     conjunctViolations :: Conjunct -> AAtomPairs
      conjunctViolations conj = pairsinexpr (notCpl (rc_conjunct conj))
      contextinfo = ctxInfo context
 
@@ -150,7 +150,7 @@ makeFSpec opts context
                      in ARelPopu{ popsrc = source dcl
                                 , poptgt = target dcl
                                 , popdcl = dcl
-                                , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
+                                , popps  = Set.unions [ popps pop | pop<-eqclass ]
                                 }
                    | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
                    [ ACptPopu{ popcpt = popcpt (head eqclass)
@@ -434,7 +434,7 @@ tblcontents ci ps plug
      BinSQL{}    -> let expr = case dLkpTbl plug of
                                  [store] -> EDcD (rsDcl store)
                                  ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
-                    in [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps expr]
+                    in [[(Just . apLeft) p,(Just . apRight) p] |p<-elems $ fullContents ci ps expr]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --attributes are assumed to be in the order kernel+other,
@@ -453,9 +453,9 @@ tblcontents ci ps plug
                  )
                  where
                    cAtoms = (atomValuesOf ci ps. source . attExpr) f
-                   lkp :: SqlAttribute -> AAtomValue -> [AAtomPair] -> Maybe AAtomValue
+                   lkp :: SqlAttribute -> AAtomValue -> AAtomPairs -> Maybe AAtomValue
                    lkp att a pairs
-                    = case [ p | p<-pairs, a==apLeft p ] of
+                    = case [ p | p<-elems pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
                        ps' -> fatal . unlines $ 

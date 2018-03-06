@@ -172,7 +172,7 @@ aPopulation2pPopulation p =
  case p of 
   ARelPopu{} -> P_RelPopu { pos  = Origin $ "Origin is not present in Population("++name pDcl++") from A-Structure"
                           , p_nmdr  = pDcl
-                          , p_popps = map aAtomPair2pAtomPair (popps p)
+                          , p_popps = map aAtomPair2pAtomPair (elems $ popps p)
                           , p_src = Nothing 
                           , p_tgt = Nothing
                           }

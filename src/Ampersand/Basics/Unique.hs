@@ -8,10 +8,11 @@ instance Unique Pattern where
 module Ampersand.Basics.Unique 
   (Unique(..),Named(..))
 where
-import Ampersand.Basics.Prelude
-import Data.Char
-import Data.List
-import Data.Typeable
+import           Ampersand.Basics.Prelude
+import           Data.Char
+import           Data.List
+import qualified Data.Set as Set
+import           Data.Typeable
 
 -- | anything could have some label, can't it?
 class Named a where
@@ -48,6 +49,8 @@ data UniqueObj a =
 instance Unique a => Unique [a] where
    showUnique [] = "[]"
    showUnique xs = "["++intercalate ", " (map showUnique xs)++"]"
+instance Unique a => Unique (Set.Set a) where
+   showUnique = showUnique . Set.elems
 
 instance Unique Bool where
  showUnique = map toLower . show 

@@ -102,9 +102,9 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                                                                       -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
                                                                       -- HJO 2016-09-05: Answer: Broad tables may contain rows where some of the attributes implement a relation that is UNI, but not TOT. In such case,
                                                                       --                         we may see empty attributes. (NULL values in database terminology)
-                   , pairsInExpr :: Expression -> [AAtomPair]   
-                   , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
-                   , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
+                   , pairsInExpr :: Expression -> AAtomPairs   
+                   , initialConjunctSignals :: [(Conjunct,AAtomPairs)] -- ^ All conjuncts that have process-rule violations.
+                   , allViolations ::  [(Rule,AAtomPairs)]   -- ^ All invariant rules with violations.
                    , allExprs ::     Expressions             -- ^ All expressions in the fSpec
                    , fcontextInfo   :: ContextInfo 
                    , ftypologies   :: [Typology]

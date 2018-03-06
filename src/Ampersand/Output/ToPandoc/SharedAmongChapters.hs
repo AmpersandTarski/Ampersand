@@ -313,7 +313,7 @@ data RuleCont = CRul { cRul ::  Rule
 data DeclCont = CDcl { cDcl ::  Relation
                      , cDclPurps :: [Purpose]
                      , cDclMeaning :: Maybe Markup
-                     , cDclPairs :: [AAtomPair]
+                     , cDclPairs :: AAtomPairs
                      }
 data CptCont  = CCpt { cCpt ::  A_Concept
                      , cCptDefs :: [ConceptDef]

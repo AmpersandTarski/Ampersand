@@ -25,11 +25,11 @@ generateInitialPopQueries fSpec withComments
   = fillSignalTable (initialConjunctSignals fSpec) <>
     populateTablesWithPops withComments fSpec
   where
-    fillSignalTable :: [(Conjunct, [AAtomPair])] -> [SqlQuery]
+    fillSignalTable :: [(Conjunct, AAtomPairs)] -> [SqlQuery]
     fillSignalTable = mapMaybe fillWithSignal
-    fillWithSignal :: (Conjunct, [AAtomPair]) -> Maybe SqlQuery
+    fillWithSignal :: (Conjunct, AAtomPairs) -> Maybe SqlQuery
     fillWithSignal (conj, violations) 
-     = case violations of
+     = case elems violations of
         []    -> Nothing
         viols -> Just query
           where query = insertQuery withComments tableName attrNames tblRecords
