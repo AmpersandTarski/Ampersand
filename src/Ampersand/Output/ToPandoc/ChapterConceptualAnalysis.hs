@@ -53,7 +53,7 @@ chpConceptualAnalysis lev fSpec = (
      
   pictures = map pictOfPat (vpatterns fSpec)
           ++ map pictOfConcept (elems $ concs fSpec)
-          ++ map pictOfRule (vrules fSpec)
+          ++ map pictOfRule (elems $ vrules fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
   pictOfPat ::  Pattern ->  Picture
@@ -79,7 +79,7 @@ chpConceptualAnalysis lev fSpec = (
         ) <>
     (
         -- now provide the text of this pattern.
-       case map caRule (invariants fSpec `isc` udefrules pat) of
+       case map caRule . elems $ invariants fSpec `isc` udefrules pat of
          []     -> mempty
          blocks -> (case fsLang fSpec of
                       Dutch   -> header (lev+3) "Regels"

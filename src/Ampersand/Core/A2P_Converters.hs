@@ -28,7 +28,7 @@ aCtx2pCtx ctx =
       , ctx_lang   = Just $ ctxlang ctx
       , ctx_markup = Just $ ctxmarkup ctx
       , ctx_pats   = map aPattern2pPattern . ctxpats $ ctx
-      , ctx_rs     = map aRule2pRule . ctxrs $ ctx
+      , ctx_rs     = map aRule2pRule . elems . ctxrs $ ctx
       , ctx_ds     = map aRelation2pRelation . elems . ctxds $ ctx
       , ctx_cs     = ctxcds ctx
       , ctx_ks     = map aIdentityDef2pIdentityDef . ctxks $ ctx
@@ -49,7 +49,7 @@ aPattern2pPattern :: Pattern -> P_Pattern
 aPattern2pPattern pat = 
  P_Pat { pos   = ptpos pat
        , pt_nm    = ptnm pat
-       , pt_rls   = map aRule2pRule (ptrls pat)
+       , pt_rls   = map aRule2pRule . elems $ ptrls pat
        , pt_gns   = map aGen2pGen (ptgns pat)
        , pt_dcs   = map aRelation2pRelation . elems . ptdcs $ pat
        , pt_RRuls = [] --TODO: should this be empty? There is nothing in the A-structure

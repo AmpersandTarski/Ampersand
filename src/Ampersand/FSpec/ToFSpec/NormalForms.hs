@@ -1579,11 +1579,12 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
   isEDcI _ = False
 
 
-makeAllConjs :: Options -> [Rule] -> [Conjunct]
+makeAllConjs :: Options -> Rules -> [Conjunct]
 makeAllConjs opts allRls =
-  let conjExprs :: [(Expression, [Rule])]
-      conjExprs = converse [ (rule, conjuncts opts rule) | rule <- allRls ]
-      
+  let conjExprs :: [(Expression, Rules)]
+      conjExprs = map (\(a,b) -> (a,Set.fromList b)) 
+                . converse 
+                $ [ (rule, conjuncts opts rule) | rule <- elems allRls ]
       conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
                      , rc_orgRules   = rs
                      , rc_conjunct   = expr

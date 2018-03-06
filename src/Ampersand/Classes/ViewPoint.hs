@@ -19,26 +19,28 @@ class Language a where
                                      --   i.e. one relation for each GEN and one for each signal rule.
                                      --   Don't confuse relsDefdIn with bindedRelationsIn, which gives the relations that are
                                      --   used in a.)
-  udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
+  udefrules :: a -> Rules           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.
-  multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = catMaybes [rulefromProp p d |d<-elems $ relsDefdIn x, p<-elems (properties d)]
-  identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.
-  identityRules x    = concatMap rulesFromIdentity (identities x)
-  allRules :: a -> [Rule]
-  allRules x = udefrules x ++ multrules x ++ identityRules x
+  multrules :: a -> Rules           -- ^ all multiplicityrules that are maintained within this viewpoint.
+  multrules x   = Set.fromList $ catMaybes [rulefromProp p d |d<-elems $ relsDefdIn x, p<-elems (properties d)]
+  identityRules :: a -> Rules       -- all identity rules that are maintained within this viewpoint.
+  identityRules x    = Set.unions . map rulesFromIdentity $ identities x
+  allRules :: a -> Rules
+  allRules x = udefrules x `uni` multrules x `uni` identityRules x
   identities :: a -> [IdentityDef]   -- ^ all keys that are defined in a
   viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
 
  
-rulesFromIdentity :: IdentityDef -> [Rule]
+rulesFromIdentity :: IdentityDef -> Rules
 rulesFromIdentity identity
- = [ if null (identityAts identity) then fatal "Moving into foldr1 with empty list (identityAts identity)." else
-     mkKeyRule
-      ( foldr1 (./\.) [  expr .:. flp expr | IdentityExp att <- identityAts identity, let expr=objExpression att ]
-        .|-. EDcI (idCpt identity)) ]
+ = if null (identityAts identity) 
+   then fatal "Moving into foldr1 with empty list (identityAts identity)."
+   else
+     singleton . mkKeyRule $
+       foldr1 (./\.) [  expr .:. flp expr | IdentityExp att <- identityAts identity, let expr=objExpression att ]
+        .|-. EDcI (idCpt identity)
  {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}
  where ruleName = "identity_" ++ name identity
        meaningEN = "Identity rule" ++ ", following from identity "++name identity
@@ -62,14 +64,14 @@ rulesFromIdentity identity
 
 instance (Eq a,Language a) => Language [a] where
   relsDefdIn  = Set.unions . map relsDefdIn 
-  udefrules   =       concatMap udefrules 
+  udefrules   = Set.unions . map udefrules 
   identities  =       concatMap identities
   viewDefs    =       concatMap viewDefs
   gens        = nub . concatMap gens
   patterns    =       concatMap patterns
 instance (Eq a,Language a) => Language (Set.Set a) where
   relsDefdIn  = Set.unions . map relsDefdIn . elems
-  udefrules   =       concatMap udefrules   . elems
+  udefrules   = Set.unions . map udefrules  . elems
   identities  =       concatMap identities  . elems
   viewDefs    =       concatMap viewDefs    . elems
   gens        = nub . concatMap gens        . elems
@@ -89,7 +91,7 @@ instance Language A_Context where
                          , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
                                           , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl
                                           }]
-  udefrules    context =       concatMap udefrules  (ctxpats context) ++ ctxrs context
+  udefrules    context = (Set.unions . map udefrules $ ctxpats context) `uni` ctxrs context
   identities   context =       concatMap identities (ctxpats context) ++ ctxks context
   viewDefs     context =       concatMap viewDefs   (ctxpats context) ++ ctxvs context
   gens         context = nub $ concatMap gens       (ctxpats context) ++ ctxgs context

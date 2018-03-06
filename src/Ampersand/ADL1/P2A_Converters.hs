@@ -103,7 +103,7 @@ isDanglingPurpose ctx purp =
   case explObj purp of
     ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (elems $ concs ctx )
     ExplRelation decl -> not (name decl `eleM` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
-    ExplRule nm -> nm `notElem` map name (udefrules ctx) 
+    ExplRule nm -> nm `notElem` map name (elems $ udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
@@ -151,7 +151,7 @@ checkDanglingRulesInRuleRoles ctx =
    case [mkDanglingRefError "Rule" nm (arPos rr)  
         | rr <- ctxrrules ctx
         , nm <- arRules rr
-        , nm `notElem` map name (allRules ctx)
+        , nm `notElem` map name (elems $ allRules ctx)
         ] of
      [] -> return ()
      x:xs -> Errors (x NEL.:| xs)
@@ -274,7 +274,7 @@ pCtx2aCtx opts
                      , ctxlang = deflangCtxt
                      , ctxmarkup = deffrmtCtxt
                      , ctxpats = pats
-                     , ctxrs = rules
+                     , ctxrs = Set.fromList $ rules
                      , ctxds = Set.fromList $ map fst declsAndPops
                      , ctxpopus = Set.toList (Set.union (Set.fromList udpops) (Set.fromList (map snd declsAndPops)))
                      , ctxcds = allConceptDefs
@@ -297,7 +297,7 @@ pCtx2aCtx opts
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx      -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
-      uniqueNames (udefrules actx)   -- Check uniquene names of: rules,
+      uniqueNames (elems $ udefrules actx)   -- Check uniquene names of: rules,
       uniqueNames (patterns  actx)   --                          patterns,
       uniqueNames (ctxvs     actx)   --                          view defs,
       uniqueNames (ctxifcs   actx)   --                          and interfaces.
@@ -941,7 +941,7 @@ pCtx2aCtx opts
     
     pPat2aPat :: DeclMap -> ContextInfo -> P_Pattern -> Guarded Pattern
     pPat2aPat declMap contextInfo ppat
-     = f <$> traverse (pRul2aRul declMap (name ppat)) (pt_rls ppat)
+     = f <$> traverse (pRul2aRul declMap (name ppat)) (elems $ pt_rls ppat)
          <*> traverse (pIdentity2aIdentity declMap) (pt_ids ppat) 
          <*> traverse (pPop2aPop declMap contextInfo) (pt_pop ppat)
          <*> traverse (pViewDef2aViewDef declMap) (pt_vds ppat) 
@@ -952,7 +952,7 @@ pCtx2aCtx opts
            = A_Pat { ptnm  = name ppat
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
-                   , ptrls = rules'
+                   , ptrls = Set.fromList $ rules'
                    , ptgns = map pGen2aGen (pt_gns ppat)
                    , ptdcs = Set.fromList $ map fst declsAndPops
                    , ptups = pops' ++ map snd declsAndPops

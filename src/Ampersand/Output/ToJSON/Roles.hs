@@ -25,7 +25,7 @@ instance JSON (Role,Int) RoleJson where
  fromAmpersand multi (role',i) = RoleJson
   { roleJSONid         = i
   , roleJSONname       = name role'
-  , roleJSONmaintains  = map name . fMaintains     fSpec $ role'
+  , roleJSONmaintains  = map name . elems .fMaintains     fSpec $ role'
   , roleJSONinterfaces = map (escapeIdentifier . name) . roleInterfaces fSpec $ role'
   }
    where fSpec = userFSpec multi

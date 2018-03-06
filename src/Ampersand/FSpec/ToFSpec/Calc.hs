@@ -40,7 +40,7 @@ deriveProofs opts context
                       "conjNF:   "<>str (showA (conjNF opts (formalExpression r)))<>linebreak<>
                       interText linebreak [ "     conj: "<>str (showA conj) | conj<-conjuncts opts r ]
                      )
-              | r<-allRules context]
+              | r<-elems $ allRules context]
    
    where
 --    interText :: (Data.String.IsString a, Data.Monoid.Monoid a) => a -> [a] -> a
@@ -73,9 +73,9 @@ showPrf _  []                   = []
 
 
 
-quadsOfRules :: Options -> [Rule] -> [Quad]
+quadsOfRules :: Options -> Rules -> [Quad]
 quadsOfRules opts rules 
-  = makeAllQuads (converse [ (conj, rc_orgRules conj) | conj <- makeAllConjs opts rules ])
+  = makeAllQuads (converse [ (conj, elems $ rc_orgRules conj) | conj <- makeAllConjs opts rules ])
 
         -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
         -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),

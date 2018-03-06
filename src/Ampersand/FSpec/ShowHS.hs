@@ -152,7 +152,7 @@ instance ShowHS Conjunct where
  showHS opts indent x
    = intercalate (indent ++"    ")
        [   "Cjct{ rc_id         = " ++ show (rc_id x)
-       ,       ", rc_orgRules   = " ++ "[ "++intercalate ", " (map showHSName (rc_orgRules x))++"]"
+       ,       ", rc_orgRules   = " ++ "[ "++intercalate ", " (map showHSName . elems $ rc_orgRules x)++"]"
        ,       ", rc_conjunct   = " ++ showHS opts indentA (rc_conjunct x)
        , wrap  ", rc_dnfClauses = " indentA (\_->showHS opts (indentA++"  ")) (rc_dnfClauses x)
        ,       "}"
@@ -179,10 +179,10 @@ instance ShowHS FSpec where
                  _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
         ,      ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
         , wrap ", fRoles        = " indentA (showHS opts)    [rol | (rol,_) <- fRoles fSpec]
-        , wrap ", vrules        = " indentA (const showHSName) (vrules fSpec)
-        , wrap ", grules        = " indentA (const showHSName) (grules fSpec)
-        , wrap ", invariants    = " indentA (const showHSName) (invariants fSpec)
-        , wrap ", fallRules     = " indentA (const showHSName) (fallRules fSpec)
+        , wrap ", vrules        = " indentA (const showHSName) (elems $ vrules fSpec)
+        , wrap ", grules        = " indentA (const showHSName) (elems $ grules fSpec)
+        , wrap ", invariants    = " indentA (const showHSName) (elems $ invariants fSpec)
+        , wrap ", fallRules     = " indentA (const showHSName) (elems $ fallRules fSpec)
         , wrap ", allUsedDecls  = " indentA (const showHSName) (elems $ allUsedDecls fSpec)
         , wrap ", vrels         = " indentA (const showHSName) (elems $ vrels fSpec)
         , wrap ", allConcepts   = " indentA (const showHSName) (elems $ allConcepts fSpec)
@@ -242,11 +242,11 @@ instance ShowHS FSpec where
     ) ++
     (if null (vrules   fSpec ) then "" else
      "\n -- *** User defined rules (total: "++(show.length.vrules) fSpec++" rules) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vrules     fSpec ]++"\n"
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-elems $ vrules     fSpec ]++"\n"
     )++
     (if null (grules   fSpec ) then "" else
      "\n -- *** Generated rules (total: "++(show.length.grules) fSpec++" rules) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-grules     fSpec ]++"\n"
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-elems $ grules     fSpec ]++"\n"
     )++
     (if null (allConjuncts fSpec ) then "" else
      "\n -- *** Conjuncts (total: "++(show.length.allConjuncts) fSpec++" conjuncts) ***: "++
@@ -339,7 +339,7 @@ instance ShowHS Pattern where
      [ "A_Pat { ptnm  = "++show (name pat)
      , ", ptpos = "++showHS opts "" (ptpos pat)
      , ", ptend = "++showHS opts "" (ptend pat)
-     , ", ptrls = [" ++intercalate ", " [showHSName r | r<-ptrls pat] ++ concat [" {- no rules -} "        | null (ptrls pat)] ++"]"
+     , ", ptrls = [" ++intercalate ", " [showHSName r | r<-elems $ ptrls pat] ++ concat [" {- no rules -} "        | Set.null (ptrls pat)] ++"]"
      , wrap ", ptgns = " indentB (showHS opts) (ptgns pat)
      , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-elems $ ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
      , wrap ", ptups = " indentB (showHS opts) (ptups pat)

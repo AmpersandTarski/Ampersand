@@ -46,7 +46,7 @@ chpDiagnosis fSpec
                           ,EN " does not define any roles. ")
               )
     | otherwise =
-        case filter isSignal ruls of
+        case filter isSignal . elems $ ruls of
           []   -> para (   (emph.str.upCap.name) fSpec
                         <> (str.l) (NL " kent geen procesregels. "
                                    ,EN " does not define any process rules. ")
@@ -75,7 +75,7 @@ chpDiagnosis fSpec
                   
      where
                   
-      ruls = filter isSignal . vrules $ fSpec                  
+      ruls = Set.filter isSignal . vrules $ fSpec                  
       f :: Role -> Rule -> Blocks
       f rol rul | (rol,rul) `elem` dead = (plain.str) [timesSymbol] 
                 | otherwise                      = mempty
@@ -258,7 +258,7 @@ chpDiagnosis fSpec
 
   missingRules :: Blocks
   missingRules
-   = case vrules fSpec of
+   = case elems $ vrules fSpec of
       []   -> mempty
       ruls ->
          if all hasMeaning ruls && all hasPurpose ruls
@@ -313,7 +313,7 @@ chpDiagnosis fSpec
       
     where mkTableRow :: String  -- The name of the pattern / fSpec 
                      -> Relations --The user-defined relations of the pattern / fSpec
-                     -> [Rule]  -- The user-defined rules of the pattern / fSpec
+                     -> Rules  -- The user-defined rules of the pattern / fSpec
                      -> [Blocks]
           mkTableRowPat p = mkTableRow (name p) (relsDefdIn p) (udefrules p)
           mkTableRow nm rels ruls =
@@ -321,9 +321,9 @@ chpDiagnosis fSpec
                             , (show . Set.size) rels 
                             , (show . Set.size) (Set.filter hasRef rels)
                             , showPercentage (Set.size rels) (Set.size . Set.filter hasRef $ rels)
-                            , (show.length) ruls
-                            , (show.length) (filter hasRef ruls)
-                            , showPercentage (length ruls) (length.filter hasRef $ ruls)
+                            , (show . Set.size) ruls
+                            , (show . Set.size) (Set.filter hasRef ruls)
+                            , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
           hasRef x = maybe False (any  ((/=[]).explRefIds)) (purposeOf fSpec (fsLang fSpec) x)

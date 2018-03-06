@@ -44,7 +44,7 @@ makeFSpec opts context
                                    , role' <- rrRoles rr
                                    ] 
               , fRoleRuls    = nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
-                                   | rule <- allrules
+                                   | rule <- elems $ allrules
                                    , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
@@ -54,10 +54,10 @@ makeFSpec opts context
                                                  )
                                    ) [0..] 
               , fallRules    = allrules
-              , vrules       = filter      isUserDefined  allrules
-              , grules       = filter (not.isUserDefined) allrules
-              , invariants   = filter (not.isSignal)      allrules
-              , signals      = filter      isSignal       allrules
+              , vrules       = Set.filter      isUserDefined  allrules
+              , grules       = Set.filter (not.isUserDefined) allrules
+              , invariants   = Set.filter (not.isSignal)      allrules
+              , signals      = Set.filter      isSignal       allrules
               , allConjuncts = allConjs
               , allConjsPerRule = fSpecAllConjsPerRule
               , allConjsPerDecl = fSpecAllConjsPerDecl
@@ -88,7 +88,7 @@ makeFSpec opts context
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
               , allViolations  = [ (r,vs)
-                                 | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
+                                 | r <- elems $ allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context `uni` expressionsIn allConjs
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
@@ -108,11 +108,9 @@ makeFSpec opts context
                               x:_ -> getLargestConcept x
      handleType :: A_Concept -> A_Concept -> Expression
      handleType gen spc = EEps gen (Sign gen spc) .:. EDcI spc .:. EEps gen (Sign spc gen)
-     fMaintains' :: Role -> [Rule]
-     fMaintains' role' = nub [ rule 
-                            | rule <- allrules
-                            , role' `elem` maintainersOf rule
-                            ]
+     fMaintains' :: Role -> Rules
+     fMaintains' role' = Set.filter f allrules
+        where f rule = role' `elem` maintainersOf rule
      typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
            [t] -> t
@@ -160,18 +158,18 @@ makeFSpec opts context
        where populations = ctxpopus context++concatMap ptups (patterns context)       
      allConjs = makeAllConjs opts allrules
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
-     fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
+     fSpecAllConjsPerRule = converse [ (conj, elems $ rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = 
-           converse [ (conj, smaller (source e) `uni` smaller (target e)) 
+           converse [ (conj, nub $ smaller (source e) ++ smaller (target e)) 
                     | conj <- allConjs
                     , e    <- elems . modifyablesByInsOrDel . rc_conjunct $ conj ]
                where 
                  smaller :: A_Concept -> [A_Concept]
-                 smaller cpt = [cpt] `uni` smallerConcepts (gens context) cpt
+                 smaller cpt = nub $ cpt : smallerConcepts (gens context) cpt
      allQuads = quadsOfRules opts allrules 
      
-     allrules = map setIsSignal (allRules context)
+     allrules = Set.map setIsSignal (allRules context)
         where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
      maintainersOf :: Rule -> [Role]
      maintainersOf r 
@@ -186,8 +184,8 @@ makeFSpec opts context
          Identity     -> False
      calcProps :: Relation -> Relation
      calcProps d = d{decprps_calc = Just calculated}
-         where calculated = decprps d `uni` (if d `eleM` totals then singleton Tot else empty)
-                                      `uni` (if d `eleM` surjectives then singleton Sur else empty)
+         where calculated = decprps d `uni` (if d `elem` totals then singleton Tot else empty)
+                                      `uni` (if d `elem` surjectives then singleton Sur else empty)
      calculatedDecls :: Relations
      calculatedDecls = Set.map calcProps (relsDefdIn context)
   -- determine relations that are total (as many as possible, but not necessarily all)
@@ -355,7 +353,7 @@ makeFSpec opts context
              , ifcPrp      = "Interface " ++name c++" has been generated by Ampersand."
              , ifcRoles    = []
              }
-        | cl <- eqCl (source.head) [ pth | pth<-maxTotPaths `uni` maxInjPaths, (source.head) pth `elem` gPlugConcepts ]
+        | cl <- eqCl (source.head) [ pth | pth<-nub (maxTotPaths ++ maxInjPaths), (source.head) pth `elem` gPlugConcepts ]
         , let objattributes = recur cl
         , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
         , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)

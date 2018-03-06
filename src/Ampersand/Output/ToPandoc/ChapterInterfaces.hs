@@ -50,7 +50,7 @@ chpInterfacesBlocks fSpec =
       (if null $ ifcControls ifc
        then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
        else plainText "Voorafgaand aan het afsluiten van een transactie (commit), moet aan de volgende regels voldaan zijn:" <>  
-              (bulletList . map plainText . nub) [rrnm rule | conj <- ifcControls ifc, rule <- rc_orgRules conj, r_usr rule == UserDefined]) <>
+              (bulletList . map plainText . nub) [rrnm rule | conj <- ifcControls ifc, rule <- elems $ rc_orgRules conj, r_usr rule == UserDefined]) <>
       (if genFPAChap (getOpts fSpec)
        then (plain . strong . text) "Functiepunten:" <>
             plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++

@@ -69,13 +69,13 @@ transformers fSpec = map toTransformer [
      ,("allRules"              , "Context"               , "Rule"    
       , [(dirtyId ctx, dirtyId rul) 
         | ctx::A_Context <- instances fSpec
-        , rul::Rule      <- allRules ctx
+        , rul::Rule      <- elems $ allRules ctx
         ]
       )
      ,("allRules"              , "Pattern"               , "Rule"    
       , [(dirtyId pat, dirtyId rul) 
         | pat::Pattern <- instances fSpec
-        , rul::Rule      <- allRules pat
+        , rul::Rule      <- elems $ allRules pat
         ]
       )
      ,("arg"                   , "UnaryTerm"             , "Expression"
@@ -260,13 +260,13 @@ transformers fSpec = map toTransformer [
      ,("identityRules"         , "Rule"                  , "Context" 
       , [(dirtyId rul, dirtyId ctx) 
         | ctx::A_Context <- instances fSpec
-        , rul            <- identityRules ctx
+        , rul            <- elems $ identityRules ctx
         ]
       )
      ,("identityRules"         , "Rule"                  , "Pattern" 
       , [(dirtyId rul, dirtyId pat) 
         | pat::Pattern <- instances fSpec
-        , rul          <- identityRules pat
+        , rul          <- elems $ identityRules pat
         ]
       )
      ,("ifcClass"              , "Interface"             , "String"  
@@ -387,13 +387,13 @@ transformers fSpec = map toTransformer [
      ,("multrules"             , "Rule"                  , "Context" 
       , [(dirtyId rul, dirtyId ctx) 
         | ctx::A_Context <- instances fSpec
-        , rul            <- multrules ctx
+        , rul            <- elems $ multrules ctx
         ]
       )
      ,("multrules"             , "Rule"                  , "Pattern" 
       , [(dirtyId rul, dirtyId pat) 
         | pat::Pattern <- instances fSpec
-        , rul            <- multrules pat
+        , rul            <- elems $ multrules pat
         ]
       )
      ,("name"                  , "Concept"               , "ConceptName"
@@ -473,7 +473,7 @@ transformers fSpec = map toTransformer [
       , if atlasWithoutExpressions opts then [] else
         [(dirtyId conj, dirtyId rul)
         | conj::Conjunct <- instances fSpec
-        , rul <- rc_orgRules conj
+        , rul <- elems $ rc_orgRules conj
         ]
       )
      ,("outQ"                  , "Quad"                  , "Act"     
@@ -648,13 +648,13 @@ transformers fSpec = map toTransformer [
      ,("udefrules"             , "Rule"                  , "Context" 
       , [(dirtyId rul, dirtyId ctx) 
         | ctx::A_Context <- instances fSpec
-        , rul            <- udefrules ctx
+        , rul            <- elems $ udefrules ctx
         ]
       )
      ,("udefrules"             , "Rule"                  , "Pattern" 
       , [(dirtyId rul, dirtyId pat) 
         | pat::Pattern <- instances fSpec
-        , rul            <- udefrules pat
+        , rul            <- elems $ udefrules pat
         ]
       )
      ,("urlEncodedName"        , "Concept"               , "EncodedName"
@@ -771,7 +771,7 @@ instance Instances Purpose where
 instance Instances Role where
   instances fSpec = nub $ [Role "SystemAdmin"] ++ map fst (fRoles fSpec)
 instance Instances Rule where
-  instances fSpec = allRules (originalContext fSpec)  
+  instances fSpec = elems . allRules $ originalContext fSpec
 instance Instances Signature where
   instances fSpec = nub $
        [sign dcl  | dcl::Relation <- instances fSpec]

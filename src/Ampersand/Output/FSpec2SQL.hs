@@ -79,7 +79,7 @@ dumpSQLqueries multi
           ,"Conjunct expression:"
           ,"  " <> (Text.pack . showA . rc_conjunct $ conj)
           ,"Rules for this conjunct:"]
-        <>map showRule (rc_orgRules conj)
+        <>map showRule (elems $ rc_orgRules conj)
         <>["*/"
           ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj) <> ";"
           ,""]

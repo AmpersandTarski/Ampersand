@@ -64,13 +64,13 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
                    , fRoleRels ::    [(Role,Relation)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
-                   , fMaintains ::   Role -> [Rule]
+                   , fMaintains ::   Role -> Rules
                    , fRoles ::       [(Role,Int)]             -- ^ All roles mentioned in this context, numbered.
-                   , fallRules ::    [Rule]
-                   , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
-                   , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
-                   , invariants ::   [Rule]                   -- ^ All invariant rules
-                   , signals ::      [Rule]                   -- ^ All signal rules
+                   , fallRules ::    Rules
+                   , vrules ::       Rules                   -- ^ All user defined rules that apply in the entire FSpec
+                   , grules ::       Rules                   -- ^ All rules that are generated: multiplicity rules and identity rules
+                   , invariants ::   Rules                   -- ^ All invariant rules
+                   , signals ::      Rules                   -- ^ All signal rules
                    , allUsedDecls :: Relations            -- ^ All relations that are used in the fSpec
                    , vrels ::        Relations            -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and

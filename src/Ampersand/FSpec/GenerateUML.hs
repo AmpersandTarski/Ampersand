@@ -82,7 +82,7 @@ fSpec2UML fSpec =
        contextName   = cdName classDiag
        allConcs      = ooCpts classDiag
        classNames    = map name (classes classDiag)
-       datatypeNames = map name allConcs >- classNames
+       datatypeNames = filter (\n -> n `notElem` classNames) $ map name allConcs
 
 genUMLRequirement :: Req -> UML
 genUMLRequirement req =

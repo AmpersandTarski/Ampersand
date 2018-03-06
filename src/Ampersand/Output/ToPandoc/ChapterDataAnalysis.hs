@@ -344,15 +344,15 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                  (invariants fSpec)
       ]
    where
-    docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> [Rule] -> Blocks
+    docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> Rules -> Blocks
     docRules title intro noRules heading rules = 
-      case rules of 
-         [] -> (para . text . l) noRules
-         _  -> mconcat $
+      if null rules 
+      then (para . text . l) noRules
+      else mconcat $
                  [ header (sectionLevel+1) . text $ l title 
                  , para . text $ l intro
                  ] ++
-                 map (docRule heading) rules
+                 map (docRule heading) (elems rules)
     
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat

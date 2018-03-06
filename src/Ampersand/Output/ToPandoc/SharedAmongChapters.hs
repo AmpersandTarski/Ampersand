@@ -37,6 +37,7 @@ import           Data.List      --       (intercalate,partition)
 import           Data.Maybe
 import           Data.Monoid as X
 import           Data.Ord
+import qualified Data.Set as Set
 import qualified Data.Time.Format as DTF
 import           Data.Typeable
 import           GHC.Exts(sortWith)
@@ -439,10 +440,10 @@ orderingByTheme fSpec
         )
      where
        (thmRuls,restRuls) = partition (inThisTheme ptrls) ruls
-       (themeDcls,restDcls) = partition (inThisTheme (elems . relsInTheme)) rels
+       (themeDcls,restDcls) = partition (inThisTheme relsInTheme) rels
           where relsInTheme p = relsDefdIn p `uni` bindedRelationsIn p
-       (themeCpts,restCpts) = partition (inThisTheme (elems . concs)) cpts
-       inThisTheme :: Eq a => (Pattern -> [a]) -> a -> Bool
+       (themeCpts,restCpts) = partition (inThisTheme concs) cpts
+       inThisTheme :: Eq a => (Pattern -> Set.Set a) -> a -> Bool
        inThisTheme allElemsOf x
          = case mPat of
              Nothing  -> True

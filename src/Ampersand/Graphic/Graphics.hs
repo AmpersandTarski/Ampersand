@@ -131,7 +131,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         PTCDConcept c ->
           let gs = fsisa fSpec
               cpts' = concs rs
-              rs    = [r | r<-vrules fSpec, c `elem` concs r]
+              rs    = [r | r<-elems $ vrules fSpec, c `elem` concs r]
           in
           CStruct { csCpts = nub$ elems cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
                   , csRels = filter (not . isProp) . elems . bindedRelationsIn $ rs   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs

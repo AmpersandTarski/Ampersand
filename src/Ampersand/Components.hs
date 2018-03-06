@@ -199,14 +199,14 @@ generateAmpersandOutput multi = do
    --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
           reportSignals []        = verboseLn opts "No signals for the initial population."
           reportSignals conjViols = verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
-            [   "Rule(s): "++(show . map name . rc_orgRules) conj
+            [   "Rule(s): "++(show . map name . elems . rc_orgRules) conj
             ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
             ++"\n  Violations : " ++ showprs viols
             | (conj, viols) <- conjViols
             ]
           ruleTest :: String -> IO ()
           ruleTest ruleName =
-           case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
+           case [ rule | rule <- elems $ grules fSpec `uni` vrules fSpec, name rule == ruleName ] of
              [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
              (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
                             ; putStrLn $ showContents rule

@@ -5,7 +5,7 @@ module Ampersand.Output.ToJSON.Rules
   (Rules)
 where
 import Ampersand.Output.ToJSON.JSONutils 
-import Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.Core.AbstractSyntaxTree hiding (Rules)
 import Ampersand.FSpec
 import Data.Maybe
 
@@ -46,8 +46,8 @@ instance ToJSON JsonPairViewSegment where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Rules where
  fromAmpersand multi _ = Rules
-   { rulJSONinvariants = map (fromAmpersand multi) (invariants fSpec)
-   , rulJSONsignals    = map (fromAmpersand multi) (signals fSpec)
+   { rulJSONinvariants = map (fromAmpersand multi) . elems $ invariants fSpec
+   , rulJSONsignals    = map (fromAmpersand multi) . elems $ signals fSpec
    }
   where
    fSpec = userFSpec multi
