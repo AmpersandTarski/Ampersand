@@ -319,18 +319,14 @@ mkOtherTupleInSessionError r pr =
 
 class ErrorConcept a where
   showEC :: a -> String
-  showMini :: a -> String
 
 instance ErrorConcept (P_ViewD a) where
   showEC x = showP (vd_cpt x) ++" given in VIEW "++vd_lbl x
-  showMini x = showP (vd_cpt x)
 instance ErrorConcept P_IdentDef where
   showEC x = showP (ix_cpt x) ++" given in Identity "++ix_lbl x
-  showMini = showP . ix_cpt
 
 instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1,c1,e1) = showEC' (p1,c1,showA e1)
-  showMini (_,c1,_) = showA c1
 
 showEC' :: (SrcOrTgt, A_Concept, String) -> String
 showEC' (p1,c1,e1) = showA c1++" ("++show p1++" of "++e1++")"
@@ -340,20 +336,12 @@ instance (AStruct declOrExpr, Association declOrExpr) => ErrorConcept (SrcOrTgt,
    = case p1 of
       Src -> showEC' (p1,source e1,showA e1)
       Tgt -> showEC' (p1,target e1,showA e1)
-  showMini (p1,e1)
-   = case p1 of
-      Src -> showA . source $ e1
-      Tgt -> showA . target $ e1
 
 instance (AStruct declOrExpr, Association declOrExpr) => ErrorConcept (SrcOrTgt, Origin, declOrExpr) where
   showEC (p1,o,e1)
    = case p1 of
       Src -> showEC' (p1,source e1,showA e1 ++ ", "++showMinorOrigin o)
       Tgt -> showEC' (p1,target e1,showA e1 ++ ", "++showMinorOrigin o)
-  showMini (p1,_,e1)
-   = case p1 of
-      Src -> showA . source $ e1
-      Tgt -> showA . target $ e1
 
 mustBeOrdered :: (ErrorConcept t1, ErrorConcept t2) => Origin -> t1 -> t2 -> Guarded a
 mustBeOrdered o a b
@@ -361,8 +349,6 @@ mustBeOrdered o a b
      [ "Type error, cannot match:"
      , "  the concept "++showEC a
      , "  and concept "++showEC b
-     , "  if you think there is no type error, add an order between"
-     , "  concepts "++showMini a++" and "++showMini b++"."
      ]
 
 mustBeOrderedLst :: (Traced o, PStruct o, PStruct a) => o -> [(A_Concept, SrcOrTgt, a)] -> Guarded b

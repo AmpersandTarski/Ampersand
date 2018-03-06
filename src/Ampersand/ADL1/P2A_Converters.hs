@@ -1011,12 +1011,12 @@ pCtx2aCtx opts
     typeCheckPairViewSeg :: Origin -> Expression -> PairViewSegment (Term (TermPrim, DisambPrim)) -> Guarded (PairViewSegment Expression)
     typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
     typeCheckPairViewSeg o t (PairViewExp orig s x)
-     = do (e,(b,_)) <- typecheckTerm x
-          case toList . findUpperbounds genLattice . lJoin (aConcToType (source e)) $ getConcept s t of
+     = do (e,_) <- typecheckTerm x
+          case toList . findExact genLattice . lJoin (aConcToType (source e)) $ getConcept s t of
                           [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
-                          lst -> if b || all (aConcToType (source e) `elem`) lst
+                          lst -> if aConcToType (source e) `elem` lst
                                  then pure (PairViewExp orig s (addEpsilonLeft (getAConcept s t) e))
-                                 else mustBeBound (origin (fmap fst x)) [(Src, e)]
+                                 else mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
     pPurp2aPurp :: DeclMap -> PPurpose -> Guarded Purpose
     pPurp2aPurp declMap
                 PRef2 { pos    = orig     -- :: Origin
