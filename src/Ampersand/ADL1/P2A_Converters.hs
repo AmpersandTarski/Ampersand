@@ -383,7 +383,7 @@ pCtx2aCtx opts
                               (_,[])   -> (a,as)
                               (hs',hs) -> g (nub $ a ++ concat hs) hs'
                     hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool
-                    hasConceptsOf a b = or [ x' `elem` b | x' <- a]
+                    hasConceptsOf a b = and [ x' `notElem` b | x' <- a]
                                              
                           
           mkTypology :: [A_Concept] -> Guarded Typology
