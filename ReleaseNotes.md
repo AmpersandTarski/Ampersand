@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 
+* Better performance of the generator, due to using Haskell's sets rather than lists.
+
 ## Unreleased changes
 
 ## v3.9.3 (16 february 2018)
