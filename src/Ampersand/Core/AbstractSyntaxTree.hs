@@ -163,7 +163,7 @@ data Rule =
         , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
         } deriving Typeable
 instance Eq Rule where
-  r==r' = rrnm r==rrnm r'
+  r==r' = name r==name r' && origin r==origin r' -- Origin should be here too: A check that they all have unique names is done after typechecking.
 instance Unique Rule where
   showUnique = rrnm
 instance Ord Rule where
