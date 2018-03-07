@@ -4,11 +4,12 @@ module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
       chpNatLangReqs
  ) where
 
-import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Data.Char hiding (Space)
-import Data.List
-import Data.List.Split(splitOn)
-import Data.Maybe
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import           Data.Char hiding (Space)
+import           Data.List
+import           Data.List.Split(splitOn)
+import           Data.Maybe
+import qualified Data.Set as Set
 
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
@@ -203,7 +204,7 @@ chpNatLangReqs lev fSpec =
                            | sample <- samples]
         <> someWhiteSpace 
          where dcl = cDcl . theLoad $ nDcl
-               samples = take 3 . elems . cDclPairs . theLoad $ nDcl
+               samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
 
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul

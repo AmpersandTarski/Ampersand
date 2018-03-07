@@ -3,13 +3,14 @@ module Ampersand.Output.ToPandoc.ChapterInterfaces
    chpInterfacesBlocks
   )
 where
-import Data.List
-import Ampersand.ADL1
-import Ampersand.Classes.Relational
-import Ampersand.FSpec.Crud
-import Ampersand.FSpec.FPA
-import Ampersand.Output.PandocAux
-import Ampersand.Output.ToPandoc.SharedAmongChapters
+import           Ampersand.ADL1
+import           Ampersand.Classes.Relational
+import           Ampersand.FSpec.Crud
+import           Ampersand.FSpec.FPA
+import           Ampersand.Output.PandocAux
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import           Data.List
+import qualified Data.Set as Set
 
 chpInterfacesBlocks :: FSpec -> Blocks
 chpInterfacesBlocks fSpec = 
@@ -50,7 +51,7 @@ chpInterfacesBlocks fSpec =
       (if null $ ifcControls ifc
        then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
        else plainText "Voorafgaand aan het afsluiten van een transactie (commit), moet aan de volgende regels voldaan zijn:" <>  
-              (bulletList . map plainText . nub) [rrnm rule | conj <- ifcControls ifc, rule <- elems $ rc_orgRules conj, r_usr rule == UserDefined]) <>
+              (bulletList . map plainText . nub) [rrnm rule | conj <- ifcControls ifc, rule <- Set.elems $ rc_orgRules conj, r_usr rule == UserDefined]) <>
       (if genFPAChap (getOpts fSpec)
        then (plain . strong . text) "Functiepunten:" <>
             plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++

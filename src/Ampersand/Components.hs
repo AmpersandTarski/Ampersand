@@ -194,19 +194,19 @@ generateAmpersandOutput multi = do
                              ]
 
           showprs :: AAtomPairs -> String
-          showprs aprs = "["++intercalate ", " (elems $ Set.map showA aprs)++"]"
+          showprs aprs = "["++intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
    --       showpr :: AAtomPair -> String
    --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
           reportSignals []        = verboseLn opts "No signals for the initial population."
           reportSignals conjViols = verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
-            [   "Rule(s): "++(show . map name . elems . rc_orgRules) conj
+            [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
             ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
             ++"\n  Violations : " ++ showprs viols
             | (conj, viols) <- conjViols
             ]
           ruleTest :: String -> IO ()
           ruleTest ruleName =
-           case [ rule | rule <- elems $ grules fSpec `uni` vrules fSpec, name rule == ruleName ] of
+           case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of
              [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
              (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
                             ; putStrLn $ showContents rule
@@ -217,7 +217,7 @@ generateAmpersandOutput multi = do
                             }
            where showContents rule = "[" ++ intercalate ", " pairs ++ "]"
                    where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 
-                                 | (r,vs) <- allViolations fSpec, r == rule, v <- elems vs]
+                                 | (r,vs) <- allViolations fSpec, r == rule, v <- Set.elems vs]
                                
    
    

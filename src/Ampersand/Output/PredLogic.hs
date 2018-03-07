@@ -425,8 +425,8 @@ assemble expr
    relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic
    relFun exclVars lhs e rhs
      = case e of
-         EDcD dcl        -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-elems $ bindedRelationsIn t']) dcl (Funs (fst tv) [r | t'<-reverse rhs, r<-elems $ bindedRelationsIn t'])
-         EFlp (EDcD dcl) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-elems $ bindedRelationsIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-elems $ bindedRelationsIn t'])
+         EDcD dcl        -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-Set.elems $ bindedRelationsIn t']) dcl (Funs (fst tv) [r | t'<-reverse rhs, r<-Set.elems $ bindedRelationsIn t'])
+         EFlp (EDcD dcl) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-Set.elems $ bindedRelationsIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-Set.elems $ bindedRelationsIn t'])
          EMp1 val _      -> \_ _-> Atom . showP $ val
          EFlp EMp1{}     -> relFun exclVars lhs e rhs
          _               -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)
@@ -472,7 +472,7 @@ assemble expr
    denote :: Expression -> Notation
    denote e = case e of
       (EDcD d)
-        | null(elems (Set.fromList [Uni,Inj,Tot,Sur] >- properties d))  -> Rn
+        | null(Set.elems (Set.fromList [Uni,Inj,Tot,Sur] Set.\\ properties d))  -> Rn
         | isUni d && isTot d                           -> Flr
         | isInj d && isSur d                           -> Frl
         | otherwise                                    -> Rn

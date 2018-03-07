@@ -22,11 +22,11 @@ class Language a where
   udefrules :: a -> Rules           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.
   multrules :: a -> Rules           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = Set.fromList $ catMaybes [rulefromProp p d |d<-elems $ relsDefdIn x, p<-elems (properties d)]
+  multrules x   = Set.fromList $ catMaybes [rulefromProp p d |d<-Set.elems $ relsDefdIn x, p<-Set.elems (properties d)]
   identityRules :: a -> Rules       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = Set.unions . map rulesFromIdentity $ identities x
   allRules :: a -> Rules
-  allRules x = udefrules x `uni` multrules x `uni` identityRules x
+  allRules x = udefrules x `Set.union` multrules x `Set.union` identityRules x
   identities :: a -> [IdentityDef]   -- ^ all keys that are defined in a
   viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
@@ -38,7 +38,7 @@ rulesFromIdentity identity
  = if null (identityAts identity) 
    then fatal "Moving into foldr1 with empty list (identityAts identity)."
    else
-     singleton . mkKeyRule $
+     Set.singleton . mkKeyRule $
        foldr1 (./\.) [  expr .:. flp expr | IdentityExp att <- identityAts identity, let expr=objExpression att ]
         .|-. EDcI (idCpt identity)
  {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}
@@ -70,28 +70,28 @@ instance (Eq a,Language a) => Language [a] where
   gens        = nub . concatMap gens
   patterns    =       concatMap patterns
 instance (Eq a,Language a) => Language (Set.Set a) where
-  relsDefdIn  = Set.unions . map relsDefdIn . elems
-  udefrules   = Set.unions . map udefrules  . elems
-  identities  =       concatMap identities  . elems
-  viewDefs    =       concatMap viewDefs    . elems
-  gens        = nub . concatMap gens        . elems
-  patterns    =       concatMap patterns    . elems
+  relsDefdIn  = Set.unions . map relsDefdIn . Set.elems
+  udefrules   = Set.unions . map udefrules  . Set.elems
+  identities  =       concatMap identities  . Set.elems
+  viewDefs    =       concatMap viewDefs    . Set.elems
+  gens        = nub . concatMap gens        . Set.elems
+  patterns    =       concatMap patterns    . Set.elems
   
 instance Language A_Context where
   relsDefdIn context = uniteRels ( relsDefdIn (patterns context)
-                                `uni` ctxds context)
+                                `Set.union` ctxds context)
      where
       -- relations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
       -- decpopu, decprps and decprps_calc are united, all others are taken from the head.
       uniteRels :: Relations -> Relations
       uniteRels ds
-        | null ds = empty
+        | null ds = Set.empty
         | otherwise = Set.fromList 
-                         [ d | cl<-eqClass (==) $ elems ds
-                         , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
+                         [ d | cl<-eqClass (==) $ Set.elems ds
+                         , let d=(head cl){ decprps      = (foldr1 Set.union . map decprps) cl
                                           , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl
                                           }]
-  udefrules    context = (Set.unions . map udefrules $ ctxpats context) `uni` ctxrs context
+  udefrules    context = (Set.unions . map udefrules $ ctxpats context) `Set.union` ctxrs context
   identities   context =       concatMap identities (ctxpats context) ++ ctxks context
   viewDefs     context =       concatMap viewDefs   (ctxpats context) ++ ctxvs context
   gens         context = nub $ concatMap gens       (ctxpats context) ++ ctxgs context

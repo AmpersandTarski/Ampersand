@@ -13,6 +13,7 @@ import           Ampersand.Prototype.TableSpec (queryAsSQL)
 import           Ampersand.Prototype.Generate  (generateDBstructQueries, generateInitialPopQueries)
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import           Data.Monoid
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import           System.Directory
 import           System.FilePath
@@ -79,7 +80,7 @@ dumpSQLqueries multi
           ,"Conjunct expression:"
           ,"  " <> (Text.pack . showA . rc_conjunct $ conj)
           ,"Rules for this conjunct:"]
-        <>map showRule (elems $ rc_orgRules conj)
+        <>map showRule (Set.elems $ rc_orgRules conj)
         <>["*/"
           ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj) <> ";"
           ,""]

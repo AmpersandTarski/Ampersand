@@ -46,7 +46,7 @@ chpDiagnosis fSpec
                           ,EN " does not define any roles. ")
               )
     | otherwise =
-        case filter isSignal . elems $ ruls of
+        case filter isSignal . Set.elems $ ruls of
           []   -> para (   (emph.str.upCap.name) fSpec
                         <> (str.l) (NL " kent geen procesregels. "
                                    ,EN " does not define any process rules. ")
@@ -85,7 +85,7 @@ chpDiagnosis fSpec
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role',rul)
          | (role',rul)<-fRoleRuls fSpec
-         , (not.or) (map (mayedit role') (elems $ bindedRelationsIn rul))
+         , (not.or) (map (mayedit role') (Set.elems $ bindedRelationsIn rul))
          ]
 
   roleomissions :: Blocks
@@ -133,10 +133,10 @@ chpDiagnosis fSpec
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
-         ccs = elems . concs . vrels $ fSpec
+         ccs = Set.elems . concs . vrels $ fSpec
   unusedConceptDefs :: Blocks
   unusedConceptDefs
-   = case [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (elems $ concs fSpec)] of
+   = case [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (Set.elems $ concs fSpec)] of
       []  -> if (null.conceptDefs) fSpec
              then mempty
              else para.str.l $
@@ -198,9 +198,9 @@ chpDiagnosis fSpec
                         )
           )
      where bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Relation]
-           bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) . elems $ decls
-           purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  . elems $ decls
-           meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) . elems $ decls
+           bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) . Set.elems $ decls
+           purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  . Set.elems $ decls
+           meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) . Set.elems $ decls
            decls = vrels fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
@@ -248,17 +248,17 @@ chpDiagnosis fSpec
      )
      where notUsed :: [Inlines]
            notUsed = [ showMath (EDcD d)
-                     | d <- elems (vrels fSpec) -- only relations that are used or defined in the selected themes
+                     | d <- Set.elems (vrels fSpec) -- only relations that are used or defined in the selected themes
                      , decusr d
                      , d `notElem` (bindedRelationsIn . vrules) fSpec
                      ]
            pats  = [ pat | pat<-vpatterns fSpec
-                         , (not.null) (relsDefdIn pat>-bindedRelationsIn pat) ]
+                         , (not.null) (relsDefdIn pat Set.\\ bindedRelationsIn pat) ]
            pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
 
   missingRules :: Blocks
   missingRules
-   = case elems $ vrules fSpec of
+   = case Set.elems $ vrules fSpec of
       []   -> mempty
       ruls ->
          if all hasMeaning ruls && all hasPurpose ruls
@@ -488,7 +488,7 @@ chpDiagnosis fSpec
                         [ [(para.text.showValADL.apLeft) p
                           ,(para.text.showValADL.apRight) p
                           ]
-                        | p<- elems ps]
+                        | p<- Set.elems ps]
 
 
 
@@ -503,7 +503,7 @@ chpDiagnosis fSpec
                    [(plain.str.name.source) r]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p]
-                   | p <-take 10 . elems $ ps --max 10 rows
+                   | p <-take 10 . Set.elems $ ps --max 10 rows
                    ]
         else table -- No caption:
                    mempty
@@ -513,5 +513,5 @@ chpDiagnosis fSpec
                    [(plain.str.name.source) r , (plain.str.name.target) r ]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p,(plain.str.showValADL.apRight) p]
-                   | p <-take 10 . elems $ ps --max 10 rows
+                   | p <-take 10 . Set.elems $ ps --max 10 rows
                    ]

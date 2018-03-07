@@ -4,8 +4,8 @@
 module Ampersand.Output.ToJSON.Roles 
     (Roles)
 where
-
-import Ampersand.Output.ToJSON.JSONutils
+import           Ampersand.Output.ToJSON.JSONutils
+import qualified Data.Set as Set
 
 data Roles = Roles [RoleJson] deriving (Generic, Show)
 data RoleJson = RoleJson
@@ -25,7 +25,7 @@ instance JSON (Role,Int) RoleJson where
  fromAmpersand multi (role',i) = RoleJson
   { roleJSONid         = i
   , roleJSONname       = name role'
-  , roleJSONmaintains  = map name . elems .fMaintains     fSpec $ role'
+  , roleJSONmaintains  = map name . Set.elems .fMaintains     fSpec $ role'
   , roleJSONinterfaces = map (escapeIdentifier . name) . roleInterfaces fSpec $ role'
   }
    where fSpec = userFSpec multi

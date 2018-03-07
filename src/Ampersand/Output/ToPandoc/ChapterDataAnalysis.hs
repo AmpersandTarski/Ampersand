@@ -1,15 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
-import Ampersand.ADL1 hiding (Association)
-import Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
-import Ampersand.FSpec.Crud
-import Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
-import Ampersand.Graphic.Fspec2ClassDiagrams
--- import Ampersand.Output.PredLogic
-import Data.Char
-import Data.List
-import Data.Function (on)
+import           Ampersand.ADL1 hiding (Association)
+import           Ampersand.FSpec.Crud
+import           Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import           Ampersand.Graphic.Fspec2ClassDiagrams
+import           Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
+import           Data.Char
+import           Data.Function (on)
+import           Data.List
+import qualified Data.Set as Set
 import qualified Text.Pandoc.Builder
 
 ------------------------------------------------------------
@@ -128,7 +128,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
             <> fromList (maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c)
            , mempty
            ]
-         | c <- sortBy (compare `on` name) . filter keyFilter . delete ONE . elems $ concs fSpec
+         | c <- sortBy (compare `on` name) . filter keyFilter . delete ONE . Set.elems $ concs fSpec
          ]
      where
        keyFilter :: A_Concept -> Bool
@@ -352,7 +352,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                  [ header (sectionLevel+1) . text $ l title 
                  , para . text $ l intro
                  ] ++
-                 map (docRule heading) (elems rules)
+                 map (docRule heading) (Set.elems rules)
     
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat

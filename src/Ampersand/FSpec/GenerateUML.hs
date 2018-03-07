@@ -1,13 +1,14 @@
 module Ampersand.FSpec.GenerateUML (generateUML) where
 
-import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Relation)
-import Ampersand.Graphic.ClassDiagram
-import Ampersand.Graphic.Fspec2ClassDiagrams 
-import Ampersand.FSpec
-import Data.List
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Relation)
+import           Ampersand.FSpec
+import           Ampersand.Graphic.ClassDiagram
+import           Ampersand.Graphic.Fspec2ClassDiagrams 
+import           Control.Monad.State.Lazy  (State, gets, evalState, modify)
+import           Data.List
 import qualified Data.Map as Map
-import Control.Monad.State.Lazy  (State, gets, evalState, modify)
+import qualified Data.Set as Set
 
 -- TODO: escape
 -- TODO: names of model, package, assoc (empty?), etc.
@@ -212,8 +213,8 @@ instance Meaning Req where
 
 requirements :: FSpec -> [Req]
 requirements fSpec
-   = map decl2req (elems $ vrels  fSpec) 
-   ++map rule2req (elems $ vrules fSpec)
+   = map decl2req (Set.elems $ vrels  fSpec) 
+   ++map rule2req (Set.elems $ vrules fSpec)
   where
     decl2req d = Req { reqId = name d
                      , reqOrig = Right d

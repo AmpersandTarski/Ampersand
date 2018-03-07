@@ -197,10 +197,10 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
             ) 
     dist dcls cptLists = 
        ( [ (t, declsInTable t) | t <- cptLists]
-       , [ d | d <- elems dcls, isNothing (conceptTableOf d)]
+       , [ d | d <- Set.elems dcls, isNothing (conceptTableOf d)]
        )
       where
-        declsInTable typ = [ dcl | dcl <- elems dcls
+        declsInTable typ = [ dcl | dcl <- Set.elems dcls
                            , case conceptTableOf dcl of
                                Nothing -> False
                                Just x  -> x `elem` tyCpts typ
@@ -270,5 +270,5 @@ typologies context =
    [Typology { tyroot = c
              , tyCpts = [c]
              } 
-   | c <- elems $ concs context >- concs (gens context)
+   | c <- Set.elems $ concs context Set.\\ concs (gens context)
    ]

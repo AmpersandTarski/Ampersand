@@ -44,7 +44,7 @@ makeFSpec opts context
                                    , role' <- rrRoles rr
                                    ] 
               , fRoleRuls    = nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
-                                   | rule <- elems $ allrules
+                                   | rule <- Set.elems $ allrules
                                    , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
@@ -88,9 +88,9 @@ makeFSpec opts context
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
               , allViolations  = [ (r,vs)
-                                 | r <- elems $ allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
+                                 | r <- Set.elems $ allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
-              , allExprs     = expressionsIn context `uni` expressionsIn allConjs
+              , allExprs     = expressionsIn context `Set.union` expressionsIn allConjs
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
@@ -119,9 +119,9 @@ makeFSpec opts context
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> AAtomPairs
      ruleviolations r = case formalExpression r of
-          EEqu{} -> (cra >- crc) `uni` (crc >- cra)
-          EInc{} -> cra >- crc
-          _      -> pairsinexpr (EDcV (sign (consequent r))) >- crc  --everything not in con
+          EEqu{} -> (cra Set.\\ crc) `Set.union` (crc Set.\\ cra)
+          EInc{} -> cra Set.\\ crc
+          _      -> pairsinexpr (EDcV (sign (consequent r))) Set.\\ crc  --everything not in con
           where cra = pairsinexpr (antecedent r)
                 crc = pairsinexpr (consequent r)
      conjunctViolations :: Conjunct -> AAtomPairs
@@ -134,7 +134,7 @@ makeFSpec opts context
        where
           enrichIfc :: Interface -> Interface
           enrichIfc ifc
-           = ifc{ ifcControls = makeIfcControls empty allConjs
+           = ifc{ ifcControls = makeIfcControls Set.empty allConjs
                 }
      fSpecRoleInterfaces :: Role -> [Interface]
      fSpecRoleInterfaces role' = filter (forThisRole role') fSpecAllInterfaces
@@ -158,12 +158,12 @@ makeFSpec opts context
        where populations = ctxpopus context++concatMap ptups (patterns context)       
      allConjs = makeAllConjs opts allrules
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
-     fSpecAllConjsPerRule = converse [ (conj, elems $ rc_orgRules conj) | conj <- allConjs ]
-     fSpecAllConjsPerDecl = converse [ (conj, elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
+     fSpecAllConjsPerRule = converse [ (conj, Set.elems $ rc_orgRules conj) | conj <- allConjs ]
+     fSpecAllConjsPerDecl = converse [ (conj, Set.elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = 
            converse [ (conj, nub $ smaller (source e) ++ smaller (target e)) 
                     | conj <- allConjs
-                    , e    <- elems . modifyablesByInsOrDel . rc_conjunct $ conj ]
+                    , e    <- Set.elems . modifyablesByInsOrDel . rc_conjunct $ conj ]
                where 
                  smaller :: A_Concept -> [A_Concept]
                  smaller cpt = nub $ cpt : smallerConcepts (gens context) cpt
@@ -184,8 +184,8 @@ makeFSpec opts context
          Identity     -> False
      calcProps :: Relation -> Relation
      calcProps d = d{decprps_calc = Just calculated}
-         where calculated = decprps d `uni` (if d `elem` totals then singleton Tot else empty)
-                                      `uni` (if d `elem` surjectives then singleton Sur else empty)
+         where calculated = decprps d `Set.union` (if d `elem` totals      then Set.singleton Tot else Set.empty)
+                                      `Set.union` (if d `elem` surjectives then Set.singleton Sur else Set.empty)
      calculatedDecls :: Relations
      calculatedDecls = Set.map calcProps (relsDefdIn context)
   -- determine relations that are total (as many as possible, but not necessarily all)
@@ -297,23 +297,23 @@ makeFSpec opts context
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal relations are excluded)
-     cRels = [     EDcD d  | d<-elems $ calculatedDecls, isTot d, not$decplug d] ++
-             [flp (EDcD d) | d<-elems $ calculatedDecls, not (isTot d) && isSur d, not$decplug d]
+     cRels = [     EDcD d  | d<-Set.elems $ calculatedDecls, isTot d, not$decplug d] ++
+             [flp (EDcD d) | d<-Set.elems $ calculatedDecls, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal relations are excluded)
-     dRels = [     EDcD d  | d<-elems $ calculatedDecls, isInj d, not$decplug d]++
-             [flp (EDcD d) | d<-elems $ calculatedDecls, not (isInj d) && isUni d, not$decplug d]
+     dRels = [     EDcD d  | d<-Set.elems $ calculatedDecls, isInj d, not$decplug d]++
+             [flp (EDcD d) | d<-Set.elems $ calculatedDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      --    Warshall's transitive closure algorithm, adapted for this purpose:
 --     clos1 :: [Expression] -> [[Expression]]
 --     clos1 xs
---      = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
+--      = foldl f [ [ x ] | x<-xs] (nub (map source xs) `Set.intersection` nub (map target xs))
 --        where
 --          f :: [[Expression]] -> A_Concept -> [[Expression]]
 --          f q x = q ++ [l ++ r | l <- q, x == target (last l),
---                                 r <- q, x == source (head r), null (l `isc` r)]
+--                                 r <- q, x == source (head r), null (l `Set.intersection` r)]
 
 --  Step 4: i) generate interfaces starting with INTERFACE concept: I[Concept]
 --          ii) generate interfaces starting with INTERFACE concepts: V[ONE*Concept]
@@ -333,7 +333,7 @@ makeFSpec opts context
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
             -- Each expression list represents a path from the origin of a box to the attribute.
-            -- 16 Aug 2011: (recur es) is applied once where es originates from (maxTotPaths `uni` maxInjPaths) both based on clos
+            -- 16 Aug 2011: (recur es) is applied once where es originates from (maxTotPaths `Set.union` maxInjPaths) both based on clos
             -- Interfaces for I[Concept] are generated only for concepts that have been analysed to be an entity.
             -- These concepts are collected in gPlugConcepts
             gPlugConcepts = [ c | InternalPlug plug@TblSQL{}<-genPlugs , (c,_)<-take 1 (cLkpTbl plug) ]
@@ -404,7 +404,7 @@ makeIfcControls :: Relations -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs
  = [ conj 
    | conj<-allConjs
-   , (not.null) (Set.map EDcD params `isc` primsMentionedIn (rc_conjunct conj))
+   , (not.null) (Set.map EDcD params `Set.intersection` primsMentionedIn (rc_conjunct conj))
    -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
    -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
    -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
@@ -432,7 +432,7 @@ tblcontents ci ps plug
      BinSQL{}    -> let expr = case dLkpTbl plug of
                                  [store] -> EDcD (rsDcl store)
                                  ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
-                    in [[(Just . apLeft) p,(Just . apRight) p] |p<-elems $ fullContents ci ps expr]
+                    in [[(Just . apLeft) p,(Just . apRight) p] |p<-Set.elems $ fullContents ci ps expr]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --attributes are assumed to be in the order kernel+other,
@@ -442,10 +442,10 @@ tblcontents ci ps plug
         case attributes plug of 
          []   -> fatal "no attributes in plug."
          f:fs -> (nub.transpose)
-                 ( map Just (elems cAtoms)
+                 ( map Just (Set.elems cAtoms)
                  : [case fExp of
-                       EDcI c -> [ if a `eleM` atomValuesOf ci ps c then Just a else Nothing | a<-elems $ cAtoms ]
-                       _      -> [ (lkp att a . fullContents ci ps) fExp | a<-elems $ cAtoms ]
+                       EDcI c -> [ if a `Set.member` atomValuesOf ci ps c then Just a else Nothing | a<-Set.elems $ cAtoms ]
+                       _      -> [ (lkp att a . fullContents ci ps) fExp | a<-Set.elems $ cAtoms ]
                    | att<-fs, let fExp=attExpr att
                    ]
                  )
@@ -453,7 +453,7 @@ tblcontents ci ps plug
                    cAtoms = (atomValuesOf ci ps. source . attExpr) f
                    lkp :: SqlAttribute -> AAtomValue -> AAtomPairs -> Maybe AAtomValue
                    lkp att a pairs
-                    = case [ p | p<-elems pairs, a==apLeft p ] of
+                    = case [ p | p<-Set.elems pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
                        ps' -> fatal . unlines $ 

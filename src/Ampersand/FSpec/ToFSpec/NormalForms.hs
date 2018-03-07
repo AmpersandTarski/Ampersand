@@ -1051,7 +1051,7 @@ delta sgn
  = EDcD Relation
               { decnm   = pack "Delta"
               , decsgn  = sgn
-              , decprps = empty
+              , decprps = Set.empty
               , decprps_calc = Nothing
               , decprL  = ""
               , decprM  = ""
@@ -1584,7 +1584,7 @@ makeAllConjs opts allRls =
   let conjExprs :: [(Expression, Rules)]
       conjExprs = map (\(a,b) -> (a,Set.fromList b)) 
                 . converse 
-                $ [ (rule, conjuncts opts rule) | rule <- elems allRls ]
+                $ [ (rule, conjuncts opts rule) | rule <- Set.elems allRls ]
       conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
                      , rc_orgRules   = rs
                      , rc_conjunct   = expr

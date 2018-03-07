@@ -44,51 +44,51 @@ type Expressions = Set.Set Expression
 primitives :: Expression -> Expressions
 primitives expr =
   case expr of
-    (EEqu (l,r)) -> primitives l `uni` primitives r
-    (EInc (l,r)) -> primitives l `uni` primitives r
-    (EIsc (l,r)) -> primitives l `uni` primitives r
-    (EUni (l,r)) -> primitives l `uni` primitives r
-    (EDif (l,r)) -> primitives l `uni` primitives r
-    (ELrs (l,r)) -> primitives l `uni` primitives r
-    (ERrs (l,r)) -> primitives l `uni` primitives r
-    (EDia (l,r)) -> primitives l `uni` primitives r
-    (ECps (l,r)) -> primitives l `uni` primitives r
-    (ERad (l,r)) -> primitives l `uni` primitives r
-    (EPrd (l,r)) -> primitives l `uni` primitives r
+    (EEqu (l,r)) -> primitives l `Set.union` primitives r
+    (EInc (l,r)) -> primitives l `Set.union` primitives r
+    (EIsc (l,r)) -> primitives l `Set.union` primitives r
+    (EUni (l,r)) -> primitives l `Set.union` primitives r
+    (EDif (l,r)) -> primitives l `Set.union` primitives r
+    (ELrs (l,r)) -> primitives l `Set.union` primitives r
+    (ERrs (l,r)) -> primitives l `Set.union` primitives r
+    (EDia (l,r)) -> primitives l `Set.union` primitives r
+    (ECps (l,r)) -> primitives l `Set.union` primitives r
+    (ERad (l,r)) -> primitives l `Set.union` primitives r
+    (EPrd (l,r)) -> primitives l `Set.union` primitives r
     (EKl0 e)     -> primitives e
     (EKl1 e)     -> primitives e
     (EFlp e)     -> primitives e
     (ECpl e)     -> primitives e
     (EBrk e)     -> primitives e
-    EDcD{}       -> singleton expr
-    EDcI{}       -> singleton expr
-    EEps{}       -> empty  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
-    EDcV{}       -> singleton expr
-    EMp1{}       -> singleton expr
+    EDcD{}       -> Set.singleton expr
+    EDcI{}       -> Set.singleton expr
+    EEps{}       -> Set.empty  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
+    EDcV{}       -> Set.singleton expr
+    EMp1{}       -> Set.singleton expr
 subExpressions :: Expression -> Expressions
 subExpressions expr = 
   case expr of
-    (EEqu (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (EInc (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (EIsc (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (EUni (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (EDif (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (ELrs (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (ERrs (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (EDia (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (ECps (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (ERad (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (EPrd (l,r)) -> singleton expr `uni` subExpressions l `uni` subExpressions r
-    (EKl0 e)     -> singleton expr `uni` subExpressions e
-    (EKl1 e)     -> singleton expr `uni` subExpressions e
-    (EFlp e)     -> singleton expr `uni` subExpressions e
-    (ECpl e)     -> singleton expr `uni` subExpressions e
-    (EBrk e)     -> singleton expr `uni` subExpressions e
-    EDcD{}       -> singleton expr
-    EDcI{}       -> singleton expr
-    EEps{}       -> singleton expr
-    EDcV{}       -> singleton expr
-    EMp1{}       -> singleton expr
+    (EEqu (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (EInc (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (EIsc (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (EUni (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (EDif (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (ELrs (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (ERrs (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (EDia (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (ECps (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (ERad (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (EPrd (l,r)) -> Set.singleton expr `Set.union` subExpressions l `Set.union` subExpressions r
+    (EKl0 e)     -> Set.singleton expr `Set.union` subExpressions e
+    (EKl1 e)     -> Set.singleton expr `Set.union` subExpressions e
+    (EFlp e)     -> Set.singleton expr `Set.union` subExpressions e
+    (ECpl e)     -> Set.singleton expr `Set.union` subExpressions e
+    (EBrk e)     -> Set.singleton expr `Set.union` subExpressions e
+    EDcD{}       -> Set.singleton expr
+    EDcI{}       -> Set.singleton expr
+    EEps{}       -> Set.singleton expr
+    EDcV{}       -> Set.singleton expr
+    EMp1{}       -> Set.singleton expr
 
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.

@@ -68,7 +68,7 @@ optList p = p `opt` []
 optSet :: Eq a => 
            AmpParser (Set.Set a)
         -> AmpParser (Set.Set a)
-optSet p = p `opt` empty
+optSet p = p `opt` Set.empty
 
 -- | Tries to apply the given parser and encapsulates the result in Maybe
 pMaybe :: AmpParser a           -- ^ The parser to apply

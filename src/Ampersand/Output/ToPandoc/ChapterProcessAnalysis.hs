@@ -2,8 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 where
-import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Data.List
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import           Data.List
+import qualified Data.Set as Set
 
 --DESCR -> the process analysis contains a section for each process in the fSpec
 -- If an Ampersand script contains no reference to any role whatsoever, a process analysis is meaningless.
@@ -130,5 +131,5 @@ chpProcessAnalysis fSpec
        ):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [(Inlines, [Blocks])]
-         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec (elems $ udefrules fproc) i seenConcepts seenRelations
+         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec (Set.elems $ udefrules fproc) i seenConcepts seenRelations
 

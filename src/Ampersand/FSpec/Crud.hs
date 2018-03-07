@@ -1,15 +1,14 @@
 module Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, getCrudObjectsForInterface, mkCrudInfo) where
 
-import Data.Function
-import Data.List
-import Data.Map (Map) 
+import           Ampersand.Basics
+import           Ampersand.Classes.ConceptStructure
+import           Ampersand.Classes.Relational
+import           Ampersand.Core.AbstractSyntaxTree
+import           Data.Function
+import           Data.List
 import qualified Data.Map as Map 
-import Ampersand.Basics
-import Ampersand.Classes.ConceptStructure
-import Ampersand.Classes.Relational
-import Ampersand.Core.AbstractSyntaxTree
-import Data.Maybe
-
+import           Data.Maybe
+import qualified Data.Set as Set
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
 
 -- NOTE: The definitions of the various CRUD aspects are still a bit quirky and will most-likely need refinement. 
@@ -41,15 +40,15 @@ getCrudObjectsForInterface crudInfo ifc =
 mkCrudInfo :: A_Concepts -> Relations -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
-  where allConcs = [ c | c <- elems allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
-        nonCrudConcpts = [ source d | d <- elems decls, isUni d && isSur d ] ++
-                         [ target d | d <- elems decls, isInj d && isTot d ]
+  where allConcs = [ c | c <- Set.elems allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
+        nonCrudConcpts = [ source d | d <- Set.elems decls, isUni d && isSur d ] ++
+                         [ target d | d <- Set.elems decls, isInj d && isTot d ]
         crudCncpts = allConcs \\ nonCrudConcpts
         
-        transSurjClosureMap :: Map A_Concept [A_Concept]
+        transSurjClosureMap :: Map.Map A_Concept [A_Concept]
         transSurjClosureMap = transClosureMap' . Map.fromListWith union $
-          [ (target d, [source d]) | d <- elems decls, isSur d ] ++ -- TODO: no isUni?
-          [ (source d, [target d]) | d <- elems decls, isTot d ]    -- TODO: no isInj?
+          [ (target d, [source d]) | d <- Set.elems decls, isSur d ] ++ -- TODO: no isUni?
+          [ (source d, [target d]) | d <- Set.elems decls, isTot d ]    -- TODO: no isInj?
           -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
         
         

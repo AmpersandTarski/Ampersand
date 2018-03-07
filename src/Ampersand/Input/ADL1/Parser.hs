@@ -242,7 +242,7 @@ pRelationDef = reorder <$> currPos
                        <*  optList (pOperator ".")
             where reorder pos' (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
                     let plug = bp1 || bp2
-                        props = prop `uni` fun
+                        props = prop `Set.union` fun
                     in P_Sgn nm sign props pragma meanings popu pos' plug
 
 --- RelationNew ::= 'RELATION' Varid Signature
@@ -250,7 +250,7 @@ pRelationNew :: AmpParser (String,P_Sign,Props)
 pRelationNew = (,,) <$  pKey "RELATION"
                     <*> pVarid
                     <*> pSign
-                    <*> return empty
+                    <*> return Set.empty
 
 --- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
 pRelationOld :: AmpParser (String,P_Sign,Props)
@@ -277,10 +277,10 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
                     | otherwise            = ps
                   -- add Uni and Inj if ps has neither Sym nor Asy
                   conv :: Props -> Props
-                  conv ps = ps `uni`
+                  conv ps = ps `Set.union`
                     if Sym `Set.member` ps && Asy `Set.member` ps 
                     then Set.fromList [Uni,Inj]
-                    else empty
+                    else Set.empty
 
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'

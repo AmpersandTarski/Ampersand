@@ -53,13 +53,13 @@ atomValuesOf ci pt c
      PlainConcept{}
          -> let smallerconcs = c:smallerConcepts (ctxiGens ci) c in
             Set.fromList $
-                 [apLeft p  | pop@ARelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- elems $ popps pop]
-               ++[apRight p | pop@ARelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- elems $ popps pop]
+                 [apLeft p  | pop@ARelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- Set.elems $ popps pop]
+               ++[apRight p | pop@ARelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- Set.elems $ popps pop]
                ++[a         | pop@ACptPopu{} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
 pairsOf :: ContextInfo -> [Population] -> Relation -> Map.Map AAtomValue AAtomValues
 pairsOf ci ps dcl
  = Map.unionsWith Set.union
-     [ Map.fromListWith Set.union [ (apLeft p,Set.singleton $ apRight p) | p<-elems $ popps pop]
+     [ Map.fromListWith Set.union [ (apLeft p,Set.singleton $ apRight p) | p<-Set.elems $ popps pop]
      | pop@ARelPopu{} <- ps
      , name dcl==name (popdcl pop)
      , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts (ctxiGens ci) (source dcl)
@@ -86,25 +86,25 @@ fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (
          EDif (l,r) -> differ (contents l) (contents r)
          -- The left residual l/r is defined by: for all x,y:  x(l/r)y  <=>  for all z in X, y r z implies x l z.
          ELrs (l,r) -> Map.fromListWith Set.union
-                       [(x,Set.singleton y) | x<-elems $ aVals (source l), y<-elems $ aVals (source r)
-                                , null (lkp y (contents r) >- lkp x (contents l))
+                       [(x,Set.singleton y) | x<-Set.elems $ aVals (source l), y<-Set.elems $ aVals (source r)
+                                , null (lkp y (contents r) Set.\\ lkp x (contents l))
                                 ]
          -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
          ERrs (l,r) -> Map.fromListWith Set.union
-                       [(x,Set.singleton y) | x<-elems $ aVals (target l), y<-elems $ aVals (target r)
-                                , null (lkp x (contents (EFlp l)) >- lkp y (contents (EFlp r)))
+                       [(x,Set.singleton y) | x<-Set.elems $ aVals (target l), y<-Set.elems $ aVals (target r)
+                                , null (lkp x (contents (EFlp l)) Set.\\ lkp y (contents (EFlp r)))
                                 ]
          EDia (l,r) -> Map.fromListWith Set.union
-                       [(x,Set.singleton y) | x <-elems $ aVals (source l), y <- elems $ aVals (target r)
-                                , null (lkp y (contents (EFlp r)) >- lkp x (contents l))
-                                , null (lkp x (contents l) >- lkp y (contents (EFlp r)))
+                       [(x,Set.singleton y) | x <-Set.elems $ aVals (source l), y <- Set.elems $ aVals (target r)
+                                , null (lkp y (contents (EFlp r)) Set.\\ lkp x (contents l))
+                                , null (lkp x (contents l) Set.\\ lkp y (contents (EFlp r)))
                                 ]
          ERad (l,r) -> Map.fromListWith Set.union
-                       [(x,Set.singleton y) | x<-elems $ aVals (source l), y<-elems $ aVals (target r)
-                                , null (aVals (target l) >- (lkp x (contents l) `uni` lkp y (contents (EFlp r))))
+                       [(x,Set.singleton y) | x<-Set.elems $ aVals (source l), y<-Set.elems $ aVals (target r)
+                                , null (aVals (target l) Set.\\ (lkp x (contents l) `Set.union` lkp y (contents (EFlp r))))
                                 ]
          EPrd (l,r) -> Map.fromList
-                       [ (a,Set.fromList cod) | a <- elems $ aVals (source l), let cod=elems $ aVals (target r), not (null cod) ]
+                       [ (a,Set.fromList cod) | a <- Set.elems $ aVals (source l), let cod=Set.elems $ aVals (target r), not (null cod) ]
          ECps (l,r) -> Map.fromListWith Set.union
                        [(x,Set.singleton y) | (x,xv)<-Map.toList (contents l), (y,yv)<-Map.toList flipr
                                 , (not. Set.null) (xv `Set.intersection` yv)
@@ -119,9 +119,9 @@ fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (
          ECpl x     -> contents (EDcV (sign x) .-. x)
          EBrk x     -> contents x
          EDcD dcl   -> pairsOf ci ps dcl
-         EDcI c     -> Map.fromList [(a, Set.singleton a) | a <- elems $ aVals c]
-         EEps i _   -> Map.fromList [(a, Set.singleton a) | a <- elems $ aVals i]
-         EDcV sgn   -> Map.fromList [(s, Set.fromList cod) | s <- elems $ aVals (source sgn), let cod=elems $ aVals (target sgn), not (null cod) ]
+         EDcI c     -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals c]
+         EEps i _   -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals i]
+         EDcV sgn   -> Map.fromList [(s, Set.fromList cod) | s <- Set.elems $ aVals (source sgn), let cod=Set.elems $ aVals (target sgn), not (null cod) ]
          EMp1 val c -> if name c == "SESSION" -- prevent populating SESSION with "_SESSION"
                           && show val == show "_SESSION"
                         then Map.empty

@@ -5,20 +5,21 @@ module Ampersand.FSpec.ToFSpec.Calc
             , quadsOfRules
             ) where
 
-import Ampersand.Basics
-import Data.List hiding (head)
-import Data.Monoid
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Classes
-import Ampersand.FSpec.FSpec
-import Ampersand.Core.ShowAStruct
-import Ampersand.FSpec.ToFSpec.NormalForms
-import Ampersand.Misc (Options(..))
-import Text.Pandoc.Builder
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.ToFSpec.NormalForms
+import           Ampersand.Misc (Options(..))
+import           Data.List hiding (head)
+import           Data.Monoid
+import qualified Data.Set as Set
+import           Text.Pandoc.Builder
 
 testConfluence :: A_Context -> Blocks
 testConfluence context
- = let tcss = [(expr,tcs) | expr<-elems $ expressionsIn context, let tcs=dfProofs expr, length tcs>1]
+ = let tcss = [(expr,tcs) | expr<-Set.elems $ expressionsIn context, let tcs=dfProofs expr, length tcs>1]
        sumt = sum (map (length.snd) tcss)
    in
    para ("Confluence analysis statistics from "<>(str.show.length.expressionsIn) context<>" expressions."<>linebreak)<>
@@ -40,7 +41,7 @@ deriveProofs opts context
                       "conjNF:   "<>str (showA (conjNF opts (formalExpression r)))<>linebreak<>
                       interText linebreak [ "     conj: "<>str (showA conj) | conj<-conjuncts opts r ]
                      )
-              | r<-elems $ allRules context]
+              | r<-Set.elems $ allRules context]
    
    where
 --    interText :: (Data.String.IsString a, Data.Monoid.Monoid a) => a -> [a] -> a
@@ -75,7 +76,7 @@ showPrf _  []                   = []
 
 quadsOfRules :: Options -> Rules -> [Quad]
 quadsOfRules opts rules 
-  = makeAllQuads (converse [ (conj, elems $ rc_orgRules conj) | conj <- makeAllConjs opts rules ])
+  = makeAllQuads (converse [ (conj, Set.elems $ rc_orgRules conj) | conj <- makeAllConjs opts rules ])
 
         -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
         -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
@@ -86,7 +87,7 @@ makeAllQuads conjsPerRule =
          , qRule    = rule
          , qConjuncts = conjs
          }
-  | (rule,conjs) <- conjsPerRule, d <-elems $ bindedRelationsIn rule
+  | (rule,conjs) <- conjsPerRule, d <-Set.elems $ bindedRelationsIn rule
   ]
   
    

@@ -16,11 +16,11 @@ import qualified Data.Set as Set
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
     OOclassdiagram { cdName  = "classification_"++name fSpec
-                   , classes = map classOf . elems . concs . vgens $ fSpec
+                   , classes = map classOf . Set.elems . concs . vgens $ fSpec
                    , assocs  = []
                    , aggrs   = []
                    , geners  = map OOGener . vgens $ fSpec
-                   , ooCpts  = elems . concs $ fSpec
+                   , ooCpts  = Set.elems . concs $ fSpec
                    }
 
  where
@@ -39,7 +39,7 @@ clAnalysis fSpec =
                        , attOptional = attNull att
                        }
     inKernel :: SqlAttribute -> Bool
-    inKernel att = null(Set.fromList [Uni,Inj,Sur]>-properties (attExpr att)) && not (isPropty att)
+    inKernel att = null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
     isPropty att = isProp (attExpr att)
 
 -- | This function, cdAnalysis, generates a conceptual data model.
@@ -51,13 +51,13 @@ cdAnalysis fSpec =
   OOclassdiagram { cdName  = "logical_"++name fSpec
                  , classes = map buildClass 
                            . filter cptIsShown
-                           . elems 
+                           . Set.elems 
                            . allConcepts $ fSpec
                  , assocs  = lefts assocsAndAggrs
                  , aggrs   = rights assocsAndAggrs
                  , geners  = map OOGener (vgens fSpec)
                  , ooCpts  = filter cptIsShown
-                           . elems 
+                           . Set.elems 
                            . allConcepts $ fSpec
                  }
 
@@ -90,14 +90,14 @@ cdAnalysis fSpec =
       attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
 
    ooAttr :: Expression -> CdAttribute
-   ooAttr r = OOAttr { attNm = (name . head . elems . bindedRelationsIn) r
+   ooAttr r = OOAttr { attNm = (name . head . Set.elems . bindedRelationsIn) r
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
    allDcls = vrels $ fSpec
    assocsAndAggrs = map decl2assocOrAggr 
                   . filter dclIsShown 
-                  . elems $ allDcls
+                  . Set.elems $ allDcls
      where
        dclIsShown :: Relation -> Bool
        dclIsShown d = 
@@ -110,7 +110,7 @@ cdAnalysis fSpec =
              )      
           where nodeConcepts = concatMap (tyCpts . typologyOf fSpec)
                              . filter cptIsShown
-                             . elems 
+                             . Set.elems 
                              . allConcepts $ fSpec
                             
 
@@ -128,7 +128,7 @@ cdAnalysis fSpec =
              , assrhr = name d
              , assmdcl = Just d
              }
-   attribDcls = [ d | d <- elems allDcls, isUni d || isInj d ]
+   attribDcls = [ d | d <- Set.elems allDcls, isUni d || isInj d ]
     
 
 -- | This function generates a technical data model.
@@ -214,7 +214,7 @@ tdAnalysis fSpec =
                     , asslhr = attName f
                     , assTgt = name . getConceptTableFor fSpec . target $ expr
                     , assrhm = mults expr
-                    , assrhr = case [name d | d<-elems $ bindedRelationsIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
+                    , assrhr = case [name d | d<-Set.elems $ bindedRelationsIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
                     , assmdcl = Nothing
                     }
 

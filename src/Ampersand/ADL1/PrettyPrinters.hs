@@ -2,7 +2,7 @@
 module Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
-import           Ampersand.Basics hiding (empty)
+import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           Data.Char (toUpper)

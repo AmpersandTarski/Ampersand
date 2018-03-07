@@ -101,9 +101,9 @@ checkPurposes ctx = let topLevelPurposes = ctxps ctx
 isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
-    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (elems $ concs ctx )
-    ExplRelation decl -> not (name decl `eleM` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
-    ExplRule nm -> nm `notElem` map name (elems $ udefrules ctx) 
+    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (Set.elems $ concs ctx )
+    ExplRelation decl -> not (name decl `Set.member` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
+    ExplRule nm -> nm `notElem` map name (Set.elems $ udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
@@ -151,7 +151,7 @@ checkDanglingRulesInRuleRoles ctx =
    case [mkDanglingRefError "Rule" nm (arPos rr)  
         | rr <- ctxrrules ctx
         , nm <- arRules rr
-        , nm `notElem` map name (elems $ allRules ctx)
+        , nm `notElem` map name (Set.elems $ allRules ctx)
         ] of
      [] -> return ()
      x:xs -> Errors (x NEL.:| xs)
@@ -167,7 +167,7 @@ checkOtherAtomsInSessionConcept ctx =
         [ mkOtherTupleInSessionError d pr
         | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
         , name src == "SESSION" || name tgt == "SESSION"
-        , pr <- elems ps
+        , pr <- Set.elems ps
         , (name src == "SESSION" && not (_isPermittedSessionValue (apLeft pr)))
           ||
           (name tgt == "SESSION" && not (_isPermittedSessionValue (apRight pr)))
@@ -311,7 +311,7 @@ pCtx2aCtx opts
     allReprs = p_representations++concatMap pt_Reprs p_patterns
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
-     = do let connectedConcepts = connect [] (map (elems . concs) gns)
+     = do let connectedConcepts = connect [] (map (Set.elems . concs) gns)
           typeMap <- mkTypeMap connectedConcepts allReprs
           let findR :: A_Concept -> TType
               findR cpt = fromMaybe
@@ -419,7 +419,7 @@ pCtx2aCtx opts
                         Isa{} -> gengen g == genspc g
                         IsE{} -> genrhs g == [genspc g]
                isInvolved :: A_Gen -> Bool
-               isInvolved gn = not . null $ concs gn `isc` Set.fromList cs
+               isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
     
 {-
@@ -486,11 +486,11 @@ pCtx2aCtx opts
        , decsgn = if decsgn r1 == decsgn r2 
                  then decsgn r1 
                  else fatal $ "Accumulated relations must have the same signature!"
-      , decprps = decprps r1 `uni` decprps r2
+      , decprps = decprps r1 `Set.union` decprps r2
       , decprps_calc = case (decprps_calc r1,decprps_calc r2) of
                          (x, Nothing)         -> x
                          (Nothing, x)         -> x
-                         (Just ps1, Just ps2) -> Just (ps1 `uni` ps2)
+                         (Just ps1, Just ps2) -> Just (ps1 `Set.union` ps2)
       , decprL = decprL r1  --ignored for r2
       , decprM = decprM r1  --ignored for r2
       , decprR = decprR r1  --ignored for r2
@@ -540,8 +540,8 @@ pCtx2aCtx opts
                     = pure ()
         | Set.null xs
                     = pure ()
-        | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (elems xs)
-       where xs = Set.fromList [Prop,Sym,Asy,Trn,Rfx,Irf] `isc` dec_prps pd
+        | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (Set.elems xs)
+       where xs = Set.fromList [Prop,Sym,Asy,Trn,Rfx,Irf] `Set.intersection` dec_prps pd
     pGen2aGen :: P_Gen -> A_Gen
     pGen2aGen pg =
       case pg of
