@@ -257,10 +257,14 @@ pCtx2aCtx opts
       let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
             where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
       pats        <- traverse (pPat2aPat declMap contextInfo) p_patterns            --  The patterns defined in this context
+      uniqueNames pats
       rules       <- traverse (pRul2aRul declMap n1) p_rules       --  All user defined rules in this context, but outside patterns
+      uniqueNames rules
       identdefs   <- traverse (pIdentity2aIdentity declMap) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       viewdefs    <- traverse (pViewDef2aViewDef declMap) p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
+      uniqueNames viewdefs
       interfaces  <- traverse (pIfc2aIfc declMap) (p_interfaceAndDisambObjs declMap)   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
+      uniqueNames interfaces
       purposes    <- traverse (pPurp2aPurp declMap) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop declMap contextInfo) p_pops --  [Population]
       sqldefs     <- traverse (pObjDef2aObjDef declMap) p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script 
@@ -297,10 +301,6 @@ pCtx2aCtx opts
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx      -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
-      uniqueNames (elems $ udefrules actx)   -- Check uniquene names of: rules,
-      uniqueNames (patterns  actx)   --                          patterns,
-      uniqueNames (ctxvs     actx)   --                          view defs,
-      uniqueNames (ctxifcs   actx)   --                          and interfaces.
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
