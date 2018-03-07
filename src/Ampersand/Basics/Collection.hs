@@ -2,7 +2,6 @@ module Ampersand.Basics.Collection
   (  Collection (..)
   )where
 import           Ampersand.Basics.Prelude
-import           Data.List(nub)
 import qualified Data.Set as Set
 ----------------------------------------------
 ---- Collection of type a --------------------
@@ -17,7 +16,7 @@ class Collection a where
  elems :: Eq b => a b -> [b]
  singleton :: b -> a b
 
-instance Collection [] where -- TODO Vervangen door 'Collection Set.Set' en fouten één voor één oplossen
+{-instance Collection [] where -- TODO Vervangen door 'Collection Set.Set' en fouten één voor één oplossen
  eleM         = elem
  xs `uni` ys  = nub xs++(ys>-xs)
  xs `isc` ys  = [y | y<-nub ys, y `Set.member` Set.fromList xs]
@@ -25,7 +24,7 @@ instance Collection [] where -- TODO Vervangen door 'Collection Set.Set' en fout
  empty        = []
  elems        = nub
  singleton e  = [e]
-
+-}
 instance Collection Set.Set where
  eleM      = Set.member
  uni       = Set.union

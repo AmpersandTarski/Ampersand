@@ -941,7 +941,7 @@ pCtx2aCtx opts
     
     pPat2aPat :: DeclMap -> ContextInfo -> P_Pattern -> Guarded Pattern
     pPat2aPat declMap contextInfo ppat
-     = f <$> traverse (pRul2aRul declMap (name ppat)) (elems $ pt_rls ppat)
+     = f <$> traverse (pRul2aRul declMap (name ppat)) (pt_rls ppat)
          <*> traverse (pIdentity2aIdentity declMap) (pt_ids ppat) 
          <*> traverse (pPop2aPop declMap contextInfo) (pt_pop ppat)
          <*> traverse (pViewDef2aViewDef declMap) (pt_vds ppat) 

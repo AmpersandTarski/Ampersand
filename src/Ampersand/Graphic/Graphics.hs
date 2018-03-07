@@ -141,8 +141,9 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         --  extended with a limited number of more general concepts;
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTCDPattern pat ->
-          let orphans = [c | c<-elems cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
-              xrels = nub [r | c<-orphans, r<-elems $ vrels fSpec
+          let orphans = [c | c<-elems cpts, not(c `elem` concs idgs || c `elem` concs rels)]
+              xrels = Set.fromList 
+                        [r | c<-orphans, r<-elems $ vrels fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
@@ -150,10 +151,10 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               gs   = fsisa fSpec
               cpts = cpts' `uni` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
               cpts' = concs pat `uni` concs rels
-              rels = filter (not . isProp) . elems . bindedRelationsIn $ pat
+              rels = Set.fromList . filter (not . isProp) . elems . bindedRelationsIn $ pat
           in
-          CStruct { csCpts = elems cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
-                  , csRels = rels `uni` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
+          CStruct { csCpts = elems $ cpts' `uni` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+                  , csRels = elems $ rels  `uni` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
 
@@ -277,7 +278,7 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
                 }
        where
         cpts = elems $ Set.fromList cpts' `uni` concs rels `uni` concs idgs
-        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<-elems cpts]
+        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<- cpts]
         (relationNodes,relationEdges) = (concat a, concat b)
               where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
         isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge opts | (s,g)<-idgs]
