@@ -3,14 +3,15 @@ module Ampersand.FSpec.ToFSpec.ADL2Plug
   ,typologies
   ,suitableAsKey)
 where
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
-import Ampersand.Misc
-import Data.Maybe
-import Data.Char
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
+import           Ampersand.Misc
+import           Data.Char
+import           Data.Maybe
+import qualified Data.Set as Set
 
 makeGeneratedSqlPlugs :: Options -> A_Context 
               -> (Relation -> Relation) -- Function to add calculated properties to a relation
@@ -22,7 +23,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
-    calculatedDecls = (map calcProps .filter (not . decplug) . relsDefdIn) context 
+    calculatedDecls :: Relations
+    calculatedDecls = Set.map calcProps . relsDefdIn $ context 
     (conceptTableParts, linkTableParts) = dist calculatedDecls (typologies context)
     makeConceptTable :: (Typology, [Relation]) -> PlugSQL
     makeConceptTable (typ , dcls) = 
@@ -187,7 +189,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
     -- | dist will distribute the relations amongst the sets of concepts. 
     --   Preconditions: The sets of concepts are supposed to be sets of 
     --                  concepts that are to be represented in a single table. 
-    dist :: [Relation]   -- all relations that are to be distributed
+    dist :: Relations   -- all relations that are to be distributed
          -> [Typology]   -- the sets of concepts, each one contains all concepts that will go into a single table.
          -> ( [(Typology, [Relation])]  -- tuples of a set of concepts and all relations that can be
                                               -- stored into that table. The order of concepts is not modified.
@@ -195,11 +197,14 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
             ) 
     dist dcls cptLists = 
        ( [ (t, declsInTable t) | t <- cptLists]
-       , [ d | d <- dcls, isNothing (conceptTableOf d)]
+       , [ d | d <- Set.elems dcls, isNothing (conceptTableOf d)]
        )
       where
-        declsInTable typ = [ dcl | dcl <- dcls
-                            , not . null $ maybeToList (conceptTableOf dcl) `isc` tyCpts typ ]
+        declsInTable typ = [ dcl | dcl <- Set.elems dcls
+                           , case conceptTableOf dcl of
+                               Nothing -> False
+                               Just x  -> x `elem` tyCpts typ
+                           ]
         
         conceptTableOf :: Relation -> Maybe A_Concept
         conceptTableOf d = if sqlBinTables opts
@@ -264,4 +269,6 @@ typologies context =
    (multiKernels . ctxInfo $ context) ++ 
    [Typology { tyroot = c
              , tyCpts = [c]
-             } | c <- concs context >- concs (gens context)]
+             } 
+   | c <- Set.elems $ concs context Set.\\ concs (gens context)
+   ]

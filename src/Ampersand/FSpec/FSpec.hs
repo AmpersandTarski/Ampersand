@@ -30,21 +30,22 @@ module Ampersand.FSpec.FSpec
           , showSQL
       --    , module Ampersand.Classes
           ) where
-import Data.List
-import Data.Text (Text,unpack)
-import Data.Typeable
-import Ampersand.ADL1.Expression (notCpl)
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.Core.ParseTree
+import           Ampersand.ADL1.Expression (notCpl,Expressions)
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree
         ( Traced(..), Origin
         , Role
         , ConceptDef
         )
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec.Crud
-import Ampersand.Misc
-import Text.Pandoc.Builder (Blocks)
+import           Ampersand.FSpec.Crud
+import           Ampersand.Misc
+import           Data.List
+import qualified Data.Set as Set
+import           Data.Text (Text,unpack)
+import           Data.Typeable
+import           Text.Pandoc.Builder (Blocks)
 
 data MultiFSpecs = MultiFSpecs
                    { userFSpec :: FSpec        -- ^ The FSpec based on the user's script, potentionally extended with metadata.
@@ -63,18 +64,18 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
                    , fRoleRels ::    [(Role,Relation)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
-                   , fMaintains ::   Role -> [Rule]
+                   , fMaintains ::   Role -> Rules
                    , fRoles ::       [(Role,Int)]             -- ^ All roles mentioned in this context, numbered.
-                   , fallRules ::    [Rule]
-                   , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
-                   , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
-                   , invariants ::   [Rule]                   -- ^ All invariant rules
-                   , signals ::      [Rule]                   -- ^ All signal rules
-                   , allUsedDecls :: [Relation]            -- ^ All relations that are used in the fSpec
-                   , vrels ::        [Relation]            -- ^ All user defined and generated relations plus all defined and computed totals.
+                   , fallRules ::    Rules
+                   , vrules ::       Rules                   -- ^ All user defined rules that apply in the entire FSpec
+                   , grules ::       Rules                   -- ^ All rules that are generated: multiplicity rules and identity rules
+                   , invariants ::   Rules                   -- ^ All invariant rules
+                   , signals ::      Rules                   -- ^ All signal rules
+                   , allUsedDecls :: Relations            -- ^ All relations that are used in the fSpec
+                   , vrels ::        Relations            -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and
                                                               --   one relation for each signal.
-                   , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
+                   , allConcepts ::  A_Concepts              -- ^ All concepts in the fSpec
                    , cptTType :: A_Concept -> TType 
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
@@ -94,17 +95,17 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
                    , crudInfo ::     CrudInfo                 -- ^ Information for CRUD matrices 
                --    , popsOfCptWithoutSmaller :: A_Concept -> [Population]  -- ^ All user defined populations of an A_concept, WITHOUT the populations of smaller A_Concepts
-                   , atomsInCptIncludingSmaller :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
-                   , atomsBySmallestConcept :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_Concept, where a population is NOT listed iff it also is in a smaller A_Concept.
+                   , atomsInCptIncludingSmaller :: A_Concept -> AAtomValues -- ^ All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
+                   , atomsBySmallestConcept :: A_Concept -> AAtomValues -- ^ All user defined populations of an A_Concept, where a population is NOT listed iff it also is in a smaller A_Concept.
                    , tableContents :: PlugSQL -> [[Maybe AAtomValue]] -- ^ tableContents is meant to compute the contents of an entity table.
                                                                       --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than String.
                                                                       -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
                                                                       -- HJO 2016-09-05: Answer: Broad tables may contain rows where some of the attributes implement a relation that is UNI, but not TOT. In such case,
                                                                       --                         we may see empty attributes. (NULL values in database terminology)
-                   , pairsInExpr :: Expression -> [AAtomPair]   
-                   , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
-                   , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
-                   , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
+                   , pairsInExpr :: Expression -> AAtomPairs   
+                   , initialConjunctSignals :: [(Conjunct,AAtomPairs)] -- ^ All conjuncts that have process-rule violations.
+                   , allViolations ::  [(Rule,AAtomPairs)]   -- ^ All invariant rules with violations.
+                   , allExprs ::     Expressions             -- ^ All expressions in the fSpec
                    , fcontextInfo   :: ContextInfo 
                    , ftypologies   :: [Typology]
                    , typologyOf :: A_Concept -> Typology
@@ -310,7 +311,7 @@ instance Unique (PlugSQL,SqlAttribute) where
 instance Ord SqlAttribute where
   compare x y = compare (attName x) (attName y)
 instance ConceptStructure SqlAttribute where
-  concs     f = [target e' |let e'=attExpr f,isSur e']
+  concs     f = Set.fromList [target e' |let e'=attExpr f,isSur e']
   expressionsIn   f = expressionsIn   (attExpr f)
 
 isPrimaryKey :: SqlAttribute -> Bool

@@ -2,8 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
-import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Data.List (intersperse )
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import           Data.List (intersperse )
+import qualified Data.Set as Set
 
 chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])
 chpConceptualAnalysis lev fSpec = (
@@ -48,11 +49,11 @@ chpConceptualAnalysis lev fSpec = (
                    <> header (lev+3) "Declared relations"
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
-      <> definitionList (map caRelation (vrels fSpec))
+      <> definitionList (map caRelation (Set.elems $ vrels fSpec))
      
   pictures = map pictOfPat (vpatterns fSpec)
-          ++ map pictOfConcept (concs fSpec)
-          ++ map pictOfRule (vrules fSpec)
+          ++ map pictOfConcept (Set.elems $ concs fSpec)
+          ++ map pictOfRule (Set.elems $ vrules fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
   pictOfPat ::  Pattern ->  Picture
@@ -78,7 +79,7 @@ chpConceptualAnalysis lev fSpec = (
         ) <>
     (
         -- now provide the text of this pattern.
-       case map caRule (invariants fSpec `isc` udefrules pat) of
+       case map caRule . Set.elems $ invariants fSpec `Set.intersection` udefrules pat of
          []     -> mempty
          blocks -> (case fsLang fSpec of
                       Dutch   -> header (lev+3) "Regels"
@@ -111,9 +112,9 @@ chpConceptualAnalysis lev fSpec = (
                                        langs -> plain (str ("(No meaning has been specified, except in "++langs++")"))
                     ms -> fromList ms
               ])
-  ukadjs d  = case [Uni,Tot]>-properties d of
-               [] -> commaEng "and" (map ukadj (properties d>-[Uni,Tot]))++" function"
-               _  -> commaEng "and" (map ukadj (properties d))++" relation"
+  ukadjs d  = if Uni `Set.member` (properties d) && Tot `Set.member` (properties d)
+              then commaEng "and" (map ukadj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
+              else commaEng "and" (map ukadj . Set.elems $ (properties d))++" relation"
    where
     ukadj Uni = "univalent"
     ukadj Inj = "injective"
@@ -125,9 +126,9 @@ chpConceptualAnalysis lev fSpec = (
     ukadj Rfx = "reflexive"
     ukadj Irf = "irreflexive"
     ukadj Prop = "symmetric and antisymmetric"
-  nladjs d = case [Uni,Tot]>-properties d of
-               [] -> commaNL "en" (map nladj (properties d>-[Uni,Tot]))++" functie"
-               _  -> commaNL "en" (map nladj (properties d))++" relatie"
+  nladjs d = if Uni `Set.member` (properties d) && Tot `Set.member` (properties d)
+             then commaNL "en" (map nladj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])++" functie"
+             else commaNL "en" (map nladj . Set.elems $ properties d)++" relatie"
    where
     nladj Uni = "univalente"
     nladj Inj = "injectieve"
@@ -162,7 +163,7 @@ chpConceptualAnalysis lev fSpec = (
                     <> mconcat (intersperse  (str ", ")
                                 [   xRef (XRefConceptualAnalysisRelation d)
                                  <> text (" ("++name d++")")
-                                | d<-bindedRelationsIn r])
+                                | d<-Set.elems $ bindedRelationsIn r])
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
                    )

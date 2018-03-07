@@ -23,29 +23,28 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , plainText
     , sortWith)
 where
-import Ampersand.Basics as X
-import Ampersand.Core.ParseTree as X
-     ( Role
-     )
-import Ampersand.Core.AbstractSyntaxTree as X hiding (Meta)
-import Ampersand.Core.ShowAStruct as X
-import Ampersand.ADL1 as X hiding (Meta)
-import Ampersand.Classes as X
-import Ampersand.FSpec as X
-import Text.Pandoc as X
-import Text.Pandoc.Builder hiding (bulletList,math)
-import qualified Text.Pandoc.Builder as  BuggyBuilder
-import Ampersand.Misc as X
-import Ampersand.Output.PandocAux as X
-import Data.List      --       (intercalate,partition)
-import Data.Monoid as X
-import Data.Maybe
-import Data.Ord
-import Data.Typeable
+import           Ampersand.Basics as X 
+import           Ampersand.Core.AbstractSyntaxTree as X hiding (Meta)
+import           Ampersand.Core.ParseTree as X ( Role)
+import           Ampersand.Core.ShowAStruct as X
+import           Ampersand.ADL1 as X hiding (Meta)
+import           Ampersand.Classes as X
+import           Ampersand.FSpec as X
+import           Ampersand.Graphic.Graphics as X
+import           Ampersand.Misc as X
+import           Ampersand.Output.PandocAux as X
+import           Data.List      --       (intercalate,partition)
+import           Data.Maybe
+import           Data.Monoid as X
+import           Data.Ord
+import qualified Data.Set as Set
 import qualified Data.Time.Format as DTF
-import GHC.Exts(sortWith)
-import Ampersand.Graphic.Graphics as X
-import System.FilePath  -- (combine,addExtension,replaceExtension)
+import           Data.Typeable
+import           GHC.Exts(sortWith)
+import           System.FilePath  -- (combine,addExtension,replaceExtension)
+import           Text.Pandoc as X
+import           Text.Pandoc.Builder hiding (bulletList,math)
+import qualified Text.Pandoc.Builder as  BuggyBuilder
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]
@@ -315,7 +314,7 @@ data RuleCont = CRul { cRul ::  Rule
 data DeclCont = CDcl { cDcl ::  Relation
                      , cDclPurps :: [Purpose]
                      , cDclMeaning :: Maybe Markup
-                     , cDclPairs :: [AAtomPair]
+                     , cDclPairs :: AAtomPairs
                      }
 data CptCont  = CCpt { cCpt ::  A_Concept
                      , cCptDefs :: [ConceptDef]
@@ -338,9 +337,9 @@ data Counters
 orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec
  = f ( Counter 1 1 1 --the initial numbers of the countes
-     , (sortWith origin . filter rulMustBeShown . fallRules)  fSpec
-     , (sortWith origin . filter relMustBeShown . relsDefdIn) fSpec 
-     , (sortBy conceptOrder . filter cptMustBeShown . concs)  fSpec
+     , (sortWith origin . filter rulMustBeShown . Set.elems . fallRules)  fSpec
+     , (sortWith origin . filter relMustBeShown . Set.elems . relsDefdIn) fSpec 
+     , (sortBy conceptOrder . filter cptMustBeShown . Set.elems . concs)  fSpec
      ) $
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
      ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
@@ -442,17 +441,17 @@ orderingByTheme fSpec
      where
        (thmRuls,restRuls) = partition (inThisTheme ptrls) ruls
        (themeDcls,restDcls) = partition (inThisTheme relsInTheme) rels
-          where relsInTheme p = relsDefdIn p `uni` bindedRelationsIn p
+          where relsInTheme p = relsDefdIn p `Set.union` bindedRelationsIn p
        (themeCpts,restCpts) = partition (inThisTheme concs) cpts
-       inThisTheme :: Eq a => (Pattern -> [a]) -> a -> Bool
+       inThisTheme :: Eq a => (Pattern -> Set.Set a) -> a -> Bool
        inThisTheme allElemsOf x
          = case mPat of
              Nothing  -> True
              Just pat -> x `elem` allElemsOf pat
 
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
-dpRule' :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Relation]
-          -> ([(Inlines, [Blocks])], Int, [A_Concept], [Relation])
+dpRule' :: FSpec -> [Rule] -> Int -> A_Concepts -> Relations
+          -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
 dpRule' fSpec = dpR
  where
    l lstr = text $ localize (fsLang fSpec) lstr
@@ -469,8 +468,8 @@ dpRule' fSpec = dpR
         theBlocks :: Blocks
         theBlocks =
             purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-         <> purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
-         <> case (nds, fsLang fSpec) of
+         <> purposes2Blocks (getOpts fSpec) [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
+         <> case (Set.elems nds, fsLang fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
              ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
@@ -478,9 +477,9 @@ dpRule' fSpec = dpR
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
              (_  ,English) -> plain ("To arrive at the formalization of "   <> xRef (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
-         <> (bulletList . map (plain . showRef) $ nds)
-         <> (case nds of
-              [] -> case rds of
+         <> (bulletList . map (plain . showRef) . Set.elems $ nds)
+         <> (if null nds
+             then case Set.elems rds of
                        []   -> mempty
                        [rd] -> plain (  l (NL "Om dit te formalizeren maken we gebruik van relatie "
                                           ,EN "We use relation ")
@@ -489,8 +488,8 @@ dpRule' fSpec = dpR
                                      )
                        _    ->    plain (  l (NL "Dit formaliseren we door gebruik te maken van de volgende relaties: "
                                              ,EN "We formalize this using relations "))
-                               <> (bulletList  . map (plain . showRef) $ rds)
-              _  -> case rds of
+                               <> (bulletList  . map (plain . showRef) . Set.elems $ rds)
+             else case Set.elems rds of
                        []   -> mempty
                        [rd] -> plain (  l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
                                       <> showRef rd 
@@ -503,7 +502,7 @@ dpRule' fSpec = dpR
                                       <> l (NL " te formaliseren, gebruiken we daarnaast ook de relaties: "
                                            ,EN " we also use relations ")
                                      ) <>
-                               (bulletList  . map (plain . showRef) $ rds)
+                               (bulletList  . map (plain . showRef) . Set.elems $ rds)
            )
          <> plain (if isSignal r
                    then l ( NL "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "
@@ -522,12 +521,12 @@ dpRule' fSpec = dpR
         showRef :: Relation -> Inlines
         showRef dcl = xRef (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . showRel) dcl <> ")"
         
-        ncs = concs r >- seenConcs            -- newly seen concepts
-        cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
+        ncs = concs r Set.\\ seenConcs            -- newly seen concepts
+        cds = [(c,cd) | c<-Set.elems ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = bindedRelationsIn r
-        nds = ds >- seenRelations     -- newly seen relations
-        rds = ds `isc` seenRelations  -- previously seen relations
-        ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenRelations)
+        nds = ds Set.\\ seenRelations     -- newly seen relations
+        rds = ds `Set.intersection` seenRelations  -- previously seen relations
+        ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `Set.union` seenConcs) (nds `Set.union` seenRelations)
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
 purposes2Blocks opts ps
