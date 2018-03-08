@@ -215,5 +215,5 @@ Test-Suite ampersand-test
   ghc-options:       -Wall -threaded
   default-extensions:NoImplicitPrelude
   build-depends:     ampersand,
-                     base == 4.9.*
+                     base == 4.10.*
 
