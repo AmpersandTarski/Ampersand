@@ -205,19 +205,30 @@ class ExecEngine extends RuleEngine
             }, $params);
             
             $functionName = trim(array_shift($params)); // first parameter is function name
+            $callable = self::getFunction($functionName);
+            try {
+                $logger->info("{$functionName}(" . implode(',', $params) . ")");
+                call_user_func_array($callable, $params);
             
-            if (array_key_exists($functionName, self::$callables)) {
-                try {
-                    $logger->info("{$functionName}(" . implode(',', $params) . ")");
-                    call_user_func_array(self::$callables[$functionName], $params);
-                
-                // Catch exceptions from ExecEngine functions and log to user
-                } catch (Exception $e) {
-                    Logger::getUserLogger()->error("{$functionName}: {$e->getMessage()}");
-                }
-            } else {
-                throw new Exception("Function '{$functionName}' does not exist. Register ExecEngine function.", 500);
+            // Catch exceptions from ExecEngine functions and log to user
+            } catch (Exception $e) {
+                Logger::getUserLogger()->error("{$functionName}: {$e->getMessage()}");
             }
+        }
+    }
+
+    /**
+     * Get registered ExecEngine function
+     *
+     * @param string $functionName
+     * @return callable
+     */
+    public static function getFunction(string $functionName): callable
+    {
+        if (array_key_exists($functionName, self::$callables)) {
+            return self::$callables[$functionName];
+        } else {
+            throw new Exception("Function '{$functionName}' does not exist. Register ExecEngine function.", 500);
         }
     }
 
