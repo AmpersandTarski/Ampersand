@@ -22,11 +22,11 @@ angular.module('AmpersandApp')
                 
                 // Default settings for notificationPrefs
                 if($localStorage.notificationPrefs === undefined){
-                    $scope.resetNotificationSettings();
+                    service.resetNotificationSettings();
                 }
                 // Default setting for switchAutoSave
                 if($localStorage.switchAutoSave === undefined){
-                    $scope.resetSwitchAutoSave();
+                    service.resetSwitchAutoSave();
                 }
                 
                 // Update notifications
@@ -34,6 +34,14 @@ angular.module('AmpersandApp')
             }, function(error){
                 // on error
             });
+        },
+
+        resetNotificationSettings : function(){
+            $localStorage.notificationPrefs = angular.extend($localStorage.notificationPrefs, service.defaultSettings.notifications);
+        },
+
+        resetSwitchAutoSave : function(){
+            $localStorage.switchAutoSave = service.defaultSettings.switchAutoSave;
         }
     };
     

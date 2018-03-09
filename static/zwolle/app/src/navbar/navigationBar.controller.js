@@ -48,17 +48,9 @@ angular.module('AmpersandApp')
         
         $timeout(function() {
             // reset to default        
-            $scope.resetNotificationSettings();
-            $scope.resetSwitchAutoSave();
+            NavigationBarService.resetNotificationSettings();
+            NavigationBarService.resetSwitchAutoSave();
         }, 500);
-    };
-    
-    $scope.resetNotificationSettings = function(){
-        $scope.$storage.notificationPrefs = angular.extend($scope.$storage.notificationPrefs, $scope.defaultSettings.notifications);
-    };
-    
-    $scope.resetSwitchAutoSave = function(){
-        $scope.$storage.switchAutoSave = $scope.defaultSettings.switchAutoSave;
     };
     
     $scope.loadingNavBar.push(NavigationBarService.refreshNavBar());

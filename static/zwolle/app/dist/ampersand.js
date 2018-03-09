@@ -87,6 +87,30 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     };
 }]);
 
+angular.module('uiSwitch', [])
+
+.directive('switch', function(){
+  return {
+    restrict: 'AE'
+  , replace: true
+  , transclude: true
+  , template: function(element, attrs) {
+      var html = '';
+      html += '<a href=""';
+      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
+      html += '>';
+      html += '<span';
+      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
+      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
+      html +=   '>';
+      html +=   '<small></small>';
+      html += '</span>';
+      html += '<span ng-transclude></span>';
+      html += '</a>';
+      return html;
+    }
+  }
+});
 // Controller for extension app in navigation bar
 angular.module('AmpersandApp')
 .controller('ExecEngineController', ["$scope", "Restangular", "NotificationService", function ($scope, Restangular, NotificationService) {
@@ -125,30 +149,6 @@ angular.module('AmpersandApp')
     };
 }]);
 
-angular.module('uiSwitch', [])
-
-.directive('switch', function(){
-  return {
-    restrict: 'AE'
-  , replace: true
-  , transclude: true
-  , template: function(element, attrs) {
-      var html = '';
-      html += '<a href=""';
-      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
-      html += '>';
-      html += '<span';
-      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
-      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
-      html +=   '>';
-      html +=   '<small></small>';
-      html += '</span>';
-      html += '<span ng-transclude></span>';
-      html += '</a>';
-      return html;
-    }
-  }
-});
 var app = angular.module('AmpersandApp');
 app.requires[app.requires.length] = 'angularFileUpload'; // add angularFileUpload to dependency list
 app.config(["$routeProvider", function($routeProvider) {
@@ -933,17 +933,9 @@ angular.module('AmpersandApp')
         
         $timeout(function() {
             // reset to default        
-            $scope.resetNotificationSettings();
-            $scope.resetSwitchAutoSave();
+            NavigationBarService.resetNotificationSettings();
+            NavigationBarService.resetSwitchAutoSave();
         }, 500);
-    };
-    
-    $scope.resetNotificationSettings = function(){
-        $scope.$storage.notificationPrefs = angular.extend($scope.$storage.notificationPrefs, $scope.defaultSettings.notifications);
-    };
-    
-    $scope.resetSwitchAutoSave = function(){
-        $scope.$storage.switchAutoSave = $scope.defaultSettings.switchAutoSave;
     };
     
     $scope.loadingNavBar.push(NavigationBarService.refreshNavBar());
@@ -973,11 +965,11 @@ angular.module('AmpersandApp')
                 
                 // Default settings for notificationPrefs
                 if($localStorage.notificationPrefs === undefined){
-                    $scope.resetNotificationSettings();
+                    service.resetNotificationSettings();
                 }
                 // Default setting for switchAutoSave
                 if($localStorage.switchAutoSave === undefined){
-                    $scope.resetSwitchAutoSave();
+                    service.resetSwitchAutoSave();
                 }
                 
                 // Update notifications
@@ -985,6 +977,14 @@ angular.module('AmpersandApp')
             }, function(error){
                 // on error
             });
+        },
+
+        resetNotificationSettings : function(){
+            $localStorage.notificationPrefs = angular.extend($localStorage.notificationPrefs, service.defaultSettings.notifications);
+        },
+
+        resetSwitchAutoSave : function(){
+            $localStorage.switchAutoSave = service.defaultSettings.switchAutoSave;
         }
     };
     
@@ -1211,16 +1211,6 @@ angular.module('AmpersandApp')
 }]);
 
 angular.module('AmpersandApp')
-.value('cgBusyDefaults',{
-    message:'Loading...',
-    backdrop: true,
-    //templateUrl: 'my_custom_template.html',
-    //delay: 500, // in ms
-    minDuration: 500, // in ms
-    // wrapperClass: 'my-class my-class2'
-});
-
-angular.module('AmpersandApp')
 .directive('myNavToInterfaces', function(){
     return {
         restrict : 'E',
@@ -1239,6 +1229,16 @@ angular.module('AmpersandApp')
     };
 });
 
+angular.module('AmpersandApp')
+.value('cgBusyDefaults',{
+    message:'Loading...',
+    backdrop: true,
+    //templateUrl: 'my_custom_template.html',
+    //delay: 500, // in ms
+    minDuration: 500, // in ms
+    // wrapperClass: 'my-class my-class2'
+});
+
 angular.module('AmpersandApp').run(['$templateCache', function($templateCache) {$templateCache.put('app/src/admin/check-rules-menu-item.html','<a ng-click="checkAllRules()"><span class="glyphicon glyphicon-check"></span><span> (Re)evaluate all rules</span></a>');
 $templateCache.put('app/src/admin/execengine-menu-item.html','<a ng-controller="ExecEngineController" href="" ng-click="run()">\r\n\t<span class="glyphicon glyphicon-cog"></span><span> Run execution engine</span>\r\n</a>');
 $templateCache.put('app/src/admin/exporter-menu-item.html','<a ng-href="api/v1/admin/export/all">\r\n    <span class="glyphicon glyphicon-download"></span><span> Population export</span>\r\n</a>');
@@ -1250,7 +1250,7 @@ $templateCache.put('app/src/navbar/navigationBar.html','<nav class="navbar navba
 $templateCache.put('app/src/notifications/notificationCenter.html','<div class="container-fluid">\r\n    <div id="notificationCenter" ng-controller="NotificationCenterController">\r\n        \r\n        <div id="infos" ng-show="localStorage.notificationPrefs.switchShowInfos">\r\n            <div class="alert alert-info alert-dismissible" role="alert" ng-repeat="info in notifications.infos">\r\n                <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.infos, $index);"><span aria-hidden="true">&times;</span></button>\r\n                <span class="glyphicon glyphicon-info-sign"></span><span> {{info.message}}</span>\r\n            </div>\r\n        </div>\r\n        \r\n        <div id="warnings" ng-show="localStorage.notificationPrefs.switchShowWarnings">\r\n            <div class="alert alert-warning alert-dismissible" role="alert" ng-repeat="warning in notifications.warnings">\r\n                <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.warnings, $index);"><span aria-hidden="true">&times;</span></button>\r\n                <span class="glyphicon glyphicon-warning-sign"></span><span> {{warning.message}}</span>\r\n                <span class="badge pull-right" ng-show="warning.count > 1">{{warning.count}}</span>\r\n            </div>\r\n        </div>\r\n        \r\n        <div id="errors" ng-show="localStorage.notificationPrefs.switchShowErrors">\r\n            <div class="panel panel-danger" id="error-panel-{{key}}" ng-repeat="(key, error) in notifications.errors">\r\n                <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#error-body-{{key}}">\r\n                    <div class="text-left">\r\n                        <span class="glyphicon glyphicon-exclamation-sign"></span> <span ng-bind-html="error.message | unsafe"></span>\r\n                        <button type="button" class="close" data-target="#error-panel-{{key}}" data-dismiss="alert" aria-label="Dismiss" ng-click="closeAlert(notifications.errors, $index);">\r\n                            <span aria-hidden="true">&times;</span>\r\n                        </button>\r\n                        <span class="badge pull-right" ng-show="error.count > 1">{{error.count}}</span>\r\n                    </div>\r\n                </div>\r\n                <div class="panel-body collapse" id="error-body-{{key}}">\r\n                    <div ng-if="error.details" ng-bind-html="error.details | unsafe"></div>\r\n                </div>\r\n            </div>\r\n        </div>\r\n        \r\n        <div id="invariants" ng-show="localStorage.notificationPrefs.switchShowInvariants">\r\n            <div class="panel panel-danger" ng-repeat="(key, val) in notifications.invariants">\r\n                <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#invariant-{{key}}">\r\n                    <div class="text-left" style="display:flex; align-items:center;">\r\n                        <span class="glyphicon glyphicon-warning-sign"></span>\r\n                        <div marked="val.ruleMessage" style="display:inline-block; margin: 0px 10px;"></div> <!-- uses angular-marked directive -->\r\n                        <span class="badge" style="margin-left:auto;">{{val.tuples.length}}</span>\r\n                    </div>\r\n                </div>\r\n                <ul class="list-group collapse" id="invariant-{{key}}">\r\n                    <li class="list-group-item" ng-repeat="tuple in val.tuples track by $index">\r\n                        <span>{{tuple.violationMessage}}</span>\r\n                    </li>\r\n                </ul>\r\n            </div>\r\n        </div>\r\n                    \r\n        <div id="signals" ng-show="localStorage.notificationPrefs.switchShowSignals">\r\n            <div class="panel panel-warning" ng-repeat="(key, val) in notifications.signals">\r\n                <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">\r\n                    <div class="text-left" style="display:flex; align-items:center;">\r\n                        <span class="glyphicon glyphicon-warning-sign"></span>\r\n                        <div marked="val.message" style="display:inline-block; margin: 0px 10px;"></div> <!-- uses angular-marked directive -->\r\n                        <span class="badge" style="margin-left:auto;">{{val.violations.length}}</span>\r\n                    </div>\r\n                </div>\r\n                <ul class="list-group collapse" id="violation-{{key}}">\r\n                    <li class="dropdown list-group-item" ng-repeat="violation in val.violations track by $index">\r\n                        <div ng-if="violation.ifcs.length > 1">\r\n                            <a href="" class="dropdown-toggle" data-toggle="dropdown">{{violation.message}}</a>\r\n                            <ul class="dropdown-menu" role="menu">\r\n                                <li ng-repeat="ifc in violation.ifcs">\r\n                                    <a ng-href="{{ifc.link}}" data-toggle="collapse" data-target="#violation-{{key}}"><small>View</small> {{ifc.label}}</a>\r\n                                </li>\r\n                            </ul>\r\n                        </div>\r\n                        <a ng-if="violation.ifcs.length == 1" ng-href="{{violation.ifcs[0].link}}" data-toggle="collapse" data-target="#violation-{{key}}">{{violation.message}}</a>\r\n                        <span ng-if="violation.ifcs.length == 0">{{violation.message}}</span>\r\n                    </li>\r\n                </ul>\r\n            </div>\r\n        </div>\r\n        \r\n        <!-- Success notifications must be last in notifications center because of position:absolute -->\r\n        <div id="successes" ng-show="localStorage.notificationPrefs.switchShowSuccesses">\r\n            <div class="alert alert-success alert-dismissible" role="alert" ng-repeat="success in notifications.successes">\r\n                <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.successes, $index);"><span aria-hidden="true">&times;</span></button>\r\n                <span class="glyphicon glyphicon-ok-sign"></span><span> {{success.message}}</span>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</div>');
 $templateCache.put('app/src/shared/404.html','<!-- 404 page -->\r\n<div class="container-fluid" id="Interface">\r\n    <div class="row">\r\n        <div class="col-md-4">\r\n            <h1>404 Page not found</h1>\r\n            <p>The requested page does not exists.</p>\r\n            <p><a class="btn btn-primary btn-lg" href="#/" role="button">Goto startpage</a></p>\r\n        </div>\r\n        <div>\r\n            <img src="app/images/404-image.png">\r\n        </div>\r\n    </div>\r\n</div>');
 $templateCache.put('app/src/shared/home.html','<!-- Home screen -->\r\n<div class="container-fluid" id="Interface">\r\n    <div class="jumbotron">\r\n        <h1>Hello, world!</h1>\r\n        <p>You\'ve successfully generated your Ampersand prototype.</p>\r\n        <p><a class="btn btn-primary btn-lg" href="https://ampersandtarski.gitbooks.io/documentation" target="_blank" role="button">See our documentation &raquo;</a></p>\r\n    </div>\r\n</div>\r\n');
-$templateCache.put('app/src/shared/loading/loading.html','<img src="app/images/loading.gif" alt="Loading..." style="height:20px;"/>');
 $templateCache.put('app/src/shared/myNavTo/myNavToInterfaces.html','<div ng-if="resource._ifcs_.length > 1" style="position:relative; display:inline-block;">\r\n    <a class="dropdown-toggle" data-toggle="dropdown"><ng-transclude></ng-transclude></a>\r\n    <ul class="dropdown-menu" role="menu">\r\n        <li ng-repeat="ifc in resource._ifcs_">\r\n            <a ng-href="#/{{ifc.id}}/{{resource._id_}}" target="{{target}}">{{ifc.label}}</a>\r\n        </li>\r\n    </ul>\r\n</div>\r\n<a ng-if="resource._ifcs_.length == 1" ng-href="#/{{resource._ifcs_[0].id}}/{{resource._id_}}" target="{{target}}"><ng-transclude></ng-transclude></a>\r\n<span ng-if="resource._ifcs_.length == 0 || resource._ifcs_ == undefined"><ng-transclude></ng-transclude></span>');
-$templateCache.put('app/src/shared/myNavTo/myNavToOtherInterfaces.html','<!-- Only when ifcs has more than 1 interface, otherwise, the user is already there -->\r\n<!-- This menu includes the interface where the user currently is -->\r\n<div ng-if="resource._ifcs_.length > 1" style="position:relative;">\r\n    <button type="button" class="btn btn-sm dropdown-toggle" data-toggle="dropdown">\r\n        <span class="glyphicon glyphicon-menu-hamburger"></span>\r\n    </button>\r\n    <ul class="dropdown-menu dropdown-menu-right" role="menu">\r\n        <li ng-repeat="ifc in resource._ifcs_">\r\n            <a ng-href="#/{{ifc.id}}/{{resource._id_}}" target="{{target}}">{{ifc.label}}</a>\r\n        </li>\r\n    </ul>\r\n</div>');}]);
+$templateCache.put('app/src/shared/myNavTo/myNavToOtherInterfaces.html','<!-- Only when ifcs has more than 1 interface, otherwise, the user is already there -->\r\n<!-- This menu includes the interface where the user currently is -->\r\n<div ng-if="resource._ifcs_.length > 1" style="position:relative;">\r\n    <button type="button" class="btn btn-sm dropdown-toggle" data-toggle="dropdown">\r\n        <span class="glyphicon glyphicon-menu-hamburger"></span>\r\n    </button>\r\n    <ul class="dropdown-menu dropdown-menu-right" role="menu">\r\n        <li ng-repeat="ifc in resource._ifcs_">\r\n            <a ng-href="#/{{ifc.id}}/{{resource._id_}}" target="{{target}}">{{ifc.label}}</a>\r\n        </li>\r\n    </ul>\r\n</div>');
+$templateCache.put('app/src/shared/loading/loading.html','<img src="app/images/loading.gif" alt="Loading..." style="height:20px;"/>');}]);
 //# sourceMappingURL=ampersand.js.map
