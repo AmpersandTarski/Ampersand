@@ -240,7 +240,7 @@ ExecEngine::registerFunction('DelAtom', function ($concept, $atomId) use ($execE
         $atom = new Atom($atomId, Concept::getConceptByLabel($concept));
     }
     
-    $atom->deleteAtom(); // delete atom + all pairs shared with other atoms
+    $atom->delete(); // delete atom + all pairs shared with other atoms
     $execEngineLogger->debug("Atom '{$atom}' deleted");
 });
 
