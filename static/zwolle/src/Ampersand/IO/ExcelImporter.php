@@ -187,7 +187,7 @@ class ExcelImporter
         foreach ($worksheet->getRowIterator() as $row) {
             /** @var \PHPExcel_Worksheet_Row $row */
             $rowNr = $row->getRowIndex();
-            $cellvalue = $worksheet->getCell('A'. $rowNr)->getValue();
+            $cellvalue = $worksheet->getCell('A'. $rowNr)->getCalculatedValue();
 
             // Import block is indicated by '[]' brackets in cell Ax
             if (substr(trim($cellvalue), 0, 1) === '[') {
@@ -226,7 +226,7 @@ class ExcelImporter
             if ($i === 1) {
                 foreach ($row->getCellIterator() as $cell) {
                     /** @var \PHPExcel_Cell $cell */
-                    $line1[$cell->getColumn()] = trim((string) $cell->getValue()); // no leading/trailing spaces allowed
+                    $line1[$cell->getColumn()] = trim((string) $cell->getCalculatedValue()); // no leading/trailing spaces allowed
                 }
             } // Header line 2 specifies concept names
             elseif ($i === 2) {
@@ -234,7 +234,7 @@ class ExcelImporter
                     /** @var \PHPExcel_Cell $cell */
                     
                     $col = $cell->getColumn();
-                    $line2[$col] = trim((string) $cell->getValue()); // no leading/trailing spaces allowed
+                    $line2[$col] = trim((string) $cell->getCalculatedValue()); // no leading/trailing spaces allowed
                 
                     // Import header can be determined now using line 1 and line 2
                     if ($col === 'A') {
