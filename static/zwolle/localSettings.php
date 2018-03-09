@@ -4,6 +4,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Misc\Config;
 use Ampersand\Plugs\MysqlDB\MysqlDB;
+// use Ampersand\Rule\ExecEngine;
 
 define ('LOCALSETTINGS_VERSION', 1.6);
 
@@ -20,7 +21,7 @@ ini_set("display_errors", false);
  *************************************************************************************************/
 set_time_limit (30);
 
-//Config::set('debugMode', 'global', true); // production mode = false
+//Config::set('debugMode', 'global', true); // default mode = false
 
 // Log file handler
 $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/error.log', 0, \Monolog\Logger::DEBUG);
