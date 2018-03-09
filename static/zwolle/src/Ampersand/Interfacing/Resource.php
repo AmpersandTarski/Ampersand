@@ -314,7 +314,7 @@ class Resource extends Atom
             }
             
             // Prevent infinite loops for reference interfaces when no depth is provided
-            // We only need to check LINKTO ref interfaces, because cycles may not exists in regular references (enforced by Ampersand generator)
+            // We only need to check LINKTO ref interfaces, because cycles may not exist in regular references (enforced by Ampersand generator)
             // If $depth is provided, no check is required, because recursion is finite
             if ($parentIfc->isLinkTo() && is_null($depth)) {
                 if (in_array($this->id, $recursionArr[$parentIfc->getRefToIfcId()])) {

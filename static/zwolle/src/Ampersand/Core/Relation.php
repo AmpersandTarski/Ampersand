@@ -258,7 +258,7 @@ class Relation
         $this->logger->debug("Add link {$link} to plug");
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation and transaction management
         
-        // Ensure that atoms exists in their concept tables
+        // Ensure that atoms exist in their concept tables
         $link->src()->add(); // TODO: remove when we know for sure that this is guaranteed by calling functions
         $link->tgt()->add(); // TODO: remove when we know for sure that this is guaranteed by calling functions
         

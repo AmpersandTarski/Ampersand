@@ -216,7 +216,7 @@ class ExecEngine extends RuleEngine
                     Logger::getUserLogger()->error("{$functionName}: {$e->getMessage()}");
                 }
             } else {
-                throw new Exception("Function '{$functionName}' does not exists. Register ExecEngine function.", 500);
+                throw new Exception("Function '{$functionName}' does not exist. Register ExecEngine function.", 500);
             }
         }
     }

@@ -585,7 +585,7 @@ class Concept
             
             // Check if atom[A] exists. Otherwise it may not be added to concept B
             if (!$atom->exists()) {
-                throw new Exception("Cannot add {$atom} to concept {$this}, because atom does not exists", 500);
+                throw new Exception("Cannot add {$atom} to concept {$this}, because atom does not exist", 500);
             }
             
             $atom->concept = $this; // Change concept definition
@@ -607,10 +607,10 @@ class Concept
         
         // Check if concept is a specialization of another concept
         if (empty($this->directGens)) {
-            throw new Exception("Cannot remove {$atom} from concept {$this}, because no generalizations exists", 500);
+            throw new Exception("Cannot remove {$atom} from concept {$this}, because no generalizations exist", 500);
         }
         if (count($this->directGens) > 1) {
-            throw new Exception("Cannot remove {$atom} from concept {$this}, because multiple generalizations exists", 500);
+            throw new Exception("Cannot remove {$atom} from concept {$this}, because multiple generalizations exist", 500);
         }
         
         // Check if atom exists
@@ -629,7 +629,7 @@ class Concept
             // from relations where $this concept (or any of its specializations) is used as src or tgt concept
             Relation::deleteAllSpecializationLinks($atom);
         } else {
-            $this->logger->debug("Cannot remove atom {$atom} from {$this}, because atom does not exists");
+            $this->logger->debug("Cannot remove atom {$atom} from {$this}, because atom does not exist");
         }
     }
     
@@ -655,7 +655,7 @@ class Concept
             // Delete all links where $atom is used as src or tgt atom
             Relation::deleteAllLinksWithAtom($atom);
         } else {
-            $this->logger->debug("Cannot delete atom {$atom}, because it does not exists");
+            $this->logger->debug("Cannot delete atom {$atom}, because it does not exist");
         }
     }
 
@@ -689,10 +689,10 @@ class Concept
 
         // Check if left and right atoms exist
         if (!$leftAtom->exists()) {
-            throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because '{$leftAtom}' does not exists", 500);
+            throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because '{$leftAtom}' does not exist", 500);
         }
         if (!$rightAtom->exists()) {
-            throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because '{$rightAtom}' does not exists", 500);
+            throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because '{$rightAtom}' does not exist", 500);
         }
 
         // Merge step 1: if right atom is more specific, make left atom also more specific

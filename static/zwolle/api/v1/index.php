@@ -82,7 +82,7 @@ $apiContainer['errorHandler'] = function ($c) use ($container) {
                     break;
                 case 500:
                     $code = 500;
-                    $message = $debugMode ? $exception->getMessage() : "An error occured. Sorry for the temporary inconvenience";
+                    $message = $debugMode ? $exception->getMessage() : "An error occured (debug information in server log files)";
                     break;
                 default:
                     $code = $exception->getCode();
@@ -121,7 +121,7 @@ $apiContainer['phpErrorHandler'] = function ($c) {
 
             return $response->withJson(
                 [ 'error' => 500
-                , 'msg' => $debugMode ? $error->getMessage() : "An error occured. Sorry for the temporary inconvenience"
+                , 'msg' => $debugMode ? $error->getMessage() : "An error occured (debug information in server log files)"
                 , 'notifications' => Notifications::getAll()
                 , 'html' => $debugMode ? stackTrace($error) : "Please contact the application administrator for more information"
                 ],

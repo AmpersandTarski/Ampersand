@@ -91,13 +91,13 @@ class MysqlDBTable
      * Return col object with given column name
      *
      * @param string $colName
-     * @throws \Exception when col does not exists
+     * @throws \Exception when col does not exist
      * @return \Ampersand\Plugs\MysqlDB\MysqlDBTableCol
      */
     public function getCol(string $colName): MysqlDBTableCol
     {
         if (!array_key_exists($colName, $this->getCols())) {
-            throw new Exception("Col '{$colName}' does not exists in table '{$this->name}'", 500);
+            throw new Exception("Col '{$colName}' does not exist in table '{$this->name}'", 500);
         }
         return $this->getCols()[$colName];
     }

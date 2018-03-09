@@ -465,7 +465,7 @@ class InterfaceObject
     public function getSubinterface($ifcId)
     {
         if (!array_key_exists($ifcId, $subifcs = $this->getSubinterfaces())) {
-            throw new Exception("Subinterface '{$ifcId}' does not exists in interface '{$this->path}'", 500);
+            throw new Exception("Subinterface '{$ifcId}' does not exist in interface '{$this->path}'", 500);
         }
     
         return $subifcs[$ifcId];
@@ -483,7 +483,7 @@ class InterfaceObject
             }
         }
         
-        throw new Exception("Subinterface '{$ifcLabel}' does not exists in interface '{$this->path}'", 500);
+        throw new Exception("Subinterface '{$ifcLabel}' does not exist in interface '{$this->path}'", 500);
     }
     
     /**
@@ -574,7 +574,7 @@ class InterfaceObject
     /**
      * Returns toplevel interface object
      * @param string $ifcId
-     * @throws Exception when interface does not exists
+     * @throws Exception when interface does not exist
      * @return InterfaceObject
      */
     public static function getInterface($ifcId)
