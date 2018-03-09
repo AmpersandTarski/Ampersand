@@ -17,6 +17,12 @@ chpGlossary _ fSpec
                English ->
                  [ plain "term", plain "definition", plain "source"]
           )
+<<<<<<< HEAD
           [ [ plain . str . name $ c, plain . str . cddef $ cd, plain . str . cdref $ cd]
-          | c<-sortWith name . Set.elems $ concs fSpec, cd<-concDefs fSpec c
+          | c<-sortWith name (concs fSpec), cd<-concDefs fSpec c
           ]
+=======
+          [ [ [Plain [(Str . name)  c]], [Plain [(Str . cddef) cd]], [Plain [(Str . cdref) cd]]]
+          | c<-Set.elems $ concs fSpec, cd<-concDefs fSpec c
+          ]]
+>>>>>>> development

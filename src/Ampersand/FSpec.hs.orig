@@ -1,5 +1,7 @@
+<<<<<<< HEAD
 module Ampersand.FSpec
    ( module Ampersand.FSpec.FSpec
+   , module Ampersand.Basics
    , module Ampersand.FSpec.ShowHS
    , module Ampersand.FSpec.ToFSpec.Calc
    , module Ampersand.FSpec.ToFSpec.ADL2FSpec
@@ -9,7 +11,14 @@ module Ampersand.FSpec
    )
 where
 import Ampersand.FSpec.FSpec
+import Ampersand.Basics (fatal, Collection(..), Named(..))
 import Ampersand.FSpec.ShowHS
+=======
+module Ampersand.FSpec (module X) where
+import Ampersand.FSpec.FSpec as X
+import Ampersand.Basics as X (fatal, Named(..))
+import Ampersand.FSpec.ShowHS as X
+>>>>>>> development
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import Ampersand.FSpec.ToFSpec.Calc (showProof, showPrf)
 import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)

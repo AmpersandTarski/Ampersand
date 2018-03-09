@@ -24,6 +24,7 @@ import           Control.Monad
 import qualified Data.ByteString.Lazy as L
 import           Data.Function (on)
 import           Data.List
+import qualified Data.Set as Set
 import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
 import           Data.Maybe (maybeToList)
 import           System.Directory
@@ -169,7 +170,7 @@ generateAmpersandOutput multi = do
        )++
        maybeToList (fmap ruleTest (testRule opts))
 
-    where violationsOfInvariants :: [(Rule,[AAtomPair])]
+    where violationsOfInvariants :: [(Rule,AAtomPairs)]
           violationsOfInvariants
             = [(r,vs) |(r,vs) <- allViolations fSpec
                       , not (isSignal r)
@@ -183,7 +184,7 @@ generateAmpersandOutput multi = do
                         , "TOT objExpression[ObjectDef*Expression]"
                         ]
                 else False
-          reportViolations :: [(Rule,[AAtomPair])] -> IO()
+          reportViolations :: [(Rule,AAtomPairs)] -> IO()
           reportViolations []    = verboseLn opts "No violations found."
           reportViolations viols =
             let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
@@ -193,20 +194,20 @@ generateAmpersandOutput multi = do
                              | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                              ]
 
-          showprs :: [AAtomPair] -> String
-          showprs aprs = "["++intercalate ", " (map showA aprs)++"]"
+          showprs :: AAtomPairs -> String
+          showprs aprs = "["++intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
    --       showpr :: AAtomPair -> String
    --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
           reportSignals []        = verboseLn opts "No signals for the initial population."
           reportSignals conjViols = verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
-            [   "Rule(s): "++(show . map name . rc_orgRules) conj
+            [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
             ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
             ++"\n  Violations : " ++ showprs viols
             | (conj, viols) <- conjViols
             ]
           ruleTest :: String -> IO ()
           ruleTest ruleName =
-           case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
+           case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of
              [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
              (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
                             ; putStrLn $ showContents rule
@@ -217,7 +218,7 @@ generateAmpersandOutput multi = do
                             }
            where showContents rule = "[" ++ intercalate ", " pairs ++ "]"
                    where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 
-                                 | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
+                                 | (r,vs) <- allViolations fSpec, r == rule, v <- Set.elems vs]
                                
    
    

@@ -2,20 +2,21 @@ module Ampersand.Classes.Relational
    (Relational(..)
    ) where
 
-import Data.Maybe
-import Ampersand.Core.ParseTree(Prop(..))
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.ADL1.Expression
-import Ampersand.Basics
+import           Ampersand.ADL1.Expression
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree(Prop(..),Props)
+import           Data.Maybe
+import qualified Data.Set as Set
 
 class Association r => Relational r where
-    properties :: r -> [Prop]
+    properties :: r -> Props
     isProp :: r -> Bool  -- > tells whether the argument is a property
     isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-
     isTrue :: r -> Bool  -- > tells whether the argument is equivalent to V
     isFalse :: r -> Bool  -- > tells whether the argument is equivalent to V-
     isFunction :: r -> Bool
-    isFunction r   = null ([Uni,Tot]>-properties r)
+    isFunction r   = null (Set.fromList [Uni,Tot]Set.\\properties r)
     isTot :: r -> Bool  --
     isTot r = Tot `elem` properties r
     isUni :: r -> Bool  --
@@ -51,7 +52,7 @@ class Association r => Relational r where
 --                                ++[Trn | isEndo rel]
 --           I{}                 -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
 --    isProp rel = case rel of
---           Rel{}               -> null ([Asy,Sym]>-properties (reldcl rel))
+--           Rel{}               -> null ([Asy,Sym]Set.\\properties (reldcl rel))
 --           V{}                 -> isEndo rel && isSingleton (source rel)
 --           I{}                 -> True
 --    isImin rel  = isImin (makeRelation rel)   -- > tells whether the argument is equivalent to I-
@@ -67,7 +68,7 @@ class Association r => Relational r where
 
 instance Relational Relation where
     properties d = fromMaybe (decprps d) (decprps_calc d)
-    isProp d = null ([Asy,Sym]>-properties d)
+    isProp d = Asy `Set.member` properties d && Sym `Set.member` properties d
     isImin _ = False  -- LET OP: Dit kan natuurlijk niet goed zijn, maar is gedetecteerd bij revision 913, toen straffeloos de Iscompl{} kon worden verwijderd.
     isTrue _ = False
     isFalse _ = False
@@ -85,9 +86,10 @@ isSingleton _   = False
 instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
  properties expr = case expr of
      EDcD dcl   -> properties dcl
-     EDcI{}     -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-     EEps a sgn -> [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
-     EDcV sgn   -> [Tot]
+     EDcI{}     -> Set.fromList [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
+     EEps a sgn -> Set.fromList $ [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
+     EDcV sgn   -> Set.fromList $ 
+                   [Tot]
                  ++[Sur]
                  ++[Inj | isSingleton (source sgn)]
                  ++[Uni | isSingleton (target sgn)]
@@ -96,14 +98,15 @@ instance Relational Expression where        -- TODO: see if we can find more mul
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
      EBrk f     -> properties f
-     ECps (l,r) -> [m | m<-properties l `isc` properties r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are properties (TODO)
-     EPrd (l,r) -> [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
-     EKl0 e'    -> [Rfx,Trn] `uni` (properties e'>-[Uni,Inj])
-     EKl1 e'    -> [    Trn] `uni` (properties e'>-[Uni,Inj])
-     ECpl e'    -> [p |p<-properties e', p==Sym]
-     EFlp e'    -> [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- properties e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
-     EMp1{}     -> [Uni,Inj,Sym,Asy,Trn]
-     _          -> []
+     ECps (l,r) -> Set.fromList $ [m | m<-Set.elems (properties l `Set.intersection` properties r)
+                                  , m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are properties (TODO)
+     EPrd (l,r) -> Set.fromList $ [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
+     EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
+     EKl1 e'    -> Set.singleton Trn `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
+     ECpl e'    -> Set.singleton Sym `Set.intersection` properties e'
+     EFlp e'    -> Set.fromList [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- Set.elems $ properties e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
+     EMp1{}     -> Set.fromList [Uni,Inj,Sym,Asy,Trn]
+     _          -> Set.empty
 
  -- |  isTrue e == True   means that e is true, i.e. the population of e is (source e * target e).
  --    isTrue e == False  does not mean anything.
@@ -115,8 +118,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) -> isTrue l && isTrue r
      EUni (l,r) -> isTrue l || isTrue r
      EDif (l,r) -> isTrue l && isFalse r
-     ECps (l,r) | null ([Uni,Tot]>-properties l) -> isTrue r
-                | null ([Sur,Inj]>-properties r) -> isTrue l
+     ECps (l,r) | Uni `Set.member` properties l && Tot `Set.member` properties l -> isTrue r
+                | Sur `Set.member` properties r && Sur `Set.member` properties r -> isTrue l
                 | otherwise                          -> isTrue l && isTrue r
      EPrd (l,r) -> isTrue l && isTrue r || isTot l && isSur r || isRfx l && isRfx r
      EKl0 e     -> isTrue e
@@ -153,7 +156,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EBrk e     -> isFalse e
      _          -> False  -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
- isProp expr = null ([Asy,Sym]>-properties expr)
+ isProp expr = Asy `Set.member` properties expr && Sym `Set.member` properties expr
 
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
  --    It does a little bit more than just test on ERel I _.

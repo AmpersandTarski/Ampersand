@@ -101,9 +101,9 @@ checkPurposes ctx = let topLevelPurposes = ctxps ctx
 isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
-    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (concs ctx )
-    ExplRelation decl -> let nm = name decl in nm `notElem` map name (relsDefdIn ctx) -- is already covered by type checker
-    ExplRule nm -> nm `notElem` map name (udefrules ctx) 
+    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (Set.elems $ concs ctx )
+    ExplRelation decl -> not (name decl `Set.member` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
+    ExplRule nm -> nm `notElem` map name (Set.elems $ udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
@@ -151,7 +151,7 @@ checkDanglingRulesInRuleRoles ctx =
    case [mkDanglingRefError "Rule" nm (arPos rr)  
         | rr <- ctxrrules ctx
         , nm <- arRules rr
-        , nm `notElem` map name (allRules ctx)
+        , nm `notElem` map name (Set.elems $ allRules ctx)
         ] of
      [] -> return ()
      x:xs -> Errors (x NEL.:| xs)
@@ -167,7 +167,7 @@ checkOtherAtomsInSessionConcept ctx =
         [ mkOtherTupleInSessionError d pr
         | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
         , name src == "SESSION" || name tgt == "SESSION"
-        , pr <- ps
+        , pr <- Set.elems ps
         , (name src == "SESSION" && not (_isPermittedSessionValue (apLeft pr)))
           ||
           (name tgt == "SESSION" && not (_isPermittedSessionValue (apRight pr)))
@@ -257,10 +257,14 @@ pCtx2aCtx opts
       let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
             where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
       pats        <- traverse (pPat2aPat declMap contextInfo) p_patterns            --  The patterns defined in this context
+      uniqueNames pats
       rules       <- traverse (pRul2aRul declMap n1) p_rules       --  All user defined rules in this context, but outside patterns
+      uniqueNames rules
       identdefs   <- traverse (pIdentity2aIdentity declMap) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       viewdefs    <- traverse (pViewDef2aViewDef declMap) p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
+      uniqueNames viewdefs
       interfaces  <- traverse (pIfc2aIfc declMap) (p_interfaceAndDisambObjs declMap)   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
+      uniqueNames interfaces
       purposes    <- traverse (pPurp2aPurp declMap) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop declMap contextInfo) p_pops --  [Population]
       sqldefs     <- traverse (pObjDef2aObjDef declMap) p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script 
@@ -274,8 +278,8 @@ pCtx2aCtx opts
                      , ctxlang = deflangCtxt
                      , ctxmarkup = deffrmtCtxt
                      , ctxpats = pats
-                     , ctxrs = rules
-                     , ctxds = map fst declsAndPops
+                     , ctxrs = Set.fromList $ rules
+                     , ctxds = Set.fromList $ map fst declsAndPops
                      , ctxpopus = Set.toList (Set.union (Set.fromList udpops) (Set.fromList (map snd declsAndPops)))
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
@@ -297,10 +301,6 @@ pCtx2aCtx opts
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx      -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
-      uniqueNames (udefrules actx)   -- Check uniquene names of: rules,
-      uniqueNames (patterns  actx)   --                          patterns,
-      uniqueNames (ctxvs     actx)   --                          view defs,
-      uniqueNames (ctxifcs   actx)   --                          and interfaces.
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
@@ -311,7 +311,7 @@ pCtx2aCtx opts
     allReprs = p_representations++concatMap pt_Reprs p_patterns
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
-     = do let connectedConcepts = connect [] (map concs gns)
+     = do let connectedConcepts = connect [] (map (Set.elems . concs) gns)
           typeMap <- mkTypeMap connectedConcepts allReprs
           let findR :: A_Concept -> TType
               findR cpt = fromMaybe
@@ -330,7 +330,7 @@ pCtx2aCtx opts
           mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept , TType)]
           mkTypeMap groups reprs 
             = f <$> traverse typeOfGroup groups
-                <*> traverse typeOfSingle (conceptsOfReprs >- conceptsOfGroups)
+                <*> traverse typeOfSingle [c | c <- conceptsOfReprs, c `notElem` conceptsOfGroups]
             where 
               f :: [[(A_Concept,TType)]] -> [Maybe (A_Concept,TType,[Origin])] -> [(A_Concept , TType)]
               f typesOfGroups typesOfOthers
@@ -381,9 +381,10 @@ pCtx2aCtx opts
                     (t,rest) = g x xs 
                     g a as = case partition (hasConceptsOf a) as of
                               (_,[])   -> (a,as)
-                              (hs',hs) -> g (foldr uni a hs) hs'
+                              (hs',hs) -> g (nub $ a ++ concat hs) hs'
                     hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool
-                    hasConceptsOf a = null . isc a
+                    hasConceptsOf a b = and [ x' `notElem` b | x' <- a]
+                                             
                           
           mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs = 
@@ -418,7 +419,7 @@ pCtx2aCtx opts
                         Isa{} -> gengen g == genspc g
                         IsE{} -> genrhs g == [genspc g]
                isInvolved :: A_Gen -> Bool
-               isInvolved gn = not . null $ concs gn `isc` cs
+               isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
     
 {-
@@ -485,11 +486,11 @@ pCtx2aCtx opts
        , decsgn = if decsgn r1 == decsgn r2 
                  then decsgn r1 
                  else fatal $ "Accumulated relations must have the same signature!"
-      , decprps = decprps r1 `uni` decprps r2
+      , decprps = decprps r1 `Set.union` decprps r2
       , decprps_calc = case (decprps_calc r1,decprps_calc r2) of
                          (x, Nothing)         -> x
                          (Nothing, x)         -> x
-                         (Just ps1, Just ps2) -> Just (ps1 `uni` ps2)
+                         (Just ps1, Just ps2) -> Just (ps1 `Set.union` ps2)
       , decprL = decprL r1  --ignored for r2
       , decprM = decprM r1  --ignored for r2
       , decprR = decprR r1  --ignored for r2
@@ -526,7 +527,7 @@ pCtx2aCtx opts
                      }
        in checkEndoProps >> 
           (\aps -> (dcl,ARelPopu { popdcl = dcl
-                                 , popps  = aps
+                                 , popps  = Set.fromList aps
                                  , popsrc = source dcl
                                  , poptgt = target dcl
                                  })
@@ -537,10 +538,10 @@ pCtx2aCtx opts
       checkEndoProps
         | source decSign == target decSign
                     = pure ()
-        | otherwise = case [Prop,Sym,Asy,Trn,Rfx,Irf] `isc` dec_prps pd of
-                        []  -> pure ()
-                        xs -> Errors . pure $ mkEndoPropertyError (origin pd) xs
-              
+        | Set.null xs
+                    = pure ()
+        | otherwise = Errors . pure $ mkEndoPropertyError (origin pd) (Set.elems xs)
+       where xs = Set.fromList [Prop,Sym,Asy,Trn,Rfx,Irf] `Set.intersection` dec_prps pd
     pGen2aGen :: P_Gen -> A_Gen
     pGen2aGen pg =
       case pg of
@@ -581,7 +582,7 @@ pCtx2aCtx opts
                src' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric (origin pop) dcl Src . userConcept) src
                tgt' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric (origin pop) dcl Tgt . userConcept) tgt
                return ARelPopu { popdcl = dcl
-                               , popps  = aps'
+                               , popps  = Set.fromList aps'
                                , popsrc = fromMaybe (source dcl) src'
                                , poptgt = fromMaybe (target dcl) tgt'
                                }
@@ -951,9 +952,9 @@ pCtx2aCtx opts
            = A_Pat { ptnm  = name ppat
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
-                   , ptrls = rules'
+                   , ptrls = Set.fromList $ rules'
                    , ptgns = map pGen2aGen (pt_gns ppat)
-                   , ptdcs = map fst declsAndPops
+                   , ptdcs = Set.fromList $ map fst declsAndPops
                    , ptups = pops' ++ map snd declsAndPops
                    , ptids = keys'
                    , ptvds = views'
@@ -1010,12 +1011,12 @@ pCtx2aCtx opts
     typeCheckPairViewSeg :: Origin -> Expression -> PairViewSegment (Term (TermPrim, DisambPrim)) -> Guarded (PairViewSegment Expression)
     typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
     typeCheckPairViewSeg o t (PairViewExp orig s x)
-     = do (e,(b,_)) <- typecheckTerm x
-          case toList . findUpperbounds genLattice . lJoin (aConcToType (source e)) $ getConcept s t of
+     = do (e,_) <- typecheckTerm x
+          case toList . findExact genLattice . lJoin (aConcToType (source e)) $ getConcept s t of
                           [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
-                          lst -> if b || all (aConcToType (source e) `elem`) lst
+                          lst -> if aConcToType (source e) `elem` lst
                                  then pure (PairViewExp orig s (addEpsilonLeft (getAConcept s t) e))
-                                 else mustBeBound (origin (fmap fst x)) [(Src, e)]
+                                 else mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
     pPurp2aPurp :: DeclMap -> PPurpose -> Guarded Purpose
     pPurp2aPurp declMap
                 PRef2 { pos    = orig     -- :: Origin

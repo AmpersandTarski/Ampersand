@@ -1,12 +1,13 @@
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
-import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ShowAStruct
-import Ampersand.FSpec
-import Ampersand.Misc
-import Ampersand.Prototype.PHP
-import Data.List
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec
+import           Ampersand.Misc
+import           Ampersand.Prototype.PHP
+import           Data.List
+import qualified Data.Set as Set
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
@@ -48,8 +49,8 @@ validateRulesSQL fSpec =
                              
                
     }
-stringify :: (Rule,[AAtomPair]) -> (String,[String])
-stringify (rule,pairs) = (name rule, map f pairs )
+stringify :: (Rule,AAtomPairs) -> (String,[String])
+stringify (rule,pairs) = (name rule, map f . Set.elems $ pairs )
   where f pair = "("++showValADL (apLeft pair)++", "++showValADL (apRight pair)++")"
 
 
@@ -63,11 +64,11 @@ getAllInterfaceExps fSpec = concat [ getObjExps (name ifc) $ ifcObj ifc
 
 -- we check the complement of the rule, since that is the expression evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]
-getAllRuleExps fSpec = map getRuleExp $ vrules fSpec ++ grules fSpec
+getAllRuleExps fSpec = map getRuleExp . Set.elems $ vrules fSpec `Set.union` grules fSpec
  where getRuleExp rule = (notCpl (formalExpression rule), "rule "++show (name rule))
 
 getAllPairViewExps :: FSpec -> [ValidationExp]
-getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fSpec
+getAllPairViewExps fSpec = concatMap getPairViewExps . Set.elems $ vrules fSpec `Set.union` grules fSpec
  where getPairViewExps r@Ru{rrviol = Just (PairView pvsegs)} =
          [ (expr, "violation view for rule "++show (name r)) | PairViewExp _ _ expr <- pvsegs ]
        getPairViewExps _    = []
@@ -96,7 +97,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
     }
 validateExp fSpec vExp@(expr, orig) =
  do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) expr
-    ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- pairsInExpr fSpec expr]
+    ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
     ; if sort violationsSQL == sort violationsAmp
       then
        do { putStr "."

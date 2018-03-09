@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.9.2
+version:        3.9.3
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -82,7 +82,6 @@ library
                      Ampersand.Basics,
                      Ampersand.Basics.Auxiliaries,
                      Ampersand.Basics.BuildInfo_Generated,
-                     Ampersand.Basics.Collection,
                      Ampersand.Basics.Exit,
                      Ampersand.Basics.Languages,
                      Ampersand.Basics.PandocExtended,

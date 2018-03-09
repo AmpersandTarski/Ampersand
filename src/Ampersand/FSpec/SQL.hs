@@ -8,23 +8,22 @@ module Ampersand.FSpec.SQL
   )
   
 where
-import Language.SQL.SimpleSQL.Syntax
-import Language.SQL.SimpleSQL.Pretty
-import Ampersand.Basics
-import Ampersand.Classes.ConceptStructure
-import Ampersand.Core.ParseTree
-     ( PSingleton )
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.ADL1.Expression
-import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.FSpecAux
-import Ampersand.Core.ShowAStruct
-import Data.List
-import Data.Maybe
-import Data.Monoid
+import           Ampersand.ADL1.Expression
+import           Ampersand.Basics
+import           Ampersand.Classes (isUni)
+import           Ampersand.Classes.ConceptStructure
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree ( PSingleton )
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.FSpecAux
+import           Data.List
+import           Data.Maybe
+import           Data.Monoid
+import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Ampersand.Classes
-     (isUni)
+import           Language.SQL.SimpleSQL.Pretty
+import           Language.SQL.SimpleSQL.Syntax
 
 data SqlQuery = SqlQueryPlain  Text.Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
               | SqlQueryPretty [Text.Text] -- Human readable, neatly prettyprinted
@@ -980,7 +979,7 @@ sqlAttConcept fSpec c | c==ONE = QName "ONE"
                       | otherwise
              = if null cs then fatal ("A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\"") else
                QName (head cs)
-               where cs = [name f |f<-plugAttributes (sqlConceptPlug fSpec c), c'<-concs f,c==c']
+               where cs = [name f |f<-plugAttributes (sqlConceptPlug fSpec c), c'<-Set.elems $ concs f,c==c']
 
 
 stringOfName :: Name -> String

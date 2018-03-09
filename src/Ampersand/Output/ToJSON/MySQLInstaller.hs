@@ -4,12 +4,13 @@
 module Ampersand.Output.ToJSON.MySQLInstaller 
   (MySQLInstaller,Populations)
 where
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Output.ToJSON.JSONutils 
-import Ampersand.Prototype.Generate
-import Ampersand.Prototype.TableSpec
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Output.ToJSON.JSONutils 
+import           Ampersand.Prototype.Generate
+import           Ampersand.Prototype.TableSpec
+import           Data.Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Data.Maybe
 
 data MySQLInstaller = MySQLInstaller
    { msiJSONallDBstructQueries :: [Text.Text]
@@ -51,8 +52,8 @@ instance ToJSON JPair where
   toJSON = amp2Jason
 instance JSON (MultiFSpecs,Bool) Populations where
  fromAmpersand _ (multi,doMeta) = Populations
-   { epJSONatoms = map (fromAmpersand multi) (zip (allConcepts theFSpec) (repeat doMeta))
-   , epJSONlinks = map (fromAmpersand multi) (zip (vrels       theFSpec) (repeat doMeta))
+   { epJSONatoms = map (fromAmpersand multi) (zip (Set.elems $ allConcepts theFSpec) (repeat doMeta))
+   , epJSONlinks = map (fromAmpersand multi) (zip (Set.elems $ vrels       theFSpec) (repeat doMeta))
    }
   where 
    theFSpec 
@@ -62,7 +63,7 @@ instance JSON (MultiFSpecs,Bool) Populations where
 instance JSON (A_Concept,Bool) AtomValuesOfConcept where
  fromAmpersand multi (cpt,doMeta) = AtomValuesOfConcept
    { avcJSONconcept = Text.pack (name cpt)
-   , avcJSONatoms   = map (Text.pack . showValADL) (atomsBySmallestConcept theFSpec cpt)
+   , avcJSONatoms   = map (Text.pack . showValADL) (Set.elems $ atomsBySmallestConcept theFSpec cpt)
    }
   where 
    theFSpec 
@@ -73,7 +74,7 @@ instance JSON (A_Concept,Bool) AtomValuesOfConcept where
 instance JSON (Relation,Bool) PairsOfRelation where
  fromAmpersand multi (dcl,doMeta) = PairsOfRelation
    { porJSONrelation = Text.pack . showRel $ dcl
-   , porJSONlinks = map (fromAmpersand multi) . pairsInExpr theFSpec $ EDcD dcl
+   , porJSONlinks = map (fromAmpersand multi) . Set.elems . pairsInExpr theFSpec $ EDcD dcl
    }
   where 
    theFSpec 

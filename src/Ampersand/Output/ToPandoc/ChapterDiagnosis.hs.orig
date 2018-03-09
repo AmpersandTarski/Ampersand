@@ -309,7 +309,12 @@ chpDiagnosis fSpec
              )
              -- Content rows
              (   map mkTableRowPat (vpatterns fSpec)
+<<<<<<< HEAD
+              ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (filter decusr $ vrels fSpec) (vrules fSpec)]
+=======
+              ++ [mempty] -- empty row
               ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (Set.filter decusr $ vrels fSpec) (vrules fSpec)]
+>>>>>>> development
              )
       
     where mkTableRow :: String  -- The name of the pattern / fSpec 

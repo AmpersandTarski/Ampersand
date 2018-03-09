@@ -211,15 +211,17 @@ tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec = 
  createTableSql withComment tSpec :
  [SqlQuerySimple . Text.pack $ 
-    ( "CREATE INDEX "<> show (tsName tSpec<>"_"<>(Text.unpack . fsname) fld)
+    ( "CREATE INDEX "<> show (tsName tSpec<>"_"<>show i)
     <>" ON "<>show (tsName tSpec) <> " ("
     <> (show . Text.unpack . fsname $ fld)<>")"
     )
- | fld <- tsflds tSpec
- , not (fsIsPrimKey fld)
- , suitableAsKey (fstype  fld)
+ | (i,fld) <- zip [0..(maxIndexes - 1)]
+            . filter (suitableAsKey . fstype)
+            . filter (not . fsIsPrimKey)
+            $ tsflds tSpec
  ]
-
+   where maxIndexes :: Int
+         maxIndexes = 62  --Limit the amount of indexes in edgecases causing mysql error 1069. (Issue #758) 
 additionalDatabaseSettings :: [SqlQuery]
 additionalDatabaseSettings = [ SqlQuerySimple "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]
 

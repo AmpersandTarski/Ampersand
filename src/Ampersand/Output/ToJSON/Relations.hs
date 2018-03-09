@@ -3,10 +3,11 @@
 module Ampersand.Output.ToJSON.Relations 
   (Relations)
 where
-import Ampersand.Output.ToJSON.JSONutils 
-import Ampersand.Core.AbstractSyntaxTree 
-import Ampersand.FSpec.FSpecAux
-import Data.Maybe
+import           Ampersand.Core.AbstractSyntaxTree hiding (Relations)
+import           Ampersand.FSpec.FSpecAux
+import           Ampersand.Output.ToJSON.JSONutils 
+import           Data.Maybe
+import qualified Data.Set as Set
 
 data Relations = Relations [RelationJson]deriving (Generic, Show)
 data RelationJson = RelationJson
@@ -42,7 +43,7 @@ instance ToJSON RelTableInfo where
 instance ToJSON TableCol where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Relations where
- fromAmpersand multi _ = Relations (map (fromAmpersand multi) (vrels (userFSpec multi)))
+ fromAmpersand multi _ = Relations (map (fromAmpersand multi) (Set.elems $ vrels (userFSpec multi)))
 instance JSON Relation RelationJson where
  fromAmpersand multi dcl = RelationJson 
          { relJSONname       = name dcl

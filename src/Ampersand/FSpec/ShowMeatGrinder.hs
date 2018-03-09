@@ -10,20 +10,21 @@ module Ampersand.FSpec.ShowMeatGrinder
   )
 where
 
-import Ampersand.Basics
-import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.Transformers
-import Ampersand.Misc
-import Ampersand.Core.A2P_Converters
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ParseTree
-import Ampersand.Core.ShowPStruct
-import Ampersand.Input
-import Ampersand.Input.ADL1.CtxError
-import Ampersand.Input.ADL1.Parser
-import Data.List
+import           Ampersand.Basics
+import           Ampersand.Core.A2P_Converters
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.ShowPStruct
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.Transformers
+import           Ampersand.Input
+import           Ampersand.Input.ADL1.CtxError
+import           Ampersand.Input.ADL1.Parser
+import           Ampersand.Misc
+import           Data.List
 import qualified Data.List.NonEmpty as NEL (toList)
-import Data.Maybe
+import           Data.Maybe
+import qualified Data.Set as Set
 
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.
@@ -78,8 +79,8 @@ extractFromPop formalAmpersand pop =
                              [ "ERROR in tupels that are generated in the meatgrinder for relation"
                              , "  "++showRel (popRelation pop)
                              ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
-      checkAtomValues :: Relation -> [PAtomPair] -> Guarded [AAtomPair]
-      checkAtomValues rel pps = sequence $ map fun pps
+      checkAtomValues :: Relation -> [PAtomPair] -> Guarded AAtomPairs
+      checkAtomValues rel pps = Set.fromList <$> (sequence $ map fun pps)
             where
               fun pp = mkAtomPair 
                 <$> pAtomValue2aAtomValue (source rel) (ppLeft  pp)

@@ -2,8 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterProcessAnalysis(chpProcessAnalysis)
 where
-import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Data.List
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import           Data.List
+import qualified Data.Set as Set
 
 chpProcessAnalysis :: FSpec -> Blocks
 chpProcessAnalysis fSpec
@@ -80,9 +81,9 @@ chpProcessAnalysis fSpec
   procSections :: [Pattern] -> [Blocks]
   procSections fprocs = iterat [fp |fp<-fprocs, (not.null.udefrules) fp] 1 declaredConcepts  declaredRelations
    where
-    declaredRelations = (concatMap relsDefdIn.vpatterns) fSpec
-    declaredConcepts  = (concs.vpatterns) fSpec
-    iterat :: [Pattern] -> Int -> [A_Concept] -> [Relation] -> [Blocks]
+    declaredRelations = relsDefdIn . vpatterns $ fSpec
+    declaredConcepts  = concs . vpatterns $ fSpec
+    iterat :: [Pattern] -> Int -> A_Concepts -> Relations -> [Blocks]
     iterat [] _ _ _ = mempty
     iterat (fproc:fps) i seenConcepts seenRelations
      = (
@@ -92,5 +93,5 @@ chpProcessAnalysis fSpec
        ):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [(Inlines, [Blocks])]
-         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec (udefrules fproc) i seenConcepts seenRelations
+         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec (Set.elems $ udefrules fproc) i seenConcepts seenRelations
 
