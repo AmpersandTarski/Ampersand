@@ -34,6 +34,12 @@ class ViolationSegment extends ViewSegment
     protected $expIsIdent = null;
 
     /**
+     * Specifies if violation segment concerns a SRC or TGT atom. NULL if N/A.
+     * @var string
+     */
+    protected $srcOrTgt = null;
+
+    /**
      * Constructor of violation segments
      *
      * @param array $segmentDef
@@ -50,6 +56,7 @@ class ViolationSegment extends ViewSegment
         $this->segType = $segmentDef['segType'];
         $this->text = $segmentDef['text'];
         $this->expSQL = $segmentDef['expSQL'];
+        $this->srcOrTgt = $segmentDef['srcOrTgt'];
         
         if (!($this->segType === 'Text' || $this->segType === 'Exp')) {
             throw new Exception("Unsupported segmentType '{$this->segType}' in RULE segment '{$this}'", 501); // 501: Not implemented
@@ -77,7 +84,10 @@ class ViolationSegment extends ViewSegment
                 break;
             case "Exp":
                 // select starting atom depending on whether the segment uses the src of tgt atom.
-                $atom = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
+                if (is_null($this->srcOrTgt)) {
+                    throw new Exception("Cannot evaluate segment expression without SRC or TGT defined", 500);
+                }
+                $atom = $this->srcOrTgt == 'Src' ? $srcAtom : $tgtAtom;
                 if ($this->expIsIdent) {
                     // when segment expression isIdent (i.e. SRC I or TGT I), we don't have to evaluate the expression.
                     return [$atom->id];
