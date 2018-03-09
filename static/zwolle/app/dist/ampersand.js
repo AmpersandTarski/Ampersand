@@ -924,12 +924,12 @@ angular.module('AmpersandApp')
     
     $scope.resetSettings = function(){
         // all off
-        angular.forEach($scope.$storage.notificationPrefs, 
+        angular.forEach($localStorage.notificationPrefs, 
             function(value, index, obj){
                 obj[index] = false;
             }
         );
-        $scope.$storage.switchAutoSave = false;
+        $localStorage.switchAutoSave = false;
         
         $timeout(function() {
             // reset to default        
@@ -961,7 +961,7 @@ angular.module('AmpersandApp')
                 $sessionStorage.session = data.session;
                 $sessionStorage.sessionRoles = data.sessionRoles;
                 $sessionStorage.sessionVars = data.sessionVars;
-                angular.extend(defaultSettings, data.defaultSettings);
+                angular.extend(service.defaultSettings, data.defaultSettings);
                 
                 // Default settings for notificationPrefs
                 if($localStorage.notificationPrefs === undefined){

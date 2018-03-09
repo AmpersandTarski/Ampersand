@@ -39,12 +39,12 @@ angular.module('AmpersandApp')
     
     $scope.resetSettings = function(){
         // all off
-        angular.forEach($scope.$storage.notificationPrefs, 
+        angular.forEach($localStorage.notificationPrefs, 
             function(value, index, obj){
                 obj[index] = false;
             }
         );
-        $scope.$storage.switchAutoSave = false;
+        $localStorage.switchAutoSave = false;
         
         $timeout(function() {
             // reset to default        
