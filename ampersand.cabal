@@ -67,7 +67,7 @@ library
                      time == 1.8.*,
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
-                     yaml == 0.8.25.*,
+                     yaml == 0.8.28.*,
                      yaml-config == 0.4.*,
                      xlsx == 0.6.*,
                      zlib == 0.6.*
