@@ -383,12 +383,12 @@ primExpr2pandocMath lang e =
            case lang of
              Dutch -> text "de relatie "
              English -> text "the relation "
-        <> math ((name.source) d++ " \\xrightarrow {"++name d++"} "++(name.target) d)
+        <> math ((name.source) d++ " \\rightarrow {"++name d++"} "++(name.target) d)
   (EFlp (EDcD d)) ->
            case lang of
              Dutch -> text "de relatie "
              English -> text "the relation "
-        <> math ((name.source) d++ " \\xleftarrow  {"++name d++"} "++(name.target) d)
+        <> math ((name.source) d++ " \\leftarrow  {"++name d++"} "++(name.target) d)
   (EIsc (r1,_)) ->
            let srcTable = case r1 of
                             EDcI c -> c
