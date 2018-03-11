@@ -108,7 +108,7 @@ defaultWriterVariables fSpec
          , ""
          , "% ============Ampersand specific End==================="
          ])
-    | fspecFormat (getOpts fSpec) `elem` [Fpdf,Ftex]
+    | fspecFormat (getOpts fSpec) `elem` [Fpdf,Flatex]
     ]
 
 --DESCR -> functions to write the pandoc
@@ -139,7 +139,7 @@ writepandoc fSpec thePandoc = do
     writerName =
       case fspecFormat . getOpts $ fSpec of
        Fpdf   -> "latex"
-       Ftex   -> "latex"
+       Flatex   -> "latex"
        fmt    -> map toLower . tail . show $ fmt
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f   = liftIO . BL.writeFile (UTF8.encodePath f)
@@ -164,7 +164,7 @@ writepandoc fSpec thePandoc = do
             Fplain        -> ".plain"
             Frst          -> ".rst"
             Frtf          -> ".rtf"
-            Ftex          -> ".ltx"
+            Flatex          -> ".ltx"
             Ftexinfo      -> ".texinfo"
             Ftextile      -> ".textile"
                    

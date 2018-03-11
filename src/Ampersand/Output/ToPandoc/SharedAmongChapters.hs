@@ -159,7 +159,7 @@ instance Xreferenceble Picture where
   xDefBlck fSpec a = para $ imageWith ("fig:"++xLabel a, [], []) src ("fig:"++xLabel a)(text (caption a))
    where
     opts = getOpts fSpec
-    src  = (if fspecFormat opts `elem` [Fpdf,Ftex] then dropExtension else id)-- let pdflatex figure out the optimal extension
+    src  = (if fspecFormat opts `elem` [Fpdf,Flatex] then dropExtension else id)-- let pdflatex figure out the optimal extension
              . takeFileName . imagePath opts $ a
 
 citeGen :: Xreferenceble a => String -> a -> Inlines
@@ -535,7 +535,7 @@ purposes2Blocks opts ps
              Just p  -> fromList $ amPandoc p
        where   -- The reference information, if available for this purpose, is put
         ref :: Purpose -> [Inline]
-        ref purp = if fspecFormat opts `elem` [Fpdf, Ftex] && (not.null.explRefIds) purp
+        ref purp = if fspecFormat opts `elem` [Fpdf, Flatex] && (not.null.explRefIds) purp
                    then [RawInline (Text.Pandoc.Builder.Format "latex")
                             (texOnlyMarginNote (intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
                    else []

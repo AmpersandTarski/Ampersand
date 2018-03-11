@@ -332,16 +332,15 @@ data FSpecFormat =
        | Fplain
        | Frst
        | Frtf
-       | Ftex
+       | Flatex
        | Ftexinfo
        | Ftextile
-       deriving (Show, Eq)
+       deriving (Show, Eq, Enum, Bounded)
 allFSpecFormats :: String
-allFSpecFormats = "["++intercalate ", " 
-    ((sort . map showFormat) 
-        [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fdocx, Fhtml, 
-                Ftex, Fman, Fmarkdown, Fmediawiki, Fopendocument
-                , Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile]) ++"]"
+allFSpecFormats = 
+     "[" ++
+     intercalate ", " ((sort . map showFormat) [minBound..]) ++
+     "]"
 showFormat :: FSpecFormat -> String
 showFormat fmt = case show fmt of
                   _:h:t -> toUpper h : map toLower t
@@ -448,13 +447,14 @@ options = [ (Option ['v']   ["version"]
                                     ('D':'O':'C':'B': _ ) -> Fdocbook
                                     ('D':'O':'C':'X': _ ) -> Fdocx
                                     ('H': _ )             -> Fhtml
-                                    ('L': _ )             -> Ftex  -- To be replaced to Fpdf later on, once PDF works again
+                                    ('L': _ )             -> Flatex
                                     ('M':'A':'N': _ )     -> Fman
                                     ('M':'A': _ )         -> Fmarkdown
                                     ('M':'E': _ )         -> Fmediawiki
                                     ('O':'P': _ )         -> Fopendocument
                                     ('O':'R': _ )         -> Forg
                                     ('P':'A': _ )         -> FPandoc
+                                    ('P':'D': _ )         -> Fpdf
                                     ('P':'L': _ )         -> Fplain
                                     ('R':'S': _ )         -> Frst
                                     ('R':'T': _ )         -> Frtf

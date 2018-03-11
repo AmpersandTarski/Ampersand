@@ -157,13 +157,13 @@ chpNatLangReqs lev fSpec =
          printCDef cDef suffx
            = definitionList 
               [(   str (l (NL"Definitie " ,EN "Definition "))
-                <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Ftex] 
+                <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Flatex] 
                      then (str . show .theNr) nCpt
                      else (str . name) cDef  
                    )  
                 <> str (fromMaybe "" suffx) <> ":" 
                , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
-                        <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Ftex]
+                        <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Flatex]
                              then rawInline "latex"
                                     ("~"++texOnlyMarginNote 
                                             ("\\gls{"++escapeNonAlphaNum 
