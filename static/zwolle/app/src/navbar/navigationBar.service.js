@@ -1,7 +1,13 @@
 angular.module('AmpersandApp')
 .service('NavigationBarService', function(Restangular, $localStorage, $sessionStorage, NotificationService){
-    let navbar = {};
     let defaultSettings = {};
+    let navbar = {
+        top: [],
+        new: [],
+        refresh: [],
+        role: [],
+        ext: []
+    };
 
     let service = {
         navbar : navbar,
@@ -14,7 +20,13 @@ angular.module('AmpersandApp')
             .then(function(data){
                 data = data.plain();
 
-                angular.extend(navbar, data);
+                // Content of navbar
+                navbar.top = data.top;
+                navbar.new = data.new;
+                navbar.refresh = data.refresh;
+                navbar.role = data.role;
+                navbar.ext = data.ext;
+
                 $sessionStorage.session = data.session;
                 $sessionStorage.sessionRoles = data.sessionRoles;
                 $sessionStorage.sessionVars = data.sessionVars;

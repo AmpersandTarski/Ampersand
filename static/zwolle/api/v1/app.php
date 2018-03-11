@@ -34,9 +34,9 @@ $app->group('/app', function () use ($container) {
         $session = $ampersandApp->getSession();
         $content =  ['top' => $angularApp->getMenuItems('top')
                     ,'new' => $angularApp->getMenuItems('new')
-                    ,'refreshMenu' => $angularApp->getMenuItems('refresh')
-                    ,'extMenu' => $angularApp->getMenuItems('ext')
-                    ,'roleMenu' => $angularApp->getMenuItems('role')
+                    ,'refresh' => $angularApp->getMenuItems('refresh')
+                    ,'ext' => $angularApp->getMenuItems('ext')
+                    ,'role' => $angularApp->getMenuItems('role')
                     ,'defaultSettings' => ['notifications' => Notifications::getDefaultSettings()
                                           ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
                                           ]
