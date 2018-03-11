@@ -3,7 +3,6 @@ angular.module('AmpersandApp')
     
     $scope.$storage = $localStorage;
     $scope.$sessionStorage = $sessionStorage;
-    $scope.defaultSettings = NavigationBarService.defaultSettings;
     $scope.loadingNavBar = [];
     $scope.navbar = NavigationBarService.navbar;
     

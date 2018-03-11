@@ -38,6 +38,7 @@ angular.module('AmpersandApp')
                 navbar.role = data.role;
                 navbar.ext = data.ext;
 
+                // Content for session storage
                 $sessionStorage.session = data.session;
                 $sessionStorage.sessionRoles = data.sessionRoles;
                 $sessionStorage.sessionVars = data.sessionVars;
@@ -57,8 +58,6 @@ angular.module('AmpersandApp')
                 
                 // Update notifications
                 NotificationService.updateNotifications(data.notifications);
-            }, function(error){
-                // on error
             });
         },
 
