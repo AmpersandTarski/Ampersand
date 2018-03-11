@@ -38,7 +38,7 @@ $app->group('/app', function () use ($container) {
                     ,'ext' => $angularApp->getMenuItems('ext')
                     ,'role' => $angularApp->getMenuItems('role')
                     ,'defaultSettings' => ['notifications' => Notifications::getDefaultSettings()
-                                          ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
+                                          ,'autoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
                                           ]
                     ,'notifications' => Notifications::getAll()
                     ,'session' =>   ['id' => $session->getId()

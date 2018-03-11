@@ -305,7 +305,7 @@ angular.module('AmpersandApp')
             if(updatedResources.indexOf(resource) === -1) updatedResources.push(resource);
             
             // Save if autoSave is enabled
-            if($localStorage.switchAutoSave) {
+            if($localStorage.autoSave) {
                 return ResourceService.saveResource(resource);
             } else {
                 // Update visual feedback
