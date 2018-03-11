@@ -182,13 +182,13 @@ class Notifications
     
     public static function getDefaultSettings()
     {
-        return array('switchShowSignals'         => Config::get('defaultShowSignals', 'notifications')
-                    ,'switchShowInfos'            => Config::get('defaultShowInfos', 'notifications')
-                    ,'switchShowSuccesses'        => Config::get('defaultShowSuccesses', 'notifications')
-                    ,'switchAutoHideSuccesses'    => Config::get('defaultAutoHideSuccesses', 'notifications')
-                    ,'switchShowErrors'            => Config::get('defaultShowErrors', 'notifications')
-                    ,'switchShowWarnings'       => Config::get('defaultShowWarnings', 'notifications')
-                    ,'switchShowInvariants'        => Config::get('defaultShowInvariants', 'notifications')
-                    );
+        return ['showSignals'        => Config::get('defaultShowSignals', 'notifications')
+               ,'showInfos'          => Config::get('defaultShowInfos', 'notifications')
+               ,'showSuccesses'      => Config::get('defaultShowSuccesses', 'notifications')
+               ,'autoHideSuccesses'  => Config::get('defaultAutoHideSuccesses', 'notifications')
+               ,'showErrors'         => Config::get('defaultShowErrors', 'notifications')
+               ,'showWarnings'       => Config::get('defaultShowWarnings', 'notifications')
+               ,'showInvariants'     => Config::get('defaultShowInvariants', 'notifications')
+               ];
     }
 }

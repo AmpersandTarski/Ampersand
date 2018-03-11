@@ -1,12 +1,23 @@
 angular.module('AmpersandApp')
 .service('NavigationBarService', function(Restangular, $localStorage, $sessionStorage, NotificationService){
-    let defaultSettings = {};
     let navbar = {
         top: [],
         new: [],
         refresh: [],
         role: [],
         ext: []
+    };
+    let defaultSettings = {
+        notifications: {
+            showSignals: true,
+            showInfos: true,
+            showSuccesses: true,
+            autoHideSuccesses: true,
+            showErrors: true,
+            showWarnings: true,
+            showInvariants: true
+        },
+        switchAutoSave: true
     };
 
     let service = {
@@ -30,7 +41,10 @@ angular.module('AmpersandApp')
                 $sessionStorage.session = data.session;
                 $sessionStorage.sessionRoles = data.sessionRoles;
                 $sessionStorage.sessionVars = data.sessionVars;
-                angular.extend(service.defaultSettings, data.defaultSettings);
+                
+                // Set default settings
+                angular.extend(service.defaultSettings.notifications, data.defaultSettings.notifications);
+                service.defaultSettings.switchAutoSave = data.defaultSettings.switchAutoSave;
                 
                 // Default settings for notificationPrefs
                 if($localStorage.notificationPrefs === undefined){

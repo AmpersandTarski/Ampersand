@@ -17,15 +17,15 @@
                 <a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-bullhorn"></span></a>
                 <ul class="dropdown-menu" role="menu" ng-click="$event.stopPropagation();">
                     <li class="dropdown-header">Transaction settings</li>
-                        <li><switch ng-model="$storage.notificationPrefs.switchShowSignals"> Show signals</switch></li>
-                        <li><switch ng-model="$storage.notificationPrefs.switchShowInvariants"> Show invariants</switch></li>
+                        <li><switch ng-model="$storage.notificationPrefs.showSignals"> Show signals</switch></li>
+                        <li><switch ng-model="$storage.notificationPrefs.showInvariants"> Show invariants</switch></li>
                         <li><switch ng-model="$storage.switchAutoSave"> Auto save changes</switch></li>
                     <li class="dropdown-header">User logs</li>
-                        <li><switch ng-model="$storage.notificationPrefs.switchShowErrors"> Show errors</switch></li>
-                        <li><switch ng-model="$storage.notificationPrefs.switchShowWarnings"> Show warnings</switch></li>
-                        <li><switch ng-model="$storage.notificationPrefs.switchShowInfos"> Show infos</switch></li>
-                        <li><switch ng-model="$storage.notificationPrefs.switchShowSuccesses"> Show successes</switch></li>
-                        <li><switch ng-model="$storage.notificationPrefs.switchAutoHideSuccesses"> Auto hide successes</switch></li>
+                        <li><switch ng-model="$storage.notificationPrefs.showErrors"> Show errors</switch></li>
+                        <li><switch ng-model="$storage.notificationPrefs.showWarnings"> Show warnings</switch></li>
+                        <li><switch ng-model="$storage.notificationPrefs.showInfos"> Show infos</switch></li>
+                        <li><switch ng-model="$storage.notificationPrefs.showSuccesses"> Show successes</switch></li>
+                        <li><switch ng-model="$storage.notificationPrefs.autoHideSuccesses"> Auto hide successes</switch></li>
                     <li class="divider" role="presentation"></li>
                         <li><a href="" ng-click="resetSettings();"><span class="glyphicon glyphicon-repeat" style="margin: 4px; width: 30px;"></span> Default settings</a></li>
                 </ul>
