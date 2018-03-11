@@ -1,14 +1,14 @@
 <div class="container-fluid">
     <div id="notificationCenter" ng-controller="NotificationCenterController">
         
-        <div id="infos" ng-show="localStorage.notificationPrefs.showInfos">
+        <div id="infos" ng-show="localStorage.notify-showInfos">
             <div class="alert alert-info alert-dismissible" role="alert" ng-repeat="info in notifications.infos">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.infos, $index);"><span aria-hidden="true">&times;</span></button>
                 <span class="glyphicon glyphicon-info-sign"></span><span> {{info.message}}</span>
             </div>
         </div>
         
-        <div id="warnings" ng-show="localStorage.notificationPrefs.showWarnings">
+        <div id="warnings" ng-show="localStorage.notify-showWarnings">
             <div class="alert alert-warning alert-dismissible" role="alert" ng-repeat="warning in notifications.warnings">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.warnings, $index);"><span aria-hidden="true">&times;</span></button>
                 <span class="glyphicon glyphicon-warning-sign"></span><span> {{warning.message}}</span>
@@ -16,7 +16,7 @@
             </div>
         </div>
         
-        <div id="errors" ng-show="localStorage.notificationPrefs.showErrors">
+        <div id="errors" ng-show="localStorage.notify-showErrors">
             <div class="panel panel-danger" id="error-panel-{{key}}" ng-repeat="(key, error) in notifications.errors">
                 <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#error-body-{{key}}">
                     <div class="text-left">
@@ -33,7 +33,7 @@
             </div>
         </div>
         
-        <div id="invariants" ng-show="localStorage.notificationPrefs.showInvariants">
+        <div id="invariants" ng-show="localStorage.notify-showInvariants">
             <div class="panel panel-danger" ng-repeat="(key, val) in notifications.invariants">
                 <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#invariant-{{key}}">
                     <div class="text-left" style="display:flex; align-items:center;">
@@ -50,7 +50,7 @@
             </div>
         </div>
                     
-        <div id="signals" ng-show="localStorage.notificationPrefs.showSignals">
+        <div id="signals" ng-show="localStorage.notify-showSignals">
             <div class="panel panel-warning" ng-repeat="(key, val) in notifications.signals">
                 <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
                     <div class="text-left" style="display:flex; align-items:center;">
@@ -77,7 +77,7 @@
         </div>
         
         <!-- Success notifications must be last in notifications center because of position:absolute -->
-        <div id="successes" ng-show="localStorage.notificationPrefs.showSuccesses">
+        <div id="successes" ng-show="localStorage.notify-showSuccesses">
             <div class="alert alert-success alert-dismissible" role="alert" ng-repeat="success in notifications.successes">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.successes, $index);"><span aria-hidden="true">&times;</span></button>
                 <span class="glyphicon glyphicon-ok-sign"></span><span> {{success.message}}</span>
