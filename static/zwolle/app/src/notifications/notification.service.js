@@ -58,7 +58,7 @@ angular.module('AmpersandApp')
             notifications.warnings = notifications.warnings.concat(data.warnings);
             notifications.errors = notifications.errors.concat(data.errors);
             
-            if($localStorage.notify-autoHideSuccesses){
+            if($localStorage.notify_autoHideSuccesses){
                 $timeout(function() {
                     notifications.successes = [];
                 }, 3000);

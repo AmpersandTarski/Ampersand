@@ -56,7 +56,7 @@ angular.module('AmpersandApp')
         initializeSettings : function(forceSet){
             // null == undefined => true
             angular.forEach(service.defaultSettings.notifications, function(value, index, obj){
-                if($localStorage['notify-' + index] == undefined || forceSet) $localStorage['notify-' + index] = value;
+                if($localStorage['notify_' + index] == undefined || forceSet) $localStorage['notify_' + index] = value;
             });
             if($localStorage.autoSave == undefined || forceSet) $localStorage.autoSave = service.defaultSettings.autoSave;
         },
@@ -64,7 +64,7 @@ angular.module('AmpersandApp')
         resetSettingsToDefault : function(){
             // all off
             angular.forEach(service.defaultSettings.notifications, function(value, index, obj){
-                $localStorage['notify-' + index] = false;
+                $localStorage['notify_' + index] = false;
             });
             $localStorage.autoSave = false;
             
