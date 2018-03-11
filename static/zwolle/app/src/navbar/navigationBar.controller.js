@@ -2,7 +2,7 @@ angular.module('AmpersandApp')
 .controller('NavigationBarController', function ($scope, $route, Restangular, $localStorage, $sessionStorage, $timeout, $location, NotificationService, RoleService, NavigationBarService) {
     
     $scope.localStorage = $localStorage;
-    $scope.$sessionStorage = $sessionStorage;
+    $scope.sessionStorage = $sessionStorage;
     $scope.loadingNavBar = [];
     $scope.navbar = NavigationBarService.navbar;
     $scope.resetSettingsToDefault = NavigationBarService.resetSettingsToDefault;
