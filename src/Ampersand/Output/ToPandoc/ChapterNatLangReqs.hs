@@ -149,7 +149,6 @@ chpNatLangReqs lev fSpec =
                     [printCDef cd (Just ("."++ [suffx])) 
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
-         <> someWhiteSpace 
         where
          nubByText = nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
          printCDef :: ConceptDef -- the definition to print
@@ -202,7 +201,6 @@ chpNatLangReqs lev fSpec =
         <> if null samples then mempty
            else bulletList [ plain $ mkPhrase dcl sample
                            | sample <- samples]
-        <> someWhiteSpace 
          where dcl = cDcl . theLoad $ nDcl
                samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
 
@@ -222,7 +220,6 @@ chpNatLangReqs lev fSpec =
                       -> [printMeaning m]
                 ) 
                ]
-    <> someWhiteSpace      
 
   mkPhrase :: Relation -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
@@ -251,9 +248,6 @@ chpNatLangReqs lev fSpec =
          atomShow = str
          pragmaShow = emph . str
                    
-someWhiteSpace :: Blocks  --TODO: This doesn't seem to have any effect. (At least not in the LaTeX output)
-someWhiteSpace = para (linebreak <> linebreak <> linebreak <> linebreak)
-
 data LawRef = LawRef { lawRef :: String}
 data ArticleOfLaw = ArticleOfLaw { aOlLaw :: String
                                  , aOlArt :: [Either String Int]
