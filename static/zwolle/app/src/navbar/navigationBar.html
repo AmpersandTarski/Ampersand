@@ -17,15 +17,15 @@
                 <a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-bullhorn"></span></a>
                 <ul class="dropdown-menu" role="menu" ng-click="$event.stopPropagation();">
                     <li class="dropdown-header">Transaction settings</li>
-                        <li><switch ng-model="$storage.notify-showSignals"> Show signals</switch></li>
-                        <li><switch ng-model="$storage.notify-showInvariants"> Show invariants</switch></li>
-                        <li><switch ng-model="$storage.autoSave"> Auto save changes</switch></li>
+                        <li><switch ng-model="localStorage.notify-showSignals"> Show signals</switch></li>
+                        <li><switch ng-model="localStorage.notify-showInvariants"> Show invariants</switch></li>
+                        <li><switch ng-model="localStorage.autoSave"> Auto save changes</switch></li>
                     <li class="dropdown-header">User logs</li>
-                        <li><switch ng-model="$storage.notify-showErrors"> Show errors</switch></li>
-                        <li><switch ng-model="$storage.notify-showWarnings"> Show warnings</switch></li>
-                        <li><switch ng-model="$storage.notify-showInfos"> Show infos</switch></li>
-                        <li><switch ng-model="$storage.notify-showSuccesses"> Show successes</switch></li>
-                        <li><switch ng-model="$storage.notify-autoHideSuccesses"> Auto hide successes</switch></li>
+                        <li><switch ng-model="localStorage.notify-showErrors"> Show errors</switch></li>
+                        <li><switch ng-model="localStorage.notify-showWarnings"> Show warnings</switch></li>
+                        <li><switch ng-model="localStorage.notify-showInfos"> Show infos</switch></li>
+                        <li><switch ng-model="localStorage.notify-showSuccesses"> Show successes</switch></li>
+                        <li><switch ng-model="localStorage.notify-autoHideSuccesses"> Auto hide successes</switch></li>
                     <li class="divider" role="presentation"></li>
                         <li><a href="" ng-click="resetSettingsToDefault();"><span class="glyphicon glyphicon-repeat" style="margin: 4px; width: 30px;"></span> Default settings</a></li>
                 </ul>
