@@ -43,30 +43,35 @@ angular.module('AmpersandApp')
                 $sessionStorage.sessionRoles = data.sessionRoles;
                 $sessionStorage.sessionVars = data.sessionVars;
                 
-                // Set default settings
+                // Save default settings
                 angular.extend(service.defaultSettings.notifications, data.defaultSettings.notifications);
                 service.defaultSettings.switchAutoSave = data.defaultSettings.switchAutoSave;
-                
-                // Default settings for notificationPrefs
-                if($localStorage.notificationPrefs === undefined){
-                    service.resetNotificationSettings();
-                }
-                // Default setting for switchAutoSave
-                if($localStorage.switchAutoSave === undefined){
-                    service.resetSwitchAutoSave();
-                }
+                service.initializeSettings(false);
                 
                 // Update notifications
                 NotificationService.updateNotifications(data.notifications);
             });
         },
 
-        resetNotificationSettings : function(){
-            $localStorage.notificationPrefs = angular.extend($localStorage.notificationPrefs, service.defaultSettings.notifications);
+        initializeSettings : function(forceSet){
+            // null == undefined => true
+            angular.forEach(service.defaultSettings.notifications, function(value, index, obj){
+                if($localStorage['notify-' + index] == undefined || forceSet) $localStorage['notify-' + index] = value;
+            });
+            if($localStorage.switchAutoSave == undefined || forceSet) $localStorage.switchAutoSave = service.defaultSettings.switchAutoSave;
         },
 
-        resetSwitchAutoSave : function(){
-            $localStorage.switchAutoSave = service.defaultSettings.switchAutoSave;
+        resetSettingsToDefault : function(){
+            // all off
+            angular.forEach(service.defaultSettings.notifications, function(value, index, obj){
+                $localStorage['notify-' + index] = false;
+            });
+            $localStorage.switchAutoSave = false;
+            
+            $timeout(function() {
+                // Reset to default
+                service.initializeSettings(true);
+            }, 500);
         }
     };
     

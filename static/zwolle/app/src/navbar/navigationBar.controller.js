@@ -5,6 +5,7 @@ angular.module('AmpersandApp')
     $scope.$sessionStorage = $sessionStorage;
     $scope.loadingNavBar = [];
     $scope.navbar = NavigationBarService.navbar;
+    $scope.resetSettingsToDefault = NavigationBarService.resetSettingsToDefault;
     
     $scope.reload = function(){
         $scope.loadingNavBar = [];
@@ -34,22 +35,6 @@ angular.module('AmpersandApp')
                 $location.url(openWithIfc + '/' + data._id_);
             }
         );
-    };
-    
-    $scope.resetSettings = function(){
-        // all off
-        angular.forEach($localStorage.notificationPrefs, 
-            function(value, index, obj){
-                obj[index] = false;
-            }
-        );
-        $localStorage.switchAutoSave = false;
-        
-        $timeout(function() {
-            // reset to default        
-            NavigationBarService.resetNotificationSettings();
-            NavigationBarService.resetSwitchAutoSave();
-        }, 500);
     };
     
     $scope.loadingNavBar.push(NavigationBarService.refreshNavBar());
