@@ -157,20 +157,22 @@ chpNatLangReqs lev fSpec =
          printCDef cDef suffx
            = definitionList 
               [(   str (l (NL"Definitie " ,EN "Definition "))
-                <> case fspecFormat (getOpts fSpec) of
-                                    FLatex -> (str . show .theNr) nCpt
-                                    _      -> (str . name) cDef  
+                <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Ftex] 
+                     then (str . show .theNr) nCpt
+                     else (str . name) cDef  
+                   )  
                 <> str (fromMaybe "" suffx) <> ":" 
                , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
-                        <> (case fspecFormat (getOpts fSpec) of
-                                    FLatex -> rawInline "latex"
-                                                ("~"++texOnlyMarginNote 
-                                                        ("\\gls{"++escapeNonAlphaNum 
-                                                                   (name cDef++fromMaybe "" suffx)
-                                                            ++"}"
-                                                        )
-                                                )
-                                    _      -> mempty)
+                        <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Ftex]
+                             then rawInline "latex"
+                                    ("~"++texOnlyMarginNote 
+                                            ("\\gls{"++escapeNonAlphaNum 
+                                                        (name cDef++fromMaybe "" suffx)
+                                                ++"}"
+                                            )
+                                    )
+                             else mempty
+                           )
                         <> str (cddef cDef)
                         <> if null (cdref cDef) then mempty
                            else str (" ["++cdref cDef++"]")

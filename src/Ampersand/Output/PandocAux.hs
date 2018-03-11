@@ -32,7 +32,7 @@ import           Conduit (liftIO, MonadIO)
 import qualified Control.Exception as E
 import           Data.Char hiding    (Space)
 import qualified Data.ByteString.Lazy as BL
-import           Data.Text as Text (unpack)
+import           Data.Text as Text (Text,pack,unpack,replace)
 import qualified Data.Text.Encoding.Error as TE
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TE
@@ -108,7 +108,8 @@ defaultWriterVariables fSpec
          , ""
          , "% ============Ampersand specific End==================="
          ])
-    | fspecFormat (getOpts fSpec) == FLatex ]
+    | fspecFormat (getOpts fSpec) `elem` [Fpdf,Ftex]
+    ]
 
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
@@ -121,7 +122,7 @@ writepandoc fSpec thePandoc = do
        content <- runIO (biteStringWriter writerOptions thePandoc) >>= handleError
        BL.writeFile outputFile content
      TextWriter f -> case fspecFormat (getOpts fSpec) of
-        FLatex -> do
+        Fpdf -> do
            res <- runIO (makePDF "pdflatex" [] f writerOptions thePandoc) >>= handleError
            case res of
              Right pdf -> writeFnBinary outputFile pdf
@@ -137,7 +138,8 @@ writepandoc fSpec thePandoc = do
                 Just w -> w
     writerName =
       case fspecFormat . getOpts $ fSpec of
-       FLatex -> "latex"
+       Fpdf   -> "latex"
+       Ftex   -> "latex"
        fmt    -> map toLower . tail . show $ fmt
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f   = liftIO . BL.writeFile (UTF8.encodePath f)
@@ -152,7 +154,7 @@ writepandoc fSpec thePandoc = do
             Fdocbook      -> ".docbook"
             Fdocx         -> ".docx"
             Fhtml         -> ".html"
-            FLatex        -> ".pdf"
+            Fpdf          -> ".pdf"
             Fman          -> ".man"
             Fmarkdown     -> ".md"
             Fmediawiki    -> ".mediawiki"
@@ -162,6 +164,7 @@ writepandoc fSpec thePandoc = do
             Fplain        -> ".plain"
             Frst          -> ".rst"
             Frtf          -> ".rtf"
+            Ftex          -> ".ltx"
             Ftexinfo      -> ".texinfo"
             Ftextile      -> ".textile"
                    
@@ -169,42 +172,29 @@ writepandoc fSpec thePandoc = do
     writerOptions = def
                       { writerTableOfContents=True
                       , writerNumberSections=True
-                      , writerTemplate=template
+                      , writerTemplate=Text.unpack <$> template
                       , writerVariables=defaultWriterVariables fSpec
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath
                     --  , writerVerbose=verboseP (getOpts fSpec)
                       }
-     where template  = getStaticFileContent PandocTemplates ("default."++fSpecFormatString)
---    docxStyleContent :: BC.ByteString 
---    docxStyleContent = 
---      case getStaticFileContent PandocTemplates "defaultStyle.docx" of
---         Just cont -> BC.pack cont
---         Nothing -> fatal "Cannot find the statically included default defaultStyle.docx."
---    docxStyleUserPath = dirOutput (getOpts fSpec) </> "reference.docx" -- this is the place where the file is written if it doesn't exist.
---    writeReferenceFileDocx :: IO()
---    writeReferenceFileDocx = do
---         exists <- doesFileExist docxStyleUserPath
---         if exists 
---             then verboseLn (getOpts fSpec) 
---                      "Existing style file is used for generating .docx file:"
---             else (do verboseLn (getOpts fSpec)
---                           "Default style file is written. this can be changed to fit your own style:"
---                      BC.writeFile docxStyleUserPath docxStyleContent
---                  )
---         verboseLn (getOpts fSpec) docxStyleUserPath
---    collectMedia :: IO MediaBag
---    collectMedia = do files <- listDirectory . dirOutput . getOpts $ fSpec
---                      let graphicsForDotx = map (dirOutput (getOpts fSpec) </>) . filter isGraphic $ files 
---                      foldM addToBag mempty graphicsForDotx                                  
---       where addToBag :: MediaBag -> FilePath -> IO MediaBag
---             addToBag bag fullPath = do
---                verboseLn (getOpts fSpec) $ "Collect: "++fullPath
---                verboseLn (getOpts fSpec) $ "  as: "++takeFileName fullPath
---                contents <- BC.readFile fullPath
---                return $ insertMedia (takeFileName fullPath) Nothing contents bag 
---             isGraphic :: FilePath -> Bool
---             isGraphic f = takeExtension f `elem` [".svg"]
+      where 
+        template :: Maybe Text.Text
+        template  = substitute substMap <$> Text.pack <$> getStaticFileContent PandocTemplates ("default."++writerName)
+        substitute :: [(Text.Text,Text.Text)] -> Text.Text -> Text.Text
+        substitute subs tmpl = foldr replaceAll tmpl subs
+        replaceAll :: (Text.Text,Text.Text) -> Text.Text -> Text.Text
+        replaceAll (needle,replacement) = Text.replace needle replacement
+        substMap :: [(Text.Text,Text.Text)]
+        -- This substitusions are required so we can use the 
+        -- templates from pandoc unchanged. Without this substitutions
+        -- all kind of crazy errors occur with LaTeX, and possibly other
+        -- templates as well.
+        substMap = 
+            [ ("\r\n$if("   ,"$if("   )        
+            , ("$endif$\r\n","$endif$")
+            , ("\r\n$endif$","$endif$")
+            ]
 
 -----Linguistic goodies--------------------------------------
 

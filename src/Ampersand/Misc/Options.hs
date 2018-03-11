@@ -323,15 +323,16 @@ data FSpecFormat =
        | Fdocbook
        | Fdocx 
        | Fhtml
-       | FLatex
        | Fman
        | Fmarkdown
        | Fmediawiki
        | Fopendocument
        | Forg
+       | Fpdf
        | Fplain
        | Frst
        | Frtf
+       | Ftex
        | Ftexinfo
        | Ftextile
        deriving (Show, Eq)
@@ -339,7 +340,7 @@ allFSpecFormats :: String
 allFSpecFormats = "["++intercalate ", " 
     ((sort . map showFormat) 
         [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fdocx, Fhtml, 
-                FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument
+                Ftex, Fman, Fmarkdown, Fmediawiki, Fopendocument
                 , Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile]) ++"]"
 showFormat :: FSpecFormat -> String
 showFormat fmt = case show fmt of
@@ -447,7 +448,7 @@ options = [ (Option ['v']   ["version"]
                                     ('D':'O':'C':'B': _ ) -> Fdocbook
                                     ('D':'O':'C':'X': _ ) -> Fdocx
                                     ('H': _ )             -> Fhtml
-                                    ('L': _ )             -> FLatex
+                                    ('L': _ )             -> Ftex  -- To be replaced to Fpdf later on, once PDF works again
                                     ('M':'A':'N': _ )     -> Fman
                                     ('M':'A': _ )         -> Fmarkdown
                                     ('M':'E': _ )         -> Fmediawiki
