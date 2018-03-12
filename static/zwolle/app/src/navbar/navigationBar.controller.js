@@ -1,5 +1,5 @@
 angular.module('AmpersandApp')
-.controller('NavigationBarController', function ($scope, $route, Restangular, $localStorage, $sessionStorage, $timeout, $location, NotificationService, RoleService, NavigationBarService) {
+.controller('NavigationBarController', function ($scope, $route, Restangular, $localStorage, $sessionStorage, $location, NotificationService, RoleService, NavigationBarService) {
     
     $scope.localStorage = $localStorage;
     $scope.sessionStorage = $sessionStorage;

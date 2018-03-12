@@ -1,5 +1,5 @@
 angular.module('AmpersandApp')
-.service('NavigationBarService', function(Restangular, $localStorage, $sessionStorage, NotificationService){
+.service('NavigationBarService', function(Restangular, $localStorage, $sessionStorage, $timeout, NotificationService){
     let navbar = {
         top: [],
         new: [],
@@ -42,33 +42,36 @@ angular.module('AmpersandApp')
                 $sessionStorage.sessionVars = data.sessionVars;
                 
                 // Save default settings
-                angular.extend(service.defaultSettings.notifications, data.defaultSettings.notifications);
-                service.defaultSettings.autoSave = data.defaultSettings.autoSave;
-                service.initializeSettings(false);
+                service.defaultSettings = data.defaultSettings;
+                service.initializeSettings();
                 
                 // Update notifications
                 NotificationService.updateNotifications(data.notifications);
             });
         },
 
-        initializeSettings : function(forceSet){
-            // null == undefined => true
-            angular.forEach(service.defaultSettings.notifications, function(value, index, obj){
-                if($localStorage['notify_' + index] == undefined || forceSet) $localStorage['notify_' + index] = value;
+        initializeSettings : function(){
+            let resetRequired = false;
+
+            // Check for undefined settings
+            angular.forEach(service.defaultSettings, function(value, index, obj){
+                if($localStorage[index] === undefined) {
+                    resetRequired = true;
+                }
             });
-            if($localStorage.autoSave == undefined || forceSet) $localStorage.autoSave = service.defaultSettings.autoSave;
+
+            if(resetRequired) service.resetSettingsToDefault();
         },
 
         resetSettingsToDefault : function(){
             // all off
-            angular.forEach(service.defaultSettings.notifications, function(value, index, obj){
-                $localStorage['notify_' + index] = false;
+            angular.forEach(service.defaultSettings, function(value, index, obj){
+                $localStorage[index] = false;
             });
-            $localStorage.autoSave = false;
             
             $timeout(function() {
                 // Reset to default
-                service.initializeSettings(true);
+                $localStorage.$reset(service.defaultSettings);
             }, 500);
         }
     };
