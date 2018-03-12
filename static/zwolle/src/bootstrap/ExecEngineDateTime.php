@@ -19,14 +19,14 @@ use Ampersand\Rule\ExecEngine;
 */
 ExecEngine::registerFunction('SetToday', function ($relation, $srcConcept, $srcAtom, $dateConcept, $formatSpec = 'd-m-Y') {
     $curdate = date($formatSpec);
-    InsPair($relation, $srcConcept, $srcAtom, $dateConcept, $curdate);
+    ExecEngine::getFunction('InsPair')($relation, $srcConcept, $srcAtom, $dateConcept, $curdate);
 });
 
 
 // VIOLATION (TXT "{EX} datimeStdFormat;standardizeDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;", TGT I)
 ExecEngine::registerFunction('datimeStdFormat', function ($relation, $DateConcept, $srcAtom, $StdFormatConcept, $formatSpec) {
     $date = new DateTime($srcAtom);
-    InsPair($relation, $DateConcept, $srcAtom, $StdFormatConcept, $date->format($formatSpec));
+    ExecEngine::getFunction('InsPair')($relation, $DateConcept, $srcAtom, $StdFormatConcept, $date->format($formatSpec));
 });
 
 
@@ -44,7 +44,7 @@ ExecEngine::registerFunction('DateDifferencePlusOne', function ($relation, $srcC
     }
     
     $result = 1 + max(0, floor($datediff/(60*60*24)));
-    InsPair($relation, $srcConcept, $srcAtom, $integerConcept, $result);
+    ExecEngine::getFunction('InsPair')($relation, $srcConcept, $srcAtom, $integerConcept, $result);
 });
 
 
@@ -62,7 +62,7 @@ ExecEngine::registerFunction('DateDifference', function ($relation, $srcConcept,
     }
     
     $result = max(0, floor($datediff/(60*60*24)));
-    InsPair($relation, $srcConcept, $srcAtom, $integerConcept, $result);
+    ExecEngine::getFunction('InsPair')($relation, $srcConcept, $srcAtom, $integerConcept, $result);
 });
 
 
@@ -104,11 +104,11 @@ ExecEngine::registerFunction('datimeEQL', function ($eqlRelation, $DateConcept, 
     }
     
     if ($dt1 == $dt2) {
-        InsPair($eqlRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+        ExecEngine::getFunction('InsPair')($eqlRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
         
         // Accommodate for different representations of the same time:
         if ($srcAtom != $tgtAtom) {
-            InsPair($eqlRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
+            ExecEngine::getFunction('InsPair')($eqlRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
         }
     }
 });
@@ -124,8 +124,8 @@ ExecEngine::registerFunction('datimeNEQ', function ($neqRelation, $DateConcept, 
     }
     
     if ($dt1 != $dt2) {
-        InsPair($neqRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
-        InsPair($neqRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
+        ExecEngine::getFunction('InsPair')($neqRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+        ExecEngine::getFunction('InsPair')($neqRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
     }
 });
 
@@ -143,9 +143,9 @@ ExecEngine::registerFunction('datimeLT', function ($ltRelation, $DateConcept, $s
     }
     
     if ($dt1 < $dt2) {
-        InsPair($ltRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+        ExecEngine::getFunction('InsPair')($ltRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
     } else {
-        InsPair($ltRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
+        ExecEngine::getFunction('InsPair')($ltRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
     }
 });
 
@@ -163,8 +163,8 @@ ExecEngine::registerFunction('datimeGT', function ($gtRelation, $DateConcept, $s
     }
     
     if ($dt1 > $dt2) {
-        InsPair($gtRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+        ExecEngine::getFunction('InsPair')($gtRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
     } else {
-        InsPair($gtRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
+        ExecEngine::getFunction('InsPair')($gtRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
     }
 });

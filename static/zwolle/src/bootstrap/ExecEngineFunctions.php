@@ -34,7 +34,7 @@ $execEngineLogger = ExecEngine::getLogger();
    VIOLATION (TXT "InsPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-ExecEngine::registerFunction('InsPair', $InsPair = function ($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom) use ($execEngineLogger) {
+ExecEngine::registerFunction('InsPair', function ($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom) use ($execEngineLogger) {
     if (func_num_args() != 5) {
         throw new Exception("InsPair() expects 5 arguments, but you have provided ".func_num_args(), 500);
     }
@@ -140,7 +140,7 @@ ExecEngine::registerFunction('DelPair', function ($relationName, $srcConceptName
               )
 
 */
-ExecEngine::registerFunction('NewStruct', function () use ($InsPair, $execEngineLogger) {
+ExecEngine::registerFunction('NewStruct', function () use ($execEngineLogger) {
  // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
     // We start with parsing the first one or two arguments
     $c = Concept::getConceptByLabel(func_get_arg(0)); // Concept for which atom is to be created
@@ -194,7 +194,7 @@ ExecEngine::registerFunction('NewStruct', function () use ($InsPair, $execEngine
         }
         
         // Any logging is done by InsPair
-        $InsPair($relation, $srcConcept->name, $srcAtomId, $tgtConcept->name, $tgtAtomId);
+        ExecEngine::getFunction('InsPair')($relation, $srcConcept->name, $srcAtomId, $tgtConcept->name, $tgtAtomId);
     }
     $execEngineLogger->debug("Newstruct: atom '{$atom}' created");
 });
@@ -282,7 +282,7 @@ ExecEngine::registerFunction('MrgAtoms', function ($conceptA, $srcAtomId, $conce
  VIOLATION (TXT "SetConcept;ConceptA;ConceptB;" SRC I)
  */
 // Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atomId>")
-ExecEngine::registerFunction('SetConcept', $SetConcept = function ($conceptA, $conceptB, $atomId) use ($execEngineLogger) {
+ExecEngine::registerFunction('SetConcept', function ($conceptA, $conceptB, $atomId) use ($execEngineLogger) {
     if (func_num_args() != 3) {
         throw new Exception("SetConcept() expects 3 arguments, but you have provided ".func_num_args(), 500);
     }
@@ -329,7 +329,7 @@ ExecEngine::registerFunction('ClearConcept', function ($concept, $atomId) use ($
  *************************************************************/
  
 // InsPairCond is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
-ExecEngine::registerFunction('InsPairCond', function ($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool) use ($InsPair, $execEngineLogger) {
+ExecEngine::registerFunction('InsPairCond', function ($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool) use ($execEngineLogger) {
     if (func_num_args() != 6) {
         throw new Exception("InsPairCond() expects 6 arguments, but you have provided ".func_num_args(), 500);
     }
@@ -341,11 +341,11 @@ ExecEngine::registerFunction('InsPairCond', function ($relationName, $srcConcept
         return;
     }
     
-    $InsPair($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom);
+    ExecEngine::getFunction('InsPair')($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom);
 });
 
 // SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
-ExecEngine::registerFunction('SetConceptCond', function ($conceptA, $conceptB, $atom, $bool) use ($SetConcept, $execEngineLogger) {
+ExecEngine::registerFunction('SetConceptCond', function ($conceptA, $conceptB, $atom, $bool) use ($execEngineLogger) {
     if (func_num_args() != 4) {
         throw new Exception("SetConceptCond() expects 4 arguments, but you have provided ".func_num_args(), 500);
     }
@@ -357,7 +357,7 @@ ExecEngine::registerFunction('SetConceptCond', function ($conceptA, $conceptB, $
         return;
     }
     
-    $SetConcept($conceptA, $conceptB, $atom);
+    ExecEngine::getFunction('SetConcept')($conceptA, $conceptB, $atom);
 });
 
 ExecEngine::registerFunction('SetNavToOnCommit', function ($navTo) use ($container, $execEngineLogger) {
