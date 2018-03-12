@@ -47,6 +47,8 @@ angular.module('AmpersandApp')
                 
                 // Update notifications
                 NotificationService.updateNotifications(data.notifications);
+            }, function(error){
+                service.initializeSettings();
             });
         },
 
