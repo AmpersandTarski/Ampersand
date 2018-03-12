@@ -96,27 +96,27 @@ class ExecEngine extends RuleEngine
             }
         }
 
-        $rulesFixed = [];
+        self::$maxRunCount = Config::get('maxRunCount', 'execEngine');
+        self::$autoRerun = Config::get('autoRerun', 'execEngine');
+        self::$runCount = 0;
+        self::$doRun = true;
         do {
+            self::$runCount++;
+            $rulesFixed = [];
             foreach ($roles as $role) {
-                self::$runCount++;
-
-                // Prevent infinite loop in ExecEngine reruns
-                if (self::$runCount > self::$maxRunCount) {
-                    $logger->error("Maximum reruns exceeded (hint! rules fixed in last run:" . implode(', ', $rulesFixed) . ")");
-                    Logger::getUserLogger()->error("Maximum reruns exceeded for ExecEngine");
-                    break 2; // break foreach and do-while loop
-                }
-
                 $logger->info("{+ Run #" . self::$runCount . " using role '{$role}' (auto rerun: " . var_export(self::$autoRerun, true) . ")");
-                
                 $rulesFixed = array_merge($rulesFixed, self::runForRole($role, $allRules));
-
                 $logger->debug("+} Run finished");
             }
 
             // If no rules fixed (i.e. no violations) in this loop: stop ExecEngine
             if (empty($rulesFixed)) {
+                self::$doRun = false;
+            }
+            // Prevent infinite loop in ExecEngine reruns
+            if (self::$runCount >= self::$maxRunCount) {
+                $logger->error("Maximum reruns exceeded (hint! rules fixed in last run:" . implode(', ', $rulesFixed) . ")");
+                Logger::getUserLogger()->error("Maximum reruns exceeded for ExecEngine");
                 self::$doRun = false;
             }
         } while (self::$doRun && self::$autoRerun); // self::$doRun can also be set to false by some ExecEngine function

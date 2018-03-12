@@ -303,21 +303,24 @@ class Transaction
      */
     public function getAffectedRules(array $rules = null): array
     {
-        $ruleNames = [];
+        $affectedRuleNames = [];
         foreach ($this->getAffectedConjuncts() as $conjunct) {
-            $ruleNames = array_merge($ruleNames, $conjunct->getRuleNames());
+            $affectedRuleNames = array_merge($affectedRuleNames, $conjunct->getRuleNames());
         }
-        $ruleNames = array_unique($ruleNames);
+        $affectedRuleNames = array_unique($affectedRuleNames);
+
+        $affectedRules = array_map(function (string $ruleName): Rule {
+            return Rule::getRule($ruleName);
+        }, $affectedRuleNames);
         
-        // Return all affected rules
+        // Return unfiltered affected rules
         if (is_null($rules)) {
-            return array_map(function ($ruleName) {
-                return Rule::getRule($ruleName);
-            }, $ruleNames);
-        } // Return filtered affected rules
+            return $affectedRules;
+        } 
+        // Filtered affected rules
         else {
-            return array_filter($rules, function ($rule) use ($ruleNames) {
-                return in_array($rule->id, $ruleNames);
+            return array_filter($affectedRules, function (Rule $rule) use ($rules) {
+                return in_array($rule, $rules);
             });
         }
     }
