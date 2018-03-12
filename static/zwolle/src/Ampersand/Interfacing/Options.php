@@ -40,7 +40,7 @@ class Options
         $optionsMap = ['metaData' => self::INCLUDE_META_DATA
                       ,'sortData' => self::INCLUDE_SORT_DATA
                       ,'navIfc' => self::INCLUDE_NAV_IFCS
-                      ,'inclLinktoData' => (INCLUDE_REF_IFCS | self::INCLUDE_LINKTO_IFCS) // flag both options
+                      ,'inclLinktoData' => (self::INCLUDE_REF_IFCS | self::INCLUDE_LINKTO_IFCS) // flag both options
                       //,'inclRefIfcs' => self::INCLUDE_REF_IFCS // not a user option!
                       ];
         

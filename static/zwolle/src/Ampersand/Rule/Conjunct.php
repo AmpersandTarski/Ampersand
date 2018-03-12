@@ -182,7 +182,7 @@ class Conjunct
                 // Execute conjunct query
                 $this->conjunctViolations = (array) $this->database->execute($this->getQuery());
                 
-                if ($count = count($violations) == 0) {
+                if (($count = count($this->conjunctViolations)) == 0) {
                     $this->logger->debug("Conjunct '{$this->id}' holds");
                 } else {
                     $this->logger->debug("Conjunct '{$this->id}' broken: {$count} violations");
