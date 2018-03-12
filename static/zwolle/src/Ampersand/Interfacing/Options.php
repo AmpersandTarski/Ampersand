@@ -27,7 +27,7 @@ class Options
 
     INCLUDE_REF_IFCS    = 0b00001000,
     
-    INCLUDE_LINKTO_IFCS = 0b00011000; // linkto ifcs are ref(erence) interfaces
+    INCLUDE_LINKTO_IFCS = 0b00010000;
 
     /**
      * Get resource options using API params
@@ -40,7 +40,7 @@ class Options
         $optionsMap = ['metaData' => self::INCLUDE_META_DATA
                       ,'sortData' => self::INCLUDE_SORT_DATA
                       ,'navIfc' => self::INCLUDE_NAV_IFCS
-                      ,'inclLinktoData' => self::INCLUDE_LINKTO_IFCS
+                      ,'inclLinktoData' => (INCLUDE_REF_IFCS | self::INCLUDE_LINKTO_IFCS) // flag both options
                       //,'inclRefIfcs' => self::INCLUDE_REF_IFCS // not a user option!
                       ];
         
