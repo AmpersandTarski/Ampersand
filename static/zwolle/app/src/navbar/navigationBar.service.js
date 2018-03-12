@@ -8,15 +8,13 @@ angular.module('AmpersandApp')
         ext: []
     };
     let defaultSettings = {
-        notifications: {
-            showSignals: true,
-            showInfos: true,
-            showSuccesses: true,
-            autoHideSuccesses: true,
-            showErrors: true,
-            showWarnings: true,
-            showInvariants: true
-        },
+        notify_showSignals: true,
+        notify_showInfos: true,
+        notify_showSuccesses: true,
+        notify_autoHideSuccesses: true,
+        notify_showErrors: true,
+        notify_showWarnings: true,
+        notify_showInvariants: true,
         autoSave: true
     };
 

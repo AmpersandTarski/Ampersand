@@ -179,16 +179,4 @@ class Notifications
                     , 'signals' => array_values(self::$signals)
                     );
     }
-    
-    public static function getDefaultSettings()
-    {
-        return ['showSignals'        => Config::get('defaultShowSignals', 'notifications')
-               ,'showInfos'          => Config::get('defaultShowInfos', 'notifications')
-               ,'showSuccesses'      => Config::get('defaultShowSuccesses', 'notifications')
-               ,'autoHideSuccesses'  => Config::get('defaultAutoHideSuccesses', 'notifications')
-               ,'showErrors'         => Config::get('defaultShowErrors', 'notifications')
-               ,'showWarnings'       => Config::get('defaultShowWarnings', 'notifications')
-               ,'showInvariants'     => Config::get('defaultShowInvariants', 'notifications')
-               ];
-    }
 }
