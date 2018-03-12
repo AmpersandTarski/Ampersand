@@ -39,7 +39,7 @@ if(Config::get('debugMode')){
     //Logger::registerGenericHandler($browserHandler);
 }
 
-$execEngineHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execengine.log', 0, \Monolog\Logger::INFO);
+$execEngineHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execengine.log', 0, \Monolog\Logger::DEBUG);
 Logger::registerHandlerForChannel('EXECENGINE', $execEngineHandler);
 
 // User log handler

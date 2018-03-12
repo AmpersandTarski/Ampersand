@@ -108,9 +108,11 @@ class ExecEngine extends RuleEngine
                     break 2; // break foreach and do-while loop
                 }
 
-                $logger->info("Run #" . self::$runCount . " using role '{$role}' (auto rerun: " . var_export(self::$autoRerun, true) . ")");
+                $logger->info("{+ Run #" . self::$runCount . " using role '{$role}' (auto rerun: " . var_export(self::$autoRerun, true) . ")");
                 
                 $rulesFixed = array_merge($rulesFixed, self::runForRole($role, $allRules));
+
+                $logger->debug("+} Run finished");
             }
 
             // If no rules fixed (i.e. no violations) in this loop: stop ExecEngine
@@ -144,14 +146,15 @@ class ExecEngine extends RuleEngine
             
             // Fix violations
             $total = count($violations);
-            $logger->debug("ExecEngine fixing {$total} violations for rule '{$rule}'");
+            $logger->debug("{++ ExecEngine fixing {$total} violations for rule '{$rule}'");
             foreach ($violations as $key => $violation) {
                 $num = $key + 1;
-                $logger->debug("Fixing violation {$num}/{$total}: ({$violation->src},{$violation->tgt})");
+                $logger->debug("{+++ Fixing violation {$num}/{$total}: ({$violation->src},{$violation->tgt})");
                 self::fixViolation($violation);
+                $logger->debug("+++}");
             }
             $rulesFixed[] = $rule->id;
-            $logger->info("ExecEngine fixed {$total} violations for rule '{$rule}'");
+            $logger->info("++} ExecEngine fixed {$total} violations for rule '{$rule}'");
         }
 
         return $rulesFixed;
