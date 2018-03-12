@@ -4,8 +4,9 @@ $endif$
 $if(crudR)$
   <div ng-repeat="resource in resource['$name$']">
 			<button class="btn btn-sm btn-primary" 
-            ng-hide="resource.hide.length"
+    		uib-popover="{{resource.popovertext}}" popover-trigger="mouseenter"
            ng-click="resource.property = !resource.property; saveItem(resource, 'property', patchResource);" 
+            ng-hide="resource.hide.length"
         ng-disabled="resource.disabled.length">$label$
       </button>
 	</div>
