@@ -18,6 +18,7 @@ return [
         'src',
         'lib',
         'extensions',
+        'api',
     ],
 
     // A directory list that defines files that will be excluded
