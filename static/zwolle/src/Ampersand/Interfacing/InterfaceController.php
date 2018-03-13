@@ -54,7 +54,7 @@ class InterfaceController
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform put
-        $resource = $resource->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($body);
+        $resource = $resource->walkPathToResource($ifcPath)->put($body);
         
         try {
             $content = $resource->get($options, $depth);
@@ -95,7 +95,7 @@ class InterfaceController
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform patch(es)
-        $resource = $resource->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches);
+        $resource = $resource->walkPathToResource($ifcPath)->patch($patches);
         
         try {
             $content = $resource->get($options, $depth);
@@ -126,7 +126,7 @@ class InterfaceController
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform create
-        $resource = $resource->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($body);
+        $resource = $resource->walkPathToResourceList($ifcPath)->post($body);
 
         try {
             $content = $resource->get($options, $depth);
@@ -163,7 +163,7 @@ class InterfaceController
         $transaction = Transaction::getCurrentTransaction();
         
         // Perform delete
-        $resource->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();
+        $resource->walkPathToResource($ifcPath)->delete();
         
         // Close transaction
         $transaction->close();
