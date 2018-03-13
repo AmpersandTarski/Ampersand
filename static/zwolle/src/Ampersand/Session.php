@@ -38,14 +38,14 @@ class Session
     /**
      * Reference to corresponding session object (Atom) in &-domain
      *
-     * @var Atom $sessionAtom
+     * @var \Ampersand\Core\Atom $sessionAtom
      */
     protected $sessionAtom;
     
     /**
      * Reference to corresponding session object which can be used with interfaces
      *
-     * @var Resource $sessionResource
+     * @var \Ampersand\Interfacing\Resource $sessionResource
      */
     protected $sessionResource;
     
