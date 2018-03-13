@@ -127,15 +127,6 @@ class OAuthLoginController
         return $this->dataObj = json_decode($data_resp);
     }
 
-    public function getToken()
-    {
-        if (!isset($this->tokenObj)) {
-            return false;
-        } else {
-            return $this->tokenObj;
-        }
-    }
-
     public function getData()
     {
         if (!isset($this->dataObj)) {
@@ -234,7 +225,7 @@ class OAuthLoginController
         
         // Create new account
         if (iterator_count($accounts) == 0) {
-            $account = Resource::makeResource(null, 'Account');
+            $account = Resource::makeNewResource('Account');
             
             // Save email as accUserid
             $account->link($email, 'accUserid[Account*UserID]')->add();
@@ -250,7 +241,7 @@ class OAuthLoginController
                 // Domain orgs not supported => skip
             }
         } elseif (iterator_count($accounts) == 1) {
-            $account = current($accounts);
+            $account = $accounts->getIterator()->current();
         } else {
             throw new Exception("Multiple users registered with email $email", 401);
         }

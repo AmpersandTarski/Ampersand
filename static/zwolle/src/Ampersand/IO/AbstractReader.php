@@ -7,6 +7,8 @@
 
 namespace Ampersand\IO;
 
+use Exception;
+
 abstract class AbstractReader
 {
 

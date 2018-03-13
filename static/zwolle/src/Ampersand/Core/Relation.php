@@ -41,13 +41,13 @@ class Relation
      * Dependency injection of plug implementation
      * There must at least be one plug for every relation
      *
-     * @var \Ampersand\Plug\RelationPlugInterface[]
+     * @var \Ampersand\Plugs\RelationPlugInterface[]
      */
     protected $plugs = [];
     
     /**
      *
-     * @var \Ampersand\Plug\RelationPlugInterface
+     * @var \Ampersand\Plugs\RelationPlugInterface
      */
     protected $primaryPlug;
     

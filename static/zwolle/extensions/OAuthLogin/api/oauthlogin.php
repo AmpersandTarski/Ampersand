@@ -4,6 +4,7 @@ use Ampersand\Misc\Config;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
 use Slim\Http\Request;
 use Slim\Http\Response;
+use Ampersand\Log\Notifications;
 
 /**
  * @var \Slim\App $app

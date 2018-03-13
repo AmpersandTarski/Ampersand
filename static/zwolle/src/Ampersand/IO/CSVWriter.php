@@ -8,6 +8,7 @@
 namespace Ampersand\IO;
 
 use Ampersand\IO\AbstractWriter;
+use Exception;
 
 /**
  *
