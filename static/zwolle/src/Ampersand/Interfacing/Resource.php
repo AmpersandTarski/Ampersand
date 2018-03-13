@@ -70,7 +70,7 @@ class Resource extends Atom
      * Returns label (from view or atom id) for this atom
      * @return string
      */
-    public function getLabel()
+    public function getLabel(): string
     {
         if (!isset($this->label)) {
             $viewStr = implode($this->getView());
@@ -394,10 +394,10 @@ class Resource extends Atom
     
     /**
      * Update a resource (updates only first level of subinterfaces, for now)
-     * @param stdClass $resourceToPut
-     * @return Resource $this
+     * @param \stdClass $resourceToPut
+     * @return \Ampersand\Interfacing\Resource $this
      */
-    public function put(stdClass $resourceToPut = null)
+    public function put(stdClass $resourceToPut = null): Resource
     {
         if (!$this->concept->isObject()) {
             throw new Exception("Cannot put resource, because it is a non-object concept {$concept}.", 400);
@@ -433,9 +433,9 @@ class Resource extends Atom
      * Use JSONPatch specification for $patches (see: http://jsonpatch.com/)
      *
      * @param array $patches
-     * @return Resource $this
+     * @return \Ampersand\Interfacing\Resource $this
      */
-    public function patch(array $patches)
+    public function patch(array $patches): Resource
     {
         if (!$this->concept->isObject()) {
             throw new Exception("Cannot patch resource, because it is a non-object concept {$concept}.", 400);
@@ -486,9 +486,9 @@ class Resource extends Atom
     
     /**
      * Delete this resource and remove as target atom from current interface
-     * @return Resource $this
+     * @return \Ampersand\Interfacing\Resource $this
      */
-    public function delete()
+    public function delete(): Resource
     {
         if (!$this->concept->isObject()) {
             throw new Exception("Cannot delete resource, because it is a non-object concept {$concept}.", 400);

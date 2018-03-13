@@ -98,7 +98,7 @@ class Hook
                 return sprintf("%s::%s", trim($this->callable[0]), trim($this->callable[1]));
             }
         } // Callable passed as Closure (aka anonymous function)
-        elseif ($this->callable instanceof Closure) {
+        elseif ($this->callable instanceof \Closure) {
             return 'Anonymous function';
         } // Unknown
         else {

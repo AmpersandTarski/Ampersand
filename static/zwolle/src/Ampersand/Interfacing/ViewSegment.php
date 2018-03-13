@@ -8,6 +8,7 @@
 namespace Ampersand\Interfacing;
 
 use Ampersand\Core\Atom;
+use Exception;
 
 /**
  *

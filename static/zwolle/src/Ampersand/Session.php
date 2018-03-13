@@ -16,6 +16,7 @@ use Ampersand\Transaction;
 use Ampersand\Misc\Config;
 use Psr\Log\LoggerInterface;
 use Ampersand\Core\Link;
+use Ampersand\Core\Relation;
 
 /**
  * Class of session objects

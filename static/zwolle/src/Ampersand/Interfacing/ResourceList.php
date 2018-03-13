@@ -232,10 +232,10 @@ class ResourceList implements IteratorAggregate
     }
     
     /**
-     * @param stdClass $resourceToPost
-     * @return Resource
+     * @param \stdClass $resourceToPost
+     * @return \Ampersand\Interfacing\Resource
      */
-    public function post(stdClass $resourceToPost)
+    public function post(stdClass $resourceToPost): Resource
     {
         if (!$this->ifc->crudC()) {
             throw new Exception("Create not allowed for ". $this->ifc->getPath(), 405);
