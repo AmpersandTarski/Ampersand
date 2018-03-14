@@ -1,0 +1,4 @@
+<!-- VIEW STRONG: StrongText HTML TEMPLATE "STRONG.html" ENDVIEW -->
+$if(exprIsUni)$<strong>{{resource['$name$']}}</strong>$else$<div ng-repeat="atom in resource['$name$']">
+    <strong>{{atom}}</strong>
+</div>$endif$
