@@ -207,7 +207,7 @@ class ExcelImporter
      *
      * @param PHPExcel_Worksheet $worksheet
      * @param int $startRowNr
-     * @param int $endRowNr
+     * @param int|null $endRowNr
      * @return void
      */
     protected function parseBlock(PHPExcel_Worksheet $worksheet, int $startRowNr, int $endRowNr = null)

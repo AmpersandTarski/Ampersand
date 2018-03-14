@@ -160,7 +160,7 @@ class Concept
      *
      * @param array $conceptDef
      * @param \Psr\Log\LoggerInterface $logger
-     * @param \Ampersand\Plugs\ConceptPlugInterface $defaultPlug
+     * @param \Ampersand\Plugs\ConceptPlugInterface|null $defaultPlug
      */
     private function __construct(array $conceptDef, LoggerInterface $logger, ConceptPlugInterface $defaultPlug = null)
     {
@@ -182,7 +182,7 @@ class Concept
         
         $this->specializations = (array)$conceptDef['specializations'];
         $this->generalizations = (array)$conceptDef['generalizations'];
-        $this->directSpec = (array)$conceptDef['directSpecs'];
+        $this->directSpecs = (array)$conceptDef['directSpecs'];
         $this->directGens = (array)$conceptDef['directGens'];
         $this->interfaceIds = (array)$conceptDef['interfaces'];
         $this->largestConceptId = $conceptDef['largestConcept'];
@@ -420,14 +420,11 @@ class Concept
      *
      * @return \Ampersand\Interfacing\InterfaceObject[]
      */
-    public function getInterfaces()
+    public function getInterfaces(): array
     {
-        $interfaces = array();
-        foreach ($this->interfaceIds as $ifcId) {
+        return array_map(function ($ifcId) {
             $ifc = InterfaceObject::getInterface($ifcId);
-            $interfaces[$ifc->id] = $ifc;
-        }
-        return $interfaces;
+        }, $this->interfaceIds);
     }
 
     /**
@@ -793,7 +790,7 @@ class Concept
      * Register plug for specified concepts
      *
      * @param \Ampersand\Plugs\ConceptPlugInterface $plug
-     * @param array $conceptLabels
+     * @param array|null $conceptLabels
      * @return void
      */
     public static function registerPlug(ConceptPlugInterface $plug, array $conceptLabels = null)
@@ -816,7 +813,7 @@ class Concept
      *
      * @param string $fileName containing the Ampersand concept definitions
      * @param \Psr\Log\LoggerInterface $logger
-     * @param \Ampersand\Plugs\ConceptPlugInterface $defaultPlug
+     * @param \Ampersand\Plugs\ConceptPlugInterface|null $defaultPlug
      * @return void
      */
     public static function setAllConcepts(string $fileName, LoggerInterface $logger, ConceptPlugInterface $defaultPlug = null)

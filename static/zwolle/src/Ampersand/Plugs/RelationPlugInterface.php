@@ -35,9 +35,9 @@ interface RelationPlugInterface extends StorageInterface
     public function deleteLink(Link $link);
     
     /**
-     * @param Relation $relation relation from which to delete all links
-     * @param Atom $atom atom for which to delete all links
-     * @param string $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
+     * @param \Ampersand\Core\Relation $relation relation from which to delete all links
+     * @param \Ampersand\Core\Atom|null $atom atom for which to delete all links
+     * @param string|null $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
      * @return void
      */
     public function deleteAllLinks(Relation $relation, Atom $atom = null, $srcOrTgt = null);

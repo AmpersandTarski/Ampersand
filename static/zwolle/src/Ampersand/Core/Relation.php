@@ -123,7 +123,7 @@ class Relation
      *
      * @param array $relationDef
      * @param \Psr\Log\LoggerInterface $logger
-     * @param \Ampersand\Plugs\RelationPlugInterface $defaultPlug
+     * @param \Ampersand\Plugs\RelationPlugInterface|null $defaultPlug
      */
     public function __construct($relationDef, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null)
     {
@@ -180,7 +180,7 @@ class Relation
     
     /**
      * Returns array with signal conjuncts that are affected by updating this Relation
-     * @return Conjunct[]
+     * @return \Ampersand\Rule\Conjunct[]
      */
     public function getRelatedConjuncts()
     {
@@ -227,7 +227,7 @@ class Relation
     
     /**
      * Check if link (tuple of src and tgt atom) exists in this relation
-     * @param Link $link
+     * @param \Ampersand\Core\Link $link
      * @return boolean
      */
     public function linkExists(Link $link)
@@ -239,9 +239,9 @@ class Relation
     
     /**
     * Get all links for this relation
-    * @param Atom $srcAtom if specified get all links with $srcAtom as source
-    * @param Atom $tgtAtom if specified get all links with $tgtAtom as tgt
-    * @return Link[]
+    * @param \Ampersand\Core\Atom|null $srcAtom if specified get all links with $srcAtom as source
+    * @param \Ampersand\Core\Atom|null $tgtAtom if specified get all links with $tgtAtom as tgt
+    * @return \Ampersand\Core\Link[]
     */
     public function getAllLinks(Atom $srcAtom = null, Atom $tgtAtom = null)
     {
@@ -250,7 +250,7 @@ class Relation
     
     /**
      * Add link to this relation
-     * @param Link $link
+     * @param \Ampersand\Core\Link $link
      * @return void
      */
     public function addLink(Link $link)
@@ -269,7 +269,7 @@ class Relation
     
     /**
      * Delete link from this relation
-     * @param Link $link
+     * @param \Ampersand\Core\Link $link
      * @return void
      */
     public function deleteLink(Link $link)
@@ -283,7 +283,7 @@ class Relation
     }
     
     /**
-     * @param Atom $atom atom for which to delete all links
+     * @param \Ampersand\Core\Atom $atom atom for which to delete all links
      * @param string $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
      * @return void
      */
@@ -348,21 +348,14 @@ class Relation
     /**
      * Return Relation object
      * @param string $relationSignature
-     * @param string|Concept $srcConcept
-     * @param string|Concept $tgtConcept
+     * @param \Ampersand\Core\Concept|null $srcConcept
+     * @param \Ampersand\Core\Concept|null $tgtConcept
      * @throws Exception if Relation is not defined
-     * @return Relation
+     * @return \Ampersand\Core\Relation
      */
     public static function getRelation($relationSignature, Concept $srcConcept = null, Concept $tgtConcept = null)
     {
         $relations = self::getAllRelations();
-        
-        if (isset($srcConcept) && !($srcConcept instanceof Concept)) {
-            $srcConcept = Concept::getConceptByLabel($srcConcept);
-        }
-        if (isset($srcConcept) && !($tgtConcept instanceof Concept)) {
-            $tgtConcept = Concept::getConceptByLabel($tgtConcept);
-        }
         
         // If relation can be found by its fullRelationSignature return the relation
         if (array_key_exists($relationSignature, $relations)) {
@@ -397,7 +390,7 @@ class Relation
     
     /**
      * Returns array with all Relation objects
-     * @return Relation[]
+     * @return \Ampersand\Core\Relation[]
      */
     public static function getAllRelations()
     {
@@ -411,8 +404,8 @@ class Relation
     /**
      * Register plug for specified relations
      *
-     * @param RelationPlugInterface $plug
-     * @param array $relationSignatures
+     * @param \Ampersand\Plugs\RelationPlugInterface $plug
+     * @param array|null $relationSignatures
      * @return void
      */
     public static function registerPlug(RelationPlugInterface $plug, array $relationSignatures = null)
@@ -435,7 +428,7 @@ class Relation
      *
      * @param string $fileName containing the Ampersand relation definitions
      * @param \Psr\Log\LoggerInterface $logger
-     * @param \Ampersand\Plugs\RelationPlugInterface $defaultPlug
+     * @param \Ampersand\Plugs\RelationPlugInterface|null $defaultPlug
      * @return void
      */
     public static function setAllRelations(string $fileName, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null)

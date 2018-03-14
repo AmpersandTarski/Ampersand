@@ -3,6 +3,7 @@
 namespace Ampersand\IO;
 
 use Psr\Http\Message\StreamInterface;
+use Slim\Http\Stream;
 
 abstract class AbstractWriter
 {
@@ -16,19 +17,19 @@ abstract class AbstractWriter
     
     /**
      *
-     * @param \Psr\Http\Message\StreamInterface $stream (e.g. stream)
+     * @param \Psr\Http\Message\StreamInterface|null $stream
      * @param array $options Configuration options
      */
     public function __construct(StreamInterface $stream = null, array $options = [])
     {
         if (is_null($stream)) {
-            $this->stream = fopen('php://temp', 'w+');
+            $this->stream = new Stream(fopen('php://temp', 'w+'));
         } else {
             $this->stream = $stream;
         }
     }
 
-    public function write($data)
+    public function write(string $data)
     {
         $this->stream->write($data);
     }

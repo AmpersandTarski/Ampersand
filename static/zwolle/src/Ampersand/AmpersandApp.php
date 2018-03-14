@@ -287,7 +287,7 @@ class AmpersandApp
     /**
      * Check if session has any of the provided roles
      *
-     * @param string[] $roles
+     * @param string[]|null $roles
      * @return bool
      */
     public function hasRole(array $roles = null): bool
@@ -306,7 +306,7 @@ class AmpersandApp
     /**
      * Check if session has any of the provided roles active
      *
-     * @param string[] $roles
+     * @param string[]|null $roles
      * @return bool
      */
     public function hasActiveRole(array $roles = null): bool

@@ -15,7 +15,7 @@ abstract class AbstractReader
     /**
      * The stream used to input
      *
-     * @var stream
+     * @var resource
      */
     protected $stream = null;
 
