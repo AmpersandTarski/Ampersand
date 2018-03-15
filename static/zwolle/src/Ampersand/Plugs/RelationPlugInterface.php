@@ -40,5 +40,5 @@ interface RelationPlugInterface extends StorageInterface
      * @param string|null $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
      * @return void
      */
-    public function deleteAllLinks(Relation $relation, Atom $atom = null, $srcOrTgt = null);
+    public function deleteAllLinks(Relation $relation, Atom $atom = null, string $srcOrTgt = null);
 }

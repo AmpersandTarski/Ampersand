@@ -29,13 +29,13 @@ class Reporter
     }
 
     /**
-     * Write and return relation definition report
+     * Write relation definition report
+     * Specifies multiplicity constraints, related conjuncts and other
+     * aspects of all relations
      *
-     * Specifies multiplicity constraints, related conjuncts and other aspects of all relations
-     *
-     * @return array
+     * @return \Ampersand\Misc\Reporter
      */
-    public function reportRelationDefinitions()
+    public function reportRelationDefinitions(): Reporter
     {
         $content = array_map(function (Relation $relation) {
             $relArr = [];
@@ -79,13 +79,13 @@ class Reporter
     }
 
     /**
-     * Write and return interface report
+     * Write interface report
+     * Specifies aspects for all interfaces (incl. subinterfaces), like path, label,
+     * crud-rights, etc
      *
-     * Specifies aspects for all interfaces (incl. subinterfaces), like path, label, crud-rights, etc
-     *
-     * @return array
+     * @return \Ampersand\Misc\Reporter
      */
-    public function reportInterfaceDefinitions()
+    public function reportInterfaceDefinitions(): Reporter
     {
         $content = [];
         foreach (InterfaceObject::getAllInterfaces() as $key => $ifc) {
@@ -117,12 +117,12 @@ class Reporter
     }
 
     /**
-     * Write and return interface issue report
+     * Write interface issue report
      * Currently focussed on CRUD rights
      *
-     * @return array
+     * @return \Ampersand\Misc\Reporter
      */
-    public function reportInterfaceIssues()
+    public function reportInterfaceIssues(): Reporter
     {
         $content = [];
         foreach (InterfaceObject::getAllInterfaces() as $key => $interface) {
@@ -177,13 +177,13 @@ class Reporter
     }
 
     /**
-     * Write and return conjunct usage report
+     * Write conjunct usage report
+     * Specifies which conjuncts are used by which rules, grouped by invariants,
+     * signals, and unused conjuncts
      *
-     * Specifies which conjuncts are used by which rules, grouped by invariants, signals, and unused conjuncts
-     *
-     * @return array
+     * @return \Ampersand\Misc\Reporter
      */
-    public function reportConjunctUsage()
+    public function reportConjunctUsage(): Reporter
     {
         $content = [];
         foreach (Conjunct::getAllConjuncts() as $conj) {
@@ -204,12 +204,12 @@ class Reporter
     }
 
     /**
-     * Write and return conjunct performance report
+     * Write conjunct performance report
      *
-     * @param Conjunct[] $conjuncts
-     * @return array
+     * @param \Ampersand\Rule\Conjunct[] $conjuncts
+     * @return \Ampersand\Misc\Reporter
      */
-    public function reportConjunctPerformance(array $conjuncts)
+    public function reportConjunctPerformance(array $conjuncts): Reporter
     {
         $content = [];
         

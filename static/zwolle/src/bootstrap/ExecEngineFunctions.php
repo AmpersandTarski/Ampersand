@@ -52,10 +52,10 @@ ExecEngine::registerFunction('InsPair', function ($relationName, $srcConceptName
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
     if ($srcAtom == "_NEW") {
-        $srcAtom = ExecEngine::$_NEW->id;
+        $srcAtom = ExecEngine::getCreatedAtom()->id;
     }
     if ($tgtAtom == "_NEW") {
-        $tgtAtom = ExecEngine::$_NEW->id;
+        $tgtAtom = ExecEngine::getCreatedAtom()->id;
     }
     
     $srcAtomIds = explode('_AND', $srcAtom);
@@ -96,10 +96,10 @@ ExecEngine::registerFunction('DelPair', function ($relationName, $srcConceptName
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
     if ($srcAtom == "_NEW") {
-        $srcAtom = ExecEngine::$_NEW->id;
+        $srcAtom = ExecEngine::getCreatedAtom()->id;
     }
     if ($tgtAtom == "_NEW") {
-        $tgtAtom = ExecEngine::$_NEW->id;
+        $tgtAtom = ExecEngine::getCreatedAtom()->id;
     }
     
     $srcAtoms = explode('_AND', $srcAtom);
@@ -160,7 +160,7 @@ ExecEngine::registerFunction('NewStruct', function () use ($execEngineLogger) {
     $atom->add();
 
     // Make newly created atom available within scope of violation for use of other functions
-    ExecEngine::$_NEW = $atom;
+    ExecEngine::setCreatedAtom($atom);
 
     // Next, for every relation that follows in the argument list, we create a link
     for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5) {
@@ -217,7 +217,7 @@ ExecEngine::registerFunction('InsAtom', function (string $conceptName, string $a
     $atom->add();
     
     // Make (newly created) atom available within scope of violation for use of other functions
-    ExecEngine::$_NEW = $atom;
+    ExecEngine::setCreatedAtom($atom);
 
     $execEngineLogger->debug("Atom '{$atom}' added");
 });
@@ -235,7 +235,7 @@ ExecEngine::registerFunction('DelAtom', function ($concept, $atomId) use ($execE
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
     if ($atomId == "_NEW") {
-        $atom = ExecEngine::$_NEW;
+        $atom = ExecEngine::getCreatedAtom();
     } else {
         $atom = new Atom($atomId, Concept::getConceptByLabel($concept));
     }
@@ -266,10 +266,10 @@ ExecEngine::registerFunction('MrgAtoms', function ($conceptA, $srcAtomId, $conce
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
     if ($srcAtomId == "_NEW") {
-        $srcAtom = ExecEngine::$_NEW;
+        $srcAtom = ExecEngine::getCreatedAtom();
     }
     if ($tgtAtomId == "_NEW") {
-        $tgtAtom = ExecEngine::$_NEW;
+        $tgtAtom = ExecEngine::getCreatedAtom();
     }
     
     $srcAtom->merge($tgtAtom); // union of two records plus substitution in all occurences in binary relations.
@@ -289,7 +289,7 @@ ExecEngine::registerFunction('SetConcept', function ($conceptA, $conceptB, $atom
 
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
     if ($atomId == "_NEW") {
-        $atom = ExecEngine::$_NEW;
+        $atom = ExecEngine::getCreatedAtom();
     } else {
         $atom = new Atom($atomId, Concept::getConceptByLabel($conceptA));
     }
@@ -314,7 +314,7 @@ ExecEngine::registerFunction('ClearConcept', function ($concept, $atomId) use ($
     
     // if atom id is specified as _NEW, the latest atom created by NewStruct or InsAtom (in this VIOLATION) is used
     if ($atomId == "_NEW") {
-        $atom = ExecEngine::$_NEW;
+        $atom = ExecEngine::getCreatedAtom();
     } else {
         $atom = new Atom($atomId, $concept);
     }
@@ -362,7 +362,7 @@ ExecEngine::registerFunction('SetConceptCond', function ($conceptA, $conceptB, $
 
 ExecEngine::registerFunction('SetNavToOnCommit', function ($navTo) use ($container, $execEngineLogger) {
     if (strpos($navTo, '_NEW') !== false) {
-        $navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
+        $navTo = str_replace('_NEW', ExecEngine::getCreatedAtom()->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
         $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
     }
     
@@ -371,7 +371,7 @@ ExecEngine::registerFunction('SetNavToOnCommit', function ($navTo) use ($contain
     
 ExecEngine::registerFunction('SetNavToOnRollback', function ($navTo) use ($container, $execEngineLogger) {
     if (strpos($navTo, '_NEW') !== false) {
-        $navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
+        $navTo = str_replace('_NEW', ExecEngine::getCreatedAtom()->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
         $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
     }
     

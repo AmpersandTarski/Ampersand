@@ -80,7 +80,7 @@ class MysqlDBTable
      */
     public function getColNames(): array
     {
-        $colNames = array();
+        $colNames = [];
         foreach ($this->getCols() as $col) {
             $colNames[] = $col->name;
         }
@@ -109,6 +109,7 @@ class MysqlDBTable
      */
     public function getFirstCol(): MysqlDBTableCol
     {
-        return current($this->getCols());
+        $cols = $this->getCols();
+        return reset($cols);
     }
 }

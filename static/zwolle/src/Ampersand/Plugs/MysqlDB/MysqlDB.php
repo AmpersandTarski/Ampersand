@@ -468,22 +468,21 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     {
         $atomId = $this->getDBRepresentation($atom);
         
-        // Get col information for concept and its specializations
-        $colNames = array();
-        $conceptTableInfo = $atom->concept->getConceptTableInfo();
-        $conceptTable = $conceptTableInfo->name;
-        $conceptCol = reset($conceptTableInfo->getCols());
+        // Get table and col for WHERE clause
+        $conceptTable = $atom->concept->getConceptTableInfo();
+        $conceptCol = $atom->concept->getConceptTableInfo()->getFirstCol();
         
-        $colNames[] = $conceptCol->name;
+        // Get cols for UPDATE clause
+        $colNames = [];
+        $colNames[] = $conceptCol->name; // also update the concept col itself
         foreach ($atom->concept->getSpecializations() as $specConcept) {
-            $conceptTableInfo = $specConcept->getConceptTableInfo();
-            $colNames[] = reset($conceptTableInfo->getColNames());
+            $colNames[] = $specConcept->getConceptTableInfo()->getFirstCol()->name;
         }
         
         // Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
         $queryString = "\"" . implode("\" = NULL, \"", $colNames) . "\" = NULL";
         
-        $this->execute("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atomId}'");
+        $this->execute("UPDATE \"{$conceptTable->name}\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atomId}'");
         
         // Check if query resulted in an affected row
         $this->checkForAffectedRows();

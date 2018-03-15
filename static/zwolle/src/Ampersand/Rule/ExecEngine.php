@@ -13,6 +13,7 @@ use Ampersand\Role;
 use Ampersand\Log\Logger;
 use Ampersand\Transaction;
 use Ampersand\Rule\Violation;
+use Ampersand\Core\Atom;
 
 class ExecEngine extends RuleEngine
 {
@@ -54,12 +55,12 @@ class ExecEngine extends RuleEngine
     protected static $callables = [];
     
     /**
-     * Specifies latest atom created by a newstruct function call.
+     * Specifies latest atom created by a Newstruct/InsAtom function call.
      * Can be (re)used within the scope of one violation statement
      *
-     * @var \Ampersand\Core\Atom
+     * @var \Ampersand\Core\Atom|null
      */
-    public static $_NEW = null;
+    protected static $newAtom = null;
     
     /**
      * Get logger for ExecEngine
@@ -69,6 +70,32 @@ class ExecEngine extends RuleEngine
     public static function getLogger()
     {
         return Logger::getLogger('EXECENGINE');
+    }
+
+    /**
+     * Get created atom by other ExecEngine function
+     * Only is available within the same violation
+     * self::$newAtom is set to null at the start of each fixViolation run
+     *
+     * @return \Ampersand\Core\Atom
+     */
+    public static function getCreatedAtom(): Atom
+    {
+        if (is_null(self::$newAtom)) {
+            throw new Exception("No newly created atom (_NEW) available. To fix: first execute function InsAtom.", 500);
+        }
+        return self::$newAtom;
+    }
+
+    /**
+     * Set created atom so it can be (re)used within the scope of one violation statement
+     *
+     * @param \Ampersand\Core\Atom $atom
+     * @return \Ampersand\Core\Atom
+     */
+    public static function setCreatedAtom(Atom $atom): Atom
+    {
+        return self::$newAtom = $atom;
     }
     
     /**
@@ -170,8 +197,9 @@ class ExecEngine extends RuleEngine
     {
         $logger = self::getLogger();
         
-        // Newly created atom (e.g. by NewStruct function) can be (re)used inside the scope of the violation in which it was created.
-        self::$_NEW = null;
+        // Reset reference to newly created atom (e.g. by NewStruct/InsAtom function)
+        // See function getCreatedAtom() above
+        self::$newAtom = null;
 
         // Determine actions/functions to be taken
         $actions = explode('{EX}', $violation->getExecEngineViolationMessage());

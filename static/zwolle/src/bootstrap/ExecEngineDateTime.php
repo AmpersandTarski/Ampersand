@@ -108,7 +108,7 @@ ExecEngine::registerFunction('datimeEQL', function ($eqlRelation, $DateConcept, 
         
         // Accommodate for different representations of the same time:
         if ($srcAtom != $tgtAtom) {
-            ExecEngine::getFunction('InsPair')($eqlRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
+            call_user_func(ExecEngine::getFunction('InsPair'), $eqlRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
         }
     }
 });
