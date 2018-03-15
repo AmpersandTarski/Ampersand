@@ -80,11 +80,13 @@ $container['default_plug'] = function ($c) {
 
 
 /**************************************************************************************************
- * EXEC ENGINE 
+ * ExecEngine 
  *************************************************************************************************/
 // Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
 // Config::set('autoRerun', 'execEngine', true);
 // Config::set('maxRunCount', 'execEngine', 10);
+// chdir(__DIR__);
+// foreach(glob('execfunctions/*.php') as $filepath) require_once(__DIR__ . DIRECTORY_SEPARATOR . $filepath);
 
 
 /**************************************************************************************************
