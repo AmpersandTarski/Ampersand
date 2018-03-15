@@ -112,9 +112,13 @@ class AmpersandApp
 
         // Add interfaces and rules for all active session roles
         foreach ($this->getActiveRoles() as $roleAtom) {
-            $role = Role::getRoleByName($roleAtom->id);
-            $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-            $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
+            try {
+                $role = Role::getRoleByName($roleAtom->id);
+                $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
+                $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
+            } catch (Exception $e) {
+                $this->logger->debug("Actived role '{$roleAtom}', but role is not used/defined in &-script.");
+            }
         }
 
         // Remove duplicates

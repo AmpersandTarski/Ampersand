@@ -135,9 +135,9 @@ class Role
      * Return role object
      * @param string $roleName
      * @throws Exception if role is not defined
-     * @return Role
+     * @return \Ampersand\Role
      */
-    public static function getRoleByName($roleName)
+    public static function getRoleByName($roleName): Role
     {
         if (!array_key_exists($roleName, $roles = self::getAllRoles())) {
             throw new Exception("Role '{$roleName}' is not defined", 500);
