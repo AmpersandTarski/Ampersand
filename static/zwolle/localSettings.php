@@ -3,10 +3,10 @@
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Misc\Config;
-use Ampersand\Plugs\MysqlDB\MysqlDB;
 // use Ampersand\Rule\ExecEngine;
+use Ampersand\Plugs\MysqlDB\MysqlDB;
 
-define ('LOCALSETTINGS_VERSION', 1.6);
+define('LOCALSETTINGS_VERSION', 1.6);
 
 date_default_timezone_set('Europe/Amsterdam'); // See http://php.net/manual/en/timezones.php for a list of supported timezones
 
@@ -19,7 +19,7 @@ ini_set("display_errors", false);
 /**************************************************************************************************
  * Execution time limit is set to a default of 30 seconds. Use 0 to have no time limit. (not advised)
  *************************************************************************************************/
-set_time_limit (30);
+set_time_limit(30);
 
 //Config::set('debugMode', 'global', true); // default mode = false
 
@@ -29,7 +29,7 @@ $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/error.lo
 $wrapper = new \Monolog\Handler\FingersCrossedHandler($fileHandler, \Monolog\Logger::ERROR, 0, true, true, \Monolog\Logger::WARNING);
 Logger::registerGenericHandler($wrapper);
 
-if(Config::get('debugMode')){
+if (Config::get('debugMode')) {
     $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
     Logger::registerGenericHandler($fileHandler);
     
@@ -55,7 +55,7 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * DATABASE settings
  *************************************************************************************************/
-$container['mysql_database'] = function($c) {
+$container['mysql_database'] = function ($c) {
     $dbHost = Config::get('dbHost', 'mysqlDatabase');
     $dbUser = Config::get('dbUser', 'mysqlDatabase');
     $dbPass = Config::get('dbPassword', 'mysqlDatabase');
@@ -68,7 +68,7 @@ $container['default_plug'] = function ($c) {
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY
- * 
+ *
  * The login functionality requires the ampersand SIAM module
  * The module can be downloaded at: https://github.com/AmpersandTarski/ampersand-models/tree/master/SIAM
  * Copy and rename the SIAM_Module-example.adl into SIAM_Module.adl
@@ -80,7 +80,7 @@ $container['default_plug'] = function ($c) {
 
 
 /**************************************************************************************************
- * ExecEngine 
+ * ExecEngine
  *************************************************************************************************/
 // Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
 // Config::set('autoRerun', 'execEngine', true);
@@ -92,4 +92,3 @@ $container['default_plug'] = function ($c) {
 /**************************************************************************************************
  * EXTENSIONS
  *************************************************************************************************/
-
