@@ -30,7 +30,7 @@ class Transaction
     /**
      * Points to the current/active transaction
      *
-     * @var \Ampersand\Transaction
+     * @var \Ampersand\Transaction|null
      */
     private static $currentTransaction = null;
 
@@ -107,9 +107,9 @@ class Transaction
      *
      * @return \Ampersand\Transaction
      */
-    public static function getCurrentTransaction()
+    public static function getCurrentTransaction(): Transaction
     {
-        if (!isset(self::$currentTransaction)) {
+        if (is_null(self::$currentTransaction)) {
             self::$transactions[] = self::$currentTransaction = new Transaction();
         }
         return self::$currentTransaction;
@@ -120,7 +120,7 @@ class Transaction
      *
      * @return \Ampersand\Transaction[]
      */
-    public static function getTransactions()
+    public static function getTransactions(): array
     {
         return self::$transactions;
     }
@@ -298,7 +298,7 @@ class Transaction
      * Get list of rules that are affected in this transaction
      * If set of rules is provided, function will return affected subset
      *
-     * @param \Ampersand\Rule\Rule[] $rules
+     * @param \Ampersand\Rule\Rule[]|null $rules
      * @return \Ampersand\Rule\Rule[]
      */
     public function getAffectedRules(array $rules = null): array
@@ -316,9 +316,9 @@ class Transaction
         // Return unfiltered affected rules
         if (is_null($rules)) {
             return $affectedRules;
-        } 
+        
         // Filtered affected rules
-        else {
+        } else {
             return array_filter($affectedRules, function (Rule $rule) use ($rules) {
                 return in_array($rule, $rules);
             });

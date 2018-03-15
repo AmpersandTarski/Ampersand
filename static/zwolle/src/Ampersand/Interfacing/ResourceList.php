@@ -15,6 +15,8 @@ use Ampersand\Misc\Config;
 use Ampersand\Core\Atom;
 use Ampersand\Log\Logger;
 use Ampersand\Interfacing\Options;
+use Ampersand\Interfacing\Resource;
+use Ampersand\Interfacing\InterfaceObject;
 
 /**
  *
@@ -67,14 +69,19 @@ class ResourceList implements IteratorAggregate
     }
     
     /**
-     * @return ArrayIterator
+     * @return \ArrayIterator
      */
-    public function getIterator()
+    public function getIterator(): ArrayIterator
     {
         return new ArrayIterator($this->getTgtResources());
     }
     
-    public function getSrc()
+    /**
+     * Get source resource of this list
+     *
+     * @return \Ampersand\Interfacing\Resource
+     */
+    public function getSrc(): Resource
     {
         return $this->src;
     }
@@ -82,24 +89,24 @@ class ResourceList implements IteratorAggregate
     /**
      * @return string
      */
-    public function getPath()
+    public function getPath(): string
     {
         return $this->src->getPath() . '/' . $this->ifc->id;
     }
     
     /**
-     * @return InterfaceObject
+     * @return \Ampersand\Interfacing\InterfaceObject
      */
-    public function getIfc()
+    public function getIfc(): InterfaceObject
     {
         return $this->ifc;
     }
     
     /**
      * @param string $tgtId
-     * @return Resource
+     * @return \Ampersand\Interfacing\Resource
      */
-    public function one($tgtId = null)
+    public function one($tgtId = null): Resource
     {
         if (!$this->ifc->crudR()) {
             throw new Exception("Read not allowed for " . $this->ifc->getPath(), 405);
@@ -126,7 +133,7 @@ class ResourceList implements IteratorAggregate
      * @param bool $fromCache specifies if target resources may be get from cache (true) or recalculated (false)
      * @return \Ampersand\Interfacing\Resource[]
      */
-    protected function getTgtResources(bool $fromCache = true)
+    protected function getTgtResources(bool $fromCache = true): array
     {
         if (!isset($this->tgts) || !$fromCache) {
             $this->tgts = [];
@@ -165,6 +172,11 @@ class ResourceList implements IteratorAggregate
         return new Resource($tgtId, $this->ifc->tgtConcept, $this);
     }
 
+    /**
+     * Resource factory. Instantiates a new target resource with a new (random) id
+     *
+     * @return \Ampersand\Interfacing\Resource
+     */
     protected function makeNewResource(): Resource
     {
         $cpt = $this->ifc->tgtConcept;
@@ -177,9 +189,9 @@ class ResourceList implements IteratorAggregate
      
     /**
      * @param int $options
-     * @param int $depth
+     * @param int|null $depth
      * @param array $recursionArr
-     * @return mixed[]
+     * @return bool|null|\Ampersand\Interfacing\Resource|\Ampersand\Interfacing\Resource[]
      */
     public function get($options = Options::DEFAULT_OPTIONS, int $depth = null, $recursionArr = [])
     {
@@ -290,9 +302,9 @@ class ResourceList implements IteratorAggregate
     /**
      * Update a complete resource list (updates only this subinterface, not any level(s) deeper for now)
      * @param mixed $value
-     * @return boolean
+     * @return bool
      */
-    public function put($value)
+    public function put($value): bool
     {
         
         if ($this->ifc->isUni()) { // expect value to be object or literal
@@ -346,10 +358,10 @@ class ResourceList implements IteratorAggregate
     
     /**
      * Alias of set() method. Used by Resource::patch() method
-     * @param string $value
-     * @return boolean
+     * @param string|null $value
+     * @return bool
      */
-    public function replace($value)
+    public function replace(string $value = null): bool
     {
         if (!$this->ifc->isUni()) {
             throw new Exception("Cannot use replace for non-univalent interface " . $this->ifc->getPath() . ". Use add or remove instead", 400);
@@ -359,10 +371,11 @@ class ResourceList implements IteratorAggregate
     
     /**
      * Set provided value (for univalent interfaces)
-     * @param string $value (value null is supported)
-     * @return boolean
+     *
+     * @param string|null $value
+     * @return bool
      */
-    public function set($value)
+    public function set(string $value = null): bool
     {
         if (!$this->ifc->isUni()) {
             throw new Exception("Cannot use set() for non-univalent interface " . $this->ifc->getPath() . ". Use add or remove instead", 400);
@@ -391,9 +404,9 @@ class ResourceList implements IteratorAggregate
     /**
      * Add value to resource list
      * @param string $value
-     * @return boolean
+     * @return bool
      */
-    public function add($value)
+    public function add($value): bool
     {
         if (!isset($value)) {
             throw new Exception("Cannot add item. Value not provided", 400);
@@ -422,10 +435,11 @@ class ResourceList implements IteratorAggregate
     
     /**
      * Remove value from resource list
+     *
      * @param string $value
-     * @return boolean
+     * @return bool
      */
-    public function remove($value)
+    public function remove($value): bool
     {
         if (!isset($value)) {
             throw new Exception("Cannot remove item. Value not provided", 400);
@@ -447,7 +461,12 @@ class ResourceList implements IteratorAggregate
         return true;
     }
     
-    public function removeAll()
+    /**
+     * Undocumented function
+     *
+     * @return bool
+     */
+    public function removeAll(): bool
     {
         if (!$this->ifc->isEditable()) {
             throw new Exception("Interface is not editable " . $this->ifc->getPath(), 405);
@@ -459,5 +478,7 @@ class ResourceList implements IteratorAggregate
         foreach ($this->getTgtResources() as $tgt) {
             $this->src->link($tgt, $this->ifc->relation(), $this->ifc->relationIsFlipped)->delete();
         }
+
+        return true;
     }
 }

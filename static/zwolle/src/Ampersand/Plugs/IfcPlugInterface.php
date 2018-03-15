@@ -20,9 +20,9 @@ interface IfcPlugInterface extends PlugInterface
 {
     
     /**
-     * @param InterfaceObject $ifc
-     * @param Atom $srcAtom
+     * @param \Ampersand\Interfacing\InterfaceObject $ifc
+     * @param \Ampersand\Core\Atom $srcAtom
      * @return mixed
      */
-    public function executeIfcExpression(InterfaceObject $ifc, Atom $srcAtom = null);
+    public function executeIfcExpression(InterfaceObject $ifc, Atom $srcAtom);
 }

@@ -24,7 +24,13 @@ global $container;
  *
  *************************************************************************************************/
 
+/**
+ * @phan-closure-scope \Slim\App
+ */
 $app->group('/resource', function () use ($container) {
+    // Inside group closure, $this is bound to the instance of Slim\App
+    /** @var \Slim\App $this */
+
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
 
@@ -146,7 +152,13 @@ $app->group('/resource', function () use ($container) {
     });
 })->add($middleWare1);
 
+/**
+ * @phan-closure-scope \Slim\App
+ */
 $app->group('/session', function () use ($container, $middleWare1) {
+    // Inside group closure, $this is bound to the instance of Slim\App
+    /** @var \Slim\App $this */
+
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
     

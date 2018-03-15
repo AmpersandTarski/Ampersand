@@ -87,7 +87,7 @@ class InterfaceController
      * @param string|array $ifcPath
      * @param array $patches
      * @param int $options
-     * @param int $depth
+     * @param int|null $depth
      * @return array
      */
     public function patch(Resource $resource, $ifcPath, array $patches, int $options, int $depth = null): array

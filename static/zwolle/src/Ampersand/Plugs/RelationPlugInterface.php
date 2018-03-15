@@ -24,8 +24,8 @@ interface RelationPlugInterface extends StorageInterface
     /**
     * Get all links given a relation
     * @param Relation $relation
-    * @param Atom $srcAtom if specified get all links with $srcAtom as source
-    * @param Atom $tgtAtom if specified get all links with $tgtAtom as tgt
+    * @param \Ampersand\Core\Atom|null $srcAtom if specified get all links with $srcAtom as source
+    * @param \Ampersand\Core\Atom|null $tgtAtom if specified get all links with $tgtAtom as tgt
     * @return Link[]
     */
     public function getAllLinks(Relation $relation, Atom $srcAtom = null, Atom $tgtAtom = null);

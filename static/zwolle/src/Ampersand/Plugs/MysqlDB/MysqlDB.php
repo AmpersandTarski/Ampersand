@@ -336,7 +336,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         if (!$this->dbTransactionActive) {
             $this->logger->info("Start mysql database transaction for {$transaction}");
             $this->execute("START TRANSACTION");
-            return $this->dbTransactionActive = true; // set flag dbTransactionActive
+            $this->dbTransactionActive = true; // set flag dbTransactionActive
         }
     }
     
@@ -470,12 +470,12 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         
         // Get col information for concept and its specializations
         $colNames = array();
-        $conceptTableInfo = $concept->getConceptTableInfo();
+        $conceptTableInfo = $atom->concept->getConceptTableInfo();
         $conceptTable = $conceptTableInfo->name;
         $conceptCol = reset($conceptTableInfo->getCols());
         
         $colNames[] = $conceptCol->name;
-        foreach ($concept->getSpecializations() as $specConcept) {
+        foreach ($atom->concept->getSpecializations() as $specConcept) {
             $conceptTableInfo = $specConcept->getConceptTableInfo();
             $colNames[] = reset($conceptTableInfo->getColNames());
         }
@@ -539,11 +539,11 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     * Get all links given a relation
 
     * @param \Ampersand\Core\Relation $relation
-    * @param \Ampersand\Core\Atom $srcAtom if specified get all links with $srcAtom as source
-    * @param \Ampersand\Core\Atom $tgtAtom if specified get all links with $tgtAtom as tgt
+    * @param \Ampersand\Core\Atom|null $srcAtom if specified get all links with $srcAtom as source
+    * @param \Ampersand\Core\Atom|null $tgtAtom if specified get all links with $tgtAtom as tgt
     * @return \Ampersand\Core\Link[]
     */
-    public function getAllLinks(Relation $relation, Atom $srcAtom = null, Atom $tgtAtom = null)
+    public function getAllLinks(Relation $relation, Atom $srcAtom = null, Atom $tgtAtom = null): array
     {
         $relTable = $relation->getMysqlTable();
         
@@ -646,11 +646,11 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
      *
      *
      * @param \Ampersand\Core\Relation $relation relation from which to delete all links
-     * @param \Ampersand\Core\Atom $atom atom for which to delete all links
-     * @param string $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
+     * @param \Ampersand\Core\Atom|null $atom atom for which to delete all links
+     * @param string|null $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
      * @return void
      */
-    public function deleteAllLinks(Relation $relation, Atom $atom = null, $srcOrTgt = null)
+    public function deleteAllLinks(Relation $relation, Atom $atom = null, string $srcOrTgt = null)
     {
         $relationTable = $relation->getMysqlTable();
         
@@ -724,7 +724,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
      * @param \Ampersand\Core\Atom $srcAtom
      * @return mixed
      */
-    public function executeIfcExpression(InterfaceObject $ifc, Atom $srcAtom = null)
+    public function executeIfcExpression(InterfaceObject $ifc, Atom $srcAtom)
     {
         $srcAtomId = $this->getDBRepresentation($srcAtom);
         $query = $ifc->getQuery();
@@ -744,7 +744,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
      * @param \Ampersand\Core\Atom $srcAtom
      * @return array
      */
-    public function executeViewExpression(ViewSegment $view, Atom $srcAtom = null): array
+    public function executeViewExpression(ViewSegment $view, Atom $srcAtom): array
     {
         $srcAtomId = $this->getDBRepresentation($srcAtom);
         $viewSQL = $view->getQuery();

@@ -7,6 +7,8 @@
 
 namespace Ampersand\Log;
 
+use Monolog\Handler\HandlerInterface;
+
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
@@ -75,19 +77,23 @@ class Logger
     
     /**
      * Register a handler that is added when certain logger (channel) is instantiated
+     *
      * @param string $channel
-     * @param \Monolog\Handler $handler
+     * @param \Monolog\Handler\HandlerInterface $handler
+     * @return void
      */
-    public static function registerHandlerForChannel($channel, $handler)
+    public static function registerHandlerForChannel(string $channel, HandlerInterface $handler)
     {
         self::$channelHandlers[$channel][] = $handler;
     }
     
     /**
      * Register a handler that is added to all loggers when instantiated
-     * @param \Monolog\Handler $handler
+     *
+     * @param \Monolog\Handler\HandlerInterface $handler
+     * @return void
      */
-    public static function registerGenericHandler($handler)
+    public static function registerGenericHandler(HandlerInterface $handler)
     {
         self::$genericHandlers[] = $handler;
     }

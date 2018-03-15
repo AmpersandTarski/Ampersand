@@ -29,7 +29,7 @@ abstract class AbstractWriter
         }
     }
 
-    public function write(string $data)
+    public function write($data)
     {
         $this->stream->write($data);
     }

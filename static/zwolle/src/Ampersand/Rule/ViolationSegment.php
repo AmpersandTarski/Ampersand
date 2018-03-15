@@ -72,12 +72,15 @@ class ViolationSegment extends ViewSegment
      * Undocumented function
      *
      * @param Atom $srcAtom
-     * @param Atom $tgtAtom
+     * @param Atom|null $tgtAtom param is declared optional, because the method must be compatible with the parent method it overwrites (i.e. ViewSegment::getData())
      * @return array
      */
     public function getData(Atom $srcAtom, Atom $tgtAtom = null): array
     {
- // Second param is declared optional, because the method must be compatible with the parent method it overwrites (i.e. ViewSegment::getData())
+        if (is_null($tgtAtom)) {
+            throw new Exception("No target atom provided for ViolationSegment::getData()", 500);
+        }
+
         switch ($this->segType) {
             case "Text":
                 return [$this->text];

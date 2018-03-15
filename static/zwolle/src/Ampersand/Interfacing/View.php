@@ -45,10 +45,10 @@ class View
     public $isDefault;
     
     /**
-     * Specifies the concpet for which this view can defined
+     * Specifies the concept for which this view can defined
      * @var string
      */
-    public $concept;
+    protected $forConcept;
     
     /**
      * Array with view segments that are used to build the view

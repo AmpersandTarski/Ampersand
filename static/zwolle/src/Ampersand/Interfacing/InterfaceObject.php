@@ -175,7 +175,7 @@ class InterfaceObject
      * InterfaceObject constructor
      * @param array $ifcDef Interface object definition as provided by Ampersand generator
      * @param \Ampersand\Plugs\IfcPlugInterface $plug
-     * @param string $pathEntry
+     * @param string|null $pathEntry
      * @param bool $rootIfc Specifies if this interface object is a toplevel interface (true) or subinterface (false)
      */
     private function __construct(array $ifcDef, IfcPlugInterface $plug, string $pathEntry = null, bool $rootIfc = false)
@@ -540,10 +540,10 @@ class InterfaceObject
     
     /**
      * Returns interface data (tgt atoms) for given src atom
-     * @param Atom $srcAtom atom to take as source atom for this interface expression query
+     * @param \Ampersand\Core\Atom $srcAtom atom to take as source atom for this interface expression query
      * @return array
      */
-    public function getIfcData($srcAtom)
+    public function getIfcData(Atom $srcAtom): array
     {
         $data = (array) $this->plug->executeIfcExpression($this, $srcAtom);
         

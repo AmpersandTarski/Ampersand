@@ -9,7 +9,7 @@
    - 'SetConcept', 'ClearConcept'
    - 'InsPairCond', 'SetConceptCond': conditionally execute an 'InsPair' or 'SetConcept'
    There are no guarantees with respect to their 100% functioning. Have fun...
-   
+
    This file has been modified to produce Exceptions rather than that it dies...
 */
 
@@ -125,13 +125,13 @@ ExecEngine::registerFunction('DelPair', function ($relationName, $srcConceptName
    atom to create links (in relations in which the concept is SRC or TGT).
 
    Example:
-   
+
    r :: ConceptA * ConceptB
    r1 :: ConceptA * ConceptC [INJ] -- multiplicity must be there (I think...)
    r2 :: ConceptC * ConceptB [UNI] -- multiplicity must be there (I think...)
-   
+
    RULE "equivalence": r = r1;r2 -- this rule is to be maintained automatically
-   
+
    ROLE ExecEngine MAINTAINS "insEquivalence" -- Creation of the atom
    RULE "insEquivalence": r |- r1;r2
    VIOLATION (TXT "NewStruct;ConceptC[;AtomC]" -- AtomC is optional. If not provided then create new, else used specified Atom
@@ -194,7 +194,7 @@ ExecEngine::registerFunction('NewStruct', function () use ($execEngineLogger) {
         }
         
         // Any logging is done by InsPair
-        ExecEngine::getFunction('InsPair')($relation, $srcConcept->name, $srcAtomId, $tgtConcept->name, $tgtAtomId);
+        call_user_func(ExecEngine::getFunction('InsPair'), $relation, $srcConcept->name, $srcAtomId, $tgtConcept->name, $tgtAtomId);
     }
     $execEngineLogger->debug("Newstruct: atom '{$atom}' created");
 });
@@ -222,7 +222,7 @@ ExecEngine::registerFunction('InsAtom', function (string $conceptName, string $a
     $execEngineLogger->debug("Atom '{$atom}' added");
 });
 
-/* 
+/*
     ROLE ExecEngine MAINTAINS "delEquivalence" -- Deletion of the atom
     RULE "delEquivalence": I[ConceptC] |- r1~;r;r2~
     VIOLATION (TXT "DelAtom;ConceptC;" SRC I) -- all links in other relations in which the atom occurs are deleted as well.
@@ -244,7 +244,7 @@ ExecEngine::registerFunction('DelAtom', function ($concept, $atomId) use ($execE
     $execEngineLogger->debug("Atom '{$atom}' deleted");
 });
 
-/* 
+/*
     ROLE ExecEngine MAINTAINS "Person" -- unify two atoms
     RULE Person : name;name~ |- I
     VIOLATION (TXT "{EX} MrgAtoms;Person;", SRC I, TXT ";Person;", TGT I )
@@ -341,7 +341,7 @@ ExecEngine::registerFunction('InsPairCond', function ($relationName, $srcConcept
         return;
     }
     
-    ExecEngine::getFunction('InsPair')($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom);
+    call_user_func(ExecEngine::getFunction('InsPair'), $relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom);
 });
 
 // SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
@@ -357,7 +357,7 @@ ExecEngine::registerFunction('SetConceptCond', function ($conceptA, $conceptB, $
         return;
     }
     
-    ExecEngine::getFunction('SetConcept')($conceptA, $conceptB, $atom);
+    call_user_func(ExecEngine::getFunction('SetConcept'), $conceptA, $conceptB, $atom);
 });
 
 ExecEngine::registerFunction('SetNavToOnCommit', function ($navTo) use ($container, $execEngineLogger) {

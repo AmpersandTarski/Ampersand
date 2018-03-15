@@ -1,5 +1,5 @@
 <?php
-/* This file defines a limited number of functions that deal with dates and times. They include functions for comparing dates and times (equal, less than etc.), for setting today's date, and more. This file may be extended, but only with functions that can be used generically. 
+/* This file defines a limited number of functions that deal with dates and times. They include functions for comparing dates and times (equal, less than etc.), for setting today's date, and more. This file may be extended, but only with functions that can be used generically.
 
 The date and time formats that can be used are pretty much arbitrary. A precise description is given at:
    http://www.php.net/manual/en/datetime.formats.date.php
@@ -13,20 +13,20 @@ use Ampersand\Rule\ExecEngine;
    ROLE ExecEngine MAINTAINS "Initialize today's date"
    RULE "Initialize today's date": I[SESSION] |- sessionToday;sessionToday~
    VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT sessionToday)
-   
+
    For $formatSpec see http://php.net/manual/en/function.date.php
    Default is 'd-m-Y' -> e.g: "01-01-2015", other examples include time, like 'd-m-Y G:i:s' -> e.g.: "01-01-2015 1:00:00"
 */
 ExecEngine::registerFunction('SetToday', function ($relation, $srcConcept, $srcAtom, $dateConcept, $formatSpec = 'd-m-Y') {
     $curdate = date($formatSpec);
-    ExecEngine::getFunction('InsPair')($relation, $srcConcept, $srcAtom, $dateConcept, $curdate);
+    call_user_func(ExecEngine::getFunction('InsPair'), $relation, $srcConcept, $srcAtom, $dateConcept, $curdate);
 });
 
 
 // VIOLATION (TXT "{EX} datimeStdFormat;standardizeDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;", TGT I)
 ExecEngine::registerFunction('datimeStdFormat', function ($relation, $DateConcept, $srcAtom, $StdFormatConcept, $formatSpec) {
     $date = new DateTime($srcAtom);
-    ExecEngine::getFunction('InsPair')($relation, $DateConcept, $srcAtom, $StdFormatConcept, $date->format($formatSpec));
+    call_user_func(ExecEngine::getFunction('InsPair'), $relation, $DateConcept, $srcAtom, $StdFormatConcept, $date->format($formatSpec));
 });
 
 
@@ -44,7 +44,7 @@ ExecEngine::registerFunction('DateDifferencePlusOne', function ($relation, $srcC
     }
     
     $result = 1 + max(0, floor($datediff/(60*60*24)));
-    ExecEngine::getFunction('InsPair')($relation, $srcConcept, $srcAtom, $integerConcept, $result);
+    call_user_func(ExecEngine::getFunction('InsPair'), $relation, $srcConcept, $srcAtom, $integerConcept, $result);
 });
 
 
@@ -62,7 +62,7 @@ ExecEngine::registerFunction('DateDifference', function ($relation, $srcConcept,
     }
     
     $result = max(0, floor($datediff/(60*60*24)));
-    ExecEngine::getFunction('InsPair')($relation, $srcConcept, $srcAtom, $integerConcept, $result);
+    call_user_func(ExecEngine::getFunction('InsPair'), $relation, $srcConcept, $srcAtom, $integerConcept, $result);
 });
 
 
@@ -71,7 +71,7 @@ ExecEngine::registerFunction('DateDifference', function ($relation, $srcConcept,
    The functions provided in this file allow you to fill such relations.
 
 >> EXAMPLES OF USE:
-   stdDateTime :: DateTime * DateTimeStdFormat [UNI] PRAGMA "Standard output format for " " is " 
+   stdDateTime :: DateTime * DateTimeStdFormat [UNI] PRAGMA "Standard output format for " " is "
 
    ROLE ExecEngine MAINTAINS "compute DateTime std values"
    RULE "compute DateTime std values": I[DateTime] |- stdDateTime;stdDateTime~
@@ -81,7 +81,7 @@ ExecEngine::registerFunction('DateDifference', function ($relation, $srcConcept,
    neqDateTime :: DateTime * DateTime PRAGMA "" " occurred either before or after "
     ltDateTime :: DateTime * DateTime PRAGMA "" " has occurred before "
     gtDateTime :: DateTime * DateTime PRAGMA "" " has occurred after "
-   
+
    ROLE ExecEngine MAINTAINS "compute DateTime comparison relations"
    RULE "compute DateTime comparison relations": V[DateTime] |- eqlDateTime \/ neqDateTime
    VIOLATION (TXT "{EX} datimeEQL;eqlDateTime;DateTime;", SRC I, TXT ";", TGT I
@@ -89,7 +89,7 @@ ExecEngine::registerFunction('DateDifference', function ($relation, $srcConcept,
              ,TXT "{EX} datimeLT;ltDateTime;DateTime;", SRC I, TXT ";", TGT I
              ,TXT "{EX} datimeGT;gtDateTime;DateTime;", SRC I, TXT ";", TGT I
              )
-            
+
 >> LIMITATIONS OF USE:
    If you use many atoms in DateTime, this will take increasingly more time
    to check for violations. So do not use that many...
@@ -104,7 +104,7 @@ ExecEngine::registerFunction('datimeEQL', function ($eqlRelation, $DateConcept, 
     }
     
     if ($dt1 == $dt2) {
-        ExecEngine::getFunction('InsPair')($eqlRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+        call_user_func(ExecEngine::getFunction('InsPair'), $eqlRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
         
         // Accommodate for different representations of the same time:
         if ($srcAtom != $tgtAtom) {
@@ -124,8 +124,8 @@ ExecEngine::registerFunction('datimeNEQ', function ($neqRelation, $DateConcept, 
     }
     
     if ($dt1 != $dt2) {
-        ExecEngine::getFunction('InsPair')($neqRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
-        ExecEngine::getFunction('InsPair')($neqRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
+        call_user_func(ExecEngine::getFunction('InsPair'), $neqRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+        call_user_func(ExecEngine::getFunction('InsPair'), $neqRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
     }
 });
 
@@ -143,9 +143,9 @@ ExecEngine::registerFunction('datimeLT', function ($ltRelation, $DateConcept, $s
     }
     
     if ($dt1 < $dt2) {
-        ExecEngine::getFunction('InsPair')($ltRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+        call_user_func(ExecEngine::getFunction('InsPair'), $ltRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
     } else {
-        ExecEngine::getFunction('InsPair')($ltRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
+        call_user_func(ExecEngine::getFunction('InsPair'), $ltRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
     }
 });
 
@@ -163,8 +163,8 @@ ExecEngine::registerFunction('datimeGT', function ($gtRelation, $DateConcept, $s
     }
     
     if ($dt1 > $dt2) {
-        ExecEngine::getFunction('InsPair')($gtRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
+        call_user_func(ExecEngine::getFunction('InsPair'), $gtRelation, $DateConcept, $srcAtom, $DateConcept, $tgtAtom);
     } else {
-        ExecEngine::getFunction('InsPair')($gtRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
+        call_user_func(ExecEngine::getFunction('InsPair'), $gtRelation, $DateConcept, $tgtAtom, $DateConcept, $srcAtom);
     }
 });

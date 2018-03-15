@@ -50,13 +50,14 @@ class Role
     
     /**
      * List of all interfaces that are accessible by this role
-     * @var unknown
+     * @var \Ampersand\Interfacing\InterfaceObject[]
      */
     protected $interfaces = [];
     
     /**
      * Constructor of role
-     * Private function to prevent outside instantiation of roles. Use Role::getRoleById($roleId) or Role::getRoleByName($roleName)
+     * Private function to prevent outside instantiation of roles
+     * Use Role::getRoleById($roleId) or Role::getRoleByName($roleName)
      *
      * @param array $roleDef
      */

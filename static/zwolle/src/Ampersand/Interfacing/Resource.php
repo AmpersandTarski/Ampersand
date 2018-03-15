@@ -53,7 +53,7 @@ class Resource extends Atom
      *
      * @param string $resourceId Ampersand atom identifier
      * @param \Ampersand\Core\Concept $cpt
-     * @param \Ampersand\Interfacing\ResourceList $parentList
+     * @param \Ampersand\Interfacing\ResourceList|null $parentList
      */
     public function __construct(string $resourceId, Concept $cpt, ResourceList $parentList = null)
     {
@@ -62,8 +62,6 @@ class Resource extends Atom
         
         // Call Atom constructor
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
-        
-        $this->logger = Logger::getLogger('INTERFACING');
     }
     
     /**
@@ -114,8 +112,6 @@ class Resource extends Atom
     {
         // If view is not already set
         if (!isset($this->viewData)) {
-            $this->logger->debug("Get view for atom '{$this}'");
-            
             if (isset($this->parentList)) {
                 $viewDef = $this->parentList->getIfc()->getView(); // if parentList is defined, use view of ifc (can be null)
             } else {
@@ -169,21 +165,25 @@ class Resource extends Atom
     }
     
     /**
+     * Return resource representation of given interface and target atom
+     *
      * @param string $ifcId
      * @param string $tgtId
-     * @return Resource resource representation of given interface and target atom
+     * @return \Ampersand\Interfacing\Resource
      */
-    public function one($ifcId, $tgtId)
+    public function one($ifcId, $tgtId): Resource
     {
         $rl = $this->all($ifcId);
         return $rl->one($tgtId);
     }
     
     /**
+     * Return resource list with target atoms of given interface
+     *
      * @param string $ifcId
-     * @return ResourceList resource list with target atoms of given interface
+     * @return \Ampersand\Interfacing\ResourceList
      */
-    public function all($ifcId)
+    public function all($ifcId): ResourceList
     {
         if (isset($this->parentList)) {
             $ifc = $this->parentList->getIfc()->getSubinterface($ifcId);
@@ -242,7 +242,7 @@ class Resource extends Atom
      * Walk path from this resource to either a Resource or a ResourceList
      *
      * @param string|array $path
-     * @return Resource|ResourceList
+     * @return \Ampersand\Interfacing\Resource|\Ampersand\Interfacing\ResourceList
      */
     public function walkPath($path)
     {
@@ -309,14 +309,14 @@ class Resource extends Atom
  
     /**
      * @param int $options
-     * @param int $depth
+     * @param int|null $depth
      * @param array $recursionArr
-     * @return Resource $this
+     * @return \Ampersand\Interfacing\Resource $this
      */
-    public function get(int $options = Options::DEFAULT_OPTIONS, int $depth = null, array $recursionArr = [])
+    public function get(int $options = Options::DEFAULT_OPTIONS, int $depth = null, array $recursionArr = []): Resource
     {
         if (!$this->concept->isObject()) {
-            throw new Exception("Cannot get resource, because it is a non-object concept {$concept}.", 400);
+            throw new Exception("Cannot get resource, because its type '{$this->concept}' is a non-object concept", 400);
         }
 
         if (isset($this->parentList)) {
@@ -394,13 +394,13 @@ class Resource extends Atom
     
     /**
      * Update a resource (updates only first level of subinterfaces, for now)
-     * @param \stdClass $resourceToPut
+     * @param \stdClass|null $resourceToPut
      * @return \Ampersand\Interfacing\Resource $this
      */
     public function put(stdClass $resourceToPut = null): Resource
     {
         if (!$this->concept->isObject()) {
-            throw new Exception("Cannot put resource, because it is a non-object concept {$concept}.", 400);
+            throw new Exception("Cannot put resource, because its type '{$this->concept}' is a non-object concept", 400);
         }
         if (!isset($this->parentList)) {
             throw new Exception("Cannot perform put without interface specification", 400);
@@ -438,7 +438,7 @@ class Resource extends Atom
     public function patch(array $patches): Resource
     {
         if (!$this->concept->isObject()) {
-            throw new Exception("Cannot patch resource, because it is a non-object concept {$concept}.", 400);
+            throw new Exception("Cannot patch resource, because its type '{$this->concept}' is a non-object concept", 400);
         }
 
         foreach ($patches as $key => $patch) {
@@ -491,7 +491,7 @@ class Resource extends Atom
     public function delete(): Resource
     {
         if (!$this->concept->isObject()) {
-            throw new Exception("Cannot delete resource, because it is a non-object concept {$concept}.", 400);
+            throw new Exception("Cannot delete resource, because its type '{$this->concept}' is a non-object concept", 400);
         }
 
         if (!isset($this->parentList)) {
@@ -512,24 +512,27 @@ class Resource extends Atom
  *************************************************************************************************/
     
     /**
+     * Get representation of resource content given a certain interface
+     *
      * @param string $ifcId
      * @param int $options
-     * @param int $depth
+     * @param int|null $depth
      * @param array $recursionArr
-     * @return array representation of resource content of given interface
+     * @return bool|null|\Ampersand\Interfacing\Resource|\Ampersand\Interfacing\Resource[]
      */
     public function getList(string $ifcId, int $options = Options::DEFAULT_OPTIONS, int $depth = null, array $recursionArr = [])
     {
-        return $this->all($ifcId)->get($options, $options, $depth, $recursionArr);
+        return $this->all($ifcId)->get($options, $depth, $recursionArr);
     }
     
     /**
-     * Create a new resource as target atom to given interface
+     * Create and return a new resource as target atom to given interface
+     *
      * @param string $ifcId
-     * @param stdClass $resourceToPost
-     * @return Resource newly created resource
+     * @param \stdClass $resourceToPost
+     * @return \Ampersand\Interfacing\Resource
      */
-    public function post($ifcId, stdClass $resourceToPost)
+    public function post(string $ifcId, stdClass $resourceToPost): Resource
     {
         return $this->all($ifcId)->post($resourceToPost);
     }

@@ -244,21 +244,23 @@ class Atom implements JsonSerializable
     
     /**
      * Save query row data (can be used for subinterfaces)
-     * @param arry $queryData
+     *
+     * @param array|null $data
      * @return void
      */
-    public function setQueryData($data)
+    public function setQueryData(array $data = null)
     {
         $this->queryData = $data;
     }
     
     /**
      * Get (column of) query data
-     * @param string $colName
-     * @param boolean $exists reference var that returns if column exists
+     *
+     * @param string|null $colName
+     * @param bool|null $exists reference var that returns if column exists
      * @return string|array
      */
-    public function getQueryData($colName = null, &$exists = null)
+    public function getQueryData(string $colName = null, bool &$exists = null)
     {
         if (is_null($colName)) {
             return (array) $this->queryData;

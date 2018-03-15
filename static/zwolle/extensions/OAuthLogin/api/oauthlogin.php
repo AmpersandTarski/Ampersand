@@ -16,8 +16,13 @@ global $app;
  */
 global $container;
 
-// Path to API is 'api/v1/oauthlogin/login'
+/**
+ * @phan-closure-scope \Slim\App
+ */
 $app->group('/oauthlogin', function () use ($container) {
+    // Inside group closure, $this is bound to the instance of Slim\App
+    /** @var \Slim\App $this */
+
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];
 

@@ -15,7 +15,12 @@ global $app;
  */
 global $container;
 
+/**
+ * @phan-closure-scope \Slim\App
+ */
 $app->group('/app', function () use ($container) {
+    // Inside group closure, $this is bound to the instance of Slim\App
+    /** @var \Slim\App $this */
 
     /** @var \Ampersand\AmpersandApp $ampersandApp */
     $ampersandApp = $container['ampersand_app'];

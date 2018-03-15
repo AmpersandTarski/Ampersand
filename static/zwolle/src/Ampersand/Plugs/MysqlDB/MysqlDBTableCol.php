@@ -40,8 +40,8 @@ class MysqlDBTableCol
      * Constructor of Database table column
      *
      * @param string $name
-     * @param bool $null
-     * @param bool $unique
+     * @param bool|null $null
+     * @param bool|null $unique
      */
     public function __construct(string $name, bool $null = null, bool $unique = null)
     {

@@ -140,11 +140,11 @@ class Session
     /**
      * (De)activate a session role
      *
-     * This function to (de)activate roles depend on the invariant as defined in SystemContext.adl
+     * This function to (de)activate roles depends on the invariant as defined in SystemContext.adl
      * RULE sessionActiveRole |- sessionAllowedRole
      *
      * @param \Ampersand\Core\Atom $roleAtom
-     * @param boolean $setActive
+     * @param bool|null $setActive
      * @return \Ampersand\Core\Atom
      */
     public function toggleActiveRole(Atom $roleAtom, bool $setActive = null): Atom

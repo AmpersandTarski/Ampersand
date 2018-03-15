@@ -20,9 +20,9 @@ interface ViewPlugInterface extends PlugInterface
 {
     
     /**
-     * @param ViewSegment $view
-     * @param Atom $srcAtom
+     * @param \Ampersand\Interfacing\ViewSegment $view
+     * @param \Ampersand\Core\Atom $srcAtom
      * @return array of target atom identifiers
      */
-    public function executeViewExpression(ViewSegment $view, Atom $srcAtom = null): array;
+    public function executeViewExpression(ViewSegment $view, Atom $srcAtom): array;
 }
