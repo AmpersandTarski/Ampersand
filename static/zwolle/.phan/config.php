@@ -6,6 +6,13 @@
  * after this file is read.
  */
 return [
+    // Backwards Compatibility Checking (This is very slow)
+    "backward_compatibility_checks" => false,
+
+    "file_list" => [
+        'index.php',
+        'localSettings.php'
+    ],
 
     // A list of directories that should be parsed for class and
     // method information. After excluding the directories
@@ -19,6 +26,10 @@ return [
         'lib',
         'extensions',
         'api',
+    ],
+
+    "analyzed_file_extensions" => [
+        'php'
     ],
 
     // A directory list that defines files that will be excluded
