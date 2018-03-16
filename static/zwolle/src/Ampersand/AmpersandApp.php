@@ -16,9 +16,6 @@ use Ampersand\Role;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Log\Notifications;
 use Ampersand\IO\JSONReader;
-use Ampersand\Interfacing\View;
-use Ampersand\Rule\Rule;
-use Ampersand\Core\Relation;
 use Psr\Log\LoggerInterface;
 use Ampersand\Log\Logger;
 
@@ -72,17 +69,6 @@ class AmpersandApp
     public function __construct(StorageInterface $defaultPlug, LoggerInterface $logger)
     {
         $this->logger = $logger;
-
-        $genericsFolder = Config::get('pathToGeneratedFiles');
-
-        // Instantiate object definitions from generated files
-        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug);
-        View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
-        Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'), $defaultPlug);
-        Relation::setAllRelations($genericsFolder . 'relations.json', Logger::getLogger('CORE'), $defaultPlug);
-        InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $defaultPlug);
-        Rule::setAllRules($genericsFolder . 'rules.json', $defaultPlug, Logger::getLogger('RULE'));
-        Role::setAllRoles($genericsFolder . 'roles.json');
 
         // Register storages
         $this->registerStorage($defaultPlug);
