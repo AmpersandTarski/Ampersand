@@ -27,7 +27,7 @@ class MysqlDBTable
      *
      * @var array
      */
-    private $cols = array();
+    private $cols = [];
     
     /**
      *

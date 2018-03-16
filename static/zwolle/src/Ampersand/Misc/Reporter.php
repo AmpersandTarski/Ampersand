@@ -93,22 +93,22 @@ class Reporter
         }
         
         $content = array_map(function (InterfaceObject $ifc) {
-            return array( 'path' => $ifc->getPath()
-                        , 'label' => $ifc->label
-                        , 'crudC' => $ifc->crudC()
-                        , 'crudR' => $ifc->crudR()
-                        , 'crudU' => $ifc->crudU()
-                        , 'crudD' => $ifc->crudD()
-                        , 'src' => $ifc->srcConcept->name
-                        , 'tgt' => $ifc->tgtConcept->name
-                        , 'view' => $ifc->getView()->label
-                        , 'relation' => $ifc->relation->signature
-                        , 'flipped' => $ifc->relationIsFlipped
-                        , 'ref' => $ifc->getRefToIfcId()
-                        , 'root' => $ifc->isRoot()
-                        , 'public' => $ifc->isPublic()
-                        , 'roles' => implode(',', $ifc->ifcRoleNames)
-                    );
+            return [ 'path' => $ifc->getPath()
+                   , 'label' => $ifc->label
+                   , 'crudC' => $ifc->crudC()
+                   , 'crudR' => $ifc->crudR()
+                   , 'crudU' => $ifc->crudU()
+                   , 'crudD' => $ifc->crudD()
+                   , 'src' => $ifc->srcConcept->name
+                   , 'tgt' => $ifc->tgtConcept->name
+                   , 'view' => $ifc->getView()->label
+                   , 'relation' => $ifc->relation->signature
+                   , 'flipped' => $ifc->relationIsFlipped
+                   , 'ref' => $ifc->getRefToIfcId()
+                   , 'root' => $ifc->isRoot()
+                   , 'public' => $ifc->isPublic()
+                   , 'roles' => implode(',', $ifc->ifcRoleNames)
+                   ];
         }, $content);
 
         $this->writer->write($content);
@@ -221,13 +221,13 @@ class Reporter
             $endTimeStamp = microtime(true);
             set_time_limit((int) ini_get('max_execution_time')); // reset time limit counter
             
-            $content = array( 'id' => $conjunct->id
-                    , 'start' => round($startTimeStamp, 6)
-                    , 'end' => round($endTimeStamp, 6)
-                    , 'duration' => round($endTimeStamp - $startTimeStamp, 6)
-                    , 'invariantRules' => implode(';', $conjunct->invRuleNames)
-                    , 'signalRules' => implode(';', $conjunct->sigRuleNames)
-            );
+            $content = [ 'id' => $conjunct->id
+                       , 'start' => round($startTimeStamp, 6)
+                       , 'end' => round($endTimeStamp, 6)
+                       , 'duration' => round($endTimeStamp - $startTimeStamp, 6)
+                       , 'invariantRules' => implode(';', $conjunct->invRuleNames)
+                       , 'signalRules' => implode(';', $conjunct->sigRuleNames)
+                       ];
         }
         
         usort($content, function ($a, $b) {

@@ -32,12 +32,12 @@ try {
     Config::set('absolutePath', 'global', dirname(__DIR__) . DIRECTORY_SEPARATOR);
     Config::set('uploadPath', 'global', 'uploads/');
     Config::set('logPath', 'global', 'log/');
-    Config::set('allowedMimeTypes', 'global', array('application/vnd.ms-excel'
+    Config::set('allowedMimeTypes', 'global', ['application/vnd.ms-excel'
             ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             ,'application/excel'
             ,'application/pdf'
             ,'text/xml'
-    ));
+            ]);
     Config::set('allowedRolesForImporter', 'global', null); // implies that everyone has access
 
     Config::set('loginEnabled', 'global', false); // enable/disable login functionality (requires Ampersand script, see localSettings.php)

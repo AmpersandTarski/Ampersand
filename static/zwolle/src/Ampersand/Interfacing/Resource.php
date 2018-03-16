@@ -334,7 +334,7 @@ class Resource extends Atom
         // Interface(s) to navigate to for this resource
         if (($options & Options::INCLUDE_NAV_IFCS) && isset($parentIfc)) {
             $this->ifcData['_ifcs_'] = array_map(function ($o) {
-                   return array('id' => $o->id, 'label' => $o->label);
+                   return ['id' => $o->id, 'label' => $o->label];
             }, $parentIfc->getNavInterfacesForTgt());
         }
         

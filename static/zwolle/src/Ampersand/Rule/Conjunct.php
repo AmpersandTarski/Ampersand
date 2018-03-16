@@ -72,7 +72,7 @@ class Conjunct
     
     /**
      * List of violation pairs
-     * array(array('src' => $srcAtom, 'tgt' => $tgtAtom))
+     * [['src' => $srcAtom, 'tgt' => $tgtAtom]]
      *
      * @var array $conjunctViolations
      */
@@ -163,7 +163,7 @@ class Conjunct
      * Evaluate conjunct and return array with violation pairs
      *
      * @param bool $fromCache
-     * @return array[] array(array('src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
+     * @return array[] [['src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>']]
      */
     public function evaluate(bool $fromCache = true): array
     {
@@ -264,7 +264,7 @@ class Conjunct
      */
     public static function setAllConjuncts(string $fileName, LoggerInterface $logger, MysqlDB $database)
     {
-        self::$allConjuncts = array();
+        self::$allConjuncts = [];
         
         $allConjDefs = (array)json_decode(file_get_contents($fileName), true);
     

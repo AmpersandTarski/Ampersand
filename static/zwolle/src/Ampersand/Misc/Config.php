@@ -19,7 +19,7 @@ class Config
      * Contains all config variables
      * @var array
      */
-    private static $configVars = array();
+    private static $configVars = [];
     
     /**
      * Config variable getter

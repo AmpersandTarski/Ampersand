@@ -330,7 +330,7 @@ class Concept
      */
     public function getSpecializations()
     {
-        $specializations = array();
+        $specializations = [];
         foreach ($this->specializations as $conceptName) {
             $specializations[$conceptName] = self::getConcept($conceptName);
         }
@@ -344,7 +344,7 @@ class Concept
      */
     public function getGeneralizations()
     {
-        $generalizations = array();
+        $generalizations = [];
         foreach ($this->generalizations as $conceptName) {
             $generalizations[$conceptName] = self::getConcept($conceptName);
         }

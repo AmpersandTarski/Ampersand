@@ -43,30 +43,27 @@ class OAuthLoginController
     public function requestToken($code)
     {
         // Setup token request
-        $token_request = array(
-                'token_url' => $this->token_url,
-                'arguments' => array(
-                        'client_id' => $this->client_id,
-                        'client_secret' => $this->client_secret,
-                        'grant_type' => 'authorization_code',
-                        'code' => $code,
-                        'redirect_uri' => $this->redirect_uri
-                )
-        );
+        $token_request = [
+            'token_url' => $this->token_url,
+            'arguments' => [
+                'client_id' => $this->client_id,
+                'client_secret' => $this->client_secret,
+                'grant_type' => 'authorization_code',
+                'code' => $code,
+                'redirect_uri' => $this->redirect_uri
+            ]
+        ];
 
         // Make HTTP POST request to OAUTH host to get token
         $curl = curl_init();
-        curl_setopt_array(
-            $curl,
-            array( CURLOPT_RETURNTRANSFER => 1
-                 , CURLOPT_URL => $token_request['token_url']
-                 , CURLOPT_USERAGENT => Config::get('contextName')
-                 , CURLOPT_POST => 1
-                 , CURLOPT_POSTFIELDS => http_build_query($token_request['arguments'])
-                 , CURLOPT_HTTPHEADER => array('Content-Type: application/x-www-form-urlencoded', 'Accept: application/json')
-                 , CURLOPT_CAINFO => __DIR__ . '/cacert.pem'
-                 )
-        );
+        curl_setopt_array($curl, [ CURLOPT_RETURNTRANSFER => 1
+                                 , CURLOPT_URL => $token_request['token_url']
+                                 , CURLOPT_USERAGENT => Config::get('contextName')
+                                 , CURLOPT_POST => 1
+                                 , CURLOPT_POSTFIELDS => http_build_query($token_request['arguments'])
+                                 , CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded', 'Accept: application/json']
+                                 , CURLOPT_CAINFO => __DIR__ . '/cacert.pem'
+                                 ]);
 
         // Send the request & save response to $resp
         $token_resp = curl_exec($curl);
@@ -102,15 +99,12 @@ class OAuthLoginController
         
         // Do a HTTP HEADER request to the API_URL
         $curl = curl_init();
-        curl_setopt_array(
-            $curl,
-            array( CURLOPT_RETURNTRANSFER => 1
-                 , CURLOPT_URL => $api_url
-                 , CURLOPT_USERAGENT => Config::get('contextName')
-                 , CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . $this->tokenObj->access_token, 'x-li-format: json')
-                 , CURLOPT_CAINFO => __DIR__ . '/cacert.pem'
-                 )
-        );
+        curl_setopt_array($curl, [ CURLOPT_RETURNTRANSFER => 1
+                                 , CURLOPT_URL => $api_url
+                                 , CURLOPT_USERAGENT => Config::get('contextName')
+                                 , CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $this->tokenObj->access_token, 'x-li-format: json']
+                                 , CURLOPT_CAINFO => __DIR__ . '/cacert.pem'
+                                 ]);
 
         // Execute request
         $data_resp = curl_exec($curl);

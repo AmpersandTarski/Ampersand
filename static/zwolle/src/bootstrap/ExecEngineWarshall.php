@@ -52,7 +52,7 @@ ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = functio
         $result = $database->execute($query);
         
         // initialization of 2-dimensional array
-        $array = array();
+        $array = [];
         foreach ($result as $row) {
             $array[$row[$srcCol->name]][$row[$tgtCol->name]] = !is_null($row[$tgtCol->name]);
         }

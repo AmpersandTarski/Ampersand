@@ -9,7 +9,7 @@ namespace Ampersand\Misc;
  */
 function getDirectoryList($dirPath)
 {
-    $results = array(); // create an array to hold directory list
+    $results = []; // create an array to hold directory list
     $handler = opendir($dirPath); // create a handler for the directory
     
     while ($file = readdir($handler)) { // open directory and walk through the filenames

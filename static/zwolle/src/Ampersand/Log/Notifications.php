@@ -20,12 +20,12 @@ use Ampersand\Rule\Violation;
 class Notifications
 {
     
-    private static $errors = array();
-    private static $invariants = array();
-    private static $warnings = array();
-    private static $signals = array();
-    private static $infos = array();
-    private static $successes = array();
+    private static $errors = [];
+    private static $invariants = [];
+    private static $warnings = [];
+    private static $signals = [];
+    private static $infos = [];
+    private static $successes = [];
 
 /**************************************************************************************************
  *
@@ -97,7 +97,7 @@ class Notifications
      */
     private static function addSuccess($message)
     {
-        self::$successes[] = array('message' => $message);
+        self::$successes[] = ['message' => $message];
     }
     
     /**
@@ -107,7 +107,7 @@ class Notifications
      */
     private static function addInfo($message)
     {
-        self::$infos[] = array('message' => $message);
+        self::$infos[] = ['message' => $message];
     }
 
 /**************************************************************************************************
@@ -126,7 +126,7 @@ class Notifications
         $hash = hash('md5', $violation->rule->id);
             
         self::$invariants[$hash]['ruleMessage'] = $violation->rule->getViolationMessage();
-        self::$invariants[$hash]['tuples'][] = array('violationMessage' => ($violationMessage = $violation->getViolationMessage()));
+        self::$invariants[$hash]['tuples'][] = ['violationMessage' => ($violationMessage = $violation->getViolationMessage())];
         
         Logger::getLogger('INVARIANT')->info("'{$violationMessage}' RULE: '{$violation->rule}'");
     }
@@ -171,12 +171,12 @@ class Notifications
     
     public static function getAll()
     {
-        return array( 'errors' => array_values(self::$errors)
-                    , 'warnings' => array_values(self::$warnings)
-                    , 'infos' => array_values(self::$infos)
-                    , 'successes' => array_values(self::$successes)
-                    , 'invariants' => array_values(self::$invariants)
-                    , 'signals' => array_values(self::$signals)
-                    );
+        return [ 'errors' => array_values(self::$errors)
+               , 'warnings' => array_values(self::$warnings)
+               , 'infos' => array_values(self::$infos)
+               , 'successes' => array_values(self::$successes)
+               , 'invariants' => array_values(self::$invariants)
+               , 'signals' => array_values(self::$signals)
+               ];
     }
 }

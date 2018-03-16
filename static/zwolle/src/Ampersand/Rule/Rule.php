@@ -245,7 +245,7 @@ class Rule
      */
     public static function getAllInvRules(): array
     {
-        $invRules = array();
+        $invRules = [];
         foreach (self::getAllRules() as $rule) {
             if ($rule->type === 'invariant') {
                 $invRules[] = $rule;
@@ -260,7 +260,7 @@ class Rule
      */
     public static function getAllSigRules(): array
     {
-        $sigRules = array();
+        $sigRules = [];
         foreach (self::getAllRules() as $rule) {
             if ($rule->type === 'signal') {
                 $sigRules[] = $rule;

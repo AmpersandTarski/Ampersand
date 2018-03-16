@@ -65,7 +65,7 @@ class InterfaceObject
      * Only applies to top level interface objects
      * @var string[]
      */
-    public $ifcRoleNames = array();
+    public $ifcRoleNames = [];
     
     /**
      *
@@ -169,7 +169,7 @@ class InterfaceObject
      *
      * @var \Ampersand\Interfacing\InterfaceObject[]
      */
-    private $subInterfaces = array();
+    private $subInterfaces = [];
 
     /**
      * InterfaceObject constructor

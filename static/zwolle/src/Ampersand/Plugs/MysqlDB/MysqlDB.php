@@ -240,7 +240,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
             return true;
         }
         
-        $arr = array();
+        $arr = [];
         while ($row = mysqli_fetch_array($result)) {
             $arr[] = $row;
         }
