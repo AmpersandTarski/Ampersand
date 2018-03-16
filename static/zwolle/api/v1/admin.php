@@ -99,7 +99,7 @@ $app->group('/admin', function () use ($container) {
             
         \Ampersand\Rule\ExecEngine::run(true);
         
-        $transaction = Transaction::getCurrentTransaction()->close(true);
+        $transaction = Transaction::getCurrentTransaction()->close();
         if ($transaction->isCommitted()) {
             Logger::getUserLogger()->notice("Run completed");
         } else {
@@ -168,7 +168,7 @@ $app->group('/admin', function () use ($container) {
             }
 
             // Commit transaction
-            $transaction = Transaction::getCurrentTransaction()->close(true);
+            $transaction = Transaction::getCurrentTransaction()->close();
             if ($transaction->isCommitted()) {
                 Logger::getUserLogger()->notice("Imported {$_FILES['file']['name']} successfully");
             }

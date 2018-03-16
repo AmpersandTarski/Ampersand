@@ -138,10 +138,9 @@ class Transaction
     /**
      * Close transaction
      *
-     * @param boolean $commit specifies to commit (true) or rollback (false) when all invariants hold
      * @return \Ampersand\Transaction $this
      */
-    public function close($commit = true): Transaction
+    public function close(): Transaction
     {
         $this->logger->info("Request to close transaction: {$this->id}");
         
@@ -167,7 +166,7 @@ class Transaction
         }
         
         // Decide action (commit or rollback)
-        if ($this->invariantRulesHold && $commit) {
+        if ($this->invariantRulesHold) {
             // Cache conjuncts
             foreach ($this->getAffectedConjuncts() as $conj) {
                 $conj->saveCache();
@@ -179,7 +178,7 @@ class Transaction
                 $storage->commitTransaction($this); // Commit transaction for each registered storage
             }
             $this->isCommitted = true;
-        } elseif (Config::get('ignoreInvariantViolations', 'transactions') && $commit) {
+        } elseif (Config::get('ignoreInvariantViolations', 'transactions')) {
             // Cache conjuncts
             foreach ($this->getAffectedConjuncts() as $conj) {
                 $conj->saveCache();
@@ -191,13 +190,9 @@ class Transaction
                 $storage->commitTransaction($this); // Commit transaction for each registered storage
             }
             $this->isCommitted = true;
-        } elseif ($this->invariantRulesHold) {
-            $this->logger->info("Rollback transaction, invariant rules do hold, but no commit requested");
-            foreach ($this->storages as $storage) {
-                $storage->rollbackTransaction($this); // Rollback transaction for each registered storage
-            }
-            $this->isCommitted = false;
         } else {
+
+            // Rollback transaction
             $this->logger->info("Rollback transaction, invariant rules do not hold");
             foreach ($this->storages as $storage) {
                 $storage->rollbackTransaction($this); // Rollback transaction for each registered storage

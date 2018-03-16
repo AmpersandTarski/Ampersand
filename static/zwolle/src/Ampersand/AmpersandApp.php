@@ -153,7 +153,7 @@ class AmpersandApp
         $this->session->setSessionAccount($account);
 
         // Commit transaction (exec-engine kicks also in)
-        Transaction::getCurrentTransaction()->close(true);
+        Transaction::getCurrentTransaction()->close();
 
         // Set (new) interfaces and rules
         $this->setInterfacesAndRules();
@@ -201,7 +201,7 @@ class AmpersandApp
         }
 
         // Close transaction
-        $transaction = Transaction::getCurrentTransaction()->close(true);
+        $transaction = Transaction::getCurrentTransaction()->close();
         $this->logger->info("End application reinstall");
 
         // Initial conjunct evaluation
@@ -232,7 +232,7 @@ class AmpersandApp
         }
         
         // Commit transaction (exec-engine kicks also in)
-        Transaction::getCurrentTransaction()->close(true);
+        Transaction::getCurrentTransaction()->close();
 
         $this->setInterfacesAndRules();
     }
