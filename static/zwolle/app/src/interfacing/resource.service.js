@@ -50,9 +50,11 @@ angular.module('AmpersandApp')
             .then(function(data) {
                 data = data.plain();
                 
-                // Update resource data
-                if(resource._isRoot_) resource.get();
-                else resource = angular.extend(resource, data.content);
+                // Update resource data if committed
+                if(data.isCommitted) {
+                    if(resource._isRoot_) resource.get();
+                    else resource = angular.extend(resource, data.content);
+                }
                 
                 // Update visual feedback (notifications and buttons)
                 ResourceService.processResponse(resource, data);
@@ -354,7 +356,7 @@ angular.module('AmpersandApp')
         processResponse : function(resource, response){
             NotificationService.updateNotifications(response.notifications);
             
-            if(response.invariantRulesHold){
+            if(response.isCommitted){
                 resource._showButtons_ = {'save' : false, 'cancel' : false};
                 resource._patchesCache_ = []; // empty patches cache
                 ResourceService.setResourceStatus(resource, 'success');

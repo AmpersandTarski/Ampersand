@@ -74,8 +74,9 @@ class InterfaceController
         return [ 'content'               => $content
                , 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
+               , 'isCommitted'           => $transaction->isCommitted()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
-               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->isCommitted() ? 'COMMIT' : 'ROLLBACK')
                ];
     }
 
@@ -116,8 +117,9 @@ class InterfaceController
                , 'content'               => $content
                , 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
+               , 'isCommitted'           => $transaction->isCommitted()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
-               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->isCommitted() ? 'COMMIT' : 'ROLLBACK')
                ];
     }
 
@@ -146,8 +148,9 @@ class InterfaceController
         return [ 'content'               => $content
                , 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
+               , 'isCommitted'           => $transaction->isCommitted()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
-               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->isCommitted() ? 'COMMIT' : 'ROLLBACK')
                ];
     }
 
@@ -176,8 +179,9 @@ class InterfaceController
         // Return result
         return [ 'notifications'         => Notifications::getAll()
                , 'invariantRulesHold'    => $transaction->invariantRulesHold()
+               , 'isCommitted'           => $transaction->isCommitted()
                , 'sessionRefreshAdvice'  => $this->angularApp->getSessionRefreshAdvice()
-               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
+               , 'navTo'                 => $this->angularApp->getNavToResponse($transaction->isCommitted() ? 'COMMIT' : 'ROLLBACK')
                ];
     }
 }
