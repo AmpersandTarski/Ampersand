@@ -56,16 +56,17 @@ class InterfaceController
         // Perform put
         $resource = $resource->walkPathToResource($ifcPath)->put($body);
         
-        try {
-            $content = $resource->get($options, $depth);
-        } catch (Exception $e) { // e.g. when read is not allowed
-            $content = $body;
-        }
-
         // Close transaction
         $transaction->close();
         if ($transaction->isCommitted()) {
             Logger::getUserLogger()->notice($resource->getLabel() . " updated");
+        }
+
+        // Get content to return
+        try {
+            $content = $resource->get($options, $depth);
+        } catch (Exception $e) { // e.g. when read is not allowed
+            $content = $body;
         }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
@@ -97,17 +98,18 @@ class InterfaceController
         
         // Perform patch(es)
         $resource = $resource->walkPathToResource($ifcPath)->patch($patches);
-        
-        try {
-            $content = $resource->get($options, $depth);
-        } catch (Exception $e) { // e.g. when read is not allowed
-            $content = null;
-        }
 
         // Close transaction
         $transaction->close();
         if ($transaction->isCommitted()) {
             Logger::getUserLogger()->notice($resource->getLabel() . " updated");
+        }
+
+        // Get content to return
+        try {
+            $content = $resource->get($options, $depth);
+        } catch (Exception $e) { // e.g. when read is not allowed
+            $content = null;
         }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
@@ -130,16 +132,17 @@ class InterfaceController
         // Perform create
         $resource = $resource->walkPathToResourceList($ifcPath)->post($body);
 
-        try {
-            $content = $resource->get($options, $depth);
-        } catch (Exception $e) { // e.g. when read is not allowed
-            $content = $body;
-        }
-        
         // Close transaction
         $transaction->close();
         if ($transaction->isCommitted()) {
             Logger::getUserLogger()->notice($resource->getLabel() . " created");
+        }
+
+        // Get content to return
+        try {
+            $content = $resource->get($options, $depth);
+        } catch (Exception $e) { // e.g. when read is not allowed
+            $content = $body;
         }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
