@@ -13,6 +13,19 @@ use Ampersand\Rule\Rule;
 use Ampersand\Role;
 use Ampersand\Misc\Config;
 
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error['type'] & (E_ERROR | E_PARSE)) {
+        $protocol = $_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.0';
+        http_response_code(500);
+        header("{$protocol}  500 {$error['message']}");
+        print json_encode(['error' => 500
+                          ,'msg' => $error['message']
+                          ]);
+        exit;
+    }
+});
+
 // Check PHP version
 if (version_compare(PHP_VERSION, '7.0.0', '<')) {
     throw new Exception("PHP version >= 7.0 required. You are on " . PHP_VERSION, 500);
