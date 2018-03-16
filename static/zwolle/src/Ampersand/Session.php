@@ -160,7 +160,9 @@ class Session
                 $link->add();
                 break;
             case false:
-                $link->delete();
+                if($link->exists()) {
+                    $link->delete();
+                }
                 break;
             case null:
                 if ($link->exists()) {
