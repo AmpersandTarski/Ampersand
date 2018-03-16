@@ -506,6 +506,11 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         // Check if query resulted in an affected row
         $this->checkForAffectedRows();
     }
+
+    public function executeCustomSQLQuery(string $query)
+    {
+        return $this->execute($query);
+    }
     
 /**************************************************************************************************
  *

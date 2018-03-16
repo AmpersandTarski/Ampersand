@@ -27,4 +27,6 @@ interface StorageInterface
     public function rollbackTransaction(Transaction $transaction);
 
     public function reinstallStorage();
+
+    public function executeCustomSQLQuery(string $query);
 }
