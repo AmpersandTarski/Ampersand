@@ -2,7 +2,8 @@
 module Ampersand.Output.ToPandoc.ChapterGlossary
   (chpGlossary)
 where
-import Ampersand.Output.ToPandoc.SharedAmongChapters
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import qualified Data.Set as Set
 
 chpGlossary :: Int -> FSpec ->  Blocks
 chpGlossary _ fSpec
@@ -17,5 +18,5 @@ chpGlossary _ fSpec
                  [ [Plain [Str "term"]] , [Plain [Str "definition"]], [Plain [Str "source"]]]
           )
           [ [ [Plain [(Str . name)  c]], [Plain [(Str . cddef) cd]], [Plain [(Str . cdref) cd]]]
-          | c<-concs fSpec, cd<-concDefs fSpec c
+          | c<-Set.elems $ concs fSpec, cd<-concDefs fSpec c
           ]]

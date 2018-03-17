@@ -1051,7 +1051,7 @@ delta sgn
  = EDcD Relation
               { decnm   = pack "Delta"
               , decsgn  = sgn
-              , decprps = []
+              , decprps = Set.empty
               , decprps_calc = Nothing
               , decprL  = ""
               , decprM  = ""
@@ -1301,10 +1301,10 @@ Until the new normalizer works, we will have to work with this one. So I have in
             incons = [conjunct |conjunct<-exprIsc2list r,conjunct==notCpl l]
             absor0  = [disjunct | disjunct<-exprUni2list l, f'<-rs++exprIsc2list r, disjunct==f']
             absor0' = [disjunct | disjunct<-exprUni2list r, f'<-rs++exprIsc2list l, disjunct==f']
-            absor1  = [(disjunct, exprUni2list l>-[disjunct]) | disjunct<-exprUni2list l, ECpl f'<-rs++exprIsc2list r, disjunct==f']++
-                      [(disjunct, exprUni2list l>-[disjunct]) | disjunct@(ECpl t')<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
-            absor1' = [(disjunct, exprUni2list r>-[disjunct]) | disjunct<-exprUni2list r, ECpl f'<-rs++exprIsc2list l, disjunct==f']++
-                      [(disjunct, exprUni2list r>-[disjunct]) | disjunct@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
+            absor1  = [(disjunct, filter (disjunct /=) (exprUni2list l)) | disjunct<-exprUni2list l, ECpl f'<-rs++exprIsc2list r, disjunct==f']++
+                      [(disjunct, filter (disjunct /=) (exprUni2list l)) | disjunct@(ECpl t')<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
+            absor1' = [(disjunct, filter (disjunct /=) (exprUni2list r)) | disjunct<-exprUni2list r, ECpl f'<-rs++exprIsc2list l, disjunct==f']++
+                      [(disjunct, filter (disjunct /=) (exprUni2list r)) | disjunct@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
             absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
             absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
             (negList,posList) = partition isNeg (exprIsc2list l++exprIsc2list r)
@@ -1372,8 +1372,8 @@ Until the new normalizer works, we will have to work with this one. So I have in
             tauts = [t' |disjunct<-exprUni2list r,disjunct==notCpl l, ECpl t'<-[disjunct,l]]
             absor0  = [t' | t'<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
             absor0' = [t' | t'<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
-            absor1  = [(t', exprIsc2list l>-[t']) | t'<-exprIsc2list l, ECpl f'<-rs++exprUni2list r, t'==f']++[(e, exprIsc2list l>-[e]) | e@(ECpl t')<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
-            absor1' = [(t', exprIsc2list r>-[t']) | t'<-exprIsc2list r, ECpl f'<-rs++exprUni2list l, t'==f']++[(e, exprIsc2list r>-[e]) | e@(ECpl t')<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
+            absor1  = [(t', filter (t' /=) (exprIsc2list l)) | t'<-exprIsc2list l, ECpl f'<-rs++exprUni2list r, t'==f']++[(e, filter (e /=) (exprIsc2list l)) | e@(ECpl t')<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
+            absor1' = [(t', filter (t' /=) (exprIsc2list r)) | t'<-exprIsc2list r, ECpl f'<-rs++exprUni2list l, t'==f']++[(e, filter (e /=) (exprIsc2list r)) | e@(ECpl t')<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
 -- Issue #72: The following rule may not be used, because multiplicities are not yet proven but must be enforced. So the normalizer may not assume them.
 --  nM _ (EFlp e) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
   nM _ x _               = (x,[],"<=>")
@@ -1579,11 +1579,12 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
   isEDcI _ = False
 
 
-makeAllConjs :: Options -> [Rule] -> [Conjunct]
+makeAllConjs :: Options -> Rules -> [Conjunct]
 makeAllConjs opts allRls =
-  let conjExprs :: [(Expression, [Rule])]
-      conjExprs = converse [ (rule, conjuncts opts rule) | rule <- allRls ]
-      
+  let conjExprs :: [(Expression, Rules)]
+      conjExprs = map (\(a,b) -> (a,Set.fromList b)) 
+                . converse 
+                $ [ (rule, conjuncts opts rule) | rule <- Set.elems allRls ]
       conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
                      , rc_orgRules   = rs
                      , rc_conjunct   = expr

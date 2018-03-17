@@ -1,6 +1,9 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.9.4 (16 march 2018)
+
+* Better performance of the generator, due to using Haskell's sets rather than lists.
+* [Issue #758](https://github.com/AmpersandTarski/Ampersand/issues/758) Fixed a bug that could cause a runtime error in edgecases
 
 ## v3.9.3 (16 february 2018)
 

@@ -11,6 +11,7 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Prototype.TableSpec
 import           Data.Maybe
 import           Data.Monoid
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
@@ -25,11 +26,11 @@ generateInitialPopQueries fSpec withComments
   = fillSignalTable (initialConjunctSignals fSpec) <>
     populateTablesWithPops withComments fSpec
   where
-    fillSignalTable :: [(Conjunct, [AAtomPair])] -> [SqlQuery]
+    fillSignalTable :: [(Conjunct, AAtomPairs)] -> [SqlQuery]
     fillSignalTable = mapMaybe fillWithSignal
-    fillWithSignal :: (Conjunct, [AAtomPair]) -> Maybe SqlQuery
+    fillWithSignal :: (Conjunct, AAtomPairs) -> Maybe SqlQuery
     fillWithSignal (conj, violations) 
-     = case violations of
+     = case Set.elems violations of
         []    -> Nothing
         viols -> Just query
           where query = insertQuery withComments tableName attrNames tblRecords
