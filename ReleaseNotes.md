@@ -3,6 +3,10 @@
 ## Unreleased changes
 
 * Upgraded to LTS-10.1
+* [Issue #760](https://github.com/AmpersandTarski/Ampersand/issues/760) Fixed a bug causing wrong results in the prototype.
+
+## v3.9.4 (16 march 2018)
+
 * Better performance of the generator, due to using Haskell's sets rather than lists.
 * [Issue #758](https://github.com/AmpersandTarski/Ampersand/issues/758) Fixed a bug that could cause a runtime error in edgecases
 
