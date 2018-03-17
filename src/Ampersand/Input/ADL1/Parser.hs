@@ -9,11 +9,12 @@ module Ampersand.Input.ADL1.Parser
     , pRule
     ) where
 
-import Ampersand.Basics hiding ((<$))
-import Ampersand.Core.ParseTree
-import Ampersand.Input.ADL1.ParsingLib
-import Data.List
-import Data.Maybe
+import           Ampersand.Basics hiding ((<$))
+import           Ampersand.Core.ParseTree
+import           Ampersand.Input.ADL1.ParsingLib
+import           Data.List
+import qualified Data.Set as Set
+import           Data.Maybe
 
 
 --- Populations ::= Population+
@@ -233,7 +234,7 @@ pRelationDef :: AmpParser P_Relation
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
                        <*> pIsThere (pKey "BYPLUG")
-                       <*> optList pProps
+                       <*> optSet pProps
                        <*> pIsThere (pKey "BYPLUG")
                        <*> optList (pKey "PRAGMA" *> many1 pString)
                        <*> many pMeaning
@@ -241,7 +242,7 @@ pRelationDef = reorder <$> currPos
                        <*  optList (pOperator ".")
             where reorder pos' (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
                     let plug = bp1 || bp2
-                        props = prop ++ fun
+                        props = prop `Set.union` fun
                     in P_Sgn nm sign props pragma meanings popu pos' plug
 
 --- RelationNew ::= 'RELATION' Varid Signature
@@ -249,7 +250,7 @@ pRelationNew :: AmpParser (String,P_Sign,Props)
 pRelationNew = (,,) <$  pKey "RELATION"
                     <*> pVarid
                     <*> pSign
-                    <*> return []
+                    <*> return Set.empty
 
 --- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
 pRelationOld :: AmpParser (String,P_Sign,Props)
@@ -261,42 +262,47 @@ pRelationOld = relOld <$> pVarid
             where relOld nm src fun tgt = (nm,P_Sign src tgt,fun)
 
 --- Props ::= '[' PropList? ']'
-pProps :: AmpParser [Prop]
+pProps :: AmpParser (Set.Set Prop)
 pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         --- PropList ::= Prop (',' Prop)*
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP'
   where pProp :: AmpParser Prop
         pProp = choice [ p <$ pKey (show p) | p <- [minBound..] ]
-        normalizeProps :: [Prop] -> [Prop]
-        normalizeProps = nub.conv.rep
+        normalizeProps :: [Prop] -> Props
+        normalizeProps = conv.rep . Set.fromList
             where -- replace PROP by SYM, ASY
-                  rep (Prop:ps) = [Sym, Asy] ++ rep ps
-                  rep (p:ps) = p:rep ps
-                  rep [] = []
+                  rep :: Props -> Props
+                  rep ps 
+                    | Prop `Set.member` ps = Set.fromList [Sym, Asy] `Set.union` (Prop `Set.delete` ps)
+                    | otherwise            = ps
                   -- add Uni and Inj if ps has neither Sym nor Asy
-                  conv ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
+                  conv :: Props -> Props
+                  conv ps = ps `Set.union`
+                    if Sym `Set.member` ps && Asy `Set.member` ps 
+                    then Set.fromList [Uni,Inj]
+                    else Set.empty
 
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
-pFun :: AmpParser [Prop]
-pFun  = []        <$ pOperator "*"  <|>
-        [Uni,Tot] <$ pOperator "->" <|>
-        [Sur,Inj] <$ pOperator "<-" <|>
+pFun :: AmpParser Props
+pFun  =  Set.empty               <$ pOperator "*"  <|>
+        (Set.fromList [Uni,Tot]) <$ pOperator "->" <|>
+        (Set.fromList [Sur,Inj]) <$ pOperator "<-" <|>
         pBrackets pMults
         --- Mults ::= Mult '-' Mult
-  where pMults :: AmpParser [Prop]
-        pMults = (++) <$> optList (pMult (Sur,Inj))
-                      <*  pDash
-                      <*> optList (pMult (Tot,Uni))
+  where pMults :: AmpParser Props
+        pMults = Set.union <$> optSet (pMult (Sur,Inj))
+                           <*  pDash
+                           <*> optSet (pMult (Tot,Uni))
 
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
         --TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
-        pMult :: (Prop,Prop) -> AmpParser [Prop]
-        pMult (ts,ui) = (++) <$> ([]    <$ pZero   <|> [ts] <$ try pOne)
-                             <*  pOperator ".."
-                             <*> ([ui] <$ try pOne <|> ([]   <$ pOperator "*" )) <|>
-                        [] <$ pOperator "*"  <|>
-                        [ts,ui] <$ try pOne
+        pMult :: (Prop,Prop) -> AmpParser Props
+        pMult (ts,ui) = Set.union <$> (Set.empty    <$ pZero   <|> Set.singleton ts <$ try pOne)
+                                  <*  pOperator ".."
+                                  <*> (Set.singleton ui <$ try pOne <|> (Set.empty   <$ pOperator "*" )) <|>
+                        Set.empty <$ pOperator "*"  <|>
+                        Set.fromList [ts,ui] <$ try pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName 'BYPLUG'? String ('TYPE' String)? String?
 pConceptDef :: AmpParser (String->ConceptDef)

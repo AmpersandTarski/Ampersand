@@ -3,17 +3,18 @@ module Ampersand.Graphic.ClassDiag2Dot (
 
 ) 
 where
-import Data.List
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.ADL1  hiding (Association,Box)
-import Ampersand.Misc
-import Data.String
-import Data.GraphViz.Types.Canonical hiding (attrs)
-import Data.GraphViz.Attributes.Complete as GVcomp
-import Data.GraphViz.Attributes as GVatt
-import Data.GraphViz.Attributes.HTML as Html
-import Ampersand.Graphic.ClassDiagram
+import           Ampersand.ADL1  hiding (Association,Box)
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Graphic.ClassDiagram
+import           Ampersand.Misc
+import           Data.GraphViz.Attributes as GVatt
+import           Data.GraphViz.Attributes.Complete as GVcomp
+import           Data.GraphViz.Attributes.HTML as Html
+import           Data.GraphViz.Types.Canonical hiding (attrs)
+import           Data.List
+import qualified Data.Set as Set
+import           Data.String
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
 classdiagram2dot :: Options -> ClassDiag -> DotGraph String
@@ -31,7 +32,9 @@ classdiagram2dot opts cd
                                                    , MinLen 4
                                        ]           ]
                         , subGraphs = []
-                        , nodeStmts = allNodes (classes cd) (nodes cd >- nodes (classes cd))
+                        , nodeStmts = allNodes (classes cd) [n | n<- nodes cd
+                                                            , n `notElem` nodes (classes cd)
+                                                            ]
                         , edgeStmts = map association2edge (assocs cd)  ++
                                       map aggregation2edge (aggrs cd)  ++
                                       concatMap generalization2edges (geners cd)
@@ -109,7 +112,7 @@ classdiagram2dot opts cd
 --       assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
 --       attrs rs   = [ OOAttr ((name.head.bindedRelationsIn) r) (name (target r)) (not(isTot r))
 --                    | r<-rs, not (isPropty r)]
---       isPropty r = null([Sym,Asy]>-properties r)
+--       isPropty r = null([Sym,Asy]Set.\\properties r)
 
 -------------------------------
 --        ASSOCIATIONS:      --
@@ -199,5 +202,5 @@ instance CdNode Aggregation where
  nodes (OOAggr _ s t) = map name [s,t]
 
 instance CdNode Generalization where
- nodes g = map name ((concs.genAgen) g)
+ nodes = map name . Set.elems . concs . genAgen
 

@@ -5,7 +5,7 @@ module Ampersand.ADL1.Disambiguate
    , DisambPrim(..)
    , pCpt2aCpt
    ) where
-import           Ampersand.Basics hiding (uni,isc)
+import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.AbstractSyntaxTree
 import qualified Data.Set as Set
@@ -224,10 +224,10 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
  where
    suggest [] = pure unkn
    suggest lst = impure (Rel lst) -- TODO: find out whether it is equivalent to put "pure" here (which could be faster).
-   possibleConcs = (mustBeSrc `isc` mustBeTgt) `orWhenEmptyS`
-                   (mustBeSrc `uni` mustBeTgt) `orWhenEmptyS`
-                   (mayBeSrc  `isc` mayBeTgt ) `orWhenEmptyS`
-                   (mayBeSrc  `uni` mayBeTgt )
+   possibleConcs = (mustBeSrc `Set.intersection` mustBeTgt) `orWhenEmptyS`
+                   (mustBeSrc `Set.union` mustBeTgt) `orWhenEmptyS`
+                   (mayBeSrc  `Set.intersection` mayBeTgt ) `orWhenEmptyS`
+                   (mayBeSrc  `Set.union` mayBeTgt )
    findMatch' (a,b) = findMatch (Set.toList a,Set.toList b)
    findMatch ([],[]) _ = []
    findMatch ([],tgts) lst
@@ -246,8 +246,6 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
    determineBySize _   [a] = impure (t,Known a)
    determineBySize err lst = fmap ((,) t) (err lst)
    impure x = Change x False
-   isc = Set.intersection
-   uni = Set.union
 
 orWhenEmpty :: [a] -> [a] -> [a]
 orWhenEmpty a b = if null a then b else a

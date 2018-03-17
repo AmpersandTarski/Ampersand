@@ -2,9 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
-import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Data.List(nub,partition)
-import Data.Maybe(isJust)
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import           Data.List(nub,partition)
+import           Data.Maybe(isJust)
+import qualified Data.Set as Set
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
@@ -45,7 +46,7 @@ chpDiagnosis fSpec
                           ,EN " does not define any roles. ")
               )
     | otherwise =
-        case filter isSignal ruls of
+        case filter isSignal . Set.elems $ ruls of
           []   -> para (   (emph.str.upCap.name) fSpec
                         <> (str.l) (NL " kent geen procesregels. "
                                    ,EN " does not define any process rules. ")
@@ -74,7 +75,7 @@ chpDiagnosis fSpec
                   
      where
                   
-      ruls = filter isSignal . vrules $ fSpec                  
+      ruls = Set.filter isSignal . vrules $ fSpec                  
       f :: Role -> Rule -> Blocks
       f rol rul | (rol,rul) `elem` dead = (plain.str) [timesSymbol] 
                 | otherwise                      = mempty
@@ -84,7 +85,7 @@ chpDiagnosis fSpec
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role',rul)
          | (role',rul)<-fRoleRuls fSpec
-         , (not.or) (map (mayedit role') (bindedRelationsIn rul))
+         , (not.or) (map (mayedit role') (Set.elems $ bindedRelationsIn rul))
          ]
 
   roleomissions :: Blocks
@@ -132,10 +133,10 @@ chpDiagnosis fSpec
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
-         ccs = concs (vrels fSpec)
+         ccs = Set.elems . concs . vrels $ fSpec
   unusedConceptDefs :: Blocks
   unusedConceptDefs
-   = case [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (concs fSpec)] of
+   = case [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (Set.elems $ concs fSpec)] of
       []  -> if (null.conceptDefs) fSpec
              then mempty
              else para.str.l $
@@ -197,9 +198,9 @@ chpDiagnosis fSpec
                         )
           )
      where bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Relation]
-           bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) $ decls
-           purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  $ decls
-           meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) $ decls
+           bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) . Set.elems $ decls
+           purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  . Set.elems $ decls
+           meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) . Set.elems $ decls
            decls = vrels fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
@@ -247,17 +248,17 @@ chpDiagnosis fSpec
      )
      where notUsed :: [Inlines]
            notUsed = [ showMath (EDcD d)
-                     | d <- nub (vrels fSpec) -- only relations that are used or defined in the selected themes
+                     | d <- Set.elems (vrels fSpec) -- only relations that are used or defined in the selected themes
                      , decusr d
                      , d `notElem` (bindedRelationsIn . vrules) fSpec
                      ]
            pats  = [ pat | pat<-vpatterns fSpec
-                         , (not.null) (relsDefdIn pat>-bindedRelationsIn pat) ]
+                         , (not.null) (relsDefdIn pat Set.\\ bindedRelationsIn pat) ]
            pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
 
   missingRules :: Blocks
   missingRules
-   = case vrules fSpec of
+   = case Set.elems $ vrules fSpec of
       []   -> mempty
       ruls ->
          if all hasMeaning ruls && all hasPurpose ruls
@@ -307,22 +308,22 @@ chpDiagnosis fSpec
              -- Content rows
              (   map mkTableRowPat (vpatterns fSpec)
               ++ [mempty] -- empty row
-              ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (filter decusr $ vrels fSpec) (vrules fSpec)]
+              ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (Set.filter decusr $ vrels fSpec) (vrules fSpec)]
              )
       
     where mkTableRow :: String  -- The name of the pattern / fSpec 
-                     -> [Relation] --The user-defined relations of the pattern / fSpec
-                     -> [Rule]  -- The user-defined rules of the pattern / fSpec
+                     -> Relations --The user-defined relations of the pattern / fSpec
+                     -> Rules  -- The user-defined rules of the pattern / fSpec
                      -> [Blocks]
           mkTableRowPat p = mkTableRow (name p) (relsDefdIn p) (udefrules p)
           mkTableRow nm rels ruls =
             map (plain.str) [ nm
-                            , (show.length) rels 
-                            , (show.length) (filter hasRef rels)
-                            , showPercentage (length rels) (length.filter hasRef $ rels)
-                            , (show.length) ruls
-                            , (show.length) (filter hasRef ruls)
-                            , showPercentage (length ruls) (length.filter hasRef $ ruls)
+                            , (show . Set.size) rels 
+                            , (show . Set.size) (Set.filter hasRef rels)
+                            , showPercentage (Set.size rels) (Set.size . Set.filter hasRef $ rels)
+                            , (show . Set.size) ruls
+                            , (show . Set.size) (Set.filter hasRef ruls)
+                            , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
           hasRef x = maybe False (any  ((/=[]).explRefIds)) (purposeOf fSpec (fsLang fSpec) x)
@@ -405,14 +406,14 @@ chpDiagnosis fSpec
                           ,EN "This rule contains work (for ")
                 <>commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                 <>")"
-                <> if length ps == 1
+                <> if Set.size ps == 1
                    then   (str.l) (NL ", te weten ", EN " by ")
-                       <> oneviol r (head ps)
+                       <> oneviol r (Set.elemAt 0 ps)
                        <> "."
-                   else   (str.l) (NL $ ". De volgende tabel laat de "++(if length ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
-                                  ,EN $ "The following table shows the "++(if length ps>10 then "first ten " else "")++"items that require attention.")
+                   else   (str.l) (NL $ ". De volgende tabel laat de "++(if Set.size ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
+                                  ,EN $ "The following table shows the "++(if Set.size ps>10 then "first ten " else "")++"items that require attention.")
                )
-       <> if length ps <= 1
+       <> if Set.size ps <= 1
           then mempty -- iff there is a single violation, it is already shown in the previous paragraph
           else violtable r ps 
      | (r,ps)<- popwork ]
@@ -436,7 +437,7 @@ chpDiagnosis fSpec
          else    "("  <> (str.name.source) r <> (str.showValADL.apLeft) p 
               <> ", " <> (str.name.target) r <> (str.showValADL.apRight) p
               <> ")"
-      popwork :: [(Rule,[AAtomPair])]
+      popwork :: [(Rule,AAtomPairs)]
       popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r]
 
   violationReport :: Blocks
@@ -458,7 +459,7 @@ chpDiagnosis fSpec
      <> bulletList (map showViolatedRule processViolations)
     where
          (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
-         showViolatedRule :: (Rule,[AAtomPair]) -> Blocks
+         showViolatedRule :: (Rule,AAtomPairs) -> Blocks
          showViolatedRule (r,ps)
              =    (para.emph)
                       (  (str.l) (NL "Regel ", EN "Rule ")
@@ -487,11 +488,11 @@ chpDiagnosis fSpec
                         [ [(para.text.showValADL.apLeft) p
                           ,(para.text.showValADL.apRight) p
                           ]
-                        | p<- ps]
+                        | p<- Set.elems ps]
 
 
 
-  violtable :: Rule -> [AAtomPair] -> Blocks
+  violtable :: Rule -> AAtomPairs -> Blocks
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
         then table -- No caption:
@@ -502,7 +503,7 @@ chpDiagnosis fSpec
                    [(plain.str.name.source) r]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p]
-                   | p <-take 10 ps --max 10 rows
+                   | p <-take 10 . Set.elems $ ps --max 10 rows
                    ]
         else table -- No caption:
                    mempty
@@ -512,5 +513,5 @@ chpDiagnosis fSpec
                    [(plain.str.name.source) r , (plain.str.name.target) r ]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p,(plain.str.showValADL.apRight) p]
-                   | p <-take 10 ps --max 10 rows
+                   | p <-take 10 . Set.elems $ ps --max 10 rows
                    ]

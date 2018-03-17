@@ -2,22 +2,22 @@ module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
-import Ampersand.ADL1
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.FSpec.FSpec
-import Ampersand.Graphic.ClassDiag2Dot
-import Ampersand.Graphic.Fspec2ClassDiagrams
-import Ampersand.Misc
-import Data.GraphViz
-import Data.GraphViz.Attributes.Complete
-import Data.List
-import Data.String(fromString)
-
-import System.FilePath hiding (addExtension)
-import System.Directory
-import System.Process (callCommand)
-import Control.Exception (catch, IOException)
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.FSpec.FSpec
+import           Ampersand.Graphic.ClassDiag2Dot
+import           Ampersand.Graphic.Fspec2ClassDiagrams
+import           Ampersand.Misc
+import           Control.Exception (catch, IOException)
+import           Data.GraphViz
+import           Data.GraphViz.Attributes.Complete
+import           Data.List
+import qualified Data.Set as Set
+import           Data.String(fromString)
+import           System.Directory
+import           System.FilePath hiding (addExtension)
+import           System.Process (callCommand)
 
 data PictureReq = PTClassDiagram
                 | PTCDPattern Pattern
@@ -131,40 +131,41 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         PTCDConcept c ->
           let gs = fsisa fSpec
               cpts' = concs rs
-              rs    = [r | r<-vrules fSpec, c `elem` concs r]
+              rs    = [r | r<-Set.elems $ vrules fSpec, c `elem` concs r]
           in
-          CStruct { csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
-                  , csRels = filter (not . isProp) (bindedRelationsIn rs)   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
+          CStruct { csCpts = nub$ Set.elems cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
+                  , csRels = filter (not . isProp) . Set.elems . bindedRelationsIn $ rs   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
         --  PTCDPattern makes a picture of at least the relations within pat;
         --  extended with a limited number of more general concepts;
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTCDPattern pat ->
-          let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
-              xrels = nub [r | c<-orphans, r<-vrels fSpec
+          let orphans = [c | c<-Set.elems cpts, not(c `elem` concs idgs || c `elem` concs rels)]
+              xrels = Set.fromList 
+                        [r | c<-orphans, r<-Set.elems $ vrels fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
-              idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
+              idgs = [(s,g) |(s,g)<-gs, g `Set.member` cpts, s `Set.member` cpts]    --  all isa edges within the concepts
               gs   = fsisa fSpec
-              cpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
-              cpts' = concs pat `uni` concs rels
-              rels = filter (not . isProp) (bindedRelationsIn pat)
+              cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+              cpts' = concs pat `Set.union` concs rels
+              rels = Set.fromList . filter (not . isProp) . Set.elems . bindedRelationsIn $ pat
           in
-          CStruct { csCpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
-                  , csRels = rels `uni` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
+          CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+                  , csRels = Set.elems $ rels  `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
 
         -- PTDeclaredInPat makes a picture of relations and gens within pat only
         PTDeclaredInPat pat ->
           let gs   = fsisa fSpec
-              cpts = concs decs `uni` concs (gens pat)
-              decs = relsDefdIn pat `uni` bindedRelationsIn (udefrules pat)
+              cpts = concs decs `Set.union` concs (gens pat)
+              decs = relsDefdIn pat `Set.union` bindedRelationsIn (udefrules pat)
           in
-          CStruct { csCpts = cpts
-                  , csRels = [r | r <- decs
+          CStruct { csCpts = Set.elems cpts
+                  , csRels = [r | r <- Set.elems decs
                              , not (isProp r), decusr r    -- r is not a property
                              ]
                   , csIdgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
@@ -174,8 +175,8 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
           let idgs = [(s,g) | (s,g)<-fsisa fSpec
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
           in
-          CStruct { csCpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
-                  , csRels = [d | d<-bindedRelationsIn r, decusr d
+          CStruct { csCpts = Set.elems $ concs r `Set.union` Set.fromList [c |(s,g)<-idgs, c<-[g,s]]
+                  , csRels = [d | d<-Set.elems $ bindedRelationsIn r, decusr d
                              , not (isProp d)    -- d is not a property
                              ]
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
@@ -276,8 +277,8 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
                                  }
                 }
        where
-        cpts = cpts' `uni` concs rels `uni` concs idgs
-        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<-cpts]
+        cpts = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
+        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<- cpts]
         (relationNodes,relationEdges) = (concat a, concat b)
               where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
         isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge opts | (s,g)<-idgs]

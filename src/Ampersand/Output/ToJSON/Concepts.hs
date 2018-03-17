@@ -4,10 +4,11 @@
 module Ampersand.Output.ToJSON.Concepts 
   (Concepts,Segment)
 where
-import Ampersand.Output.ToJSON.JSONutils 
-import Ampersand.Core.AbstractSyntaxTree 
-import Data.Maybe
-import Data.List(nub)
+import           Ampersand.Core.AbstractSyntaxTree 
+import           Ampersand.Output.ToJSON.JSONutils 
+import           Data.List(nub)
+import           Data.Maybe
+import qualified Data.Set as Set
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
 data Concept = Concept
@@ -53,7 +54,7 @@ instance ToJSON Segment where
 instance ToJSON TableCols where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Concepts where
- fromAmpersand multi _ = Concepts (map (fromAmpersand multi) (concs fSpec))
+ fromAmpersand multi _ = Concepts (map (fromAmpersand multi) (Set.elems $ concs fSpec))
    where fSpec = userFSpec multi
 instance JSON A_Concept Concept where
  fromAmpersand multi cpt = Concept

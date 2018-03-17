@@ -787,7 +787,7 @@ data P_Gen =  P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand fil
 instance Traced P_Gen where
  origin = pos
 
-type Props = [Prop]
+type Props = Set.Set Prop
 
 data Prop      = Uni          -- ^ univalent
                | Inj          -- ^ injective

@@ -1,3 +1,8 @@
+# Sublime editor files:
+ampersand.sublime-project
+ampersand.sublime-workspace
+
+# Cabal files
 cabal.sandbox.config
 .cabal-sandbox
 .dist-buildwrapper

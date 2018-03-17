@@ -3,10 +3,11 @@ module Ampersand.Core.ShowPStruct
   (PStruct(..), doubleQuote)
 where
 
-import Ampersand.Core.ParseTree
-import Ampersand.Basics
-import Data.List
-import Ampersand.ADL1.PrettyPrinters
+import           Ampersand.ADL1.PrettyPrinters
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
+import           Data.List
+import qualified Data.Set as Set
 
 class PStruct a where
  showP :: a -> String
@@ -198,13 +199,10 @@ instance PStruct P_RoleRule where
 
 
 instance PStruct P_Relation where
- showP decl =
-  case decl of
-    P_Sgn{} -> name decl++" :: "++(show . name . pSrc . dec_sign) decl
-                                ++(if null ([Uni,Tot]>-dec_prps decl) then " -> " else " * ")
+ showP decl =  name decl++" :: "++(show . name . pSrc . dec_sign) decl
+                                ++operator
                                 ++(show . name . pTgt . dec_sign) decl++
-               (let mults=if null ([Uni,Tot]>-dec_prps decl) then dec_prps decl>-[Uni,Tot] else dec_prps decl in
-                if null mults then "" else " ["++intercalate "," (map showP mults)++"]"
+               (if Set.null mults then "" else " ["++intercalate "," (map showP (Set.toList mults))++"]"
                )++
                (case unwords (dec_pragma decl) of
                   "  "   -> ""
@@ -215,8 +213,12 @@ instance PStruct P_Relation where
                case dec_popu decl of
                 []   -> " = []"
                 p:ps -> "\n = [ "++showP p++concatMap (\x -> "\n   , "++showP x) ps++"\n   ]"
-
-
+     where
+       (mults,operator) = 
+           if Uni `Set.member` dec_prps decl &&
+              Tot `Set.member` dec_prps decl
+           then (Uni `Set.delete` (Tot `Set.delete` dec_prps decl), " -> ")
+           else (                                   dec_prps decl , " * " )
 instance PStruct PMeaning where
  showP (PMeaning pmkup) = "\n   MEANING "++showP pmkup
 

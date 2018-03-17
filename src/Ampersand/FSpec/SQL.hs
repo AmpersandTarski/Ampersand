@@ -8,23 +8,22 @@ module Ampersand.FSpec.SQL
   )
   
 where
-import Language.SQL.SimpleSQL.Syntax
-import Language.SQL.SimpleSQL.Pretty
-import Ampersand.Basics
-import Ampersand.Classes.ConceptStructure
-import Ampersand.Core.ParseTree
-     ( PSingleton )
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.ADL1.Expression
-import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.FSpecAux
-import Ampersand.Core.ShowAStruct
-import Data.List
-import Data.Maybe
-import Data.Monoid
+import           Ampersand.ADL1.Expression
+import           Ampersand.Basics
+import           Ampersand.Classes (isUni)
+import           Ampersand.Classes.ConceptStructure
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree ( PSingleton )
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.FSpecAux
+import           Data.List
+import           Data.Maybe
+import           Data.Monoid
+import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Ampersand.Classes
-     (isUni)
+import           Language.SQL.SimpleSQL.Pretty
+import           Language.SQL.SimpleSQL.Syntax
 
 data SqlQuery = SqlQueryPlain  Text.Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
               | SqlQueryPretty [Text.Text] -- Human readable, neatly prettyprinted
@@ -183,10 +182,10 @@ maybeSpecialCase fSpec expr =
   where 
     traceComment = traceExprComment expr
     go :: Bool -> Expression -> Expression -> Maybe BinQueryExpr
-    go isFlipped expr1 expr2 = Just .
+    go isFlipped' expr1 expr2 = Just .
        traceComment 
              [ "Optimized case for: <expr1> intersect with the "
-                   ++(if isFlipped then "flipped " else "")
+                   ++(if isFlipped' then "flipped " else "")
                    ++"complement of "++(case expr2 of 
                                            (EDcD dcl) -> "`"++name dcl++"`"
                                            _          -> "<expr2>"
@@ -220,13 +219,13 @@ maybeSpecialCase fSpec expr =
                                     ]
                 }
      where
-      fun = if isFlipped then flp else id
+      fun = if isFlipped' then flp else id
       (expr2Src,expr2trg,leftTable) =
          case expr2 of
            EDcD rel -> 
                let (plug,s,t) = getRelationTableInfo fSpec rel
                    lt = TRSimple [QName (name plug)] `as` table2
-               in if isFlipped 
+               in if isFlipped' 
                   then (QName (name t), QName (name s), lt)
                   else (QName (name s), QName (name t), lt)
            _ -> ( sourceAlias, targetAlias
@@ -980,7 +979,7 @@ sqlAttConcept fSpec c | c==ONE = QName "ONE"
                       | otherwise
              = if null cs then fatal ("A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\"") else
                QName (head cs)
-               where cs = [name f |f<-plugAttributes (sqlConceptPlug fSpec c), c'<-concs f,c==c']
+               where cs = [name f |f<-plugAttributes (sqlConceptPlug fSpec c), c'<-Set.elems $ concs f,c==c']
 
 
 stringOfName :: Name -> String
@@ -1166,9 +1165,10 @@ broadQuery fSpec obj =
 
   isInBroadQuery :: Expression -> ObjectDef -> Bool
   isInBroadQuery ctxExpr sObj = 
-     (isUni . objExpression $ sObj) && 
-     (isJust . attThatisInTableOf (target . objExpression $ obj) $ sObj) &&
-     (source ctxExpr /= target ctxExpr || null (primitives ctxExpr)) --this is required to prevent conflicts in rows of the same broad table. See explanation in issue #627
+       (isUni . objExpression $ sObj) 
+    && (isJust . attThatisInTableOf (target . objExpression $ obj) $ sObj)
+    && (source ctxExpr /= target ctxExpr || null (primitives ctxExpr)) --this is required to prevent conflicts in rows of the same broad table. See explanation in issue #627
+    && (target ctxExpr /= target (objExpression sObj) || (not . isFlipped . objExpression $ sObj)) -- see issue #760 for motivation of this line.
 
   attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
   attThatisInTableOf cpt od = 
