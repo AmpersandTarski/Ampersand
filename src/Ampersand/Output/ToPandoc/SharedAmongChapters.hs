@@ -2,8 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc.Builder
-    , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
-    , math --
     , module Text.Pandoc
     , module Data.Monoid
     , module Ampersand.ADL1
@@ -28,7 +26,6 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , isMissing
     , lclForLang
     , dpRule'
-    , inlineIntercalate
     , ThemeContent(..), orderingByTheme
     , Numbered(..), RuleCont(..),DeclCont(..),CptCont(..)
     , plainText
@@ -54,8 +51,7 @@ import           Data.Typeable
 import           GHC.Exts(sortWith)
 import           System.FilePath  -- (combine,addExtension,replaceExtension)
 import           Text.Pandoc hiding (trace)
-import           Text.Pandoc.Builder hiding (bulletList,math)
-import qualified Text.Pandoc.Builder as  BuggyBuilder
+import           Text.Pandoc.Builder
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]
@@ -573,21 +569,8 @@ lclForLang lang = DTF.defaultTimeLocale { DTF.months =
                       , ("September","Sep"),("October","Oct"),("November","Nov"),("December","Dec")]
            }
 
-inlineIntercalate :: Inlines -> [Inlines] -> Inlines
-inlineIntercalate _  [] = mempty
-inlineIntercalate _ [x] = x
-inlineIntercalate sep (x:xs) = x <> sep <> inlineIntercalate sep xs
-
 plainText :: String -> Blocks
 plainText = plain . text
-
--- Temporary fixes of Pandoc builder. ---
-bulletList :: [Blocks] -> Blocks
-bulletList [] = mempty
-bulletList xs = BuggyBuilder.bulletList xs
-
-math :: String -> Inlines
-math s = BuggyBuilder.math s -- ("{"++s++"}")
 
 violation2Inlines :: FSpec -> PairView Expression -> Inlines
 violation2Inlines fSpec _ = (text.l) (NL "<meldingstekst moet hier nog worden gegenereerd>"
