@@ -358,10 +358,10 @@ class ResourceList implements IteratorAggregate
     
     /**
      * Alias of set() method. Used by Resource::patch() method
-     * @param string|null $value
+     * @param mixed|null $value
      * @return bool
      */
-    public function replace(string $value = null): bool
+    public function replace($value = null): bool
     {
         if (!$this->ifc->isUni()) {
             throw new Exception("Cannot use replace for non-univalent interface " . $this->ifc->getPath() . ". Use add or remove instead", 400);
@@ -372,10 +372,10 @@ class ResourceList implements IteratorAggregate
     /**
      * Set provided value (for univalent interfaces)
      *
-     * @param string|null $value
+     * @param mixed|null $value
      * @return bool
      */
-    public function set(string $value = null): bool
+    public function set($value = null): bool
     {
         if (!$this->ifc->isUni()) {
             throw new Exception("Cannot use set() for non-univalent interface " . $this->ifc->getPath() . ". Use add or remove instead", 400);
@@ -403,7 +403,7 @@ class ResourceList implements IteratorAggregate
     
     /**
      * Add value to resource list
-     * @param string $value
+     * @param mixed $value
      * @return bool
      */
     public function add($value): bool
@@ -436,7 +436,7 @@ class ResourceList implements IteratorAggregate
     /**
      * Remove value from resource list
      *
-     * @param string $value
+     * @param mixed $value
      * @return bool
      */
     public function remove($value): bool
