@@ -1,0 +1,16 @@
+﻿CONTEXT "Bug760" IN ENGLISH
+
+RELATION myFatherIs[Person*Person] [UNI,INJ] -- (Src) Person has (Tgt) Person as its predecessor
+
+POPULATION myFatherIs CONTAINS [ ( "Stein", "Rieks" ) ] 
+POPULATION myFatherIs CONTAINS [ ( "Rieks", "Pierre" ) ] 
+POPULATION myFatherIs CONTAINS [ ( "Pierre", "Harry" ) ] 
+POPULATION myFatherIs CONTAINS [ ( "Harry", "Peter" ) ] 
+
+INTERFACE "[Persons]": "_SESSION";V[SESSION*Person] cRud BOX <SHCOLS>
+   [ "Me"        : I cRud
+   , "My father" : myFatherIs cRud
+   , "My son"    : myFatherIs~ cRud
+   ]
+
+ENDCONTEXT
