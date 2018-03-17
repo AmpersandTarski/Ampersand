@@ -182,10 +182,10 @@ maybeSpecialCase fSpec expr =
   where 
     traceComment = traceExprComment expr
     go :: Bool -> Expression -> Expression -> Maybe BinQueryExpr
-    go isFlipped expr1 expr2 = Just .
+    go isFlipped' expr1 expr2 = Just .
        traceComment 
              [ "Optimized case for: <expr1> intersect with the "
-                   ++(if isFlipped then "flipped " else "")
+                   ++(if isFlipped' then "flipped " else "")
                    ++"complement of "++(case expr2 of 
                                            (EDcD dcl) -> "`"++name dcl++"`"
                                            _          -> "<expr2>"
@@ -219,13 +219,13 @@ maybeSpecialCase fSpec expr =
                                     ]
                 }
      where
-      fun = if isFlipped then flp else id
+      fun = if isFlipped' then flp else id
       (expr2Src,expr2trg,leftTable) =
          case expr2 of
            EDcD rel -> 
                let (plug,s,t) = getRelationTableInfo fSpec rel
                    lt = TRSimple [QName (name plug)] `as` table2
-               in if isFlipped 
+               in if isFlipped' 
                   then (QName (name t), QName (name s), lt)
                   else (QName (name s), QName (name t), lt)
            _ -> ( sourceAlias, targetAlias
