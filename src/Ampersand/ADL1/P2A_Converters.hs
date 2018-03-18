@@ -253,7 +253,7 @@ pCtx2aCtx opts
       }
  = do contextInfo <- g_contextInfo
       decls       <- map fst
-                       <$> traverse (pDecl2aDecl n1 contextInfo deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
+                       <$> traverse (pDecl2aDecl Nothing contextInfo deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
       let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
             where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
       pats        <- traverse (pPat2aPat declMap contextInfo) p_patterns            --  The patterns defined in this context
@@ -270,7 +270,7 @@ pCtx2aCtx opts
       sqldefs     <- traverse (pObjDef2aObjDef declMap) p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script 
       phpdefs     <- traverse (pObjDef2aObjDef declMap) p_phpdefs       --  user defined phpplugs, taken from the Ampersand script 
       allRoleRelations <- traverse (pRoleRelation2aRoleRelation declMap) (p_roleRelations ++ concatMap pt_RRels p_patterns)
-      declsAndPops <- traverse (pDecl2aDecl n1 contextInfo deflangCtxt deffrmtCtxt) p_relations
+      declsAndPops <- traverse (pDecl2aDecl Nothing contextInfo deflangCtxt deffrmtCtxt) p_relations
       let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
       let soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs) :: [Type]
       let actx = ACtx{ ctxnm = n1
@@ -503,12 +503,12 @@ pCtx2aCtx opts
       } 
 
     pDecl2aDecl ::
-         String         -- The name of the pattern
+         Maybe String   -- name of pattern the rule is defined in (if any)
       -> ContextInfo
       -> Lang           -- The default language
       -> PandocFormat   -- The default pandocFormat
       -> P_Relation -> Guarded (Relation,Population)
-    pDecl2aDecl patNm contextInfo defLanguage defFormat pd
+    pDecl2aDecl env contextInfo defLanguage defFormat pd
      = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
            dcl = Relation
                      { decnm   = pack (dec_nm pd)
@@ -521,7 +521,7 @@ pCtx2aCtx opts
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
                      , decfpos = origin pd
                      , decusr  = True
-                     , decpat  = Just patNm
+                     , decpat  = env
                      , decplug = dec_plug pd
                      , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                      }
@@ -946,7 +946,7 @@ pCtx2aCtx opts
          <*> traverse (pPop2aPop declMap contextInfo) (pt_pop ppat)
          <*> traverse (pViewDef2aViewDef declMap) (pt_vds ppat) 
          <*> traverse (pPurp2aPurp declMap) (pt_xps ppat)
-         <*> traverse (pDecl2aDecl (name ppat) contextInfo deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+         <*> traverse (pDecl2aDecl (Just $ name ppat) contextInfo deflangCtxt deffrmtCtxt) (pt_dcs ppat)
        where
         f rules' keys' pops' views' xpls declsAndPops
            = A_Pat { ptnm  = name ppat
