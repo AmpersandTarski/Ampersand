@@ -4,7 +4,7 @@ module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           Data.List(nub,partition)
-import           Data.Maybe(isJust)
+import           Data.Maybe(isJust,fromMaybe)
 import qualified Data.Set as Set
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
@@ -353,14 +353,14 @@ chpDiagnosis fSpec
                   )
                   -- Rows:
                   [  [ (plain.str.name) rol]
-                   ++[ (plain.str.r_env) rul | multProcs]
+                   ++[ (plain.str.fromMaybe "--".rrpat) rul | multProcs]
                    ++[ (plain.str.name) rul
-                     , (plain.str.r_env) rul
+                     , (plain.str.fromMaybe "--".rrpat) rul
                      ]
                   | (rol,rul)<-fRoleRuls fSpec]
           
      where multProcs = length (vpatterns fSpec)>1
-
+           
   wipReport :: Blocks
   wipReport
    =   case popwork of

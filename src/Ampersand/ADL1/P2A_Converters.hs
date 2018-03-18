@@ -258,9 +258,9 @@ pCtx2aCtx opts
             where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
       pats        <- traverse (pPat2aPat declMap contextInfo) p_patterns            --  The patterns defined in this context
       uniqueNames pats
-      rules       <- traverse (pRul2aRul declMap n1) p_rules       --  All user defined rules in this context, but outside patterns
+      rules       <- traverse (pRul2aRul declMap Nothing) p_rules       --  All user defined rules in this context, but outside patterns
       uniqueNames rules
-      identdefs   <- traverse (pIdentity2aIdentity declMap) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
+      identdefs   <- traverse (pIdentity2aIdentity declMap Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       viewdefs    <- traverse (pViewDef2aViewDef declMap) p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames viewdefs
       interfaces  <- traverse (pIfc2aIfc declMap) (p_interfaceAndDisambObjs declMap)   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
@@ -497,7 +497,7 @@ pCtx2aCtx opts
       , decMean = decMean r1  --ignored for r2
       , decfpos = decfpos r1  --ignored for r2
       , decusr = or [decusr r1, decusr r2]
-      , decpat = decpat r1 ++ decpat r2   --not very nice!
+      , decpat = decpat r1 `orElse` decpat r2
       , decplug = or [decplug r1, decplug r2]
       , dechash = dechash r1  --ignored for r2
       } 
@@ -521,7 +521,7 @@ pCtx2aCtx opts
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
                      , decfpos = origin pd
                      , decusr  = True
-                     , decpat  = patNm
+                     , decpat  = Just patNm
                      , decplug = dec_plug pd
                      , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                      }
@@ -941,8 +941,8 @@ pCtx2aCtx opts
     
     pPat2aPat :: DeclMap -> ContextInfo -> P_Pattern -> Guarded Pattern
     pPat2aPat declMap contextInfo ppat
-     = f <$> traverse (pRul2aRul declMap (name ppat)) (pt_rls ppat)
-         <*> traverse (pIdentity2aIdentity declMap) (pt_ids ppat) 
+     = f <$> traverse (pRul2aRul declMap (Just $ name ppat)) (pt_rls ppat)
+         <*> traverse (pIdentity2aIdentity declMap (Just $ name ppat)) (pt_ids ppat) 
          <*> traverse (pPop2aPop declMap contextInfo) (pt_pop ppat)
          <*> traverse (pViewDef2aViewDef declMap) (pt_vds ppat) 
          <*> traverse (pPurp2aPurp declMap) (pt_xps ppat)
@@ -960,11 +960,11 @@ pCtx2aCtx opts
                    , ptvds = views'
                    , ptxps = xpls
                    }
-    pRul2aRul :: DeclMap -> String -- environment name (pattern / proc name)
+    pRul2aRul :: DeclMap -> Maybe String -- name of pattern the rule is defined in (if any)
               -> P_Rule TermPrim -> Guarded Rule
     pRul2aRul declMap env = typeCheckRul env . disambiguate (termPrimDisAmb declMap)
     typeCheckRul :: 
-                 String -- environment name (pattern / proc name)
+                 Maybe String -- name of pattern the rule is defined in (if any)
               -> P_Rule (TermPrim, DisambPrim) -> Guarded Rule
     typeCheckRul env P_Ru { pos = orig
                           , rr_nm = nm
@@ -983,18 +983,21 @@ pCtx2aCtx opts
                     , rrviol = vls
                     , rrtyp = sign exp'
                     , rrdcl = Nothing
-                    , r_env = env
+                    , rrpat = env
                     , r_usr = UserDefined
                     , isSignal = not . null . concatMap arRoles . filter (\x -> nm `elem` arRules x) $ allRoleRules 
                     }
-    pIdentity2aIdentity :: DeclMap -> P_IdentDef -> Guarded IdentityDef
-    pIdentity2aIdentity declMap pidt
+    pIdentity2aIdentity ::
+         DeclMap -> Maybe String -- name of pattern the rule is defined in (if any)
+      -> P_IdentDef -> Guarded IdentityDef
+    pIdentity2aIdentity declMap env pidt
      = case disambiguate (termPrimDisAmb declMap) pidt of
            P_Id { ix_lbl = lbl
                 , ix_ats = isegs
                 } -> (\isegs' -> Id { idPos = orig
                                     , idLbl = lbl
                                     , idCpt = conc
+                                    , idPat = env
                                     , identityAts = isegs'
                                     }) <$> traverse pIdentSegment2IdentSegment isegs
      where conc = pCpt2aCpt (ix_cpt pidt)

@@ -38,7 +38,7 @@ rulefromProp prp d =
         , rrviol = Nothing
         , rrtyp = sign rExpr
         , rrdcl = Just (prp,d)         -- For traceability: The original property and relation.
-        , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
+        , rrpat = decpat d      
         , r_usr = Multiplicity
         , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }

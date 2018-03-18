@@ -1061,7 +1061,7 @@ delta sgn
                                    ]
               , decfpos = Origin ("generated relation (Delta "++show sgn++")")
               , decusr  = False
-              , decpat  = ""
+              , decpat  = Nothing
               , decplug = True
               , dechash = hash sgn
               }
