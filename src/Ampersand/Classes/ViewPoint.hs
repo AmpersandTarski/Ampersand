@@ -7,7 +7,6 @@ import           Ampersand.Classes.Relational  (Relational(properties))
 import           Ampersand.Core.ParseTree (origin)
 import           Ampersand.Core.AbstractSyntaxTree
 import           Data.List(nub)
-import           Data.Maybe
 import qualified Data.Set as Set
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
@@ -22,7 +21,7 @@ class Language a where
   udefrules :: a -> Rules           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.
   multrules :: a -> Rules           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = Set.fromList $ catMaybes [rulefromProp p d |d<-Set.elems $ relsDefdIn x, p<-Set.elems (properties d)]
+  multrules x   = Set.fromList $ [rulefromProp p d |d<-Set.elems $ relsDefdIn x, p<-Set.elems (properties d)]
   identityRules :: a -> Rules       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = Set.unions . map rulesFromIdentity $ identities x
   allRules :: a -> Rules

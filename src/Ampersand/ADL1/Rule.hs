@@ -26,10 +26,8 @@ consequent r
      x           -> x
 
 -- rulefromProp specifies a rule that defines property prp of relation d.
--- The table of all relations is provided, in order to generate shorter names if possible.
-rulefromProp :: Prop -> Relation -> Maybe Rule
+rulefromProp :: Prop -> Relation -> Rule
 rulefromProp prp d =
-  Just
      Ru { rrnm  = show prp++" "++showDcl
         , formalExpression = rExpr
         , rrfps = origin d
