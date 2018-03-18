@@ -63,7 +63,12 @@ chpNatLangReqs lev fSpec =
   -- Each explanation should state the purpose (and nothing else).
   printOneTheme :: ThemeContent -> Blocks
   printOneTheme tc 
-        =   --  *** Header of the theme: ***
+    | isNothing (patOfTheme tc) &&
+        null (cptsOfTheme tc) &&
+        null (dclsOfTheme tc) &&
+        null (rulesOfTheme tc) = mempty
+    | otherwise =
+             --  *** Header of the theme: ***
             xDefBlck fSpec (XRefNaturalLanguageTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
@@ -81,7 +86,6 @@ chpNatLangReqs lev fSpec =
           <> (mconcat . map printRel     . dclsOfTheme ) tc
           <> (mconcat . map printRule    . rulesOfTheme) tc
       where
-                           
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
        printIntro :: [Numbered CptCont] -> Blocks
        printIntro [] = mempty
