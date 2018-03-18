@@ -39,12 +39,17 @@ fieldset {
     margin: 5px 0px 5px 2px;
 }
 
-.interface .box-rows .box-rows-opt {
+.interface .box-rows .box-opt {
     display: flex;
     justify-content: flex-end;
 }
 
-.box-rows-opt .btn {
+.interface .box-tabs .box-opt {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.box-opt .btn {
     margin: 5px 0px 5px 2px;
 }
 
