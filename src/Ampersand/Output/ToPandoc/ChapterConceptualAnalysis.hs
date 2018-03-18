@@ -71,10 +71,10 @@ chpConceptualAnalysis lev fSpec = (
         -- followed by a conceptual model for this pattern
      <> ( case fsLang fSpec of
                Dutch   -> -- announce the conceptual diagram
-                          para (xRef (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
+                          para (xRef fSpec (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
                           -- draw the conceptual diagram
                           <>(xDefBlck fSpec . pictOfPat) pat
-               English -> para (xRef (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
+               English -> para (xRef fSpec (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
                           <>(xDefBlck fSpec . pictOfPat) pat
         ) <>
     (
@@ -113,33 +113,12 @@ chpConceptualAnalysis lev fSpec = (
                     ms -> fromList ms
               ])
   ukadjs d  = if Uni `Set.member` (properties d) && Tot `Set.member` (properties d)
-              then commaEng "and" (map ukadj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
-              else commaEng "and" (map ukadj . Set.elems $ (properties d))++" relation"
-   where
-    ukadj Uni = "univalent"
-    ukadj Inj = "injective"
-    ukadj Sur = "surjective"
-    ukadj Tot = "total"
-    ukadj Sym = "symmetric"
-    ukadj Asy = "antisymmetric"
-    ukadj Trn = "transitive"
-    ukadj Rfx = "reflexive"
-    ukadj Irf = "irreflexive"
-    ukadj Prop = "symmetric and antisymmetric"
+              then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
+              else commaEng "and" (map adj . Set.elems $ (properties d))++" relation"
   nladjs d = if Uni `Set.member` (properties d) && Tot `Set.member` (properties d)
-             then commaNL "en" (map nladj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])++" functie"
-             else commaNL "en" (map nladj . Set.elems $ properties d)++" relatie"
-   where
-    nladj Uni = "univalente"
-    nladj Inj = "injectieve"
-    nladj Sur = "surjectieve"
-    nladj Tot = "totale"
-    nladj Sym = "symmetrische"
-    nladj Asy = "antisymmetrische"
-    nladj Trn = "transitieve"
-    nladj Rfx = "reflexieve"
-    nladj Irf = "irreflexieve"
-    nladj Prop  = "symmetrische en antisymmetrische"
+             then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])++" functie"
+             else commaNL "en" (map adj . Set.elems $ properties d)++" relatie"
+  adj = propFullName (fsLang fSpec) 
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
         = let purp = purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r)
@@ -149,10 +128,10 @@ chpConceptualAnalysis lev fSpec = (
                   -- Then the rule as a requirement
                <> plain
                    ( if isNull purp
-                     then (xRef . XRefSharedLangRule) r
+                     then (xRef fSpec . XRefSharedLangRule) r
                        <> str (l (NL " is gemaakt :" ,EN " has been made:"))
                      else str (l (NL "Daarom bestaat ", EN "Therefore "))
-                       <> (xRef . XRefSharedLangRule) r
+                       <> (xRef fSpec . XRefSharedLangRule) r
                        <> str (l (NL ":", EN " exists:"))
                    )
                <> fromList (meaning2Blocks  (fsLang fSpec) r)
@@ -161,7 +140,7 @@ chpConceptualAnalysis lev fSpec = (
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
                     <> mconcat (intersperse  (str ", ")
-                                [   xRef (XRefConceptualAnalysisRelation d)
+                                [   xRef fSpec (XRefConceptualAnalysisRelation d)
                                  <> text (" ("++name d++")")
                                 | d<-Set.elems $ bindedRelationsIn r])
                     <> str (l (NL " - geformaliseerd als "
@@ -169,7 +148,7 @@ chpConceptualAnalysis lev fSpec = (
                    )
                <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisRule r) (showMath r) 
                -- followed by a conceptual model for this rule
-               <> para (   xRef (pictOfRule r)
+               <> para (   xRef fSpec (pictOfRule r)
                         <> str (l (NL " geeft een conceptueel diagram van deze regel."
                                   ,EN " shows a conceptual diagram of this rule."))
                        )

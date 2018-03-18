@@ -182,47 +182,63 @@ chpNatLangReqs lev fSpec =
               ]
 
   printRel :: Numbered DeclCont -> Blocks
-  printRel nDcl
-       =   (printPurposes . cDclPurps . theLoad) nDcl
-        <> case (cDclMeaning . theLoad) nDcl of
-              Just m -> definitionList 
-                    [(   str (l (NL "Afspraak ", EN "Agreement "))
-                      <> xDefInln fSpec (XRefSharedLangRelation dcl)
-                     , [printMeaning m]
-                     )
-                    ]
-              _      -> mempty
-        <> case samples of
-              []  -> mempty
-              [_] -> plain ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"
-                                    ,EN "A phrase that can be formed is for instance:")
-                           )
-              _   -> plain ((str.l) (NL "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"
-                                    ,EN "Phrases that can be made are for instance:")
-                                        )
-        <> if null samples then mempty
-           else bulletList [ plain $ mkPhrase dcl sample
-                           | sample <- samples]
-         where dcl = cDcl . theLoad $ nDcl
-               samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
+  printRel nDcl =
+         (printPurposes . cDclPurps . theLoad) nDcl
+      <> definitionList 
+            [(   str (l (NL "Afspraak ", EN "Agreement "))
+              <> (xDefInln fSpec (XRefSharedLangRelation dcl) <> ": ")
+             ,  (case (cDclMeaning . theLoad) nDcl of
+                   Nothing
+                     -> [plain $
+                             (str.l) (NL "De relatie ",EN "The relation ")
+                          <> (emph.str.name) dcl
+                          <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
+                        ]
+                   Just m -> [printMeaning m]
+                )
+              <>(case Set.elems $ properties dcl of
+                    []  -> mempty
+                    ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
+                                   <> (commaPandocAnd (fsLang fSpec) (map (str . propFullName (fsLang fSpec)) ps)<>"."
+                                      )
+                                  )
+                           ]
+                )    
+             )   
+            ]
+      <> case samples of
+            []  -> mempty
+            [_] -> plain ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"
+                                  ,EN "A phrase that can be formed is for instance:")
+                         )
+            _   -> plain ((str.l) (NL "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"
+                                  ,EN "Phrases that can be made are for instance:")
+                         )
+      <> case samples of
+            []  -> mempty
+            _   -> bulletList . map (plain . mkPhrase dcl) $ samples
+    where dcl = cDcl . theLoad $ nDcl
+          samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
 
   printRule :: Numbered RuleCont -> Blocks
-  printRule nRul
-   = -- (plain . strong . str $ "**** "<>name nRul<>" ("<>show (theNr nRul)<>") ****" ) <>
-       (printPurposes . cRulPurps . theLoad) nRul
-    <> definitionList 
-               [(   str (l (NL "Afspraak ", EN "Agreement "))
-                 <> xDefInln fSpec
-                       (XRefSharedLangRule . cRul . theLoad $ nRul) <> ": "
-                , case (cRulMeaning . theLoad) nRul of
-                    Nothing 
-                      -> -- We need the number, because otherwise we get broken references. 
-                         mempty  
-                    Just m
-                      -> [printMeaning m]
-                ) 
-               ]
-
+  printRule nRul =
+         (printPurposes . cRulPurps . theLoad) nRul
+      <> definitionList 
+            [(   str (l (NL "Afspraak ", EN "Agreement "))
+              <> (xDefInln fSpec
+                    (XRefSharedLangRule rul) <> ": ")
+             , case (cRulMeaning . theLoad) nRul of
+                 Nothing 
+                    -> [plain $
+                            (str.l) (NL "De regel ",EN "The rule ")
+                         <> (emph.str.name) rul
+                         <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
+                       ]
+                 Just m
+                    -> [printMeaning m]
+             )
+            ]
+     where rul = cRul . theLoad $ nRul
   mkPhrase :: Relation -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
    | null (prL++prM++prR)

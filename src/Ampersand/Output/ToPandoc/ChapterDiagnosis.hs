@@ -231,13 +231,13 @@ chpDiagnosis fSpec
                                   ,EN " are not used in any rule. ")
                       ) 
      <>( case pictsWithUnusedRels of
-          [pict] -> para (    xRef pict 
+          [pict] -> para (    xRef fSpec pict 
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          )
                  <> xDefBlck fSpec pict
           picts  -> mconcat
-                       [ para (   xRef pict
+                       [ para (   xRef fSpec pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
@@ -398,7 +398,7 @@ chpDiagnosis fSpec
 -- the tables containing the actual work in progress population
      mconcat
      [    para (  str (l (NL "Afspraak ", EN "Agreement "))
-               <> xRef (XRefSharedLangRule r)
+               <> xRef fSpec (XRefSharedLangRule r)
                <> " ( " <> quoterule r <> " )"
                <> (str.l) (NL " luidt: ", EN " says: ")
                )
