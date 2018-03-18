@@ -171,11 +171,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                  _  -> para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
                          <> orderedList (map assocToRow asscs) 
     where
-        
      assocToRow :: Ampersand.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
          plain (  (text.assrhr) assoc
-                <>(text.l) (NL " (vanaf ",EN " (from ")
+                <>(text.l) (NL " (van ",EN " (from ")
                 <>(text.assSrc) assoc
                 <>(text.l) (NL " naar ", EN " to ")
                 <>(text.assTgt) assoc
@@ -295,13 +294,14 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                             PrimaryKey _ -> case fsLang fSpec of
                                               Dutch   -> "Dit attribuut is de primaire sleutel. "
                                               English -> "This attribute is the primary key. "
-                            ForeignKey c -> case fsLang fSpec of
-                                              Dutch   -> "Dit attribuut verwijst naar een voorkomen in de tabel "
+                            ForeignKey c -> (case fsLang fSpec of
+                                              Dutch   -> "Dit attribuut verwijst naar een rij in de tabel "
                                               English -> "This attribute is a foreign key to "
-                                               <> (text.name) c
-                            PlainAttr    -> case fsLang fSpec of
+                                            )<> (text.name) c
+                            PlainAttr    -> (case fsLang fSpec of
                                               Dutch   -> "Dit attribuut implementeert "
                                               English -> "This attribute implements "
+                                            )
                                           <> primExpr2pandocMath (fsLang fSpec) (attExpr att)
                                           <> "."
                       <> linebreak
