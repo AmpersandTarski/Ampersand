@@ -260,7 +260,7 @@ class NumberedThing a where
 
 instance NumberedThing Rule where
   numberOf fSpec r = case filter isTheOne ns of
-                      [] -> Nothing -- fatal ("Rule has not been numbered: "++name r)
+                      [] -> fatal ("Rule has not been numbered: "++name r)
                       [nr] -> Just $ theNr nr 
                       _ -> fatal ("Rule has been numbered multiple times: "++name r)
     where ns = concatMap rulesOfTheme (orderingByTheme fSpec)
@@ -268,7 +268,7 @@ instance NumberedThing Rule where
           isTheOne = (r ==) . cRul . theLoad
 instance NumberedThing Relation where
   numberOf fSpec d = case filter isTheOne ns of
-                      [] -> Nothing -- fatal ("Relation has not been numbered: "++showRel d)
+                      [] -> fatal ("Relation has not been numbered: "++showRel d)
                       [nr] -> Just $ theNr nr 
                       _ -> fatal ("Relation has been numbered multiple times: "++showRel d)
     where ns = concatMap dclsOfTheme (orderingByTheme fSpec)
@@ -276,7 +276,7 @@ instance NumberedThing Relation where
           isTheOne = (d ==) . cDcl . theLoad
 instance NumberedThing A_Concept where
   numberOf fSpec c = case filter isTheOne ns of
-                      [] -> Nothing -- fatal ("Concept has not been numbered: "++name c)
+                      [] -> fatal ("Concept has not been numbered: "++name c)
                       [nr] -> Just $ theNr nr 
                       _ -> fatal ("Concept has been numbered multiple times: "++name c)
     where ns = concatMap cptsOfTheme (orderingByTheme fSpec)
