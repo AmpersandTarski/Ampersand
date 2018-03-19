@@ -2,7 +2,7 @@ angular.module('AmpersandApp')
 .controller('BoxController', function($scope, ResourceService){
     
     // Function to create a new resource (does a POST)
-    $scope.createResource = ResourceService.createResource; // function(resource, ifc, callingObj, prepend)
+    $scope.createResource = ResourceService.createResource; // function(resource, ifc, callingObj, insertAtIndex)
     
     // Function to save certain attributes changes of a resource (does a PATCH)
     $scope.save = ResourceService.saveResource; // function(resource)

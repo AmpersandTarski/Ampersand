@@ -1,14 +1,14 @@
 $if(verbose)$<!-- Box-ROWS.html "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
 $endif$$if(crudR)$<div class="box box-rows" ng-controller="BoxController" ng-class="{'bg-warning' : resource._status_.warning, 'bg-danger' : resource._status_.danger, 'bg-success' : resource._status_.success}">
-    <div class="box-rows-opt">$if(crudC)$
-        <button type="button" class="btn btn-xs btn-success"$if(exprIsUni)$ ng-hide="resource['$name$']"$endif$ ng-click="createResource(resource, '$name$', patchResource, true)">New</button>$endif$
+    <div class="box-opt">$if(crudC)$
+        <button type="button" class="btn btn-xs btn-success"$if(exprIsUni)$ ng-hide="resource['$name$']"$endif$ ng-click="createResource(resource, '$name$', patchResource, 0)">New</button>$endif$
     </div>
     <ul class="list-group" ng-init="parent = resource">
         <li class="list-group-item" $if(exprIsUni)$ng-repeat="resource in (resource['$name$'] === null ? [] : [resource['$name$']])"$else$ng-repeat="resource in resource['$name$']"$endif$ $if(isRoot)$ ng-init="patchResource = resource"$endif$ ng-class="{'list-group-item-warning' : resource._status_.warning, 'list-group-item-danger' : resource._status_.danger, 'list-group-item-success' : resource._status_.success}">
             <div class="box-rows-li-opt">
                 <button type="button" class="btn btn-xs btn-warning" ng-if="resource._showButtons_.save" ng-click="save(resource)">Save</button>
                 <button type="button" class="btn btn-xs btn-danger" ng-if="resource._showButtons_.cancel" ng-click="cancel(resource)">Cancel</button>$if(crudU)$
-                <span class="glyphicon glyphicon-minus" ng-hide="resource._showButtons_.cancel" ng-click="remove(parent, '$name$', resource, $if(isRoot)$parent$else$patchResource$endif$)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="bottom"></span>$endif$$if(crudD)$
+                <span class="glyphicon glyphicon-minus" ng-hide="resource._showButtons_.cancel" ng-click="remove(parent, '$name$', resource, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="bottom"></span>$endif$$if(crudD)$
                 <span class="glyphicon glyphicon-trash" ng-hide="resource._showButtons_.cancel" ng-click="delete(parent, '$name$', resource)" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="bottom"></span>$endif$
             </div>
             <h5 class="list-group-item-heading">{{resource._label_}}&nbsp;</h5>$subObjects:{subObj|$if(verbose)$

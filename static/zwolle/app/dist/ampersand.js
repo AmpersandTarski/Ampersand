@@ -357,7 +357,7 @@ angular.module('AmpersandApp')
 .controller('BoxController', ["$scope", "ResourceService", function($scope, ResourceService){
     
     // Function to create a new resource (does a POST)
-    $scope.createResource = ResourceService.createResource; // function(resource, ifc, callingObj, prepend)
+    $scope.createResource = ResourceService.createResource; // function(resource, ifc, callingObj, insertAtIndex)
     
     // Function to save certain attributes changes of a resource (does a PATCH)
     $scope.save = ResourceService.saveResource; // function(resource)
@@ -537,26 +537,26 @@ angular.module('AmpersandApp')
          * @param {Object} resource
          * @param {string} ifc
          * @param {Object} callingObj will be used for loading indicator
-         * @param {bool} prepend
+         * @param {int} insertAtIndex
          * @returns {Promise}
          */
-        createResource : function(resource, ifc, callingObj, prepend){
-            if(prepend === 'undefined') prepend = false;
+        createResource : function(resource, ifc, callingObj, insertAtIndex){
             
+
             promise = Restangular
             .one(resource._path_).all(ifc)
             .post({}, {})
             .then(function(data){
                 data = data.plain();
-                // Update visual feedback (notifications and buttons)
-                ResourceService.processResponse(callingObj, data);
-
                 newResource = data.content;
+
+                // Update visual feedback (notifications and buttons)
+                ResourceService.processResponse(newResource, data);
                 
                 // Add new resource to ifc
                 if(Array.isArray(resource[ifc])){ // non-uni = list
-                    if(prepend) resource[ifc].unshift(newResource);
-                    else resource[ifc].push(newResource);
+                    if(insertAtIndex === 'undefined') insertAtIndex = resource[ifc].length; // append by default
+                    resource[ifc].splice(insertAtIndex, 0, newResource);
                 }else{ // uni = object
                     resource[ifc] = newResource;
                 }

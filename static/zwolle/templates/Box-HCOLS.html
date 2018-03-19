@@ -6,7 +6,7 @@ $endif$$if(crudR)$<div class="box cols" ng-controller="BoxController" ng-init="p
             <tr>$subObjects:{subObj|
                 <th>$subObj.subObjLabel$</th>}$
                 <th class="options">$if(crudC)$
-                    <a $if(exprIsUni)$ng-if="!resource['$name$']" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', patchResource, true)">
+                    <a $if(exprIsUni)$ng-if="!resource['$name$']" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', patchResource, 0)">
                         <span class="glyphicon glyphicon-plus"></span>
                     </a>$endif$
                 </th>
@@ -36,7 +36,7 @@ $endif$$if(crudR)$<div class="box cols" ng-controller="BoxController" ng-init="p
             <tr>$subObjects:{subObj|
                 <td></td>}$
                 <td class="options">$if(crudC)$
-                    <a $if(exprIsUni)$ng-if="!resource['$name$']" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', patchResource, false)">
+                    <a $if(exprIsUni)$ng-if="!resource['$name$']" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', patchResource)">
                         <span class="glyphicon glyphicon-plus"></span>
                     </a>$endif$
                 </td>
