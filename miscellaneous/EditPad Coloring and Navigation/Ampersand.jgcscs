@@ -315,9 +315,14 @@ FALSE
 
 FALSE
 
-Frontend templates
-names of frontend templates that are available by default
-<(TABS|ROWS|COLS|SCOLS|HCOLS|HROWS|SHCOLS|SPCOLS|SPHCOLS|ROWSNL|COLSNL)>
+Frontend templates/views
+names of frontend templates and views that are available by default
+5
+<(DIV|TABS
+|ROWS|ROWSNL|HROWS
+|COLS|COLSNL|HCOLS|SCOLS|SHCOLS|SPCOLS|SPHCOLS
+|PANELS
+|PROPBUTTON|STRONG)>
 FALSE
 FALSE
 12
@@ -326,7 +331,7 @@ FALSE
 
 0
 FALSE
-FALSE
+TRUE
 FALSE
 FALSE
 
