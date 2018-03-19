@@ -1,10 +1,5 @@
-$if(verbose)$<!-- Box-ROWSNL.html "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
-$endif$$if(crudR)$<div class="box box-rows" ng-controller="BoxController" ng-init="parent = resource">$if(crudC)$
-    <div class="row" ng-if="$if(exprIsUni)$!resource['$name$']$else$!resource['$name$'].length$endif$">
-        <div class="col-xs-12">
-            <button type="button" class="btn btn-sm btn-success" ng-click="createResource(parent, '$name$', patchResource)">New $target$</button>
-        </div>
-    </div>$endif$
+$if(verbose)$<!-- Box-HROWSNL.html "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
+$endif$$if(crudR)$<div class="box box-rows" ng-if="$if(exprIsUni)$resource['$name$']$else$resource['$name$'].length$endif$" ng-controller="BoxController" ng-init="parent = resource">
     <ul class="list-group">
         <li class="list-group-item"$if(exprIsUni)$ ng-repeat="resource in (resource['$name$'] === null ? [] : [resource['$name$']])"$else$ ng-repeat="resource in resource['$name$']"$endif$
             cg-busy="resource._loading_" ng-class="{'list-group-item-warning' : resource._status_.warning, 'list-group-item-danger' : resource._status_.danger, 'list-group-item-success' : resource._status_.success}"
