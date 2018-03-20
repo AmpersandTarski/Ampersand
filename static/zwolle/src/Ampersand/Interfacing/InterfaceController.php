@@ -15,6 +15,7 @@ use Ampersand\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Misc\Config;
+use function Ampersand\Misc\getSafeFileName;
 
 class InterfaceController
 {
@@ -134,22 +135,24 @@ class InterfaceController
 
         // Special case for file upload
         if ($list->getIfc()->tgtConcept->isFileObject()) {
-            $resource = $list->post((object) []);
             if (is_uploaded_file($_FILES['file']['tmp_name'])) {
+                $resource = $list->post((object) []);
+
                 $tmp_name = $_FILES['file']['tmp_name'];
-                $file_name = $_FILES['file']['name'];
-                $new_name = time() . '_' . $file_name; // prefix with timestamp to prevent overwrites
-                $absolutePath = Config::get('absolutePath') . Config::get('uploadPath') . $new_name;
-                $relativePath = Config::get('uploadPath') . $new_name;
-                $result = move_uploaded_file($tmp_name, $absolutePath);
-                 
+                $originalFileName = $_FILES['file']['name'];
+
+                $dest = getSafeFileName(Config::get('absolutePath') . Config::get('uploadPath'). $originalFileName);
+                $relativePath = Config::get('uploadPath') . pathinfo($dest, PATHINFO_BASENAME);
+                
+                $result = move_uploaded_file($tmp_name, $dest);
+                
                 if (!$result) {
                     throw new Exception("Error in file upload", 500);
                 }
                 
                 // Populate filePath and originalFileName relations in database
                 $resource->link($relativePath, 'filePath[FileObject*FilePath]')->add();
-                $resource->link($file_name, 'originalFileName[FileObject*FileName]')->add();
+                $resource->link($originalFileName, 'originalFileName[FileObject*FileName]')->add();
             } else {
                 throw new Exception("No file uploaded", 500);
             }
@@ -162,7 +165,7 @@ class InterfaceController
         $transaction->close();
         if ($transaction->isCommitted()) {
             if ($result) {
-                Logger::getUserLogger()->notice("File '{$file_name}' uploaded");
+                Logger::getUserLogger()->notice("File '{$originalFileName}' uploaded");
             } else {
                 Logger::getUserLogger()->notice($resource->getLabel() . " created");
             }
