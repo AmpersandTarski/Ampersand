@@ -14,6 +14,7 @@ use Ampersand\Interfacing\Resource;
 use Ampersand\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
+use Ampersand\Misc\Config;
 
 class InterfaceController
 {
@@ -129,13 +130,44 @@ class InterfaceController
     {
         $transaction = Transaction::getCurrentTransaction();
         
-        // Perform create
-        $resource = $resource->walkPathToResourceList($ifcPath)->post($body);
+        $list = $resource->walkPathToResourceList($ifcPath);
+
+        // Special case for file upload
+        if ($list->getIfc()->tgtConcept->isFileObject()) {
+            $resource = $list->post((object) []);
+            if (is_uploaded_file($_FILES['file']['tmp_name'])) {
+                $tmp_name = $_FILES['file']['tmp_name'];
+                $file_name = $_FILES['file']['name'];
+                $new_name = time() . '_' . $file_name; // prefix with timestamp to prevent overwrites
+                $absolutePath = Config::get('absolutePath') . Config::get('uploadPath') . $new_name;
+                $relativePath = Config::get('uploadPath') . $new_name;
+                $result = move_uploaded_file($tmp_name, $absolutePath);
+                 
+                if (!$result) {
+                    throw new Exception("Error in file upload", 500);
+                }
+                
+                // Populate filePath and originalFileName relations in database
+                $resource->link($relativePath, 'filePath[FileObject*FilePath]')->add();
+                $resource->link($file_name, 'originalFileName[FileObject*FileName]')->add();
+            } else {
+                throw new Exception("No file uploaded", 500);
+            }
+        } else {
+            // Perform create
+            $resource = $list->post($body);
+        }
 
         // Close transaction
         $transaction->close();
         if ($transaction->isCommitted()) {
-            Logger::getUserLogger()->notice($resource->getLabel() . " created");
+            if ($result) {
+                Logger::getUserLogger()->notice("File '{$file_name}' uploaded");
+            } else {
+                Logger::getUserLogger()->notice($resource->getLabel() . " created");
+            }
+        } else {
+            // TODO: remove uploaded file
         }
 
         // Get content to return

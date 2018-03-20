@@ -11,7 +11,6 @@ use stdClass;
 use Exception;
 use ArrayIterator;
 use IteratorAggregate;
-use Ampersand\Misc\Config;
 use Ampersand\Core\Atom;
 use Ampersand\Log\Logger;
 use Ampersand\Interfacing\Options;
@@ -272,29 +271,6 @@ class ResourceList implements IteratorAggregate
         
         // Put resource attributes
         $resource->put($resourceToPost);
-        
-        // Special case for file upload. TODO: make extension with hooks
-        if ($this->ifc->tgtConcept->isFileObject()) {
-            if (is_uploaded_file($_FILES['file']['tmp_name'])) {
-                $tmp_name = $_FILES['file']['tmp_name'];
-                $new_name = time() . '_' . $_FILES['file']['name'];
-                $absolutePath = Config::get('absolutePath') . Config::get('uploadPath') . $new_name;
-                $relativePath = Config::get('uploadPath') . $new_name;
-                $result = move_uploaded_file($tmp_name, $absolutePath);
-                 
-                if ($result) {
-                    Logger::getUserLogger()->notice("File '{$new_name}' uploaded");
-                } else {
-                    throw new Exception("Error in file upload", 500);
-                }
-                
-                // Populate filePath and originalFileName relations in database
-                $resource->link($relativePath, 'filePath[FileObject*FilePath]')->add();
-                $resource->link($_FILES['file']['name'], 'originalFileName[FileObject*FileName]')->add();
-            } else {
-                throw new Exception("No file uploaded", 500);
-            }
-        }
         
         return $resource;
     }
