@@ -167,48 +167,60 @@ class Transaction
         
         // Decide action (commit or rollback)
         if ($this->invariantRulesHold) {
-            // Cache conjuncts
-            foreach ($this->getAffectedConjuncts() as $conj) {
-                $conj->saveCache();
-            }
-
-            // Commit transaction
             $this->logger->info("Commit transaction");
-            foreach ($this->storages as $storage) {
-                $storage->commitTransaction($this); // Commit transaction for each registered storage
-            }
-            $this->isCommitted = true;
+            $this->commit();
         } elseif (Config::get('ignoreInvariantViolations', 'transactions')) {
-            // Cache conjuncts
-            foreach ($this->getAffectedConjuncts() as $conj) {
-                $conj->saveCache();
-            }
-
-            // Commit transaction
             $this->logger->warning("Commit transaction with invariant violations");
-            foreach ($this->storages as $storage) {
-                $storage->commitTransaction($this); // Commit transaction for each registered storage
-            }
-            $this->isCommitted = true;
+            $this->commit();
         } else {
-
-            // Rollback transaction
             $this->logger->info("Rollback transaction, invariant rules do not hold");
-            foreach ($this->storages as $storage) {
-                $storage->rollbackTransaction($this); // Rollback transaction for each registered storage
-            }
-            // Clear atom cache for affected concepts
-            foreach ($this->affectedConcepts as $cpt) {
-                $cpt->clearAtomCache();
-            }
-
-            $this->isCommitted = false;
+            $this->rollback();
         }
         
         Hook::callHooks('postCloseTransaction', get_defined_vars());
         
         self::$currentTransaction = null; // unset currentTransaction
         return $this;
+    }
+
+    /**
+     * Commit transaction
+     *
+     * @return void
+     */
+    protected function commit()
+    {
+        // Cache conjuncts
+        foreach ($this->getAffectedConjuncts() as $conj) {
+            $conj->saveCache();
+        }
+
+        // Commit transaction for each registered storage
+        foreach ($this->storages as $storage) {
+            $storage->commitTransaction($this);
+        }
+
+        $this->isCommitted = true;
+    }
+
+    /**
+     * Rollback transaction
+     *
+     * @return void
+     */
+    protected function rollback()
+    {
+        // Rollback transaction for each registered storage
+        foreach ($this->storages as $storage) {
+            $storage->rollbackTransaction($this);
+        }
+
+        // Clear atom cache for affected concepts
+        foreach ($this->affectedConcepts as $cpt) {
+            $cpt->clearAtomCache();
+        }
+
+        $this->isCommitted = false;
     }
     
     /**
