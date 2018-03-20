@@ -8,6 +8,7 @@
 namespace Ampersand\Log;
 
 use Monolog\Handler\HandlerInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  *
@@ -38,9 +39,9 @@ class Logger
     /**
      *
      * @param string $channel
-     * @return \Monolog\Logger
+     * @return \Psr\Log\LoggerInterface
      */
-    public static function getLogger($channel)
+    public static function getLogger(string $channel): LoggerInterface
     {
         
         if (isset(self::$loggers[$channel])) {
@@ -68,9 +69,9 @@ class Logger
     
     /**
      *
-     * @return \Monolog\Logger
+     * @return \Psr\Log\LoggerInterface
      */
-    public static function getUserLogger()
+    public static function getUserLogger(): LoggerInterface
     {
         return Logger::getLogger('USERLOG');
     }

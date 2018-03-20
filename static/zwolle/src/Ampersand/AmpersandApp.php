@@ -202,7 +202,9 @@ class AmpersandApp
 
         // Close transaction
         $transaction = Transaction::getCurrentTransaction()->close();
-        $this->logger->info("End application reinstall");
+        if ($transaction->isRolledBack()) {
+            Logger::getUserLogger()->error("Initial installation does not satisfy invariant rules");
+        }
 
         // Initial conjunct evaluation
         $this->logger->info("Initial evaluation of all conjuncts after application reinstallation");
@@ -214,6 +216,8 @@ class AmpersandApp
         }
 
         $this->setSession(); // Initiate session again
+
+        $this->logger->info("End application reinstall");
 
         return $transaction;
     }
