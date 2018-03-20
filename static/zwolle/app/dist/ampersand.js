@@ -349,7 +349,8 @@ angular.module('AmpersandApp')
     };
     
     $scope.FileUploader.onErrorItem = function(item, response, status, headers){
-        NotificationService.addError(response.error.message, response.error.code, true);
+        NotificationService.addError(response.msg, response.error, true, response.html);
+        NotificationService.updateNotifications(response.notifications);
     };
 }]);
 
