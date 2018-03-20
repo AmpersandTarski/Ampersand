@@ -157,11 +157,11 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     {
         // Drop database
         $this->logger->info("Drop database if exists: '{$this->dbName}'");
-        $this->dbLink->query("DROP DATABASE IF EXISTS {$this->dbName}");
+        $this->doQuery("DROP DATABASE IF EXISTS {$this->dbName}");
         
         // Create new database
         $this->logger->info("Create new database: '{$this->dbName}'");
-        $this->dbLink->query("CREATE DATABASE {$this->dbName} DEFAULT CHARACTER SET UTF8");
+        $this->doQuery("CREATE DATABASE {$this->dbName} DEFAULT CHARACTER SET UTF8");
 
         $this->dbLink->select_db($this->dbName);
     }
