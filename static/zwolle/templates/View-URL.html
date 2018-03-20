@@ -1,17 +1,17 @@
 $if(verbose)$<!-- URL.html -->
-<!-- Requires & statement: 
+<!--To use: add the following statements to your script:
     CONCEPT URL "a uniform resource locator as defined by RFC3986"
     REPRESENT URL TYPE BIGALPHANUMERIC
     VIEW URL : URL DEFAULT HTML TEMPLATE "View-URL.html" ENDVIEW
 -->
-$endif$$if(crudR)$<div class="input-group" ng-controller="AtomicController">$if(crudU)$$if(exprIsUni)$
-    <input ng-model="resource['$name$']" my-bluronenter type="text" placeholder="Value" class="form-control input-sm" style="width:400px;" ng-blur="saveItem(resource, '$name$', patchResource)">$else$
+$endif$$if(crudR)$<div class="input-group view-url" ng-controller="AtomicController">$if(crudU)$$if(exprIsUni)$
+    <input ng-model="resource['$name$']" my-bluronenter type="text" placeholder="Value" class="form-control input-sm" ng-blur="saveItem(resource, '$name$', patchResource)">$else$
     <div ng-repeat="url in resource['$name$'] track by \$index">
         <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(resource, '$name$', \$index, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
         <span class="wordwrap"><a ng-href="{{url}}" target="_blank">{{url}}</a></span>
     </div>
     <div>
-        <input ng-model="selected.value" my-bluronenter type="text" placeholder="Add value" class="form-control input-sm" style="width:400px;" ng-blur="addItem(resource, '$name$', selected, patchResource)">
+        <input ng-model="selected.value" my-bluronenter type="text" placeholder="http://" class="form-control input-sm" ng-blur="addItem(resource, '$name$', selected, patchResource)">
     </div>$endif$$else$$if(exprIsUni)$
     <div class="wordwrap">{{resource['$name$']}}</div>$else$
     <div ng-repeat="url in resource['$name$'] track by \$index" class="wordwrap">

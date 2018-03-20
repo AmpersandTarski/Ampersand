@@ -99,6 +99,10 @@ fieldset {
     margin-bottom: 1px;
 }
 
+.view-url input {
+    width: 400px;
+}
+
 input .ng-invalid .ng-dirty {
     border: 2px solid red;
 }
