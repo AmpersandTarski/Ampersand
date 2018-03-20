@@ -152,7 +152,15 @@ angular.module('AmpersandApp')
             patch = ResourceService.createPatch('remove', resource, patchResource);
 
             // Execute patch
-            return ResourceService.addPatches(patchResource, [patch]);
+            return ResourceService
+            .addPatches(patchResource, [patch])
+            .then(function(data){
+                // Adapt js model
+                if(!data.saved) {
+                    if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
+                    else parent[ifc] = null; // uni = object
+                }
+            });
         },
         
         /**
@@ -315,7 +323,7 @@ angular.module('AmpersandApp')
          * @returns {bool}
          */
         checkRequired : function(){ 
-            updatedResources.reduce(function(prev, item, index, arr){
+            return updatedResources.reduce(function(prev, item, index, arr){
                 return prev || item._patchesCache_.length;
             }, false);
         },

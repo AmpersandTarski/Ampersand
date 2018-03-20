@@ -87,30 +87,6 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     };
 }]);
 
-angular.module('uiSwitch', [])
-
-.directive('switch', function(){
-  return {
-    restrict: 'AE'
-  , replace: true
-  , transclude: true
-  , template: function(element, attrs) {
-      var html = '';
-      html += '<a href=""';
-      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
-      html += '>';
-      html += '<span';
-      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
-      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
-      html +=   '>';
-      html +=   '<small></small>';
-      html += '</span>';
-      html += '<span ng-transclude></span>';
-      html += '</a>';
-      return html;
-    }
-  }
-});
 // Controller for extension app in navigation bar
 angular.module('AmpersandApp')
 .controller('ExecEngineController', ["$scope", "Restangular", "NotificationService", function ($scope, Restangular, NotificationService) {
@@ -149,6 +125,30 @@ angular.module('AmpersandApp')
     };
 }]);
 
+angular.module('uiSwitch', [])
+
+.directive('switch', function(){
+  return {
+    restrict: 'AE'
+  , replace: true
+  , transclude: true
+  , template: function(element, attrs) {
+      var html = '';
+      html += '<a href=""';
+      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
+      html += '>';
+      html += '<span';
+      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
+      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
+      html +=   '>';
+      html +=   '<small></small>';
+      html += '</span>';
+      html += '<span ng-transclude></span>';
+      html += '</a>';
+      return html;
+    }
+  }
+});
 var app = angular.module('AmpersandApp');
 app.requires[app.requires.length] = 'angularFileUpload'; // add angularFileUpload to dependency list
 app.config(["$routeProvider", function($routeProvider) {
@@ -592,7 +592,15 @@ angular.module('AmpersandApp')
             patch = ResourceService.createPatch('remove', resource, patchResource);
 
             // Execute patch
-            return ResourceService.addPatches(patchResource, [patch]);
+            return ResourceService
+            .addPatches(patchResource, [patch])
+            .then(function(data){
+                // Adapt js model
+                if(!data.saved) {
+                    if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
+                    else parent[ifc] = null; // uni = object
+                }
+            });
         },
         
         /**
@@ -755,7 +763,7 @@ angular.module('AmpersandApp')
          * @returns {bool}
          */
         checkRequired : function(){ 
-            updatedResources.reduce(function(prev, item, index, arr){
+            return updatedResources.reduce(function(prev, item, index, arr){
                 return prev || item._patchesCache_.length;
             }, false);
         },
