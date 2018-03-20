@@ -197,6 +197,11 @@ class Transaction
             foreach ($this->storages as $storage) {
                 $storage->rollbackTransaction($this); // Rollback transaction for each registered storage
             }
+            // Clear atom cache for affected concepts
+            foreach ($this->affectedConcepts as $cpt) {
+                $cpt->clearAtomCache();
+            }
+
             $this->isCommitted = false;
         }
         
