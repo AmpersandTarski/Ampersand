@@ -21,9 +21,13 @@ $endif$$if(crudR)$<div class="box box-cols" ng-controller="BoxController" ng-ini
                 <td class="box-cols-opt">
                     <button type="button" class="btn btn-warning btn-xs" ng-if="resource._showButtons_.save" ng-click="save(resource)">Save</button>
                     <button type="button" class="btn btn-danger btn-xs" ng-if="resource._showButtons_.cancel" ng-click="cancel(resource)">Cancel</button>$if(crudU)$
-                    <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="remove(parent, '$name$', resource, patchResource)"></span>$endif$$if(crudD)$
-                    <span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="delete(parent, '$name$', resource)"></span>$endif$
-                    <div style="float:right;" cg-busy="{promise:resource._loading_, templateUrl:'app/src/shared/loading/loading.html', backdrop:false, wrapperClass:''}"></div>
+                    <button type="button" class="btn btn-xs" ng-click="remove(parent, '$name$', resource, $if(isRoot)$parent$else$patchResource$endif$)">
+                        <span class="glyphicon glyphicon-minus"></span>
+                    </button>$endif$$if(crudD)$
+                    <button type="button" class="btn btn-danger btn-xs" ng-click="delete(parent, '$name$', resource)">
+                        <span class="glyphicon glyphicon-trash"></span>
+                    </button>$endif$
+                    <div style="display: inline-block;" cg-busy="{promise:resource._loading_, templateUrl:'app/src/shared/loading/loading.html', backdrop:false, wrapperClass:''}"></div>
                 </td>
             </tr>$if(crudU)$
             <tr$if(exprIsUni)$ ng-if="!resource['$name$']"$endif$ ng-controller="AtomicTypeAheadController">
