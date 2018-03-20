@@ -13,7 +13,7 @@ angular.module('AmpersandApp')
     
     $scope.removeItem = ResourceService.removeItem; // function(resource, ifc, index, patchResource)
     
-    $scope.remove = ResourceService.removeResource; // function(ifc, resource, patchResource)
+    $scope.remove = ResourceService.removeResource; // function(parent, ifc, resource, patchResource)
     
-    $scope.delete = ResourceService.deleteResource; // function(ifc, resource)
+    $scope.delete = ResourceService.deleteResource; // function(parent, ifc, resource)
 });

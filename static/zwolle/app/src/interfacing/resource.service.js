@@ -108,8 +108,6 @@ angular.module('AmpersandApp')
          * @returns {Promise}
          */
         createResource : function(resource, ifc, callingObj, insertAtIndex){
-            
-
             promise = Restangular
             .one(resource._path_).all(ifc)
             .post({}, {})
@@ -146,7 +144,7 @@ angular.module('AmpersandApp')
          * @param {Object} parent
          * @param {string} ifc
          * @param {Object} resource
-         * @param {bool} patchResource
+         * @param {Object} patchResource
          * @returns {Promise}
          */
         removeResource : function(parent, ifc, resource, patchResource){
@@ -154,13 +152,7 @@ angular.module('AmpersandApp')
             patch = ResourceService.createPatch('remove', resource, patchResource);
 
             // Execute patch
-            return ResourceService
-            .addPatches(patchResource, [patch])
-            .then(function(data){
-                // Adapt js model
-                if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
-                else parent[ifc] = null; // uni = object
-            });
+            return ResourceService.addPatches(patchResource, [patch]);
         },
         
         /**

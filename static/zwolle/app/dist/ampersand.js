@@ -87,6 +87,30 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     };
 }]);
 
+angular.module('uiSwitch', [])
+
+.directive('switch', function(){
+  return {
+    restrict: 'AE'
+  , replace: true
+  , transclude: true
+  , template: function(element, attrs) {
+      var html = '';
+      html += '<a href=""';
+      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
+      html += '>';
+      html += '<span';
+      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
+      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
+      html +=   '>';
+      html +=   '<small></small>';
+      html += '</span>';
+      html += '<span ng-transclude></span>';
+      html += '</a>';
+      return html;
+    }
+  }
+});
 // Controller for extension app in navigation bar
 angular.module('AmpersandApp')
 .controller('ExecEngineController', ["$scope", "Restangular", "NotificationService", function ($scope, Restangular, NotificationService) {
@@ -125,30 +149,6 @@ angular.module('AmpersandApp')
     };
 }]);
 
-angular.module('uiSwitch', [])
-
-.directive('switch', function(){
-  return {
-    restrict: 'AE'
-  , replace: true
-  , transclude: true
-  , template: function(element, attrs) {
-      var html = '';
-      html += '<a href=""';
-      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
-      html += '>';
-      html += '<span';
-      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
-      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
-      html +=   '>';
-      html +=   '<small></small>';
-      html += '</span>';
-      html += '<span ng-transclude></span>';
-      html += '</a>';
-      return html;
-    }
-  }
-});
 var app = angular.module('AmpersandApp');
 app.requires[app.requires.length] = 'angularFileUpload'; // add angularFileUpload to dependency list
 app.config(["$routeProvider", function($routeProvider) {
@@ -202,9 +202,9 @@ angular.module('AmpersandApp')
     
     $scope.removeItem = ResourceService.removeItem; // function(resource, ifc, index, patchResource)
     
-    $scope.remove = ResourceService.removeResource; // function(ifc, resource, patchResource)
+    $scope.remove = ResourceService.removeResource; // function(parent, ifc, resource, patchResource)
     
-    $scope.delete = ResourceService.deleteResource; // function(ifc, resource)
+    $scope.delete = ResourceService.deleteResource; // function(parent, ifc, resource)
 }]);
 
 angular.module('AmpersandApp')
@@ -344,8 +344,14 @@ angular.module('AmpersandApp')
     $scope.FileUploader.onSuccessItem = function(fileItem, response, status, headers){
         NotificationService.updateNotifications(response.notifications);
         
-        // Add response content (newly created FileObject) to ifc list in resource
-        fileItem.resource[fileItem.ifc].push(response.content);
+        newResource = response.content;
+        
+        // Add new resource to ifc
+        if(Array.isArray(fileItem.resource[fileItem.ifc])){ // non-uni = list
+            fileItem.resource[fileItem.ifc].splice(-1, 0, newResource);
+        }else{ // uni = object
+            fileItem.resource[fileItem.ifc] = newResource;
+        }
     };
     
     $scope.FileUploader.onErrorItem = function(item, response, status, headers){
@@ -542,8 +548,6 @@ angular.module('AmpersandApp')
          * @returns {Promise}
          */
         createResource : function(resource, ifc, callingObj, insertAtIndex){
-            
-
             promise = Restangular
             .one(resource._path_).all(ifc)
             .post({}, {})
@@ -580,7 +584,7 @@ angular.module('AmpersandApp')
          * @param {Object} parent
          * @param {string} ifc
          * @param {Object} resource
-         * @param {bool} patchResource
+         * @param {Object} patchResource
          * @returns {Promise}
          */
         removeResource : function(parent, ifc, resource, patchResource){
@@ -588,13 +592,7 @@ angular.module('AmpersandApp')
             patch = ResourceService.createPatch('remove', resource, patchResource);
 
             // Execute patch
-            return ResourceService
-            .addPatches(patchResource, [patch])
-            .then(function(data){
-                // Adapt js model
-                if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
-                else parent[ifc] = null; // uni = object
-            });
+            return ResourceService.addPatches(patchResource, [patch]);
         },
         
         /**
