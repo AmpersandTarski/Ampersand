@@ -6,7 +6,7 @@ INTERFACE "$interfaceName$" : $expAdl$ :: $source$ * $target$  ($if(!isTopLevel)
 InterfaceLabel: $interfaceLabel$
 Roles: [$roles;separator=", "$]
 $endif$-->
-<div class="container-fluid interface" cg-busy="resource._loading_" ng-controller="InterfaceController" ng-class="{'bg-warning' : resource._status_.warning, 'bg-danger' : resource._status_.danger, 'bg-success' : resource._status_.success}">
+<div id="$interfaceName$" class="container-fluid interface" cg-busy="resource._loading_" ng-controller="InterfaceController" ng-class="{'bg-warning' : resource._status_.warning, 'bg-danger' : resource._status_.danger, 'bg-success' : resource._status_.success}">
     <div class="interface-opt">
         <button type="button" class="btn btn-xs btn-warning" ng-if="resource._showButtons_.save" ng-click="saveResource(resource)">Save</button>
         <button type="button" class="btn btn-xs btn-danger" ng-if="resource._showButtons_.cancel" ng-click="resource.get()">Cancel</button>
