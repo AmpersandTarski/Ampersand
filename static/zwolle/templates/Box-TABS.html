@@ -7,8 +7,7 @@ $endif$$if(crudR)$<div class="box box-tabs" ng-controller="BoxController" ng-ini
     </div>$endif$
     <div class="row" $if(exprIsUni)$ng-repeat="resource in (resource['$name$'] === null ? [] : [resource['$name$']])"$else$ng-repeat="resource in resource['$name$']"$endif$>
         <div class="col-xs-12"$if(isRoot)$ ng-init="patchResource = resource"$endif$ cg-busy="resource._loading_" ng-class="{'bg-warning' : resource._status_.warning, 'bg-danger' : resource._status_.danger, 'bg-success' : resource._status_.success}">
-            <div class="pull-right panel-heading-options">
-                <my-nav-to-other-interfaces resource="resource"></my-nav-to-other-interfaces>
+            <div class="pull-right box-tabs-opt">
                 <button type="button" class="btn btn-warning btn-xs" ng-if="resource._showButtons_.save" ng-click="save(resource)">Save</button>
                 <button type="button" class="btn btn-danger btn-xs" ng-if="resource._showButtons_.cancel" ng-click="cancel(resource)">Cancel</button>$if(crudC)$$if(!exprIsUni)$
                 <button type="button" class="btn btn-xs" ng-click="createResource(parent, '$name$', parent, \$index)" uib-tooltip="Create new $target$" tooltip-trigger="mouseenter" tooltip-placement="left">
@@ -20,6 +19,7 @@ $endif$$if(crudR)$<div class="box box-tabs" ng-controller="BoxController" ng-ini
                 <button type="button" class="btn btn-danger btn-xs" ng-hide="resource._showButtons_.cancel" ng-click="delete(parent, '$name$', resource)" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left">
                     <span class="glyphicon glyphicon-trash"></span>
                 </button>$endif$
+                <my-nav-to-other-interfaces resource="resource"></my-nav-to-other-interfaces>
             </div>
             <uib-tabset>$subObjects:{subObj|$if(verbose)$
                 <!-- TAB: $subObj.subObjLabel$ -->$endif$

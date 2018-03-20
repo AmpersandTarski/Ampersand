@@ -1,6 +1,6 @@
 $if(verbose)$<!-- Box-COLSNL.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
 <!-- Difference with COLS.html is removed <thead> -->
-$endif$$if(crudR)$<div class="box cols" ng-controller="BoxController" ng-init="parent = resource">
+$endif$$if(crudR)$<div class="box box-cols" ng-controller="BoxController" ng-init="parent = resource">
     <table class="table table-striped table-hover table-condensed">
         <tbody>
             <tr $if(exprIsUni)$ng-repeat="resource in (resource['$name$'] === null ? [] : [resource['$name$']])"$else$ng-repeat="resource in resource['$name$']"$endif$ ng-class="resource._status_"$if(isRoot)$ ng-init="patchResource = resource;"$endif$>$subObjects:{subObj|
@@ -8,7 +8,7 @@ $endif$$if(crudR)$<div class="box cols" ng-controller="BoxController" ng-init="p
                 $endif$<td class="row-content">
                     $subObj.subObjContents$
                 </td>}$
-                <td class="options">
+                <td class="box-cols-opt">
                     <button type="button" class="btn btn-warning btn-xs" ng-if="resource._showButtons_.save" ng-click="save(resource)">Save</button>
                     <button type="button" class="btn btn-danger btn-xs" ng-if="resource._showButtons_.cancel" ng-click="cancel(resource)">Cancel</button>$if(crudU)$
                     <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="remove(parent, '$name$', resource, patchResource)"></span>$endif$$if(crudD)$
@@ -25,7 +25,7 @@ $endif$$if(crudR)$<div class="box cols" ng-controller="BoxController" ng-init="p
         <tfoot>
             <tr>$subObjects:{subObj|
                 <td></td>}$
-                <td class="options">$if(crudC)$
+                <td class="box-cols-opt">$if(crudC)$
                     <a $if(exprIsUni)$ng-if="!resource['$name$']" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', patchResource)">
                         <span class="glyphicon glyphicon-plus"></span>
                     </a>$endif$

@@ -4,16 +4,6 @@
     /* Overrides margin-bottom set to 20px by bootstrap.min.css */
 }
 
-.interface .CRUDbuttons {
-    font-size: 14px;
-    margin-top: 5px;
-    padding: 5px;
-}
-
-.interface .glyphicon-plus {
-    color: green;
-}
-
 fieldset {
     padding: 10px;
 }
@@ -26,10 +16,6 @@ fieldset {
     margin-bottom: 15px;
 }
 
-.interface .cols .options {
-    text-align: right;
-}
-
 .interface .interface-opt {
     display: flex;
     justify-content: flex-end;
@@ -39,25 +25,35 @@ fieldset {
     margin: 5px 0px 5px 2px;
 }
 
-.interface .box-rows .box-opt {
-    display: flex;
-    justify-content: flex-end;
+.interface .box-cols .box-cols-opt {
+    text-align: right;
 }
 
-.interface .box-tabs .box-opt {
-    display: flex;
-    justify-content: flex-end;
+.interface .box-cols-opt .btn {
+    margin-left: 2px;
 }
 
-.box-opt .btn {
-    margin: 5px 0px 5px 2px;
+.interface .box-tabs .box-tabs-opt {
+    padding-top: 10px;
 }
 
-.interface .box-rows .box-rows-li-opt {
+.interface .box-tabs-opt .btn {
+    margin-left: 2px;
+}
+
+.interface .box-panels .box-panels-opt {
+
+}
+
+.interface .box-panels-opt .btn {
+    margin-left: 2px;
+}
+
+.interface .box-rows .box-li-opt, 
+.interface .box-panels .box-li-opt {
     position: absolute;
     top: 0;
     right: 0;
-    z-index: 10;
     display: block;
     padding: 5px 8px;
     font-size: 12px;
@@ -68,23 +64,8 @@ fieldset {
     */
 }
 
-.box-rows-li-opt .btn {
+.interface .box-li-opt .btn {
     margin-left: 2px;
-}
-
-.interface .panel-heading {
-    padding-top: 1px;
-    padding-bottom: 1px;
-}
-
-.interface .panel-heading-options {
-    height: 38px;
-    display: flex;
-    align-items: center;
-}
-
-.interface .panel-heading-options .btn {
-    margin: 3px;
 }
 
 .wordwrap {
@@ -130,22 +111,26 @@ input .ng-invalid .ng-dirty {
     cursor: pointer;
 }
 
-.glyphicon-remove {
-    color: red;
-}
-
-.glyphicon-minus {
-    color: red;
-}
-
-.glyphicon-ok {
+.interface .glyphicon-plus {
     color: green;
 }
 
-.glyphicon-orange {
+.interface .glyphicon-remove {
+    color: red;
+}
+
+.interface .glyphicon-minus {
+    color: red;
+}
+
+.interface .glyphicon-ok {
+    color: green;
+}
+
+.interface .glyphicon-orange {
     color: orange;
 }
 
-.glyphicon-blue {
+.interface .glyphicon-blue {
     color: #428bca;
 }

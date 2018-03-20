@@ -9,7 +9,7 @@ $endif$$if(crudR)$<div class="box box-rows" ng-controller="BoxController" ng-ini
         <li class="list-group-item"$if(exprIsUni)$ ng-repeat="resource in (resource['$name$'] === null ? [] : [resource['$name$']])"$else$ ng-repeat="resource in resource['$name$']"$endif$
             cg-busy="resource._loading_" ng-class="{'list-group-item-warning' : resource._status_.warning, 'list-group-item-danger' : resource._status_.danger, 'list-group-item-success' : resource._status_.success}"
             $if(isRoot)$ ng-init="patchResource = resource"$endif$>
-            <div class="box-rows-li-opt">
+            <div class="box-li-opt">
                 <button type="button" class="btn btn-xs btn-warning" ng-if="resource._showButtons_.save" ng-click="save(resource)">Save</button>
                 <button type="button" class="btn btn-xs btn-danger" ng-if="resource._showButtons_.cancel" ng-click="cancel(resource)">Cancel</button>$if(crudC)$$if(!exprIsUni)$
                 <button type="button" class="btn btn-xs" ng-click="createResource(parent, '$name$', parent, \$index)" uib-tooltip="Create new $target$" tooltip-trigger="mouseenter" tooltip-placement="left">
