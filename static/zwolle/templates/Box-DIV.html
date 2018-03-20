@@ -1,5 +1,5 @@
 $if(verbose)$<!-- Box-DIV.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
-$endif$$if(crudR)$<div $if(exprIsUni)$ng-repeat="resource in (resource['$name$'] === null ? [] : [resource['$name$']])"$else$ng-repeat="resource in resource['$name$']"$endif$ ng-class="resource._status_"$if(isRoot)$ ng-init="patchResource = resource;"$endif$>$subObjects:{subObj|$if(verbose)$
+$endif$$if(crudR)$<div $if(exprIsUni)$ng-repeat="resource in (resource['$name$'] === null ? [] : [resource['$name$']])"$else$ng-repeat="resource in resource['$name$']"$endif$>$subObjects:{subObj|$if(verbose)$
     <!-- $subObj.subObjLabel$ -->$endif$
     $subObj.subObjContents$}$
 </div>$else$<span><i>not readable</i></span>$endif$
