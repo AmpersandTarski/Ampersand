@@ -25,13 +25,7 @@ angular.module('AmpersandApp')
         };
         
         // watch navbar
-        scope.$watch('NavigationBarService.navbar', function() {
-            // small timeout (500ms) for angular to update DOM after navbar data change
-            // TODO: instead watch resize of element '#navbar-interfaces' and '#navbar-options'
-            $timeout(function(){
-                resizeNavbar();
-            }, 500);
-        });
+        NavigationBarService.addObserverCallable(resizeNavbar);
         
         // when window size gets changed
         w.bind('resize', function () {

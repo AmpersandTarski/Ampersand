@@ -17,10 +17,21 @@ angular.module('AmpersandApp')
         notify_showInvariants: true,
         autoSave: true
     };
+    let observerCallables = [];
+
+    let notifyObservers = function(){
+        angular.forEach(observerCallables, function(callable){
+            callable();
+        });
+    };
 
     let service = {
         navbar : navbar,
         defaultSettings : defaultSettings,
+
+        addObserverCallable : function(callable){
+            observerCallables.push(callable);
+        },
 
         refreshNavBar : function(){
             return Restangular
@@ -47,6 +58,8 @@ angular.module('AmpersandApp')
                 
                 // Update notifications
                 NotificationService.updateNotifications(data.notifications);
+
+                notifyObservers();
             }, function(error){
                 service.initializeSettings();
             });

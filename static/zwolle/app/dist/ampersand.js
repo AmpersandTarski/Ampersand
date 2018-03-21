@@ -87,6 +87,30 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     };
 }]);
 
+angular.module('uiSwitch', [])
+
+.directive('switch', function(){
+  return {
+    restrict: 'AE'
+  , replace: true
+  , transclude: true
+  , template: function(element, attrs) {
+      var html = '';
+      html += '<a href=""';
+      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
+      html += '>';
+      html += '<span';
+      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
+      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
+      html +=   '>';
+      html +=   '<small></small>';
+      html += '</span>';
+      html += '<span ng-transclude></span>';
+      html += '</a>';
+      return html;
+    }
+  }
+});
 // Controller for extension app in navigation bar
 angular.module('AmpersandApp')
 .controller('ExecEngineController', ["$scope", "Restangular", "NotificationService", function ($scope, Restangular, NotificationService) {
@@ -125,30 +149,6 @@ angular.module('AmpersandApp')
     };
 }]);
 
-angular.module('uiSwitch', [])
-
-.directive('switch', function(){
-  return {
-    restrict: 'AE'
-  , replace: true
-  , transclude: true
-  , template: function(element, attrs) {
-      var html = '';
-      html += '<a href=""';
-      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
-      html += '>';
-      html += '<span';
-      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
-      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
-      html +=   '>';
-      html +=   '<small></small>';
-      html += '</span>';
-      html += '<span ng-transclude></span>';
-      html += '</a>';
-      return html;
-    }
-  }
-});
 var app = angular.module('AmpersandApp');
 app.requires[app.requires.length] = 'angularFileUpload'; // add angularFileUpload to dependency list
 app.config(["$routeProvider", function($routeProvider) {
@@ -878,13 +878,8 @@ angular.module('AmpersandApp')
         };
         
         // watch navbar
-        scope.$watch('NavigationBarService.navbar', function() {
-            // small timeout (500ms) for angular to update DOM after navbar data change
-            // TODO: instead watch resize of element '#navbar-interfaces' and '#navbar-options'
-            $timeout(function(){
-                resizeNavbar();
-            }, 500);
-        });
+        NavigationBarService
+        .addObserverCallable(resizeNavbar);
         
         // when window size gets changed
         w.bind('resize', function () {
@@ -959,10 +954,21 @@ angular.module('AmpersandApp')
         notify_showInvariants: true,
         autoSave: true
     };
+    let observerCallables = [];
+
+    let notifyObservers = function(){
+        angular.forEach(observerCallables, function(callable){
+            callable();
+        });
+    };
 
     let service = {
         navbar : navbar,
         defaultSettings : defaultSettings,
+
+        addObserverCallable : function(callable){
+            observerCallables.push(callable);
+        },
 
         refreshNavBar : function(){
             return Restangular
@@ -989,6 +995,8 @@ angular.module('AmpersandApp')
                 
                 // Update notifications
                 NotificationService.updateNotifications(data.notifications);
+
+                notifyObservers();
             }, function(error){
                 service.initializeSettings();
             });
