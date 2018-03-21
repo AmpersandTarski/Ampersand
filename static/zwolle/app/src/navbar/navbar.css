@@ -32,6 +32,12 @@
 
 #navbar-interfaces {
     float: left;
+    white-space: nowrap; /* prevents wrapping of sub elements */
+}
+
+.navbar-nav>li {
+    float: none; /* overwrite bootstrap float: left */
+    display: inline-block; /* put elements side by side */
 }
 
 #navbar-options {
@@ -40,10 +46,6 @@
 
 .navbar-nav {
     margin: 0px;
-}
-
-.navbar-nav>li {
-    float: left;
 }
 
 /* title */

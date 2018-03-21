@@ -879,16 +879,22 @@ angular.module('AmpersandApp')
         
         // watch navbar
         scope.$watch('NavigationBarService.navbar', function() {
-            resizeNavbar();
+            // small timeout (500ms) for angular to update DOM after navbar data change
+            // TODO: instead watch resize of element '#navbar-interfaces' and '#navbar-options'
+            $timeout(function(){
+                resizeNavbar();
+            }, 500);
         });
         
         // when window size gets changed
-        w.bind('resize', function () {        
+        w.bind('resize', function () {
             resizeNavbar();
         });
         
         // when page loads
-        resizeNavbar();
+        angular.element(document).ready(function(){
+            resizeNavbar();
+        });
     };
 }]);
 
