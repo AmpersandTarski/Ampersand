@@ -46,7 +46,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
         // 401: Unauthorized
         if(response.status == 401) {
             RoleService.deactivateAllRoles();
-            $location.path(''); // TODO: redirect to login page (if exists)
+            $location.path('ext/Login'); // TODO: redirect to login page (if exists)
         }
         
         var message;

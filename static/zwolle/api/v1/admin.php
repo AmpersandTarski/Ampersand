@@ -94,7 +94,7 @@ $app->group('/admin', function () use ($container) {
     $this->get('/execengine/run', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
         // Check for required role
         if (!$ampersandApp->hasRole(Config::get('allowedRolesForRunFunction', 'execEngine'))) {
-            throw new Exception("You do not have access to run the exec engine", 401);
+            throw new Exception("You do not have access to run the exec engine", 403);
         }
             
         \Ampersand\Rule\ExecEngine::run(true);
@@ -144,7 +144,7 @@ $app->group('/admin', function () use ($container) {
     $this->post('/import', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
         // Check for required role
         if (!$ampersandApp->hasRole(Config::get('allowedRolesForImporter'))) {
-            throw new Exception("You do not have access to import population", 401);
+            throw new Exception("You do not have access to import population", 403);
         }
         
         if (is_uploaded_file($_FILES['file']['tmp_name'])) {

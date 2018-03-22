@@ -60,7 +60,7 @@ class ResourceList implements IteratorAggregate
         $this->logger = Logger::getLogger('INTERFACING');
         
         if ($parentIfc->isRoot() && !$container['ampersand_app']->isAccessibleIfc($parentIfc)) {
-            throw new Exception("Unauthorized to access interface {$parentIfc->label}", 401); // 401: Unauthorized
+            throw new Exception("Unauthorized to access interface {$parentIfc->label}", 403);
         }
         
         $this->src = $src;
