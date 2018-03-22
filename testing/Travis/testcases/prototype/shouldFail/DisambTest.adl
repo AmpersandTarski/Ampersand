@@ -1,0 +1,10 @@
+CONTEXT ARMTest1 IN ENGLISH
+biaVerplichting_Def :: Bedrijfsfunctie * Verplichting [INJ]
+CLASSIFY ExterneVerplichting ISA Verplichting
+
+RULE "BIAlijst integriteit": -- Invariant
+biaVerplichting_Def |- biaVerplichting_Def;I[ExterneVerplichting]
+MEANING "De BIA-lijst bevat alleen externe verplichtingen."
+VIOLATION (TXT "De BIA-lijst van ", SRC I, TXT " mag alleen externe verplichtingen bevatten; ", TGT I, TXT " is dat niet.")
+
+ENDCONTEXT
