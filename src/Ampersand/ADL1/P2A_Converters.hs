@@ -803,6 +803,7 @@ pCtx2aCtx opts
      = case tct of
          Prim (t,v) -> (\x -> (x, case t of
                                    PVee _ -> (False,False)
+                                   -- PI   _ -> (False,False) -- this line needs to be uncommented, but it causes too many problems in travis (scripts that turn out to be genuinely unbounded and ambiguous)
                                    _      -> (True,True)
                                    )) <$> pDisAmb2Expr (t,v)
          PEqu _ a b -> join $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
@@ -1016,12 +1017,14 @@ pCtx2aCtx opts
     typeCheckPairViewSeg :: Origin -> Expression -> PairViewSegment (Term (TermPrim, DisambPrim)) -> Guarded (PairViewSegment Expression)
     typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
     typeCheckPairViewSeg o t (PairViewExp orig s x)
-     = do (e,_) <- typecheckTerm x
-          case toList . findExact genLattice . lJoin (aConcToType (source e)) $ getConcept s t of
+     = do (e,(b,_)) <- typecheckTerm x
+          let tp = aConcToType (source e)
+          case toList . findExact genLattice . lMeet tp $ getConcept s t of
                           [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
-                          lst -> if aConcToType (source e) `elem` lst
-                                 then pure (PairViewExp orig s (addEpsilonLeft (getAConcept s t) e))
-                                 else mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
+                          lst -> if b || elem (getConcept s t) lst then
+                                    pure (PairViewExp orig s (addEpsilonLeft (getAConcept s t) e))
+                                 else
+                                    mustBeBound o [(Src, e)]
     pPurp2aPurp :: DeclMap -> PPurpose -> Guarded Purpose
     pPurp2aPurp declMap
                 PRef2 { pos    = orig     -- :: Origin
