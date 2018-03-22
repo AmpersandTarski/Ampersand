@@ -365,8 +365,8 @@ ExecEngine::registerFunction('SetNavToOnCommit', function ($navTo) use ($contain
         $navTo = str_replace('_NEW', ExecEngine::getCreatedAtom()->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
         $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
     }
-    
-    $container['angular_app']->setNavToResponse($navTo, 'COMMIT');
+
+    if (!empty($navTo)) $container['angular_app']->setNavToResponse($navTo, 'COMMIT');
 });
     
 ExecEngine::registerFunction('SetNavToOnRollback', function ($navTo) use ($container, $execEngineLogger) {
@@ -375,5 +375,5 @@ ExecEngine::registerFunction('SetNavToOnRollback', function ($navTo) use ($conta
         $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
     }
     
-    $container['angular_app']->setNavToResponse($navTo, 'ROLLBACK');
+    if (!empty($navTo)) $container['angular_app']->setNavToResponse($navTo, 'ROLLBACK');
 });
