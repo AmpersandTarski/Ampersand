@@ -2,7 +2,7 @@
     <div id="navbar-wrapper" class="container">
         <ul class="nav navbar-nav" id="navbar-interfaces" my-navbar-resize>
             <li><a href="#/"><span class="glyphicon glyphicon-home"></span></a></li>
-            <li id="navbar-interfaces-dropdown" class="dropdown" uib-tooltip="More interfaces" tooltip-trigger="mouseenter" tooltip-placement="top">
+            <li id="navbar-interfaces-dropdown" class="dropdown" uib-tooltip="More interfaces" tooltip-trigger="mouseenter" tooltip-placement="bottom">
                 <a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-menu-hamburger"></span></a>
                 <ul id="navbar-interfaces-dropdown-menu" class="dropdown-menu" role="menu"></ul>
             </li>
@@ -32,26 +32,17 @@
             </li>
             
             <!-- hidden on extra small devices, e.g. phone (<768px) -->
-            <li class="dropdown hidden-xs" uib-tooltip="Refresh/reset options" tooltip-trigger="mouseenter" tooltip-placement="top">
-                <a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-refresh"></span></a>
-                <ul class="dropdown-menu" role="menu">
-                    <li><a href="" ng-click="reload()"><span class="glyphicon glyphicon-refresh"></span> Refresh page</a></li>
-                    <li ng-if="navbar.refresh.length" class="divider" role="presentation"></li>
-                    <li ng-repeat="app in navbar.refresh" ng-include="app.url"/>
-                </ul>
-            </li>
-            
-            <!-- hidden on extra small devices, e.g. phone (<768px) -->
-            <li ng-if="navbar.ext.length" class="dropdown hidden-xs" uib-tooltip="Select application extensions" tooltip-trigger="mouseenter" tooltip-placement="top">
+            <li class="dropdown hidden-xs" uib-tooltip="Tools" tooltip-trigger="mouseenter" tooltip-placement="bottom">
                 <a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-th"></span></a>
                 <ul class="dropdown-menu" role="menu">
+                    <li ng-repeat="app in navbar.refresh" ng-include="app.url"/>
+                    <li><a href="" ng-click="reload()"><span class="glyphicon glyphicon-refresh"></span> Refresh page</a></li>
                     <li ng-repeat="ext in navbar.ext" ng-include="ext.url"/>
-                    <!-- <li class="divider" role="presentation"></li>-->                    
                 </ul>
             </li>
             
             <!-- hidden on extra small devices, e.g. phone (<768px) -->
-            <li ng-if="navbar.new.length" class="dropdown hidden-xs" uib-tooltip="Create new resource" tooltip-trigger="mouseenter" tooltip-placement="top">
+            <li ng-if="navbar.new.length" class="dropdown hidden-xs" uib-tooltip="Create new resource" tooltip-trigger="mouseenter" tooltip-placement="bottom">
                 <a href="" class="dropdown-toggle" data-toggle="dropdown">
                     <span class="glyphicon glyphicon-plus"></span>
                 </a>
@@ -71,7 +62,7 @@
                 </ul>
             </li>
             
-            <li ng-if="sessionStorage.sessionRoles.length || navbar.role.length" class="dropdown" uib-tooltip="Switch roles" tooltip-trigger="mouseenter" tooltip-placement="top">
+            <li ng-if="sessionStorage.sessionRoles.length || navbar.role.length" class="dropdown" uib-tooltip="Switch roles" tooltip-trigger="mouseenter" tooltip-placement="bottom">
                 <a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
                 <ul class="dropdown-menu" role="menu">
                     <li ng-repeat="role in sessionStorage.sessionRoles" ng-click="$event.stopPropagation();"><switch ng-model="role.active" ng-click="toggleRole(role.id);"> {{role.label}}</switch></li>
