@@ -1,7 +1,10 @@
-$if(verbose)$<!-- Box-PROPBUTTON.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$ ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
-$endif$$if(crudR)$<div ng-controller="AtomicController">
-	<div ng-repeat="resource in $if(exprIsUni)$(resource['$name$'] === null ? [] : [resource['$name$']])$else$resource['$name$']$endif$">
-		<button class="btn btn-sm btn-primary" uib-popover="{{resource.popovertext}}" popover-trigger="mouseenter" ng-click="resource.property = !resource.property; saveItem(resource, 'property', patchResource);" ng-disabled="resource.disabled.length" ng-hide="resource.hide">$label$</button>
-	</div>
-</div>
-$else$<span><i>N/A</i></span>$endif$
+$if(verbose)$<!-- Box-PROPBUTTON.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$ ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->$endif$
+$if(crudR)$<div ng-controller="AtomicController">
+    <div ng-repeat="resource in $if(exprIsUni)$(resource['$name$'] === null ? [] : [resource['$name$']])$else$resource['$name$']$endif$">
+        <button class="btn btn-sm btn-primary" uib-popover="{{resource.popovertext}}" popover-trigger="mouseenter" 
+            ng-click="resource.property = !resource.property; saveItem(resource, 'property', patchResource);"
+            ng-disabled="resource.disabled" ng-hide="resource.hide">$label$</button>
+    </div>
+</div>$else$<span>
+    <i>N/A</i>
+</span>$endif$
