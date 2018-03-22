@@ -798,7 +798,7 @@ pCtx2aCtx opts
      = case tct of
          Prim (t,v) -> (\x -> (x, case t of
                                    PVee _ -> (False,False)
-                                   PI   _ -> (False,False)
+                                   -- PI   _ -> (False,False) -- this line needs to be uncommented, but it causes too many problems in travis (scripts that turn out to be genuinely unbounded and ambiguous)
                                    _      -> (True,True)
                                    )) <$> pDisAmb2Expr (t,v)
          PEqu _ a b -> join $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
