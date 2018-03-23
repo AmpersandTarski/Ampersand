@@ -982,7 +982,6 @@ pCtx2aCtx opts
                     , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
                     , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
                     , rrviol = vls
-                    , rrtyp = sign exp'
                     , rrdcl = Nothing
                     , r_env = env
                     , r_usr = UserDefined

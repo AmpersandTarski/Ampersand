@@ -156,7 +156,6 @@ data Rule =
         , rrmean ::   AMeaning                    -- ^ Ampersand generated meaning (for all known languages)
         , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
-        , rrtyp ::    Signature                   -- ^ Allocated signature
         , rrdcl ::    Maybe (Prop,Relation)    -- ^ The property, if this rule originates from a property on a Relation
         , r_env ::    String                      -- ^ Name of pattern in which it was defined.
         , r_usr ::    RuleOrigin                  -- ^ Where does this rule come from?
@@ -176,7 +175,7 @@ instance Traced Rule where
 instance Named Rule where
   name   = rrnm
 instance Association Rule where
-  sign   = rrtyp
+  sign   = sign . formalExpression
 
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)
