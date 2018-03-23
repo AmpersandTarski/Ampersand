@@ -492,7 +492,7 @@ angular.module('AmpersandApp')
                 
                 // Update resource data if committed
                 if(data.isCommitted) {
-                    if(resource._isRoot_) resource.get();
+                    if(resource._isRoot_ && data.navTo == null) resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
                     else resource = angular.extend(resource, data.content);
                 }
                 
