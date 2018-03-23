@@ -225,11 +225,6 @@ class InterfaceObject
             foreach ((array)$ifcDef['subinterfaces']['ifcObjects'] as $subIfcDef) {
                 $ifc = new InterfaceObject($subIfcDef, $this->plug, $this->path);
                 $this->subInterfaces[$ifc->id] = $ifc;
-
-                // Integrity check due to #769: no epsilon allowed for isIdent aspect
-                if ($ifc->isIdent() && $this->tgtConcept !== $ifc->tgtConcept) {
-                    throw new Exception("Semantic mismatch in 'isIdent' aspect of interface {$ifc->getPath()}. See #769", 500);
-                }
             }
         }
         
