@@ -271,7 +271,7 @@ instance SetLike Set.Set where
   getList = Set.toList
   fromList = Set.fromList
   fromSet = id
-  isElemOf = Set.member
+  isElemOf = elem
   slFold f = Set.fold (flip f)
   slNull = Set.null
   slSize = Set.size

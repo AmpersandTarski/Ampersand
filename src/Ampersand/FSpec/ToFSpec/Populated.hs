@@ -39,7 +39,7 @@ largerConcepts gs cpt
 sortSpecific2Generic :: [A_Gen] -> [A_Concept] -> [A_Concept]
 sortSpecific2Generic gens = go []
   where go xs [] = xs
-        go xs (y:ys) = case [y' | y'<-nub ys, y' `Set.member` (Set.fromList $ smallerConcepts gens y)] of
+        go xs (y:ys) = case [y' | y'<-nub ys, y' `elem` (Set.fromList $ smallerConcepts gens y)] of
                           []  -> go (xs++[y]) ys
                           _:_ -> go xs (ys++[y])
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)

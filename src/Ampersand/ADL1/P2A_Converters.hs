@@ -102,7 +102,7 @@ isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
     ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (Set.elems $ concs ctx )
-    ExplRelation decl -> not (name decl `Set.member` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
+    ExplRelation decl -> not (name decl `elem` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
     ExplRule nm -> nm `notElem` map name (Set.elems $ udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
