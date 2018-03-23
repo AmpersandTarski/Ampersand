@@ -1,59 +1,26 @@
-<!DOCTYPE html>
-<html ng-app="AmpersandApp">
-    <head>
-        <title>My application</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <meta charset="UTF-8"/>
-        <meta http-equiv="Expires" content="0"/>
-        <meta http-equiv="Cache-Control" content="no-store"/>
-        <!-- include libraries -->
-        <link href="app/dist/lib/lib.min.css" rel="stylesheet" media="screen" type="text/css"/>
-        <script src="app/dist/lib/lib.min.js"></script>
-        <!-- include ampersand framework -->
-        <link href="app/dist/ampersand.min.css" rel="stylesheet" media="screen" type="text/css"/>
-        <script src="app/dist/ampersand.min.js"></script>
-        <!-- include project application -->
 <?php
-if (file_exists('app/dist/project.min.css')) {
-    echo "        <link href=\"app/dist/project.min.css\" rel=\"stylesheet\" media=\"screen\" type=\"text/css\"/>" . PHP_EOL;
-}
-if (file_exists('app/dist/project.min.js')) {
-    echo "        <script src=\"app/dist/project.min.js\"></script>" . PHP_EOL;
-} else {
-    if ($files = glob('app/project/*.js')) {
-        array_map(function ($filepath) {
-            echo "        <script src=\"{$filepath}\"></script>" . PHP_EOL;
-        }, $files);
+
+$html = file_get_contents('app' . DIRECTORY_SEPARATOR . 'index.html');
+
+if (strpos($html, '<!--[PROJECT_PLACEHOLDER]-->')) {
+    $replace = '';
+
+    // Project style sheet
+    if (file_exists('app/dist/project.min.css')) {
+        $replace .= "<link href=\"app/dist/project.min.css\" rel=\"stylesheet\" media=\"screen\" type=\"text/css\"/>" . PHP_EOL;
     }
+
+    // Project javascript files
+    if (file_exists('app/dist/project.min.js')) {
+        $replace .= "<script src=\"app/dist/project.min.js\"></script>" . PHP_EOL;
+    } else {
+        if ($files = glob('app/project/*.js')) {
+            foreach ($files as $filepath) {
+                $replace .= "<script src=\"{$filepath}\"></script>" . PHP_EOL;
+            }
+        }
+    }
+    $html = str_replace('<!--[PROJECT_PLACEHOLDER]-->', $replace, $html);
 }
-?>
-    </head>
-    <body>
-        <!-- HEADER -->
-        <div id="header"></div>
 
-        <!-- NAVIGATION BAR -->
-        <div id="navbar" ng-include="'app/src/navbar/navigationBar.html'"></div>
-
-        <!-- MAIN -->
-        <div id="main" class="container">
-            <!--  Notification center -->
-            <div ng-include="'app/src/notifications/notificationCenter.html'"></div>
-            
-            <!-- Placeholder for views (user interfaces) -->
-            <div ng-view></div>
-        </div>
-
-        <!-- FOOTER -->
-        <div id="footer">
-            <div id="ampersand-footer" class="container">
-                <div id="ampersand-footer-logos" class="pull-right">
-                    <a href="http://www.ou.nl"><img src="app/images/logos/logo-ou.png" alt="Open Universiteit" style="height:25px"/></a>
-                    <a href="http://www.tno.nl"><img src="app/images/logos/logo-tno.png" alt="TNO"/></a>
-                    <a href="http://www.ordina.nl"><img src="app/images/logos/logo-ordina.png" alt="Ordina"/></a>
-                </div>
-                <p class="text-muted">This application is developed with <a href="https://github.com/AmpersandTarski/ampersand" target="_blank"><img src="app/images/ampersand.png"/> Ampersand technology</a>.</p>
-            </div>
-        </div>
-    </body>
-</html>
+echo $html;
