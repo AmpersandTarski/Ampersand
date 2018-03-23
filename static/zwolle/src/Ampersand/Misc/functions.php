@@ -57,3 +57,30 @@ function getSafeFileName(string $absolutePath): string
     }
     return $dir . DIRECTORY_SEPARATOR . "{$filename}_{$i}.{$ext}";
 }
+
+function stackTrace(Throwable $throwable): string
+{
+    $html = sprintf('<div><strong>Type:</strong> %s</div>', get_class($throwable));
+    
+    if (($code = $throwable->getCode())) {
+        $html .= sprintf('<div><strong>Code:</strong> %s</div>', $code);
+    }
+
+    if (($message = $throwable->getMessage())) {
+        $html .= sprintf('<div><strong>Message:</strong> %s</div>', htmlentities($message));
+    }
+
+    if (($file = $throwable->getFile())) {
+        $html .= sprintf('<div><strong>File:</strong> %s</div>', $file);
+    }
+
+    if (($line = $throwable->getLine())) {
+        $html .= sprintf('<div><strong>Line:</strong> %s</div>', $line);
+    }
+
+    if (($trace = $throwable->getTraceAsString())) {
+        $html .= '<h2>Trace</h2>';
+        $html .= sprintf('<pre>%s</pre>', htmlentities($trace));
+    }
+    return $html;
+}

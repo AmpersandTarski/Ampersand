@@ -16,11 +16,14 @@ use Ampersand\Misc\Config;
 register_shutdown_function(function () {
     $error = error_get_last();
     if ($error['type'] & (E_ERROR | E_PARSE)) {
+        $debugMode = Config::get('debugMode');
+
         $protocol = $_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.0';
         http_response_code(500);
-        header("{$protocol}  500 {$error['message']}");
+        header("{$protocol} 500 Internal server error");
         print json_encode(['error' => 500
-                          ,'msg' => $error['message']
+                          ,'msg' => "An error occurred"
+                          ,'html' => $debugMode ? $error['message'] : null
                           ]);
         exit;
     }

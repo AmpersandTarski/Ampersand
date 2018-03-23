@@ -7,6 +7,7 @@ use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Container;
+use function Ampersand\Misc\stackTrace;
 
 require_once(__DIR__ . '/../../src/bootstrap.php');
 
@@ -16,33 +17,6 @@ require_once(__DIR__ . '/../../src/bootstrap.php');
 global $container;
 
 $apiContainer = new Container();
-
-function stackTrace(Throwable $throwable): string
-{
-    $html = sprintf('<div><strong>Type:</strong> %s</div>', get_class($throwable));
-    
-    if (($code = $throwable->getCode())) {
-        $html .= sprintf('<div><strong>Code:</strong> %s</div>', $code);
-    }
-
-    if (($message = $throwable->getMessage())) {
-        $html .= sprintf('<div><strong>Message:</strong> %s</div>', htmlentities($message));
-    }
-
-    if (($file = $throwable->getFile())) {
-        $html .= sprintf('<div><strong>File:</strong> %s</div>', $file);
-    }
-
-    if (($line = $throwable->getLine())) {
-        $html .= sprintf('<div><strong>Line:</strong> %s</div>', $line);
-    }
-
-    if (($trace = $throwable->getTraceAsString())) {
-        $html .= '<h2>Trace</h2>';
-        $html .= sprintf('<pre>%s</pre>', htmlentities($trace));
-    }
-    return $html;
-}
 
 // Custom NotFound handler when API path-method is not found
 // The application can also return a Resource not found, this is handled by the errorHandler below
