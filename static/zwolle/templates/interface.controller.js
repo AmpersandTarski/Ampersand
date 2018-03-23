@@ -7,7 +7,7 @@ INTERFACE "$interfaceName$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UN
 Roles: [$roles;separator=", "$]
 $endif$*/
 /* jshint ignore:start */
-angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', function (\$scope, \$route, \$routeParams, ResourceService) {
+angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', function (\$scope, \$route, \$routeParams, ResourceService, \$location) {
     const resourceType = '$source$';
     const ifcName = '$interfaceName$';
 
