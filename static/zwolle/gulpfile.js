@@ -93,14 +93,14 @@ gulp.task('build-ampersand', function (done) {
  */
 gulp.task('build-project', function (done) {
     // css
-    gulp.src(['app/project/**/*.css', 'extensions/**/*.css'])
+    gulp.src(['app/project/**/*.css', 'extensions/**/*.css', '!extensions/**/lib/**/*'])
         .pipe(concat('project.css'))
         .pipe(gulp.dest('app/dist'))
         .pipe(rename({ suffix: '.min' }))
         .pipe(minifycss())
         .pipe(gulp.dest('app/dist'))
     // js
-    gulp.src(['app/project/**/*.js', 'extensions/**/*.js'])
+    gulp.src(['app/project/**/*.js', 'extensions/**/*.js', '!extensions/**/lib/**/*'])
         .pipe(addStream.obj(prepareTemplates('app/project/')))
         .pipe(sourcemaps.init())
         .pipe(concat('project.js'))
