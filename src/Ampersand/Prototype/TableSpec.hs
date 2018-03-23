@@ -4,7 +4,7 @@
 module Ampersand.Prototype.TableSpec
     ( TableSpec(tsCmnt)
     , getTableName
-    , sessionTableSpec, signalTableSpec
+    , signalTableSpec
     , plug2TableSpec, tableSpec2Queries
     , dropTableSql, showColumsSql, createTableSql
     , insertQuery
@@ -39,27 +39,6 @@ data AttributeSpec
                   , fsIsPrimKey :: Bool
                   , fsDbNull :: Bool
                   }
-
-
-sessionTableSpec :: TableSpec
-sessionTableSpec = 
-    TableSpec { tsCmnt = ["Session timeout table"]
-              , tsName = "__SessionTimeout__"
-              , tsflds = [ AttributeSpec 
-                             { fsname      = "SESSION"
-                             , fstype      = Alphanumeric
-                             , fsIsPrimKey = True
-                             , fsDbNull    = False
-                             }
-                         , AttributeSpec 
-                             { fsname      = "lastAccess"
-                             , fstype      = Integer --HJO: Why not DateTime???
-                             , fsIsPrimKey = False
-                             , fsDbNull    = False
-                             }
-                         ]
-              , tsKey  = "PRIMARY KEY (\"SESSION\")"
-              }
 
 signalTableSpec :: TableSpec
 signalTableSpec =

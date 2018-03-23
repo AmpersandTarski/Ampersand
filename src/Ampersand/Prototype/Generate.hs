@@ -17,7 +17,7 @@ import qualified Data.Text as Text
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment 
   =    concatMap (tableSpec2Queries withComment)
-           (   [ sessionTableSpec, signalTableSpec]
+           (   [signalTableSpec]
             ++ [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
            )
     <> additionalDatabaseSettings 
