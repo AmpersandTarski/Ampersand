@@ -115,11 +115,16 @@ $app->group('/admin', function () use ($container) {
         if (Config::get('productionEnv')) {
             throw new Exception("Evaluation of all rules not allowed in production environment", 403);
         }
+
+        foreach (Conjunct::getAllConjuncts() as $conj) {
+            $conj->evaluate(true);
+            $conj->saveCache();
+        }
         
-        foreach (RuleEngine::checkRules(Rule::getAllInvRules(), false) as $violation) {
+        foreach (RuleEngine::checkRules(Rule::getAllInvRules(), true) as $violation) {
             Notifications::addInvariant($violation);
         }
-        foreach (RuleEngine::checkRules(Rule::getAllSigRules(), false) as $violation) {
+        foreach (RuleEngine::checkRules(Rule::getAllSigRules(), true) as $violation) {
             Notifications::addSignal($violation);
         }
         
