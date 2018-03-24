@@ -1,0 +1,28 @@
+<<<<<<< HEAD
+module Ampersand.FSpec
+=======
+module Ampersand.FSpec 
+>>>>>>> development
+   ( module Ampersand.FSpec.FSpec
+   , module Ampersand.FSpec.ShowHS
+   , module Ampersand.FSpec.ToFSpec.Calc
+   , module Ampersand.FSpec.ToFSpec.ADL2FSpec
+   , module Ampersand.FSpec.ToFSpec.NormalForms
+   , module Ampersand.FSpec.Motivations
+   , module Ampersand.FSpec.ToFSpec.CreateFspec
+<<<<<<< HEAD
+   )
+where
+=======
+   ) where
+>>>>>>> development
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ShowHS
+       (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
+import Ampersand.FSpec.ToFSpec.Calc (showProof, showPrf)
+import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
+import Ampersand.FSpec.ToFSpec.NormalForms
+       (conjNF, disjNF, cfProof, simplify)
+import Ampersand.FSpec.Motivations
+       (Meaning(..), Motivated(..))
+import Ampersand.FSpec.ToFSpec.CreateFspec (createMulti)

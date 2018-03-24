@@ -3,8 +3,7 @@ module           Ampersand.FSpec.ShowHS
     (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
 where
 import           Ampersand.Basics hiding (indent)
-import           Ampersand.Core.ParseTree
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct  (AStruct(..))  -- for traceability, we generate comments in the Haskell code.
 import           Ampersand.FSpec.FSpec
 import           Ampersand.Misc
@@ -416,7 +415,7 @@ instance ShowHSName Rule where
  showHSName r = haskellIdentifier ("rule_"++ rrnm r)
 
 instance ShowHS Rule where
- showHS opts indent r@(Ru _ _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
+ showHS opts indent r@(Ru _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
    = intercalate indent
      ["Ru{ rrnm   = " ++ show (rrnm   r)
      ,"  , formalExpression  = -- " ++ showA (formalExpression  r) ++ indent++"             " ++ showHS opts (indent++"             ") (formalExpression  r)
@@ -424,7 +423,6 @@ instance ShowHS Rule where
      ,"  , rrmean = " ++ showHS opts (indent++"             ") (rrmean r)
      ,"  , rrmsg  = " ++ showHS opts "" (rrmsg  r)
      ,"  , rrviol = " ++ showHS opts "" (rrviol r)
-     ,"  , rrtyp  = " ++ showHS opts "" (rrtyp  r)
      ,"  , rrdcl  = " ++ case rrdcl r of
                            Just (p,d) -> "Just ("++showHSName p++", "++showHSName d++" )"
                            Nothing    -> "Nothing"

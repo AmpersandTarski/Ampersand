@@ -5,7 +5,6 @@ module Ampersand.ADL1.Rule
   )
 where
 
-import Ampersand.Core.ParseTree(Prop(..),Traced(..))
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
 import Data.Maybe
@@ -41,7 +40,6 @@ rulefromProp prp d =
         , rrmean = AMeaning $ explain prp
         , rrmsg =  violMsg prp
         , rrviol = Nothing
-        , rrtyp = sign rExpr
         , rrdcl = Just (prp,d)         -- For traceability: The original property and relation.
         , rrpat = decpat d      
         , r_usr = Multiplicity

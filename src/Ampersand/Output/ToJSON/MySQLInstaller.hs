@@ -4,7 +4,7 @@
 module Ampersand.Output.ToJSON.MySQLInstaller 
   (MySQLInstaller,Populations)
 where
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.JSONutils 
 import           Ampersand.Prototype.Generate
 import           Ampersand.Prototype.TableSpec

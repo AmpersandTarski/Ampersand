@@ -4,7 +4,6 @@ module Ampersand.Output.FSpec2SQL
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree ( Relation )
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL

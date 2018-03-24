@@ -8,12 +8,9 @@ module Ampersand.FSpec.SQL
   )
   
 where
-import           Ampersand.ADL1.Expression
+import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Classes (isUni)
-import           Ampersand.Classes.ConceptStructure
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree ( PSingleton )
+import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.FSpecAux

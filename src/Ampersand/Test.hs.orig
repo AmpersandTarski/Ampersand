@@ -1,4 +1,5 @@
 module Ampersand.Test
+<<<<<<< HEAD
    ( module Ampersand.Test.Regression
    , module Ampersand.Test.TestScripts
    , module Ampersand.Test.Parser.ParserTest
@@ -6,6 +7,16 @@ module Ampersand.Test
    ) 
 where
 import Ampersand.Test.Regression
+import Ampersand.Test.TestScripts (getTestScripts, testAmpersandScripts)
+import Ampersand.Test.Parser.ParserTest (parseScripts)
+=======
+     (module Ampersand.Test.Regression
+     ,getTestScripts, testAmpersandScripts
+     ,parseScripts
+     ,parserQuickChecks
+     ) where
+import Ampersand.Test.Regression
 import Ampersand.Test.TestScripts        (getTestScripts, testAmpersandScripts)
 import Ampersand.Test.Parser.ParserTest  (parseScripts)
+>>>>>>> development
 import Ampersand.Test.Parser.QuickChecks (parserQuickChecks)

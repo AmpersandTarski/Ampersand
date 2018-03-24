@@ -9,8 +9,7 @@ where
 import           Ampersand.ADL1.Disambiguate
 import           Ampersand.ADL1.Lattices -- used for type-checking
 import           Ampersand.Basics
-import           Ampersand.Classes.ConceptStructure
-import           Ampersand.Classes.ViewPoint
+import           Ampersand.Classes
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.A2P_Converters
 import           Ampersand.Core.AbstractSyntaxTree
@@ -102,7 +101,7 @@ isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
     ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (Set.elems $ concs ctx )
-    ExplRelation decl -> not (name decl `Set.member` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
+    ExplRelation decl -> not (name decl `elem` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
     ExplRule nm -> nm `notElem` map name (Set.elems $ udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
@@ -798,6 +797,7 @@ pCtx2aCtx opts
      = case tct of
          Prim (t,v) -> (\x -> (x, case t of
                                    PVee _ -> (False,False)
+                                   -- PI   _ -> (False,False) -- this line needs to be uncommented, but it causes too many problems in travis (scripts that turn out to be genuinely unbounded and ambiguous)
                                    _      -> (True,True)
                                    )) <$> pDisAmb2Expr (t,v)
          PEqu _ a b -> join $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
@@ -981,7 +981,6 @@ pCtx2aCtx opts
                     , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
                     , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
                     , rrviol = vls
-                    , rrtyp = sign exp'
                     , rrdcl = Nothing
                     , rrpat = env
                     , r_usr = UserDefined
@@ -1014,12 +1013,14 @@ pCtx2aCtx opts
     typeCheckPairViewSeg :: Origin -> Expression -> PairViewSegment (Term (TermPrim, DisambPrim)) -> Guarded (PairViewSegment Expression)
     typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
     typeCheckPairViewSeg o t (PairViewExp orig s x)
-     = do (e,_) <- typecheckTerm x
-          case toList . findExact genLattice . lJoin (aConcToType (source e)) $ getConcept s t of
+     = do (e,(b,_)) <- typecheckTerm x
+          let tp = aConcToType (source e)
+          case toList . findExact genLattice . lMeet tp $ getConcept s t of
                           [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
-                          lst -> if aConcToType (source e) `elem` lst
-                                 then pure (PairViewExp orig s (addEpsilonLeft (getAConcept s t) e))
-                                 else mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
+                          lst -> if b || elem (getConcept s t) lst then
+                                    pure (PairViewExp orig s (addEpsilonLeft (getAConcept s t) e))
+                                 else
+                                    mustBeBound o [(Src, e)]
     pPurp2aPurp :: DeclMap -> PPurpose -> Guarded Purpose
     pPurp2aPurp declMap
                 PRef2 { pos    = orig     -- :: Origin
@@ -1132,10 +1133,10 @@ instance Functor TT where
   fmap f (MBE a b) = MBE (f a) (f b)
   fmap f (MBG a b) = MBG (f a) (f b)
   
-getAConcept :: Association a => SrcOrTgt -> a -> A_Concept
+getAConcept :: HasSignature a => SrcOrTgt -> a -> A_Concept
 getAConcept Src = source
 getAConcept Tgt = target
-getConcept :: Association a => SrcOrTgt -> a -> Type
+getConcept :: HasSignature a => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
 

@@ -5,7 +5,7 @@ module Ampersand.Graphic.ClassDiagram
            ) where
 import Data.List
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1
      ( A_Concept, Relation, A_Gen
      )
 

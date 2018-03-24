@@ -4,10 +4,7 @@ module Ampersand.FSpec.Motivations
    ( Motivated (purposeOf,purposesDefinedIn,explanations,explForObj)
    , Meaning(..))
 where
-import Ampersand.Core.ParseTree
-        ( ConceptDef
-        )
-import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1
 import Ampersand.FSpec.FSpec(FSpec(..)) 
 import Ampersand.Basics
 import Text.Pandoc

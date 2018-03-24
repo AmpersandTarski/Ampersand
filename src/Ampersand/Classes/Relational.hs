@@ -2,21 +2,21 @@ module Ampersand.Classes.Relational
    (Relational(..)
    ) where
 
-import           Ampersand.ADL1.Expression
+import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
 import           Ampersand.Core.ParseTree(Prop(..),Props)
 import           Data.Maybe
 import qualified Data.Set as Set
 
-class Association r => Relational r where
+class HasSignature r => Relational r where
     properties :: r -> Props
     isProp :: r -> Bool  -- > tells whether the argument is a property
     isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-
     isTrue :: r -> Bool  -- > tells whether the argument is equivalent to V
     isFalse :: r -> Bool  -- > tells whether the argument is equivalent to V-
     isFunction :: r -> Bool
-    isFunction r   = null (Set.fromList [Uni,Tot]Set.\\properties r)
+    isFunction r   = Uni `elem` properties r && 
+                     Tot `elem` properties r 
     isTot :: r -> Bool  --
     isTot r = Tot `elem` properties r
     isUni :: r -> Bool  --
@@ -38,37 +38,9 @@ class Association r => Relational r where
     isIdent :: r -> Bool  -- > tells whether the argument is equivalent to I
     isEpsilon :: r -> Bool  -- > tells whether the argument is equivalent to I
 
---instance Relational Relation where
---    properties rel
---      = case rel of
---           Rel{}               -> properties (reldcl rel)
---           V {}                -> [Tot]
---                                ++[Sur]
---                                ++[Inj | isSingleton (source rel)]
---                                ++[Uni | isSingleton (target rel)]
---                                ++[Asy | isEndo rel, isSingleton (source rel)]
---                                ++[Sym | isEndo rel]
---                                ++[Rfx | isEndo rel]
---                                ++[Trn | isEndo rel]
---           I{}                 -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
---    isProp rel = case rel of
---           Rel{}               -> null ([Asy,Sym]Set.\\properties (reldcl rel))
---           V{}                 -> isEndo rel && isSingleton (source rel)
---           I{}                 -> True
---    isImin rel  = isImin (makeRelation rel)   -- > tells whether the argument is equivalent to I-
---    isTrue rel = case rel of
---           Rel{}               -> False
---           V{}                 -> True
---           I{}                 -> False
---    isFalse _   = False
---    isIdent rel = case rel of       -- > tells whether the argument is equivalent to I
---                   Rel{} -> False
---                   V{}   -> isEndo rel && isSingleton (source rel)
---                   I{}   -> True
-
 instance Relational Relation where
     properties d = fromMaybe (decprps d) (decprps_calc d)
-    isProp d = Asy `Set.member` properties d && Sym `Set.member` properties d
+    isProp d = Asy `elem` properties d && Sym `elem` properties d
     isImin _ = False  -- LET OP: Dit kan natuurlijk niet goed zijn, maar is gedetecteerd bij revision 913, toen straffeloos de Iscompl{} kon worden verwijderd.
     isTrue _ = False
     isFalse _ = False
@@ -118,8 +90,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) -> isTrue l && isTrue r
      EUni (l,r) -> isTrue l || isTrue r
      EDif (l,r) -> isTrue l && isFalse r
-     ECps (l,r) | Uni `Set.member` properties l && Tot `Set.member` properties l -> isTrue r
-                | Sur `Set.member` properties r && Sur `Set.member` properties r -> isTrue l
+     ECps (l,r) | Uni `elem` properties l && Tot `elem` properties l -> isTrue r
+                | Sur `elem` properties r && Sur `elem` properties r -> isTrue l
                 | otherwise                          -> isTrue l && isTrue r
      EPrd (l,r) -> isTrue l && isTrue r || isTot l && isSur r || isRfx l && isRfx r
      EKl0 e     -> isTrue e
@@ -156,14 +128,18 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EBrk e     -> isFalse e
      _          -> False  -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
- isProp expr = Asy `Set.member` properties expr && Sym `Set.member` properties expr
+ isProp expr = Asy `elem` properties expr && Sym `elem` properties expr
 
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
  --    It does a little bit more than just test on ERel I _.
  --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value.
- isIdent expr = case expr of
+ isIdent expr = (\x -> if x && (source expr /= target expr) 
+                       then fatal $ "Something wrong with isIdent." ++ show expr
+                       else x
+                ) $
+   case expr of
      EEqu (l,r) -> isIdent (EIsc (EInc (l,r), EInc (r,l)))    -- TODO: maybe derive something better?
-     EInc (l,r) -> isIdent (EUni (ECpl l, r))                     -- TODO: maybe derive something better?
+     EInc (l,r) -> isIdent (EUni (ECpl l, r))                 -- TODO: maybe derive something better?
      EIsc (l,r) -> isIdent l && isIdent r
      EUni (l,r) -> isIdent l && isIdent r
      EDif (l,r) -> isIdent l && isFalse r

@@ -1,6 +1,11 @@
 module Ampersand.ADL1
+<<<<<<< HEAD
+   ( module Ampersand.Core.AbstractSyntaxTree
+   , module Ampersand.Core.ParseTree
+=======
    ( module Ampersand.Core.ParseTree
    , module Ampersand.Core.AbstractSyntaxTree
+>>>>>>> development
    , module Ampersand.ADL1.Expression
    , module Ampersand.ADL1.Rule
    )
@@ -36,7 +41,12 @@ import Ampersand.Core.ParseTree (
          , PMeaning(..),PMessage(..),P_Markup(..)
          )
 import Ampersand.Core.AbstractSyntaxTree (
+<<<<<<< HEAD
+          A_Concept(..)
+         ,Signature(..),showSign
+=======
           Signature(..),showSign
+>>>>>>> development
          ,A_Context(..)
          ,HasSignature(..)
          ,Expression(..)
@@ -69,13 +79,22 @@ import Ampersand.Core.AbstractSyntaxTree (
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
 import Ampersand.ADL1.Expression
+<<<<<<< HEAD
+         ( notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
+         , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
+         , insParentheses)
+import Ampersand.ADL1.Rule 
+         ( consequent, antecedent, hasantecedent
+         , rulefromProp, isPropertyRule, propFullName)
+=======
          ( primitives,subExpressions,Expressions
          , notCpl, isCpl, isEEps, isMp1, isFlipped
          , isPos, isNeg
          , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
          , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
          , insParentheses)
-import Ampersand.ADL1.Rule 
-         ( consequent, antecedent, hasantecedent
-         , rulefromProp, isPropertyRule, propFullName)
+import Ampersand.ADL1.Rule (
+          rulefromProp
+         ,consequent,antecedent,hasantecedent)
+>>>>>>> development
 

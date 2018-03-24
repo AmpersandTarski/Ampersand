@@ -273,12 +273,12 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
             where -- replace PROP by SYM, ASY
                   rep :: Props -> Props
                   rep ps 
-                    | Prop `Set.member` ps = Set.fromList [Sym, Asy] `Set.union` (Prop `Set.delete` ps)
+                    | Prop `elem` ps = Set.fromList [Sym, Asy] `Set.union` (Prop `Set.delete` ps)
                     | otherwise            = ps
                   -- add Uni and Inj if ps has neither Sym nor Asy
                   conv :: Props -> Props
                   conv ps = ps `Set.union`
-                    if Sym `Set.member` ps && Asy `Set.member` ps 
+                    if Sym `elem` ps && Asy `elem` ps 
                     then Set.fromList [Uni,Inj]
                     else Set.empty
 

@@ -10,8 +10,7 @@ module Ampersand.FSpec.Transformers
 
 import           Ampersand.Basics
 import           Ampersand.Classes
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree
+import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
@@ -600,11 +599,6 @@ transformers fSpec = map toTransformer [
         | rel::Relation <- instances fSpec
         ]
       )
-     ,("sign"                  , "Rule"                  , "Signature"
-      , [(dirtyId rul, dirtyId (sign rul)) 
-        | rul::Rule <- instances fSpec
-        ]
-      )
      ,("singleton"             , "Singleton"             , "AtomValue"
       , if atlasWithoutExpressions opts then [] else
         [(dirtyId expr, dirtyId x)
@@ -776,7 +770,6 @@ instance Instances Rule where
 instance Instances Signature where
   instances fSpec = nub $
        [sign dcl  | dcl::Relation <- instances fSpec]
-    ++ [sign rul  | rul::Rule <- instances fSpec]
     ++ [sign expr | expr::Expression <- instances fSpec]
 instance Instances ViewDef where
   instances fSpec = viewDefs (originalContext fSpec)  

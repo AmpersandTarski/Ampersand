@@ -5,12 +5,10 @@ module Ampersand.FSpec.ToFSpec.NormalForms
   , makeAllConjs, conjuncts
   ) where
   
-import           Ampersand.ADL1.Expression
+import           Ampersand.ADL1
 import           Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import           Ampersand.Basics
 import           Ampersand.Classes.Relational
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input (parseRule)
@@ -406,7 +404,7 @@ dSteps drs x = dStps x
 splitList :: [a] -> [([a],a,[a])]
 splitList lst = [(take i lst,l,drop (i+1) lst) | (i,l) <- zip [0..] lst]
 
-instance Association RTerm where
+instance HasSignature RTerm where
   sign (RIsc a)      = sign$ Set.findMin a
   sign (RUni a)      = sign$ Set.findMin a
   sign (RDif a _)    = sign a

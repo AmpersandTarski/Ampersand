@@ -5,7 +5,7 @@ module Ampersand.Output.ToJSON.Views
     (Views)
 where
 import Ampersand.Output.ToJSON.JSONutils 
-import Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.ADL1
 import Ampersand.Output.ToJSON.Concepts 
 
 data Views = Views [View] deriving (Generic, Show)

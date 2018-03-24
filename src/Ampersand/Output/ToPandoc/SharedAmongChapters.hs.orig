@@ -1,16 +1,32 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.SharedAmongChapters
+<<<<<<< HEAD
     ( module Text.Pandoc.Builder
     , module Text.Pandoc
+    , module Data.Monoid
     , module Ampersand.ADL1
     , module Ampersand.Basics
+    , module Ampersand.Core.AbstractSyntaxTree
     , module Ampersand.Core.ShowAStruct
+=======
+    ( module Ampersand.Basics
+    , module Ampersand.Core.ShowAStruct
+    , module Ampersand.ADL1
+    , module Ampersand.Classes
+>>>>>>> development
     , module Ampersand.FSpec
     , module Ampersand.Graphic.Graphics
     , module Ampersand.Misc
     , module Ampersand.Output.PandocAux
+<<<<<<< HEAD
     , module Ampersand.Classes
+=======
+    , module Text.Pandoc
+    , module Text.Pandoc.Builder
+    , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
+    , math --
+>>>>>>> development
     , Chapter(..)
     , chaptersInDoc
     , Xreferenceble(..)
@@ -18,6 +34,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , pandocEqnArray
     , pandocEquationWithLabel
     , Purpose(..)
+    , Role
     , purposes2Blocks
     , violation2Inlines
     , isMissing
@@ -28,24 +45,45 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , plainText
     , sortWith)
 where
+<<<<<<< HEAD
 import           Ampersand.ADL1 hiding (Meta)
 import           Ampersand.Basics
 import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree hiding (Meta)
+import           Ampersand.Core.ParseTree(Role)
 import           Ampersand.Core.ShowAStruct
+=======
+import           Ampersand.Basics 
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.ADL1 hiding (Meta)
+import           Ampersand.Classes
+>>>>>>> development
 import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc
 import           Ampersand.Output.PandocAux
+<<<<<<< HEAD
 import           Data.List
 import           Data.Maybe
+import           Data.Monoid 
+=======
+import           Data.List      --       (intercalate,partition)
+import           Data.Maybe
+>>>>>>> development
 import           Data.Ord
 import qualified Data.Set as Set
 import qualified Data.Time.Format as DTF
 import           Data.Typeable
 import           GHC.Exts(sortWith)
 import           System.FilePath  -- (combine,addExtension,replaceExtension)
+<<<<<<< HEAD
 import           Text.Pandoc hiding (trace)
 import           Text.Pandoc.Builder
+=======
+import           Text.Pandoc
+import           Text.Pandoc.Builder hiding (bulletList,math)
+import qualified Text.Pandoc.Builder as  BuggyBuilder
+>>>>>>> development
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]

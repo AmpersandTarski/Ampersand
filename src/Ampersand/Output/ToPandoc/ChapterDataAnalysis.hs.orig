@@ -171,7 +171,12 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                  _  -> para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
                          <> orderedList (map assocToRow asscs) 
     where
+<<<<<<< HEAD
+     assocToRow :: Ampersand.Graphic.ClassDiagram.Association -> Blocks
+=======
+        
      assocToRow :: Association -> Blocks
+>>>>>>> development
      assocToRow assoc  =
          plain (  (text.assrhr) assoc
                 <>(text.l) (NL " (van ",EN " (from ")
