@@ -134,7 +134,11 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
  --    It does a little bit more than just test on ERel I _.
  --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value.
- isIdent expr = case expr of
+ isIdent expr = (\x -> if x && (source expr /= target expr) 
+                       then fatal $ "Something wrong with isIdent." ++ show expr
+                       else x
+                ) $
+   case expr of
      EEqu (l,r) -> isIdent (EIsc (EInc (l,r), EInc (r,l)))    -- TODO: maybe derive something better?
      EInc (l,r) -> isIdent (EUni (ECpl l, r))                     -- TODO: maybe derive something better?
      EIsc (l,r) -> isIdent l && isIdent r
