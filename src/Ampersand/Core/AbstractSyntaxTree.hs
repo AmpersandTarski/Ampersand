@@ -174,8 +174,6 @@ instance Traced Rule where
   origin = rrfps
 instance Named Rule where
   name   = rrnm
-instance Association Rule where
-  sign   = sign . formalExpression
 
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)

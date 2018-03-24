@@ -140,7 +140,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
                 ) $
    case expr of
      EEqu (l,r) -> isIdent (EIsc (EInc (l,r), EInc (r,l)))    -- TODO: maybe derive something better?
-     EInc (l,r) -> isIdent (EUni (ECpl l, r))                     -- TODO: maybe derive something better?
+     EInc (l,r) -> isIdent (EUni (ECpl l, r))                 -- TODO: maybe derive something better?
      EIsc (l,r) -> isIdent l && isIdent r
      EUni (l,r) -> isIdent l && isIdent r
      EDif (l,r) -> isIdent l && isFalse r
