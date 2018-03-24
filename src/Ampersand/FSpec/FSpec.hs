@@ -143,7 +143,7 @@ data A_Pair = Pair { lnkDcl :: Relation
                    , lnkLeft :: Atom
                    , lnkRight :: Atom
                    } deriving (Typeable,Eq)
-instance Association A_Pair where
+instance HasSignature A_Pair where
   sign = sign . lnkDcl
 instance Unique A_Pair where
   showUnique x = uniqueShow False (lnkDcl x)

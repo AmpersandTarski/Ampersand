@@ -9,7 +9,7 @@ import           Ampersand.Core.ParseTree(Prop(..),Props)
 import           Data.Maybe
 import qualified Data.Set as Set
 
-class Association r => Relational r where
+class HasSignature r => Relational r where
     properties :: r -> Props
     isProp :: r -> Bool  -- > tells whether the argument is a property
     isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-

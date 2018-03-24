@@ -33,7 +33,7 @@ import Ampersand.Core.AbstractSyntaxTree as X (
           A_Concept(..)
          ,Signature(..),showSign
          ,A_Context(..)
-         ,Association(..)
+         ,HasSignature(..)
          ,Expression(..)
          ,A_Gen(..)
          ,IdentityDef(..)

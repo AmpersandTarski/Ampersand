@@ -1131,10 +1131,10 @@ instance Functor TT where
   fmap f (MBE a b) = MBE (f a) (f b)
   fmap f (MBG a b) = MBG (f a) (f b)
   
-getAConcept :: Association a => SrcOrTgt -> a -> A_Concept
+getAConcept :: HasSignature a => SrcOrTgt -> a -> A_Concept
 getAConcept Src = source
 getAConcept Tgt = target
-getConcept :: Association a => SrcOrTgt -> a -> Type
+getConcept :: HasSignature a => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
 

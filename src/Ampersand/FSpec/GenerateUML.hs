@@ -123,14 +123,14 @@ genUMAttribute  (OOAttr nm attrType optional) =
              , "       </ownedAttribute>"]
     }
 
-genUMLAssociation :: Association -> UML
+genUMLAssociation :: HasSignature -> UML
 genUMLAssociation ass =
  do { assocId <- mkUnlabeledId "Assoc"
     ; lMemberAndOwnedEnd <- genMemberAndOwnedEnd (asslhm ass) assocId (assSrc ass)
     ; rMemberAndOwnedEnd <- genMemberAndOwnedEnd (assrhm ass) assocId (assTgt ass)
 
     ; return $
-        [ "    <packagedElement xmi:type=\"uml:Association\" xmi:id=\""++assocId++"\" name=\""++assrhr ass++"\" visibility=\"public\">"
+        [ "    <packagedElement xmi:type=\"uml:HasSignature\" xmi:id=\""++assocId++"\" name=\""++assrhr ass++"\" visibility=\"public\">"
         ] ++
         lMemberAndOwnedEnd ++
         rMemberAndOwnedEnd ++

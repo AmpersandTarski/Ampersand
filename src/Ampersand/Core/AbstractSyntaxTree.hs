@@ -36,7 +36,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , unsafePAtomVal2AtomValue, safePSingleton2AAtomVal
  , Signature(..)
  , Population(..)
- , Association(..)
+ , HasSignature(..)
  , Conjunct(..), DnfClause(..)
  , AAtomPair(..), AAtomPairs
  , AAtomValue(..), AAtomValues, mkAtomPair, PAtomValue(..)
@@ -239,7 +239,7 @@ data AMeaning = AMeaning { ameaMrk ::[Markup]} deriving (Show, Eq, Ord, Typeable
 
 instance Named Relation where
   name d = unpack (decnm d)
-instance Association Relation where
+instance HasSignature Relation where
   sign = decsgn
 instance Traced Relation where
   origin = decfpos
@@ -637,7 +637,7 @@ instance Flippable Expression where
                EDcV sgn   -> EDcV (flp sgn)
                EMp1{}     -> expr
 
-instance Association Expression where
+instance HasSignature Expression where
  sign (EEqu (l,r)) = Sign (source l) (target r)
  sign (EInc (l,r)) = Sign (source l) (target r)
  sign (EIsc (l,r)) = Sign (source l) (target r)
@@ -660,7 +660,7 @@ instance Association Expression where
  sign (EDcV sgn)   = sgn
  sign (EMp1 _ c)   = Sign c c
 
-showSign :: Association a => a -> String
+showSign :: HasSignature a => a -> String
 showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
 
 -- We allow editing on basic relations (Relations) that may have been flipped, or narrowed/widened by composing with I.
@@ -754,7 +754,7 @@ instance Show Signature where
      showString (   "[" ++ show s ++ "*" ++ show t ++ "]" )
 instance Unique Signature where
   showUnique (Sign s t) = "[" ++ uniqueShow False s ++ "*" ++ uniqueShow False t ++ "]"
-instance Association Signature where
+instance HasSignature Signature where
   source (Sign s _) = s
   target (Sign _ t) = t
   sign sgn = sgn
@@ -762,7 +762,7 @@ instance Association Signature where
 instance Flippable Signature where
  flp (Sign s t) = Sign t s
 
-class Association rel where
+class HasSignature rel where
   source, target :: rel -> A_Concept      -- e.g. Relation -> Concept
   source x        = source (sign x)
   target x        = target (sign x)
