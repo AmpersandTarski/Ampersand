@@ -2,7 +2,7 @@ module Ampersand.FSpec.FSpecAux
   (getRelationTableInfo,getConceptTableInfo)
 where
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
 
 -- return table name and source and target column names for relation dcl

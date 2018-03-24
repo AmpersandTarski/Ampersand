@@ -8,9 +8,8 @@ where
    The implementation is done through Haskell's Map mechanism, as defined in Data.Map, for reasons of efficiency.
 -}
 
-import           Ampersand.ADL1.Expression (notCpl)
+import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
 import qualified Data.Map as Map
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import qualified Data.Set as Set

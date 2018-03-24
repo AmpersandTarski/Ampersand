@@ -1,11 +1,9 @@
 module Ampersand.Classes.ViewPoint 
    (Language(..)) 
 where
-import           Ampersand.ADL1.Rule
+import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ord(..))
 import           Ampersand.Classes.Relational  (Relational(properties))
-import           Ampersand.Core.ParseTree (origin)
-import           Ampersand.Core.AbstractSyntaxTree
 import           Data.List(nub)
 import           Data.Maybe
 import qualified Data.Set as Set

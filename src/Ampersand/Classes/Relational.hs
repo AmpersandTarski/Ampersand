@@ -2,9 +2,8 @@ module Ampersand.Classes.Relational
    (Relational(..)
    ) where
 
-import           Ampersand.ADL1.Expression
+import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
 import           Ampersand.Core.ParseTree(Prop(..),Props)
 import           Data.Maybe
 import qualified Data.Set as Set

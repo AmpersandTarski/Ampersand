@@ -1,10 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
-import           Ampersand.ADL1.Expression(primitives,subExpressions,Expressions)
+import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ordering(..))
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree(ConceptDef)
 import           Ampersand.Classes.ViewPoint
 import           Data.Maybe
 import qualified Data.Set as Set

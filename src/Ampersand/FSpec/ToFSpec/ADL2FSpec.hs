@@ -4,8 +4,6 @@ module Ampersand.FSpec.ToFSpec.ADL2FSpec
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree ( Role)
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.Crud
 import           Ampersand.FSpec.FSpec

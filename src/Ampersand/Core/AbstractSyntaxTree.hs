@@ -37,6 +37,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Signature(..)
  , Population(..)
  , HasSignature(..)
+ , Prop(..),Traced(..)
  , Conjunct(..), DnfClause(..)
  , AAtomPair(..), AAtomPairs
  , AAtomValue(..), AAtomValues, mkAtomPair, PAtomValue(..)

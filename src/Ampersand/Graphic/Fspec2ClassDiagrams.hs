@@ -115,7 +115,7 @@ cdAnalysis fSpec =
                             
 
    -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
---   decl2assocOrAggr :: Relation -> Either HasSignature Aggregation
+--   decl2assocOrAggr :: Relation -> Either Association Aggregation
 --   decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
 --   decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
    decl2assocOrAggr d = Left
@@ -206,7 +206,7 @@ tdAnalysis fSpec =
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
            _ -> fatal ("Unexpected expression: "++show expr)
-       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Ampersand.Graphic.ClassDiagram.HasSignature
+       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Association
        mkRel t (expr,f) =
             OOAssoc { assSrc = sqlname t
                     , assSrcPort = attName f

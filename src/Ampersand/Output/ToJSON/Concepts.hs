@@ -4,7 +4,7 @@
 module Ampersand.Output.ToJSON.Concepts 
   (Concepts,Segment)
 where
-import           Ampersand.Core.AbstractSyntaxTree 
+import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.JSONutils 
 import           Data.List(nub)
 import           Data.Maybe

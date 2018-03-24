@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
-import           Ampersand.ADL1 hiding (HasSignature)
+import           Ampersand.ADL1
 import           Ampersand.FSpec.Crud
 import           Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import           Ampersand.Graphic.Fspec2ClassDiagrams
-import           Ampersand.Output.ToPandoc.SharedAmongChapters hiding (HasSignature)
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           Data.Char
 import           Data.Function (on)
 import           Data.List
@@ -173,7 +173,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                          <> orderedList (map assocToRow asscs) 
     where
         
-     assocToRow :: Ampersand.Graphic.ClassDiagram.HasSignature -> Blocks
+     assocToRow :: Association -> Blocks
      assocToRow assoc  =
          plain (  (text.assrhr) assoc
                 <>(text.l) (NL " (vanaf ",EN " (from ")

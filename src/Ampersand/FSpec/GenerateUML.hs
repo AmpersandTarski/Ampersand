@@ -1,7 +1,7 @@
 module Ampersand.FSpec.GenerateUML (generateUML) where
 
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Relation)
+import           Ampersand.ADL1--Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Relation)
 import           Ampersand.FSpec
 import           Ampersand.Graphic.ClassDiagram
 import           Ampersand.Graphic.Fspec2ClassDiagrams 
@@ -123,14 +123,14 @@ genUMAttribute  (OOAttr nm attrType optional) =
              , "       </ownedAttribute>"]
     }
 
-genUMLAssociation :: HasSignature -> UML
+genUMLAssociation :: Association -> UML
 genUMLAssociation ass =
  do { assocId <- mkUnlabeledId "Assoc"
     ; lMemberAndOwnedEnd <- genMemberAndOwnedEnd (asslhm ass) assocId (assSrc ass)
     ; rMemberAndOwnedEnd <- genMemberAndOwnedEnd (assrhm ass) assocId (assTgt ass)
 
     ; return $
-        [ "    <packagedElement xmi:type=\"uml:HasSignature\" xmi:id=\""++assocId++"\" name=\""++assrhr ass++"\" visibility=\"public\">"
+        [ "    <packagedElement xmi:type=\"uml:Association\" xmi:id=\""++assocId++"\" name=\""++assrhr ass++"\" visibility=\"public\">"
         ] ++
         lMemberAndOwnedEnd ++
         rMemberAndOwnedEnd ++

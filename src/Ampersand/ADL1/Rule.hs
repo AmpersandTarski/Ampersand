@@ -1,7 +1,6 @@
 module Ampersand.ADL1.Rule 
   (consequent, antecedent, rulefromProp, hasantecedent) where
 
-import Ampersand.Core.ParseTree(Prop(..),Traced(..))
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
 

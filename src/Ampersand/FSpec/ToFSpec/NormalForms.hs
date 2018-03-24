@@ -5,12 +5,10 @@ module Ampersand.FSpec.ToFSpec.NormalForms
   , makeAllConjs, conjuncts
   ) where
   
-import           Ampersand.ADL1.Expression
+import           Ampersand.ADL1
 import           Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import           Ampersand.Basics
 import           Ampersand.Classes.Relational
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input (parseRule)

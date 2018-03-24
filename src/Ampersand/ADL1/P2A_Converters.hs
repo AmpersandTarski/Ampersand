@@ -9,8 +9,7 @@ where
 import           Ampersand.ADL1.Disambiguate
 import           Ampersand.ADL1.Lattices -- used for type-checking
 import           Ampersand.Basics
-import           Ampersand.Classes.ConceptStructure
-import           Ampersand.Classes.ViewPoint
+import           Ampersand.Classes
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.A2P_Converters
 import           Ampersand.Core.AbstractSyntaxTree

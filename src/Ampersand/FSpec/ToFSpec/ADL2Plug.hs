@@ -5,7 +5,7 @@ module Ampersand.FSpec.ToFSpec.ADL2Plug
 where
 import           Ampersand.Basics
 import           Ampersand.Classes
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import           Ampersand.Misc
@@ -255,12 +255,6 @@ suitableAsKey st =
     TypeOfOne        -> fatal "ONE has no key at all. does it?"
 
  
-
-isFlipped :: Expression -> Bool
-isFlipped e = 
-  case e of
-    EFlp _ -> True
-    _      -> False
 
 
 

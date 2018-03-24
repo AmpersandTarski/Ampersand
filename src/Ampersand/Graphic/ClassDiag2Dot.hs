@@ -3,7 +3,7 @@ module Ampersand.Graphic.ClassDiag2Dot (
 
 ) 
 where
-import           Ampersand.ADL1  hiding (HasSignature,Box)
+import           Ampersand.ADL1  hiding (Box)
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.Graphic.ClassDiagram
@@ -117,7 +117,7 @@ classdiagram2dot opts cd
 -------------------------------
 --        ASSOCIATIONS:      --
 -------------------------------
-       association2edge :: HasSignature -> DotEdge String
+       association2edge :: Association -> DotEdge String
        association2edge ass =
           DotEdge { fromNode       = assSrc ass
                   , toNode         = assTgt ass
@@ -195,7 +195,7 @@ instance CdNode Class where
  nodes cl = [clName cl]
 instance CdNode a => CdNode [a] where
  nodes = concatMap nodes
-instance CdNode HasSignature where
+instance CdNode Association where
  nodes a = [assSrc a,assTgt a]
 
 instance CdNode Aggregation where

@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 module Ampersand.Output.ToJSON.Relations 
-  (Relations)
+  (Relationz)
 where
-import           Ampersand.Core.AbstractSyntaxTree hiding (Relations)
+import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpecAux
 import           Ampersand.Output.ToJSON.JSONutils 
 import           Data.Maybe
 import qualified Data.Set as Set
 
-data Relations = Relations [RelationJson]deriving (Generic, Show)
+data Relationz = Relationz [RelationJson]deriving (Generic, Show)
 data RelationJson = RelationJson
   { relJSONname         :: String
   , relJSONsignature    :: String
@@ -34,7 +34,7 @@ data TableCol = TableCol
   , tcJSONnull     :: Bool
   , tcJSONunique   :: Bool
   } deriving (Generic, Show)
-instance ToJSON Relations where
+instance ToJSON Relationz where
   toJSON = amp2Jason
 instance ToJSON RelationJson where
   toJSON = amp2Jason
@@ -42,8 +42,8 @@ instance ToJSON RelTableInfo where
   toJSON = amp2Jason
 instance ToJSON TableCol where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Relations where
- fromAmpersand multi _ = Relations (map (fromAmpersand multi) (Set.elems $ vrels (userFSpec multi)))
+instance JSON MultiFSpecs Relationz where
+ fromAmpersand multi _ = Relationz (map (fromAmpersand multi) (Set.elems $ vrels (userFSpec multi)))
 instance JSON Relation RelationJson where
  fromAmpersand multi dcl = RelationJson 
          { relJSONname       = name dcl

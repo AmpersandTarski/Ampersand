@@ -1,17 +1,17 @@
 module Ampersand.Graphic.ClassDiagram
-         (ClassDiag(..), Class(..), CdAttribute(..), HasSignature(..),
+         (ClassDiag(..), Class(..), CdAttribute(..), Association(..),
           Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..) , MinValue(..), MaxValue(..)
            ) where
 import Data.List
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1
      ( A_Concept, Relation, A_Gen
      )
 
 data ClassDiag = OOclassdiagram {cdName :: String
                                 ,classes :: [Class]           --
-                                ,assocs :: [HasSignature]      --
+                                ,assocs :: [Association]      --
                                 ,aggrs ::  [Aggregation]      --
                                 ,geners :: [Generalization]   --
                                 ,ooCpts :: [A_Concept]}
@@ -38,7 +38,7 @@ data MaxValue = MaxOne | MaxMany deriving (Show, Eq)
 
 data Multiplicities = Mult MinValue MaxValue deriving Show
 
-data HasSignature    = OOAssoc  { assSrc ::     String           -- ^ source: the name of the source class
+data Association    = OOAssoc  { assSrc ::     String           -- ^ source: the name of the source class
                                , assSrcPort :: String           -- ^ the name of the attribute in the source class
                                , asslhm ::     Multiplicities   -- ^ left hand side multiplicities
                                , asslhr ::     String           -- ^ left hand side role
