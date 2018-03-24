@@ -1,7 +1,7 @@
 module Ampersand.Output.Statistics (Statistics(..)) where
 
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1
 import Ampersand.FSpec.FPA
 import Ampersand.FSpec.FSpec
 

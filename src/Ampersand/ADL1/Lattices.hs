@@ -13,13 +13,12 @@ module Ampersand.ADL1.Lattices
     ( findExact,findUpperbounds,optimize1
     , Op1EqualitySystem,addEquality,emptySystem
     , FreeLattice(..),getGroups,isInSystem
-    , SetLike(..)
     ) where
 
 import           Ampersand.Basics
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
-import           Data.List    (sort, partition)
+import qualified Data.List   as Lst (partition)
 import qualified Data.Map    as Map
 import qualified Data.Set    as Set
 
@@ -180,12 +179,12 @@ reverseMap :: (Ord a) => [(a,[Int])] -> RevMap a
 reverseMap lst
  = RevMap (Set.fromList (map fst empties)) (buildMap rest)
  where
-   (empties,rest) = partition (null . snd) lst
+   (empties,rest) = Lst.partition (null . snd) lst
    buildMap [] = IntMap.empty
    buildMap o@((_,~(f:_)):_)
      = IntMap.insert f (reverseMap (map tail2 h)) (buildMap tl)
      where tail2 (a,b) = (a, tail b)
-           (h,tl) = partition ((== f) . head . snd) o
+           (h,tl) = Lst.partition ((== f) . head . snd) o
 
 -- | Change the system into one with fast reverse lookups
 optimize1 :: Ord a => EqualitySystem a -> Op1EqualitySystem a
@@ -228,11 +227,11 @@ addEquality' ~(ES nms imap) set1 set2
 translateWith :: (Ord a, SetLike x) => EqualitySystem a -> x a -> (EqualitySystem a, IntSet.IntSet)
 translateWith ~(ES nomenclature imap) inSet
  = ( ES newNomenclature imap
-   , IntSet.fromList$ map (newNomenclature Map.!) (getList inSet)
+   , IntSet.fromList$ map (newNomenclature Map.!) (toList inSet)
    )
  where
   newNomenclature
-   = foldr (\x y -> if Map.member x y then y else Map.insert x (Map.size y) y) nomenclature (getList inSet)
+   = foldr (\x y -> if Map.member x y then y else Map.insert x (Map.size y) y) nomenclature (toList inSet)
 
 imapTranslate :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> IntSet.IntSet -> IntSet.IntSet -> IntSet.IntSet
 imapTranslate imap tds doneSet
@@ -254,71 +253,24 @@ data FreeLattice a
 instance SetLike [] where
   fromList = id
   fromSet = Set.toList
-  toSet = Set.fromList
-  getList = id
-  slUnion = mrgUnion
-  slIsect = mrgIsect
-  slFold = foldl
+  toList = id
   slNull = null
-  slSize = length
 
 instance SetLike Set.Set where
-  slIsect = Set.intersection
-  slUnion = Set.union
   slEmpty = Set.empty
-  slUnions = Set.unions
-  slMap = Set.map
-  getList = Set.toList
+  toList = Set.toList
   fromList = Set.fromList
   fromSet = id
-  isElemOf = Set.member
-  slFold f = Set.fold (flip f)
   slNull = Set.null
-  slSize = Set.size
-  slInsert = Set.insert
-  toSet = id
 
 -- | A single set of operations to use both for ordered lists and for sets
 class SetLike x where -- I dislike having to put Ord everywhere, is there another way? (Without including a in the class)
-  slIsect :: Ord a => x a -> x a -> x a
-  slUnion :: Ord a => x a -> x a -> x a
-  getList :: Ord a => x a -> [a]
+  toList :: Ord a => x a -> [a]
   fromList :: Ord a => [a] -> x a
   fromSet :: Ord a => Set.Set a -> x a
-  slMap :: (Ord a,Ord b) => (a -> b) -> x a -> x b
-  slMap f = fromList . nub' . sort . map f . getList
   slEmpty :: Ord a => x a
   slEmpty = fromList []
-  slUnions :: Ord a => [x a] -> x a
-  slUnions = foldr slUnion slEmpty
-  isElemOf :: Ord a => a -> x a -> Bool
-  isElemOf e mp = e `elem` getList mp
-  slFold :: Ord b => (a -> b -> a) -> a -> x b -> a
-  slFold f u xs = foldl f u (getList xs)
-  slSize :: Ord a => x a -> Int
-  slSize = length . getList
   slNull :: Ord a => x a -> Bool
-  slNull = null . getList
-  slInsert :: Ord a => a -> x a -> x a
-  slInsert x = slUnion (fromList [x])
-  toSet :: Ord a => x a -> Set.Set a
+  slNull = null . toList
 
-nub' :: Eq a => [a] -> [a]
-nub' (a:b:bs) | a == b = nub' (b:bs)
-              | otherwise = a:nub' (b:bs)
-nub' rst = rst
-
-mrgUnion :: (Ord a) => [a] -> [a] -> [a]
-mrgUnion (a:as) (b:bs) | a<b       = a:mrgUnion as (b:bs)
-                       | a==b      = a:mrgUnion as bs
-                       | otherwise = b:mrgUnion (a:as) bs
-mrgUnion a b = a ++ b -- since either a or b is the empty list
-{-# SPECIALIZE mrgUnion :: [Int] -> [Int] -> [Int] #-}
-
-mrgIsect :: (Ord a) => [a] -> [a] -> [a]
-mrgIsect (a:as) (b:bs) | a<b       = mrgIsect as (b:bs)
-                       | a==b      = b: mrgIsect as bs
-                       | otherwise = mrgIsect (a:as) bs
-mrgIsect _ _ = [] -- since either a or b is the empty list
-{-# SPECIALIZE mrgIsect :: [Int] -> [Int] -> [Int] #-}
 

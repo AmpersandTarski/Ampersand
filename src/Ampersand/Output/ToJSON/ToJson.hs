@@ -21,8 +21,8 @@ generateJSONfiles multi =
   else [ writeJSON "settings"   (fromAmpersand multi multi :: Settings)
        , writeJSON "mysql-installer"
                                 (fromAmpersand multi multi :: MySQLInstaller)
-       , writeJSON "relations"  (fromAmpersand multi multi :: Relations)
-       , writeJSON "rules"      (fromAmpersand multi multi :: Rules)
+       , writeJSON "relations"  (fromAmpersand multi multi :: Relationz)
+       , writeJSON "rules"      (fromAmpersand multi multi :: Rulez)
        , writeJSON "concepts"   (fromAmpersand multi multi :: Concepts)
        , writeJSON "conjuncts"  (fromAmpersand multi multi :: Conjuncts)
        , writeJSON "interfaces" (fromAmpersand multi multi :: Interfaces)

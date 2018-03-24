@@ -430,12 +430,12 @@ chpDiagnosis fSpec
          else (singleQuoted.str.name) r
       oneviol :: Rule -> AAtomPair -> Inlines
       oneviol r p
-       = if source r==target r && apLeft p==apRight p
-         then singleQuoted (  (str.name.source) r 
+       = if isEndo (formalExpression r) && apLeft p==apRight p
+         then singleQuoted (  (str.name.source.formalExpression) r 
                             <>(str.showValADL.apLeft) p
                            )
-         else    "("  <> (str.name.source) r <> (str.showValADL.apLeft) p 
-              <> ", " <> (str.name.target) r <> (str.showValADL.apRight) p
+         else    "("  <> (str.name.source.formalExpression) r <> (str.showValADL.apLeft) p 
+              <> ", " <> (str.name.target.formalExpression) r <> (str.showValADL.apRight) p
               <> ")"
       popwork :: [(Rule,AAtomPairs)]
       popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r]
@@ -500,7 +500,7 @@ chpDiagnosis fSpec
                    -- Alignment:
                    [(AlignLeft,1.0)]
                    -- Header:
-                   [(plain.str.name.source) r]
+                   [(plain.str.name.source.formalExpression) r]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p]
                    | p <-take 10 . Set.elems $ ps --max 10 rows
@@ -510,7 +510,7 @@ chpDiagnosis fSpec
                    -- Alignment:
                    (replicate 2 (AlignLeft,1/2))
                    -- Header:
-                   [(plain.str.name.source) r , (plain.str.name.target) r ]
+                   [(plain.str.name.source.formalExpression) r , (plain.str.name.target.formalExpression) r ]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p,(plain.str.showValADL.apRight) p]
                    | p <-take 10 . Set.elems $ ps --max 10 rows

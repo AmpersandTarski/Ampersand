@@ -3,7 +3,7 @@
 module Ampersand.Output.ToJSON.Conjuncts 
   (Conjuncts)
 where
-import           Ampersand.Core.AbstractSyntaxTree 
+import           Ampersand.ADL1
 import           Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import           Ampersand.Output.ToJSON.JSONutils 
 import qualified Data.Set as Set

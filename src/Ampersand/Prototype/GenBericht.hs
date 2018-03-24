@@ -3,8 +3,7 @@ module Ampersand.Prototype.GenBericht (doGenBericht) where
 
 import Ampersand.Basics
 import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ParseTree
+import Ampersand.ADL1
 import Ampersand.FSpec
 import Ampersand.Misc
 import Data.List

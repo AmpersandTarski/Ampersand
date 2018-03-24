@@ -2,15 +2,15 @@
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
 module Ampersand.Output.ToJSON.Rules 
-  (Rules)
+  (Rulez)
 where
-import           Ampersand.Core.AbstractSyntaxTree hiding (Rules)
+import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.Output.ToJSON.JSONutils 
 import           Data.Maybe
 import qualified Data.Set as Set
 
-data Rules = Rules
+data Rulez = Rulez
   { rulJSONinvariants :: [JsonRule]
   , rulJSONsignals    :: [JsonRule]
   } deriving (Generic, Show)
@@ -37,7 +37,7 @@ data JsonPairViewSegment = JsonPairViewSegment
   , pvsJSONexpIsIdent  :: Maybe Bool
   } deriving (Generic, Show)
 
-instance ToJSON Rules where
+instance ToJSON Rulez where
   toJSON = amp2Jason
 instance ToJSON JsonRule where
   toJSON = amp2Jason
@@ -45,8 +45,8 @@ instance ToJSON JsonPairView where
   toJSON = amp2Jason
 instance ToJSON JsonPairViewSegment where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Rules where
- fromAmpersand multi _ = Rules
+instance JSON MultiFSpecs Rulez where
+ fromAmpersand multi _ = Rulez
    { rulJSONinvariants = map (fromAmpersand multi) . Set.elems $ invariants fSpec
    , rulJSONsignals    = map (fromAmpersand multi) . Set.elems $ signals fSpec
    }

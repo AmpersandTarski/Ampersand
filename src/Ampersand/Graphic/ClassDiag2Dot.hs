@@ -3,7 +3,7 @@ module Ampersand.Graphic.ClassDiag2Dot (
 
 ) 
 where
-import           Ampersand.ADL1  hiding (Association,Box)
+import           Ampersand.ADL1  hiding (Box)
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.Graphic.ClassDiagram

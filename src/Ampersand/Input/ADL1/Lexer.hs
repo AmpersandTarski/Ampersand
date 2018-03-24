@@ -177,7 +177,7 @@ mainLexer p cs@(c:s)
 -----------------------------------------------------------
 
 locatein :: Ord a => [a] -> a -> Bool
-locatein es e = Set.member e (Set.fromList es)
+locatein es e = elem e (Set.fromList es)
 
 iskw :: String -> Bool
 iskw = locatein keywords

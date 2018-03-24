@@ -1,7 +1,6 @@
 module Ampersand.ADL1.Rule 
   (consequent, antecedent, rulefromProp, hasantecedent) where
 
-import Ampersand.Core.ParseTree(Prop(..),Traced(..))
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
 
@@ -36,7 +35,6 @@ rulefromProp prp d =
         , rrmean = AMeaning $ explain prp
         , rrmsg =  violMsg prp
         , rrviol = Nothing
-        , rrtyp = sign rExpr
         , rrdcl = Just (prp,d)         -- For traceability: The original property and relation.
         , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
         , r_usr = Multiplicity
