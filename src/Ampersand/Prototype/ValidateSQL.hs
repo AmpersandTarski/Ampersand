@@ -1,7 +1,7 @@
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc

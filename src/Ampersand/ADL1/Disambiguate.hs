@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.ADL1.Disambiguate
    ( disambiguate
    , orWhenEmpty

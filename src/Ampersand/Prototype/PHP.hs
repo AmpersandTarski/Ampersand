@@ -6,7 +6,7 @@ module Ampersand.Prototype.PHP
          ) where
 
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
 import           Ampersand.Misc

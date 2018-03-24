@@ -1,7 +1,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.SharedAmongChapters
-    ( module X
+    ( module Ampersand.Basics
+    , module Ampersand.Core.ShowAStruct
+    , module Ampersand.ADL1
+    , module Ampersand.Classes
+    , module Ampersand.FSpec
+    , module Ampersand.Graphic.Graphics
+    , module Ampersand.Misc
+    , module Ampersand.Output.PandocAux
+    , module Text.Pandoc
     , module Text.Pandoc.Builder
     , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
     , math --
@@ -23,26 +31,23 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , plainText
     , sortWith)
 where
-import           Ampersand.Basics as X 
-import           Ampersand.Core.AbstractSyntaxTree as X hiding (Meta)
-import           Ampersand.Core.ParseTree as X ( Role)
-import           Ampersand.Core.ShowAStruct as X
-import           Ampersand.ADL1 as X hiding (Meta)
-import           Ampersand.Classes as X
-import           Ampersand.FSpec as X
-import           Ampersand.Graphic.Graphics as X
-import           Ampersand.Misc as X
-import           Ampersand.Output.PandocAux as X
+import           Ampersand.Basics 
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.ADL1 hiding (Meta)
+import           Ampersand.Classes
+import           Ampersand.FSpec
+import           Ampersand.Graphic.Graphics
+import           Ampersand.Misc
+import           Ampersand.Output.PandocAux
 import           Data.List      --       (intercalate,partition)
 import           Data.Maybe
-import           Data.Monoid as X
 import           Data.Ord
 import qualified Data.Set as Set
 import qualified Data.Time.Format as DTF
 import           Data.Typeable
 import           GHC.Exts(sortWith)
 import           System.FilePath  -- (combine,addExtension,replaceExtension)
-import           Text.Pandoc as X
+import           Text.Pandoc
 import           Text.Pandoc.Builder hiding (bulletList,math)
 import qualified Text.Pandoc.Builder as  BuggyBuilder
 

@@ -206,7 +206,7 @@ tdAnalysis fSpec =
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
            _ -> fatal ("Unexpected expression: "++show expr)
-       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Ampersand.Graphic.ClassDiagram.Association
+       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Association
        mkRel t (expr,f) =
             OOAssoc { assSrc = sqlname t
                     , assSrcPort = attName f

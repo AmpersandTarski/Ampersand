@@ -5,7 +5,7 @@ module Ampersand.Output.ToJSON.Interfaces
    (Interfaces)
 where
 import Ampersand.Output.ToJSON.JSONutils 
-import Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.ADL1
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.ToFSpec.Calc
 
@@ -136,8 +136,8 @@ instance JSON ObjectDef JSONObjectDef where
     normalizedInterfaceExp = conjNF opts $ objExpression object
     (tgtConcept, mEditableDecl) =
       case getExpressionRelation normalizedInterfaceExp of
-        Just (_ , decl, tgt, isFlipped) ->
-          (tgt, Just (decl, isFlipped))
+        Just (_ , decl, tgt, isFlipped') ->
+          (tgt, Just (decl, isFlipped'))
         Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
     
 

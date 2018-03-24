@@ -8,9 +8,8 @@ where
    The implementation is done through Haskell's Map mechanism, as defined in Data.Map, for reasons of efficiency.
 -}
 
-import           Ampersand.ADL1.Expression (notCpl)
+import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
 import qualified Data.Map as Map
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import qualified Data.Set as Set
@@ -39,7 +38,7 @@ largerConcepts gs cpt
 sortSpecific2Generic :: [A_Gen] -> [A_Concept] -> [A_Concept]
 sortSpecific2Generic gens = go []
   where go xs [] = xs
-        go xs (y:ys) = case [y' | y'<-nub ys, y' `Set.member` (Set.fromList $ smallerConcepts gens y)] of
+        go xs (y:ys) = case [y' | y'<-nub ys, y' `elem` (Set.fromList $ smallerConcepts gens y)] of
                           []  -> go (xs++[y]) ys
                           _:_ -> go xs (ys++[y])
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)

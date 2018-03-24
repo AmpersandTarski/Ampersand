@@ -1,9 +1,8 @@
 module Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, getCrudObjectsForInterface, mkCrudInfo) where
 
 import           Ampersand.Basics
-import           Ampersand.Classes.ConceptStructure
-import           Ampersand.Classes.Relational
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Classes
+import           Ampersand.ADL1
 import           Data.Function
 import           Data.List
 import qualified Data.Map as Map 
@@ -87,8 +86,8 @@ getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterf
   where editableTarget expr = 
           case getExpressionRelation expr of
             Nothing                                                              -> []
-            Just (declSrc, decl, declTgt, isFlipped) | decl `elem` [] -> [(decl, if isFlipped then declSrc else declTgt)]
-                                                     | otherwise                 -> []
+            Just (declSrc, decl, declTgt, isFlipped') | decl `elem` [] -> [(decl, if isFlipped' then declSrc else declTgt)]
+                                                      | otherwise                 -> []
 
 getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]
 getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc

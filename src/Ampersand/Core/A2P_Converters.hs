@@ -13,10 +13,8 @@ module Ampersand.Core.A2P_Converters (
   , aViewDef2pViewDef
 ) 
 where
-import           Ampersand.ADL1.Expression
+import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.ParseTree
-import           Ampersand.Core.AbstractSyntaxTree
 import           Data.Maybe
 import           Data.Char
 import qualified Data.Set as Set

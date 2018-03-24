@@ -1,8 +1,8 @@
 module Ampersand.Prototype.ValidateEdit where
 
 import           Ampersand.Basics
-import           Ampersand.Classes.ConceptStructure
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Classes
+import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
 import qualified Ampersand.Misc.Options as Opts

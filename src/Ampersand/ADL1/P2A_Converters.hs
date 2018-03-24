@@ -9,8 +9,7 @@ where
 import           Ampersand.ADL1.Disambiguate
 import           Ampersand.ADL1.Lattices -- used for type-checking
 import           Ampersand.Basics
-import           Ampersand.Classes.ConceptStructure
-import           Ampersand.Classes.ViewPoint
+import           Ampersand.Classes
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.A2P_Converters
 import           Ampersand.Core.AbstractSyntaxTree
@@ -102,7 +101,7 @@ isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
     ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (Set.elems $ concs ctx )
-    ExplRelation decl -> not (name decl `Set.member` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
+    ExplRelation decl -> not (name decl `elem` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
     ExplRule nm -> nm `notElem` map name (Set.elems $ udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
@@ -987,7 +986,6 @@ pCtx2aCtx opts
                     , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
                     , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
                     , rrviol = vls
-                    , rrtyp = sign exp'
                     , rrdcl = Nothing
                     , r_env = env
                     , r_usr = UserDefined
@@ -1137,10 +1135,10 @@ instance Functor TT where
   fmap f (MBE a b) = MBE (f a) (f b)
   fmap f (MBG a b) = MBG (f a) (f b)
   
-getAConcept :: Association a => SrcOrTgt -> a -> A_Concept
+getAConcept :: HasSignature a => SrcOrTgt -> a -> A_Concept
 getAConcept Src = source
 getAConcept Tgt = target
-getConcept :: Association a => SrcOrTgt -> a -> Type
+getConcept :: HasSignature a => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
 

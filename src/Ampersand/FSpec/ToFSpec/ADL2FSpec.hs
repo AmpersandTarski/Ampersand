@@ -4,8 +4,6 @@ module Ampersand.FSpec.ToFSpec.ADL2FSpec
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree ( Role)
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.Crud
 import           Ampersand.FSpec.FSpec
@@ -444,7 +442,7 @@ tblcontents ci ps plug
          f:fs -> (nub.transpose)
                  ( map Just (Set.elems cAtoms)
                  : [case fExp of
-                       EDcI c -> [ if a `Set.member` atomValuesOf ci ps c then Just a else Nothing | a<-Set.elems $ cAtoms ]
+                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-Set.elems $ cAtoms ]
                        _      -> [ (lkp att a . fullContents ci ps) fExp | a<-Set.elems $ cAtoms ]
                    | att<-fs, let fExp=attExpr att
                    ]
