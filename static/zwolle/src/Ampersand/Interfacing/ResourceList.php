@@ -141,8 +141,8 @@ class ResourceList implements IteratorAggregate
     {
         if (!isset($this->tgts) || !$fromCache) {
             $this->tgts = [];
-            // If interface isIdent (i.e. expr = I[Concept]) we can return the src
-            if ($this->ifc->isIdent()) {
+            // If interface isIdent (i.e. expr = I[Concept]), and no epsilon is required (i.e. srcConcept equals tgtConcept of parent ifc) we can return the src
+            if ($this->ifc->isIdent() && (($this->ifc->srcConcept === $this->ifc->getParentInterface()->tgtConcept) ?? false)) {
                 $this->tgts[] = $this->makeResource($this->src->id);
                 
             // Else try to get tgt atom from src query data (in case of uni relation in same table)

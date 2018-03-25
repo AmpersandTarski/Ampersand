@@ -372,9 +372,15 @@ class InterfaceObject
         return empty($this->ifcRoleNames) && $this->isRoot();
     }
     
-    public function isIdent()
+    /**
+     * Returns if the interface expression isIdent
+     * Note! Epsilons are not included
+     *
+     * @return boolean
+     */
+    public function isIdent(): bool
     {
-        return $this->isIdent && $this->srcConcept == $this->tgtConcept;
+        return $this->isIdent;
     }
     
     public function isUni()
