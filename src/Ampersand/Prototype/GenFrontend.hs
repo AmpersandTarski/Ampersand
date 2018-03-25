@@ -231,7 +231,7 @@ buildInterface fSpec allIfcs ifc =
                          , exprIsTot = isTot iExp'
                          , relIsProp  = case mDecl of
                                           Nothing  -> False
-                                          Just dcl -> isProp dcl
+                                          Just dcl -> isProp (EDcD dcl)
                          , exprIsIdent = isIdent iExp'
                          , atomicOrBox = aOrB
                          }

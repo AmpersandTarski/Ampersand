@@ -191,9 +191,10 @@ makeFSpec opts context
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
      totsurs :: [Expression]
      totsurs
-      = nub [rel | q<-filter (not . isSignal . qRule) allQuads -- all quads for invariant rules
-                 , isIdent (qDcl q)
-                 , x<-qConjuncts q, dnf<-rc_dnfClauses x
+      = nub [rel | q<- filter (isIdent . EDcD . qDcl)
+                     . filter (not . isSignal . qRule)
+                     $ allQuads -- all quads for invariant rules
+                 , dnf<- concatMap rc_dnfClauses . qConjuncts $ q
                  , let antc = conjNF opts (foldr (./\.) (EDcV (sign (head (antcs dnf++conss dnf)))) (antcs dnf))
                  , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
                  , cons<-map exprCps2list (conss dnf)
@@ -295,12 +296,16 @@ makeFSpec opts context
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal relations are excluded)
-     cRels = [     EDcD d  | d<-Set.elems $ calculatedDecls, isTot d, not$decplug d] ++
-             [flp (EDcD d) | d<-Set.elems $ calculatedDecls, not (isTot d) && isSur d, not$decplug d]
+     cRels = Set.elems $
+             (              Set.filter      isTot                     $ toconsider) `Set.union`
+             (Set.map flp . Set.filter (not.isTot) . Set.filter isSur $ toconsider)
+       where toconsider = Set.map EDcD . Set.filter (not . decplug) $ calculatedDecls
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal relations are excluded)
-     dRels = [     EDcD d  | d<-Set.elems $ calculatedDecls, isInj d, not$decplug d]++
-             [flp (EDcD d) | d<-Set.elems $ calculatedDecls, not (isInj d) && isUni d, not$decplug d]
+     dRels = Set.elems $
+             (              Set.filter      isInj                     $ toconsider) `Set.union`
+             (Set.map flp . Set.filter (not.isInj) . Set.filter isUni $ toconsider)
+       where toconsider = Set.map EDcD . Set.filter (not . decplug) $ calculatedDecls
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!

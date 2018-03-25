@@ -87,8 +87,8 @@ cdAnalysis fSpec =
       isOfCpt :: [Expression] -> Bool
       isOfCpt []    = fatal "List must not be empty!"
       isOfCpt (e:_) = source e == cpt
-      attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
-
+      attribs = map (flipWhenNeeded . EDcD) attribDcls
+      flipWhenNeeded x = if isInj x && (not.isUni) x then flp x else x
    ooAttr :: Expression -> CdAttribute
    ooAttr r = OOAttr { attNm = (name . head . Set.elems . bindedRelationsIn) r
                      , attTyp = if isProp r then "Prop" else (name.target) r
@@ -101,7 +101,7 @@ cdAnalysis fSpec =
      where
        dclIsShown :: Relation -> Bool
        dclIsShown d = 
-             (not . isProp) d
+             (not . isProp . EDcD) d
           && (   (d `notElem` attribDcls)
               || (   source d `elem` nodeConcepts
                   && target d `elem` nodeConcepts
@@ -124,11 +124,12 @@ cdAnalysis fSpec =
              , asslhm = mults . flp $ EDcD d
              , asslhr = ""
              , assTgt = name $ target d
-             , assrhm = mults d
+             , assrhm = mults $ EDcD d
              , assrhr = name d
              , assmdcl = Just d
              }
-   attribDcls = [ d | d <- Set.elems allDcls, isUni d || isInj d ]
+   
+   attribDcls = [ d | d <- Set.elems allDcls, isUni (EDcD d) || isInj (EDcD d) ]
     
 
 -- | This function generates a technical data model.
@@ -218,9 +219,7 @@ tdAnalysis fSpec =
                     , assmdcl = Nothing
                     }
 
-----             
-mults :: Relational r => r -> Multiplicities
-mults r = let minVal = if isTot r then MinOne else MinZero
-              maxVal = if isUni r then MaxOne else MaxMany
-          in  Mult minVal maxVal
-             
+mults :: Expression -> Multiplicities
+mults r = Mult (if isTot r then MinOne else MinZero)
+               (if isUni r then MaxOne else MaxMany)
+          
