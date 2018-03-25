@@ -52,19 +52,24 @@ class ResourceList implements IteratorAggregate
      */
     protected $tgts = null;
     
-    
-    public function __construct(Resource $src, InterfaceObject $parentIfc)
+    /**
+     * Constructor
+     *
+     * @param \Ampersand\Interfacing\Resource $src
+     * @param \Ampersand\Interfacing\InterfaceObject $ifc
+     */
+    public function __construct(Resource $src, InterfaceObject $ifc)
     {
         /** @var \Pimple\Container $container */
         global $container;
         $this->logger = Logger::getLogger('INTERFACING');
         
-        if ($parentIfc->isRoot() && !$container['ampersand_app']->isAccessibleIfc($parentIfc)) {
-            throw new Exception("Unauthorized to access interface {$parentIfc->label}", 403);
+        if ($ifc->isRoot() && !$container['ampersand_app']->isAccessibleIfc($ifc)) {
+            throw new Exception("Unauthorized to access interface {$ifc->label}", 403);
         }
         
         $this->src = $src;
-        $this->ifc = $parentIfc;
+        $this->ifc = $ifc;
     }
     
     /**

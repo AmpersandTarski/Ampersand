@@ -172,6 +172,13 @@ class InterfaceObject
     private $subInterfaces = [];
 
     /**
+     * Parent interface (when not root interface)
+     *
+     * @var \Ampersand\Interfacing\InterfaceObject
+     */
+    protected $parentIfc = null;
+
+    /**
      * InterfaceObject constructor
      * @param array $ifcDef Interface object definition as provided by Ampersand generator
      * @param \Ampersand\Plugs\IfcPlugInterface $plug
@@ -224,6 +231,7 @@ class InterfaceObject
             // Inline subinterface definitions
             foreach ((array)$ifcDef['subinterfaces']['ifcObjects'] as $subIfcDef) {
                 $ifc = new InterfaceObject($subIfcDef, $this->plug, $this->path);
+                $ifc->parentIfc = $this;
                 $this->subInterfaces[$ifc->id] = $ifc;
             }
         }
@@ -456,6 +464,16 @@ class InterfaceObject
     public function getQuery()
     {
         return str_replace('_SESSION', session_id(), $this->query); // Replace _SESSION var with current session id.
+    }
+
+    /**
+     * Returns parent interface object (or null if not applicable)
+     *
+     * @return \Ampersand\Interfacing\InterfaceObject|null
+     */
+    public function getParentInterface()
+    {
+        return $this->parentIfc;
     }
     
     /**
