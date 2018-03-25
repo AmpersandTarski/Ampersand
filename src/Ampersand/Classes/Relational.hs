@@ -31,12 +31,6 @@ class Relational r where
 
 instance HasProps Relation where
     properties d = fromMaybe (decprps d) (decprps_calc d)
---    isProp d = Asy `elem` properties d && Sym `elem` properties d
---    isImin _ = False  -- LET OP: Dit kan natuurlijk niet goed zijn, maar is gedetecteerd bij revision 913, toen straffeloos de Iscompl{} kon worden verwijderd.
---    isTrue _ = False
---    isFalse _ = False
---    isIdent _ = False
---    isEpsilon _ = False
 
 isSingleton :: A_Concept -> Bool
 isSingleton ONE = True
@@ -164,12 +158,40 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EBrk f     -> isImin f
      EFlp f     -> isImin f
      _          -> False  -- TODO: find richer answers for ELrs, ERrs, and EDia
- isFunction r   = Uni `elem` properties r && 
-                  Tot `elem` properties r 
+ isFunction r   = isUni r && isTot r
+                 
  isTot r = Tot `elem` properties r
- isUni r = Uni `elem` properties r
+-- isUni r = Uni `elem` properties r
+ isUni = isUni' Uni
+   where
+     isUni' :: Prop -> Expression -> Bool 
+     isUni' prop expr 
+       = case expr of
+            EEqu (_,_) -> False
+            EInc (_,_) -> False
+            EIsc (l,r) -> isUni' prop l || isUni' prop r
+            EUni (_,_) -> z
+            EDif (l,_) -> isUni' prop l
+            ECps (l,r) -> isUni' prop l || isUni' prop r
+            EPrd (_,_) -> z
+            EKl0 e     -> isUni' prop e
+            EKl1 e     -> isUni' prop e
+            EFlp e     -> isUni' (flp prop) e
+            ECpl _     -> z
+            ELrs _     -> z
+            ERrs _     -> z
+            EDia _     -> z
+            ERad _     -> z
+            EDcD d     -> prop `elem` properties d
+            EDcI{}     -> True
+            EEps{}     -> True
+            EDcV{}     -> z
+            EBrk e     -> isUni e
+            EMp1{}     -> True
+      where
+        z = prop `elem` properties expr
  isSur r = Sur `elem` properties r
- isInj r = Inj `elem` properties r
+ isInj r = isUni (flp r)
  isRfx r = Rfx `elem` properties r
  isIrf r = Irf `elem` properties r
  isTrn r = Trn `elem` properties r
