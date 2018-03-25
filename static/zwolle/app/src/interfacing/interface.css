@@ -42,7 +42,7 @@ fieldset {
 }
 
 .interface .box-panels .box-panels-opt {
-
+    margin-top: -3px;
 }
 
 .interface .box-panels-opt .btn {
