@@ -57,8 +57,9 @@ showLatex :: PredLogic -> [[String]]
 showLatex x 
  = chop (predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee"
                    , "\\ \\wedge\t", "^{*}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x)
-   where rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
-           = if isIdent r then lhs++"\\ =\\ "++rhs else
+   where rel :: Relation -> String -> String -> String 
+         rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
+           = if isIdent (EDcD r) then lhs++"\\ =\\ "++rhs else
              case name r of
               "lt"     -> lhs++"\\ <\\ "++rhs
               "gt"     -> lhs++"\\ >\\ "++rhs
@@ -67,7 +68,9 @@ showLatex x
               "ge"     -> lhs++"\\ \\geq\\ "++rhs
               "geq"    -> lhs++"\\ \\geq\\ "++rhs
               _        -> lhs++"\\ \\id{"++latexEscShw (name r)++"}\\ "++rhs
+         fun :: Relation -> String -> String
          fun r e = "\\id{"++latexEscShw (name r)++"}("++e++")"
+         implies :: String -> String -> String
          implies antc cons = antc++" \\Rightarrow "++cons
          apply :: Relation -> String -> String -> String    --TODO language afhankelijk maken.
          apply decl d c =
@@ -104,7 +107,7 @@ showRtf = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, no
         notP = unicodeSym 26 '¬' '!'
         el = unicodeSym 30 '∈' '?' 
         relP r lhs rhs  -- TODO: sloppy code, copied from showLatex
-         = if isIdent r then lhs++"\\ =\\ "++rhs else
+         = if isIdent (EDcD r) then lhs++"\\ =\\ "++rhs else
            case name r of
             "lt"     -> lhs++" < "++rhs
             "gt"     -> lhs++" > "++rhs
@@ -225,7 +228,7 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                                       else wrap i 4 (intercalate (spaceP++andP++spaceP) (map (charshow 4) rs))
                Funs x ls           -> case ls of
                                          []    -> x
-                                         r:ms  -> if isIdent r then charshow i (Funs x ms) else charshow i (Funs (funP r x) ms)
+                                         r:ms  -> if isIdent (EDcD r) then charshow i (Funs x ms) else charshow i (Funs (funP r x) ms)
                Dom expr (x,_)      -> x++el++funP (makeRel "dom") (showA expr)
                Cod expr (x,_)      -> x++el++funP (makeRel "cod") (showA expr)
                R pexpr dec pexpr'  -> case (pexpr,pexpr') of
@@ -473,8 +476,8 @@ assemble expr
    denote e = case e of
       (EDcD d)
         | null(Set.elems (Set.fromList [Uni,Inj,Tot,Sur] Set.\\ properties d))  -> Rn
-        | isUni d && isTot d                           -> Flr
-        | isInj d && isSur d                           -> Frl
+        | isUni e && isTot e                           -> Flr
+        | isInj e && isSur e                           -> Frl
         | otherwise                                    -> Rn
       _                                                -> Rn
    denotes :: [Expression] -> Notation
