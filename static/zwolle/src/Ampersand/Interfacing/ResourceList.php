@@ -268,8 +268,8 @@ class ResourceList implements IteratorAggregate
         }
         
         // If interface is editable, also add tuple(src, tgt) in interface relation
-        if ($this->ifc->isEditable() && $this->ifc->crudU()) {
-            $this->add($resource->id);
+        if ($this->ifc->isEditable()) {
+            $this->add($resource->id, true);
         } else {
             $resource->add();
         }
@@ -385,9 +385,10 @@ class ResourceList implements IteratorAggregate
     /**
      * Add value to resource list
      * @param mixed $value
+     * @param bool $skipCrudUCheck
      * @return bool
      */
-    public function add($value): bool
+    public function add($value, bool $skipCrudUCheck = false): bool
     {
         if (!isset($value)) {
             throw new Exception("Cannot add item. Value not provided", 400);
@@ -399,7 +400,7 @@ class ResourceList implements IteratorAggregate
         if (!$this->ifc->isEditable()) {
             throw new Exception("Interface is not editable " . $this->ifc->getPath(), 405);
         }
-        if (!$this->ifc->crudU()) {
+        if (!$this->ifc->crudU() && !$skipCrudUCheck) {
             throw new Exception("Update not allowed for " . $this->ifc->getPath(), 405);
         }
         
