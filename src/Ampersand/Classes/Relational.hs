@@ -172,7 +172,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
             EIsc (l,r) -> isUni' prop l || isUni' prop r
             EUni (_,_) -> z
             EDif (l,_) -> isUni' prop l
-            ECps (l,r) -> isUni' prop l || isUni' prop r
+            ECps (l,r) -> isUni' prop l && isUni' prop r
             EPrd (_,_) -> z
             EKl0 e     -> isUni' prop e
             EKl1 e     -> isUni' prop e
