@@ -40,23 +40,25 @@ mkCrudInfo :: A_Concepts -> Relations -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
   where allConcs = [ c | c <- Set.elems allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
-        nonCrudConcpts = [ source d | d <- Set.elems decls, isUni d && isSur d ] ++
-                         [ target d | d <- Set.elems decls, isInj d && isTot d ]
+        nonCrudConcpts = (map source . filter isUni . filter isSur . map EDcD . Set.elems $ decls) ++
+                         (map target . filter isInj . filter isTot . map EDcD . Set.elems $ decls)
         crudCncpts = allConcs \\ nonCrudConcpts
         
         transSurjClosureMap :: Map.Map A_Concept [A_Concept]
         transSurjClosureMap = transClosureMap' . Map.fromListWith union $
-          [ (target d, [source d]) | d <- Set.elems decls, isSur d ] ++ -- TODO: no isUni?
-          [ (source d, [target d]) | d <- Set.elems decls, isTot d ]    -- TODO: no isInj?
+          (map (mkMapItem . flp) . filter isSur . map EDcD $ Set.elems decls) ++ -- TODO: no isUni?
+          (map (mkMapItem      ) . filter isTot . map EDcD $ Set.elems decls)    -- TODO: no isInj?
           -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
-        
+           where
+             mkMapItem :: Expression -> (A_Concept,[A_Concept])
+             mkMapItem expr = (source expr,[target expr])
         
         -- crud concept together with its target concept in the surjective/total transitive closure of relations
         crudObjs :: [(A_Concept, [A_Concept])]
         crudObjs = [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap) -- TODO: should [] be a fatal? 
                    | crudCncpt <- crudCncpts ]
         
-        getCrudUpdateConcpts :: Relation -> [A_Concept]
+        getCrudUpdateConcpts :: Expression -> [A_Concept]
         getCrudUpdateConcpts decl = 
           if  isSur decl || isTot decl  -- TODO: no isUni?  -- TODO: no isInj?
           then [ cObj | (cObj, cCncpts) <- crudObjs, source decl `elem` cCncpts && target decl `elem` cCncpts ]    
@@ -77,7 +79,7 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
           where crudCreateCncpts = editableTgts
                 crudReadCncpts   = concs (bindedRelationsIn ifc) -- NOTE: this includes interface params, even if they do not appear in any of the field expressions
                 crudDeleteCncpts = crudCreateCncpts -- We can't currently distinguish between these two.
-                crudUpdateCncpts = concatMap getCrudUpdateConcpts editableDecls
+                crudUpdateCncpts = concatMap (getCrudUpdateConcpts .EDcD) editableDecls
                 (editableDecls, editableTgts) = unzip $ getEditableDeclsAndTargets allIfcs ifc
                                              
 -- NOTE: editable target is not necessarily the target of decl, as it may have been flipped (in which case it's the source)

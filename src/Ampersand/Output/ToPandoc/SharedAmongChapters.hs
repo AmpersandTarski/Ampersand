@@ -367,7 +367,7 @@ orderingByTheme fSpec
   rulMustBeShown r = hasMeaning r || hasPurpose r
   relMustBeShown :: Relation -> Bool
   relMustBeShown d 
-    | isIdent d || name d == "V" = False  --Identity relation has no meaning defined
+    | isIdent (EDcD d) || name d == "V" = False  --Identity relation has no meaning defined
     | otherwise = (hasMeaning d || hasPurpose d) && (decusr d || forNonUserDefdRule d)  
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
@@ -474,7 +474,7 @@ dpRule' fSpec = dpR
         theBlocks =
             purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
          <> purposes2Blocks (getOpts fSpec) [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
-         <> case (Set.elems nds, fsLang fSpec) of
+         <> case (Set.elems . Set.map EDcD $ nds, fsLang fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
              ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")

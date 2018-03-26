@@ -1,5 +1,6 @@
 module Ampersand.Classes.Relational
-   (Relational(..)
+   ( HasProps(..)
+   , Relational(..)
    ) where
 
 import           Ampersand.ADL1
@@ -8,44 +9,28 @@ import           Ampersand.Core.ParseTree(Prop(..),Props)
 import           Data.Maybe
 import qualified Data.Set as Set
 
-class HasSignature r => Relational r where
+class HasProps r where
     properties :: r -> Props
+class Relational r where
     isProp :: r -> Bool  -- > tells whether the argument is a property
     isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-
     isTrue :: r -> Bool  -- > tells whether the argument is equivalent to V
     isFalse :: r -> Bool  -- > tells whether the argument is equivalent to V-
     isFunction :: r -> Bool
-    isFunction r   = Uni `elem` properties r && 
-                     Tot `elem` properties r 
     isTot :: r -> Bool  --
-    isTot r = Tot `elem` properties r
     isUni :: r -> Bool  --
-    isUni r = Uni `elem` properties r
     isSur :: r -> Bool  --
-    isSur r = Sur `elem` properties r
     isInj :: r -> Bool  --
-    isInj r = Inj `elem` properties r
     isRfx :: r -> Bool  --
-    isRfx r = Rfx `elem` properties r
     isIrf :: r -> Bool  --
-    isIrf r = Irf `elem` properties r
     isTrn :: r -> Bool  --
-    isTrn r = Trn `elem` properties r
     isSym :: r -> Bool  --
-    isSym r = Sym `elem` properties r
     isAsy :: r -> Bool  --
-    isAsy r = Asy `elem` properties r
     isIdent :: r -> Bool  -- > tells whether the argument is equivalent to I
     isEpsilon :: r -> Bool  -- > tells whether the argument is equivalent to I
 
-instance Relational Relation where
+instance HasProps Relation where
     properties d = fromMaybe (decprps d) (decprps_calc d)
-    isProp d = Asy `elem` properties d && Sym `elem` properties d
-    isImin _ = False  -- LET OP: Dit kan natuurlijk niet goed zijn, maar is gedetecteerd bij revision 913, toen straffeloos de Iscompl{} kon worden verwijderd.
-    isTrue _ = False
-    isFalse _ = False
-    isIdent _ = False
-    isEpsilon _ = False
 
 isSingleton :: A_Concept -> Bool
 isSingleton ONE = True
@@ -55,8 +40,8 @@ isSingleton _   = False
 -- but tries to derive the most obvious multiplicity constraints as well. The more multiplicity constraints are known,
 -- the better the data structure that is derived.
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
-instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
- properties expr = case expr of
+instance HasProps Expression where
+    properties expr = case expr of
      EDcD dcl   -> properties dcl
      EDcI{}     -> Set.fromList [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
      EEps a sgn -> Set.fromList $ [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
@@ -80,6 +65,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EMp1{}     -> Set.fromList [Uni,Inj,Sym,Asy,Trn]
      _          -> Set.empty
 
+instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
  -- |  isTrue e == True   means that e is true, i.e. the population of e is (source e * target e).
  --    isTrue e == False  does not mean anything.
  --    the function isTrue is meant to produce a quick answer, without any form of theorem proving.
@@ -165,10 +151,49 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EUni (l,r) -> isImin l && isImin r
      EDif (l,r) -> isImin l && isFalse r
      ECpl e     -> isIdent e
-     EDcD dcl   -> isImin dcl
+     EDcD{}     -> False
      EDcI{}     -> False
      EEps{}     -> False
      EDcV{}     -> False
      EBrk f     -> isImin f
      EFlp f     -> isImin f
      _          -> False  -- TODO: find richer answers for ELrs, ERrs, and EDia
+ isFunction r   = isUni r && isTot r
+                 
+ isTot r = Tot `elem` properties r
+-- isUni r = Uni `elem` properties r
+ isUni = isUni' Uni
+   where
+     isUni' :: Prop -> Expression -> Bool 
+     isUni' prop expr 
+       = case expr of
+            EEqu (_,_) -> False
+            EInc (_,_) -> False
+            EIsc (l,r) -> isUni' prop l || isUni' prop r
+            EUni (_,_) -> z
+            EDif (l,_) -> isUni' prop l
+            ECps (l,r) -> isUni' prop l || isUni' prop r
+            EPrd (_,_) -> z
+            EKl0 e     -> isUni' prop e
+            EKl1 e     -> isUni' prop e
+            EFlp e     -> isUni' (flp prop) e
+            ECpl _     -> z
+            ELrs _     -> z
+            ERrs _     -> z
+            EDia _     -> z
+            ERad _     -> z
+            EDcD d     -> prop `elem` properties d
+            EDcI{}     -> True
+            EEps{}     -> True
+            EDcV{}     -> z
+            EBrk e     -> isUni e
+            EMp1{}     -> True
+      where
+        z = prop `elem` properties expr
+ isSur r = Sur `elem` properties r
+ isInj r = isUni (flp r)
+ isRfx r = Rfx `elem` properties r
+ isIrf r = Irf `elem` properties r
+ isTrn r = Trn `elem` properties r
+ isSym r = Sym `elem` properties r
+ isAsy r = Asy `elem` properties r
