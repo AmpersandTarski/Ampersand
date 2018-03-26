@@ -2,6 +2,8 @@
 
 namespace Ampersand\Misc;
 
+use Throwable;
+
 /**
  * Get the filesnames from a folder
  * @param $dirPath

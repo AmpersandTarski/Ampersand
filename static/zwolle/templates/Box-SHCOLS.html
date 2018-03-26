@@ -1,4 +1,4 @@
-$if(verbose)$<!-- Box-COLS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
+$if(verbose)$<!-- Box-SHCOLS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
 <!-- Difference with COLS.html is added 'si-table' directive for sorting and 'ng-show' directive on <table> -->
 $endif$$if(crudR)$<div class="box box-cols" ng-controller="BoxController" ng-init="parent = resource">
     <table si-table class="table table-striped table-hover table-condensed" ng-show="$if(exprIsUni)$resource['$name$'] !== null$else$resource['$name$'].length$endif$">
