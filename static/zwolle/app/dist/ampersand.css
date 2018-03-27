@@ -123,6 +123,7 @@ fieldset {
 .interface .interface-opt {
     display: flex;
     justify-content: flex-end;
+    z-index: 1;
 }
 
 .interface .interface-opt .btn {
@@ -131,6 +132,7 @@ fieldset {
 
 .interface .box-cols .box-cols-opt {
     text-align: right;
+    z-index: 1;
 }
 
 .interface .box-cols-opt .btn {
@@ -139,6 +141,7 @@ fieldset {
 
 .interface .box-tabs .box-tabs-opt {
     padding-top: 10px;
+    z-index: 1;
 }
 
 .interface .box-tabs-opt .btn {
@@ -147,6 +150,7 @@ fieldset {
 
 .interface .box-panels .box-panels-opt {
     margin-top: -3px;
+    z-index: 1;
 }
 
 .interface .box-panels-opt .btn {
@@ -161,6 +165,7 @@ fieldset {
     display: block;
     padding: 5px 8px;
     font-size: 12px;
+    z-index: 1;
     /*
     border-left: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
