@@ -34,7 +34,7 @@ gulp.task('build-lib', function (done) {
                 bootstrap: {
                     main: [
                         './dist/js/bootstrap.js',
-                        './dist/css/*.min.css',
+                        './dist/css/bootstrap.min.css',
                         './dist/fonts/*.*'
                     ]
                 }
