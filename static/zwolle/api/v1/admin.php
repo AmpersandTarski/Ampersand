@@ -25,19 +25,11 @@ use Ampersand\Session;
 global $app;
 
 /**
- * @var \Pimple\Container $container
- */
-global $container;
-
-/**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/admin', function () use ($container) {
+$app->group('/admin', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
-
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
 
     $this->get('/sessions/delete/expired', function (Request $request, Response $response, $args = []) {
         if (Config::get('productionEnv')) {
@@ -69,7 +61,10 @@ $app->group('/admin', function () use ($container) {
         return $response->withJson($list, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/installer', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
+    $this->get('/installer', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+
         if (Config::get('productionEnv')) {
             throw new Exception("Reinstallation of application not allowed in production environment", 403);
         }
@@ -91,7 +86,10 @@ $app->group('/admin', function () use ($container) {
         return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/execengine/run', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
+    $this->get('/execengine/run', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+
         // Check for required role
         if (!$ampersandApp->hasRole(Config::get('allowedRolesForRunFunction', 'execEngine'))) {
             throw new Exception("You do not have access to run the exec engine", 403);
@@ -146,7 +144,10 @@ $app->group('/admin', function () use ($container) {
                         ->withHeader('Content-Type', 'application/json;charset=utf-8');
     });
 
-    $this->post('/import', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
+    $this->post('/import', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+        
         // Check for required role
         if (!$ampersandApp->hasRole(Config::get('allowedRolesForImporter'))) {
             throw new Exception("You do not have access to import population", 403);
@@ -192,7 +193,7 @@ $app->group('/admin', function () use ($container) {
 /**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/admin/report', function () use ($container) {
+$app->group('/admin/report', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
 

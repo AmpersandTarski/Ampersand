@@ -129,7 +129,7 @@ class Violation
     public function getInterfaces($srcOrTgt = null): array
     {
         /** @var \Pimple\Container $container */
-        global $container;
+        global $container; // TODO: remove dependency to global $container var
         
         switch ($srcOrTgt) {
             case 'src':

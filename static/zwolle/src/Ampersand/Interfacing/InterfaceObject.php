@@ -547,6 +547,7 @@ class InterfaceObject
     
     /**
      * @return InterfaceObject[]
+     * TODO: move this code, or at least remove dependency to global $container var
      */
     public function getNavInterfacesForTgt()
     {

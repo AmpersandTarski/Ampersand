@@ -12,19 +12,11 @@ use Ampersand\Log\Notifications;
 global $app;
 
 /**
- * @var \Pimple\Container $container
- */
-global $container;
-
-/**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/oauthlogin', function () use ($container) {
+$app->group('/oauthlogin', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
-
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
 
     $this->get('/login', function (Request $request, Response $response, $args = []) {
         // Get configured identity providers
@@ -58,7 +50,10 @@ $app->group('/oauthlogin', function () use ($container) {
         return $response->withJson(['identityProviders' => $idps, 'notifications' => Notifications::getAll()], 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/logout', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
+    $this->get('/logout', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+
         $ampersandApp->logout();
         $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
         return $response->withJson(['notifications' => Notifications::getAll()], 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

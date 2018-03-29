@@ -11,29 +11,26 @@ use Slim\Http\Response;
 global $app;
 
 /**
- * @var \Pimple\Container $container
- */
-global $container;
-
-/**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/app', function () use ($container) {
+$app->group('/app', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
 
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
+    $this->patch('/roles', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
 
-    /** @var \Ampersand\AngularApp $angularApp */
-    $angularApp = $container['angular_app'];
-
-    $this->patch('/roles', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
         $ampersandApp->setActiveRoles((array) $request->getParsedBody());
         return $response->withJson($ampersandApp->getSessionRoles(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/navbar', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+    $this->get('/navbar', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this->appContainer['angular_app'];
+
         $ampersandApp->checkProcessRules();
         
         $session = $ampersandApp->getSession();
@@ -61,7 +58,10 @@ $app->group('/app', function () use ($container) {
         return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/notifications', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
+    $this->get('/notifications', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+
         $ampersandApp->checkProcessRules();
         return $response->withJson(Notifications::getAll(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });

@@ -52,7 +52,7 @@ class RuleEngine
     protected static function getViolationsFromDB(array $rules): array
     {
         /** @var \Pimple\Container $container */
-        global $container;
+        global $container; // TODO: remove dependency to global $container var
         $database = $container['mysql_database'];
         $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 

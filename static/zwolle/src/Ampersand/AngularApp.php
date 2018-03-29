@@ -58,23 +58,14 @@ class AngularApp
     protected $navToResponse = [];
 
     /**
-     * Instantiation of Ampersand backend application
-     *
-     * @var \Ampersand\AmpersandApp
-     */
-    protected $ampersandApp;
-
-    /**
      * Undocumented function
      *
-     * @param \Ampersand\AmpersandApp $ampersandApp
      * @param \Psr\Log\LoggerInterface $logger
      */
-    public function __construct(AmpersandApp $ampersandApp, LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
         $this->logger->debug("## BUILD ANGULAR APP ##################################################");
-        $this->ampersandApp = $ampersandApp;
     }
     
     /**

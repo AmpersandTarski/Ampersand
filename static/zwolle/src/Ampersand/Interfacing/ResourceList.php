@@ -61,7 +61,7 @@ class ResourceList implements IteratorAggregate
     public function __construct(Resource $src, InterfaceObject $ifc)
     {
         /** @var \Pimple\Container $container */
-        global $container;
+        global $container; // TODO: remove dependency on global $container var
         $this->logger = Logger::getLogger('INTERFACING');
         
         if ($ifc->isRoot() && !$container['ampersand_app']->isAccessibleIfc($ifc)) {

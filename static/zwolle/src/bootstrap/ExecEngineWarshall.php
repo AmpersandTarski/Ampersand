@@ -35,7 +35,7 @@ use Ampersand\Rule\ExecEngine;
 /**
  * @var \Pimple\Container $container
  */
-global $container;
+global $container; // TODO: remove dependency to gloabl $container var
 
 
 ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = function ($relationName, $conceptName) use ($container) {

@@ -17,6 +17,7 @@ require_once(__DIR__ . '/../../src/bootstrap.php');
 global $container;
 
 $apiContainer = new Container();
+$apiContainer['appContainer'] = $container;
 
 // Custom NotFound handler when API path-method is not found
 // The application can also return a Resource not found, this is handled by the errorHandler below
@@ -33,8 +34,8 @@ $apiContainer['notFoundHandler'] = function ($c) {
     };
 };
 
-$apiContainer['errorHandler'] = function ($c) use ($container) {
-    return function (Request $request, Response $response, Exception $exception) use ($container) {
+$apiContainer['errorHandler'] = function ($c) {
+    return function (Request $request, Response $response, Exception $exception) use ($c) {
         try {
             Logger::getLogger("API")->error($exception->getMessage());
             $debugMode = Config::get('debugMode');
@@ -42,7 +43,7 @@ $apiContainer['errorHandler'] = function ($c) use ($container) {
             switch ($exception->getCode()) {
                 case 401: // Unauthorized
                 case 403: // Forbidden
-                    if (Config::get('loginEnabled') && !$container['ampersand_app']->getSession()->sessionUserLoggedIn()) {
+                    if (Config::get('loginEnabled') && !$c->appContainer['ampersand_app']->getSession()->sessionUserLoggedIn()) {
                         $code = 401;
                         $message = "Please login to access this page";
                     } else {
@@ -168,5 +169,10 @@ foreach ((array)$GLOBALS['api']['files'] as $apiFile) {
     include_once($apiFile); // include api path added by extensions
 }
 
-// Run app
-$app->run();
+// Add middleware to initialize the AmpersandApp
+$app->add(function (Request $req, Response $res, callable $next) {
+    /** @var \Ampersand\AmpersandApp $ampersandApp */
+    $this->appContainer['ampersand_app']; // instantiates AmpersandApp
+
+    return $next($req, $res);
+})->run();

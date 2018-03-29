@@ -5,7 +5,7 @@ use Ampersand\Misc\Config;
 /**
  * @var \Pimple\Container $container
  */
-global $container;
+global $container; // TODO: remove dependency to gloabl $container var
 
 // Navigation menu settings
 $angularApp = $container['angular_app'];

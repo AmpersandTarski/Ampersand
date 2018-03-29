@@ -57,7 +57,7 @@ $container['ampersand_app'] = function ($c) {
     return new AmpersandApp($c['default_plug'], Logger::getLogger('APPLICATION'));
 };
 $container['angular_app'] = function ($c) {
-    return new AngularApp($c['ampersand_app'], Logger::getLogger('APP'));
+    return new AngularApp(Logger::getLogger('APP'));
 };
 
 // Include/set default settings

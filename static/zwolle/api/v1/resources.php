@@ -13,11 +13,6 @@ use Slim\Http\Response;
  */
 global $app;
 
-/**
- * @var \Pimple\Container $container
- */
-global $container;
-
 /**************************************************************************************************
  *
  * resource calls WITHOUT interfaces
@@ -27,15 +22,9 @@ global $container;
 /**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/resource', function () use ($container) {
+$app->group('/resource', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
-
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
-
-    /** @var \Ampersand\AngularApp $angularApp */
-    $angularApp = $container['angular_app'];
 
     $this->get('', function (Request $request, Response $response, $args = []) {
         if (Config::get('productionEnv')) {
@@ -53,7 +42,10 @@ $app->group('/resource', function () use ($container) {
         return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/{resourceType}', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
+    $this->get('/{resourceType}', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+
         $concept = Concept::getConcept($args['resourceType']);
         
         // Checks
@@ -72,7 +64,10 @@ $app->group('/resource', function () use ($container) {
         return $response->withJson($resources, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->post('/{resourceType}', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
+    $this->post('/{resourceType}', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+
         $resource = Resource::makeNewResource($args['resourceType']);
 
         $allowed = false;
@@ -90,7 +85,10 @@ $app->group('/resource', function () use ($container) {
         return $response->withJson($resource, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
-    $this->get('/{resourceType}/{resourceId}', function (Request $request, Response $response, $args = []) use ($ampersandApp) {
+    $this->get('/{resourceType}/{resourceId}', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
         
         // Checks
@@ -105,7 +103,12 @@ $app->group('/resource', function () use ($container) {
     });
 
     // GET for interfaces that start with other resource
-    $this->get('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+    $this->get('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this->appContainer['angular_app'];
+
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
@@ -119,7 +122,12 @@ $app->group('/resource', function () use ($container) {
     });
 
     // PUT, PATCH, POST for interfaces that start with other resource
-    $this->map(['PUT', 'PATCH', 'POST'], '/{resourceType}/{resourceId}[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+    $this->map(['PUT', 'PATCH', 'POST'], '/{resourceType}/{resourceId}[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this->appContainer['angular_app'];
+
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
@@ -143,7 +151,12 @@ $app->group('/resource', function () use ($container) {
         }
     });
 
-    $this->delete('/{resourceType}/{resourceId}[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+    $this->delete('/{resourceType}/{resourceId}[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this->appContainer['angular_app'];
+
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
         $controller = new InterfaceController($ampersandApp, $angularApp);
@@ -155,18 +168,17 @@ $app->group('/resource', function () use ($container) {
 /**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/session', function () use ($container, $middleWare1) {
+$app->group('/session', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
 
-    /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $ampersandApp = $container['ampersand_app'];
-    
-    /** @var \Ampersand\AngularApp $angularApp */
-    $angularApp = $container['angular_app'];
-
     // GET for interfaces with expr[SESSION*..]
-    $this->get('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+    $this->get('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this->appContainer['angular_app'];
+
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
@@ -180,7 +192,12 @@ $app->group('/session', function () use ($container, $middleWare1) {
     });
 
     // PUT, PATCH, POST for interfaces with expr[SESSION*..]
-    $this->map(['PUT', 'PATCH', 'POST'], '[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+    $this->map(['PUT', 'PATCH', 'POST'], '[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this->appContainer['angular_app'];
+
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
         $depth = $request->getQueryParam('depth');
@@ -204,7 +221,12 @@ $app->group('/session', function () use ($container, $middleWare1) {
         }
     });
 
-    $this->delete('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) use ($ampersandApp, $angularApp) {
+    $this->delete('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this->appContainer['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this->appContainer['angular_app'];
+
         $resource = $ampersandApp->getSession()->getSessionResource();
 
         $controller = new InterfaceController($ampersandApp, $angularApp);
