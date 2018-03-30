@@ -160,16 +160,12 @@ class Concept
      *
      * @param array $conceptDef
      * @param \Psr\Log\LoggerInterface $logger
-     * @param \Ampersand\Plugs\ConceptPlugInterface|null $defaultPlug
      */
-    private function __construct(array $conceptDef, LoggerInterface $logger, ConceptPlugInterface $defaultPlug = null)
+    private function __construct(array $conceptDef, LoggerInterface $logger)
     {
         $this->logger = $logger;
         
         $this->def = $conceptDef;
-        if (!is_null($defaultPlug)) {
-            $this->addPlug($defaultPlug);
-        }
         
         $this->name = $conceptDef['id'];
         $this->label = $conceptDef['label'];
@@ -446,7 +442,7 @@ class Concept
      * @param \Ampersand\Plugs\ConceptPlugInterface $plug
      * @return void
      */
-    protected function addPlug(ConceptPlugInterface $plug)
+    public function addPlug(ConceptPlugInterface $plug)
     {
         if (!in_array($plug, $this->plugs)) {
             $this->plugs[] = $plug;
@@ -785,45 +781,22 @@ class Concept
         
         return self::$allConcepts;
     }
-
-    /**
-     * Register plug for specified concepts
-     *
-     * @param \Ampersand\Plugs\ConceptPlugInterface $plug
-     * @param array|null $conceptLabels
-     * @return void
-     */
-    public static function registerPlug(ConceptPlugInterface $plug, array $conceptLabels = null)
-    {
-        // Add plugs for all concepts
-        if (is_null($conceptLabels)) {
-            foreach (self::getAllConcepts() as $cpt) {
-                $cpt->addPlug($plug);
-            }
-        } // Only for specific concepts
-        else {
-            foreach ($conceptLabels as $label) {
-                (self::getConceptByLabel($label))->addPlug($plug);
-            }
-        }
-    }
     
     /**
      * Import all concept definitions from json file and instantiate Concept objects
      *
      * @param string $fileName containing the Ampersand concept definitions
      * @param \Psr\Log\LoggerInterface $logger
-     * @param \Ampersand\Plugs\ConceptPlugInterface|null $defaultPlug
      * @return void
      */
-    public static function setAllConcepts(string $fileName, LoggerInterface $logger, ConceptPlugInterface $defaultPlug = null)
+    public static function setAllConcepts(string $fileName, LoggerInterface $logger)
     {
         self::$allConcepts = [];
         
         $allConceptDefs = (array)json_decode(file_get_contents($fileName), true);
     
         foreach ($allConceptDefs as $conceptDef) {
-            self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $logger, $defaultPlug);
+            self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $logger);
         }
     }
 }

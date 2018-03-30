@@ -44,17 +44,7 @@ require_once(__DIR__ . '/../lib/autoload.php');
 // New Pimple Dependency Injection Container
 $container = new Container();
 $container['ampersand_app'] = function ($c) {
-    // Instantiate object definitions from generated files
-    $genericsFolder = Config::get('pathToGeneratedFiles');
-    Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $c['default_plug']);
-    View::setAllViews($genericsFolder . 'views.json', $c['default_plug']);
-    Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'), $c['default_plug']);
-    Relation::setAllRelations($genericsFolder . 'relations.json', Logger::getLogger('CORE'), $c['default_plug']);
-    InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $c['default_plug']);
-    Rule::setAllRules($genericsFolder . 'rules.json', $c['default_plug'], Logger::getLogger('RULE'));
-    Role::setAllRoles($genericsFolder . 'roles.json');
-    
-    return new AmpersandApp($c['default_plug'], Logger::getLogger('APPLICATION'));
+    return new AmpersandApp($c, Logger::getLogger('APPLICATION'));
 };
 $container['angular_app'] = function ($c) {
     return new AngularApp(Logger::getLogger('APP'));

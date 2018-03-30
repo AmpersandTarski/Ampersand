@@ -18,6 +18,10 @@ use Ampersand\Log\Notifications;
 use Ampersand\IO\JSONReader;
 use Psr\Log\LoggerInterface;
 use Ampersand\Log\Logger;
+use Pimple\Container;
+use Ampersand\Core\Relation;
+use Ampersand\Interfacing\View;
+use Ampersand\Rule\Rule;
 
 class AmpersandApp
 {
@@ -26,6 +30,13 @@ class AmpersandApp
      * @const float
      */
     const REQ_LOCALSETTINGS_VERSION = 1.6;
+
+    /**
+     * Dependency injection container
+     *
+     * @var \Pimple\Container
+     */
+    protected $container;
 
     /**
      *
@@ -63,32 +74,74 @@ class AmpersandApp
     /**
      * Constructor
      *
-     * @param \Ampersand\Plugs\StorageInterface $defaultPlug
      * @param \Psr\Log\LoggerInterface $logger
      */
-    public function __construct(StorageInterface $defaultPlug, LoggerInterface $logger)
+    public function __construct(Container $container, LoggerInterface $logger)
     {
         $this->logger = $logger;
+        $this->container = $container;
+    }
 
-        // Register storages
-        $this->registerStorage($defaultPlug);
+    public function init()
+    {
+        $this->logger->info('Initialize Ampersand application');
+
+        $defaultPlug = $this->container['default_plug'];
+
+        // Instantiate object definitions from generated files
+        $genericsFolder = Config::get('pathToGeneratedFiles');
+        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug);
+        View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
+        Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'));
+        Relation::setAllRelations($genericsFolder . 'relations.json', Logger::getLogger('CORE'));
+        InterfaceObject::setAllInterfaces($genericsFolder . 'interfaces.json', $defaultPlug);
+        Rule::setAllRules($genericsFolder . 'rules.json', $defaultPlug, Logger::getLogger('RULE'));
+        Role::setAllRoles($genericsFolder . 'roles.json');
+
+        // Add concept plugs
+        $conceptPlugList = $this->container['conceptPlugs'] ?? [];
+        foreach (Concept::getAllConcepts() as $cpt) {
+            if (array_key_exists($cpt->label, $conceptPlugList)) {
+                foreach ($conceptPlugList[$cpt->label] as $plug) {
+                    $cpt->addPlug($plug);
+                    $this->registerStorage($plug);
+                }
+            } else {
+                $cpt->addPlug($defaultPlug);
+            }
+        }
+
+        // Add relation plugs
+        $relationPlugList = $this->container['relationPlugs'] ?? [];
+        foreach (Relation::getAllRelations() as $rel) {
+            if (array_key_exists($rel->signature, $relationPlugList)) {
+                foreach ($relationPlugList[$rel->signature] as $plug) {
+                    $rel->addPlug($plug);
+                    $this->registerStorage($plug);
+                }
+            } else {
+                $rel->addPlug($defaultPlug);
+            }
+        }
 
         // Initiate session
         $this->setSession();
-
-        // Set accessible interfaces and rules to maintain
-        $this->setInterfacesAndRules();
     }
     
     public function registerStorage(StorageInterface $storage)
     {
-        $this->logger->debug("Add storage: " . $storage->getLabel());
-        $this->storages[] = $storage;
+        if (!in_array($storage, $this->storages)) {
+            $this->logger->debug("Add storage: " . $storage->getLabel());
+            $this->storages[] = $storage;
+        }
     }
 
     protected function setSession()
     {
         $this->session = new Session(Logger::getLogger('SESSION'));
+
+        // Set accessible interfaces and rules to maintain
+        $this->setInterfacesAndRules();
     }
 
     protected function setInterfacesAndRules()

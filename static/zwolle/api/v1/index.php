@@ -174,6 +174,7 @@ $app->add(function (Request $req, Response $res, callable $next) {
     /** @var \Slim\App $this */
     $ampersandApp = $this['appContainer']['ampersand_app'];
     /** @var \Ampersand\AmpersandApp $ampersandApp */
+    $ampersandApp->init(); // initialize Ampersand application
 
     return $next($req, $res);
 })->run();

@@ -123,9 +123,8 @@ class Relation
      *
      * @param array $relationDef
      * @param \Psr\Log\LoggerInterface $logger
-     * @param \Ampersand\Plugs\RelationPlugInterface|null $defaultPlug
      */
-    public function __construct($relationDef, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null)
+    public function __construct($relationDef, LoggerInterface $logger)
     {
         $this->logger = $logger;
 
@@ -144,10 +143,6 @@ class Relation
         foreach ((array)$relationDef['affectedConjuncts'] as $conjId) {
             $conj = Conjunct::getConjunct($conjId);
             $this->relatedConjuncts[] = $conj;
-        }
-        
-        if (!is_null($defaultPlug)) {
-            $this->addPlug($defaultPlug);
         }
 
         // Specify mysql table information
@@ -215,7 +210,7 @@ class Relation
      * @param \Ampersand\Plugs\RelationPlugInterface $plug
      * @return void
      */
-    protected function addPlug(RelationPlugInterface $plug)
+    public function addPlug(RelationPlugInterface $plug)
     {
         if (!in_array($plug, $this->plugs)) {
             $this->plugs[] = $plug;
@@ -400,38 +395,15 @@ class Relation
          
         return self::$allRelations;
     }
-
-    /**
-     * Register plug for specified relations
-     *
-     * @param \Ampersand\Plugs\RelationPlugInterface $plug
-     * @param array|null $relationSignatures
-     * @return void
-     */
-    public static function registerPlug(RelationPlugInterface $plug, array $relationSignatures = null)
-    {
-        // Add plugs for all relations
-        if (is_null($relationSignatures)) {
-            foreach (self::getAllRelations() as $rel) {
-                $rel->addPlug($plug);
-            }
-        } // Only for specific relations
-        else {
-            foreach ($relationSignatures as $rel) {
-                (self::getRelation($rel))->addPlug($plug);
-            }
-        }
-    }
     
     /**
      * Import all Relation definitions from json file and instantiate Relation objects
      *
      * @param string $fileName containing the Ampersand relation definitions
      * @param \Psr\Log\LoggerInterface $logger
-     * @param \Ampersand\Plugs\RelationPlugInterface|null $defaultPlug
      * @return void
      */
-    public static function setAllRelations(string $fileName, LoggerInterface $logger, RelationPlugInterface $defaultPlug = null)
+    public static function setAllRelations(string $fileName, LoggerInterface $logger)
     {
         self::$allRelations = [];
     
@@ -439,7 +411,7 @@ class Relation
         $allRelationDefs = (array)json_decode(file_get_contents($fileName), true);
     
         foreach ($allRelationDefs as $relationDef) {
-            $relation = new Relation($relationDef, $logger, $defaultPlug);
+            $relation = new Relation($relationDef, $logger);
             self::$allRelations[$relation->signature] = $relation;
         }
     }
