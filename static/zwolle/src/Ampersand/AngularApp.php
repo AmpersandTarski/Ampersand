@@ -8,10 +8,6 @@
 namespace Ampersand;
 
 use Exception;
-use Ampersand\Core\Concept;
-use function Ampersand\Misc\getDirectoryList;
-use Ampersand\AmpersandApp;
-use Ampersand\Misc\Config;
 use Psr\Log\LoggerInterface;
 use Ampersand\Interfacing\InterfaceObject;
 
@@ -65,7 +61,6 @@ class AngularApp
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
-        $this->logger->debug("## BUILD ANGULAR APP ##################################################");
     }
     
     /**

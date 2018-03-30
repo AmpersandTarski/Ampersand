@@ -4,13 +4,6 @@ use Ampersand\AmpersandApp;
 use Pimple\Container;
 use Ampersand\AngularApp;
 use Ampersand\Log\Logger;
-use Ampersand\Rule\Conjunct;
-use Ampersand\Interfacing\View;
-use Ampersand\Core\Concept;
-use Ampersand\Core\Relation;
-use Ampersand\Interfacing\InterfaceObject;
-use Ampersand\Rule\Rule;
-use Ampersand\Role;
 use Ampersand\Misc\Config;
 
 register_shutdown_function(function () {
