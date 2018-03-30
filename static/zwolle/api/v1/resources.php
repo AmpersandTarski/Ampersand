@@ -44,7 +44,7 @@ $app->group('/resource', function () {
 
     $this->get('/{resourceType}', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
         $concept = Concept::getConcept($args['resourceType']);
         
@@ -66,7 +66,7 @@ $app->group('/resource', function () {
 
     $this->post('/{resourceType}', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
         $resource = Resource::makeNewResource($args['resourceType']);
 
@@ -87,7 +87,7 @@ $app->group('/resource', function () {
 
     $this->get('/{resourceType}/{resourceId}', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
         
@@ -105,9 +105,9 @@ $app->group('/resource', function () {
     // GET for interfaces that start with other resource
     $this->get('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
         /** @var \Ampersand\AngularApp $angularApp */
-        $angularApp = $this->appContainer['angular_app'];
+        $angularApp = $this['appContainer']['angular_app'];
 
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
@@ -124,9 +124,9 @@ $app->group('/resource', function () {
     // PUT, PATCH, POST for interfaces that start with other resource
     $this->map(['PUT', 'PATCH', 'POST'], '/{resourceType}/{resourceId}[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
         /** @var \Ampersand\AngularApp $angularApp */
-        $angularApp = $this->appContainer['angular_app'];
+        $angularApp = $this['appContainer']['angular_app'];
 
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
@@ -153,9 +153,9 @@ $app->group('/resource', function () {
 
     $this->delete('/{resourceType}/{resourceId}[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
         /** @var \Ampersand\AngularApp $angularApp */
-        $angularApp = $this->appContainer['angular_app'];
+        $angularApp = $this['appContainer']['angular_app'];
 
         $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
@@ -175,9 +175,9 @@ $app->group('/session', function () {
     // GET for interfaces with expr[SESSION*..]
     $this->get('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
         /** @var \Ampersand\AngularApp $angularApp */
-        $angularApp = $this->appContainer['angular_app'];
+        $angularApp = $this['appContainer']['angular_app'];
 
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
@@ -194,9 +194,9 @@ $app->group('/session', function () {
     // PUT, PATCH, POST for interfaces with expr[SESSION*..]
     $this->map(['PUT', 'PATCH', 'POST'], '[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
         /** @var \Ampersand\AngularApp $angularApp */
-        $angularApp = $this->appContainer['angular_app'];
+        $angularApp = $this['appContainer']['angular_app'];
 
         // Input
         $options = Options::getFromRequestParams($request->getQueryParams());
@@ -223,9 +223,9 @@ $app->group('/session', function () {
 
     $this->delete('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
         /** @var \Ampersand\AngularApp $angularApp */
-        $angularApp = $this->appContainer['angular_app'];
+        $angularApp = $this['appContainer']['angular_app'];
 
         $resource = $ampersandApp->getSession()->getSessionResource();
 

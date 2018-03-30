@@ -171,8 +171,9 @@ foreach ((array)$GLOBALS['api']['files'] as $apiFile) {
 
 // Add middleware to initialize the AmpersandApp
 $app->add(function (Request $req, Response $res, callable $next) {
+    /** @var \Slim\App $this */
+    $ampersandApp = $this['appContainer']['ampersand_app'];
     /** @var \Ampersand\AmpersandApp $ampersandApp */
-    $this->appContainer['ampersand_app']; // instantiates AmpersandApp
 
     return $next($req, $res);
 })->run();

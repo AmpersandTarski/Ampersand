@@ -62,8 +62,9 @@ $app->group('/admin', function () {
     });
 
     $this->get('/installer', function (Request $request, Response $response, $args = []) {
+        /** @var \Slim\Container $this */
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
         if (Config::get('productionEnv')) {
             throw new Exception("Reinstallation of application not allowed in production environment", 403);
@@ -88,7 +89,7 @@ $app->group('/admin', function () {
 
     $this->get('/execengine/run', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
         // Check for required role
         if (!$ampersandApp->hasRole(Config::get('allowedRolesForRunFunction', 'execEngine'))) {
@@ -146,7 +147,7 @@ $app->group('/admin', function () {
 
     $this->post('/import', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
         
         // Check for required role
         if (!$ampersandApp->hasRole(Config::get('allowedRolesForImporter'))) {

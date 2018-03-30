@@ -19,7 +19,7 @@ $app->group('/app', function () {
 
     $this->patch('/roles', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
         $ampersandApp->setActiveRoles((array) $request->getParsedBody());
         return $response->withJson($ampersandApp->getSessionRoles(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -27,9 +27,9 @@ $app->group('/app', function () {
 
     $this->get('/navbar', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
         /** @var \Ampersand\AngularApp $angularApp */
-        $angularApp = $this->appContainer['angular_app'];
+        $angularApp = $this['appContainer']['angular_app'];
 
         $ampersandApp->checkProcessRules();
         
@@ -60,7 +60,7 @@ $app->group('/app', function () {
 
     $this->get('/notifications', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
         $ampersandApp->checkProcessRules();
         return $response->withJson(Notifications::getAll(), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

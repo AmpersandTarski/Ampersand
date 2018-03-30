@@ -52,7 +52,7 @@ $app->group('/oauthlogin', function () {
 
     $this->get('/logout', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
-        $ampersandApp = $this->appContainer['ampersand_app'];
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
         $ampersandApp->logout();
         $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
