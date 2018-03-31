@@ -40,8 +40,8 @@ isSingleton _   = False
 -- but tries to derive the most obvious multiplicity constraints as well. The more multiplicity constraints are known,
 -- the better the data structure that is derived.
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
-instance HasProps Expression where
-    properties expr = case expr of
+properties' :: Expression -> Props
+properties' expr = case expr of
      EDcD dcl   -> properties dcl
      EDcI{}     -> Set.fromList [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
      EEps a sgn -> Set.fromList $ [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
@@ -54,14 +54,14 @@ instance HasProps Expression where
                  ++[Sym | isEndo sgn]
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
-     EBrk f     -> properties f
-     ECps (l,r) -> Set.fromList $ [m | m<-Set.elems (properties l `Set.intersection` properties r)
+     EBrk f     -> properties' f
+     ECps (l,r) -> Set.fromList $ [m | m<-Set.elems (properties' l `Set.intersection` properties' r)
                                   , m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are properties (TODO)
      EPrd (l,r) -> Set.fromList $ [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
-     EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
-     EKl1 e'    -> Set.singleton Trn `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
-     ECpl e'    -> Set.singleton Sym `Set.intersection` properties e'
-     EFlp e'    -> Set.fromList [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- Set.elems $ properties e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
+     EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
+     EKl1 e'    -> Set.singleton Trn `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
+     ECpl e'    -> Set.singleton Sym `Set.intersection` properties' e'
+     EFlp e'    -> Set.map flp $ properties' e'
      EMp1{}     -> Set.fromList [Uni,Inj,Sym,Asy,Trn]
      _          -> Set.empty
 
@@ -76,9 +76,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) -> isTrue l && isTrue r
      EUni (l,r) -> isTrue l || isTrue r
      EDif (l,r) -> isTrue l && isFalse r
-     ECps (l,r) | Uni `elem` properties l && Tot `elem` properties l -> isTrue r
-                | Sur `elem` properties r && Sur `elem` properties r -> isTrue l
-                | otherwise                          -> isTrue l && isTrue r
+     ECps (l,r) | isUni l && isTot l -> isTrue r
+             --   | isSur r && isSur r -> isTrue l  --HJO, 20180331: Disabled this statement, for it has probably been bitrotted???
+                | otherwise          -> isTrue l && isTrue r
      EPrd (l,r) -> isTrue l && isTrue r || isTot l && isSur r || isRfx l && isRfx r
      EKl0 e     -> isTrue e
      EKl1 e     -> isTrue e
@@ -114,7 +114,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EBrk e     -> isFalse e
      _          -> False  -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
- isProp expr = Asy `elem` properties expr && Sym `elem` properties expr
+ isProp expr = isAsy expr && isSym expr
 
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
  --    It does a little bit more than just test on ERel I _.
@@ -160,40 +160,72 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      _          -> False  -- TODO: find richer answers for ELrs, ERrs, and EDia
  isFunction r   = isUni r && isTot r
                  
- isTot r = Tot `elem` properties r
--- isUni r = Uni `elem` properties r
- isUni = isUni' Uni
-   where
-     isUni' :: Prop -> Expression -> Bool 
-     isUni' prop expr 
-       = case expr of
-            EEqu (_,_) -> False
-            EInc (_,_) -> False
-            EIsc (l,r) -> isUni' prop l || isUni' prop r
-            EUni (_,_) -> z
-            EDif (l,_) -> isUni' prop l
-            ECps (l,r) -> isUni' prop l && isUni' prop r
-            EPrd (_,_) -> z
-            EKl0 e     -> isUni' prop e
-            EKl1 e     -> isUni' prop e
-            EFlp e     -> isUni' (flp prop) e
-            ECpl _     -> z
-            ELrs _     -> z
-            ERrs _     -> z
-            EDia _     -> z
-            ERad _     -> z
-            EDcD d     -> prop `elem` properties d
-            EDcI{}     -> True
-            EEps{}     -> True
-            EDcV{}     -> z
-            EBrk e     -> isUni' prop e
-            EMp1{}     -> True
-      where
-        z = prop `elem` properties expr
- isSur r = Sur `elem` properties r
- isInj r = isUni (flp r)
- isRfx r = Rfx `elem` properties r
- isIrf r = Irf `elem` properties r
- isTrn r = Trn `elem` properties r
- isSym r = Sym `elem` properties r
- isAsy r = Asy `elem` properties r
+ isTot = isTotSur Tot
+ isSur = isTotSur Sur
+ 
+ isUni = isUniInj Uni
+ isInj = isUniInj Inj
+ 
+ isRfx r = Rfx `elem` properties' r
+ isIrf r = Irf `elem` properties' r
+ isTrn r = Trn `elem` properties' r
+ isSym r = Sym `elem` properties' r
+ isAsy r = Asy `elem` properties' r
+
+-- Not to be exported:
+isTotSur :: Prop -> Expression -> Bool 
+isTotSur prop expr 
+  = case expr of
+      EEqu (_,_) -> False
+      EInc (_,_) -> False
+      EIsc (l,r) -> isTotSur prop l || isTotSur prop r
+      EUni (_,_) -> todo
+      EDif (l,_) -> isTotSur prop l
+      ECps (l,r) -> isTotSur prop l && isTotSur prop r
+      EPrd (_,_) -> todo
+      EKl0 e     -> isTotSur prop e
+      EKl1 e     -> isTotSur prop e
+      EFlp e     -> isTotSur (flp prop) e
+      ECpl _     -> todo
+      ELrs _     -> todo
+      ERrs _     -> todo
+      EDia _     -> todo
+      ERad _     -> todo
+      EDcD d     -> prop `elem` properties d
+      EDcI{}     -> True
+      EEps c sgn -> case prop of
+                      Tot -> c == source sgn
+                      Sur -> c == target sgn
+                      _   -> fatal $ "isTotSur must not be called with "++show prop
+      EDcV{}     -> todo
+      EBrk e     -> isTotSur prop e
+      EMp1{}     -> True
+  where
+    todo = prop `elem` properties' expr
+
+isUniInj :: Prop -> Expression -> Bool 
+isUniInj prop expr 
+  = case expr of
+      EEqu (_,_) -> False
+      EInc (_,_) -> False
+      EIsc (l,r) -> isUniInj prop l || isUniInj prop r
+      EUni (_,_) -> todo
+      EDif (l,_) -> isUniInj prop l
+      ECps (l,r) -> isUniInj prop l && isUniInj prop r
+      EPrd (_,_) -> todo
+      EKl0 e     -> isUniInj prop e
+      EKl1 e     -> isUniInj prop e
+      EFlp e     -> isUniInj (flp prop) e
+      ECpl _     -> todo
+      ELrs _     -> todo
+      ERrs _     -> todo
+      EDia _     -> todo
+      ERad _     -> todo
+      EDcD d     -> prop `elem` properties d
+      EDcI{}     -> True
+      EEps{}     -> True
+      EDcV{}     -> todo
+      EBrk e     -> isUniInj prop e
+      EMp1{}     -> True
+  where
+    todo = prop `elem` properties' expr
