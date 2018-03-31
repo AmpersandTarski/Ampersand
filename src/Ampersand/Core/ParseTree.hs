@@ -11,7 +11,7 @@ module Ampersand.Core.ParseTree (
    , P_Relation(..)
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
-   , SrcOrTgt(..), isSrc
+   , SrcOrTgt(..)
    , P_Rule(..)
    , ConceptDef(..)
    , Representation(..), TType(..)
@@ -467,10 +467,6 @@ instance Hashable SrcOrTgt
 instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
-
-isSrc :: SrcOrTgt -> Bool
-isSrc Src = True
-isSrc Tgt = False
 
 data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving (Show, Typeable, Eq, Generic)
 instance Hashable a => Hashable (PairView a)
