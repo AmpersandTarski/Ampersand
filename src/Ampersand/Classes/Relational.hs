@@ -186,7 +186,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
             EDcI{}     -> True
             EEps{}     -> True
             EDcV{}     -> z
-            EBrk e     -> isUni' e
+            EBrk e     -> isUni' prop e
             EMp1{}     -> True
       where
         z = prop `elem` properties expr
