@@ -366,7 +366,11 @@ ExecEngine::registerFunction('SetNavToOnCommit', function ($navTo) use ($contain
         $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
     }
 
-    if (!empty($navTo)) $container['angular_app']->setNavToResponse($navTo, 'COMMIT');
+    if (empty($navTo)) {
+        return false;
+    }
+
+    $container['angular_app']->setNavToResponse($navTo, 'COMMIT');
 });
     
 ExecEngine::registerFunction('SetNavToOnRollback', function ($navTo) use ($container, $execEngineLogger) {
@@ -375,5 +379,9 @@ ExecEngine::registerFunction('SetNavToOnRollback', function ($navTo) use ($conta
         $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
     }
     
-    if (!empty($navTo)) $container['angular_app']->setNavToResponse($navTo, 'ROLLBACK');
+    if (empty($navTo)) {
+        return false;
+    }
+    
+    $container['angular_app']->setNavToResponse($navTo, 'ROLLBACK');
 });
