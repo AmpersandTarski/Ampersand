@@ -22,6 +22,7 @@ use Pimple\Container;
 use Ampersand\Core\Relation;
 use Ampersand\Interfacing\View;
 use Ampersand\Rule\Rule;
+use Closure;
 
 class AmpersandApp
 {
@@ -46,9 +47,17 @@ class AmpersandApp
 
     /**
      * List with storages that are registered for this application
-     * @var \Ampersand\Plugs\StorageInterface[] $storages
+     * @var \Ampersand\Plugs\StorageInterface[]
      */
     protected $storages = [];
+
+    /**
+     * List with anonymous functions (closures) to be executed during initialization 
+     * (i.e. during AmpersandApp::init())
+     *
+     * @var \Closure[]
+     */
+    protected $initClosures = [];
 
     /**
      * The session between AmpersandApp and user
@@ -124,8 +133,24 @@ class AmpersandApp
             }
         }
 
+        // Run registered initialization closures
+        foreach ($this->initClosures as $closure) {
+            $closure->call($this);
+        }
+
         // Initiate session
         $this->setSession();
+    }
+
+    /**
+     * Add closure to be executed during initialization of Ampersand application
+     *
+     * @param \Closure $closure
+     * @return void
+     */
+    public function registerInitClosure(Closure $closure)
+    {
+        $this->initClosures[] = $closure;
     }
     
     public function registerStorage(StorageInterface $storage)
