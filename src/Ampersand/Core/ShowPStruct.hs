@@ -7,6 +7,7 @@ import           Ampersand.ADL1.PrettyPrinters
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Data.List
+import qualified Data.List.NonEmpty as NEL (toList)
 import qualified Data.Set as Set
 
 class PStruct a where
@@ -190,7 +191,7 @@ instance (Traced a,PStruct a) => PStruct (P_Rule a) where
      ++ concat ["\n   "++showP msg | msg <- rr_msg  r ]
      ++ case rr_viol r of
           Nothing                -> ""
-          Just (PairView pvSegs) -> "\n     VIOLATION ("++intercalate ", " (map showP pvSegs)++")"
+          Just (PairView pvSegs) -> "\n     VIOLATION ("++intercalate ", " (map showP . NEL.toList $ pvSegs)++")"
 
 
 instance PStruct P_RoleRule where

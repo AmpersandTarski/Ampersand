@@ -35,12 +35,16 @@ clAnalysis fSpec =
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att 
               = OOAttr { attNm       = attName att
-                       , attTyp      = if isPropty att then "Prop" else (name.target.attExpr) att
+                       , attTyp      = if isProp (attExpr att) then "Prop" else (name.target.attExpr) att
                        , attOptional = attNull att
                        }
     inKernel :: SqlAttribute -> Bool
-    inKernel att = null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
-    isPropty att = isProp (attExpr att)
+    inKernel att = isUni expr 
+                && isInj expr
+                && isSur expr
+                && (not . isProp) expr
+        where expr = attExpr att 
+             --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
 -- | This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.

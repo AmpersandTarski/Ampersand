@@ -7,6 +7,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.Output.ToJSON.JSONutils 
+import qualified Data.List.NonEmpty as NEL (toList)
 import           Data.Maybe
 import qualified Data.Set as Set
 
@@ -72,7 +73,7 @@ instance JSON Rule JsonRule where
                               []    -> ""
                               markup:_ -> aMarkup2String Markdown markup
 instance JSON (PairView Expression) JsonPairView where
- fromAmpersand multi pv = JsonPairView $ map (fromAmpersand multi) (zip [0..] (ppv_segs pv))
+ fromAmpersand multi pv = JsonPairView $ map (fromAmpersand multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
  fromAmpersand multi (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr

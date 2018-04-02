@@ -8,6 +8,7 @@ import Data.List (nub,isInfixOf)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Basics
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
 
 -- Useful functions to build on the quick check functions
 
@@ -210,8 +211,9 @@ relationRef :: Gen P_NamedRel
 relationRef = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
 
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
-    arbitrary = PairView <$> listOf1 arbitrary
-
+    arbitrary = f <$> listOf1 arbitrary
+         where f (x:xs) = PairView {ppv_segs = x NEL.:| xs}
+               f []     = fatal "This fatal can only occur if listOf1 doesn't do what it is supposed to do."
 instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
     arbitrary = oneof [
             PairViewText <$> arbitrary <*> safeStr,
