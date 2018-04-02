@@ -221,7 +221,8 @@ pRuleDef =  P_Ru <$> currPos
                  --- PairView ::= '(' PairViewSegmentList ')'
                  pPairView :: AmpParser (PairView (Term TermPrim))
                  pPairView = f <$> pParens (pPairViewSegment `sepBy1` pComma)
-                       where f (x:xs) = PairView {ppv_segs = x NEL.:| xs}      
+                       where f (x:xs) = PairView {ppv_segs = x NEL.:| xs}
+                             f []     = fatal "This fatal can only occur if sepBy1 doesn't do what it is supposed to do."
                  --- PairViewSegmentList ::= PairViewSegment (',' PairViewSegment)*
                  --- PairViewSegment ::= 'SRC' Term | 'TGT' Term | 'TXT' String
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))

@@ -213,6 +213,7 @@ relationRef = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
     arbitrary = f <$> listOf1 arbitrary
          where f (x:xs) = PairView {ppv_segs = x NEL.:| xs}
+               f []     = fatal "This fatal can only occur if listOf1 doesn't do what it is supposed to do."
 instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
     arbitrary = oneof [
             PairViewText <$> arbitrary <*> safeStr,
