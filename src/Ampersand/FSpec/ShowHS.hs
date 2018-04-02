@@ -11,6 +11,7 @@ import           Data.Char                  (isAlphaNum)
 import           Data.Function
 import           Data.Hashable
 import           Data.List
+import qualified Data.List.NonEmpty as NEL (toList)
 import           Data.Ord
 import qualified Data.Set as Set
 import           Text.Pandoc hiding (Meta)
@@ -405,7 +406,7 @@ instance ShowHS Markup where
      ]
 
 instance ShowHS (PairView Expression) where
-  showHS opts indent (PairView pvs) = "PairView "++showHS opts indent pvs
+  showHS opts indent (PairView pvs) = "PairView "++showHS opts indent (NEL.toList pvs)
 
 instance ShowHS (PairViewSegment Expression) where
   showHS _     _ (PairViewText _ txt) = "PairViewText "++show txt

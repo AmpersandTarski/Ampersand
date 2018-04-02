@@ -14,8 +14,8 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.ParsingLib
 import           Data.List
 import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
 import           Data.Maybe
-
 
 --- Populations ::= Population+
 -- | Parses a list of populations
@@ -220,8 +220,8 @@ pRuleDef =  P_Ru <$> currPos
 
                  --- PairView ::= '(' PairViewSegmentList ')'
                  pPairView :: AmpParser (PairView (Term TermPrim))
-                 pPairView = PairView <$> pParens (pPairViewSegment `sepBy1` pComma)
-
+                 pPairView = f <$> pParens (pPairViewSegment `sepBy1` pComma)
+                       where f (x:xs) = PairView {ppv_segs = x NEL.:| xs}      
                  --- PairViewSegmentList ::= PairViewSegment (',' PairViewSegment)*
                  --- PairViewSegment ::= 'SRC' Term | 'TGT' Term | 'TXT' String
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))

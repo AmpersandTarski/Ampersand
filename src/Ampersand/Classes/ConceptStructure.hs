@@ -4,6 +4,7 @@ module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ordering(..))
 import           Ampersand.Classes.ViewPoint
+import qualified Data.List.NonEmpty as NEL (toList)
 import qualified Data.Set as Set
 
 class ConceptStructure a where
@@ -162,8 +163,8 @@ instance ConceptStructure Rule where
                    ]
 
 instance ConceptStructure (PairView Expression) where
-  concs         (PairView ps) = concs         ps
-  expressionsIn (PairView ps) = expressionsIn ps
+  concs         (PairView ps) = concs         . NEL.toList $ ps
+  expressionsIn (PairView ps) = expressionsIn . NEL.toList $ ps
 
 instance ConceptStructure Population where
   concs pop@ARelPopu{} = concs (popdcl pop)

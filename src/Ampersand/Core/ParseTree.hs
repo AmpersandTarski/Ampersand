@@ -46,6 +46,7 @@ import           Data.Time.Clock
 import           Data.Time.LocalTime() -- for instance Show UTCTime
 import           GHC.Generics (Generic)
 import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head)
 
 data P_Context
    = PCtx{ ctx_nm ::     String           -- ^ The name of this context
@@ -468,13 +469,10 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
-data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving (Show, Typeable, Eq, Generic)
+data PairView a = PairView { ppv_segs :: NEL.NonEmpty (PairViewSegment a) } deriving (Show, Typeable, Eq, Generic)
 instance Hashable a => Hashable (PairView a)
 instance Traced a => Traced (PairView a) where
-  origin pv =
-    case ppv_segs pv of
-       [] -> fatal "An empty PairView must not occur"
-       xs -> origin (head xs)
+  origin = origin . NEL.head . ppv_segs
 data PairViewSegment a =
     PairViewText{ pos :: Origin
                 , pvsStr :: String

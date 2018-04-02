@@ -7,6 +7,7 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           Data.Char (toUpper)
 import           Data.List (intercalate,intersperse)
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),toList)
 import           Data.List.Utils (replace)
 import qualified Data.Set as Set
 import           Text.PrettyPrint.Leijen
@@ -78,7 +79,8 @@ commas = encloseSep empty empty comma
 
 listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
-
+listOf1 :: Pretty a => NEL.NonEmpty a -> Doc
+listOf1 = listOf . NEL.toList
 separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
 
@@ -211,7 +213,7 @@ instance Pretty P_NamedRel where
     pretty (PNamedRel _ str mpSign) = text (takeQuote str) <~> mpSign
 
 instance Pretty a => Pretty (PairView a) where
-    pretty (PairView ss) = text "VIOLATION" <+> parens (listOf ss)
+    pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
 
 instance Pretty a => Pretty (PairViewSegment a) where
     pretty (PairViewText _ str) = text "TXT" <+> quote str
