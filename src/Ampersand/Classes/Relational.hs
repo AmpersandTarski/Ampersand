@@ -1,5 +1,6 @@
 module Ampersand.Classes.Relational
-   (Relational(..)
+   ( HasProps(..)
+   , Relational(..)
    ) where
 
 import           Ampersand.ADL1
@@ -8,44 +9,28 @@ import           Ampersand.Core.ParseTree(Prop(..),Props)
 import           Data.Maybe
 import qualified Data.Set as Set
 
-class HasSignature r => Relational r where
+class HasProps r where
     properties :: r -> Props
+class Relational r where
     isProp :: r -> Bool  -- > tells whether the argument is a property
     isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-
     isTrue :: r -> Bool  -- > tells whether the argument is equivalent to V
     isFalse :: r -> Bool  -- > tells whether the argument is equivalent to V-
     isFunction :: r -> Bool
-    isFunction r   = Uni `elem` properties r && 
-                     Tot `elem` properties r 
     isTot :: r -> Bool  --
-    isTot r = Tot `elem` properties r
     isUni :: r -> Bool  --
-    isUni r = Uni `elem` properties r
     isSur :: r -> Bool  --
-    isSur r = Sur `elem` properties r
     isInj :: r -> Bool  --
-    isInj r = Inj `elem` properties r
     isRfx :: r -> Bool  --
-    isRfx r = Rfx `elem` properties r
     isIrf :: r -> Bool  --
-    isIrf r = Irf `elem` properties r
     isTrn :: r -> Bool  --
-    isTrn r = Trn `elem` properties r
     isSym :: r -> Bool  --
-    isSym r = Sym `elem` properties r
     isAsy :: r -> Bool  --
-    isAsy r = Asy `elem` properties r
     isIdent :: r -> Bool  -- > tells whether the argument is equivalent to I
     isEpsilon :: r -> Bool  -- > tells whether the argument is equivalent to I
 
-instance Relational Relation where
+instance HasProps Relation where
     properties d = fromMaybe (decprps d) (decprps_calc d)
-    isProp d = Asy `elem` properties d && Sym `elem` properties d
-    isImin _ = False  -- LET OP: Dit kan natuurlijk niet goed zijn, maar is gedetecteerd bij revision 913, toen straffeloos de Iscompl{} kon worden verwijderd.
-    isTrue _ = False
-    isFalse _ = False
-    isIdent _ = False
-    isEpsilon _ = False
 
 isSingleton :: A_Concept -> Bool
 isSingleton ONE = True
@@ -55,8 +40,8 @@ isSingleton _   = False
 -- but tries to derive the most obvious multiplicity constraints as well. The more multiplicity constraints are known,
 -- the better the data structure that is derived.
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
-instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
- properties expr = case expr of
+properties' :: Expression -> Props
+properties' expr = case expr of
      EDcD dcl   -> properties dcl
      EDcI{}     -> Set.fromList [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
      EEps a sgn -> Set.fromList $ [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
@@ -69,17 +54,18 @@ instance Relational Expression where        -- TODO: see if we can find more mul
                  ++[Sym | isEndo sgn]
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
-     EBrk f     -> properties f
-     ECps (l,r) -> Set.fromList $ [m | m<-Set.elems (properties l `Set.intersection` properties r)
+     EBrk f     -> properties' f
+     ECps (l,r) -> Set.fromList $ [m | m<-Set.elems (properties' l `Set.intersection` properties' r)
                                   , m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are properties (TODO)
      EPrd (l,r) -> Set.fromList $ [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
-     EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
-     EKl1 e'    -> Set.singleton Trn `Set.union` (properties e' Set.\\ Set.fromList [Uni,Inj])
-     ECpl e'    -> Set.singleton Sym `Set.intersection` properties e'
-     EFlp e'    -> Set.fromList [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- Set.elems $ properties e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
+     EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
+     EKl1 e'    -> Set.singleton Trn `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
+     ECpl e'    -> Set.singleton Sym `Set.intersection` properties' e'
+     EFlp e'    -> Set.map flp $ properties' e'
      EMp1{}     -> Set.fromList [Uni,Inj,Sym,Asy,Trn]
      _          -> Set.empty
 
+instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
  -- |  isTrue e == True   means that e is true, i.e. the population of e is (source e * target e).
  --    isTrue e == False  does not mean anything.
  --    the function isTrue is meant to produce a quick answer, without any form of theorem proving.
@@ -90,9 +76,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) -> isTrue l && isTrue r
      EUni (l,r) -> isTrue l || isTrue r
      EDif (l,r) -> isTrue l && isFalse r
-     ECps (l,r) | Uni `elem` properties l && Tot `elem` properties l -> isTrue r
-                | Sur `elem` properties r && Sur `elem` properties r -> isTrue l
-                | otherwise                          -> isTrue l && isTrue r
+     ECps (l,r) | isUni l && isTot l -> isTrue r
+             --   | isSur r && isSur r -> isTrue l  --HJO, 20180331: Disabled this statement, for it has probably been bitrotted???
+                | otherwise          -> isTrue l && isTrue r
      EPrd (l,r) -> isTrue l && isTrue r || isTot l && isSur r || isRfx l && isRfx r
      EKl0 e     -> isTrue e
      EKl1 e     -> isTrue e
@@ -128,7 +114,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EBrk e     -> isFalse e
      _          -> False  -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
- isProp expr = Asy `elem` properties expr && Sym `elem` properties expr
+ isProp expr = isAsy expr && isSym expr
 
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
  --    It does a little bit more than just test on ERel I _.
@@ -165,10 +151,81 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EUni (l,r) -> isImin l && isImin r
      EDif (l,r) -> isImin l && isFalse r
      ECpl e     -> isIdent e
-     EDcD dcl   -> isImin dcl
+     EDcD{}     -> False
      EDcI{}     -> False
      EEps{}     -> False
      EDcV{}     -> False
      EBrk f     -> isImin f
      EFlp f     -> isImin f
      _          -> False  -- TODO: find richer answers for ELrs, ERrs, and EDia
+ isFunction r   = isUni r && isTot r
+                 
+ isTot = isTotSur Tot
+ isSur = isTotSur Sur
+ 
+ isUni = isUniInj Uni
+ isInj = isUniInj Inj
+ 
+ isRfx r = Rfx `elem` properties' r
+ isIrf r = Irf `elem` properties' r
+ isTrn r = Trn `elem` properties' r
+ isSym r = Sym `elem` properties' r
+ isAsy r = Asy `elem` properties' r
+
+-- Not to be exported:
+isTotSur :: Prop -> Expression -> Bool 
+isTotSur prop expr 
+  = case expr of
+      EEqu (_,_) -> False
+      EInc (_,_) -> False
+      EIsc (l,r) -> isTotSur prop l || isTotSur prop r
+      EUni (_,_) -> todo
+      EDif (l,_) -> isTotSur prop l
+      ECps (l,r) -> isTotSur prop l && isTotSur prop r
+      EPrd (_,_) -> todo
+      EKl0 e     -> isTotSur prop e
+      EKl1 e     -> isTotSur prop e
+      EFlp e     -> isTotSur (flp prop) e
+      ECpl _     -> todo
+      ELrs _     -> todo
+      ERrs _     -> todo
+      EDia _     -> todo
+      ERad _     -> todo
+      EDcD d     -> prop `elem` properties d
+      EDcI{}     -> True
+      EEps c sgn -> case prop of
+                      Tot -> c == source sgn
+                      Sur -> c == target sgn
+                      _   -> fatal $ "isTotSur must not be called with "++show prop
+      EDcV{}     -> todo
+      EBrk e     -> isTotSur prop e
+      EMp1{}     -> True
+  where
+    todo = prop `elem` properties' expr
+
+isUniInj :: Prop -> Expression -> Bool 
+isUniInj prop expr 
+  = case expr of
+      EEqu (_,_) -> False
+      EInc (_,_) -> False
+      EIsc (l,r) -> isUniInj prop l || isUniInj prop r
+      EUni (_,_) -> todo
+      EDif (l,_) -> isUniInj prop l
+      ECps (l,r) -> isUniInj prop l && isUniInj prop r
+      EPrd (_,_) -> todo
+      EKl0 e     -> isUniInj prop e
+      EKl1 e     -> isUniInj prop e
+      EFlp e     -> isUniInj (flp prop) e
+      ECpl _     -> todo
+      ELrs _     -> todo
+      ERrs _     -> todo
+      EDia _     -> todo
+      ERad _     -> todo
+      EDcD d     -> prop `elem` properties d
+      EDcI{}     -> True
+      EEps{}     -> True
+      EDcV{}     -> todo
+      EBrk e     -> isUniInj prop e
+      EMp1{}     -> True
+  where
+    todo = prop `elem` properties' expr

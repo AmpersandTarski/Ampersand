@@ -50,15 +50,16 @@ instance JSON Relation RelationJson where
          , relJSONsignature  = name dcl ++ (show . sign) dcl
          , relJSONsrcConceptId  = escapeIdentifier . name . source $ dcl 
          , relJSONtgtConceptId  = escapeIdentifier . name . target $ dcl
-         , relJSONuni      = isUni dcl
-         , relJSONtot      = isTot dcl
-         , relJSONinj      = isInj dcl
-         , relJSONsur      = isSur dcl
-         , relJSONprop     = isProp dcl
+         , relJSONuni      = isUni bindedExp
+         , relJSONtot      = isTot bindedExp
+         , relJSONinj      = isInj bindedExp
+         , relJSONsur      = isSur bindedExp
+         , relJSONprop     = isProp bindedExp
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
          , relJSONmysqlTable = fromAmpersand multi dcl
          }
-      where fSpec = userFSpec multi
+      where bindedExp = EDcD dcl
+            fSpec = userFSpec multi
          
 instance JSON Relation RelTableInfo where
  fromAmpersand multi dcl = RelTableInfo
