@@ -34,19 +34,8 @@ perlinePrefix :: Pretty a => String -> [a] -> Doc
 perlinePrefix pref xs = vsep $ map addPrefix xs
            where addPrefix x = text pref <+> pretty x
 
---quoteWith :: String -> String -> String -> Doc
---quoteWith l r x = enclose (text l) (text r) (text x)
-
 quote :: String -> Doc
 quote = text.show
---singlequote :: String -> Doc
---singlequote = squotes.text.escapeAll
---escapeAll :: [Char] -> [Char]
---escapeAll = escapeQuote.escapeBreaklines.escapeSlash
---        where escapeQuote = escape "\""
---              escapeBreaklines = replace "\n" "\\n"
---              escapeSlash = escape "\\"
---              escape x = replace x ("\\" ++ x)
 
 quotePurpose :: String -> Doc
 quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
