@@ -3,7 +3,7 @@ module Ampersand.Classes.ViewPoint
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ord(..))
-import           Ampersand.Classes.Relational  (Relational(properties))
+import           Ampersand.Classes.Relational  (HasProps(properties))
 import           Data.List(nub)
 import qualified Data.Set as Set
 

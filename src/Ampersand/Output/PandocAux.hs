@@ -303,7 +303,7 @@ addParensToSuper e        = e
 instance ShowMath Relation where
  showMath decl = math $ 
         inMathText (name decl)++":\\ "
-     ++(inMathText . name . source $ decl)++(if isFunction decl then "\\mapsto" else "*")
+     ++(inMathText . name . source $ decl)++(if isFunction (EDcD decl) then "\\mapsto" else "*")
      ++(inMathText . name . target $ decl)++"]"
 showMathWithSign :: Relation -> Inlines
 showMathWithSign decl = math $ 

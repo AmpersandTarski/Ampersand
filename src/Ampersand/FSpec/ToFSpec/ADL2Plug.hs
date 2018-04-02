@@ -143,6 +143,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
              , dLkpTbl = [theRelStore]
              }
       where
+       bindedExp :: Expression
+       bindedExp = EDcD dcl
        theRelStore =  if isFlipped trgExpr
                          then RelStore
                                { rsDcl       = dcl
@@ -156,13 +158,13 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                                }
        --the expr for the source of r
        srcExpr
-        | isTot dcl = EDcI (source dcl)
-        | isSur dcl = EDcI (target dcl)
-        | otherwise = let er=EDcD dcl in EDcI (source dcl) ./\. (er .:. flp er)
+        | isTot bindedExp = EDcI (source bindedExp)
+        | isSur bindedExp = EDcI (target bindedExp)
+        | otherwise = EDcI (source bindedExp) ./\. (bindedExp .:. flp bindedExp)
        --the expr for the target of r
        trgExpr
-        | not (isTot dcl) && isSur dcl = flp (EDcD dcl)
-        | otherwise                    = EDcD dcl
+        | not (isTot bindedExp) && isSur bindedExp = flp bindedExp
+        | otherwise                                =     bindedExp
        srcAtt = Att { attName = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
                     , attExpr = srcExpr
                     , attType = repr . source $ srcExpr
@@ -215,7 +217,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 --   in a concept table, it returns the concept and a boolean, telling wether or not the relation
 --   is stored flipped.
 wayToStore :: Relation -> Maybe (A_Concept,Bool)
-wayToStore d =
+wayToStore dcl =
        case (isInj d, isUni d) of
             (False  , False  ) -> Nothing --Will become a link-table
             (True   , False  ) -> Just flipped
@@ -226,9 +228,10 @@ wayToStore d =
                    (True   , False  ) -> Just plain
                    (False  , True   ) -> Just plain
                    (True   , True   ) -> Just plain
-  where plain  = (source d,False)
+  where d = EDcD dcl
+        plain   = (source d,False)
         flipped = (target d, True)
-
+        
 
 unquote :: String -> String
 unquote str 

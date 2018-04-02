@@ -350,8 +350,7 @@ orderingByTheme fSpec
   rulMustBeShown r = 
      (not . isPropertyRule $ r) -- property rules are shown as part of the declaration
   relMustBeShown :: Relation -> Bool
-  relMustBeShown d =
-     (decusr d)
+  relMustBeShown = decusr
   cptMustBeShown = not . null . concDefs fSpec
   f :: (Counters, [Rule], [Relation], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
   f stuff pats
@@ -446,7 +445,7 @@ dpRule' fSpec = dpR
         theBlocks =
             purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
          <> purposes2Blocks (getOpts fSpec) [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
-         <> case (Set.elems nds, fsLang fSpec) of
+         <> case (Set.elems . Set.map EDcD $ nds, fsLang fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
              ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
