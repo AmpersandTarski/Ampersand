@@ -7,6 +7,7 @@ use Ampersand\Misc\Config;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Transaction;
+use Ampersand\AmpersandApp;
 
 /**
  * @var \Pimple\Container $container
@@ -14,9 +15,13 @@ use Ampersand\Transaction;
 global $container;
 
 // UI
-$container['angular_app']->addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function ($app) {
-    return true;
-});
+$container['angular_app']->addMenuItem(
+    'role',
+    'extensions/OAuthLogin/ui/views/MenuItem.html',
+    function (AmpersandApp $app) {
+        return true;
+    }
+);
 
 // API
 $GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'oauthlogin.php';

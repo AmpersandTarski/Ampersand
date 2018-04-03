@@ -52,7 +52,7 @@ class AmpersandApp
     protected $storages = [];
 
     /**
-     * List with anonymous functions (closures) to be executed during initialization 
+     * List with anonymous functions (closures) to be executed during initialization
      * (i.e. during AmpersandApp::init())
      *
      * @var \Closure[]
