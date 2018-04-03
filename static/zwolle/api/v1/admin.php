@@ -20,14 +20,14 @@ use Slim\Http\Response;
 use Ampersand\Session;
 
 /**
- * @var \Slim\App $app
+ * @var \Slim\App $api
  */
-global $app;
+global $api;
 
 /**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/admin', function () {
+$api->group('/admin', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
 
@@ -194,7 +194,7 @@ $app->group('/admin', function () {
 /**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/admin/report', function () {
+$api->group('/admin/report', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
 

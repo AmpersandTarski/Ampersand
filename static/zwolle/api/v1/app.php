@@ -6,14 +6,14 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 
 /**
- * @var \Slim\Slim $app
+ * @var \Slim\Slim $api
  */
-global $app;
+global $api;
 
 /**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/app', function () {
+$api->group('/app', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
 

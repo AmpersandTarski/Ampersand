@@ -7,14 +7,14 @@ use Slim\Http\Response;
 use Ampersand\Log\Notifications;
 
 /**
- * @var \Slim\App $app
+ * @var \Slim\App $api
  */
-global $app;
+global $api;
 
 /**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/oauthlogin', function () {
+$api->group('/oauthlogin', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
 

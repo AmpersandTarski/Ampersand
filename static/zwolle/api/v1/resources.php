@@ -9,9 +9,9 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 
 /**
- * @var \Slim\Slim $app
+ * @var \Slim\Slim $api
  */
-global $app;
+global $api;
 
 /**************************************************************************************************
  *
@@ -22,7 +22,7 @@ global $app;
 /**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/resource', function () {
+$api->group('/resource', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
 
@@ -168,7 +168,7 @@ $app->group('/resource', function () {
 /**
  * @phan-closure-scope \Slim\App
  */
-$app->group('/session', function () {
+$api->group('/session', function () {
     // Inside group closure, $this is bound to the instance of Slim\App
     /** @var \Slim\App $this */
 

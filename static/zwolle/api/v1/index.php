@@ -121,10 +121,10 @@ $apiContainer['phpErrorHandler'] = function ($c) {
 $apiContainer->get('settings')->replace(['displayErrorDetails' => Config::get('debugMode')]);
 
 // Create and configure Slim app (version 3.x)
-$app = new App($apiContainer);
+$api = new App($apiContainer);
 
 // Add middleware to set default content type for response
-$app->add(function (Request $req, Response $res, callable $next) {
+$api->add(function (Request $req, Response $res, callable $next) {
     $res = $res->withHeader('Content-Type', 'application/json;charset=utf-8');
     $newResponse = $next($req, $res);
     return $newResponse;
@@ -170,7 +170,7 @@ foreach ((array)$GLOBALS['api']['files'] as $apiFile) {
 }
 
 // Add middleware to initialize the AmpersandApp
-$app->add(function (Request $req, Response $res, callable $next) {
+$api->add(function (Request $req, Response $res, callable $next) {
     /** @var \Slim\App $this */
     $ampersandApp = $this['appContainer']['ampersand_app'];
     /** @var \Ampersand\AmpersandApp $ampersandApp */
