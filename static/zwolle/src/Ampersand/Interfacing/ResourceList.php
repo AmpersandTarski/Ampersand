@@ -57,14 +57,15 @@ class ResourceList implements IteratorAggregate
      *
      * @param \Ampersand\Interfacing\Resource $src
      * @param \Ampersand\Interfacing\InterfaceObject $ifc
+     * @param bool $skipAccessCheck
      */
-    public function __construct(Resource $src, InterfaceObject $ifc)
+    public function __construct(Resource $src, InterfaceObject $ifc, bool $skipAccessCheck = false)
     {
         /** @var \Pimple\Container $container */
         global $container; // TODO: remove dependency on global $container var
         $this->logger = Logger::getLogger('INTERFACING');
         
-        if ($ifc->isRoot() && !$container['ampersand_app']->isAccessibleIfc($ifc)) {
+        if ($ifc->isRoot() && !$container['ampersand_app']->isAccessibleIfc($ifc) && !$skipAccessCheck) {
             throw new Exception("Unauthorized to access interface {$ifc->label}", 403);
         }
         

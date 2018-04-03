@@ -273,7 +273,7 @@ class Session
         if (InterfaceObject::interfaceExists('SessionVars')) {
             try {
                 $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionResource}");
-                return $this->sessionResource->all('SessionVars')->get();
+                return $this->sessionResource->all('SessionVars', true)->get();
             } catch (Exception $e) {
                 $this->logger->error("Error while getting SessionVars interface: " . $e->getMessage());
                 return false;

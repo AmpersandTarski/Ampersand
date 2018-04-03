@@ -179,11 +179,13 @@ class Resource extends Atom
     
     /**
      * Return resource list with target atoms of given interface
+     * For system use of interfaces you can skip the role check by setting the second parameters to true
      *
      * @param string $ifcId
+     * @param bool $skipAccessCheck
      * @return \Ampersand\Interfacing\ResourceList
      */
-    public function all($ifcId): ResourceList
+    public function all($ifcId, bool $skipAccessCheck = false): ResourceList
     {
         if (isset($this->parentList)) {
             $ifc = $this->parentList->getIfc()->getSubinterface($ifcId);
@@ -191,7 +193,7 @@ class Resource extends Atom
             $ifc = InterfaceObject::getInterface($ifcId);
         }
         
-        return new ResourceList($this, $ifc);
+        return new ResourceList($this, $ifc, $skipAccessCheck);
     }
 
     /**
