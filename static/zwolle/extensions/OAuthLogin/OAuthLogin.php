@@ -24,7 +24,7 @@ $container['angular_app']->addMenuItem(
 );
 
 // API
-$GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'oauthlogin.php';
+$GLOBALS['apiFiles'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'oauthlogin.php';
 
 class OAuthLoginController
 {
