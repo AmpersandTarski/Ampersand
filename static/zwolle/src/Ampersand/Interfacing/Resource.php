@@ -8,6 +8,7 @@
 namespace Ampersand\Interfacing;
 
 use stdClass;
+use ArrayAccess;
 use Exception;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
@@ -21,32 +22,32 @@ use Ampersand\Interfacing\Options;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Resource extends Atom
+class Resource extends Atom implements ArrayAccess
 {
         
     /**
      * @var ResourceList $parentList specifies the resource list in which this resource is a tgt atom
      */
-    private $parentList = null;
+    protected $parentList = null;
     
     /**
      * Label of resource to be displayed in user interfaces
      * @var string
      */
-    private $label = null;
+    protected $label = null;
     
     /**
      * Contains view data of this resource for the UI templates
      * DO NOT initialize var here, isset() is used below
      * @var array $viewData
      */
-    private $viewData;
+    protected $viewData;
     
     /**
      * Contains the interface data filled by the get() method
-     * @var array $ifcData
+     * @var array|null $ifcData
      */
-    private $ifcData = [];
+    protected $ifcData = null;
     
     /**
      * Constructor
@@ -62,6 +63,17 @@ class Resource extends Atom
         
         // Call Atom constructor
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
+    }
+
+    /**
+     * Function is called when object is treated as a string
+     * This functionality is needed when the ArrayAccess::offsetGet method below is used by internal code
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return (string) parent::jsonSerialize();
     }
     
     /**
@@ -97,8 +109,12 @@ class Resource extends Atom
                 $content['_view_'] = $data;
             }
             
-            // Mterge with inerface data (which is set when get() method is called before)
-            return array_merge($content, $this->ifcData);
+            // Merge with inerface data (which is set when get() method is called before)
+            if (!is_null($this->ifcData)) {
+                return array_merge($content, $this->ifcData);
+            }
+            
+            return $content;
         } else {
             return parent::jsonSerialize();
         }
@@ -303,6 +319,37 @@ class Resource extends Atom
         
         // Return
         return $r;
+    }
+
+/**************************************************************************************************
+ * ArrayAccess methods
+ *************************************************************************************************/
+    public function offsetExists($offset)
+    {
+        // Get data (1 level deep) if icfData is not (yet) set
+        if (is_null($this->ifcData)) {
+            $this->get(0, 1);
+        }
+        return isset($this->ifcData[$offset]);
+    }
+
+    public function offsetGet($offset)
+    {
+        // Get data (1 level deep) if icfData is not (yet) set
+        if (is_null($this->ifcData)) {
+            $this->get(0, 1);
+        }
+        return $this->ifcData[$offset];
+    }
+
+    public function offsetSet($offset, $value)
+    {
+        throw new Exception("ArrayAccess::offsetSet() not implemented on Resource class", 500);
+    }
+
+    public function offsetUnset($offset)
+    {
+        throw new Exception("ArrayAccess::offsetUnset() not implemented on Resource class", 500);
     }
 
 /**************************************************************************************************
