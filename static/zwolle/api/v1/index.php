@@ -64,6 +64,11 @@ $apiContainer['errorHandler'] = function ($c) {
                     $message = $exception->getMessage();
                     break;
             }
+
+            // Convert invalid HTTP status code to 500
+            if (!is_integer($code) || $code < 100 || $code > 599) {
+                $code = 500;
+            }
             
             return $response->withJson(
                 [ 'error' => $code
