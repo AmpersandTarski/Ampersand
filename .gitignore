@@ -36,3 +36,5 @@ miscellaneous/AmpersandBackup.jgfns
 static/zwolle/lib/
 static/zwolle/app/lib
 static/zwolle/node_modules/
+
+\.ghci
