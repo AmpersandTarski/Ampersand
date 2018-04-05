@@ -21,7 +21,6 @@ $endif$$if(crudR)$<div class="box box-rows" ng-controller="BoxController" ng-ini
                 <button type="button" class="btn btn-xs btn-danger" ng-hide="resource._showButtons_.cancel" ng-click="delete(parent, '$name$', resource)" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left">
                     <span class="glyphicon glyphicon-trash"></span>
                 </button>$endif$
-                <my-nav-to-other-interfaces resource="resource"></my-nav-to-other-interfaces>
             </div>$subObjects:{subObj|$if(verbose)$
             <!-- $subObj.subObjLabel$ -->$endif$
             <div class="row">
