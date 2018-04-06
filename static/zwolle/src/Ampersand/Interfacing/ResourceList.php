@@ -264,6 +264,8 @@ class ResourceList implements IteratorAggregate
             if ($resource->exists()) {
                 throw new Exception("Cannot create resource that already exists", 400);
             }
+        } elseif ($this->ifc->isIdent()) {
+            $resource = $this->makeResource($this->src->id);
         } else {
             $resource = $this->makeNewResource();
         }
