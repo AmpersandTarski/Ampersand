@@ -81,9 +81,10 @@ fieldset {
     min-width: 35px;
 }
 
-.bigalphanumeric .hugealphanumeric {
-    padding: 5px 10px 5px 0px;
+.bigalphanumeric,
+.hugealphanumeric {
     width: 100%;
+    white-space: pre-wrap;
 }
 
 .hugealphanumeric:hover {
