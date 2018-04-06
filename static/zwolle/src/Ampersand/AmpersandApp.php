@@ -117,6 +117,7 @@ class AmpersandApp
                 }
             } else {
                 $cpt->addPlug($defaultPlug);
+                $this->registerStorage($defaultPlug);
             }
         }
 
@@ -130,6 +131,7 @@ class AmpersandApp
                 }
             } else {
                 $rel->addPlug($defaultPlug);
+                $this->registerStorage($defaultPlug);
             }
         }
 
