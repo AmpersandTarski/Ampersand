@@ -5,6 +5,7 @@ module Ampersand.Output.ToJSON.MySQLInstaller
   (MySQLInstaller,Populations)
 where
 import           Ampersand.ADL1
+import           Ampersand.Basics
 import           Ampersand.Output.ToJSON.JSONutils 
 import           Ampersand.Prototype.Generate
 import           Ampersand.Prototype.TableSpec
@@ -62,7 +63,7 @@ instance JSON (MultiFSpecs,Bool) Populations where
      where ftl = fatal "There is no grinded fSpec."
 instance JSON (A_Concept,Bool) AtomValuesOfConcept where
  fromAmpersand multi (cpt,doMeta) = AtomValuesOfConcept
-   { avcJSONconcept = Text.pack (name cpt)
+   { avcJSONconcept = Text.pack (escapeIdentifier . name $ cpt)
    , avcJSONatoms   = map (Text.pack . showValADL) (Set.elems $ atomsBySmallestConcept theFSpec cpt)
    }
   where 
