@@ -2,14 +2,16 @@
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
 # resolver: lts-3.18
-resolver: lts-10.8
-
+resolver: lts-11.1
+allow-newer: true
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: 
+- graphviz-2999.19.0.0
+- fgl-5.5.4.0
 - SpreadsheetML-0.1
 - simple-sql-parser-0.4.3
 - yaml-config-0.4.0

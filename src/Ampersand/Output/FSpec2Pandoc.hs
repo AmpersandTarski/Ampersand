@@ -83,7 +83,7 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
             <> cref True
             <> chapters True
 
-    thePandoc = wrap .
+    thePandoc = -- wrap .
         setTitle
            (case metaValues "title" fSpec of
                 [] -> text (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of

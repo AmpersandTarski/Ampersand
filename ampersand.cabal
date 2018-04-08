@@ -41,8 +41,8 @@ library
                      aeson-pretty == 0.8.*,
                      base == 4.10.*,
                      bytestring == 0.10.*,
-                     conduit == 1.2.*,
-                     conduit-combinators == 1.1.*,
+                     conduit == 1.3.*,
+                     conduit-combinators == 1.3.*,
                      containers == 0.5.*,
                      csv == 0.1.*,
                      data-default == 0.7.*,
@@ -51,10 +51,10 @@ library
                      graphviz == 2999.19.*,
                      hashable == 1.2.*,
                      HStringTemplate == 0.8.*,
-                     lens == 4.15.*,
+                     lens == 4.16.*,
                      MissingH == 1.4.*,
                      mtl == 2.2.*,
-                     pandoc == 2.0.*,
+                     pandoc == 2.1.*,
                      pandoc-crossref == 0.3.*,
                      pandoc-types == 1.17.*,
                      parsec == 3.1.*,
@@ -69,7 +69,7 @@ library
                      wl-pprint == 1.2.*,
                      yaml == 0.8.28.*,
                      yaml-config == 0.4.*,
-                     xlsx == 0.6.*,
+                     xlsx == 0.7.*,
                      zlib == 0.6.*
   exposed-modules:   Ampersand,
                      Ampersand.ADL1,
@@ -201,8 +201,8 @@ Test-Suite regression-test
   default-extensions:NoImplicitPrelude
   build-depends:     ampersand,
                      base == 4.10.*,
-                     conduit == 1.2.*,
-                     conduit-combinators == 1.1.*,
+                     conduit == 1.3.*,
+                     conduit-combinators == 1.3.*,
                      directory == 1.3.*,
                      filepath == 1.4.*
                     
