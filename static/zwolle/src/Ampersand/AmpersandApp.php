@@ -23,6 +23,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Interfacing\View;
 use Ampersand\Rule\Rule;
 use Closure;
+use Ampersand\Rule\ExecEngine;
 
 class AmpersandApp
 {
@@ -232,7 +233,14 @@ class AmpersandApp
         // Set sessionAccount
         $this->session->setSessionAccount($account);
 
-        // Commit transaction (exec-engine kicks also in)
+        // Run ExecEngine
+        ExecEngine::run();
+
+        // Activate all allowed roles by default
+        foreach ($this->session->getSessionAllowedRoles() as $atom) {
+            $this->session->toggleActiveRole($atom, true);
+        }
+
         Transaction::getCurrentTransaction()->close();
 
         // Set (new) interfaces and rules
