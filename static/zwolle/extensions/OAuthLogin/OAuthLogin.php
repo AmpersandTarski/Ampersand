@@ -220,7 +220,7 @@ class OAuthLoginController
             throw new Exception("No emailaddress provided to login", 500);
         }
         
-        $accounts = Resource::makeResource($email, 'UserID')->all('AccountForUserid');
+        $accounts = Resource::makeResource($email, 'UserID')->all('AccountForUserid', true);
         
         // Create new account
         if (iterator_count($accounts) == 0) {
@@ -232,7 +232,7 @@ class OAuthLoginController
             try {
                 // If possible, add account to organization(s) based on domain name
                 $domain = explode('@', $email)[1];
-                $orgs = Resource::makeResource($domain, 'Domain')->all('DomainOrgs');
+                $orgs = Resource::makeResource($domain, 'Domain')->all('DomainOrgs', true);
                 foreach ($orgs as $org) {
                     $account->link($org, 'accOrg[Account*Organization]')->add();
                 }
@@ -246,9 +246,10 @@ class OAuthLoginController
         }
         
         // Login account
+        $transaction = Transaction::getCurrentTransaction();
         $container['ampersand_app']->login($account); // Automatically closes transaction
 
-        if (Transaction::getCurrentTransaction()->isCommitted()) {
+        if ($transaction->isCommitted()) {
             Logger::getUserLogger()->notice("Login successfull");
             return true;
         } else {

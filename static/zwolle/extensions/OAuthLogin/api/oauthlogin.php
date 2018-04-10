@@ -72,6 +72,6 @@ $api->group('/oauthlogin', function () {
         }
 
         $url = $isLoggedIn ? Config::get('redirectAfterLogin', 'OAuthLogin') : Config::get('redirectAfterLoginFailure', 'OAuthLogin');
-        return $response->withRedirect($url, 403);
+        return $response->withRedirect($url);
     });
 });
