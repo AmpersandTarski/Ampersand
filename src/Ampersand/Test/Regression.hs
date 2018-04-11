@@ -47,7 +47,7 @@ doTestSet indnt dir fs
                              putStrLni $ prettyPrintParseException err
                              return 1
               Right ti -> do putStrLni $ "Command: "++command ti++if shouldSucceed ti then " (should succeed)." else " (should fail)."
-                             runConduit $ runTests ti .| getResults
+                             runTests ti $$ getResults
   | otherwise =
        do putStrLni $ "Nothing to do. ("++yaml++" not present)"
           return 0
@@ -55,23 +55,23 @@ doTestSet indnt dir fs
   where
     parseYaml ::  IO (Either ParseException TestInfo) 
     parseYaml = decodeFileEither $ dir </> yaml
-    runTests :: TestInfo -> ConduitM () Int IO ()
-    runTests ti = testsSource .| doATest
+    runTests :: TestInfo -> Source IO Int
+    runTests ti = testsSource =$= doATest
       where 
         isRelevant f = map toUpper (takeExtension f) `elem` [".ADL"]
-        testsSource :: ConduitT () FilePath IO ()
+        testsSource :: Source IO FilePath
         testsSource = CL.sourceList $ filter isRelevant fs
-        doATest :: ConduitT FilePath Int IO ()
+        doATest :: Conduit FilePath IO Int
         doATest = awaitForever dotheTest
           where 
              dotheTest file = 
                 do liftIO $ putStri $ "Start testing of `"++file++"`: "
                    res <- liftIO $ testAdlfile (indnt + 2) dir file ti
                    yield (if res then 0 else 1) 
-    getResults :: ConduitT Int Void IO Int
+    getResults :: Sink Int IO Int
     getResults = loop 0 
      where
-       loop :: Int -> ConduitT Int Void IO Int
+       loop :: Int -> Sink Int IO Int
        loop i = 
          await >>= maybe (return i) 
                          (\x -> loop $! (i+x))

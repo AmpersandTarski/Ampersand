@@ -13,12 +13,12 @@ import           System.FilePath
 writeStaticFiles :: Options -> IO()
 writeStaticFiles opts =
   if genStaticFiles opts
-  then runConduitRes $ source .| sink 
+  then runResourceT $ source $$ sink 
   else verboseLn opts "Skipping static files (because of command line argument)"
  where
-    source :: ConduitT () StaticFile (ResourceT IO) ()
+    source :: Source (ResourceT IO) StaticFile
     source = yieldMany $ filter isRequired allStaticFiles
-    sink :: ConduitT StaticFile Void (ResourceT IO) ()
+    sink :: Sink StaticFile (ResourceT IO) ()
     sink = CL.mapM_ writeStaticFile
 
     writeStaticFile :: StaticFile -> (ResourceT IO) ()
