@@ -16,34 +16,32 @@ Step 1: Choose identity providers you would like to support (e.g. Github, Linked
 Step 2: Add and configure supported identity providers in your `localSettings.php` file.
 ```php
 require_once(__DIR__ . '/extensions/OAuthLogin/OAuthLogin.php');
-	Config::set('redirectAfterLogin', 'OAuthLogin', 'https://[server]/#/');
-	Config::set('redirectAfterLoginFailure', 'OAuthLogin', 'https://[server]/#/');
-	Config::set('identityProviders', 'OAuthLogin', 
-					    ['linkedin' => 
-							    ['name' => 'LinkedIn'
+    Config::set('redirectAfterLogin', 'OAuthLogin', 'https://[server]/#/');
+    Config::set('redirectAfterLoginFailure', 'OAuthLogin', 'https://[server]/#/');
+    Config::set('identityProviders', 'OAuthLogin', 
+                        ['linkedin' => 
+                                ['name' => 'LinkedIn'
                                 ,'logoUrl' => 'extensions/OAuthLogin/ui/images/logo-linkedin.png'
                                 ,'authBase' => 'https://www.linkedin.com/uas/oauth2/authorization'
-								,'redirectUrl' => 'https://[server]/api/v1/oauthlogin/callback/linkedin'
-								,'clientId' => '[string]'
-								,'clientSecret' => '[string]'
-								,'tokenUrl' => 'https://www.linkedin.com/uas/oauth2/accessToken'
-								,'apiUrl' => 'https://api.linkedin.com/v1/people/~:(emailAddress)?format=json'
-								,'scope' => 'r_emailaddress'
-								,'state' => '[string]' // A unique string value of your choice that is hard to guess. Used to prevent CSRF
-								,'emailField' => 'emailAddress'
+                                ,'redirectUrl' => 'https://[server]/api/v1/oauthlogin/callback/linkedin'
+                                ,'clientId' => '[string]'
+                                ,'clientSecret' => '[string]'
+                                ,'tokenUrl' => 'https://www.linkedin.com/uas/oauth2/accessToken'
+                                ,'apiUrl' => 'https://api.linkedin.com/v1/people/~:(emailAddress)?format=json'
+                                ,'scope' => 'r_emailaddress'
+                                ,'state' => '[string]' // A unique string value of your choice that is hard to guess. Used to prevent CSRF
                                 ]
-						,'google' => 
-							    ['name' => 'Google'
+                        ,'google' => 
+                                ['name' => 'Google'
                                 ,'logoUrl' => 'extensions/OAuthLogin/ui/images/logo-google.png'
                                 ,'authBase' => 'https://accounts.google.com/o/oauth2/auth'
-								,'redirectUrl' => 'https://[server]/api/v1/oauthlogin/callback/google'
-								,'clientId' => '[string]'
-								,'clientSecret' => '[string]'
-								,'tokenUrl' => 'https://accounts.google.com/o/oauth2/token'
-								,'apiUrl' => 'https://www.googleapis.com/userinfo/v2/me'
-								,'scope' => 'https://www.googleapis.com/auth/userinfo.email'
-								,'state' => '[string]' // A unique string value of your choice that is hard to guess. Used to prevent CSRF
-								,'emailField' => 'email'
+                                ,'redirectUrl' => 'https://[server]/api/v1/oauthlogin/callback/google'
+                                ,'clientId' => '[string]'
+                                ,'clientSecret' => '[string]'
+                                ,'tokenUrl' => 'https://accounts.google.com/o/oauth2/token'
+                                ,'apiUrl' => 'https://www.googleapis.com/userinfo/v2/me'
+                                ,'scope' => 'https://www.googleapis.com/auth/userinfo.email'
+                                ,'state' => '[string]' // A unique string value of your choice that is hard to guess. Used to prevent CSRF
                                 ]
                         ,'github' =>
                                 ['name' => 'GitHub'
@@ -58,7 +56,7 @@ require_once(__DIR__ . '/extensions/OAuthLogin/OAuthLogin.php');
                                 ,'state' => '[string]' // A unique string value of your choice that is hard to guess. Used to prevent CSRF
                                 ]
                         ]
-				);
+                );
 ```
 Step 3: Add required concepts and relations to your Ampersand script. See SIAM OAuth module.
 
