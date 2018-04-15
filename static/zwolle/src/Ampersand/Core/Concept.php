@@ -217,6 +217,16 @@ class Concept
     {
         return $this->label;
     }
+
+    /**
+     * Get escaped name of concept
+     *
+     * @return string
+     */
+    public function getId(): string
+    {
+        return $this->name;
+    }
     
     /**
      * Specifies if concept representation is integer
