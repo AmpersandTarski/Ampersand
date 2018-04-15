@@ -1,25 +1,28 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
-import           Ampersand.ADL1.Expression(primitives,subExpressions,Expressions)
+import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ordering(..))
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree(ConceptDef)
 import           Ampersand.Classes.ViewPoint
-import           Data.Maybe
+import qualified Data.List.NonEmpty as NEL (toList)
 import qualified Data.Set as Set
 
 class ConceptStructure a where
   concs                 :: a -> A_Concepts -- ^ the set of all concepts used in data structure a
   expressionsIn         :: a -> Expressions -- ^ The set of all expressions within data structure a
   bindedRelationsIn     :: a -> Relations  -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
-  bindedRelationsIn = Set.map fromJust . Set.filter isJust . Set.map bindedRelation . primsMentionedIn
+  bindedRelationsIn = Set.map theBindedRel . Set.filter isBindedRelation . primsMentionedIn
     where 
-      bindedRelation :: Expression -> Maybe Relation
-      bindedRelation primExpr =
-        case primExpr of
-         EDcD d -> Just d
-         _      -> Nothing
+      isBindedRelation :: Expression -> Bool
+      isBindedRelation expr =
+        case expr of
+         EDcD _ -> True
+         _      -> False
+      theBindedRel :: Expression -> Relation
+      theBindedRel expr =
+        case expr of
+         EDcD d -> d
+         _      -> fatal $ "This function is only implemented partially, and must be called with an expression of the form BindedRelation only." ++ show expr
   primsMentionedIn      :: a -> Expressions
   primsMentionedIn = Set.unions . Set.toList . Set.map primitives . expressionsIn
   modifyablesByInsOrDel :: a -> Expressions -- ^ the set of expressions of which population could be modified directy by Insert or Delete
@@ -160,8 +163,8 @@ instance ConceptStructure Rule where
                    ]
 
 instance ConceptStructure (PairView Expression) where
-  concs         (PairView ps) = concs         ps
-  expressionsIn (PairView ps) = expressionsIn ps
+  concs         (PairView ps) = concs         . NEL.toList $ ps
+  expressionsIn (PairView ps) = expressionsIn . NEL.toList $ ps
 
 instance ConceptStructure Population where
   concs pop@ARelPopu{} = concs (popdcl pop)

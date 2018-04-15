@@ -14,8 +14,7 @@ module Ampersand.Prototype.TableSpec
 where
 
 import           Ampersand.Basics
-import           Ampersand.Classes
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
@@ -99,7 +98,7 @@ plug2TableSpec plug
                    ,"attributes:"
                    ]<> concat
                    [ [showA (attExpr x)
-                     , "  "<>(show.properties.attExpr) x ]
+                     ]
                    | x <- plugAttributes plug
                    ]
      , tsName = name plug

@@ -13,12 +13,11 @@ module Ampersand.Core.A2P_Converters (
   , aViewDef2pViewDef
 ) 
 where
-import           Ampersand.ADL1.Expression
+import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.ParseTree
-import           Ampersand.Core.AbstractSyntaxTree
 import           Data.Maybe
 import           Data.Char
+import qualified Data.List.NonEmpty as NEL (map)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 
@@ -240,7 +239,7 @@ aMarkup2pMarkup markup =
 
 aPairView2pPairView :: PairView Expression -> PairView (Term TermPrim)
 aPairView2pPairView pv =
- PairView { ppv_segs = map aPairViewSegment2pPairViewSegment (ppv_segs pv)
+ PairView { ppv_segs = NEL.map aPairViewSegment2pPairViewSegment (ppv_segs pv)
           }
 
 aViewSegment2pP_ViewSegment :: ViewSegment -> P_ViewSegment TermPrim

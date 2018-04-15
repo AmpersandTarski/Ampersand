@@ -41,7 +41,6 @@ import Data.Maybe
 import qualified Data.List as L   (intercalate)
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
 import GHC.Exts (groupWith)
-import Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
 import Ampersand.Input.ADL1.FilePos()
 import Data.Monoid
@@ -331,13 +330,13 @@ instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
 showEC' :: (SrcOrTgt, A_Concept, String) -> String
 showEC' (p1,c1,e1) = showA c1++" ("++show p1++" of "++e1++")"
 
-instance (AStruct declOrExpr, Association declOrExpr) => ErrorConcept (SrcOrTgt, declOrExpr) where
+instance (AStruct declOrExpr, HasSignature declOrExpr) => ErrorConcept (SrcOrTgt, declOrExpr) where
   showEC (p1,e1)
    = case p1 of
       Src -> showEC' (p1,source e1,showA e1)
       Tgt -> showEC' (p1,target e1,showA e1)
 
-instance (AStruct declOrExpr, Association declOrExpr) => ErrorConcept (SrcOrTgt, Origin, declOrExpr) where
+instance (AStruct declOrExpr, HasSignature declOrExpr) => ErrorConcept (SrcOrTgt, Origin, declOrExpr) where
   showEC (p1,o,e1)
    = case p1 of
       Src -> showEC' (p1,source e1,showA e1 ++ ", "++showMinorOrigin o)

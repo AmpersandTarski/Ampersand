@@ -1,5 +1,9 @@
 # Release notes of Ampersand
 
+## v3.9.5 (15 april 2018)
+
+* [Issue #760](https://github.com/AmpersandTarski/Ampersand/issues/760) Fixed a bug causing wrong results in the prototype.
+
 ## v3.9.4 (16 march 2018)
 
 * Better performance of the generator, due to using Haskell's sets rather than lists.

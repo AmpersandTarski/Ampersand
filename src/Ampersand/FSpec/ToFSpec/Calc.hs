@@ -7,7 +7,7 @@ module Ampersand.FSpec.ToFSpec.Calc
 
 import           Ampersand.Basics
 import           Ampersand.Classes
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms

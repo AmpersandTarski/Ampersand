@@ -4,7 +4,6 @@ module Ampersand.Input.Xslx.XLSX
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
@@ -76,7 +75,7 @@ toPops opts file x = map popForColumn (colNrs x)
      where                             
        src, trg :: Maybe String
        (src,trg) = case mTargetConceptName of
-                  Just tCptName -> (if isFlipped then swap else id) (Just sourceConceptName, Just tCptName)
+                  Just tCptName -> (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
                   Nothing -> (Nothing,Nothing)
           
        popOrigin :: Origin
@@ -104,8 +103,8 @@ toPops opts file x = map popForColumn (colNrs x)
                                      in (Just nm, mDel)
                 _ -> (Nothing, Nothing)
        relName :: String
-       isFlipped :: Bool
-       (relName,isFlipped) 
+       isFlipped' :: Bool
+       (relName,isFlipped') 
           = case value (relNamesRow,targetCol) of
                 Just (CellText t) -> 
                     let str = T.unpack . trim $ t
@@ -120,7 +119,7 @@ toPops opts file x = map popForColumn (colNrs x)
                           ,value (r,targetCol)
                           ) of
                        (Just s,Just t) -> Just $ 
-                                            (if isFlipped then map flp else id)
+                                            (if isFlipped' then map flp else id)
                                                 [mkPair origTrg s' t'
                                                 | s' <- cellToAtomValue mSourceConceptDelimiter s origSrc
                                                 , t' <- cellToAtomValue mTargetConceptDelimiter t origTrg

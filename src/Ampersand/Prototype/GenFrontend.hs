@@ -3,10 +3,7 @@ module Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs) where
 
 import           Ampersand.Basics
 import           Ampersand.Classes.Relational
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree
-     ( Role, ViewHtmlTemplate(ViewHtmlTemplateFile)
-     )
+import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
@@ -282,7 +279,7 @@ buildInterface fSpec allIfcs ifc =
                          , exprIsTot = isTot iExp'
                          , relIsProp  = case mDecl of
                                           Nothing  -> False
-                                          Just dcl -> isProp dcl
+                                          Just dcl -> isProp (EDcD dcl)
                          , exprIsIdent = isIdent iExp'
                          , objNavInterfaces = navIfcs
                          , atomicOrBox = aOrB

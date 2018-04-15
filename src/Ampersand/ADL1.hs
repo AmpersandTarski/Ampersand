@@ -1,8 +1,11 @@
 module Ampersand.ADL1
-   ( module X
+   ( module Ampersand.Core.ParseTree
+   , module Ampersand.Core.AbstractSyntaxTree
+   , module Ampersand.ADL1.Expression
+   , module Ampersand.ADL1.Rule
    )
 where
-import Ampersand.Core.ParseTree as X (
+import Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
          , mkPair
          , FilePos(..), Origin(..), Traced(..)
@@ -16,48 +19,63 @@ import Ampersand.Core.ParseTree as X (
          , P_Pattern(..)
          , PairView(..), PairViewSegment(..)
          , SrcOrTgt(..)
-         , P_Rule(..)
-         , P_IdentDef, P_IdentSegment
-         , P_ViewDef, P_ViewSegment
-         , P_Population(..)
-         , P_ObjectDef
+         , P_Rule(..),Role(..)
+         , Prop(..),Props
+         , P_IdentDef, P_IdentSegment,P_IdentDf(..),P_IdentSegmnt(..)
+         , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),ViewHtmlTemplate(..)
+         , P_Population(..),PAtomPair(..)
+         , P_ObjectDef,P_ObjDef(..)
          , P_Interface(..)
-         , P_SubInterface
+         , P_SubInterface,P_SubIfc(..),P_Cruds(..)
          , Term(..)
          , TermPrim(..), P_NamedRel(..)
          , P_Gen(..)
          , P_Relation(..)
          , ConceptDef(..)
+         , PSingleton
+         , PMeaning(..),PMessage(..),P_Markup(..)
          )
-import Ampersand.Core.AbstractSyntaxTree as X (
-          A_Concept(..)
-         ,Signature(..),showSign
+import Ampersand.Core.AbstractSyntaxTree (
+          Signature(..),showSign
          ,A_Context(..)
-         ,Association(..)
+         ,HasSignature(..)
          ,Expression(..)
          ,A_Gen(..)
+         ,RuleOrigin(..)
          ,IdentityDef(..)
          ,IdentitySegment(..)
          ,ViewDef(..)
          ,ViewSegment(..)
-         ,ObjectDef(..)
+         ,ViewSegmentPayLoad(..)
+         ,ObjectDef(..),Object(..)
          , Default(..)
          ,SubInterface(..)
          ,Relation(..),decusr
-         ,Interface(..)
+         ,Interface(..),getInterfaceByName
          ,Pattern(..)
-         ,Rule(..)
+         , Relation(..),Relations, getExpressionRelation, showRel
+         ,Rule(..),Rules,A_RoleRule(..)
+         , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, makeConcept ,unsafePAtomVal2AtomValue 
+         , Conjunct(..)
+         , PAtomValue(..)
+         , AAtomValues, AAtomPairs, safePSingleton2AAtomVal
+         , Cruds(..)
+         , Typology(..)
+         , DnfClause(..)
          ,A_RoleRelation(..)
          ,Population(..)
-         ,Purpose(..), ExplObj(..)
-         , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), representationOf
+         ,Purpose(..), ExplObj(..) ,AMeaning(..)
+         , AAtomPair(..), AAtomValue(..),aavstr, mkAtomPair, ContextInfo(..), representationOf
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
-import Ampersand.ADL1.Expression as X
-         ( notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
+import Ampersand.ADL1.Expression
+         ( primitives,subExpressions,Expressions
+         , notCpl, isCpl, isEEps, isMp1, isFlipped
+         , isPos, isNeg
+         , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
          , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
          , insParentheses)
-import Ampersand.ADL1.Rule as X (
+import Ampersand.ADL1.Rule (
           rulefromProp
          ,consequent,antecedent,hasantecedent)
 

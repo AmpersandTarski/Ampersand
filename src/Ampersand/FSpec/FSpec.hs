@@ -28,17 +28,10 @@ module Ampersand.FSpec.FSpec
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
           , showSQL
-      --    , module Ampersand.Classes
           ) where
-import           Ampersand.ADL1.Expression (notCpl,Expressions)
+import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree
-        ( Traced(..), Origin
-        , Role
-        , ConceptDef
-        )
 import           Ampersand.FSpec.Crud
 import           Ampersand.Misc
 import           Data.List
@@ -143,7 +136,7 @@ data A_Pair = Pair { lnkDcl :: Relation
                    , lnkLeft :: Atom
                    , lnkRight :: Atom
                    } deriving (Typeable,Eq)
-instance Association A_Pair where
+instance HasSignature A_Pair where
   sign = sign . lnkDcl
 instance Unique A_Pair where
   showUnique x = uniqueShow False (lnkDcl x)

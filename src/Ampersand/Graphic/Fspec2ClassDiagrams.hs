@@ -35,12 +35,16 @@ clAnalysis fSpec =
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att 
               = OOAttr { attNm       = attName att
-                       , attTyp      = if isPropty att then "Prop" else (name.target.attExpr) att
+                       , attTyp      = if isProp (attExpr att) then "Prop" else (name.target.attExpr) att
                        , attOptional = attNull att
                        }
     inKernel :: SqlAttribute -> Bool
-    inKernel att = null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
-    isPropty att = isProp (attExpr att)
+    inKernel att = isUni expr 
+                && isInj expr
+                && isSur expr
+                && (not . isProp) expr
+        where expr = attExpr att 
+             --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
 -- | This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
@@ -87,8 +91,8 @@ cdAnalysis fSpec =
       isOfCpt :: [Expression] -> Bool
       isOfCpt []    = fatal "List must not be empty!"
       isOfCpt (e:_) = source e == cpt
-      attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
-
+      attribs = map (flipWhenNeeded . EDcD) attribDcls
+      flipWhenNeeded x = if isInj x && (not.isUni) x then flp x else x
    ooAttr :: Expression -> CdAttribute
    ooAttr r = OOAttr { attNm = (name . head . Set.elems . bindedRelationsIn) r
                      , attTyp = if isProp r then "Prop" else (name.target) r
@@ -101,7 +105,7 @@ cdAnalysis fSpec =
      where
        dclIsShown :: Relation -> Bool
        dclIsShown d = 
-             (not . isProp) d
+             (not . isProp . EDcD) d
           && (   (d `notElem` attribDcls)
               || (   source d `elem` nodeConcepts
                   && target d `elem` nodeConcepts
@@ -124,11 +128,12 @@ cdAnalysis fSpec =
              , asslhm = mults . flp $ EDcD d
              , asslhr = ""
              , assTgt = name $ target d
-             , assrhm = mults d
+             , assrhm = mults $ EDcD d
              , assrhr = name d
              , assmdcl = Just d
              }
-   attribDcls = [ d | d <- Set.elems allDcls, isUni d || isInj d ]
+   
+   attribDcls = [ d | d <- Set.elems allDcls, isUni (EDcD d) || isInj (EDcD d) ]
     
 
 -- | This function generates a technical data model.
@@ -206,7 +211,7 @@ tdAnalysis fSpec =
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
            _ -> fatal ("Unexpected expression: "++show expr)
-       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Ampersand.Graphic.ClassDiagram.Association
+       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Association
        mkRel t (expr,f) =
             OOAssoc { assSrc = sqlname t
                     , assSrcPort = attName f
@@ -218,9 +223,7 @@ tdAnalysis fSpec =
                     , assmdcl = Nothing
                     }
 
-----             
-mults :: Relational r => r -> Multiplicities
-mults r = let minVal = if isTot r then MinOne else MinZero
-              maxVal = if isUni r then MaxOne else MaxMany
-          in  Mult minVal maxVal
-             
+mults :: Expression -> Multiplicities
+mults r = Mult (if isTot r then MinOne else MinZero)
+               (if isUni r then MaxOne else MaxMany)
+          

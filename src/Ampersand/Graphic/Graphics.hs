@@ -134,7 +134,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               rs    = [r | r<-Set.elems $ vrules fSpec, c `elem` concs r]
           in
           CStruct { csCpts = nub$ Set.elems cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
-                  , csRels = filter (not . isProp) . Set.elems . bindedRelationsIn $ rs   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
+                  , csRels = filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ rs   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
         --  PTCDPattern makes a picture of at least the relations within pat;
@@ -147,11 +147,11 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
-              idgs = [(s,g) |(s,g)<-gs, g `Set.member` cpts, s `Set.member` cpts]    --  all isa edges within the concepts
+              idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
               gs   = fsisa fSpec
               cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
               cpts' = concs pat `Set.union` concs rels
-              rels = Set.fromList . filter (not . isProp) . Set.elems . bindedRelationsIn $ pat
+              rels = Set.fromList . filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ pat
           in
           CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
                   , csRels = Set.elems $ rels  `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
@@ -165,9 +165,10 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               decs = relsDefdIn pat `Set.union` bindedRelationsIn (udefrules pat)
           in
           CStruct { csCpts = Set.elems cpts
-                  , csRels = [r | r <- Set.elems decs
-                             , not (isProp r), decusr r    -- r is not a property
-                             ]
+                  , csRels = Set.elems 
+                           . Set.filter (not . isProp . EDcD)
+                           . Set.filter decusr
+                           $ decs 
                   , csIdgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
                   }
 
@@ -176,9 +177,10 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
           in
           CStruct { csCpts = Set.elems $ concs r `Set.union` Set.fromList [c |(s,g)<-idgs, c<-[g,s]]
-                  , csRels = [d | d<-Set.elems $ bindedRelationsIn r, decusr d
-                             , not (isProp d)    -- d is not a property
-                             ]
+                  , csRels = Set.elems
+                           . Set.filter (not . isProp . EDcD)
+                           . Set.filter decusr
+                           $ bindedRelationsIn r
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
         _  -> fatal "No conceptual graph defined for this type."
@@ -390,22 +392,22 @@ handleFlags po opts =
                           , Style [SItem Tapered []] , PenWidth 5
                           ]
       RelSrcEdge r -> [ ArrowHead ( if crowfoot opts   then normal                    else
-                                    if isFunction r    then noArrow                   else
+                                    if isFunction (EDcD r) then noArrow                   else
                                     directionArrow
                                   )
                       , ArrowTail ( if crowfoot opts   then crowfootArrowType False r else
-                                    if isFunction r    then noArrow                   else
-                                    if isInvFunction r then normal                    else
+                                    if isFunction (EDcD r)    then noArrow                   else
+                                    if isFunction (flp . EDcD $ r) then normal                    else
                                     noArrow
                                   )
                       ,HeadClip False
                       ]
       RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
                       , ArrowHead ( if crowfoot opts   then crowfootArrowType True r  else
-                                    if isFunction r    then normal                    else
+                                    if isFunction (EDcD r)    then normal                    else
                                     noArrow
                                   )
-                      , ArrowTail ( if crowfoot opts   || isFunction r    
+                      , ArrowTail ( if crowfoot opts   || isFunction (EDcD r)    
                                                        then noArrow                   else
                                     AType [(noMod ,Inv)]
                                   )
@@ -428,16 +430,14 @@ handleFlags po opts =
                       , Landscape False
                       ]
 
-isInvFunction :: Relation -> Bool
-isInvFunction d = isInj d && isSur d
-
 crowfootArrowType :: Bool -> Relation -> ArrowType
 crowfootArrowType isHead r
    = AType (if isHead 
-            then getCrowfootShape (isUni r) (isTot r)
-            else getCrowfootShape (isInj r) (isSur r)
+            then getCrowfootShape (isUni bindedExpr) (isTot bindedExpr)
+            else getCrowfootShape (isInj bindedExpr) (isSur bindedExpr)
            )
        where
+         bindedExpr = EDcD r
          getCrowfootShape :: Bool -> Bool -> [( ArrowModifier , ArrowShape )]
          getCrowfootShape a b =
            case (a,b) of

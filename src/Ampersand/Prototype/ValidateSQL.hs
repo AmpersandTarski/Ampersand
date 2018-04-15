@@ -1,12 +1,13 @@
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc
 import           Ampersand.Prototype.PHP
 import           Data.List
+import qualified Data.List.NonEmpty as NEL (toList)
 import qualified Data.Set as Set
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
@@ -70,7 +71,7 @@ getAllRuleExps fSpec = map getRuleExp . Set.elems $ vrules fSpec `Set.union` gru
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps . Set.elems $ vrules fSpec `Set.union` grules fSpec
  where getPairViewExps r@Ru{rrviol = Just (PairView pvsegs)} =
-         [ (expr, "violation view for rule "++show (name r)) | PairViewExp _ _ expr <- pvsegs ]
+         [ (expr, "violation view for rule "++show (name r)) | PairViewExp _ _ expr <- NEL.toList pvsegs ]
        getPairViewExps _    = []
 
 getAllIdExps :: FSpec -> [ValidationExp]

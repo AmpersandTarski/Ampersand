@@ -1,7 +1,7 @@
 module Ampersand.FSpec.GenerateUML (generateUML) where
 
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Relation)
+import           Ampersand.ADL1--Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Relation)
 import           Ampersand.FSpec
 import           Ampersand.Graphic.ClassDiagram
 import           Ampersand.Graphic.Fspec2ClassDiagrams 

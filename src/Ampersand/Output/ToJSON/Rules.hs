@@ -2,15 +2,16 @@
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
 module Ampersand.Output.ToJSON.Rules 
-  (Rules)
+  (Rulez)
 where
-import           Ampersand.Core.AbstractSyntaxTree hiding (Rules)
+import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.Output.ToJSON.JSONutils 
+import qualified Data.List.NonEmpty as NEL (toList)
 import           Data.Maybe
 import qualified Data.Set as Set
 
-data Rules = Rules
+data Rulez = Rulez
   { rulJSONinvariants :: [JsonRule]
   , rulJSONsignals    :: [JsonRule]
   } deriving (Generic, Show)
@@ -37,7 +38,7 @@ data JsonPairViewSegment = JsonPairViewSegment
   , pvsJSONexpIsIdent  :: Maybe Bool
   } deriving (Generic, Show)
 
-instance ToJSON Rules where
+instance ToJSON Rulez where
   toJSON = amp2Jason
 instance ToJSON JsonRule where
   toJSON = amp2Jason
@@ -45,8 +46,8 @@ instance ToJSON JsonPairView where
   toJSON = amp2Jason
 instance ToJSON JsonPairViewSegment where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Rules where
- fromAmpersand multi _ = Rules
+instance JSON MultiFSpecs Rulez where
+ fromAmpersand multi _ = Rulez
    { rulJSONinvariants = map (fromAmpersand multi) . Set.elems $ invariants fSpec
    , rulJSONsignals    = map (fromAmpersand multi) . Set.elems $ signals fSpec
    }
@@ -72,7 +73,7 @@ instance JSON Rule JsonRule where
                               []    -> ""
                               markup:_ -> aMarkup2String Markdown markup
 instance JSON (PairView Expression) JsonPairView where
- fromAmpersand multi pv = JsonPairView $ map (fromAmpersand multi) (zip [0..] (ppv_segs pv))
+ fromAmpersand multi pv = JsonPairView $ map (fromAmpersand multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
  fromAmpersand multi (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr

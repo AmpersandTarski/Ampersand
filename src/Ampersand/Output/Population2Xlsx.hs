@@ -4,7 +4,7 @@ module Ampersand.Output.Population2Xlsx
 where
 
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.ADL1(AAtomValue(..),HasSignature(..),aavstr)
 import           Ampersand.FSpec
 import           Codec.Xlsx
 import qualified Data.ByteString.Lazy as L

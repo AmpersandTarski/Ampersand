@@ -112,7 +112,7 @@ chpConceptualAnalysis lev fSpec = (
                                        langs -> plain (str ("(No meaning has been specified, except in "++langs++")"))
                     ms -> fromList ms
               ])
-  ukadjs d  = if Uni `Set.member` (properties d) && Tot `Set.member` (properties d)
+  ukadjs d  = if Uni `elem` (properties d) && Tot `elem` (properties d)
               then commaEng "and" (map ukadj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
               else commaEng "and" (map ukadj . Set.elems $ (properties d))++" relation"
    where
@@ -126,7 +126,7 @@ chpConceptualAnalysis lev fSpec = (
     ukadj Rfx = "reflexive"
     ukadj Irf = "irreflexive"
     ukadj Prop = "symmetric and antisymmetric"
-  nladjs d = if Uni `Set.member` (properties d) && Tot `Set.member` (properties d)
+  nladjs d = if Uni `elem` (properties d) && Tot `elem` (properties d)
              then commaNL "en" (map nladj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])++" functie"
              else commaNL "en" (map nladj . Set.elems $ properties d)++" relatie"
    where

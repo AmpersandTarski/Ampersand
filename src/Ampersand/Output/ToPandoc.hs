@@ -1,15 +1,24 @@
 module Ampersand.Output.ToPandoc 
-  ( module X
+  ( chpInterfacesBlocks
+  , chpIntroduction
+  , chpNatLangReqs
+  , chpDiagnosis
+  , chpConceptualAnalysis
+  , chpProcessAnalysis
+  , chpDataAnalysis
+  , fpAnalysis
+  , chpFunctionPointAnalysis
+  , chpGlossary 
   )
 where
 
-import Ampersand.Output.ToPandoc.ChapterInterfaces            as X (chpInterfacesBlocks)
-import Ampersand.Output.ToPandoc.ChapterIntroduction          as X (chpIntroduction)
-import Ampersand.Output.ToPandoc.ChapterNatLangReqs           as X (chpNatLangReqs)
-import Ampersand.Output.ToPandoc.ChapterDiagnosis             as X (chpDiagnosis)
-import Ampersand.Output.ToPandoc.ChapterConceptualAnalysis    as X (chpConceptualAnalysis)
-import Ampersand.Output.ToPandoc.ChapterProcessAnalysis       as X (chpProcessAnalysis)
-import Ampersand.Output.ToPandoc.ChapterDataAnalysis          as X (chpDataAnalysis)
-import Ampersand.Output.ToPandoc.ChapterSoftwareMetrics       as X (fpAnalysis)
-import Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis as X (chpFunctionPointAnalysis)
-import Ampersand.Output.ToPandoc.ChapterGlossary              as X (chpGlossary)
+import Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks)
+import Ampersand.Output.ToPandoc.ChapterIntroduction          (chpIntroduction)
+import Ampersand.Output.ToPandoc.ChapterNatLangReqs           (chpNatLangReqs)
+import Ampersand.Output.ToPandoc.ChapterDiagnosis             (chpDiagnosis)
+import Ampersand.Output.ToPandoc.ChapterConceptualAnalysis    (chpConceptualAnalysis)
+import Ampersand.Output.ToPandoc.ChapterProcessAnalysis       (chpProcessAnalysis)
+import Ampersand.Output.ToPandoc.ChapterDataAnalysis          (chpDataAnalysis)
+import Ampersand.Output.ToPandoc.ChapterSoftwareMetrics       (fpAnalysis)
+import Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis (chpFunctionPointAnalysis)
+import Ampersand.Output.ToPandoc.ChapterGlossary              (chpGlossary)

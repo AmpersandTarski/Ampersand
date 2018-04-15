@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.ADL1.Disambiguate
    ( disambiguate
    , orWhenEmpty
@@ -8,6 +8,7 @@ module Ampersand.ADL1.Disambiguate
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.AbstractSyntaxTree
+import qualified Data.List.NonEmpty as NEL (toList,fromList)
 import qualified Data.Set as Set
 import           Control.Arrow
 
@@ -97,7 +98,7 @@ instance Disambiguatable P_Rule where
           = disambInfo (PairViewTerm viol) rt
 instance Disambiguatable PairViewTerm where
   disambInfo (PairViewTerm (PairView lst)) x
-   = (PairViewTerm (PairView [pv' | pv <- lst, let (PairViewSegmentTerm pv',_) = disambInfo (PairViewSegmentTerm pv) x])
+   = (PairViewTerm (PairView . NEL.fromList $ [pv' | pv <- NEL.toList lst, let (PairViewSegmentTerm pv',_) = disambInfo (PairViewSegmentTerm pv) x])
      , noConstraints) -- unrelated
 instance Disambiguatable PairViewSegmentTerm where
   disambInfo (PairViewSegmentTerm (PairViewText orig s)) _ = (PairViewSegmentTerm (PairViewText orig s), noConstraints)

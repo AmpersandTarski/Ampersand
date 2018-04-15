@@ -1,7 +1,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.SharedAmongChapters
-    ( module X
+    ( module Ampersand.Basics
+    , module Ampersand.Core.ShowAStruct
+    , module Ampersand.ADL1
+    , module Ampersand.Classes
+    , module Ampersand.FSpec
+    , module Ampersand.Graphic.Graphics
+    , module Ampersand.Misc
+    , module Ampersand.Output.PandocAux
+    , module Text.Pandoc
     , module Text.Pandoc.Builder
     , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
     , math --
@@ -23,26 +31,23 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , plainText
     , sortWith)
 where
-import           Ampersand.Basics as X 
-import           Ampersand.Core.AbstractSyntaxTree as X hiding (Meta)
-import           Ampersand.Core.ParseTree as X ( Role)
-import           Ampersand.Core.ShowAStruct as X
-import           Ampersand.ADL1 as X hiding (Meta)
-import           Ampersand.Classes as X
-import           Ampersand.FSpec as X
-import           Ampersand.Graphic.Graphics as X
-import           Ampersand.Misc as X
-import           Ampersand.Output.PandocAux as X
+import           Ampersand.Basics 
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.ADL1 hiding (Meta)
+import           Ampersand.Classes
+import           Ampersand.FSpec
+import           Ampersand.Graphic.Graphics
+import           Ampersand.Misc
+import           Ampersand.Output.PandocAux
 import           Data.List      --       (intercalate,partition)
 import           Data.Maybe
-import           Data.Monoid as X
 import           Data.Ord
 import qualified Data.Set as Set
 import qualified Data.Time.Format as DTF
 import           Data.Typeable
 import           GHC.Exts(sortWith)
 import           System.FilePath  -- (combine,addExtension,replaceExtension)
-import           Text.Pandoc as X
+import           Text.Pandoc
 import           Text.Pandoc.Builder hiding (bulletList,math)
 import qualified Text.Pandoc.Builder as  BuggyBuilder
 
@@ -362,7 +367,7 @@ orderingByTheme fSpec
   rulMustBeShown r = hasMeaning r || hasPurpose r
   relMustBeShown :: Relation -> Bool
   relMustBeShown d 
-    | isIdent d || name d == "V" = False  --Identity relation has no meaning defined
+    | isIdent (EDcD d) || name d == "V" = False  --Identity relation has no meaning defined
     | otherwise = (hasMeaning d || hasPurpose d) && (decusr d || forNonUserDefdRule d)  
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
@@ -469,7 +474,7 @@ dpRule' fSpec = dpR
         theBlocks =
             purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
          <> purposes2Blocks (getOpts fSpec) [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
-         <> case (Set.elems nds, fsLang fSpec) of
+         <> case (Set.elems . Set.map EDcD $ nds, fsLang fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
              ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")

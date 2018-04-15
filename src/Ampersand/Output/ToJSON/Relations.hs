@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 module Ampersand.Output.ToJSON.Relations 
-  (Relations)
+  (Relationz)
 where
-import           Ampersand.Core.AbstractSyntaxTree hiding (Relations)
+import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpecAux
 import           Ampersand.Output.ToJSON.JSONutils 
 import           Data.Maybe
 import qualified Data.Set as Set
 
-data Relations = Relations [RelationJson]deriving (Generic, Show)
+data Relationz = Relationz [RelationJson]deriving (Generic, Show)
 data RelationJson = RelationJson
   { relJSONname         :: String
   , relJSONsignature    :: String
@@ -34,7 +34,7 @@ data TableCol = TableCol
   , tcJSONnull     :: Bool
   , tcJSONunique   :: Bool
   } deriving (Generic, Show)
-instance ToJSON Relations where
+instance ToJSON Relationz where
   toJSON = amp2Jason
 instance ToJSON RelationJson where
   toJSON = amp2Jason
@@ -42,23 +42,24 @@ instance ToJSON RelTableInfo where
   toJSON = amp2Jason
 instance ToJSON TableCol where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Relations where
- fromAmpersand multi _ = Relations (map (fromAmpersand multi) (Set.elems $ vrels (userFSpec multi)))
+instance JSON MultiFSpecs Relationz where
+ fromAmpersand multi _ = Relationz (map (fromAmpersand multi) (Set.elems $ vrels (userFSpec multi)))
 instance JSON Relation RelationJson where
  fromAmpersand multi dcl = RelationJson 
          { relJSONname       = name dcl
          , relJSONsignature  = name dcl ++ (show . sign) dcl
          , relJSONsrcConceptId  = escapeIdentifier . name . source $ dcl 
          , relJSONtgtConceptId  = escapeIdentifier . name . target $ dcl
-         , relJSONuni      = isUni dcl
-         , relJSONtot      = isTot dcl
-         , relJSONinj      = isInj dcl
-         , relJSONsur      = isSur dcl
-         , relJSONprop     = isProp dcl
+         , relJSONuni      = isUni bindedExp
+         , relJSONtot      = isTot bindedExp
+         , relJSONinj      = isInj bindedExp
+         , relJSONsur      = isSur bindedExp
+         , relJSONprop     = isProp bindedExp
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
          , relJSONmysqlTable = fromAmpersand multi dcl
          }
-      where fSpec = userFSpec multi
+      where bindedExp = EDcD dcl
+            fSpec = userFSpec multi
          
 instance JSON Relation RelTableInfo where
  fromAmpersand multi dcl = RelTableInfo

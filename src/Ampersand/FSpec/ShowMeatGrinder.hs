@@ -12,8 +12,7 @@ where
 
 import           Ampersand.Basics
 import           Ampersand.Core.A2P_Converters
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.Core.ParseTree
+import           Ampersand.ADL1
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers

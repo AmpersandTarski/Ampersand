@@ -3,7 +3,7 @@ module Ampersand.ADL1.Expression (
                        Expressions
                       ,subst
                       ,primitives, subExpressions, isMp1, isEEps, isEDcD
-                      ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl
+                      ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl, isFlipped
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
 where
@@ -141,6 +141,12 @@ isEEps _ = False
 isEDcD :: Expression -> Bool
 isEDcD EDcD{} = True
 isEDcD _ = False
+
+isFlipped :: Expression -> Bool
+isFlipped EFlp{}   = True
+isFlipped (EBrk e) = isFlipped e
+isFlipped _        = False
+
 
 exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> [Expression]
 exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r
