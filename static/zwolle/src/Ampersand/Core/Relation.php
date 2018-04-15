@@ -316,25 +316,38 @@ class Relation
      *
      *********************************************************************************************/
     
+     /**
+      * Delete all links where $atom is used
+      *
+      * @param \Ampersand\Core\Atom $atom
+      * @return void
+      */
     public static function deleteAllLinksWithAtom(Atom $atom)
     {
         foreach (self::getAllRelations() as $relation) {
-            if ($relation->srcConcept->inSameClassificationTree($atom->concept)) {
+            if ($atom->concept->inSameClassificationTree($relation->srcConcept)) {
                 $relation->deleteAllLinks($atom, 'src');
             }
-            if ($relation->tgtConcept->inSameClassificationTree($atom->concept)) {
+            if ($atom->concept->inSameClassificationTree($relation->tgtConcept)) {
                 $relation->deleteAllLinks($atom, 'tgt');
             }
         }
     }
     
+    /**
+     * Delete all links where $atom is used as src or tgt atom
+     * from relations where $atom's concept (or any of its specializations) is used as src or tgt concept
+     *
+     * @param \Ampersand\Core\Atom $atom
+     * @return void
+     */
     public static function deleteAllSpecializationLinks(Atom $atom)
     {
         foreach (self::getAllRelations() as $relation) {
-            if ($relation->srcConcept->hasSpecialization($atom->concept)) {
+            if ($atom->concept->hasSpecialization($relation->srcConcept, true)) {
                 $relation->deleteAllLinks($atom, 'src');
             }
-            if ($relation->tgtConcept->hasSpecialization($atom->concept)) {
+            if ($atom->concept->hasSpecialization($relation->tgtConcept, true)) {
                 $relation->deleteAllLinks($atom, 'tgt');
             }
         }
