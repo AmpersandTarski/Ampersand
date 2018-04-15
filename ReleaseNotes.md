@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.9.5 (15 april 2018)
 
 * Upgraded to LTS-10.1
 * [Issue #760](https://github.com/AmpersandTarski/Ampersand/issues/760) Fixed a bug causing wrong results in the prototype.
