@@ -98,18 +98,22 @@ copyTemplates fSpec =
     }
 
 copyCustomizations :: FSpec -> IO ()
-copyCustomizations fSpec =
- do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          custDir = adlSourceDir </> dirCustomizations (getOpts fSpec)
-          protoDir = dirPrototype (getOpts fSpec)
-    ; custDirExists <- doesDirectoryExist custDir
-    ; if custDirExists then
-        do { verboseLn (getOpts fSpec) $ "Copying customizations from " ++ custDir ++ " -> " ++ protoDir
-           ; copyDirRecursively custDir protoDir (getOpts fSpec) -- recursively copy all customizations
-           }
-      else
-        verboseLn (getOpts fSpec) $ "No customizations (there is no directory " ++ custDir ++ ")"
-    }
+copyCustomizations fSpec = do
+  let adlSourceDir = takeDirectory $ fileName opts
+      custDirs = map (adlSourceDir </>) (dirCustomizations opts)
+      protoDir = dirPrototype opts
+  mapM_ (copyDir protoDir) custDirs
+    where
+      opts = getOpts fSpec
+      copyDir :: FilePath -> FilePath -> IO()
+      copyDir targetDir sourceDir = do
+        sourceDirExists <- doesDirectoryExist sourceDir
+        if sourceDirExists then
+          do verboseLn opts $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
+             copyDirRecursively sourceDir targetDir opts -- recursively copy all customizations
+        else
+          do verboseLn opts $ "No customizations (there is no directory " ++ sourceDir ++ ")"
+
 
 deleteTemplateDir :: FSpec -> IO ()
 deleteTemplateDir fSpec = removeDirectoryRecursive $ dirPrototype (getOpts fSpec) </> "templates"

@@ -15,6 +15,7 @@ where
 import Ampersand.Basics
 import Data.Char
 import Data.List as DL
+import Data.List.Split (splitOn)
 import Data.Maybe
 import Data.Time.Clock
 import Data.Time.LocalTime
@@ -37,7 +38,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
-                       , dirCustomizations :: String -- the directory that is copied after generating the prototype
+                       , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , allInterfaces :: Bool
                        , dbName :: String
                        , namespace :: String
@@ -207,7 +208,7 @@ getOptions' envOpts =
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfile       = fatal "No monadic options available."
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
-                      , dirCustomizations = "customizations"
+                      , dirCustomizations = ["customizations"]
                       , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
                       , preVersion       = fromMaybe "" $ envPreVersion envOpts
@@ -379,13 +380,12 @@ options = [ (Option ['v']   ["version"]
             , Hidden)
           , (Option ['p']     ["proto"]
                (OptArg (\nm opts -> opts {dirPrototype = fromMaybe (dirPrototype opts) nm
-                                                  ,genPrototype = True}
+                                         ,genPrototype = True}
                        ) "DIRECTORY")
                ("generate a functional prototype (This overrules environment variable "++ dirPrototypeVarName ++ ").")
             , Public)
           , (Option []     ["customizations"]
-               (ReqArg (\nm opts -> opts {dirCustomizations = nm
-                                         }
+               (ReqArg (\names opts -> opts {dirCustomizations = splitOn ";" names}
                        ) "DIRECTORY")
                "copy a directory into the generated prototype, instead of the default."
             , Public)
