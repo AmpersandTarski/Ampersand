@@ -98,12 +98,12 @@ copyTemplates fSpec =
     }
 
 copyCustomizations :: FSpec -> IO ()
-copyCustomizations fSpec = do
-  let adlSourceDir = takeDirectory $ fileName opts
-      custDirs = map (adlSourceDir </>) (dirCustomizations opts)
-      protoDir = dirPrototype opts
+copyCustomizations fSpec = 
   mapM_ (copyDir protoDir) custDirs
     where
+      adlSourceDir = takeDirectory $ fileName opts
+      custDirs = map (adlSourceDir </>) (dirCustomizations opts)
+      protoDir = dirPrototype opts
       opts = getOpts fSpec
       copyDir :: FilePath -> FilePath -> IO()
       copyDir targetDir sourceDir = do
@@ -113,7 +113,6 @@ copyCustomizations fSpec = do
              copyDirRecursively sourceDir targetDir opts -- recursively copy all customizations
         else
           do verboseLn opts $ "No customizations (there is no directory " ++ sourceDir ++ ")"
-
 
 deleteTemplateDir :: FSpec -> IO ()
 deleteTemplateDir fSpec = removeDirectoryRecursive $ dirPrototype (getOpts fSpec) </> "templates"
