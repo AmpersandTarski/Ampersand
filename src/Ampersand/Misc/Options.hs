@@ -385,7 +385,7 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option []     ["customizations"]
                (ReqArg (\nm opts -> opts {dirCustomizations = nm
-                                                ,genPrototype = True}
+                                         }
                        ) "DIRECTORY")
                "copy a directory into the generated prototype, instead of the default."
             , Public)
