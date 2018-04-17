@@ -334,7 +334,16 @@ class Resource extends Atom implements ArrayAccess
         if (is_null($this->ifcData)) {
             $this->get(0, 1);
         }
-        return $this->ifcData[$offset];
+        if ($this->parentList->getIfc()->getSubinterface($offset)->tgtConcept->isObject()) {
+            return $this->ifcData[$offset];
+        }
+        if ($this->parentList->getIfc()->getSubinterface($offset)->isUni()) {
+            return $this->ifcData[$offset]->id ?? null;
+        } else {
+            return array_map(function(Resource $resource){
+                return $resource->id;
+            }, $this->ifcData[$offset]);
+        }
     }
 
     public function offsetSet($offset, $value)
