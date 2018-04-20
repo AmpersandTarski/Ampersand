@@ -324,7 +324,7 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
     {
         // Get data (1 level deep) if icfData is not (yet) set
         if (is_null($this->ifcData)) {
-            $this->get(0, 1);
+            $this->get(Options::INCLUDE_REF_IFCS | Options::INCLUDE_LINKTO_IFCS, 1);
         }
         return isset($this->ifcData[$offset]);
     }
@@ -333,7 +333,7 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
     {
         // Get data (1 level deep) if icfData is not (yet) set
         if (is_null($this->ifcData)) {
-            $this->get(0, 1);
+            $this->get(Options::INCLUDE_REF_IFCS | Options::INCLUDE_LINKTO_IFCS, 1);
         }
         if ($this->parentList->getIfc()->getSubinterface($offset)->tgtConcept->isObject()) {
             return $this->ifcData[$offset];
