@@ -9,6 +9,7 @@ namespace Ampersand\Interfacing;
 
 use stdClass;
 use ArrayAccess;
+use IteratorAggregate;
 use Exception;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
@@ -22,7 +23,7 @@ use Ampersand\Interfacing\Options;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Resource extends Atom implements ArrayAccess
+class Resource extends Atom implements ArrayAccess, IteratorAggregate
 {
         
     /**
@@ -355,6 +356,14 @@ class Resource extends Atom implements ArrayAccess
     {
         throw new Exception("ArrayAccess::offsetUnset() not implemented on Resource class", 500);
     }
+
+/**************************************************************************************************
+ * ArrayAccess methods
+ *************************************************************************************************/
+public function getIterator()
+{
+    throw new Exception("It is not possible to iterate over a single Resource", 500);
+}
 
 /**************************************************************************************************
  * Methods to call on Resource
