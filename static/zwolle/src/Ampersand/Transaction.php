@@ -136,6 +136,25 @@ class Transaction
     }
 
     /**
+     * Cancel (i.e. rollback) the transaction
+     *
+     * @return \Ampersand\Transaction
+     */
+    public function cancel(): Transaction
+    {
+        $this->logger->info("Request to cancel transaction: {$this->id}");
+
+        if ($this->isClosed()) {
+            throw new Exception("Cannot cancel transaction, because transaction is already closed", 500);
+        }
+
+        $this->rollback();
+
+        self::$currentTransaction = null; // unset currentTransaction
+        return $this;
+    }
+
+    /**
      * Alias for closing the transaction with the intention to rollback
      * Affected conjuncts are evaluated and invariant rule violations are reported
      *
