@@ -134,13 +134,25 @@ class Transaction
     {
         return 'Transaction ' . $this->id;
     }
+
+    /**
+     * Alias for closing the transaction with the intention to rollback
+     * Affected conjuncts are evaluated and invariant rule violations are reported
+     *
+     * @return Transaction
+     */
+    public function dryRun(): Transaction
+    {
+        return $this->close(true);
+    }
     
     /**
      * Close transaction
      *
+     * @param bool $dryRun
      * @return \Ampersand\Transaction $this
      */
-    public function close(): Transaction
+    public function close(bool $dryRun = false): Transaction
     {
         $this->logger->info("Request to close transaction: {$this->id}");
         
@@ -166,15 +178,20 @@ class Transaction
         }
         
         // Decide action (commit or rollback)
-        if ($this->invariantRulesHold) {
-            $this->logger->info("Commit transaction");
-            $this->commit();
-        } elseif (Config::get('ignoreInvariantViolations', 'transactions')) {
-            $this->logger->warning("Commit transaction with invariant violations");
-            $this->commit();
-        } else {
-            $this->logger->info("Rollback transaction, invariant rules do not hold");
+        if ($dryRun){
+            $this->logger->info("Rollback transaction, because dry run was requested");
             $this->rollback();
+        } else {
+            if ($this->invariantRulesHold) {
+                $this->logger->info("Commit transaction");
+                $this->commit();
+            } elseif (!$this->invariantRulesHold && Config::get('ignoreInvariantViolations', 'transactions')) {
+                $this->logger->warning("Commit transaction with invariant violations");
+                $this->commit();
+            } else {
+                $this->logger->info("Rollback transaction, because invariant rules do not hold");
+                $this->rollback();
+            }
         }
         
         Hook::callHooks('postCloseTransaction', get_defined_vars());
