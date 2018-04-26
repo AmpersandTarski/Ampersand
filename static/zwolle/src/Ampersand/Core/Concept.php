@@ -542,6 +542,16 @@ class Concept
      */
     public function atomExists(Atom $atom): bool
     {
+        // Convert atom to more generic/specific concept if needed
+        if ($atom->concept !== $this) {
+            if (!$this->inSameClassificationTree($atom->concept)) {
+                throw new Exception("Concept of atom '{$atom}' not in same classifcation tree with {$this}", 500);
+            } else {
+                $atom = new Atom($atom->id, $this);
+            }
+        }
+
+        // Check if atom exists in concept population
         if (in_array($atom->id, $this->atomCache, true)) { // strict mode to prevent 'Nesting level too deep' error
             return true;
         } elseif ($this->primaryPlug->atomExists($atom)) {
