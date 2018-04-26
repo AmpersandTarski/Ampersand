@@ -714,6 +714,10 @@ class Concept
             throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because '{$rightAtom}' does not exist", 500);
         }
 
+        // Merge step 0: start with most specific versions of the atoms
+        $leftAtom = $leftAtom->getSmallest();
+        $rightAtom = $rightAtom->getSmallest();
+
         // Merge step 1: if right atom is more specific, make left atom also more specific
         if ($leftAtom->concept->hasSpecialization($rightAtom->concept)) {
             $rightAtom->concept->addAtom($leftAtom);
