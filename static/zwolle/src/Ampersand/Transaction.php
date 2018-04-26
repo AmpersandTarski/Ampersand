@@ -197,7 +197,7 @@ class Transaction
         }
         
         // Decide action (commit or rollback)
-        if ($dryRun){
+        if ($dryRun) {
             $this->logger->info("Rollback transaction, because dry run was requested");
             $this->rollback();
         } else {
