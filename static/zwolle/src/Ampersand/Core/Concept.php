@@ -330,31 +330,37 @@ class Concept
     }
     
     /**
-     * Array of all concepts of which this concept is a generalization.
+     * Array of concepts of which this concept is a generalization.
      *
+     * @param bool $onlyDirectSpecializations (default=false)
      * @return \Ampersand\Core\Concept[]
      */
-    public function getSpecializations()
+    public function getSpecializations(bool $onlyDirectSpecializations = false)
     {
-        $specializations = [];
-        foreach ($this->specializations as $conceptName) {
-            $specializations[$conceptName] = self::getConcept($conceptName);
+        $specizalizations = $onlyDirectSpecializations ? $this->directSpecs : $this->specializations;
+        
+        $returnArr = [];
+        foreach ($specizalizations as $conceptName) {
+            $returnArr[$conceptName] = self::getConcept($conceptName);
         }
-        return $specializations;
+        return $returnArr;
     }
     
     /**
-     * Array of all concepts of which this concept is a specialization (exluding the concept itself).
+     * Array of concepts of which this concept is a specialization (exluding the concept itself).
      *
+     * @param bool $onlyDirectGeneralizations (default=false)
      * @return \Ampersand\Core\Concept[]
      */
-    public function getGeneralizations()
+    public function getGeneralizations(bool $onlyDirectGeneralizations = false)
     {
-        $generalizations = [];
-        foreach ($this->generalizations as $conceptName) {
-            $generalizations[$conceptName] = self::getConcept($conceptName);
+        $generalizations = $onlyDirectGeneralizations ? $this->directGens : $this->generalizations;
+
+        $returnArr = [];
+        foreach ($generalizations as $conceptName) {
+            $returnArr[$conceptName] = self::getConcept($conceptName);
         }
-        return $generalizations;
+        return $returnArr;
     }
     
     /**
