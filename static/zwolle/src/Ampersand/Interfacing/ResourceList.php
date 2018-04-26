@@ -127,6 +127,11 @@ class ResourceList implements IteratorAggregate
                 return $resource;
             }
         }
+
+        // Create the target atom if allowed
+        if ($this->ifc->tgtConcept->isObject() && $this->ifc->crudC()) {
+            return $this->makeResource($tgtId);
+        }
         
         // When not found
         throw new Exception("Resource not found", 404);
