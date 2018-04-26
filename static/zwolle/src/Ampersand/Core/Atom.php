@@ -152,6 +152,24 @@ class Atom implements JsonSerializable
     {
         return $this->concept->atomExists($this);
     }
+
+    /**
+     * Get the most specific version of this atom (i.e. with the smallest concept)
+     *
+     * @return \Ampersand\Core\Atom
+     */
+    public function getSmallest(): Atom
+    {
+        foreach ($this->concept->getSpecializations($onlyDirectSpecializations = true) as $specConcept) {
+            // NOTE! Only a single path down is considered.
+            if ($specConcept->atomExists($this)) {
+                // Walk further down the classification tree
+                return (new Atom($this->id, $specConcept))->getSmallest();
+            }
+        }
+        // No further specializations
+        return $this;
+    }
     
     /**
      * Add atom to concept
