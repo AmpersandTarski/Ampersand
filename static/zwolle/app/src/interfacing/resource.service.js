@@ -50,16 +50,17 @@ angular.module('AmpersandApp')
             .then(function(data) {
                 data = data.plain();
                 
+                // Update visual feedback (notifications and buttons)
+                ResourceService.processResponse(resource, data);
+
                 // Update resource data if committed
                 if(data.isCommitted) {
                     if(resource._isRoot_ && data.navTo == null) resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
                     else resource = angular.extend(resource, data.content);
+                    return {resource : resource, saved: true};
+                } else {
+                    return {resource : resource, saved: false};
                 }
-                
-                // Update visual feedback (notifications and buttons)
-                ResourceService.processResponse(resource, data);
-
-                return {resource : resource, saved: true};
             });
 
             // Add promise to loading list
