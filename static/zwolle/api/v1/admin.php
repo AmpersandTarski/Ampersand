@@ -44,7 +44,7 @@ $api->group('/admin', function () {
         }
         $resourceType = $args['resourceType'];
         
-        $list = $request->getParsedBody();
+        $list = $request->reparseBody()->getParsedBody();
         if (!is_array($list)) {
             throw new Exception("Body must be array. Non-array provided", 500);
         }
@@ -189,7 +189,7 @@ $api->group('/admin', function () {
         $content = ['notifications' => Notifications::getAll(), 'files' => $_FILES];
         return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
-});
+})->add($middleWare1);
 
 /**
  * @phan-closure-scope \Slim\App
@@ -268,4 +268,4 @@ $api->group('/admin/report', function () {
         return $response->withHeader('Content-Disposition', "attachment; filename={$filename}")
                         ->withHeader('Content-Type', 'text/csv; charset=utf-8');
     });
-});
+})->add($middleWare1);
