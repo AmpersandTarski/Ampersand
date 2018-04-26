@@ -578,9 +578,9 @@ class Concept
      * ór adding an existing atom to another concept set (making it a specialization)
      *
      * @param \Ampersand\Core\Atom $atom
-     * @return void
+     * @return \Ampersand\Core\Atom
      */
-    public function addAtom(Atom $atom)
+    public function addAtom(Atom $atom): Atom
     {
         // Adding atom[A] to [A] ($this)
         if ($atom->concept == $this) {
@@ -595,6 +595,7 @@ class Concept
                 }
                 $this->atomCache[] = $atom->id; // Add to cache
             }
+            return $atom;
         // Adding atom[A] to another concept [B] ($this)
         } else {
             // Check if concept A and concept B are in the same classification tree
@@ -608,7 +609,7 @@ class Concept
             }
             
             $atom->concept = $this; // Change concept definition
-            $this->addAtom($atom);
+            return $this->addAtom($atom);
         }
     }
     
@@ -720,7 +721,7 @@ class Concept
 
         // Merge step 1: if right atom is more specific, make left atom also more specific
         if ($leftAtom->concept->hasSpecialization($rightAtom->concept)) {
-            $rightAtom->concept->addAtom($leftAtom);
+            $leftAtom = $rightAtom->concept->addAtom($leftAtom);
         }
 
         // Merge step 2: rename right atom by left atom in relation sets
