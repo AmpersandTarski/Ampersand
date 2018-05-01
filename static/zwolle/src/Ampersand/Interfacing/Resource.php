@@ -410,7 +410,7 @@ public function getIterator()
             // We only need to check LINKTO ref interfaces, because cycles may not exist in regular references (enforced by Ampersand generator)
             // If $depth is provided, no check is required, because recursion is finite
             if ($parentIfc->isLinkTo() && is_null($depth)) {
-                if (in_array($this->id, $recursionArr[$parentIfc->getRefToIfcId()])) {
+                if (in_array($this->id, $recursionArr[$parentIfc->getRefToIfcId()] ?? [])) {
                     throw new Exception("Infinite loop detected for {$this} in " . $parentIfc->getPath(), 500);
                 } else {
                     $recursionArr[$parentIfc->getRefToIfcId()][] = $this->id;
