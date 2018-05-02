@@ -119,7 +119,7 @@ class ExecEngine extends RuleEngine
             try {
                 $roles[] = Role::getRoleByName($roleName);
             } catch (Exception $e) {
-                $logger->debug("ExecEngine role '{$roleName}' configured, but role is not used/defined in &-script.");
+                $logger->info("ExecEngine role '{$roleName}' configured, but role is not used/defined in &-script.");
             }
         }
 
@@ -133,7 +133,7 @@ class ExecEngine extends RuleEngine
             foreach ($roles as $role) {
                 $logger->info("{+ Run #" . self::$runCount . " using role '{$role}' (auto rerun: " . var_export(self::$autoRerun, true) . ")");
                 $rulesFixed = array_merge($rulesFixed, self::runForRole($role, $allRules));
-                $logger->debug("+} Run finished");
+                $logger->info("+} Run finished");
             }
 
             // If no rules fixed (i.e. no violations) in this loop: stop ExecEngine
@@ -173,12 +173,12 @@ class ExecEngine extends RuleEngine
             
             // Fix violations
             $total = count($violations);
-            $logger->debug("{++ ExecEngine fixing {$total} violations for rule '{$rule}'");
+            $logger->info("{++ ExecEngine fixing {$total} violations for rule '{$rule}'");
             foreach ($violations as $key => $violation) {
                 $num = $key + 1;
-                $logger->debug("{+++ Fixing violation {$num}/{$total}: ({$violation->src},{$violation->tgt})");
+                $logger->info("{+++ Fixing violation {$num}/{$total}: ({$violation->src},{$violation->tgt})");
                 self::fixViolation($violation);
-                $logger->debug("+++}");
+                $logger->info("+++}");
             }
             $rulesFixed[] = $rule->id;
             $logger->info("++} ExecEngine fixed {$total} violations for rule '{$rule}'");
