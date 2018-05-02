@@ -370,10 +370,10 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
 /**************************************************************************************************
  * ArrayAccess methods
  *************************************************************************************************/
-public function getIterator()
-{
-    throw new Exception("It is not possible to iterate over a single Resource", 500);
-}
+    public function getIterator()
+    {
+        throw new Exception("It is not possible to iterate over a single Resource", 500);
+    }
 
 /**************************************************************************************************
  * Methods to call on Resource
