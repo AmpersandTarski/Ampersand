@@ -69,7 +69,14 @@ class ResourceList implements IteratorAggregate
             throw new Exception("Unauthorized to access interface {$ifc->label}", 403);
         }
         
-        $this->src = $src;
+        // Epsilon. TODO: remove after multiple concept specifications are possible for Atom objects
+        if ($src->concept !== $ifc->srcConcept) {
+            $this->src = new Resource($src->id, $ifc->srcConcept, $src->getParentList());
+        // No epsilon
+        } else {
+            $this->src = $src;
+        }
+        
         $this->ifc = $ifc;
     }
     

@@ -180,6 +180,16 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
     {
         return Config::get('serverURL') . Config::get('apiPath') . "/resource/{$this->concept->name}/" . $this->id;
     }
+
+    /**
+     * Return parent list (i.e. the list of which this Resource is a target resource/atom)
+     *
+     * @return \Ampersand\Interfacing\ResourceList|null
+     */
+    public function getParentList()
+    {
+        return $this->parentList;
+    }
     
     /**
      * Return resource representation of given interface and target atom
