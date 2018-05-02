@@ -351,7 +351,7 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
         if ($this->parentList->getIfc()->getSubinterface($offset)->isUni()) {
             return $this->ifcData[$offset]->id ?? null;
         } else {
-            return array_map(function(Resource $resource){
+            return array_map(function (Resource $resource) {
                 return $resource->id;
             }, $this->ifcData[$offset]);
         }
