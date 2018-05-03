@@ -1,8 +1,12 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
+* Upgrade to LTS-10.10
+* Upgrade to pandoc vs 2.0
+
 ## v3.9.5 (15 april 2018)
 
-* Upgraded to LTS-10.1
 * [Issue #760](https://github.com/AmpersandTarski/Ampersand/issues/760) Fixed a bug causing wrong results in the prototype.
 
 ## v3.9.4 (16 march 2018)

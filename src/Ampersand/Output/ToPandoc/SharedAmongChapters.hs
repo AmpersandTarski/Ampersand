@@ -150,13 +150,13 @@ hyperTarget fSpec a =
 citeGen :: Xreferenceble a => FSpec -> String -> a -> Inlines
 citeGen fSpec p l = -- (\x -> trace (myShow x) x) $
   cite [Citation { citationId = p++xLabel fSpec l
-                 , citationPrefix = [Str "AAP"]
-                 , citationSuffix = [Str "NOOT"]
+                 , citationPrefix = []
+                 , citationSuffix = []
                  , citationHash = 0
                  , citationNoteNum = 0
                  , citationMode = NormalCitation
                  }
-       ] "HOPSEFLOPS"
+       ] mempty
   where
     myShow :: Show a => Many a -> String
     myShow = show . head . toList

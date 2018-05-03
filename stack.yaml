@@ -2,23 +2,19 @@
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
 # resolver: lts-3.18
-resolver: lts-11.1
-allow-newer: true
+resolver: lts-10.10 #This is the latest that supports graphviz up till now. 
+allow-newer: false
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: 
-- graphviz-2999.19.0.0
-- fgl-5.5.4.0
-- SpreadsheetML-0.1
-- simple-sql-parser-0.4.3
-- yaml-config-0.4.0
-- pandoc-crossref-0.3.0.1
+- pandoc-crossref-0.3.0.0
 - roman-numerals-0.5.1.5
-- process-1.6.2.0
-
+- simple-sql-parser-0.4.3
+- SpreadsheetML-0.1
+- yaml-config-0.4.0
 # Override default flag values for local packages and extra-deps
 flags: {}
 
