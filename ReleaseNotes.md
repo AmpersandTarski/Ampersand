@@ -11,6 +11,8 @@
 * PHP Backend: added function/method parameter and return type specifications
 * PHP Backend: update from Slim v2 to v3 api framework
 
+## v3.9.5 (15 april 2018)
+
 * [Issue #760](https://github.com/AmpersandTarski/Ampersand/issues/760) Fixed a bug causing wrong results in the prototype.
 
 ## v3.9.4 (16 march 2018)
