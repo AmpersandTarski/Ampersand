@@ -80,7 +80,7 @@ class ExcelImporter
         // Determine $leftConcept from cell A1
         $leftConcept = Concept::getConceptByLabel((string)$worksheet->getCell('A1'));
         if ($leftConcept != $ifc->tgtConcept) {
-            throw new Exception("Target concept of interface '{$ifc->getPath()}' does not match concept specified in cell {$worksheet->getTitle()}:A1", 500);
+            throw new Exception("Target concept of interface '{$ifc->getPath()}' does not match concept specified in cell {$worksheet->getTitle()}!A1", 500);
         }
         
         // Parse other columns of first row
@@ -94,7 +94,7 @@ class ExcelImporter
             if ($cellvalue != '') {
                 $subIfc = $ifc->getSubinterfaceByLabel($cellvalue);
                 if (!$subIfc->crudU() || !$subIfc->relation) {
-                    throw new Exception("Use of {$subIfc->label} in cell {$columnLetter}1 is not allowed. No update rights specified in interface", 403);
+                    throw new Exception("Use of {$subIfc->label} in cell '{$worksheet->getTitle()}!{$columnLetter}1' is not allowed. No update rights specified in interface", 400);
                 }
                 $header[$columnLetter] = $subIfc;
             } else {
@@ -107,8 +107,9 @@ class ExcelImporter
             /** @var \PHPExcel_Worksheet_Row $row */
 
             $rowNr = $row->getRowIndex();
+            $cell = $worksheet->getCell('A'.$rowNr);
 
-            $firstCol = (string)$worksheet->getCell('A'.$rowNr)->getCalculatedValue();
+            $firstCol = (string)$cell->getCalculatedValue();
             
             // If cell Ax is empty, skip complete row
             if ($firstCol == '') {
@@ -117,7 +118,7 @@ class ExcelImporter
             } // If cell Ax contains '_NEW', this means to automatically create a new atom
             elseif ($firstCol == '_NEW') {
                 if (!$ifc->crudC()) {
-                    throw new Exception("Trying to create new atom in cell A{$rowNr}. This is not allowed.", 403);
+                    throw new Exception("Trying to create new atom in cell '{$cell->getWorksheet()->getTitle()}!{$cell->getCoordinate()}'. This is not allowed.", 400);
                 }
                 $leftAtom = $leftConcept->createNewAtom()->add();
             } // Else instantiate atom with given atom identifier
@@ -125,7 +126,7 @@ class ExcelImporter
                 $leftAtom = new Atom($firstCol, $leftConcept);
                 if (!$leftAtom->exists()) {
                     if (!$ifc->crudC()) {
-                        throw new Exception("Trying to create new {$leftConcept} in cell A{$rowNr}. This is not allowed.", 403);
+                        throw new Exception("Trying to create new {$leftConcept} in cell '{$cell->getWorksheet()->getTitle()}!{$cell->getCoordinate()}'. This is not allowed.", 400);
                     } else {
                         $leftAtom->add();
                     }
@@ -151,8 +152,8 @@ class ExcelImporter
                 
                 $rightAtom = new Atom($cellvalue, $subifc->tgtConcept);
                 if (!$rightAtom->exists()) {
-                        throw new Exception("Trying to create new {$ifc->tgtConcept} in cell {$columnLetter}{$rowNr}. This is not allowed.", 403);
                     if ($subifc->tgtConcept->isObject() && !$subifc->crudC()) {
+                        throw new Exception("Trying to create new {$subifc->tgtConcept} in cell '{$cell->getWorksheet()->getTitle()}!{$cell->getCoordinate()}'. This is not allowed.", 400);
                     } else {
                         $rightAtom->add();
                     }
