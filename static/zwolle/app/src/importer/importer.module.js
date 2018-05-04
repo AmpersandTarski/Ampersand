@@ -7,13 +7,14 @@ app.config(function($routeProvider) {
             templateUrl : 'app/src/importer/importer.html',
             interfaceLabel : 'Population importer'
         });
-}).service('ImportService', function(FileUploader, NotificationService){
+}).service('ImportService', function(FileUploader, NotificationService, NavigationBarService){
     let uploader = new FileUploader({
         url: 'api/v1/admin/import'
     });
 
     uploader.onSuccessItem = function(fileItem, response, status, headers) {
         NotificationService.updateNotifications(response.notifications);
+        if(response.sessionRefreshAdvice) NavigationBarService.refreshNavBar();
     };
     
     uploader.onErrorItem = function(item, response, status, headers){

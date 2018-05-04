@@ -148,6 +148,9 @@ $api->group('/admin', function () {
     $this->post('/import', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
         $ampersandApp = $this['appContainer']['ampersand_app'];
+
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this['appContainer']['angular_app'];
         
         // Check for required role
         if (!$ampersandApp->hasRole(Config::get('allowedRolesForImporter'))) {
@@ -186,7 +189,10 @@ $api->group('/admin', function () {
         
         // Check all process rules that are relevant for the activate roles
         $ampersandApp->checkProcessRules();
-        $content = ['notifications' => Notifications::getAll(), 'files' => $_FILES];
+        $content = ['notifications' => Notifications::getAll(),
+                    'files' => $_FILES,
+                    'sessionRefreshAdvice' => $angularApp->getSessionRefreshAdvice()
+                    ];
         return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 })->add($middleWare1);
