@@ -156,7 +156,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
             
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
- do { obj <- buildObject (substituteReferenceObjectDef fSpec (ifcObj ifc))
+ do { obj <- buildObject (ifcObj ifc)
     ; return 
         FEInterface { ifcName = escapeIdentifier $ name ifc
                     , ifcLabel = name ifc
@@ -171,9 +171,9 @@ buildInterface fSpec allIfcs ifc =
     } 
   where    
     buildObject :: ObjectDef -> IO FEObject
-    buildObject object =
-     do { let iExp = conjNF (getOpts fSpec) $ objExpression object
-              
+    buildObject object' =
+     do { let object = substituteReferenceObjectDef fSpec object'
+        ; let iExp = conjNF (getOpts fSpec) $ objExpression object
         ; (aOrB, iExp') <-
             case objmsub object of
               Nothing                  ->
