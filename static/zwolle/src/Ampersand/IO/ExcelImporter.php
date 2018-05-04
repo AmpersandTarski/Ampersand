@@ -135,7 +135,7 @@ class ExcelImporter
             }
             
             // Process other columns of this row
-            foreach ($header as $columnLetter => $ifc) {
+            foreach ($header as $columnLetter => $subifc) {
                 $cell = $worksheet->getCell($columnLetter . $rowNr);
                 $cellvalue = (string)$cell->getCalculatedValue();
                 
@@ -149,16 +149,16 @@ class ExcelImporter
                     $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
                 }
                 
-                $rightAtom = new Atom($cellvalue, $ifc->tgtConcept);
+                $rightAtom = new Atom($cellvalue, $subifc->tgtConcept);
                 if (!$rightAtom->exists()) {
-                    if ($ifc->tgtConcept->isObject() && !$ifc->crudC()) {
                         throw new Exception("Trying to create new {$ifc->tgtConcept} in cell {$columnLetter}{$rowNr}. This is not allowed.", 403);
+                    if ($subifc->tgtConcept->isObject() && !$subifc->crudC()) {
                     } else {
                         $rightAtom->add();
                     }
                 }
                 
-                $leftAtom->link($rightAtom, $ifc->relation(), $ifc->relationIsFlipped)->add();
+                $leftAtom->link($rightAtom, $subifc->relation(), $subifc->relationIsFlipped)->add();
             }
         }
     }
