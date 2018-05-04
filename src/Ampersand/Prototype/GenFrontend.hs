@@ -156,7 +156,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
             
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
- do { obj <- buildObject (ifcObj ifc)
+ do { obj <- buildObject (substituteReferenceObjectDef fSpec (ifcObj ifc))
     ; return 
         FEInterface { ifcName = escapeIdentifier $ name ifc
                     , ifcLabel = name ifc
