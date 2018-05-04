@@ -98,7 +98,7 @@ class ExcelImporter
                 }
                 $header[$columnLetter] = $subIfc;
             } else {
-                $this->logger->warning("Skipping column {$columnLetter} in sheet {$worksheet->getTitle()}, because header is not provided");
+                $this->logger->notice("Skipping column {$columnLetter} in sheet {$worksheet->getTitle()}, because header is not provided");
             }
         }
         
@@ -113,7 +113,7 @@ class ExcelImporter
             
             // If cell Ax is empty, skip complete row
             if ($firstCol == '') {
-                $this->logger->warning("Skipping row {$rowNr} in sheet {$worksheet->getTitle()}, because column A is empty");
+                $this->logger->notice("Skipping row {$rowNr} in sheet {$worksheet->getTitle()}, because column A is empty");
                 continue;
             } // If cell Ax contains '_NEW', this means to automatically create a new atom
             elseif ($firstCol == '_NEW') {
@@ -245,7 +245,7 @@ class ExcelImporter
                     } else {
                         if ($line1[$col] == '' || $line2[$col] == '') {
                             // Skipping column
-                            $this->logger->warning("Skipping column {$col} in sheet {$worksheet->getTitle()}, because header is not complete");
+                            $this->logger->notice("Skipping column {$col} in sheet {$worksheet->getTitle()}, because header is not complete");
                         } // Relation is flipped when last character is a tilde (~)
                         elseif (substr($line1[$col], -1) == '~') {
                             $rightConcept = Concept::getConceptByLabel($line2[$col]);
@@ -301,7 +301,7 @@ class ExcelImporter
             if ($col == 'A') {
                 // If cell Ax is empty, skip complete row
                 if ($cellvalue == '') {
-                    $this->logger->warning("Skipping row {$row->getRowIndex()}, because column A is empty");
+                    $this->logger->notice("Skipping row {$row->getRowIndex()}, because column A is empty");
                     return; // stop processing complete row
                 } // If cell Ax contains '_NEW', this means to automatically create a new atom
                 elseif ($cellvalue == '_NEW') {
