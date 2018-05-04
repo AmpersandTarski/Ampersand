@@ -156,7 +156,7 @@ instance JSON ObjectDef JSONObjectDef where
          Just InterfaceRef{ siIsLink=False
                           , siIfcId=interfaceId} 
            -> let ifc = ifcObj (lookupInterface interfaceId)
-              in Just (conjNF opts (objExpression object' .:. objExpression ifc), objcrud ifc)
+              in Just (objExpression object' .:. objExpression ifc, objcrud ifc)
          _ -> Nothing
     lookupInterface :: String -> Interface
     lookupInterface nm = 
