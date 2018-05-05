@@ -1,1 +1,0 @@
-Files with .js extension in this folder will be automatically loaded into the Ampersand application.

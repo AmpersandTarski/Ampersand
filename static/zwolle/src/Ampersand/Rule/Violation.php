@@ -8,121 +8,139 @@
 namespace Ampersand\Rule;
 
 use Exception;
-use Ampersand\Database\Database;
 use Ampersand\Core\Atom;
-use Ampersand\Session;
+use Ampersand\Rule\Rule;
 
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Violation {
+class Violation
+{
 
     /**
      * Rule to which this violation belongs to
-     * @var Rule\Rule
+     *
+     * @var \Ampersand\Rule\Rule
      */
     public $rule;
 
     /**
+     * The source atom of the violation
      *
-     * @var Atom
+     * @var \Ampersand\Core\Atom
      */
     public $src;
 
     /**
+     * The target atom of the violation
      *
-     * @var Atom
+     * @var \Ampersand\Core\Atom
      */
     public $tgt;
 
     /**
+     * The violation message
      *
      * @var string
      */
     private $message;
 
     /**
-     * Array with urls that could be used to solve the violation
-     * @var string[]
-     */
-    public $urls;
-
-    /**
      * Constructor of violation
-     * @param Rule\Rule $rule
-     * @param string $srcAtom
-     * @param string $tgtAtom
+     *
+     * @param \Ampersand\Rule\Rule $rule
+     * @param string $srcAtomId
+     * @param string $tgtAtomId
      */
-    public function __construct($rule, $srcAtomId, $tgtAtomId){
+    public function __construct(Rule $rule, $srcAtomId, $tgtAtomId)
+    {
         $this->rule = $rule;
         $this->src = new Atom($srcAtomId, $rule->srcConcept);
         $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept);
     }
-
-    public function __toString(){
-
-    }
-
+    
     /**
+     * Function is called when object is treated as a string
      *
-     * @throws Exception when segment type is unknown
+     * @return string role label
+     */
+    public function __toString()
+    {
+        return "({$this->src},{$this->tgt})";
+    }
+    
+    /**
+     * Get violation message
+     *
      * @throws Exception when segment expression return more that 1 tgt atom
      * @return string
      */
-    public function getViolationMessage(){
-        $database = Database::singleton();
+    public function getViolationMessage(): string
+    {
+        $strArr = [];
+        foreach ($this->rule->getViolationSegments() as $segment) {
+            $tgtAtomIds = $segment->getData($this->src, $this->tgt);
 
-        $strArr = array();
-        foreach ($this->rule->violationSegments as $segment){
-            // text segment
-            if ($segment['segmentType'] == 'Text'){
-                $strArr[] = $segment['Text'];
-                 
-            // expressie segment
-            }elseif($segment['segmentType'] == 'Exp'){
-                // select starting atom depending on whether the segment uses the src of tgt atom.
-                $atom = $segment['srcOrTgt'] == 'Src' ? $this->src : $this->tgt;
-
-                // quering the expression
-                $expSQL = str_replace('_SESSION', session_id(), $segment['expSQL']);
-                $query = "SELECT DISTINCT `tgt` FROM ($expSQL) AS `results` WHERE `src` = '{$atom->idEsc}'"; // SRC of TGT kunnen door een expressie gevolgd worden
-                $rows = $database->Exe($query);
-
-                // returning the result
-                if(count($rows) > 1) throw new Exception("Expression of pairview results in more than one tgt atom", 501); // 501: Not implemented
-                $strArr[] = $rows[0]['tgt'];
-
-            // unknown segment
-            }else{
-                $errorMessage = "Unknown segmentType '{$segment['segmentType']}' in violationSegments of rule '{$this->rule->id}'";
-                throw new Exception($errorMessage, 501); // 501: Not implemented
+            if (count($tgtAtomIds) > 1) {
+                throw new Exception("Expression of RULE segment '{$segment}' results in more than one tgt atom", 501); // 501: Not implemented
             }
+            $strArr[] = count($tgtAtomIds) ? $tgtAtomIds[0] : null;
         }
 
-        // If empty array of strings (i.e. no violation segments defined), use default violation representation: '<srcAtom>,<tgtAtom>'
-        $this->message = empty($strArr) ? "{$this->src->getLabel()},{$this->tgt->getLabel()}" : implode($strArr);
-
-        return $this->message;
+        // If empty array of strings (i.e. no violation segments defined), use default violation representation: '<src>,<tgt>'
+        return $this->message = empty($strArr) ? "{$this->src},{$this->tgt}" : implode($strArr);
     }
 
     /**
-     * Build links to interfaces to solve the violation
-     * @return array
+     * Get violation message prepared for ExecEngine
+     *
+     * @return string
      */
-    public function getLinks(){
-        $session = Session::singleton();
+    public function getExecEngineViolationMessage(): string
+    {
+        $strArr = [];
+        foreach ($this->rule->getViolationSegments() as $segment) {
+            $tgtAtomIds = $segment->getData($this->src, $this->tgt);
 
-        $links = array();
-        foreach ($session->getInterfacesToReadConcept($this->src->concept) as $interface){
-            $links[] = "#/{$interface->id}/{$this->src->getJsonRepresentation()}";
+            if (count($tgtAtomIds) == 0) {
+                $strArr[] = '_NULL'; // use reserved keyword '_NULL' to specify in the return string that segment is empty (i.e. no target atom for expr)
+            } else { // >= 1
+                $str = implode('_AND', $tgtAtomIds); // use reserved keyword '_AND' as separator between multiple atom ids
+
+                // Prevent certain user input that has special meaning in ExecEngine. Only allow when segment type is 'Text' (i.e. segment is specified in &-script)
+                if ($segment->getType() != 'Text') {
+                    $strArr[] = str_replace(['{EX}','{php}'], '', $str);
+                } else {
+                    $strArr[] = $str;
+                }
+            }
         }
-        foreach ($session->getInterfacesToReadConcept($this->tgt->concept) as $interface){
-            $links[] = "#/{$interface->id}/{$this->tgt->getJsonRepresentation()}";
+        return $this->message = implode($strArr); // glue as one string
+    }
+
+    /**
+     * Get list of interfaces to solve the violation
+     *
+     * @param string $srcOrTgt specifies to get interfaces for source concept (src), target concept (tgt) or both (null)
+     * @return \Ampersand\Interfacing\InterfaceObject[]
+     */
+    public function getInterfaces($srcOrTgt = null): array
+    {
+        /** @var \Pimple\Container $container */
+        global $container; // TODO: remove dependency to global $container var
+        
+        switch ($srcOrTgt) {
+            case 'src':
+                return $container['ampersand_app']->getInterfacesToReadConcepts([$this->src->concept]);
+                break;
+            case 'tgt':
+                return $container['ampersand_app']->getInterfacesToReadConcepts([$this->tgt->concept]);
+                break;
+            default:
+                return $container['ampersand_app']->getInterfacesToReadConcepts([$this->src->concept, $this->tgt->concept]);
+                break;
         }
-        return array_unique($links);
     }
 }
-
-?>

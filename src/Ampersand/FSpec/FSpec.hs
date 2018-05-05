@@ -28,6 +28,7 @@ module Ampersand.FSpec.FSpec
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
           , showSQL
+          , substituteReferenceObjectDef
           ) where
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -334,3 +335,28 @@ showSQL tt =
      Object           -> "VARCHAR(255)"
      TypeOfOne        -> fatal "ONE is not represented in SQL" 
 
+-- In case of reference to an INTERFACE, not used as a LINKTO, the
+-- expression and cruds are replaced. This is introduce with the
+-- refactoring of the frontend interfaces in oct/nov 2016. 
+substituteReferenceObjectDef :: FSpec -> ObjectDef -> ObjectDef
+substituteReferenceObjectDef fSpec originalObjectDef =
+  case substitution of
+    Nothing           -> originalObjectDef
+    Just (expr,cruds) -> originalObjectDef
+                            { objExpression  = expr
+                            , objcrud = cruds
+                            }
+  where
+    substitution :: Maybe (Expression, Cruds)
+    substitution =
+      case objmsub originalObjectDef of
+        Just InterfaceRef{ siIsLink=False
+                          , siIfcId=interfaceId} 
+          -> let ifc = ifcObj (lookupInterface interfaceId)
+              in Just (objExpression originalObjectDef .:. objExpression ifc, objcrud ifc)
+        _ -> Nothing
+    lookupInterface :: String -> Interface
+    lookupInterface nm = 
+        case [ ifc | ifc <- (interfaceS fSpec ++ interfaceG fSpec), name ifc == nm ] of
+          [ifc] -> ifc
+          _     -> fatal "Interface lookup returned zero or more than one result"

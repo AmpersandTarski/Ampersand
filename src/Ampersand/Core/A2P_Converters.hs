@@ -340,11 +340,10 @@ aSubIfc2pSubIfc sub =
                       , si_class = mStr
                       , si_box   = map aObjectDef2pObjectDef objs
                       }
-  InterfaceRef isLinkto str cruds
+  InterfaceRef isLinkto str
     -> P_InterfaceRef { pos    = fatal "Origin is not present in SubInterface"
                       , si_isLink = isLinkto
                       , si_str    = str
-                      , si_crud   = aCruds2pCruds cruds
                       }
 
 aCruds2pCruds :: Cruds -> Maybe P_Cruds

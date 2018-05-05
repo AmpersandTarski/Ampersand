@@ -1,9 +1,8 @@
 <?php
 
-use Ampersand\Config;
-use Ampersand\AngularApp;
+use Ampersand\Misc\Config;
 
-try{
+try {
     Config::set('pathToGeneratedFiles', 'global', dirname(dirname(__FILE__)) . '/generics/');
     Config::set('pathToAppFolder', 'global', dirname(dirname(__FILE__)) . '/app/');
     
@@ -33,22 +32,21 @@ try{
     Config::set('absolutePath', 'global', dirname(__DIR__) . DIRECTORY_SEPARATOR);
     Config::set('uploadPath', 'global', 'uploads/');
     Config::set('logPath', 'global', 'log/');
-    Config::set('allowedMimeTypes', 'global', array('application/vnd.ms-excel'
+    Config::set('allowedMimeTypes', 'global', ['application/vnd.ms-excel'
             ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             ,'application/excel'
             ,'application/pdf'
             ,'text/xml'
-    ));
+            ]);
+    Config::set('allowedRolesForImporter', 'global', null); // implies that everyone has access
 
     Config::set('loginEnabled', 'global', false); // enable/disable login functionality (requires Ampersand script, see localSettings.php)
 
 
-    Config::set('checkDefaultPopulation', 'transactions', true); // For debugging set to false (commits the initial population, regardless if it has invariant violations)
     Config::set('ignoreInvariantViolations', 'transactions', false); // for debugging can be set to true (transactions will be committed regardless off invariant violations)
     Config::set('skipUniInjConjuncts', 'transactions', false); // TODO: remove after fix for issue #535
     Config::set('interfaceAutoCommitChanges', 'transactions', true); // specifies whether changes in an interface are automatically commited when allowed (all invariants hold)
     Config::set('interfaceAutoSaveChanges', 'transactions', true); // specifies whether changes in interface are directly communicated (saved) to server
-    Config::set('interfaceCacheGetCalls', 'transactions', false); // specifies whether GET calls should be cached by the frontend (e.g. angular) application
 
     // Default CRUD rights for interfaces
     Config::set('defaultCrudC', 'transactions', true);
@@ -64,20 +62,11 @@ try{
     Config::set('defaultAutoHideSuccesses', 'notifications', true);
     Config::set('defaultShowErrors', 'notifications', true);
     Config::set('defaultShowInvariants', 'notifications', true);
-    
-    // Navigation menu settings
-    AngularApp::addMenuItem('refresh', 'app/views/menu/installer.html', 
-        function($session){
-            return !Config::get('productionEnv');
-        });
-    
-    AngularApp::addMenuItem('refresh', 'app/views/menu/checkAllRules.html',
-        function($session){
-            return !Config::get('productionEnv');
-        });
 
-}catch(Exception $e){
+    // ExecEngine settings
+    Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
+    Config::set('autoRerun', 'execEngine', true);
+    Config::set('maxRunCount', 'execEngine', 10);
+} catch (Exception $e) {
     throw $e;
 }
-
-?>

@@ -10,108 +10,121 @@ namespace Ampersand\Rule;
 use Exception;
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
-use Ampersand\Config;
+use Ampersand\Plugs\ViewPlugInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Rule {
+class Rule
+{
 
     /**
-     * Contains all rule definitions
-     * @var Rule[]
+     * List of all rules
+     *
+     * @var \Ampersand\Rule\Rule[]
      */
     private static $allRules;
     
     /**
+     * Logger
      *
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
 
     /**
-     * 
+     * Dependency injection of an ViewPlug implementation
+     *
+     * @var \Ampersand\Plugs\ViewPlugInterface
+     */
+    public $plug;
+
+    /**
+     * Rule identifier
+     *
      * @var string
      */
     public $id;
     
     /**
-     * Specifies the file and line number of the Ampersand script where this rule is defined
+     * The file and line number of the Ampersand script where this rule is defined
+     *
      * @var string
      */
-    public $origin;
+    protected $origin;
     
     /**
-     * Specifies the formalized rule in adl
+     * The formalized rule in adl
+     *
      * @var string
      */
-    public $ruleAdl;
+    protected $ruleAdl;
     
     /**
-     * Specifies the source concept of this rule
-     * @var Concept
+     * The source concept of this rule
+     *
+     * @var \Ampersand\Core\Concept
      */
     public $srcConcept;
     
     /**
-     * Specifies the target concept of this rule
-     * @var Concept
+     * The target concept of this rule
+     *
+     * @var \Ampersand\Core\Concept
      */
     public $tgtConcept;
     
     /**
-     * Specifies the meaning of this rule (provided in natural language by the Ampersand engineer)
+     * The meaning of this rule (provided in natural language by the Ampersand engineer)
+     *
      * @var string
      */
-    public $meaning;
+    protected $meaning;
     
     /**
-     * Specifies the violation message to display (provided in natural language by the Ampersand engineer)
+     * The violation message to display (provided in natural language by the Ampersand engineer)
+     *
      * @var string
      */
-    public $message;
+    protected $message;
     
     /**
-     * Array of conjuncts of which this rule is made of
-     * @var Conjunct[]
+     * List of conjuncts of which this rule is made of
+     *
+     * @var \Ampersand\Rule\Conjunct[]
      */
     public $conjuncts;
     
     /**
-     * Array with segments to build violation messages
-     * @var array
+     * List with segments to build violation messages
+     *
+     * @var \Ampersand\Rule\ViolationSegment[]
      */
-    public $violationSegments;
+    protected $violationSegments = [];
     
     /**
-     * 
-     * @var boolean
+     * Specifies the type of rule (signal or invariant)
+     *
+     * @var string
      */
-    public $isSignal = null;
-    
-    /**
-     * 
-     * @var boolean
-     */
-    public $isInvariant = null;
-
-    /**
-     * 
-     * @var array
-     */
-    private $violations;
+    protected $type;
     
     /**
      * Rule constructor
      * Private function to prevent outside instantiation. Use Rule::getRule($ruleName)
      *
      * @param array $ruleDef
-     * @param boolean $type
+     * @param \Ampersand\Plugs\ViewPlugInterface $plug
+     * @param string $type specifies if it is a signal (sig) or invariant (inv) rule
     */
-    private function __construct($ruleDef, $type = null){
-        $this->logger = Logger::getLogger('FW');
+    private function __construct(array $ruleDef, ViewPlugInterface $plug, string $type, LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+
+        $this->plug = $plug;
         
         $this->id = $ruleDef['name'];
         
@@ -125,75 +138,82 @@ class Rule {
         $this->message = $ruleDef['message'];
         
         // Conjuncts
-        foreach($ruleDef['conjunctIds'] as $conjId){
+        foreach ($ruleDef['conjunctIds'] as $conjId) {
             $this->conjuncts[] = Conjunct::getConjunct($conjId);
         }
         
-        $this->violationSegments = (array)$ruleDef['pairView'];
-        
-        switch($type){
-            case 'sig' :
-                $this->isSignal = true;
-                break;
-            case 'inv' :
-                $this->isInvariant = true;
-                break;
-            case null :
-                break;
-            default : throw new Exception ("Unknown/unsupported rule type. Allowed types are signal or invariant", 500);
+        // Violation segments
+        foreach ((array)$ruleDef['pairView'] as $segment) {
+            $this->violationSegments[] = new ViolationSegment($segment, $this);
         }
+        
+        // Set type of rule
+        if (!in_array($type, ['signal', 'invariant'])) {
+            throw new Exception("Unsupported rule type. Allowed types are signal or invariant", 500);
+        }
+        $this->type = $type;
     }
     
-    public function __toString(){
+    /**
+     * Function is called when object is treated as a string
+     *
+     * @return string
+     */
+    public function __toString(): string
+    {
         return $this->id;
     }
     
     /**
-     * 
+     * Get message to tell that a rule is broken
+     *
      * @return string
      */
-    public function getViolationMessage(){
+    public function getViolationMessage(): string
+    {
         return $this->message ? $this->message : "Violation of rule '{$this->id}'";
     }
-    
+
     /**
+     * Get list of all violation segment definitions for this rule
      *
-     * @param boolean $cacheConjuncts
-     * @return Violation[]
+     * @return \Ampersand\Rule\ViolationSegment[]
      */
-    private function checkRule($cacheConjuncts = true){
-        $this->logger->debug("Checking rule '{$this->id}'");
-         
-        try{
-            $violations = array();
-    
-            // Evaluate conjuncts of this rule
-            foreach($this->conjuncts as $conjunct) 
-                foreach ($conjunct->evaluateConjunct($cacheConjuncts) as $violation) 
-                    $violations[] = new Violation($this, $violation['src'], $violation['tgt']);
-            	
-            // If no violations => rule holds
-            if(empty($violations)) $this->logger->debug("Rule '{$this->id}' holds");
-            
-            // Cache violations when requested
-            if($cacheConjuncts) $this->violations = $violations;
-    
-            return $violations;
-            
-        }catch (Exception $e){
-            Logger::getUserLogger()->error("While evaluating rule '{$this->id}': {$e->getMessage()}");
-        }
+    public function getViolationSegments(): array
+    {
+        return $this->violationSegments;
     }
     
     /**
-     * 
-     * @param string $cacheConjuncts
-     * @return Violation[]
+     * Check rule and return violations
+     *
+     * @param bool $fromCache
+     * @return \Ampersand\Rule\Violation[]
      */
-    public function getViolations($cacheConjuncts = true){
-        if(isset($this->violations) && $cacheConjuncts) return $this->violations;
-        else return $this->checkRule($cacheConjuncts);
-        
+    public function checkRule(bool $fromCache = true): array
+    {
+        $this->logger->debug("Checking rule '{$this->id}'");
+         
+        try {
+            $violations = [];
+    
+            // Evaluate conjuncts of this rule
+            foreach ($this->conjuncts as $conjunct) {
+                foreach ($conjunct->evaluate($fromCache) as $violation) {
+                    $violations[] = new Violation($this, $violation['src'], $violation['tgt']);
+                }
+            }
+                
+            // If no violations => rule holds
+            if (empty($violations)) {
+                $this->logger->debug("Rule '{$this}' holds");
+            }
+    
+            return $violations;
+        } catch (Exception $e) {
+            $this->logger->error("Error while evaluating rule '{$this}': {$e->getMessage()}");
+            Logger::getUserLogger()->error("Error while evaluating rule");
+        }
     }
     
     /**********************************************************************************************
@@ -203,75 +223,90 @@ class Rule {
      *********************************************************************************************/
 
     /**
-     * Return rule object
+     * Get rule with a given rule name
+     *
      * @param string $ruleName
      * @throws Exception if rule is not defined
      * @return Rule
      */
-    public static function getRule($ruleName){
-        if(!array_key_exists($ruleName, $rules = self::getAllRules())) throw new Exception("Rule '{$ruleName}' is not defined", 500);
+    public static function getRule($ruleName): Rule
+    {
+        if (!array_key_exists($ruleName, $rules = self::getAllRules())) {
+            throw new Exception("Rule '{$ruleName}' is not defined", 500);
+        }
 
         return $rules[$ruleName];
     }
     
     /**
-     * Returns array with all invariant rule objects
+     * Get list with all invariant rules
+     *
      * @return Rule[]
      */
-    public static function getAllInvRules(){
-        $invRules = array();
-        foreach (self::getAllRules() as $rule){
-            if($rule->isInvariant) $invRules[] = $rule;            
+    public static function getAllInvRules(): array
+    {
+        $invRules = [];
+        foreach (self::getAllRules() as $rule) {
+            if ($rule->type === 'invariant') {
+                $invRules[] = $rule;
+            }
         }
         return $invRules;
     }
     
     /**
-     * Returns array with all signal rule objects
+     * Get list with all signal rules
      * @return Rule[]
      */
-    public static function getAllSigRules(){
-        $sigRules = array();
-        foreach (self::getAllRules() as $rule){
-            if($rule->isSignal) $sigRules[] = $rule;
+    public static function getAllSigRules(): array
+    {
+        $sigRules = [];
+        foreach (self::getAllRules() as $rule) {
+            if ($rule->type === 'signal') {
+                $sigRules[] = $rule;
+            }
         }
         return $sigRules;
     }
 
     /**
-     * Returns array with all rule objects
+     * Get list with all rules
+     *
      * @return Rule[]
      */
-    public static function getAllRules(){
-        if(!isset(self::$allRules)) self::setAllRules();
+    public static function getAllRules(): array
+    {
+        if (!isset(self::$allRules)) {
+            throw new Exception("Rule definitions not loaded yet", 500);
+        }
          
         return self::$allRules;
     }
 
     /**
-     * Import all rule definitions from json file and create and save Rule objects
+     * Import all rule definitions from json file and instantiate Rule objects
+     *
+     * @param string $fileName containing the Ampersand rule definitions
+     * @param \Ampersand\Plugs\ViewPlugInterface $defaultPlug
+     * @param \Psr\Log\LoggerInterface $logger
      * @return void
      */
-    private static function setAllRules(){
-        self::$allRules = array();
+    public static function setAllRules(string $fileName, ViewPlugInterface $defaultPlug, LoggerInterface $logger)
+    {
+        self::$allRules = [];
 
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'rules.json');
-        $allRuleDefs = (array)json_decode($file, true);
+        $allRuleDefs = (array) json_decode(file_get_contents($fileName), true);
         
         // Signal rules
-        foreach ($allRuleDefs['signals'] as $ruleDef){
-            $rule = new Rule($ruleDef, 'sig');
+        foreach ($allRuleDefs['signals'] as $ruleDef) {
+            $rule = new Rule($ruleDef, $defaultPlug, 'signal', $logger);
             self::$allRules[$rule->id] = $rule;
         }
         
         // Invariant rules
-        foreach ($allRuleDefs['invariants'] as $ruleDef){
-            $rule = new Rule($ruleDef, 'inv');
+        foreach ($allRuleDefs['invariants'] as $ruleDef) {
+            $rule = new Rule($ruleDef, $defaultPlug, 'invariant', $logger);
             self::$allRules[$rule->id] = $rule;
         }
     }
-
 }
-
-?>

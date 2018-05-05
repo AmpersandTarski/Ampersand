@@ -1,1 +1,0 @@
-https://github.com/zhaber/angular-js-bootstrap-datetimepicker/blob/master/README.md
