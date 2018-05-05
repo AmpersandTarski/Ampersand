@@ -34,7 +34,7 @@ angular.module('AmpersandApp')
         else{
             if(Array.isArray(resource[ifc])){
                 // Construct patch(es)
-                patch = ResourceService.createPatch('add', resource, patchResource, ifc, $item._id_);
+                patch = ResourceService.addPatch('add', resource, patchResource, ifc, $item._id_);
                 ResourceService.addPatches(patchResource, [patch])
                 .then(function(data){
                     // Adapt in js model
@@ -43,7 +43,7 @@ angular.module('AmpersandApp')
                 
             }else if(resource[ifc] === null){
                 // Construct patch(es)
-                patch = ResourceService.createPatch('replace', resource, patchResource, ifc, $item._id_);
+                patch = ResourceService.addPatch('replace', resource, patchResource, ifc, $item._id_);
                 ResourceService.addPatches(patchResource, [patch])
                 .then(function(data){
                     // Adapt js model

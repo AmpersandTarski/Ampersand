@@ -150,7 +150,7 @@ angular.module('AmpersandApp')
          */
         removeResource : function(parent, ifc, resource, patchResource){
             // Construct patch(es)
-            patch = ResourceService.createPatch('remove', resource, patchResource);
+            patch = ResourceService.addPatch('remove', resource, patchResource);
 
             // Execute patch
             return ResourceService
@@ -212,7 +212,7 @@ angular.module('AmpersandApp')
             } else {
                 value = resource[ifc];
             }
-            patch = ResourceService.createPatch('replace', resource, patchResource, ifc, value);
+            patch = ResourceService.addPatch('replace', resource, patchResource, ifc, value);
 
             // Register patch
             return ResourceService.addPatches(patchResource, [patch]);
@@ -242,7 +242,7 @@ angular.module('AmpersandApp')
                 resource[ifc].push(selected.value);
                 
                 // Construct patch(es)
-                patch = ResourceService.createPatch('add', resource, patchResource, ifc, selected.value);
+                patch = ResourceService.addPatch('add', resource, patchResource, ifc, selected.value);
                 return ResourceService.addPatches(patchResource, [patch]).then(function(data){
                     // Reset selected value
                     delete(selected.value);
@@ -263,7 +263,7 @@ angular.module('AmpersandApp')
         removeItem : function(resource, ifc, index, patchResource){
             // Construct patch(es)
             value = resource[ifc][index];
-            patch = ResourceService.createPatch('remove', resource, patchResource, ifc, value);
+            patch = ResourceService.addPatch('remove', resource, patchResource, ifc, value);
             
             // Adapt js model
             resource[ifc].splice(index, 1);
@@ -281,7 +281,7 @@ angular.module('AmpersandApp')
          * @param {string} value
          * @returns {Object}
          */
-        createPatch : function(operation, resource, patchResource, ifc, value){
+        addPatch : function(operation, resource, patchResource, ifc, value){
             if(typeof patchResource === 'undefined') patchResource = resource;
             pathLength = patchResource._path_.length;
             
