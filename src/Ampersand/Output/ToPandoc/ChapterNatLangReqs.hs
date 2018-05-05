@@ -189,9 +189,11 @@ chpNatLangReqs lev fSpec =
   printRel nDcl =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
-            [(   str (l (NL "Afspraak ", EN "Agreement "))
-              <> (xDefInln fSpec (XRefSharedLangRelation dcl) <> ": ")
-             ,  (case (cDclMeaning . theLoad) nDcl of
+            [(   (str.l) (NL "Afspraak ", EN "Agreement ")
+              <> ": "
+             , -- (xDefInln fSpec (XRefSharedLangRelation dcl) 
+                [xDefBlck fSpec (XRefSharedLangRelation dcl)]
+              <>(case (cDclMeaning . theLoad) nDcl of
                    Nothing
                      -> [plain $
                              (str.l) (NL "De relatie ",EN "The relation ")
@@ -223,25 +225,24 @@ chpNatLangReqs lev fSpec =
             _   -> bulletList . map (plain . mkPhrase dcl) $ samples
     where dcl = cDcl . theLoad $ nDcl
           samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
-
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul =
-         (printPurposes . cRulPurps . theLoad) nRul
-      <> definitionList 
-            [(   str (l (NL "Afspraak ", EN "Agreement "))
-              <> (xDefInln fSpec
-                    (XRefSharedLangRule rul) <> ": ")
-             , case (cRulMeaning . theLoad) nRul of
-                 Nothing 
-                    -> [plain $
-                            (str.l) (NL "De regel ",EN "The rule ")
-                         <> (emph.str.name) rul
-                         <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
-                       ]
-                 Just m
-                    -> [printMeaning m]
-             )
-            ]
+         xDefBlck fSpec (XRefSharedLangRule rul)
+      <> (printPurposes . cRulPurps . theLoad) nRul
+      -- <> definitionList 
+      --       [(   str (l (NL "Afspraak ", EN "Agreement "))
+      --         <> ": TODO"
+      --        , case (cRulMeaning . theLoad) nRul of
+      --            Nothing 
+      --               -> [plain $
+      --                       (str.l) (NL "De regel ",EN "The rule ")
+      --                    <> (emph.str.name) rul
+      --                    <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
+      --                  ]
+      --            Just m
+      --               -> [printMeaning m]
+      --        )
+      --       ]
      where rul = cRul . theLoad $ nRul
   mkPhrase :: Relation -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom

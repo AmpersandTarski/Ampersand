@@ -36,7 +36,6 @@ import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc
 import           Ampersand.Output.PandocAux
-import           Data.Hashable
 import           Data.List
 import           Data.Maybe
 import           Data.Ord
@@ -73,41 +72,41 @@ data XRefSection
              | XRefInterfacesInterface Interface
              | XRefNaturalLanguageTheme (Maybe Pattern)
 
-xRefRawLabel :: FSpec -> XRefSection -> String
-xRefRawLabel fSpec x'
- = -- mapMaybe myShow . show . hash $
-   show (chapterOfSection x)++typeOfSection x++"-"++nameOfThing x
-  where x = refStuff fSpec x'
-        myShow :: Char -> Maybe Char
-        myShow '-' = Nothing 
-        myShow c = Just . toEnum $ fromEnum c + fromEnum 'A' - fromEnum '0'
-
 ------ Symbolic referencing to a chapter/section. ---------------------------------
 class Typeable a => Xreferenceble a where
-  xLabel   :: FSpec -> a -> String
+  xSafeLabel :: FSpec -> a -> String -- The full string that is used as ID for referencing
   hyperLinkTo :: FSpec -> a -> Inlines
   xDefBlck :: FSpec -> a -> Blocks
   xDefBlck _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
   xDefInln :: FSpec -> a -> Inlines
   xDefInln _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
-  {-# MINIMAL xLabel, hyperLinkTo, (xDefBlck | xDefInln) #-}
+  {-# MINIMAL xSafeLabel, hyperLinkTo, (xDefBlck | xDefInln) #-}
 
 instance Xreferenceble Chapter where
-  xLabel _ = show
-  hyperLinkTo fSpec = citeGen fSpec "sec:"
-  xDefBlck fSpec a = headerWith ("sec:"<> xLabel fSpec a,[],[]) 1 (chptTitle (fsLang fSpec) a)
+  xSafeLabel _ a = show Sec++show a
+  hyperLinkTo fSpec = citeGen fSpec
+  xDefBlck fSpec a = headerWith (xSafeLabel fSpec a,[],[]) 1 (chptTitle (fsLang fSpec) a)
   
 instance Xreferenceble Picture where
-  xLabel _ = caption
-  hyperLinkTo fSpec = citeGen fSpec "fig:"
-  xDefBlck fSpec a = para $ imageWith ("fig:"++xLabel fSpec a, [], []) src ("fig:"++xLabel fSpec a)(text (caption a))
+  xSafeLabel _ a = show Fig++caption a
+  hyperLinkTo fSpec = citeGen fSpec
+  xDefBlck fSpec a = para $ imageWith (xSafeLabel fSpec a, [], []) src (xSafeLabel fSpec a)(text (caption a))
    where
     opts = getOpts fSpec
     src  = (if fspecFormat opts `elem` [Fpdf,Flatex] then dropExtension else id)-- let pdflatex figure out the optimal extension
              . takeFileName . imagePath opts $ a
 instance Xreferenceble XRefSection where
-  xLabel = xRefRawLabel
-  hyperLinkTo fSpec a = citeGen fSpec (xrefPrefix (refStuff fSpec a)) a
+  xSafeLabel fSpec a = 
+       (show . xrefPrefix . refStuff fSpec $ a)
+     <> show (chapterOfSection x)
+     <> typeOfSection x
+     <> "-"
+     <> nameOfThing x
+    where 
+      x = refStuff fSpec a
+
+
+  hyperLinkTo fSpec = codeGen fSpec
   xDefBlck fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff fSpec a))) (hyperTarget fSpec a)
   xDefInln fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff fSpec a))) id (hyperTarget fSpec a)
 
@@ -122,34 +121,55 @@ hyperTarget fSpec a =
                                           Nothing  -> (text.l) (NL "Losse eindjes...",EN "Loose ends...")
                                           Just pat -> text (name pat)
                                        )
-      XRefSharedLangRelation d     -> Right $ spanWith (xrefPrefix (refStuff fSpec a) <> xLabel fSpec a,[],[]) (str . show . numberOf fSpec $ d)
-      XRefSharedLangRule r            -> Right $ spanWith (xrefPrefix (refStuff fSpec a) <> xLabel fSpec a,[],[]) (str . show . numberOf fSpec $ r)
+      XRefSharedLangRelation d        -> -- Right $ spanWith (xSafeLabel fSpec a,[],[]) (str . show . numberOf fSpec $ d)
+                                         Left $ divWith (xSafeLabel fSpec a,["listing"],[]) 
+                                                        (   (para . str $ showRel d)
+                                                          <>codeBlockWith 
+                                                               ("", ["adl"],[("caption",name d)]) 
+                                                               ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
+                                                        )
+      XRefSharedLangRule r            -> -- Right $ spanWith (xSafeLabel fSpec a,[],[]) (str . show . numberOf fSpec $ r)
+                                         Left $ divWith (xSafeLabel fSpec a,["listing"],[])
+                                                        (   (para . text $ name r)
+                                                          <>codeBlockWith 
+                                                               ("", ["adl"],[("caption",name r)]) 
+                                                               ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
+
+                                                          -- <>(case meaning (fsLang fSpec) r of
+                                                          --     Nothing 
+                                                          --         ->( plain $
+                                                          --                (str.l) (NL "De regel ",EN "The rule ")
+                                                          --             <> (emph.str.name) r
+                                                          --             <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
+                                                          --           )
+                                                          --     Just m
+                                                          --         -> (fromList . amPandoc $ m)
+                                                          --   )
+                                                        )
       XRefConceptualAnalysisRelation d 
-            -> Right $ spanWith (xrefPrefix (refStuff fSpec a) <> xLabel fSpec a,[],[]) 
+            -> Right $ spanWith (xSafeLabel fSpec a,[],[]) 
                                 (    (text.l) (NL "Relatie ",EN "Relation ")
                                   <> (str . show . numberOf fSpec $ d)
                                 )  
       XRefConceptualAnalysisRule r    
-            -> Right $ spanWith (xrefPrefix (refStuff fSpec a) <> xLabel fSpec a,[],[]) 
+            -> Right $ spanWith (xSafeLabel fSpec a,[],[]) 
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                   <> (str . show . numberOf fSpec $ r)
                                 ) 
       XRefConceptualAnalysisExpression r
-            -> Right $ spanWith (xrefPrefix (refStuff fSpec a) <> xLabel fSpec a,[],[]) 
+            -> Right $ spanWith (xSafeLabel fSpec a,[],[]) 
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                   <> (str . show . numberOf fSpec $ r)
                                 ) 
       _ ->  fatal ("hyperTarget not yet defined for "++show (refStuff fSpec a))
    where
-    hdr = headerWith (xRefRawLabel fSpec a, [], []) 2
+    hdr = headerWith (xSafeLabel fSpec a, [], []) 2
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
     l = localize (fsLang fSpec)
-
-
-citeGen :: Xreferenceble a => FSpec -> String -> a -> Inlines
-citeGen fSpec p l = -- (\x -> trace (myShow x) x) $
-  cite [Citation { citationId = p++xLabel fSpec l
+citeGen :: Xreferenceble a => FSpec -> a -> Inlines
+citeGen fSpec l = 
+  cite [Citation { citationId = xSafeLabel fSpec l
                  , citationPrefix = []
                  , citationSuffix = []
                  , citationHash = 0
@@ -157,15 +177,23 @@ citeGen fSpec p l = -- (\x -> trace (myShow x) x) $
                  , citationMode = NormalCitation
                  }
        ] mempty
-  where
-    myShow :: Show a => Many a -> String
-    myShow = show . head . toList
+codeGen :: Xreferenceble a => FSpec -> a -> Inlines
+codeGen fSpec = code . xSafeLabel fSpec 
+
 pandocEqnArray :: [Inlines] -> Blocks
 pandocEqnArray [] = mempty
 pandocEqnArray xs
  = orderedList (map para xs)
 
-
+data CrossrefType = Lst | Eq | Sec | Tbl | Fig -- Special prefixes that make pandoc-crossref work. 
+instance Show CrossrefType where
+  showsPrec _ x
+   = showString $ case x of
+                    Lst -> "lst:"
+                    Eq  -> "eq:"
+                    Sec -> "sec:"
+                    Tbl -> "tbl:"
+                    Fig -> "fig:"
 pandocEquationWithLabel :: FSpec -> XRefSection -> Inlines -> Blocks
 pandocEquationWithLabel fSpec xref x = 
   para (strong (xDefInln fSpec xref) <> x)
@@ -174,7 +202,7 @@ data RefStuff =
   RefStuff { typeOfSection    :: String
            , chapterOfSection :: Chapter
            , nameOfThing      :: String
-           , xrefPrefix       :: String
+           , xrefPrefix       :: CrossrefType
            } deriving Show
 refStuff :: FSpec -> XRefSection -> RefStuff
 refStuff fSpec x  = 
@@ -183,55 +211,55 @@ refStuff fSpec x  =
        -> RefStuff { typeOfSection    = relation
                    , chapterOfSection = SharedLang
                    , nameOfThing      = showRel d
-                   , xrefPrefix       = "lst:"
+                   , xrefPrefix       = Lst
                    }
      XRefDataAnalysisRule r
        -> RefStuff { typeOfSection    = rule
                    , chapterOfSection = DataAnalysis
                    , nameOfThing      = name r
-                   , xrefPrefix       = "eq:"
+                   , xrefPrefix       = Eq
                    }
      XRefSharedLangRule r
        -> RefStuff { typeOfSection    = rule
                    , chapterOfSection = SharedLang
                    , nameOfThing      = name r
-                   , xrefPrefix       = "lst:"
+                   , xrefPrefix       = Lst
                    }
      XRefProcessAnalysis p
        -> RefStuff { typeOfSection    = pattern
                    , chapterOfSection = ProcessAnalysis
                    , nameOfThing      = name p
-                   , xrefPrefix       = "sec:"
+                   , xrefPrefix       = Sec
                    }
      XRefConceptualAnalysisPattern p
        -> RefStuff { typeOfSection    = pattern
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = name p
-                   , xrefPrefix       = "sec:"
+                   , xrefPrefix       = Sec
                    }
      XRefConceptualAnalysisRelation d
        -> RefStuff { typeOfSection    = relation
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = showRel d
-                   , xrefPrefix       = "eq:"
+                   , xrefPrefix       = Eq
                    }
      XRefConceptualAnalysisRule r 
        -> RefStuff { typeOfSection    = rule
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = name r
-                   , xrefPrefix       = "eq:"
+                   , xrefPrefix       = Eq
                    }
      XRefConceptualAnalysisExpression r 
        -> RefStuff { typeOfSection    = expression
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = name r
-                   , xrefPrefix       = "eq:"
+                   , xrefPrefix       = Eq
                    }
      XRefInterfacesInterface i    
        -> RefStuff { typeOfSection    = interface
                    , chapterOfSection = Interfaces
                    , nameOfThing      = name i
-                   , xrefPrefix       = "sec:"
+                   , xrefPrefix       = Sec
                    }
      XRefNaturalLanguageTheme mt
        -> RefStuff { typeOfSection    = theme
@@ -239,7 +267,7 @@ refStuff fSpec x  =
                    , nameOfThing      = case mt of
                                           Nothing -> ":losseEindjes"
                                           Just t  -> name t
-                   , xrefPrefix       = "sec:"
+                   , xrefPrefix       = Sec
                    }
   where (                relation , rule  , expression , pattern ,interface  , theme) =
           case fsLang fSpec of
