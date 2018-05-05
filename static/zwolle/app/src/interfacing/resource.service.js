@@ -272,11 +272,11 @@ angular.module('AmpersandApp')
         },
         
         /**
-         * Construct patch object (with attributes 'op', 'path' and 'value')
+         * Construct, add and return patch object (with attributes 'op', 'path' and 'value')
          * 
          * @param {string} operation choose from 'add', 'remove' or 'replace'
          * @param {Object} resource
-         * @param {Object} patchResource
+         * @param {Object} patchResource resource to add patch to
          * @param {string} ifc
          * @param {string} value
          * @returns {Object}
@@ -288,25 +288,26 @@ angular.module('AmpersandApp')
             path = resource._path_.substring(pathLength);
             if(typeof ifc !== 'undefined') path = path + '/' + ifc;
             
-            if(typeof value === 'undefined') return { op : operation, path : path};
-            else return { op : operation, path : path, value : value};
+            if(typeof value === 'undefined') patch = { op : operation, path : path};
+            else patch = { op : operation, path : path, value : value};
+
+            // Add new patch to patchResource
+            if(!Array.isArray(patchResource._patchesCache_)) patchResource._patchesCache_ = [];
+            patchResource._patchesCache_.push(patch);
+
+            // Add resource to updatedResources
+            if(updatedResources.indexOf(patchResource) === -1) updatedResources.push(patchResource);
+
+            return patch;
         },
         
         /**
-         * Add list of patches for given resource and call API (when auto-save is on)
+         * Patch given resource (i.e. send all patches from _patchesCache_)
          * 
          * @param {Object} resource
-         * @param {Object[]} patches
          * @returns {Promise}
          */
-        addPatches : function(resource, patches){
-            // Add new patches to resource
-            if(!Array.isArray(resource._patchesCache_)) resource._patchesCache_ = [];
-            resource._patchesCache_ = resource._patchesCache_.concat(patches);
-            
-            // Add resource to updatedResources
-            if(updatedResources.indexOf(resource) === -1) updatedResources.push(resource);
-            
+        addPatches : function(resource){
             // Save if autoSave is enabled
             if($localStorage.autoSave) {
                 return ResourceService.saveResource(resource);
