@@ -22,7 +22,9 @@ angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', functi
     \$scope.patchResource = \$scope.resource;
     
     \$scope.resource.get = function(){ ResourceService.getResource(\$scope.resource, ifcName, \$scope.patchResource);};
-    \$scope.saveResource = ResourceService.saveResource;
+    \$scope.saveResource = function(resource){
+        ResourceService.patchResource(resource, true);
+    };
     \$scope.switchResource = function(resourceId){ \$location.url('/$interfaceName$/' + resourceId);};
     
     // Get resource

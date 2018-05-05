@@ -5,7 +5,9 @@ angular.module('AmpersandApp')
     $scope.createResource = ResourceService.createResource; // function(resource, ifc, callingObj, insertAtIndex)
     
     // Function to save certain attributes changes of a resource (does a PATCH)
-    $scope.save = ResourceService.saveResource; // function(resource)
+    $scope.save = function(resource){
+        ResourceService.patchResource(resource, true);
+    };
     
     // Function to cancel unsaved edits (does a GET)
     $scope.cancel = ResourceService.cancelResource; // function(resource)

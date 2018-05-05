@@ -165,7 +165,7 @@ angular.module('AmpersandApp')
 
             // Execute patch
             return ResourceService
-            .addPatches(patchResource)
+            .patchResource(patchResource)
             .then(function(data){
                 // Adapt js model
                 if(!data.saved) {
@@ -226,7 +226,7 @@ angular.module('AmpersandApp')
             ResourceService.addPatch('replace', resource, patchResource, ifc, value);
 
             // Register patch
-            return ResourceService.addPatches(patchResource);
+            return ResourceService.patchResource(patchResource);
         },
         
         /**
@@ -254,7 +254,8 @@ angular.module('AmpersandApp')
                 
                 // Construct patch(es)
                 ResourceService.addPatch('add', resource, patchResource, ifc, selected.value);
-                return ResourceService.addPatches(patchResource).then(function(data){
+                return ResourceService.patchResource(patchResource)
+                .then(function(data){
                     // Reset selected value
                     delete(selected.value);
                     return data;
@@ -279,7 +280,7 @@ angular.module('AmpersandApp')
             // Adapt js model
             resource[ifc].splice(index, 1);
 
-            return ResourceService.addPatches(patchResource);
+            return ResourceService.patchResource(patchResource);
         },
         
         /**
