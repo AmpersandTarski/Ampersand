@@ -41,33 +41,44 @@ angular.module('AmpersandApp')
          * Patch the given resource by calling the API and sending the list of stored patches 
          * 
          * @param {Object} resource
+         * @param {bool} forceSave
          * @returns {Promise}
          */
-        saveResource : function(resource){
-            promise = Restangular
-            .one(resource._path_)
-            .patch(resource._patchesCache_, {})
-            .then(function(data) {
-                data = data.plain();
+        patchResource : function(resource, forceSave){
+
+            // Save if autoSave is enabled
+            if($localStorage.autoSave || forceSave) {
+                promise = Restangular
+                .one(resource._path_)
+                .patch(resource._patchesCache_, {})
+                .then(function(data) {
+                    data = data.plain();
+                    
+                    // Update visual feedback (notifications and buttons)
+                    ResourceService.processResponse(resource, data);
+
+                    // Update resource data if committed
+                    if(data.isCommitted) {
+                        if(resource._isRoot_ && data.navTo == null) resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
+                        else resource = angular.extend(resource, data.content);
+                        return {resource : resource, saved: true};
+                    } else {
+                        return {resource : resource, saved: false};
+                    }
+                });
+
+                // Add promise to loading list
+                if(!Array.isArray(resource._loading_)) resource._loading_ = [];
+                resource._loading_.push(promise);
                 
-                // Update visual feedback (notifications and buttons)
-                ResourceService.processResponse(resource, data);
-
-                // Update resource data if committed
-                if(data.isCommitted) {
-                    if(resource._isRoot_ && data.navTo == null) resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
-                    else resource = angular.extend(resource, data.content);
-                    return {resource : resource, saved: true};
-                } else {
-                    return {resource : resource, saved: false};
-                }
-            });
-
-            // Add promise to loading list
-            if(!Array.isArray(resource._loading_)) resource._loading_ = [];
-            resource._loading_.push(promise);
+                return promise;
             
-            return promise;
+            } else {
+                // Update visual feedback
+                ResourceService.setResourceStatus(resource, 'warning');
+                resource._showButtons_ = {'save' : true, 'cancel' : true};
+                return $q.resolve({resource : resource, saved : false});
+            }
         },
         
         /**
@@ -299,24 +310,6 @@ angular.module('AmpersandApp')
             if(updatedResources.indexOf(patchResource) === -1) updatedResources.push(patchResource);
 
             return patch;
-        },
-        
-        /**
-         * Patch given resource (i.e. send all patches from _patchesCache_)
-         * 
-         * @param {Object} resource
-         * @returns {Promise}
-         */
-        addPatches : function(resource){
-            // Save if autoSave is enabled
-            if($localStorage.autoSave) {
-                return ResourceService.saveResource(resource);
-            } else {
-                // Update visual feedback
-                ResourceService.setResourceStatus(resource, 'warning');
-                resource._showButtons_ = {'save' : true, 'cancel' : true};
-                return $q.resolve({resource : resource, saved : false});
-            }
         },
 
         /**
