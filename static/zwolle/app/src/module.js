@@ -27,7 +27,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     // RestangularProvider.setPlainByDefault(true); available from Restangular v1.5.3
     
-}).run(function(Restangular, $rootScope, $location, $route, NotificationService, RoleService, NavigationBarService){
+}).run(function(Restangular, $rootScope, $location, $route, NotificationService, RoleService, NavigationBarService, LoginService){
 
     Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params){
         //params.navIfc = true;
@@ -51,8 +51,9 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
             
             } else if(response.status == 401){ // 401: Unauthorized
                 if(response.data.data.loginPage) {
-                    $location.path(response.data.data.loginPage);
+                    LoginService.setLoginPage(response.data.data.loginPage);
                 }
+                LoginService.gotoLoginPage();
                 NotificationService.addInfo(response.data.msg || 'Login required to access this page');
             
             } else {
