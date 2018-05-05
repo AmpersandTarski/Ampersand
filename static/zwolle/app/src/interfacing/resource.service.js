@@ -41,33 +41,44 @@ angular.module('AmpersandApp')
          * Patch the given resource by calling the API and sending the list of stored patches 
          * 
          * @param {Object} resource
+         * @param {bool} forceSave
          * @returns {Promise}
          */
-        saveResource : function(resource){
-            promise = Restangular
-            .one(resource._path_)
-            .patch(resource._patchesCache_, {})
-            .then(function(data) {
-                data = data.plain();
+        patchResource : function(resource, forceSave){
+
+            // Save if autoSave is enabled
+            if($localStorage.autoSave || forceSave) {
+                promise = Restangular
+                .one(resource._path_)
+                .patch(resource._patchesCache_, {})
+                .then(function(data) {
+                    data = data.plain();
+                    
+                    // Update visual feedback (notifications and buttons)
+                    ResourceService.processResponse(resource, data);
+
+                    // Update resource data if committed
+                    if(data.isCommitted) {
+                        if(resource._isRoot_ && data.navTo == null) resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
+                        else resource = angular.extend(resource, data.content);
+                        return {resource : resource, saved: true};
+                    } else {
+                        return {resource : resource, saved: false};
+                    }
+                });
+
+                // Add promise to loading list
+                if(!Array.isArray(resource._loading_)) resource._loading_ = [];
+                resource._loading_.push(promise);
                 
-                // Update visual feedback (notifications and buttons)
-                ResourceService.processResponse(resource, data);
-
-                // Update resource data if committed
-                if(data.isCommitted) {
-                    if(resource._isRoot_ && data.navTo == null) resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
-                    else resource = angular.extend(resource, data.content);
-                    return {resource : resource, saved: true};
-                } else {
-                    return {resource : resource, saved: false};
-                }
-            });
-
-            // Add promise to loading list
-            if(!Array.isArray(resource._loading_)) resource._loading_ = [];
-            resource._loading_.push(promise);
+                return promise;
             
-            return promise;
+            } else {
+                // Update visual feedback
+                ResourceService.setResourceStatus(resource, 'warning');
+                resource._showButtons_ = {'save' : true, 'cancel' : true};
+                return $q.resolve({resource : resource, saved : false});
+            }
         },
         
         /**
@@ -150,11 +161,11 @@ angular.module('AmpersandApp')
          */
         removeResource : function(parent, ifc, resource, patchResource){
             // Construct patch(es)
-            patch = ResourceService.createPatch('remove', resource, patchResource);
+            ResourceService.addPatch('remove', resource, patchResource);
 
             // Execute patch
             return ResourceService
-            .addPatches(patchResource, [patch])
+            .patchResource(patchResource)
             .then(function(data){
                 // Adapt js model
                 if(!data.saved) {
@@ -212,10 +223,10 @@ angular.module('AmpersandApp')
             } else {
                 value = resource[ifc];
             }
-            patch = ResourceService.createPatch('replace', resource, patchResource, ifc, value);
+            ResourceService.addPatch('replace', resource, patchResource, ifc, value);
 
             // Register patch
-            return ResourceService.addPatches(patchResource, [patch]);
+            return ResourceService.patchResource(patchResource);
         },
         
         /**
@@ -242,8 +253,9 @@ angular.module('AmpersandApp')
                 resource[ifc].push(selected.value);
                 
                 // Construct patch(es)
-                patch = ResourceService.createPatch('add', resource, patchResource, ifc, selected.value);
-                return ResourceService.addPatches(patchResource, [patch]).then(function(data){
+                ResourceService.addPatch('add', resource, patchResource, ifc, selected.value);
+                return ResourceService.patchResource(patchResource)
+                .then(function(data){
                     // Reset selected value
                     delete(selected.value);
                     return data;
@@ -263,59 +275,42 @@ angular.module('AmpersandApp')
         removeItem : function(resource, ifc, index, patchResource){
             // Construct patch(es)
             value = resource[ifc][index];
-            patch = ResourceService.createPatch('remove', resource, patchResource, ifc, value);
+            ResourceService.addPatch('remove', resource, patchResource, ifc, value);
             
             // Adapt js model
             resource[ifc].splice(index, 1);
 
-            return ResourceService.addPatches(patchResource, [patch]);
+            return ResourceService.patchResource(patchResource);
         },
         
         /**
-         * Construct patch object (with attributes 'op', 'path' and 'value')
+         * Construct, add and return patch object (with attributes 'op', 'path' and 'value')
          * 
          * @param {string} operation choose from 'add', 'remove' or 'replace'
          * @param {Object} resource
-         * @param {Object} patchResource
+         * @param {Object} patchResource resource to add patch to
          * @param {string} ifc
          * @param {string} value
          * @returns {Object}
          */
-        createPatch : function(operation, resource, patchResource, ifc, value){
+        addPatch : function(operation, resource, patchResource, ifc, value){
             if(typeof patchResource === 'undefined') patchResource = resource;
             pathLength = patchResource._path_.length;
             
             path = resource._path_.substring(pathLength);
             if(typeof ifc !== 'undefined') path = path + '/' + ifc;
             
-            if(typeof value === 'undefined') return { op : operation, path : path};
-            else return { op : operation, path : path, value : value};
-        },
-        
-        /**
-         * Add list of patches for given resource and call API (when auto-save is on)
-         * 
-         * @param {Object} resource
-         * @param {Object[]} patches
-         * @returns {Promise}
-         */
-        addPatches : function(resource, patches){
-            // Add new patches to resource
-            if(!Array.isArray(resource._patchesCache_)) resource._patchesCache_ = [];
-            resource._patchesCache_ = resource._patchesCache_.concat(patches);
-            
+            if(typeof value === 'undefined') patch = { op : operation, path : path};
+            else patch = { op : operation, path : path, value : value};
+
+            // Add new patch to patchResource
+            if(!Array.isArray(patchResource._patchesCache_)) patchResource._patchesCache_ = [];
+            patchResource._patchesCache_.push(patch);
+
             // Add resource to updatedResources
-            if(updatedResources.indexOf(resource) === -1) updatedResources.push(resource);
-            
-            // Save if autoSave is enabled
-            if($localStorage.autoSave) {
-                return ResourceService.saveResource(resource);
-            } else {
-                // Update visual feedback
-                ResourceService.setResourceStatus(resource, 'warning');
-                resource._showButtons_ = {'save' : true, 'cancel' : true};
-                return $q.resolve({resource : resource, saved : false});
-            }
+            if(updatedResources.indexOf(patchResource) === -1) updatedResources.push(patchResource);
+
+            return patch;
         },
 
         /**
