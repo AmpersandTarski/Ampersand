@@ -150,11 +150,11 @@ angular.module('AmpersandApp')
          */
         removeResource : function(parent, ifc, resource, patchResource){
             // Construct patch(es)
-            patch = ResourceService.addPatch('remove', resource, patchResource);
+            ResourceService.addPatch('remove', resource, patchResource);
 
             // Execute patch
             return ResourceService
-            .addPatches(patchResource, [patch])
+            .addPatches(patchResource)
             .then(function(data){
                 // Adapt js model
                 if(!data.saved) {
@@ -212,10 +212,10 @@ angular.module('AmpersandApp')
             } else {
                 value = resource[ifc];
             }
-            patch = ResourceService.addPatch('replace', resource, patchResource, ifc, value);
+            ResourceService.addPatch('replace', resource, patchResource, ifc, value);
 
             // Register patch
-            return ResourceService.addPatches(patchResource, [patch]);
+            return ResourceService.addPatches(patchResource);
         },
         
         /**
@@ -242,8 +242,8 @@ angular.module('AmpersandApp')
                 resource[ifc].push(selected.value);
                 
                 // Construct patch(es)
-                patch = ResourceService.addPatch('add', resource, patchResource, ifc, selected.value);
-                return ResourceService.addPatches(patchResource, [patch]).then(function(data){
+                ResourceService.addPatch('add', resource, patchResource, ifc, selected.value);
+                return ResourceService.addPatches(patchResource).then(function(data){
                     // Reset selected value
                     delete(selected.value);
                     return data;
@@ -263,12 +263,12 @@ angular.module('AmpersandApp')
         removeItem : function(resource, ifc, index, patchResource){
             // Construct patch(es)
             value = resource[ifc][index];
-            patch = ResourceService.addPatch('remove', resource, patchResource, ifc, value);
+            ResourceService.addPatch('remove', resource, patchResource, ifc, value);
             
             // Adapt js model
             resource[ifc].splice(index, 1);
 
-            return ResourceService.addPatches(patchResource, [patch]);
+            return ResourceService.addPatches(patchResource);
         },
         
         /**
