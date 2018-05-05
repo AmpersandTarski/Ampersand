@@ -138,9 +138,10 @@ writepandoc fSpec thePandoc = do
                 Just w -> w
     writerName =
       case fspecFormat . getOpts $ fSpec of
-       Fpdf   -> "latex"
-       Flatex   -> "latex"
-       fmt    -> map toLower . tail . show $ fmt
+       Fpdf    -> "latex"
+       Flatex  -> "latex"
+       FPandoc -> "native"
+       fmt     -> map toLower . tail . show $ fmt
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f   = liftIO . BL.writeFile (UTF8.encodePath f)
     (outputFile,fSpecFormatString) = 
