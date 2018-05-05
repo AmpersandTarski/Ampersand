@@ -46,9 +46,9 @@ properties' expr = case expr of
      EDcI{}     -> Set.fromList [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
      EEps a sgn -> Set.fromList $ [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
      EDcV sgn   -> Set.fromList $ 
-                   [Tot]
-                 ++[Sur]
-                 ++[Inj | isSingleton (source sgn)]
+                 --NOT totaal
+                 --NOT surjective
+                   [Inj | isSingleton (source sgn)]
                  ++[Uni | isSingleton (target sgn)]
                  ++[Asy | isEndo sgn, isSingleton (source sgn)]
                  ++[Sym | isEndo sgn]

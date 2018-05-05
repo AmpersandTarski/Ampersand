@@ -8,67 +8,88 @@
 namespace Ampersand\Rule;
 
 use Exception;
-use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
+use Psr\Log\LoggerInterface;
+use Ampersand\Plugs\MysqlDB\MysqlDB;
 
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Conjunct {
+class Conjunct
+{
     
     /**
-     * Contains all conjunct definitions
-     * @var Conjunct[]
+     * List of all conjuncts
+     *
+     * @var \Ampersand\Rule\Conjunct[]
      */
     private static $allConjuncts;
     
     /**
+     * Logger
      *
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
+
+    /**
+     * Database to evaluate conjuncts and store violation cache
+     *
+     * @var \Ampersand\Plugs\MysqlDB\MysqlDB
+     */
+    protected $database;
     
     /**
-     * 
+     * Conjunct identifier
+     *
      * @var string
      */
     public $id;
     
     /**
-     * 
+     * Query to evaluate conjunct (i.e. get violations)
+     *
      * @var string
      */
     private $query;
     
     /**
-     * 
-     * @var array
+     * List invariant rules that use this conjunct
+     *
+     * @var string[]
      */
     public $invRuleNames;
     
     /**
-     * 
-     * @var array
+     * List signal rules that use this conjunct
+     *
+     * @var string[]
      */
     public $sigRuleNames;
     
     /**
-     * Array of arrays with violation pairs array(array('src' => $srcAtom, 'tgt' => $tgtAtom))
+     * List of violation pairs
+     * [['src' => $srcAtom, 'tgt' => $tgtAtom]]
+     *
      * @var array $conjunctViolations
      */
-    private $conjunctViolations;
+    private $conjunctViolations = null;
     
     /**
      * Conjunct constructor
      * Private function to prevent outside instantiation of conjuncts. Use Conjunct::getConjunct($conjId)
      *
      * @param array $conjDef
+     * @param \Psr\Log\LoggerInterface $logger
      */
-    private function __construct($conjDef){
-        $this->logger = Logger::getLogger('FW');
+    private function __construct(array $conjDef, LoggerInterface $logger, MysqlDB $database)
+    {
+        $this->logger = $logger;
+
+        $this->database = $database;
         
         $this->id = $conjDef['id'];
         $this->query = $conjDef['violationsSQL'];
@@ -77,110 +98,123 @@ class Conjunct {
     }
     
     /**
-     * Returns identifier of conjunct
-     * This method is required for array_unique() to work elsewhere in the code
-     * @return string
+     * Function is called when object is treated as a string
+     *
+     * @return string identifier of conjunct
      */
-    public function __toString(){
+    public function __toString(): string
+    {
         return $this->id;
     }
     
     /**
      * Check is conjunct is used by/part of a signal rule
-     * @return boolean
+     * @return bool
      */
-    public function isSigConj(){
+    public function isSigConj(): bool
+    {
         return !empty($this->sigRuleNames);
     }
     
     /**
      * Check is conjunct is used by/part of a invariant rule
-     * @return boolean
+     * @return bool
      */
-    public function isInvConj(){
+    public function isInvConj(): bool
+    {
         return !empty($this->invRuleNames);
     }
 
     /**
-     * Returns query to evaluate conjunct violations
+     * Get list of rule names that use this conjunct
+     *
+     * @return string[]
+     */
+    public function getRuleNames(): array
+    {
+        return array_merge($this->sigRuleNames, $this->invRuleNames);
+    }
+
+    /**
+     * Get query to evaluate conjunct violations
+     *
      * @return string
      */
-    public function getQuery(){
+    public function getQuery(): string
+    {
         return str_replace('_SESSION', session_id(), $this->query); // Replace _SESSION var with current session id.
     }
     
     /**
-     * Temporary function to be able to skip uni and inj conj in Conjunct::evaluateConjunct()
-     * @return boolean specifies if this conjunct is part of an UNI or INJ rule
+     * Specificies if conjunct is part of UNI or INJ rule
+     * Temporary fuction to be able to skip uni and inj conj
      * TODO: remove after fix for issue #535
+     *
+     * @return bool
      */
-    public function isUniOrInjConj(){
-        $rules = array_map(function($name){
-            return substr($name, 0, 3);
-        }, array_merge($this->sigRuleNames, $this->invRuleNames));
-        
-        return (in_array('UNI', $rules) || in_array('INJ', $rules));
+    protected function isUniOrInjConj(): bool
+    {
+        return array_reduce($this->getRuleNames(), function (bool $carry, string $ruleName) {
+            return ($carry || in_array(substr($ruleName, 0, 3), ['UNI', 'INJ']));
+        }, false);
     }
     
     /**
-     * Function to evaluate conjunct
-     * @param boolean $cacheConjuncts
-     * @return array[] array(array('src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
+     * Evaluate conjunct and return array with violation pairs
+     *
+     * @param bool $fromCache
+     * @return array[] [['src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>']]
      */
-    public function evaluateConjunct($cacheConjuncts = true){
-        $this->logger->debug("Checking conjunct '{$this->id}' cache:" . var_export($cacheConjuncts, true));
-        try{
+    public function evaluate(bool $fromCache = true): array
+    {
+        $this->logger->debug("Checking conjunct '{$this->id}' (fromCache:" . var_export($fromCache, true) . ")");
+        try {
             // Skipping evaluation of UNI and INJ conjuncts. TODO: remove after fix for issue #535
-            if(Config::get('skipUniInjConjuncts', 'transactions') && $this->isUniOrInjConj()){
+            if (Config::get('skipUniInjConjuncts', 'transactions') && $this->isUniOrInjConj()) {
                 $this->logger->debug("Skipping conjunct '{$this}', because it is part of a UNI/INJ rule");
                 return [];
-            }
-            
-            // If conjunct is already evaluated and conjunctCach may be used -> return violations
-            if(isset($this->conjunctViolations) && $cacheConjuncts){
+            } // If conjunct is already evaluated and conjunctCach may be used -> return violations
+            elseif (isset($this->conjunctViolations) && $fromCache) {
                 $this->logger->debug("Conjunct is already evaluated, getting violations from cache");
                 return $this->conjunctViolations;
-                	
-                // Otherwise evaluate conjunct, cache and return violations
-            }else{
-                $db = Database::singleton();
-                $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
-                $violations = array();
-    
+            } // Otherwise evaluate conjunct, cache and return violations
+            else {
                 // Execute conjunct query
-                $violations = (array)$db->Exe($this->getQuery());
+                $this->conjunctViolations = (array) $this->database->execute($this->getQuery());
                 
-                // Cache violations in php Conjunct object
-                if($cacheConjuncts) $this->conjunctViolations = $violations;
-    
-                if(count($violations) == 0){
+                if (($count = count($this->conjunctViolations)) == 0) {
                     $this->logger->debug("Conjunct '{$this->id}' holds");
-                    	
-                    // Remove "old" conjunct violations from database
-                    $query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '{$this->id}'";
-                    $db->Exe($query);
-                    	
-                }else{
-                    $this->logger->debug("Conjunct '{$this->id}' broken, updating violations in database");
-                    
-                    // Remove "old" conjunct violations from database
-                    $query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '{$this->id}'";
-                    $db->Exe($query);
-                    	
-                    // Add new conjunct violation to database
-                    $query = "INSERT IGNORE INTO `$dbsignalTableName` (`conjId`, `src`, `tgt`) VALUES ";
-                    $values = array();
-                    foreach ($violations as $violation) $values[] = "('{$this->id}', '".$db->escape($violation['src'])."', '".$db->escape($violation['tgt'])."')";
-                    $query .= implode(',', $values);
-                    $db->Exe($query);
+                } else {
+                    $this->logger->debug("Conjunct '{$this->id}' broken: {$count} violations");
                 }
-    
-                return $violations;
+
+                return $this->conjunctViolations;
             }
-            	
-        }catch (Exception $e){
-            Logger::getUserLogger()->error("While checking conjunct '{$this->id}': " . $e->getMessage());
-            return array();
+        } catch (Exception $e) {
+            Logger::getUserLogger()->error("Error while checking conjunct '{$this->id}'");
+            $this->logger->error($e->getMessage());
+            return [];
+        }
+    }
+
+    public function saveCache()
+    {
+        $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
+
+        // Delete existing conjunct violation cache
+        $query = "DELETE FROM \"{$dbsignalTableName}\" WHERE \"conjId\" = '{$this->id}'";
+        $this->database->execute($query);
+        
+        // Save new violations (if any)
+        if (!empty($this->conjunctViolations)) {
+            // Add new conjunct violation to database
+            $query = "INSERT IGNORE INTO \"{$dbsignalTableName}\" (\"conjId\", \"src\", \"tgt\") VALUES ";
+            $values = [];
+            foreach ($this->conjunctViolations as $violation) {
+                $values[] = "('{$this->id}', '" . $this->database->escape($violation['src']) . "', '" . $this->database->escape($violation['tgt']) . "')";
+            }
+            $query .= implode(',', $values);
+            $this->database->execute($query);
         }
     }
     
@@ -192,49 +226,50 @@ class Conjunct {
     
     /**
      * Return conjunct object
+     *
      * @param string $conjId
      * @throws Exception if conjunct is not defined
-     * @return Conjunct
+     * @return \Ampersand\Rule\Conjunct
      */
-    public static function getConjunct($conjId){
-        if(!array_key_exists($conjId, $conjuncts = self::getAllConjuncts())) throw new Exception("Conjunct '{$conjId}' is not defined", 500);
+    public static function getConjunct($conjId): Conjunct
+    {
+        if (!array_key_exists($conjId, $conjuncts = self::getAllConjuncts())) {
+            throw new Exception("Conjunct '{$conjId}' is not defined", 500);
+        }
     
         return $conjuncts[$conjId];
     }
     
     /**
      * Returns array with all conjunct objects
-     * @return Conjunct[]
+     *
+     * @return \Ampersand\Rule\Conjunct[]
      */
-    public static function getAllConjuncts(){
-        if(!isset(self::$allConjuncts)) self::setAllConjuncts();
+    public static function getAllConjuncts(): array
+    {
+        if (!isset(self::$allConjuncts)) {
+            throw new Exception("Conjunct definitions not loaded yet", 500);
+        }
          
         return self::$allConjuncts;
     }
     
     /**
-     * Import all conjunct definitions from json file and create and save Conjunct objects
+     * Import all role definitions from json file and instantiate Conjunct objects
+     *
+     * @param string $fileName containing the Ampersand conjunct definitions
+     * @param \Psr\Log\LoggerInterface $logger
+     * @param \Ampersand\Plugs\MysqlDB\MysqlDB $database
      * @return void
      */
-    private static function setAllConjuncts(){
-        self::$allConjuncts = array();
-    
-        // import json file
-        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'conjuncts.json');
-        $allConjDefs = (array)json_decode($file, true);
-    
-        foreach ($allConjDefs as $conjDef) self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef);
-    }
-    
-    /**
-     * 
-     * @param Conjunct[] $conjuncts
-     * @return void
-     */
-    public static function evaluateConjuncts($conjuncts = null, $cacheConjuncts = true){
-        if(is_null($conjuncts)) $conjuncts = self::getAllConjuncts();
+    public static function setAllConjuncts(string $fileName, LoggerInterface $logger, MysqlDB $database)
+    {
+        self::$allConjuncts = [];
         
-        foreach($conjuncts as $conjunct) $conjunct->evaluateConjunct($cacheConjuncts);
-    }
+        $allConjDefs = (array)json_decode(file_get_contents($fileName), true);
     
+        foreach ($allConjDefs as $conjDef) {
+            self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef, $logger, $database);
+        }
+    }
 }

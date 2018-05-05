@@ -449,7 +449,6 @@ pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
             <|> P_InterfaceRef <$> currPos 
                                <*> pIsThere (pKey "LINKTO") <*  pKey "INTERFACE" 
                                <*> pADLid
-                               <*> pMaybe pCruds
   where pBoxKey :: AmpParser (Maybe String)
         pBoxKey = pKey "BOX" *> pMaybe (pChevrons pConid)
               <|> Just <$> pKey "ROWS"
@@ -463,7 +462,7 @@ pObjDef = obj <$> currPos
               <*> pLabel
               <*> pTerm            -- the context expression (for example: I[c])
               <*> pMaybe pCruds
-              <*> pMaybe (pChevrons pConid)
+              <*> pMaybe (pChevrons pConid) --for the views
               <*> pMaybe pSubInterface  -- the optional subinterface
          where obj p nm ctx mCrud mView msub =
                  P_Obj { obj_nm   = nm

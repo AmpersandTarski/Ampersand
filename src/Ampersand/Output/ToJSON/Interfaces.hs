@@ -30,8 +30,7 @@ data JSONSubInterface = JSONSubInterface
   { subJSONboxClass           :: Maybe String
   , subJSONifcObjects         :: Maybe [JSONObjectDef]
   , subJSONrefSubInterfaceId  :: Maybe String
-  , subJSONrefIsLinTo         :: Maybe Bool
-  , subJSONcrud               :: Maybe JSONCruds
+  , subJSONrefIsLinkTo        :: Maybe Bool
   } deriving (Generic, Show)
 data JSONCruds = JSONCruds
   { crudJSONread              :: Bool
@@ -72,15 +71,13 @@ instance JSON SubInterface JSONSubInterface where
        { subJSONboxClass           = siMClass si
        , subJSONifcObjects         = Just . map (fromAmpersand multi) . siObjs $ si
        , subJSONrefSubInterfaceId  = Nothing
-       , subJSONrefIsLinTo         = Nothing
-       , subJSONcrud               = Nothing
+       , subJSONrefIsLinkTo        = Nothing
        }
      InterfaceRef{} -> JSONSubInterface
        { subJSONboxClass           = Nothing
        , subJSONifcObjects         = Nothing
        , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si
-       , subJSONrefIsLinTo         = Just . siIsLink $ si
-       , subJSONcrud               = Just . fromAmpersand multi . siCruds $ si
+       , subJSONrefIsLinkTo        = Just . siIsLink $ si
        }
  
 instance JSON Interface JSONInterface where
@@ -119,7 +116,7 @@ instance JSON ObjectDef JSONexpr where
         Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
 instance JSON ObjectDef JSONObjectDef where
- fromAmpersand multi object = JSONObjectDef
+ fromAmpersand multi object' = JSONObjectDef
   { ifcJSONid                 = escapeIdentifier . name $ object
   , ifcJSONlabel              = name object
   , ifcJSONviewId             = fmap name viewToUse
@@ -142,4 +139,4 @@ instance JSON ObjectDef JSONObjectDef where
         Just (_ , decl, tgt, isFlipped') ->
           (tgt, Just (decl, isFlipped'))
         Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
-    
+    object = substituteReferenceObjectDef fSpec object'

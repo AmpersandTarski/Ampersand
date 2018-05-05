@@ -677,7 +677,8 @@ pCtx2aCtx opts
                , obj_mView = mView
                , obj_msub = subs
                }
-     = do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
+     = do checkCrudForRefInterface 
+          (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
           crud <- pCruds2aCruds mCrud
           maybeObj <- case subs of
                         Just P_Box{si_box=[]} -> pure Nothing
@@ -691,6 +692,12 @@ pCtx2aCtx opts
                             []   -> Nothing
                             vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
                         
+      checkCrudForRefInterface :: Guarded()
+      checkCrudForRefInterface = 
+         case (mCrud, subs) of
+           (Just _ , Just P_InterfaceRef{si_isLink=False}) 
+                   -> Errors . pure $ mkCrudForRefInterfaceError orig
+           _       -> pure ()
       typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
       typeCheckViewAnnotation _       Nothing       = pure ()
       typeCheckViewAnnotation objExpr (Just viewId) =
@@ -756,11 +763,9 @@ pCtx2aCtx opts
            ->  do (refIfcExpr,_) <- case lookupDisambIfcObj declMap ifcId of
                                          Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                                          Nothing        -> Errors . pure $ mkUndeclaredError "interface" o ifcId
-                  cs <- pCruds2aCruds (si_crud x)
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
                   return (objExprEps,InterfaceRef{ siIsLink = si_isLink x
                                                  , siIfcId  = ifcId
-                                                 , siCruds  = cs
                                                  }
                          )
          P_Box{}
