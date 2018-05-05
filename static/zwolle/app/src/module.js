@@ -43,18 +43,18 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     });
     
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-        // 401: Unauthorized
-        if(response.status == 401) {
-            if(response.data.data.loginPage) {
-                $location.path(response.data.data.loginPage);
-            }
-        }
-        
         var message;
         var details;
         if(typeof response.data === 'object'){
-            if(response.data.error == 404) {
+            if(response.data.error == 404) { // 404: Not found
                 NotificationService.addInfo(response.data.msg || 'Resource not found');
+            
+            } else if(response.status == 401){ // 401: Unauthorized
+                if(response.data.data.loginPage) {
+                    $location.path(response.data.data.loginPage);
+                }
+                NotificationService.addInfo(response.data.msg || 'Login required to access this page');
+            
             } else {
                 message = response.data.msg || response.statusText; // if empty response message, take statusText
                 NotificationService.addError(message, response.status, true, response.data.html);
