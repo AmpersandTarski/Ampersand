@@ -45,8 +45,9 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
         // 401: Unauthorized
         if(response.status == 401) {
-            RoleService.deactivateAllRoles();
-            $location.path('ext/Login'); // TODO: redirect to login page (if exists)
+            if(response.data.data.loginPage) {
+                $location.path(response.data.data.loginPage);
+            }
         }
         
         var message;

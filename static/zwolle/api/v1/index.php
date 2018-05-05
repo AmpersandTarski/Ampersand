@@ -40,12 +40,15 @@ $apiContainer['errorHandler'] = function ($c) {
             Logger::getLogger("API")->error($exception->getMessage());
             $debugMode = Config::get('debugMode');
             
+            $data = []; // array for error context related data
+
             switch ($exception->getCode()) {
                 case 401: // Unauthorized
                 case 403: // Forbidden
                     if (Config::get('loginEnabled') && !$c->appContainer['ampersand_app']->getSession()->sessionUserLoggedIn()) {
                         $code = 401;
                         $message = "Please login to access this page";
+                        $data['loginPage'] = Config::get('loginPage', 'login');
                     } else {
                         $code = 403;
                         $message = "You do not have access to this page";
@@ -73,6 +76,7 @@ $apiContainer['errorHandler'] = function ($c) {
             return $response->withJson(
                 [ 'error' => $code
                 , 'msg' => $message
+                , 'data' => $data
                 , 'notifications' => Notifications::getAll()
                 , 'html' => $debugMode ? stackTrace($exception) : null
                 ],
