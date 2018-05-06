@@ -56,7 +56,8 @@ library
                      mtl == 2.2.*,
                      pandoc == 1.19.*,
                      pandoc-crossref == 0.2.5.*,
-                     pandoc-types == 1.17.*,
+                     -- Extra dependency for pandoc types because of issue. See https://github.com/jgm/pandoc/issues/4448
+                     pandoc-types == 1.17.*, pandoc-types < 1.17.4,
                      parsec == 3.1.*,
                      process == 1.4.*,
                      QuickCheck == 2.9.*,
