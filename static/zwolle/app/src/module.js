@@ -27,7 +27,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     // RestangularProvider.setPlainByDefault(true); available from Restangular v1.5.3
     
-}).run(function(Restangular, $rootScope, $location, $route, NotificationService, RoleService, NavigationBarService){
+}).run(function(Restangular, $rootScope, $location, $route, NotificationService, RoleService, NavigationBarService, LoginService){
 
     Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params){
         //params.navIfc = true;
@@ -43,17 +43,19 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     });
     
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-        // 401: Unauthorized
-        if(response.status == 401) {
-            RoleService.deactivateAllRoles();
-            $location.path('ext/Login'); // TODO: redirect to login page (if exists)
-        }
-        
         var message;
         var details;
         if(typeof response.data === 'object'){
-            if(response.data.error == 404) {
+            if(response.data.error == 404) { // 404: Not found
                 NotificationService.addInfo(response.data.msg || 'Resource not found');
+            
+            } else if(response.status == 401){ // 401: Unauthorized
+                if(response.data.data.loginPage) {
+                    LoginService.setLoginPage(response.data.data.loginPage);
+                }
+                LoginService.gotoLoginPage();
+                NotificationService.addInfo(response.data.msg || 'Login required to access this page');
+            
             } else {
                 message = response.data.msg || response.statusText; // if empty response message, take statusText
                 NotificationService.addError(message, response.status, true, response.data.html);
