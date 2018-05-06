@@ -45,7 +45,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
         var message;
         var details;
-        if(typeof response.data === 'object'){
+        if(typeof response.data === 'object' && response.data !== null){
             if(response.data.error == 404) { // 404: Not found
                 NotificationService.addInfo(response.data.msg || 'Resource not found');
             
