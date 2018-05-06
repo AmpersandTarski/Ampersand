@@ -31,10 +31,7 @@ angular.module('AmpersandApp')
             });
             
             // Add promise to loading list
-            if(!Array.isArray(callingObj._loading_)) callingObj._loading_ = [];
-            callingObj._loading_.push(promise);
-            
-            return promise;
+            return ResourceService.addPromiseToResourceLoadingList(callingObj, promise);
         },
 
         /**
@@ -68,11 +65,7 @@ angular.module('AmpersandApp')
                 });
 
                 // Add promise to loading list
-                if(!Array.isArray(resource._loading_)) resource._loading_ = [];
-                resource._loading_.push(promise);
-                
-                return promise;
-            
+                return ResourceService.addPromiseToResourceLoadingList(resource, promise);
             } else {
                 // Update visual feedback
                 ResourceService.setResourceStatus(resource, 'warning');
@@ -104,10 +97,7 @@ angular.module('AmpersandApp')
             });
             
             // Add promise to loading list
-            if(!Array.isArray(resource._loading_)) resource._loading_ = [];
-            resource._loading_.push(promise);
-            
-            return promise;
+            return ResourceService.addPromiseToResourceLoadingList(resource, promise);
         },
         
         /**
@@ -144,10 +134,7 @@ angular.module('AmpersandApp')
             });
 
             // Add promise to loading list
-            if(!Array.isArray(callingObj._loading_)) callingObj._loading_ = [];
-            callingObj._loading_.push(promise);
-            
-            return promise;
+            return ResourceService.addPromiseToResourceLoadingList(callingObj, promise);
         },
         
         /**
@@ -201,10 +188,7 @@ angular.module('AmpersandApp')
                 });
 
                 // Add promise to loading list
-                if(!Array.isArray(resource._loading_)) resource._loading_ = [];
-                resource._loading_.push(promise);
-                
-                return promise;
+                return ResourceService.addPromiseToResourceLoadingList(resource, promise);
             }
         },
 
@@ -400,6 +384,22 @@ angular.module('AmpersandApp')
             
             return resource._loading_.some(function(val){
                 return val.$$state.status === 0; // promise status: 0 -> pending, 1 -> resolved, 2 -> rejected
+            });
+        },
+
+        /**
+         * @param {Object} resource
+         * @param {Promise} promise
+         * @returns {Promise}
+         */
+        addPromiseToResourceLoadingList : function(resource, promise){
+            if(!Array.isArray(resource._loading_)) resource._loading_ = [];
+            resource._loading_.push(promise);
+
+            return promise.finally(function(){
+                if(!ResourceService.pendingPromises(resource)) {
+                    resource._loading_ = [];
+                }
             });
         }
     };
