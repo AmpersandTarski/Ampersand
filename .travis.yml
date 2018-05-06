@@ -30,18 +30,15 @@ matrix:
   include:
   # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
   # variable, such as using --stack-yaml to point to a different file.
-  - env: BUILD=stack GHCVER=8.2.2 STACK_YAML=stack.yaml
-    compiler: ": #stack 8.2.2"
-    addons: {apt: {packages: [ cabal-install-1.24
-                             , ghc-8.2.2
-                             , libpthread-stubs0-dev
-                             , mysql-server-5.6
+  - env: BUILD=stack STACK_YAML=stack.yaml
+    compiler: ": #stack"
+    addons: {apt: {packages: [ mysql-server-5.6
                              , mysql-client-core-5.6
                              , mysql-client-5.6
                              ] 
                   ,sources: [hvr-ghc]}}
-  - env: BUILD=stack GHCVER=8.2.2 STACK_YAML=stack.yaml osx
-    compiler: ": #stack 8.2.2"
+  - env: BUILD=stack STACK_YAML=stack.yaml osx
+    compiler: ": #stack"
     os: osx
 
 
@@ -88,8 +85,8 @@ matrix:
   - env: BUILD=cabal GHCVER=head  CABALVER=head
 
   # OSX builds currently (sept 2016) do not work, because PHP isn't available
-  - env: BUILD=stack GHCVER=8.2.2 STACK_YAML=stack.yaml osx
-  - env: BUILD=cabal GHCVER=8.2.2 CABALVER=1.24 osx
+  - env: BUILD=stack GHCVER=8.0.2 STACK_YAML=stack.yaml osx
+  - env: BUILD=cabal GHCVER=8.0.2 CABALVER=1.24 osx
 
 
   

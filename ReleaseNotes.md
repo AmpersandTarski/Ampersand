@@ -13,6 +13,7 @@
 * PHP Backend: mysql database class placed under Plug namespace
 * PHP Backend: added function/method parameter and return type specifications
 * PHP Backend: update from Slim v2 to v3 api framework
+* [Issue #770](https://github.com/AmpersandTarski/Ampersand/issues/770) Add configuration option to specify login page for prototype
 
 ## v3.9.5 (15 april 2018)
 

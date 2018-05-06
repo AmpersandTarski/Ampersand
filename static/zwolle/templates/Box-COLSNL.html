@@ -17,7 +17,7 @@ $endif$$if(crudR)$<div class="box box-cols" ng-controller="BoxController" ng-ini
                     <button type="button" class="btn btn-danger btn-xs" ng-click="delete(parent, '$name$', resource)">
                         <span class="glyphicon glyphicon-trash"></span>
                     </button>$endif$
-                    <div style="display: inline-block;" cg-busy="{promise:resource._loading_, templateUrl:'app/src/shared/loading/loading.html', backdrop:false, wrapperClass:''}"></div>
+                    <img ng-show="resource._isLoading_" src="app/images/loading.gif" alt="Loading..." style="height:20px;"/>
                 </td>
             </tr>$if(crudU)$
             <tr$if(exprIsUni)$ ng-if="!resource['$name$']"$endif$ ng-controller="AtomicTypeAheadController">

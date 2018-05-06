@@ -76,6 +76,7 @@ $container['default_plug'] = function ($c) {
  * Uncomment the config setting below
  *************************************************************************************************/
 // Config::set('loginEnabled', 'global', true);
+// Config::set('loginPage', 'login', 'ext/Login');
 // Config::set('allowedRolesForImporter', 'global', []); // list of roles that have access to the importer
 
 
