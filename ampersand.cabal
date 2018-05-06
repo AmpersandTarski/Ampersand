@@ -70,7 +70,8 @@ library
                      yaml == 0.8.23.*,
                      yaml-config == 0.4.*,
                      xlsx == 0.6.*,
-                     zlib == 0.6.*
+                     zlib == 0.6.*,
+                     adjunctions == 4.3
   exposed-modules:   Ampersand,
                      Ampersand.ADL1,
                      Ampersand.ADL1.Disambiguate,
