@@ -395,9 +395,11 @@ angular.module('AmpersandApp')
         addPromiseToResourceLoadingList : function(resource, promise){
             if(!Array.isArray(resource._loading_)) resource._loading_ = [];
             resource._loading_.push(promise);
+            resource._isLoading_ = true;
 
             return promise.finally(function(){
                 if(!ResourceService.pendingPromises(resource)) {
+                    resource._isLoading_ = false;
                     resource._loading_ = [];
                 }
             });
