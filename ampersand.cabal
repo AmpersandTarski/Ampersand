@@ -35,7 +35,7 @@ source-repository head
 library
   hs-source-dirs:    src
                      -- -threaded solves an issue compiling pandoc-crossref on ci-travis
-  ghc-options:       -Wall -threaded  
+  ghc-options:       -Wall
   default-extensions:NoImplicitPrelude
   default-language:  Haskell2010
   build-depends:     aeson == 1.2.*,
@@ -57,8 +57,7 @@ library
                      mtl == 2.2.*,
                      pandoc == 2.0.6.*,
                      pandoc-crossref == 0.3.0.*,
-                     -- Extra dependency for pandoc types because of issue. See https://github.com/jgm/pandoc/issues/4448
-                     pandoc-types == 1.17.*, pandoc-types < 1.17.4,
+                     pandoc-types == 1.17.*,
                      parsec == 3.1.*,
                      process == 1.6.*,
                      QuickCheck == 2.10.*,
