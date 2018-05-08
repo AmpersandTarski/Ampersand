@@ -136,6 +136,19 @@ class Transaction
     }
 
     /**
+     * Run exec engine for affected rules in this transaction
+     *
+     * @return Transaction
+     */
+    public function runExecEngine(): Transaction
+    {
+        // Run ExecEngine
+        ExecEngine::run();
+
+        return $this;
+    }
+
+    /**
      * Cancel (i.e. rollback) the transaction
      *
      * @return \Ampersand\Transaction
@@ -180,9 +193,6 @@ class Transaction
         }
         
         Hook::callHooks('preCloseTransaction', get_defined_vars());
-
-        // Run ExecEngine
-        ExecEngine::run();
 
         // (Re)evaluate affected conjuncts
         foreach ($this->getAffectedConjuncts() as $conj) {

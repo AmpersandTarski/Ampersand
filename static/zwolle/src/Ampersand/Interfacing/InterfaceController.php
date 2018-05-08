@@ -59,7 +59,7 @@ class InterfaceController
         $resource = $resource->walkPathToResource($ifcPath)->put($body);
         
         // Close transaction
-        $transaction->close();
+        $transaction->runExecEngine()->close();
         if ($transaction->isCommitted()) {
             Logger::getUserLogger()->notice($resource->getLabel() . " updated");
         }
@@ -102,7 +102,7 @@ class InterfaceController
         $resource = $resource->walkPathToResource($ifcPath)->patch($patches);
 
         // Close transaction
-        $transaction->close();
+        $transaction->runExecEngine()->close();
         if ($transaction->isCommitted()) {
             Logger::getUserLogger()->notice($resource->getLabel() . " updated");
         }
@@ -162,7 +162,7 @@ class InterfaceController
         }
 
         // Close transaction
-        $transaction->close();
+        $transaction->runExecEngine()->close();
         if ($transaction->isCommitted()) {
             if ($result) {
                 Logger::getUserLogger()->notice("File '{$originalFileName}' uploaded");
@@ -207,7 +207,7 @@ class InterfaceController
         $resource->walkPathToResource($ifcPath)->delete();
         
         // Close transaction
-        $transaction->close();
+        $transaction->runExecEngine()->close();
         if ($transaction->isCommitted()) {
             Logger::getUserLogger()->notice("Resource deleted");
         }
