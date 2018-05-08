@@ -8,7 +8,8 @@ angular.module('AmpersandApp')
     $scope.watchDateObject = function(resource, ifc){
         $scope.$watch('resource', function(){
             if (!(resource[ifc] instanceof Date)){
-                resource[ifc] = new Date(resource[ifc]);
+                // Only convert to Date object when not NULL, otherwise the 1970-01-01 is created
+                if (resource[ifc] !== null) resource[ifc] = new Date(resource[ifc]);
             }
         }, true);
     };
