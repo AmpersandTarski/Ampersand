@@ -135,6 +135,30 @@ angular.module('AmpersandApp')
     };
 }]);
 
+angular.module('uiSwitch', [])
+
+.directive('switch', function(){
+  return {
+    restrict: 'AE'
+  , replace: true
+  , transclude: true
+  , template: function(element, attrs) {
+      var html = '';
+      html += '<a href=""';
+      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
+      html += '>';
+      html += '<span';
+      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
+      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
+      html +=   '>';
+      html +=   '<small></small>';
+      html += '</span>';
+      html += '<span ng-transclude></span>';
+      html += '</a>';
+      return html;
+    }
+  }
+});
 var app = angular.module('AmpersandApp');
 app.requires[app.requires.length] = 'angularFileUpload'; // add angularFileUpload to dependency list
 app.config(["$routeProvider", function($routeProvider) {
@@ -199,6 +223,16 @@ angular.module('AmpersandApp')
     
     $scope.isOpen = false;
     
+    // Function is here because ng-model needs to be a Date object.
+    // watch listener is initialized by the template
+    $scope.watchDateObject = function(resource, ifc){
+        $scope.$watch('resource', function(){
+            if (!(resource[ifc] instanceof Date)){
+                resource[ifc] = new Date(resource[ifc]);
+            }
+        }, true);
+    };
+
     $scope.openDatepicker = function($event){
         $event.preventDefault();
         $event.stopPropagation();
@@ -874,30 +908,6 @@ angular.module('AmpersandApp')
     
     return service;
 }]);
-angular.module('uiSwitch', [])
-
-.directive('switch', function(){
-  return {
-    restrict: 'AE'
-  , replace: true
-  , transclude: true
-  , template: function(element, attrs) {
-      var html = '';
-      html += '<a href=""';
-      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
-      html += '>';
-      html += '<span';
-      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
-      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
-      html +=   '>';
-      html +=   '<small></small>';
-      html += '</span>';
-      html += '<span ng-transclude></span>';
-      html += '</a>';
-      return html;
-    }
-  }
-});
 angular.module('AmpersandApp')
 .directive('myNavbarResize', ["$window", "$timeout", "NavigationBarService", function ($window, $timeout, NavigationBarService) {
     return function (scope, element) {
