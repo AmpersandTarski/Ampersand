@@ -228,7 +228,8 @@ angular.module('AmpersandApp')
     $scope.watchDateObject = function(resource, ifc){
         $scope.$watch('resource', function(){
             if (!(resource[ifc] instanceof Date)){
-                resource[ifc] = new Date(resource[ifc]);
+                // Only convert to Date object when not NULL, otherwise the 1970-01-01 is created
+                if (resource[ifc] !== null) resource[ifc] = new Date(resource[ifc]);
             }
         }, true);
     };
@@ -529,14 +530,14 @@ angular.module('AmpersandApp')
                     // Update visual feedback (notifications and buttons)
                     ResourceService.processResponse(resource, data);
 
-                    // Update resource data if committed
-                    if(data.isCommitted) {
-                        if(resource._isRoot_ && data.navTo == null) resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
-                        else resource = angular.extend(resource, data.content);
-                        return {resource : resource, saved: true};
+                    // Update resource data
+                    if(resource._isRoot_ && data.navTo == null) {
+                        resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
                     } else {
-                        return {resource : resource, saved: false};
+                        resource = angular.extend(resource, data.content);
                     }
+
+                    return {resource : resource, saved: true, committed: data.isCommitted};
                 });
 
                 // Add promise to loading list
@@ -545,7 +546,7 @@ angular.module('AmpersandApp')
                 // Update visual feedback
                 ResourceService.setResourceStatus(resource, 'warning');
                 resource._showButtons_ = {'save' : true, 'cancel' : true};
-                return $q.resolve({resource : resource, saved : false});
+                return $q.resolve({resource : resource, saved : false, committed: false});
             }
         },
         
