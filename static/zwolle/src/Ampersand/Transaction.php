@@ -200,7 +200,7 @@ class Transaction
         }
 
         // Check invariant rules
-        $violations = $this->getInvariantViolations();
+        $violations = $this->checkInvariantRules();
         $this->invariantRulesHold = empty($violations) ? true : false;
         foreach ($violations as $violation) {
             Notifications::addInvariant($violation); // notify user of broken invariant rules
@@ -375,7 +375,7 @@ class Transaction
      *
      * @return \Ampersand\Rule\Violation[]
      */
-    public function getInvariantViolations(): array
+    protected function checkInvariantRules(): array
     {
         $this->logger->info("Checking invariant rules");
         
