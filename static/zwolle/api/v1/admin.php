@@ -96,7 +96,7 @@ $api->group('/admin', function () {
             throw new Exception("You do not have access to run the exec engine", 403);
         }
             
-        \Ampersand\Rule\ExecEngine::run(true);
+        \Ampersand\Rule\ExecEngine::run();
         
         $transaction = Transaction::getCurrentTransaction()->close();
         if ($transaction->isCommitted()) {
