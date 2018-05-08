@@ -58,17 +58,20 @@ class InterfaceController
         // Perform put
         $resource = $resource->walkPathToResource($ifcPath)->put($body);
         
-        // Close transaction
-        $transaction->close();
-        if ($transaction->isCommitted()) {
-            Logger::getUserLogger()->notice($resource->getLabel() . " updated");
-        }
+        // Run ExecEngine
+        $transaction->runExecEngine();
 
         // Get content to return
         try {
             $content = $resource->get($options, $depth);
         } catch (Exception $e) { // e.g. when read is not allowed
             $content = $body;
+        }
+
+        // Close transaction
+        $transaction->close();
+        if ($transaction->isCommitted()) {
+            Logger::getUserLogger()->notice($resource->getLabel() . " updated");
         }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
@@ -101,17 +104,20 @@ class InterfaceController
         // Perform patch(es)
         $resource = $resource->walkPathToResource($ifcPath)->patch($patches);
 
-        // Close transaction
-        $transaction->close();
-        if ($transaction->isCommitted()) {
-            Logger::getUserLogger()->notice($resource->getLabel() . " updated");
-        }
+        // Run ExecEngine
+        $transaction->runExecEngine();
 
         // Get content to return
         try {
             $content = $resource->get($options, $depth);
         } catch (Exception $e) { // e.g. when read is not allowed
             $content = null;
+        }
+
+        // Close transaction
+        $transaction->close();
+        if ($transaction->isCommitted()) {
+            Logger::getUserLogger()->notice($resource->getLabel() . " updated");
         }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
@@ -161,6 +167,16 @@ class InterfaceController
             $resource = $list->post($body);
         }
 
+        // Run ExecEngine
+        $transaction->runExecEngine();
+
+        // Get content to return
+        try {
+            $content = $resource->get($options, $depth);
+        } catch (Exception $e) { // e.g. when read is not allowed
+            $content = $body;
+        }
+
         // Close transaction
         $transaction->close();
         if ($transaction->isCommitted()) {
@@ -171,13 +187,6 @@ class InterfaceController
             }
         } else {
             // TODO: remove uploaded file
-        }
-
-        // Get content to return
-        try {
-            $content = $resource->get($options, $depth);
-        } catch (Exception $e) { // e.g. when read is not allowed
-            $content = $body;
         }
         
         $this->ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
@@ -207,7 +216,7 @@ class InterfaceController
         $resource->walkPathToResource($ifcPath)->delete();
         
         // Close transaction
-        $transaction->close();
+        $transaction->runExecEngine()->close();
         if ($transaction->isCommitted()) {
             Logger::getUserLogger()->notice("Resource deleted");
         }

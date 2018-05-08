@@ -233,15 +233,18 @@ class AmpersandApp
         // Set sessionAccount
         $this->session->setSessionAccount($account);
 
-        // Run ExecEngine
-        ExecEngine::run();
+        $transaction = Transaction::getCurrentTransaction();
+
+        // Run ExecEngine to populate session related relations (e.g. sessionAllowedRoles)
+        $transaction->runExecEngine();
 
         // Activate all allowed roles by default
         foreach ($this->session->getSessionAllowedRoles() as $atom) {
             $this->session->toggleActiveRole($atom, true);
         }
 
-        Transaction::getCurrentTransaction()->close();
+        // Run ExecEngine and close transaction
+        $transaction->runExecEngine()->close();
 
         // Set (new) interfaces and rules
         $this->setInterfacesAndRules();
@@ -289,7 +292,7 @@ class AmpersandApp
         }
 
         // Close transaction
-        $transaction = Transaction::getCurrentTransaction()->close();
+        $transaction = Transaction::getCurrentTransaction()->runExecEngine()->close();
         if ($transaction->isRolledBack()) {
             Logger::getUserLogger()->error("Initial installation does not satisfy invariant rules");
         }
@@ -324,7 +327,7 @@ class AmpersandApp
         }
         
         // Commit transaction (exec-engine kicks also in)
-        Transaction::getCurrentTransaction()->close();
+        Transaction::getCurrentTransaction()->runExecEngine()->close();
 
         $this->setInterfacesAndRules();
     }
