@@ -28,7 +28,6 @@ data MySQLSettings = MySQLSettings
   , msqlJSONdbName :: String
   , msqlJSONdbUser :: String
   , msqlJSONdbPass :: String
-  , msqlJSONdbsignalTableName :: String
   } deriving (Generic, Show)
 instance ToJSON MySQLSettings where
   toJSON = amp2Jason
@@ -38,6 +37,5 @@ instance JSON MultiFSpecs MySQLSettings where
   , msqlJSONdbName = dbName   opts
   , msqlJSONdbUser = sqlLogin opts
   , msqlJSONdbPass = sqlPwd   opts
-  , msqlJSONdbsignalTableName = "__all_signals__"
   }
    where opts = getOpts $ userFSpec multi

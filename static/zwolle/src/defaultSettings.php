@@ -19,7 +19,7 @@ try {
     Config::set('dbUser', 'mysqlDatabase', $settings['mysqlSettings']['dbUser']);
     Config::set('dbPassword', 'mysqlDatabase', $settings['mysqlSettings']['dbPass']);
     Config::set('dbName', 'mysqlDatabase', $settings['mysqlSettings']['dbName']);
-    Config::set('dbsignalTableName', 'mysqlDatabase', $settings['mysqlSettings']['dbsignalTableName']);
+    Config::set('dbsignalTableName', 'mysqlDatabase', '__all_signals__');
 
     // Other default configuration
     Config::set('serverURL', 'global', 'http://localhost/' . Config::get('contextName')); // set the base url for the application
