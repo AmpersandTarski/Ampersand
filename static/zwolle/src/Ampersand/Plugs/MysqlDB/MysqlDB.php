@@ -177,6 +177,11 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         $structure = file_get_contents(Config::get('pathToGeneratedFiles') . 'database.sql');
         $this->logger->info("Execute database structure queries");
         $this->doQuery($structure, true);
+
+        // Perform static (i.e. project independent) database structure queries
+        // e.g. adds '__all_signals__ table to cache conjunct violations
+        $queries = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'DBStructureQueries.sql');
+        $this->doQuery($queries, true);
     }
     
     /**

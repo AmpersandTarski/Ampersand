@@ -16,30 +16,11 @@ import qualified Data.Text as Text
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment 
-  =    concatMap (tableSpec2Queries withComment)
-           (   [signalTableSpec]
-            ++ [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
-           )
+  =    concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
     <> additionalDatabaseSettings 
 generateInitialPopQueries :: FSpec -> Bool -> [SqlQuery]
 generateInitialPopQueries fSpec withComments
-  = fillSignalTable (initialConjunctSignals fSpec) <>
-    populateTablesWithPops withComments fSpec
-  where
-    fillSignalTable :: [(Conjunct, AAtomPairs)] -> [SqlQuery]
-    fillSignalTable = mapMaybe fillWithSignal
-    fillWithSignal :: (Conjunct, AAtomPairs) -> Maybe SqlQuery
-    fillWithSignal (conj, violations) 
-     = case Set.elems violations of
-        []    -> Nothing
-        viols -> Just query
-          where query = insertQuery withComments tableName attrNames tblRecords
-                tableName = getTableName signalTableSpec
-                attrNames = ["conjId","src","tgt"]
-                tblRecords = map mkRecord viols
-                  where
-                    mkRecord p = 
-                       map Just ["'"++rc_id conj++"'", showValSQL (apLeft p), showValSQL (apRight p)]
+  = populateTablesWithPops withComments fSpec
 
 populateTablesWithPops :: Bool -> FSpec -> [SqlQuery]
 populateTablesWithPops withComments fSpec =
