@@ -6,9 +6,7 @@ module Ampersand.Output.ToJSON.Populations
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Output.ToJSON.JSONutils 
-import           Ampersand.Prototype.Generate
-import           Ampersand.Prototype.TableSpec
+import           Ampersand.Output.ToJSON.JSONutils
 import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
