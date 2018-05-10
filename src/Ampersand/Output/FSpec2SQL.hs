@@ -9,7 +9,7 @@ import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.TableSpec (queryAsSQL)
-import           Ampersand.Prototype.Generate  (generateDBstructQueries, generateInitialPopQueries)
+import           Ampersand.Prototype.Generate  (generateDBstructQueries)
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import           Data.Monoid
 import qualified Data.Set as Set
@@ -42,8 +42,6 @@ dumpSQLqueries multi
          header (Text.pack ampersandVersionStr)
        <>header "Database structure queries"
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
-       <>header "Initial population queries"
-       <>map (addSeparator . queryAsSQL) (generateInitialPopQueries fSpec True) 
        <>header "Violations of conjuncts"
        <>concatMap showConjunct (allConjuncts fSpec)
        <>header "Queries per relation"

@@ -1,8 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-module Ampersand.Output.ToJSON.MySQLInstaller 
-  (MySQLInstaller,Populations)
+module Ampersand.Output.ToJSON.Populations 
+  (Populations)
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -12,20 +12,6 @@ import           Ampersand.Prototype.TableSpec
 import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-
-data MySQLInstaller = MySQLInstaller
-   { msiJSONallDBstructQueries :: [Text.Text]
-   , msiJSONallDefPopQueries   :: [Text.Text]
-   } deriving (Generic, Show)
-instance ToJSON MySQLInstaller where
-  toJSON = amp2Jason
-instance JSON MultiFSpecs MySQLInstaller where
- fromAmpersand _ multi = MySQLInstaller
-        { msiJSONallDBstructQueries = map queryAsSQL $ generateDBstructQueries fSpec False
-        , msiJSONallDefPopQueries = map queryAsSQL $ generateInitialPopQueries fSpec False
-        }
-  where
-    fSpec = userFSpec multi
 
 data Populations = Populations
    { epJSONatoms :: [AtomValuesOfConcept]
