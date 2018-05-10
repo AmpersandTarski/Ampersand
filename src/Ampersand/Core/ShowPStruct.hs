@@ -161,8 +161,8 @@ instance PStruct (P_ObjDef TermPrim) where
   where 
     recur :: (Traced a, PStruct a) => String -> Maybe (P_SubIfc a) -> String
     recur _   Nothing = ""
-    recur ind (Just (P_InterfaceRef _ isLink nm cruds))
-         = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm++showP cruds
+    recur ind (Just (P_InterfaceRef _ isLink nm))
+         = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm
     recur ind (Just (P_Box _ cl objs))
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
@@ -177,7 +177,7 @@ instance PStruct (P_ObjDef TermPrim) where
 
 instance PStruct (P_SubIfc a) where --TODO : Compare with other " LINKTO" stuff to check redundancy. 
   showP P_Box{} = "BOX"
-  showP (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm
+  showP (P_InterfaceRef _ isLink nm) = (if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm
 
 instance PStruct (Maybe P_Cruds) where
  showP Nothing = ""

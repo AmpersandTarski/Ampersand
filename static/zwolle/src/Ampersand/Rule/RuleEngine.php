@@ -7,124 +7,84 @@
 
 namespace Ampersand\Rule;
 
-use Ampersand\Log\Logger;
-use Ampersand\Log\Notifications;
-use Ampersand\Session;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
+use Ampersand\Rule\Violation;
 
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class RuleEngine {
-    
+class RuleEngine
+{
+
     /**
+     * Function to check and/or get violations for a set of rules
+     * By default, violations are queries from cache in the database
      *
-     * @param Conjunct[] $conjuncts
-     * @param boolean $cacheConjuncts
-     * @return boolean
+     * @param \Ampersand\Rule\Rule[] $rules set of rules to check
+     * @param bool $fromDatabaseCache
+     * @return \Ampersand\Rule\Violation[]
      */
-    public static function checkInvariantRules($conjuncts, $cacheConjuncts = true){
-        $logger = Logger::getLogger('FW');
-        $invariantRulesHold = true;
-    
-        // check invariant rules
-        $logger->debug("Checking invariant rules for provided conjuncts: " . implode(', ', array_column($conjuncts, 'id')));
+    public static function checkRules(array $rules, bool $fromDatabaseCache = false): array
+    {
         
-        foreach ($conjuncts as $conjunct){
-            if($conjunct->isInvConj()){
-                foreach ($conjunct->evaluateConjunct($cacheConjuncts) as $violation){
-                    // If a conjunct is broken (i.e. returns 1 or more violation pairs) mark that invariant rules do not hold
-                    $invariantRulesHold = false;
-                    foreach ($conjunct->invRuleNames as $ruleName) Notifications::addInvariant(new Violation(Rule::getRule($ruleName), $violation['src'], $violation['tgt']));
-                }
-            }else{
-                $logger->error("Conjunct '{$conjunct->id}' provided to be checked for invariant violations, but this is not an invariant conjunct");
+        // Evaluate rules
+        if (!$fromDatabaseCache) {
+            $violations = [];
+            foreach ($rules as $rule) {
+                /** @var \Ampersand\Rule\Rule $rule */
+                $violations = array_merge($violations, $rule->checkRule(true)); // param fromCache = true, because multiple rules can share the same conjunct
             }
+            return $violations;
+        } // Get violations from database table
+        else {
+            return self::getViolationsFromDB($rules);
         }
-        return $invariantRulesHold;
     }
     
-	/**
-	 * 
-	 * @param boolean $cacheConjuncts
-	 * @return void
-	 */
-	public static function checkProcessRules($cacheConjuncts = true){
-	    $logger = Logger::getLogger('FW');
-	    $session = Session::singleton();
-		
-		$logger->debug("Checking process rules for active roles: " . implode(', ', array_column($session->getActiveRoles(), 'label')));
-		
-		foreach ($session->rulesToMaintain as $rule){
-			$violations = $rule->getViolations($cacheConjuncts);
-			foreach ($violations as $violation) Notifications::addSignal($violation);
-		}	
-	}
-	
-	/**
-	 * 
-	 * @param Concept[] $affectedConcepts
-	 * @param Relation[] $affectedRelations
-	 * @param string $ruleType
-	 * @return Conjunct[]
-	 */
-	public static function getAffectedConjuncts($affectedConcepts, $affectedRelations, $ruleType = 'both'){
-	    
-	    $affectedConjuncts = array();
-	    
-	    // Get conjuncts for Concepts
-        foreach($affectedConcepts as $concept){
-            // Invariant conjuncts
-            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedInvConjuncts());
-            // Signal conjuncts
-            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedSigConjuncts());
+    /**
+     * Get violations for set of rules from database cache
+     *
+     * @param \Ampersand\Rule\Rule[] $rules set of rules for which to query the violations
+     * @return \Ampersand\Rule\Violation[]
+     */
+    protected static function getViolationsFromDB(array $rules): array
+    {
+        /** @var \Pimple\Container $container */
+        global $container; // TODO: remove dependency to global $container var
+        $database = $container['mysql_database'];
+        $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
+
+        // Determine conjuncts to select from database
+        $conjuncts = [];
+        $conjunctRuleMap = []; // needed because violations are instantiated per rule (not per conjunct)
+        foreach ($rules as $rule) {
+            foreach ($rule->conjuncts as $conjunct) {
+                $conjunctRuleMap[$conjunct->id][] = $rule;
+            }
+            $conjuncts = array_merge($conjuncts, $rule->conjuncts);
+        }
+        $conjuncts = array_unique($conjuncts); // remove duplicates
+        
+        if (empty($conjuncts)) {
+            return [];
         }
         
-        // Get conjuncts for Relations
-        foreach($affectedRelations as $relation){
-            // Invariant conjuncts
-            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedInvConjuncts());
-            // Signal conjuncts
-            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedSigConjuncts());
-        }
-		
-		return array_unique($affectedConjuncts); // remove duplicate entries.
-	}
-	
-	/**
-	 * 
-	 * @return Violation[]
-	 */
-	public static function getSignalViolationsFromDB(){
-	    $logger = Logger::getLogger('FW');
-	    $session = Session::singleton();
-	    $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
-	    
-		$conjuncts = array();
-		$conjunctRuleMap = array();
-		foreach ($session->rulesToMaintain as $rule){
-			foreach($rule->conjuncts as $conjunct) $conjunctRuleMap[$conjunct->id][] = $rule;
-			$conjuncts = array_merge($conjuncts, $rule->conjuncts);
-		}
-		$conjuncts = array_unique($conjuncts); // remove duplicates
-		
-    	$violations = array();
-    	if(count($conjuncts) > 0){
-    	    $q = implode(',', array_map( function($conj){ return "'{$conj->id}'";}, $conjuncts)); // returns string "<conjId1>,<conjId2>,<etc>"
-    	    $query = "SELECT * FROM `{$dbsignalTableName}` WHERE `conjId` IN ({$q})";
-    	    $result = $session->database->Exe($query); // array(array('conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
-    	    foreach ($result as $row){
-    	        foreach($conjunctRuleMap[$row['conjId']] as $rule){
-    	           $violations[] = new Violation($rule, $row['src'], $row['tgt']);
-    	        }
-    	    }
-    	}else{
-    	    $logger->debug("No conjuncts to check (it can be that this role does not maintain any rule)");
-    	}
-    	return $violations;
-	}
-}
+        // Query database
+        $q = implode(',', array_map(function ($conj) {
+            return "'{$conj->id}'";
+        }, $conjuncts)); // returns string "<conjId1>,<conjId2>,<etc>"
+        $query = "SELECT * FROM \"{$dbsignalTableName}\" WHERE \"conjId\" IN ({$q})";
+        $result = $database->execute($query); // [['conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>']]
 
-?>
+        // Return violation
+        $violations = [];
+        foreach ($result as $row) {
+            foreach ($conjunctRuleMap[$row['conjId']] as $rule) {
+                $violations[] = new Violation($rule, $row['src'], $row['tgt']);
+            }
+        }
+        return $violations;
+    }
+}

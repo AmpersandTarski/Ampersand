@@ -1,43 +1,35 @@
-var app = angular.module('AmpersandApp');
-app.requires[app.requires.length] = 'LoginModule'; // add ur.file module to dependencies
-
-var LoginModule = angular.module('LoginModule', ['ngRoute', 'restangular']);
-
-LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, Restangular){
-	
-	Restangular.one('oauthlogin/login').get().then(
-		function(data){ // success
-			$scope.idps = data.identityProviders;
-			$rootScope.updateNotifications(data.notifications);
-			
-		}, function(){ // error
-		
-		}
-	);
-	
-}).controller('LoginExtLogoutController', function($scope, $rootScope, Restangular, $location){
-	
-	$scope.logout = function(){
-		Restangular.one('oauthlogin/logout').get().then(
-			function(data){ // success
-				
-				$rootScope.updateNotifications(data.notifications);
-				$rootScope.deactivateAllRoles();
-				$location.path('/'); // goto home
-				
-			}, function(){ // error
-				
-			}
-		);
-	}
+app = angular.module('AmpersandApp')
+.config(function($routeProvider) {
+    $routeProvider
+        // default start page
+        .when('/ext/Login', {
+            controller : 'LoginExtLoginController',
+            templateUrl : 'extensions/OAuthLogin/ui/views/Login.html',
+            interfaceLabel : 'Login'
+        });
 });
+// Add Login module to dependency list
+app.requires[app.requires.length] = 'LoginModule'; // add LoginModule to dependencies
 
-app.config(function($routeProvider) {
-	$routeProvider
-		// default start page
-		.when('/ext/Login',
-			{	controller: 'LoginExtLoginController'
-			,	templateUrl: 'extensions/OAuthLogin/ui/views/Login.html'
-			,	interfaceLabel: 'Login'
-			})
+// LoginModule declaration
+angular.module('LoginModule', ['ngRoute', 'restangular'])
+.controller('LoginExtLoginController', function($scope, Restangular, NotificationService){
+    Restangular.one('oauthlogin/login').get().then(
+        function(data){ // on success
+            data = data.plain();
+            $scope.idps = data.identityProviders;
+            NotificationService.updateNotifications(data.notifications);
+        }
+    );
+}).controller('LoginExtLogoutController', function($scope, Restangular, $location, NotificationService, NavigationBarService){
+    $scope.logout = function(){
+        Restangular.one('oauthlogin/logout').get().then(
+            function(data){ // success
+                data = data.plain();
+                NotificationService.updateNotifications(data.notifications);
+                NavigationBarService.refreshNavBar();
+                $location.path('/'); // goto home
+            }
+        );
+    };
 });

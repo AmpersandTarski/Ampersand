@@ -45,6 +45,13 @@ PATTERN SystemSpecific
   {+De universele singleton+}
   PURPOSE CONCEPT "ONE" IN ENGLISH
   {+The universal singleton+}
+  
+  -- The following rule is required for the access control mechanism. It ensures that only allowed roles can be activated
+  RULE "Active roles MUST be a subset of allowed roles" : sessionActiveRoles |- sessionAllowedRoles
+  
+  RELATION sessionAccount[SESSION*Account] [UNI]
+  RELATION accMostRecentLogin[Account*DateTime] [UNI]
+  RELATION accLoginTimestamps[Account*DateTime]
 ENDPATTERN
   
 ENDCONTEXT

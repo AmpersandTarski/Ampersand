@@ -1,14 +1,17 @@
 <?php
 
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Core\Concept;
-use Ampersand\Session;
-use Ampersand\Core\Atom;
-use Ampersand\Log\Notifications;
-use Ampersand\Interfacing\InterfaceObject;
-use function Ampersand\Helper\isAssoc;
+use Ampersand\Interfacing\Resource;
+use Ampersand\Interfacing\Options;
+use Ampersand\Interfacing\InterfaceController;
+use Slim\Http\Request;
+use Slim\Http\Response;
 
-global $app;
+/**
+ * @var \Slim\Slim $api
+ */
+global $api;
 
 /**************************************************************************************************
  *
@@ -16,173 +19,218 @@ global $app;
  *
  *************************************************************************************************/
 
-$app->get('/resources', function() use ($app) {
-	if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
-	
-	$content = array_keys(Concept::getAllConcepts()); // Return list of all concepts
-	
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-});
+/**
+ * @phan-closure-scope \Slim\App
+ */
+$api->group('/resource', function () {
+    // Inside group closure, $this is bound to the instance of Slim\App
+    /** @var \Slim\App $this */
 
-$app->get('/resources/:resourceType', function ($resourceType) use ($app) {
-	$session = Session::singleton();
-	
-	$roleIds = $app->request->params('roleIds');
-	$session->activateRoles($roleIds);
-	
-	$concept = Concept::getConcept($resourceType);
-	
-	// Checks
-	if(!$session->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
-	
-	// Get list of all atoms for $resourceType (i.e. concept)
-	$content = $concept->getAllAtomObjects(); 
-	
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-});
+    $this->get('', function (Request $request, Response $response, $args = []) {
+        if (Config::get('productionEnv')) {
+            throw new Exception("List of all resource types is not available in production environment", 403);
+        }
+        
+        $content = array_values(
+            array_map(function ($cpt) {
+                return $cpt->label; // only show label of resource types
+            }, array_filter(Concept::getAllConcepts(), function ($cpt) {
+                return $cpt->isObject(); // filter concepts without a representation (i.e. resource types)
+            }))
+        );
+        
+        return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
 
+    $this->get('/{resourceType}', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
-$app->get('/resources/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app) {
-	$session = Session::singleton();
+        $concept = Concept::getConcept($args['resourceType']);
+        
+        // Checks
+        if (!$concept->isObject()) {
+            throw new Exception("Resource type not found", 404);
+        }
+        if ($concept->isSession()) {
+            throw new Exception("Resource type not found", 404); // Prevent users to list other sessions
+        }
+        if (!$ampersandApp->isEditableConcept($concept)) {
+            throw new Exception("You do not have access for this call", 403);
+        }
+        
+        $resources = Resource::getAllResources($args['resourceType']);
+        
+        return $response->withJson($resources, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
 
-	$roleIds = $app->request->params('roleIds');
-	$session->activateRoles($roleIds);
-    
-	$resource = new Atom($resourceId, Concept::getConcept($resourceType));
-	
-	// Checks
-	if(!$session->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
+    $this->post('/{resourceType}', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
-	// Get specific resource (i.e. atom)
-	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->__toString()}' not found", 404);
-	
-	$content = $resource->getAtom();
+        $resource = Resource::makeNewResource($args['resourceType']);
 
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-});
+        $allowed = false;
+        foreach ($ampersandApp->getAccessibleInterfaces() as $ifc) {
+            if ($ifc->isRoot() && $ifc->crudC() && $ifc->tgtConcept == $resource->concept) {
+                $allowed = true;
+                break;
+            }
+        }
+        if (!$allowed) {
+            throw new Exception("You do not have access for this call", 403);
+        }
+        
+        // Don't save/commit new resource (yet)
+        return $response->withJson($resource, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
 
+    $this->get('/{resourceType}/{resourceId}', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
 
-/**************************************************************************************************
- *
- * resource calls WITH interfaces
- *
- *************************************************************************************************/
+        $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
+        
+        // Checks
+        if (!$ampersandApp->isEditableConcept($resource->concept)) {
+            throw new Exception("You do not have access for this call", 403);
+        }
+        if (!$resource->exists()) {
+            throw new Exception("Resource '{$resource}' not found", 404);
+        }
 
-$app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
-	$session = Session::singleton();
+        return $response->withJson($resource, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
 
-	$roleIds = $app->request->params('roleIds');
-	$session->activateRoles($roleIds);
+    // GET for interfaces that start with other resource
+    $this->get('/{resourceType}/{resourceId}/{ifcPath:.*}', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this['appContainer']['angular_app'];
 
-	$options = $app->request->params();
-	$ifcPath = implode ('/', $ifcPath);
+        // Input
+        $options = Options::getFromRequestParams($request->getQueryParams());
+        $depth = $request->getQueryParam('depth');
+        
+        // Prepare
+        $controller = new InterfaceController($ampersandApp, $angularApp);
+        $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
-	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
-	$atomOrIfc = $atom->walkIfcPath($ifcPath);
+        // Output
+        return $response->withJson($controller->get($resource, $args['ifcPath'], $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
 
-	$content = $atomOrIfc->read($options);
-	
-	// If force list option is provided, make sure to return an array
-	if($options['forceList'] && isAssoc($content)) $content = array($content);
+    // PUT, PATCH, POST for interfaces that start with other resource
+    $this->map(['PUT', 'PATCH', 'POST'], '/{resourceType}/{resourceId}[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this['appContainer']['angular_app'];
 
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        // Input
+        $options = Options::getFromRequestParams($request->getQueryParams());
+        $depth = $request->getQueryParam('depth');
+        $body = $request->reparseBody()->getParsedBody();
+        $ifcPath = $args['ifcPath'];
+        
+        // Prepare
+        $controller = new InterfaceController($ampersandApp, $angularApp);
+        $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
-});
+        // Output
+        switch ($request->getMethod()) {
+            case 'PUT':
+                return $response->withJson($controller->put($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            case 'PATCH':
+                return $response->withJson($controller->patch($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            case 'POST':
+                return $response->withJson($controller->post($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            default:
+                throw new Exception("Unsupported HTTP method", 500);
+        }
+    });
 
-$app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
-	throw new Exception ("Not implemented yet", 501);
-});
+    $this->delete('/{resourceType}/{resourceId}[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this['appContainer']['angular_app'];
 
-$app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app) {
-	$session = Session::singleton();
-	
-	$roleIds = $app->request->params('roleIds');
-	$topLevelIfcId = $app->request->params('topLevelIfc');
-	$options = $app->request->params();
-	
-	$session->activateRoles($roleIds);
-	   
-	if(empty($ifcPath) && empty($topLevelIfcId)) throw new Exception ("Parameter 'topLevelIfc' is required to return data when no interface path is specified", 400);
-	
-	$ifcPath = implode ('/', $ifcPath);
-	
-	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
-	$atom->topLevelIfcId = $topLevelIfcId;
-	
-	// Create atom if not exists and crudC is allowed
-	if(!$atom->atomExists() && InterfaceObject::getInterface($topLevelIfcId)->crudC) $atom->addAtom();
-	
-	$atomOrIfc = $atom->walkIfcPath($ifcPath);
-	
-	// Perform patch(es)
-	$content = $atomOrIfc->patch($app->request->getBody(), $options);
-	
-	// Return result
-	$result = array ( 'patches'				=> $app->request->getBody()
-					, 'content' 			=> $content
-					, 'notifications' 		=> Notifications::getAll()
-					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()
-					, 'requestType'			=> $session->database->getRequestType()
-					, 'sessionRefreshAdvice' => $session->getSessionRefreshAdvice()
-					, 'navTo'				=> $session->getNavToResponse()
-					);
-	
-	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-	
-});
+        $resource = Resource::makeResource($args['resourceId'], $args['resourceType']);
 
-$app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
-	$session = Session::singleton();
+        $controller = new InterfaceController($ampersandApp, $angularApp);
 
-	$roleIds = $app->request->params('roleIds');
-	$session->activateRoles($roleIds);
+        return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
+})->add($middleWare1);
 
-	$options = $app->request->params();
-	$ifcPath = implode ('/', $ifcPath);
+/**
+ * @phan-closure-scope \Slim\App
+ */
+$api->group('/session', function () {
+    // Inside group closure, $this is bound to the instance of Slim\App
+    /** @var \Slim\App $this */
 
-	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
-	$atomOrIfc = $atom->walkIfcPath($ifcPath);
-	
-	// Perform create
-	$content = $atomOrIfc->create($app->request->getBody(), $options);
+    // GET for interfaces with expr[SESSION*..]
+    $this->get('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this['appContainer']['angular_app'];
 
-	// Return result
-	$result = array ( 'content' 			=> $content
-					, 'notifications' 		=> Notifications::getAll()
-					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()
-					, 'requestType'			=> $session->database->getRequestType()
-					, 'sessionRefreshAdvice' => $session->getSessionRefreshAdvice()
-					, 'navTo'				=> $session->getNavToResponse()
-					);
+        // Input
+        $options = Options::getFromRequestParams($request->getQueryParams());
+        $depth = $request->getQueryParam('depth');
 
-	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-});
+        // Prepare
+        $controller = new InterfaceController($ampersandApp, $angularApp);
+        $resource = $ampersandApp->getSession()->getSessionResource();
 
-$app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
-	$session = Session::singleton();
+        // Output
+        return $response->withJson($controller->get($resource, $args['ifcPath'], $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
 
-	$roleIds = $app->request->params('roleIds');
-	$session->activateRoles($roleIds);
+    // PUT, PATCH, POST for interfaces with expr[SESSION*..]
+    $this->map(['PUT', 'PATCH', 'POST'], '[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this['appContainer']['angular_app'];
 
-	$options = $app->request->params();
-	$ifcPath = implode ('/', $ifcPath);
+        // Input
+        $options = Options::getFromRequestParams($request->getQueryParams());
+        $depth = $request->getQueryParam('depth');
+        $body = $request->reparseBody()->getParsedBody();
+        $ifcPath = $args['ifcPath'];
+        
+        // Prepare
+        $controller = new InterfaceController($ampersandApp, $angularApp);
+        $resource = $ampersandApp->getSession()->getSessionResource();
 
-	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
-	$atomOrIfc = $atom->walkIfcPath($ifcPath);
+        // Output
+        switch ($request->getMethod()) {
+            case 'PUT':
+                return $response->withJson($controller->put($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            case 'PATCH':
+                return $response->withJson($controller->patch($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            case 'POST':
+                return $response->withJson($controller->post($resource, $ifcPath, $body, $options, $depth), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            default:
+                throw new Exception("Unsupported HTTP method", 500);
+        }
+    });
 
-	// Perform delete
-	$atomOrIfc->delete($options);
+    $this->delete('[/{ifcPath:.*}]', function (Request $request, Response $response, $args = []) {
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
+        /** @var \Ampersand\AngularApp $angularApp */
+        $angularApp = $this['appContainer']['angular_app'];
 
-	// Return result
-	$result = array ( 'notifications' 		=> Notifications::getAll()
-					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()
-					, 'requestType'			=> $session->database->getRequestType()
-					, 'sessionRefreshAdvice' => $session->getSessionRefreshAdvice()
-					, 'navTo'				=> $session->getNavToResponse()
-					);
+        $resource = $ampersandApp->getSession()->getSessionResource();
 
-	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $controller = new InterfaceController($ampersandApp, $angularApp);
 
-});
-
-?>
+        return $response->withJson($controller->delete($resource, $args['ifcPath']), 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
+})->add($middleWare1);
