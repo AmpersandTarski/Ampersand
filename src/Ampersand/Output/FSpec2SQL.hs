@@ -9,7 +9,6 @@ import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.TableSpec (queryAsSQL)
-import           Ampersand.Prototype.Generate  (generateDBstructQueries)
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import           Data.Monoid
 import qualified Data.Set as Set
@@ -36,6 +35,12 @@ databaseStructureSql multi
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
    where
      fSpec = userFSpec multi
+
+generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
+generateDBstructQueries fSpec withComment 
+  =    concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
+    <> additionalDatabaseSettings 
+
 dumpSQLqueries :: MultiFSpecs -> Text.Text
 dumpSQLqueries multi
    = Text.intercalate "\n" $ 
