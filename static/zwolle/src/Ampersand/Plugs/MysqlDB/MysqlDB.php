@@ -91,7 +91,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
 
     /**
      * Number of queries executed within a transaction
-     * 
+     *
      * Attribute is reset to 0 on start of (new) transaction
      *
      * @var integer
