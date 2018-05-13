@@ -88,6 +88,15 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
      * @var $string
      */
     protected $lastQuery = null;
+
+    /**
+     * Number of queries executed within a transaction
+     *
+     * Attribute is reset to 0 on start of (new) transaction
+     *
+     * @var integer
+     */
+    protected $queryCount = 0;
     
     /**
      * Constructor
@@ -259,6 +268,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     {
         $this->lastQuery = $query;
         try {
+            $this->queryCount++;
             if ($multiQuery) {
                 $this->dbLink->multi_query($query);
                 do { // to flush results, otherwise a connection stays open
@@ -337,6 +347,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
     {
         if (!$this->dbTransactionActive) {
             $this->logger->info("Start mysql database transaction for {$transaction}");
+            $this->queryCount = 0;
             $this->execute("START TRANSACTION");
             $this->dbTransactionActive = true; // set flag dbTransactionActive
         }
@@ -353,6 +364,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         $this->logger->info("Commit mysql database transaction for {$transaction}");
         $this->execute("COMMIT");
         $this->dbTransactionActive = false;
+        $this->logger->info("{$this->queryCount} queries executed in this transaction");
     }
     
     /**
@@ -366,6 +378,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         $this->logger->info("Rollback mysql database transaction for {$transaction}");
         $this->execute("ROLLBACK");
         $this->dbTransactionActive = false;
+        $this->logger->info("{$this->queryCount} queries executed in this transaction");
     }
     
 /**************************************************************************************************
