@@ -10,7 +10,7 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: 
-- pandoc-crossref-0.3.0.0
+- pandoc-crossref-0.3.0.1
 - roman-numerals-0.5.1.5
 - simple-sql-parser-0.4.3
 - SpreadsheetML-0.1
