@@ -199,7 +199,7 @@ class ExcelImporter
 
         // Process import blocks
         foreach ($blockStartRowNrs as $key => $startRowNr) {
-            $endRowNr = isset($blockStartRowNrs[$key + 1]) ? $blockStartRowNrs[$key + 1] : null;
+            $endRowNr = isset($blockStartRowNrs[$key + 1]) ? ($blockStartRowNrs[$key + 1] - 1) : null;
             $this->parseBlock($worksheet, $startRowNr, $endRowNr);
         }
     }
