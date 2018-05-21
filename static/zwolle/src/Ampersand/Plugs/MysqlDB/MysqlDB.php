@@ -179,7 +179,7 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
         $this->doQuery($structure, true);
 
         // Perform static (i.e. project independent) database structure queries
-        // e.g. adds '__all_signals__ table to cache conjunct violations
+        // e.g. adds table to cache conjunct violations
         $queries = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'DBStructureQueries.sql');
         $this->doQuery($queries, true);
     }

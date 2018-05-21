@@ -54,7 +54,6 @@ class RuleEngine
         /** @var \Pimple\Container $container */
         global $container; // TODO: remove dependency to global $container var
         $database = $container['mysql_database'];
-        $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 
         // Determine conjuncts to select from database
         $conjuncts = [];
@@ -75,7 +74,7 @@ class RuleEngine
         $q = implode(',', array_map(function ($conj) {
             return "'{$conj->id}'";
         }, $conjuncts)); // returns string "<conjId1>,<conjId2>,<etc>"
-        $query = "SELECT * FROM \"{$dbsignalTableName}\" WHERE \"conjId\" IN ({$q})";
+        $query = "SELECT * FROM \"__conj_violation_cache__\" WHERE \"conjId\" IN ({$q})";
         $result = $database->execute($query); // [['conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>']]
 
         // Return violation
