@@ -379,9 +379,8 @@ class Transaction
     {
         $this->logger->info("Checking invariant rules");
         
-        $allInvRules = Rule::getAllInvRules();
-        $affectedInvRules = array_filter($this->getAffectedRules(), function (Rule $rule) use ($allInvRules) {
-            return in_array($rule, $allInvRules);
+        $affectedInvRules = array_filter($this->getAffectedRules(), function (Rule $rule) {
+            return $rule->isInvariantRule();
         });
 
         return RuleEngine::checkRules($affectedInvRules, false); // force evaluation, because conjunct violations are not (yet) saved in database

@@ -163,6 +163,26 @@ class Rule
     {
         return $this->id;
     }
+
+    /**
+     * Specifies if rule is a signal rule
+     *
+     * @return boolean
+     */
+    public function isSignalRule(): bool
+    {
+        return $this->type === 'signal';
+    }
+
+    /**
+     * Specifies is rule is a invariant rule
+     *
+     * @return boolean
+     */
+    public function isInvariantRule(): bool
+    {
+        return $this->type === 'invariant';
+    }
     
     /**
      * Get message to tell that a rule is broken
