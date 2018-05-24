@@ -200,11 +200,7 @@ class Transaction
         }
 
         // Check invariant rules
-        $violations = $this->checkInvariantRules();
-        $this->invariantRulesHold = empty($violations) ? true : false;
-        foreach ($violations as $violation) {
-            Notifications::addInvariant($violation); // notify user of broken invariant rules
-        }
+        $this->invariantRulesHold = $this->checkInvariantRules();
         
         // Decide action (commit or rollback)
         if ($dryRun) {
@@ -371,11 +367,12 @@ class Transaction
     }
 
     /**
-     * Get violations of invariant rules that are affected in this transaction
+     * Returns if invariant rules hold and notifies user of violations (if any)
+     * Note! Only checks affected invariant rules
      *
-     * @return \Ampersand\Rule\Violation[]
+     * @return bool
      */
-    protected function checkInvariantRules(): array
+    protected function checkInvariantRules(): bool
     {
         $this->logger->info("Checking invariant rules");
         
@@ -383,7 +380,13 @@ class Transaction
             return $rule->isInvariantRule();
         });
 
-        return RuleEngine::checkRules($affectedInvRules, false); // force evaluation, because conjunct violations are not (yet) saved in database
+        $rulesHold = true;
+        foreach (RuleEngine::getViolations($affectedInvRules) as $violation) {
+            $rulesHold = false; // set to false if there is one or more violation
+            Notifications::addInvariant($violation); // notify user of broken invariant rules
+        }
+
+        return $rulesHold;
     }
     
     public function invariantRulesHold()
