@@ -9,6 +9,13 @@ namespace Ampersand\Log;
  */
 class RequestIDProcessor
 {
+    /**
+     * Request identifier
+     * 
+     * @var string
+     */
+    protected $requestID;
+    
     public function __construct()
     {
         $this->requestID = bin2hex(random_bytes(5));

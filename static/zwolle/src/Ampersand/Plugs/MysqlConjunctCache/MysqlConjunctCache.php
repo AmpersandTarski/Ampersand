@@ -9,6 +9,7 @@ namespace Ampersand\Plugs\MysqlConjunctCache;
 
 use Psr\Cache\CacheItemPoolInterface;
 use Ampersand\Plugs\MysqlDB\MysqlDB;
+use Psr\Cache\CacheItemInterface;
 
 /**
  *
@@ -70,11 +71,11 @@ class MysqlConjunctCache implements CacheItemPoolInterface
      * @param string $key
      *   The key for which to return the corresponding Cache Item.
      *
-     * @throws InvalidArgumentException
+     * @throws \Psr\Cache\InvalidArgumentException
      *   If the $key string is not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
-     * @return CacheItemInterface
+     * @return \Psr\Cache\CacheItemInterface
      *   The corresponding Cache Item.
      */
     public function getItem($key)
@@ -96,7 +97,7 @@ class MysqlConjunctCache implements CacheItemPoolInterface
      * @param string[] $keys
      *   An indexed array of keys of items to retrieve.
      *
-     * @throws InvalidArgumentException
+     * @throws \Psr\Cache\InvalidArgumentException
      *   If any of the keys in $keys are not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
@@ -135,7 +136,7 @@ class MysqlConjunctCache implements CacheItemPoolInterface
      * @param string $key
      *   The key for which to check existence.
      *
-     * @throws InvalidArgumentException
+     * @throws \Psr\Cache\InvalidArgumentException
      *   If the $key string is not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
@@ -167,7 +168,7 @@ class MysqlConjunctCache implements CacheItemPoolInterface
      * @param string $key
      *   The key to delete.
      *
-     * @throws InvalidArgumentException
+     * @throws \Psr\Cache\InvalidArgumentException
      *   If the $key string is not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
@@ -185,7 +186,7 @@ class MysqlConjunctCache implements CacheItemPoolInterface
      * @param string[] $keys
      *   An array of keys that should be removed from the pool.
 
-     * @throws InvalidArgumentException
+     * @throws \Psr\Cache\InvalidArgumentException
      *   If any of the keys in $keys are not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
@@ -209,22 +210,20 @@ class MysqlConjunctCache implements CacheItemPoolInterface
     /**
      * Persists a cache item immediately.
      *
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      *   The cache item to save.
      *
      * @return bool
      *   True if the item was successfully persisted. False if there was an error.
      */
-    public function save(MysqlConjunctCacheItem $item)
+    public function save(CacheItemInterface $item)
     {
-        $conjunctId = $item->getKey();
-
-        $this->deleteItem($conjunctId);
+        $this->deleteItem($item->getKey());
 
         // Add new conjunct violation to database
         $query = "INSERT IGNORE INTO \"{$this->tableName}\" (\"conjId\", \"src\", \"tgt\") VALUES ";
         $query .= implode(',', array_map(function ($violation) {
-            return "('{$conjunctId}', '" . $this->database->escape($violation['src']) . "', '" . $this->database->escape($violation['tgt']) . "')";
+            return "('{$violation['conjId']}', '" . $this->database->escape($violation['src']) . "', '" . $this->database->escape($violation['tgt']) . "')";
         }, $item->get()));
 
         return $this->database->execute($query);
@@ -233,13 +232,13 @@ class MysqlConjunctCache implements CacheItemPoolInterface
     /**
      * Sets a cache item to be persisted later.
      *
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      *   The cache item to save.
      *
      * @return bool
      *   False if the item could not be queued or if a commit was attempted and failed. True otherwise.
      */
-    public function saveDeferred(MysqlConjunctCacheItem $item)
+    public function saveDeferred(CacheItemInterface $item)
     {
         $this->deferred[$item->getKey()] = $item;
 
@@ -275,6 +274,6 @@ class MysqlConjunctCache implements CacheItemPoolInterface
     {
         $whereClause = implode(',', $conjunctIds); // returns string "<conjId1>,<conjId2>,<etc>"
         $query = "SELECT * FROM \"{$this->tableName}\" WHERE \"conjId\" IN ({$whereClause})";
-        return $database->execute($query); // [['conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'], [], ..]
+        return $this->database->execute($query); // [['conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'], [], ..]
     }
 }

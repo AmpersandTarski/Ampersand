@@ -63,7 +63,6 @@ class MysqlConjunctCacheItem implements CacheItemInterface
     {
         $this->key = $conjunctId;
         $this->callable = $callable;
-        $this->value = $value;
     }
 
     /**
