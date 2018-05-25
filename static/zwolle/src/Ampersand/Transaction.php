@@ -143,7 +143,7 @@ class Transaction
     public function runExecEngine(): Transaction
     {
         // Run ExecEngine
-        ExecEngine::run($this->getAffectedRules());
+        ExecEngine::run($this);
 
         return $this;
     }

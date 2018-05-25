@@ -1,6 +1,9 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
+
+## v3.10.0 (11 may 2018)
+
 * PHP Backend: integrated and refactored ExecEngine (not an extension anymore)
 * PHP Backend: integrated and refactored ExcelImporter (not an extension anymore)
 * PHP Backend: added functionality to import json population files via UI of ExcelImporter

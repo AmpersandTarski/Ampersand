@@ -13,6 +13,7 @@ use Ampersand\Role;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Violation;
 use Ampersand\Core\Atom;
+use Ampersand\Transaction;
 
 class ExecEngine extends RuleEngine
 {
@@ -100,11 +101,13 @@ class ExecEngine extends RuleEngine
     /**
      * Run all ExecEngine roles
      * Default/standard role used in Ampersand scripts is 'ExecEngine', but other roles can be configured
+     * 
+     * If transaction is provided, only the affected rules are checked
      *
-     * @param \Ampersand\Rule\Rule[]|null $affectedRule
+     * @param \Ampersand\Transaction|null $transaction
      * @return void
      */
-    public static function run(array $affectedRules = null)
+    public static function run(Transaction $transaction = null)
     {
         $logger = self::getLogger();
 
@@ -132,9 +135,10 @@ class ExecEngine extends RuleEngine
             foreach ($roles as $role) {
                 $logger->info("{+ Run #" . self::$runCount . " using role '{$role}' (auto rerun: " . var_export(self::$autoRerun, true) . ")");
                 
-                if (is_null($affectedRules)) {
+                if (is_null($transaction)) {
                     $rulesToCheck = $role->maintains();
                 } else {
+                    $affectedRules = $transaction->getAffectedRules();
                     $rulesToCheck = array_filter($role->maintains(), function (Rule $rule) use ($affectedRules) {
                         return in_array($rule, $affectedRules);
                     });

@@ -24,7 +24,7 @@ class CSVWriter extends AbstractWriter
 
         // Output the column headings (use first row to get column heading)
         $columns = array_keys($data[0]);
-        fputcsv($this->stream, $columns, $delimiter);
+        $this->stream->write($this->formatCSVLine($columns, $delimiter));
 
         // Output rows
         foreach ($data as $row) {
@@ -54,7 +54,14 @@ class CSVWriter extends AbstractWriter
                 }
             }
             
-            fputcsv($this->stream, $fields, $delimiter);
+            $this->stream->write($this->formatCSVLine($fields, $delimiter));
         }
+    }
+    
+    protected function formatCSVLine(array $fields, string $delimiter = ';')
+    {
+        return implode($delimiter, array_map(function ($field){
+            return '"' . addslashes($field) . '"';
+        }, $fields)) . PHP_EOL;
     }
 }
