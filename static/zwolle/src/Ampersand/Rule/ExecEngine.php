@@ -101,7 +101,7 @@ class ExecEngine extends RuleEngine
     /**
      * Run all ExecEngine roles
      * Default/standard role used in Ampersand scripts is 'ExecEngine', but other roles can be configured
-     * 
+     *
      * If transaction is provided, only the affected rules are checked
      *
      * @param \Ampersand\Transaction|null $transaction

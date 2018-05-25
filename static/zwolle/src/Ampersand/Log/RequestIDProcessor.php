@@ -11,7 +11,7 @@ class RequestIDProcessor
 {
     /**
      * Request identifier
-     * 
+     *
      * @var string
      */
     protected $requestID;
