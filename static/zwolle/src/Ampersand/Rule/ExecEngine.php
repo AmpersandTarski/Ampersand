@@ -171,7 +171,7 @@ class ExecEngine extends RuleEngine
         
         $rulesFixed = [];
         foreach ($rulesToCheck as $rule) {
-            $violations = $rule->checkRule(false); // param false to force (re)evaluation of conjuncts
+            $violations = $rule->checkRule(true); // param true to force (re)evaluation of conjuncts
             
             if (empty($violations)) {
                 continue; // continue to next rule when no violation

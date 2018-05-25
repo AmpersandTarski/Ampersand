@@ -120,10 +120,10 @@ $api->group('/admin', function () {
             $conj->evaluate()->persistCacheItem();
         }
         
-        foreach (RuleEngine::checkRules(Rule::getAllInvRules(), true) as $violation) {
+        foreach (RuleEngine::getViolations(Rule::getAllInvRules()) as $violation) {
             Notifications::addInvariant($violation);
         }
-        foreach (RuleEngine::checkRules(Rule::getAllSigRules(), true) as $violation) {
+        foreach (RuleEngine::getViolations(Rule::getAllSigRules()) as $violation) {
             Notifications::addSignal($violation);
         }
         
