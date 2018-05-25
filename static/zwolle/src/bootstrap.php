@@ -29,6 +29,7 @@ if (version_compare(PHP_VERSION, '7.0.0', '<')) {
 
 // PHP SESSION : Start a new, or resume the existing, PHP session
 ini_set("session.use_strict_mode", true); // prevents a session ID that is never generated
+ini_set("session.cookie_httponly", true); // ensures the cookie won't be accessible by scripting languages, such as JavaScript
 session_start();
 
 // Composer Autoloader
