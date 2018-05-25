@@ -196,7 +196,7 @@ class Transaction
 
         // (Re)evaluate affected conjuncts
         foreach ($this->getAffectedConjuncts() as $conj) {
-            $conj->evaluate(false);
+            $conj->evaluate(); // violations are persisted below, only when transaction is committed
         }
 
         // Check invariant rules
@@ -234,7 +234,7 @@ class Transaction
     {
         // Cache conjuncts
         foreach ($this->getAffectedConjuncts() as $conj) {
-            $conj->saveCache();
+            $conj->persistCacheItem();
         }
 
         // Commit transaction for each registered storage

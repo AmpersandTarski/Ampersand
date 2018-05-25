@@ -304,8 +304,8 @@ class AmpersandApp
         
         // Evaluate all conjunct and save cache
         foreach (Conjunct::getAllConjuncts() as $conj) {
-            $conj->evaluate(true);
-            $conj->saveCache();
+            /** @var \Ampersand\Rule\Conjunct $conj */
+            $conj->evaluate()->persistCacheItem();
         }
 
         $this->setSession(); // Initiate session again

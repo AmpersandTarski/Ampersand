@@ -116,8 +116,8 @@ $api->group('/admin', function () {
         }
 
         foreach (Conjunct::getAllConjuncts() as $conj) {
-            $conj->evaluate(true);
-            $conj->saveCache();
+            /** @var \Ampersand\Rule\Conjunct $conj */
+            $conj->evaluate()->persistCacheItem();
         }
         
         foreach (RuleEngine::checkRules(Rule::getAllInvRules(), true) as $violation) {
