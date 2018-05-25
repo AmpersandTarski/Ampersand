@@ -9,6 +9,7 @@ namespace Ampersand\Rule;
 
 use Ampersand\Misc\Config;
 use Ampersand\Rule\Violation;
+use Psr\Cache\CacheItemPoolInterface;
 
 /**
  *
@@ -42,12 +43,8 @@ class RuleEngine
      * @param \Ampersand\Rule\Rule[] $rules set of rules for which to query the violations
      * @return \Ampersand\Rule\Violation[]
      */
-    public static function getViolationsFromCache(array $rules): array
+    public static function getViolationsFromCache(array $rules, CacheItemPoolInterface $conjunctCache): array
     {
-        global $container;
-        /** @var \Psr\Cache\CacheItemPoolInterface $conjunctCache */
-        $conjunctCache = $container['conjunctCachePool'];
-
         // Determine conjuncts to select from database
         $conjuncts = [];
         $conjunctRuleMap = []; // needed because violations are instantiated per rule (not per conjunct)
