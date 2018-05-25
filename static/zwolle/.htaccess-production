@@ -1,0 +1,4 @@
+Header always set Strict-Transport-Security "max-age=15768000; includeSubDomains;"
+RewriteEngine On
+RewriteCond %{SERVER_PORT} ^80$
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301]
