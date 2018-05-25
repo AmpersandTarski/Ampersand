@@ -24,6 +24,7 @@ use Ampersand\Interfacing\View;
 use Ampersand\Rule\Rule;
 use Closure;
 use Ampersand\Rule\ExecEngine;
+use Ampersand\Plugs\MysqlConjunctCache\MysqlConjunctCache;
 
 class AmpersandApp
 {
@@ -97,10 +98,11 @@ class AmpersandApp
         $this->logger->info('Initialize Ampersand application');
 
         $defaultPlug = $this->container['default_plug'];
+        $conjunctCache = $this->container['conjunctCachePool'] ?? new MysqlConjunctCache($defaultPlug);
 
         // Instantiate object definitions from generated files
         $genericsFolder = Config::get('pathToGeneratedFiles');
-        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug);
+        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug, $conjunctCache);
         View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
         Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'));
         Relation::setAllRelations($genericsFolder . 'relations.json', Logger::getLogger('CORE'));

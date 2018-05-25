@@ -12,6 +12,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Misc\Config;
 use Psr\Log\LoggerInterface;
 use Ampersand\Plugs\MysqlDB\MysqlDB;
+use Psr\Cache\CacheItemPoolInterface;
 
 /**
  *
@@ -41,7 +42,21 @@ class Conjunct
      * @var \Ampersand\Plugs\MysqlDB\MysqlDB
      */
     protected $database;
+
+    /**
+     * Undocumented variable
+     *
+     * @var \Psr\Cache\CacheItemPoolInterface
+     */
+    protected $cachePool;
     
+    /**
+     * Undocumented variable
+     *
+     * @var \Psr\Cache\CacheItemInterface
+     */
+    protected $cacheItem;
+
     /**
      * Conjunct identifier
      *
@@ -85,7 +100,7 @@ class Conjunct
      * @param array $conjDef
      * @param \Psr\Log\LoggerInterface $logger
      */
-    private function __construct(array $conjDef, LoggerInterface $logger, MysqlDB $database)
+    private function __construct(array $conjDef, LoggerInterface $logger, MysqlDB $database, CacheItemPoolInterface $cachePool)
     {
         $this->logger = $logger;
 
@@ -95,6 +110,9 @@ class Conjunct
         $this->query = $conjDef['violationsSQL'];
         $this->invRuleNames = (array)$conjDef['invariantRuleNames'];
         $this->sigRuleNames = (array)$conjDef['signalRuleNames'];
+
+        $this->cachePool = $cachePool;
+        $this->cacheItem = $cachePool->getItem($this->id);
     }
     
     /**
@@ -262,14 +280,14 @@ class Conjunct
      * @param \Ampersand\Plugs\MysqlDB\MysqlDB $database
      * @return void
      */
-    public static function setAllConjuncts(string $fileName, LoggerInterface $logger, MysqlDB $database)
+    public static function setAllConjuncts(string $fileName, LoggerInterface $logger, MysqlDB $database, CacheItemPoolInterface $cachePool)
     {
         self::$allConjuncts = [];
         
         $allConjDefs = (array)json_decode(file_get_contents($fileName), true);
     
         foreach ($allConjDefs as $conjDef) {
-            self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef, $logger, $database);
+            self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef, $logger, $database, $cachePool);
         }
     }
 }
