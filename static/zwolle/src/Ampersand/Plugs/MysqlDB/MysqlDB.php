@@ -245,8 +245,8 @@ class MysqlDB implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInt
      */
     public function execute($query)
     {
-        $result = $this->doQuery($query);
         $this->logger->debug($query);
+        $result = $this->doQuery($query);
 
         if ($result === false) {
             return false;
