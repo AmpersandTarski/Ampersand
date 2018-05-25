@@ -220,11 +220,17 @@ class MysqlConjunctCache implements CacheItemPoolInterface
     {
         $this->deleteItem($item->getKey());
 
-        // Add new conjunct violation to database
-        $query = "INSERT IGNORE INTO \"{$this->tableName}\" (\"conjId\", \"src\", \"tgt\") VALUES ";
-        $query .= implode(',', array_map(function ($violation) {
+        $insertValues = array_map(function ($violation) {
             return "('{$violation['conjId']}', '" . $this->database->escape($violation['src']) . "', '" . $this->database->escape($violation['tgt']) . "')";
-        }, $item->get()));
+        }, $item->get());
+
+        // Directly return true when nothing to insert
+        if (empty($insertValues)) {
+            return true;
+        }
+
+        // Add new conjunct violation to database
+        $query = "INSERT IGNORE INTO \"{$this->tableName}\" (\"conjId\", \"src\", \"tgt\") VALUES " . implode(',', $insertValues);
 
         return $this->database->execute($query);
     }
