@@ -43,7 +43,7 @@ class RuleEngine
      * @param \Ampersand\Rule\Rule[] $rules set of rules for which to query the violations
      * @return \Ampersand\Rule\Violation[]
      */
-    public static function getViolationsFromCache(array $rules, CacheItemPoolInterface $conjunctCache): array
+    public static function getViolationsFromCache(array $rules): array
     {
         // Determine conjuncts to select from database
         $conjuncts = [];

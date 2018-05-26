@@ -52,13 +52,6 @@ class AmpersandApp
      * @var \Ampersand\Plugs\StorageInterface[]
      */
     protected $storages = [];
-    
-    /**
-     * Cache pool for conjunct violations
-     *
-     * @var \Psr\Cache\CacheItemPoolInterface
-     */
-    protected $conjunctCache;
 
     /**
      * List with anonymous functions (closures) to be executed during initialization
@@ -105,11 +98,11 @@ class AmpersandApp
         $this->logger->info('Initialize Ampersand application');
 
         $defaultPlug = $this->container['default_plug'];
-        $this->conjunctCache = $this->container['conjunctCachePool'] ?? new MysqlConjunctCache($defaultPlug);
+        $conjunctCache = $this->container['conjunctCachePool'] ?? new MysqlConjunctCache($defaultPlug);
 
         // Instantiate object definitions from generated files
         $genericsFolder = Config::get('pathToGeneratedFiles');
-        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug, $this->conjunctCache);
+        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug, $conjunctCache);
         View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
         Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'));
         Relation::setAllRelations($genericsFolder . 'relations.json', Logger::getLogger('CORE'));
@@ -470,7 +463,7 @@ class AmpersandApp
         $this->logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'id')));
         
         // Check rules and signal notifications for all violations
-        foreach (RuleEngine::getViolationsFromCache($this->getRulesToMaintain(), $this->conjunctCache) as $violation) {
+        foreach (RuleEngine::getViolationsFromCache($this->getRulesToMaintain()) as $violation) {
             Notifications::addSignal($violation);
         }
     }
