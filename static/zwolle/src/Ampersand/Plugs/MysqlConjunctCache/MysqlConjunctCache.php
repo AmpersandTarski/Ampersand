@@ -278,8 +278,8 @@ class MysqlConjunctCache implements CacheItemPoolInterface
      */
     public function getConjunctViolations(array $conjunctIds = []): array
     {
-        $whereClause = implode(',', $conjunctIds); // returns string "<conjId1>,<conjId2>,<etc>"
-        $query = "SELECT * FROM \"{$this->tableName}\" WHERE \"conjId\" IN ({$whereClause})";
+        $whereClause = implode("','", $conjunctIds); // returns string "<conjId1>,<conjId2>,<etc>"
+        $query = "SELECT * FROM \"{$this->tableName}\" WHERE \"conjId\" IN ('{$whereClause}')";
         return $this->database->execute($query); // [['conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'], [], ..]
     }
 }
