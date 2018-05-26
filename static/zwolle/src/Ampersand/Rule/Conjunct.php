@@ -198,7 +198,7 @@ class Conjunct
         }
         
         // If re-evaluation is forced
-        if ($forceReEvaluation) {
+        if ($forceReEvaluation || !$this->cacheItem->isHit()) {
             $this->evaluate();
             return $this->cacheItem->get();
         }
