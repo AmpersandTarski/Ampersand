@@ -8,6 +8,7 @@
 namespace Ampersand\Rule;
 
 use Exception;
+use Generator;
 use Ampersand\Log\Logger;
 use Ampersand\Misc\Config;
 use Psr\Log\LoggerInterface;
@@ -255,6 +256,37 @@ class Conjunct
      *
      *********************************************************************************************/
     
+    /**
+     * Get conjunct violations (if possible from cache) for given set of conjuncts
+     *
+     * @param \Ampersand\Rule\Conjunct[] $conjuncts
+     * @return array
+     */
+    public static function getConjunctViolations(array $conjuncts = []): Generator
+    {
+        // Foreach conjunct provided, check if there is a hit in cache (i.e. ->isHit())
+        $hits = $nonHits = [];
+        foreach ($conjuncts as $conjunct) {
+            /** @var \Ampersand\Rule\Conjunct $conjunct */
+            if ($conjunct->cacheItem->isHit()) {
+                $hits[] = $conjunct->id;
+            } else {
+                $nonHits[] = $conjunct;
+            }
+        }
+
+        // For all hits, use CachPoolInterface->getItems()
+        foreach (self::$conjunctCache->getItems($hits) as $cacheItem) {
+            /** @var \Psr\Cache\CacheItemInterface $cacheItem */
+            yield from $cacheItem->get();
+        }
+
+        // For all non-hits, get violations from Conjunct object
+        foreach ($nonHits as $conjunct) {
+            yield from $conjunct->getViolations();
+        }
+    }
+
     /**
      * Return conjunct object
      *

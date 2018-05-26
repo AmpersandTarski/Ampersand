@@ -63,11 +63,9 @@ class RuleEngine
 
         // Return violation
         $violations = [];
-        foreach ($conjunctCache->getItems(array_column($conjuncts, 'id')) as $cacheItem) {
-            /** @var \Psr\Cache\CacheItemInterface $cacheItem */
-            $value = $cacheItem->get();
-            foreach ($conjunctRuleMap[$value['conjId']] as $rule) {
-                $violations[] = new Violation($rule, $value['src'], $value['tgt']);
+        foreach (Conjunct::getConjunctViolations($conjuncts) as $conjViolation) {
+            foreach ($conjunctRuleMap[$conjViolation['conjId']] as $rule) {
+                $violations[] = new Violation($rule, $conjViolation['src'], $conjViolation['tgt']);
             }
         }
         return $violations;
