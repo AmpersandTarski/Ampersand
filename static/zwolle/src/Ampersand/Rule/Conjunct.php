@@ -214,7 +214,8 @@ class Conjunct
             // Execute conjunct query
             $violations = array_map(function (array $pair) {
                 // Adds conjunct id to every pair
-                return $pair['conjId'] = $this->id;
+                $pair['conjId'] = $this->id;
+                return $pair;
             }, $this->database->execute($this->getQuery()));
 
             $this->isEvaluated = true;
