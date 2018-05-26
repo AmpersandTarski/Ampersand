@@ -28,6 +28,13 @@ class Conjunct
      * @var \Ampersand\Rule\Conjunct[]
      */
     private static $allConjuncts;
+
+    /**
+     * Cache pool that contains conjunct violations
+     *
+     * @var \Psr\Cache\CacheItemPoolInterface
+     */
+    protected static $conjunctCache;
     
     /**
      * Logger
@@ -289,6 +296,7 @@ class Conjunct
     public static function setAllConjuncts(string $fileName, LoggerInterface $logger, MysqlDB $database, CacheItemPoolInterface $cachePool)
     {
         self::$allConjuncts = [];
+        self::$conjunctCache = $cachePool;
         
         $allConjDefs = (array)json_decode(file_get_contents($fileName), true);
     
