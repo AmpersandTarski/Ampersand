@@ -175,6 +175,7 @@ class ExecEngine extends RuleEngine
         
         $rulesFixed = [];
         foreach ($rulesToCheck as $rule) {
+            /** @var \Ampersand\Rule\Rule $rule */
             $violations = $rule->checkRule(true); // param true to force (re)evaluation of conjuncts
             
             if (empty($violations)) {
