@@ -260,7 +260,7 @@ class Conjunct
      * Get conjunct violations (if possible from cache) for given set of conjuncts
      *
      * @param \Ampersand\Rule\Conjunct[] $conjuncts
-     * @return array
+     * @return \Generator
      */
     public static function getConjunctViolations(array $conjuncts = []): Generator
     {
