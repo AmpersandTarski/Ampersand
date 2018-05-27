@@ -1,6 +1,9 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
+* PHP Backend: implement [PSR6 caching interface](https://www.php-fig.org/psr/psr-6/) for conjunct violation cache
+* [Issue #411](https://github.com/AmpersandTarski/Ampersand/issues/411) Fix issue with conjunct violation cache for src/tgt atom identifiers longer than 255 chars
+* [Issue #482](https://github.com/AmpersandTarski/Ampersand/issues/482) Add checksum for generated Ampersand model files to detect changes
 
 ## v3.10.0 (11 may 2018)
 
