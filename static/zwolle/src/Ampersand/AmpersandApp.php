@@ -220,6 +220,16 @@ class AmpersandApp
     }
 
     /**
+     * Get Ampersand model for this application
+     *
+     * @return \Ampersand\Misc\Generics
+     */
+    public function getModel(): Generics
+    {
+        return $this->model;
+    }
+
+    /**
      * Get list of accessible interfaces for the user of this Ampersand application
      *
      * @return \Ampersand\Interfacing\InterfaceObject[]
