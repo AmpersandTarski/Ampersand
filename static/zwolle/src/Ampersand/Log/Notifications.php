@@ -38,6 +38,21 @@ class Notifications
                ];
     }
 
+    /**
+     * Clear all notification arrays
+     *
+     * @return void
+     */
+    public static function clearAll()
+    {
+        self::$errors = [];
+        self::$warnings = [];
+        self::$infos = [];
+        self::$successes = [];
+        self::$invariants = [];
+        self::$signals = [];
+    }
+
 /**************************************************************************************************
  *
  * Notifications for: user logs (info, notice (success), warning and error)

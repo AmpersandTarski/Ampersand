@@ -287,6 +287,9 @@ class AmpersandApp
     {
         $this->logger->info("Start application reinstall");
 
+        // Clear notifications
+        Notifications::clearAll();
+
         // Write new checksum file of generated Ampersand moel
         $this->model->writeChecksumFile();
 
