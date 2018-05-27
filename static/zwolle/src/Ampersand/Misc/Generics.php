@@ -103,4 +103,9 @@ class Generics
 
         return $valid;
     }
+
+    public function getFolder(): string
+    {
+        return $this->folder;
+    }
 }

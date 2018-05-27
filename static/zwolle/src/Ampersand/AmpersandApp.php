@@ -43,10 +43,18 @@ class AmpersandApp
     protected $container;
 
     /**
+     * Logger
      *
      * @var \Psr\Log\LoggerInterface
      */
     protected $logger;
+
+    /**
+     * Reference to generated Ampersand model
+     *
+     * @var \Ampersand\Misc\Generics
+     */
+    protected $model;
 
     /**
      * List with storages that are registered for this application
@@ -92,6 +100,7 @@ class AmpersandApp
     {
         $this->logger = $logger;
         $this->container = $container;
+        $this->model = new Generics(Config::get('pathToGeneratedFiles'), $logger);
     }
 
     public function init()
@@ -101,13 +110,12 @@ class AmpersandApp
         $defaultPlug = $this->container['default_plug'];
         $conjunctCache = $this->container['conjunctCachePool'] ?? new MysqlConjunctCache($defaultPlug);
 
-        $genericsFolder = Config::get('pathToGeneratedFiles');
-        $generics = new Generics($genericsFolder, $this->logger);
-        if (!$generics->verifyChecksum() && !Config::get('productionEnv')) {
+        if (!$this->model->verifyChecksum() && !Config::get('productionEnv')) {
             Logger::getUserLogger()->warning("Generated model is changed. You SHOULD reinstall your application");
         }
 
         // Instantiate object definitions from generated files
+        $genericsFolder = $this->model->getFolder() . '/';
         Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug, $conjunctCache);
         View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
         Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'));
