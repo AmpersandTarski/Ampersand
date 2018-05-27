@@ -293,6 +293,7 @@ class AmpersandApp
         // Write new checksum file of generated Ampersand moel
         $this->model->writeChecksumFile();
 
+        // Call reinstall method on every registered storage (e.g. for MysqlDB implementation this means (re)creating database structure)
         foreach ($this->storages as $storage) {
             $storage->reinstallStorage();
         }
@@ -302,6 +303,7 @@ class AmpersandApp
             $cpt->clearAtomCache();
         }
 
+        // Default population
         if ($installDefaultPop) {
             $this->logger->info("Install default population");
 
@@ -328,7 +330,8 @@ class AmpersandApp
             $conj->evaluate()->persistCacheItem();
         }
 
-        $this->setSession(); // Initiate session again
+        // Initiate session again
+        $this->setSession();
 
         $this->logger->info("End application reinstall");
 

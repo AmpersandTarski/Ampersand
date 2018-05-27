@@ -71,6 +71,8 @@ class Generics
      */
     public function writeChecksumFile()
     {
+        $this->logger->debug("Writing checksum file for generated Ampersand model files");
+
         $checksums = [];
         foreach ($this->filesToCompare as $path) {
             $filename = pathinfo($path, PATHINFO_BASENAME);
@@ -87,6 +89,8 @@ class Generics
      */
     public function verifyChecksum(): bool
     {
+        $this->logger->debug("Verifying checksum for Ampersand model files");
+
         $valid = true; // assume all checksums match
 
         // Get stored checksums
