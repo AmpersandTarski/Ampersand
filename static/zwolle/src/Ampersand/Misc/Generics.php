@@ -59,7 +59,7 @@ class Generics
         $this->checksumPath = "{$this->folder}/checksums.txt";
         $this->filesToCompare = glob("{$this->folder}/*.json");
 
-        if (!file_exists($this->checksumFile)) {
+        if (!file_exists($this->checksumPath)) {
             $this->writeChecksumFile();
         }
     }
