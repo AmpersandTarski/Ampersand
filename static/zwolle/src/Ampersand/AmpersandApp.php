@@ -287,6 +287,9 @@ class AmpersandApp
     {
         $this->logger->info("Start application reinstall");
 
+        // Write new checksum file of generated Ampersand moel
+        $this->model->writeChecksumFile();
+
         foreach ($this->storages as $storage) {
             $storage->reinstallStorage();
         }
