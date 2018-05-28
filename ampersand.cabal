@@ -167,7 +167,6 @@ library
                      Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                      Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                      Ampersand.Output.ToPandoc.SharedAmongChapters,
-                     Ampersand.Prototype.GenBericht,
                      Ampersand.Prototype.Generate,
                      Ampersand.Prototype.GenFrontend,
                      Ampersand.Prototype.PHP,
