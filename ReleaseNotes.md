@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #779](https://github.com/AmpersandTarski/Ampersand/issues/779) Removed GenBericht module (project specific extension which is not used anymore)
 
 ## v3.10.0 (11 may 2018)
 
