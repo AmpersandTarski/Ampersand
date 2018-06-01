@@ -54,7 +54,7 @@ library
                      MissingH == 1.4.*,
                      mtl == 2.2.*,
                      pandoc == 1.19.*,
-                     pandoc-crossref == 0.2.5.*,
+                     pandoc-crossref == 0.2.6.*,
                      -- Extra dependency for pandoc types because of issue. See https://github.com/jgm/pandoc/issues/4448
                      pandoc-types == 1.17.*, pandoc-types < 1.17.4,
                      parsec == 3.1.*,
