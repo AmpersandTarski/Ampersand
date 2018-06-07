@@ -53,7 +53,7 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 , "PURPOSE", "REF"
                 , "REST", "HTML", "LATEX", "MARKDOWN"
                 -- Keywords for interfaces
-                , "INTERFACE", "FOR", "LINKTO"
+                , "INTERFACE", "FOR", "LINKTO", "API"
                 , "BOX", "ROWS", "TABS", "COLS"
                 -- Keywords for identitys
                 , "IDENT"
