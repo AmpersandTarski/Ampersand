@@ -15,7 +15,6 @@ import           Ampersand.FSpec.GenerateUML
 import           Ampersand.Graphic.Graphics (writePicture)
 import           Ampersand.Misc
 import           Ampersand.Output
-import           Ampersand.Prototype.GenBericht  (doGenBericht)
 import           Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
 import           Ampersand.Prototype.ProtoUtil   (installComposerLibs)
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
@@ -57,7 +56,6 @@ generateAmpersandOutput multi = do
       , ( proofs      , doGenProofs        )
       , ( validateSQL , doValidateSQLTest  )
       , ( genPrototype, doGenProto         )
-      , ( genBericht  , doGenBericht fSpec )
       , ( const True  , putStrLn "Finished processing your model.")]
    opts = getOpts fSpec
    fSpec = userFSpec multi

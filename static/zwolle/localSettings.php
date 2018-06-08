@@ -2,6 +2,7 @@
 
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
+use Ampersand\Log\RequestIDProcessor;
 use Ampersand\Misc\Config;
 // use Ampersand\Rule\ExecEngine;
 use Ampersand\Plugs\MysqlDB\MysqlDB;
@@ -25,7 +26,7 @@ Config::set('debugMode', 'global', true); // default mode = false
 
 // Log file handler
 $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/error.log', 0, \Monolog\Logger::DEBUG);
-//$fileHandler->pushProcessor(new \Monolog\Processor\WebProcessor()); // Adds IP adres and url info to log records
+// $fileHandler->pushProcessor(new RequestIDProcessor())->pushProcessor(new WebProcessor(null, [ 'ip' => 'REMOTE_ADDR', 'method' => 'REQUEST_METHOD', 'url' => 'REQUEST_URI'])); // Adds IP adres and url info to log records
 $wrapper = new \Monolog\Handler\FingersCrossedHandler($fileHandler, \Monolog\Logger::ERROR, 0, true, true, \Monolog\Logger::WARNING);
 Logger::registerGenericHandler($wrapper);
 
