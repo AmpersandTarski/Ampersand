@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.10.1 (8 june 2018)
 
 * [Issue #779](https://github.com/AmpersandTarski/Ampersand/issues/779) Removed GenBericht module (project specific extension which is not used anymore)
 * [Issue #789](https://github.com/AmpersandTarski/Ampersand/issues/789) Introduction `API` keyword as synonym for `INTERFACE`
