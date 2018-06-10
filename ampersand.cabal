@@ -54,7 +54,7 @@ library
                      lens == 4.16.*,
                      MissingH == 1.4.*,
                      mtl == 2.2.*,
-                     pandoc == 2.1.*,
+                     pandoc == 2.1.2,
                      pandoc-crossref == 0.3.1.0,
                      pandoc-types == 1.17.*,
                      parsec == 3.1.*,

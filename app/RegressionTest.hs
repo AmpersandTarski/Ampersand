@@ -11,7 +11,7 @@ import System.IO.Error (tryIOError)
 
 main :: IO ExitCode
 main = do 
-    totalfails <- walk baseDir $$ myVisitor =$ sumarize
+    totalfails <- runConduit $ walk baseDir .| myVisitor .| sumarize
     failWhenNotZero totalfails 
   where 
     baseDir = "." </> "testing"
@@ -26,7 +26,7 @@ main = do
    
 
 -- Produces directory data
-walk :: FilePath -> Source IO DirData
+walk :: FilePath -> ConduitT () DirData IO ()
 walk path = do 
     result <- lift $ tryIOError listdir
     case result of
@@ -54,10 +54,10 @@ walk path = do
             isHidden dir = head dir == '.'
             
 -- Convert a DirData into an Int that contains the number of failed tests
-myVisitor :: Conduit DirData IO Int
+myVisitor :: ConduitT DirData Int IO ()
 myVisitor = loop 1
   where
-    loop :: Int -> Conduit DirData IO Int
+    loop :: Int -> ConduitT DirData Int IO ()
     loop n = 
         awaitForever 
           (\dird -> do lift $ putStr $ ">> " ++ show n ++ ". "
@@ -67,10 +67,10 @@ myVisitor = loop 1
           ) 
                 
 
-sumarize :: Sink Int IO Int
+sumarize :: ConduitT Int Void IO Int
 sumarize = loop 0 
   where
-    loop :: Int -> Sink Int IO Int
+    loop :: Int -> ConduitT Int Void IO Int
     loop i = 
       await >>= maybe (return i) 
                       (\x -> loop $! (i+x))
