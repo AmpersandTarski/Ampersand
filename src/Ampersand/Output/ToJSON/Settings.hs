@@ -3,7 +3,8 @@
 module Ampersand.Output.ToJSON.Settings 
   (Settings)
 where
-import Ampersand.Output.ToJSON.JSONutils 
+import           Ampersand.Output.ToJSON.JSONutils 
+import           Data.Hashable
 import qualified Data.Text as Text
 
 data Settings = Settings 
@@ -28,7 +29,7 @@ data MySQLSettings = MySQLSettings
   , msqlJSONdbName :: String
   , msqlJSONdbUser :: String
   , msqlJSONdbPass :: String
-  , msqlJSONdbsignalTableName :: String
+  , msqlJSONdbHash :: String
   } deriving (Generic, Show)
 instance ToJSON MySQLSettings where
   toJSON = amp2Jason
@@ -38,6 +39,7 @@ instance JSON MultiFSpecs MySQLSettings where
   , msqlJSONdbName = dbName   opts
   , msqlJSONdbUser = sqlLogin opts
   , msqlJSONdbPass = sqlPwd   opts
-  , msqlJSONdbsignalTableName = "__all_signals__"
+  , msqlJSONdbHash = show . hash $ fSpec
   }
-   where opts = getOpts $ userFSpec multi
+   where opts = getOpts fSpec
+         fSpec = userFSpec multi

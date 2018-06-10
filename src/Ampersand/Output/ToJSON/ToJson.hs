@@ -3,7 +3,7 @@ module Ampersand.Output.ToJSON.ToJson
 where
 import Ampersand.Output.ToJSON.JSONutils
 import Ampersand.Output.ToJSON.Settings
-import Ampersand.Output.ToJSON.MySQLInstaller
+import Ampersand.Output.ToJSON.Populations
 import Ampersand.Output.ToJSON.Relations
 import Ampersand.Output.ToJSON.Rules 
 import Ampersand.Output.ToJSON.Concepts 
@@ -19,8 +19,6 @@ generateJSONfiles multi =
                                 (fromAmpersand multi (multi,True) :: Populations)
        ]
   else [ writeJSON "settings"   (fromAmpersand multi multi :: Settings)
-       , writeJSON "mysql-installer"
-                                (fromAmpersand multi multi :: MySQLInstaller)
        , writeJSON "relations"  (fromAmpersand multi multi :: Relationz)
        , writeJSON "rules"      (fromAmpersand multi multi :: Rulez)
        , writeJSON "concepts"   (fromAmpersand multi multi :: Concepts)

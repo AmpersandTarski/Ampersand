@@ -35,6 +35,8 @@ import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.FSpec.Crud
 import           Ampersand.Misc
+import           Data.Function (on)
+import           Data.Hashable
 import           Data.List
 import qualified Data.Set as Set
 import           Data.Text (Text,unpack)
@@ -113,6 +115,22 @@ instance Unique FSpec where
  showUnique = showUnique . originalContext
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
+
+-- The point of calculating a hash for FSpec is that such a hash can be used 
+-- at runtime to determine if the database structure and content is still valid.
+-- We want to detect if the user has made changes in her script, that require
+-- to reinstall the database. (e.g. changing the order of things in the script
+-- would not require a change of the database. However, change the name of concepts would.)
+instance Hashable FSpec where
+    hashWithSalt salt fSpec = salt 
+      `composeHash` name
+      `composeHash` (sort . Set.toList . fallRules) 
+      `composeHash` (sort . Set.toList . vrels)
+      `composeHash` (sort . Set.toList . allConcepts)
+      `composeHash` (sortBy (compare `on` genspc) . vgens)
+      where 
+        composeHash :: Hashable a => Int -> (FSpec -> a) -> Int
+        composeHash s fun = s `hashWithSalt` (fun fSpec) 
 
 instance Language FSpec where
   relsDefdIn = relsDefdIn.originalContext

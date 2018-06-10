@@ -27,6 +27,32 @@ class Notifications
     private static $infos = [];
     private static $successes = [];
 
+    public static function getAll()
+    {
+        return [ 'errors' => array_values(self::$errors)
+               , 'warnings' => array_values(self::$warnings)
+               , 'infos' => array_values(self::$infos)
+               , 'successes' => array_values(self::$successes)
+               , 'invariants' => array_values(self::$invariants)
+               , 'signals' => array_values(self::$signals)
+               ];
+    }
+
+    /**
+     * Clear all notification arrays
+     *
+     * @return void
+     */
+    public static function clearAll()
+    {
+        self::$errors = [];
+        self::$warnings = [];
+        self::$infos = [];
+        self::$successes = [];
+        self::$invariants = [];
+        self::$signals = [];
+    }
+
 /**************************************************************************************************
  *
  * Notifications for: user logs (info, notice (success), warning and error)
@@ -161,22 +187,5 @@ class Notifications
                                                     ];
         
         Logger::getLogger('SIGNAL')->debug("'{$message}' RULE: '{$violation->rule}'");
-    }
-    
-/**************************************************************************************************
- *
- * Get notifications and default settings
- *
- *************************************************************************************************/
-    
-    public static function getAll()
-    {
-        return [ 'errors' => array_values(self::$errors)
-               , 'warnings' => array_values(self::$warnings)
-               , 'infos' => array_values(self::$infos)
-               , 'successes' => array_values(self::$successes)
-               , 'invariants' => array_values(self::$invariants)
-               , 'signals' => array_values(self::$signals)
-               ];
     }
 }

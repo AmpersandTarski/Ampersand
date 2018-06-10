@@ -67,7 +67,7 @@ import           Data.Data          (Typeable,Data)
 import           Data.Default       (Default(..))
 import           Data.Function      (on)
 import           Data.Hashable      (Hashable(..),hashWithSalt)
-import           Data.List          (nub,intercalate)
+import           Data.List          (nub,intercalate,sort)
 import           Data.Maybe         (fromMaybe,listToMaybe)
 import qualified Data.Set as Set
 import           Data.Text          (Text,unpack,pack)
@@ -175,6 +175,10 @@ instance Traced Rule where
   origin = rrfps
 instance Named Rule where
   name   = rrnm
+instance Hashable Rule where
+  hashWithSalt s rul = s 
+    `hashWithSalt` (name rul)
+    `hashWithSalt` (formalExpression rul)
 
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)
@@ -315,6 +319,13 @@ instance Show A_Gen where
     case g of
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
+instance Hashable A_Gen where
+    hashWithSalt s g = 
+      s `hashWithSalt` (genspc g)
+        `hashWithSalt` (case g of 
+                         Isa{} -> [genspc g]
+                         IsE{} -> sort $ genrhs g 
+                       )
 
 data Interface = Ifc { ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)

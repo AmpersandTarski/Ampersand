@@ -196,15 +196,11 @@ class Transaction
 
         // (Re)evaluate affected conjuncts
         foreach ($this->getAffectedConjuncts() as $conj) {
-            $conj->evaluate(false);
+            $conj->evaluate(); // violations are persisted below, only when transaction is committed
         }
 
         // Check invariant rules
-        $violations = $this->checkInvariantRules();
-        $this->invariantRulesHold = empty($violations) ? true : false;
-        foreach ($violations as $violation) {
-            Notifications::addInvariant($violation); // notify user of broken invariant rules
-        }
+        $this->invariantRulesHold = $this->checkInvariantRules();
         
         // Decide action (commit or rollback)
         if ($dryRun) {
@@ -238,7 +234,7 @@ class Transaction
     {
         // Cache conjuncts
         foreach ($this->getAffectedConjuncts() as $conj) {
-            $conj->saveCache();
+            $conj->persistCacheItem();
         }
 
         // Commit transaction for each registered storage
@@ -371,20 +367,26 @@ class Transaction
     }
 
     /**
-     * Get violations of invariant rules that are affected in this transaction
+     * Returns if invariant rules hold and notifies user of violations (if any)
+     * Note! Only checks affected invariant rules
      *
-     * @return \Ampersand\Rule\Violation[]
+     * @return bool
      */
-    protected function checkInvariantRules(): array
+    protected function checkInvariantRules(): bool
     {
         $this->logger->info("Checking invariant rules");
         
-        $allInvRules = Rule::getAllInvRules();
-        $affectedInvRules = array_filter($this->getAffectedRules(), function (Rule $rule) use ($allInvRules) {
-            return in_array($rule, $allInvRules);
+        $affectedInvRules = array_filter($this->getAffectedRules(), function (Rule $rule) {
+            return $rule->isInvariantRule();
         });
 
-        return RuleEngine::checkRules($affectedInvRules, false); // force evaluation, because conjunct violations are not (yet) saved in database
+        $rulesHold = true;
+        foreach (RuleEngine::getViolations($affectedInvRules) as $violation) {
+            $rulesHold = false; // set to false if there is one or more violation
+            Notifications::addInvariant($violation); // notify user of broken invariant rules
+        }
+
+        return $rulesHold;
     }
     
     public function invariantRulesHold()

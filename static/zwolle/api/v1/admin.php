@@ -87,6 +87,24 @@ $api->group('/admin', function () {
         return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
 
+    $this->get('/installer/checksum/update', function (Request $request, Response $response, $args = []) {
+        /** @var \Slim\Container $this */
+        /** @var \Ampersand\AmpersandApp $ampersandApp */
+        $ampersandApp = $this['appContainer']['ampersand_app'];
+
+        if (Config::get('productionEnv')) {
+            throw new Exception("Checksum update is not allowed in production environment", 403);
+        }
+
+        $ampersandApp->getModel()->writeChecksumFile();
+        
+        Logger::getUserLogger()->info('New checksum calculated for generated Ampersand model files');
+
+        $content = Notifications::getAll(); // Return all notifications
+
+        return $response->withJson($content, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    });
+
     $this->get('/execengine/run', function (Request $request, Response $response, $args = []) {
         /** @var \Ampersand\AmpersandApp $ampersandApp */
         $ampersandApp = $this['appContainer']['ampersand_app'];
@@ -116,14 +134,14 @@ $api->group('/admin', function () {
         }
 
         foreach (Conjunct::getAllConjuncts() as $conj) {
-            $conj->evaluate(true);
-            $conj->saveCache();
+            /** @var \Ampersand\Rule\Conjunct $conj */
+            $conj->evaluate()->persistCacheItem();
         }
         
-        foreach (RuleEngine::checkRules(Rule::getAllInvRules(), true) as $violation) {
+        foreach (RuleEngine::getViolations(Rule::getAllInvRules()) as $violation) {
             Notifications::addInvariant($violation);
         }
-        foreach (RuleEngine::checkRules(Rule::getAllSigRules(), true) as $violation) {
+        foreach (RuleEngine::getViolations(Rule::getAllSigRules()) as $violation) {
             Notifications::addSignal($violation);
         }
         

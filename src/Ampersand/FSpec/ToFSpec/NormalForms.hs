@@ -13,8 +13,9 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input (parseRule)
 import           Ampersand.Misc
+import           Data.Function (on)
 import           Data.Hashable
-import           Data.List (nub, intercalate, permutations,partition)
+import           Data.List (nub, intercalate, permutations, partition, sortBy)
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Text (pack)
@@ -1582,7 +1583,7 @@ makeAllConjs opts allRls =
   let conjExprs :: [(Expression, Rules)]
       conjExprs = map (\(a,b) -> (a,Set.fromList b)) 
                 . converse 
-                $ [ (rule, conjuncts opts rule) | rule <- Set.elems allRls ]
+                $ [ (rule, conjuncts opts rule) | rule <- sortBy (compare `on` name) . Set.toList $ allRls ]
       conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
                      , rc_orgRules   = rs
                      , rc_conjunct   = expr

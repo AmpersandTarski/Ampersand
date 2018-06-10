@@ -163,6 +163,26 @@ class Rule
     {
         return $this->id;
     }
+
+    /**
+     * Specifies if rule is a signal rule
+     *
+     * @return boolean
+     */
+    public function isSignalRule(): bool
+    {
+        return $this->type === 'signal';
+    }
+
+    /**
+     * Specifies is rule is a invariant rule
+     *
+     * @return boolean
+     */
+    public function isInvariantRule(): bool
+    {
+        return $this->type === 'invariant';
+    }
     
     /**
      * Get message to tell that a rule is broken
@@ -187,10 +207,10 @@ class Rule
     /**
      * Check rule and return violations
      *
-     * @param bool $fromCache
+     * @param bool $forceReEvaluation
      * @return \Ampersand\Rule\Violation[]
      */
-    public function checkRule(bool $fromCache = true): array
+    public function checkRule(bool $forceReEvaluation = true): array
     {
         $this->logger->debug("Checking rule '{$this->id}'");
          
@@ -199,11 +219,11 @@ class Rule
     
             // Evaluate conjuncts of this rule
             foreach ($this->conjuncts as $conjunct) {
-                foreach ($conjunct->evaluate($fromCache) as $violation) {
+                foreach ($conjunct->getViolations($forceReEvaluation) as $violation) {
                     $violations[] = new Violation($this, $violation['src'], $violation['tgt']);
                 }
             }
-                
+            
             // If no violations => rule holds
             if (empty($violations)) {
                 $this->logger->debug("Rule '{$this}' holds");

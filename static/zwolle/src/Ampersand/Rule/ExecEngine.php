@@ -101,7 +101,7 @@ class ExecEngine extends RuleEngine
     /**
      * Run all ExecEngine roles
      * Default/standard role used in Ampersand scripts is 'ExecEngine', but other roles can be configured
-     * 
+     *
      * If transaction is provided, only the affected rules are checked
      *
      * @param \Ampersand\Transaction|null $transaction
@@ -175,7 +175,8 @@ class ExecEngine extends RuleEngine
         
         $rulesFixed = [];
         foreach ($rulesToCheck as $rule) {
-            $violations = $rule->checkRule(false); // param false to force (re)evaluation of conjuncts
+            /** @var \Ampersand\Rule\Rule $rule */
+            $violations = $rule->checkRule(true); // param true to force (re)evaluation of conjuncts
             
             if (empty($violations)) {
                 continue; // continue to next rule when no violation

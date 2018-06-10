@@ -24,6 +24,8 @@ use Ampersand\Interfacing\View;
 use Ampersand\Rule\Rule;
 use Closure;
 use Ampersand\Rule\ExecEngine;
+use Ampersand\Plugs\MysqlConjunctCache\MysqlConjunctCache;
+use Ampersand\Misc\Generics;
 
 class AmpersandApp
 {
@@ -41,10 +43,18 @@ class AmpersandApp
     protected $container;
 
     /**
+     * Logger
      *
      * @var \Psr\Log\LoggerInterface
      */
     protected $logger;
+
+    /**
+     * Reference to generated Ampersand model
+     *
+     * @var \Ampersand\Misc\Generics
+     */
+    protected $model;
 
     /**
      * List with storages that are registered for this application
@@ -90,6 +100,7 @@ class AmpersandApp
     {
         $this->logger = $logger;
         $this->container = $container;
+        $this->model = new Generics(Config::get('pathToGeneratedFiles'), $logger);
     }
 
     public function init()
@@ -97,10 +108,15 @@ class AmpersandApp
         $this->logger->info('Initialize Ampersand application');
 
         $defaultPlug = $this->container['default_plug'];
+        $conjunctCache = $this->container['conjunctCachePool'] ?? new MysqlConjunctCache($defaultPlug);
+
+        if (!$this->model->verifyChecksum() && !Config::get('productionEnv')) {
+            Logger::getUserLogger()->warning("Generated model is changed. You SHOULD reinstall your application");
+        }
 
         // Instantiate object definitions from generated files
-        $genericsFolder = Config::get('pathToGeneratedFiles');
-        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug);
+        $genericsFolder = $this->model->getFolder() . '/';
+        Conjunct::setAllConjuncts($genericsFolder . 'conjuncts.json', Logger::getLogger('RULE'), $defaultPlug, $conjunctCache);
         View::setAllViews($genericsFolder . 'views.json', $defaultPlug);
         Concept::setAllConcepts($genericsFolder . 'concepts.json', Logger::getLogger('CORE'));
         Relation::setAllRelations($genericsFolder . 'relations.json', Logger::getLogger('CORE'));
@@ -204,6 +220,16 @@ class AmpersandApp
     }
 
     /**
+     * Get Ampersand model for this application
+     *
+     * @return \Ampersand\Misc\Generics
+     */
+    public function getModel(): Generics
+    {
+        return $this->model;
+    }
+
+    /**
      * Get list of accessible interfaces for the user of this Ampersand application
      *
      * @return \Ampersand\Interfacing\InterfaceObject[]
@@ -271,6 +297,13 @@ class AmpersandApp
     {
         $this->logger->info("Start application reinstall");
 
+        // Clear notifications
+        Notifications::clearAll();
+
+        // Write new checksum file of generated Ampersand moel
+        $this->model->writeChecksumFile();
+
+        // Call reinstall method on every registered storage (e.g. for MysqlDB implementation this means (re)creating database structure)
         foreach ($this->storages as $storage) {
             $storage->reinstallStorage();
         }
@@ -280,6 +313,7 @@ class AmpersandApp
             $cpt->clearAtomCache();
         }
 
+        // Default population
         if ($installDefaultPop) {
             $this->logger->info("Install default population");
 
@@ -302,11 +336,12 @@ class AmpersandApp
         
         // Evaluate all conjunct and save cache
         foreach (Conjunct::getAllConjuncts() as $conj) {
-            $conj->evaluate(true);
-            $conj->saveCache();
+            /** @var \Ampersand\Rule\Conjunct $conj */
+            $conj->evaluate()->persistCacheItem();
         }
 
-        $this->setSession(); // Initiate session again
+        // Initiate session again
+        $this->setSession();
 
         $this->logger->info("End application reinstall");
 
@@ -461,7 +496,7 @@ class AmpersandApp
         $this->logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'id')));
         
         // Check rules and signal notifications for all violations
-        foreach (RuleEngine::checkRules($this->getRulesToMaintain(), true) as $violation) {
+        foreach (RuleEngine::getViolationsFromCache($this->getRulesToMaintain()) as $violation) {
             Notifications::addSignal($violation);
         }
     }

@@ -9,6 +9,7 @@ namespace Ampersand\Rule;
 
 use Ampersand\Misc\Config;
 use Ampersand\Rule\Violation;
+use Psr\Cache\CacheItemPoolInterface;
 
 /**
  *
@@ -19,28 +20,21 @@ class RuleEngine
 {
 
     /**
-     * Function to check and/or get violations for a set of rules
-     * By default, violations are queries from cache in the database
+     * Function to get violations for a set of rules
+     * Conjuncts are NOT re-evaluated
      *
      * @param \Ampersand\Rule\Rule[] $rules set of rules to check
-     * @param bool $fromDatabaseCache
      * @return \Ampersand\Rule\Violation[]
      */
-    public static function checkRules(array $rules, bool $fromDatabaseCache = false): array
+    public static function getViolations(array $rules): array
     {
-        
         // Evaluate rules
-        if (!$fromDatabaseCache) {
-            $violations = [];
-            foreach ($rules as $rule) {
-                /** @var \Ampersand\Rule\Rule $rule */
-                $violations = array_merge($violations, $rule->checkRule(true)); // param fromCache = true, because multiple rules can share the same conjunct
-            }
-            return $violations;
-        } // Get violations from database table
-        else {
-            return self::getViolationsFromDB($rules);
+        $violations = [];
+        foreach ($rules as $rule) {
+            /** @var \Ampersand\Rule\Rule $rule */
+            $violations = array_merge($violations, $rule->checkRule($forceReEvaluation = false));
         }
+        return $violations;
     }
     
     /**
@@ -49,17 +43,13 @@ class RuleEngine
      * @param \Ampersand\Rule\Rule[] $rules set of rules for which to query the violations
      * @return \Ampersand\Rule\Violation[]
      */
-    protected static function getViolationsFromDB(array $rules): array
+    public static function getViolationsFromCache(array $rules): array
     {
-        /** @var \Pimple\Container $container */
-        global $container; // TODO: remove dependency to global $container var
-        $database = $container['mysql_database'];
-        $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
-
         // Determine conjuncts to select from database
         $conjuncts = [];
         $conjunctRuleMap = []; // needed because violations are instantiated per rule (not per conjunct)
         foreach ($rules as $rule) {
+            /** @var \Ampersand\Rule\Rule $rule */
             foreach ($rule->conjuncts as $conjunct) {
                 $conjunctRuleMap[$conjunct->id][] = $rule;
             }
@@ -70,19 +60,12 @@ class RuleEngine
         if (empty($conjuncts)) {
             return [];
         }
-        
-        // Query database
-        $q = implode(',', array_map(function ($conj) {
-            return "'{$conj->id}'";
-        }, $conjuncts)); // returns string "<conjId1>,<conjId2>,<etc>"
-        $query = "SELECT * FROM \"{$dbsignalTableName}\" WHERE \"conjId\" IN ({$q})";
-        $result = $database->execute($query); // [['conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>']]
 
         // Return violation
         $violations = [];
-        foreach ($result as $row) {
-            foreach ($conjunctRuleMap[$row['conjId']] as $rule) {
-                $violations[] = new Violation($rule, $row['src'], $row['tgt']);
+        foreach (Conjunct::getConjunctViolations($conjuncts) as $conjViolation) {
+            foreach ($conjunctRuleMap[$conjViolation['conjId']] as $rule) {
+                $violations[] = new Violation($rule, $conjViolation['src'], $conjViolation['tgt']);
             }
         }
         return $violations;

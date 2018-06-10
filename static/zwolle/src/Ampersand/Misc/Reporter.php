@@ -217,7 +217,7 @@ class Reporter
         foreach ($conjuncts as $conjunct) {
             /** @var \Ampersand\Rule\Conjunct $conjunct */
             $startTimeStamp = microtime(true); // true means get as float instead of string
-            $conjunct->evaluate(false);
+            $conjunct->evaluate();
             $endTimeStamp = microtime(true);
             set_time_limit((int) ini_get('max_execution_time')); // reset time limit counter
             
