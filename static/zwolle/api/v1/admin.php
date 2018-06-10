@@ -56,7 +56,7 @@ $api->group('/admin', function () {
             $resource->rename($item->newId);
         }
         
-        $transaction->close();
+        $transaction->runExecEngine()->close();
 
         return $response->withJson($list, 200, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     });
@@ -96,7 +96,7 @@ $api->group('/admin', function () {
             throw new Exception("You do not have access to run the exec engine", 403);
         }
             
-        \Ampersand\Rule\ExecEngine::run(true);
+        \Ampersand\Rule\ExecEngine::run();
         
         $transaction = Transaction::getCurrentTransaction()->close();
         if ($transaction->isCommitted()) {
@@ -178,7 +178,7 @@ $api->group('/admin', function () {
             }
 
             // Commit transaction
-            $transaction = Transaction::getCurrentTransaction()->close();
+            $transaction = Transaction::getCurrentTransaction()->runExecEngine()->close();
             if ($transaction->isCommitted()) {
                 Logger::getUserLogger()->notice("Imported {$_FILES['file']['name']} successfully");
             }

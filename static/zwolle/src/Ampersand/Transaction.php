@@ -136,6 +136,19 @@ class Transaction
     }
 
     /**
+     * Run exec engine for affected rules in this transaction
+     *
+     * @return Transaction
+     */
+    public function runExecEngine(): Transaction
+    {
+        // Run ExecEngine
+        ExecEngine::run($this);
+
+        return $this;
+    }
+
+    /**
      * Cancel (i.e. rollback) the transaction
      *
      * @return \Ampersand\Transaction
@@ -181,16 +194,13 @@ class Transaction
         
         Hook::callHooks('preCloseTransaction', get_defined_vars());
 
-        // Run ExecEngine
-        ExecEngine::run();
-
         // (Re)evaluate affected conjuncts
         foreach ($this->getAffectedConjuncts() as $conj) {
             $conj->evaluate(false);
         }
 
         // Check invariant rules
-        $violations = $this->getInvariantViolations();
+        $violations = $this->checkInvariantRules();
         $this->invariantRulesHold = empty($violations) ? true : false;
         foreach ($violations as $violation) {
             Notifications::addInvariant($violation); // notify user of broken invariant rules
@@ -344,12 +354,10 @@ class Transaction
 
     /**
      * Get list of rules that are affected in this transaction
-     * If set of rules is provided, function will return affected subset
      *
-     * @param \Ampersand\Rule\Rule[]|null $rules
      * @return \Ampersand\Rule\Rule[]
      */
-    public function getAffectedRules(array $rules = null): array
+    public function getAffectedRules(): array
     {
         $affectedRuleNames = [];
         foreach ($this->getAffectedConjuncts() as $conjunct) {
@@ -357,20 +365,9 @@ class Transaction
         }
         $affectedRuleNames = array_unique($affectedRuleNames);
 
-        $affectedRules = array_map(function (string $ruleName): Rule {
+        return array_map(function (string $ruleName): Rule {
             return Rule::getRule($ruleName);
         }, $affectedRuleNames);
-        
-        // Return unfiltered affected rules
-        if (is_null($rules)) {
-            return $affectedRules;
-        
-        // Filtered affected rules
-        } else {
-            return array_filter($affectedRules, function (Rule $rule) use ($rules) {
-                return in_array($rule, $rules);
-            });
-        }
     }
 
     /**
@@ -378,11 +375,14 @@ class Transaction
      *
      * @return \Ampersand\Rule\Violation[]
      */
-    public function getInvariantViolations(): array
+    protected function checkInvariantRules(): array
     {
         $this->logger->info("Checking invariant rules");
         
-        $affectedInvRules = $this->getAffectedRules(Rule::getAllInvRules());
+        $allInvRules = Rule::getAllInvRules();
+        $affectedInvRules = array_filter($this->getAffectedRules(), function (Rule $rule) use ($allInvRules) {
+            return in_array($rule, $allInvRules);
+        });
 
         return RuleEngine::checkRules($affectedInvRules, false); // force evaluation, because conjunct violations are not (yet) saved in database
     }

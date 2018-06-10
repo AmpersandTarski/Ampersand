@@ -14,7 +14,11 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
             templateUrl : 'app/src/admin/installer.html',
             interfaceLabel : 'Installer'
             })
-        .when('/404', {
+        .when('/redirect-after-login', {
+            resolveRedirectTo : ['LoginService', function (LoginService) {
+                return LoginService.getPageBeforeLogin();
+            }]
+        }).when('/404', {
             templateUrl: 'app/src/shared/404.html',
             interfaceLabel: '404'
             })

@@ -163,7 +163,7 @@ class AngularApp
         return array_filter($container['ampersand_app']->getAccessibleInterfaces(), function (InterfaceObject $ifc) use ($menu) {
             switch ($menu) {
                 case 'top':
-                    if (($ifc->srcConcept->isSession() || $ifc->srcConcept->name == 'ONE') && $ifc->crudR()) {
+                    if ($ifc->srcConcept->isSession() && $ifc->crudR()) {
                         return true;
                     } else {
                         return false;

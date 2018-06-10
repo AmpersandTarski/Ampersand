@@ -417,7 +417,7 @@ pViewDefLegacy = P_Vd <$> currPos
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: AmpParser P_Interface
 pInterface = lbl <$> currPos                                       
-                 <*> (pKey "INTERFACE" *> pADLid)
+                 <*> (pInterfaceKey *> pADLid)
                  <*> optList pParams
                  <*> optList pRoles 
                  <*> (pColon *> pTerm)          -- the expression of the interface object
@@ -447,7 +447,7 @@ pInterface = lbl <$> currPos
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
             <|> P_InterfaceRef <$> currPos 
-                               <*> pIsThere (pKey "LINKTO") <*  pKey "INTERFACE" 
+                               <*> pIsThere (pKey "LINKTO") <*  pInterfaceKey 
                                <*> pADLid
   where pBoxKey :: AmpParser (Maybe String)
         pBoxKey = pKey "BOX" *> pMaybe (pChevrons pConid)
@@ -516,8 +516,11 @@ pPurpose = rebuild <$> currPos
                   PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>
                   PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid       <|>
                   PRef2Pattern     <$ pKey "PROCESS"   <*> pADLid       <|>
-                  PRef2Interface   <$ pKey "INTERFACE" <*> pADLid       <|>
+                  PRef2Interface   <$ pInterfaceKey <*> pADLid       <|>
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
+
+pInterfaceKey :: AmpParser String
+pInterfaceKey = pKey "INTERFACE" <|> pKey "API" -- On special request of Rieks, the keyword "API" is allowed everywhere where the keyword "INTERFACE" is used. https://github.com/AmpersandTarski/Ampersand/issues/789
 
 --- Population ::= 'POPULATION' (NamedRel 'CONTAINS' Content | ConceptName 'CONTAINS' '[' ValueList ']')
 -- | Parses a population

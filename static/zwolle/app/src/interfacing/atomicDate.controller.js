@@ -3,6 +3,17 @@ angular.module('AmpersandApp')
     
     $scope.isOpen = false;
     
+    // Function is here because ng-model needs to be a Date object.
+    // watch listener is initialized by the template
+    $scope.watchDateObject = function(resource, ifc){
+        $scope.$watch('resource', function(){
+            if (!(resource[ifc] instanceof Date)){
+                // Only convert to Date object when not NULL, otherwise the 1970-01-01 is created
+                if (resource[ifc] !== null) resource[ifc] = new Date(resource[ifc]);
+            }
+        }, true);
+    };
+
     $scope.openDatepicker = function($event){
         $event.preventDefault();
         $event.stopPropagation();

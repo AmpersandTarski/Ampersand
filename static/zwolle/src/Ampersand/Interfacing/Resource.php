@@ -287,16 +287,19 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
             $pathList = explode('/', $path);
         }
 
-        // Check if entry resource ($this) exists
+        // Try to create resource ($this) if not exists (yet)
         if (!$this->exists()) {
-            if (empty($pathList)) {
-                throw new Exception("Resource '{$this}' not found", 404);
+            if (isset($this->parentList)) {
+                $ifc = $this->parentList->getIfc();
+            } else {
+                if (empty($pathList)) {
+                    throw new Exception("Resource '{$this}' not found", 404);
+                }
+                $ifc = InterfaceObject::getInterface(reset($pathList));
             }
             
-            $ifc = InterfaceObject::getInterface(reset($pathList));
-            
             // Automatically create if allowed
-            if ($ifc->crudC() && $ifc->isIdent()) {
+            if ($ifc->crudC()) {
                 $this->add();
             } else {
                 throw new Exception("Resource '{$this}' not found", 404);

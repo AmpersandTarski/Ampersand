@@ -23,12 +23,14 @@ $apiContainer['appContainer'] = $container;
 // The application can also return a Resource not found, this is handled by the errorHandler below
 $apiContainer['notFoundHandler'] = function ($c) {
     return function (Request $request, Response $response) {
+        $msg = "API endpoint not found: {$request->getMethod()} {$request->getUri()}. Note! virtual path is case sensitive";
+        Logger::getLogger("API")->warning($msg);
         return $response
             ->withStatus(404)
             ->withHeader('Content-Type', 'application/json')
             ->write(json_encode(
                 [ 'error' => 404
-                , 'msg' => "API endpoint not found: {$request->getMethod()} {$request->getUri()}. Note! virtual path is case sensitive"
+                , 'msg' => $msg
                 ]
             ));
     };
@@ -37,14 +39,14 @@ $apiContainer['notFoundHandler'] = function ($c) {
 $apiContainer['errorHandler'] = function ($c) {
     return function (Request $request, Response $response, Exception $exception) use ($c) {
         try {
-            Logger::getLogger("API")->error($exception->getMessage());
+            $logger = Logger::getLogger("API");
             $debugMode = Config::get('debugMode');
-            
             $data = []; // array for error context related data
 
             switch ($exception->getCode()) {
                 case 401: // Unauthorized
                 case 403: // Forbidden
+                    $logger->warning($exception->getMessage());
                     if (Config::get('loginEnabled') && !$c->appContainer['ampersand_app']->getSession()->sessionUserLoggedIn()) {
                         $code = 401;
                         $message = "Please login to access this page";
@@ -55,14 +57,17 @@ $apiContainer['errorHandler'] = function ($c) {
                     }
                     break;
                 case 404: // Not found
+                    $logger->warning($exception->getMessage());
                     $code = $debugMode ? 500 : 404;
                     $message = $exception->getMessage();
                     break;
                 case 500:
+                    $logger->error($exception->getMessage());
                     $code = 500;
                     $message = $debugMode ? $exception->getMessage() : "An error occured (debug information in server log files)";
                     break;
                 default:
+                    $logger->error($exception->getMessage());
                     $code = $exception->getCode();
                     $message = $exception->getMessage();
                     break;

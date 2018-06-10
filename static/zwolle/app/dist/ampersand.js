@@ -14,7 +14,11 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
             templateUrl : 'app/src/admin/installer.html',
             interfaceLabel : 'Installer'
             })
-        .when('/404', {
+        .when('/redirect-after-login', {
+            resolveRedirectTo : ['LoginService', function (LoginService) {
+                return LoginService.getPageBeforeLogin();
+            }]
+        }).when('/404', {
             templateUrl: 'app/src/shared/404.html',
             interfaceLabel: '404'
             })
@@ -174,6 +178,53 @@ app.config(["$routeProvider", function($routeProvider) {
     $scope.uploader = ImportService.uploader;
 }]);
 
+angular.module('uiSwitch', [])
+
+.directive('switch', function(){
+  return {
+    restrict: 'AE'
+  , replace: true
+  , transclude: true
+  , template: function(element, attrs) {
+      var html = '';
+      html += '<a href=""';
+      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
+      html += '>';
+      html += '<span';
+      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
+      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
+      html +=   '>';
+      html +=   '<small></small>';
+      html += '</span>';
+      html += '<span ng-transclude></span>';
+      html += '</a>';
+      return html;
+    }
+  }
+});
+angular.module('AmpersandApp')
+.service('LoginService', ["$location", "$localStorage", function($location, $localStorage){
+    let urlLoginPage = null;
+    
+    let service = {
+        setLoginPage : function (url) {
+            urlLoginPage = url;
+        },
+
+        gotoLoginPage : function () {
+            $localStorage.login_urlBeforeLogin = $location.url(); // "/some/path?foo=bar&baz=xoxo"
+            if (urlLoginPage) {
+                $location.url(urlLoginPage);
+            }
+        },
+
+        getPageBeforeLogin : function () {
+            return $localStorage.login_urlBeforeLogin;
+        }
+    };
+    
+    return service;
+}]);
 angular.module('AmpersandApp')
 .controller('AtomicController', ["$scope", "ResourceService", function($scope, ResourceService){
     
@@ -199,6 +250,17 @@ angular.module('AmpersandApp')
     
     $scope.isOpen = false;
     
+    // Function is here because ng-model needs to be a Date object.
+    // watch listener is initialized by the template
+    $scope.watchDateObject = function(resource, ifc){
+        $scope.$watch('resource', function(){
+            if (!(resource[ifc] instanceof Date)){
+                // Only convert to Date object when not NULL, otherwise the 1970-01-01 is created
+                if (resource[ifc] !== null) resource[ifc] = new Date(resource[ifc]);
+            }
+        }, true);
+    };
+
     $scope.openDatepicker = function($event){
         $event.preventDefault();
         $event.stopPropagation();
@@ -495,14 +557,14 @@ angular.module('AmpersandApp')
                     // Update visual feedback (notifications and buttons)
                     ResourceService.processResponse(resource, data);
 
-                    // Update resource data if committed
-                    if(data.isCommitted) {
-                        if(resource._isRoot_ && data.navTo == null) resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
-                        else resource = angular.extend(resource, data.content);
-                        return {resource : resource, saved: true};
+                    // Update resource data
+                    if(resource._isRoot_ && data.navTo == null) {
+                        resource.get(); // if directed to other page (data.navTo), refresh of data is not needed
                     } else {
-                        return {resource : resource, saved: false};
+                        resource = angular.extend(resource, data.content);
                     }
+
+                    return {resource : resource, saved: true, committed: data.isCommitted};
                 });
 
                 // Add promise to loading list
@@ -511,7 +573,7 @@ angular.module('AmpersandApp')
                 // Update visual feedback
                 ResourceService.setResourceStatus(resource, 'warning');
                 resource._showButtons_ = {'save' : true, 'cancel' : true};
-                return $q.resolve({resource : resource, saved : false});
+                return $q.resolve({resource : resource, saved : false, committed: false});
             }
         },
         
@@ -850,54 +912,6 @@ angular.module('AmpersandApp')
     return ResourceService;
 }]);
 
-angular.module('AmpersandApp')
-.service('LoginService', ["$location", function($location){
-    let urlLoginPage = null;
-    let urlBeforeLogin = null;
-    
-    let service = {
-        setLoginPage : function (url) {
-            urlLoginPage = url;
-        },
-
-        gotoLoginPage : function () {
-            urlBeforeLogin = $location.url(); // "/some/path?foo=bar&baz=xoxo"
-            if (urlLoginPage) {
-                $location.url(urlLoginPage);
-            }
-        },
-
-        gotoRequestedPageBeforeLogin : function () {
-            $location.url(urlBeforeLogin);
-        }
-    };
-    
-    return service;
-}]);
-angular.module('uiSwitch', [])
-
-.directive('switch', function(){
-  return {
-    restrict: 'AE'
-  , replace: true
-  , transclude: true
-  , template: function(element, attrs) {
-      var html = '';
-      html += '<a href=""';
-      html +=   (attrs.ngModel && !attrs.ngClick) ? ' ng-click="' + attrs.ngModel + '=!' + attrs.ngModel + '"' : '';
-      html += '>';
-      html += '<span';
-      html +=   ' class="switch' + (attrs.class ? ' ' + attrs.class : '') + '"';
-      html +=   ' ng-class="{ checked:' + attrs.ngModel + ' }"';
-      html +=   '>';
-      html +=   '<small></small>';
-      html += '</span>';
-      html += '<span ng-transclude></span>';
-      html += '</a>';
-      return html;
-    }
-  }
-});
 angular.module('AmpersandApp')
 .directive('myNavbarResize', ["$window", "$timeout", "NavigationBarService", function ($window, $timeout, NavigationBarService) {
     return function (scope, element) {

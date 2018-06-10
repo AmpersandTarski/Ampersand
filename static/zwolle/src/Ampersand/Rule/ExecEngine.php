@@ -11,9 +11,9 @@ use Exception;
 use Ampersand\Misc\Config;
 use Ampersand\Role;
 use Ampersand\Log\Logger;
-use Ampersand\Transaction;
 use Ampersand\Rule\Violation;
 use Ampersand\Core\Atom;
+use Ampersand\Transaction;
 
 class ExecEngine extends RuleEngine
 {
@@ -34,7 +34,7 @@ class ExecEngine extends RuleEngine
     public static $autoRerun;
 
     /**
-     * Maximum number of ExecEngine runs (within a single transaction)
+     * Maximum number of ExecEngine runs
      *
      * @var int
      */
@@ -101,11 +101,13 @@ class ExecEngine extends RuleEngine
     /**
      * Run all ExecEngine roles
      * Default/standard role used in Ampersand scripts is 'ExecEngine', but other roles can be configured
+     * 
+     * If transaction is provided, only the affected rules are checked
      *
-     * @param bool $allRules
+     * @param \Ampersand\Transaction|null $transaction
      * @return void
      */
-    public static function run(bool $allRules = false)
+    public static function run(Transaction $transaction = null)
     {
         $logger = self::getLogger();
 
@@ -132,7 +134,17 @@ class ExecEngine extends RuleEngine
             $rulesFixed = [];
             foreach ($roles as $role) {
                 $logger->info("{+ Run #" . self::$runCount . " using role '{$role}' (auto rerun: " . var_export(self::$autoRerun, true) . ")");
-                $rulesFixed = array_merge($rulesFixed, self::runForRole($role, $allRules));
+                
+                if (is_null($transaction)) {
+                    $rulesToCheck = $role->maintains();
+                } else {
+                    $affectedRules = $transaction->getAffectedRules();
+                    $rulesToCheck = array_filter($role->maintains(), function (Rule $rule) use ($affectedRules) {
+                        return in_array($rule, $affectedRules);
+                    });
+                }
+
+                $rulesFixed = array_merge($rulesFixed, self::checkFixRules($rulesToCheck));
                 $logger->info("+} Run finished");
             }
 
@@ -152,18 +164,16 @@ class ExecEngine extends RuleEngine
     }
 
     /**
-     * Single run for a given ExecEngine role
+     * Check and fix given set of rules
      *
-     * @param \Ampersand\Role $role
-     * @param bool $allRules
+     * @param \Ampersand\Rule\Rule[] $rulesToCheck
      * @return string[]
      */
-    protected static function runForRole(Role $role, bool $allRules): array
+    protected static function checkFixRules(array $rulesToCheck): array
     {
         $logger = self::getLogger();
         
         $rulesFixed = [];
-        $rulesToCheck = $allRules ? $role->maintains() : Transaction::getCurrentTransaction()->getAffectedRules($role->maintains());
         foreach ($rulesToCheck as $rule) {
             $violations = $rule->checkRule(false); // param false to force (re)evaluation of conjuncts
             

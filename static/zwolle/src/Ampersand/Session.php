@@ -124,7 +124,7 @@ class Session
         // Set lastAccess time
         $this->sessionAtom->link(date(DATE_ATOM), 'lastAccess[SESSION*DateTime]', false)->add();
         
-        Transaction::getCurrentTransaction()->close();
+        Transaction::getCurrentTransaction()->runExecEngine()->close();
     }
 
     /**
@@ -299,6 +299,6 @@ class Session
                 $link->src()->delete();
             }
         }
-        Transaction::getCurrentTransaction()->close();
+        Transaction::getCurrentTransaction()->runExecEngine()->close();
     }
 }

@@ -1,7 +1,6 @@
 angular.module('AmpersandApp')
-.service('LoginService', function($location){
+.service('LoginService', function($location, $localStorage){
     let urlLoginPage = null;
-    let urlBeforeLogin = null;
     
     let service = {
         setLoginPage : function (url) {
@@ -9,14 +8,14 @@ angular.module('AmpersandApp')
         },
 
         gotoLoginPage : function () {
-            urlBeforeLogin = $location.url(); // "/some/path?foo=bar&baz=xoxo"
+            $localStorage.login_urlBeforeLogin = $location.url(); // "/some/path?foo=bar&baz=xoxo"
             if (urlLoginPage) {
                 $location.url(urlLoginPage);
             }
         },
 
-        gotoRequestedPageBeforeLogin : function () {
-            $location.url(urlBeforeLogin);
+        getPageBeforeLogin : function () {
+            return $localStorage.login_urlBeforeLogin;
         }
     };
     

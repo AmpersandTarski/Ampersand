@@ -4,6 +4,14 @@
 
 * Upgrade to LTS-10.10
 * Upgrade to pandoc vs 2.0
+
+## v3.10.1 (8 june 2018)
+
+* [Issue #779](https://github.com/AmpersandTarski/Ampersand/issues/779) Removed GenBericht module (project specific extension which is not used anymore)
+* [Issue #789](https://github.com/AmpersandTarski/Ampersand/issues/789) Introduction `API` keyword as synonym for `INTERFACE`
+
+## v3.10.0 (11 may 2018)
+
 * PHP Backend: integrated and refactored ExecEngine (not an extension anymore)
 * PHP Backend: integrated and refactored ExcelImporter (not an extension anymore)
 * PHP Backend: added functionality to import json population files via UI of ExcelImporter

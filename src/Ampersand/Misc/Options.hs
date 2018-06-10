@@ -65,7 +65,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
                        , genPOPExcel :: Bool   -- Generate an .xmlx file containing the populations 
                        , genStaticFiles :: Bool-- Generate the static files into the prototype
-                       , genBericht :: Bool
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                        , progrName :: String --The name of the adl executable
@@ -242,7 +241,6 @@ getOptions' envOpts =
                       , genFPAExcel      = False
                       , genStaticFiles   = True
                       , genPOPExcel      = False
-                      , genBericht       = False
                       , language         = Nothing
                       , progrName        = envProgName envOpts
                       , fileName         = if hasExtension fName
@@ -532,11 +530,7 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["pop-xlsx"]
                (NoArg (\opts -> opts{genPOPExcel = True}))
                "Generate an .xmlx file containing the populations of your script."
-            , Public) 
-          , (Option []        ["ebc"]
-               (NoArg (\opts -> opts{genBericht = True}))
-               "Generate specifications of interfaces in EBV-format (http://www.justid.nl/ebv/)."
-            , Hidden)
+            , Public)
           , (Option []        ["language"]
                (ReqArg (\l opts-> opts{language = case map toUpper l of
                                                        "NL"  -> Just Dutch

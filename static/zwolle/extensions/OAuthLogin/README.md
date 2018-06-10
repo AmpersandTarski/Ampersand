@@ -16,7 +16,7 @@ Step 1: Choose identity providers you would like to support (e.g. Github, Linked
 Step 2: Add and configure supported identity providers in your `localSettings.php` file.
 ```php
 require_once(__DIR__ . '/extensions/OAuthLogin/OAuthLogin.php');
-    Config::set('redirectAfterLogin', 'OAuthLogin', 'https://[server]/#/');
+    Config::set('redirectAfterLogin', 'OAuthLogin', 'https://[server]/#/redirect-after-login'); // path 'redirect-after-login' triggers frontend to route back to page where status 401 was raised.
     Config::set('redirectAfterLoginFailure', 'OAuthLogin', 'https://[server]/#/');
     Config::set('identityProviders', 'OAuthLogin', 
                         ['linkedin' => 
