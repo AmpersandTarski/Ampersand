@@ -134,6 +134,7 @@ toPops opts file x = map popForColumn (colNrs x)
              CellDouble d -> [XlsxDouble orig d]
              CellBool b -> [ComnBool orig b] 
              CellRich ts -> map (XlsxString orig . T.unpack) . unDelimit mDelimiter . handleSpaces . T.concat . map _richTextRunText $ ts
+             CellError e -> fatal $ "Error reading cell. "++show e
        unDelimit :: Maybe Char -> T.Text -> [T.Text]
        unDelimit mDelimiter xs = 
          case mDelimiter of
@@ -214,6 +215,7 @@ theSheetCellsForTable (sheetName,ws)
             Just (CellDouble _) -> True
             Just (CellBool _)   -> True
             Just (CellRich _)   -> True
+            Just (CellError e)  -> fatal $ "Error reading cell "++show e
             Nothing -> False
        theCols = filter isProperCol [1..maxColOfWorksheet]
        isProperCol :: Int -> Bool
