@@ -8,7 +8,7 @@ homepage:       http://ampersandtarski.github.io/
 category:       Database Design
 stability:      alpha
 cabal-version:  >= 2.0
-tested-with:    GHC == 8.0.2
+tested-with:    GHC == 8.2.2
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE
@@ -42,8 +42,8 @@ library
                      aeson-pretty == 0.8.*,
                      base == 4.10.*,
                      bytestring == 0.10.*,
-                     conduit == 1.2.*,
-                     conduit-combinators == 1.1.*,
+                     conduit == 1.3.*,
+                     conduit-combinators == 1.3.*,
                      containers == 0.5.*,
                      data-default == 0.7.*,
                      directory == 1.3.*,
@@ -51,13 +51,14 @@ library
                      graphviz == 2999.19.*,
                      hashable == 1.2.*,
                      HStringTemplate == 0.8.*,
-                     lens == 4.15.*,
+                     lens == 4.16.*,
                      MissingH == 1.4.*,
                      mtl == 2.2.*,
-                     pandoc == 2.0.6.*,
-                     pandoc-crossref == 0.3.0.1,
+                     pandoc == 2.1.2,
+                     pandoc-crossref == 0.3.1.0,
                      pandoc-types == 1.17.*,
                      parsec == 3.1.*,
+                     wl-pprint == 1.2.1, 
                      process == 1.6.*,
                      QuickCheck == 2.10.*,
                      simple-sql-parser == 0.4.3,
@@ -66,10 +67,9 @@ library
                      text == 1.2.*,
                      time == 1.8.*,
                      utf8-string == 1.0.*,
-                     wl-pprint == 1.2.*,
                      yaml == 0.8.*,
                      yaml-config == 0.4.*,
-                     xlsx == 0.6.*,
+                     xlsx == 0.7.*,
                      zlib == 0.6.*
   exposed-modules:   Ampersand,
                      Ampersand.ADL1,
@@ -200,8 +200,8 @@ Test-Suite regression-test
   default-extensions:NoImplicitPrelude
   build-depends:     ampersand,
                      base == 4.10.*,
-                     conduit == 1.2.*,
-                     conduit-combinators == 1.1.*,
+                     conduit == 1.3.*,
+                     conduit-combinators == 1.3.*,
                      directory == 1.3.*,
                      filepath == 1.4.*
                     

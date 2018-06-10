@@ -2,7 +2,7 @@
 
 ## Unreleased changes
 
-* Upgrade to LTS-10.10
+* Upgrade to LTS-11.13
 * Upgrade to pandoc vs 2.0
 
 ## v3.10.1 (8 june 2018)
@@ -16,7 +16,7 @@
 * PHP Backend: integrated and refactored ExcelImporter (not an extension anymore)
 * PHP Backend: added functionality to import json population files via UI of ExcelImporter
 * PHP Backend: now requires PHP 7.x (5.6 is not supported anymore)
-* PHP Backend: added [Pimple](https://pimple.symfony.com/) as Dependency Injection Container library 
+* PHP Backend: added [Pimple](https://pimple.symfony.com/) as Dependency Injection Container library
 * PHP Backend: refactored creation of AngularApp, AmpersandApp and MysqlDB using Pimple container
 * PHP Backend: mysql database class placed under Plug namespace
 * PHP Backend: added function/method parameter and return type specifications
