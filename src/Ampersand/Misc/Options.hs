@@ -56,7 +56,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
                        , blackWhite :: Bool   -- only use black/white in graphics
                        , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.
-                       , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document
+                       , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document.
+                       , noGraphics :: Bool  -- Omit generation of graphics during generation of functional design document.
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , genUML :: Bool   -- Generate a UML 2.0 data model
@@ -113,9 +114,7 @@ getEnvironmentOptions =
       progName <- getProgName
       execPth  <- getExecutablePath -- on some operating systems, `getExecutablePath` gives a relative path. That may lead to a runtime error.
       exePath  <- makeAbsolute execPth -- see https://github.com/haskell/cabal/issues/3512 for details
-      localTime <-  do utcTime <- getCurrentTime
-                       timeZone <- getCurrentTimeZone
-                       return (utcToLocalTime timeZone utcTime)
+      localTime <- utcToLocalTime <$> getCurrentTimeZone <*> getCurrentTime
       env <- getEnvironment
       return EnvironmentOptions
         { envArgs               = args
@@ -234,6 +233,7 @@ getOptions' envOpts =
                       , blackWhite       = False
                       , doubleEdges      = True
                       , noDiagnosis      = False
+                      , noGraphics       = False
                       , diagnosisOnly    = False
                       , genLegalRefs     = False
                       , genUML           = False
@@ -322,24 +322,24 @@ data FSpecFormat =
        | Fdocbook
        | Fdocx 
        | Fhtml
-       | FLatex
        | Fman
        | Fmarkdown
        | Fmediawiki
        | Fopendocument
        | Forg
+       | Fpdf
        | Fplain
        | Frst
        | Frtf
+       | Flatex
        | Ftexinfo
        | Ftextile
-       deriving (Show, Eq)
+       deriving (Show, Eq, Enum, Bounded)
 allFSpecFormats :: String
-allFSpecFormats = "["++intercalate ", " 
-    ((sort . map showFormat) 
-        [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fdocx, Fhtml, 
-                FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument
-                , Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile]) ++"]"
+allFSpecFormats = 
+     "[" ++
+     intercalate ", " ((sort . map showFormat) [minBound..]) ++
+     "]"
 showFormat :: FSpecFormat -> String
 showFormat fmt = case show fmt of
                   _:h:t -> toUpper h : map toLower t
@@ -434,7 +434,7 @@ options = [ (Option ['v']   ["version"]
           , (Option []      ["namespace"]
                (ReqArg (\nm opts -> opts{namespace = nm}
                        ) "NAMESPACE")
-               "prefix database identifiers with this namespace, in order to isolate namspaces."
+               "prefix database identifiers with this namespace, in order to isolate namespaces."
             , Public)
           , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> opts
@@ -445,13 +445,14 @@ options = [ (Option ['v']   ["version"]
                                     ('D':'O':'C':'B': _ ) -> Fdocbook
                                     ('D':'O':'C':'X': _ ) -> Fdocx
                                     ('H': _ )             -> Fhtml
-                                    ('L': _ )             -> FLatex
+                                    ('L': _ )             -> Flatex
                                     ('M':'A':'N': _ )     -> Fman
                                     ('M':'A': _ )         -> Fmarkdown
                                     ('M':'E': _ )         -> Fmediawiki
                                     ('O':'P': _ )         -> Fopendocument
                                     ('O':'R': _ )         -> Forg
                                     ('P':'A': _ )         -> FPandoc
+                                    ('P':'D': _ )         -> Fpdf
                                     ('P':'L': _ )         -> Fplain
                                     ('R':'S': _ )         -> Frst
                                     ('R':'T': _ )         -> Frtf
@@ -498,13 +499,17 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{doubleEdges = not (doubleEdges opts)}))
                "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
             , Public)
+          , (Option []        ["noGraphics"]
+               (NoArg (\opts -> opts{noGraphics = True}))
+               "omit the generation of graphics during generation of the functional design document."
+            , Public)
           , (Option []        ["noDiagnosis"]
                (NoArg (\opts -> opts{noDiagnosis = True}))
                "omit the diagnosis chapter from the functional design document."
             , Public)
           , (Option []        ["diagnosis"]
                (NoArg (\opts -> opts{diagnosisOnly = True}))
-               "diagnose your Ampersand script (generates a .pdf file)."
+               "diagnose your Ampersand script (generates a document containing the diagnosis chapter only)."
             , Public)
           , (Option []        ["reference-table"]
                (NoArg (\opts -> opts{genLegalRefs = True}))

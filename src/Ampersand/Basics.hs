@@ -8,7 +8,8 @@ module Ampersand.Basics
    , module Ampersand.Basics.Unique
    , module Ampersand.Basics.UTF8
    , module Ampersand.Basics.Version
-   ) where
+   )
+where
 import Ampersand.Basics.Auxiliaries
 import Ampersand.Basics.Exit
 import Ampersand.Basics.Languages

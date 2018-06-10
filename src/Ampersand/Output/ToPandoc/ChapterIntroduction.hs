@@ -23,19 +23,19 @@ chpIntroduction fSpec =
                    <> text ". "
                    <> if SharedLang `elem` chaptersInDoc (getOpts fSpec)
                       then text "Deze afspraken staan opgesomd in "
-                        <> xRef SharedLang
+                        <> hyperLinkTo fSpec SharedLang
                         <> text ", geordend op thema. "
                       else text "Deze afspraken zijn niet opgenomen in dit document."
                     )
             <> if Diagnosis `elem` chaptersInDoc (getOpts fSpec)
                then para (   text "De diagnose in " 
-                          <> xRef Diagnosis
+                          <> hyperLinkTo fSpec Diagnosis
                           <> text " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
                          )
                else mempty
             <> if ConceptualAnalysis `elem` chaptersInDoc (getOpts fSpec)
                then para (   text "De conceptuele analyse in "
-                          <> xRef ConceptualAnalysis
+                          <> hyperLinkTo fSpec ConceptualAnalysis
                           <> text " is bedoeld voor requirements engineers en architecten om de gemaakte afspraken"
                           <> text " te valideren en te formaliseren. "
                           <> text "Tevens is het bedoeld voor testers om eenduidige testgevallen te kunnen bepalen. "
@@ -48,7 +48,7 @@ chpIntroduction fSpec =
                         <> (singleQuoted.text.name) fSpec
                         <> text ". "
                         <> text "De gegevensanalyse in "
-                        <> xRef DataAnalysis
+                        <> hyperLinkTo fSpec DataAnalysis
                         <> text " beschrijft de gegevensverzamelingen waarop "
                         <> (singleQuoted.text.name) fSpec
                         <> text " wordt gebouwd. "
@@ -73,19 +73,19 @@ chpIntroduction fSpec =
                    <> text ". "
                    <> if SharedLang `elem` chaptersInDoc (getOpts fSpec)
                       then text "Those rules are listed in "
-                        <> xRef SharedLang
+                        <> hyperLinkTo fSpec SharedLang
                         <> text ", ordered by theme. "
                       else text "Those rules are not included in this document."
                     )
              <> if Diagnosis `elem` chaptersInDoc (getOpts fSpec)
                then para (  text "The diagnosis in "
-                         <> xRef Diagnosis
+                         <> hyperLinkTo fSpec Diagnosis
                          <> text " is meant to help the authors identify shortcomings in their Ampersand script."
                          )
                else mempty
             <> if ConceptualAnalysis `elem` chaptersInDoc (getOpts fSpec)
                then para (  text "The conceptual analysis in "
-                         <> xRef ConceptualAnalysis
+                         <> hyperLinkTo fSpec ConceptualAnalysis
                          <> text " is meant for requirements engineers and architects to validate and formalize the requirements. "
                          <> text "It is also meant for testers to come up with correct test cases. "
                          <> text "The formalization in this chapter makes consistency of the functional design provable. "
@@ -97,7 +97,7 @@ chpIntroduction fSpec =
                         <> (singleQuoted.text.name) fSpec
                         <> text " as their intended audience. "
                         <> text "The data analysis in "
-                        <> xRef DataAnalysis
+                        <> hyperLinkTo fSpec DataAnalysis
                         <> text " describes the data sets upon which "
                         <> (singleQuoted.text.name) fSpec
                         <> text " is built. "

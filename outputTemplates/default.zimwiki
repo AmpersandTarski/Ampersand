@@ -1,17 +1,12 @@
-$if(titleblock)$
-$titleblock$
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
 
-$endif$
-$for(header-includes)$
-$header-includes$
-
-$endfor$
 $for(include-before)$
 $include-before$
 
 $endfor$
 $if(toc)$
-$table-of-contents$
+__TOC__
 
 $endif$
 $body$

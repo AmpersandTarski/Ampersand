@@ -75,7 +75,7 @@ import Ampersand.ADL1.Expression
          , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
          , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
          , insParentheses)
-import Ampersand.ADL1.Rule (
-          rulefromProp
-         ,consequent,antecedent,hasantecedent)
+import Ampersand.ADL1.Rule 
+         ( consequent, antecedent, hasantecedent
+         , rulefromProp, isPropertyRule, propFullName)
 

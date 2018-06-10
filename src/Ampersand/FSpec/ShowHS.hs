@@ -427,7 +427,7 @@ instance ShowHS Rule where
      ,"  , rrdcl  = " ++ case rrdcl r of
                            Just (p,d) -> "Just ("++showHSName p++", "++showHSName d++" )"
                            Nothing    -> "Nothing"
-     ,"  , r_env  = " ++ show (r_env  r)
+     ,"  , rrpat  = " ++ show (rrpat  r)
      ,"  , r_usr  = " ++ show (r_usr  r)
      ,"  , isSignal = " ++ show (isSignal  r)
      ,"  }"

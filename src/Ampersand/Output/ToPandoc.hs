@@ -1,15 +1,15 @@
 module Ampersand.Output.ToPandoc 
-  ( chpInterfacesBlocks
-  , chpIntroduction
-  , chpNatLangReqs
-  , chpDiagnosis
-  , chpConceptualAnalysis
-  , chpProcessAnalysis
-  , chpDataAnalysis
-  , fpAnalysis
-  , chpFunctionPointAnalysis
-  , chpGlossary 
-  )
+   ( module Ampersand.Output.ToPandoc.ChapterInterfaces
+   , module Ampersand.Output.ToPandoc.ChapterIntroduction
+   , module Ampersand.Output.ToPandoc.ChapterNatLangReqs
+   , module Ampersand.Output.ToPandoc.ChapterDiagnosis
+   , module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
+   , module Ampersand.Output.ToPandoc.ChapterProcessAnalysis
+   , module Ampersand.Output.ToPandoc.ChapterDataAnalysis
+   , module Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
+   , module Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis
+   , module Ampersand.Output.ToPandoc.ChapterGlossary
+   )
 where
 
 import Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks)

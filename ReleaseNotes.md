@@ -1,5 +1,10 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
+* Upgrade to LTS-10.10
+* Upgrade to pandoc vs 2.0
+
 ## v3.10.1 (8 june 2018)
 
 * [Issue #779](https://github.com/AmpersandTarski/Ampersand/issues/779) Removed GenBericht module (project specific extension which is not used anymore)
