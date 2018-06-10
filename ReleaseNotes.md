@@ -2,7 +2,7 @@
 
 ## Unreleased changes
 
-* Upgrade to LTS-10.10
+* Upgrade to LTS-11.13
 * Upgrade to pandoc vs 2.0
 
 ## v3.10.1 (8 june 2018)
