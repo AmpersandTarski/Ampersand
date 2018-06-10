@@ -30,7 +30,7 @@ main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook
 
 generateBuildInfoHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
 generateBuildInfoHook pd  lbi uh bf =
- do { let cabalVersionStr = intercalate "." (map show . versionBranch . pkgVersion . package $ pd)
+ do { let cabalVersionStr = showVersion . pkgVersion . package $ pd
 
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime

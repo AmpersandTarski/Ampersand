@@ -80,8 +80,8 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
                          ,(str.l) (NL "afspraken", EN "agreements")]
             <> secPrefix [(str.l) (NL "hoofdstuk",EN "chapter")
                          ,(str.l) (NL "hoofdstukken", EN "chapters")]
-            <> cref True
-            <> chapters True
+            <> cref True     --required for pandoc-crossref to do its work properly
+            <> chapters True -- Numbering with subnumbers per chapter
 
     thePandoc = wrap .
         setTitle

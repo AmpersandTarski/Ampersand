@@ -1,17 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Ampersand.Output.ToPandoc.ChapterProcessAnalysis
+module Ampersand.Output.ToPandoc.ChapterProcessAnalysis(chpProcessAnalysis)
 where
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           Data.List
 import qualified Data.Set as Set
-
---DESCR -> the process analysis contains a section for each process in the fSpec
--- If an Ampersand script contains no reference to any role whatsoever, a process analysis is meaningless.
--- In that case it will not be printed. To detect whether this is the case, we can look whether the
--- mayEdit attributes remain empty.
-noProcesses :: FSpec -> Bool
-noProcesses fSpec = null (fRoles fSpec)
 
 chpProcessAnalysis :: FSpec -> Blocks
 chpProcessAnalysis fSpec
@@ -23,97 +16,66 @@ chpProcessAnalysis fSpec
            <> mconcat (procSections ps)
    
  where
+  -- shorthand for easy localizing    
+  l :: LocalizedStr -> String
+  l = localize (fsLang fSpec)
+
   headerBlocks :: Blocks
   headerBlocks
    = xDefBlck fSpec ProcessAnalysis <>
      purposes2Blocks (getOpts fSpec) purps <> -- This explains the purpose of this context.
-     fromList(
-     [ case fsLang fSpec of
-         Dutch   ->
-            Plain [ Str $ upCap (name fSpec)++" benoemt geen enkele rol. "
-                  , Str "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
-                  ]
-         English ->
-            Plain [ Str $ upCap (name fSpec)++" does not mention any role. "
-                  , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
-                  ]
-     | null (fRoles fSpec)] ++
-     [ case fsLang fSpec of
-         Dutch   ->
-            Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
-                  , Str ""
-                  ]
-         English ->
-            Plain [ Str $ upCap (name fSpec)++" does not specify which roles may change the contents of which relations. "
-                  , Str ""
-                  ]
-     | null (fRoleRels fSpec)])
+     if null (fRoles fSpec)
+     then
+      plain (  fnm
+            <> (str.l) (NL " benoemt geen enkele rol. "
+                       ,EN " does not mention any role. ")
+            <> (str.l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
+                       ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process.")
+            ) 
+     else
+      plain (  fnm
+            <> (str.l) (NL " specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
+                       ,EN " does not specify which roles may change the contents of which relations. ")
+            )
      where purps = purposesDefinedIn fSpec (fsLang fSpec) fSpec
-
+           
+  fnm :: Inlines
+  fnm   = str . upCap . name $ fSpec
   roleRuleBlocks :: Blocks
   roleRuleBlocks
    = if null (fRoleRuls fSpec) && (not.null.vrules) fSpec then mempty else
       (case fsLang fSpec of
           Dutch   ->
-            para ( (str.upCap.name) fSpec <> " kent regels aan rollen toe. "
+            para ( fnm <> " kent regels aan rollen toe. "
                  <> "De volgende tabel toont de regels die door een bepaalde rol worden gehandhaafd."
                  )
           English ->
-            para ( (str.upCap.name) fSpec <> " assigns rules to roles. "
+            para ( fnm <> " assigns rules to roles. "
                  <> "The following table shows the rules that are being maintained by a given role."
                  )
 -- the table containing the role-rule assignments
      )<>
-     fromList
-     [ Para  $ [ RawInline (Format "latex") "\\begin{tabular}{|l|l|}\\hline\n"
-               , case fsLang fSpec of
-                  Dutch   -> RawInline (Format "latex") "Rol&Regel\\\\ \\hline\n"
-                  English -> RawInline (Format "latex") "Role&Rule\\\\ \\hline\n"
-               ]++
-               [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   "
-                       [ latexEscShw (name role')++" & "++latexEscShw (name r)++
-                         concat[ "\\\\\n   &"++latexEscShw  (name rul) | rul<-map snd (tail rrClass)]
-                       | rrClass<-eqCl fst (fRoleRuls fSpec)
-                       , let role'=fst (head rrClass), let r=snd (head rrClass)
-                       ]
-               ]++
-               [ RawInline (Format "latex") "\\\\ \\hline\n\\end{tabular}"
-               ]
-     ]
+      table -- Caption: 
+            ((str.l) (NL "regeltoewijzingen", EN "role-rule assignments"))
+            -- Alignment:
+            (replicate 2 (AlignLeft, 1/2))
+            -- Header:
+            (map (plain.str.l) 
+               [ (NL "Rol"  , EN "Role")
+               , (NL "Regel", EN "Rule")
+               ])
+            -- Data rows:
+            ( [map (plain.str) 
+                 [ name role'
+                 , name rul
+                 ]
+              | (role',rul)<-sort $ fRoleRuls fSpec
+              ]
+            )
 
 -- the table containing the role-relation assignments
   roleRelationBlocks :: [Block]
   roleRelationBlocks = [] --BITROTTED (because to much specific LaTeX stuff, in a chapter that isn't fit for use at the moment.)
-   -- = if null (fRoleRels fSpec) then [] else
-   --   [ case fsLang fSpec of
-   --        Dutch   ->
-   --          Para [ Str $ upCap (name fSpec)++" kent rollen aan relaties toe. "
-   --               , Str "De volgende tabel toont de relaties waarvan de inhoud gewijzigd kan worden door iemand die een bepaalde rol vervult."
-   --               ]
-   --        English ->
-   --          Para [ Str $ upCap (name fSpec)++" assigns roles to relations. "
-   --               , Str "The following table shows the relations, the content of which can be altered by anyone who fulfills a given role."
-   --               ]
-   --   , Para  $ [ RawInline (Format "latex") "\\begin{tabular}{|l|l|}\\hline\n"
-   --             , RawInline (Format "latex")
-   --                  (case  fsLang fSpec of
-   --                     Dutch   -> "Rol&Relatie\\\\ \\hline\n"
-   --                     English -> "Role&Relation\\\\ \\hline\n")
-   --             ]++
-   --             [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   "
-   --                     [ name role++" & $"++showMath r++"$"++
-   --                       concat[ "\\\\\n   &$"++showMath (snd rs)++"$" | rs<-tail rrClass]
-   --                     | rrClass<-eqCl fst (fRoleRels fSpec)
-   --                     , let role=fst (head rrClass), let r=snd (head rrClass)
-   --                     ]
-   --             ]++
-   --             [ RawInline (Format "latex") "\\\\ \\hline\n" | not (null rolelessRels)]++
-   --             [ RawInline (Format "latex") $ intercalate "\\\\\n   " [ "&$"++showMath d++"$" | d<-rolelessRels] | not (null rolelessRels)]++
-   --             [ RawInline (Format "latex") "\\\\ \\hline\n\\end{tabular}"
-   --             ]
-   --   ]
-   --   where
-   --    rolelessRels = [ d | d<-vrels fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
 
 -- the sections in which processes are analyzed
   procSections :: [Pattern] -> [Blocks]

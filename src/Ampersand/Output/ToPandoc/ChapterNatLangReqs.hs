@@ -63,7 +63,12 @@ chpNatLangReqs lev fSpec =
   -- Each explanation should state the purpose (and nothing else).
   printOneTheme :: ThemeContent -> Blocks
   printOneTheme tc 
-        =   --  *** Header of the theme: ***
+    | isNothing (patOfTheme tc) &&
+        null (cptsOfTheme tc) &&
+        null (dclsOfTheme tc) &&
+        null (rulesOfTheme tc) = mempty
+    | otherwise =
+             --  *** Header of the theme: ***
             xDefBlck fSpec (XRefNaturalLanguageTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
@@ -81,7 +86,6 @@ chpNatLangReqs lev fSpec =
           <> (mconcat . map printRel     . dclsOfTheme ) tc
           <> (mconcat . map printRule    . rulesOfTheme) tc
       where
-                           
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
        printIntro :: [Numbered CptCont] -> Blocks
        printIntro [] = mempty
@@ -149,7 +153,6 @@ chpNatLangReqs lev fSpec =
                     [printCDef cd (Just ("."++ [suffx])) 
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
-         <> someWhiteSpace 
         where
          nubByText = nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
          printCDef :: ConceptDef -- the definition to print
@@ -158,20 +161,22 @@ chpNatLangReqs lev fSpec =
          printCDef cDef suffx
            = definitionList 
               [(   str (l (NL"Definitie " ,EN "Definition "))
-                <> case fspecFormat (getOpts fSpec) of
-                                    FLatex -> (str . show .theNr) nCpt
-                                    _      -> (str . name) cDef  
+                <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Flatex] 
+                     then (str . show .theNr) nCpt
+                     else (str . name) cDef  
+                   )  
                 <> str (fromMaybe "" suffx) <> ":" 
                , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
-                        <> (case fspecFormat (getOpts fSpec) of
-                                    FLatex -> rawInline "latex"
-                                                ("~"++texOnlyMarginNote 
-                                                        ("\\gls{"++escapeNonAlphaNum 
-                                                                   (name cDef++fromMaybe "" suffx)
-                                                            ++"}"
-                                                        )
-                                                )
-                                    _      -> mempty)
+                        <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Flatex]
+                             then rawInline "latex"
+                                    ("~"++texOnlyMarginNote 
+                                            ("\\gls{"++escapeNonAlphaNum 
+                                                        (name cDef++fromMaybe "" suffx)
+                                                ++"}"
+                                            )
+                                    )
+                             else mempty
+                           )
                         <> str (cddef cDef)
                         <> if null (cdref cDef) then mempty
                            else str (" ["++cdref cDef++"]")
@@ -181,49 +186,64 @@ chpNatLangReqs lev fSpec =
               ]
 
   printRel :: Numbered DeclCont -> Blocks
-  printRel nDcl
-       =   (printPurposes . cDclPurps . theLoad) nDcl
-        <> case (cDclMeaning . theLoad) nDcl of
-              Just m -> definitionList 
-                    [(   str (l (NL "Afspraak ", EN "Agreement "))
-                      <> xDefInln fSpec (XRefSharedLangRelation dcl)
-                     , [printMeaning m]
-                     )
-                    ]
-              _      -> mempty
-        <> case samples of
-              []  -> mempty
-              [_] -> plain ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"
-                                    ,EN "A phrase that can be formed is for instance:")
-                           )
-              _   -> plain ((str.l) (NL "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"
-                                    ,EN "Phrases that can be made are for instance:")
-                                        )
-        <> if null samples then mempty
-           else bulletList [ plain $ mkPhrase dcl sample
-                           | sample <- samples]
-        <> someWhiteSpace 
-         where dcl = cDcl . theLoad $ nDcl
-               samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
-
+  printRel nDcl =
+         (printPurposes . cDclPurps . theLoad) nDcl
+      <> definitionList 
+            [(   (str.l) (NL "Afspraak ", EN "Agreement ")
+              <> ": "
+             , -- (xDefInln fSpec (XRefSharedLangRelation dcl) 
+                [xDefBlck fSpec (XRefSharedLangRelation dcl)]
+              <>(case (cDclMeaning . theLoad) nDcl of
+                   Nothing
+                     -> [plain $
+                             (str.l) (NL "De relatie ",EN "The relation ")
+                          <> (emph.str.name) dcl
+                          <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
+                        ]
+                   Just m -> [printMeaning m]
+                )
+              <>(case Set.elems $ properties dcl of
+                    []  -> mempty
+                    ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
+                                   <> (commaPandocAnd (fsLang fSpec) (map (str . propFullName (fsLang fSpec)) ps)<>"."
+                                      )
+                                  )
+                           ]
+                )    
+             )   
+            ]
+      <> case samples of
+            []  -> mempty
+            [_] -> plain ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"
+                                  ,EN "A phrase that can be formed is for instance:")
+                         )
+            _   -> plain ((str.l) (NL "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"
+                                  ,EN "Phrases that can be made are for instance:")
+                         )
+      <> case samples of
+            []  -> mempty
+            _   -> bulletList . map (plain . mkPhrase dcl) $ samples
+    where dcl = cDcl . theLoad $ nDcl
+          samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
   printRule :: Numbered RuleCont -> Blocks
-  printRule nRul
-   = -- (plain . strong . str $ "**** "<>name nRul<>" ("<>show (theNr nRul)<>") ****" ) <>
-       (printPurposes . cRulPurps . theLoad) nRul
-    <> definitionList 
-               [(   str (l (NL "Afspraak ", EN "Agreement "))
-                 <> xDefInln fSpec
-                       (XRefSharedLangRule . cRul . theLoad $ nRul) <> ": "
-                , case (cRulMeaning . theLoad) nRul of
-                    Nothing 
-                      -> -- We need the number, because otherwise we get broken references. 
-                         mempty  
-                    Just m
-                      -> [printMeaning m]
-                ) 
-               ]
-    <> someWhiteSpace      
-
+  printRule nRul =
+         xDefBlck fSpec (XRefSharedLangRule rul)
+      <> (printPurposes . cRulPurps . theLoad) nRul
+      -- <> definitionList 
+      --       [(   str (l (NL "Afspraak ", EN "Agreement "))
+      --         <> ": TODO"
+      --        , case (cRulMeaning . theLoad) nRul of
+      --            Nothing 
+      --               -> [plain $
+      --                       (str.l) (NL "De regel ",EN "The rule ")
+      --                    <> (emph.str.name) rul
+      --                    <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
+      --                  ]
+      --            Just m
+      --               -> [printMeaning m]
+      --        )
+      --       ]
+     where rul = cRul . theLoad $ nRul
   mkPhrase :: Relation -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
    | null (prL++prM++prR)
@@ -251,9 +271,6 @@ chpNatLangReqs lev fSpec =
          atomShow = str
          pragmaShow = emph . str
                    
-someWhiteSpace :: Blocks  --TODO: This doesn't seem to have any effect. (At least not in the LaTeX output)
-someWhiteSpace = para (linebreak <> linebreak <> linebreak <> linebreak)
-
 data LawRef = LawRef { lawRef :: String}
 data ArticleOfLaw = ArticleOfLaw { aOlLaw :: String
                                  , aOlArt :: [Either String Int]

@@ -1,23 +1,28 @@
 <!DOCTYPE html>
-<html$if(lang)$ lang="$lang$"$endif$$if(dir)$ dir="$dir$"$endif$>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="$lang$" xml:lang="$lang$"$if(dir)$ dir="$dir$"$endif$>
 <head>
-  <meta charset="utf-8">
-  <meta name="generator" content="pandoc">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
 $for(author-meta)$
-  <meta name="author" content="$author-meta$">
+  <meta name="author" content="$author-meta$" />
 $endfor$
 $if(date-meta)$
-  <meta name="dcterms.date" content="$date-meta$">
+  <meta name="dcterms.date" content="$date-meta$" />
 $endif$
 $if(keywords)$
-  <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$">
+  <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
 $endif$
   <title>$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$</title>
-  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
 $if(quotes)$
-  <style type="text/css">q { quotes: "“" "”" "‘" "’"; }</style>
+      q { quotes: "“" "”" "‘" "’"; }
 $endif$
+  </style>
 $if(highlighting-css)$
   <style type="text/css">
 $highlighting-css$
@@ -44,19 +49,19 @@ $if(title)$
 <header>
 <h1 class="title">$title$</h1>
 $if(subtitle)$
-<h1 class="subtitle">$subtitle$</h1>
+<p class="subtitle">$subtitle$</p>
 $endif$
 $for(author)$
-<h2 class="author">$author$</h2>
+<p class="author">$author$</p>
 $endfor$
 $if(date)$
-<h3 class="date">$date$</h3>
+<p class="date">$date$</p>
 $endif$
 </header>
 $endif$
 $if(toc)$
 <nav id="$idprefix$TOC">
-$toc$
+$table-of-contents$
 </nav>
 $endif$
 $body$

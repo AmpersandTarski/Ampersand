@@ -1,4 +1,4 @@
-module Ampersand.FSpec 
+module Ampersand.FSpec
    ( module Ampersand.FSpec.FSpec
    , module Ampersand.FSpec.ShowHS
    , module Ampersand.FSpec.ToFSpec.Calc
@@ -6,7 +6,8 @@ module Ampersand.FSpec
    , module Ampersand.FSpec.ToFSpec.NormalForms
    , module Ampersand.FSpec.Motivations
    , module Ampersand.FSpec.ToFSpec.CreateFspec
-   ) where
+   )
+where
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)

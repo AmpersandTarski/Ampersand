@@ -4,11 +4,13 @@ module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           Data.List(nub,partition)
-import           Data.Maybe(isJust)
+import           Data.Maybe(isJust,fromMaybe)
 import qualified Data.Set as Set
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
+ | noDiagnosis (getOpts fSpec) = mempty
+ | otherwise
  = (  xDefBlck fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
@@ -229,13 +231,13 @@ chpDiagnosis fSpec
                                   ,EN " are not used in any rule. ")
                       ) 
      <>( case pictsWithUnusedRels of
-          [pict] -> para (    xRef pict 
+          [pict] -> para (    hyperLinkTo fSpec pict 
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          )
                  <> xDefBlck fSpec pict
           picts  -> mconcat
-                       [ para (   xRef pict
+                       [ para (   hyperLinkTo fSpec pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
@@ -288,8 +290,8 @@ chpDiagnosis fSpec
                           "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " ++
                           "gedeclareerd worden, worden ook meerdere keren geteld."
                     ,EN $ "The table below shows for each theme (i.e. pattern) the number of relations and rules, followed " ++
-                          " by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
-                          " times."
+                          "by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
+                          "times."
                     )
     <> table -- No caption:
              mempty
@@ -307,7 +309,6 @@ chpDiagnosis fSpec
              )
              -- Content rows
              (   map mkTableRowPat (vpatterns fSpec)
-              ++ [mempty] -- empty row
               ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (Set.filter decusr $ vrels fSpec) (vrules fSpec)]
              )
       
@@ -352,14 +353,14 @@ chpDiagnosis fSpec
                   )
                   -- Rows:
                   [  [ (plain.str.name) rol]
-                   ++[ (plain.str.r_env) rul | multProcs]
+                   ++[ (plain.str.fromMaybe "--".rrpat) rul | multProcs]
                    ++[ (plain.str.name) rul
-                     , (plain.str.r_env) rul
+                     , (plain.str.fromMaybe "--".rrpat) rul
                      ]
                   | (rol,rul)<-fRoleRuls fSpec]
           
      where multProcs = length (vpatterns fSpec)>1
-
+           
   wipReport :: Blocks
   wipReport
    =   case popwork of
@@ -397,7 +398,7 @@ chpDiagnosis fSpec
 -- the tables containing the actual work in progress population
      mconcat
      [    para (  str (l (NL "Afspraak ", EN "Agreement "))
-               <> xRef (XRefSharedLangRule r)
+               <> hyperLinkTo fSpec (XRefSharedLangRule r)
                <> " ( " <> quoterule r <> " )"
                <> (str.l) (NL " luidt: ", EN " says: ")
                )

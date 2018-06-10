@@ -15,13 +15,18 @@ $if(keywords)$
   <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
 $endif$
   <title>$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$</title>
-  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+$if(quotes)$
+      q { quotes: "“" "”" "‘" "’"; }
+$endif$
+  </style>
   <!-- configuration parameters -->
   <meta name="defaultView" content="slideshow" />
   <meta name="controlVis" content="hidden" />
-$if(quotes)$
-  <style type="text/css">q { quotes: "“" "”" "‘" "’"; }</style>
-$endif$
 $if(highlighting-css)$
   <style type="text/css">
 $highlighting-css$
@@ -59,7 +64,7 @@ $endfor$
 </div>
 <div class="presentation">
 $if(title)$
-<div class="titleslide slide">
+<div class="title-slide slide">
   <h1 class="title">$title$</h1>
 $if(subtitle)$
   <h2 class="subtitle">$subtitle$</h2>
@@ -74,7 +79,7 @@ $endif$
 $endif$
 $if(toc)$
 <div class="slide" id="$idprefix$TOC">
-$toc$
+$table-of-contents$
 </div>
 $endif$
 $body$

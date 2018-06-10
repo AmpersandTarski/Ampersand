@@ -25,7 +25,6 @@ import           Data.Function (on)
 import           Data.List
 import qualified Data.Set as Set
 import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
-import           Data.Time.Clock.POSIX
 import           Data.Maybe (maybeToList)
 import           System.Directory
 import           System.FilePath
@@ -71,7 +70,8 @@ generateAmpersandOutput multi = do
    doGenProofs =
     do { verboseLn opts $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
    --  ; verboseLn opts $ writeTextile def thePandoc
-       ; writeFile outputFile $ writeHtmlString def thePandoc
+       ; content <- runIO (writeHtml5String def thePandoc) >>= handleError
+       ; Text.writeFile outputFile content
        ; verboseLn opts "Proof written."
        }
     where outputFile = dirOutput opts </> "proofs_of_"++baseName opts -<.> ".html"
@@ -111,8 +111,9 @@ generateAmpersandOutput multi = do
    doGenDocument :: IO()
    doGenDocument =
     do { verboseLn opts ("Processing "++name fSpec)
-       ; -- First we need to output the pictures, because they should be present before the actual document is written
-         when (not(null thePictures) && fspecFormat opts/=FPandoc) $
+       ; -- First we need to output the pictures, because they should be present 
+         -- before the actual document is written
+         when (not(noGraphics opts) && fspecFormat opts/=FPandoc) $
            mapM_ (writePicture opts) (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
        ; writepandoc fSpec thePandoc
        }
@@ -130,7 +131,7 @@ generateAmpersandOutput multi = do
    doGenPopsXLSX :: IO()
    doGenPopsXLSX =
     do { verboseLn opts "Generating .xlsx file containing the population "
-       ; ct <- getPOSIXTime 
+       ; ct <- runIO getPOSIXTime >>= handleError
        ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
        ; verboseLn opts $ "Generated file: " ++ outputFile
        }
