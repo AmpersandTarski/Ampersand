@@ -107,8 +107,6 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- interfaces
        <*> listOf arbitrary -- purposes
        <*> listOf arbitrary -- populations
-       <*> listOf arbitrary -- sqlplugs
-       <*> listOf arbitrary -- phpplugs
        <*> listOf arbitrary -- generic meta information
 
 instance Arbitrary Meta where
@@ -152,7 +150,6 @@ instance Arbitrary P_Relation where
                       <*> arbitrary       -- meaning
                       <*> arbitrary       -- pairs
                       <*> arbitrary       -- origin
-                      <*> arbitrary       -- plug
 
 instance Arbitrary a => Arbitrary (Term a) where
     arbitrary = do lv <- choose (0,6)
@@ -236,7 +233,7 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
 
 instance Arbitrary ConceptDef where
     arbitrary = Cd <$> arbitrary <*> safeStr <*> arbitrary <*> safeStr
-                   <*>  safeStr  <*> safeStr
+                   <*>  safeStr  
 
 instance Arbitrary PAtomPair where
     arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary

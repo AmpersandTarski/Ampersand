@@ -40,8 +40,6 @@ aCtx2pCtx ctx =
       , ctx_ifcs   = map aInterface2pInterface . ctxifcs $ ctx
       , ctx_ps     = mapMaybe aPurpose2pPurpose . ctxps $ ctx
       , ctx_pops   = map aPopulation2pPopulation . ctxpopus $ ctx
-      , ctx_sql    = map aObjectDef2pObjectDef . ctxsql $ ctx
-      , ctx_php    = map aObjectDef2pObjectDef . ctxphp $ ctx
       , ctx_metas  = ctxmetas ctx
       }
   
@@ -82,7 +80,6 @@ aRelation2pRelation dcl =
        , dec_Mean   = aMeaning2pMeaning (decMean dcl)
        , dec_popu   = [] --TODO: should this be empty? There is nothing in the A-structure
        , pos   = decfpos dcl
-       , dec_plug   = decplug dcl
        }
 
 aRelation2pNamedRel :: Relation -> P_NamedRel

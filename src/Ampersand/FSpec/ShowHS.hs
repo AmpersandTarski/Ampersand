@@ -168,7 +168,6 @@ instance ShowHS FSpec where
         [ "FSpec{ fsName        = " ++ show (name fSpec)
         , wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
         ,      ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
-        , wrap ", vplugInfos    = " indentA (\_->showHS opts (indentA++"  ")) (vplugInfos fSpec)
         , wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
         ,      ", interfaceS    = interfaceS'"
         ,      ", interfaceG    = interfaceG'"
@@ -577,7 +576,6 @@ instance ShowHS Relation where
                      ,"         , decfpos = " ++ showHS opts "" (decfpos d)
                      ,"         , decusr  = " ++ show (decusr d)
                      ,"         , decpat  = " ++ show (decpat d)
-                     ,"         , decplug = " ++ show (decplug d)
                      ]++"}"
 
 --   instance ShowHSName ConceptDef where
@@ -585,7 +583,7 @@ instance ShowHS Relation where
 
 instance ShowHS ConceptDef where
  showHS opts _ cd
-  = " Cd ("++showHS opts "" (origin cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
+  = " Cd ("++showHS opts "" (origin cd)++") "++show (cdcpt cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
 instance ShowHSName Char where
  showHSName = show
 instance ShowHS Char where

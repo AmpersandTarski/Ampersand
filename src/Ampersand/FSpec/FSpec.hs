@@ -52,8 +52,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
-                   , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
-                   , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
+                   , plugInfos ::    [PlugInfo]               -- ^ All plugs (derived)
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role

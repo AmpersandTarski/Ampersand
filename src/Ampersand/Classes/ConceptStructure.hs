@@ -59,20 +59,16 @@ instance ConceptStructure A_Context where
               , (concs . ctxifcs) ctx
               , (concs . ctxks) ctx
               , (concs . ctxpats) ctx
-              , (concs . ctxphp) ctx
               , (concs . ctxpopus) ctx
               , (concs . ctxps) ctx
               , (concs . ctxrs) ctx
-              , (concs . ctxsql) ctx
               , (concs . ctxvs) ctx
               ]
   expressionsIn ctx = Set.unions
                       [ (expressionsIn . ctxifcs) ctx
                       , (expressionsIn . ctxks) ctx
                       , (expressionsIn . ctxpats) ctx
-                      , (expressionsIn . ctxphp) ctx
                       , (expressionsIn . ctxrs) ctx
-                      , (expressionsIn . ctxsql) ctx
                       , (expressionsIn . ctxvs) ctx
                       , (expressionsIn . identityRules) ctx
                       , (expressionsIn . multrules) ctx

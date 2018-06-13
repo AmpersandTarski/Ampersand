@@ -246,8 +246,6 @@ pCtx2aCtx opts
       , ctx_ifcs   = p_interfaces
       , ctx_ps     = p_purposes
       , ctx_pops   = p_pops
-      , ctx_sql    = p_sqldefs
-      , ctx_php    = p_phpdefs
       , ctx_metas  = p_metas
       }
  = do contextInfo <- g_contextInfo
@@ -266,8 +264,6 @@ pCtx2aCtx opts
       uniqueNames interfaces
       purposes    <- traverse (pPurp2aPurp declMap) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop declMap contextInfo) p_pops --  [Population]
-      sqldefs     <- traverse (pObjDef2aObjDef declMap) p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script 
-      phpdefs     <- traverse (pObjDef2aObjDef declMap) p_phpdefs       --  user defined phpplugs, taken from the Ampersand script 
       allRoleRelations <- traverse (pRoleRelation2aRoleRelation declMap) (p_roleRelations ++ concatMap pt_RRels p_patterns)
       declsAndPops <- traverse (pDecl2aDecl Nothing contextInfo deflangCtxt deffrmtCtxt) p_relations
       let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
@@ -290,8 +286,6 @@ pCtx2aCtx opts
                      , ctxgenconcs = onlyUserConcepts (concGroups ++ map (:[]) soloConcs)
                      , ctxifcs = interfaces
                      , ctxps = purposes
-                     , ctxsql = sqldefs
-                     , ctxphp = phpdefs
                      , ctxmetas = p_metas
                      , ctxInfo = contextInfo 
                      }
@@ -497,7 +491,6 @@ pCtx2aCtx opts
       , decfpos = decfpos r1  --ignored for r2
       , decusr = or [decusr r1, decusr r2]
       , decpat = decpat r1 `orElse` decpat r2
-      , decplug = or [decplug r1, decplug r2]
       , dechash = dechash r1  --ignored for r2
       } 
 
@@ -521,7 +514,6 @@ pCtx2aCtx opts
                      , decfpos = origin pd
                      , decusr  = True
                      , decpat  = env
-                     , decplug = dec_plug pd
                      , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                      }
        in checkEndoProps >> 
@@ -612,9 +604,6 @@ pCtx2aCtx opts
         Right av -> pure av
       where typ = representationOf contextInfo cpt
                
-
-    pObjDef2aObjDef :: DeclMap -> P_ObjectDef -> Guarded ObjectDef
-    pObjDef2aObjDef declMap x = pObjDefDisamb2aObjDef declMap $ disambiguate (termPrimDisAmb declMap) x
 
     pObjDefDisamb2aObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded ObjectDef
     pObjDefDisamb2aObjDef declMap x = fmap fst (typecheckObjDef declMap x)
@@ -1052,7 +1041,7 @@ pCtx2aCtx opts
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s
      = case filter (\cd -> name cd == s) allConceptDefs of
-        []    -> Cd{pos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdref="", cdfrom=n1} 
+        []    -> Cd{pos=OriginUnknown, cdcpt=s, cddef="", cdref="", cdfrom=n1} 
         (x:_) -> x
     allConceptDefs :: [ConceptDef]
     allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns

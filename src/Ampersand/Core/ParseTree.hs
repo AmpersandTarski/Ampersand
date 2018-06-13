@@ -66,8 +66,6 @@ data P_Context
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
          , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
          , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
-         , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
-         , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
          } deriving Show --for QuickCheck
 
@@ -148,7 +146,6 @@ instance Traced P_Pattern where
 data ConceptDef
    = Cd  { pos :: Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
          , cdcpt :: String   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-         , cdplug:: Bool     -- ^ Whether the user specifically told Ampersand not to store this concept in the database
          , cddef :: String   -- ^ The textual definition of this concept.
          , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
          , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
@@ -203,7 +200,6 @@ data P_Relation =
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a relation, possibly more than one for different languages.
             , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
             , pos :: Origin    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
-            , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
             } deriving (Show) --For QuickCheck error messages only!
 
 -- | Equality on P_Relation
@@ -838,8 +834,6 @@ mergeContexts ctx1 ctx2 =
       , ctx_ifcs   = nubSortConcatMap ctx_ifcs contexts
       , ctx_ps     = nubSortConcatMap ctx_ps contexts
       , ctx_pops   = nubSortConcatMap ctx_pops contexts
-      , ctx_sql    = nubSortConcatMap ctx_sql contexts
-      , ctx_php    = nubSortConcatMap ctx_php contexts
       , ctx_metas  = nubSortConcatMap ctx_metas contexts
       }
     where contexts = [ctx1,ctx2]
@@ -869,8 +863,6 @@ mkContextOfPopsOnly pops =
       , ctx_ifcs   = []
       , ctx_ps     = []
       , ctx_pops   = pops
-      , ctx_sql    = []
-      , ctx_php    = []
       , ctx_metas  = []
       }
 -- | Left-biased choice on maybes

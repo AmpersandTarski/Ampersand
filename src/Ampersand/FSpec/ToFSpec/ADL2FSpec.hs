@@ -27,7 +27,6 @@ makeFSpec opts context
               , getOpts      = opts
               , fspos        = ctxpos context
               , fsLang       = printingLanguage
-              , vplugInfos   = definedplugs
               , plugInfos    = allplugs
               , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
               , roleInterfaces = fSpecRoleInterfaces
@@ -235,16 +234,9 @@ makeFSpec opts context
      --------------
      --making plugs
      --------------
-     vsqlplugs = case ctxsql context of
-                   []  -> []
-                   _   -> fatal "User defined plugs are heavily bitrotted." --REMARK -> no optimization like try2specific, because these plugs are user defined
-     definedplugs = map InternalPlug vsqlplugs
-                 ++ map ExternalPlug (ctxphp context)
-     allplugs = definedplugs ++      -- all plugs defined by the user
-                genPlugs             -- all generated plugs
+     allplugs = genPlugs             -- all generated plugs
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
-                | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
-                                   (makeGeneratedSqlPlugs opts context calcProps)
+                | p <- uniqueNames [] (makeGeneratedSqlPlugs opts context calcProps)
                 ]
      qlfname x = if null (namespace opts) then x else "ns"++namespace opts++x
 
@@ -299,13 +291,13 @@ makeFSpec opts context
      cRels = Set.elems $
              (              Set.filter      isTot                     $ toconsider) `Set.union`
              (Set.map flp . Set.filter (not.isTot) . Set.filter isSur $ toconsider)
-       where toconsider = Set.map EDcD . Set.filter (not . decplug) $ calculatedDecls
+       where toconsider = Set.map EDcD $ calculatedDecls
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal relations are excluded)
      dRels = Set.elems $
              (              Set.filter      isInj                     $ toconsider) `Set.union`
              (Set.map flp . Set.filter (not.isInj) . Set.filter isUni $ toconsider)
-       where toconsider = Set.map EDcD . Set.filter (not . decplug) $ calculatedDecls
+       where toconsider = Set.map EDcD $ calculatedDecls
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!

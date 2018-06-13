@@ -30,10 +30,6 @@ prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
 perline :: Pretty a => [a] -> Doc
 perline = vsep . map pretty
 
-perlinePrefix :: Pretty a => String -> [a] -> Doc
-perlinePrefix pref xs = vsep $ map addPrefix xs
-           where addPrefix x = text pref <+> pretty x
-
 quote :: String -> Doc
 quote = text.show
 
@@ -82,7 +78,7 @@ prettyLabel :: String -> Doc
 prettyLabel = maybeQuote
 
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops sql php metas) =
+    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops metas) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
@@ -101,8 +97,6 @@ instance Pretty P_Context where
                <+\> perline gs
                <+\> perline ifcs
                <+\> perline pops
-               <+\> perlinePrefix "SQLPLUG" sql
-               <+\> perlinePrefix "PHPPLUG" php
                <+\> text "ENDCONTEXT"
              
 instance Pretty Meta where
@@ -143,12 +137,10 @@ instance Pretty P_Pattern where
         where keyword = if null rruls && null rrels then "PATTERN" else "PROCESS"
 
 instance Pretty P_Relation where
-    pretty (P_Sgn nm sign prps pragma mean popu _ plug) =
-        text "RELATION" <+> text nm <~> sign <+> props <+> byplug <+\> pragmas <+\> prettyhsep mean <+\> content
+    pretty (P_Sgn nm sign prps pragma mean popu _) =
+        text "RELATION" <+> text nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean <+\> content
         where props   = if prps == Set.fromList [Sym, Asy] then text "[PROP]"
                         else text "[" <> listOf (Set.toList prps) <> text "]"
-              byplug  | plug        = text "BYPLUG"
-                      | otherwise   = empty
               pragmas | null pragma = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
               content | null popu   = empty
@@ -223,8 +215,8 @@ instance Pretty a => Pretty (P_Rule a) where
                          else maybeQuote nm <> text ":"
 
 instance Pretty ConceptDef where
-    pretty (Cd _ cpt plug def ref _) -- from, the last argument, is not used in the parser
-        = text "CONCEPT" <+> quoteConcept cpt <+> (if plug then text "BYPLUG" else empty)
+    pretty (Cd _ cpt def ref _) -- from, the last argument, is not used in the parser
+        = text "CONCEPT" <+> quoteConcept cpt
                <+> quote def <+> maybeText ref
         where maybeText txt = if null txt then empty
                               else quote txt

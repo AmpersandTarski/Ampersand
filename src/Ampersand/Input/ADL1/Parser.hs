@@ -49,8 +49,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_reprs  = [r | CRep r<-ces]
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
-            , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]
-            , ctx_php    = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
             , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
             , ctx_pops   = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]
             , ctx_metas  = [meta | CMeta meta <-ces]
@@ -74,8 +72,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       CIndx    <$> pIndex        <|>
                       CView    <$> pViewDef      <|>
                       Cifc     <$> pInterface    <|>
-                      CSqlPlug <$> pSqlplug      <|>
-                      CPhpPlug <$> pPhpplug      <|>
                       CPrp     <$> pPurpose      <|>
                       CPop     <$> pPopulation   <|>
                       CIncl    <$> pIncludeStatement
@@ -93,8 +89,6 @@ data ContextElement = CMeta Meta
                     | CIndx P_IdentDef
                     | CView P_ViewDef
                     | Cifc P_Interface
-                    | CSqlPlug P_ObjectDef
-                    | CPhpPlug P_ObjectDef
                     | CPrp PPurpose
                     | CPop P_Population
                     | CIncl Include    -- an INCLUDE statement
@@ -234,17 +228,14 @@ pRuleDef =  P_Ru <$> currPos
 pRelationDef :: AmpParser P_Relation
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
-                       <*> pIsThere (pKey "BYPLUG")
                        <*> optSet pProps
-                       <*> pIsThere (pKey "BYPLUG")
                        <*> optList (pKey "PRAGMA" *> many1 pString)
                        <*> many pMeaning
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
-            where reorder pos' (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
-                    let plug = bp1 || bp2
-                        props = prop `Set.union` fun
-                    in P_Sgn nm sign props pragma meanings popu pos' plug
+            where reorder pos' (nm,sign,fun) prop pragma meanings popu =
+                    let props = prop `Set.union` fun
+                    in P_Sgn nm sign props pragma meanings popu pos'
 
 --- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (String,P_Sign,Props)
@@ -310,7 +301,6 @@ pConceptDef :: AmpParser (String->ConceptDef)
 pConceptDef       = Cd <$> currPos
                        <*  pKey "CONCEPT"
                        <*> pConceptName
-                       <*> pIsThere (pKey "BYPLUG")
                        <*> (pString <?> "concept definition (string)")
                        <*> (pString `opt` "") -- a reference to the source of this definition.
 
@@ -479,14 +469,6 @@ pCruds = P_Cruds <$> currPos <*> pCrudString
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
 pBox = pBrackets $ pObjDef `sepBy` pComma
-
---- Sqlplug ::= 'SQLPLUG' ObjDef
-pSqlplug :: AmpParser P_ObjectDef
-pSqlplug = pKey "SQLPLUG" *> pObjDef
-
---- Phpplug ::= 'PHPPLUG' ObjDef
-pPhpplug :: AmpParser P_ObjectDef
-pPhpplug = pKey "PHPPLUG" *> pObjDef
 
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose

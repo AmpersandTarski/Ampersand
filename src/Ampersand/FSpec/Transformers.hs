@@ -746,10 +746,10 @@ instance Instances IdentityDef where
 instance Instances Interface where
   instances fSpec = ctxifcs (originalContext fSpec)
 instance Instances ObjectDef where
-  instances fSpec = nub $
-       ctxsql (originalContext fSpec)
-    ++ ctxphp (originalContext fSpec)
-    ++ (concatMap (objects . ifcObj) . instances $ fSpec)
+  instances fSpec = 
+       nub
+     . concatMap (objects . ifcObj)
+     . instances $ fSpec
     where
       objects :: ObjectDef -> [ObjectDef]
       objects obj = obj :
