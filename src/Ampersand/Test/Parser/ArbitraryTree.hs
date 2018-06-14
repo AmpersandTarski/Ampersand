@@ -232,8 +232,8 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
               where ruleTerm = sized $ genTerm 0 -- rule is a term level 0
 
 instance Arbitrary ConceptDef where
-    arbitrary = Cd <$> arbitrary <*> safeStr <*> arbitrary <*> safeStr
-                   <*>  safeStr  
+    arbitrary = Cd <$> arbitrary <*> safeStr <*> safeStr
+                   <*> safeStr  <*> safeStr
 
 instance Arbitrary PAtomPair where
     arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
