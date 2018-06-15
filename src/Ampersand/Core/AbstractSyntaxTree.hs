@@ -361,13 +361,17 @@ instance Object ObjectDef where
                  Just b@Box{}    -> siObjs b
  contextOf   = objExpression
 
-data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                     , objpos ::   Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-                     , objExpression ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
-                     , objcrud ::  Cruds -- ^ CRUD as defined by the user 
-                     , objmView :: Maybe String   -- ^ The view that should be used for this object
-                     , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.
-                     } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
+data ObjectDef = 
+    ObjExpr { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+            , objpos ::   Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+            , objExpression ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
+            , objcrud ::  Cruds -- ^ CRUD as defined by the user 
+            , objmView :: Maybe String   -- ^ The view that should be used for this object
+            , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.
+            }
+  | ObjTxt  { objpos :: Origin
+            , objtxt :: String
+            } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
 instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where

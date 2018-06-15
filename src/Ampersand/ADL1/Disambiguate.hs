@@ -64,6 +64,7 @@ class Traversable d => Disambiguatable d where
   disambiguationStep :: d (TermPrim, DisambPrim) -> Change (d (TermPrim, DisambPrim))
   disambiguationStep thing = traverse performUpdate withInfo
       where (withInfo, _) = disambInfo thing noConstraints
+  {-# MINIMAL disambInfo #-}
 
 noConstraints :: Constraints
 noConstraints = Cnstr [][]

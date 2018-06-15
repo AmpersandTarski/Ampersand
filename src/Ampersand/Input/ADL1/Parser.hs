@@ -224,7 +224,7 @@ pRuleDef =  P_Ru <$> currPos
                                 <|> PairViewExp  <$> posOf (pKey "TGT") <*> return Tgt <*> pTerm
                                 <|> PairViewText <$> posOf (pKey "TXT") <*> pString
 
---- RelationDef ::= (RelationNew | RelationOld) 'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
+--- RelationDef ::= (RelationNew | RelationOld) Props? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
 pRelationDef :: AmpParser P_Relation
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
@@ -296,7 +296,7 @@ pFun  =  Set.empty               <$ pOperator "*"  <|>
                         Set.empty <$ pOperator "*"  <|>
                         Set.fromList [ts,ui] <$ try pOne
 
---- ConceptDef ::= 'CONCEPT' ConceptName 'BYPLUG'? String ('TYPE' String)? String?
+--- ConceptDef ::= 'CONCEPT' ConceptName String ('TYPE' String)? String?
 pConceptDef :: AmpParser (String->ConceptDef)
 pConceptDef       = Cd <$> currPos
                        <*  pKey "CONCEPT"
@@ -448,7 +448,9 @@ pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef
-pObjDef = obj <$> currPos
+pObjDef = pObj <|> pTxt
+  where
+   pObj = obj <$> currPos
               <*> pLabel
               <*> pTerm            -- the context expression (for example: I[c])
               <*> pMaybe pCruds
@@ -462,6 +464,8 @@ pObjDef = obj <$> currPos
                        , obj_mView = mView
                        , obj_msub = msub
                        }
+   pTxt = P_Txt <$> posOf (pKey "TXT") <*> pString
+
 --- Cruds ::= crud in upper /lowercase combinations
 pCruds :: AmpParser P_Cruds
 pCruds = P_Cruds <$> currPos <*> pCrudString
@@ -498,7 +502,7 @@ pPurpose = rebuild <$> currPos
                   PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>
                   PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid       <|>
                   PRef2Pattern     <$ pKey "PROCESS"   <*> pADLid       <|>
-                  PRef2Interface   <$ pInterfaceKey <*> pADLid       <|>
+                  PRef2Interface   <$ pInterfaceKey    <*> pADLid       <|>
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
 pInterfaceKey :: AmpParser String

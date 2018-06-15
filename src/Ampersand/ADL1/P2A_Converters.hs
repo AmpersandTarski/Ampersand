@@ -658,55 +658,55 @@ pCtx2aCtx opts
     isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
     
     typecheckObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded (ObjectDef, Bool)
-    typecheckObjDef declMap
-       o@P_Obj { obj_nm = nm
-               , pos = orig
-               , obj_ctx = ctx
-               , obj_crud = mCrud
-               , obj_mView = mView
-               , obj_msub = subs
-               }
-     = do checkCrudForRefInterface 
-          (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
-          crud <- pCruds2aCruds mCrud
-          maybeObj <- case subs of
-                        Just P_Box{si_box=[]} -> pure Nothing
-                        _ -> maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
-          case maybeObj of
-               Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
-               Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
-     where      
-      lookupView :: String -> Maybe P_ViewDef
-      lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
-                            []   -> Nothing
-                            vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
-                        
-      checkCrudForRefInterface :: Guarded()
-      checkCrudForRefInterface = 
-         case (mCrud, subs) of
-           (Just _ , Just P_InterfaceRef{si_isLink=False}) 
-                   -> Errors . pure $ mkCrudForRefInterfaceError orig
-           _       -> pure ()
-      typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
-      typeCheckViewAnnotation _       Nothing       = pure ()
-      typeCheckViewAnnotation objExpr (Just viewId) =
-        case lookupView viewId of 
-          Just vd -> let viewAnnCptStr = aConcToType $ target objExpr
-                         viewDefCptStr = pConcToType $ vd_cpt vd
-                         viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
-                     in  if viewIsCompatible 
-                         then pure ()
-                         else Errors . pure $ 
-                                mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr
-          Nothing -> Errors . pure $ mkUndeclaredError "view" o viewId
-      obj crud (e,sr) s
-       = ( Obj { objnm = nm
-               , objpos = orig
-               , objExpression = e
-               , objcrud = crud
-               , objmView = mView
-               , objmsub = s
-               }, sr)
+    typecheckObjDef declMap objDef
+      = case objDef of
+          P_Obj { obj_nm = nm
+                , pos = orig
+                , obj_ctx = ctx
+                , obj_crud = mCrud
+                , obj_mView = mView
+                , obj_msub = subs
+                } -> do checkCrudForRefInterface 
+                        (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
+                        crud <- pCruds2aCruds mCrud
+                        maybeObj <- case subs of
+                                      Just P_Box{si_box=[]} -> pure Nothing
+                                      _ -> maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
+                        case maybeObj of
+                          Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
+                          Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
+            where      
+              lookupView :: String -> Maybe P_ViewDef
+              lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
+                                    []   -> Nothing
+                                    vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
+                                
+              checkCrudForRefInterface :: Guarded()
+              checkCrudForRefInterface = 
+                case (mCrud, subs) of
+                  (Just _ , Just P_InterfaceRef{si_isLink=False}) 
+                          -> Errors . pure $ mkCrudForRefInterfaceError orig
+                  _       -> pure ()
+              typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
+              typeCheckViewAnnotation _       Nothing       = pure ()
+              typeCheckViewAnnotation objExpr (Just viewId) =
+                case lookupView viewId of 
+                  Just vd -> let viewAnnCptStr = aConcToType $ target objExpr
+                                 viewDefCptStr = pConcToType $ vd_cpt vd
+                                 viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
+                             in  if viewIsCompatible 
+                                 then pure ()
+                                 else Errors . pure $ 
+                                        mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
+                  Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
+              obj crud (e,sr) s
+                = ( Obj { objnm = nm
+                        , objpos = orig
+                        , objExpression = e
+                        , objcrud = crud
+                        , objmView = mView
+                        , objmsub = s
+                        }, sr)
     addEpsilonLeft,addEpsilonRight :: A_Concept -> Expression -> Expression
     addEpsilonLeft a e
      = if a==source e then e else EEps (leastConcept (source e) a) (castSign a (source e)) .:. e
@@ -765,8 +765,13 @@ pCtx2aCtx opts
                                              , siObjs    = lst
                                              }
                                 )
-                       ) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef declMap) l <* uniqueNames l
-     where matchWith _ (ojd,exprBound)
+                       ) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef declMap) l 
+                         <*  uniqueBy obj_nm (filter isPObj l)
+     where isPObj obj =
+             case obj of
+               P_Obj{} -> True
+               P_Txt{} -> False
+           matchWith _ (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
                     [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef ojd)]

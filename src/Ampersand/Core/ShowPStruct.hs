@@ -166,9 +166,11 @@ instance PStruct (P_ObjDef TermPrim) where
     recur ind (Just (P_Box _ cl objs))
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
-                               [ doubleQuote (name o)++
-                                  " : "++showP (obj_ctx o)++
-                                  recur (ind++"      ") (obj_msub o)
+                               [ case o of
+                                   P_Obj{} -> doubleQuote (obj_nm o)++
+                                              " : "++showP (obj_ctx o)++
+                                              recur (ind++"      ") (obj_msub o)
+                                   P_Txt{} -> "TXT "++show (obj_txt o) 
                                | o<-objs
                                ]++
            ind++"     ]"

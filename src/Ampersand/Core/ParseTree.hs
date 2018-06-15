@@ -414,6 +414,7 @@ instance Traversable P_ObjDef where
  traverse f (P_Obj nm pos' ctx mCrud mView msub)
   = (\ctx' msub'->(P_Obj nm pos' ctx' mCrud mView msub')) <$>
      traverse f ctx <*> traverse (traverse f) msub
+ traverse _ (P_Txt pos' str) = pure (P_Txt pos' str)
 
 instance Traced TermPrim where
  origin e = case e of
@@ -606,12 +607,15 @@ data P_ObjDef a =
            , obj_crud :: Maybe P_Cruds  -- ^ the CRUD actions as required by the user  
            , obj_mView :: Maybe String -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
-           }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
+           }
+   | P_Txt { pos :: Origin
+           , obj_txt :: String
+           } deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
 instance Ord (P_ObjDef a) where
   compare a b = compare (origin a) (origin b)
 instance Eq (P_ObjDef a) where od==od' = origin od==origin od'
-instance Named (P_ObjDef a) where
- name = obj_nm
+--instance Named (P_ObjDef a) where
+-- name = obj_nm
 instance Traced (P_ObjDef a) where
  origin = pos
 data P_Cruds = P_Cruds Origin String deriving Show
