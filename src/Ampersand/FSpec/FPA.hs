@@ -74,8 +74,9 @@ fpaInterface ifc =
                         | d == 2    = Gemiddeld
                         | otherwise = Moeilijk 
 
-        getDepth Obj{objmsub=Nothing} = 0
-        getDepth Obj{objmsub=Just si}
+        getDepth ObjTxt{} = 0
+        getDepth ObjExp{objmsub=Nothing} = 0
+        getDepth ObjExp{objmsub=Just si}
           = case si of 
              InterfaceRef{} -> 1
              Box{}          -> 1 + maximum (map getDepth (siObjs si))

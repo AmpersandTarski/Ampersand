@@ -700,13 +700,19 @@ pCtx2aCtx opts
                                         mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
                   Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
               obj crud (e,sr) s
-                = ( Obj { objnm = nm
-                        , objpos = orig
-                        , objExpression = e
-                        , objcrud = crud
-                        , objmView = mView
-                        , objmsub = s
-                        }, sr)
+                = ( ObjExp { objnm = nm
+                           , objpos = orig
+                           , objExpression = e
+                           , objcrud = crud
+                           , objmView = mView
+                           , objmsub = s
+                           }, sr)
+          P_Txt { pos = orig
+                , obj_txt = str
+                } -> pure $ (ObjTxt { objpos = orig
+                                    , objtxt = str
+                                    },True)
+
     addEpsilonLeft,addEpsilonRight :: A_Concept -> Expression -> Expression
     addEpsilonLeft a e
      = if a==source e then e else EEps (leastConcept (source e) a) (castSign a (source e)) .:. e

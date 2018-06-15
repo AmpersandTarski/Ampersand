@@ -318,7 +318,8 @@ makeFSpec opts context
      interfaceGen = step4a ++ step4b
      step4a
       = let recur es
-             = [ Obj { objnm   = showA t
+             = [ ObjExp
+                     { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objExpression  = t
                      , objcrud = fatal "No default crud in generated interface"
@@ -336,7 +337,8 @@ makeFSpec opts context
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
         [Ifc { ifcname     = name c
-             , ifcObj      = Obj { objnm   = name c
+             , ifcObj      = ObjExp
+                                 { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objExpression  = EDcI c
                                  , objcrud = fatal "No default crud in generated interface"
@@ -361,7 +363,8 @@ makeFSpec opts context
      --end stap4a
      step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
       = [Ifc { ifcname     = nm
-             , ifcObj      = Obj { objnm   = nm
+             , ifcObj      = ObjExp
+                                 { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objExpression  = EDcI ONE
                                  , objcrud = fatal "No default crud in generated interface"
@@ -382,7 +385,8 @@ makeFSpec opts context
               nm
                 | null nms = fatal "impossible"
                 | otherwise = head nms
-              att = Obj { objnm    = name c
+              att = ObjExp
+                        { objnm    = name c
                         , objpos   = Origin "generated attribute object: step 4b"
                         , objExpression   = EDcV (Sign ONE c)
                         , objcrud  = fatal "No default crud in generated interface."
