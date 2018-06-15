@@ -49,6 +49,14 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
      * @var array|null $ifcData
      */
     protected $ifcData = null;
+
+    /**
+     * Specifies if user interface data must be included when outputting (json_serialize) the Resource
+     * This includes: _id_, _label_ and _view_
+     * 
+     * @var boolean
+     */
+    protected $inclUserInterfaceData = false;
     
     /**
      * Constructor
@@ -97,12 +105,13 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
      */
     public function jsonSerialize()
     {
-        if ($this->concept->isObject()) {
+        if ($this->concept->isObject() && $this->inclUserInterfaceData) {
             $content = [];
             
             // Add Ampersand atom attributes
             $content['_id_'] = $this->id;
             $content['_label_'] = $this->getLabel();
+            $content['_path_'] = $this->getPath();
             
             // Add view data if array is assoc (i.e. not sequential)
             $data = $this->getView();
@@ -400,10 +409,10 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
                 throw new Exception("Read not allowed for ". $parentIfc->getPath(), 405);
             }
         }
-        
-        // Meta data
-            $this->ifcData['_path_'] = $this->getPath();
+
+        // User interface data (_id_, _label_ and _view_ and _path_)
         if ($options & Options::INCLUDE_UI_DATA) {
+            $this->inclUserInterfaceData = true; // added in json_serialize
         }
         
         // Interface(s) to navigate to for this resource
