@@ -53,7 +53,7 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
     /**
      * Specifies if user interface data must be included when outputting (json_serialize) the Resource
      * This includes: _id_, _label_ and _view_
-     * 
+     *
      * @var boolean
      */
     protected $inclUserInterfaceData = false;
@@ -105,26 +105,26 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
      */
     public function jsonSerialize()
     {
-        if ($this->concept->isObject() && $this->inclUserInterfaceData) {
+        if ($this->concept->isObject()) {
             $content = [];
+            if ($this->inclUserInterfaceData) {
+                // Add Ampersand atom attributes
+                $content['_id_'] = $this->id;
+                $content['_label_'] = $this->getLabel();
+                $content['_path_'] = $this->getPath();
             
-            // Add Ampersand atom attributes
-            $content['_id_'] = $this->id;
-            $content['_label_'] = $this->getLabel();
-            $content['_path_'] = $this->getPath();
-            
-            // Add view data if array is assoc (i.e. not sequential)
-            $data = $this->getView();
-            if (!isSequential($data)) {
-                $content['_view_'] = $data;
+                // Add view data if array is assoc (i.e. not sequential)
+                $data = $this->getView();
+                if (!isSequential($data)) {
+                    $content['_view_'] = $data;
+                }
+            // Not inclUserInterfaceData and ifcData is null -> directly return $this->id
+            } elseif (is_null($this->ifcData)) {
+                return $this->id;
             }
             
             // Merge with inerface data (which is set when get() method is called before)
-            if (!is_null($this->ifcData)) {
-                return array_merge($content, $this->ifcData);
-            }
-            
-            return $content;
+            return array_merge($content, (array)$this->ifcData); // cast to array: null => empty array
         } else {
             return parent::jsonSerialize();
         }
