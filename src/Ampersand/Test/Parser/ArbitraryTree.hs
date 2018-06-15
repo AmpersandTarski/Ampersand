@@ -64,11 +64,13 @@ genObj = makeObj arbitrary genIfc (return Nothing)
 
 makeObj :: Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
 makeObj genPrim ifcGen genView n =
-        P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc
-              where term = Prim <$> genPrim
-                    ifc  = if n == 0 then return Nothing
-                           else Just <$> ifcGen (n`div`2)
-
+  oneof [ P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc
+        , P_Txt <$> arbitrary <*> arbitrary
+        ]
+     where term = Prim <$> genPrim
+           ifc  = if n == 0 then return Nothing
+                  else Just <$> ifcGen (n`div`2)
+        
 genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
 genIfc = subIfc genObj
 

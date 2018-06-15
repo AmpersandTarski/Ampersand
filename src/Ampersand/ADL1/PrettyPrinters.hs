@@ -242,9 +242,13 @@ instance Pretty P_Interface where
                                 else text "FOR" <+> listOf roles
 
 instance Pretty a => Pretty (P_ObjDef a) where
-    pretty (P_Obj nm _ ctx mCrud mView msub) =
-        prettyLabel nm <+> text ":"
+    pretty obj =
+      case obj of
+        (P_Obj nm _ ctx mCrud mView msub)
+           -> prettyLabel nm <+> text ":"
                  <~> ctx <+> crud mCrud <+> view mView <~> msub
+        (P_Txt _ str)
+           -> text "TXT" <+> quote str
         where crud Nothing = empty
               crud (Just cruds) = pretty cruds
               view Nothing  = empty
@@ -263,10 +267,15 @@ instance Pretty a => Pretty (P_IdentDf a) where
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
 instance Pretty a => Pretty (P_IdentSegmnt a) where
-    pretty (P_IdentExp (P_Obj nm _ ctx _ mView _)) =
-              if null nm
-              then pretty ctx -- no label
-              else prettyLabel nm <> text ":" <~> ctx <+> view mView
+    pretty (P_IdentExp obj) =
+      case obj of
+        (P_Obj nm _ ctx _ mView _)
+           -> (if null nm
+               then pretty ctx -- no label
+               else prettyLabel nm <> text ":" <~> ctx
+              ) <+> view mView
+        (P_Txt _ str)
+           -> text "TXT" <+> quote str
         where view Nothing  = empty
               view (Just v) = pretty v
 
