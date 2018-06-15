@@ -21,9 +21,9 @@ class Options
     
     INCLUDE_META_DATA   = 0b00000001,
     
-    INCLUDE_NAV_IFCS    = 0b00000010,
+    INCLUDE_NAV_IFCS    = 0b00000010, // includes _ifcs_
     
-    INCLUDE_SORT_DATA   = 0b00000100,
+    INCLUDE_SORT_DATA   = 0b00000100, // includes _sortVales_
 
     INCLUDE_REF_IFCS    = 0b00001000,
     
