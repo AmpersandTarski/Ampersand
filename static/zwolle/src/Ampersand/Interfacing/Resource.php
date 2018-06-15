@@ -402,8 +402,8 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
         }
         
         // Meta data
-        if ($options & Options::INCLUDE_META_DATA) {
             $this->ifcData['_path_'] = $this->getPath();
+        if ($options & Options::INCLUDE_UI_DATA) {
         }
         
         // Interface(s) to navigate to for this resource

@@ -19,7 +19,7 @@ class Options
     /** Default options */
     DEFAULT_OPTIONS     = 0b00001111,
     
-    INCLUDE_META_DATA   = 0b00000001,
+    INCLUDE_UI_DATA     = 0b00000001, // includes _id_, _label_, _view_ and _path_
     
     INCLUDE_NAV_IFCS    = 0b00000010, // includes _ifcs_
     
@@ -37,7 +37,7 @@ class Options
      */
     public static function getFromRequestParams(array $params): int
     {
-        $optionsMap = ['metaData' => self::INCLUDE_META_DATA
+        $optionsMap = ['metaData' => self::INCLUDE_UI_DATA
                       ,'sortData' => self::INCLUDE_SORT_DATA
                       ,'navIfc' => self::INCLUDE_NAV_IFCS
                       ,'inclLinktoData' => (self::INCLUDE_REF_IFCS | self::INCLUDE_LINKTO_IFCS) // flag both options
