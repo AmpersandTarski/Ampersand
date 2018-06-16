@@ -15,17 +15,20 @@ data JSONInterface = JSONInterface
   , ifcJSONboxClass           :: Maybe String
   , ifcJSONifcObject          :: JSONObjectDef
   } deriving (Generic, Show)
-data JSONObjectDef = JSONObjectDef
-  { ifcJSONid                 :: String
-  , ifcJSONlabel              :: String
-  , ifcJSONviewId             :: Maybe String
-  , ifcJSONNormalizationSteps :: [String] -- Not used in frontend. Just informative for analisys
-  , ifcJSONrelation           :: Maybe String
-  , ifcJSONrelationIsFlipped  :: Maybe Bool
-  , ifcJSONcrud               :: JSONCruds
-  , ifcJSONexpr               :: JSONexpr
-  , ifcJSONsubinterfaces      :: Maybe JSONSubInterface
-  } deriving (Generic, Show)
+data JSONObjectDef = 
+  JSONObjectDef
+    { ifcJSONtag                :: String
+    , ifcJSONtxt                :: Maybe String
+    , ifcJSONid                 :: Maybe String
+    , ifcJSONlabel              :: Maybe String
+    , ifcJSONviewId             :: Maybe String
+    , ifcJSONNormalizationSteps :: Maybe [String] -- Not used in frontend. Just informative for analisys
+    , ifcJSONrelation           :: Maybe String
+    , ifcJSONrelationIsFlipped  :: Maybe Bool
+    , ifcJSONcrud               :: Maybe JSONCruds
+    , ifcJSONexpr               :: Maybe JSONexpr
+    , ifcJSONsubinterfaces      :: Maybe JSONSubInterface
+    } deriving (Generic, Show)
 data JSONSubInterface = JSONSubInterface
   { subJSONboxClass           :: Maybe String
   , subJSONifcObjects         :: Maybe [JSONObjectDef]
@@ -79,7 +82,6 @@ instance JSON SubInterface JSONSubInterface where
        , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si
        , subJSONrefIsLinkTo        = Just . siIsLink $ si
        }
- 
 instance JSON Interface JSONInterface where
  fromAmpersand multi interface = JSONInterface
   { ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
@@ -95,10 +97,9 @@ instance JSON Cruds JSONCruds where
   , crudJSONdelete            = crudD crud
   }
   
-instance JSON ObjectDef JSONexpr where
- fromAmpersand multi obj =
-   case obj of 
-     ObjE object -> JSONexpr
+instance JSON ObjExp JSONexpr where
+ fromAmpersand multi object =
+    JSONexpr
         { exprJSONsrcConceptId = escapeIdentifier . name $ srcConcept
         , exprJSONtgtConceptId = escapeIdentifier . name $ tgtConcept
         , exprJSONisUni        = isUni normalizedInterfaceExp
@@ -121,15 +122,17 @@ instance JSON ObjectDef JSONObjectDef where
  fromAmpersand multi obj =
    case obj of 
      ObjE object' -> JSONObjectDef
-      { ifcJSONid                 = escapeIdentifier . name $ object
-      , ifcJSONlabel              = name object
+      { ifcJSONtag                = "ObjExpression"
+      , ifcJSONid                 = Just $ escapeIdentifier . name $ object
+      , ifcJSONlabel              = Just $ name object
       , ifcJSONviewId             = fmap name viewToUse
-      , ifcJSONNormalizationSteps = showPrf showA.cfProof.objExpression $ object 
+      , ifcJSONNormalizationSteps = Just $ showPrf showA.cfProof.objExpression $ object 
       , ifcJSONrelation           = fmap (showRel . fst) mEditableDecl
       , ifcJSONrelationIsFlipped  = fmap            snd  mEditableDecl
-      , ifcJSONcrud               = fromAmpersand multi (objcrud object)
-      , ifcJSONexpr               = fromAmpersand multi (ObjE object)
+      , ifcJSONcrud               = Just $ fromAmpersand multi (objcrud object)
+      , ifcJSONexpr               = Just $ fromAmpersand multi object
       , ifcJSONsubinterfaces      = fmap (fromAmpersand multi) (objmsub object)
+      , ifcJSONtxt                = Nothing
       }
       where
         opts = getOpts fSpec
@@ -144,3 +147,16 @@ instance JSON ObjectDef JSONObjectDef where
               (tgt, Just (decl, isFlipped'))
             Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
         object = substituteReferenceObjectDef fSpec object'
+     ObjT object' -> JSONObjectDef
+      { ifcJSONtag                = "ObjText"
+      , ifcJSONid                 = Nothing
+      , ifcJSONlabel              = Nothing
+      , ifcJSONviewId             = Nothing
+      , ifcJSONNormalizationSteps = Nothing
+      , ifcJSONrelation           = Nothing
+      , ifcJSONrelationIsFlipped  = Nothing
+      , ifcJSONcrud               = Nothing
+      , ifcJSONexpr               = Nothing
+      , ifcJSONsubinterfaces      = Nothing
+      , ifcJSONtxt                = Just $ objtxt object'
+      }
