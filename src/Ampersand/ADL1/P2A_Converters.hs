@@ -776,8 +776,8 @@ pCtx2aCtx opts
                        ) <$> traverse (join . fmap fn . typecheckObjDef declMap) l 
                          <*  uniqueBy obj_nm (filter isPObj l)
                   where fn :: (ObjectDef2, Bool) -> (Guarded ObjectDef2)
-                        fn (ObjE x,b) = fmap ObjE $ matchWith  (x,b)
-                        fn (ObjT x,_) = pure $ ObjT x  
+                        fn (ObjE e,p) = fmap ObjE $ matchWith  (e,p)
+                        fn (ObjT t,_) = pure $ ObjT t
      where isPObj obj =
              case obj of
                P_Obj{} -> True
@@ -928,13 +928,17 @@ pCtx2aCtx opts
                     , ifc_Prp = prp
                     }, objDisamb)
         = (\ obj'
-             -> Ifc { ifcname = nm 
-                    , ifcRoles = rols
-                    , ifcObj = obj'
-                    , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
-                    , ifcPos = orig
-                    , ifcPrp = prp
-                    }) <$> pObjDefDisamb2aObjDef declMap objDisamb
+             -> case obj' of
+                  ObjE o ->
+                    Ifc { ifcname = nm 
+                        , ifcRoles = rols
+                        , ifcObj = o
+                        , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
+                        , ifcPos = orig
+                        , ifcPrp = prp
+                        }
+                  ObjT _ -> fatal "Unexpected ObjT"  --Interface should not have TXT only. it should have an expression object.     
+          ) <$> pObjDefDisamb2aObjDef declMap objDisamb
 
     pRoleRelation2aRoleRelation :: DeclMap -> P_RoleRelation -> Guarded A_RoleRelation
     pRoleRelation2aRoleRelation declMap prr
@@ -1014,10 +1018,13 @@ pCtx2aCtx opts
            orig = origin pidt
            pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
-              do o <- pObjDefDisamb2aObjDef declMap ojd
-                 case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
-                          [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
-                          _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft conc (objExpression o)}
+              do ob <- pObjDefDisamb2aObjDef declMap ojd
+                 case ob of
+                   ObjE o ->
+                     case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
+                              [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
+                              _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft conc (objExpression o)}
+                   ObjT t -> fatal $ "TXT is not expected in IDENT statements. ("++show (origin t)++")"
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg o x) lst

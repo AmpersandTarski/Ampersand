@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 module Ampersand.FSpec.ToFSpec.ADL2FSpec
    ( makeFSpec
    ) where
@@ -317,14 +318,15 @@ makeFSpec opts context
 --                student theme => generate interface for each concept with relations where concept is source or target (note: step1-3 are skipped)
      interfaceGen = step4a ++ step4b
      step4a
-      = let recur es
+      = let recur :: [[Expression]] -> [ObjExp]
+            recur es
              = [ ObjExp
                      { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objExpression  = t
                      , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
-                     , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
+                     , objmsub = Just . Box (target t) Nothing . map ObjE $ recur [ pth | (_:pth)<-cl, not (null pth) ]
                      }
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
@@ -343,7 +345,7 @@ makeFSpec opts context
                                  , objExpression  = EDcI c
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
-                                 , objmsub = Just . Box c Nothing $ objattributes
+                                 , objmsub = Just . Box c Nothing . map ObjE $ objattributes
                                  }
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
@@ -369,7 +371,7 @@ makeFSpec opts context
                                  , objExpression  = EDcI ONE
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
-                                 , objmsub = Just . Box ONE Nothing $ [att]
+                                 , objmsub = Just . Box ONE Nothing $ [ObjE att]
                                  }
              , ifcControls = ifcControls ifcc
              , ifcPos      = ifcPos      ifcc

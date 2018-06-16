@@ -64,7 +64,7 @@ chpInterfacesBlocks fSpec =
       docInterfaceObjects (ifcRoles ifc) [] (ifcObj ifc)
       where interfaceFP = fpaInterface ifc
 
-    docInterfaceObjects :: [Role] -> [Int] -> ObjectDef -> Blocks
+    docInterfaceObjects :: [Role] -> [Int] -> ObjExp -> Blocks
     docInterfaceObjects roles hierarchy object =
       case hierarchy of
         [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (target iExp) ++ "."
@@ -114,7 +114,7 @@ chpInterfacesBlocks fSpec =
            InterfaceRef{} -> 
              [ plainText $ (if siIsLink si then "LINKTO " else "")++"REF "++siIfcId si ] -- TODO: handle InterfaceRef
            Box{} -> 
-             [ docInterfaceObjects roles (hierarchy ++[i]) obj | (obj,i) <- zip (siObjs si) [1..] ]
+             [ docInterfaceObjects roles (hierarchy ++[i]) obj | (obj,i) <- zip [e | ObjE e <- siObjs si] [1..] ]
 
     docCrudMatrix :: Interface -> Blocks
     docCrudMatrix ifc = mconcat

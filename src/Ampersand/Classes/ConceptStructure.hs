@@ -114,14 +114,16 @@ instance ConceptStructure Signature where
   expressionsIn _  = Set.empty
 
 instance ConceptStructure ObjectDef2 where
-  concs (ObjE obj) = (Set.singleton . target . objExpression $ obj) `Set.union` concs (objmsub obj)
+  concs (ObjE obj) = concs obj
   concs (ObjT _  ) = Set.empty
-  expressionsIn (ObjE obj)
-                   = Set.unions
+  expressionsIn (ObjE obj) = expressionsIn obj
+  expressionsIn (ObjT _  ) = Set.empty
+instance ConceptStructure ObjExp where
+  concs obj = (Set.singleton . target . objExpression $ obj) `Set.union` concs (objmsub obj)
+  expressionsIn obj = Set.unions
                      [ (expressionsIn . objExpression) obj
                      , (expressionsIn . objmsub) obj
                      ]
-  expressionsIn (ObjT _  ) = Set.empty
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
 instance ConceptStructure SubInterface where
   concs si = case si of

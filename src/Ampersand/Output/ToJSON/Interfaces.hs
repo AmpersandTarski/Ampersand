@@ -84,7 +84,7 @@ instance JSON Interface JSONInterface where
  fromAmpersand multi interface = JSONInterface
   { ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
   , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
-  , ifcJSONifcObject          = fromAmpersand multi (ifcObj interface)
+  , ifcJSONifcObject          = fromAmpersand multi (ObjE $ ifcObj interface)
   }
 
 instance JSON Cruds JSONCruds where
@@ -95,48 +95,52 @@ instance JSON Cruds JSONCruds where
   , crudJSONdelete            = crudD crud
   }
   
-instance JSON ObjectDef JSONexpr where
- fromAmpersand multi object = JSONexpr
-  { exprJSONsrcConceptId      = escapeIdentifier . name $ srcConcept
-  , exprJSONtgtConceptId      = escapeIdentifier . name $ tgtConcept
-  , exprJSONisUni             = isUni normalizedInterfaceExp
-  , exprJSONisTot             = isTot normalizedInterfaceExp
-  , exprJSONisIdent           = isIdent normalizedInterfaceExp
-  , exprJSONquery             = query
-  }
-  where
-    opts = getOpts fSpec
-    fSpec = userFSpec multi
-    query = broadQueryWithPlaceholder fSpec object{objExpression=normalizedInterfaceExp}
-    normalizedInterfaceExp = conjNF opts $ objExpression object
-    (srcConcept, tgtConcept) =
-      case getExpressionRelation normalizedInterfaceExp of
-        Just (src, _ , tgt, _) ->
-          (src, tgt)
-        Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
+instance JSON ObjectDef2 JSONexpr where
+ fromAmpersand multi obj =
+   case obj of 
+     ObjE object -> JSONexpr
+        { exprJSONsrcConceptId = escapeIdentifier . name $ srcConcept
+        , exprJSONtgtConceptId = escapeIdentifier . name $ tgtConcept
+        , exprJSONisUni        = isUni normalizedInterfaceExp
+        , exprJSONisTot        = isTot normalizedInterfaceExp
+        , exprJSONisIdent      = isIdent normalizedInterfaceExp
+        , exprJSONquery        = query
+        }
+      where
+        opts = getOpts fSpec
+        fSpec = userFSpec multi
+        query = broadQueryWithPlaceholder fSpec object{objExpression=normalizedInterfaceExp}
+        normalizedInterfaceExp = conjNF opts $ objExpression object
+        (srcConcept, tgtConcept) =
+          case getExpressionRelation normalizedInterfaceExp of
+            Just (src, _ , tgt, _) ->
+              (src, tgt)
+            Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
-instance JSON ObjectDef JSONObjectDef where
- fromAmpersand multi object' = JSONObjectDef
-  { ifcJSONid                 = escapeIdentifier . name $ object
-  , ifcJSONlabel              = name object
-  , ifcJSONviewId             = fmap name viewToUse
-  , ifcJSONNormalizationSteps = showPrf showA.cfProof.objExpression $ object 
-  , ifcJSONrelation           = fmap (showRel . fst) mEditableDecl
-  , ifcJSONrelationIsFlipped  = fmap            snd  mEditableDecl
-  , ifcJSONcrud               = fromAmpersand multi (objcrud object)
-  , ifcJSONexpr               = fromAmpersand multi object
-  , ifcJSONsubinterfaces      = fmap (fromAmpersand multi) (objmsub object)
-  }
-  where
-    opts = getOpts fSpec
-    fSpec = userFSpec multi
-    viewToUse = case objmView object of
-                 Just nm -> Just $ lookupView fSpec nm
-                 Nothing -> getDefaultViewForConcept fSpec tgtConcept
-    normalizedInterfaceExp = conjNF opts $ objExpression object
-    (tgtConcept, mEditableDecl) =
-      case getExpressionRelation normalizedInterfaceExp of
-        Just (_ , decl, tgt, isFlipped') ->
-          (tgt, Just (decl, isFlipped'))
-        Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
-    object = substituteReferenceObjectDef fSpec object'
+instance JSON ObjectDef2 JSONObjectDef where
+ fromAmpersand multi obj =
+   case obj of 
+     ObjE object' -> JSONObjectDef
+      { ifcJSONid                 = escapeIdentifier . name $ object
+      , ifcJSONlabel              = name object
+      , ifcJSONviewId             = fmap name viewToUse
+      , ifcJSONNormalizationSteps = showPrf showA.cfProof.objExpression $ object 
+      , ifcJSONrelation           = fmap (showRel . fst) mEditableDecl
+      , ifcJSONrelationIsFlipped  = fmap            snd  mEditableDecl
+      , ifcJSONcrud               = fromAmpersand multi (objcrud object)
+      , ifcJSONexpr               = fromAmpersand multi (ObjE object)
+      , ifcJSONsubinterfaces      = fmap (fromAmpersand multi) (objmsub object)
+      }
+      where
+        opts = getOpts fSpec
+        fSpec = userFSpec multi
+        viewToUse = case objmView object of
+                    Just nm -> Just $ lookupView fSpec nm
+                    Nothing -> getDefaultViewForConcept fSpec tgtConcept
+        normalizedInterfaceExp = conjNF opts $ objExpression object
+        (tgtConcept, mEditableDecl) =
+          case getExpressionRelation normalizedInterfaceExp of
+            Just (_ , decl, tgt, isFlipped') ->
+              (tgt, Just (decl, isFlipped'))
+            Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
+        object = substituteReferenceObjectDef fSpec object'
