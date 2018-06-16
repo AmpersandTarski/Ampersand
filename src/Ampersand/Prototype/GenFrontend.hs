@@ -300,7 +300,7 @@ genViewInterface fSpec interf =
     }
    where opts = getOpts fSpec
 -- Helper data structure to pass attribute values to HStringTemplate
-data SubObjectAttr = SubObjAttr { subObjName :: String
+data SubObjectAttr2 = SubObjAttr { subObjName :: String
                                 , subObjLabel :: String
                                 , subObjContents :: String 
                                 , subObjExprIsUni :: Bool
@@ -354,29 +354,34 @@ genViewObject fSpec depth obj@FEObjE{} =
                                . setAttribute "isRoot"     (depth == 0)
                                . setAttribute "subObjects" subObjAttrs
             }
-  where indentation :: [String] -> [String]
-        indentation = indent (if depth == 0 then 4 else 16) 
-        genView_SubObject subObj = 
-         do { lns <- genViewObject fSpec (depth + 1) subObj
-            ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
-                               , subObjLabel = objName subObj -- no escaping for labels in templates needed
-                               , subObjContents = intercalate "\n" lns
-                               , subObjExprIsUni = exprIsUni subObj
-                               } 
-            }
-        getTemplateForObject :: IO FilePath
-        getTemplateForObject 
-           | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
-                       = return $ "View-PROPERTY"++".html"
-           | otherwise = getTemplateForConcept (objTarget obj)
-        getTemplateForConcept :: A_Concept -> IO FilePath
-        getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
-                                       return $ if exists
-                                                then cptfn
-                                                else "Atomic-"++show ttp++".html" 
-           where ttp = cptTType fSpec cpt
-                 cptfn = "Concept-"++name cpt++".html" 
-genViewObject _     _     FEObjT{} = fatal "genViewObject is not defined for TXT-like objects."
+  where 
+    indentation :: [String] -> [String]
+    indentation = indent (if depth == 0 then 4 else 16) 
+    genView_SubObject :: FEObject2 -> IO SubObjectAttr2
+    genView_SubObject subObj =
+      case subObj of
+        FEObjE{} -> 
+          do lns <- genViewObject fSpec (depth + 1) subObj
+             return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
+                              , subObjLabel = objName subObj -- no escaping for labels in templates needed
+                              , subObjContents = intercalate "\n" lns
+                              , subObjExprIsUni = exprIsUni subObj
+                              } 
+        FEObjT{} -> fatal "No view for TXT-like objects is defined."    
+    getTemplateForObject :: IO FilePath
+    getTemplateForObject 
+       | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
+                   = return $ "View-PROPERTY"++".html"
+       | otherwise = getTemplateForConcept (objTarget obj)
+    getTemplateForConcept :: A_Concept -> IO FilePath
+    getTemplateForConcept cpt = do 
+         exists <- doesTemplateExist fSpec cptfn
+         return $ if exists
+                  then cptfn
+                  else "Atomic-"++show ttp++".html" 
+       where ttp = cptTType fSpec cpt
+             cptfn = "Concept-"++name cpt++".html" 
+genViewObject _     _     FEObjT{} = pure []
 
 ------ Generate controller JavaScript code
 genControllerInterfaces :: FSpec -> [FEInterface] -> IO ()
