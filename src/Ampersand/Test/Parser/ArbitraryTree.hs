@@ -278,8 +278,12 @@ instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
 
 instance Arbitrary P_IdentDef where
-    arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary <*> listOf1 arbitrary
-
+    arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
+                     <*> listOf1 (arbitrary `suchThat` noTXT)
+      where noTXT :: P_IdentSegmnt TermPrim -> Bool
+            noTXT = not . isPTxt . ks_obj
+            isPTxt P_Txt{} = True
+            isPTxt _       = False
 instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized objTermPrim
 
