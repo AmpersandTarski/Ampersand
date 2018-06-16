@@ -75,8 +75,9 @@ instance ConceptStructure A_Context where
                       ]
 
 instance ConceptStructure IdentityDef where
-  concs       identity   = Set.singleton (idCpt identity) `Set.union` concs [objDef | IdentityExp objDef <- identityAts identity]
-  expressionsIn identity = expressionsIn             [objDef | IdentityExp objDef <- identityAts identity]
+  concs         identity = Set.singleton (idCpt identity) `Set.union` 
+                           concs         [ObjE objDef | IdentityExp objDef <- identityAts identity]
+  expressionsIn identity = expressionsIn [ObjE objDef | IdentityExp objDef <- identityAts identity]
 
 instance ConceptStructure ViewDef where
   concs         vd = Set.singleton (vdcpt vd) `Set.union` concs (vdats vd)
@@ -112,13 +113,15 @@ instance ConceptStructure Signature where
   concs (Sign s t) = Set.singleton s `Set.union` Set.singleton t
   expressionsIn _  = Set.empty
 
-instance ConceptStructure ObjectDef where
-  concs     obj = (Set.singleton . target . objExpression $ obj) `Set.union` concs (objmsub obj)
-  expressionsIn obj = Set.unions
+instance ConceptStructure ObjectDef2 where
+  concs (ObjE obj) = (Set.singleton . target . objExpression $ obj) `Set.union` concs (objmsub obj)
+  concs (ObjT _  ) = Set.empty
+  expressionsIn (ObjE obj)
+                   = Set.unions
                      [ (expressionsIn . objExpression) obj
                      , (expressionsIn . objmsub) obj
                      ]
-
+  expressionsIn (ObjT _  ) = Set.empty
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
 instance ConceptStructure SubInterface where
   concs si = case si of
@@ -144,8 +147,8 @@ instance ConceptStructure Pattern where
                      ]
 
 instance ConceptStructure Interface where
-  concs         = concs         . ifcObj
-  expressionsIn = expressionsIn . ifcObj
+  concs         = concs         . ObjE . ifcObj
+  expressionsIn = expressionsIn . ObjE . ifcObj
 
 instance ConceptStructure Relation where
   concs         d = concs (sign d)

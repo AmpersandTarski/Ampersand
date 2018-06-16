@@ -85,10 +85,10 @@ transformers fSpec = map toTransformer [
         , Just x <- [arg expr]
         ]
       )
-     ,("attIn"                 , "Attribute"             , "ObjectDef"
+     ,("attIn"                 , "Attribute"             , "ObjExp"
       , []  --TODO
       )
-     ,("attObj"                , "Attribute"             , "ObjectDef"
+     ,("attObj"                , "Attribute"             , "ObjExp"
       , []  --TODO
       )
      ,("bind"                  , "BindedRelation"        , "Relation"
@@ -282,7 +282,7 @@ transformers fSpec = map toTransformer [
      ,("ifcInputs"             , "Interface"             , "Relation"
       , []  --TODO
       )
-     ,("ifcObj"                , "Interface"             , "ObjectDef"
+     ,("ifcObj"                , "Interface"             , "ObjExp"
       , [(dirtyId ifc, dirtyId (ifcObj ifc)) 
         | ifc::Interface <- instances fSpec
         ]
@@ -310,7 +310,7 @@ transformers fSpec = map toTransformer [
      ,("inQ"                   , "Quad"                  , "Act"     
       , []  --TODO
       )
-     ,("inst"                  , "Object"                , "ObjectDef"
+     ,("inst"                  , "Object"                , "ObjExp"
       , []  --TODO
       )
      ,("inst"                  , "Transaction"           , "Interface"
@@ -411,9 +411,9 @@ transformers fSpec = map toTransformer [
         | ifc::Interface <- instances fSpec
         ]
       )
-     ,("name"                 , "ObjectDef"             , "ObjectName"  
+     ,("name"                 , "ObjExp"             , "ObjectName"  
       , [(dirtyId obj, (PopAlphaNumeric . name) obj)
-        | obj::ObjectDef <- instances fSpec
+        | obj::ObjExp <- instances fSpec
         ]
       )
      ,("name"                  , "Pattern"               , "PatternName"
@@ -436,18 +436,18 @@ transformers fSpec = map toTransformer [
         | rul::Rule <- instances fSpec
         ]
       )
-     ,("objExpression"         , "ObjectDef"             , "Expression"
+     ,("objExpression"         , "ObjExp"             , "Expression"
       , if atlasWithoutExpressions opts then [] else
         [(dirtyId obj, dirtyId (objExpression obj))
-        | obj::ObjectDef <- instances fSpec
+        | obj::ObjExp <- instances fSpec
         ]
       )
-     ,("objmView"              , "ObjectDef"             , "View"    
+     ,("objmView"              , "ObjExp"             , "View"    
       , []  --TODO
       )
-     ,("objpos"                , "ObjectDef"             , "Origin"  
-      , [(dirtyId obj, PopAlphaNumeric . show . objpos $ obj) 
-        | obj::ObjectDef <- instances fSpec
+     ,("objpos"                , "ObjExp"             , "Origin"  
+      , [(dirtyId obj, PopAlphaNumeric . show . origin $ obj) 
+        | obj::ObjExp <- instances fSpec
         ]
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
@@ -745,18 +745,14 @@ instance Instances IdentityDef where
   instances fSpec = ctxks (originalContext fSpec)
 instance Instances Interface where
   instances fSpec = ctxifcs (originalContext fSpec)
-instance Instances ObjectDef where
+instance Instances ObjExp where
   instances fSpec = 
        nub
      . concatMap (objects . ifcObj)
      . instances $ fSpec
     where
-      objects :: ObjectDef -> [ObjectDef]
-      objects obj = obj :
-          case objmsub obj of
-              Nothing       -> []
-              Just InterfaceRef{} -> []
-              Just b@Box{}  -> concatMap objects . siObjs $ b  
+      objects :: ObjExp -> [ObjExp]
+      objects obj = obj : fields obj
 instance Instances Pattern where
   instances fSpec = ctxpats (originalContext fSpec)  
 instance Instances Population where

@@ -1,6 +1,9 @@
-{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
@@ -20,7 +23,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Interface(..)
  , getInterfaceByName
  , SubInterface(..)
- , ObjectDef(..)
+ , ObjectDef2(..),ObjExp(..),ObjTxt(..),isObjExp
  , Object(..)
  , Cruds(..)
  , Default(..)
@@ -259,7 +262,7 @@ instance Traced IdentityDef where
 instance Unique IdentityDef where
   showUnique = idLbl
 
-data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refactor to a list of terms
+data IdentitySegment = IdentityExp ObjExp deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
 data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                   , vdlbl :: String          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
@@ -326,7 +329,7 @@ instance Hashable A_Gen where
 
 data Interface = Ifc { ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
-                     , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
+                     , ifcObj ::      ObjExp     -- NOTE: this top-level ObjExp is contains the interface itself (ie. name and expression)
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
                      , ifcPrp ::      String        -- The purpose of the interface
@@ -349,34 +352,51 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
 
 
 class Object a where
- concept ::   a -> A_Concept        -- the type of the object
- fields ::    a -> [ObjectDef]   -- the objects defined within the object
+ concept ::   a -> A_Concept      -- the type of the object
+ fields ::    a -> [ObjExp]       -- the objects defined within the object
  contextOf :: a -> Expression     -- the context expression
 
-instance Object ObjectDef where
+instance Object ObjExp where
  concept obj = target (objExpression obj)
  fields  obj = case objmsub obj of
                  Nothing       -> []
                  Just InterfaceRef{} -> []
-                 Just b@Box{}    -> siObjs b
+                 Just b@Box{}    -> map objE . filter isObjExp $ siObjs b
  contextOf   = objExpression
 
-data ObjectDef = 
+data ObjectDef2 = 
+        ObjE {objE :: ObjExp}
+      | ObjT {objT :: ObjTxt}
+      deriving (Eq, Show)
+instance Traced ObjectDef2 where
+  origin o 
+    = case o of
+        ObjE{} -> origin . objE $ o
+        ObjT{} -> origin . objT $ o
+isObjExp :: ObjectDef2 -> Bool
+isObjExp ObjE{} = True
+isObjExp ObjT{} = False
+data ObjExp = 
     ObjExp { objnm    :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , objpos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , objExpression :: Expression -- ^ this expression describes the instances of this object, related to their context.
            , objcrud  :: Cruds          -- ^ CRUD as defined by the user 
            , objmView :: Maybe String   -- ^ The view that should be used for this object
            , objmsub  :: Maybe SubInterface -- ^ the fields, which are object definitions themselves.
-           }
-  | ObjTxt { objpos :: Origin
-           , objtxt :: String
            } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
-instance Named ObjectDef where
+data ObjTxt =
+    ObjTxt { objpos :: Origin
+           , objtxt :: String
+           } deriving (Eq, Show)
+instance Named ObjExp where
   name   = objnm
-instance Traced ObjectDef where
+instance Traced ObjExp where
   origin = objpos
-instance Unique ObjectDef where
+instance Unique ObjExp where
+  showUnique = showUnique . origin
+instance Traced ObjTxt where
+  origin = objpos
+instance Unique ObjectDef2 where
   showUnique = showUnique . origin
 data Cruds = Cruds { crudOrig :: Origin
                    , crudC :: Bool
@@ -386,7 +406,7 @@ data Cruds = Cruds { crudOrig :: Origin
                    } deriving (Eq, Show)
 data SubInterface = Box { siConcept :: A_Concept
                         , siMClass  :: Maybe String
-                        , siObjs    :: [ObjectDef] 
+                        , siObjs    :: [ObjectDef2] 
                         }
                   | InterfaceRef 
                         { siIsLink :: Bool

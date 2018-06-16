@@ -298,13 +298,10 @@ instance ShowHS Meta where
 
 instance ShowHSName PlugInfo where
  showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
- showHSName (ExternalPlug _) = fatal "a PlugInfo is anonymous with respect to showHS opts"
-
+ 
 instance ShowHS PlugInfo where
  showHS _ _ (InternalPlug p)
   = "InternalPlug "++showHSName p
- showHS opts ind (ExternalPlug o)
-  = "ExternalPlug "++showHS opts (ind++"    ") o
 
 instance ShowHS A_RoleRelation where
  showHS opts ind rr
@@ -482,20 +479,27 @@ instance ShowHS Population where
           ++indent++"                    ]"
           ++indent++"         }"
 
-instance ShowHSName ObjectDef where
+instance ShowHSName ObjExp where
  showHSName obj = haskellIdentifier ("oDef_"++name obj)
 
-instance ShowHS ObjectDef where
- showHS opts indent r
+instance ShowHS ObjExp where
+ showHS opts indent x
   = intercalate indent
-        ["Obj{ objnm    = " ++ show(objnm r)
-        ,"   , objpos   = " ++ showHS opts "" (objpos r)
-        ,"   , objExpression   = " ++ showHS opts (indent++"                ") (objExpression r)
-        ,"   , objcrud  = " ++ showHS opts (indent++"                ") (objcrud r)
-        ,"   , objmView = " ++ show(objmView r)
-        ,"   , objmsub  = " ++ showHS opts (indent++"                ") (objmsub r)
-        ]++indent++"   }"
-
+        ["ObjExp { objnm    = " ++ show(objnm x)
+        ,"       , objpos   = " ++ showHS opts "" (origin x)
+        ,"       , objExpression   = " ++ showHS opts (indent++"                ") (objExpression x)
+        ,"       , objcrud  = " ++ showHS opts (indent++"                ") (objcrud x)
+        ,"       , objmView = " ++ show(objmView x)
+        ,"       , objmsub  = " ++ showHS opts (indent++"                ") (objmsub x)
+        ,"       }"
+        ]
+instance ShowHS ObjTxt where
+ showHS opts indent x
+  = intercalate indent
+        ["ObjTxt { objpos   = " ++ showHS opts "" (origin x)
+        ,"       , objtxt   = " ++ show(objtxt x)
+        ,"       }"
+        ]
 instance ShowHS Cruds where
  showHS opts indent x 
   = intercalate indent
@@ -519,7 +523,12 @@ instance ShowHS Interface where
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
         , "    , ifcPrp    = " ++ show(ifcPrp ifc)
         ]++indent++"    }"
-
+instance ShowHS ObjectDef2 where
+ showHS opts indent obj =
+   case obj of
+     (ObjE e) -> "ObjE ("++showHS opts indent e++")"
+     (ObjT t) -> "ObjT ("++showHS opts indent t++")"
+ 
 instance ShowHS SubInterface where
  showHS _     _     (InterfaceRef isLink n) = "InterfaceRef "++show isLink ++" "++show n
  showHS opts indent (Box x cl objs) = "Box ("++showHS opts indent x++") ("++showHS opts indent cl++")"++indent++"     ("++showHS opts (indent++"     ") objs++")"

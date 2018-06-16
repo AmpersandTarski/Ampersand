@@ -24,7 +24,6 @@ plugs2Sheets :: FSpec -> [(T.Text, Worksheet)]
 plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
   where
     plug2sheet :: PlugInfo -> Maybe (T.Text, Worksheet)
-    plug2sheet ExternalPlug{} = Nothing  -- Not supported at present
     plug2sheet (InternalPlug plug) = fmap (\x -> (T.pack (name plug),x)) sheet
       where 
        sheet :: Maybe Worksheet

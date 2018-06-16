@@ -124,14 +124,14 @@ checkInterfaceCycles ctx =
                         . getCycles $ refsPerInterface
         refsPerInterface :: [(String, [String])]
         refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
-        getDeepIfcRefs :: ObjectDef -> [String]
+        getDeepIfcRefs :: ObjExp -> [String]
         getDeepIfcRefs obj = case objmsub obj of
                                Nothing -> []
                                Just si -> case si of 
                                            InterfaceRef{} -> if siIsLink si
                                                              then []
                                                              else [siIfcId si]
-                                           Box{}          -> concatMap getDeepIfcRefs (siObjs si)
+                                           Box{}          -> concatMap getDeepIfcRefs [x | ObjE x <- siObjs si]
         lookupInterface :: String -> Interface
         lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                [ifc] -> ifc
@@ -605,7 +605,7 @@ pCtx2aCtx opts
       where typ = representationOf contextInfo cpt
                
 
-    pObjDefDisamb2aObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded ObjectDef
+    pObjDefDisamb2aObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded ObjectDef2
     pObjDefDisamb2aObjDef declMap x = fmap fst (typecheckObjDef declMap x)
 
     pViewDef2aViewDef :: DeclMap -> P_ViewDef -> Guarded ViewDef
@@ -657,7 +657,7 @@ pCtx2aCtx opts
     isaC :: A_Concept -> A_Concept -> Bool
     isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
     
-    typecheckObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded (ObjectDef, Bool)
+    typecheckObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded (ObjectDef2, Bool)
     typecheckObjDef declMap objDef
       = case objDef of
           P_Obj { obj_nm = nm
@@ -700,7 +700,8 @@ pCtx2aCtx opts
                                         mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
                   Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
               obj crud (e,sr) s
-                = ( ObjExp { objnm = nm
+                = ( ObjE
+                    ObjExp { objnm = nm
                            , objpos = orig
                            , objExpression = e
                            , objcrud = crud
@@ -709,7 +710,8 @@ pCtx2aCtx opts
                            }, sr)
           P_Txt { pos = orig
                 , obj_txt = str
-                } -> pure $ (ObjTxt { objpos = orig
+                } -> pure $ (ObjT
+                             ObjTxt { objpos = orig
                                     , objtxt = str
                                     },True)
 
@@ -771,16 +773,20 @@ pCtx2aCtx opts
                                              , siObjs    = lst
                                              }
                                 )
-                       ) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef declMap) l 
+                       ) <$> traverse (join . fmap fn . typecheckObjDef declMap) l 
                          <*  uniqueBy obj_nm (filter isPObj l)
+                  where fn :: (ObjectDef2, Bool) -> (Guarded ObjectDef2)
+                        fn (ObjE x,b) = fmap ObjE $ matchWith  (x,b)
+                        fn (ObjT x,_) = pure $ ObjT x  
      where isPObj obj =
              case obj of
                P_Obj{} -> True
                P_Txt{} -> False
-           matchWith _ (ojd,exprBound)
+           matchWith :: (ObjExp, Bool) -> (Guarded ObjExp)
+           matchWith (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
-                    [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef ojd)]
+                    [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef $ ObjE ojd)]
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
     typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression

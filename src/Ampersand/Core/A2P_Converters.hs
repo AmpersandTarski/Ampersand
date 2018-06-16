@@ -134,7 +134,7 @@ aInterface2pInterface :: Interface -> P_Interface
 aInterface2pInterface ifc =
  P_Ifc { ifc_Name   = name ifc
        , ifc_Roles  = ifcRoles ifc
-       , ifc_Obj    = aObjectDef2pObjectDef (ifcObj ifc)
+       , ifc_Obj    = aObjectDef2pObjectDef (ObjE (ifcObj ifc))
        , pos        = origin ifc
        , ifc_Prp    = ifcPrp ifc
        }
@@ -180,16 +180,21 @@ aPopulation2pPopulation p =
                           }
 
 
-aObjectDef2pObjectDef :: ObjectDef -> P_ObjectDef
-aObjectDef2pObjectDef oDef =
- P_Obj { obj_nm    = objnm oDef
-       , pos   = objpos oDef
-       , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
-       , obj_crud  = aCruds2pCruds (objcrud oDef)
-       , obj_mView = objmView oDef
-       , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
-       }
-
+aObjectDef2pObjectDef :: ObjectDef2 -> P_ObjectDef
+aObjectDef2pObjectDef x =
+  case x of
+    ObjE oDef ->
+      P_Obj { obj_nm    = objnm oDef
+            , pos       = origin oDef
+            , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
+            , obj_crud  = aCruds2pCruds (objcrud oDef)
+            , obj_mView = objmView oDef
+            , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
+            }
+    ObjT oDef ->
+      P_Txt { pos       = origin oDef
+            , obj_txt   = objtxt oDef
+            }
 aExpression2pTermPrim :: Expression -> Term TermPrim
 aExpression2pTermPrim expr = 
   case expr of
@@ -264,7 +269,7 @@ aPairViewSegment2pPairViewSegment segment =
 
 aIdentitySegment2pIdentSegmnt :: IdentitySegment -> P_IdentSegmnt TermPrim
 aIdentitySegment2pIdentSegmnt (IdentityExp oDef) =
- P_IdentExp  { ks_obj = aObjectDef2pObjectDef oDef
+  P_IdentExp { ks_obj = aObjectDef2pObjectDef (ObjE oDef)
              }
 
 aExplObj2PRef2Obj :: ExplObj -> PRef2Obj

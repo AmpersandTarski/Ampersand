@@ -21,7 +21,7 @@ module Ampersand.FSpec.FSpec
           , Typology(..)
           , Interface(..)
           , Object(..)
-          , ObjectDef(..)
+          , ObjectDef2(..)
           , SubInterface(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)
@@ -220,19 +220,14 @@ dnf2expr dnf
     (as,cs) -> notCpl (foldr1 (./\.) as) .\/. foldr1 (.\/.) cs
 
 data PlugInfo = InternalPlug PlugSQL
-              | ExternalPlug ObjectDef
                 deriving (Show, Eq,Typeable)
 instance Named PlugInfo where
   name (InternalPlug psql) = name psql
-  name (ExternalPlug obj)  = name obj
 instance Unique PlugInfo where
   showUnique (InternalPlug psql) = "SQLTable "++name psql
-  showUnique (ExternalPlug obj ) = "Object "++name obj++show (origin obj)
 instance ConceptStructure PlugInfo where
   concs   (InternalPlug psql) = concs   psql
-  concs   (ExternalPlug obj)  = concs   obj
   expressionsIn (InternalPlug psql) = expressionsIn psql
-  expressionsIn (ExternalPlug obj)  = expressionsIn obj
 instance ConceptStructure PlugSQL where
   concs     p = concs   (plugAttributes p)
   expressionsIn   p = expressionsIn (plugAttributes p)
@@ -353,9 +348,9 @@ showSQL tt =
      TypeOfOne        -> fatal "ONE is not represented in SQL" 
 
 -- In case of reference to an INTERFACE, not used as a LINKTO, the
--- expression and cruds are replaced. This is introduce with the
+-- expression and cruds are replaced. This is introduced with the
 -- refactoring of the frontend interfaces in oct/nov 2016. 
-substituteReferenceObjectDef :: FSpec -> ObjectDef -> ObjectDef
+substituteReferenceObjectDef :: FSpec -> ObjExp -> ObjExp
 substituteReferenceObjectDef fSpec originalObjectDef =
   case substitution of
     Nothing           -> originalObjectDef

@@ -248,14 +248,11 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
       isTable (InternalPlug BinSQL{}) = True
-      isTable ExternalPlug{} = False
       detailsOfplug :: PlugInfo -> Blocks
       detailsOfplug p =
-           header 3 (   case (fsLang fSpec, p) of
-                          (Dutch  , InternalPlug{}) ->  "Tabel: "
-                          (Dutch  , ExternalPlug{}) ->  "Dataservice: "
-                          (English, InternalPlug{}) ->  "Table: "
-                          (English, ExternalPlug{}) ->  "Data service: "
+           header 3 (   case (fsLang fSpec) of
+                          Dutch   ->  "Tabel: "
+                          English ->  "Table: "
                      <> text (name p)
                     )
         <> case p of
@@ -280,10 +277,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                        )
                      <> showAttributes (plugAttributes bin)
 
-             ExternalPlug _
-               -> case fsLang fSpec of
-                    Dutch   -> para "De details van deze service zijn in dit document (nog) niet verder uitgewerkt."
-                    English -> para "The details of this dataservice are not available in this document."
       showAttributes :: [SqlAttribute] -> Blocks
       showAttributes atts = bulletList (map showAttribute atts)
         where
