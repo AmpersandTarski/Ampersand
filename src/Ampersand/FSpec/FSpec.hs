@@ -21,7 +21,7 @@ module Ampersand.FSpec.FSpec
           , Typology(..)
           , Interface(..)
           , Object(..)
-          , ObjectDef2(..)
+          , ObjectDef(..)
           , SubInterface(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)

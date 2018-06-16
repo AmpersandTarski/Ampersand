@@ -23,7 +23,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Interface(..)
  , getInterfaceByName
  , SubInterface(..)
- , ObjectDef2(..),ObjExp(..),ObjTxt(..),isObjExp
+ , ObjectDef(..),ObjExp(..),ObjTxt(..),isObjExp
  , Object(..)
  , Cruds(..)
  , Default(..)
@@ -364,16 +364,16 @@ instance Object ObjExp where
                  Just b@Box{}    -> map objE . filter isObjExp $ siObjs b
  contextOf   = objExpression
 
-data ObjectDef2 = 
+data ObjectDef = 
         ObjE {objE :: ObjExp}
       | ObjT {objT :: ObjTxt}
       deriving (Eq, Show)
-instance Traced ObjectDef2 where
+instance Traced ObjectDef where
   origin o 
     = case o of
         ObjE{} -> origin . objE $ o
         ObjT{} -> origin . objT $ o
-isObjExp :: ObjectDef2 -> Bool
+isObjExp :: ObjectDef -> Bool
 isObjExp ObjE{} = True
 isObjExp ObjT{} = False
 data ObjExp = 
@@ -396,7 +396,7 @@ instance Unique ObjExp where
   showUnique = showUnique . origin
 instance Traced ObjTxt where
   origin = objpos
-instance Unique ObjectDef2 where
+instance Unique ObjectDef where
   showUnique = showUnique . origin
 data Cruds = Cruds { crudOrig :: Origin
                    , crudC :: Bool
@@ -406,7 +406,7 @@ data Cruds = Cruds { crudOrig :: Origin
                    } deriving (Eq, Show)
 data SubInterface = Box { siConcept :: A_Concept
                         , siMClass  :: Maybe String
-                        , siObjs    :: [ObjectDef2] 
+                        , siObjs    :: [ObjectDef] 
                         }
                   | InterfaceRef 
                         { siIsLink :: Bool

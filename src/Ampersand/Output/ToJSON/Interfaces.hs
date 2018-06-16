@@ -95,7 +95,7 @@ instance JSON Cruds JSONCruds where
   , crudJSONdelete            = crudD crud
   }
   
-instance JSON ObjectDef2 JSONexpr where
+instance JSON ObjectDef JSONexpr where
  fromAmpersand multi obj =
    case obj of 
      ObjE object -> JSONexpr
@@ -117,7 +117,7 @@ instance JSON ObjectDef2 JSONexpr where
               (src, tgt)
             Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
-instance JSON ObjectDef2 JSONObjectDef where
+instance JSON ObjectDef JSONObjectDef where
  fromAmpersand multi obj =
    case obj of 
      ObjE object' -> JSONObjectDef

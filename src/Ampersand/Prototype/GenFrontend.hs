@@ -176,7 +176,7 @@ buildInterface fSpec allIfcs ifc =
     --       (name comes from interface, but is equal to object name)
     } 
   where    
-    buildObject :: ObjectDef2 -> IO FEObject2
+    buildObject :: ObjectDef -> IO FEObject2
     buildObject (ObjE object') =
      do { let object = substituteReferenceObjectDef fSpec object'
         ; let iExp = conjNF (getOpts fSpec) $ objExpression object

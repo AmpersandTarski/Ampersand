@@ -523,7 +523,7 @@ instance ShowHS Interface where
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
         , "    , ifcPrp    = " ++ show(ifcPrp ifc)
         ]++indent++"    }"
-instance ShowHS ObjectDef2 where
+instance ShowHS ObjectDef where
  showHS opts indent obj =
    case obj of
      (ObjE e) -> "ObjE ("++showHS opts indent e++")"

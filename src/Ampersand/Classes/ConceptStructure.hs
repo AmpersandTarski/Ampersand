@@ -113,7 +113,7 @@ instance ConceptStructure Signature where
   concs (Sign s t) = Set.singleton s `Set.union` Set.singleton t
   expressionsIn _  = Set.empty
 
-instance ConceptStructure ObjectDef2 where
+instance ConceptStructure ObjectDef where
   concs (ObjE obj) = concs obj
   concs (ObjT _  ) = Set.empty
   expressionsIn (ObjE obj) = expressionsIn obj

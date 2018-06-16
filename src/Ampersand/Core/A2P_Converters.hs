@@ -180,7 +180,7 @@ aPopulation2pPopulation p =
                           }
 
 
-aObjectDef2pObjectDef :: ObjectDef2 -> P_ObjectDef
+aObjectDef2pObjectDef :: ObjectDef -> P_ObjectDef
 aObjectDef2pObjectDef x =
   case x of
     ObjE oDef ->

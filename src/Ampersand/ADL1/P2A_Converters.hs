@@ -605,7 +605,7 @@ pCtx2aCtx opts
       where typ = representationOf contextInfo cpt
                
 
-    pObjDefDisamb2aObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded ObjectDef2
+    pObjDefDisamb2aObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded ObjectDef
     pObjDefDisamb2aObjDef declMap x = fmap fst (typecheckObjDef declMap x)
 
     pViewDef2aViewDef :: DeclMap -> P_ViewDef -> Guarded ViewDef
@@ -657,7 +657,7 @@ pCtx2aCtx opts
     isaC :: A_Concept -> A_Concept -> Bool
     isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
     
-    typecheckObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded (ObjectDef2, Bool)
+    typecheckObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded (ObjectDef, Bool)
     typecheckObjDef declMap objDef
       = case objDef of
           P_Obj { obj_nm = nm
@@ -775,7 +775,7 @@ pCtx2aCtx opts
                                 )
                        ) <$> traverse (join . fmap fn . typecheckObjDef declMap) l 
                          <*  uniqueBy obj_nm (filter isPObj l)
-                  where fn :: (ObjectDef2, Bool) -> (Guarded ObjectDef2)
+                  where fn :: (ObjectDef, Bool) -> (Guarded ObjectDef)
                         fn (ObjE e,p) = fmap ObjE $ matchWith  (e,p)
                         fn (ObjT t,_) = pure $ ObjT t
      where isPObj obj =
