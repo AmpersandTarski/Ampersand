@@ -8,6 +8,7 @@
 namespace Ampersand\Misc;
 
 use Psr\Log\LoggerInterface;
+use Exception;
 
 /**
  *
@@ -111,5 +112,37 @@ class Generics
     public function getFolder(): string
     {
         return $this->folder;
+    }
+
+    protected function loadFile(string $filename)
+    {
+        if (!array_key_exists($filename, $this->modelFiles)) {
+            throw new Exception("Filename '{$filename}' is not a valid file to load here", 500);
+        }
+
+        return file_get_contents($this->modelFiles[$filename]);
+    }
+
+    protected function getFile(string $filename)
+    {
+        static $loadedFiles = [];
+
+        if (!array_key_exists($filename, $loadedFiles)) {
+            $loadedFiles[$filename] = $this->loadFile($filename);
+        }
+
+        return $loadedFiles[$filename];
+    }
+
+    public function getSetting(string $setting)
+    {
+        $fileContent = $this->getFile('settings.json');
+        $settings = json_decode($fileContent, false);
+        
+        if (!property_exists($settings, $setting)) {
+            throw new Exception("Undefined setting '{$setting}' in settings.json", 500);
+        }
+
+        return $settings->$setting;
     }
 }
