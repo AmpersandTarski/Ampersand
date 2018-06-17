@@ -12,6 +12,7 @@ data Settings = Settings
   , sngJSONcontextName :: String
   , sngJSONmysqlSettings :: MySQLSettings
   , sngJSONenvironment :: String
+  , sngJSONmodelHash :: String
   } deriving (Generic, Show)
 instance ToJSON Settings where
   toJSON = amp2Jason
@@ -21,6 +22,7 @@ instance JSON MultiFSpecs Settings where
   , sngJSONcontextName   = Text.unpack (fsName fSpec)
   , sngJSONmysqlSettings = fromAmpersand multi multi
   , sngJSONenvironment   = show . environment . getOpts $ fSpec
+  , sngJSONmodelHash = show . hash $ fSpec
   } 
    where fSpec = userFSpec multi
 
@@ -29,7 +31,6 @@ data MySQLSettings = MySQLSettings
   , msqlJSONdbName :: String
   , msqlJSONdbUser :: String
   , msqlJSONdbPass :: String
-  , msqlJSONdbHash :: String
   } deriving (Generic, Show)
 instance ToJSON MySQLSettings where
   toJSON = amp2Jason
@@ -39,7 +40,6 @@ instance JSON MultiFSpecs MySQLSettings where
   , msqlJSONdbName = dbName   opts
   , msqlJSONdbUser = sqlLogin opts
   , msqlJSONdbPass = sqlPwd   opts
-  , msqlJSONdbHash = show . hash $ fSpec
   }
    where opts = getOpts fSpec
          fSpec = userFSpec multi
