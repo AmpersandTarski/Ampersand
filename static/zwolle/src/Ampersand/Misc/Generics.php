@@ -58,8 +58,21 @@ class Generics
         $this->logger = $logger;
 
         $this->checksumFile = "{$this->folder}/checksums.txt";
-        $this->modelFiles = glob("{$this->folder}/*.json");
-
+        
+        // Ampersand model files
+        $this->modelFiles = [
+            'concepts' => $this->folder . '/concepts.json',
+            'conjuncts' => $this->folder . '/conjuncts.json',
+            'interfaces' => $this->folder . '/interfaces.json',
+            'populations' => $this->folder . '/populations.json',
+            'relations' => $this->folder . '/relations.json',
+            'roles' => $this->folder . '/roles.json',
+            'rules' => $this->folder . '/rules.json',
+            'settings' => $this->folder . '/settings.json',
+            'views' => $this->folder . '/views.json'
+        ];
+        
+        // Write checksum file if not yet exists
         if (!file_exists($this->checksumFile)) {
             $this->writeChecksumFile();
         }
@@ -117,7 +130,7 @@ class Generics
     protected function loadFile(string $filename)
     {
         if (!array_key_exists($filename, $this->modelFiles)) {
-            throw new Exception("Filename '{$filename}' is not a valid file to load here", 500);
+            throw new Exception("File '{$filename}' is not part of the specified Ampersand model files", 500);
         }
 
         return file_get_contents($this->modelFiles[$filename]);
@@ -136,11 +149,11 @@ class Generics
 
     public function getSetting(string $setting)
     {
-        $fileContent = $this->getFile('settings.json');
+        $fileContent = $this->getFile('settings');
         $settings = json_decode($fileContent, false);
         
         if (!property_exists($settings, $setting)) {
-            throw new Exception("Undefined setting '{$setting}' in settings.json", 500);
+            throw new Exception("Undefined setting '{$setting}'", 500);
         }
 
         return $settings->$setting;
