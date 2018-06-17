@@ -37,14 +37,14 @@ class Generics
      *
      * @var string
      */
-    protected $checksumPath;
+    protected $checksumFile;
 
     /**
      * List of files that contain the generated Ampersand model
      *
      * @var array
      */
-    protected $filesToCompare = [];
+    protected $modelFiles = [];
 
     /**
      * Constructor
@@ -56,10 +56,10 @@ class Generics
         $this->folder = realpath($folder);
         $this->logger = $logger;
 
-        $this->checksumPath = "{$this->folder}/checksums.txt";
-        $this->filesToCompare = glob("{$this->folder}/*.json");
+        $this->checksumFile = "{$this->folder}/checksums.txt";
+        $this->modelFiles = glob("{$this->folder}/*.json");
 
-        if (!file_exists($this->checksumPath)) {
+        if (!file_exists($this->checksumFile)) {
             $this->writeChecksumFile();
         }
     }
@@ -74,12 +74,12 @@ class Generics
         $this->logger->debug("Writing checksum file for generated Ampersand model files");
 
         $checksums = [];
-        foreach ($this->filesToCompare as $path) {
+        foreach ($this->modelFiles as $path) {
             $filename = pathinfo($path, PATHINFO_BASENAME);
             $checksums[$filename] = hash_file(self::HASH_ALGORITHM, $path);
         }
     
-        file_put_contents($this->checksumPath, serialize($checksums));
+        file_put_contents($this->checksumFile, serialize($checksums));
     }
 
     /**
@@ -94,10 +94,10 @@ class Generics
         $valid = true; // assume all checksums match
 
         // Get stored checksums
-        $checkSums = unserialize(file_get_contents($this->checksumPath));
+        $checkSums = unserialize(file_get_contents($this->checksumFile));
 
         // Compare checksum with actual file
-        foreach ($this->filesToCompare as $path) {
+        foreach ($this->modelFiles as $path) {
             $filename = pathinfo($path, PATHINFO_BASENAME);
             if ($checkSums[$filename] !== hash_file(self::HASH_ALGORITHM, $path)) {
                 $this->logger->warning("Invalid checksum of file '{$filename}'");
