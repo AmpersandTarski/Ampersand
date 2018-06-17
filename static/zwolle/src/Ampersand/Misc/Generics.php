@@ -85,6 +85,7 @@ class Generics
      */
     public function writeChecksumFile()
     {
+        /* Earlier implementation.
         $this->logger->debug("Writing checksum file for generated Ampersand model files");
 
         $checksums = [];
@@ -92,8 +93,12 @@ class Generics
             $filename = pathinfo($path, PATHINFO_BASENAME);
             $checksums[$filename] = hash_file(self::HASH_ALGORITHM, $path);
         }
-    
+
         file_put_contents($this->checksumFile, serialize($checksums));
+        */
+
+        // Now: use the hash value from generated output (created by Haskell codebase)
+        file_put_contents($this->checksumFile, $this->getSetting('modelHash'));
     }
 
     /**
@@ -105,6 +110,9 @@ class Generics
     {
         $this->logger->debug("Verifying checksum for Ampersand model files");
 
+        return (file_get_contents($this->checksumFile) === $this->getSetting('modelHash'));
+
+        /* Earlier implementation.
         $valid = true; // assume all checksums match
 
         // Get stored checksums
@@ -120,6 +128,7 @@ class Generics
         }
 
         return $valid;
+        */
     }
 
     public function getFolder(): string
