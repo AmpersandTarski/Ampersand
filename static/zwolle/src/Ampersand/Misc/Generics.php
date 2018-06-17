@@ -8,6 +8,7 @@
 namespace Ampersand\Misc;
 
 use Psr\Log\LoggerInterface;
+use Exception;
 
 /**
  *
@@ -37,14 +38,14 @@ class Generics
      *
      * @var string
      */
-    protected $checksumPath;
+    protected $checksumFile;
 
     /**
      * List of files that contain the generated Ampersand model
      *
      * @var array
      */
-    protected $filesToCompare = [];
+    protected $modelFiles = [];
 
     /**
      * Constructor
@@ -56,10 +57,23 @@ class Generics
         $this->folder = realpath($folder);
         $this->logger = $logger;
 
-        $this->checksumPath = "{$this->folder}/checksums.txt";
-        $this->filesToCompare = glob("{$this->folder}/*.json");
-
-        if (!file_exists($this->checksumPath)) {
+        $this->checksumFile = "{$this->folder}/checksums.txt";
+        
+        // Ampersand model files
+        $this->modelFiles = [
+            'concepts' => $this->folder . '/concepts.json',
+            'conjuncts' => $this->folder . '/conjuncts.json',
+            'interfaces' => $this->folder . '/interfaces.json',
+            'populations' => $this->folder . '/populations.json',
+            'relations' => $this->folder . '/relations.json',
+            'roles' => $this->folder . '/roles.json',
+            'rules' => $this->folder . '/rules.json',
+            'settings' => $this->folder . '/settings.json',
+            'views' => $this->folder . '/views.json'
+        ];
+        
+        // Write checksum file if not yet exists
+        if (!file_exists($this->checksumFile)) {
             $this->writeChecksumFile();
         }
     }
@@ -71,15 +85,20 @@ class Generics
      */
     public function writeChecksumFile()
     {
+        /* Earlier implementation.
         $this->logger->debug("Writing checksum file for generated Ampersand model files");
 
         $checksums = [];
-        foreach ($this->filesToCompare as $path) {
+        foreach ($this->modelFiles as $path) {
             $filename = pathinfo($path, PATHINFO_BASENAME);
             $checksums[$filename] = hash_file(self::HASH_ALGORITHM, $path);
         }
-    
-        file_put_contents($this->checksumPath, serialize($checksums));
+
+        file_put_contents($this->checksumFile, serialize($checksums));
+        */
+
+        // Now: use the hash value from generated output (created by Haskell codebase)
+        file_put_contents($this->checksumFile, $this->getSetting('modelHash'));
     }
 
     /**
@@ -91,13 +110,16 @@ class Generics
     {
         $this->logger->debug("Verifying checksum for Ampersand model files");
 
+        return (file_get_contents($this->checksumFile) === $this->getSetting('modelHash'));
+
+        /* Earlier implementation.
         $valid = true; // assume all checksums match
 
         // Get stored checksums
-        $checkSums = unserialize(file_get_contents($this->checksumPath));
+        $checkSums = unserialize(file_get_contents($this->checksumFile));
 
         // Compare checksum with actual file
-        foreach ($this->filesToCompare as $path) {
+        foreach ($this->modelFiles as $path) {
             $filename = pathinfo($path, PATHINFO_BASENAME);
             if ($checkSums[$filename] !== hash_file(self::HASH_ALGORITHM, $path)) {
                 $this->logger->warning("Invalid checksum of file '{$filename}'");
@@ -106,10 +128,43 @@ class Generics
         }
 
         return $valid;
+        */
     }
 
     public function getFolder(): string
     {
         return $this->folder;
+    }
+
+    protected function loadFile(string $filename)
+    {
+        if (!array_key_exists($filename, $this->modelFiles)) {
+            throw new Exception("File '{$filename}' is not part of the specified Ampersand model files", 500);
+        }
+
+        return file_get_contents($this->modelFiles[$filename]);
+    }
+
+    protected function getFile(string $filename)
+    {
+        static $loadedFiles = [];
+
+        if (!array_key_exists($filename, $loadedFiles)) {
+            $loadedFiles[$filename] = $this->loadFile($filename);
+        }
+
+        return $loadedFiles[$filename];
+    }
+
+    public function getSetting(string $setting)
+    {
+        $fileContent = $this->getFile('settings');
+        $settings = json_decode($fileContent, false);
+        
+        if (!property_exists($settings, $setting)) {
+            throw new Exception("Undefined setting '{$setting}'", 500);
+        }
+
+        return $settings->$setting;
     }
 }
