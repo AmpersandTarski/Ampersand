@@ -15,7 +15,7 @@ import           Ampersand.FSpec.GenerateUML
 import           Ampersand.Graphic.Graphics (writePicture)
 import           Ampersand.Misc
 import           Ampersand.Output
-import           Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
+import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Prototype.ProtoUtil   (installComposerLibs)
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import           Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
@@ -155,7 +155,6 @@ generateAmpersandOutput multi = do
         then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
              else [ verboseLn opts "Generating prototype..."
-                  , clearTemplateDirs fSpec
                   , writeStaticFiles opts
                   , generateDatabaseFile multi
                   , generateJSONfiles multi
