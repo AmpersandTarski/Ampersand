@@ -296,7 +296,9 @@ class ResourceList implements IteratorAggregate
     }
     
     /**
-     * Update a complete resource list (updates only this subinterface, not any level(s) deeper for now)
+     * Update a complete resource list
+     * Updates only this subinterface, not any level(s) deeper for now, except for I expressions
+     *
      * @param mixed $value
      * @return bool
      */
@@ -313,6 +315,9 @@ class ResourceList implements IteratorAggregate
                     $this->set($value);
                 } elseif (isset($value->_id_)) { // object with _id_ attribute
                     $this->set($value->_id_);
+                } elseif ($this->ifc->isIdent()) { // Ident object => no need for object id
+                    // go deeper into PUT when interface expression equals 'I'
+                    $this->one()->put($value);
                 } else {
                     throw new Exception("Cannot identify provided object while updating " . $this->ifc->getPath(), 400);
                 }
