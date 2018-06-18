@@ -16,7 +16,6 @@ import           Ampersand.Graphic.Graphics (writePicture)
 import           Ampersand.Misc
 import           Ampersand.Output
 import           Ampersand.Prototype.GenFrontend (doGenFrontend)
-import           Ampersand.Prototype.ProtoUtil   (installComposerLibs)
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import           Control.Monad
 import qualified Data.ByteString.Lazy as L
@@ -159,7 +158,6 @@ generateAmpersandOutput multi = do
                   , doGenFrontend fSpec
                   , verboseLn opts "\n"
                   , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
-                  , installComposerLibs opts
                   ]
         else [exitWith NoPrototypeBecauseOfRuleViolations]
        )++

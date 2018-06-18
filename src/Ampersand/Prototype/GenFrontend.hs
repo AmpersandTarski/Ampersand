@@ -67,6 +67,8 @@ doGenFrontend fSpec =
     ; genRouteProvider fSpec feInterfaces
     ; copyCustomizations fSpec
     ; deleteTemplateDir fSpec
+    ; putStrLn "Installing dependencies.."
+    ; installComposerLibs (getOpts fSpec)
     ; putStrLn "Frontend generated.\n"
     }
 
