@@ -9,7 +9,6 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
-import           Control.Monad
 import           Data.Data
 import           Data.List
 import           Data.Maybe
