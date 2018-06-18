@@ -171,7 +171,6 @@ library
                      Ampersand.Prototype.StaticFiles_Generated,
                      Ampersand.Prototype.TableSpec,
                      Ampersand.Prototype.ValidateSQL,
-                     Ampersand.Prototype.WriteStaticFiles,
                      Ampersand.Test
                      Ampersand.Test.Parser.ArbitraryTree,
                      Ampersand.Test.Parser.ParserTest,

@@ -18,7 +18,6 @@ import           Ampersand.Output
 import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Prototype.ProtoUtil   (installComposerLibs)
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import           Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import           Control.Monad
 import qualified Data.ByteString.Lazy as L
 import           Data.Function (on)
@@ -155,7 +154,6 @@ generateAmpersandOutput multi = do
         then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
              else [ verboseLn opts "Generating prototype..."
-                  , writeStaticFiles opts
                   , generateDatabaseFile multi
                   , generateJSONfiles multi
                   , doGenFrontend fSpec
