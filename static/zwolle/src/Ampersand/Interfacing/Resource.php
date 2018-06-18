@@ -695,7 +695,7 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
         foreach ($concept->getAllAtomObjects() as $atom) {
             $r = new Resource($atom->id, $concept);
             $r->setQueryData($atom->getQueryData());
-            $resources[] = $r;
+            $resources[] = $r->get();
         }
         
         return $resources;
