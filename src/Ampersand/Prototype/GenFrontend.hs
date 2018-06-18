@@ -59,7 +59,7 @@ getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
- do { putStr "Generating frontend..\n" 
+ do { putStrLn "Generating frontend.."
     ; copyTemplates fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
@@ -69,7 +69,7 @@ doGenFrontend fSpec =
     -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
     ; putStrLn "Installing dependencies.."
     ; installComposerLibs (getOpts fSpec)
-    ; putStrLn "Frontend generated.\n"
+    ; putStrLn "Frontend generated."
     }
 
 copyTemplates :: FSpec -> IO ()
