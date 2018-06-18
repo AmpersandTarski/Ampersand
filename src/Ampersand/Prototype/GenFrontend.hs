@@ -66,7 +66,7 @@ doGenFrontend fSpec =
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
     ; copyCustomizations fSpec
-    ; deleteTemplateDir fSpec
+    -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
     ; putStrLn "Installing dependencies.."
     ; installComposerLibs (getOpts fSpec)
     ; putStrLn "Frontend generated.\n"
@@ -103,8 +103,8 @@ copyCustomizations fSpec =
         else
           do verboseLn opts $ "No customizations (there is no directory " ++ sourceDir ++ ")"
 
-deleteTemplateDir :: FSpec -> IO ()
-deleteTemplateDir fSpec = removeDirectoryRecursive $ dirPrototype (getOpts fSpec) </> "templates"
+-- deleteTemplateDir :: FSpec -> IO ()
+-- deleteTemplateDir fSpec = removeDirectoryRecursive $ dirPrototype (getOpts fSpec) </> "templates"
 
 ------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
