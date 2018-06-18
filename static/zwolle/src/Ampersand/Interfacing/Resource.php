@@ -500,7 +500,9 @@ class Resource extends Atom implements ArrayAccess, IteratorAggregate
             try {
                 $rl = $this->all($ifcId);
             } catch (Exception $e) {
-                throw new Exception("Unknown attribute '{$ifcId}'", 400);
+                // throw new Exception("Unknown attribute '{$ifcId}'", 400);
+                Logger::getLogger('INTERFACING')->warning("Unknown attribute '{$ifcId}' in PUT data");
+                continue;
             }
             
             $rl->put($value);
