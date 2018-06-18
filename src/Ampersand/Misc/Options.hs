@@ -64,7 +64,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , genFPAChap :: Bool   -- Generate Function Point Analysis chapter
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
                        , genPOPExcel :: Bool   -- Generate an .xmlx file containing the populations 
-                       , genStaticFiles :: Bool-- Generate the static files into the prototype
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                        , progrName :: String --The name of the adl executable
@@ -239,7 +238,6 @@ getOptions' envOpts =
                       , genUML           = False
                       , genFPAChap       = False
                       , genFPAExcel      = False
-                      , genStaticFiles   = True
                       , genPOPExcel      = False
                       , language         = Nothing
                       , progrName        = envProgName envOpts
@@ -563,10 +561,6 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{atlasWithoutExpressions = True}))
                "Temporary switch to create Atlas without expressions. (for RAP3)"
             , Hidden)
-          , (Option []        ["no-static-files"]
-               (NoArg  (\opts -> opts{genStaticFiles = False}))
-               "Do not generate static files into the prototype directory"
-            , Public)
           , (Option []        ["crud-defaults"]
                (ReqArg (\crudString opts -> let c = 'c' `notElem` crudString
                                                 r = 'r' `notElem` crudString
