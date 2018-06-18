@@ -243,7 +243,7 @@ instance Pretty P_Interface where
                  where iroles = if null roles then empty
                                 else text "FOR" <+> listOf roles
         P_Txt{} ->
-          fatal "TXT is not expected here."
+          text "TXT" <+> quote (obj_txt obj)
           
 instance Pretty a => Pretty (P_ObjDef a) where
     pretty obj =
