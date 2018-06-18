@@ -240,8 +240,7 @@ instance Pretty P_Interface where
          (case obj of
             P_Obj{} -> 
                 text ":" <~\> obj_ctx obj <~> obj_msub obj
-            P_Txt{} ->
-                text "TXT" <+> quote (obj_txt obj)
+            P_Txt{} -> fatal "TXT must not be used directly in a P_Ifc."
          )
       where iroles = if null roles then empty
                      else text "FOR" <+> listOf roles

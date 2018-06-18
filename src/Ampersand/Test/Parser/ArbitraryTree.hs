@@ -47,32 +47,31 @@ lowerId = suchThat identifier startLower
     where startLower = isLower . head
 
 -- Generates an object
-objTermPrim :: Int -> Gen (P_ObjDef TermPrim)
-objTermPrim 0 = objTermPrim 1 -- minimum of 1 sub interface
-objTermPrim i =
-  makeObj genPrim ifc genView i
+objTermPrim :: Bool -> Int -> Gen (P_ObjDef TermPrim)
+objTermPrim isTxtAllowed 0 = objTermPrim isTxtAllowed 1 -- minimum of 1 sub interface
+objTermPrim isTxtAllowed i =
+  makeObj isTxtAllowed genPrim ifc genView i
     where ifc :: Int -> Gen (P_SubIfc TermPrim)
-          ifc n = subIfc objTermPrim (n`div`2)
+          ifc n = subIfc (objTermPrim True) (n`div`2)
           --TODO: The view is never tested like this
           genView = return Nothing
           genPrim :: Gen TermPrim
           genPrim = PNamedR <$> relationRef
 
 --TODO: refactor obj/ifc generators
-genObj :: Arbitrary a => Int -> Gen (P_ObjDef a)
-genObj = makeObj arbitrary genIfc (return Nothing)
+genObj :: Arbitrary a => Bool -> Int -> Gen (P_ObjDef a)
+genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (return Nothing)
 
-makeObj :: Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
-makeObj genPrim ifcGen genView n =
-  oneof [ P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc
-        , P_Txt <$> arbitrary <*> arbitrary
-        ]
+makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
+makeObj isTxtAllowed genPrim ifcGen genView n =
+  oneof $ [P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
+        ++[P_Txt <$> arbitrary <*> arbitrary | isTxtAllowed]
      where term = Prim <$> genPrim
            ifc  = if n == 0 then return Nothing
                   else Just <$> ifcGen (n`div`2)
         
 genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
-genIfc = subIfc genObj
+genIfc = subIfc $ genObj True
 
 subIfc :: (Int -> Gen (P_ObjDef a)) -> Int -> Gen (P_SubIfc a)
 subIfc objGen n =
@@ -269,23 +268,19 @@ instance Arbitrary PAtomValue where
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1
                       <*> listOf arbitrary
-                      <*> sized objTermPrim <*> arbitrary <*> safeStr
+                      <*> sized (objTermPrim False) <*> arbitrary <*> safeStr
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
-    arbitrary = sized genObj
+    arbitrary = sized (genObj True)
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
 
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
-                     <*> listOf1 (arbitrary `suchThat` noTXT)
-      where noTXT :: P_IdentSegmnt TermPrim -> Bool
-            noTXT = not . isPTxt . ks_obj
-            isPTxt P_Txt{} = True
-            isPTxt _       = False
+                     <*> listOf1 arbitrary
 instance Arbitrary P_IdentSegment where
-    arbitrary = P_IdentExp <$> sized objTermPrim
+    arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
     arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
