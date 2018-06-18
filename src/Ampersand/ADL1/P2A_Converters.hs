@@ -758,7 +758,9 @@ pCtx2aCtx opts
       = case x of
          P_InterfaceRef{si_str = ifcId} 
            ->  do (refIfcExpr,_) <- case lookupDisambIfcObj declMap ifcId of
-                                         Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                                         Just disambObj -> typecheckTerm $ case disambObj of
+                                                                             P_Obj{} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                                                                             P_Txt{} -> fatal "TXT is not expected here."
                                          Nothing        -> Errors . pure $ mkUndeclaredError "interface" o ifcId
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
                   return (objExprEps,InterfaceRef{ siIsLink = si_isLink x

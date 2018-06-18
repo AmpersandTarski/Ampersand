@@ -235,12 +235,16 @@ instance Pretty TType where
       
 instance Pretty P_Interface where
     pretty (P_Ifc nm roles obj _ _) =
-        text "INTERFACE" <+> maybeQuote nm 
+      case obj of
+        P_Obj{} -> 
+          text "INTERFACE" <+> maybeQuote nm 
                <+> iroles
                <+> text ":" <~\> obj_ctx obj <~> obj_msub obj
                  where iroles = if null roles then empty
                                 else text "FOR" <+> listOf roles
-
+        P_Txt{} ->
+          fatal "TXT is not expected here."
+          
 instance Pretty a => Pretty (P_ObjDef a) where
     pretty obj =
       case obj of
