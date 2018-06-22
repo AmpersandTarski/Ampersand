@@ -153,9 +153,9 @@ generateAmpersandOutput multi = do
         then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
              else [ verboseLn opts "Generating prototype..."
+                  , doGenFrontend fSpec
                   , generateDatabaseFile multi
                   , generateJSONfiles multi
-                  , doGenFrontend fSpec
                   , verboseLn opts "\n"
                   , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
                   ]

@@ -9,13 +9,19 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
+import           Codec.Archive.Zip
+import           Control.Monad
+import qualified Data.ByteString.Lazy  as BL
 import           Data.Data
 import           Data.List
 import           Data.Maybe
+import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath
 import           Text.StringTemplate
 import           Text.StringTemplate.GenericStandard () -- only import instances
+
+
 
 {- TODO
 - Be more consistent with record selectors/pattern matching
@@ -60,6 +66,7 @@ getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStrLn "Generating frontend.."
+    ; downloadPrototypeFramework (getOpts fSpec)
     ; copyTemplates fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
@@ -420,3 +427,46 @@ renderTemplate (Template template absPath) setAttrs =
              ([], attrs@(_:_), _)        -> templateError $ "The following attributes are expected by the template, but not supplied: " ++ show attrs
              ([], [], ts@(_:_)) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
   where templateError msg = error $ "\n\n*** TEMPLATE ERROR in:\n" ++ absPath ++ "\n\n" ++ msg
+
+
+
+
+downloadPrototypeFramework :: Options -> IO ()
+downloadPrototypeFramework opts = do 
+  x <- allowExtraction
+  when x $ do 
+    request <- parseRequest (prototypeFrameworkURL opts)
+    response <- httpBS request
+    let zipByteString = getResponseBody response
+    let archive =  removeTopLevelFolder $ toArchive (BL.fromStrict zipByteString)
+    putStrLn $ "Aantal bestanden "++show (length (zEntries archive))
+    sequence_ (map putStrLn (filesInArchive archive))
+    let zipoptions = [OptDestination destination]
+    extractFilesFromArchive zipoptions archive
+  where
+    destination = dirPrototype opts
+    removeTopLevelFolder :: Archive -> Archive
+    removeTopLevelFolder archive = archive{zEntries = mapMaybe removeTopLevelPath (zEntries(archive))}
+      where
+        removeTopLevelPath :: Entry -> Maybe Entry
+        removeTopLevelPath entry = 
+            case tail . splitPath . eRelativePath $ entry of
+              [] -> Nothing
+              xs -> Just entry{eRelativePath = joinPath xs}
+
+    allowExtraction :: IO Bool
+    allowExtraction = do
+      pathExist <- doesPathExist destination
+      if pathExist
+      then do 
+          putStrLn "Pad bestaat" 
+          destIsDirectory <- doesDirectoryExist destination 
+          if destIsDirectory
+          then do 
+            dirContents <- listDirectory destination
+            putStrLn $"Directory is "++(if null dirContents then "" else "niet ") ++"leeg."
+            return (null dirContents)
+          else return False
+      else do 
+         putStrLn "Pad bestaat nog niet" 
+         return True
