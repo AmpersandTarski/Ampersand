@@ -435,7 +435,8 @@ downloadPrototypeFramework :: Options -> IO ()
 downloadPrototypeFramework opts = do 
   x <- allowExtraction
   when x $ do 
-    request <- parseRequest (prototypeFrameworkURL opts)
+    let prototypeFrameworkURL = "https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip"
+    request <- parseRequest prototypeFrameworkURL
     response <- httpBS request
     let zipByteString = getResponseBody response
     let archive =  removeTopLevelFolder $ toArchive (BL.fromStrict zipByteString)

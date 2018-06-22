@@ -38,7 +38,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
-                       , prototypeFrameworkURL :: String 
+                       , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , allInterfaces :: Bool
                        , dbName :: String
@@ -206,7 +206,7 @@ getOptions' envOpts =
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfile       = fatal "No monadic options available."
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
-                      , prototypeFrameworkURL = "https://github.com/AmpersandTarski/Prototype/archive/master.zip"
+                      , zwolleVersion    = "master"
                       , dirCustomizations = ["customizations"]
                       , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
@@ -381,6 +381,11 @@ options = [ (Option ['v']   ["version"]
                                          ,genPrototype = True}
                        ) "DIRECTORY")
                ("generate a functional prototype (This overrules environment variable "++ dirPrototypeVarName ++ ").")
+            , Public)
+          , (Option []     ["prototype-framework-version"]
+               (ReqArg (\x opts -> opts {zwolleVersion = x}
+                       ) "VERSION")
+               ("tag, branch or SHA of the prototype framework on Github.")
             , Public)
           , (Option []     ["customizations"]
                (ReqArg (\names opts -> opts {dirCustomizations = splitOn ";" names}
