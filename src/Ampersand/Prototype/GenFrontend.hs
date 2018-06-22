@@ -10,6 +10,7 @@ import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Codec.Archive.Zip
+import           Control.Exception
 import           Control.Monad
 import qualified Data.ByteString.Lazy  as BL
 import           Data.Data
@@ -431,25 +432,32 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 downloadPrototypeFramework :: Options -> IO ()
-downloadPrototypeFramework opts = do 
-  x <- allowExtraction
-  when x $ do 
-    when (forceReinstallFramework opts) destroyDestinationDir
-    verboseLn opts "Start downloading frontend framework."
-    response <- 
-       parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip") >>=
-       httpBS  
-    let archive = removeTopLevelFolder 
-                . toArchive 
-                . BL.fromStrict 
-                . getResponseBody $ response
-    verboseLn opts "Start extraction of frontend framework."
-    let zipoptions = 
-             [OptVerbose | verboseP opts]
-          ++ [OptDestination destination]
-    extractFilesFromArchive zipoptions archive
-    writeFile (destination </> ".prototypeSHA")
-              (show . zComment $ archive)
+downloadPrototypeFramework opts = 
+  (do 
+    x <- allowExtraction
+    when x $ do 
+      when (forceReinstallFramework opts) destroyDestinationDir
+      verboseLn opts "Start downloading frontend framework."
+      response <- 
+        parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip") >>=
+        httpBS  
+      let archive = removeTopLevelFolder 
+                  . toArchive 
+                  . BL.fromStrict 
+                  . getResponseBody $ response
+      verboseLn opts "Start extraction of frontend framework."
+      let zipoptions = 
+              [OptVerbose | verboseP opts]
+            ++ [OptDestination destination]
+      extractFilesFromArchive zipoptions archive
+      writeFile (destination </> ".prototypeSHA")
+                (show . zComment $ archive)
+  ) `catch` \err ->  -- git failed to execute
+         exitWith . FailedToInstallPrototypeFramework $
+            [ "Error encountered during installation of prototype framework:"
+            , show (err :: SomeException)
+            ]
+            
   where
     destination = dirPrototype opts
     destroyDestinationDir :: IO ()
