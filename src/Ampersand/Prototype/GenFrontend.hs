@@ -83,7 +83,7 @@ copyTemplates :: FSpec -> IO ()
 copyTemplates fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
           tempDir = adlSourceDir </> "templates"
-          toDir = (dirPrototype (getOpts fSpec)) </> "templates"
+          toDir = dirPrototype (getOpts fSpec) </> "templates"
     ; tempDirExists <- doesDirectoryExist tempDir
     ; if tempDirExists then
         do { verboseLn (getOpts fSpec) $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
@@ -107,8 +107,7 @@ copyCustomizations fSpec =
         if sourceDirExists then
           do verboseLn opts $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
              copyDirRecursively sourceDir targetDir opts -- recursively copy all customizations
-        else
-          do verboseLn opts $ "No customizations (there is no directory " ++ sourceDir ++ ")"
+        else verboseLn opts $ "No customizations (there is no directory " ++ sourceDir ++ ")"
 
 -- deleteTemplateDir :: FSpec -> IO ()
 -- deleteTemplateDir fSpec = removeDirectoryRecursive $ dirPrototype (getOpts fSpec) </> "templates"
@@ -436,21 +435,28 @@ downloadPrototypeFramework opts = do
   x <- allowExtraction
   when x $ do 
     when (forceReinstallFramework opts) destroyDestinationDir
-    let prototypeFrameworkURL = "https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip"
-    request <- parseRequest prototypeFrameworkURL
-    response <- httpBS request
-    let zipByteString = getResponseBody response
-    let archive =  removeTopLevelFolder $ toArchive (BL.fromStrict zipByteString)
-    putStrLn $ "Aantal bestanden "++show (length (zEntries archive))
-    sequence_ (map putStrLn (filesInArchive archive))
-    let zipoptions = [OptDestination destination]
+    verboseLn opts "Start downloading frontend framework."
+    response <- 
+       parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip") >>=
+       httpBS  
+    let archive = removeTopLevelFolder 
+                . toArchive 
+                . BL.fromStrict 
+                . getResponseBody $ response
+    verboseLn opts "Start extraction of frontend framework."
+    let zipoptions = 
+             [OptVerbose | verboseP opts]
+          ++ [OptDestination destination]
     extractFilesFromArchive zipoptions archive
+    writeFile (destination </> ".prototypeSHA")
+              (show . zComment $ archive)
   where
     destination = dirPrototype opts
     destroyDestinationDir :: IO ()
     destroyDestinationDir = removeDirectoryRecursive destination
     removeTopLevelFolder :: Archive -> Archive
-    removeTopLevelFolder archive = archive{zEntries = mapMaybe removeTopLevelPath (zEntries(archive))}
+    removeTopLevelFolder archive = 
+       archive{zEntries = mapMaybe removeTopLevelPath . zEntries $ archive}
       where
         removeTopLevelPath :: Entry -> Maybe Entry
         removeTopLevelPath entry = 
@@ -461,16 +467,21 @@ downloadPrototypeFramework opts = do
     allowExtraction :: IO Bool
     allowExtraction = do
       pathExist <- doesPathExist destination
+      destIsDirectory <- doesDirectoryExist destination 
       if pathExist
-      then do 
-          putStrLn "Pad bestaat" 
-          destIsDirectory <- doesDirectoryExist destination 
+      then 
           if destIsDirectory
           then do 
             dirContents <- listDirectory destination
-            putStrLn $"Directory is "++(if null dirContents then "" else "niet ") ++"leeg."
+            unless (null dirContents)
+                   (verboseLn opts $
+                         "Didn't install prototype framework, because\n"
+                      ++ "  "++destination++" isn't empty.")
             return (null dirContents)
-          else return False
-      else do 
-         putStrLn "Pad bestaat nog niet" 
-         return True
+          else do 
+             verboseLn opts $
+                       "Didn't install prototype framework, because\n"
+                    ++ "  "++destination++" isn't a directory."
+             return False
+      else return True
+      
