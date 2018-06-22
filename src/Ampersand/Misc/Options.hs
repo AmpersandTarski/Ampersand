@@ -39,6 +39,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
                        , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
+                       , forceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , allInterfaces :: Bool
                        , dbName :: String
@@ -207,6 +208,7 @@ getOptions' envOpts =
                       , outputfile       = fatal "No monadic options available."
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
                       , zwolleVersion    = "master"
+                      , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
                       , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
@@ -386,6 +388,10 @@ options = [ (Option ['v']   ["version"]
                (ReqArg (\x opts -> opts {zwolleVersion = x}
                        ) "VERSION")
                ("tag, branch or SHA of the prototype framework on Github.")
+            , Public)
+          , (Option []      ["force-reinstall-framework"]
+               (NoArg (\opts -> opts{forceReinstallFramework = True}))
+               "re-install the prototype framework. This discards any previously installed version."
             , Public)
           , (Option []     ["customizations"]
                (ReqArg (\names opts -> opts {dirCustomizations = splitOn ";" names}

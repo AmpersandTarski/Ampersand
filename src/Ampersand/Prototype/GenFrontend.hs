@@ -435,6 +435,7 @@ downloadPrototypeFramework :: Options -> IO ()
 downloadPrototypeFramework opts = do 
   x <- allowExtraction
   when x $ do 
+    when (forceReinstallFramework opts) destroyDestinationDir
     let prototypeFrameworkURL = "https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip"
     request <- parseRequest prototypeFrameworkURL
     response <- httpBS request
@@ -446,6 +447,8 @@ downloadPrototypeFramework opts = do
     extractFilesFromArchive zipoptions archive
   where
     destination = dirPrototype opts
+    destroyDestinationDir :: IO ()
+    destroyDestinationDir = removeDirectoryRecursive destination
     removeTopLevelFolder :: Archive -> Archive
     removeTopLevelFolder archive = archive{zEntries = mapMaybe removeTopLevelPath (zEntries(archive))}
       where
