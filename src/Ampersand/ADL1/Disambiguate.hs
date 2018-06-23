@@ -151,7 +151,7 @@ instance Disambiguatable P_ObjDef where
            Just si -> Control.Arrow.first Just $ disambInfo si (Cnstr (bottomUpTargetTypes env2) [])
      (c', env2)
       = disambInfo c (Cnstr (bottomUpSourceTypes env) (bottomUpSourceTypes env1))
-  disambInfo (P_Txt a b) _ = (P_Txt a b, noConstraints)
+  disambInfo (P_Txt a b c) _ = (P_Txt a b c, noConstraints)
 
 instance Disambiguatable Term where
   disambInfo (PFlp o a  ) env1 = ( PFlp o a', Cnstr (bottomUpTargetTypes envA)(bottomUpSourceTypes envA) )

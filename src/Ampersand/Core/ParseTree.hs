@@ -414,7 +414,7 @@ instance Traversable P_ObjDef where
  traverse f (P_Obj nm pos' ctx mCrud mView msub)
   = (\ctx' msub'->(P_Obj nm pos' ctx' mCrud mView msub')) <$>
      traverse f ctx <*> traverse (traverse f) msub
- traverse _ (P_Txt pos' str) = pure (P_Txt pos' str)
+ traverse _ (P_Txt nm pos' str) = pure (P_Txt nm pos' str)
 
 instance Traced TermPrim where
  origin e = case e of
@@ -608,7 +608,8 @@ data P_ObjDef a =
            , obj_mView :: Maybe String -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
            }
-   | P_Txt { pos :: Origin
+   | P_Txt { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+           , pos :: Origin
            , obj_txt :: String
            } deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
 instance Ord (P_ObjDef a) where

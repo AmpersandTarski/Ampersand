@@ -708,10 +708,12 @@ pCtx2aCtx opts
                            , objmView = mView
                            , objmsub = s
                            }, sr)
-          P_Txt { pos = orig
+          P_Txt { obj_nm  = nm
+                , pos = orig
                 , obj_txt = str
                 } -> pure $ (ObjT
-                             ObjTxt { objpos = orig
+                             ObjTxt { objnm = nm
+                                    , objpos = orig
                                     , objtxt = str
                                     },True)
 

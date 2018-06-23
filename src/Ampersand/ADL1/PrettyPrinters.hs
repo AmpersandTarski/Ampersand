@@ -251,8 +251,9 @@ instance Pretty a => Pretty (P_ObjDef a) where
         (P_Obj nm _ ctx mCrud mView msub)
            -> prettyLabel nm <+> text ":"
                  <~> ctx <+> crud mCrud <+> view mView <~> msub
-        (P_Txt _ str)
-           -> text "TXT" <+> quote str
+        (P_Txt nm _ str)
+           -> prettyLabel nm <+> text ":"
+                 <~> text "TXT" <+> quote str
         where crud Nothing = empty
               crud (Just cruds) = pretty cruds
               view Nothing  = empty
@@ -278,8 +279,9 @@ instance Pretty a => Pretty (P_IdentSegmnt a) where
                then pretty ctx -- no label
                else prettyLabel nm <> text ":" <~> ctx
               ) <+> view mView
-        (P_Txt _ str)
-           -> text "TXT" <+> quote str
+        (P_Txt nm _ str)
+           -> prettyLabel nm <+> text ":"
+              <~> text "TXT" <+> quote str
         where view Nothing  = empty
               view (Just v) = pretty v
 

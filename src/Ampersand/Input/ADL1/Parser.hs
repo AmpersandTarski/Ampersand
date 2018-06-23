@@ -464,7 +464,10 @@ pObjDef = pObj <|> pTxt
                        , obj_mView = mView
                        , obj_msub = msub
                        }
-   pTxt = P_Txt <$> posOf (pKey "TXT") <*> pString
+   pTxt = P_Txt <$> pLabel
+                <*> currPos
+                <*  pKey "TXT"
+                <*> pString
 
 --- Cruds ::= crud in upper /lowercase combinations
 pCruds :: AmpParser P_Cruds

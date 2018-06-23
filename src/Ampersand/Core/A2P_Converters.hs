@@ -184,7 +184,7 @@ aObjectDef2pObjectDef :: ObjectDef -> P_ObjectDef
 aObjectDef2pObjectDef x =
   case x of
     ObjE oDef ->
-      P_Obj { obj_nm    = objnm oDef
+      P_Obj { obj_nm    = name oDef
             , pos       = origin oDef
             , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
             , obj_crud  = aCruds2pCruds (objcrud oDef)
@@ -192,7 +192,8 @@ aObjectDef2pObjectDef x =
             , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
             }
     ObjT oDef ->
-      P_Txt { pos       = origin oDef
+      P_Txt { obj_nm    = name oDef
+            , pos       = origin oDef
             , obj_txt   = objtxt oDef
             }
 aExpression2pTermPrim :: Expression -> Term TermPrim

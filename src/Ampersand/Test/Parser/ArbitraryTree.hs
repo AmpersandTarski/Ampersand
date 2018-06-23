@@ -65,7 +65,7 @@ genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (return Nothing)
 makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
   oneof $ [P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
-        ++[P_Txt <$> arbitrary <*> safeStr | isTxtAllowed]
+        ++[P_Txt <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
      where term = Prim <$> genPrim
            ifc  = if n == 0 then return Nothing
                   else Just <$> ifcGen (n`div`2)

@@ -385,7 +385,8 @@ data ObjExp =
            , objmsub  :: Maybe SubInterface -- ^ the fields, which are object definitions themselves.
            } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
 data ObjTxt =
-    ObjTxt { objpos :: Origin
+    ObjTxt { objnm  :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+           , objpos :: Origin
            , objtxt :: String
            } deriving (Eq, Show)
 instance Named ObjExp where
@@ -394,6 +395,8 @@ instance Traced ObjExp where
   origin = objpos
 instance Unique ObjExp where
   showUnique = showUnique . origin
+instance Named ObjTxt where
+  name   = objnm
 instance Traced ObjTxt where
   origin = objpos
 instance Unique ObjectDef where

@@ -19,8 +19,8 @@ data JSONObjectDef =
   JSONObjectDef
     { ifcJSONtag                :: String
     , ifcJSONtxt                :: Maybe String
-    , ifcJSONid                 :: Maybe String
-    , ifcJSONlabel              :: Maybe String
+    , ifcJSONid                 :: String
+    , ifcJSONlabel              :: String
     , ifcJSONviewId             :: Maybe String
     , ifcJSONNormalizationSteps :: Maybe [String] -- Not used in frontend. Just informative for analisys
     , ifcJSONrelation           :: Maybe String
@@ -123,8 +123,8 @@ instance JSON ObjectDef JSONObjectDef where
    case obj of 
      ObjE object' -> JSONObjectDef
       { ifcJSONtag                = "ObjExpression"
-      , ifcJSONid                 = Just $ escapeIdentifier . name $ object
-      , ifcJSONlabel              = Just $ name object
+      , ifcJSONid                 = escapeIdentifier . name $ object
+      , ifcJSONlabel              = name object
       , ifcJSONviewId             = fmap name viewToUse
       , ifcJSONNormalizationSteps = Just $ showPrf showA.cfProof.objExpression $ object 
       , ifcJSONrelation           = fmap (showRel . fst) mEditableDecl
@@ -147,10 +147,10 @@ instance JSON ObjectDef JSONObjectDef where
               (tgt, Just (decl, isFlipped'))
             Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
         object = substituteReferenceObjectDef fSpec object'
-     ObjT object' -> JSONObjectDef
+     ObjT object -> JSONObjectDef
       { ifcJSONtag                = "ObjText"
-      , ifcJSONid                 = Nothing
-      , ifcJSONlabel              = Nothing
+      , ifcJSONid                 = escapeIdentifier . name $ object
+      , ifcJSONlabel              = name object
       , ifcJSONviewId             = Nothing
       , ifcJSONNormalizationSteps = Nothing
       , ifcJSONrelation           = Nothing
@@ -158,5 +158,5 @@ instance JSON ObjectDef JSONObjectDef where
       , ifcJSONcrud               = Nothing
       , ifcJSONexpr               = Nothing
       , ifcJSONsubinterfaces      = Nothing
-      , ifcJSONtxt                = Just $ objtxt object'
+      , ifcJSONtxt                = Just $ objtxt object
       }

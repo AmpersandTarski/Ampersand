@@ -485,7 +485,7 @@ instance ShowHSName ObjExp where
 instance ShowHS ObjExp where
  showHS opts indent x
   = intercalate indent
-        ["ObjExp { objnm    = " ++ show(objnm x)
+        ["ObjExp { objnm    = " ++ show(name x)
         ,"       , objpos   = " ++ showHS opts "" (origin x)
         ,"       , objExpression   = " ++ showHS opts (indent++"                ") (objExpression x)
         ,"       , objcrud  = " ++ showHS opts (indent++"                ") (objcrud x)
@@ -496,7 +496,8 @@ instance ShowHS ObjExp where
 instance ShowHS ObjTxt where
  showHS opts indent x
   = intercalate indent
-        ["ObjTxt { objpos   = " ++ showHS opts "" (origin x)
+        ["ObjTxt { objnm    = " ++ show(name x)
+        ,"       , objpos   = " ++ showHS opts "" (origin x)
         ,"       , objtxt   = " ++ show(objtxt x)
         ,"       }"
         ]
