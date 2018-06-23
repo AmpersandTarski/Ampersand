@@ -32,10 +32,7 @@ matrix:
   # variable, such as using --stack-yaml to point to a different file.
   - env: BUILD=stack STACK_YAML=stack.yaml
     compiler: ": #stack"
-    addons: {apt: {packages: [ mysql-server-5.6
-                             , mysql-client-core-5.6
-                             , mysql-client-5.6
-                             ] 
+    addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
   - env: BUILD=stack STACK_YAML=stack.yaml osx
     compiler: ": #stack"
@@ -48,18 +45,12 @@ matrix:
     compiler: ": #GHC 8.2.2"
     addons: {apt: {packages: [ cabal-install-1.24
                              , ghc-8.2.2
-                             , mysql-server-5.6
-                             , mysql-client-core-5.6
-                             , mysql-client-5.6
                              ] 
                   ,sources: [hvr-ghc]}}
   - env: BUILD=cabal GHCVER=8.2.2 CABALVER=1.24 osx
     compiler: ": #GHC 8.2.2"
     addons: {apt: {packages: [ cabal-install-1.24
                              , ghc-8.2.2
-                             , mysql-server-5.6
-                             , mysql-client-core-5.6
-                             , mysql-client-5.6
                              ] 
                   ,sources: [hvr-ghc]}}
     os: osx
@@ -69,9 +60,6 @@ matrix:
     compiler: ": #GHC HEAD"
     addons: {apt: {packages: [ cabal-install-head
                              , ghc-head
-                             , mysql-server-5.6
-                             , mysql-client-core-5.6
-                             , mysql-client-5.6
                              ] 
                   ,sources: [hvr-ghc]}}
   - env: BUILD=stack ARGS="--resolver nightly"
@@ -81,7 +69,7 @@ matrix:
 
   allow_failures:
   # Temporarily, because cabal does not build, but stack does
-  - env: BUILD=cabal GHCVER=8.2.2 CABALVER=1.24
+  # - env: BUILD=cabal GHCVER=8.2.2 CABALVER=1.24
   
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
