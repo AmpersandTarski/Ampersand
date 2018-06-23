@@ -448,26 +448,37 @@ pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef
-pObjDef = pObj <|> pTxt
+pObjDef = pBoxItem <$> currPos
+                <*> pADLid
+                <*> (pObj <|> pTxt) 
   where
-   pObj = obj <$> currPos
-              <*> pLabel
-              <*> pTerm            -- the context expression (for example: I[c])
-              <*> pMaybe pCruds
-              <*> pMaybe (pChevrons pConid) --for the views
-              <*> pMaybe pSubInterface  -- the optional subinterface
-         where obj p nm ctx mCrud mView msub =
-                 P_Obj { obj_nm   = nm
-                       , pos      = p
-                       , obj_ctx  = ctx
-                       , obj_crud = mCrud
-                       , obj_mView = mView
-                       , obj_msub = msub
-                       }
-   pTxt = P_Txt <$> pLabel
-                <*> currPos
-                <*  pKey "TXT"
-                <*> pString
+    --build p lable fun = pBoxItem p lable <$> fun
+    pBoxItem :: Origin -> String -> P_ObjectDef -> P_ObjectDef
+    pBoxItem p nm fun = fun{ pos    = p
+                           , obj_nm = nm}
+      
+    pObj :: AmpParser (P_ObjectDef)
+    pObj = obj <$  pColon
+                   <*> pTerm            -- the context expression (for example: I[c])
+                   <*> pMaybe pCruds
+                   <*> pMaybe (pChevrons pConid) --for the views
+                   <*> pMaybe pSubInterface  -- the optional subinterface
+          where obj ctx mCrud mView msub =
+                  P_Obj { obj_nm    = fatal "This should have been filled in promptly."
+                        , pos       = fatal "This should have been filled in promptly."
+                        , obj_ctx   = ctx
+                        , obj_crud  = mCrud
+                        , obj_mView = mView
+                        , obj_msub  = msub
+                        }
+    pTxt :: AmpParser P_ObjectDef
+    pTxt = obj <$ pKey "TXT"
+               <*> pString
+          where obj txt = 
+                  P_Txt { obj_nm   = fatal "This should have been filled in promptly."
+                        , pos      = fatal "This should have been filled in promptly."
+                        , obj_txt  = txt
+                        }
 
 --- Cruds ::= crud in upper /lowercase combinations
 pCruds :: AmpParser P_Cruds

@@ -270,9 +270,6 @@ instance Arbitrary P_Interface where
                       <*> listOf arbitrary
                       <*> sized (objTermPrim False) <*> arbitrary <*> safeStr
 
-instance Arbitrary a => Arbitrary (P_ObjDef a) where
-    arbitrary = sized (genObj True)
-
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
 
