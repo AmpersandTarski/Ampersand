@@ -778,15 +778,11 @@ pCtx2aCtx opts
                                              }
                                 )
                        ) <$> traverse (join . fmap fn . typecheckObjDef declMap) l 
-                         <*  uniqueBy obj_nm (filter isPObj l)
+                         <*  uniqueNames l
                   where fn :: (ObjectDef, Bool) -> (Guarded ObjectDef)
                         fn (ObjE e,p) = fmap ObjE $ matchWith  (e,p)
                         fn (ObjT t,_) = pure $ ObjT t
-     where isPObj obj =
-             case obj of
-               P_Obj{} -> True
-               P_Txt{} -> False
-           matchWith :: (ObjExp, Bool) -> (Guarded ObjExp)
+     where matchWith :: (ObjExp, Bool) -> (Guarded ObjExp)
            matchWith (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of

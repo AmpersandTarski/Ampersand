@@ -615,8 +615,8 @@ data P_ObjDef a =
 instance Ord (P_ObjDef a) where
   compare a b = compare (origin a) (origin b)
 instance Eq (P_ObjDef a) where od==od' = origin od==origin od'
---instance Named (P_ObjDef a) where
--- name = obj_nm
+instance Named (P_ObjDef a) where
+  name = obj_nm
 instance Traced (P_ObjDef a) where
  origin = pos
 data P_Cruds = P_Cruds Origin String deriving Show
