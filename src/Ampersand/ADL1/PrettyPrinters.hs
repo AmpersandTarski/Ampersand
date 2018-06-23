@@ -74,9 +74,6 @@ separate d xs = encloseSep empty empty (text d) $ map pretty xs
 takeQuote :: String -> String
 takeQuote = replace "\"" ""
 
-prettyLabel :: String -> Doc
-prettyLabel = maybeQuote
-
 instance Pretty P_Context where
     pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops metas) =
                text "CONTEXT"
@@ -249,10 +246,10 @@ instance Pretty a => Pretty (P_ObjDef a) where
     pretty obj =
       case obj of
         (P_Obj nm _ ctx mCrud mView msub)
-           -> prettyLabel nm <+> text ":"
+           -> maybeQuote nm <+> text ":"
                  <~> ctx <+> crud mCrud <+> view mView <~> msub
         (P_Txt nm _ str)
-           -> prettyLabel nm <+> text ":"
+           -> maybeQuote nm 
                  <~> text "TXT" <+> quote str
         where crud Nothing = empty
               crud (Just cruds) = pretty cruds
@@ -277,10 +274,10 @@ instance Pretty a => Pretty (P_IdentSegmnt a) where
         (P_Obj nm _ ctx _ mView _)
            -> (if null nm
                then pretty ctx -- no label
-               else prettyLabel nm <> text ":" <~> ctx
+               else maybeQuote nm <> text ":" <~> ctx
               ) <+> view mView
         (P_Txt nm _ str)
-           -> prettyLabel nm <+> text ":"
+           -> maybeQuote nm 
               <~> text "TXT" <+> quote str
         where view Nothing  = empty
               view (Just v) = pretty v
