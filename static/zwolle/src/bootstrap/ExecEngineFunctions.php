@@ -366,7 +366,7 @@ ExecEngine::registerFunction('SetNavToOnCommit', function ($navTo) use ($contain
         $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
     }
 
-    if (empty($navTo)) {
+    if (empty($navTo) || ($navTo == '_NULL')) {
         return false;
     }
 
@@ -379,7 +379,7 @@ ExecEngine::registerFunction('SetNavToOnRollback', function ($navTo) use ($conta
         $execEngineLogger->debug("replaced navTo string with '{$navTo}'");
     }
     
-    if (empty($navTo)) {
+    if (empty($navTo) || ($navTo == '_NULL')) {
         return false;
     }
     

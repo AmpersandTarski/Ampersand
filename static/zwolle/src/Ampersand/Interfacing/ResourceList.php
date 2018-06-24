@@ -296,7 +296,9 @@ class ResourceList implements IteratorAggregate
     }
     
     /**
-     * Update a complete resource list (updates only this subinterface, not any level(s) deeper for now)
+     * Update a complete resource list
+     * Updates only this subinterface, not any level(s) deeper for now, except for I expressions
+     *
      * @param mixed $value
      * @return bool
      */
@@ -308,17 +310,16 @@ class ResourceList implements IteratorAggregate
                 throw new Exception("Non-array expected but array provided while updating " . $this->ifc->getPath(), 400);
             }
             
-            if ($this->ifc->tgtConcept->isObject()) { // expect value to be object or null
-                if (!is_object($value) && !is_null($value)) {
-                    throw new Exception("Object (or null) expected but " . gettype($value) . " provided while updating " . $this->ifc->getPath(), 400);
-                }
-                
-                if (is_null($value)) {
+            if ($this->ifc->tgtConcept->isObject()) {
+                if (is_null($value) || is_string($value)) { // null object or string
                     $this->set($value);
-                } elseif (isset($value->_id_)) {
+                } elseif (isset($value->_id_)) { // object with _id_ attribute
                     $this->set($value->_id_);
+                } elseif ($this->ifc->isIdent()) { // Ident object => no need for object id
+                    // go deeper into PUT when interface expression equals 'I'
+                    $this->one()->put($value);
                 } else {
-                    throw new Exception("No object identifier (_id_) provided while updating " . $this->ifc->getPath(), 400);
+                    throw new Exception("Cannot identify provided object while updating " . $this->ifc->getPath(), 400);
                 }
             } else { // expect value to be literal (i.e. non-object) or null
                 $this->set($value);
@@ -338,10 +339,12 @@ class ResourceList implements IteratorAggregate
                         throw new Exception("Object expected but " . gettype($item) . " provided while updating " . $this->ifc->getPath(), 400);
                     }
                     
-                    if (isset($item->_id_)) {
+                    if (is_string($item)) { // string
+                        $this->add($item);
+                    } elseif (isset($item->_id_)) { // object with _id_ attribute
                         $this->add($item->_id_);
                     } else {
-                        throw new Exception("No object identifier (_id_) provided while updating " . $this->ifc->getPath(), 400);
+                        throw new Exception("Cannot identify provided object while updating " . $this->ifc->getPath(), 400);
                     }
                 } else { // expect item to be literal (i.e. non-object) or null
                     $this->add($item);
