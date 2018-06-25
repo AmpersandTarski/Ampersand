@@ -41,6 +41,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , AAtomPair(..), AAtomPairs
  , AAtomValue(..), AAtomValues, mkAtomPair, PAtomValue(..)
  , ContextInfo(..)
+ , SignOrd(..), Type(..), DeclMap, typeOrConcept
  , showValADL,showValSQL
  , showSign
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
@@ -59,7 +60,7 @@ import           Ampersand.Core.ParseTree
     , PairView(..)
     , PairViewSegment(..)
     , Prop(..), Props
-    , Representation(..), TType(..), PAtomValue(..), PSingleton
+    , Representation(..), TType(..), PAtomValue(..)
     )
 import           Data.Char          (toUpper,toLower)
 import           Data.Data          (Typeable,Data)
@@ -75,6 +76,7 @@ import           Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
 import qualified Data.Time.Format as DTF 
                           (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 import           GHC.Generics       (Generic)
+import qualified Data.Map as Map
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
@@ -536,7 +538,7 @@ data Expression
       | EDcI A_Concept                 -- ^ Identity relation
       | EEps A_Concept Signature       -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Signature                 -- ^ Cartesian product relation
-      | EMp1 PSingleton A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
+      | EMp1 PAtomValue A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
       deriving (Eq, Ord, Show, Typeable, Generic, Data)
 instance Hashable Expression where
    hashWithSalt s expr =
@@ -747,7 +749,7 @@ instance Named A_Concept where
 instance Show A_Concept where
   showsPrec _ c = showString (name c)
 
-instance Unique (A_Concept, PSingleton) where
+instance Unique (A_Concept, PAtomValue) where
   showUnique (c,val) = show val++"["++showUnique c++"]"
 
 data Signature = Sign A_Concept A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
@@ -776,22 +778,50 @@ class Association rel where
 
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
+-- Purpose: have this information available during the type checking,
+--   and reuse it in a context.
 data ContextInfo =
   CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
      , reprList         :: [Representation] -- a list of all Representation, so 
+     , declDisambMap    :: DeclMap
+     , soloConcs        :: [Type]
      }
-                       
-   
+
+instance Named Type where
+  name v = case typeOrConcept v of
+                Right (Just x) -> "Built-in type "++show x
+                Right Nothing  -> "The Generic Built-in type"
+                Left  x -> "Concept "++name x
+
+typeOrConcept :: Type -> Either A_Concept (Maybe TType)
+typeOrConcept (BuiltIn TypeOfOne)  = Left  ONE
+typeOrConcept (UserConcept s)      = Left$ makeConcept s
+typeOrConcept (BuiltIn x)          = Right (Just x)
+typeOrConcept RepresentSeparator = Right Nothing
+
+data Type = UserConcept String
+          | BuiltIn TType
+          | RepresentSeparator
+          deriving (Eq,Ord,Show)
+type DeclMap = Map.Map String (Map.Map SignOrd Relation)
+
+-- for faster comparison
+newtype SignOrd = SignOrd Signature
+instance Ord SignOrd where
+  compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
+instance Eq SignOrd where
+  (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
+
 
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
 --   after the expression has been built inside an A_Context. Only at that time
 --   the TType is known, enabling the correct transformation.
 --   To ensure that this function is not used too early, ContextInfo is required,
 --   which only exsists after disambiguation.
-safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
-safePSingleton2AAtomVal ci c val =
+safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
+safePSingleton2AAtomVal ci c val = 
    case unsafePAtomVal2AtomValue typ (Just c) val of
      Left _ -> fatal . intercalate "\n  " $
                   [ "This should be impossible: after checking everything an unhandled singleton value found!"
