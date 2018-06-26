@@ -44,6 +44,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , ContextInfo(..)
  , showValADL,showValSQL
  , showSign
+ , SignOrd(..), Type(..), DeclMap, typeOrConcept
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
  , makeConcept
@@ -76,6 +77,7 @@ import           Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
 import qualified Data.Time.Format as DTF 
                           (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 import           GHC.Generics       (Generic)
+import qualified Data.Map as Map
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
@@ -790,8 +792,34 @@ data ContextInfo =
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
      , reprList         :: [Representation] -- a list of all Representation, so 
+     , declDisambMap    :: DeclMap
+     , soloConcs        :: [Type]
      }
                        
+instance Named Type where
+  name v = case typeOrConcept v of
+                Right (Just x) -> "Built-in type "++show x
+                Right Nothing  -> "The Generic Built-in type"
+                Left  x -> "Concept "++name x
+
+typeOrConcept :: Type -> Either A_Concept (Maybe TType)
+typeOrConcept (BuiltIn TypeOfOne)  = Left  ONE
+typeOrConcept (UserConcept s)      = Left$ makeConcept s
+typeOrConcept (BuiltIn x)          = Right (Just x)
+typeOrConcept RepresentSeparator = Right Nothing
+
+data Type = UserConcept String
+          | BuiltIn TType
+          | RepresentSeparator
+          deriving (Eq,Ord,Show)
+type DeclMap = Map.Map String (Map.Map SignOrd Relation)
+
+-- for faster comparison
+newtype SignOrd = SignOrd Signature
+instance Ord SignOrd where
+  compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
+instance Eq SignOrd where
+  (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
    
 
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
