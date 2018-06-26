@@ -154,26 +154,29 @@ checkOtherAtomsInSessionConcept ctx =
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
-findDecls :: DeclMap -> String -> Map.Map SignOrd Relation
-findDecls declMap x = Map.findWithDefault Map.empty x declMap  -- get all relations with the same name as x
+findRels :: DeclMap -> String -> Map.Map SignOrd Expression
+findRels declMap x = Map.findWithDefault Map.empty x declMap  -- get all relations with the same name as x
+extractDecl :: (Traced a) => a -> Expression -> Guarded Relation
+extractDecl _ (EDcD r) = return r
+extractDecl _ e = fatal $ "Expecting a declared relation, instead I found: "++show e -- to fix: return an error via a (still to be made) function in CtxError
 namedRel2Decl :: DeclMap -> P_NamedRel -> Guarded Relation
-namedRel2Decl declMap o@(PNamedRel _ r Nothing)  = getOneExactly o (findDecls' declMap r)
-namedRel2Decl declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findDeclsTyped declMap r (pSign2aSign s))
-findDecls' :: DeclMap -> String -> [Relation]
-findDecls' declMap x = Map.elems (findDecls declMap  x)
-findDeclsLooselyTyped :: DeclMap -> String -> Maybe A_Concept -> Maybe A_Concept -> [Relation]
-findDeclsLooselyTyped declMap x (Just src) (Just tgt)
- = findDeclsTyped declMap x (Sign src tgt)
-   `orWhenEmpty` (findDeclsLooselyTyped declMap x (Just src) Nothing `isct` findDeclsLooselyTyped declMap x Nothing (Just tgt))
-   `orWhenEmpty` (findDeclsLooselyTyped declMap x (Just src) Nothing `unin` findDeclsLooselyTyped declMap x Nothing (Just tgt))
+namedRel2Decl declMap o@(PNamedRel _ r Nothing)  = getOneExactly o (findDecls' declMap r) >>= extractDecl o
+namedRel2Decl declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findRelsTyped declMap r (pSign2aSign s)) >>= extractDecl o
+findDecls' :: DeclMap -> String -> [Expression]
+findDecls' declMap x = Map.elems (findRels declMap  x)
+findRelsLooselyTyped :: DeclMap -> String -> Maybe A_Concept -> Maybe A_Concept -> [Expression]
+findRelsLooselyTyped declMap x (Just src) (Just tgt)
+ = findRelsTyped declMap x (Sign src tgt)
+   `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `isct` findRelsLooselyTyped declMap x Nothing (Just tgt))
+   `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `unin` findRelsLooselyTyped declMap x Nothing (Just tgt))
    `orWhenEmpty` findDecls' declMap x
  where isct lsta lstb = [a | a<-lsta, a `elem` lstb]
        unin lsta lstb = Lst.nub (lsta ++ lstb)
-findDeclsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
-findDeclsLooselyTyped declMap x (Just src) Nothing
+findRelsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
+findRelsLooselyTyped declMap x (Just src) Nothing
  = [dcl | dcl <- findDecls' declMap x, name (source dcl) == name src ]
    `orWhenEmpty` findDecls' declMap x
-findDeclsLooselyTyped declMap x Nothing (Just tgt)
+findRelsLooselyTyped declMap x Nothing (Just tgt)
  = [dcl | dcl <- findDecls' declMap x, name (target dcl) == name tgt ]
    `orWhenEmpty` findDecls' declMap x
 findDeclLooselyTyped :: DeclMap
@@ -182,9 +185,11 @@ findDeclLooselyTyped :: DeclMap
                      -> Maybe A_Concept
                      -> Maybe A_Concept
                      -> Guarded Relation
-findDeclLooselyTyped declMap o x src tgt = getOneExactly o (findDeclsLooselyTyped declMap x src tgt)
-findDeclsTyped :: DeclMap -> String -> Signature -> [Relation]
-findDeclsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls declMap x))
+findDeclLooselyTyped declMap o x src tgt = getOneExactly o (findRelsLooselyTyped declMap x src tgt) >>= extractDecl o
+findRelsTyped :: DeclMap -> String -> Signature -> [Expression]
+findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findRels declMap x))
+
+type DeclMap = Map.Map String (Map.Map SignOrd Expression)
 
 onlyUserConcepts :: [[Type]] -> [[A_Concept]]
 onlyUserConcepts = fmap userList
@@ -288,8 +293,8 @@ pCtx2aCtx opts
           multitypologies <- traverse mkTypology connectedConcepts
           decls <- map fst
                        <$> traverse (pDecl2aDecl Nothing findR deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
-          let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
-                where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
+          let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[EDcD d]) | d <- decls])
+                where groupOnTp lst = Map.fromListWith const [(SignOrd$ sign d,d) | d <- lst]
           let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
           return CI { ctxiGens = gns
                     , representationOf = findR
@@ -435,34 +440,6 @@ pCtx2aCtx opts
     genLatticeIncomplete = optimize1 (foldr addEquality emptySystem genRules)
     genLattice :: Op1EqualitySystem Type
     genLattice = optimize1 (foldr addEquality emptySystem completeRules)
-
-    -- accumDecl is the function that combines two relations into one.
-    -- meanings, for instance, two should get combined into a list of meanings, et cetera
-    -- positions are combined
-    -- TODO. This combining should be done better. (now some things of r2 are ignored.)
-    accumDecl :: Relation -> Relation -> Relation
-    accumDecl r1 r2 = Relation 
-       { decnm = if decnm r1 == decnm r2 
-                 then decnm r1 
-                 else fatal "Accumulated relations must have the same name!"
-       , decsgn = if decsgn r1 == decsgn r2 
-                 then decsgn r1 
-                 else fatal "Accumulated relations must have the same signature!"
-      , decprps = decprps r1 `Set.union` decprps r2
-      , decprps_calc = case (decprps_calc r1,decprps_calc r2) of
-                         (x, Nothing)         -> x
-                         (Nothing, x)         -> x
-                         (Just ps1, Just ps2) -> Just (ps1 `Set.union` ps2)
-      , decprL = decprL r1  --ignored for r2
-      , decprM = decprM r1  --ignored for r2
-      , decprR = decprR r1  --ignored for r2
-      , decMean = decMean r1  --ignored for r2
-      , decfpos = decfpos r1  --ignored for r2
-      , decusr = decusr r1 || decusr r2
-      , decpat = decpat r1 `orElse` decpat r2
-      , decplug = decplug r1 || decplug r2
-      , dechash = dechash r1  --ignored for r2
-      } 
 
     pGen2aGen :: P_Gen -> A_Gen
     pGen2aGen pg =
@@ -698,8 +675,8 @@ pCtx2aCtx opts
            PNamedR nr -> Rel $ disambNamedRel nr
         )
       where
-        disambNamedRel (PNamedRel _ r Nothing)  = map EDcD . Map.elems $ findDecls declMap r
-        disambNamedRel (PNamedRel _ r (Just s)) = map EDcD . findDeclsTyped declMap r $ pSign2aSign s
+        disambNamedRel (PNamedRel _ r Nothing)  = Map.elems $ findRels declMap r
+        disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign s
 
     pIfc2aIfc :: ContextInfo -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc ci
@@ -830,7 +807,7 @@ pCtx2aCtx opts
        <$> pRefObj2aRefObj ci objref
     pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
     pRefObj2aRefObj _       (PRef2ConceptDef  s ) = pure$ ExplConceptDef (lookupConceptDef s)
-    pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (declDisambMap ci) tm
+    pRefObj2aRefObj ci      (PRef2Relation tm)    = ExplRelation <$> namedRel2Decl (declDisambMap ci) tm
     pRefObj2aRefObj _       (PRef2Rule        s ) = pure$ ExplRule s
     pRefObj2aRefObj _       (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
     pRefObj2aRefObj _       (PRef2ViewDef     s ) = pure$ ExplViewDef s
