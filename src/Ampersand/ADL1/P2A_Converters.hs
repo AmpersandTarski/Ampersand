@@ -154,26 +154,29 @@ checkOtherAtomsInSessionConcept ctx =
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
-findDecls :: DeclMap -> String -> Map.Map SignOrd Relation
-findDecls declMap x = Map.findWithDefault Map.empty x declMap  -- get all relations with the same name as x
+findRels :: DeclMap -> String -> Map.Map SignOrd Expression
+findRels declMap x = Map.findWithDefault Map.empty x declMap  -- get all relations with the same name as x
+extractDecl :: (Traced a) => a -> Expression -> Guarded Relation
+extractDecl _ (EDcD r) = return r
+extractDecl _ e = fatal $ "Expecting a declared relation, instead I found: "++show e -- to fix: return an error via a (still to be made) function in CtxError
 namedRel2Decl :: DeclMap -> P_NamedRel -> Guarded Relation
-namedRel2Decl declMap o@(PNamedRel _ r Nothing)  = getOneExactly o (findDecls' declMap r)
-namedRel2Decl declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findDeclsTyped declMap r (pSign2aSign s))
-findDecls' :: DeclMap -> String -> [Relation]
-findDecls' declMap x = Map.elems (findDecls declMap  x)
-findDeclsLooselyTyped :: DeclMap -> String -> Maybe A_Concept -> Maybe A_Concept -> [Relation]
-findDeclsLooselyTyped declMap x (Just src) (Just tgt)
- = findDeclsTyped declMap x (Sign src tgt)
-   `orWhenEmpty` (findDeclsLooselyTyped declMap x (Just src) Nothing `isct` findDeclsLooselyTyped declMap x Nothing (Just tgt))
-   `orWhenEmpty` (findDeclsLooselyTyped declMap x (Just src) Nothing `unin` findDeclsLooselyTyped declMap x Nothing (Just tgt))
+namedRel2Decl declMap o@(PNamedRel _ r Nothing)  = getOneExactly o (findDecls' declMap r) >>= extractDecl o
+namedRel2Decl declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findRelsTyped declMap r (pSign2aSign s)) >>= extractDecl o
+findDecls' :: DeclMap -> String -> [Expression]
+findDecls' declMap x = Map.elems (findRels declMap  x)
+findRelsLooselyTyped :: DeclMap -> String -> Maybe A_Concept -> Maybe A_Concept -> [Expression]
+findRelsLooselyTyped declMap x (Just src) (Just tgt)
+ = findRelsTyped declMap x (Sign src tgt)
+   `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `isct` findRelsLooselyTyped declMap x Nothing (Just tgt))
+   `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `unin` findRelsLooselyTyped declMap x Nothing (Just tgt))
    `orWhenEmpty` findDecls' declMap x
  where isct lsta lstb = [a | a<-lsta, a `elem` lstb]
        unin lsta lstb = Lst.nub (lsta ++ lstb)
-findDeclsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
-findDeclsLooselyTyped declMap x (Just src) Nothing
+findRelsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
+findRelsLooselyTyped declMap x (Just src) Nothing
  = [dcl | dcl <- findDecls' declMap x, name (source dcl) == name src ]
    `orWhenEmpty` findDecls' declMap x
-findDeclsLooselyTyped declMap x Nothing (Just tgt)
+findRelsLooselyTyped declMap x Nothing (Just tgt)
  = [dcl | dcl <- findDecls' declMap x, name (target dcl) == name tgt ]
    `orWhenEmpty` findDecls' declMap x
 findDeclLooselyTyped :: DeclMap
@@ -182,9 +185,11 @@ findDeclLooselyTyped :: DeclMap
                      -> Maybe A_Concept
                      -> Maybe A_Concept
                      -> Guarded Relation
-findDeclLooselyTyped declMap o x src tgt = getOneExactly o (findDeclsLooselyTyped declMap x src tgt)
-findDeclsTyped :: DeclMap -> String -> Signature -> [Relation]
-findDeclsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls declMap x))
+findDeclLooselyTyped declMap o x src tgt = getOneExactly o (findRelsLooselyTyped declMap x src tgt) >>= extractDecl o
+findRelsTyped :: DeclMap -> String -> Signature -> [Expression]
+findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findRels declMap x))
+
+type DeclMap = Map.Map String (Map.Map SignOrd Expression)
 
 onlyUserConcepts :: [[Type]] -> [[A_Concept]]
 onlyUserConcepts = fmap userList
@@ -288,8 +293,8 @@ pCtx2aCtx opts
           multitypologies <- traverse mkTypology connectedConcepts
           decls <- map fst
                        <$> traverse (pDecl2aDecl Nothing findR deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
-          let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
-                where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
+          let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[EDcD d]) | d <- decls])
+                where groupOnTp lst = Map.fromListWith const [(SignOrd$ sign d,d) | d <- lst]
           let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
           return CI { ctxiGens = gns
                     , representationOf = findR
@@ -297,6 +302,7 @@ pCtx2aCtx opts
                     , reprList = allReprs
                     , declDisambMap = declMap
                     , soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs)
+                    , gens_efficient = genLattice
                     }
         where
           gns = map pGen2aGen allGens
@@ -435,34 +441,6 @@ pCtx2aCtx opts
     genLattice :: Op1EqualitySystem Type
     genLattice = optimize1 (foldr addEquality emptySystem completeRules)
 
-    -- accumDecl is the function that combines two relations into one
-    -- meanings, for instance, two should get combined into a list of meanings, et cetera
-    -- positions are combined
-    -- TODO. This combining should be done better. (now some things of r2 are ignored.)
-    accumDecl :: Relation -> Relation -> Relation
-    accumDecl r1 r2 = Relation 
-       { decnm = if decnm r1 == decnm r2 
-                 then decnm r1 
-                 else fatal "Accumulated relations must have the same name!"
-       , decsgn = if decsgn r1 == decsgn r2 
-                 then decsgn r1 
-                 else fatal "Accumulated relations must have the same signature!"
-      , decprps = decprps r1 `Set.union` decprps r2
-      , decprps_calc = case (decprps_calc r1,decprps_calc r2) of
-                         (x, Nothing)         -> x
-                         (Nothing, x)         -> x
-                         (Just ps1, Just ps2) -> Just (ps1 `Set.union` ps2)
-      , decprL = decprL r1  --ignored for r2
-      , decprM = decprM r1  --ignored for r2
-      , decprR = decprR r1  --ignored for r2
-      , decMean = decMean r1  --ignored for r2
-      , decfpos = decfpos r1  --ignored for r2
-      , decusr = decusr r1 || decusr r2
-      , decpat = decpat r1 `orElse` decpat r2
-      , decplug = decplug r1 || decplug r2
-      , dechash = dechash r1  --ignored for r2
-      } 
-
     pGen2aGen :: P_Gen -> A_Gen
     pGen2aGen pg =
       case pg of
@@ -474,18 +452,6 @@ pCtx2aCtx opts
                      , genrhs = map pCpt2aCpt (gen_rhs pg)
                      , genspc = pCpt2aCpt (gen_spc pg)
                      }
-
-    castSign :: A_Concept -> A_Concept -> Signature
-    castSign = Sign
-
-    leastConcept :: A_Concept -> A_Concept -> A_Concept
-    leastConcept c str
-     = case (aConcToType c `elem` leastConcepts, aConcToType str `elem` leastConcepts) of
-         (True, _) -> c
-         (_, True) -> str
-         (_, _)    -> fatal ("Either "++name c++" or "++show str++" should be a subset of the other." )
-       where
-         leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType str))
 
     userConcept :: String -> Type
     userConcept "ONE" = BuiltIn TypeOfOne
@@ -566,7 +532,7 @@ pCtx2aCtx opts
                  do (viewExpr,(srcBounded,_)) <- typecheckTerm ci term
                     case userList$toList$ findExact genLattice (flType$ lMeet c (source viewExpr)) of
                        [] -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
-                       r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft (head r) viewExpr))
+                       r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft genLattice (head r) viewExpr))
                              else mustBeBound (origin seg) [(Tgt,viewExpr)]
               P_ViewText str -> pure$ ViewText str
        c = mustBeConceptBecauseMath (pConcToType (vd_cpt o))
@@ -626,14 +592,7 @@ pCtx2aCtx opts
                , objmView = mView
                , objmsub = s
                }, sr)
-    addEpsilonLeft,addEpsilonRight :: A_Concept -> Expression -> Expression
-    addEpsilonLeft a e
-     = if a==source e then e else EEps (leastConcept (source e) a) (castSign a (source e)) .:. e
-    addEpsilonRight a e
-     = if a==target e then e else e .:. EEps (leastConcept (target e) a) (castSign (target e) a)
-    addEpsilon :: A_Concept -> A_Concept -> Expression -> Expression
-    addEpsilon s t e
-     = addEpsilonLeft s (addEpsilonRight t e)
+    
     pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
     pCruds2aCruds mCrud = 
        case mCrud of 
@@ -654,8 +613,6 @@ pCtx2aCtx opts
                       | toUpper c `elem` str = True
                       | toLower c `elem` str = False
                       | otherwise            = def'
-
-
 
     pSubi2aSubi :: ContextInfo
                 -> Expression -- Expression of the surrounding
@@ -689,7 +646,7 @@ pCtx2aCtx opts
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
                     [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef ojd)]
-                    (r:_) -> pure (ojd{objExpression=addEpsilonLeft r (objExpression ojd)})
+                    (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
     typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
@@ -697,7 +654,7 @@ pCtx2aCtx opts
           ifcSource = source ifcExpr
           refIsCompatible = expTarget `isaC` ifcSource || ifcSource `isaC` expTarget
       in  if refIsCompatible 
-          then pure $ addEpsilonRight ifcSource objExpr 
+          then pure $ addEpsilonRight genLattice ifcSource objExpr 
           else Errors . pure $ mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef
     lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
     lookupDisambIfcObj declMap ifcId =
@@ -705,109 +662,7 @@ pCtx2aCtx opts
         []          -> Nothing
         disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
     
-    typecheckTerm :: ContextInfo -> Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
-    typecheckTerm ci tct
-     = case tct of
-         Prim (t,v) -> join $ (\x -> case x of
-            EMp1 s c -> const (x,(True,True)) <$> pAtomValue2aAtomValue (representationOf ci) c s
-            _ -> return (x, case t of
-                                   PVee _ -> (False,False)
-                                   -- PI   _ -> (False,False) -- this line needs to be uncommented, but it causes too many problems in travis (scripts that turn out to be genuinely unbounded and ambiguous)
-                                   _      -> (True,True)
-                                   )) <$> pDisAmb2Expr (t,v)
-         PEqu _ a b -> join $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PInc _ a b -> join $ binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <$> tt a <*> tt b
-         PIsc _ a b -> join $ binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PUni _ a b -> join $ binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PDif _ a b -> join $ binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PLrs _ a b -> join $ binary' (./.)  (MBE (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <$> tt a <*> tt b
-         PRrs _ a b -> join $ binary' (.\.)  (MBE (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <$> tt a <*> tt b
-         PDia _ a b -> join $ binary' (.<>.) (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- MBE would have been correct, but too restrictive
-         PCps _ a b -> join $ binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b
-         PRad _ a b -> join $ binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- Using MBE instead of ISC allows the programmer to use De Morgan
-         PPrd _ a b -> (\(x,(s,_)) (y,(_,t)) -> (x .*. y, (s,t))) <$> tt a <*> tt b
-         PKl0 _ a   -> join $ unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
-         PKl1 _ a   -> join $ unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
-         PFlp _ a   -> (\(x,(s,t)) -> (EFlp x, (t,s))) <$> tt a
-         PCpl _ a   -> (\(x,_) -> (ECpl x,(False,False))) <$> tt a
-         PBrk _ e   -> first EBrk <$> tt e 
-     where
-      o = origin (fmap fst tct)
-      tt = typecheckTerm ci
-      -- SJC: Here is what binary, binary' and unary do:
-      -- (1) Create an expression, the combinator for this is given by its first argument
-      -- (2) Fill in the corresponding type-checked terms to that expression
-      -- (3) For binary' only: fill in the intermediate concept too
-      -- (4) Fill in the type of the new expression
-      -- For steps (3) and (4), you can use the `TT' data type to specify the new type, and what checks should occur:
-      -- If you don't know what to use, try MBE: it is the strictest form.
-      -- In the steps (3) and (4), different type errors may arise:
-      -- If the type does not exist, this yields a type error.
-      -- Some types may be generalized, while others may not.
-      -- When a type may be generalized, that means that the value of the expression does not change if the type becomes larger
-      -- When a type may not be generalized:
-      --   the type so far is actually just an estimate
-      --   it must be bound by the context to something smaller, or something as big
-      --   a way to do this, is by using (V[type] /\ thingToBeBound)
-      -- More details about generalizable types can be found by looking at "deriv1".
-      binary :: (Expression -> Expression->Expression) -- combinator
-             -> ( TT ( SrcOrTgt
-                     , ( (Expression, (Bool, Bool))
-                       , (Expression, (Bool, Bool))
-                       ) -> (Expression, (Bool, Bool))
-                     )
-                , TT ( SrcOrTgt
-                     , ( (Expression, (Bool, Bool))
-                       , (Expression, (Bool, Bool))
-                       ) -> (Expression, (Bool, Bool))
-                     )
-                ) -- simple instruction on how to derive the type
-             -> (Expression,(Bool,Bool))
-             -> (Expression,(Bool,Bool)) -- expressions to feed into the combinator after translation
-             -> Guarded (Expression,(Bool,Bool))
-      binary  cbn     tp  e1 e2 = wrap (fst e1,fst e2) <$> deriv tp (e1,e2)
-        where
-         wrap (expr1,expr2) ((src,b1), (tgt,b2)) = (cbn (addEpsilon src tgt expr1) (addEpsilon src tgt expr2), (b1, b2))
-      unary   cbn     tp e1      = wrap (fst e1) <$> deriv tp e1
-        where
-         wrap expr  ((src,b1), (tgt,b2))  = (cbn (addEpsilon src tgt expr), (b1, b2))
-      binary' cbn preConcept tp side1 side2 e1 e2 = 
-          do a <- deriv1 o (fmap (resolve (e1,e2)) preConcept) 
-             b <- deriv' tp (e1,e2)
-             wrap (fst e1,fst e2) a b
-        where
-         wrap _ (_,False) ((_,b1), (_,b2))
-          = mustBeBound o [(p,e) | (False,p,e)<-[(b1,side1,fst e1),(b2,side2,fst e2)]]
-         wrap (expr1,expr2) (cpt,True) ((_,b1), (_,b2))
-          = pure (cbn (lrDecide side1 expr1) (lrDecide side2 expr2), (b1, b2))
-            where lrDecide side e = case side of Src -> addEpsilonLeft cpt e; Tgt -> addEpsilonRight cpt e
-      deriv (t1,t2) es = (,) <$> deriv1 o (fmap (resolve es) t1) <*> deriv1 o (fmap (resolve es) t2)
-    deriv1 :: Origin -> TT (SrcOrTgt, (Expression, Bool)) -> Guarded (A_Concept, Bool)
-    deriv1 o x'
-     = case x' of
-        (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
-             if (b1 && b2) || (getAConcept p1 e1 == getAConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType lJoin (p1, e1) (p2, e2)
-             else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
-        (MBG (p1,(e1,b1)) (p2,(e2,b2))) ->
-             (\x -> (fst x,b1)) <$> getAndCheckType lJoin (p1, True, e1) (p2, b2, e2)
-        (UNI (p1,(e1,b1)) (p2,(e2,b2))) ->
-             (\x -> (fst x,b1 && b2)) <$> getAndCheckType lJoin (p1, b1, e1) (p2, b2, e2)
-        (ISC (p1,(e1,b1)) (p2,(e2,b2))) ->
-             (\(x,r) -> (x, (b1 && elem (getAConcept p1 e1) r) || (b2 && elem (getAConcept p2 e2) r) || (b1 && b2))
-             ) <$> getAndCheckType lMeet (p1, b1, e1) (p2, b2, e2)
-     where
-      getExactType flf (p1,e1) (p2,e2)
-       = case userList$toList$ findExact genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of
-          [] -> mustBeOrdered o (p1,e1) (p2,e2)
-          r  -> pure$ head r
-      getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
-       = case fmap (userList . toList)$toList$ findUpperbounds genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
-          []  -> mustBeOrdered o (p1,e1) (p2,e2)
-          [r@(h:_)]
-              -> case (b1 || elem (getAConcept p1 e1) r,b2 || elem (getAConcept p2 e2) r ) of
-                   (True,True) -> pure (h,r)
-                   (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
-          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) lst
+
     termPrimDisAmb :: DeclMap -> TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb declMap x
      = (x, case x of
@@ -820,8 +675,8 @@ pCtx2aCtx opts
            PNamedR nr -> Rel $ disambNamedRel nr
         )
       where
-        disambNamedRel (PNamedRel _ r Nothing)  = map EDcD . Map.elems $ findDecls declMap r
-        disambNamedRel (PNamedRel _ r (Just s)) = map EDcD . findDeclsTyped declMap r $ pSign2aSign s
+        disambNamedRel (PNamedRel _ r Nothing)  = Map.elems $ findRels declMap r
+        disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign s
 
     pIfc2aIfc :: ContextInfo -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc ci
@@ -921,7 +776,7 @@ pCtx2aCtx opts
               do o <- pObjDefDisamb2aObjDef ci ojd
                  case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
                           [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
-                          _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft conc (objExpression o)}
+                          _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft genLattice conc (objExpression o)}
     typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView ci o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
@@ -933,7 +788,7 @@ pCtx2aCtx opts
           case toList . findExact genLattice . lMeet tp $ getConcept s t of
                           [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
                           lst -> if b || elem (getConcept s t) lst then
-                                    pure (PairViewExp orig s (addEpsilonLeft (getAConcept s t) e))
+                                    pure (PairViewExp orig s (addEpsilonLeft genLattice (getAConcept s t) e))
                                  else
                                     mustBeBound o [(Src, e)]
     pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
@@ -952,7 +807,7 @@ pCtx2aCtx opts
        <$> pRefObj2aRefObj ci objref
     pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
     pRefObj2aRefObj _       (PRef2ConceptDef  s ) = pure$ ExplConceptDef (lookupConceptDef s)
-    pRefObj2aRefObj ci (PRef2Relation tm) = ExplRelation <$> namedRel2Decl (declDisambMap ci) tm
+    pRefObj2aRefObj ci      (PRef2Relation tm)    = ExplRelation <$> namedRel2Decl (declDisambMap ci) tm
     pRefObj2aRefObj _       (PRef2Rule        s ) = pure$ ExplRule s
     pRefObj2aRefObj _       (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
     pRefObj2aRefObj _       (PRef2ViewDef     s ) = pure$ ExplViewDef s
@@ -969,6 +824,129 @@ pCtx2aCtx opts
     allRoleRules :: [A_RoleRule]
     allRoleRules = map pRoleRule2aRoleRule 
                       (p_roleRules ++ concatMap pt_RRuls p_patterns)
+
+leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
+leastConcept genLattice c str
+     = case (aConcToType c `elem` leastConcepts, aConcToType str `elem` leastConcepts) of
+         (True, _) -> c
+         (_, True) -> str
+         (_, _)    -> fatal ("Either "++name c++" or "++show str++" should be a subset of the other." )
+       where
+         leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType str))
+
+addEpsilonLeft,addEpsilonRight :: Op1EqualitySystem Type -> A_Concept -> Expression -> Expression
+addEpsilonLeft genLattice a e
+  = if a==source e then e else EEps (leastConcept genLattice (source e) a) (Sign a (source e)) .:. e
+addEpsilonRight genLattice a e
+  = if a==target e then e else e .:. EEps (leastConcept genLattice (target e) a) (Sign (target e) a)
+addEpsilon :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> Expression -> Expression
+addEpsilon genLattice s t e
+  = addEpsilonLeft genLattice s (addEpsilonRight genLattice t e)
+
+typecheckTerm :: ContextInfo -> Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
+typecheckTerm ci tct
+ = case tct of
+     Prim (t,v) -> join $ (\x -> case x of
+        EMp1 s c -> const (x,(True,True)) <$> pAtomValue2aAtomValue (representationOf ci) c s
+        _ -> return (x, case t of
+                               PVee _ -> (False,False)
+                               -- PI   _ -> (False,False) -- this line needs to be uncommented, but it causes too many problems in travis (scripts that turn out to be genuinely unbounded and ambiguous)
+                               _      -> (True,True)
+                               )) <$> pDisAmb2Expr (t,v)
+     PEqu _ a b -> join $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+     PInc _ a b -> join $ binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <$> tt a <*> tt b
+     PIsc _ a b -> join $ binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+     PUni _ a b -> join $ binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+     PDif _ a b -> join $ binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+     PLrs _ a b -> join $ binary' (./.)  (MBE (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <$> tt a <*> tt b
+     PRrs _ a b -> join $ binary' (.\.)  (MBE (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <$> tt a <*> tt b
+     PDia _ a b -> join $ binary' (.<>.) (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- MBE would have been correct, but too restrictive
+     PCps _ a b -> join $ binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b
+     PRad _ a b -> join $ binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- Using MBE instead of ISC allows the programmer to use De Morgan
+     PPrd _ a b -> (\(x,(s,_)) (y,(_,t)) -> (x .*. y, (s,t))) <$> tt a <*> tt b
+     PKl0 _ a   -> join $ unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
+     PKl1 _ a   -> join $ unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
+     PFlp _ a   -> (\(x,(s,t)) -> (EFlp x, (t,s))) <$> tt a
+     PCpl _ a   -> (\(x,_) -> (ECpl x,(False,False))) <$> tt a
+     PBrk _ e   -> first EBrk <$> tt e 
+ where
+  genLattice = gens_efficient ci
+  o = origin (fmap fst tct)
+  tt = typecheckTerm ci
+  -- SJC: Here is what binary, binary' and unary do:
+  -- (1) Create an expression, the combinator for this is given by its first argument
+  -- (2) Fill in the corresponding type-checked terms to that expression
+  -- (3) For binary' only: fill in the intermediate concept too
+  -- (4) Fill in the type of the new expression
+  -- For steps (3) and (4), you can use the `TT' data type to specify the new type, and what checks should occur:
+  -- If you don't know what to use, try MBE: it is the strictest form.
+  -- In the steps (3) and (4), different type errors may arise:
+  -- If the type does not exist, this yields a type error.
+  -- Some types may be generalized, while others may not.
+  -- When a type may be generalized, that means that the value of the expression does not change if the type becomes larger
+  -- When a type may not be generalized:
+  --   the type so far is actually just an estimate
+  --   it must be bound by the context to something smaller, or something as big
+  --   a way to do this, is by using (V[type] /\ thingToBeBound)
+  -- More details about generalizable types can be found by looking at "deriv1".
+  binary :: (Expression -> Expression->Expression) -- combinator
+         -> ( TT ( SrcOrTgt
+                 , ( (Expression, (Bool, Bool))
+                   , (Expression, (Bool, Bool))
+                   ) -> (Expression, (Bool, Bool))
+                 )
+            , TT ( SrcOrTgt
+                 , ( (Expression, (Bool, Bool))
+                   , (Expression, (Bool, Bool))
+                   ) -> (Expression, (Bool, Bool))
+                 )
+            ) -- simple instruction on how to derive the type
+         -> (Expression,(Bool,Bool))
+         -> (Expression,(Bool,Bool)) -- expressions to feed into the combinator after translation
+         -> Guarded (Expression,(Bool,Bool))
+  binary  cbn     tp  e1 e2 = wrap (fst e1,fst e2) <$> deriv tp (e1,e2)
+    where
+     wrap (expr1,expr2) ((src,b1), (tgt,b2)) = (cbn (addEpsilon genLattice src tgt expr1) (addEpsilon genLattice src tgt expr2), (b1, b2))
+  unary   cbn     tp e1      = wrap (fst e1) <$> deriv tp e1
+    where
+     wrap expr  ((src,b1), (tgt,b2))  = (cbn (addEpsilon genLattice src tgt expr), (b1, b2))
+  binary' cbn preConcept tp side1 side2 e1 e2 = 
+      do a <- deriv1 (fmap (resolve (e1,e2)) preConcept) 
+         b <- deriv' tp (e1,e2)
+         wrap (fst e1,fst e2) a b
+    where
+     wrap _ (_,False) ((_,b1), (_,b2))
+      = mustBeBound o [(p,e) | (False,p,e)<-[(b1,side1,fst e1),(b2,side2,fst e2)]]
+     wrap (expr1,expr2) (cpt,True) ((_,b1), (_,b2))
+      = pure (cbn (lrDecide side1 expr1) (lrDecide side2 expr2), (b1, b2))
+        where lrDecide side e = case side of Src -> addEpsilonLeft genLattice cpt e; Tgt -> addEpsilonRight genLattice cpt e
+  deriv (t1,t2) es = (,) <$> deriv1 (fmap (resolve es) t1) <*> deriv1 (fmap (resolve es) t2)
+  deriv1 :: TT (SrcOrTgt, (Expression, Bool)) -> Guarded (A_Concept, Bool)
+  deriv1 x'
+     = case x' of
+        (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
+             if (b1 && b2) || (getAConcept p1 e1 == getAConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType lJoin (p1, e1) (p2, e2)
+             else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
+        (MBG (p1,(e1,b1)) (p2,(e2,b2))) ->
+             (\x -> (fst x,b1)) <$> getAndCheckType lJoin (p1, True, e1) (p2, b2, e2)
+        (UNI (p1,(e1,b1)) (p2,(e2,b2))) ->
+             (\x -> (fst x,b1 && b2)) <$> getAndCheckType lJoin (p1, b1, e1) (p2, b2, e2)
+        (ISC (p1,(e1,b1)) (p2,(e2,b2))) ->
+             (\(x,r) -> (x, (b1 && elem (getAConcept p1 e1) r) || (b2 && elem (getAConcept p2 e2) r) || (b1 && b2))
+             ) <$> getAndCheckType lMeet (p1, b1, e1) (p2, b2, e2)
+     where
+      getExactType flf (p1,e1) (p2,e2)
+       = case userList$toList$ findExact genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of
+          [] -> mustBeOrdered o (p1,e1) (p2,e2)
+          r  -> pure$ head r
+      getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
+       = case fmap (userList . toList)$toList$ findUpperbounds genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
+          []  -> mustBeOrdered o (p1,e1) (p2,e2)
+          [r@(h:_)]
+              -> case (b1 || elem (getAConcept p1 e1) r,b2 || elem (getAConcept p2 e2) r ) of
+                   (True,True) -> pure (h,r)
+                   (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
+          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) lst
 
 pAtomPair2aAtomPair :: (A_Concept -> TType) -> Relation -> PAtomPair -> Guarded AAtomPair
 pAtomPair2aAtomPair typ dcl pp = 

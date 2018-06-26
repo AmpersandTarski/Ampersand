@@ -44,7 +44,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , ContextInfo(..)
  , showValADL,showValSQL
  , showSign
- , SignOrd(..), Type(..), DeclMap, typeOrConcept
+ , SignOrd(..), Type(..), typeOrConcept
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
  , makeConcept
@@ -78,6 +78,7 @@ import qualified Data.Time.Format as DTF
                           (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 import           GHC.Generics       (Generic)
 import qualified Data.Map as Map
+import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
@@ -791,10 +792,11 @@ data ContextInfo =
   CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
-     , reprList         :: [Representation] -- a list of all Representation, so 
-     , declDisambMap    :: DeclMap
-     , soloConcs        :: [Type]
-     }
+     , reprList         :: [Representation] -- a list of all Representations
+     , declDisambMap    :: Map.Map String (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
+     , soloConcs        :: [Type] -- types not used in any declaration
+     , gens_efficient   :: (Op1EqualitySystem Type) -- generalisation relations again, as a type system (including phantom types)
+     } 
                        
 instance Named Type where
   name v = case typeOrConcept v of
@@ -812,7 +814,6 @@ data Type = UserConcept String
           | BuiltIn TType
           | RepresentSeparator
           deriving (Eq,Ord,Show)
-type DeclMap = Map.Map String (Map.Map SignOrd Relation)
 
 -- for faster comparison
 newtype SignOrd = SignOrd Signature

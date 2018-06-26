@@ -192,6 +192,15 @@ instance GetOneGuarded Relation where
     ++".\n  Be more specific. These are the matching relations:"
     ++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]
 
+instance GetOneGuarded Expression where
+  getOneExactly _ [d] = Checked d
+  getOneExactly o []  = Errors . pure $ CTXE (origin o) $
+      "No relation for "++showP o
+  getOneExactly o lst = Errors . pure $ CTXE (origin o) $
+      "An ambiguity arises in trying to match "++showP o
+    ++".\n  Be more specific by using one of the following matching expressions:"
+    ++concat ["\n  - "++showA l | l<-lst]
+
 mkTypeMismatchError :: (Traced a2, Named a) => a2 -> Relation -> SrcOrTgt -> a -> Guarded a1
 mkTypeMismatchError o decl sot conc
  = Errors . pure $ CTXE (origin o) message
