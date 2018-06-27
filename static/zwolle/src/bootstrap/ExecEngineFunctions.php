@@ -370,6 +370,7 @@ ExecEngine::registerFunction('SetNavToOnCommit', function ($navTo) use ($contain
         return false;
     }
 
+    $execEngineLogger->info("instructing container to navigate to '{$navTo}' on a COMMIT");
     $container['angular_app']->setNavToResponse($navTo, 'COMMIT');
 });
     
@@ -383,5 +384,6 @@ ExecEngine::registerFunction('SetNavToOnRollback', function ($navTo) use ($conta
         return false;
     }
     
+    $execEngineLogger->info("instructing container to navigate to '{$navTo}' on a ROLLBACK");
     $container['angular_app']->setNavToResponse($navTo, 'ROLLBACK');
 });
