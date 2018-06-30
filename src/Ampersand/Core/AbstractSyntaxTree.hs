@@ -23,7 +23,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Interface(..)
  , getInterfaceByName
  , SubInterface(..)
- , ObjectDef(..),ObjExp(..),ObjTxt(..),isObjExp
+ , BoxItem(..),BoxExp(..),BoxTxt(..),isObjExp
  , Object(..)
  , Cruds(..)
  , Default(..)
@@ -265,7 +265,7 @@ instance Traced IdentityDef where
 instance Unique IdentityDef where
   showUnique = idLbl
 
-data IdentitySegment = IdentityExp ObjExp deriving (Eq, Show)  -- TODO: refactor to a list of terms
+data IdentitySegment = IdentityExp BoxExp deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
 data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                   , vdlbl :: String          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
@@ -332,7 +332,7 @@ instance Hashable A_Gen where
 
 data Interface = Ifc { ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
-                     , ifcObj ::      ObjExp     -- NOTE: this top-level ObjExp is contains the interface itself (ie. name and expression)
+                     , ifcObj ::      BoxExp     -- NOTE: this top-level BoxExp is contains the interface itself (ie. name and expression)
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
                      , ifcPrp ::      String        -- The purpose of the interface
@@ -356,10 +356,10 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
 
 class Object a where
  concept ::   a -> A_Concept      -- the type of the object
- fields ::    a -> [ObjExp]       -- the objects defined within the object
+ fields ::    a -> [BoxExp]       -- the objects defined within the object
  contextOf :: a -> Expression     -- the context expression
 
-instance Object ObjExp where
+instance Object BoxExp where
  concept obj = target (objExpression obj)
  fields  obj = case objmsub obj of
                  Nothing       -> []
@@ -367,42 +367,42 @@ instance Object ObjExp where
                  Just b@Box{}    -> map objE . filter isObjExp $ siObjs b
  contextOf   = objExpression
 
-data ObjectDef = 
-        ObjE {objE :: ObjExp}
-      | ObjT {objT :: ObjTxt}
+data BoxItem = 
+        BxExpr {objE :: BoxExp}
+      | BxTxt {objT :: BoxTxt}
       deriving (Eq, Show)
-instance Traced ObjectDef where
+instance Traced BoxItem where
   origin o 
     = case o of
-        ObjE{} -> origin . objE $ o
-        ObjT{} -> origin . objT $ o
-isObjExp :: ObjectDef -> Bool
-isObjExp ObjE{} = True
-isObjExp ObjT{} = False
-data ObjExp = 
-    ObjExp { objnm    :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+        BxExpr{} -> origin . objE $ o
+        BxTxt{} -> origin . objT $ o
+isObjExp :: BoxItem -> Bool
+isObjExp BxExpr{} = True
+isObjExp BxTxt{} = False
+data BoxExp = 
+    BoxExp { objnm    :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , objpos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , objExpression :: Expression -- ^ this expression describes the instances of this object, related to their context.
            , objcrud  :: Cruds          -- ^ CRUD as defined by the user 
            , objmView :: Maybe String   -- ^ The view that should be used for this object
            , objmsub  :: Maybe SubInterface -- ^ the fields, which are object definitions themselves.
-           } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
-data ObjTxt =
-    ObjTxt { objnm  :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+           } deriving (Eq, Show)        -- just for debugging (zie ook instance Show BoxItem)
+data BoxTxt =
+    BoxTxt { objnm  :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , objpos :: Origin
            , objtxt :: String
            } deriving (Eq, Show)
-instance Named ObjExp where
+instance Named BoxExp where
   name   = objnm
-instance Traced ObjExp where
+instance Traced BoxExp where
   origin = objpos
-instance Unique ObjExp where
+instance Unique BoxExp where
   showUnique = showUnique . origin
-instance Named ObjTxt where
+instance Named BoxTxt where
   name   = objnm
-instance Traced ObjTxt where
+instance Traced BoxTxt where
   origin = objpos
-instance Unique ObjectDef where
+instance Unique BoxItem where
   showUnique = showUnique . origin
 data Cruds = Cruds { crudOrig :: Origin
                    , crudC :: Bool
@@ -412,7 +412,7 @@ data Cruds = Cruds { crudOrig :: Origin
                    } deriving (Eq, Show)
 data SubInterface = Box { siConcept :: A_Concept
                         , siMClass  :: Maybe String
-                        , siObjs    :: [ObjectDef] 
+                        , siObjs    :: [BoxItem] 
                         }
                   | InterfaceRef 
                         { siIsLink :: Bool

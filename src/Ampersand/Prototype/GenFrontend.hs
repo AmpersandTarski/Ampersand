@@ -162,7 +162,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
             
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
- do { obj <- buildObject (ObjE $ ifcObj ifc)
+ do { obj <- buildObject (BxExpr $ ifcObj ifc)
     ; return 
         FEInterface { ifcName = escapeIdentifier $ name ifc
                     , ifcLabel = name ifc
@@ -176,8 +176,8 @@ buildInterface fSpec allIfcs ifc =
     --       (name comes from interface, but is equal to object name)
     } 
   where    
-    buildObject :: ObjectDef -> IO FEObject2
-    buildObject (ObjE object') =
+    buildObject :: BoxItem -> IO FEObject2
+    buildObject (BxExpr object') =
      do { let object = substituteReferenceObjectDef fSpec object'
         ; let iExp = conjNF (getOpts fSpec) $ objExpression object
         ; (aOrB, iExp') <-
@@ -219,7 +219,7 @@ buildInterface fSpec allIfcs ifc =
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
                                             , iExp)
                                    }
-                           else do { refObj <- buildObject  (ObjE $ ifcObj i)
+                           else do { refObj <- buildObject  (BxExpr $ ifcObj i)
                                    ; let comp = ECps (iExp, objExp refObj) 
                                          -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
                                          
@@ -250,7 +250,7 @@ buildInterface fSpec allIfcs ifc =
                 Nothing                          -> (source expr, Nothing  , target expr)
                 Just (declSrc, decl, declTgt, _) -> (declSrc    , Just decl, declTgt    ) 
                                                    -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
-    buildObject (ObjT object') = do
+    buildObject (BxTxt object') = do
       return FEObjT{objTxt = objtxt object'}
 
 ------ Generate RouteProvider.js

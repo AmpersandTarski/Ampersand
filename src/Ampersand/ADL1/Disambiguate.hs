@@ -138,14 +138,14 @@ instance Disambiguatable P_SubIfc where
    where (a', envA)              = disambInfo a                (Cnstr (bottomUpSourceTypes envB++bottomUpSourceTypes env1) [])
          (P_Box _ cl' lst',envB) = disambInfo (P_Box o cl lst) (Cnstr (bottomUpSourceTypes env1++bottomUpSourceTypes envA) [])
 
-instance Disambiguatable P_ObjDef where
-  disambInfo (P_Obj a b c -- term/expression
+instance Disambiguatable P_BoxItem where
+  disambInfo (P_BxExpr a b c -- term/expression
                         mCrud
                         v
                         d -- (potential) subobject
                         )
                         env -- from the environment, only the source is important
-   = (P_Obj a b c' mCrud v d', Cnstr (bottomUpSourceTypes env2) [] -- only source information should be relevant
+   = (P_BxExpr a b c' mCrud v d', Cnstr (bottomUpSourceTypes env2) [] -- only source information should be relevant
      )
     where
      (d', env1)
@@ -154,7 +154,7 @@ instance Disambiguatable P_ObjDef where
            Just si -> Control.Arrow.first Just $ disambInfo si (Cnstr (bottomUpTargetTypes env2) [])
      (c', env2)
       = disambInfo c (Cnstr (bottomUpSourceTypes env) (bottomUpSourceTypes env1))
-  disambInfo (P_Txt a b c) _ = (P_Txt a b c, noConstraints)
+  disambInfo (P_BxTxt  a b c) _ = (P_BxTxt  a b c, noConstraints)
 
 instance Disambiguatable Term where
   disambInfo (PFlp o a  ) env1 = ( PFlp o a', Cnstr (bottomUpTargetTypes envA)(bottomUpSourceTypes envA) )

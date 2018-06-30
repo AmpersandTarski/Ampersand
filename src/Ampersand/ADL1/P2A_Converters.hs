@@ -98,14 +98,14 @@ checkInterfaceCycles ctx =
                         . getCycles $ refsPerInterface
         refsPerInterface :: [(String, [String])]
         refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
-        getDeepIfcRefs :: ObjExp -> [String]
+        getDeepIfcRefs :: BoxExp -> [String]
         getDeepIfcRefs obj = case objmsub obj of
                                Nothing -> []
                                Just si -> case si of 
                                            InterfaceRef{} -> if siIsLink si
                                                              then []
                                                              else [siIfcId si]
-                                           Box{}          -> concatMap getDeepIfcRefs [x | ObjE x <- siObjs si]
+                                           Box{}          -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
         lookupInterface :: String -> Interface
         lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                [ifc] -> ifc
@@ -393,7 +393,7 @@ pCtx2aCtx opts
                isInvolved :: A_Gen -> Bool
                isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
-    p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
+    p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
     p_interfaceAndDisambObjs declMap = [ (ifc, disambiguate (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces ]
     
     -- story about genRules and genLattice
@@ -481,7 +481,7 @@ pCtx2aCtx opts
        then pure givenType
        else mkTypeMismatchError o dcl sourceOrTarget givenType
                
-    pObjDefDisamb2aObjDef :: ContextInfo -> P_ObjDef (TermPrim, DisambPrim) -> Guarded ObjectDef
+    pObjDefDisamb2aObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded BoxItem
     pObjDefDisamb2aObjDef ci x = fmap fst (typecheckObjDef ci x)
 
     pViewDef2aViewDef :: ContextInfo -> P_ViewDef -> Guarded ViewDef
@@ -533,10 +533,10 @@ pCtx2aCtx opts
     isaC :: A_Concept -> A_Concept -> Bool
     isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
     
-    typecheckObjDef :: ContextInfo -> P_ObjDef (TermPrim, DisambPrim) -> Guarded (ObjectDef, Bool)
+    typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (BoxItem, Bool)
     typecheckObjDef declMap objDef
       = case objDef of
-          P_Obj { obj_nm = nm
+          P_BxExpr { obj_nm = nm
                 , pos = orig
                 , obj_ctx = ctx
                 , obj_crud = mCrud
@@ -576,19 +576,19 @@ pCtx2aCtx opts
                                         mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
                   Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
               obj crud (e,sr) s
-                = ( ObjE
-                    ObjExp { objnm = nm
+                = ( BxExpr
+                    BoxExp { objnm = nm
                            , objpos = orig
                            , objExpression = e
                            , objcrud = crud
                            , objmView = mView
                            , objmsub = s
                            }, sr)
-          P_Txt { obj_nm  = nm
+          P_BxTxt  { obj_nm  = nm
                 , pos = orig
                 , obj_txt = str
-                } -> pure $ (ObjT
-                             ObjTxt { objnm = nm
+                } -> pure $ (BxTxt
+                             BoxTxt { objnm = nm
                                     , objpos = orig
                                     , objtxt = str
                                     },True)
@@ -617,7 +617,7 @@ pCtx2aCtx opts
     pSubi2aSubi :: ContextInfo
                 -> Expression -- Expression of the surrounding
                 -> Bool -- Whether the surrounding is bounded
-                -> P_ObjDef a -- name of where the error occured!
+                -> P_BoxItem a -- name of where the error occured!
                 -> P_SubIfc (TermPrim, DisambPrim) -- Subinterface to check
                 -> Guarded ( Expression -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original expression (in such a case, epsilons are added to the branches instead)
                            , SubInterface -- the subinterface
@@ -628,8 +628,8 @@ pCtx2aCtx opts
            ->  do (refIfcExpr,_) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
                                          Just disambObj -> typecheckTerm ci 
                                                                 $ case disambObj of
-                                                                             P_Obj{} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
-                                                                             P_Txt{} -> fatal "TXT is not expected here."
+                                                                             P_BxExpr{} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                                                                             P_BxTxt {} -> fatal "TXT is not expected here."
                                          Nothing        -> Errors . pure $ mkUndeclaredError "interface" o ifcId
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
                   return (objExprEps,InterfaceRef{ siIsLink = si_isLink x
@@ -646,17 +646,17 @@ pCtx2aCtx opts
                                 )
                        ) <$> traverse (join . fmap fn . typecheckObjDef ci) l 
                          <*  uniqueNames l
-                  where fn :: (ObjectDef, Bool) -> (Guarded ObjectDef)
-                        fn (ObjE e,p) = fmap ObjE $ matchWith (e,p)
-                        fn (ObjT t,_) = pure $ ObjT t
-     where matchWith :: (ObjExp, Bool) -> (Guarded ObjExp)
+                  where fn :: (BoxItem, Bool) -> (Guarded BoxItem)
+                        fn (BxExpr e,p) = fmap BxExpr $ matchWith (e,p)
+                        fn (BxTxt t,_) = pure $ BxTxt t
+     where matchWith :: (BoxExp, Bool) -> (Guarded BoxExp)
            matchWith (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
-                    [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef $ ObjE ojd)]
+                    [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef $ BxExpr ojd)]
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
-    typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
+    typeCheckInterfaceRef :: P_BoxItem a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
       let expTarget = target objExpr
           ifcSource = source ifcExpr
@@ -664,7 +664,7 @@ pCtx2aCtx opts
       in  if refIsCompatible 
           then pure $ addEpsilonRight genLattice ifcSource objExpr 
           else Errors . pure $ mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef
-    lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
+    lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_BoxItem (TermPrim, DisambPrim))
     lookupDisambIfcObj declMap ifcId =
       case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId ] of
         []          -> Nothing
@@ -686,7 +686,7 @@ pCtx2aCtx opts
         disambNamedRel (PNamedRel _ r Nothing)  = Map.elems $ findRels declMap r
         disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign s
 
-    pIfc2aIfc :: ContextInfo -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
+    pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc ci
              (P_Ifc { ifc_Name = nm
                     , ifc_Roles = rols
@@ -696,7 +696,7 @@ pCtx2aCtx opts
                     }, objDisamb)
         = (\ obj'
              -> case obj' of
-                  ObjE o ->
+                  BxExpr o ->
                     Ifc { ifcname = nm 
                         , ifcRoles = rols
                         , ifcObj = o
@@ -704,7 +704,7 @@ pCtx2aCtx opts
                         , ifcPos = orig
                         , ifcPrp = prp
                         }
-                  ObjT _ -> fatal "Unexpected ObjT"  --Interface should not have TXT only. it should have an expression object.     
+                  BxTxt _ -> fatal "Unexpected BxTxt"  --Interface should not have TXT only. it should have an expression object.     
           ) <$> pObjDefDisamb2aObjDef ci objDisamb
 
     pRoleRelation2aRoleRelation :: ContextInfo -> P_RoleRelation -> Guarded A_RoleRelation
@@ -787,11 +787,11 @@ pCtx2aCtx opts
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
               do ob <- pObjDefDisamb2aObjDef ci ojd
                  case ob of
-                   ObjE o ->
+                   BxExpr o ->
                      case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
                               [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
                               _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft genLattice conc (objExpression o)}
-                   ObjT t -> fatal $ "TXT is not expected in IDENT statements. ("++show (origin t)++")"
+                   BxTxt t -> fatal $ "TXT is not expected in IDENT statements. ("++show (origin t)++")"
     typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView ci o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg ci o x) lst

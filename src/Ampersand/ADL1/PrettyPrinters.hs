@@ -235,20 +235,20 @@ instance Pretty P_Interface where
       text "INTERFACE " <+> maybeQuote nm 
         <+> iroles <+>
          (case obj of
-            P_Obj{} -> 
+            P_BxExpr{} -> 
                 text ":" <~\> obj_ctx obj <~> obj_msub obj
-            P_Txt{} -> fatal "TXT must not be used directly in a P_Ifc."
+            P_BxTxt {} -> fatal "TXT must not be used directly in a P_Ifc."
          )
       where iroles = if null roles then empty
                      else text "FOR" <+> listOf roles
           
-instance Pretty a => Pretty (P_ObjDef a) where
+instance Pretty a => Pretty (P_BoxItem a) where
     pretty obj =
      maybeQuote (name obj) <+> text ":" <+>
        case obj of
-        (P_Obj _ _ ctx mCrud mView msub)
+        (P_BxExpr _ _ ctx mCrud mView msub)
            -> pretty ctx <+> crud mCrud <+> view mView <~> msub
-        (P_Txt _ _ str)
+        (P_BxTxt  _ _ str)
            -> text "TXT" <+> quote str
            
         where crud Nothing = empty
@@ -271,12 +271,12 @@ instance Pretty a => Pretty (P_IdentDf a) where
 instance Pretty a => Pretty (P_IdentSegmnt a) where
     pretty (P_IdentExp obj) =
       case obj of
-        (P_Obj nm _ ctx _ mView _)
+        (P_BxExpr nm _ ctx _ mView _)
            -> (if null nm
                then pretty ctx -- no label
                else maybeQuote nm <> text ":" <~> ctx
               ) <+> view mView
-        (P_Txt nm _ str)
+        (P_BxTxt  nm _ str)
            -> maybeQuote nm 
               <~> text "TXT" <+> quote str
         where view Nothing  = empty

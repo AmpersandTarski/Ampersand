@@ -263,10 +263,10 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> CtxError
 mkDanglingRefError entity ref orig =
   CTXE orig $ "Reference to non-existent " ++ entity ++ ": "++show ref
-mkUndeclaredError :: String -> P_ObjDef a -> String -> CtxError
+mkUndeclaredError :: String -> P_BoxItem a -> String -> CtxError
 mkUndeclaredError entity objDef ref =
   case objDef of
-    P_Obj{} -> CTXE (origin objDef) $ 
+    P_BxExpr{} -> CTXE (origin objDef) $ 
        "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (obj_nm objDef)
     _       -> fatal "Unexpected use of mkUndeclaredError."
 
@@ -307,10 +307,10 @@ mkInterfaceRefCycleError cyclicIfcs =
     where
       showIfc :: Interface -> String
       showIfc i = "- " ++ show (name i) ++ " at position " ++ show (origin i)
-mkIncompatibleInterfaceError :: P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError
+mkIncompatibleInterfaceError :: P_BoxItem a -> A_Concept -> A_Concept -> String -> CtxError
 mkIncompatibleInterfaceError objDef expTgt refSrc ref =
   case objDef of
-    P_Obj{} -> CTXE (origin objDef) $ 
+    P_BxExpr{} -> CTXE (origin objDef) $ 
         "Incompatible interface reference "++ show ref ++ " at field " ++ show (obj_nm objDef) ++
         ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++
         ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
@@ -323,10 +323,10 @@ mkMultipleDefaultError (c, vds@(vd0:_)) =
                       concat ["\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")"
                              | vd <- vds ]
 
-mkIncompatibleViewError :: (Named b,Named c) => P_ObjDef a -> String -> b -> c -> CtxError
+mkIncompatibleViewError :: (Named b,Named c) => P_BoxItem a -> String -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   case objDef of
-    P_Obj{} -> CTXE (origin objDef) $
+    P_BxExpr{} -> CTXE (origin objDef) $
       "Incompatible view annotation <"++viewId++"> at field " ++ show (obj_nm objDef) ++ ":"++
       "\nView " ++ show viewId ++ " has type " ++ name viewCptStr ++
       ", which should be equal to or more general than the target " ++ name viewRefCptStr ++ " of the expression at this field."

@@ -94,7 +94,7 @@ getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterf
 getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]
 getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
   where 
-    getExprs :: ObjExp -> [Expression]
+    getExprs :: BoxExp -> [Expression]
     getExprs objExpr =
       objExpression objExpr : 
           case objmsub objExpr of 
@@ -107,8 +107,8 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
                                     (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
                                     [i]     -> getAllInterfaceExprs allIfcs i
                                Box{} -> concatMap getExprs' (siObjs si)
-                        where getExprs' (ObjE e) = getExprs e
-                              getExprs' (ObjT _) = []
+                        where getExprs' (BxExpr e) = getExprs e
+                              getExprs' (BxTxt _) = []
 
 getCrudObjsPerConcept :: [(Interface, [(A_Concept,Bool,Bool,Bool,Bool)])] ->
                          [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]

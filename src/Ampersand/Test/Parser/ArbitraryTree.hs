@@ -47,7 +47,7 @@ lowerId = suchThat identifier startLower
     where startLower = isLower . head
 
 -- Generates an object
-objTermPrim :: Bool -> Int -> Gen (P_ObjDef TermPrim)
+objTermPrim :: Bool -> Int -> Gen (P_BoxItem TermPrim)
 objTermPrim isTxtAllowed 0 = objTermPrim isTxtAllowed 1 -- minimum of 1 sub interface
 objTermPrim isTxtAllowed i =
   makeObj isTxtAllowed genPrim ifc genView i
@@ -59,13 +59,13 @@ objTermPrim isTxtAllowed i =
           genPrim = PNamedR <$> relationRef
 
 --TODO: refactor obj/ifc generators
-genObj :: Arbitrary a => Bool -> Int -> Gen (P_ObjDef a)
+genObj :: Arbitrary a => Bool -> Int -> Gen (P_BoxItem a)
 genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (return Nothing)
 
-makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
+makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
-  oneof $ [P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
-        ++[P_Txt <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
+  oneof $ [P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
+        ++[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
      where term = Prim <$> genPrim
            ifc  = if n == 0 then return Nothing
                   else Just <$> ifcGen (n`div`2)
@@ -73,7 +73,7 @@ makeObj isTxtAllowed genPrim ifcGen genView n =
 genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
 genIfc = subIfc $ genObj True
 
-subIfc :: (Int -> Gen (P_ObjDef a)) -> Int -> Gen (P_SubIfc a)
+subIfc :: (Int -> Gen (P_BoxItem a)) -> Int -> Gen (P_SubIfc a)
 subIfc objGen n =
     if n == 0 then P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
     else P_Box          <$> arbitrary <*> boxKey   <*> vectorOf n (objGen$ n`div`2)

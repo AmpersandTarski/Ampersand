@@ -418,7 +418,7 @@ pInterface = lbl <$> currPos
           lbl p nm _params roles ctx mCrud mView sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Roles  = roles
-                     , ifc_Obj    = P_Obj { obj_nm   = nm
+                     , ifc_Obj    = P_BxExpr { obj_nm   = nm
                                           , pos      = p
                                           , obj_ctx  = ctx
                                           , obj_crud = mCrud
@@ -447,34 +447,34 @@ pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
-pObjDef :: AmpParser P_ObjectDef
+pObjDef :: AmpParser P_BoxItemTermPrim
 pObjDef = pBoxItem <$> currPos
                    <*> pLabel
                    <*> (pObj <|> pTxt) 
   where
     --build p lable fun = pBoxItem p lable <$> fun
-    pBoxItem :: Origin -> String -> P_ObjectDef -> P_ObjectDef
+    pBoxItem :: Origin -> String -> P_BoxItemTermPrim -> P_BoxItemTermPrim
     pBoxItem p nm fun = fun{ pos    = p
                            , obj_nm = nm}
       
-    pObj :: AmpParser (P_ObjectDef)
+    pObj :: AmpParser (P_BoxItemTermPrim)
     pObj = obj     <$> pTerm            -- the context expression (for example: I[c])
                    <*> pMaybe pCruds
                    <*> pMaybe (pChevrons pConid) --for the views
                    <*> pMaybe pSubInterface  -- the optional subinterface
           where obj ctx mCrud mView msub =
-                  P_Obj { obj_nm    = fatal "This should have been filled in promptly."
+                  P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."
                         , pos       = fatal "This should have been filled in promptly."
                         , obj_ctx   = ctx
                         , obj_crud  = mCrud
                         , obj_mView = mView
                         , obj_msub  = msub
                         }
-    pTxt :: AmpParser P_ObjectDef
+    pTxt :: AmpParser P_BoxItemTermPrim
     pTxt = obj <$ pKey "TXT"
                <*> pString
           where obj txt = 
-                  P_Txt { obj_nm   = fatal "This should have been filled in promptly."
+                  P_BxTxt  { obj_nm   = fatal "This should have been filled in promptly."
                         , pos      = fatal "This should have been filled in promptly."
                         , obj_txt  = txt
                         }
@@ -484,7 +484,7 @@ pCruds :: AmpParser P_Cruds
 pCruds = P_Cruds <$> currPos <*> pCrudString
 
 --- Box ::= '[' ObjDefList ']'
-pBox :: AmpParser [P_ObjectDef]
+pBox :: AmpParser [P_BoxItemTermPrim]
 pBox = pBrackets $ pObjDef `sepBy` pComma
 
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
@@ -679,10 +679,10 @@ value2PAtomValue o v = case v of
          VDate x        -> ScriptDate o x
 
 --- Attr ::= Label? Term
-pAtt :: AmpParser P_ObjectDef
+pAtt :: AmpParser P_BoxItemTermPrim
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
 pAtt = rebuild <$> currPos <*> try pLabel `opt` "" <*> try pTerm
-  where rebuild pos' nm ctx = P_Obj { obj_nm   = nm
+  where rebuild pos' nm ctx = P_BxExpr { obj_nm   = nm
                                     , pos      = pos'
                                     , obj_ctx  = ctx
                                     , obj_crud = Nothing

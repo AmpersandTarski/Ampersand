@@ -21,7 +21,7 @@ module Ampersand.FSpec.FSpec
           , Typology(..)
           , Interface(..)
           , Object(..)
-          , ObjectDef(..)
+          , BoxItem(..)
           , SubInterface(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)
@@ -350,7 +350,7 @@ showSQL tt =
 -- In case of reference to an INTERFACE, not used as a LINKTO, the
 -- expression and cruds are replaced. This is introduced with the
 -- refactoring of the frontend interfaces in oct/nov 2016. 
-substituteReferenceObjectDef :: FSpec -> ObjExp -> ObjExp
+substituteReferenceObjectDef :: FSpec -> BoxExp -> BoxExp
 substituteReferenceObjectDef fSpec originalObjectDef =
   case substitution of
     Nothing           -> originalObjectDef

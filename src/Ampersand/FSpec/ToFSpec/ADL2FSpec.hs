@@ -274,14 +274,14 @@ makeFSpec opts context
      -------------------
      --making interfaces
      -------------------
-     -- interfaces (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
+     -- interfaces (type BoxItem) can be generated from a basic ontology. That is: they can be derived from a set
      -- of relations together with multiplicity constraints. That is what interfaceG does.
      -- This is meant to help a developer to build his own list of interfaces, by providing a set of interfaces that works.
      -- The developer may relabel attributes by names of his own choice.
      -- This is easier than to invent a set of interfaces from scratch.
 
      -- Rule: a interface must be large enough to allow the required transactions to take place within that interface.
-     -- Attributes of an ObjectDef have unique names within that ObjectDef.
+     -- Attributes of an BoxItem have unique names within that BoxItem.
 
 --- generation of interfaces:
 --  Ampersand generates interfaces for the purpose of quick prototyping.
@@ -318,15 +318,15 @@ makeFSpec opts context
 --                student theme => generate interface for each concept with relations where concept is source or target (note: step1-3 are skipped)
      interfaceGen = step4a ++ step4b
      step4a
-      = let recur :: [[Expression]] -> [ObjExp]
+      = let recur :: [[Expression]] -> [BoxExp]
             recur es
-             = [ ObjExp
+             = [ BoxExp
                      { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objExpression  = t
                      , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
-                     , objmsub = Just . Box (target t) Nothing . map ObjE $ recur [ pth | (_:pth)<-cl, not (null pth) ]
+                     , objmsub = Just . Box (target t) Nothing . map BxExpr $ recur [ pth | (_:pth)<-cl, not (null pth) ]
                      }
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
@@ -339,13 +339,13 @@ makeFSpec opts context
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
         [Ifc { ifcname     = name c
-             , ifcObj      = ObjExp
+             , ifcObj      = BoxExp
                                  { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objExpression  = EDcI c
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
-                                 , objmsub = Just . Box c Nothing . map ObjE $ objattributes
+                                 , objmsub = Just . Box c Nothing . map BxExpr $ objattributes
                                  }
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
@@ -365,13 +365,13 @@ makeFSpec opts context
      --end stap4a
      step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
       = [Ifc { ifcname     = nm
-             , ifcObj      = ObjExp
+             , ifcObj      = BoxExp
                                  { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objExpression  = EDcI ONE
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
-                                 , objmsub = Just . Box ONE Nothing $ [ObjE att]
+                                 , objmsub = Just . Box ONE Nothing $ [BxExpr att]
                                  }
              , ifcControls = ifcControls ifcc
              , ifcPos      = ifcPos      ifcc
@@ -387,7 +387,7 @@ makeFSpec opts context
               nm
                 | null nms = fatal "impossible"
                 | otherwise = head nms
-              att = ObjExp
+              att = BoxExp
                         { objnm    = name c
                         , objpos   = Origin "generated attribute object: step 4b"
                         , objExpression   = EDcV (Sign ONE c)

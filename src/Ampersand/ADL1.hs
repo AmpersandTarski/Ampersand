@@ -24,7 +24,7 @@ import Ampersand.Core.ParseTree (
          , P_IdentDef, P_IdentSegment,P_IdentDf(..),P_IdentSegmnt(..)
          , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),ViewHtmlTemplate(..)
          , P_Population(..),PAtomPair(..)
-         , P_ObjectDef,P_ObjDef(..)
+         , P_BoxItemTermPrim,P_BoxItem(..)
          , P_Interface(..)
          , P_SubInterface,P_SubIfc(..),P_Cruds(..)
          , Term(..)
@@ -47,7 +47,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , ViewDef(..)
          , ViewSegment(..)
          , ViewSegmentPayLoad(..)
-         , ObjectDef(..), ObjExp(..), ObjTxt(..), isObjExp
+         , BoxItem(..), BoxExp(..), BoxTxt(..), isObjExp
          , Object(..)
          , Default(..)
          , SubInterface(..)

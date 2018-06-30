@@ -86,7 +86,7 @@ instance JSON Interface JSONInterface where
  fromAmpersand multi interface = JSONInterface
   { ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
   , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
-  , ifcJSONifcObject          = fromAmpersand multi (ObjE $ ifcObj interface)
+  , ifcJSONifcObject          = fromAmpersand multi (BxExpr $ ifcObj interface)
   }
 
 instance JSON Cruds JSONCruds where
@@ -97,7 +97,7 @@ instance JSON Cruds JSONCruds where
   , crudJSONdelete            = crudD crud
   }
   
-instance JSON ObjExp JSONexpr where
+instance JSON BoxExp JSONexpr where
  fromAmpersand multi object =
     JSONexpr
         { exprJSONsrcConceptId = escapeIdentifier . name $ srcConcept
@@ -118,10 +118,10 @@ instance JSON ObjExp JSONexpr where
               (src, tgt)
             Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
-instance JSON ObjectDef JSONObjectDef where
+instance JSON BoxItem JSONObjectDef where
  fromAmpersand multi obj =
    case obj of 
-     ObjE object' -> JSONObjectDef
+     BxExpr object' -> JSONObjectDef
       { ifcJSONtag                = "ObjExpression"
       , ifcJSONid                 = escapeIdentifier . name $ object
       , ifcJSONlabel              = name object
@@ -147,7 +147,7 @@ instance JSON ObjectDef JSONObjectDef where
               (tgt, Just (decl, isFlipped'))
             Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
         object = substituteReferenceObjectDef fSpec object'
-     ObjT object -> JSONObjectDef
+     BxTxt object -> JSONObjectDef
       { ifcJSONtag                = "ObjText"
       , ifcJSONid                 = escapeIdentifier . name $ object
       , ifcJSONlabel              = name object

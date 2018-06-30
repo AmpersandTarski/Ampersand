@@ -60,7 +60,7 @@ dumpSQLqueries multi
         = header ("INTERFACE: "<>Text.pack (name ifc))
         <>(map ("  " <>) . showObjDef . ifcObj) ifc
         where 
-          showObjDef :: ObjExp -> [Text.Text]
+          showObjDef :: BoxExp -> [Text.Text]
           showObjDef obj
             = (header . Text.pack . showA . objExpression) obj
             <>[queryAsSQL . prettySQLQueryWithPlaceholder 2 fSpec . objExpression $ obj]
@@ -72,7 +72,7 @@ dumpSQLqueries multi
           showSubInterface :: SubInterface -> [Text.Text]
           showSubInterface sub = 
             case sub of 
-              Box{} -> concatMap showObjDef [e | ObjE e <- siObjs sub]
+              Box{} -> concatMap showObjDef [e | BxExpr e <- siObjs sub]
               InterfaceRef{} -> []
 
      showConjunct :: Conjunct -> [Text.Text]

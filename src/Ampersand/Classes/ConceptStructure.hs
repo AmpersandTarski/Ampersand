@@ -76,8 +76,8 @@ instance ConceptStructure A_Context where
 
 instance ConceptStructure IdentityDef where
   concs         identity = Set.singleton (idCpt identity) `Set.union` 
-                           concs         [ObjE objDef | IdentityExp objDef <- identityAts identity]
-  expressionsIn identity = expressionsIn [ObjE objDef | IdentityExp objDef <- identityAts identity]
+                           concs         [BxExpr objDef | IdentityExp objDef <- identityAts identity]
+  expressionsIn identity = expressionsIn [BxExpr objDef | IdentityExp objDef <- identityAts identity]
 
 instance ConceptStructure ViewDef where
   concs         vd = Set.singleton (vdcpt vd) `Set.union` concs (vdats vd)
@@ -113,12 +113,12 @@ instance ConceptStructure Signature where
   concs (Sign s t) = Set.singleton s `Set.union` Set.singleton t
   expressionsIn _  = Set.empty
 
-instance ConceptStructure ObjectDef where
-  concs (ObjE obj) = concs obj
-  concs (ObjT _  ) = Set.empty
-  expressionsIn (ObjE obj) = expressionsIn obj
-  expressionsIn (ObjT _  ) = Set.empty
-instance ConceptStructure ObjExp where
+instance ConceptStructure BoxItem where
+  concs (BxExpr obj) = concs obj
+  concs (BxTxt _  ) = Set.empty
+  expressionsIn (BxExpr obj) = expressionsIn obj
+  expressionsIn (BxTxt _  ) = Set.empty
+instance ConceptStructure BoxExp where
   concs obj = (Set.singleton . target . objExpression $ obj) `Set.union` concs (objmsub obj)
   expressionsIn obj = Set.unions
                      [ (expressionsIn . objExpression) obj
@@ -149,8 +149,8 @@ instance ConceptStructure Pattern where
                      ]
 
 instance ConceptStructure Interface where
-  concs         = concs         . ObjE . ifcObj
-  expressionsIn = expressionsIn . ObjE . ifcObj
+  concs         = concs         . BxExpr . ifcObj
+  expressionsIn = expressionsIn . BxExpr . ifcObj
 
 instance ConceptStructure Relation where
   concs         d = concs (sign d)

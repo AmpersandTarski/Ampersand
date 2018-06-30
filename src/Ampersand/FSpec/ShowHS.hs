@@ -479,13 +479,13 @@ instance ShowHS Population where
           ++indent++"                    ]"
           ++indent++"         }"
 
-instance ShowHSName ObjExp where
+instance ShowHSName BoxExp where
  showHSName obj = haskellIdentifier ("oDef_"++name obj)
 
-instance ShowHS ObjExp where
+instance ShowHS BoxExp where
  showHS opts indent x
   = intercalate indent
-        ["ObjExp { objnm    = " ++ show(name x)
+        ["BoxExp { objnm    = " ++ show(name x)
         ,"       , objpos   = " ++ showHS opts "" (origin x)
         ,"       , objExpression   = " ++ showHS opts (indent++"                ") (objExpression x)
         ,"       , objcrud  = " ++ showHS opts (indent++"                ") (objcrud x)
@@ -493,10 +493,10 @@ instance ShowHS ObjExp where
         ,"       , objmsub  = " ++ showHS opts (indent++"                ") (objmsub x)
         ,"       }"
         ]
-instance ShowHS ObjTxt where
+instance ShowHS BoxTxt where
  showHS opts indent x
   = intercalate indent
-        ["ObjTxt { objnm    = " ++ show(name x)
+        ["BoxTxt { objnm    = " ++ show(name x)
         ,"       , objpos   = " ++ showHS opts "" (origin x)
         ,"       , objtxt   = " ++ show(objtxt x)
         ,"       }"
@@ -524,11 +524,11 @@ instance ShowHS Interface where
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
         , "    , ifcPrp    = " ++ show(ifcPrp ifc)
         ]++indent++"    }"
-instance ShowHS ObjectDef where
+instance ShowHS BoxItem where
  showHS opts indent obj =
    case obj of
-     (ObjE e) -> "ObjE ("++showHS opts indent e++")"
-     (ObjT t) -> "ObjT ("++showHS opts indent t++")"
+     (BxExpr e) -> "BxExpr ("++showHS opts indent e++")"
+     (BxTxt t) -> "BxTxt ("++showHS opts indent t++")"
  
 instance ShowHS SubInterface where
  showHS _     _     (InterfaceRef isLink n) = "InterfaceRef "++show isLink ++" "++show n

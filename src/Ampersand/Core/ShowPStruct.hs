@@ -155,13 +155,13 @@ instance (Traced a, PStruct a) => PStruct (Term a) where
        insPar i (PBrk _ e)   = insPar i e
        insPar _ x            = x
 
-instance PStruct (P_ObjDef TermPrim) where
+instance PStruct (P_BoxItem TermPrim) where
  showP obj = 
    case obj of 
-     P_Obj{} ->
+     P_BxExpr{} ->
        " : "++showP (obj_ctx obj)++
                recur "\n  " (obj_msub obj)
-     P_Txt{} -> " TXT "++show (obj_txt obj)
+     P_BxTxt {} -> " TXT "++show (obj_txt obj)
   where 
     recur :: (Traced a, PStruct a) => String -> Maybe (P_SubIfc a) -> String
     recur _   Nothing = ""
@@ -171,10 +171,10 @@ instance PStruct (P_ObjDef TermPrim) where
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
                                [ case o of
-                                   P_Obj{} -> doubleQuote (obj_nm o)++
+                                   P_BxExpr{} -> doubleQuote (obj_nm o)++
                                               " : "++showP (obj_ctx o)++
                                               recur (ind++"      ") (obj_msub o)
-                                   P_Txt{} -> " : TXT "++show (obj_txt o) 
+                                   P_BxTxt {} -> " : TXT "++show (obj_txt o) 
                                | o<-objs
                                ]++
            ind++"     ]"

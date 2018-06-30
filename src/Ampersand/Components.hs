@@ -179,7 +179,7 @@ generateAmpersandOutput multi = do
                 if atlasWithoutExpressions opts 
                 then name rul `elem` 
                         [ "TOT formalExpression[Rule*Expression]"
-                        , "TOT objExpression[ObjectDef*Expression]"
+                        , "TOT objExpression[BoxItem*Expression]"
                         ]
                 else False
           reportViolations :: [(Rule,AAtomPairs)] -> IO()
