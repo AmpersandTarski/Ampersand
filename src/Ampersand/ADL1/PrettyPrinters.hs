@@ -244,13 +244,13 @@ instance Pretty P_Interface where
           
 instance Pretty a => Pretty (P_ObjDef a) where
     pretty obj =
-      case obj of
-        (P_Obj nm _ ctx mCrud mView msub)
-           -> maybeQuote nm <+> text ":"
-                 <~> ctx <+> crud mCrud <+> view mView <~> msub
-        (P_Txt nm _ str)
-           -> maybeQuote nm 
-                 <~> text "TXT" <+> quote str
+     maybeQuote (name obj) <+> text ":" <+>
+       case obj of
+        (P_Obj _ _ ctx mCrud mView msub)
+           -> pretty ctx <+> crud mCrud <+> view mView <~> msub
+        (P_Txt _ _ str)
+           -> text "TXT" <+> quote str
+           
         where crud Nothing = empty
               crud (Just cruds) = pretty cruds
               view Nothing  = empty

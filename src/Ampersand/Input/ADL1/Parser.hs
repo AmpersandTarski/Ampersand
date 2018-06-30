@@ -449,8 +449,8 @@ pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef
 pObjDef = pBoxItem <$> currPos
-                <*> pADLid
-                <*> (pObj <|> pTxt) 
+                   <*> pLabel
+                   <*> (pObj <|> pTxt) 
   where
     --build p lable fun = pBoxItem p lable <$> fun
     pBoxItem :: Origin -> String -> P_ObjectDef -> P_ObjectDef
@@ -458,8 +458,7 @@ pObjDef = pBoxItem <$> currPos
                            , obj_nm = nm}
       
     pObj :: AmpParser (P_ObjectDef)
-    pObj = obj <$  pColon
-                   <*> pTerm            -- the context expression (for example: I[c])
+    pObj = obj     <$> pTerm            -- the context expression (for example: I[c])
                    <*> pMaybe pCruds
                    <*> pMaybe (pChevrons pConid) --for the views
                    <*> pMaybe pSubInterface  -- the optional subinterface

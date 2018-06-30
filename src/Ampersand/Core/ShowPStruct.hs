@@ -174,7 +174,7 @@ instance PStruct (P_ObjDef TermPrim) where
                                    P_Obj{} -> doubleQuote (obj_nm o)++
                                               " : "++showP (obj_ctx o)++
                                               recur (ind++"      ") (obj_msub o)
-                                   P_Txt{} -> " TXT "++show (obj_txt o) 
+                                   P_Txt{} -> " : TXT "++show (obj_txt o) 
                                | o<-objs
                                ]++
            ind++"     ]"
