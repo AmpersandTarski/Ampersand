@@ -8,6 +8,7 @@
 * [Issue #411](https://github.com/AmpersandTarski/Ampersand/issues/411) Fix issue with conjunct violation cache for src/tgt atom identifiers longer than 255 chars
 * Upgrade to pandoc vs 2.0
 * [Issue #482](https://github.com/AmpersandTarski/Ampersand/issues/482) Using checksum from generator to check if Ampersand model files are changed
+* [Issue #801](https://github.com/AmpersandTarski/Ampersand/issues/801) Fix a problem with empty values in .xlsx files during compilation of an .adl file
 
 ## v3.10.1 (8 june 2018)
 
