@@ -481,9 +481,6 @@ pCtx2aCtx opts
        then pure givenType
        else mkTypeMismatchError o dcl sourceOrTarget givenType
                
-    pObjDef2aObjDef :: ContextInfo -> P_ObjectDef -> Guarded ObjectDef
-    pObjDef2aObjDef ci x = pObjDefDisamb2aObjDef ci $ disambiguate (termPrimDisAmb (declDisambMap ci)) x
-
     pObjDefDisamb2aObjDef :: ContextInfo -> P_ObjDef (TermPrim, DisambPrim) -> Guarded ObjectDef
     pObjDefDisamb2aObjDef ci x = fmap fst (typecheckObjDef ci x)
 
@@ -546,7 +543,7 @@ pCtx2aCtx opts
                 , obj_mView = mView
                 , obj_msub = subs
                 } -> do checkCrudForRefInterface 
-                        (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
+                        (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
                         crud <- pCruds2aCruds mCrud
                         maybeObj <- case subs of
                                       Just P_Box{si_box=[]} -> pure Nothing
@@ -629,7 +626,8 @@ pCtx2aCtx opts
       = case x of
          P_InterfaceRef{si_str = ifcId} 
            ->  do (refIfcExpr,_) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
-                                         Just disambObj -> typecheckTerm $ case disambObj of
+                                         Just disambObj -> typecheckTerm ci 
+                                                                $ case disambObj of
                                                                              P_Obj{} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                                                                              P_Txt{} -> fatal "TXT is not expected here."
                                          Nothing        -> Errors . pure $ mkUndeclaredError "interface" o ifcId
@@ -646,10 +644,10 @@ pCtx2aCtx opts
                                              , siObjs    = lst
                                              }
                                 )
-                       ) <$> traverse (join . fmap fn . typecheckObjDef declMap) l 
+                       ) <$> traverse (join . fmap fn . typecheckObjDef ci) l 
                          <*  uniqueNames l
                   where fn :: (ObjectDef, Bool) -> (Guarded ObjectDef)
-                        fn (ObjE e,p) = fmap ObjE $ matchWith  (e,p)
+                        fn (ObjE e,p) = fmap ObjE $ matchWith (e,p)
                         fn (ObjT t,_) = pure $ ObjT t
      where matchWith :: (ObjExp, Bool) -> (Guarded ObjExp)
            matchWith (ojd,exprBound)
@@ -707,7 +705,7 @@ pCtx2aCtx opts
                         , ifcPrp = prp
                         }
                   ObjT _ -> fatal "Unexpected ObjT"  --Interface should not have TXT only. it should have an expression object.     
-          ) <$> pObjDefDisamb2aObjDef declMap objDisamb
+          ) <$> pObjDefDisamb2aObjDef ci objDisamb
 
     pRoleRelation2aRoleRelation :: ContextInfo -> P_RoleRelation -> Guarded A_RoleRelation
     pRoleRelation2aRoleRelation ci prr
@@ -787,12 +785,12 @@ pCtx2aCtx opts
            orig = origin pidt
            pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
-              do ob <- pObjDefDisamb2aObjDef declMap ojd
+              do ob <- pObjDefDisamb2aObjDef ci ojd
                  case ob of
                    ObjE o ->
                      case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
                               [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
-                          _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft genLattice conc (objExpression o)}
+                              _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft genLattice conc (objExpression o)}
                    ObjT t -> fatal $ "TXT is not expected in IDENT statements. ("++show (origin t)++")"
     typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView ci o x (PairView lst)
@@ -998,7 +996,6 @@ pDecl2aDecl env typ defLanguage defFormat pd
                  , decfpos = origin pd
                  , decusr  = True
                  , decpat  = env
-                 , decplug = dec_plug pd
                  , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                  }
    in checkEndoProps >> 
