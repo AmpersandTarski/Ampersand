@@ -386,18 +386,14 @@ mustBeOrderedLst o lst
      [ "  if you think there is no type error, add an order between the mismatched concepts."
      ]
 
-mustBeOrderedConcLst :: (Named a_conc) => Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[a_conc]] -> Guarded a
+mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])
 mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
  = Errors . pure . CTXE (origin o) . unlines $
     [ "Ambiguous type when matching: "++show p1++" of "++showA e1
     , " and "++show p2++" of "++showA e2++"."
-    , "  The type can be "++L.intercalate " or " (map (showP . Slash) cs)
+    , "  The type can be "++L.intercalate " or " (map (L.intercalate "/" . map name) cs)
     , "  None of these concepts is known to be the smallest, you may want to add an order between them."
     ]
-
-newtype Slash a = Slash [a]
-instance Named a => PStruct (Slash a) where
-  showP (Slash x) = L.intercalate "/" (map name x)
 
 mustBeBound :: Origin -> [(SrcOrTgt, Expression)] -> Guarded a
 mustBeBound o [(p,e)]
