@@ -131,10 +131,10 @@ mkMultipleRootsError roots gs
              [ "  CLASSIFY "++name cpt++" ISA "++show rootName    | cpt<-roots]
           
        where rootName = L.intercalate "_Or_" . map name $ roots 
-nonMatchingRepresentTypes :: (Traced a1, Show a2, Show a3) => a1 -> a2 -> a3 -> Guarded a
-nonMatchingRepresentTypes genStmt wrongType rightType
+nonMatchingRepresentTypes :: Origin -> TType -> TType -> Guarded a
+nonMatchingRepresentTypes orig wrongType rightType
  = Errors . pure $
-      CTXE (origin genStmt)
+      CTXE orig
            $ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "
              ++show wrongType++" is not the same as "++show rightType
 
@@ -152,22 +152,9 @@ class GetOneGuarded a where
                                      -> Guarded a
   hasNone o = getOneExactly o []
 
-instance GetOneGuarded (P_SubIfc a) where
-  hasNone o = Errors . pure $
-    CTXE (origin o)$ "Required: one P-subinterface in "++showP o
-
 instance GetOneGuarded SubInterface where
   hasNone o = Errors . pure $
     CTXE (origin o)$ "Required: one A-subinterface in "++showP o
-
-instance GetOneGuarded Relation where
-  getOneExactly _ [d] = Checked d
-  getOneExactly o []  = Errors . pure $ CTXE (origin o) $
-      "No relation for "++showP o
-  getOneExactly o lst = Errors . pure $ CTXE (origin o) $
-      "Too many relations match "++showP o
-    ++".\n  Be more specific. These are the matching relations:"
-    ++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]
 
 instance GetOneGuarded Expression where
   getOneExactly _ [d] = Checked d
