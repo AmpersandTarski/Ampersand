@@ -7,7 +7,7 @@ module Ampersand.Input.ADL1.CtxError
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, uniqueBy
-  , TypeAware(..), unexpectedType
+  , unexpectedType
   , mkErrorReadingINCLUDE
   , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
@@ -61,38 +61,15 @@ errors (Errors lst) = Just lst
 makeError :: String -> Guarded a
 makeError msg = Errors (PE (Message msg) NEL.:| [])
 
-class TypeAware x where
-  -- Need something of type "p x"? Use on of these: [x], Maybe x, Guarded x
-  -- They are all of the type "p x".
-  -- The reason for us to write "p x" (without constraints on p, thus not specifying p) is that we want to disallow getADLType to inspect its argument
-  -- This way, we have no information about x, except for its type
-  getADLType :: p x -> String
-  getADLTypes :: p x -> String
-  getADLTypes p = getADLType p<>"s"
-  getADLType_A :: p x -> String
-  getADLType_A p = "A "<>getADLType p
-  getADLType_a :: p x -> String
-  getADLType_a p = "a "<>getADLType p
-
-instance TypeAware TType where
-  getADLType _ = "built-in type"
-instance TypeAware (Maybe TType) where
-  getADLType _ = "built-in type"
-instance TypeAware A_Concept where
-  getADLType _ = "concept"
-
--- SJC, Note about Haskell: I'm using scoped type variables here, via the flag "ScopedTypeVariables"
--- the result is that the b is bound by the type signature, so I can use `getADLType_a' with exactly that type
-unexpectedType :: forall a b. (TypeAware a, TypeAware b, PStruct a) => Origin -> a -> Guarded b
+unexpectedType :: Origin -> Maybe TType -> Guarded A_Concept
 unexpectedType o x = 
-   Errors (CTXE o ("Unexpected "<>getADLType [x]<>": "<>showP x<>"\n  expecting "<>getADLType_a ([]::[b])) 
+   Errors (CTXE o ((case x of 
+                     Nothing   -> "The Generic Built-in type was unexpeced. "
+                     Just ttyp -> "Unexpected built-in type: "<>show ttyp
+                   )<>"\n  expecting a concept.")
            NEL.:| []
           )
--- There is a way to work around this without ScopedTypeVariables, but in my (SJC) view, this is less readable:
--- unexpectedType :: (TypeAware a, TypeAware b, ShowADL a) => Origin -> a -> Guarded b
--- unexpectedType o x = res
---   where res = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showP x<>"\n  expecting "<>getADLType_a res]
--- There is no loop, since getADLType_a cannot inspect its first argument (res), and the chain of constructors: "Errors", (:) and CTXE, contains a lazy one (in fact, they are all lazy). In case all occurences of "getADLType_a" are non-strict in their first argument, that would already break a loop.
+
 mkErrorReadingINCLUDE :: Maybe Origin -> FilePath -> String -> Guarded a
 mkErrorReadingINCLUDE mo file str
  = Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) msg
