@@ -15,10 +15,8 @@ import           Ampersand.FSpec.GenerateUML
 import           Ampersand.Graphic.Graphics (writePicture)
 import           Ampersand.Misc
 import           Ampersand.Output
-import           Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
-import           Ampersand.Prototype.ProtoUtil   (installComposerLibs)
+import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import           Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import           Control.Monad
 import qualified Data.ByteString.Lazy as L
 import           Data.Function (on)
@@ -155,14 +153,11 @@ generateAmpersandOutput multi = do
         then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
              else [ verboseLn opts "Generating prototype..."
-                  , clearTemplateDirs fSpec
-                  , writeStaticFiles opts
+                  , doGenFrontend fSpec
                   , generateDatabaseFile multi
                   , generateJSONfiles multi
-                  , doGenFrontend fSpec
                   , verboseLn opts "\n"
                   , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
-                  , installComposerLibs opts
                   ]
         else [exitWith NoPrototypeBecauseOfRuleViolations]
        )++
