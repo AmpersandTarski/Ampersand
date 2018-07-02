@@ -338,7 +338,7 @@ mustBeOrdered o a b
      , "  and concept "++showEC b
      ]
 
-mustBeOrderedLst :: (Traced o, PStruct o, PStruct a) => o -> [(A_Concept, SrcOrTgt, a)] -> Guarded b
+mustBeOrderedLst :: P_SubIfc (TermPrim, x) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
 mustBeOrderedLst o lst
  = Errors . pure . CTXE (origin o) . unlines $
      [ "Type error in "++showP o
@@ -348,6 +348,7 @@ mustBeOrderedLst o lst
      | (c,st,a) <- lst
      ]++ 
      [ "  if you think there is no type error, add an order between the mismatched concepts."
+     , "  You can do so by using a CLASSIFY statement."
      ]
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])
