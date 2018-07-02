@@ -31,7 +31,9 @@ class Traversable d => Disambiguatable d where
 --     type Thing = ThingPolymorphic TermPrim
 --     This makes sure that "Thing" is the exact same type before and after this change.
 -- (2) Make ThingPolymorphic an instance of Traversable. The default "deriving Traversable" should be fine.
--- (3) Make ThingPolymorphic an instance of Disambiguatable. It is your responsibility to prevent loops here. The instance looks like this:
+-- (3) Make ThingPolymorphic an instance of Disambiguatable. It is your responsibility to prevent loops here, which is tricky:
+--       the result may not depend on the second argument (more later).
+--     The instance looks like this:
 --     disambInfo (Thing1 x y z) td = (Thing1 x' y' z', (bottomUpSourceTypes,bottomUpTargetTypes))
 --      where (x',resultingTypesForX) = disambInfo x' topDownTypesForX
 --            (y',resultingTypesForY) = disambInfo y' topDownTypesForY
@@ -42,7 +44,8 @@ class Traversable d => Disambiguatable d where
 --     Note that disambInfo actually performs two separate functions in one go: one to go top down, the other to go bottom up.
 --     The top-down function may use parts of the bottom-up function, but not the other way around.
 --     A nice example to look at is PCps:
---         disambInfo (PCps o a b) (ia1,ib1) = ( PCps o a' b', (ia, ib) )
+--         disambInfo (PCps o a b) (ia1,ib1)
+--            = ( PCps o a' b', (ia, ib) ) -- here only bottom-up information is allowed: don't use ia1 or ib1 here!
 --          where (a', (ia,ic1)) = disambInfo a (ia1,ic2) -- here ic2 is top-down, so that is ok
 --                (b', (ic2,ib)) = disambInfo b (ic1,ib1)
   disambInfo :: d (TermPrim,DisambPrim)  --the thing that is disabmiguated
@@ -192,8 +195,8 @@ instance Disambiguatable Term where
    where (a', envA) = disambInfo a (Cnstr (sourceConstraintsOf env1) (sourceConstraintsOf envB))
          (b', envB) = disambInfo b (Cnstr (targetConstraintsOf envA) (targetConstraintsOf env1))
   disambInfo (PPrd o a b) env1 = ( PPrd o a' b', Cnstr (sourceConstraintsOf envA) (targetConstraintsOf envB) )
-   where (a', envA) = disambInfo a (Cnstr (sourceConstraintsOf env1) (sourceConstraintsOf envB))
-         (b', envB) = disambInfo b (Cnstr (targetConstraintsOf envA) (targetConstraintsOf env1))
+   where (a', envA) = disambInfo a (Cnstr (sourceConstraintsOf env1) [])
+         (b', envB) = disambInfo b (Cnstr [] (targetConstraintsOf env1))
   disambInfo (Prim (a,b)) st = (Prim ((a,b), st), Cnstr (getDConcepts source b) (getDConcepts target b))
 
 getDConcepts :: (Expression -> A_Concept) -> DisambPrim -> [D_Concept]
