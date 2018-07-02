@@ -38,6 +38,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
+                       , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
+                       , forceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , allInterfaces :: Bool
                        , dbName :: String
@@ -64,7 +66,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , genFPAChap :: Bool   -- Generate Function Point Analysis chapter
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
                        , genPOPExcel :: Bool   -- Generate an .xmlx file containing the populations 
-                       , genStaticFiles :: Bool-- Generate the static files into the prototype
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                        , progrName :: String --The name of the adl executable
@@ -206,6 +207,8 @@ getOptions' envOpts =
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfile       = fatal "No monadic options available."
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
+                      , zwolleVersion    = "v1.0.0"
+                      , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
                       , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
@@ -239,7 +242,6 @@ getOptions' envOpts =
                       , genUML           = False
                       , genFPAChap       = False
                       , genFPAExcel      = False
-                      , genStaticFiles   = True
                       , genPOPExcel      = False
                       , language         = Nothing
                       , progrName        = envProgName envOpts
@@ -381,6 +383,15 @@ options = [ (Option ['v']   ["version"]
                                          ,genPrototype = True}
                        ) "DIRECTORY")
                ("generate a functional prototype (This overrules environment variable "++ dirPrototypeVarName ++ ").")
+            , Public)
+          , (Option []     ["prototype-framework-version"]
+               (ReqArg (\x opts -> opts {zwolleVersion = x}
+                       ) "VERSION")
+               ("tag, branch or SHA of the prototype framework on Github.")
+            , Public)
+          , (Option []      ["force-reinstall-framework"]
+               (NoArg (\opts -> opts{forceReinstallFramework = True}))
+               "re-install the prototype framework. This discards any previously installed version."
             , Public)
           , (Option []     ["customizations"]
                (ReqArg (\names opts -> opts {dirCustomizations = splitOn ";" names}
@@ -563,10 +574,6 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{atlasWithoutExpressions = True}))
                "Temporary switch to create Atlas without expressions. (for RAP3)"
             , Hidden)
-          , (Option []        ["no-static-files"]
-               (NoArg  (\opts -> opts{genStaticFiles = False}))
-               "Do not generate static files into the prototype directory"
-            , Public)
           , (Option []        ["crud-defaults"]
                (ReqArg (\crudString opts -> let c = 'c' `notElem` crudString
                                                 r = 'r' `notElem` crudString
