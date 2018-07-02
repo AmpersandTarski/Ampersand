@@ -139,7 +139,8 @@ data FEObject2 =
            , exprIsIdent :: Bool
            , atomicOrBox :: FEAtomicOrBox
            }
-  | FEObjT { objTxt :: String
+  | FEObjT { objName     :: String
+           , objTxt      :: String
            } deriving (Show, Data, Typeable )
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
@@ -247,7 +248,9 @@ buildInterface fSpec allIfcs ifc =
                 Just (declSrc, decl, declTgt, _) -> (declSrc    , Just decl, declTgt    ) 
                                                    -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
     buildObject (BxTxt object') = do
-      return FEObjT{objTxt = objtxt object'}
+      return FEObjT{ objName = name object'
+                   , objTxt = objtxt object'
+                   }
 
 ------ Generate RouteProvider.js
 
@@ -296,7 +299,7 @@ genViewInterface fSpec interf =
     }
    where opts = getOpts fSpec
 -- Helper data structure to pass attribute values to HStringTemplate
-data SubObjectAttr2 = SubObjAttr { subObjName :: String
+data SubObjectAttr2 = SubObjAttr{ subObjName :: String
                                 , subObjLabel :: String
                                 , subObjContents :: String 
                                 , subObjExprIsUni :: Bool
@@ -363,7 +366,12 @@ genViewObject fSpec depth obj@FEObjE{} =
                               , subObjContents = intercalate "\n" lns
                               , subObjExprIsUni = exprIsUni subObj
                               } 
-        FEObjT{} -> fatal "No view for TXT-like objects is defined."    
+        FEObjT{} -> 
+          do return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
+                              , subObjLabel = objName subObj
+                              , subObjContents = objTxt subObj
+                              , subObjExprIsUni = True
+                              }
     getTemplateForObject :: IO FilePath
     getTemplateForObject 
        | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
