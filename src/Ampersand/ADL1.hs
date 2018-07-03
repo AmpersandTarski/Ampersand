@@ -24,7 +24,7 @@ import Ampersand.Core.ParseTree (
          , P_IdentDef, P_IdentSegment,P_IdentDf(..),P_IdentSegmnt(..)
          , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),ViewHtmlTemplate(..)
          , P_Population(..),PAtomPair(..)
-         , P_ObjectDef,P_ObjDef(..)
+         , P_BoxItemTermPrim,P_BoxItem(..)
          , P_Interface(..)
          , P_SubInterface,P_SubIfc(..),P_Cruds(..)
          , Term(..)
@@ -36,25 +36,26 @@ import Ampersand.Core.ParseTree (
          , PMeaning(..),PMessage(..),P_Markup(..)
          )
 import Ampersand.Core.AbstractSyntaxTree (
-          Signature(..),showSign
-         ,A_Context(..)
-         ,HasSignature(..)
-         ,Expression(..)
-         ,A_Gen(..)
-         ,RuleOrigin(..)
-         ,IdentityDef(..)
-         ,IdentitySegment(..)
-         ,ViewDef(..)
-         ,ViewSegment(..)
-         ,ViewSegmentPayLoad(..)
-         ,ObjectDef(..),Object(..)
+           Signature(..) ,showSign
+         , A_Context(..)
+         , HasSignature(..)
+         , Expression(..)
+         , A_Gen(..)
+         , RuleOrigin(..)
+         , IdentityDef(..)
+         , IdentitySegment(..)
+         , ViewDef(..)
+         , ViewSegment(..)
+         , ViewSegmentPayLoad(..)
+         , BoxItem(..), BoxExp(..), BoxTxt(..), isObjExp
+         , Object(..)
          , Default(..)
-         ,SubInterface(..)
-         ,Relation(..),decusr
-         ,Interface(..),getInterfaceByName
-         ,Pattern(..)
-         , Relation(..),Relations, getExpressionRelation, showRel
-         ,Rule(..),Rules,A_RoleRule(..)
+         , SubInterface(..)
+         , Relation(..)
+         , Interface(..), getInterfaceByName
+         , Pattern(..)
+         , Relation(..), Relations, getExpressionRelation, showRel
+         , Rule(..), Rules, A_RoleRule(..)
          , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, makeConcept ,unsafePAtomVal2AtomValue 
          , Conjunct(..)
          , PAtomValue(..)
@@ -62,10 +63,10 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Cruds(..)
          , Typology(..)
          , DnfClause(..)
-         ,A_RoleRelation(..)
-         ,Population(..)
-         ,Purpose(..), ExplObj(..) ,AMeaning(..)
-         , AAtomPair(..), AAtomValue(..),aavstr, mkAtomPair, ContextInfo(..), representationOf
+         , A_RoleRelation(..)
+         , Population(..)
+         , Purpose(..), ExplObj(..) ,AMeaning(..)
+         , AAtomPair(..), AAtomValue(..), aavstr, mkAtomPair, ContextInfo(..)
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
 import Ampersand.ADL1.Expression

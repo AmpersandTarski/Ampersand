@@ -597,7 +597,6 @@ rTerm2expr term
             , decfpos = fatal "Illegal RTerm in rTerm2expr"
             , decusr  = fatal "Illegal RTerm in rTerm2expr"
             , decpat  = fatal "Illegal RTerm in rTerm2expr"
-            , decplug = fatal "Illegal RTerm in rTerm2expr"
             , dechash = hash nm `hashWithSalt` sgn
             }
 class ShowIT a where  --class ment for stuff not belonging to A-struct and/or P-struct
@@ -1061,7 +1060,6 @@ delta sgn
               , decfpos = Origin ("generated relation (Delta "++show sgn++")")
               , decusr  = False
               , decpat  = Nothing
-              , decplug = True
               , dechash = hash sgn
               }
 

@@ -40,8 +40,6 @@ aCtx2pCtx ctx =
       , ctx_ifcs   = map aInterface2pInterface . ctxifcs $ ctx
       , ctx_ps     = mapMaybe aPurpose2pPurpose . ctxps $ ctx
       , ctx_pops   = map aPopulation2pPopulation . ctxpopus $ ctx
-      , ctx_sql    = map aObjectDef2pObjectDef . ctxsql $ ctx
-      , ctx_php    = map aObjectDef2pObjectDef . ctxphp $ ctx
       , ctx_metas  = ctxmetas ctx
       }
   
@@ -82,7 +80,6 @@ aRelation2pRelation dcl =
        , dec_Mean   = aMeaning2pMeaning (decMean dcl)
        , dec_popu   = [] --TODO: should this be empty? There is nothing in the A-structure
        , pos   = decfpos dcl
-       , dec_plug   = decplug dcl
        }
 
 aRelation2pNamedRel :: Relation -> P_NamedRel
@@ -137,7 +134,7 @@ aInterface2pInterface :: Interface -> P_Interface
 aInterface2pInterface ifc =
  P_Ifc { ifc_Name   = name ifc
        , ifc_Roles  = ifcRoles ifc
-       , ifc_Obj    = aObjectDef2pObjectDef (ifcObj ifc)
+       , ifc_Obj    = aObjectDef2pObjectDef (BxExpr (ifcObj ifc))
        , pos        = origin ifc
        , ifc_Prp    = ifcPrp ifc
        }
@@ -183,16 +180,22 @@ aPopulation2pPopulation p =
                           }
 
 
-aObjectDef2pObjectDef :: ObjectDef -> P_ObjectDef
-aObjectDef2pObjectDef oDef =
- P_Obj { obj_nm    = objnm oDef
-       , pos   = objpos oDef
-       , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
-       , obj_crud  = aCruds2pCruds (objcrud oDef)
-       , obj_mView = objmView oDef
-       , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
-       }
-
+aObjectDef2pObjectDef :: BoxItem -> P_BoxItemTermPrim
+aObjectDef2pObjectDef x =
+  case x of
+    BxExpr oDef ->
+      P_BxExpr { obj_nm    = name oDef
+            , pos       = origin oDef
+            , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
+            , obj_crud  = aCruds2pCruds (objcrud oDef)
+            , obj_mView = objmView oDef
+            , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
+            }
+    BxTxt oDef ->
+      P_BxTxt  { obj_nm    = name oDef
+            , pos       = origin oDef
+            , obj_txt   = objtxt oDef
+            }
 aExpression2pTermPrim :: Expression -> Term TermPrim
 aExpression2pTermPrim expr = 
   case expr of
@@ -267,7 +270,7 @@ aPairViewSegment2pPairViewSegment segment =
 
 aIdentitySegment2pIdentSegmnt :: IdentitySegment -> P_IdentSegmnt TermPrim
 aIdentitySegment2pIdentSegmnt (IdentityExp oDef) =
- P_IdentExp  { ks_obj = aObjectDef2pObjectDef oDef
+  P_IdentExp { ks_obj = aObjectDef2pObjectDef (BxExpr oDef)
              }
 
 aExplObj2PRef2Obj :: ExplObj -> PRef2Obj

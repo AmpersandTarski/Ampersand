@@ -117,31 +117,38 @@ copyCustomizations fSpec =
 -- NOTE: _ disables 'not used' warning for fields
 data FEInterface = FEInterface { ifcName :: String
                                , ifcLabel :: String
-                               , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
-                               , _ifcRoles :: [Role],  _ifcObj :: FEObject
+                               , _ifcExp :: Expression
+                               , _ifcSource :: A_Concept
+                               , _ifcTarget :: A_Concept
+                               , _ifcRoles :: [Role]
+                               , _ifcObj :: FEObject2
                                } deriving (Typeable, Data)
 
-data FEObject = FEObject { objName :: String
-                         , objExp :: Expression
-                         , objSource :: A_Concept
-                         , objTarget :: A_Concept
-                         , objCrudC :: Bool
-                         , objCrudR :: Bool
-                         , objCrudU :: Bool
-                         , objCrudD :: Bool
-                         , exprIsUni :: Bool
-                         , exprIsTot :: Bool
-                         , relIsProp  :: Bool -- True iff the expression is a kind of simple relation and that relation is a property.
-                         , exprIsIdent :: Bool
-                         , atomicOrBox :: FEAtomicOrBox
-                         } deriving (Show, Data, Typeable )
+data FEObject2 =
+    FEObjE { objName     :: String
+           , objExp      :: Expression
+           , objSource   :: A_Concept
+           , objTarget   :: A_Concept
+           , objCrudC    :: Bool
+           , objCrudR    :: Bool
+           , objCrudU    :: Bool
+           , objCrudD    :: Bool
+           , exprIsUni   :: Bool
+           , exprIsTot   :: Bool
+           , relIsProp   :: Bool -- True iff the expression is a kind of simple relation and that relation is a property.
+           , exprIsIdent :: Bool
+           , atomicOrBox :: FEAtomicOrBox
+           }
+  | FEObjT { objName     :: String
+           , objTxt      :: String
+           } deriving (Show, Data, Typeable )
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
                                                           , [String] -- the attributes of the template
                                                           ) }
                    | FEBox    { objMClass :: Maybe String
-                              , ifcSubObjs :: [FEObject] 
+                              , ifcSubObjs :: [FEObject2] 
                               } deriving (Show, Data,Typeable)
 
 buildInterfaces :: FSpec -> IO [FEInterface]
@@ -152,7 +159,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
             
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
- do { obj <- buildObject (ifcObj ifc)
+ do { obj <- buildObject (BxExpr $ ifcObj ifc)
     ; return 
         FEInterface { ifcName = escapeIdentifier $ name ifc
                     , ifcLabel = name ifc
@@ -166,8 +173,8 @@ buildInterface fSpec allIfcs ifc =
     --       (name comes from interface, but is equal to object name)
     } 
   where    
-    buildObject :: ObjectDef -> IO FEObject
-    buildObject object' =
+    buildObject :: BoxItem -> IO FEObject2
+    buildObject (BxExpr object') =
      do { let object = substituteReferenceObjectDef fSpec object'
         ; let iExp = conjNF (getOpts fSpec) $ objExpression object
         ; (aOrB, iExp') <-
@@ -209,7 +216,7 @@ buildInterface fSpec allIfcs ifc =
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
                                             , iExp)
                                    }
-                           else do { refObj <- buildObject  (ifcObj i)
+                           else do { refObj <- buildObject  (BxExpr $ ifcObj i)
                                    ; let comp = ECps (iExp, objExp refObj) 
                                          -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
                                          
@@ -218,7 +225,7 @@ buildInterface fSpec allIfcs ifc =
         
 
         ; let (src, mDecl, tgt) = getSrcDclTgt iExp'
-        ; return FEObject{ objName = name object
+        ; return FEObjE  { objName = name object
                          , objExp = iExp'
                          , objSource = src
                          , objTarget = tgt
@@ -240,6 +247,10 @@ buildInterface fSpec allIfcs ifc =
                 Nothing                          -> (source expr, Nothing  , target expr)
                 Just (declSrc, decl, declTgt, _) -> (declSrc    , Just decl, declTgt    ) 
                                                    -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
+    buildObject (BxTxt object') = do
+      return FEObjT{ objName = name object'
+                   , objTxt = objtxt object'
+                   }
 
 ------ Generate RouteProvider.js
 
@@ -288,14 +299,14 @@ genViewInterface fSpec interf =
     }
    where opts = getOpts fSpec
 -- Helper data structure to pass attribute values to HStringTemplate
-data SubObjectAttr = SubObjAttr { subObjName :: String
+data SubObjectAttr2 = SubObjAttr{ subObjName :: String
                                 , subObjLabel :: String
                                 , subObjContents :: String 
                                 , subObjExprIsUni :: Bool
                                 } deriving (Show, Data, Typeable)
  
-genViewObject :: FSpec -> Int -> FEObject -> IO [String]
-genViewObject fSpec depth obj =
+genViewObject :: FSpec -> Int -> FEObject2 -> IO [String]
+genViewObject fSpec depth obj@FEObjE{} =
   let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
       atomicAndBoxAttrs = setAttribute "exprIsUni"  (exprIsUni obj)
                         . setAttribute "exprIsTot"  (exprIsTot obj)
@@ -342,30 +353,43 @@ genViewObject fSpec depth obj =
                                . setAttribute "isRoot"     (depth == 0)
                                . setAttribute "subObjects" subObjAttrs
             }
-  where indentation :: [String] -> [String]
-        indentation = indent (if depth == 0 then 4 else 16) 
-        genView_SubObject subObj = 
-         do { lns <- genViewObject fSpec (depth + 1) subObj
-            ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
-                               , subObjLabel = objName subObj -- no escaping for labels in templates needed
-                               , subObjContents = intercalate "\n" lns
-                               , subObjExprIsUni = exprIsUni subObj
-                               } 
-            }
-        getTemplateForObject :: IO FilePath
-        getTemplateForObject 
-           | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
-                       = return $ "View-PROPERTY"++".html"
-           | otherwise = getTemplateForConcept (objTarget obj)
-        getTemplateForConcept :: A_Concept -> IO FilePath
-        getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
-                                       return $ if exists
-                                                then cptfn
-                                                else "Atomic-"++show ttp++".html" 
-           where ttp = cptTType fSpec cpt
-                 cptfn = "Concept-"++name cpt++".html" 
------- Generate controller JavaScript code
+  where 
+    indentation :: [String] -> [String]
+    indentation = indent (if depth == 0 then 4 else 16) 
+    genView_SubObject :: FEObject2 -> IO SubObjectAttr2
+    genView_SubObject subObj =
+      case subObj of
+        FEObjE{} -> 
+          do lns <- genViewObject fSpec (depth + 1) subObj
+             return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
+                              , subObjLabel = objName subObj -- no escaping for labels in templates needed
+                              , subObjContents = intercalate "\n" lns
+                              , subObjExprIsUni = exprIsUni subObj
+                              } 
+        FEObjT{} -> fatal "No view for TXT-like objects is defined."
+{- Code already in place. Wait for Prototype framework to implement backend
+          do return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
+                              , subObjLabel = objName subObj
+                              , subObjContents = objTxt subObj
+                              , subObjExprIsUni = True
+                              }
+-}
+    getTemplateForObject :: IO FilePath
+    getTemplateForObject 
+       | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
+                   = return $ "View-PROPERTY"++".html"
+       | otherwise = getTemplateForConcept (objTarget obj)
+    getTemplateForConcept :: A_Concept -> IO FilePath
+    getTemplateForConcept cpt = do 
+         exists <- doesTemplateExist fSpec cptfn
+         return $ if exists
+                  then cptfn
+                  else "Atomic-"++show ttp++".html" 
+       where ttp = cptTType fSpec cpt
+             cptfn = "Concept-"++name cpt++".html" 
+genViewObject _     _     FEObjT{} = pure []
 
+------ Generate controller JavaScript code
 genControllerInterfaces :: FSpec -> [FEInterface] -> IO ()
 genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 

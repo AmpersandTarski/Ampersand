@@ -74,11 +74,12 @@ fpaInterface ifc =
                         | d == 2    = Gemiddeld
                         | otherwise = Moeilijk 
 
-        getDepth Obj{objmsub=Nothing} = 0
-        getDepth Obj{objmsub=Just si}
+        getDepth :: BoxExp -> Int
+        getDepth BoxExp{objmsub=Nothing} = 0
+        getDepth BoxExp{objmsub=Just si}
           = case si of 
              InterfaceRef{} -> 1
-             Box{}          -> 1 + maximum (map getDepth (siObjs si))
+             Box{}          -> 1 + maximum (map getDepth [x | BxExpr x <- siObjs si])
 
 class ShowLang a where
   showLang :: Lang -> a -> String

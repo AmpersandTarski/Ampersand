@@ -32,13 +32,13 @@ instance Statistics Pattern where
 
 -- \***********************************************************************
 -- \*** Properties with respect to: Dataset                       ***
--- \*** TODO: both datasets and interfaces are represented as ObjectDef. This does actually make a difference for the function point count, so we have work....
+-- \*** TODO: both datasets and interfaces are represented as BoxItem. This does actually make a difference for the function point count, so we have work....
 instance Statistics Interface where
   nInterfaces _ = 1
   nPatterns   _ = 0
   nFpoints ifc  = fpVal $ fpaInterface ifc
 
---   instance Statistics ObjectDef where
+--   instance Statistics BoxItem where
 --    nInterfaces (Obj{objmsub=Nothing}) = 2 -- this is an association, i.e. a binary relation --TODO -> check correctness
 --    nInterfaces _ = 4 -- this is an entity with one or more attributes. --TODO -> check correctness
 --    nPatterns   _ = 0

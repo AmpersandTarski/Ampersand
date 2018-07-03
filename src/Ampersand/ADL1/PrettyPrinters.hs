@@ -30,10 +30,6 @@ prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
 perline :: Pretty a => [a] -> Doc
 perline = vsep . map pretty
 
-perlinePrefix :: Pretty a => String -> [a] -> Doc
-perlinePrefix pref xs = vsep $ map addPrefix xs
-           where addPrefix x = text pref <+> pretty x
-
 quote :: String -> Doc
 quote = text.show
 
@@ -78,11 +74,8 @@ separate d xs = encloseSep empty empty (text d) $ map pretty xs
 takeQuote :: String -> String
 takeQuote = replace "\"" ""
 
-prettyLabel :: String -> Doc
-prettyLabel = maybeQuote
-
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops sql php metas) =
+    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops metas) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
@@ -101,8 +94,6 @@ instance Pretty P_Context where
                <+\> perline gs
                <+\> perline ifcs
                <+\> perline pops
-               <+\> perlinePrefix "SQLPLUG" sql
-               <+\> perlinePrefix "PHPPLUG" php
                <+\> text "ENDCONTEXT"
              
 instance Pretty Meta where
@@ -143,12 +134,10 @@ instance Pretty P_Pattern where
         where keyword = if null rruls && null rrels then "PATTERN" else "PROCESS"
 
 instance Pretty P_Relation where
-    pretty (P_Sgn nm sign prps pragma mean popu _ plug) =
-        text "RELATION" <+> text nm <~> sign <+> props <+> byplug <+\> pragmas <+\> prettyhsep mean <+\> content
+    pretty (P_Sgn nm sign prps pragma mean popu _) =
+        text "RELATION" <+> text nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean <+\> content
         where props   = if prps == Set.fromList [Sym, Asy] then text "[PROP]"
                         else text "[" <> listOf (Set.toList prps) <> text "]"
-              byplug  | plug        = text "BYPLUG"
-                      | otherwise   = empty
               pragmas | null pragma = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
               content | null popu   = empty
@@ -223,8 +212,8 @@ instance Pretty a => Pretty (P_Rule a) where
                          else maybeQuote nm <> text ":"
 
 instance Pretty ConceptDef where
-    pretty (Cd _ cpt plug def ref _) -- from, the last argument, is not used in the parser
-        = text "CONCEPT" <+> quoteConcept cpt <+> (if plug then text "BYPLUG" else empty)
+    pretty (Cd _ cpt def ref _) -- from, the last argument, is not used in the parser
+        = text "CONCEPT" <+> quoteConcept cpt
                <+> quote def <+> maybeText ref
         where maybeText txt = if null txt then empty
                               else quote txt
@@ -243,16 +232,25 @@ instance Pretty TType where
       
 instance Pretty P_Interface where
     pretty (P_Ifc nm roles obj _ _) =
-        text "INTERFACE" <+> maybeQuote nm 
-               <+> iroles
-               <+> text ":" <~\> obj_ctx obj <~> obj_msub obj
-                 where iroles = if null roles then empty
-                                else text "FOR" <+> listOf roles
-
-instance Pretty a => Pretty (P_ObjDef a) where
-    pretty (P_Obj nm _ ctx mCrud mView msub) =
-        prettyLabel nm <+> text ":"
-                 <~> ctx <+> crud mCrud <+> view mView <~> msub
+      text "INTERFACE " <+> maybeQuote nm 
+        <+> iroles <+>
+         (case obj of
+            P_BxExpr{} -> 
+                text ":" <~\> obj_ctx obj <~> obj_msub obj
+            P_BxTxt {} -> fatal "TXT must not be used directly in a P_Ifc."
+         )
+      where iroles = if null roles then empty
+                     else text "FOR" <+> listOf roles
+          
+instance Pretty a => Pretty (P_BoxItem a) where
+    pretty obj =
+     maybeQuote (name obj) <+> text ":" <+>
+       case obj of
+        (P_BxExpr _ _ ctx mCrud mView msub)
+           -> pretty ctx <+> crud mCrud <+> view mView <~> msub
+        (P_BxTxt  _ _ str)
+           -> text "TXT" <+> quote str
+           
         where crud Nothing = empty
               crud (Just cruds) = pretty cruds
               view Nothing  = empty
@@ -271,10 +269,16 @@ instance Pretty a => Pretty (P_IdentDf a) where
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
 instance Pretty a => Pretty (P_IdentSegmnt a) where
-    pretty (P_IdentExp (P_Obj nm _ ctx _ mView _)) =
-              if null nm
-              then pretty ctx -- no label
-              else prettyLabel nm <> text ":" <~> ctx <+> view mView
+    pretty (P_IdentExp obj) =
+      case obj of
+        (P_BxExpr nm _ ctx _ mView _)
+           -> (if null nm
+               then pretty ctx -- no label
+               else maybeQuote nm <> text ":" <~> ctx
+              ) <+> view mView
+        (P_BxTxt  nm _ str)
+           -> maybeQuote nm 
+              <~> text "TXT" <+> quote str
         where view Nothing  = empty
               view (Just v) = pretty v
 

@@ -46,8 +46,6 @@ grind formalAmpersand userFspec =
       , ctx_ifcs   = []
       , ctx_ps     = []
       , ctx_pops   = []
-      , ctx_sql    = []
-      , ctx_php    = []
       , ctx_metas  = []
       }
   where

@@ -98,14 +98,14 @@ checkInterfaceCycles ctx =
                         . getCycles $ refsPerInterface
         refsPerInterface :: [(String, [String])]
         refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
-        getDeepIfcRefs :: ObjectDef -> [String]
+        getDeepIfcRefs :: BoxExp -> [String]
         getDeepIfcRefs obj = case objmsub obj of
                                Nothing -> []
                                Just si -> case si of 
                                            InterfaceRef{} -> if siIsLink si
                                                              then []
                                                              else [siIfcId si]
-                                           Box{}          -> concatMap getDeepIfcRefs (siObjs si)
+                                           Box{}          -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
         lookupInterface :: String -> Interface
         lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                [ifc] -> ifc
@@ -225,8 +225,6 @@ pCtx2aCtx opts
       , ctx_ifcs   = p_interfaces
       , ctx_ps     = p_purposes
       , ctx_pops   = p_pops
-      , ctx_sql    = p_sqldefs
-      , ctx_php    = p_phpdefs
       , ctx_metas  = p_metas
       }
  = do contextInfo <- g_contextInfo
@@ -242,8 +240,6 @@ pCtx2aCtx opts
       uniqueNames interfaces
       purposes    <- traverse (pPurp2aPurp contextInfo) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      sqldefs     <- traverse (pObjDef2aObjDef contextInfo) p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script 
-      phpdefs     <- traverse (pObjDef2aObjDef contextInfo) p_phpdefs       --  user defined phpplugs, taken from the Ampersand script 
       allRoleRelations <- traverse (pRoleRelation2aRoleRelation contextInfo) (p_roleRelations ++ concatMap pt_RRels p_patterns)
       declsAndPops <- traverse (pDecl2aDecl Nothing (representationOf contextInfo) deflangCtxt deffrmtCtxt) p_relations
       let actx = ACtx{ ctxnm = n1
@@ -264,8 +260,6 @@ pCtx2aCtx opts
                      , ctxgenconcs = onlyUserConcepts (concGroups ++ map (:[]) (soloConcs contextInfo))
                      , ctxifcs = interfaces
                      , ctxps = purposes
-                     , ctxsql = sqldefs
-                     , ctxphp = phpdefs
                      , ctxmetas = p_metas
                      , ctxInfo = contextInfo 
                      }
@@ -399,7 +393,7 @@ pCtx2aCtx opts
                isInvolved :: A_Gen -> Bool
                isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
-    p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
+    p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
     p_interfaceAndDisambObjs declMap = [ (ifc, disambiguate (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces ]
     
     -- story about genRules and genLattice
@@ -487,10 +481,7 @@ pCtx2aCtx opts
        then pure givenType
        else mkTypeMismatchError o dcl sourceOrTarget givenType
                
-    pObjDef2aObjDef :: ContextInfo -> P_ObjectDef -> Guarded ObjectDef
-    pObjDef2aObjDef ci x = pObjDefDisamb2aObjDef ci $ disambiguate (termPrimDisAmb (declDisambMap ci)) x
-
-    pObjDefDisamb2aObjDef :: ContextInfo -> P_ObjDef (TermPrim, DisambPrim) -> Guarded ObjectDef
+    pObjDefDisamb2aObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded BoxItem
     pObjDefDisamb2aObjDef ci x = fmap fst (typecheckObjDef ci x)
 
     pViewDef2aViewDef :: ContextInfo -> P_ViewDef -> Guarded ViewDef
@@ -542,57 +533,66 @@ pCtx2aCtx opts
     isaC :: A_Concept -> A_Concept -> Bool
     isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
     
-    typecheckObjDef :: ContextInfo -> P_ObjDef (TermPrim, DisambPrim) -> Guarded (ObjectDef, Bool)
-    typecheckObjDef ci
-       o@P_Obj { obj_nm = nm
-               , pos = orig
-               , obj_ctx = ctx
-               , obj_crud = mCrud
-               , obj_mView = mView
-               , obj_msub = subs
-               }
-     = do checkCrudForRefInterface 
-          (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ci ctx
-          crud <- pCruds2aCruds mCrud
-          maybeObj <- case subs of
-                        Just P_Box{si_box=[]} -> pure Nothing
-                        _ -> maybeOverGuarded (pSubi2aSubi ci objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
-          case maybeObj of
-               Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
-               Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
-     where      
-      lookupView :: String -> Maybe P_ViewDef
-      lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
-                            []   -> Nothing
-                            vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
-                        
-      checkCrudForRefInterface :: Guarded()
-      checkCrudForRefInterface = 
-         case (mCrud, subs) of
-           (Just _ , Just P_InterfaceRef{si_isLink=False}) 
-                   -> Errors . pure $ mkCrudForRefInterfaceError orig
-           _       -> pure ()
-      typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
-      typeCheckViewAnnotation _       Nothing       = pure ()
-      typeCheckViewAnnotation objExpr (Just viewId) =
-        case lookupView viewId of 
-          Just vd -> let viewAnnCptStr = aConcToType $ target objExpr
-                         viewDefCptStr = pConcToType $ vd_cpt vd
-                         viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
-                     in  if viewIsCompatible 
-                         then pure ()
-                         else Errors . pure $ 
-                                mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr
-          Nothing -> Errors . pure $ mkUndeclaredError "view" o viewId
-      obj crud (e,sr) s
-       = ( Obj { objnm = nm
-               , objpos = orig
-               , objExpression = e
-               , objcrud = crud
-               , objmView = mView
-               , objmsub = s
-               }, sr)
-    
+    typecheckObjDef :: ContextInfo -> P_BoxItem (TermPrim, DisambPrim) -> Guarded (BoxItem, Bool)
+    typecheckObjDef declMap objDef
+      = case objDef of
+          P_BxExpr { obj_nm = nm
+                , pos = orig
+                , obj_ctx = ctx
+                , obj_crud = mCrud
+                , obj_mView = mView
+                , obj_msub = subs
+                } -> do checkCrudForRefInterface 
+                        (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
+                        crud <- pCruds2aCruds mCrud
+                        maybeObj <- case subs of
+                                      Just P_Box{si_box=[]} -> pure Nothing
+                                      _ -> maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
+                        case maybeObj of
+                          Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
+                          Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
+            where      
+              lookupView :: String -> Maybe P_ViewDef
+              lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
+                                    []   -> Nothing
+                                    vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
+                                
+              checkCrudForRefInterface :: Guarded()
+              checkCrudForRefInterface = 
+                case (mCrud, subs) of
+                  (Just _ , Just P_InterfaceRef{si_isLink=False}) 
+                          -> Errors . pure $ mkCrudForRefInterfaceError orig
+                  _       -> pure ()
+              typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
+              typeCheckViewAnnotation _       Nothing       = pure ()
+              typeCheckViewAnnotation objExpr (Just viewId) =
+                case lookupView viewId of 
+                  Just vd -> let viewAnnCptStr = aConcToType $ target objExpr
+                                 viewDefCptStr = pConcToType $ vd_cpt vd
+                                 viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
+                             in  if viewIsCompatible 
+                                 then pure ()
+                                 else Errors . pure $ 
+                                        mkIncompatibleViewError objDef viewId viewAnnCptStr viewDefCptStr
+                  Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
+              obj crud (e,sr) s
+                = ( BxExpr
+                    BoxExp { objnm = nm
+                           , objpos = orig
+                           , objExpression = e
+                           , objcrud = crud
+                           , objmView = mView
+                           , objmsub = s
+                           }, sr)
+          P_BxTxt  { obj_nm  = nm
+                , pos = orig
+                , obj_txt = str
+                } -> pure $ (BxTxt
+                             BoxTxt { objnm = nm
+                                    , objpos = orig
+                                    , objtxt = str
+                                    },True)
+
     pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
     pCruds2aCruds mCrud = 
        case mCrud of 
@@ -617,7 +617,7 @@ pCtx2aCtx opts
     pSubi2aSubi :: ContextInfo
                 -> Expression -- Expression of the surrounding
                 -> Bool -- Whether the surrounding is bounded
-                -> P_ObjDef a -- name of where the error occured!
+                -> P_BoxItem a -- name of where the error occured!
                 -> P_SubIfc (TermPrim, DisambPrim) -- Subinterface to check
                 -> Guarded ( Expression -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original expression (in such a case, epsilons are added to the branches instead)
                            , SubInterface -- the subinterface
@@ -626,7 +626,10 @@ pCtx2aCtx opts
       = case x of
          P_InterfaceRef{si_str = ifcId} 
            ->  do (refIfcExpr,_) <- case lookupDisambIfcObj (declDisambMap ci) ifcId of
-                                         Just disambObj -> typecheckTerm ci $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                                         Just disambObj -> typecheckTerm ci 
+                                                                $ case disambObj of
+                                                                             P_BxExpr{} -> obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                                                                             P_BxTxt {} -> fatal "TXT is not expected here."
                                          Nothing        -> Errors . pure $ mkUndeclaredError "interface" o ifcId
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
                   return (objExprEps,InterfaceRef{ siIsLink = si_isLink x
@@ -641,14 +644,19 @@ pCtx2aCtx opts
                                              , siObjs    = lst
                                              }
                                 )
-                       ) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef ci) l <* uniqueNames l
-     where matchWith _ (ojd,exprBound)
+                       ) <$> traverse (join . fmap fn . typecheckObjDef ci) l 
+                         <*  uniqueNames l
+                  where fn :: (BoxItem, Bool) -> (Guarded BoxItem)
+                        fn (BxExpr e,p) = fmap BxExpr $ matchWith (e,p)
+                        fn (BxTxt t,_) = pure $ BxTxt t
+     where matchWith :: (BoxExp, Bool) -> (Guarded BoxExp)
+           matchWith (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
-                    [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef ojd)]
+                    [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef $ BxExpr ojd)]
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
-    typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
+    typeCheckInterfaceRef :: P_BoxItem a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
       let expTarget = target objExpr
           ifcSource = source ifcExpr
@@ -656,7 +664,7 @@ pCtx2aCtx opts
       in  if refIsCompatible 
           then pure $ addEpsilonRight genLattice ifcSource objExpr 
           else Errors . pure $ mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef
-    lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
+    lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_BoxItem (TermPrim, DisambPrim))
     lookupDisambIfcObj declMap ifcId =
       case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId ] of
         []          -> Nothing
@@ -678,7 +686,7 @@ pCtx2aCtx opts
         disambNamedRel (PNamedRel _ r Nothing)  = Map.elems $ findRels declMap r
         disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign s
 
-    pIfc2aIfc :: ContextInfo -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
+    pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc ci
              (P_Ifc { ifc_Name = nm
                     , ifc_Roles = rols
@@ -687,13 +695,17 @@ pCtx2aCtx opts
                     , ifc_Prp = prp
                     }, objDisamb)
         = (\ obj'
-             -> Ifc { ifcname = nm 
-                    , ifcRoles = rols
-                    , ifcObj = obj'
-                    , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
-                    , ifcPos = orig
-                    , ifcPrp = prp
-                    }) <$> pObjDefDisamb2aObjDef ci objDisamb
+             -> case obj' of
+                  BxExpr o ->
+                    Ifc { ifcname = nm 
+                        , ifcRoles = rols
+                        , ifcObj = o
+                        , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
+                        , ifcPos = orig
+                        , ifcPrp = prp
+                        }
+                  BxTxt _ -> fatal "Unexpected BxTxt"  --Interface should not have TXT only. it should have an expression object.     
+          ) <$> pObjDefDisamb2aObjDef ci objDisamb
 
     pRoleRelation2aRoleRelation :: ContextInfo -> P_RoleRelation -> Guarded A_RoleRelation
     pRoleRelation2aRoleRelation ci prr
@@ -773,10 +785,13 @@ pCtx2aCtx opts
            orig = origin pidt
            pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
-              do o <- pObjDefDisamb2aObjDef ci ojd
-                 case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
-                          [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
-                          _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft genLattice conc (objExpression o)}
+              do ob <- pObjDefDisamb2aObjDef ci ojd
+                 case ob of
+                   BxExpr o ->
+                     case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
+                              [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
+                              _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft genLattice conc (objExpression o)}
+                   BxTxt t -> fatal $ "TXT is not expected in IDENT statements. ("++show (origin t)++")"
     typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView ci o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
@@ -817,7 +832,7 @@ pCtx2aCtx opts
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s
      = case filter (\cd -> name cd == s) allConceptDefs of
-        []    -> Cd{pos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdref="", cdfrom=n1} 
+        []    -> Cd{pos=OriginUnknown, cdcpt=s, cddef="", cdref="", cdfrom=n1} 
         (x:_) -> x
     allConceptDefs :: [ConceptDef]
     allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns
@@ -981,7 +996,6 @@ pDecl2aDecl env typ defLanguage defFormat pd
                  , decfpos = origin pd
                  , decusr  = True
                  , decpat  = env
-                 , decplug = dec_plug pd
                  , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                  }
    in checkEndoProps >> 
