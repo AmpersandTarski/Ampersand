@@ -369,14 +369,12 @@ genViewObject fSpec depth obj@FEObjE{} =
                               , subObjContents = intercalate "\n" lns
                               , subObjExprIsUni = exprIsUni subObj
                               } 
-        FEObjT{} -> fatal "No view for TXT-like objects is defined."
-{- Code already in place. Wait for Prototype framework to implement backend
+        FEObjT{} -> 
           do return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                               , subObjLabel = objName subObj
                               , subObjContents = objTxt subObj
                               , subObjExprIsUni = True
                               }
--}
     getTemplateForObject :: IO FilePath
     getTemplateForObject 
        | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
