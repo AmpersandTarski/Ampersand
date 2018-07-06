@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"$if(lang)$ xml:lang="$lang$"$endif$>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"$if(lang)$ xml:lang="$lang$"$endif$>
 <head>
-  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
   <title>$pagetitle$</title>
   <style type="text/css">
@@ -28,9 +29,8 @@ $endfor$
 </head>
 <body$if(coverpage)$ id="cover"$endif$>
 $if(titlepage)$
-<section epub:type="titlepage">
 $for(title)$
-$if(title.type)$
+$if(title.text)$
   <h1 class="$title.type$">$title.text$</h1>
 $else$
   <h1 class="title">$title$</h1>
@@ -54,7 +54,6 @@ $endif$
 $if(rights)$
   <div class="rights">$rights$</div>
 $endif$
-</section>
 $else$
 $for(include-before)$
 $include-before$

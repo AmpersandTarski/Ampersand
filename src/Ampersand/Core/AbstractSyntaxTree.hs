@@ -1,6 +1,9 @@
-{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
@@ -20,7 +23,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Interface(..)
  , getInterfaceByName
  , SubInterface(..)
- , ObjectDef(..)
+ , BoxItem(..),BoxExp(..),BoxTxt(..),isObjExp
  , Object(..)
  , Cruds(..)
  , Default(..)
@@ -44,6 +47,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , ContextInfo(..)
  , showValADL,showValSQL
  , showSign
+ , SignOrd(..), Type(..), typeOrConcept
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
  , makeConcept
@@ -67,7 +71,7 @@ import           Data.Data          (Typeable,Data)
 import           Data.Default       (Default(..))
 import           Data.Function      (on)
 import           Data.Hashable      (Hashable(..),hashWithSalt)
-import           Data.List          (nub,intercalate)
+import           Data.List          (nub,intercalate,sort)
 import           Data.Maybe         (fromMaybe,listToMaybe)
 import qualified Data.Set as Set
 import           Data.Text          (Text,unpack,pack)
@@ -76,12 +80,14 @@ import           Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
 import qualified Data.Time.Format as DTF 
                           (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 import           GHC.Generics       (Generic)
+import qualified Data.Map as Map
+import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
          , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctxlang :: Lang           -- ^ The default language used in this context.
-         , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
+         , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context.
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxrs :: Rules           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: Relations        -- ^ The relations that are declared in this context, outside the scope of patterns
@@ -96,8 +102,6 @@ data A_Context
          , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
          , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context
          , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns and processes
-         , ctxsql :: [ObjectDef]     -- ^ user defined sqlplugs, taken from the Ampersand script
-         , ctxphp :: [ObjectDef]     -- ^ user defined phpplugs, taken from the Ampersand script
          , ctxmetas :: [Meta]        -- ^ used for Pandoc authors (and possibly other things)
          , ctxInfo :: ContextInfo
          } deriving (Typeable)              --deriving (Show) -- voor debugging
@@ -158,7 +162,7 @@ data Rule =
         , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
         , rrdcl ::    Maybe (Prop,Relation)    -- ^ The property, if this rule originates from a property on a Relation
-        , r_env ::    String                      -- ^ Name of pattern in which it was defined.
+        , rrpat ::    Maybe String                -- ^ If the rule is defined in the context of a pattern, the name of that pattern.
         , r_usr ::    RuleOrigin                  -- ^ Where does this rule come from?
         , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
         } deriving Typeable
@@ -175,6 +179,10 @@ instance Traced Rule where
   origin = rrfps
 instance Named Rule where
   name   = rrnm
+instance Hashable Rule where
+  hashWithSalt s rul = s 
+    `hashWithSalt` (name rul)
+    `hashWithSalt` (formalExpression rul)
 
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)
@@ -211,8 +219,7 @@ data Relation = Relation
       , decMean :: AMeaning          -- ^ the meaning of a relation, for each language supported by Ampersand.
       , decfpos :: Origin            -- ^ the position in the Ampersand source file where this relation is declared. Not all decalartions come from the ampersand souce file.
       , decusr ::  Bool              -- ^ if true, this relation is declared by an author in the Ampersand script; otherwise it was generated by Ampersand.
-      , decpat ::  String            -- ^ the pattern where this relation has been declared.
-      , decplug :: Bool              -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
+      , decpat ::  Maybe String      -- ^ If the relation is declared inside a pattern, the name of that pattern.
       , dechash :: Int
       } deriving (Typeable, Data)
 
@@ -248,6 +255,7 @@ instance Traced Relation where
 data IdentityDef = Id { idPos :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                       , idLbl :: String        -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                       , idCpt :: A_Concept     -- ^ this expression describes the instances of this object, related to their context
+                      , idPat :: Maybe String  -- ^ if defined within a pattern, then the name of that pattern.
                       , identityAts :: [IdentitySegment]  -- ^ the constituent attributes (i.e. name/expression pairs) of this identity.
                       } deriving (Eq,Show)
 instance Named IdentityDef where
@@ -257,7 +265,7 @@ instance Traced IdentityDef where
 instance Unique IdentityDef where
   showUnique = idLbl
 
-data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refactor to a list of terms
+data IdentitySegment = IdentityExp BoxExp deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
 data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                   , vdlbl :: String          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
@@ -314,10 +322,17 @@ instance Show A_Gen where
     case g of
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
+instance Hashable A_Gen where
+    hashWithSalt s g = 
+      s `hashWithSalt` (genspc g)
+        `hashWithSalt` (case g of 
+                         Isa{} -> [genspc g]
+                         IsE{} -> sort $ genrhs g 
+                       )
 
 data Interface = Ifc { ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
-                     , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
+                     , ifcObj ::      BoxExp     -- NOTE: this top-level BoxExp is contains the interface itself (ie. name and expression)
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
                      , ifcPrp ::      String        -- The purpose of the interface
@@ -340,30 +355,54 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
 
 
 class Object a where
- concept ::   a -> A_Concept        -- the type of the object
- fields ::    a -> [ObjectDef]   -- the objects defined within the object
+ concept ::   a -> A_Concept      -- the type of the object
+ fields ::    a -> [BoxExp]       -- the objects defined within the object
  contextOf :: a -> Expression     -- the context expression
 
-instance Object ObjectDef where
+instance Object BoxExp where
  concept obj = target (objExpression obj)
  fields  obj = case objmsub obj of
                  Nothing       -> []
                  Just InterfaceRef{} -> []
-                 Just b@Box{}    -> siObjs b
+                 Just b@Box{}    -> map objE . filter isObjExp $ siObjs b
  contextOf   = objExpression
 
-data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                     , objpos ::   Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-                     , objExpression ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
-                     , objcrud ::  Cruds -- ^ CRUD as defined by the user 
-                     , objmView :: Maybe String   -- ^ The view that should be used for this object
-                     , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.
-                     } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
-instance Named ObjectDef where
+data BoxItem = 
+        BxExpr {objE :: BoxExp}
+      | BxTxt {objT :: BoxTxt}
+      deriving (Eq, Show)
+instance Traced BoxItem where
+  origin o 
+    = case o of
+        BxExpr{} -> origin . objE $ o
+        BxTxt{} -> origin . objT $ o
+isObjExp :: BoxItem -> Bool
+isObjExp BxExpr{} = True
+isObjExp BxTxt{} = False
+data BoxExp = 
+    BoxExp { objnm    :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+           , objpos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+           , objExpression :: Expression -- ^ this expression describes the instances of this object, related to their context.
+           , objcrud  :: Cruds          -- ^ CRUD as defined by the user 
+           , objmView :: Maybe String   -- ^ The view that should be used for this object
+           , objmsub  :: Maybe SubInterface -- ^ the fields, which are object definitions themselves.
+           } deriving (Eq, Show)        -- just for debugging (zie ook instance Show BoxItem)
+data BoxTxt =
+    BoxTxt { objnm  :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+           , objpos :: Origin
+           , objtxt :: String
+           } deriving (Eq, Show)
+instance Named BoxExp where
   name   = objnm
-instance Traced ObjectDef where
+instance Traced BoxExp where
   origin = objpos
-instance Unique ObjectDef where
+instance Unique BoxExp where
+  showUnique = showUnique . origin
+instance Named BoxTxt where
+  name   = objnm
+instance Traced BoxTxt where
+  origin = objpos
+instance Unique BoxItem where
   showUnique = showUnique . origin
 data Cruds = Cruds { crudOrig :: Origin
                    , crudC :: Bool
@@ -373,7 +412,7 @@ data Cruds = Cruds { crudOrig :: Origin
                    } deriving (Eq, Show)
 data SubInterface = Box { siConcept :: A_Concept
                         , siMClass  :: Maybe String
-                        , siObjs    :: [ObjectDef] 
+                        , siObjs    :: [BoxItem] 
                         }
                   | InterfaceRef 
                         { siIsLink :: Bool
@@ -777,9 +816,35 @@ data ContextInfo =
   CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
-     , reprList         :: [Representation] -- a list of all Representation, so 
-     }
+     , reprList         :: [Representation] -- a list of all Representations
+     , declDisambMap    :: Map.Map String (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
+     , soloConcs        :: [Type] -- types not used in any declaration
+     , gens_efficient   :: (Op1EqualitySystem Type) -- generalisation relations again, as a type system (including phantom types)
+     } 
                        
+instance Named Type where
+  name v = case typeOrConcept v of
+                Right (Just x) -> "Built-in type "++show x
+                Right Nothing  -> "The Generic Built-in type"
+                Left  x -> "Concept "++name x
+
+typeOrConcept :: Type -> Either A_Concept (Maybe TType)
+typeOrConcept (BuiltIn TypeOfOne)  = Left  ONE
+typeOrConcept (UserConcept s)      = Left$ makeConcept s
+typeOrConcept (BuiltIn x)          = Right (Just x)
+typeOrConcept RepresentSeparator = Right Nothing
+
+data Type = UserConcept String
+          | BuiltIn TType
+          | RepresentSeparator
+          deriving (Eq,Ord,Show)
+
+-- for faster comparison
+newtype SignOrd = SignOrd Signature
+instance Ord SignOrd where
+  compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
+instance Eq SignOrd where
+  (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
    
 
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,

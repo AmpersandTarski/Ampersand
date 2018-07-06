@@ -21,7 +21,7 @@ module Ampersand.FSpec.FSpec
           , Typology(..)
           , Interface(..)
           , Object(..)
-          , ObjectDef(..)
+          , BoxItem(..)
           , SubInterface(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)
@@ -35,6 +35,8 @@ import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.FSpec.Crud
 import           Ampersand.Misc
+import           Data.Function (on)
+import           Data.Hashable
 import           Data.List
 import qualified Data.Set as Set
 import           Data.Text (Text,unpack)
@@ -50,8 +52,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
-                   , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
-                   , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
+                   , plugInfos ::    [PlugInfo]               -- ^ All plugs (derived)
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
@@ -113,6 +114,22 @@ instance Unique FSpec where
  showUnique = showUnique . originalContext
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
+
+-- The point of calculating a hash for FSpec is that such a hash can be used 
+-- at runtime to determine if the database structure and content is still valid.
+-- We want to detect if the user has made changes in her script, that require
+-- to reinstall the database. (e.g. changing the order of things in the script
+-- would not require a change of the database. However, change the name of concepts would.)
+instance Hashable FSpec where
+    hashWithSalt salt fSpec = salt 
+      `composeHash` name
+      `composeHash` (sort . Set.toList . fallRules) 
+      `composeHash` (sort . Set.toList . vrels)
+      `composeHash` (sort . Set.toList . allConcepts)
+      `composeHash` (sortBy (compare `on` genspc) . vgens)
+      where 
+        composeHash :: Hashable a => Int -> (FSpec -> a) -> Int
+        composeHash s fun = s `hashWithSalt` (fun fSpec) 
 
 instance Language FSpec where
   relsDefdIn = relsDefdIn.originalContext
@@ -203,19 +220,14 @@ dnf2expr dnf
     (as,cs) -> notCpl (foldr1 (./\.) as) .\/. foldr1 (.\/.) cs
 
 data PlugInfo = InternalPlug PlugSQL
-              | ExternalPlug ObjectDef
                 deriving (Show, Eq,Typeable)
 instance Named PlugInfo where
   name (InternalPlug psql) = name psql
-  name (ExternalPlug obj)  = name obj
 instance Unique PlugInfo where
   showUnique (InternalPlug psql) = "SQLTable "++name psql
-  showUnique (ExternalPlug obj ) = "Object "++name obj++show (origin obj)
 instance ConceptStructure PlugInfo where
   concs   (InternalPlug psql) = concs   psql
-  concs   (ExternalPlug obj)  = concs   obj
   expressionsIn (InternalPlug psql) = expressionsIn psql
-  expressionsIn (ExternalPlug obj)  = expressionsIn obj
 instance ConceptStructure PlugSQL where
   concs     p = concs   (plugAttributes p)
   expressionsIn   p = expressionsIn (plugAttributes p)
@@ -336,9 +348,9 @@ showSQL tt =
      TypeOfOne        -> fatal "ONE is not represented in SQL" 
 
 -- In case of reference to an INTERFACE, not used as a LINKTO, the
--- expression and cruds are replaced. This is introduce with the
+-- expression and cruds are replaced. This is introduced with the
 -- refactoring of the frontend interfaces in oct/nov 2016. 
-substituteReferenceObjectDef :: FSpec -> ObjectDef -> ObjectDef
+substituteReferenceObjectDef :: FSpec -> BoxExp -> BoxExp
 substituteReferenceObjectDef fSpec originalObjectDef =
   case substitution of
     Nothing           -> originalObjectDef

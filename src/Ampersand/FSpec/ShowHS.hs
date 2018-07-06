@@ -168,7 +168,6 @@ instance ShowHS FSpec where
         [ "FSpec{ fsName        = " ++ show (name fSpec)
         , wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
         ,      ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
-        , wrap ", vplugInfos    = " indentA (\_->showHS opts (indentA++"  ")) (vplugInfos fSpec)
         , wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
         ,      ", interfaceS    = interfaceS'"
         ,      ", interfaceG    = interfaceG'"
@@ -299,13 +298,10 @@ instance ShowHS Meta where
 
 instance ShowHSName PlugInfo where
  showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
- showHSName (ExternalPlug _) = fatal "a PlugInfo is anonymous with respect to showHS opts"
-
+ 
 instance ShowHS PlugInfo where
  showHS _ _ (InternalPlug p)
   = "InternalPlug "++showHSName p
- showHS opts ind (ExternalPlug o)
-  = "ExternalPlug "++showHS opts (ind++"    ") o
 
 instance ShowHS A_RoleRelation where
  showHS opts ind rr
@@ -427,7 +423,7 @@ instance ShowHS Rule where
      ,"  , rrdcl  = " ++ case rrdcl r of
                            Just (p,d) -> "Just ("++showHSName p++", "++showHSName d++" )"
                            Nothing    -> "Nothing"
-     ,"  , r_env  = " ++ show (r_env  r)
+     ,"  , rrpat  = " ++ show (rrpat  r)
      ,"  , r_usr  = " ++ show (r_usr  r)
      ,"  , isSignal = " ++ show (isSignal  r)
      ,"  }"
@@ -483,20 +479,28 @@ instance ShowHS Population where
           ++indent++"                    ]"
           ++indent++"         }"
 
-instance ShowHSName ObjectDef where
+instance ShowHSName BoxExp where
  showHSName obj = haskellIdentifier ("oDef_"++name obj)
 
-instance ShowHS ObjectDef where
- showHS opts indent r
+instance ShowHS BoxExp where
+ showHS opts indent x
   = intercalate indent
-        ["Obj{ objnm    = " ++ show(objnm r)
-        ,"   , objpos   = " ++ showHS opts "" (objpos r)
-        ,"   , objExpression   = " ++ showHS opts (indent++"                ") (objExpression r)
-        ,"   , objcrud  = " ++ showHS opts (indent++"                ") (objcrud r)
-        ,"   , objmView = " ++ show(objmView r)
-        ,"   , objmsub  = " ++ showHS opts (indent++"                ") (objmsub r)
-        ]++indent++"   }"
-
+        ["BoxExp { objnm    = " ++ show(name x)
+        ,"       , objpos   = " ++ showHS opts "" (origin x)
+        ,"       , objExpression   = " ++ showHS opts (indent++"                ") (objExpression x)
+        ,"       , objcrud  = " ++ showHS opts (indent++"                ") (objcrud x)
+        ,"       , objmView = " ++ show(objmView x)
+        ,"       , objmsub  = " ++ showHS opts (indent++"                ") (objmsub x)
+        ,"       }"
+        ]
+instance ShowHS BoxTxt where
+ showHS opts indent x
+  = intercalate indent
+        ["BoxTxt { objnm    = " ++ show(name x)
+        ,"       , objpos   = " ++ showHS opts "" (origin x)
+        ,"       , objtxt   = " ++ show(objtxt x)
+        ,"       }"
+        ]
 instance ShowHS Cruds where
  showHS opts indent x 
   = intercalate indent
@@ -520,7 +524,12 @@ instance ShowHS Interface where
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
         , "    , ifcPrp    = " ++ show(ifcPrp ifc)
         ]++indent++"    }"
-
+instance ShowHS BoxItem where
+ showHS opts indent obj =
+   case obj of
+     (BxExpr e) -> "BxExpr ("++showHS opts indent e++")"
+     (BxTxt t) -> "BxTxt ("++showHS opts indent t++")"
+ 
 instance ShowHS SubInterface where
  showHS _     _     (InterfaceRef isLink n) = "InterfaceRef "++show isLink ++" "++show n
  showHS opts indent (Box x cl objs) = "Box ("++showHS opts indent x++") ("++showHS opts indent cl++")"++indent++"     ("++showHS opts (indent++"     ") objs++")"
@@ -577,7 +586,6 @@ instance ShowHS Relation where
                      ,"         , decfpos = " ++ showHS opts "" (decfpos d)
                      ,"         , decusr  = " ++ show (decusr d)
                      ,"         , decpat  = " ++ show (decpat d)
-                     ,"         , decplug = " ++ show (decplug d)
                      ]++"}"
 
 --   instance ShowHSName ConceptDef where
@@ -585,7 +593,7 @@ instance ShowHS Relation where
 
 instance ShowHS ConceptDef where
  showHS opts _ cd
-  = " Cd ("++showHS opts "" (origin cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
+  = " Cd ("++showHS opts "" (origin cd)++") "++show (cdcpt cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
 instance ShowHSName Char where
  showHSName = show
 instance ShowHS Char where

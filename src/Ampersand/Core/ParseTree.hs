@@ -17,7 +17,7 @@ module Ampersand.Core.ParseTree (
    , Representation(..), TType(..)
    , P_Population(..)
    , PAtomPair(..), PAtomValue(..), mkPair, PSingleton, makePSingleton
-   , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
+   , P_BoxItemTermPrim, P_SubInterface, P_Interface(..), P_IClass(..), P_BoxItem(..), P_SubIfc(..)
    , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
    , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..)
@@ -66,8 +66,6 @@ data P_Context
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
          , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
          , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
-         , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
-         , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
          } deriving Show --for QuickCheck
 
@@ -148,7 +146,6 @@ instance Traced P_Pattern where
 data ConceptDef
    = Cd  { pos :: Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
          , cdcpt :: String   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-         , cdplug:: Bool     -- ^ Whether the user specifically told Ampersand not to store this concept in the database
          , cddef :: String   -- ^ The textual definition of this concept.
          , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
          , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
@@ -203,7 +200,6 @@ data P_Relation =
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a relation, possibly more than one for different languages.
             , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
             , pos :: Origin    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
-            , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
             } deriving (Show) --For QuickCheck error messages only!
 
 -- | Equality on P_Relation
@@ -412,12 +408,13 @@ instance Traversable P_SubIfc where
 instance Traced (P_SubIfc a) where
  origin = pos
 
-instance Functor P_ObjDef where fmap = fmapDefault
-instance Foldable P_ObjDef where foldMap = foldMapDefault
-instance Traversable P_ObjDef where
- traverse f (P_Obj nm pos' ctx mCrud mView msub)
-  = (\ctx' msub'->(P_Obj nm pos' ctx' mCrud mView msub')) <$>
+instance Functor P_BoxItem where fmap = fmapDefault
+instance Foldable P_BoxItem where foldMap = foldMapDefault
+instance Traversable P_BoxItem where
+ traverse f (P_BxExpr nm pos' ctx mCrud mView msub)
+  = (\ctx' msub'->(P_BxExpr nm pos' ctx' mCrud mView msub')) <$>
      traverse f ctx <*> traverse (traverse f) msub
+ traverse _ (P_BxTxt  nm pos' str) = pure (P_BxTxt  nm pos' str)
 
 instance Traced TermPrim where
  origin e = case e of
@@ -574,7 +571,7 @@ instance Traced P_Population where
 data P_Interface =
      P_Ifc { ifc_Name :: String           -- ^ the name of the interface
            , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
-           , ifc_Obj :: P_ObjectDef       -- ^ the context expression (mostly: I[c])
+           , ifc_Obj :: P_BoxItemTermPrim       -- ^ the context expression (mostly: I[c])
            , pos :: Origin
            , ifc_Prp :: String
            } deriving (Show) --For QuickCheck error messages only!
@@ -595,28 +592,32 @@ type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
               = P_Box          { pos :: Origin
                                , si_class :: Maybe String
-                               , si_box :: [P_ObjDef a] }
+                               , si_box :: [P_BoxItem a] }
               | P_InterfaceRef { pos :: Origin
                                , si_isLink :: Bool --True iff LINKTO is used. (will display as hyperlink)
                                , si_str :: String  -- Name of the interface that is reffered to
                                } 
                 deriving (Show)
 
-type P_ObjectDef = P_ObjDef TermPrim
-data P_ObjDef a =
-     P_Obj { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+type P_BoxItemTermPrim = P_BoxItem TermPrim
+data P_BoxItem a =
+     P_BxExpr { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , obj_ctx :: Term a         -- ^ this expression describes the instances of this object, related to their context.
            , obj_crud :: Maybe P_Cruds  -- ^ the CRUD actions as required by the user  
            , obj_mView :: Maybe String -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
-           }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
-instance Ord (P_ObjDef a) where
+           }
+   | P_BxTxt  { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+           , pos :: Origin
+           , obj_txt :: String
+           } deriving (Show)       -- just for debugging (zie ook instance Show BoxItem)
+instance Ord (P_BoxItem a) where
   compare a b = compare (origin a) (origin b)
-instance Eq (P_ObjDef a) where od==od' = origin od==origin od'
-instance Named (P_ObjDef a) where
- name = obj_nm
-instance Traced (P_ObjDef a) where
+instance Eq (P_BoxItem a) where od==od' = origin od==origin od'
+instance Named (P_BoxItem a) where
+  name = obj_nm
+instance Traced (P_BoxItem a) where
  origin = pos
 data P_Cruds = P_Cruds Origin String deriving Show
 type P_IdentDef = P_IdentDf TermPrim -- this is what is returned by the parser, but we need to change the "TermPrim" for disambiguation
@@ -645,7 +646,7 @@ instance Traversable P_IdentSegmnt where
 
 type P_IdentSegment = P_IdentSegmnt TermPrim
 data P_IdentSegmnt a
-              = P_IdentExp  { ks_obj :: P_ObjDef a}
+              = P_IdentExp  { ks_obj :: P_BoxItem a}
                 deriving (Eq, Ord, Show)
 
 type P_ViewDef = P_ViewD TermPrim
@@ -838,8 +839,6 @@ mergeContexts ctx1 ctx2 =
       , ctx_ifcs   = nubSortConcatMap ctx_ifcs contexts
       , ctx_ps     = nubSortConcatMap ctx_ps contexts
       , ctx_pops   = nubSortConcatMap ctx_pops contexts
-      , ctx_sql    = nubSortConcatMap ctx_sql contexts
-      , ctx_php    = nubSortConcatMap ctx_php contexts
       , ctx_metas  = nubSortConcatMap ctx_metas contexts
       }
     where contexts = [ctx1,ctx2]
@@ -869,8 +868,6 @@ mkContextOfPopsOnly pops =
       , ctx_ifcs   = []
       , ctx_ps     = []
       , ctx_pops   = pops
-      , ctx_sql    = []
-      , ctx_php    = []
       , ctx_metas  = []
       }
 -- | Left-biased choice on maybes

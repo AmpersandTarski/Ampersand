@@ -3,7 +3,8 @@
 module Ampersand.Output.ToJSON.Settings 
   (Settings)
 where
-import Ampersand.Output.ToJSON.JSONutils 
+import           Ampersand.Output.ToJSON.JSONutils 
+import           Data.Hashable
 import qualified Data.Text as Text
 
 data Settings = Settings 
@@ -11,6 +12,7 @@ data Settings = Settings
   , sngJSONcontextName :: String
   , sngJSONmysqlSettings :: MySQLSettings
   , sngJSONenvironment :: String
+  , sngJSONmodelHash :: String
   } deriving (Generic, Show)
 instance ToJSON Settings where
   toJSON = amp2Jason
@@ -20,6 +22,7 @@ instance JSON MultiFSpecs Settings where
   , sngJSONcontextName   = Text.unpack (fsName fSpec)
   , sngJSONmysqlSettings = fromAmpersand multi multi
   , sngJSONenvironment   = show . environment . getOpts $ fSpec
+  , sngJSONmodelHash = show . hash $ fSpec
   } 
    where fSpec = userFSpec multi
 
@@ -28,7 +31,6 @@ data MySQLSettings = MySQLSettings
   , msqlJSONdbName :: String
   , msqlJSONdbUser :: String
   , msqlJSONdbPass :: String
-  , msqlJSONdbsignalTableName :: String
   } deriving (Generic, Show)
 instance ToJSON MySQLSettings where
   toJSON = amp2Jason
@@ -38,6 +40,6 @@ instance JSON MultiFSpecs MySQLSettings where
   , msqlJSONdbName = dbName   opts
   , msqlJSONdbUser = sqlLogin opts
   , msqlJSONdbPass = sqlPwd   opts
-  , msqlJSONdbsignalTableName = "__all_signals__"
   }
-   where opts = getOpts $ userFSpec multi
+   where opts = getOpts fSpec
+         fSpec = userFSpec multi

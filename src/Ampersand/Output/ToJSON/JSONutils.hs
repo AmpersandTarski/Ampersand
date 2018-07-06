@@ -23,7 +23,7 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder) 
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
-import           Data.Aeson
+import           Data.Aeson hiding (Options)
 import qualified Data.Aeson.Types as AT 
 import           Data.Aeson.Encode.Pretty
 import qualified Data.ByteString.Lazy as BS

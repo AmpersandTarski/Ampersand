@@ -28,25 +28,19 @@ import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
-import           Control.Monad
+import           Conduit (liftIO, MonadIO)  
+import qualified Control.Exception as E
 import           Data.Char hiding    (Space)
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Lazy.Char8 as BC
-import           Data.List
-import           System.Directory
-import           System.Environment
-import qualified System.Exit as SE (ExitCode(..)) -- These are not considered Ampersand exit codes, but from Pandoc
+import           Data.Text as Text (Text,pack,unpack,replace)
+import qualified Data.Text.Encoding.Error as TE
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TE
 import           System.FilePath  -- (combine,addExtension,replaceExtension)
 import           Text.Pandoc
 import           Text.Pandoc.Builder
-import           Text.Pandoc.MediaBag
-import           Text.Pandoc.Process (pipeProcess)
-
-#ifdef _WINDOWS
-changePathSeparators :: FilePath -> FilePath
-changePathSeparators = intercalate "/" . splitDirectories
-#endif
+import           Text.Pandoc.PDF (makePDF)
+import qualified Text.Pandoc.UTF8 as UTF8
 
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: FSpec -> [(String , String)]
@@ -59,14 +53,10 @@ defaultWriterVariables fSpec
                         (Dutch  ,  True) -> "Diagnose van "
                         (English,  True) -> "Diagnosis of "
                 )++name fSpec)
- --   , ("mainfont",
- --   , ("sansfont",
- --   , ("monofont",
- --   , ("mathfont",
     , ("fontsize", "12pt")   --can be overridden by geometry package (see below)
     , ("lang"    , case fsLang fSpec of
-                       Dutch   -> "dutch"
-                       English -> "english")
+                       Dutch   -> "nl-NL"
+                       English -> "en-US")
     , ("papersize", "a4")
     , ("babel-lang", case fsLang fSpec of
                        Dutch   -> "dutch"
@@ -108,152 +98,104 @@ defaultWriterVariables fSpec
          , "% hypcap – Adjusting the anchors of captions"
          , "\\usepackage[all]{hypcap}"
          , ""
-         -- , "% adaptation1) For the purpose of clear references in Latex. See also https://github.com/AmpersandTarski/ampersand/issues/31"
-         -- , "\\makeatletter"
-         -- , "\\let\\orgdescriptionlabel\\descriptionlabel"
-         -- , "\\renewcommand*{\\descriptionlabel}[1]{%"
-         -- , "  \\let\\orglabel\\label"
-         -- , "  \\let\\label\\@gobble"
-         -- , "  \\phantomsection"
-         -- , "  \\edef\\@currentlabel{#1}%"
-         -- , "  %\\edef\\@currentlabelname{#1}%"
-         -- , "  \\let\\label\\orglabel"
-         -- , "  \\orgdescriptionlabel{#1}%"
-         -- , "}"
-         -- , "\\makeatother"
-         -- , "% End-adaptation1"
-         , ""
-         , "% adaptation2) The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that equations are"
+         , "% <Adaptation>: The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that equations are"
          , "% not numbered. This is undesireable behaviour. this is fixed with the following hack, inspired on a note"
          , "% found at http://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath"
          , "\\DeclareRobustCommand{\\[}{\\begin{equation}}"
          , "\\DeclareRobustCommand{\\]}{\\end{equation}}"
-         , "% End-adaptation2"
+         , "% <End-adaptation>"
          , ""
          , ""
          , "% ============Ampersand specific End==================="
          ])
-    | fspecFormat (getOpts fSpec) == FLatex ]
+    | fspecFormat (getOpts fSpec) `elem` [Fpdf,Flatex]
+    ]
 
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The IO() creates the actual output
 writepandoc :: FSpec -> Pandoc -> IO()
-writepandoc fSpec thePandoc = 
-  do verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
-     media <- collectMedia
-     verboseLn (getOpts fSpec) "Media collected"
-     let wOpts = writerOptions media
-     writeToFile wOpts
-     -- In case of Latex, we need to postprocess the .ltx file to pdf:
-     case fspecFormat (getOpts fSpec) of
-        FLatex  ->
-           do result <- makePDF writeLaTeX wOpts thePandoc fSpec
-              case result of 
-                Left err -> do putStrLn "LaTeX Error: "
-                               BL.putStr err
-                               putStrLn "\n."
-                Right _  -> do let pdfFile = outputFile -<.> "pdf"
-                               verboseLn (getOpts fSpec) $ pdfFile ++" created."
-             
-        _ -> return ()
- where
-    writeToFile :: WriterOptions -> IO()
-    writeToFile wOpts = do
-      when (fspecFormat (getOpts fSpec) == Fdocx)
-           writeReferenceFileDocx
-      case getWriter fSpecFormatString of
-        Left msg -> fatal . unlines $
-                        ("Something wrong with format "++show(fspecFormat (getOpts fSpec))++":")
-                        : map ("  "++) (lines msg)
-        Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
-                                                writeFile outputFile content
-        Right (IOStringWriter worker)     -> do content <- worker wOpts thePandoc
-                                                writeFile outputFile content
-        Right (IOByteStringWriter worker) -> do content <- worker wOpts thePandoc
-                                                BC.writeFile outputFile content
-
-    outputFile = 
-      addExtension (dirOutput (getOpts fSpec) </> baseName (getOpts fSpec))
-                   (case fspecFormat (getOpts fSpec) of
-                      Fasciidoc     -> ".txt"
-                      Fcontext      -> ".context"
-                      Fdocbook      -> ".docbook"
-                      Fdocx         -> ".docx"
-                      Fman          -> ".man"
-                      Fmarkdown     -> ".md"
-                      Fmediawiki    -> ".mediawiki"
-                      Forg          -> ".org"
-                      Fplain        -> ".plain"
-                      Frst          -> ".rst"
-                      FPandoc       -> ".pandoc"
-                      Frtf          -> ".rtf"
-                      FLatex        -> ".ltx"
-                      Fhtml         -> ".html"
-                      Fopendocument -> ".odt"
-                      Ftexinfo      -> ".texinfo"
-                      Ftextile      -> ".textile"
-                   )
-    fSpecFormatString :: String
-    fSpecFormatString =
-       case fspecFormat (getOpts fSpec) of
-            FPandoc   -> "pandoc"
-            Fasciidoc -> "asciidoc"
-            Fcontext  -> "context"
-            Fdocbook  -> "docbook"
-            Fdocx     -> "docx"
-            Fhtml     -> "html"
-            FLatex    -> "latex"
-            Fman      -> "man"
-            Fmarkdown -> "markdown"
-            Fmediawiki -> "mediawiki"
-            Fopendocument -> "opendocument"
-            Forg -> "org"
-            Fplain -> "plain"
-            Frst -> "rst"
-            Frtf -> "rtf"
-            Ftexinfo -> "texinfo"
-            Ftextile -> "textile"
-    writerOptions :: MediaBag-> WriterOptions
-    writerOptions bag = def
+writepandoc fSpec thePandoc = do
+  verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
+  case writer of 
+     ByteStringWriter biteStringWriter -> do 
+       content <- runIO (biteStringWriter writerOptions thePandoc) >>= handleError
+       BL.writeFile outputFile content
+     TextWriter f -> case fspecFormat (getOpts fSpec) of
+        Fpdf -> do
+           res <- runIO (makePDF "pdflatex" [] f writerOptions thePandoc) >>= handleError
+           case res of
+             Right pdf -> writeFnBinary outputFile pdf
+             Left err' -> liftIO . E.throwIO . PandocPDFError .
+                            TL.unpack . TE.decodeUtf8With TE.lenientDecode $ err'
+        _     -> do
+                output <- runIO (f writerOptions thePandoc) >>= handleError
+                writeFile outputFile (Text.unpack output)
+ where   
+    writer :: PandocMonad m => Writer m
+    writer = case lookup writerName writers of
+                Nothing -> fatal $ "Undefined Pandoc writer: "++writerName
+                Just w -> w
+    writerName =
+      case fspecFormat . getOpts $ fSpec of
+       Fpdf    -> "latex"
+       Flatex  -> "latex"
+       FPandoc -> "native"
+       fmt     -> map toLower . tail . show $ fmt
+    writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
+    writeFnBinary f   = liftIO . BL.writeFile (UTF8.encodePath f)
+    (outputFile,fSpecFormatString) = 
+      (dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ext
+      ,map toLower . tail . show . fspecFormat . getOpts $ fSpec )
+      where 
+        ext =
+          case fspecFormat . getOpts $ fSpec of
+            Fasciidoc     -> ".txt"
+            Fcontext      -> ".context"
+            Fdocbook      -> ".docbook"
+            Fdocx         -> ".docx"
+            Fhtml         -> ".html"
+            Fpdf          -> ".pdf"
+            Fman          -> ".man"
+            Fmarkdown     -> ".md"
+            Fmediawiki    -> ".mediawiki"
+            Fopendocument -> ".odt"
+            Forg          -> ".org"
+            FPandoc       -> ".pandoc"
+            Fplain        -> ".plain"
+            Frst          -> ".rst"
+            Frtf          -> ".rtf"
+            Flatex          -> ".ltx"
+            Ftexinfo      -> ".texinfo"
+            Ftextile      -> ".textile"
+                   
+    writerOptions :: WriterOptions
+    writerOptions = def
                       { writerTableOfContents=True
                       , writerNumberSections=True
-                      , writerTemplate=template
+                      , writerTemplate=Text.unpack <$> template
                       , writerVariables=defaultWriterVariables fSpec
-                      , writerMediaBag=bag
-                      , writerReferenceDocx=Just docxStyleUserPath
-                      , writerVerbose=verboseP (getOpts fSpec)
+                    --  , writerMediaBag=bag
+                    --  , writerReferenceDocx=Just docxStyleUserPath
+                    --  , writerVerbose=verboseP (getOpts fSpec)
                       }
-     where template  = getStaticFileContent PandocTemplates ("default."++fSpecFormatString)
-    docxStyleContent :: BC.ByteString 
-    docxStyleContent = 
-      case getStaticFileContent PandocTemplates "defaultStyle.docx" of
-         Just cont -> BC.pack cont
-         Nothing -> fatal "Cannot find the statically included default defaultStyle.docx."
-    docxStyleUserPath = dirOutput (getOpts fSpec) </> "reference.docx" -- this is the place where the file is written if it doesn't exist.
-    writeReferenceFileDocx :: IO()
-    writeReferenceFileDocx = do
-         exists <- doesFileExist docxStyleUserPath
-         if exists 
-             then verboseLn (getOpts fSpec) 
-                      "Existing style file is used for generating .docx file:"
-             else (do verboseLn (getOpts fSpec)
-                           "Default style file is written. this can be changed to fit your own style:"
-                      BC.writeFile docxStyleUserPath docxStyleContent
-                  )
-         verboseLn (getOpts fSpec) docxStyleUserPath
-    collectMedia :: IO MediaBag
-    collectMedia = do files <- listDirectory . dirOutput . getOpts $ fSpec
-                      let graphicsForDotx = map (dirOutput (getOpts fSpec) </>) . filter isGraphic $ files 
-                      foldM addToBag mempty graphicsForDotx                                  
-       where addToBag :: MediaBag -> FilePath -> IO MediaBag
-             addToBag bag fullPath = do
-                verboseLn (getOpts fSpec) $ "Collect: "++fullPath
-                verboseLn (getOpts fSpec) $ "  as: "++takeFileName fullPath
-                contents <- BC.readFile fullPath
-                return $ insertMedia (takeFileName fullPath) Nothing contents bag 
-             isGraphic :: FilePath -> Bool
-             isGraphic f = takeExtension f `elem` [".svg"]
+      where 
+        template :: Maybe Text.Text
+        template  = substitute substMap <$> Text.pack <$> getStaticFileContent PandocTemplates ("default."++writerName)
+        substitute :: [(Text.Text,Text.Text)] -> Text.Text -> Text.Text
+        substitute subs tmpl = foldr replaceAll tmpl subs
+        replaceAll :: (Text.Text,Text.Text) -> Text.Text -> Text.Text
+        replaceAll (needle,replacement) = Text.replace needle replacement
+        substMap :: [(Text.Text,Text.Text)]
+        -- This substitusions are required so we can use the 
+        -- templates from pandoc unchanged. Without this substitutions
+        -- all kind of crazy errors occur with LaTeX, and possibly other
+        -- templates as well.
+        substMap = 
+            [ ("\r\n$if("   ,"$if("   )        
+            , ("$endif$\r\n","$endif$")
+            , ("\r\n$endif$","$endif$")
+            ]
 
 -----Linguistic goodies--------------------------------------
 
@@ -324,7 +266,8 @@ instance ShowMath Rule where
 
 instance ShowMath Expression where
  showMath = math . showExpr . insParentheses
-   where  showExpr (EEqu (l,r)) = showExpr l++inMathEquals++showExpr r
+   where  showExpr :: Expression -> String
+          showExpr (EEqu (l,r)) = showExpr l++inMathEquals++showExpr r
           showExpr (EInc (l,r)) = showExpr l++inMathInclusion++showExpr r
           showExpr (EIsc (l,r)) = showExpr l++inMathIntersect++showExpr r
           showExpr (EUni (l,r)) = showExpr l++inMathUnion++showExpr r
@@ -576,101 +519,6 @@ texOnlyMarginNote :: String -> String
 texOnlyMarginNote mgn = 
    "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "++mgn++"}\\end{minipage}}"
 
--------------------------------------------------
----temporary from Pandoc:
-------------------------------------------
-
-makePDF :: (WriterOptions -> Pandoc -> String)  -- ^ writer
-        -> WriterOptions       -- ^ options
-        -> Pandoc              -- ^ document
-        -> FSpec
-        -> IO (Either BL.ByteString BL.ByteString)
-makePDF writer wOpts pandoc fSpec = 
-  tex2pdf' (dirOutput (getOpts fSpec))
-  
-  where 
-    wVerbose = writerVerbose wOpts
-    program  = "pdflatex" 
-    args     = writerLaTeXArgs wOpts
-    wSource  = writer wOpts pandoc
-    tex2pdf' :: FilePath                        -- ^ temp directory for output
-             -> IO (Either BL.ByteString BL.ByteString)
-    tex2pdf' tmpDir = do
-      let numruns = if "\\tableofcontents" `isInfixOf` wSource
-                       then 3  -- to get page numbers
-                       else 2  -- 1 run won't give you PDF bookmarks
-      (exit, log', mbPdf) <- runTeXProgram 1 numruns tmpDir
-      case (exit, mbPdf) of
-           (SE.ExitFailure _, _)      -> do
-              let logmsg = extractMsg log'
-              return $ Left logmsg
-           (SE.ExitSuccess, Nothing)  -> return $ Left ""
-           (SE.ExitSuccess, Just pdf) -> return $ Right pdf
-
--- running tex programs
-
--- Run a TeX program on an input bytestring and return (exit code,
--- contents of stdout, contents of produced PDF if any).  Rerun
--- a fixed number of times to resolve references.
-    runTeXProgram :: Int -> Int -> FilePath
-                  -> IO (SE.ExitCode, BL.ByteString, Maybe BL.ByteString)
-    runTeXProgram runNumber numRuns tmpDir = do
-        let file = dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ".ltx"
-        exists <- doesFileExist file
-        unless exists $ fatal ("File should be written by now:\n  "++file)
-#ifdef _WINDOWS
-        -- note:  we want / even on Windows, for TexLive
-        let tmpDir' = changePathSeparators tmpDir
-        let file' = changePathSeparators file
-#else
-        let tmpDir' = tmpDir
-        let file' = file
-#endif
-        let programArgs = ["-halt-on-error", "-interaction", "nonstopmode",
-             "-output-directory", tmpDir'] ++ args ++ [file']
-        env' <- getEnvironment
-        let sep = [searchPathSeparator]
-        let texinputs = maybe (tmpDir' ++ sep) ((tmpDir' ++ sep) ++)
-              $ lookup "TEXINPUTS" env'
-        let env'' = ("TEXINPUTS", texinputs) :
-                      [(k,v) | (k,v) <- env', k /= "TEXINPUTS"]
-        when (wVerbose && runNumber == 1) $ do
-          putStrLn "[makePDF] temp dir:"
-          putStrLn tmpDir'
-          putStrLn "[makePDF] Command line:"
-          putStrLn $ program ++ " " ++ unwords (map show programArgs)
-          putStr "\n"
-          putStrLn $ "[makePDF] Processing: " ++ file'
-          putStr "\n"
-        (exit, out, err) <- pipeProcess (Just env'') program programArgs BL.empty
-        when wVerbose $ do
-          putStrLn $ "[makePDF] Run #" ++ show runNumber
-          BL.hPutStr stdout out
-          BL.hPutStr stderr err
-          putStr "\n"
-        if runNumber <= numRuns
-           then runTeXProgram (runNumber + 1) numRuns tmpDir
-           else do
-             let pdfFile = replaceDirectory (replaceExtension file ".pdf") tmpDir
-             pdfExists <- doesFileExist pdfFile
-             pdf <- if pdfExists
-                       -- We read PDF as a strict bytestring to make sure that the
-                       -- temp directory is removed on Windows.
-                       -- See https://github.com/jgm/pandoc/issues/1192.
-                       then (Just . BL.fromChunks . (:[])) `fmap` BS.readFile pdfFile
-                       else return Nothing
-             return (exit, out <> err, pdf)
-
--- parsing output
-
-extractMsg :: BL.ByteString -> BL.ByteString
-extractMsg log' = do
-  let msg'  = dropWhile (not . ("!" `BC.isPrefixOf`)) $ BC.lines log'
-  let (msg'',rest) = break ("l." `BC.isPrefixOf`) msg'
-  let lineno = take 1 rest
-  if null msg'
-     then log'
-     else BC.unlines (msg'' ++ lineno)
 
 commaPandocAnd :: Lang -> [Inlines] -> Inlines
 commaPandocAnd Dutch = commaNLPandoc "en"

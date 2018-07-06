@@ -1,9 +1,19 @@
 # Release notes of Ampersand
 
+## v3.11.0 (6 july 2018)
+
+* Upgrade to LTS-11.13
+* PHP Backend: implement [PSR6 caching interface](https://www.php-fig.org/psr/psr-6/) for conjunct violation cache
+* [Issue #789](https://github.com/AmpersandTarski/Ampersand/issues/789) Introduction `API` keyword as synonym for `INTERFACE`
+* [Issue #411](https://github.com/AmpersandTarski/Ampersand/issues/411) Fix issue with conjunct violation cache for src/tgt atom identifiers longer than 255 chars
+* Upgrade to pandoc vs 2.0
+* [Issue #482](https://github.com/AmpersandTarski/Ampersand/issues/482) Using checksum from generator to check if Ampersand model files are changed
+* [Issue #801](https://github.com/AmpersandTarski/Ampersand/issues/801) Fix a problem with empty values in .xlsx files during compilation of an .adl file
+
 ## v3.10.1 (8 june 2018)
 
 * [Issue #779](https://github.com/AmpersandTarski/Ampersand/issues/779) Removed GenBericht module (project specific extension which is not used anymore)
-* [Issue #789](https://github.com/AmpersandTarski/Ampersand/issues/789) Introduction `API` keyword as synonym for `INTERFACE`
+* [Issue #482](https://github.com/AmpersandTarski/Ampersand/issues/482) Add checksum for generated Ampersand model files to detect changes
 
 ## v3.10.0 (11 may 2018)
 
@@ -11,7 +21,7 @@
 * PHP Backend: integrated and refactored ExcelImporter (not an extension anymore)
 * PHP Backend: added functionality to import json population files via UI of ExcelImporter
 * PHP Backend: now requires PHP 7.x (5.6 is not supported anymore)
-* PHP Backend: added [Pimple](https://pimple.symfony.com/) as Dependency Injection Container library 
+* PHP Backend: added [Pimple](https://pimple.symfony.com/) as Dependency Injection Container library
 * PHP Backend: refactored creation of AngularApp, AmpersandApp and MysqlDB using Pimple container
 * PHP Backend: mysql database class placed under Plug namespace
 * PHP Backend: added function/method parameter and return type specifications

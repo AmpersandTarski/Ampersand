@@ -10,7 +10,6 @@ import           Data.Char
 import           Data.Function (on)
 import           Data.List
 import qualified Data.Set as Set
-import qualified Text.Pandoc.Builder
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
@@ -49,10 +48,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                    )
             <> para (case fsLang fSpec of
                       Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                               <> ("Deze is weergegeven in " <> xRef classificationPicture <> "."
+                               <> ("Deze is weergegeven in " <> hyperLinkTo fSpec classificationPicture <> "."
                                   )
                       English -> "A number of concepts is organized in a classification structure. "
-                               <> ("This is shown in " <> xRef classificationPicture <> "."
+                               <> ("This is shown in " <> hyperLinkTo fSpec classificationPicture <> "."
                                   )
                     )
             <> xDefBlck fSpec classificationPicture
@@ -76,10 +75,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                     )
       <> para (case fsLang fSpec of
                  Dutch   -> text "De afspraken zijn vertaald naar een gegevensmodel. "
-                           <> ( text "Dit gegevensmodel is in " <> xRef logicalDataModelPicture <> text " weergegeven."
+                           <> ( text "Dit gegevensmodel is in " <> hyperLinkTo fSpec logicalDataModelPicture <> text " weergegeven."
                               )
                  English -> text "The functional requirements have been translated into a data model. "
-                           <> ( text "This model is shown by " <> xRef logicalDataModelPicture <> text "."
+                           <> ( text "This model is shown by " <> hyperLinkTo fSpec logicalDataModelPicture <> text "."
                               )
               )
        <> xDefBlck fSpec logicalDataModelPicture
@@ -172,11 +171,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                  _  -> para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
                          <> orderedList (map assocToRow asscs) 
     where
-        
      assocToRow :: Association -> Blocks
      assocToRow assoc  =
          plain (  (text.assrhr) assoc
-                <>(text.l) (NL " (vanaf ",EN " (from ")
+                <>(text.l) (NL " (van ",EN " (from ")
                 <>(text.assSrc) assoc
                 <>(text.l) (NL " naar ", EN " to ")
                 <>(text.assTgt) assoc
@@ -232,10 +230,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                 )
     <> para (case fsLang fSpec of
                Dutch   ->   "De afspraken zijn vertaald naar een technisch datamodel. "
-                         <> ( "Dit model is in " <> xRef technicalDataModelPicture <> " weergegeven."
+                         <> ( "Dit model is in " <> hyperLinkTo fSpec technicalDataModelPicture <> " weergegeven."
                             )
                English ->   "The functional requirements have been translated into a technical data model. "
-                         <> ( "This model is shown by " <> xRef technicalDataModelPicture <> "."
+                         <> ( "This model is shown by " <> hyperLinkTo fSpec technicalDataModelPicture <> "."
                             )
             )
     <> xDefBlck fSpec technicalDataModelPicture
@@ -250,14 +248,11 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
       isTable (InternalPlug BinSQL{}) = True
-      isTable ExternalPlug{} = False
       detailsOfplug :: PlugInfo -> Blocks
       detailsOfplug p =
-           header 3 (   case (fsLang fSpec, p) of
-                          (Dutch  , InternalPlug{}) ->  "Tabel: "
-                          (Dutch  , ExternalPlug{}) ->  "Dataservice: "
-                          (English, InternalPlug{}) ->  "Table: "
-                          (English, ExternalPlug{}) ->  "Data service: "
+           header 3 (   case (fsLang fSpec) of
+                          Dutch   ->  "Tabel: "
+                          English ->  "Table: "
                      <> text (name p)
                     )
         <> case p of
@@ -282,10 +277,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                        )
                      <> showAttributes (plugAttributes bin)
 
-             ExternalPlug _
-               -> case fsLang fSpec of
-                    Dutch   -> para "De details van deze service zijn in dit document (nog) niet verder uitgewerkt."
-                    English -> para "The details of this dataservice are not available in this document."
       showAttributes :: [SqlAttribute] -> Blocks
       showAttributes atts = bulletList (map showAttribute atts)
         where
@@ -296,13 +287,14 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                             PrimaryKey _ -> case fsLang fSpec of
                                               Dutch   -> "Dit attribuut is de primaire sleutel. "
                                               English -> "This attribute is the primary key. "
-                            ForeignKey c -> case fsLang fSpec of
-                                              Dutch   -> "Dit attribuut verwijst naar een voorkomen in de tabel "
+                            ForeignKey c -> (case fsLang fSpec of
+                                              Dutch   -> "Dit attribuut verwijst naar een rij in de tabel "
                                               English -> "This attribute is a foreign key to "
-                                               <> (text.name) c
-                            PlainAttr    -> case fsLang fSpec of
+                                            )<> (text.name) c
+                            PlainAttr    -> (case fsLang fSpec of
                                               Dutch   -> "Dit attribuut implementeert "
                                               English -> "This attribute implements "
+                                            )
                                           <> primExpr2pandocMath (fsLang fSpec) (attExpr att)
                                           <> "."
                       <> linebreak
@@ -360,7 +352,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
        , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) rule
        , fromList $ meaning2Blocks (fsLang fSpec) rule
        , para (showMath rule)
-       , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
        , if isSignal rule
          then mempty
          else case rrviol rule of
@@ -385,12 +376,12 @@ primExpr2pandocMath lang e =
            case lang of
              Dutch -> text "de relatie "
              English -> text "the relation "
-        <> math ((name.source) d++ " \\xrightarrow {"++name d++"} "++(name.target) d)
+        <> math ((name.source) d++ " \\rightarrow {"++name d++"} "++(name.target) d)
   (EFlp (EDcD d)) ->
            case lang of
              Dutch -> text "de relatie "
              English -> text "the relation "
-        <> math ((name.source) d++ " \\xleftarrow  {"++name d++"} "++(name.target) d)
+        <> math ((name.source) d++ " \\leftarrow  {"++name d++"} "++(name.target) d)
   (EIsc (r1,_)) ->
            let srcTable = case r1 of
                             EDcI c -> c

@@ -4,7 +4,6 @@
 module Ampersand.Prototype.TableSpec
     ( TableSpec(tsCmnt)
     , getTableName
-    , signalTableSpec
     , plug2TableSpec, tableSpec2Queries
     , dropTableSql, showColumsSql, createTableSql
     , insertQuery
@@ -39,31 +38,6 @@ data AttributeSpec
                   , fsDbNull :: Bool
                   }
 
-signalTableSpec :: TableSpec
-signalTableSpec =
-    TableSpec { tsCmnt = ["Signal table"]
-              , tsName = "__all_signals__"
-              , tsflds = [ AttributeSpec 
-                             { fsname      = "conjId"
-                             , fstype      = Alphanumeric
-                             , fsIsPrimKey = False
-                             , fsDbNull    = False
-                             }
-                         , AttributeSpec 
-                             { fsname      = "src"
-                             , fstype      = Alphanumeric
-                             , fsIsPrimKey = False
-                             , fsDbNull    = False
-                             }
-                         , AttributeSpec 
-                             { fsname      = "tgt"
-                             , fstype      = Alphanumeric
-                             , fsIsPrimKey = False
-                             , fsDbNull    = False
-                             }        
-                         ]
-              , tsKey  = ""
-              }
 getTableName :: TableSpec -> Text.Text
 getTableName = Text.pack . tsName
 

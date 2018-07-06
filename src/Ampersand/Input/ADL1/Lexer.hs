@@ -70,7 +70,6 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 -- Keywords for values of atoms:
                 , "TRUE", "FALSE" --for booleans
                 -- Experimental stuff:
-                , "BYPLUG", "SQLPLUG", "PHPPLUG"
                 , "SERVICE", "EDITS"
                 -- Depreciated keywords:
                 , "SPEC", "PROCESS", "ENDPROCESS"]

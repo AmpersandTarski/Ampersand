@@ -9,7 +9,8 @@ import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
 import           Codec.Xlsx
 import           Control.Lens
-import qualified Data.ByteString.Lazy as L
+import qualified Data.List as L
+import qualified Data.ByteString.Lazy as BL
 import           Data.Char
 import qualified Data.Map as M 
 import           Data.Maybe
@@ -28,7 +29,7 @@ parseXlsxFile opts mFk file =
                       Just cont -> return $ fromString cont
                       Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++file++"`.")
           Nothing
-             -> L.readFile file
+             -> BL.readFile file
      return . xlsx2pContext . toXlsx $ bytestr
  where
   xlsx2pContext :: Xlsx -> Guarded [P_Population]
@@ -62,7 +63,7 @@ toPops opts file x = map popForColumn (colNrs x)
                       , p_cnme = sourceConceptName 
                       , p_popas = concat [ case value(row,i) of
                                              Nothing -> []
-                                             Just cv -> cellToAtomValue mSourceConceptDelimiter cv popOrigin
+                                             Just cv -> cellToAtomValues mSourceConceptDelimiter cv popOrigin
                                          | row <- popRowNrs x
                                          ] 
                       }
@@ -121,19 +122,29 @@ toPops opts file x = map popForColumn (colNrs x)
                        (Just s,Just t) -> Just $ 
                                             (if isFlipped' then map flp else id)
                                                 [mkPair origTrg s' t'
-                                                | s' <- cellToAtomValue mSourceConceptDelimiter s origSrc
-                                                , t' <- cellToAtomValue mTargetConceptDelimiter t origTrg
+                                                | s' <- cellToAtomValues mSourceConceptDelimiter s origSrc
+                                                , t' <- cellToAtomValues mTargetConceptDelimiter t origTrg
                                                 ]
                        _               -> Nothing
             where origSrc = XLSXLoc file (theSheetName x) (r,sourceCol)
                   origTrg = XLSXLoc file (theSheetName x) (r,targetCol)
-       cellToAtomValue :: Maybe Char -> CellValue -> Origin -> [PAtomValue]  -- The value in a cell can contain the delimeter of the row
-       cellToAtomValue mDelimiter cv orig
+       cellToAtomValues :: Maybe Char -> CellValue -> Origin -> [PAtomValue]  -- The value in a cell can contain the delimeter of the row
+       cellToAtomValues mDelimiter cv orig
          = case cv of
-             CellText t   -> map (XlsxString orig . T.unpack) (unDelimit mDelimiter . handleSpaces $ t)
+             CellText t   -> map (XlsxString orig . T.unpack) 
+                           . filter (not . T.null)
+                           . unDelimit mDelimiter 
+                           . handleSpaces $ t
              CellDouble d -> [XlsxDouble orig d]
              CellBool b -> [ComnBool orig b] 
-             CellRich ts -> map (XlsxString orig . T.unpack) . unDelimit mDelimiter . handleSpaces . T.concat . map _richTextRunText $ ts
+             CellRich ts -> map (XlsxString orig . T.unpack) 
+                          . filter (not . T.null)
+                          . unDelimit mDelimiter 
+                          . handleSpaces . T.concat . map _richTextRunText $ ts
+             CellError e -> fatal . L.intercalate "\n  " $
+                                    [ "Error reading cell at:"
+                                    , show orig
+                                    , show e]
        unDelimit :: Maybe Char -> T.Text -> [T.Text]
        unDelimit mDelimiter xs = 
          case mDelimiter of
@@ -214,6 +225,7 @@ theSheetCellsForTable (sheetName,ws)
             Just (CellDouble _) -> True
             Just (CellBool _)   -> True
             Just (CellRich _)   -> True
+            Just (CellError e)  -> fatal $ "Error reading cell "++show e
             Nothing -> False
        theCols = filter isProperCol [1..maxColOfWorksheet]
        isProperCol :: Int -> Bool

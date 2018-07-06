@@ -59,28 +59,25 @@ instance ConceptStructure A_Context where
               , (concs . ctxifcs) ctx
               , (concs . ctxks) ctx
               , (concs . ctxpats) ctx
-              , (concs . ctxphp) ctx
               , (concs . ctxpopus) ctx
               , (concs . ctxps) ctx
               , (concs . ctxrs) ctx
-              , (concs . ctxsql) ctx
               , (concs . ctxvs) ctx
               ]
   expressionsIn ctx = Set.unions
                       [ (expressionsIn . ctxifcs) ctx
                       , (expressionsIn . ctxks) ctx
                       , (expressionsIn . ctxpats) ctx
-                      , (expressionsIn . ctxphp) ctx
                       , (expressionsIn . ctxrs) ctx
-                      , (expressionsIn . ctxsql) ctx
                       , (expressionsIn . ctxvs) ctx
                       , (expressionsIn . identityRules) ctx
                       , (expressionsIn . multrules) ctx
                       ]
 
 instance ConceptStructure IdentityDef where
-  concs       identity   = Set.singleton (idCpt identity) `Set.union` concs [objDef | IdentityExp objDef <- identityAts identity]
-  expressionsIn identity = expressionsIn             [objDef | IdentityExp objDef <- identityAts identity]
+  concs         identity = Set.singleton (idCpt identity) `Set.union` 
+                           concs         [BxExpr objDef | IdentityExp objDef <- identityAts identity]
+  expressionsIn identity = expressionsIn [BxExpr objDef | IdentityExp objDef <- identityAts identity]
 
 instance ConceptStructure ViewDef where
   concs         vd = Set.singleton (vdcpt vd) `Set.union` concs (vdats vd)
@@ -116,13 +113,17 @@ instance ConceptStructure Signature where
   concs (Sign s t) = Set.singleton s `Set.union` Set.singleton t
   expressionsIn _  = Set.empty
 
-instance ConceptStructure ObjectDef where
-  concs     obj = (Set.singleton . target . objExpression $ obj) `Set.union` concs (objmsub obj)
+instance ConceptStructure BoxItem where
+  concs (BxExpr obj) = concs obj
+  concs (BxTxt _  ) = Set.empty
+  expressionsIn (BxExpr obj) = expressionsIn obj
+  expressionsIn (BxTxt _  ) = Set.empty
+instance ConceptStructure BoxExp where
+  concs obj = (Set.singleton . target . objExpression $ obj) `Set.union` concs (objmsub obj)
   expressionsIn obj = Set.unions
                      [ (expressionsIn . objExpression) obj
                      , (expressionsIn . objmsub) obj
                      ]
-
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
 instance ConceptStructure SubInterface where
   concs si = case si of
@@ -148,8 +149,8 @@ instance ConceptStructure Pattern where
                      ]
 
 instance ConceptStructure Interface where
-  concs         = concs         . ifcObj
-  expressionsIn = expressionsIn . ifcObj
+  concs         = concs         . BxExpr . ifcObj
+  expressionsIn = expressionsIn . BxExpr . ifcObj
 
 instance ConceptStructure Relation where
   concs         d = concs (sign d)

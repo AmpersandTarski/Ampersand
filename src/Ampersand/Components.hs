@@ -15,17 +15,14 @@ import           Ampersand.FSpec.GenerateUML
 import           Ampersand.Graphic.Graphics (writePicture)
 import           Ampersand.Misc
 import           Ampersand.Output
-import           Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
-import           Ampersand.Prototype.ProtoUtil   (installComposerLibs)
+import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import           Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import           Control.Monad
 import qualified Data.ByteString.Lazy as L
 import           Data.Function (on)
 import           Data.List
 import qualified Data.Set as Set
 import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
-import           Data.Time.Clock.POSIX
 import           Data.Maybe (maybeToList)
 import           System.Directory
 import           System.FilePath
@@ -71,7 +68,8 @@ generateAmpersandOutput multi = do
    doGenProofs =
     do { verboseLn opts $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
    --  ; verboseLn opts $ writeTextile def thePandoc
-       ; writeFile outputFile $ writeHtmlString def thePandoc
+       ; content <- runIO (writeHtml5String def thePandoc) >>= handleError
+       ; Text.writeFile outputFile content
        ; verboseLn opts "Proof written."
        }
     where outputFile = dirOutput opts </> "proofs_of_"++baseName opts -<.> ".html"
@@ -111,8 +109,9 @@ generateAmpersandOutput multi = do
    doGenDocument :: IO()
    doGenDocument =
     do { verboseLn opts ("Processing "++name fSpec)
-       ; -- First we need to output the pictures, because they should be present before the actual document is written
-         when (not(null thePictures) && fspecFormat opts/=FPandoc) $
+       ; -- First we need to output the pictures, because they should be present 
+         -- before the actual document is written
+         when (not(noGraphics opts) && fspecFormat opts/=FPandoc) $
            mapM_ (writePicture opts) (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
        ; writepandoc fSpec thePandoc
        }
@@ -130,7 +129,7 @@ generateAmpersandOutput multi = do
    doGenPopsXLSX :: IO()
    doGenPopsXLSX =
     do { verboseLn opts "Generating .xlsx file containing the population "
-       ; ct <- getPOSIXTime 
+       ; ct <- runIO getPOSIXTime >>= handleError
        ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
        ; verboseLn opts $ "Generated file: " ++ outputFile
        }
@@ -154,14 +153,11 @@ generateAmpersandOutput multi = do
         then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
              else [ verboseLn opts "Generating prototype..."
-                  , clearTemplateDirs fSpec
-                  , writeStaticFiles opts
+                  , doGenFrontend fSpec
                   , generateDatabaseFile multi
                   , generateJSONfiles multi
-                  , doGenFrontend fSpec
                   , verboseLn opts "\n"
                   , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
-                  , installComposerLibs opts
                   ]
         else [exitWith NoPrototypeBecauseOfRuleViolations]
        )++
@@ -178,7 +174,7 @@ generateAmpersandOutput multi = do
                 if atlasWithoutExpressions opts 
                 then name rul `elem` 
                         [ "TOT formalExpression[Rule*Expression]"
-                        , "TOT objExpression[ObjectDef*Expression]"
+                        , "TOT objExpression[BoxItem*Expression]"
                         ]
                 else False
           reportViolations :: [(Rule,AAtomPairs)] -> IO()

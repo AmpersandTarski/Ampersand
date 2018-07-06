@@ -49,8 +49,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_reprs  = [r | CRep r<-ces]
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
-            , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]
-            , ctx_php    = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
             , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
             , ctx_pops   = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]
             , ctx_metas  = [meta | CMeta meta <-ces]
@@ -74,8 +72,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       CIndx    <$> pIndex        <|>
                       CView    <$> pViewDef      <|>
                       Cifc     <$> pInterface    <|>
-                      CSqlPlug <$> pSqlplug      <|>
-                      CPhpPlug <$> pPhpplug      <|>
                       CPrp     <$> pPurpose      <|>
                       CPop     <$> pPopulation   <|>
                       CIncl    <$> pIncludeStatement
@@ -93,8 +89,6 @@ data ContextElement = CMeta Meta
                     | CIndx P_IdentDef
                     | CView P_ViewDef
                     | Cifc P_Interface
-                    | CSqlPlug P_ObjectDef
-                    | CPhpPlug P_ObjectDef
                     | CPrp PPurpose
                     | CPop P_Population
                     | CIncl Include    -- an INCLUDE statement
@@ -230,21 +224,18 @@ pRuleDef =  P_Ru <$> currPos
                                 <|> PairViewExp  <$> posOf (pKey "TGT") <*> return Tgt <*> pTerm
                                 <|> PairViewText <$> posOf (pKey "TXT") <*> pString
 
---- RelationDef ::= (RelationNew | RelationOld) 'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
+--- RelationDef ::= (RelationNew | RelationOld) Props? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
 pRelationDef :: AmpParser P_Relation
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
-                       <*> pIsThere (pKey "BYPLUG")
                        <*> optSet pProps
-                       <*> pIsThere (pKey "BYPLUG")
                        <*> optList (pKey "PRAGMA" *> many1 pString)
                        <*> many pMeaning
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
-            where reorder pos' (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
-                    let plug = bp1 || bp2
-                        props = prop `Set.union` fun
-                    in P_Sgn nm sign props pragma meanings popu pos' plug
+            where reorder pos' (nm,sign,fun) prop pragma meanings popu =
+                    let props = prop `Set.union` fun
+                    in P_Sgn nm sign props pragma meanings popu pos'
 
 --- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (String,P_Sign,Props)
@@ -305,12 +296,11 @@ pFun  =  Set.empty               <$ pOperator "*"  <|>
                         Set.empty <$ pOperator "*"  <|>
                         Set.fromList [ts,ui] <$ try pOne
 
---- ConceptDef ::= 'CONCEPT' ConceptName 'BYPLUG'? String ('TYPE' String)? String?
+--- ConceptDef ::= 'CONCEPT' ConceptName String ('TYPE' String)? String?
 pConceptDef :: AmpParser (String->ConceptDef)
 pConceptDef       = Cd <$> currPos
                        <*  pKey "CONCEPT"
                        <*> pConceptName
-                       <*> pIsThere (pKey "BYPLUG")
                        <*> (pString <?> "concept definition (string)")
                        <*> (pString `opt` "") -- a reference to the source of this definition.
 
@@ -428,7 +418,7 @@ pInterface = lbl <$> currPos
           lbl p nm _params roles ctx mCrud mView sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Roles  = roles
-                     , ifc_Obj    = P_Obj { obj_nm   = nm
+                     , ifc_Obj    = P_BxExpr { obj_nm   = nm
                                           , pos      = p
                                           , obj_ctx  = ctx
                                           , obj_crud = mCrud
@@ -457,36 +447,45 @@ pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
-pObjDef :: AmpParser P_ObjectDef
-pObjDef = obj <$> currPos
-              <*> pLabel
-              <*> pTerm            -- the context expression (for example: I[c])
-              <*> pMaybe pCruds
-              <*> pMaybe (pChevrons pConid) --for the views
-              <*> pMaybe pSubInterface  -- the optional subinterface
-         where obj p nm ctx mCrud mView msub =
-                 P_Obj { obj_nm   = nm
-                       , pos      = p
-                       , obj_ctx  = ctx
-                       , obj_crud = mCrud
-                       , obj_mView = mView
-                       , obj_msub = msub
-                       }
+pObjDef :: AmpParser P_BoxItemTermPrim
+pObjDef = pBoxItem <$> currPos
+                   <*> pLabel
+                   <*> (pObj <|> pTxt) 
+  where
+    --build p lable fun = pBoxItem p lable <$> fun
+    pBoxItem :: Origin -> String -> P_BoxItemTermPrim -> P_BoxItemTermPrim
+    pBoxItem p nm fun = fun{ pos    = p
+                           , obj_nm = nm}
+      
+    pObj :: AmpParser (P_BoxItemTermPrim)
+    pObj = obj     <$> pTerm            -- the context expression (for example: I[c])
+                   <*> pMaybe pCruds
+                   <*> pMaybe (pChevrons pConid) --for the views
+                   <*> pMaybe pSubInterface  -- the optional subinterface
+          where obj ctx mCrud mView msub =
+                  P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."
+                        , pos       = fatal "This should have been filled in promptly."
+                        , obj_ctx   = ctx
+                        , obj_crud  = mCrud
+                        , obj_mView = mView
+                        , obj_msub  = msub
+                        }
+    pTxt :: AmpParser P_BoxItemTermPrim
+    pTxt = obj <$ pKey "TXT"
+               <*> pString
+          where obj txt = 
+                  P_BxTxt  { obj_nm   = fatal "This should have been filled in promptly."
+                        , pos      = fatal "This should have been filled in promptly."
+                        , obj_txt  = txt
+                        }
+
 --- Cruds ::= crud in upper /lowercase combinations
 pCruds :: AmpParser P_Cruds
 pCruds = P_Cruds <$> currPos <*> pCrudString
 
 --- Box ::= '[' ObjDefList ']'
-pBox :: AmpParser [P_ObjectDef]
+pBox :: AmpParser [P_BoxItemTermPrim]
 pBox = pBrackets $ pObjDef `sepBy` pComma
-
---- Sqlplug ::= 'SQLPLUG' ObjDef
-pSqlplug :: AmpParser P_ObjectDef
-pSqlplug = pKey "SQLPLUG" *> pObjDef
-
---- Phpplug ::= 'PHPPLUG' ObjDef
-pPhpplug :: AmpParser P_ObjectDef
-pPhpplug = pKey "PHPPLUG" *> pObjDef
 
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose
@@ -516,7 +515,7 @@ pPurpose = rebuild <$> currPos
                   PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>
                   PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid       <|>
                   PRef2Pattern     <$ pKey "PROCESS"   <*> pADLid       <|>
-                  PRef2Interface   <$ pInterfaceKey <*> pADLid       <|>
+                  PRef2Interface   <$ pInterfaceKey    <*> pADLid       <|>
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
 pInterfaceKey :: AmpParser String
@@ -680,10 +679,10 @@ value2PAtomValue o v = case v of
          VDate x        -> ScriptDate o x
 
 --- Attr ::= Label? Term
-pAtt :: AmpParser P_ObjectDef
+pAtt :: AmpParser P_BoxItemTermPrim
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
 pAtt = rebuild <$> currPos <*> try pLabel `opt` "" <*> try pTerm
-  where rebuild pos' nm ctx = P_Obj { obj_nm   = nm
+  where rebuild pos' nm ctx = P_BxExpr { obj_nm   = nm
                                     , pos      = pos'
                                     , obj_ctx  = ctx
                                     , obj_crud = Nothing

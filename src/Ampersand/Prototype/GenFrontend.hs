@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable,OverloadedStrings #-}
-module Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs) where
+module Ampersand.Prototype.GenFrontend (doGenFrontend) where
 
 import           Ampersand.Basics
 import           Ampersand.Classes.Relational
@@ -9,14 +9,20 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
+import           Codec.Archive.Zip
+import           Control.Exception
 import           Control.Monad
+import qualified Data.ByteString.Lazy  as BL
 import           Data.Data
 import           Data.List
 import           Data.Maybe
+import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath
 import           Text.StringTemplate
 import           Text.StringTemplate.GenericStandard () -- only import instances
+
+
 
 {- TODO
 - Be more consistent with record selectors/pattern matching
@@ -51,18 +57,6 @@ This is considered editable iff the composition rel;relRef yields an editable re
 
 getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
-
--- Clear template dirs so the generator won't use lingering template files. 
--- (Needs to be called before statics are generated, otherwise the templates from statics/ZwolleFrontend/templates will get deleted)
--- TODO: refactor generate, so we can call generation of static files and generics.php from this module.
-clearTemplateDirs :: FSpec -> IO ()
-clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
-  where emptyDir path = 
-         do { let absPath = getTemplateDir fSpec </> path
-            ; dirExists <- doesDirectoryExist absPath
-            ; when dirExists $ -- dir may not exist if we haven't generated before
-               removeAllDirectoryFiles absPath
-            } -- Only remove files, withouth entering subdirectories, to prevent possible disasters with symbolic links.
         
 -- For useful info on the template language, see
 -- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
@@ -72,22 +66,25 @@ clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
 
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
- do { putStr "Generating frontend..\n" 
+ do { putStrLn "Generating frontend.."
+    ; downloadPrototypeFramework (getOpts fSpec)
     ; copyTemplates fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
     ; copyCustomizations fSpec
-    ; deleteTemplateDir fSpec
-    ; putStrLn "Frontend generated.\n"
+    -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
+    ; putStrLn "Installing dependencies.."
+    ; installComposerLibs (getOpts fSpec)
+    ; putStrLn "Frontend generated."
     }
 
 copyTemplates :: FSpec -> IO ()
 copyTemplates fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
           tempDir = adlSourceDir </> "templates"
-          toDir = (dirPrototype (getOpts fSpec)) </> "templates"
+          toDir = dirPrototype (getOpts fSpec) </> "templates"
     ; tempDirExists <- doesDirectoryExist tempDir
     ; if tempDirExists then
         do { verboseLn (getOpts fSpec) $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
@@ -111,41 +108,47 @@ copyCustomizations fSpec =
         if sourceDirExists then
           do verboseLn opts $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
              copyDirRecursively sourceDir targetDir opts -- recursively copy all customizations
-        else
-          do verboseLn opts $ "No customizations (there is no directory " ++ sourceDir ++ ")"
+        else verboseLn opts $ "No customizations (there is no directory " ++ sourceDir ++ ")"
 
-deleteTemplateDir :: FSpec -> IO ()
-deleteTemplateDir fSpec = removeDirectoryRecursive $ dirPrototype (getOpts fSpec) </> "templates"
+-- deleteTemplateDir :: FSpec -> IO ()
+-- deleteTemplateDir fSpec = removeDirectoryRecursive $ dirPrototype (getOpts fSpec) </> "templates"
 
 ------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
 data FEInterface = FEInterface { ifcName :: String
                                , ifcLabel :: String
-                               , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
-                               , _ifcRoles :: [Role],  _ifcObj :: FEObject
+                               , _ifcExp :: Expression
+                               , _ifcSource :: A_Concept
+                               , _ifcTarget :: A_Concept
+                               , _ifcRoles :: [Role]
+                               , _ifcObj :: FEObject2
                                } deriving (Typeable, Data)
 
-data FEObject = FEObject { objName :: String
-                         , objExp :: Expression
-                         , objSource :: A_Concept
-                         , objTarget :: A_Concept
-                         , objCrudC :: Bool
-                         , objCrudR :: Bool
-                         , objCrudU :: Bool
-                         , objCrudD :: Bool
-                         , exprIsUni :: Bool
-                         , exprIsTot :: Bool
-                         , relIsProp  :: Bool -- True iff the expression is a kind of simple relation and that relation is a property.
-                         , exprIsIdent :: Bool
-                         , atomicOrBox :: FEAtomicOrBox
-                         } deriving (Show, Data, Typeable )
+data FEObject2 =
+    FEObjE { objName     :: String
+           , objExp      :: Expression
+           , objSource   :: A_Concept
+           , objTarget   :: A_Concept
+           , objCrudC    :: Bool
+           , objCrudR    :: Bool
+           , objCrudU    :: Bool
+           , objCrudD    :: Bool
+           , exprIsUni   :: Bool
+           , exprIsTot   :: Bool
+           , relIsProp   :: Bool -- True iff the expression is a kind of simple relation and that relation is a property.
+           , exprIsIdent :: Bool
+           , atomicOrBox :: FEAtomicOrBox
+           }
+  | FEObjT { objName     :: String
+           , objTxt      :: String
+           } deriving (Show, Data, Typeable )
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
                                                           , [String] -- the attributes of the template
                                                           ) }
                    | FEBox    { objMClass :: Maybe String
-                              , ifcSubObjs :: [FEObject] 
+                              , ifcSubObjs :: [FEObject2] 
                               } deriving (Show, Data,Typeable)
 
 buildInterfaces :: FSpec -> IO [FEInterface]
@@ -156,7 +159,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
             
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
- do { obj <- buildObject (ifcObj ifc)
+ do { obj <- buildObject (BxExpr $ ifcObj ifc)
     ; return 
         FEInterface { ifcName = escapeIdentifier $ name ifc
                     , ifcLabel = name ifc
@@ -170,8 +173,8 @@ buildInterface fSpec allIfcs ifc =
     --       (name comes from interface, but is equal to object name)
     } 
   where    
-    buildObject :: ObjectDef -> IO FEObject
-    buildObject object' =
+    buildObject :: BoxItem -> IO FEObject2
+    buildObject (BxExpr object') =
      do { let object = substituteReferenceObjectDef fSpec object'
         ; let iExp = conjNF (getOpts fSpec) $ objExpression object
         ; (aOrB, iExp') <-
@@ -213,7 +216,7 @@ buildInterface fSpec allIfcs ifc =
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
                                             , iExp)
                                    }
-                           else do { refObj <- buildObject  (ifcObj i)
+                           else do { refObj <- buildObject  (BxExpr $ ifcObj i)
                                    ; let comp = ECps (iExp, objExp refObj) 
                                          -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
                                          
@@ -222,7 +225,7 @@ buildInterface fSpec allIfcs ifc =
         
 
         ; let (src, mDecl, tgt) = getSrcDclTgt iExp'
-        ; return FEObject{ objName = name object
+        ; return FEObjE  { objName = name object
                          , objExp = iExp'
                          , objSource = src
                          , objTarget = tgt
@@ -244,6 +247,10 @@ buildInterface fSpec allIfcs ifc =
                 Nothing                          -> (source expr, Nothing  , target expr)
                 Just (declSrc, decl, declTgt, _) -> (declSrc    , Just decl, declTgt    ) 
                                                    -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
+    buildObject (BxTxt object') = do
+      return FEObjT{ objName = name object'
+                   , objTxt = objtxt object'
+                   }
 
 ------ Generate RouteProvider.js
 
@@ -292,14 +299,14 @@ genViewInterface fSpec interf =
     }
    where opts = getOpts fSpec
 -- Helper data structure to pass attribute values to HStringTemplate
-data SubObjectAttr = SubObjAttr { subObjName :: String
+data SubObjectAttr2 = SubObjAttr{ subObjName :: String
                                 , subObjLabel :: String
                                 , subObjContents :: String 
                                 , subObjExprIsUni :: Bool
                                 } deriving (Show, Data, Typeable)
  
-genViewObject :: FSpec -> Int -> FEObject -> IO [String]
-genViewObject fSpec depth obj =
+genViewObject :: FSpec -> Int -> FEObject2 -> IO [String]
+genViewObject fSpec depth obj@FEObjE{} =
   let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
       atomicAndBoxAttrs = setAttribute "exprIsUni"  (exprIsUni obj)
                         . setAttribute "exprIsTot"  (exprIsTot obj)
@@ -346,30 +353,43 @@ genViewObject fSpec depth obj =
                                . setAttribute "isRoot"     (depth == 0)
                                . setAttribute "subObjects" subObjAttrs
             }
-  where indentation :: [String] -> [String]
-        indentation = indent (if depth == 0 then 4 else 16) 
-        genView_SubObject subObj = 
-         do { lns <- genViewObject fSpec (depth + 1) subObj
-            ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
-                               , subObjLabel = objName subObj -- no escaping for labels in templates needed
-                               , subObjContents = intercalate "\n" lns
-                               , subObjExprIsUni = exprIsUni subObj
-                               } 
-            }
-        getTemplateForObject :: IO FilePath
-        getTemplateForObject 
-           | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
-                       = return $ "View-PROPERTY"++".html"
-           | otherwise = getTemplateForConcept (objTarget obj)
-        getTemplateForConcept :: A_Concept -> IO FilePath
-        getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
-                                       return $ if exists
-                                                then cptfn
-                                                else "Atomic-"++show ttp++".html" 
-           where ttp = cptTType fSpec cpt
-                 cptfn = "Concept-"++name cpt++".html" 
------- Generate controller JavaScript code
+  where 
+    indentation :: [String] -> [String]
+    indentation = indent (if depth == 0 then 4 else 16) 
+    genView_SubObject :: FEObject2 -> IO SubObjectAttr2
+    genView_SubObject subObj =
+      case subObj of
+        FEObjE{} -> 
+          do lns <- genViewObject fSpec (depth + 1) subObj
+             return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
+                              , subObjLabel = objName subObj -- no escaping for labels in templates needed
+                              , subObjContents = intercalate "\n" lns
+                              , subObjExprIsUni = exprIsUni subObj
+                              } 
+        FEObjT{} -> fatal "No view for TXT-like objects is defined."
+{- Code already in place. Wait for Prototype framework to implement backend
+          do return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
+                              , subObjLabel = objName subObj
+                              , subObjContents = objTxt subObj
+                              , subObjExprIsUni = True
+                              }
+-}
+    getTemplateForObject :: IO FilePath
+    getTemplateForObject 
+       | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
+                   = return $ "View-PROPERTY"++".html"
+       | otherwise = getTemplateForConcept (objTarget obj)
+    getTemplateForConcept :: A_Concept -> IO FilePath
+    getTemplateForConcept cpt = do 
+         exists <- doesTemplateExist fSpec cptfn
+         return $ if exists
+                  then cptfn
+                  else "Atomic-"++show ttp++".html" 
+       where ttp = cptTType fSpec cpt
+             cptfn = "Concept-"++name cpt++".html" 
+genViewObject _     _     FEObjT{} = pure []
 
+------ Generate controller JavaScript code
 genControllerInterfaces :: FSpec -> [FEInterface] -> IO ()
 genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 
@@ -431,3 +451,69 @@ renderTemplate (Template template absPath) setAttrs =
              ([], attrs@(_:_), _)        -> templateError $ "The following attributes are expected by the template, but not supplied: " ++ show attrs
              ([], [], ts@(_:_)) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
   where templateError msg = error $ "\n\n*** TEMPLATE ERROR in:\n" ++ absPath ++ "\n\n" ++ msg
+
+
+
+
+downloadPrototypeFramework :: Options -> IO ()
+downloadPrototypeFramework opts = 
+  (do 
+    x <- allowExtraction
+    when x $ do 
+      when (forceReinstallFramework opts) destroyDestinationDir
+      verboseLn opts "Start downloading frontend framework."
+      response <- 
+        parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip") >>=
+        httpBS  
+      let archive = removeTopLevelFolder 
+                  . toArchive 
+                  . BL.fromStrict 
+                  . getResponseBody $ response
+      verboseLn opts "Start extraction of frontend framework."
+      let zipoptions = 
+              [OptVerbose | verboseP opts]
+            ++ [OptDestination destination]
+      extractFilesFromArchive zipoptions archive
+      writeFile (destination </> ".prototypeSHA")
+                (show . zComment $ archive)
+  ) `catch` \err ->  -- git failed to execute
+         exitWith . FailedToInstallPrototypeFramework $
+            [ "Error encountered during installation of prototype framework:"
+            , show (err :: SomeException)
+            ]
+            
+  where
+    destination = dirPrototype opts
+    destroyDestinationDir :: IO ()
+    destroyDestinationDir = removeDirectoryRecursive destination
+    removeTopLevelFolder :: Archive -> Archive
+    removeTopLevelFolder archive = 
+       archive{zEntries = mapMaybe removeTopLevelPath . zEntries $ archive}
+      where
+        removeTopLevelPath :: Entry -> Maybe Entry
+        removeTopLevelPath entry = 
+            case tail . splitPath . eRelativePath $ entry of
+              [] -> Nothing
+              xs -> Just entry{eRelativePath = joinPath xs}
+
+    allowExtraction :: IO Bool
+    allowExtraction = do
+      pathExist <- doesPathExist destination
+      destIsDirectory <- doesDirectoryExist destination 
+      if pathExist
+      then 
+          if destIsDirectory
+          then do 
+            dirContents <- listDirectory destination
+            unless (null dirContents)
+                   (verboseLn opts $
+                         "Didn't install prototype framework, because\n"
+                      ++ "  "++destination++" isn't empty.")
+            return (null dirContents)
+          else do 
+             verboseLn opts $
+                       "Didn't install prototype framework, because\n"
+                    ++ "  "++destination++" isn't a directory."
+             return False
+      else return True
+      

@@ -1,8 +1,13 @@
 module Ampersand.ADL1.Rule 
-  (consequent, antecedent, rulefromProp, hasantecedent) where
+  ( consequent, antecedent, hasantecedent
+  , isPropertyRule, rulefromProp
+  , propFullName
+  )
+where
 
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
+import Data.Maybe
 
 hasantecedent :: Rule -> Bool
 hasantecedent r
@@ -24,11 +29,11 @@ consequent r
      EInc (_,re) -> re
      x           -> x
 
+isPropertyRule :: Rule -> Bool
+isPropertyRule = isJust . rrdcl 
 -- rulefromProp specifies a rule that defines property prp of relation d.
--- The table of all relations is provided, in order to generate shorter names if possible.
-rulefromProp :: Prop -> Relation -> Maybe Rule
+rulefromProp :: Prop -> Relation -> Rule
 rulefromProp prp d =
-  Just
      Ru { rrnm  = show prp++" "++showDcl
         , formalExpression = rExpr
         , rrfps = origin d
@@ -36,7 +41,7 @@ rulefromProp prp d =
         , rrmsg =  violMsg prp
         , rrviol = Nothing
         , rrdcl = Just (prp,d)         -- For traceability: The original property and relation.
-        , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
+        , rrpat = decpat d      
         , r_usr = Multiplicity
         , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
@@ -60,59 +65,65 @@ rulefromProp prp d =
         explain prop = [ explang lang | lang <-[English,Dutch]]
           where 
             explang lang = Markup lang (string2Blocks ReST $ f lang)
-            f English = showDcl++" is "++
-                  case prop of
-                    Sym-> "symmetric"
-                    Asy-> "antisymmetric"
-                    Trn-> "transitive"
-                    Rfx-> "reflexive"
-                    Irf-> "irreflexive"
-                    Uni-> "univalent"
-                    Sur-> "surjective"
-                    Inj-> "injective"
-                    Tot-> "total"
-                    Prop -> fatal "Prop should have been converted by the parser"
-            f Dutch = showDcl++" is "++
-                  case prop of
-                    Sym-> "symmetrisch"
-                    Asy-> "antisymmetrisch"
-                    Trn-> "transitief"
-                    Rfx-> "reflexief"
-                    Irf-> "irreflexief"
-                    Uni-> "univalent"
-                    Sur-> "surjectief"
-                    Inj-> "injectief"
-                    Tot-> "totaal"
-                    Prop -> fatal "Prop should have been converted by the parser"
+            f lang = showDcl++" is "++propFullName lang prop
          
         violMsg prop = [ msg lang | lang <-[English,Dutch]]
           where
             s= name (source d)
             t= name (target d)
             msg lang = Markup lang (string2Blocks ReST $ f lang)
-            f English =
+            f lang =
+              case lang of
+                English ->
                   case prop of
-                    Sym-> showDcl++" is "++"symmetric"
-                    Asy-> showDcl++" is "++"antisymmetric"
-                    Trn-> showDcl++" is "++"transitive"
-                    Rfx-> showDcl++" is "++"reflexive"
-                    Irf-> showDcl++" is "++"irreflexive"
+                    Sym-> explByFullName lang
+                    Asy-> explByFullName lang
+                    Trn-> explByFullName lang
+                    Rfx-> explByFullName lang
+                    Irf-> explByFullName lang
                     Uni-> "Each " ++s++" may only have one "++t++"" ++" in the relation "++name d
                     Inj-> "Each " ++t++" may only have one "++s++"" ++" in the relation "++name d
                     Tot ->"Every "++s++" must have a "      ++t++"" ++" in the relation "++name d
                     Sur ->"Every "++t++" must have a "      ++s++"" ++" in the relation "++name d
                     Prop -> fatal "Prop should have been converted by the parser"
-            f Dutch =
+                Dutch ->
                   case prop of
-                    Sym-> showDcl++" is "++"symmetrisch"
-                    Asy-> showDcl++" is "++"antisymmetrisch"
-                    Trn-> showDcl++" is "++"transitief"
-                    Rfx-> showDcl++" is "++"reflexief"
-                    Irf-> showDcl++" is "++"irreflexief"
+                    Sym-> explByFullName lang
+                    Asy-> explByFullName lang
+                    Trn-> explByFullName lang
+                    Rfx-> explByFullName lang
+                    Irf-> explByFullName lang
                     Uni-> "Elke "++s++" mag slechts één "++t++   " hebben" ++" in de relatie "++name d
                     Inj-> "Elke "++t++" mag slechts één "++s++   " hebben" ++" in de relatie "++name d
                     Tot-> "Elke "++s++" dient één "      ++t++" te hebben" ++" in de relatie "++name d
                     Sur-> "Elke "++t++" dient een "      ++s++" te hebben" ++" in de relatie "++name d
                     Prop -> fatal "Prop should have been converted by pattern the parser"
+            explByFullName lang = showDcl++" is "++propFullName lang prop
 
-
+propFullName :: Lang -> Prop -> String
+propFullName lang prop =
+  case lang of 
+    English ->
+        case prop of
+          Sym-> "symmetric"
+          Asy-> "antisymmetric"
+          Trn-> "transitive"
+          Rfx-> "reflexive"
+          Irf-> "irreflexive"
+          Uni-> "univalent"
+          Sur-> "surjective"
+          Inj-> "injective"
+          Tot-> "total"
+          Prop -> fatal "Prop should have been converted by the parser"
+    Dutch ->
+        case prop of
+          Sym-> "symmetrisch"
+          Asy-> "antisymmetrisch"
+          Trn-> "transitief"
+          Rfx-> "reflexief"
+          Irf-> "irreflexief"
+          Uni-> "univalent"
+          Sur-> "surjectief"
+          Inj-> "injectief"
+          Tot-> "totaal"
+          Prop -> fatal "Prop should have been converted by the parser"

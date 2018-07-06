@@ -230,7 +230,6 @@ createTempDatabase fSpec =
     [ "/*** Create new SQL tables ***/"
     , ""
     ] <>
-    createTablePHP signalTableSpec <>
     [ ""
     , "//// Number of plugs: " <> Text.pack (show (length (plugInfos fSpec)))
     ]

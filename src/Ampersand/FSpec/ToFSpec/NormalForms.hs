@@ -13,8 +13,9 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input (parseRule)
 import           Ampersand.Misc
+import           Data.Function (on)
 import           Data.Hashable
-import           Data.List (nub, intercalate, permutations,partition)
+import           Data.List (nub, intercalate, permutations, partition, sortBy)
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Text (pack)
@@ -596,7 +597,6 @@ rTerm2expr term
             , decfpos = fatal "Illegal RTerm in rTerm2expr"
             , decusr  = fatal "Illegal RTerm in rTerm2expr"
             , decpat  = fatal "Illegal RTerm in rTerm2expr"
-            , decplug = fatal "Illegal RTerm in rTerm2expr"
             , dechash = hash nm `hashWithSalt` sgn
             }
 class ShowIT a where  --class ment for stuff not belonging to A-struct and/or P-struct
@@ -1059,8 +1059,7 @@ delta sgn
                                    ]
               , decfpos = Origin ("generated relation (Delta "++show sgn++")")
               , decusr  = False
-              , decpat  = ""
-              , decplug = True
+              , decpat  = Nothing
               , dechash = hash sgn
               }
 
@@ -1582,7 +1581,7 @@ makeAllConjs opts allRls =
   let conjExprs :: [(Expression, Rules)]
       conjExprs = map (\(a,b) -> (a,Set.fromList b)) 
                 . converse 
-                $ [ (rule, conjuncts opts rule) | rule <- Set.elems allRls ]
+                $ [ (rule, conjuncts opts rule) | rule <- sortBy (compare `on` name) . Set.toList $ allRls ]
       conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
                      , rc_orgRules   = rs
                      , rc_conjunct   = expr

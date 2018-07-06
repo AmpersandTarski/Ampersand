@@ -8,7 +8,8 @@ module Ampersand
   , module Ampersand.Misc
   , module Ampersand.Output
   , module Ampersand.Test
-  ) where
+  ) 
+where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes

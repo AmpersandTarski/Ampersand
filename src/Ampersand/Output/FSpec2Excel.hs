@@ -119,14 +119,9 @@ fspec2Workbook fSpec =
     showDetailsOfPlug plug | Just fpaplgInfo <- fpaPlugInfo plug = Just
        [ emptyCell
        , (string.name) plug
-       , string (case plug of
-                  InternalPlug _ -> showLang lang fpaplgInfo 
-                  ExternalPlug _ -> "???"
-                )
+       , string (showLang lang fpaplgInfo)
        , number . fromIntegral $ fpVal fpaplgInfo 
        , string ( case plug of
-                   ExternalPlug{}          -> l ( NL "PHP plugs worden (nog) niet meegerekend!"
-                                                , EN "PHP plugs are not (yet) taken into account!")
                    InternalPlug p@TblSQL{} -> l ( NL $ "Tabel met " ++(show . length . attributes) p++" attributen."
                                                 , EN $ "Table with "++(show . length . attributes) p++" attributes.")
                    InternalPlug BinSQL{}   -> l ( NL "Koppel tabel"

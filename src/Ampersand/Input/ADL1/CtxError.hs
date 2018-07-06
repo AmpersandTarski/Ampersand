@@ -6,7 +6,7 @@ module Ampersand.Input.ADL1.CtxError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..), uniqueNames
+  , GetOneGuarded(..), uniqueNames, uniqueBy
   , TypeAware(..), unexpectedType
   , mkErrorReadingINCLUDE
   , mkDanglingPurposeError
@@ -192,6 +192,15 @@ instance GetOneGuarded Relation where
     ++".\n  Be more specific. These are the matching relations:"
     ++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]
 
+instance GetOneGuarded Expression where
+  getOneExactly _ [d] = Checked d
+  getOneExactly o []  = Errors . pure $ CTXE (origin o) $
+      "No relation for "++showP o
+  getOneExactly o lst = Errors . pure $ CTXE (origin o) $
+      "An ambiguity arises in trying to match "++showP o
+    ++".\n  Be more specific by using one of the following matching expressions:"
+    ++concat ["\n  - "++showA l | l<-lst]
+
 mkTypeMismatchError :: (Traced a2, Named a) => a2 -> Relation -> SrcOrTgt -> a -> Guarded a1
 mkTypeMismatchError o decl sot conc
  = Errors . pure $ CTXE (origin o) message
@@ -230,15 +239,16 @@ cannotDisamb o = Errors . pure $ CTXE (origin o) $
 
 uniqueNames :: (Named a, Traced a) =>
                      [a] -> Guarded ()
-uniqueNames a = case (filter moreThanOne . groupWith name) a of
+uniqueNames = uniqueBy name
+uniqueBy :: (Traced a, Show b, Ord b) => (a -> b) -> [a] -> Guarded ()
+uniqueBy fun a = case (filter moreThanOne . groupWith fun) a of
                   []   -> pure ()
                   x:xs -> Errors $ (messageFor x) NEL.:| (fmap messageFor xs)
     where
      moreThanOne (_:_:_) = True
      moreThanOne  _      = False
-     messageFor :: (Named a, Traced a) => [a] -> CtxError
      messageFor (x:xs) = CTXE (origin x)
-                      ("Names / labels must be unique. "++(show . name) x++", however, is used at:"++
+                      ("Names / labels must be unique. "++(show . fun) x++", however, is used at:"++
                         concatMap (("\n    "++ ) . show . origin) (x:xs)
                         ++"."
                        )
@@ -253,9 +263,12 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> CtxError
 mkDanglingRefError entity ref orig =
   CTXE orig $ "Reference to non-existent " ++ entity ++ ": "++show ref
-mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
+mkUndeclaredError :: String -> P_BoxItem a -> String -> CtxError
 mkUndeclaredError entity objDef ref =
-  CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
+  case objDef of
+    P_BxExpr{} -> CTXE (origin objDef) $ 
+       "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (obj_nm objDef)
+    _       -> fatal "Unexpected use of mkUndeclaredError."
 
 mkEndoPropertyError :: Origin -> [Prop] -> CtxError
 mkEndoPropertyError orig ps =
@@ -294,12 +307,15 @@ mkInterfaceRefCycleError cyclicIfcs =
     where
       showIfc :: Interface -> String
       showIfc i = "- " ++ show (name i) ++ " at position " ++ show (origin i)
-mkIncompatibleInterfaceError :: P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError
+mkIncompatibleInterfaceError :: P_BoxItem a -> A_Concept -> A_Concept -> String -> CtxError
 mkIncompatibleInterfaceError objDef expTgt refSrc ref =
-  CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++ " at field " ++ show (name objDef) ++
-                         ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++
-                         ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
-
+  case objDef of
+    P_BxExpr{} -> CTXE (origin objDef) $ 
+        "Incompatible interface reference "++ show ref ++ " at field " ++ show (obj_nm objDef) ++
+        ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++
+        ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
+    _ -> fatal "Improper use of mkIncompatibleInterfaceError"
+  
 mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
 mkMultipleDefaultError (_, [])              = fatal "mkMultipleDefaultError called on []"
 mkMultipleDefaultError (c, vds@(vd0:_)) =
@@ -307,10 +323,14 @@ mkMultipleDefaultError (c, vds@(vd0:_)) =
                       concat ["\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")"
                              | vd <- vds ]
 
-mkIncompatibleViewError :: (Named b,Named c) => P_ObjDef a -> String -> b -> c -> CtxError
+mkIncompatibleViewError :: (Named b,Named c) => P_BoxItem a -> String -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
-  CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ name viewCptStr ++
-                         ", which should be equal to or more general than the target " ++ name viewRefCptStr ++ " of the expression at this field."
+  case objDef of
+    P_BxExpr{} -> CTXE (origin objDef) $
+      "Incompatible view annotation <"++viewId++"> at field " ++ show (obj_nm objDef) ++ ":"++
+      "\nView " ++ show viewId ++ " has type " ++ name viewCptStr ++
+      ", which should be equal to or more general than the target " ++ name viewRefCptStr ++ " of the expression at this field."
+    _       -> fatal "Improper use of mkIncompatibleViewError."
 
 mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =

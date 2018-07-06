@@ -93,8 +93,11 @@ getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterf
 
 getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]
 getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
-  where getExprs Obj{objExpression=expr, objmsub=subObj} = 
-          expr : case subObj of 
+  where 
+    getExprs :: BoxExp -> [Expression]
+    getExprs objExpr =
+      objExpression objExpr : 
+          case objmsub objExpr of 
                    Nothing                -> []
                    Just si -> case si of
                                InterfaceRef{siIsLink = True} -> []
@@ -103,7 +106,9 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
                                     []      -> fatal ("Referenced interface " ++ siIfcId si ++ " missing")
                                     (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
                                     [i]     -> getAllInterfaceExprs allIfcs i
-                               Box{} -> concatMap getExprs (siObjs si)
+                               Box{} -> concatMap getExprs' (siObjs si)
+                        where getExprs' (BxExpr e) = getExprs e
+                              getExprs' (BxTxt _) = []
 
 getCrudObjsPerConcept :: [(Interface, [(A_Concept,Bool,Bool,Bool,Bool)])] ->
                          [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]

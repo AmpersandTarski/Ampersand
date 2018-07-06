@@ -260,7 +260,6 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                    , decfpos = OriginUnknown
                    , decusr  = False
                    , decpat  = fatal "Do not refer to decpat of this dummy relation"
-                   , decplug = fatal "Do not refer to decplug of this dummy relation"
                    , dechash = fatal "Do not use EQ on this dummy relation"
                    }
 
