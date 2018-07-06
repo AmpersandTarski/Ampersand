@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
 ## v3.11.0 (6 july 2018)
 
 * Upgrade to LTS-11.13
