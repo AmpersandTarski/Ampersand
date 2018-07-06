@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.11.0 (6 july 2018)
 
 * Upgrade to LTS-11.13
 * PHP Backend: implement [PSR6 caching interface](https://www.php-fig.org/psr/psr-6/) for conjunct violation cache
