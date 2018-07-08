@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.10.1
+version:        3.11.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -49,6 +49,7 @@ library
                      filepath == 1.4.*,
                      graphviz == 2999.19.*,
                      hashable == 1.2.*,
+                     http-conduit == 2.3.*,
                      HStringTemplate == 0.8.*,
                      lens == 4.16.*,
                      MissingH == 1.4.*,
@@ -69,6 +70,7 @@ library
                      yaml == 0.8.*,
                      yaml-config == 0.4.*,
                      xlsx == 0.7.*,
+                     zip-archive,
                      zlib == 0.6.*
   exposed-modules:   Ampersand,
                      Ampersand.ADL1,
@@ -171,7 +173,6 @@ library
                      Ampersand.Prototype.StaticFiles_Generated,
                      Ampersand.Prototype.TableSpec,
                      Ampersand.Prototype.ValidateSQL,
-                     Ampersand.Prototype.WriteStaticFiles,
                      Ampersand.Test
                      Ampersand.Test.Parser.ArbitraryTree,
                      Ampersand.Test.Parser.ParserTest,

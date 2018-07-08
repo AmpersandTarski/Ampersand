@@ -17,7 +17,7 @@ data JSONInterface = JSONInterface
   } deriving (Generic, Show)
 data JSONObjectDef = 
   JSONObjectDef
-    { ifcJSONtag                :: String
+    { ifcJSONtype               :: String
     , ifcJSONtxt                :: Maybe String
     , ifcJSONid                 :: String
     , ifcJSONlabel              :: String
@@ -122,7 +122,7 @@ instance JSON BoxItem JSONObjectDef where
  fromAmpersand multi obj =
    case obj of 
      BxExpr object' -> JSONObjectDef
-      { ifcJSONtag                = "ObjExpression"
+      { ifcJSONtype               = "ObjExpression"
       , ifcJSONid                 = escapeIdentifier . name $ object
       , ifcJSONlabel              = name object
       , ifcJSONviewId             = fmap name viewToUse
@@ -148,7 +148,7 @@ instance JSON BoxItem JSONObjectDef where
             Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
         object = substituteReferenceObjectDef fSpec object'
      BxTxt object -> JSONObjectDef
-      { ifcJSONtag                = "ObjText"
+      { ifcJSONtype               = "ObjText"
       , ifcJSONid                 = escapeIdentifier . name $ object
       , ifcJSONlabel              = name object
       , ifcJSONviewId             = Nothing

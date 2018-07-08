@@ -33,8 +33,4 @@ miscellaneous/AmpersandBackup.jgfns
 .settings/org.eclipse.wst.common.project.facet.core.xml
 .settings/org.eclipse.php.core.prefs
 /.stack-work
-static/zwolle/lib/
-static/zwolle/app/lib
-static/zwolle/node_modules/
-
 \.ghci
