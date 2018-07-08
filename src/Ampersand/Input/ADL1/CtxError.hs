@@ -35,18 +35,18 @@ module Ampersand.Input.ADL1.CtxError
 -- Although I also consider it ill practice to export PE
 -- for the same reasons, I did this as a quick fix for the parse errors
 where
---import Control.Applicative
-import Ampersand.ADL1
-import Ampersand.Core.ShowAStruct
-import Ampersand.Core.ShowPStruct
-import Ampersand.Basics
-import Data.Maybe
+
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.Core.ShowPStruct
+import           Ampersand.Input.ADL1.FilePos()
 import qualified Data.List as L   (intercalate)
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
-import GHC.Exts (groupWith)
-import Text.Parsec.Error (Message(..), messageString)
-import Ampersand.Input.ADL1.FilePos()
-import Data.Monoid
+import           Data.Maybe
+import           Data.Monoid
+import           GHC.Exts (groupWith)
+import           Text.Parsec.Error (Message(..), messageString)
 
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
@@ -154,7 +154,7 @@ class GetOneGuarded a b | b -> a where
              -> Guarded a
   hasNone o = getOneExactly o []
 
-instance GetOneGuarded SubInterface (P_SubIfc a) where
+instance Pretty a => GetOneGuarded SubInterface (P_SubIfc a) where
   hasNone o = Errors . pure $
     CTXE (origin o)$ "Required: one A-subinterface in "++showP o
 
@@ -340,7 +340,7 @@ mustBeOrdered o a b
      , "  and concept "++showEC b
      ]
 
-mustBeOrderedLst :: P_SubIfc (TermPrim, x) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
+mustBeOrderedLst :: Pretty x => P_SubIfc (TermPrim, x) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
 mustBeOrderedLst o lst
  = Errors . pure . CTXE (origin o) . unlines $
      [ "Type error in "++showP o

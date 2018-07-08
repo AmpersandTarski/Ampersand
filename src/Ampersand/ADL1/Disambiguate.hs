@@ -11,6 +11,7 @@ import           Ampersand.Core.AbstractSyntaxTree
 import qualified Data.List.NonEmpty as NEL (toList,fromList)
 import qualified Data.Set as Set
 import           Control.Arrow
+import           Text.PrettyPrint.Leijen (Pretty(..),text)
 
 -- this is *only* used internally!
 data D_Concept
@@ -214,7 +215,8 @@ data DisambPrim
  | Mp1 PSingleton -- a singleton atomvalue, type unknown
  | Known Expression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
  deriving Show  -- Here, deriving Show serves debugging purposes only.
-
+instance Pretty DisambPrim where
+  pretty = text . show
 performUpdate :: ((t, DisambPrim),
                      Constraints)
                      -> Change (t, DisambPrim)
