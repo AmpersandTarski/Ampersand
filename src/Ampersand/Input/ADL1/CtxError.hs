@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
-{-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FunctionalDependencies #-}
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr, makeError
@@ -138,9 +140,9 @@ nonMatchingRepresentTypes orig wrongType rightType
            $ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "
              ++show wrongType++" is not the same as "++show rightType
 
-class GetOneGuarded a where
+class GetOneGuarded a b | b -> a where
   {-# MINIMAL getOneExactly | hasNone #-}  -- we don't want endless loops, do we?
-  getOneExactly :: (Traced a1, PStruct a1) => a1 -> [a] -> Guarded a
+  getOneExactly :: b -> [a] -> Guarded a
   getOneExactly _ [a] = Checked a
   getOneExactly o []  = hasNone o
   getOneExactly o _ = 
@@ -148,15 +150,15 @@ class GetOneGuarded a where
       Nothing -> fatal "No error message!"
       Just (CTXE o' s NEL.:| _) -> Errors . pure $ CTXE o' $ "Found too many:\n  "++s
       Just (PE _      NEL.:| _) -> fatal "Didn't expect a PE constructor here"
-  hasNone :: (Traced a1, PStruct a1) => a1  -- the object where the problem is arising
-                                     -> Guarded a
+  hasNone :: b  -- the object where the problem is arising
+             -> Guarded a
   hasNone o = getOneExactly o []
 
-instance GetOneGuarded SubInterface where
+instance GetOneGuarded SubInterface (P_SubIfc a) where
   hasNone o = Errors . pure $
     CTXE (origin o)$ "Required: one A-subinterface in "++showP o
 
-instance GetOneGuarded Expression where
+instance GetOneGuarded Expression P_NamedRel where
   getOneExactly _ [d] = Checked d
   getOneExactly o []  = Errors . pure $ CTXE (origin o) $
       "No relation for "++showP o
