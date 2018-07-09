@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+* [Issue #798](https://github.com/AmpersandTarski/Ampersand/issues/798) Refactor code, to remove some double code.
+
 ## v3.11.0 (6 july 2018)
 
 * Upgrade to LTS-11.13
