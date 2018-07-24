@@ -1020,8 +1020,7 @@ pDecl2aDecl env typ defLanguage defFormat pd
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
-pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
-pDisAmb2Expr (o,_)       = cannotDisamb o
+pDisAmb2Expr (o,dx)      = cannotDisambiguate o dx
 
 pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat

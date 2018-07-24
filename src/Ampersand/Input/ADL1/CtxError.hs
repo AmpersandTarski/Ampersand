@@ -5,7 +5,7 @@
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr, makeError
-  , cannotDisamb, cannotDisambRel
+  , cannotDisambiguate
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, uniqueBy
@@ -47,7 +47,7 @@ import           Data.Maybe
 import           Data.Monoid
 import           GHC.Exts (groupWith)
 import           Text.Parsec.Error (Message(..), messageString)
-
+import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message
@@ -176,32 +176,28 @@ mkTypeMismatchError o decl sot conc
             ++"relation you wish to populate, namely: "
             ++showEC (sot,decl)
 
-cannotDisambRel :: TermPrim -> [Expression] -> Guarded Expression
-cannotDisambRel o exprs
- = Errors . pure $ CTXE (origin o) message
+cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded Expression
+cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
   where
-   message =
-    case exprs of
-     [] -> "No relations match the relation: "++showP o
-     _  -> case o of
+    message = 
+      case x of 
+        Rel [] -> "A relation is used that is not defined: "++showP o
+        Rel exprs -> case o of
              (PNamedR(PNamedRel _ _ Nothing))
                 -> L.intercalate "\n" $
                        ["Cannot disambiguate the relation: "++showP o
                        ,"  Please add a signature (e.g. [A*B]) to the relation."
                        ,"  Relations you may have intended:"
                        ]++
-                       ["  "++showA e++"["++name (source e)++"*"++name (target e)++"]"
-                       |e<-exprs]
+                       map (("  "++) . showA) exprs
              _  -> L.intercalate "\n" $
                        ["Cannot disambiguate: "++showP o
                        ,"  Please add a signature."
                        ,"  You may have intended one of these:"
                        ]++
                        ["  "++showA e|e<-exprs]
-
-cannotDisamb :: TermPrim -> Guarded Expression
-cannotDisamb o = Errors . pure $ CTXE (origin o) $
-  "Cannot disambiguate: "++showP o++"\n  Please add a signature to it"
+        Known _ -> fatal "We have a known expression, so it is allready disambiguated."
+        _ -> "Cannot disambiguate: "++showP o++"\n  Please add a signature to it"
 
 uniqueNames :: (Named a, Traced a) =>
                      [a] -> Guarded ()
