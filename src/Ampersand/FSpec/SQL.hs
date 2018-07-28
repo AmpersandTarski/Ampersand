@@ -328,35 +328,103 @@ nonSpecialSelectExpr fSpec expr=
                                                           , bseWhr = Nothing
                                                           }
                                        makeIntersectSelectExpr :: [Expression] -> BinQueryExpr
-                                       makeIntersectSelectExpr exprs =
-                                        case map (selectExpr fSpec) exprs of 
-                                          []  -> fatal "makeIntersectSelectExpr must not be used on empty list"
-                                          [e] -> e
-                                          es  -> -- Note: We now have at least two subexpressions
-                                                 BQEComment [BlockComment "`intersect` does not work in MySQL, so this statement is generated:"]
-                                                 BSE { bseSetQuantifier = SQDefault
-                                                     , bseSrc = Col { cTable = [iSect 0]
-                                                                    , cCol   = [sourceAlias]
-                                                                    , cAlias = []
-                                                                    , cSpecial = Nothing}
-                                                     , bseTrg = Col { cTable = [iSect 0]
-                                                                    , cCol   = [targetAlias]
-                                                                    , cAlias = []
-                                                                    , cSpecial = Nothing}
-                                                     , bseTbl = zipWith tableRef [0 ..] es
-                                                     , bseWhr = Just . conjunctSQL . concatMap constraintsOfTailExpression $ 
-                                                                   [1..length (tail es)]     
-                                                     }
-                                                  where
-                                                   iSect :: Int -> Name
-                                                   iSect n = Name ("subIntersect"++show n)
-                                                   tableRef :: Int -> BinQueryExpr -> TableRef
-                                                   tableRef n e = TRQueryExpr (toSQL e) `as` iSect n
-                                                   constraintsOfTailExpression :: Int -> [ValueExpr]
-                                                   constraintsOfTailExpression n 
-                                                      = [ BinOp (Iden[iSect n,sourceAlias]) [Name "="] (Iden[iSect 0,sourceAlias])
-                                                        , BinOp (Iden[iSect n,targetAlias]) [Name "="] (Iden[iSect 0,targetAlias])
-                                                        ]
+                                       makeIntersectSelectExpr [] = fatal $ "makeIntersectSelectExpr must not be called with an empty list."
+                                       makeIntersectSelectExpr exprs 
+                                        | null esI = nonOptimizedIntersectSelectExpr
+                                        | null esRest = optimizedIntersectSelectExpr
+                                        | otherwise = fatal "TODO"
+                                        where
+                                          broadTable :: PlugSQL -- The broad table where everything in the optimized case comes from.
+                                          broadTable = fst . getConceptTableInfo fSpec . source . head $ exprs
+                                          esI :: [(Expression,Name)] -- all conjunctions that are of the form I
+                                          esI = mapMaybe isI exprs 
+                                            where 
+                                              isI :: Expression -> Maybe (Expression,Name)
+                                              isI e = 
+                                                case e of 
+                                                  EDcI c   -> Just (e,sqlAttConcept fSpec c)
+                                                  EEps c _ -> Just (e,sqlAttConcept fSpec c)
+                                                  _        -> Nothing
+                                          esR :: [(Expression,[Name])] -- all conjuctions that are of the form r;r~ where r is in the same broad table as I
+                                          esR = mapMaybe isR exprs
+                                            where 
+                                              isR :: Expression -> Maybe (Expression,[Name])
+                                              isR e = 
+                                                case e of
+                                                  (ECps (EDcD r, EFlp (EDcD r')))
+                                                    -> let (plug,_,t) = getRelationTableInfo fSpec r in
+                                                       if r == r' && plug == broadTable
+                                                       then Just (e,[QName (name t)])
+                                                       else Nothing
+                                                  (ECps (EFlp (EDcD r'), EDcD r))
+                                                    -> let (plug,s,_) = getRelationTableInfo fSpec r in
+                                                       if r' == r && plug == broadTable
+                                                       then Just (e,[QName (name s)])
+                                                       else Nothing
+                                                  (EDcD r)
+                                                    -> let (plug,s,t) = getRelationTableInfo fSpec r in
+                                                       if plug == broadTable
+                                                       then Just (e,[QName (name s),QName (name t)])
+                                                       else Nothing
+                                                  (EFlp (EDcD r))
+                                                    -> let (plug,s,t) = getRelationTableInfo fSpec r in
+                                                       if plug == broadTable
+                                                       then Just (e,[QName (name s),QName (name t)])
+                                                       else Nothing 
+                                                  _ -> Nothing
+                                          esRest :: [Expression] -- all other conjuctions
+                                          esRest = (exprs \\ (map fst esI)) \\ (map fst esR)
+                                          optimizedIntersectSelectExpr :: BinQueryExpr
+                                          optimizedIntersectSelectExpr
+                                            = BQEComment [BlockComment "Optimized intersection:"]
+                                              BSE { bseSetQuantifier = SQDefault
+                                                  , bseSrc = Col { cTable = []
+                                                                 , cCol   = [sqlAttConcept fSpec c]
+                                                                 , cAlias = []
+                                                                 , cSpecial = Nothing}
+                                                  , bseTrg = Col { cTable = []
+                                                                 , cCol   = [sqlAttConcept fSpec c]
+                                                                 , cAlias = []
+                                                                 , cSpecial = Nothing}
+                                                  , bseTbl = [sqlConceptTable fSpec c]
+                                                  , bseWhr = Just . conjunctSQL $
+                                                       [notNull (Iden [nm]) | nm <- nub (map snd esI++concatMap snd esR)]
+                                                  }
+                                              where c = case map fst esI of
+                                                          [] -> fatal "This list must not be empty here."
+                                                          EDcI cpt   : _ -> cpt
+                                                          EEps cpt _ : _ -> cpt
+                                                          e          : _ -> fatal $ "Unexpected expression: "++show e
+                                          nonOptimizedIntersectSelectExpr :: BinQueryExpr 
+                                          nonOptimizedIntersectSelectExpr =
+                                            case map (selectExpr fSpec) exprs of 
+                                              []  -> fatal "makeIntersectSelectExpr must not be used on empty list"
+                                              [e] -> e
+                                              es  -> -- Note: We now have at least two subexpressions
+                                                BQEComment [BlockComment "`intersect` does not work in MySQL, so this statement is generated:"]
+                                                BSE { bseSetQuantifier = SQDefault
+                                                    , bseSrc = Col { cTable = [iSect 0]
+                                                                   , cCol   = [sourceAlias]
+                                                                   , cAlias = []
+                                                                   , cSpecial = Nothing}
+                                                    , bseTrg = Col { cTable = [iSect 0]
+                                                                   , cCol   = [targetAlias]
+                                                                   , cAlias = []
+                                                                   , cSpecial = Nothing}
+                                                    , bseTbl = zipWith tableRef [0 ..] es
+                                                    , bseWhr = Just . conjunctSQL . concatMap constraintsOfTailExpression $ 
+                                                                  [1..length (tail es)]     
+                                                    }
+                                                 where
+                                                  iSect :: Int -> Name
+                                                  iSect n = Name ("subIntersect"++show n)
+                                                  tableRef :: Int -> BinQueryExpr -> TableRef
+                                                  tableRef n e = TRQueryExpr (toSQL e) `as` iSect n
+                                                  constraintsOfTailExpression :: Int -> [ValueExpr]
+                                                  constraintsOfTailExpression n 
+                                                     = [ BinOp (Iden[iSect n,sourceAlias]) [Name "="] (Iden[iSect 0,sourceAlias])
+                                                       , BinOp (Iden[iSect n,targetAlias]) [Name "="] (Iden[iSect 0,targetAlias])
+                                                       ]
 
     EUni (l,r) -> traceComment ["case: EUni (l,r)"]
                   BCQE { bseSetQuantifier = SQDefault

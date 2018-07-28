@@ -52,8 +52,10 @@ dumpSQLqueries multi
        <>header "Queries per relation"
        <>concatMap showDecl (vrels fSpec)
        <>header "Queries of interfaces"
-       <>concatMap showInterface (interfaceS fSpec <> interfaceG fSpec)
+       <>concatMap showInterface y 
    where
+     y :: [Interface]
+     y = (\x -> trace (show x) x) (interfaceS fSpec <> interfaceG fSpec)
      fSpec = userFSpec multi
      showInterface :: Interface -> [Text.Text]
      showInterface ifc 
