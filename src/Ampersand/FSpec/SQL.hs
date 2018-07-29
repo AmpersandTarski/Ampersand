@@ -330,9 +330,33 @@ nonSpecialSelectExpr fSpec expr=
                                        makeIntersectSelectExpr :: [Expression] -> BinQueryExpr
                                        makeIntersectSelectExpr [] = fatal $ "makeIntersectSelectExpr must not be called with an empty list."
                                        makeIntersectSelectExpr exprs 
+                                          -- The story here: If at least one of the conjuncts is I, then
+                                          -- we know that all results should be in the broad table where
+                                          -- I is in. All expressions that are implemented in that table (esR)
+                                          -- can be used to efficiently restrict the rows from that table. 
+                                          -- If we still have expressions left over, these have to be dealt with
+                                          -- appropriatly. 
                                         | null esI = nonOptimizedIntersectSelectExpr
                                         | null esRest = optimizedIntersectSelectExpr
-                                        | otherwise = fatal "TODO"
+                                        | otherwise = 
+                                              let part1 = makeIntersectSelectExpr (map fst esI ++ map fst esR)
+                                                  part2 = makeIntersectSelectExpr esRest
+                                              in traceComment ["Combination of optimized and non-optimized intersections"]
+                                                 BSE { bseSetQuantifier = SQDefault
+                                                     , bseSrc = Col { cTable = []
+                                                                    , cCol   = [sourceAlias]
+                                                                    , cAlias = []
+                                                                    , cSpecial = Nothing}
+                                                     , bseTrg = Col { cTable = []
+                                                                    , cCol   = [targetAlias]
+                                                                    , cAlias = []
+                                                                    , cSpecial = Nothing}
+                                                     , bseTbl = [TRQueryExpr (toSQL part2)]
+                                                     , bseWhr = Just $ In True (Iden [sourceAlias]) 
+                                                                         (InQueryExpr (makeSelect {qeSelectList = [(Iden [sourceAlias],Nothing)]
+                                                                                                  ,qeFrom = [TRQueryExpr (toSQL part1)]
+                                                                                                  }))
+                                                     } 
                                         where
                                           broadTable :: PlugSQL -- The broad table where everything in the optimized case comes from.
                                           broadTable = fst . getConceptTableInfo fSpec . source . head $ exprs
