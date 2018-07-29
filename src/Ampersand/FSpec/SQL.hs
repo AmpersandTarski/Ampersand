@@ -351,10 +351,10 @@ nonSpecialSelectExpr fSpec expr=
                                                                     , cCol   = [targetAlias]
                                                                     , cAlias = []
                                                                     , cSpecial = Nothing}
-                                                     , bseTbl = [TRQueryExpr (toSQL part2)]
+                                                     , bseTbl = [TRQueryExpr (toSQL part2) `as` Name "part2" ]
                                                      , bseWhr = Just $ In True (Iden [sourceAlias]) 
                                                                          (InQueryExpr (makeSelect {qeSelectList = [(Iden [sourceAlias],Nothing)]
-                                                                                                  ,qeFrom = [TRQueryExpr (toSQL part1)]
+                                                                                                  ,qeFrom = [TRQueryExpr (toSQL part1)  `as` Name "part1"]
                                                                                                   }))
                                                      } 
                                         where
