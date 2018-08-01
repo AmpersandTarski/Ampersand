@@ -2,6 +2,7 @@
 
 ## Unreleased changes
 
+* [Issue #628](https://github.com/AmpersandTarski/Ampersand/issues/628) Fixed a performance issue for specific queries.
 * [Issue #814](https://github.com/AmpersandTarski/Ampersand/issues/814) More clear error message.
 * [Issue #798](https://github.com/AmpersandTarski/Ampersand/issues/798) Refactor code, to remove some double code.
 
