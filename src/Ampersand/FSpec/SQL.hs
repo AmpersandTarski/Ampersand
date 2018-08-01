@@ -352,10 +352,13 @@ nonSpecialSelectExpr fSpec expr=
                                                                     , cAlias = []
                                                                     , cSpecial = Nothing}
                                                      , bseTbl = [TRQueryExpr (toSQL part2) `as` Name "part2" ]
-                                                     , bseWhr = Just $ In True (Iden [sourceAlias]) 
+                                                     , bseWhr = Just . conjunctSQL $
+                                                         [ BinOp (Iden [sourceAlias]) [Name "="] (Iden [targetAlias])
+                                                         , In True (Iden [sourceAlias]) 
                                                                          (InQueryExpr (makeSelect {qeSelectList = [(Iden [sourceAlias],Nothing)]
                                                                                                   ,qeFrom = [TRQueryExpr (toSQL part1)  `as` Name "part1"]
                                                                                                   }))
+                                                         ]
                                                      } 
                                         where
                                           broadTable :: PlugSQL -- The broad table where everything in the optimized case comes from.
