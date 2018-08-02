@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.11.1 (3 august 2018)
 
 * [Issue #814](https://github.com/AmpersandTarski/Ampersand/issues/814) More clear error message.
 * [Issue #798](https://github.com/AmpersandTarski/Ampersand/issues/798) Refactor code, to remove some double code.
