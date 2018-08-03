@@ -156,7 +156,7 @@ pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 findRels :: DeclMap -> String -> Map.Map SignOrd Expression
 findRels declMap x = Map.findWithDefault Map.empty x declMap  -- get all relations with the same name as x
-extractDecl :: (Traced a) => a -> Expression -> Guarded Relation
+extractDecl :: P_NamedRel -> Expression -> Guarded Relation
 extractDecl _ (EDcD r) = return r
 extractDecl _ e = fatal $ "Expecting a declared relation, instead I found: "++show e -- to fix: return an error via a (still to be made) function in CtxError
 namedRel2Decl :: DeclMap -> P_NamedRel -> Guarded Relation
@@ -180,7 +180,7 @@ findRelsLooselyTyped declMap x Nothing (Just tgt)
  = [dcl | dcl <- findDecls' declMap x, name (target dcl) == name tgt ]
    `orWhenEmpty` findDecls' declMap x
 findDeclLooselyTyped :: DeclMap
-                     -> P_Population
+                     -> P_NamedRel
                      -> String
                      -> Maybe A_Concept
                      -> Maybe A_Concept
@@ -456,7 +456,7 @@ pCtx2aCtx opts
      case pop of
        P_RelPopu{p_nmdr = nmdr, p_popps=aps, p_src = src, p_tgt = tgt}
          -> do dcl <- case p_mbSign nmdr of
-                        Nothing -> findDeclLooselyTyped declMap pop (name nmdr) (makeConcept <$> src) (makeConcept <$> tgt)
+                        Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (makeConcept <$> src) (makeConcept <$> tgt)
                         _ -> namedRel2Decl declMap nmdr
                       
                aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
@@ -1020,8 +1020,7 @@ pDecl2aDecl env typ defLanguage defFormat pd
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
-pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
-pDisAmb2Expr (o,_)       = cannotDisamb o
+pDisAmb2Expr (o,dx)      = cannotDisambiguate o dx
 
 pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat

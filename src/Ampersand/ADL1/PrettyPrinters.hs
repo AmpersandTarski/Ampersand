@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Ampersand.ADL1.PrettyPrinters(prettyPrint)
+module Ampersand.ADL1.PrettyPrinters(Pretty(..),prettyPrint)
 where
 
 import           Ampersand.Basics

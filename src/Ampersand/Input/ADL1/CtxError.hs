@@ -1,13 +1,15 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
-{-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FunctionalDependencies #-}
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr, makeError
-  , cannotDisamb, cannotDisambRel
+  , cannotDisambiguate
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, uniqueBy
-  , TypeAware(..), unexpectedType
+  , unexpectedType
   , mkErrorReadingINCLUDE
   , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
@@ -33,19 +35,19 @@ module Ampersand.Input.ADL1.CtxError
 -- Although I also consider it ill practice to export PE
 -- for the same reasons, I did this as a quick fix for the parse errors
 where
---import Control.Applicative
-import Ampersand.ADL1
-import Ampersand.Core.ShowAStruct
-import Ampersand.Core.ShowPStruct
-import Ampersand.Basics
-import Data.Maybe
+
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.Core.ShowPStruct
+import           Ampersand.Input.ADL1.FilePos()
 import qualified Data.List as L   (intercalate)
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
-import GHC.Exts (groupWith)
-import Text.Parsec.Error (Message(..), messageString)
-import Ampersand.Input.ADL1.FilePos()
-import Data.Monoid
-
+import           Data.Maybe
+import           Data.Monoid
+import           GHC.Exts (groupWith)
+import           Text.Parsec.Error (Message(..), messageString)
+import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message
@@ -61,38 +63,15 @@ errors (Errors lst) = Just lst
 makeError :: String -> Guarded a
 makeError msg = Errors (PE (Message msg) NEL.:| [])
 
-class TypeAware x where
-  -- Need something of type "p x"? Use on of these: [x], Maybe x, Guarded x
-  -- They are all of the type "p x".
-  -- The reason for us to write "p x" (without constraints on p, thus not specifying p) is that we want to disallow getADLType to inspect its argument
-  -- This way, we have no information about x, except for its type
-  getADLType :: p x -> String
-  getADLTypes :: p x -> String
-  getADLTypes p = getADLType p<>"s"
-  getADLType_A :: p x -> String
-  getADLType_A p = "A "<>getADLType p
-  getADLType_a :: p x -> String
-  getADLType_a p = "a "<>getADLType p
-
-instance TypeAware TType where
-  getADLType _ = "built-in type"
-instance TypeAware (Maybe TType) where
-  getADLType _ = "built-in type"
-instance TypeAware A_Concept where
-  getADLType _ = "concept"
-
--- SJC, Note about Haskell: I'm using scoped type variables here, via the flag "ScopedTypeVariables"
--- the result is that the b is bound by the type signature, so I can use `getADLType_a' with exactly that type
-unexpectedType :: forall a b. (TypeAware a, TypeAware b, PStruct a) => Origin -> a -> Guarded b
+unexpectedType :: Origin -> Maybe TType -> Guarded A_Concept
 unexpectedType o x = 
-   Errors (CTXE o ("Unexpected "<>getADLType [x]<>": "<>showP x<>"\n  expecting "<>getADLType_a ([]::[b])) 
+   Errors (CTXE o ((case x of 
+                     Nothing   -> "The Generic Built-in type was unexpeced. "
+                     Just ttyp -> "Unexpected built-in type: "<>show ttyp
+                   )<>"\n  expecting a concept.")
            NEL.:| []
           )
--- There is a way to work around this without ScopedTypeVariables, but in my (SJC) view, this is less readable:
--- unexpectedType :: (TypeAware a, TypeAware b, ShowADL a) => Origin -> a -> Guarded b
--- unexpectedType o x = res
---   where res = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showP x<>"\n  expecting "<>getADLType_a res]
--- There is no loop, since getADLType_a cannot inspect its first argument (res), and the chain of constructors: "Errors", (:) and CTXE, contains a lazy one (in fact, they are all lazy). In case all occurences of "getADLType_a" are non-strict in their first argument, that would already break a loop.
+
 mkErrorReadingINCLUDE :: Maybe Origin -> FilePath -> String -> Guarded a
 mkErrorReadingINCLUDE mo file str
  = Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) msg
@@ -154,16 +133,16 @@ mkMultipleRootsError roots gs
              [ "  CLASSIFY "++name cpt++" ISA "++show rootName    | cpt<-roots]
           
        where rootName = L.intercalate "_Or_" . map name $ roots 
-nonMatchingRepresentTypes :: (Traced a1, Show a2, Show a3) => a1 -> a2 -> a3 -> Guarded a
-nonMatchingRepresentTypes genStmt wrongType rightType
+nonMatchingRepresentTypes :: Origin -> TType -> TType -> Guarded a
+nonMatchingRepresentTypes orig wrongType rightType
  = Errors . pure $
-      CTXE (origin genStmt)
+      CTXE orig
            $ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "
              ++show wrongType++" is not the same as "++show rightType
 
-class GetOneGuarded a where
+class GetOneGuarded a b | b -> a where
   {-# MINIMAL getOneExactly | hasNone #-}  -- we don't want endless loops, do we?
-  getOneExactly :: (Traced a1, PStruct a1) => a1 -> [a] -> Guarded a
+  getOneExactly :: b -> [a] -> Guarded a
   getOneExactly _ [a] = Checked a
   getOneExactly o []  = hasNone o
   getOneExactly o _ = 
@@ -171,28 +150,15 @@ class GetOneGuarded a where
       Nothing -> fatal "No error message!"
       Just (CTXE o' s NEL.:| _) -> Errors . pure $ CTXE o' $ "Found too many:\n  "++s
       Just (PE _      NEL.:| _) -> fatal "Didn't expect a PE constructor here"
-  hasNone :: (Traced a1, PStruct a1) => a1  -- the object where the problem is arising
-                                     -> Guarded a
+  hasNone :: b  -- the object where the problem is arising
+             -> Guarded a
   hasNone o = getOneExactly o []
 
-instance GetOneGuarded (P_SubIfc a) where
-  hasNone o = Errors . pure $
-    CTXE (origin o)$ "Required: one P-subinterface in "++showP o
-
-instance GetOneGuarded SubInterface where
+instance Pretty a => GetOneGuarded SubInterface (P_SubIfc a) where
   hasNone o = Errors . pure $
     CTXE (origin o)$ "Required: one A-subinterface in "++showP o
 
-instance GetOneGuarded Relation where
-  getOneExactly _ [d] = Checked d
-  getOneExactly o []  = Errors . pure $ CTXE (origin o) $
-      "No relation for "++showP o
-  getOneExactly o lst = Errors . pure $ CTXE (origin o) $
-      "Too many relations match "++showP o
-    ++".\n  Be more specific. These are the matching relations:"
-    ++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]
-
-instance GetOneGuarded Expression where
+instance GetOneGuarded Expression P_NamedRel where
   getOneExactly _ [d] = Checked d
   getOneExactly o []  = Errors . pure $ CTXE (origin o) $
       "No relation for "++showP o
@@ -210,32 +176,28 @@ mkTypeMismatchError o decl sot conc
             ++"relation you wish to populate, namely: "
             ++showEC (sot,decl)
 
-cannotDisambRel :: TermPrim -> [Expression] -> Guarded Expression
-cannotDisambRel o exprs
- = Errors . pure $ CTXE (origin o) message
+cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded Expression
+cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
   where
-   message =
-    case exprs of
-     [] -> "No relations match the relation: "++showP o
-     _  -> case o of
+    message = 
+      case x of 
+        Rel [] -> "A relation is used that is not defined: "++showP o
+        Rel exprs -> case o of
              (PNamedR(PNamedRel _ _ Nothing))
                 -> L.intercalate "\n" $
                        ["Cannot disambiguate the relation: "++showP o
                        ,"  Please add a signature (e.g. [A*B]) to the relation."
                        ,"  Relations you may have intended:"
                        ]++
-                       ["  "++showA e++"["++name (source e)++"*"++name (target e)++"]"
-                       |e<-exprs]
+                       map (("  "++) . showA) exprs
              _  -> L.intercalate "\n" $
                        ["Cannot disambiguate: "++showP o
                        ,"  Please add a signature."
                        ,"  You may have intended one of these:"
                        ]++
                        ["  "++showA e|e<-exprs]
-
-cannotDisamb :: TermPrim -> Guarded Expression
-cannotDisamb o = Errors . pure $ CTXE (origin o) $
-  "Cannot disambiguate: "++showP o++"\n  Please add a signature to it"
+        Known _ -> fatal "We have a known expression, so it is allready disambiguated."
+        _ -> "Cannot disambiguate: "++showP o++"\n  Please add a signature to it"
 
 uniqueNames :: (Named a, Traced a) =>
                      [a] -> Guarded ()
@@ -374,7 +336,7 @@ mustBeOrdered o a b
      , "  and concept "++showEC b
      ]
 
-mustBeOrderedLst :: (Traced o, PStruct o, PStruct a) => o -> [(A_Concept, SrcOrTgt, a)] -> Guarded b
+mustBeOrderedLst :: Pretty x => P_SubIfc (TermPrim, x) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
 mustBeOrderedLst o lst
  = Errors . pure . CTXE (origin o) . unlines $
      [ "Type error in "++showP o
@@ -384,20 +346,17 @@ mustBeOrderedLst o lst
      | (c,st,a) <- lst
      ]++ 
      [ "  if you think there is no type error, add an order between the mismatched concepts."
+     , "  You can do so by using a CLASSIFY statement."
      ]
 
-mustBeOrderedConcLst :: (Named a_conc) => Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[a_conc]] -> Guarded a
+mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])
 mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
  = Errors . pure . CTXE (origin o) . unlines $
     [ "Ambiguous type when matching: "++show p1++" of "++showA e1
     , " and "++show p2++" of "++showA e2++"."
-    , "  The type can be "++L.intercalate " or " (map (showP . Slash) cs)
+    , "  The type can be "++L.intercalate " or " (map (L.intercalate "/" . map name) cs)
     , "  None of these concepts is known to be the smallest, you may want to add an order between them."
     ]
-
-newtype Slash a = Slash [a]
-instance Named a => PStruct (Slash a) where
-  showP (Slash x) = L.intercalate "/" (map name x)
 
 mustBeBound :: Origin -> [(SrcOrTgt, Expression)] -> Guarded a
 mustBeBound o [(p,e)]

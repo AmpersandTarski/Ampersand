@@ -93,8 +93,8 @@ instance Xreferenceble Picture where
   xDefBlck fSpec a = para $ imageWith (xSafeLabel fSpec a, [], []) src (xSafeLabel fSpec a)(text (caption a))
    where
     opts = getOpts fSpec
-    src  = (if fspecFormat opts `elem` [Fpdf,Flatex] then dropExtension else id)-- let pdflatex figure out the optimal extension
-             . takeFileName . imagePath opts $ a
+    src  = -- (if fspecFormat opts `elem` [Fpdf,Flatex] then dropExtension else id) . -- let pdflatex figure out the optimal extension
+            takeFileName . imagePath opts $ a
 instance Xreferenceble XRefSection where
   xSafeLabel fSpec a = 
        (show . xrefPrefix . refStuff fSpec $ a)
