@@ -1,8 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 module Ampersand.ADL1.PrettyPrinters(Pretty(..),prettyPrint)
 where
 
-import           Ampersand.Basics
+import           Ampersand.Basics hiding ((<$>))
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           Data.Char (toUpper)
@@ -163,14 +166,14 @@ instance Pretty a => Pretty (Term a) where
        PRad _ t1 t2 -> two t1 t2 "!"
        PPrd _ t1 t2 -> two t1 t2 "#"
        -- level 5
-       PKl0 _ t -> pos' t "*"
-       PKl1 _ t -> pos' t "+"
-       PFlp _ t -> pos' t "~"
+       PKl0 _ t -> post t "*"
+       PKl1 _ t -> post t "+"
+       PFlp _ t -> post t "~"
        PCpl _ t -> pre t " -" -- a double dash can happen when combined with PDif, therefore the extra space
        -- level 6
        PBrk _ t -> parens $ pretty t
        
-       where pos' t op    = pretty t <> text op
+       where post t op    = pretty t <> text op
              pre t op     = text op <> pretty t
              two t1 t2 op = pretty t1 <> text op <> pretty t2
 
@@ -190,10 +193,15 @@ instance Pretty TermPrim where
 instance Pretty P_NamedRel where
     pretty (PNamedRel _ str mpSign) = text (takeQuote str) <~> mpSign
 
-instance Pretty a => Pretty (PairView a) where
+instance Pretty (PairView TermPrim) where
+    pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
+instance Pretty (PairView (Term TermPrim)) where
     pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
 
-instance Pretty a => Pretty (PairViewSegment a) where
+instance Pretty (PairViewSegment TermPrim) where
+    pretty (PairViewText _ str) = text "TXT" <+> quote str
+    pretty (PairViewExp _ srcTgt term) = pretty srcTgt <~> term
+instance Pretty (PairViewSegment (Term TermPrim)) where
     pretty (PairViewText _ str) = text "TXT" <+> quote str
     pretty (PairViewExp _ srcTgt term) = pretty srcTgt <~> term
 
@@ -201,7 +209,7 @@ instance Pretty SrcOrTgt where
     pretty Src = text "SRC"
     pretty Tgt = text "TGT"
 
-instance Pretty a => Pretty (P_Rule a) where
+instance Pretty (P_Rule TermPrim) where
     pretty (P_Ru _ nm expr mean msg viol) =
                 text "RULE" <+> rName <~>
                 expr <+\>
@@ -236,7 +244,7 @@ instance Pretty P_Interface where
         <+> iroles <+>
          (case obj of
             P_BxExpr{} -> 
-                text ":" <~\> obj_ctx obj <~> obj_msub obj
+                nest 2 (text ":" <+> pretty (obj_ctx obj) <$> pretty (obj_msub obj))
             P_BxTxt {} -> fatal "TXT must not be used directly in a P_Ifc."
          )
       where iroles = if null roles then empty
@@ -247,7 +255,7 @@ instance Pretty a => Pretty (P_BoxItem a) where
      maybeQuote (name obj) <+> text ":" <+>
        case obj of
         (P_BxExpr _ _ ctx mCrud mView msub)
-           -> pretty ctx <+> crud mCrud <+> view mView <~> msub
+           -> nest 2 (pretty ctx <+> crud mCrud <+> view mView <$> pretty msub)
         (P_BxTxt  _ _ str)
            -> text "TXT" <+> quote str
            
@@ -264,11 +272,11 @@ instance Pretty a => Pretty (P_SubIfc a) where
             where box_type Nothing  = text "BOX"
                   box_type (Just x) = text x -- ROWS, COLS, TABS
 
-instance Pretty a => Pretty (P_IdentDf a) where
+instance Pretty (P_IdentDf TermPrim) where
     pretty (P_Id _ lbl cpt ats) =
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
-instance Pretty a => Pretty (P_IdentSegmnt a) where
+instance Pretty (P_IdentSegmnt TermPrim) where
     pretty (P_IdentExp obj) =
       case obj of
         (P_BxExpr nm _ ctx _ mView _)
@@ -282,7 +290,7 @@ instance Pretty a => Pretty (P_IdentSegmnt a) where
         where view Nothing  = empty
               view (Just v) = pretty v
 
-instance Pretty a => Pretty (P_ViewD a) where
+instance Pretty (P_ViewD TermPrim) where
     pretty (P_Vd _ lbl cpt True Nothing ats) = -- legacy syntax
         text "VIEW" <+> maybeQuote lbl   <+> text ":"
                     <~> cpt <+> parens (listOf ats)
@@ -293,13 +301,13 @@ instance Pretty a => Pretty (P_ViewD a) where
 
 instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
-instance Pretty a => Pretty (P_ViewSegment a) where
+instance Pretty (P_ViewSegment TermPrim) where
     pretty (P_ViewSegment mlab _ pl)
         = ( case mlab of 
              Nothing  -> empty
              Just str -> maybeQuote str <+> text ":" 
           ) <~> pretty pl
-instance Pretty a => Pretty (P_ViewSegmtPayLoad a) where
+instance Pretty (P_ViewSegmtPayLoad TermPrim) where
     pretty (P_ViewExp expr) = pretty expr
     pretty (P_ViewText txt) = text "TXT" <+> quote txt
                         
