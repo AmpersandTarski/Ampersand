@@ -339,16 +339,20 @@ mustBeOrdered o a b
 mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
 mustBeOrderedLst o lst
  = Errors . pure . CTXE (origin o) . unlines $
-     [ "Type error in "++showP o
+     [ "Type error in BOX"
      , "  Cannot match:"
      ]++
-     [ "  - concept "++showA c++" , "++showP st++" of "++showP a
+     [ "  - concept "++showA c++" , "++showP st++" of: "++showP (exprOf a)
      | (c,st,a) <- lst
      ]++ 
      [ "  if you think there is no type error, add an order between the mismatched concepts."
      , "  You can do so by using a CLASSIFY statement."
      ]
-
+     where exprOf :: P_BoxItem TermPrim -> Term TermPrim
+           exprOf x = 
+             case x of 
+               P_BxExpr{} -> obj_ctx x
+               P_BxTxt{}  -> fatal "How can a type error occur with a TXT field???"
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded (A_Concept, [A_Concept])
 mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
  = Errors . pure . CTXE (origin o) . unlines $
