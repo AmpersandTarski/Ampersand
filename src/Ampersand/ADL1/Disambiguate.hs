@@ -1,4 +1,7 @@
-{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Ampersand.ADL1.Disambiguate
    ( disambiguate
    , orWhenEmpty
@@ -217,6 +220,8 @@ data DisambPrim
  deriving Show  -- Here, deriving Show serves debugging purposes only.
 instance Pretty DisambPrim where
   pretty = text . show
+instance Pretty a => Pretty (a,DisambPrim) where
+  pretty (t,_) = pretty t
 performUpdate :: ((t, DisambPrim),
                      Constraints)
                      -> Change (t, DisambPrim)

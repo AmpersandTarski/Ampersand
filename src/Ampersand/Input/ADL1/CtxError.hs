@@ -336,13 +336,13 @@ mustBeOrdered o a b
      , "  and concept "++showEC b
      ]
 
-mustBeOrderedLst :: Pretty x => P_SubIfc (TermPrim, x) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
+mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> [(A_Concept, SrcOrTgt, P_BoxItem TermPrim)] -> Guarded b
 mustBeOrderedLst o lst
  = Errors . pure . CTXE (origin o) . unlines $
      [ "Type error in "++showP o
      , "  Cannot match:"
      ]++
-     [ "  - concept "++showA c++", "++show st++" of "++showP a
+     [ "  - concept "++showA c++" , "++showP st++" of "++showP a
      | (c,st,a) <- lst
      ]++ 
      [ "  if you think there is no type error, add an order between the mismatched concepts."
