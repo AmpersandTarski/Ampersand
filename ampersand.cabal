@@ -133,6 +133,7 @@ library
                      Ampersand.Input.ADL1.Parser,
                      Ampersand.Input.ADL1.ParsingLib,
                      Ampersand.Input.Parsing,
+                     Ampersand.Input.PreProcessor,
                      Ampersand.Input.Xslx.XLSX,
                      Ampersand.Misc,
                      Ampersand.Misc.Options,
