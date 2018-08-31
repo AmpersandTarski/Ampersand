@@ -1,5 +1,12 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
+## v3.11.2 (31 august 2018)
+
+* [Issue #821](https://github.com/AmpersandTarski/Ampersand/issues/821) Fix error messages.
+* Exit codes: code 20 was erroneously called 10. On 8 august 2018 this was discovered and fixed in `Exit.hs` when documenting error codes.
+
 ## v3.11.1 (3 august 2018)
 
 * [Issue #814](https://github.com/AmpersandTarski/Ampersand/issues/814) More clear error message.

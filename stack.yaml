@@ -21,7 +21,7 @@ extra-deps:
 # Override default flag values for local packages and extra-deps
 flags: {}
 
-# Make sure we can allready use GHC 7.10.3: (See https://www.fpcomplete.com/blog/2015/12/stack-with-ghc-7-10-3)
+# Make sure we can already use GHC 7.10.3: (See https://www.fpcomplete.com/blog/2015/12/stack-with-ghc-7-10-3)
 # compiler-check: newer-minor
 
 # Extra package databases containing global packages

@@ -7,7 +7,6 @@ module Ampersand.Input.Parsing (
     , parseMeta
     , parseSystemContext
     , parseRule
-    , parseCtx
     , runParser
 ) where
 
