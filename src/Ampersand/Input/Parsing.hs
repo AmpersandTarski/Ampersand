@@ -34,7 +34,7 @@ import           Text.Parsec.Prim (runP)
 parseADL :: Options                    -- ^ The options given through the command line
          -> FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
          -> IO (Guarded P_Context)     -- ^ The resulting context
-parseADL opts fp = do curDir <- getCurrentDirectory 
+parseADL opts fp = do curDir <- getCurrentDirectory
                       canonical <- canonicalizePath fp
                       parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical [])
 
@@ -110,7 +110,7 @@ parseSingleADL opts pc
                     Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) filePath err
                     Right fileContents ->
                          whenCheckedIO
-                           (return $ parseCtx filePath $ preProcess fileContents $ pcDefineds pc)
+                           (return $ parseCtx filePath $ (preProcess (pcDefineds pc) fileContents))
                            $ \(ctxts, includes) ->
                                  do parseCandidates <- mapM include2ParseCandidate includes
                                     return (Checked (ctxts, parseCandidates))
