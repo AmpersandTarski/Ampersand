@@ -29,11 +29,11 @@ blockElem2string _    True  (Left  line) = line
 blockElem2string _    False (Left  line) = "-- hide by preprocc " ++ line
 -- Lots of unpacking to get to the IfBlock
 blockElem2string defs False (Right (IfBlock (Guard guard) block)) = 
-    "-- IF " ++ guard ++ block2file defs False block ++ "-- #ENDIF"
+    "--#IF " ++ guard ++ block2file defs False block ++ "--#ENDIF"
 blockElem2string defs True  (Right (IfBlock (Guard guard) block)) = 
-    "-- #IF " ++ guard ++ "\n" ++
+    "--#IF " ++ guard ++ "\n" ++
     (block2file defs (guard `elem` defs) block) ++ 
-    "\n-- #ENDIF"
+    "\n--#ENDIF"
  
 -- Here the experimentation starts
 
@@ -78,10 +78,10 @@ parseLine line = case parseIfStartLine line of
                                _       -> Codeline line
                                    
 parseIfStartLine :: String -> Maybe Guard
-parseIfStartLine x = fmap (Guard . head . words) (stripPrefix "-- #IF " $ stripFront x)
+parseIfStartLine x = fmap (Guard . head . words) (stripPrefix "--#IF " $ stripFront x)
 
 parseIfEndLine :: String -> Maybe ()
-parseIfEndLine x = fmap (const ()) (stripPrefix "-- #ENDIF" $ stripFront x)
+parseIfEndLine x = fmap (const ()) (stripPrefix "--#ENDIF" $ stripFront x)
 
 -- Next, define a function that processes our data type [Line]
 
