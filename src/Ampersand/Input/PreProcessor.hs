@@ -6,9 +6,8 @@ module Ampersand.Input.PreProcessor (
 import Data.List
 import Data.String
 import Data.Char
-import Data.Either
 import Data.Maybe
-import Prelude
+import GHC.Base
 
 type PreProcDefine = String
 
@@ -23,88 +22,81 @@ file2block = parseBlock . map parseLine . lines
 block2file :: [PreProcDefine] -> Bool -> Block -> String
 block2file defs shown = unlines . map (blockElem2string defs shown)
 
--- Handle single entry in a block
-blockElem2string :: [PreProcDefine] -> Bool -> BlockElem -> String
-blockElem2string _    True  (Left  line) = line
-blockElem2string _    False (Left  line) = "-- hide by preprocc " ++ line
--- Lots of unpacking to get to the IfBlock
-blockElem2string defs False (Right (IfBlock (Guard guard) block)) = 
-    "--#IF " ++ guard ++ block2file defs False block ++ "--#ENDIF"
-blockElem2string defs True  (Right (IfBlock (Guard guard) block)) = 
-    "--#IF " ++ guard ++ "\n" ++
-    (block2file defs (guard `elem` defs) block) ++ 
-    "\n--#ENDIF"
- 
--- Here the experimentation starts
-
-{- Our grammar is:
-Codeline = Any line that is not IfStartLine or IfEndLine
-Word = consecutive non-whitespace chars
-String litterals are encased in pairs of '
-: is concatenation
-| is disjunction
-\ is negation
-
-IfStartLine = ' '* : '-- if ' : Word : ' '* : '\n'
-IfEndLine   = ' '* : '-- endif ' : ' '* : '\n'
-CodeLine    = Line \ (IfStartLine | IfEndLine)
-
-IfBlock = IfStartLine : Block : IfEndLine
-
-Block = (CodeLine | IfBlock)*
- -}
-
--- Do we want to implement the relevant strings
+-- Do we want to implement the relevant strings e.g. "--# IF" as constants?
 
 -- "Implement" the grammar in Haskell Types
 newtype Guard = Guard String
 
-type BlockElem = Either String IfBlock
+data BlockElem = LineElem String
+               | IfElem IfBlock
+               | IfNotElem NotIfBlock
+
 type Block   = [ BlockElem ]
-data IfBlock = IfBlock Guard Block
+
+data IfBlock    = IfBlock    Guard Block
+data NotIfBlock = IfNotBlock Guard Block
 
 data Line = Codeline String
+          | IfNotStart Guard
           | IfStart Guard
           | IfEnd
  
 -- First, define a function that reads our primitive 'line'
 
--- It must be possible to do this nicer. Probably with something like <* and *> or <|>
+-- We now do (f x) <|> (g x), would be nicer to have (f <|> g) x
+-- would require <|> :: (a -> Maybe b) -> (a -> Maybe b) -> (a -> Maybe b)
+-- Monad >=> comes close but not quite
 parseLine :: String -> Line
-parseLine line = case parseIfStartLine line of 
-            Just guard -> IfStart guard
-            _          -> case parseIfEndLine line of 
-                               Just () -> IfEnd 
-                               _       -> Codeline line
-                                   
-parseIfStartLine :: String -> Maybe Guard
-parseIfStartLine x = fmap (Guard . head . words) (stripPrefix "--#IF " $ stripFront x)
+parseLine line = fromMaybe (Codeline line) $ (parseIfStartLine line
+                                          <|> parseNotIfStartLine line
+                                          <|> parseIfEndLine line)
 
-parseIfEndLine :: String -> Maybe ()
-parseIfEndLine x = fmap (const ()) (stripPrefix "--#ENDIF" $ stripFront x)
+--f :: (a -> Maybe b) -> (a -> Maybe b) -> (a -> Maybe b)
+
+parseIfStartLine :: String -> Maybe Line
+parseIfStartLine x = fmap    (IfStart . Guard . head . words)    (stripPrefix "--#IF "    $ dropWhile isSpace x)
+
+parseNotIfStartLine :: String -> Maybe Line
+parseNotIfStartLine x = fmap (IfNotStart . Guard . head . words) (stripPrefix "--#IFNOT " $ dropWhile isSpace  x)
+
+parseIfEndLine :: String -> Maybe Line
+parseIfEndLine x = fmap (const IfEnd) (stripPrefix "--#ENDIF" $ dropWhile isSpace x)
 
 -- Next, define a function that processes our data type [Line]
 
--- Probably want something like:
--- parseBlock :: [Line] -> ( [Line] , Block ) 
--- or
--- parseBlock :: [Line] -> ( Block, [Line] ) 
+-- Use blockParser to turn a list of lines into a list of BlockElem
+-- Note that blockParser could consume more than one line
+-- Fold after build?
 parseBlock :: [Line] -> Block
 parseBlock [] = []
-parseBlock (line:rest) = case line of
-    Codeline plainLine -> (Left plainLine) : parseBlock rest
-    IfStart guard      -> let (blockLines, remainingLines) = break endsBlock rest in
-                              (Right $ IfBlock guard $ parseBlock blockLines) : parseBlock remainingLines
-    IfEnd              -> (Left "") : parseBlock rest
+parseBlock lineList = (\(x, y) -> y ++ parseBlock x) . blockParser $ lineList
+
+blockParser :: [Line] -> ([Line], [BlockElem] )
+blockParser [] = ([], [])
+blockParser (line:rest) = case line of
+    Codeline plainLine -> (rest, [LineElem plainLine])
+    IfStart guard      -> let (blockLines, remainingLines) = break endsIfBlock rest in
+                              ( remainingLines, [IfElem    $ IfBlock    guard (parseBlock blockLines)] )
+    IfNotStart guard   -> let (blockLines, remainingLines) = break endsIfBlock rest in
+                              ( remainingLines, [IfNotElem $ IfNotBlock guard (parseBlock blockLines)] )
+    IfEnd              -> (rest, [LineElem "--#ENDIF"] )
+
+endsIfBlock :: Line -> Bool
+endsIfBlock IfEnd = True
+endsIfBlock _     = False
 
 
- 
--- Helper functions
 
-stripFront :: String -> String
-stripFront = dropWhile isSpace
+-- Handle single entry in a block
+--                  list of flags      Showing this element?  2 process    output
+blockElem2string :: [PreProcDefine] -> Bool ->                BlockElem -> String
+blockElem2string _    True  (LineElem line) = line
+blockElem2string _    False (LineElem line) = "--#hiden by preprocc " ++ line
+-- Lots of unpacking to get to the IfBlock
+blockElem2string defs hiding  (IfElem    (IfBlock    (Guard guard) block)) =
+    "--#IF " ++ guard ++ "\n" ++
+    (block2file defs (hiding &&     (guard `elem` defs)) block)
 
--- there has to be a better way
-endsBlock :: Line -> Bool
-endsBlock IfEnd = True
-endsBlock _     = False
+blockElem2string defs hiding  (IfNotElem (IfNotBlock (Guard guard) block)) =
+    "--#IFNOT " ++ guard ++ "\n" ++
+    (block2file defs (hiding && not (guard `elem` defs)) block)
