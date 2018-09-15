@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+* Bugfix: Figures are available again in the generated specification document. 
+
 ## v3.11.2 (31 august 2018)
 
 * [Issue #821](https://github.com/AmpersandTarski/Ampersand/issues/821) Fix error messages.
