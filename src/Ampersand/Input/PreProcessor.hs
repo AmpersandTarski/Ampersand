@@ -20,7 +20,7 @@ file2block = parseBlock . map parseLine . lines
 
 -- Turn a block back
 block2file :: [PreProcDefine] -> Bool -> Block -> String
-block2file defs shown = unlines . map (blockElem2string defs shown)
+block2file defs shown = concat . map (blockElem2string defs shown)
 
 -- Do we want to implement the relevant strings e.g. "--# IF" as constants?
 
@@ -79,7 +79,7 @@ blockParser (line:rest) = case line of
                               ( remainingLines, [IfElem    $ IfBlock    guard (parseBlock blockLines)] )
     IfNotStart guard   -> let (blockLines, remainingLines) = break endsIfBlock rest in
                               ( remainingLines, [IfNotElem $ IfNotBlock guard (parseBlock blockLines)] )
-    IfEnd              -> (rest, [LineElem "--#ENDIF"] )
+    IfEnd              -> (rest, [] )
 
 endsIfBlock :: Line -> Bool
 endsIfBlock IfEnd = True
@@ -88,15 +88,17 @@ endsIfBlock _     = False
 
 
 -- Handle single entry in a block
+-- Responsible for adding newlines
 --                  list of flags      Showing this element?  2 process    output
 blockElem2string :: [PreProcDefine] -> Bool ->                BlockElem -> String
-blockElem2string _    True  (LineElem line) = line
-blockElem2string _    False (LineElem line) = "--#hiden by preprocc " ++ line
+blockElem2string _    True  (LineElem line) = line ++ "\n"
+blockElem2string _    False (LineElem line) = "--hiden by preprocc " ++ line ++ "\n"
 -- Lots of unpacking to get to the IfBlock
 blockElem2string defs hiding  (IfElem    (IfBlock    (Guard guard) block)) =
     "--#IF " ++ guard ++ "\n" ++
-    (block2file defs (hiding &&     (guard `elem` defs)) block)
-
+    (block2file defs (hiding &&     (guard `elem` defs)) block) ++
+    "--#ENDIF\n"
 blockElem2string defs hiding  (IfNotElem (IfNotBlock (Guard guard) block)) =
     "--#IFNOT " ++ guard ++ "\n" ++
-    (block2file defs (hiding && not (guard `elem` defs)) block)
+    (block2file defs (hiding && not (guard `elem` defs)) block) ++
+    "--#ENDIF\n"
