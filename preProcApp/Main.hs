@@ -1,11 +1,14 @@
 module Main where
 
+import Ampersand
+import System.Environment
 import Ampersand.Input.PreProcessor
-import Ampersand.Basics.UTF8
+import Ampersand.Basics.UTF8 (readUTF8File)
 
 main :: IO ()
 main =
   do
     filename:defs <- getArgs;
-    fileContents  <- readUTF8File fileName;
-    return (preProcess defs fileContents);
+    input       <- readUTF8File filename
+    inputString <- return $ either id id input
+    putStr $ preProcess defs inputString ++ "\n"
