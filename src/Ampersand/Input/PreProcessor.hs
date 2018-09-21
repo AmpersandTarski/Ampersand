@@ -5,7 +5,6 @@ module Ampersand.Input.PreProcessor (
 
 import Data.List
 import Data.String
-import Data.Char
 import Data.Maybe
 import Data.Bool
 import Data.Either
@@ -19,12 +18,16 @@ type PreProcDefine = String
 
 preProcess :: [PreProcDefine] -> String -> String
 preProcess defs = block2file defs True . (either (error . show) id) <$> file2block ""
- 
+
 -- Run the parser
 file2block :: String -> String -> Either ParseError Block
-file2block fileName = parseFile fileName . map lexLine . lines
+file2block fileName = (parseLexedFile fileName) <=< (fullLexer fileName)
 
 -- LEXER
+
+type Lexer a = Parsec String () a
+
+
 data LexLine = Codeline String
              | IfNotStart Guard
              | IfStart Guard
@@ -38,19 +41,46 @@ showLex (IfNotStart x) = "If Not " ++ guard x
 showLex (IfStart x)    = "If "     ++ guard x
 showLex (IfEnd)        = "End If"
 
-parseIfStartLine :: String -> Maybe LexLine
-parseIfStartLine x = fmap    (IfStart . Guard . head . words)    (stripPrefix "--#IF "    $ dropWhile isSpace x)
+--preProcDirective :: Lexer ()
 
-parseNotIfStartLine :: String -> Maybe LexLine
-parseNotIfStartLine x = fmap (IfNotStart . Guard . head . words) (stripPrefix "--#IFNOT " $ dropWhile isSpace  x)
 
-parseIfEndLine :: String -> Maybe LexLine
-parseIfEndLine x = fmap (const IfEnd) (stripPrefix "--#ENDIF" $ dropWhile isSpace x)
+whitespace :: Lexer ()
+whitespace = skipMany1 space
 
-lexLine :: String -> LexLine
-lexLine line = fromMaybe (Codeline line) $ (parseIfStartLine line
-                                          <|> parseNotIfStartLine line
-                                          <|> parseIfEndLine line)
+ifWithGuard :: Lexer LexLine
+ifWithGuard = (IfStart . Guard) <$>
+              (string "IF"      *>
+               whitespace       *>
+               some alphaNum   <*
+               manyTill anyChar endOfLine
+              )
+
+ifNotWithGuard :: Lexer LexLine
+ifNotWithGuard = (IfNotStart . Guard) <$>
+                 (string "IFNOT"   *>
+                  whitespace       *>
+                  some alphaNum   <*
+                  manyTill anyChar endOfLine
+                 )
+
+ifEnd :: Lexer LexLine
+ifEnd = (const IfEnd) <$>
+            (string "ENDIF"   *>
+             manyTill anyChar endOfLine
+            )
+
+-- This fails without consuming input on comments,
+-- but fails with consuming input (and message "preproccesor directive")
+-- for comments starting with #.
+preProcDirective :: Lexer LexLine
+preProcDirective = try (spaces *> string "--") *> char '#' *> spaces *>
+                  (ifWithGuard <|> ifNotWithGuard <|> ifEnd <?> "preproccesor directive")
+
+lexLine :: Lexer LexLine
+lexLine = preProcDirective <|> Codeline <$> manyTill anyChar endOfLine
+
+fullLexer :: String -> String -> Either ParseError [LexLine]
+fullLexer filename = parse (many lexLine <* eof) filename
 
 -- PARSER
 newtype Guard = Guard String
@@ -66,58 +96,58 @@ type Block   = [ BlockElem ]
 data IfBlock    = IfBlock    Guard Block
 data IfNotBlock = IfNotBlock Guard Block
 
-type Parser a = Parsec [LexLine] () a
+type TokenParser a = Parsec [LexLine] () a
 
-myToken :: (LexLine -> Maybe a) -> Parser a
-myToken constructor = tokenPrim showLex (\pos _ _ -> incSourceLine pos 1) constructor
+parserToken :: (LexLine -> Maybe a) -> TokenParser a
+parserToken constructor = tokenPrim showLex (\pos _ _ -> incSourceLine pos 1) constructor
 
-codeLine :: Parser BlockElem
-codeLine = myToken ((fmap LineElem) <$> line2string)
+lineElem :: TokenParser BlockElem
+lineElem = parserToken ((fmap LineElem) <$> line2string)
   where
   line2string :: LexLine -> Maybe String
   line2string (Codeline s) = Just s
   line2string _          = Nothing
 
-ifStart :: Parser Guard
-ifStart = myToken guard2string
+ifElemStart :: TokenParser Guard
+ifElemStart = parserToken guard2string
   where
   guard2string (IfStart g) = Just g
   guard2string _           = Nothing
 
-ifNotStart :: Parser Guard
-ifNotStart = myToken guard2string
+ifNotElemStart :: TokenParser Guard
+ifNotElemStart = parserToken guard2string
   where
   guard2string (IfNotStart g) = Just g
   guard2string _              = Nothing
 
-ifEnd :: Parser ()
-ifEnd = myToken (matchIfEnd)
+ifElemEnd :: TokenParser ()
+ifElemEnd = parserToken (matchIfEnd)
   where
   matchIfEnd IfEnd = Just ()
   matchIfEnd _     = Nothing
 
-ifBlock :: Parser IfBlock
+ifBlock :: TokenParser IfBlock
 ifBlock = do
-  guard' <- ifStart;
+  guard' <- ifElemStart;
   lines' <- many blockElem
-  _     <- ifEnd
+  _     <- ifElemEnd
   return (IfBlock guard' lines')
 
-ifNotBlock :: Parser IfNotBlock
+ifNotBlock :: TokenParser IfNotBlock
 ifNotBlock = do
-  guard' <- ifNotStart;
+  guard' <- ifNotElemStart;
   lines' <- block
-  _     <- ifEnd
+  _     <- ifElemEnd
   return (IfNotBlock guard' lines')
 
-blockElem :: Parser BlockElem
-blockElem = choice [codeLine, IfElem <$> ifBlock, IfNotElem <$> ifNotBlock ] <?> "a block element"
+blockElem :: TokenParser BlockElem
+blockElem = choice [lineElem, IfElem <$> ifBlock, IfNotElem <$> ifNotBlock ] <?> "a block element"
 
-block :: Parser Block
+block :: TokenParser Block
 block = many blockElem
 
-parseFile :: String -> [LexLine] -> (Either ParseError Block)
-parseFile fileName = parse (block <* eof) fileName
+parseLexedFile :: String -> [LexLine] -> (Either ParseError Block)
+parseLexedFile fileName = parse (block <* eof) fileName
 
 -- Turn Blocks Back into text
 
