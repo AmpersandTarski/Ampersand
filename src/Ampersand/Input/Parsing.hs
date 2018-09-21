@@ -110,7 +110,7 @@ parseSingleADL opts pc
                     Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) filePath err
                     Right fileContents ->
                          whenCheckedIO
-                           (return $ parseCtx filePath $ (preProcess (pcDefineds pc) fileContents))
+                           (return $ parseCtx filePath =<< (preProcess filePath (pcDefineds pc) fileContents))
                            $ \(ctxts, includes) ->
                                  do parseCandidates <- mapM include2ParseCandidate includes
                                     return (Checked (ctxts, parseCandidates))
