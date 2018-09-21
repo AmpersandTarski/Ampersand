@@ -11,4 +11,4 @@ main =
     filename:defs <- getArgs;
     input       <- readUTF8File filename
     inputString <- return $ either id id input
-    putStr $ preProcess defs inputString ++ "\n"
+    putStr $ show (preProcess filename defs inputString) ++ "\n"

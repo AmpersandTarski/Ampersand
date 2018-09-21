@@ -1,9 +1,11 @@
 module Ampersand.Input.PreProcessor (
       preProcess
+    , preProcess'
     , PreProcDefine
 ) where
 
 import Data.List
+import qualified Data.List.NonEmpty as NEL
 import Data.String
 import Data.Maybe
 import Data.Bool
@@ -12,12 +14,19 @@ import Data.Functor
 import Control.Monad hiding (guard)
 import Control.Applicative hiding ( many )
 import Text.Parsec hiding ( (<|>) )
+import Text.Parsec.Error
 import Prelude
+import Ampersand.Input.ADL1.CtxError
 
 type PreProcDefine = String
 
-preProcess :: [PreProcDefine] -> String -> String
-preProcess defs = block2file defs True . (either (error . show) id) <$> file2block ""
+preProcess :: String -> [PreProcDefine] -> String -> Guarded String
+preProcess f d i = case preProcess' f d i of
+                   (Left  err) -> Errors $ (PE . Message . show $ err) NEL.:| []
+                   (Right out) -> Checked out
+
+preProcess' :: String -> [PreProcDefine] -> String -> Either ParseError String
+preProcess' fileName defs input = (block2file defs True) <$> (file2block fileName input)
 
 -- Run the parser
 file2block :: String -> String -> Either ParseError Block
@@ -49,23 +58,23 @@ whitespace = skipMany1 space
 
 ifWithGuard :: Lexer LexLine
 ifWithGuard = (IfStart . Guard) <$>
-              (string "IF"      *>
-               whitespace       *>
-               some alphaNum   <*
+              (try(string "IF")      *>
+               whitespace            *>
+               some alphaNum        <*
                manyTill anyChar endOfLine
               )
 
 ifNotWithGuard :: Lexer LexLine
 ifNotWithGuard = (IfNotStart . Guard) <$>
-                 (string "IFNOT"   *>
-                  whitespace       *>
-                  some alphaNum   <*
+                 (try(string "IFNOT")   *>
+                  whitespace            *>
+                  some alphaNum        <*
                   manyTill anyChar endOfLine
                  )
 
 ifEnd :: Lexer LexLine
 ifEnd = (const IfEnd) <$>
-            (string "ENDIF"   *>
+            (try(string "ENDIF")   *>
              manyTill anyChar endOfLine
             )
 
@@ -74,7 +83,7 @@ ifEnd = (const IfEnd) <$>
 -- for comments starting with #.
 preProcDirective :: Lexer LexLine
 preProcDirective = try (spaces *> string "--") *> char '#' *> spaces *>
-                  (ifWithGuard <|> ifNotWithGuard <|> ifEnd <?> "preproccesor directive")
+                  (ifNotWithGuard <|> ifWithGuard <|> ifEnd <?> "preproccesor directive")
 
 lexLine :: Lexer LexLine
 lexLine = preProcDirective <|> Codeline <$> manyTill anyChar endOfLine
