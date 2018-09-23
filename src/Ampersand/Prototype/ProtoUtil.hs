@@ -14,7 +14,6 @@ module Ampersand.Prototype.ProtoUtil
 import           Ampersand.Basics
 import           Ampersand.Misc
 import           Data.List
-import           Data.Monoid
 import qualified Data.Text as Text
 import           System.Directory
 import qualified System.Exit as SE (ExitCode(..))

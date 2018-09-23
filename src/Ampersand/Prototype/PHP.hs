@@ -14,7 +14,6 @@ import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
 import           Control.Exception
 import           Data.List
-import           Data.Monoid
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import           System.Directory
