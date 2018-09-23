@@ -16,7 +16,6 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.FSpecAux
 import           Data.List
 import           Data.Maybe
-import           Data.Monoid
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import           Language.SQL.SimpleSQL.Pretty

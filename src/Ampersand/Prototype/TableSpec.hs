@@ -21,7 +21,6 @@ import           Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import           Ampersand.Prototype.ProtoUtil
 import           Data.List
 import           Data.Maybe
-import           Data.Monoid
 import           Data.String (IsString(fromString))
 import qualified Data.Text as Text
 

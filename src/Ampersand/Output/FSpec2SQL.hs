@@ -10,7 +10,6 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.TableSpec
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
-import           Data.Monoid
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import           System.Directory
