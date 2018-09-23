@@ -43,13 +43,13 @@ matrix:
   # https://github.com/hvr/multi-ghc-travis
   - env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2
     compiler: ": #GHC 8.4.3"
-    addons: {apt: {packages: [ cabal-install-2.2.0.0
+    addons: {apt: {packages: [ cabal-install-2.2.0.1
                              , ghc-8.4.3
                              ] 
                   ,sources: [hvr-ghc]}}
   - env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2 osx
     compiler: ": #GHC 8.4.3"
-    addons: {apt: {packages: [ cabal-install-2.2.0.0
+    addons: {apt: {packages: [ cabal-install-2.2.0.1
                              , ghc-8.4.3
                              ] 
                   ,sources: [hvr-ghc]}}
