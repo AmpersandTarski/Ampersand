@@ -8,7 +8,7 @@ homepage:       http://ampersandtarski.github.io/
 category:       Database Design
 stability:      alpha
 cabal-version:  >= 2.0
-tested-with:    GHC == 8.2.2
+tested-with:    GHC == 8.4.3
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE
