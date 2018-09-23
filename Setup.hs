@@ -14,6 +14,7 @@ import           Distribution.Simple
 import           Distribution.Simple.LocalBuildInfo
 import           Distribution.Simple.Setup
 import           Distribution.PackageDescription
+import           Distribution.Pretty (prettyShow)
 import           System.Directory
 import           System.Exit
 import           System.FilePath
@@ -30,7 +31,7 @@ main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook
 
 generateBuildInfoHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
 generateBuildInfoHook pd  lbi uh bf =
- do { let cabalVersionStr = showVersion . pkgVersion . package $ pd
+ do { let cabalVersionStr = prettyShow . pkgVersion . package $ pd
 
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime
