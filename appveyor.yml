@@ -11,7 +11,7 @@ build: off
 version: build.{build}-{branch}
 
 cache:
-- "c:\\sr" # stack root, short paths == fewer problems
+- "c:\\srClearCache" # stack root, short paths == fewer problems
 clone_folder: "c:\\stack"
 environment:
   global:
