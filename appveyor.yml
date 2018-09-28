@@ -21,7 +21,7 @@ environment:
 # converts ssh-based git submodules to https-based ones, that 
 # can be cloned without needing to mess about with ssh keys.
 before_build:
-- curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-x86_64
+- curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
 - 7z x stack.zip stack.exe
 - set PATH=%PATH%;C:\stack\;C:\Users\appveyor\AppData\Roaming\local\bin
 
