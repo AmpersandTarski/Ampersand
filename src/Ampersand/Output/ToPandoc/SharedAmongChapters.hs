@@ -43,7 +43,6 @@ import qualified Data.Set as Set
 import qualified Data.Time.Format as DTF
 import           Data.Typeable
 import           GHC.Exts(sortWith)
-import           System.FilePath  -- (combine,addExtension,replaceExtension)
 import           Text.Pandoc hiding (trace)
 import           Text.Pandoc.Builder
 
@@ -93,8 +92,7 @@ instance Xreferenceble Picture where
   xDefBlck fSpec a = para $ imageWith (xSafeLabel fSpec a, [], []) src (xSafeLabel fSpec a)(text (caption a))
    where
     opts = getOpts fSpec
-    src  = -- (if fspecFormat opts `elem` [Fpdf,Flatex] then dropExtension else id) . -- let pdflatex figure out the optimal extension
-            takeFileName . imagePath opts $ a
+    src  = imagePath opts $ a
 instance Xreferenceble XRefSection where
   xSafeLabel fSpec a = 
        (show . xrefPrefix . refStuff fSpec $ a)

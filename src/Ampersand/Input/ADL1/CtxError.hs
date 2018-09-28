@@ -44,7 +44,6 @@ import           Ampersand.Input.ADL1.FilePos()
 import qualified Data.List as L   (intercalate)
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
 import           Data.Maybe
-import           Data.Monoid
 import           GHC.Exts (groupWith)
 import           Text.Parsec.Error (Message(..), messageString)
 import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
