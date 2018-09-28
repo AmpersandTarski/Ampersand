@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
 ## v3.11.3 (28 september 2018)
 
 * Bugfix: Figures are available again in the generated specification document.
