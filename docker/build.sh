@@ -11,10 +11,10 @@
 set -e
 
 echo "Building ampersandtarski/ampersand-prototype:latest"
-docker build --tag ampersandtarski/ampersand-prototype:latest prototype
+docker build --tag ampersandtarski/ampersand-prototype:latest docker
 
 echo "Building ampersandtarski/ampersand-prototype:texlive"
-docker build --tag ampersandtarski/ampersand-prototype:texlive prototype/texlive
+docker build --tag ampersandtarski/ampersand-prototype:texlive docker/texlive
 
 echo "Building ampersandtarski/ampersand-prototype-db"
-docker build --tag ampersandtarski/ampersand-prototype-db:latest prototype/prototype-db
+docker build --tag ampersandtarski/ampersand-prototype-db:latest docker/prototype-db
