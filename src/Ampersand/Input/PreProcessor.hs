@@ -82,7 +82,7 @@ ifEnd = (const IfEnd) <$>
 -- but fails with consuming input (and message "preproccesor directive")
 -- for comments starting with #.
 preProcDirective :: Lexer LexLine
-preProcDirective = try (spaces *> string "--") *> char '#' *> spaces *>
+preProcDirective = try(spaces *> string "--#") *> spaces *>
                   (ifNotWithGuard <|> ifWithGuard <|> ifEnd <?> "preproccesor directive")
 
 lexLine :: Lexer LexLine
