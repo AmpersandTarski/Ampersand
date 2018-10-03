@@ -40,6 +40,7 @@ type Lexer a = Parsec String () a
 data LexLine = Codeline String
              | IfNotStart Guard
              | IfStart Guard
+             | ElseClause
              | IfEnd
 instance Show LexLine where
   show = showLex
@@ -48,6 +49,7 @@ showLex :: LexLine -> String
 showLex (Codeline x)   = x
 showLex (IfNotStart x) = "If Not " ++ guard x
 showLex (IfStart x)    = "If "     ++ guard x
+showLex (ElseClause)   = "Else"
 showLex (IfEnd)        = "End If"
 
 --preProcDirective :: Lexer ()
@@ -78,12 +80,18 @@ ifEnd = (const IfEnd) <$>
              manyTill anyChar endOfLine
             )
 
+elseClause :: Lexer LexLine
+elseClause = (const ElseClause) <$>
+            (try(string "ELSE")   *>
+             manyTill anyChar endOfLine
+            )
+
 -- This fails without consuming input on comments,
 -- but fails with consuming input (and message "preproccesor directive")
 -- for comments starting with #.
 preProcDirective :: Lexer LexLine
 preProcDirective = try(spaces *> string "--#") *> spaces *>
-                  (ifNotWithGuard <|> ifWithGuard <|> ifEnd <?> "preproccesor directive")
+                  (ifNotWithGuard <|> ifWithGuard <|> elseClause <|> ifEnd <?> "preproccesor directive")
 
 lexLine :: Lexer LexLine
 lexLine = preProcDirective <|> Codeline <$> manyTill anyChar endOfLine
@@ -92,18 +100,21 @@ fullLexer :: String -> String -> Either ParseError [LexLine]
 fullLexer filename = parse (many lexLine <* eof) filename
 
 -- PARSER
-newtype Guard = Guard String
+newtype Guard = Guard String   deriving (Show)
 guard :: Guard -> String
 guard (Guard x) = x
 
 data BlockElem = LineElem String
                | IfElem IfBlock
                | IfNotElem IfNotBlock
+     deriving (Show)
 
 type Block   = [ BlockElem ]
 
-data IfBlock    = IfBlock    Guard Block
-data IfNotBlock = IfNotBlock Guard Block
+data IfBlock    = IfBlock    Guard Block (Maybe Block)
+     deriving (Show)
+data IfNotBlock = IfNotBlock Guard Block (Maybe Block)
+     deriving (Show)
 
 type TokenParser a = Parsec [LexLine] () a
 
@@ -135,19 +146,27 @@ ifElemEnd = parserToken (matchIfEnd)
   matchIfEnd IfEnd = Just ()
   matchIfEnd _     = Nothing
 
+elseClauseStart :: TokenParser ()
+elseClauseStart = parserToken (matchIfEnd)
+  where
+  matchIfEnd ElseClause = Just ()
+  matchIfEnd _          = Nothing
+
 ifBlock :: TokenParser IfBlock
 ifBlock = do
-  guard' <- ifElemStart;
-  lines' <- many blockElem
-  _     <- ifElemEnd
-  return (IfBlock guard' lines')
+  guard'    <- ifElemStart;
+  lines'    <- many blockElem
+  elseLines <- optionMaybe( elseClauseStart *> many blockElem)
+  _         <- ifElemEnd
+  return (IfBlock guard' lines' elseLines)
 
 ifNotBlock :: TokenParser IfNotBlock
 ifNotBlock = do
-  guard' <- ifNotElemStart;
-  lines' <- block
-  _     <- ifElemEnd
-  return (IfNotBlock guard' lines')
+  guard'    <- ifNotElemStart;
+  lines'    <- block
+  elseLines <- optionMaybe( elseClauseStart *> many blockElem)
+  _         <- ifElemEnd
+  return (IfNotBlock guard' lines' elseLines)
 
 blockElem :: TokenParser BlockElem
 blockElem = choice [lineElem, IfElem <$> ifBlock, IfNotElem <$> ifNotBlock ] <?> "a block element"
@@ -172,11 +191,21 @@ blockElem2string :: [PreProcDefine] -> Bool ->                BlockElem -> Strin
 blockElem2string _    True  (LineElem line) = line ++ "\n"
 blockElem2string _    False (LineElem line) = "--hiden by preprocc " ++ line ++ "\n"
 -- Lots of unpacking to get to the IfBlock
-blockElem2string defs showing  (IfElem    (IfBlock    (Guard guard') block')) =
+blockElem2string defs showing  (IfElem (IfBlock (Guard guard') block' elseBlock)) =
     "--#IF " ++ guard' ++ "\n" ++
-    (block2file defs (showing &&     (guard' `elem` defs)) block') ++
+    (block2file defs (showing && (guard' `elem` defs)) block') ++
+    (maybe ""
+      ( ("--#ELSE\n" ++) .
+        block2file defs (showing && not (guard' `elem` defs))
+      ) elseBlock
+    ) ++
     "--#ENDIF\n"
-blockElem2string defs showing  (IfNotElem (IfNotBlock (Guard guard') block')) =
+blockElem2string defs showing  (IfNotElem (IfNotBlock (Guard guard') block' elseBlock)) =
     "--#IFNOT " ++ guard' ++ "\n" ++
     (block2file defs (showing && not (guard' `elem` defs)) block') ++
+    (maybe ""
+      ( ("--#ELSE\n" ++) .
+        block2file defs (showing && (guard' `elem` defs))
+      ) elseBlock
+    ) ++
     "--#ENDIF\n"
