@@ -20,113 +20,160 @@ import Ampersand.Input.ADL1.CtxError
 
 type PreProcDefine = String
 
-preProcess :: String -> [PreProcDefine] -> String -> Guarded String
+-- Shim that changes our 'Either ParseError a' from preProcess' into 'Guarded a'
+-- | Runs the preProcessor on input
+preProcess :: String          -- ^ filename, used only for error reporting
+           -> [PreProcDefine] -- ^ list of flags, The list of defined 'flags
+           -> String          -- ^ input, The actual string to processs
+           -> Guarded String  -- ^ result, The result of processing
 preProcess f d i = case preProcess' f d i of
                    (Left  err) -> Errors $ (PE . Message . show $ err) NEL.:| []
                    (Right out) -> Checked out
 
-preProcess' :: String -> [PreProcDefine] -> String -> Either ParseError String
-preProcess' fileName defs input = (block2file defs True) <$> (file2block fileName input)
+-- | Runs the preProcessor on input
+preProcess' :: String                   -- ^ filename, used only for error reporting
+            -> [PreProcDefine]          -- ^ list of flags, The list of defined 'flags
+            -> String                   -- ^ input, The actual string to process
+            -> Either ParseError String -- ^ result, The result of processing
+-- We append "\n" because the parser cannot handle a final line not terminated by a newline.
+preProcess' fileName defs input = (block2file defs True) <$> (file2block fileName (input ++ "\n"))
 
 -- Run the parser
-file2block :: String -> String -> Either ParseError Block
-file2block fileName = (parseLexedFile fileName) <=< (fullLexer fileName)
+file2block :: String                  -- ^ filename, used only for error reporting
+           -> String                  -- ^ input, the string to process
+           -> Either ParseError Block -- ^ result
+file2block fileName = (parseLexedFile fileName) <=< (runLexer fileName)
 
--- LEXER
+---- LEXER
 
-type Lexer a = Parsec String () a
-
-
-data LexLine = Codeline String
-             | IfNotStart Guard
-             | IfStart Guard
-             | ElseClause
-             | IfEnd
-instance Show LexLine where
-  show = showLex
-
-showLex :: LexLine -> String
-showLex (Codeline x)   = x
-showLex (IfNotStart x) = "If Not " ++ guard x
-showLex (IfStart x)    = "If "     ++ guard x
-showLex (ElseClause)   = "Else"
-showLex (IfEnd)        = "End If"
-
---preProcDirective :: Lexer ()
-
-
-whitespace :: Lexer ()
-whitespace = skipMany1 space
-
-ifWithGuard :: Lexer LexLine
-ifWithGuard = (IfStart . Guard) <$>
-              (try(string "IF")      *>
-               whitespace            *>
-               some alphaNum        <*
-               manyTill anyChar endOfLine
-              )
-
-ifNotWithGuard :: Lexer LexLine
-ifNotWithGuard = (IfNotStart . Guard) <$>
-                 (try(string "IFNOT")   *>
-                  whitespace            *>
-                  some alphaNum        <*
-                  manyTill anyChar endOfLine
-                 )
-
-ifEnd :: Lexer LexLine
-ifEnd = (const IfEnd) <$>
-            (try(string "ENDIF")   *>
-             manyTill anyChar endOfLine
-            )
-
-elseClause :: Lexer LexLine
-elseClause = (const ElseClause) <$>
-            (try(string "ELSE")   *>
-             manyTill anyChar endOfLine
-            )
-
--- This fails without consuming input on comments,
--- but fails with consuming input (and message "preproccesor directive")
--- for comments starting with #.
-preProcDirective :: Lexer LexLine
-preProcDirective = try(spaces *> string "--#") *> spaces *>
-                  (ifNotWithGuard <|> ifWithGuard <|> elseClause <|> ifEnd <?> "preproccesor directive")
-
-lexLine :: Lexer LexLine
-lexLine = preProcDirective <|> Codeline <$> manyTill anyChar endOfLine
-
-fullLexer :: String -> String -> Either ParseError [LexLine]
-fullLexer filename = parse (many lexLine <* eof) filename
-
--- PARSER
-newtype Guard = Guard String   deriving (Show)
+newtype Guard = Guard String
 guard :: Guard -> String
 guard (Guard x) = x
 
+data LexLine = CodeLine String
+             | IfNotStart Guard
+             | IfStart Guard
+             | ElseClause
+             | EndIf
+instance Show LexLine where
+  show = showLex
+showLex :: LexLine -> String
+showLex (CodeLine x)   = x
+showLex (IfNotStart x) = "IFNOT " ++ guard x
+showLex (IfStart x)    = "IF "    ++ guard x
+showLex (ElseClause)   = "ELSE"
+showLex (EndIf)        = "ENDIF"
+
+type Lexer a = Parsec String () a
+
+-- | Transform the String 'input' into a list of LexLine tokens. Using 'filename' for error reporting.
+runLexer :: String -- ^ filename, only used for error reporting
+         -> String -- ^ input, the string to process
+         -> Either ParseError [LexLine]
+runLexer filename = parse (many lexLine <* eof) filename
+
+lexLine :: Lexer LexLine
+lexLine = preProcDirective <|> codeLine
+
+codeLine :: Lexer LexLine
+codeLine = CodeLine <$> untillEOL
+
+preProcDirective :: Lexer LexLine
+preProcDirective = (try preProcPrefix) *>
+                     (   ifNotGuard
+                     <|> ifGuard
+                     <|> elseClause
+                     <|> ifEnd
+                     <?> "preproccesor directive"
+                     )
+
+-- This pattern signifies the line is meant for the preProcessor.
+-- Lines that don't start with this pattern are 'CodeLine's
+preProcPrefix :: Lexer ()
+preProcPrefix = spaces *> string "--" *> many (char '-') *> spaces *> char '#' *> spaces
+
+ifGuard :: Lexer LexLine
+ifGuard = (IfStart . Guard) <$>
+              (try(string "IF") *>
+               whitespace       *>
+               some alphaNum    <*
+               untillEOL
+              )
+
+ifNotGuard :: Lexer LexLine
+ifNotGuard = (IfNotStart . Guard) <$>
+                 (try(string "IFNOT") *>
+                  whitespace          *>
+                  some alphaNum       <*
+                  untillEOL
+                 )
+
+elseClause :: Lexer LexLine
+elseClause = (const ElseClause) <$> (try(string "ELSE") *> untillEOL)
+
+ifEnd :: Lexer LexLine
+ifEnd = (const EndIf) <$> (try(string "ENDIF") *> untillEOL)
+
+-- Helper Lexers
+whitespace :: Lexer ()
+whitespace = skipMany1 space
+
+untillEOL :: Lexer String
+untillEOL = manyTill anyChar endOfLine
+
+---- PARSER
+
+-- | A block element is either a normal line, or a Guarded Block (i.e. an IF or IFNOT block)
 data BlockElem = LineElem String
-               | IfElem IfBlock
-               | IfNotElem IfNotBlock
-     deriving (Show)
+               | GuardedElem GuardedBlock  -- These cover IF and IFNOT blocks
 
 type Block   = [ BlockElem ]
 
-data IfBlock    = IfBlock    Guard Block (Maybe Block)
-     deriving (Show)
-data IfNotBlock = IfNotBlock Guard Block (Maybe Block)
-     deriving (Show)
+-- The first BOOL here determines whether this is an IF or IFNOT block
+data GuardedBlock = GuardedBlock Bool  -- ^ This covers whether this is an IF or an IFNOT block. True for IF, false for IFNOT.
+                                 Guard -- ^ The guard of the IF or IFNOT
+                                 Block -- ^ The actual Block
+                                 (Maybe Block)  -- ^ An optional ELSE block.
+                                                {- (Note that there is a difference between Maybe [] and Nothing here.
+                                                The first represents and empty ELSE block, the second an absent block.
+                                                This matters for preserving line numbers.
+                                                -}
 
 type TokenParser a = Parsec [LexLine] () a
 
-parserToken :: (LexLine -> Maybe a) -> TokenParser a
-parserToken constructor = tokenPrim showLex (\pos _ _ -> incSourceLine pos 1) constructor
+parseLexedFile :: String -> [LexLine] -> (Either ParseError Block)
+parseLexedFile fileName = parse (many blockElem <* eof) fileName
+
+blockElem :: TokenParser BlockElem
+blockElem = choice [lineElem, ifBlock, ifNotBlock ] <?> "a normal code line, an IF block or an IFNOT block"
 
 lineElem :: TokenParser BlockElem
 lineElem = parserToken ((fmap LineElem) <$> line2string)
   where
   line2string :: LexLine -> Maybe String
-  line2string (Codeline s) = Just s
+  line2string (CodeLine s) = Just s
   line2string _          = Nothing
+
+ifBlock :: TokenParser BlockElem
+ifBlock = GuardedElem <$> (pure (GuardedBlock True)
+          <*> ifElemStart
+          <*> many blockElem
+          <*> optionMaybe(elseClauseStart *> many blockElem)
+          <*  ifElemEnd
+          )
+
+ifNotBlock :: TokenParser BlockElem
+ifNotBlock = GuardedElem <$> (pure (GuardedBlock False)
+             <*> ifNotElemStart
+             <*> many blockElem
+             <*> optionMaybe(elseClauseStart *> many blockElem)
+             <*  ifElemEnd
+             )
+{-| Helper function to create parsers. Takes a constructor of type (LexLine -> Maybe a) and returns a parser. The
+    returned parser yields  x  if the constructor returns  Just x  and the parser fails if the constructor returns Nothing.
+-}
+parserToken :: (LexLine -> Maybe a) -> TokenParser a
+parserToken constructor = tokenPrim showLex (\pos _ _ -> incSourceLine pos 1) constructor
 
 ifElemStart :: TokenParser Guard
 ifElemStart = parserToken guard2string
@@ -141,71 +188,65 @@ ifNotElemStart = parserToken guard2string
   guard2string _              = Nothing
 
 ifElemEnd :: TokenParser ()
-ifElemEnd = parserToken (matchIfEnd)
+ifElemEnd = parserToken matchIfEnd
   where
-  matchIfEnd IfEnd = Just ()
+  matchIfEnd EndIf = Just ()
   matchIfEnd _     = Nothing
 
 elseClauseStart :: TokenParser ()
-elseClauseStart = parserToken (matchIfEnd)
+elseClauseStart = parserToken matchIfEnd
   where
   matchIfEnd ElseClause = Just ()
   matchIfEnd _          = Nothing
 
-ifBlock :: TokenParser IfBlock
-ifBlock = do
-  guard'    <- ifElemStart;
-  lines'    <- many blockElem
-  elseLines <- optionMaybe( elseClauseStart *> many blockElem)
-  _         <- ifElemEnd
-  return (IfBlock guard' lines' elseLines)
+---- TURN BLOCK BACK INTO TEXT
 
-ifNotBlock :: TokenParser IfNotBlock
-ifNotBlock = do
-  guard'    <- ifNotElemStart;
-  lines'    <- block
-  elseLines <- optionMaybe( elseClauseStart *> many blockElem)
-  _         <- ifElemEnd
-  return (IfNotBlock guard' lines' elseLines)
+{- Note the recursion here:
+   block2file calls blockElem2String, which might call showGuardedBlock, which calls block2file and potentially also
+   showElse, which again calls block2file
 
-blockElem :: TokenParser BlockElem
-blockElem = choice [lineElem, IfElem <$> ifBlock, IfNotElem <$> ifNotBlock ] <?> "a block element"
+   This matches the recursion where a 'Block' contains multiple 'BlockElem's which can contain a 'GuardedBlock' which
+   contains a main 'Block', and potentially an ELSE 'Block'.
+-}
 
-block :: TokenParser Block
-block = many blockElem
-
-parseLexedFile :: String -> [LexLine] -> (Either ParseError Block)
-parseLexedFile fileName = parse (block <* eof) fileName
-
--- Turn Blocks Back into text
-
--- Turn a block back
--- Could be done with a stateful monad where
-block2file :: [PreProcDefine] -> Bool -> Block -> String
+-- | Renders a Block type back into a String, according to some context
+block2file :: [PreProcDefine] -- ^ flags, List of defined flags
+           -> Bool    -- ^ showing, whether we are showing the current block, or it is hidden
+           -> Block   -- ^ block, the block we want to process
+           -> String
 block2file defs shown = concat . map (blockElem2string defs shown)
 
--- Handle single entry in a block
--- Responsible for adding newlines
---                  list of flags      Showing this element?  2 process    output
-blockElem2string :: [PreProcDefine] -> Bool ->                BlockElem -> String
-blockElem2string _    True  (LineElem line) = line ++ "\n"
-blockElem2string _    False (LineElem line) = "--hiden by preprocc " ++ line ++ "\n"
--- Lots of unpacking to get to the IfBlock
-blockElem2string defs showing  (IfElem (IfBlock (Guard guard') block' elseBlock)) =
-    "--#IF " ++ guard' ++ "\n" ++
-    (block2file defs (showing && (guard' `elem` defs)) block') ++
-    (maybe ""
-      ( ("--#ELSE\n" ++) .
-        block2file defs (showing && not (guard' `elem` defs))
-      ) elseBlock
-    ) ++
-    "--#ENDIF\n"
-blockElem2string defs showing  (IfNotElem (IfNotBlock (Guard guard') block' elseBlock)) =
-    "--#IFNOT " ++ guard' ++ "\n" ++
-    (block2file defs (showing && not (guard' `elem` defs)) block') ++
-    (maybe ""
-      ( ("--#ELSE\n" ++) .
-        block2file defs (showing && (guard' `elem` defs))
-      ) elseBlock
-    ) ++
-    "--#ENDIF\n"
+-- | Renders a single block element back into text
+blockElem2string :: [PreProcDefine] -- ^ flags, the list of active flags
+                 -> Bool            -- ^ showing, whether we are showing the current block element, or it is hidden
+                 -> BlockElem       -- ^ blockElem, the block element to render
+                 -> String
+blockElem2string _    True    (LineElem line)           = line ++ "\n"
+blockElem2string _    False   (LineElem line)           = "--hiden by preprocc " ++ line ++ "\n"
+blockElem2string defs showing (GuardedElem guardedElem) = showGuardedBlock defs showing guardedElem
+
+-- | Renders a GuardedBlock
+-- This is where the rendering logic of IF and IFNOT is implemented
+-- Simplification of this function is why IF and IFNOT are both represented by the type GuardedBlock
+showGuardedBlock :: [PreProcDefine] -- ^ flags, the list of active flags
+                 -> Bool            -- ^ showing, whether we are showing the current block element, or it is hidden
+                 -> GuardedBlock    -- ^ guardedBlock, the element to render
+                 -> String
+showGuardedBlock defs showing (GuardedBlock ifType (Guard guard') block elseBlock) =
+    -- The  xor (not ifType)  is a succinct way to express the difference between IF blocks and NOTIF blocks
+    let showMainBody = (xor (not ifType) (guard' `elem` defs)) in
+      concat [ guardedBlockName ifType ++ guard' ++ "\n"
+             , (block2file defs (showing &&      showMainBody)  block    )
+             , (showElse  defs (showing && (not showMainBody)) elseBlock)
+             , "--#ENDIF\n"
+             ]
+
+-- Helper functions
+guardedBlockName :: Bool -> String
+guardedBlockName ifType = (if ifType then "--#IF " else "--#IFNOT ")
+
+showElse :: [PreProcDefine] -> Bool -> Maybe Block -> String
+showElse defs showing = maybe "" (("--#ELSE\n" ++) . block2file defs showing)
+
+xor :: Bool -> Bool -> Bool
+xor p q = (p || q) && not (p && q)
