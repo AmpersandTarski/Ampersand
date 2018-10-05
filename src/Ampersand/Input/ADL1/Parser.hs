@@ -94,13 +94,13 @@ data ContextElement = CMeta Meta
                     | CIncl Include    -- an INCLUDE statement
 
 data Include = Include Origin FilePath [String]
---- IncludeStatement ::= 'INCLUDE' String
+--- IncludeStatement ::= 'INCLUDE' ('--#' [ "vars" ])
 pIncludeStatement :: AmpParser Include
 pIncludeStatement = 
       Include <$> currPos
               <*  pKey "INCLUDE" 
               <*> pString
-              <*> (pBrackets (pString `sepBy` pComma) <|> return [])
+              <*> optList (try (pKey "--#") *> (pBrackets (pString `sepBy` pComma) <|> return []) <?> "list of flags")
 
 --- LanguageRef ::= 'IN' ('DUTCH' | 'ENGLISH')
 pLanguageRef :: AmpParser Lang
