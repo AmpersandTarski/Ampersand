@@ -63,12 +63,10 @@ data XRefSection
              = XRefSharedLangRelation Relation
              | XRefDataAnalysisRule Rule
              | XRefSharedLangRule Rule
-             | XRefProcessAnalysis Pattern
              | XRefConceptualAnalysisPattern Pattern
              | XRefConceptualAnalysisRelation Relation
              | XRefConceptualAnalysisRule Rule
              | XRefConceptualAnalysisExpression Rule
-             | XRefInterfacesInterface Interface
              | XRefNaturalLanguageTheme (Maybe Pattern)
 
 ------ Symbolic referencing to a chapter/section. ---------------------------------
@@ -111,9 +109,7 @@ instance Xreferenceble XRefSection where
 hyperTarget :: FSpec -> XRefSection -> Either Blocks Inlines 
 hyperTarget fSpec a =
     case a of
-      XRefProcessAnalysis{}           -> Left . hdr $ (text.l) (NL "Proces: ",EN "Process: ")   <> (singleQuoted . str . nameOfThing . refStuff fSpec $ a)
       XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff fSpec $ a)
-      XRefInterfacesInterface ifc     -> Left . hdr $ (text.l) (NL "Koppelvlak: ",EN "Interface: ") <> (singleQuoted . str . name $ ifc)
       XRefNaturalLanguageTheme mPat   -> Left . hdr $ 
                                        (case mPat of
                                           Nothing  -> (text.l) (NL "Losse eindjes...",EN "Loose ends...")
@@ -223,12 +219,6 @@ refStuff fSpec x  =
                    , nameOfThing      = name r
                    , xrefPrefix       = Lst
                    }
-     XRefProcessAnalysis p
-       -> RefStuff { typeOfSection    = pattern
-                   , chapterOfSection = ProcessAnalysis
-                   , nameOfThing      = name p
-                   , xrefPrefix       = Sec
-                   }
      XRefConceptualAnalysisPattern p
        -> RefStuff { typeOfSection    = pattern
                    , chapterOfSection = ConceptualAnalysis
@@ -252,12 +242,6 @@ refStuff fSpec x  =
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = name r
                    , xrefPrefix       = Eq
-                   }
-     XRefInterfacesInterface i    
-       -> RefStuff { typeOfSection    = interface
-                   , chapterOfSection = Interfaces
-                   , nameOfThing      = name i
-                   , xrefPrefix       = Sec
                    }
      XRefNaturalLanguageTheme mt
        -> RefStuff { typeOfSection    = theme

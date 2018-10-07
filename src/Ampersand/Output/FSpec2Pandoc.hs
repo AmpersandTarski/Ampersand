@@ -4,13 +4,8 @@ where
 import Ampersand.Output.ToPandoc.ChapterConceptualAnalysis    (chpConceptualAnalysis)
 import Ampersand.Output.ToPandoc.ChapterDataAnalysis          (chpDataAnalysis)
 import Ampersand.Output.ToPandoc.ChapterDiagnosis             (chpDiagnosis)
-import Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis (chpFunctionPointAnalysis)
-import Ampersand.Output.ToPandoc.ChapterGlossary              (chpGlossary)
-import Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks)
 import Ampersand.Output.ToPandoc.ChapterIntroduction          (chpIntroduction)
 import Ampersand.Output.ToPandoc.ChapterNatLangReqs           (chpNatLangReqs)
-import Ampersand.Output.ToPandoc.ChapterProcessAnalysis       (chpProcessAnalysis)
-import Ampersand.Output.ToPandoc.ChapterSoftwareMetrics       (fpAnalysis)
 import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.Time.Format                                       (formatTime)
 import Data.List                                              (nub)
@@ -67,16 +62,20 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
     l :: LocalizedStr -> String
     l = localize (fsLang fSpec)
     
+    wrap' p = p
     wrap :: Pandoc -> Pandoc
-    wrap (Pandoc m bs) = Pandoc m $ runCrossRef m' Nothing crossRefBlocks bs 
+    wrap (Pandoc meta blocks) = 
+      Pandoc meta $ runCrossRef m' Nothing crossRefBlocks blocks 
       where 
         m' =   figureTitle ( (str.l) (NL "Figuur" ,EN "Figure"))
             <> tableTitle  ( (str.l) (NL "Tabel"  ,EN "Table" ))
-            <> figPrefix [str "fig.", str "figs."]
-            <> eqnPrefix [(str.l) (NL "relatie",EN "relation")
+            <> figPrefix [(str.l) (NL "fig.",EN "fig.")
+                         ,(str.l) (NL "figs.",EN "figs.")]
+            <> eqnPrefix [(str.l) (NL "XXXrelatie",EN "relation")
                          ,(str.l) (NL "relaties", EN "relations")]
-            <> tblPrefix [str "tbl.", str "tbls."]
-            <> lstPrefix [(str.l) (NL "afspraak",EN "agreement")
+            <> tblPrefix [(str.l) (NL "tbl.",EN "tbl.")
+                         ,(str.l) (NL "tbls.",EN "tbls.")]
+            <> lstPrefix [(str.l) (NL "XXXafspraak",EN "agreement")
                          ,(str.l) (NL "afspraken", EN "agreements")]
             <> secPrefix [(str.l) (NL "hoofdstuk",EN "chapter")
                          ,(str.l) (NL "hoofdstukken", EN "chapters")]
@@ -86,22 +85,23 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
     thePandoc = wrap .
         setTitle
            (case metaValues "title" fSpec of
-                [] -> text (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
-                                 (Dutch  , False) -> "Functioneel Ontwerp van "
-                                 (English, False) -> "Functional Design of "
-                                 (Dutch  ,  True) -> "Diagnose van "
-                                 (English,  True) -> "Diagnosis of "
-                           ) <> (singleQuoted.text.name) fSpec
+                [] -> (if diagnosisOnly (getOpts fSpec)
+                       then (text.l)
+                               ( NL "Functioneel Ontwerp van "
+                               , EN "Functional Design of ")
+                       else (text.l)
+                               ( NL "Diagnose van "
+                               , EN "Diagnosis of ")
+                      ) <> (singleQuoted.text.name) fSpec
                 titles -> (text.concat.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
            )
-        
       . setAuthors ( 
            case metaValues "authors" fSpec of
-             [] -> case fsLang fSpec of
-                     Dutch   -> [text "Specificeer auteurs in Ampersand met: META \"authors\" \"<auteursnamen>\""]
-                     English -> [text "Specify authors in Ampersand with: META \"authors\" \"<author names>\""]
+             [] -> [(text.l) 
+                    ( NL "Specificeer auteurs in Ampersand met: META \"authors\" \"<auteursnamen>\""
+                    , EN "Specify authors in Ampersand with: META \"authors\" \"<author names>\"")
+                   ] 
              xs -> map text $ nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
-           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" ]
 
         )
       . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec))))
@@ -117,10 +117,5 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
     fspec2Blocks SharedLang            = (chpNatLangReqs          0 fSpec, [])
     fspec2Blocks Diagnosis             = chpDiagnosis               fSpec
     fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis    0 fSpec
-    fspec2Blocks ProcessAnalysis       = (chpProcessAnalysis        fSpec, [])
     fspec2Blocks DataAnalysis          = chpDataAnalysis            fSpec
-    fspec2Blocks SoftwareMetrics       = (fpAnalysis                fSpec, [])
-    fspec2Blocks Interfaces            = (chpInterfacesBlocks       fSpec, [])
-    fspec2Blocks FunctionPointAnalysis = (chpFunctionPointAnalysis  fSpec, [])
-    fspec2Blocks Glossary              = (chpGlossary             0 fSpec, [])
 
