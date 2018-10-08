@@ -7,31 +7,27 @@ module Ampersand.Components
    , generateAmpersandOutput
   )
 where
-import Prelude hiding (putStr,putStrLn,readFile,writeFile)
-import Ampersand.Misc
-import Text.Pandoc
-import Text.Pandoc.Builder
-import Ampersand.Basics
-import Ampersand.FSpec
-import Ampersand.FSpec.GenerateUML
-import Ampersand.Graphic.Graphics (writePicture)
-import Ampersand.Output
-import Control.Monad
-import System.FilePath
-import System.Directory
-import Data.Time.Clock.POSIX
+import           Ampersand.Basics
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.FSpec
+import           Ampersand.FSpec.GenerateUML
+import           Ampersand.Graphic.Graphics (writePicture)
+import           Ampersand.Misc
+import           Ampersand.Output
+import           Ampersand.Prototype.GenFrontend (doGenFrontend)
+import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
+import           Control.Monad
 import qualified Data.ByteString.Lazy as L
-import Data.List
-import qualified Data.Text.IO as Text
-import Data.Function (on)
-import Data.Maybe (maybeToList)
-import Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ShowAStruct
-import Ampersand.Prototype.GenBericht  (doGenBericht)
-import Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
-import Ampersand.Prototype.ProtoUtil   (installComposerLibs)
+import           Data.Function (on)
+import           Data.List
+import qualified Data.Set as Set
+import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
+import           Data.Maybe (maybeToList)
+import           System.Directory
+import           System.FilePath
+import           Text.Pandoc
+import           Text.Pandoc.Builder
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
@@ -57,7 +53,6 @@ generateAmpersandOutput multi = do
       , ( proofs      , doGenProofs          )
       , ( validateSQL , doValidateSQLTest    )
       , ( genPrototype, doGenProto           )
-      , ( genBericht  , doGenBericht fSpec   )
 --    , ( genArchiAnal, doArchiAnalyze fSpec )  -- awaiting an implementation of doArchiAnalyze
       , ( const True  , putStrLn "Finished processing your model.")]
    opts = getOpts fSpec
@@ -74,7 +69,8 @@ generateAmpersandOutput multi = do
    doGenProofs =
     do { verboseLn opts $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
    --  ; verboseLn opts $ writeTextile def thePandoc
-       ; writeFile outputFile $ writeHtmlString def thePandoc
+       ; content <- runIO (writeHtml5String def thePandoc) >>= handleError
+       ; Text.writeFile outputFile content
        ; verboseLn opts "Proof written."
        }
     where outputFile = dirOutput opts </> "proofs_of_"++baseName opts -<.> ".html"
@@ -97,8 +93,8 @@ generateAmpersandOutput multi = do
        ; Text.writeFile outputFile (dumpSQLqueries multi)
        ; verboseLn opts $ "SQL queries dumpfile written into " ++ outputFile ++ "."
        }
-    where outputFile = dirOutput opts </> baseName opts -<.> ".sqlDump"
-
+    where outputFile = dirOutput opts </> baseName opts ++ "_dump" -<.> ".sql"
+   
    doGenUML :: IO()
    doGenUML =
     do { verboseLn opts "Generating UML..."
@@ -114,8 +110,9 @@ generateAmpersandOutput multi = do
    doGenDocument :: IO()
    doGenDocument =
     do { verboseLn opts ("Processing "++name fSpec)
-       ; -- First we need to output the pictures, because they should be present before the actual document is written
-         when (not(null thePictures) && fspecFormat opts/=FPandoc) $
+       ; -- First we need to output the pictures, because they should be present 
+         -- before the actual document is written
+         when (not(noGraphics opts) && fspecFormat opts/=FPandoc) $
            mapM_ (writePicture opts) (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
        ; writepandoc fSpec thePandoc
        }
@@ -133,7 +130,7 @@ generateAmpersandOutput multi = do
    doGenPopsXLSX :: IO()
    doGenPopsXLSX =
     do { verboseLn opts "Generating .xlsx file containing the population "
-       ; ct <- getPOSIXTime 
+       ; ct <- runIO getPOSIXTime >>= handleError
        ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
        ; verboseLn opts $ "Generated file: " ++ outputFile
        }
@@ -149,33 +146,39 @@ generateAmpersandOutput multi = do
    doGenProto :: IO ()
    doGenProto =
     sequence_ $
-       [ verboseLn opts "Checking on rule violations..."
+       [ verboseLn opts "Checking for rule violations..."
        , reportViolations violationsOfInvariants
        , reportSignals (initialConjunctSignals fSpec)
        ]++
-       (if null violationsOfInvariants || development opts
-        then if genRap
+       (if null violationsOfInvariants || allowInvariantViolations opts
+        then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
              else [ verboseLn opts "Generating prototype..."
-                  , clearTemplateDirs fSpec
-                  , writeStaticFiles opts
-                  , generateJSONfiles multi
                   , doGenFrontend fSpec
+                  , generateDatabaseFile multi
+                  , generateJSONfiles multi
                   , verboseLn opts "\n"
                   , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
-                  , installComposerLibs opts
                   ]
         else [exitWith NoPrototypeBecauseOfRuleViolations]
        )++
        maybeToList (fmap ruleTest (testRule opts))
 
-    where genRap = genRapPopulationOnly (getOpts fSpec)
-          violationsOfInvariants :: [(Rule,[AAtomPair])]
+    where violationsOfInvariants :: [(Rule,AAtomPairs)]
           violationsOfInvariants
             = [(r,vs) |(r,vs) <- allViolations fSpec
                       , not (isSignal r)
+                      , not (elemOfTemporarilyBlocked r)
               ]
-          reportViolations :: [(Rule,[AAtomPair])] -> IO()
+            where
+              elemOfTemporarilyBlocked rul =
+                if atlasWithoutExpressions opts 
+                then name rul `elem` 
+                        [ "TOT formalExpression[Rule*Expression]"
+                        , "TOT objExpression[BoxItem*Expression]"
+                        ]
+                else False
+          reportViolations :: [(Rule,AAtomPairs)] -> IO()
           reportViolations []    = verboseLn opts "No violations found."
           reportViolations viols =
             let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
@@ -185,31 +188,31 @@ generateAmpersandOutput multi = do
                              | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                              ]
 
-          showprs :: [AAtomPair] -> String
-          showprs aprs = "["++intercalate ", " (map showA aprs)++"]"
+          showprs :: AAtomPairs -> String
+          showprs aprs = "["++intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
    --       showpr :: AAtomPair -> String
    --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
           reportSignals []        = verboseLn opts "No signals for the initial population."
           reportSignals conjViols = verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
-            [   "Rule(s): "++(show . map name . rc_orgRules) conj
+            [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
             ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
             ++"\n  Violations : " ++ showprs viols
             | (conj, viols) <- conjViols
             ]
           ruleTest :: String -> IO ()
           ruleTest ruleName =
-           case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
+           case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of
              [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
-             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (rrexp rule)
+             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
                             ; putStrLn $ showContents rule
-                            ; let rExpr = rrexp rule
-                            ; let ruleComplement = rule { rrexp = notCpl (EBrk rExpr) }
-                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (rrexp ruleComplement)++"):"
+                            ; let rExpr = formalExpression rule
+                            ; let ruleComplement = rule { formalExpression = notCpl (EBrk rExpr) }
+                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (formalExpression ruleComplement)++"):"
                             ; putStrLn $ showContents ruleComplement
                             }
            where showContents rule = "[" ++ intercalate ", " pairs ++ "]"
                    where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 
-                                 | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
+                                 | (r,vs) <- allViolations fSpec, r == rule, v <- Set.elems vs]
                                
    
    

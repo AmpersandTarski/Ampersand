@@ -2,25 +2,25 @@ module Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
 ) 
 where
-import Data.List
-import Ampersand.ADL1
-import Ampersand.Classes
-import Ampersand.Basics
-import Ampersand.FSpec
-import Data.Maybe
-import Data.Either
-import Ampersand.Graphic.ClassDiagram
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.FSpec
+import           Ampersand.Graphic.ClassDiagram
+import           Data.Either
+import           Data.Maybe
+import qualified Data.Set as Set
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
     OOclassdiagram { cdName  = "classification_"++name fSpec
-                   , classes = map classOf . concs . gensInScope $ fSpec
+                   , classes = map classOf . Set.elems . concs . vgens $ fSpec
                    , assocs  = []
                    , aggrs   = []
-                   , geners  = map OOGener . gensInScope $ fSpec
-                   , ooCpts  = concs fSpec
+                   , geners  = map OOGener . vgens $ fSpec
+                   , ooCpts  = Set.elems . concs $ fSpec
                    }
 
  where
@@ -35,12 +35,16 @@ clAnalysis fSpec =
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att 
               = OOAttr { attNm       = attName att
-                       , attTyp      = if isPropty att then "Prop" else (name.target.attExpr) att
+                       , attTyp      = if isProp (attExpr att) then "Prop" else (name.target.attExpr) att
                        , attOptional = attNull att
                        }
     inKernel :: SqlAttribute -> Bool
-    inKernel att = null([Uni,Inj,Sur]>-properties (attExpr att)) && not (isPropty att)
-    isPropty att = isProp (attExpr att)
+    inKernel att = isUni expr 
+                && isInj expr
+                && isSur expr
+                && (not . isProp) expr
+        where expr = attExpr att 
+             --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
 -- | This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
@@ -51,11 +55,13 @@ cdAnalysis fSpec =
   OOclassdiagram { cdName  = "logical_"++name fSpec
                  , classes = map buildClass 
                            . filter cptIsShown
+                           . Set.elems 
                            . allConcepts $ fSpec
                  , assocs  = lefts assocsAndAggrs
                  , aggrs   = rights assocsAndAggrs
-                 , geners  = map OOGener (gensInScope fSpec)
+                 , geners  = map OOGener (vgens fSpec)
                  , ooCpts  = filter cptIsShown
+                           . Set.elems 
                            . allConcepts $ fSpec
                  }
 
@@ -63,7 +69,7 @@ cdAnalysis fSpec =
    buildClass :: A_Concept -> Class
    buildClass root 
      = case classOf root of
-         Nothing -> fatal 67 $ "Concept is not a class: `"++name root++"`."
+         Nothing -> fatal $ "Concept is not a class: `"++name root++"`."
          Just exprs ->
            OOClass { clName = name root
                    , clcpt  = Just root
@@ -80,34 +86,26 @@ cdAnalysis fSpec =
      case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
         []   -> Nothing
         [es] -> Just es
-        _    -> fatal 82 "Only one list of expressions is expected here"
+        _    -> fatal "Only one list of expressions is expected here"
      where
       isOfCpt :: [Expression] -> Bool
-      isOfCpt []    = fatal 85 "List must not be empty!"
+      isOfCpt []    = fatal "List must not be empty!"
       isOfCpt (e:_) = source e == cpt
-      attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
-
-   dclIsInScope :: Declaration -> Bool
-   dclIsInScope dcl =
-      dcl `elem` (topLevelDcls `uni` pattInScopeDcls)
-     where   
-       topLevelDcls = vrels fSpec \\ (concatMap relsDefdIn . vpatterns $ fSpec)
-       pattInScopeDcls = nub . concatMap dclsInPat . pattsInScope $ fSpec
-          where 
-            dclsInPat :: Pattern -> [Declaration]
-            dclsInPat p = relsDefdIn p `uni` relsMentionedIn p
+      attribs = map (flipWhenNeeded . EDcD) attribDcls
+      flipWhenNeeded x = if isInj x && (not.isUni) x then flp x else x
    ooAttr :: Expression -> CdAttribute
-   ooAttr r = OOAttr { attNm = (name . head . relsMentionedIn) r
+   ooAttr r = OOAttr { attNm = (name . head . Set.elems . bindedRelationsIn) r
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
-   allDcls = filter dclIsInScope . vrels $ fSpec
+   allDcls = vrels $ fSpec
    assocsAndAggrs = map decl2assocOrAggr 
-                  . filter dclIsShown $ allDcls
+                  . filter dclIsShown 
+                  . Set.elems $ allDcls
      where
-       dclIsShown :: Declaration -> Bool
+       dclIsShown :: Relation -> Bool
        dclIsShown d = 
-             (not . isProp) d
+             (not . isProp . EDcD) d
           && (   (d `notElem` attribDcls)
               || (   source d `elem` nodeConcepts
                   && target d `elem` nodeConcepts
@@ -116,11 +114,12 @@ cdAnalysis fSpec =
              )      
           where nodeConcepts = concatMap (tyCpts . typologyOf fSpec)
                              . filter cptIsShown
+                             . Set.elems 
                              . allConcepts $ fSpec
                             
 
    -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
---   decl2assocOrAggr :: Declaration -> Either Association Aggregation
+--   decl2assocOrAggr :: Relation -> Either Association Aggregation
 --   decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
 --   decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
    decl2assocOrAggr d = Left
@@ -129,11 +128,12 @@ cdAnalysis fSpec =
              , asslhm = mults . flp $ EDcD d
              , asslhr = ""
              , assTgt = name $ target d
-             , assrhm = mults d
+             , assrhm = mults $ EDcD d
              , assrhr = name d
              , assmdcl = Just d
              }
-   attribDcls = [ d | d <- allDcls, isUni d || isInj d ]
+   
+   attribDcls = [ d | d <- Set.elems allDcls, isUni (EDcD d) || isInj (EDcD d) ]
     
 
 -- | This function generates a technical data model.
@@ -210,8 +210,8 @@ tdAnalysis fSpec =
            EEps{} -> Nothing
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
-           _ -> fatal 200 ("Unexpected expression: "++show expr)
-       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Ampersand.Graphic.ClassDiagram.Association
+           _ -> fatal ("Unexpected expression: "++show expr)
+       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Association
        mkRel t (expr,f) =
             OOAssoc { assSrc = sqlname t
                     , assSrcPort = attName f
@@ -219,13 +219,11 @@ tdAnalysis fSpec =
                     , asslhr = attName f
                     , assTgt = name . getConceptTableFor fSpec . target $ expr
                     , assrhm = mults expr
-                    , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal 229 "no relations used in expr"
+                    , assrhr = case [name d | d<-Set.elems $ bindedRelationsIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
                     , assmdcl = Nothing
                     }
 
-----             
-mults :: Relational r => r -> Multiplicities
-mults r = let minVal = if isTot r then MinOne else MinZero
-              maxVal = if isUni r then MaxOne else MaxMany
-          in  Mult minVal maxVal
-             
+mults :: Expression -> Multiplicities
+mults r = Mult (if isTot r then MinOne else MinZero)
+               (if isUni r then MaxOne else MaxMany)
+          

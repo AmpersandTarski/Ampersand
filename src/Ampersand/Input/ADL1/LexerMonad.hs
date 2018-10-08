@@ -13,10 +13,10 @@ module Ampersand.Input.ADL1.LexerMonad
     , runLexerMonad
     ) where
 
-import Ampersand.Input.ADL1.LexerMessage
+import Ampersand.Basics
 import Ampersand.Input.ADL1.FilePos
+import Ampersand.Input.ADL1.LexerMessage
 import Ampersand.Misc
-
 import Control.Monad
 
 type Bracket = (FilePos, Char)

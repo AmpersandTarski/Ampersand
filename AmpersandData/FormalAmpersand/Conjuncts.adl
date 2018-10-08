@@ -8,11 +8,10 @@ RELATION rc_dnfClauses[Conjunct*DnfClause]
 RELATION conjuncts[Rule*Expression]
 RELATION expr2dnfClause[Expression*DnfClause] [UNI,TOT]
 RELATION allShifts[DnfClause*DnfClause]
---RELATION rrexp[Rule*Expression] [UNI,TOT] HJO: Removed. Is the same as term[Rule*Expression]
 RELATION term[Rule*Expression][UNI,TOT] --is defined somewhere else too.
 RELATION conjNF[Expression*Expression] [UNI,TOT]
 RELATION exprIsc2list[Expression*Expression] [TOT]
-RELATION name[Rule*RuleID] [UNI,TOT]
+RELATION name[Rule*RuleName] [UNI,TOT]
 
 RULE Conjuncts1 : qConjuncts;rc_conjunct |- qRule;conjuncts
 MEANING "All conjuncts in a quad are derived by means of the relation ``conjuncts''."

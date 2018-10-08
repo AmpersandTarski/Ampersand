@@ -6,24 +6,20 @@ module Ampersand.Prototype.ProtoUtil
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
-         , indentBlockBetween,quote
-         , showValPHP,phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
+         , indentBlockBetween
+         , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
          , installComposerLibs
          ) where
  
-import Prelude hiding (putStrLn, readFile, writeFile)
-import Data.Monoid
-import Data.List
+import           Ampersand.Basics
+import           Ampersand.Misc
+import           Data.List
 import qualified Data.Text as Text
-import System.Directory
-import System.FilePath
-import Ampersand.Basics
-import Ampersand.Misc
+import           System.Directory
 import qualified System.Exit as SE (ExitCode(..))
-import System.Process
-import Ampersand.Core.AbstractSyntaxTree
-     ( showValPHP
-     )
+import           System.FilePath
+import           System.Process
+
 
 getGenericsDir :: Options -> String
 getGenericsDir opts = 
@@ -39,7 +35,7 @@ writePrototypeAppFile opts relFilePath content =
    
 getAppDir :: Options -> String
 getAppDir opts =
-  dirPrototype opts </> "app"
+  dirPrototype opts </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
@@ -88,20 +84,6 @@ getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = 
     filter (`notElem` [".","..",".svn"]) 
        <$> getDirectoryContents pth
-
-
-quote :: Text.Text->Text.Text
-quote = Text.pack . quote' . Text.unpack
-  where
-    quote' [] = []
-    quote' ('`':s) = '`':s  -- do nothing if already quoted
-    quote' s = "`"<>s<>"`"
---   quote s = "`"<>quo s<>"`"
---    where quo ('`':s')  = "\\`" <> quo s'
---          quo ('\\':s') = "\\\\" <> quo s'
---          quo (c:s')    = c: quo s'
---          quo []       = []
--- See http://stackoverflow.com/questions/11321491/when-to-use-single-quotes-double-quotes-and-backticks
 
 commentBlock :: [String]->[String]
 commentBlock ls = ["/*"<>replicate lnth '*'<>"*\\"]
@@ -152,7 +134,7 @@ addSlashes = Text.pack . addSlashes' . Text.unpack
     addSlashes' "" = ""
 
 addToLast :: [a] -> [[a]] -> [[a]]
-addToLast _ [] = fatal 109 "addToLast: empty list"
+addToLast _ [] = fatal "addToLast: empty list"
 addToLast s as = init as<>[last as<>s]
 
 showPhpStr :: Text.Text -> Text.Text
@@ -190,7 +172,7 @@ installComposerLibs opts =
    where
      myProc :: CreateProcess
      myProc = CreateProcess 
-       { cmdspec = ShellCommand $ "composer update --prefer-dist --lock --profile --working-dir="<>composerTargetPath
+       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<>composerTargetPath
        , cwd = Nothing
        , env = Nothing
        , std_in = Inherit
@@ -204,6 +186,7 @@ installComposerLibs opts =
        , new_session = False
        , child_group = Nothing
        , child_user = Nothing
+       , use_process_jobs = False
        }
      composerTargetPath = dirPrototype opts
      failOutput (exit_code, stdout', stderr') =

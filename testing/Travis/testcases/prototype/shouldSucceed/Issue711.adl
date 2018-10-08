@@ -1,0 +1,22 @@
+CONTEXT Issue711 IN ENGLISH
+
+geitCounter   :: Geit   * GeitCounter   [UNI]   REPRESENT GeitCounter   TYPE INTEGER
+schaapCounter :: Schaap * SchaapCounter [UNI]   REPRESENT SchaapCounter TYPE INTEGER
+
+ROLE ExecEngine MAINTAINS "Initialize GeitCounters"
+RULE "Initialize GeitCounters": I[Geit] |- geitCounter;V
+VIOLATION (TXT "{EX} InsPair;geitCounter;Geit;", SRC I, TXT ";GeitCounter;3")
+
+ROLE ExecEngine MAINTAINS "Initialize SchaapCounters"
+RULE "Initialize SchaapCounters": I[Schaap] |- schaapCounter;schaapCounter~
+VIOLATION (TXT "{EX} InsPair;schaapCounter;Schaap;", SRC I, TXT ";SchaapCounter;5")
+
+INTERFACE Geiten:  V[SESSION*Geit]   CRuD BOX [ Geit:   I cRud, Number: geitCounter   cRud]
+INTERFACE Schapen: V[SESSION*Schaap] CRuD BOX [ Schaap: I cRud, Number: schaapCounter cRud]
+
+POPULATION Geit   CONTAINS [ "Geit1" ]
+POPULATION Schaap CONTAINS [ "Schaap1" ]
+
+ENDCONTEXT
+
+

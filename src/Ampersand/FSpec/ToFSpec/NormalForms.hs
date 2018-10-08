@@ -5,22 +5,21 @@ module Ampersand.FSpec.ToFSpec.NormalForms
   , makeAllConjs, conjuncts
   ) where
   
-import Data.Set (Set)
+import           Ampersand.ADL1
+import           Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
+import           Ampersand.Basics
+import           Ampersand.Classes.Relational
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.Core.ShowPStruct
+import           Ampersand.Input (parseRule)
+import           Ampersand.Misc
+import           Data.Function (on)
+import           Data.Hashable
+import           Data.List (nub, intercalate, permutations, partition, sortBy)
+import           Data.Set (Set)
 import qualified Data.Set as Set
-import Data.List (nub, intercalate, permutations,partition)
-import Ampersand.Basics
-import Ampersand.ADL1.Expression
-import Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
-import Ampersand.Classes.Relational
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ParseTree
-import Ampersand.Core.ShowAStruct
-import Ampersand.Core.ShowPStruct
-import Ampersand.Misc
-import Ampersand.Input (parseRule)
-import Data.Hashable
-import Data.Text (pack)
-import Prelude hiding (head)
+import           Data.Text (pack)
+
 
 {- SJC:
 Ideas for future work:
@@ -179,7 +178,7 @@ dSteps drs x = dStps x
                        , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                        , let rd = showIT term++" -> "++showIT term'           -- rule documentation for fatals in 'substitute'
                        , substitute rd unif term==x ||
-                         fatal 122 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from:  "++showIT x)
+                         fatal ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from:  "++showIT x)
                        ]
   dStps (RVee a b)   = [ DStep { lhs = x                                       -- derivs gives the top level rewrites.
                                , rul = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
@@ -191,7 +190,7 @@ dSteps drs x = dStps x
                        , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                        , let rd = showIT term++" -> "++showIT term'           -- rule documentation for fatals in 'substitute'
                        , substitute rd unif term==x ||
-                         fatal 134 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from:  "++showIT x)
+                         fatal ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from:  "++showIT x)
                        ]
   dStps (RAtm a c)   = [ DStep { lhs = x                                       -- derivs gives the top level rewrites.
                                , rul = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
@@ -203,9 +202,9 @@ dSteps drs x = dStps x
                        , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                        , let rd = showIT term++" -> "++showIT term'            -- rule documentation for fatals in 'substitute'
                        , substitute rd unif term==x ||
-                         fatal 146 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from:  "++showIT x)
+                         fatal ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from:  "++showIT x)
                        ]
-  dStps RVar{}   = fatal 147 "Cannot rewrite a term with a variable in it." -- This should become a haskell type-error when RTerm is polymorphic
+  dStps RVar{}   = fatal "Cannot rewrite a term with a variable in it." -- This should become a haskell type-error when RTerm is polymorphic
   dStps RConst{} = [] -- the only possibly matching rule has a single variable on the lhs, which we assume does not exist. SJ to SJC: Why? is there a reason why we don't want to include that situation?
 
   dStepUny :: (RTerm -> Bool)    -- a predicate, isrComb, which tests whether some RTerm r has rCombinator as its root.
@@ -218,7 +217,7 @@ dSteps drs x = dStps x
 -}
   dStepUny isrComb rCombinator a
    = if (not . isValid . rCombinator) a
-     then fatal 180 ("Invalid expression in dStepLists: "++showIT (rCombinator a))
+     then fatal ("Invalid expression in dStepLists: "++showIT (rCombinator a))
      else
      derivs ++
      [ DStep { lhs = rCombinator a                                     -- try to find steps recursively
@@ -236,14 +235,14 @@ dSteps drs x = dStps x
                     , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                     , let rd = showIT term++" -> "++showIT term'            -- rule documentation for fatals in 'substitute'
                     , substitute rd unif term==rCombinator a ||
-                      fatal 177 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from\nrCombinator a:  "++showIT (rCombinator a))
+                      fatal ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from\nrCombinator a:  "++showIT (rCombinator a))
                     ]
 
 -- dStepBin follows the same pattern as dStepUny, but for binary RTerms
   dStepBin :: (RTerm -> Bool) -> (RTerm -> RTerm -> RTerm) -> RTerm -> RTerm -> [DerivStep]
   dStepBin isrComb rCombinator a b
    = if (not . isValid) (rCombinator a b)
-     then fatal 202 ("Invalid expression in dStepLists: "++showIT (rCombinator a b))
+     then fatal ("Invalid expression in dStepLists: "++showIT (rCombinator a b))
      else
      derivs ++
      [ DStep { lhs = rCombinator a b
@@ -269,13 +268,13 @@ dSteps drs x = dStps x
                     , term'<-rewriteTerms                     -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                     , let rd = showIT term++" -> "++showIT term'        -- rule documentation for fatals in 'substitute'
                     , substitute rd unif term==rCombinator a b ||
-                      fatal 207 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from\nrCombinator a b:  "++showIT (rCombinator a b))
+                      fatal ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from\nrCombinator a b:  "++showIT (rCombinator a b))
                     ]
 
   dStepLists :: (RTerm -> Bool) -> ([RTerm] -> RTerm) -> [RTerm] -> [DerivStep] -- Note: a and b are both RTerm
   dStepLists isrComb rCombinator ls
    = if (not . isValid . rCombinator) ls
-     then fatal 231 ("Invalid expression in dStepLists: "++showIT (rCombinator ls))
+     then fatal ("Invalid expression in dStepLists: "++showIT (rCombinator ls))
      else
      [ DStep { lhs = rCombinator ls       -- The original expression
              , rul = (term, unif, term')  -- only one rewrite step is done without parallelism.
@@ -292,13 +291,13 @@ dSteps drs x = dStps x
      , let original=flatLst (pre ++ substitute rd unif term :post)  -- is equal to rCombinator ls
      , let result  =flatLst (pre ++ substitute rd unif term':post)
      , original==rCombinator ls ||
-       fatal 228 ("When analysing rule "++rd++" with unifier "++showIT unif++" on:  "++showIT (rCombinator ls)++
-                  "\nWe substitute:  "++showIT (substitute rd unif term)++
-                  "\nby:             "++showIT (substitute rd unif term')++
-                  ".\nHowever, the original RTerm:  "++showIT (rCombinator ls)++
-                  "\ndiffers from flatLst (pre ++ substitute rd unif term :post):\n  "++
-                  showIT original
-                 )
+       fatal ("When analysing rule "++rd++" with unifier "++showIT unif++" on:  "++showIT (rCombinator ls)++
+              "\nWe substitute:  "++showIT (substitute rd unif term)++
+              "\nby:             "++showIT (substitute rd unif term')++
+              ".\nHowever, the original RTerm:  "++showIT (rCombinator ls)++
+              "\ndiffers from flatLst (pre ++ substitute rd unif term :post):\n  "++
+              showIT original
+             )
      ] ++
      [ DStep { lhs = rCombinator ls -- is equal to: (pre++lhs dstep:post)
              , rul = rul dstep
@@ -328,7 +327,7 @@ dSteps drs x = dStps x
              , rul = (term, unif, term')      -- only one rewrite is done in parallel in the top level.
              , rhs = result                   -- so rest is left alone, if partition can be rewritten.
              }
-     | null [ () | e<-Set.toList s, not (isValid e), fatal 313 ("Invalid subexpr: "++showIT e) ]
+     | null [ () | e<-Set.toList s, not (isValid e), fatal ("Invalid subexpr: "++showIT e) ]
      -- s = { foo;foo~ , -(bar;bar~) , I[C]}
      , (term, rewriteTerms)<-matchableRules, isrComb term       -- e.g. term = 'Piet' \/ r \/ p\q
      , let subTerms = rTermSet term                             -- e.g. subTerms = { 'Piet', r, p\q }
@@ -343,14 +342,14 @@ dSteps drs x = dStps x
      , let restTerms = Set.map (flatSet . Set.toList) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
      , Set.null restTerms ||
        (isValid . flatSet . Set.toList) restTerms ||
-       fatal 305 ("Invalid restTerms: "++showIT (rCombinator restTerms))
+       fatal ("Invalid restTerms: "++showIT (rCombinator restTerms))
      , let remTerm   = let remT = combSet rCombinator remainder in
                        if Set.null remainder
-                       then fatal 308 "empty remTerm"
-                       else if isValid remT then remT else fatal 309 ("Invalid remTerm: "++showIT remT)            -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
+                       then fatal "empty remTerm"
+                       else if isValid remT then remT else fatal ("Invalid remTerm: "++showIT remT)            -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
      , unif0 <- if Set.null toMatchs then [Set.empty] else
-                if (not.isValid.combSet rCombinator) toMatchs        then fatal 311 ("Invalid toMatchs: "++showIT (rCombinator toMatchs)) else
-                if (not.isValid.combSet rCombinator) matchCandidates then fatal 312 ("Invalid matchCandidates: "++showIT (rCombinator matchCandidates)) else
+                if (not.isValid.combSet rCombinator) toMatchs        then fatal ("Invalid toMatchs: "++showIT (rCombinator toMatchs)) else
+                if (not.isValid.combSet rCombinator) matchCandidates then fatal ("Invalid matchCandidates: "++showIT (rCombinator matchCandidates)) else
                 matchSets rCombinator toMatchs matchCandidates  -- e.g. unif0={ p->aap, q->noot }
      , unif1 <- if Set.null termVars then [Set.empty] else
                 matchSets rCombinator termVars restTerms        -- e.g. unif1={ r->RUni {'1', aap, mies;vuur} }
@@ -365,12 +364,12 @@ dSteps drs x = dStps x
                       then substitute rd unif term'
                       else flatSet [substitute rd unif term', remTerm]
      , original==rCombinator s ||
-       fatal 327 ("When analysing rule "++rd++" with unifier "++showIT unif++" on:  "++showIT (rCombinator s)++
-                  "\nWe substitute:  "++showIT original++
-                  "\nby:             "++showIT result++
-                  "\nHowever, the original RTerm:  "++showIT (rCombinator s)++
-                  "\ndiffers from subs term:       "++showIT original
-                 )
+       fatal ("When analysing rule "++rd++" with unifier "++showIT unif++" on:  "++showIT (rCombinator s)++
+              "\nWe substitute:  "++showIT original++
+              "\nby:             "++showIT result++
+              "\nHowever, the original RTerm:  "++showIT (rCombinator s)++
+              "\ndiffers from subs term:       "++showIT original
+             )
      ] ++
      [ DStep { lhs = rCombinator s -- is equal to: (pre \/ lhs dstep)
              , rul = rul dstep
@@ -406,7 +405,7 @@ dSteps drs x = dStps x
 splitList :: [a] -> [([a],a,[a])]
 splitList lst = [(take i lst,l,drop (i+1) lst) | (i,l) <- zip [0..] lst]
 
-instance Association RTerm where
+instance HasSignature RTerm where
   sign (RIsc a)      = sign$ Set.findMin a
   sign (RUni a)      = sign$ Set.findMin a
   sign (RDif a _)    = sign a
@@ -423,14 +422,14 @@ instance Association RTerm where
   sign (RId  a)      = Sign a a
   sign (RVee a b)    = Sign a b
   sign (RAtm _ b)    = Sign b b
-  sign RVar{}        = fatal 324 "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
+  sign RVar{}        = fatal "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
   sign (RConst e)    = sign e
 
 -- In order to write deriviation rules in the Ampersand syntax, RTerms are obtained by means of the (already available) Ampersand parser.
 -- For that reason, we need a function term2rTerm to translate a term obtained by parsing (type: Term TermPrim) to a RTerm.
 term2rTerm :: Term TermPrim -> RTerm
 term2rTerm term
-   = if isValid result then result else fatal 385 ("term2rTerm has produced an invalid result: "++showIT result)
+   = if isValid result then result else fatal ("term2rTerm has produced an invalid result: "++showIT result)
      where
       result
        = case term of
@@ -484,11 +483,11 @@ term2rTerm term
            Prim (Pid _ c)           -> RId  (pCpt2aCpt c)
            Prim (Pfull _ s t)       -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
            Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt c)
-           _                        -> fatal 381 ("Cannot cope with untyped "++showP term++" in a dRule inside the normalizer.")
+           _                        -> fatal ("Cannot cope with untyped "++showP term++" in a dRule inside the normalizer.")
 
 expr2RTerm :: Expression -> RTerm
 expr2RTerm expr
-   = if isValid result then result else fatal 443 ("expr2RTerm has produced an invalid result: "++showIT result)
+   = if isValid result then result else fatal ("expr2RTerm has produced an invalid result: "++showIT result)
      where
       result
        = case expr of
@@ -553,11 +552,11 @@ rTerm2expr term
  = case term of
      RIsc rs    -> case Set.toList (Set.map rTerm2expr rs) of
                     [e] -> e
-                    []  -> fatal 445 "empty set in RIsc is illegal."
+                    []  -> fatal "empty set in RIsc is illegal."
                     es  -> let oper l r = EIsc (l,r) in foldr1 oper es
      RUni rs    -> case Set.toList (Set.map rTerm2expr rs) of
                     [e] -> e
-                    []  -> fatal 449 "empty set in RUni is illegal."
+                    []  -> fatal "empty set in RUni is illegal."
                     es  -> let oper l r = EUni (l,r) in foldr1 oper es
      RDif l r   -> EDif (rTerm2expr l, rTerm2expr r)
      RCpl e     -> ECpl (rTerm2expr e)
@@ -566,15 +565,15 @@ rTerm2expr term
      RRrs l r   -> ERrs (rTerm2expr l, rTerm2expr r)
      RRad rs    -> case map rTerm2expr rs of
                     [e] -> e
-                    []  -> fatal 458 "empty set in RRad is illegal."
+                    []  -> fatal "empty set in RRad is illegal."
                     es  -> let oper l r = ERad (l,r) in foldr1 oper es
      RCps rs    -> case map rTerm2expr rs of
                     [e] -> e
-                    []  -> fatal 462 "empty set in RCps is illegal."
+                    []  -> fatal "empty set in RCps is illegal."
                     es  -> let oper l r = ECps (l,r) in foldr1 oper es
      RPrd rs    -> case map rTerm2expr rs of
                     [e] -> e
-                    []  -> fatal 466 "empty set in RPrd is illegal."
+                    []  -> fatal "empty set in RPrd is illegal."
                     es  -> let oper l r = EPrd (l,r) in foldr1 oper es
      RKl0 e     -> EKl0$ rTerm2expr e
      RKl1 e     -> EKl1$ rTerm2expr e
@@ -586,19 +585,19 @@ rTerm2expr term
      RConst e   -> e
    where
      makeDecl nm sgn
-      = Sgn { decnm   = pack nm
+      = Relation
+            { decnm   = pack nm
             , decsgn  = sgn
-            , decprps = fatal 480 "Illegal RTerm in rTerm2expr"
+            , decprps = fatal "Illegal RTerm in rTerm2expr"
             , decprps_calc = Nothing
-            , decprL  = fatal 482 "Illegal RTerm in rTerm2expr"
-            , decprM  = fatal 483 "Illegal RTerm in rTerm2expr"
-            , decprR  = fatal 484 "Illegal RTerm in rTerm2expr"
-            , decMean = fatal 485 "Illegal RTerm in rTerm2expr"
-            , decfpos = fatal 486 "Illegal RTerm in rTerm2expr"
-            , decusr  = fatal 488 "Illegal RTerm in rTerm2expr"
-            , decpat  = fatal 489 "Illegal RTerm in rTerm2expr"
-            , decplug = fatal 490 "Illegal RTerm in rTerm2expr"
-            , dech    = hash nm `hashWithSalt` sgn
+            , decprL  = fatal "Illegal RTerm in rTerm2expr"
+            , decprM  = fatal "Illegal RTerm in rTerm2expr"
+            , decprR  = fatal "Illegal RTerm in rTerm2expr"
+            , decMean = fatal "Illegal RTerm in rTerm2expr"
+            , decfpos = fatal "Illegal RTerm in rTerm2expr"
+            , decusr  = fatal "Illegal RTerm in rTerm2expr"
+            , decpat  = fatal "Illegal RTerm in rTerm2expr"
+            , dechash = hash nm `hashWithSalt` sgn
             }
 class ShowIT a where  --class ment for stuff not belonging to A-struct and/or P-struct
   showIT :: a -> String
@@ -635,7 +634,7 @@ instance ShowIT RTerm where
 {- momentarily redundant
    unVar :: RTerm -> String
    unVar (RVar r _ _) = r
-   unVar _ = fatal 501 "Illegal call on unVar"
+   unVar _ = fatal "Illegal call on unVar"
 -}
 
 vars :: RTerm -> Set String
@@ -684,7 +683,7 @@ data DerivStep = DStep { lhs :: RTerm
 dRule :: Term TermPrim -> [DerivRule]
 dRule (PEqu _ l r) = [DEquiR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule (PInc _ l r) = [DInclR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
-dRule term         = fatal 279 ("Illegal use of dRule with term "++showP term)
+dRule term         = fatal ("Illegal use of dRule with term "++showP term)
 
 weightNF :: Bool -> RTerm -> Integer
 weightNF dnf = w
@@ -719,11 +718,11 @@ substitute :: String    -- A string to document fatals
            -> RTerm     -- The term to be transformed to an expression, with all variables replaced by subexpressions
            -> RTerm
 substitute ruleDoc unifier term
- = if isValid result then result else fatal 713 ("substitute has produced an invalid result: "++showIT result)
+ = if isValid result then result else fatal ("substitute has produced an invalid result: "++showIT result)
    where
     result = subs term
     subs :: RTerm -> RTerm
-    subs t | not (isValid t) = fatal 680 ("Substituting an invalid term "++showIT t)
+    subs t | not (isValid t) = fatal ("Substituting an invalid term "++showIT t)
     subs (RIsc s)     = (combSet RIsc . Set.fromList . flat isRIsc . map subs . Set.toList) s
     subs (RUni s)     = (combSet RUni . Set.fromList . flat isRUni . map subs . Set.toList) s
     subs (RDif l r)   = RDif (subs l) (subs r)
@@ -739,27 +738,27 @@ substitute ruleDoc unifier term
     subs (RCpl e  )   = RCpl (subs e)
     subs (RVar r _ _) = case [ e | (v,e)<-Set.toList unifier, v==r] of
                            [e] -> e
-                           [] ->  fatal 378 ("Rule:  "++ruleDoc++"\nVariable "++r++" is not in term "++showIT term++ " using unifier "++show unifier)
+                           [] ->  fatal ("Rule:  "++ruleDoc++"\nVariable "++r++" is not in term "++showIT term++ " using unifier "++show unifier)
                            -- e.g. Variable r is not in term -V[A*B] /\ r[A*B] using unifier fromList [("A",RId Verzoek),("B",RId Persoon)]
-                           es ->  fatal 379 ("Rule:  "++ruleDoc++"\nVariable "++r++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
+                           es ->  fatal ("Rule:  "++ruleDoc++"\nVariable "++r++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
     subs (RId c)      = case [ e | (v,e)<-Set.toList unifier, v==name c] of
                            [e] -> e  -- This is e@(RId c')
-                           []  -> fatal 382 ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showIT term)
-                           es  -> fatal 383 ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
+                           []  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showIT term)
+                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
     subs (RVee s t)   = case ([ e | (v,e)<-Set.toList unifier, v==name s], [ e | (v,e)<-Set.toList unifier, v==name t]) of
                            ([RId s'], [RId t']) -> RVee s' t'
-                           (_,_)  -> fatal 386 ("Rule:  "++ruleDoc++"\nSomething wrong with RVee in term "++showIT term++" with unifier "++show unifier)
+                           (_,_)  -> fatal ("Rule:  "++ruleDoc++"\nSomething wrong with RVee in term "++showIT term++" with unifier "++show unifier)
     subs (RAtm a c)   = case [ e | (v,e)<-Set.toList unifier, v==name c] of
                            [RId c'] -> RAtm a c'
-                           []  -> fatal 389 ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showIT term)
-                           es  -> fatal 390 ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
+                           []  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showIT term)
+                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
     subs e@RConst{}   = e
---     subs t            = fatal 392 ("Rule:  "++ruleDoc++"\nError: "++showIT t++"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
+--     subs t            = fatal ("Rule:  "++ruleDoc++"\nError: "++showIT t++"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
 
 flat :: (RTerm -> Bool) -> [RTerm] -> [RTerm]
 flat isrComb ls
  = case ls of
-    []  -> fatal 689 "Illegal empty list"
+    []  -> fatal "Illegal empty list"
     es  -> concat [ if isrComb e then rTermListForSets e else [e] | e<-es]
 --     es  -> if or [isrComb e | e<-es]   -- SJ: Apparently, the recursion in 'flat' is required. Without it, Misc/Kernmodel.adl did fail on 18 aug 2014.
 --            then (flat isrComb . concat) [ if isrComb e then rTermListForSets e else [e] | e<-es]
@@ -771,8 +770,8 @@ rTermListForSets x = rTermList x
 
 matches :: RTerm -> RTerm -> [Unifier]
 matches term expr
- | not (isValid term) = fatal 719 ("Invalid term "++showIT term++"\nbeing matched to expression "++showIT expr)
- | not (isValid expr) = fatal 720 ("Matching term "++showIT term++"\nto invalid expression "++showIT expr)
+ | not (isValid term) = fatal ("Invalid term "++showIT term++"\nbeing matched to expression "++showIT expr)
+ | not (isValid expr) = fatal ("Matching term "++showIT term++"\nto invalid expression "++showIT expr)
  | otherwise =
     case (term,expr) of
      (RIsc es,        RIsc es')   -> matchSets RIsc es es'
@@ -797,15 +796,15 @@ matches term expr
 
 matchLists :: ([RTerm] -> RTerm) -> [RTerm] -> [RTerm] -> [Unifier]
 matchLists rCombinator es es'
- | not (isValid (combLst rCombinator es) ) = fatal 754 ("Invalid term " ++showIT (rCombinator es)++"\nbeing matched to expression "++showIT (rCombinator es'))
- | not (isValid (combLst rCombinator es')) = fatal 755 ("Matching term "++showIT (rCombinator es)++"\nto invalid expression " ++showIT (rCombinator es'))
+ | not (isValid (combLst rCombinator es) ) = fatal ("Invalid term " ++showIT (rCombinator es)++"\nbeing matched to expression "++showIT (rCombinator es'))
+ | not (isValid (combLst rCombinator es')) = fatal ("Matching term "++showIT (rCombinator es)++"\nto invalid expression " ++showIT (rCombinator es'))
  | otherwise =
    [ unif
    | let n = length es              -- the length of the template, which contains variables
-   , n /= 0 || fatal 681 "n equals 0"
+   , n /= 0 || fatal "n equals 0"
    , ms <- dist n es'     -- determine segments from es' (which is variable free) that have the same length as the template es
    , not (or [null m | m<-ms]) ||
-     fatal 683 (concat ["\nms:  ["++intercalate ", " (map showIT m)++"]" | m<-ms])
+     fatal (concat ["\nms:  ["++intercalate ", " (map showIT m)++"]" | m<-ms])
    , let subTerms = map (combLst rCombinator) ms     -- make an RTerm from each sublist in ms
    , unif<-mix [ matches l r | (l,r)<-safezip es subTerms ]
    , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
@@ -842,9 +841,9 @@ mix []       = [Set.empty]
 matchSets :: (Set RTerm -> RTerm) -> Set RTerm -> Set RTerm -> [Unifier]
 matchSets rCombinator es es'
  -- set sizes are not necessarily equal.
- | Set.null es || Set.null es' = fatal 858 "cannot match empty sets"
- | or [ not (isValid e) | e<-Set.toList es ] = fatal 859 ("Invalid subterm(s): "++intercalate ", " [ showIT e | e<-Set.toList es,  not (isValid e) ])
- | or [ not (isValid e) | e<-Set.toList es'] = fatal 860 ("Invalid subexpr(s): "++intercalate ", " [ showIT e | e<-Set.toList es', not (isValid e) ])
+ | Set.null es || Set.null es' = fatal "cannot match empty sets"
+ | or [ not (isValid e) | e<-Set.toList es ] = fatal ("Invalid subterm(s): "++intercalate ", " [ showIT e | e<-Set.toList es,  not (isValid e) ])
+ | or [ not (isValid e) | e<-Set.toList es'] = fatal ("Invalid subexpr(s): "++intercalate ", " [ showIT e | e<-Set.toList es', not (isValid e) ])
  | otherwise =
    [ unif
    | let n = Set.size cdes                      -- the length of the template, which contains variables
@@ -897,14 +896,14 @@ parts n = Set.toList . Set.fromList . map (Set.fromList . map Set.fromList) . p 
 combLst :: ([RTerm] -> RTerm) -> [RTerm] -> RTerm
 combLst rCombinator es
  = case es of
-        []  -> fatal 791 "Not allowed."
+        []  -> fatal "Not allowed."
         [e] -> e
         _   -> rCombinator es
 
 combSet :: (Set RTerm -> RTerm) -> Set RTerm -> RTerm
 combSet rCombinator s
  = case Set.toList s of
-        []  -> fatal 798 "Not allowed."
+        []  -> fatal "Not allowed."
         [e] -> e
         _   -> rCombinator s
 
@@ -915,7 +914,7 @@ noDoubles unif = and [ n==1 | n<-(map length . eqCl fst . Set.toList) unif ]
 safezip :: [a] -> [b] -> [(a,b)]
 safezip (a:as) (b:bs) = (a,b):safezip as bs
 safezip [] [] = []
-safezip _ _ = fatal 827 "Zip of two lists with different lengths!"
+safezip _ _ = fatal "Zip of two lists with different lengths!"
 
 {-
    assignments {a,p} {2,3,4}
@@ -1044,16 +1043,13 @@ taeDerivRules = concatMap (dRule.parseRule)
  ]
 -}
 
-head :: [a] -> a
-head [] = fatal 30 "head must not be used on an empty list!"
-head (a:_) = a
-
 -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
 delta :: Signature -> Expression
 delta sgn
- = EDcD   Sgn { decnm   = pack "Delta"
+ = EDcD Relation
+              { decnm   = pack "Delta"
               , decsgn  = sgn
-              , decprps = []
+              , decprps = Set.empty
               , decprps_calc = Nothing
               , decprL  = ""
               , decprM  = ""
@@ -1063,9 +1059,8 @@ delta sgn
                                    ]
               , decfpos = Origin ("generated relation (Delta "++show sgn++")")
               , decusr  = False
-              , decpat  = ""
-              , decplug = True
-              , dech = hash sgn
+              , decpat  = Nothing
+              , dechash = hash sgn
               }
 
 {- Normalization of process algebra clauses -}
@@ -1085,7 +1080,7 @@ type Proof a = [(a, [String], String)]
 
 simplify :: Expression -> Expression
 simplify expr = expr'
-    where (expr',_,_) = if null (simpProof shw expr) then fatal 101 "last: empty list" else last (simpProof shw expr)
+    where (expr',_,_) = if null (simpProof shw expr) then fatal "last: empty list" else last (simpProof shw expr)
           shw _ = ""
 
 simpProof :: (Expression -> String) -> Expression -> Proof Expression
@@ -1110,7 +1105,7 @@ normStep shw   -- a function to print an expression. Might be "showIT"
          eq    -- If eq==True, only equivalences are used. Otherwise, inclusions are used as well.
          simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
          expr = if sign expr==sign res then (res,ss,equ) else
-                fatal 166 ("Violation of sign expr==sign res in the normalizer\n  expr: sign( "++showA expr++" ) == "++showSign res++"\n  res:  sign( "++showA res++" ) == "++showSign res)
+                fatal ("Violation of sign expr==sign res in the normalizer\n  expr: sign( "++showA expr++" ) == "++showSign res++"\n  res:  sign( "++showA res++" ) == "++showSign res)
 {-SJ 20140720: You might wonder why we test sign expr==sign res, which was introduced as a result of ticket #409 (the residu bug)
 It turns out that many rewrite rules in the normalizer change the type of an expression; an aspect I have been overlooking all the time.
 Until the new normalizer works, we will have to work with this one. So I have inserted this test to ensure that the type remains constant during normalization.
@@ -1243,7 +1238,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM posCpl x@(EIsc (l,r)) rs
 -- Absorb equals:    r/\r  -->  r
       | or [length cl>1 |cl<-absorbClasses]
-           = ( case absorbClasses of [] -> fatal 243 "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (./\.) [head cl | cl<-absorbClasses]
+           = ( case absorbClasses of [] -> fatal "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (./\.) [head cl | cl<-absorbClasses]
              , [shw e++" /\\ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
              , "<=>"
              )
@@ -1303,10 +1298,10 @@ Until the new normalizer works, we will have to work with this one. So I have in
             incons = [conjunct |conjunct<-exprIsc2list r,conjunct==notCpl l]
             absor0  = [disjunct | disjunct<-exprUni2list l, f'<-rs++exprIsc2list r, disjunct==f']
             absor0' = [disjunct | disjunct<-exprUni2list r, f'<-rs++exprIsc2list l, disjunct==f']
-            absor1  = [(disjunct, exprUni2list l>-[disjunct]) | disjunct<-exprUni2list l, ECpl f'<-rs++exprIsc2list r, disjunct==f']++
-                      [(disjunct, exprUni2list l>-[disjunct]) | disjunct@(ECpl t')<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
-            absor1' = [(disjunct, exprUni2list r>-[disjunct]) | disjunct<-exprUni2list r, ECpl f'<-rs++exprIsc2list l, disjunct==f']++
-                      [(disjunct, exprUni2list r>-[disjunct]) | disjunct@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
+            absor1  = [(disjunct, filter (disjunct /=) (exprUni2list l)) | disjunct<-exprUni2list l, ECpl f'<-rs++exprIsc2list r, disjunct==f']++
+                      [(disjunct, filter (disjunct /=) (exprUni2list l)) | disjunct@(ECpl t')<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
+            absor1' = [(disjunct, filter (disjunct /=) (exprUni2list r)) | disjunct<-exprUni2list r, ECpl f'<-rs++exprIsc2list l, disjunct==f']++
+                      [(disjunct, filter (disjunct /=) (exprUni2list r)) | disjunct@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
             absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
             absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
             (negList,posList) = partition isNeg (exprIsc2list l++exprIsc2list r)
@@ -1374,8 +1369,8 @@ Until the new normalizer works, we will have to work with this one. So I have in
             tauts = [t' |disjunct<-exprUni2list r,disjunct==notCpl l, ECpl t'<-[disjunct,l]]
             absor0  = [t' | t'<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
             absor0' = [t' | t'<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
-            absor1  = [(t', exprIsc2list l>-[t']) | t'<-exprIsc2list l, ECpl f'<-rs++exprUni2list r, t'==f']++[(e, exprIsc2list l>-[e]) | e@(ECpl t')<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
-            absor1' = [(t', exprIsc2list r>-[t']) | t'<-exprIsc2list r, ECpl f'<-rs++exprUni2list l, t'==f']++[(e, exprIsc2list r>-[e]) | e@(ECpl t')<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
+            absor1  = [(t', filter (t' /=) (exprIsc2list l)) | t'<-exprIsc2list l, ECpl f'<-rs++exprUni2list r, t'==f']++[(e, filter (e /=) (exprIsc2list l)) | e@(ECpl t')<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
+            absor1' = [(t', filter (t' /=) (exprIsc2list r)) | t'<-exprIsc2list r, ECpl f'<-rs++exprUni2list l, t'==f']++[(e, filter (e /=) (exprIsc2list r)) | e@(ECpl t')<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
 -- Issue #72: The following rule may not be used, because multiplicities are not yet proven but must be enforced. So the normalizer may not assume them.
 --  nM _ (EFlp e) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
   nM _ x _               = (x,[],"<=>")
@@ -1390,12 +1385,12 @@ fEqu ss = if and [s=="<=>" | s<-ss] then "<=>" else "==>"
 nfPr :: (Expression -> String) -> Bool -> Bool -> Expression -> [(Expression, [String], String)]
 nfPr shw eq dnf expr
  = {-if showIT expr=="r \\/ s"
-   then fatal 360 ("Diagnose expr: "++showIT expr++"\n"++
-                   "eq:            "++show eq++"\n"++
-                   "dnf:           "++show eq++"\n"++
-                   "res:           "++showIT res++"\n"++
-                   "expr==res:     "++show (expr==res)
-                  ) else-}
+   then fatal ("Diagnose expr: "++showIT expr++"\n"++
+               "eq:            "++show eq++"\n"++
+               "dnf:           "++show eq++"\n"++
+               "res:           "++showIT res++"\n"++
+               "expr==res:     "++show (expr==res)
+              ) else-}
    if expr==res
    then [(expr,[],"<=>")]
    else (expr,steps,equ):nfPr shw eq dnf (simplify res)
@@ -1405,7 +1400,7 @@ conjNF, disjNF :: Options -> Expression -> Expression
 (conjNF, disjNF) = (pr False, pr True)
  where pr dnf _ expr
         = let proof = if dnf then dfProof else cfProof
-              (e,_,_) = if null (proof expr) then fatal 340 "last: empty list" else last (proof expr)
+              (e,_,_) = if null (proof expr) then fatal "last: empty list" else last (proof expr)
           in e
 
 cfProof, dfProof :: Expression -> Proof Expression
@@ -1421,11 +1416,11 @@ cfProof, dfProof :: Expression -> Proof Expression
             )]
       where
         pr           = nfPr showA True dnf expr
-        (expr',_,_)  = if null pr then fatal 356 "last: empty list" else last pr
+        (expr',_,_)  = if null pr then fatal "last: empty list" else last pr
         step         = simplify expr/=simplify expr'
         pr'          = nfPr showA True dnf expr'
         step'        = simplify expr'/=simplify expr''
-        (expr'',_,_) = if null pr' then fatal 365 "last: empty list" else last pr'
+        (expr'',_,_) = if null pr' then fatal "last: empty list" else last pr'
 
 
 isEUni :: Expression -> Bool
@@ -1437,7 +1432,11 @@ isEIsc EIsc{}  = True
 isEIsc _       = False
 
 conjuncts :: Options -> Rule -> [Expression]
-conjuncts opts = exprIsc2list.conjNF opts.rrexp
+conjuncts opts r = exprIsc2list
+               --  . (\e -> trace ("conjNF of that expression: "++show e) e)
+                 . conjNF opts
+               --  . (\e -> trace ("FormalExpression: "++show e) e)
+                 . formalExpression $ r
 
 allShifts :: Options -> DnfClause -> [DnfClause]
 allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
@@ -1455,7 +1454,7 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
    | otherwise = [ Dnf { antcs = ass
                        , conss = case css of
                                    [] -> let antcExpr = foldr1 (./\.) ass in
-                                         if isEndo antcExpr then [EDcI (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
+                                         if isEndo antcExpr then [EDcI (source antcExpr)] else fatal "antcExpr should be endorelation"
                                    _  -> css
                        }
                  | (ass,css)<-nub (move (antcs dc) (conss dc))
@@ -1473,13 +1472,13 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
                 , length (eqClass (==) headEs) == 1                    -- example: True, because map head css == [ "x" ]
                 , let h=head headEs                                    -- example: h= "x"
                 , isUni h                                              -- example: assume True
-                , ts<-move [if source h==source as then flp h.:.as else fatal 455 "type mismatch"
+                , ts<-move [if source h==source as then flp h.:.as else fatal "type mismatch"
                            |as<-ass] (map tailECps css)]++ -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
             [ts | let lastEs = map lastECps css
                 , length (eqClass (==) lastEs) == 1
                 , let l=head lastEs
                 , isInj l
-                , ts<-move [if target as==target l then as.:.flp l else fatal 461 "type mismatch"
+                , ts<-move [if target as==target l then as.:.flp l else fatal "type mismatch"
                            |as<-ass] (map initECps css)]   -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
        else []
    -- Here is (informally) what the example does:
@@ -1494,7 +1493,7 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
    | null (antcs dc) || null (conss dc) = [dc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
    | otherwise                = [ Dnf (case ass of
                                         [] -> let consExpr = foldr1 (.\/.) css in
-                                              if source consExpr==target consExpr then [EDcI (source consExpr)] else fatal 463 "consExpr should be endorelation"
+                                              if source consExpr==target consExpr then [EDcI (source consExpr)] else fatal "consExpr should be endorelation"
                                         _  -> ass
                                       ) css
                                 | (ass,css)<-nub (move (antcs dc) (conss dc))
@@ -1514,13 +1513,13 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
                 , length (eqClass (==) headEs) == 1                      -- example: True, because map headECps ass == [ "r", "r" ]
                 , let h=head headEs                                      -- example: h= "r"
                 , isSur h                                                -- example: assume True
-                , ts<-move (map tailECps ass) [if source h==source cs then flp h.:.cs else fatal 496 "type mismatch"
+                , ts<-move (map tailECps ass) [if source h==source cs then flp h.:.cs else fatal "type mismatch"
                                               |cs<-css]]++   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
             [ts | let lastEs = map lastECps ass
                 , length (eqClass (==) lastEs) == 1                      -- example: False, because map lastECps ass == [ ["s"], ["r"] ]
                 , let l=head lastEs
                 , isTot l
-                , ts<-move (map initECps ass) [if target cs==target l then cs.:.flp l else fatal 502 "type mismatch"
+                , ts<-move (map initECps ass) [if target cs==target l then cs.:.flp l else fatal "type mismatch"
                                               |cs<-css]]     -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
        else []
    -- Here is (informally) what the example does:
@@ -1577,11 +1576,12 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
   isEDcI _ = False
 
 
-makeAllConjs :: Options -> [Rule] -> [Conjunct]
+makeAllConjs :: Options -> Rules -> [Conjunct]
 makeAllConjs opts allRls =
-  let conjExprs :: [(Expression, [Rule])]
-      conjExprs = converse [ (rule, conjuncts opts rule) | rule <- allRls ]
-      
+  let conjExprs :: [(Expression, Rules)]
+      conjExprs = map (\(a,b) -> (a,Set.fromList b)) 
+                . converse 
+                $ [ (rule, conjuncts opts rule) | rule <- sortBy (compare `on` name) . Set.toList $ allRls ]
       conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
                      , rc_orgRules   = rs
                      , rc_conjunct   = expr

@@ -1,6 +1,12 @@
   -- | This module contains some common String funcions
-module Ampersand.Basics.String (unCap,upCap,escapeNonAlphaNum,escapeIdentifier) where
+module Ampersand.Basics.String 
+        ( unCap,upCap
+        , escapeNonAlphaNum
+        , escapeIdentifier
+        , optionalQuote
+        ) where
 
+import Ampersand.Basics.Prelude
 import Data.Char
 
 -- | Converts the first character of a string to lowercase, with the exception that there is a second character, which is uppercase.
@@ -32,3 +38,14 @@ escapeIdentifier (c0:cs) = encode False c0 ++ concatMap (encode True) cs
   where encode allowNum c | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = [c]
                           | c == '_'  = "__" -- shorthand for '_' to improve readability
                           | otherwise = "_" ++ show (ord c) ++ "_"
+
+optionalQuote :: String -> String
+optionalQuote str
+  | needsQuotes = show str
+  | otherwise   = str 
+ where
+  needsQuotes =
+   case words str of
+    []  -> True
+    [_] -> False
+    _   -> True

@@ -20,25 +20,25 @@ module Ampersand.Input.ADL1.Lexer
     , FilePos(..)
 ) where
 
-import Ampersand.Input.ADL1.FilePos(updatePos)
-import Ampersand.Input.ADL1.LexerToken
-import Ampersand.Input.ADL1.LexerMonad
-import Ampersand.Input.ADL1.LexerMessage
-import Data.Char hiding(isSymbol)
-import Data.Set (member, fromList)
-import Data.List (nub)
-import Ampersand.Basics (fatal)
-import Ampersand.Misc
-import Data.Time.Calendar
-import Data.Time.Clock
-import Numeric
+import           Ampersand.Basics
+import           Ampersand.Input.ADL1.FilePos(updatePos)
+import           Ampersand.Input.ADL1.LexerMessage
+import           Ampersand.Input.ADL1.LexerMonad
+import           Ampersand.Input.ADL1.LexerToken
+import           Ampersand.Misc
+import           Data.Char hiding(isSymbol)
+import           Data.List (nub)
+import qualified Data.Set as Set -- (member, fromList)
+import           Data.Time.Calendar
+import           Data.Time.Clock
+import           Numeric
 
 -- | Retrieves a list of keywords accepted by the Ampersand language
 keywords :: [String] -- ^ The keywords
 keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 , "IN", "ENGLISH", "DUTCH"
                 , "INCLUDE"
-                , "META", "THEMES"
+                , "META"
                 , "PATTERN", "ENDPATTERN"
                 , "CONCEPT"
                 -- Keywords for Relation-statements
@@ -53,7 +53,7 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 , "PURPOSE", "REF"
                 , "REST", "HTML", "LATEX", "MARKDOWN"
                 -- Keywords for interfaces
-                , "INTERFACE", "FOR", "LINKTO"
+                , "INTERFACE", "FOR", "LINKTO", "API"
                 , "BOX", "ROWS", "TABS", "COLS"
                 -- Keywords for identitys
                 , "IDENT"
@@ -70,7 +70,6 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 -- Keywords for values of atoms:
                 , "TRUE", "FALSE" --for booleans
                 -- Experimental stuff:
-                , "BYPLUG", "SQLPLUG", "PHPPLUG"
                 , "SERVICE", "EDITS"
                 -- Depreciated keywords:
                 , "SPEC", "PROCESS", "ENDPROCESS"]
@@ -128,14 +127,6 @@ mainLexer p ('"':ss) =
                               then lexerError (NonTerminatedString s) p
                               else returnToken (LexString s) p mainLexer (addPos (swidth+2) p) (tail rest)
 
-{- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
-   single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
-mainLexer p ('\'':ss)
-     = let (s,swidth,rest) = scanSingletonInExpression ss
-       in if null rest || head rest /= '\''
-             then lexerError UnterminatedAtom p
-             else returnToken (LexSingleton s) p mainLexer (addPos (swidth+2) p) (tail rest)
-
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
 -----------------------------------------------------------
@@ -148,15 +139,15 @@ mainLexer p ('<':d:s) = if isOperator ['<',d]
 mainLexer p cs@(c:s)
      | isIdStart c || isUpper c
          = let (name', p', s')    = scanIdent (addPos 1 p) s
-               name               = c:name'
-               tokt   | iskw name = LexKeyword name
+               name''               = c:name'
+               tokt   | iskw name'' = LexKeyword name''
                       | otherwise = if isIdStart c
-                                    then LexVarId name
-                                    else LexConId name
+                                    then LexVarId name''
+                                    else LexConId name''
            in returnToken tokt p mainLexer p' s'
      | isOperatorBegin c
-         = let (name, s') = getOp cs
-           in returnToken (LexOperator name) p mainLexer (foldl updatePos p name) s'
+         = let (name', s') = getOp cs
+           in returnToken (LexOperator name') p mainLexer (foldl updatePos p name') s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
      | isDigit c
          = case  getDateTime cs of
@@ -185,7 +176,7 @@ mainLexer p cs@(c:s)
 -----------------------------------------------------------
 
 locatein :: Ord a => [a] -> a -> Bool
-locatein es e = member e (fromList es)
+locatein es e = elem e (Set.fromList es)
 
 iskw :: String -> Bool
 iskw = locatein keywords
@@ -218,8 +209,8 @@ getOp cs = findOper operators cs ""
 
 -- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the resting contents.
 scanIdent :: FilePos -> String -> (String, FilePos, String)
-scanIdent p s = let (name,rest) = span isIdChar s
-                in (name,addPos (length name) p,rest)
+scanIdent p s = let (nm,rest) = span isIdChar s
+                in (nm,addPos (length nm) p,rest)
 
 
 -----------------------------------------------------------
@@ -342,11 +333,11 @@ getNumber str =
   case readDec str of
     [(_,'.':_)] -> case readFloat str of
                            [(flt,rest)] -> (LexFloat flt, Right flt, length str - length rest,rest)
-                           _            -> fatal 342 "Unexpected: can read decimal, but not float???"
+                           _            -> fatal "Unexpected: can read decimal, but not float???"
     [(dec,rest)]  -> (LexDecimal dec , Left dec, length str - length rest,rest)
-    _  -> fatal 343 $ "No number to read!\n  " ++ take 40 str                    
+    _  -> fatal ("No number to read!\n  " ++ take 40 str)
 --getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
---getNumber [] = fatal 294 "getNumber"
+--getNumber [] = fatal "getNumber"
 --getNumber cs@(c:s)
 --  | c /= '0'         = num10
 --  | null s           = const0
@@ -382,49 +373,41 @@ getNumber str =
 -- characters / strings
 -----------------------------------------------------------
 scanString :: String -> (String, Int, String)
-scanString = scanUpto False ['"']
-
-scanSingletonInExpression :: String -> (String, Int, String)
-scanSingletonInExpression = scanUpto True ['\'']
+scanString = scanUpto ['"']
 
 -- | scan to some given character. The end char is scanned away too
-scanUpto :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
-         -> String  -- non-empty list of ending characters
+scanUpto :: String  -- non-empty list of ending characters
          -> String 
          -> (String, Int, String)
-scanUpto isAtomScan echrs s = 
+scanUpto echrs s = 
  case s of
-   xs       -> let (ch,cw,cr) = getchar isAtomScan echrs xs
-                   (str,w,r)  = scanUpto isAtomScan echrs cr
+   xs       -> let (ch,cw,cr) = getchar echrs xs
+                   (str,w,r)  = scanUpto echrs cr
                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
-getchar :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
-        -> String  -- non-empty list of ending characters
+getchar :: String  -- non-empty list of ending characters
         -> String  -- string to get the character from
         -> (Maybe Char, Int, String)
-getchar isAtomScan echrs s =
+getchar echrs s =
   case s of
    []          -> (Nothing,0,[])
    ('\n':_ )   -> (Nothing,0,s)
    ('\t':_ )   -> (Nothing,0,s)
-   ('\\':'&':xs) -> let (str,w,r) = getchar isAtomScan echrs xs -- Special case is required because an escaped & is equal to empty string in Haskell
+   ('\\':'&':xs) -> let (str,w,r) = getchar echrs xs -- Special case is required because an escaped & is equal to empty string in Haskell
                     in (str,w+2,r)
    ('\\':xs)   -> let (c,l,r) = getEscChar xs
                   in (c,l+1,r)
    (x:xs)      
     | x `elem` echrs   -> (Nothing,0,s)
-    | isAtomScan && x `elem`[doubleQuote, singleQuote]  -> (Nothing,0,s) 
-   --- | isAtomScan && ec == singleQuote && x == doubleQuote -> (Nothing,0,s) 
     | otherwise -> (Just x,1,xs)
-  where
-    (doubleQuote,singleQuote) = ('\"','\'')
+
 getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
 getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
                                       | val >= 0 && val <= ord (maximum [chr 1 ..]) -> (Just (chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
-                                    _  -> fatal 432 $ "Impossible! first char is a digit.. "++take 40 s
+                                    _  -> fatal ("Impossible! first char is a digit.. "++take 40 s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)
                     | otherwise = case x `lookup` cntrChars of
                                  Nothing -> (Nothing,0,s)

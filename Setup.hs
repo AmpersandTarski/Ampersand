@@ -1,24 +1,25 @@
 {-# OPTIONS_GHC -Wall #-}
-import Distribution.Simple
-import Distribution.Simple.LocalBuildInfo
-import Distribution.Simple.Setup
-import Distribution.PackageDescription
-import System.Process
-import System.Exit
-import Control.Exception
-import Data.List
-import Data.Either
-import Data.Char
-import Data.Time.Clock
-import qualified Data.Time.Format as DTF
-import Data.Time.LocalTime
-import System.Directory
-import System.FilePath
-import System.IO
---import System.Locale as SL
-import qualified Data.ByteString.Lazy.Char8 as BS
+module Main 
+where
 import qualified Codec.Compression.GZip as GZip
-
+import           Control.Exception
+import qualified Data.ByteString.Lazy.Char8 as BS
+import           Data.Char
+import           Data.Either
+import           Data.List
+import           Data.Time.Clock
+import qualified Data.Time.Format as DTF
+import           Data.Time.LocalTime
+import           Distribution.Simple
+import           Distribution.Simple.LocalBuildInfo
+import           Distribution.Simple.Setup
+import           Distribution.PackageDescription
+import           Distribution.Pretty (prettyShow)
+import           System.Directory
+import           System.Exit
+import           System.FilePath
+import           System.IO(withFile,IOMode(ReadMode),hGetContents)
+import           System.Process
 
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
@@ -30,7 +31,7 @@ main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook
 
 generateBuildInfoHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
 generateBuildInfoHook pd  lbi uh bf =
- do { let cabalVersionStr = intercalate "." (map show . versionBranch . pkgVersion . package $ pd)
+ do { let cabalVersionStr = prettyShow . pkgVersion . package $ pd
 
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime
@@ -49,11 +50,17 @@ buildInfoModuleName = "Ampersand.Basics.BuildInfo_Generated"
 
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion gitInfo time = unlines
-  [ "module "++buildInfoModuleName++"(cabalVersionStr, gitInfoStr, buildTimeStr) where"
+  [ "module "++buildInfoModuleName++"("
+  -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""
-  -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
+  , "      cabalVersionStr"
+  , "    , gitInfoStr"
+  , "    , buildTimeStr"
+  , "    ) where"
+  , "import Ampersand.Basics.Prelude"
+  , ""
   , "{-"++"# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
   , "cabalVersionStr :: String"
   , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
@@ -153,10 +160,10 @@ getPreviousStaticFileModuleContents sfModulePath =
 -- Collect all files required to be inside the ampersand.exe 
 readAllStaticFiles :: IO String
 readAllStaticFiles =
-  do { zwolleFrontEndFiles  <- readStaticFiles ZwolleFrontEnd   "static/zwolle" "."  -- files that define the Zwolle Frontend
-     ; pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
+  do { pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
      ; formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand" "."  --meta information about Ampersand
-     ; return $ mkStaticFileModule $ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles
+     ; systemContextFiles   <- readStaticFiles SystemContext    "AmpersandData/SystemContext" "."  --Special system context for Ampersand
+     ; return $ mkStaticFileModule $ pandocTemplatesFiles ++ formalAmpersandFiles ++ systemContextFiles
      }
 
 readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [String]
@@ -178,7 +185,7 @@ readStaticFiles fkind base fileOrDirPth =
   where utcToEpochTime :: UTCTime -> String
         utcToEpochTime utcTime = DTF.formatTime DTF.defaultTimeLocale "%s" utcTime
 
-data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand deriving (Show, Eq)
+data FileKind = PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)
 
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
@@ -189,12 +196,17 @@ mkStaticFileModule sfDeclStrs =
 staticFileModuleHeader :: [String]
 staticFileModuleHeader =
   [ "{-# LANGUAGE OverloadedStrings #-}"
-  , "module "++staticFileModuleName++" where"
+  , "module "++staticFileModuleName
+  , "   ( StaticFile(..),FileKind(..)"
+  , "   , allStaticFiles, getStaticFileContent"
+  , "   )"
+  , "where"
+  , "import Ampersand.Basics"
   , "import qualified Data.ByteString.Lazy.Char8 as BS"
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"
   , ""
-  , "data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand deriving (Show, Eq)"
+  , "data FileKind = PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)"
   , "data StaticFile = SF { fileKind      :: FileKind"
   , "                     , filePath      :: FilePath -- relative path, including extension"
   , "                     , timeStamp     :: Integer  -- unix epoch time"

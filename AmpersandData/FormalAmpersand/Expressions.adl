@@ -1,18 +1,20 @@
 CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
 INCLUDE "Concepts.adl"
+INCLUDE "Relations.adl"
 
 
-PROCESS "Expression definitions"
+PATTERN "Expression definitions"
     RELATION usedIn[Relation*Expression]
     MEANING "The rule expressed in relation algebra."
-    RELATION src[Expression*Concept]
-    RELATION tgt[Expression*Concept]
-    RELATION bind[BindedRelation*Relation][UNI,TOT]
-    RELATION formalExpression[Rule*Expression]
+--    TODO make transitive closure of usedIn
+    ROLE ExecEngine MAINTAINS bindUsedIn
+    RULE bindUsedIn : bind |- usedIn~
+    VIOLATION (TXT "{EX} InsPair;usedIn;Relation;", TGT I, TXT ";Expression;", SRC I[Expression])
+
+    RELATION sign[Expression*Signature][UNI,TOT]
     RELATION in[Pair*Expression]
-    VIEW BindedRelation     : BindedRelation (bind)
-    
+
     VIEW Equivalence        : Equivalence(TXT "RULE ", first[BinaryTerm*Expression], TXT " = ", second[BinaryTerm*Expression])
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first[BinaryTerm*Expression], TXT " |- ", second[BinaryTerm*Expression])
   --  VIEW Truth              : Truth      (TXT "RULE ", I[Expression])
@@ -29,10 +31,6 @@ PROCESS "Expression definitions"
     VIEW RelationalAddition : RelationalAddition(TXT "(", first[BinaryTerm*Expression], TXT  "!" , second[BinaryTerm*Expression], TXT ")")
     VIEW LeftResidual       : LeftResidual      (TXT "(", first[BinaryTerm*Expression], TXT  "/" , second[BinaryTerm*Expression], TXT ")")
     VIEW RightResidual      : RightResidual     (TXT "(", first[BinaryTerm*Expression], TXT "\\" , second[BinaryTerm*Expression], TXT ")")
-
-
-    CONCEPT Rule ""
-    RELATION formalExpression[Rule*Expression] [UNI,TOT]
 
     CONCEPT Operator ""
     REPRESENT Operator TYPE ALPHANUMERIC
@@ -55,9 +53,11 @@ PROCESS "Expression definitions"
     RELATION userSrc["V"*Concept] [UNI]
     RELATION userTrg["V"*Concept] [UNI]
     
+    CONCEPT Epsilon "An expression between two concepts that have an generalisation relation between them" 
+    CLASSIFY Epsilon ISA Expression
+    RELATION userCpt[Epsilon*Concept] [UNI]
     CONCEPT "I" "The identity expression on a concept."
-    CLASSIFY "I" ISA Expression
-    RELATION userCpt["I"*Concept] [UNI]
+    CLASSIFY "I" ISA Epsilon
     
     CLASSIFY Equivalence ISA BinaryTerm
     CLASSIFY Inclusion   ISA BinaryTerm
@@ -78,7 +78,7 @@ PROCESS "Expression definitions"
     CLASSIFY RelationalAddition ISA BinaryTerm
     CLASSIFY LeftResidual       ISA BinaryTerm
     CLASSIFY RightResidual      ISA BinaryTerm
-ENDPROCESS
+ENDPATTERN
 
 RELATION showADL[Expression*ShowADL] [UNI,TOT]
 REPRESENT ShowADL TYPE BIGALPHANUMERIC

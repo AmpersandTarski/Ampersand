@@ -1,13 +1,14 @@
 module Ampersand.FSpec.GenerateUML (generateUML) where
 
-import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Declaration)
-import Ampersand.Graphic.ClassDiagram
-import Ampersand.Graphic.Fspec2ClassDiagrams 
-import Ampersand.FSpec
-import Data.List
+import           Ampersand.Basics
+import           Ampersand.ADL1--Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Relation)
+import           Ampersand.FSpec
+import           Ampersand.Graphic.ClassDiagram
+import           Ampersand.Graphic.Fspec2ClassDiagrams 
+import           Control.Monad.State.Lazy  (State, gets, evalState, modify)
+import           Data.List
 import qualified Data.Map as Map
-import Control.Monad.State.Lazy  (State, gets, evalState, modify)
+import qualified Data.Set as Set
 
 -- TODO: escape
 -- TODO: names of model, package, assoc (empty?), etc.
@@ -82,7 +83,7 @@ fSpec2UML fSpec =
        contextName   = cdName classDiag
        allConcs      = ooCpts classDiag
        classNames    = map name (classes classDiag)
-       datatypeNames = map name allConcs >- classNames
+       datatypeNames = filter (\n -> n `notElem` classNames) $ map name allConcs
 
 genUMLRequirement :: Req -> UML
 genUMLRequirement req =
@@ -201,7 +202,7 @@ genCustomReqElements fSpec parentPackageId =
 
 data Req = Req { reqId :: String
             --   , reqRef :: String
-               , reqOrig :: Either Rule Declaration
+               , reqOrig :: Either Rule Relation
                , reqPurposes :: [Purpose]
                }
 
@@ -212,8 +213,8 @@ instance Meaning Req where
 
 requirements :: FSpec -> [Req]
 requirements fSpec
-   = [decl2req d | d <- vrels  fSpec]
-   ++[rule2req r | r <- vrules fSpec]
+   = map decl2req (Set.elems $ vrels  fSpec) 
+   ++map rule2req (Set.elems $ vrules fSpec)
   where
     decl2req d = Req { reqId = name d
                      , reqOrig = Right d
@@ -261,7 +262,7 @@ refLabeledId label =
  do { lidMap <- gets labelIdMap
     ; case Map.lookup label lidMap of
           Just lid -> return lid
-          Nothing  -> fatal 147 $ "Requesting non-existent label "++label
+          Nothing  -> fatal ("Requesting non-existent label "++label)
     }
 
 mkLabeledId :: String -> String -> StateUML ()

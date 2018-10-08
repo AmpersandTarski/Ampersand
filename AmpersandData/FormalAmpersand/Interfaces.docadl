@@ -1,4 +1,5 @@
 CONTEXT RAP IN ENGLISH LATEX
+INCLUDE "Interfaces.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
 PURPOSE PATTERN Interfaces
@@ -10,34 +11,35 @@ An Interface can be seen as a context in its own right.
 It uses (e.g. by importing, referring to) concepts and relations of the (both) contexts that it connects.
 It has rules of its own for governing 'translations' and to ensure that messages sent to either context are in line with what that contexts expects (and: can test using its invariants).
 The concepts and relations defined in this pattern describe the contexts of Interfaces at a meta level.
--}
++}
 
 PURPOSE CONCEPT Interface
 {+An interface is used by persons or by computers to execute transactions on a data set.
 Interfaces are needed to communicate with persons or other computer programs.
--}
++}
 PURPOSE CONCEPT ObjectDef
 {+ In essence, an interface is a hierarchical structure containing attributes.
 It describes the structure of objects upon which transactions can be executed.
 The interface may also contain information related to such objects.
--}
++}
 
 PURPOSE RELATION ifcObj[Interface*ObjectDef]
 {+In order to link an object definition to an interface, the two must be related.
 Each interface has precisely one object definition.
--}
++}
 
-PURPOSE RELATION objnm[ObjectDef*String]
+PURPOSE RELATION name[ObjectDef*ObjectName]
 {+The name of an object definition serves as attribute name, if used inside some other object definition.
 Otherwise, this name is the name of the interface.
 The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
--}
++}
 
-PURPOSE RELATION objctx[ObjectDef*Expression]
+PURPOSE RELATION objExpression[ObjectDef*Expression]
 {+Every object definition is associated with an expression.
 If the object definition is an attribute, this expression yields the pairs that are used to ``walk'' through the population of the system.
 It works the same way if the object definition is related to an interface.
-In that case, the expression characterizes the atoms on which it can be used.-}
+In that case, the expression characterizes the atoms on which it can be used.
++}
 
 PURPOSE RELATION getExpressionRelation[Expression*Relation]
 {+Some expressions are equivalent to a relation.
@@ -45,30 +47,30 @@ Such expressions can be used to change the content of (i.e. to edit) a relation.
 We say that the expression allows editing in that relation.
 That is relevant, because such expressions allow the system to open a relation for editing during a transaction.
 So in order to be edited, a relation must occur in this relation.
--}
++}
 
 PURPOSE RULE "accessible relations"
 {+The population of every relation may need to change every now and then.
 Changing relations, however, requires an interface.
 The following rule signals the developer if no such interface exists.
 It is meant to guard completeness, i.e. that every relation can be edited by at least one interface.
--}
++}
 
 PURPOSE PATTERN InterfaceSession
 {+Every user and every computer program that interacts with an information system does so through an interface.
--}
++}
 PURPOSE RELATION sessionRole
 {+In order to allow role based access control, every session is assigned to a role.
--}
++}
 
 PURPOSE PATTERN InterfaceSemantics
 {+Calling an interface in Ampersand corresponds with performing a database transaction.
 For this purpose we define how transactions are affected by the way an interface is defined.
 In this line of thought, a transaction can be regarded as an instantiation of an interface (or the calling of an interface).
--}
++}
 PURPOSE CONCEPT Transaction
 {+The purpose of a transaction is to bring brings an information system from one state to another, whilst keeping all invariants true.
--}
++}
 PURPOSE CONCEPT Object
 {+By viewing a database as a collection of pairs, it is desirable to navigate over pairs from one atom to another.
 Starting on a particular atom (in the database), users may follow the links to browse through the data.
@@ -76,49 +78,49 @@ However, the amount of data to navigate in is limited when using an interface.
 That amount of data is called "object".
 Roughly speaking, an object consists of one atom (the root of the object) and all data that can be reached by following the links as defined in the attributes of that objects.
 Since objects are defined recursively, interfaces can involve a substantial amount of data.
--}
++}
 
 PURPOSE RELATION transactionObject[Transaction*Object]
 {+Because every transaction operates on one object, we must specify a relation that defines the object on which a transaction operates.
--}
++}
 
 PURPOSE RELATION inst[Transaction*Interface]
 {+In order to restrict state changes caused by a transaction, each transaction is governed by restrictions imposed by an interface.
 For that purpose, a transaction is treated as an instance of an interface.
 This makes interfaces useful as a description of communication with the information system.
--}
++}
 
 PURPOSE RELATION inst[Object*ObjectDef]
 {+Being an instance of an object definition, every object must be in the instance-relation to identify the object definition of which it is an instance.
--}
++}
 
 PURPOSE RELATION left[Pair*Atom]
 {+The relation ``left'' is needed to identify one of the atoms in a pair.
--}
++}
 
 PURPOSE RELATION right[Pair*Atom]
 {+The relation ``right'' is needed to identify the other atom in a pair.
--}
++}
 
 PURPOSE RELATION in[Pair*Expression]
 {+The relation ``in'' is needed to establish whether a pair is in an expression.
 This can be computed by taking the populations of all relations that are used in the expression, and by computing the result of applying the relational operators in the expression on those relations.
--}
++}
 
 PURPOSE RULE "atoms in objects"
 {+The data content of an object is defined by the attribute expressions inside that object.
--}
++}
 PURPOSE RULE "attributes in objects"
 {+An object may have a number of attributes, which are defined in the object's definition.
--}
++}
 PURPOSE RULE "attributes with unique names"
 {+In order to identify attributes within an object, each attribute is given a name to identify its attribute expression.
--}
++}
 
 PURPOSE RULE quadsInInterface
 {+In order to make quads work, an interface needs permission to use relations for inputs or outputs.
 If a quad that you expect is missing, try if you have granted the required permissions by entering the right relations in the inputs or outputs of the interface.
--}
++}
 
 PURPOSE RULE violatableByInterface
 {+Which rules can be violated in an interface?
@@ -126,23 +128,23 @@ To answer that question, we must first look at the relations that can be edited,
 because these actions will cause violations, if any.
 The rules that are violatable, are the ones in which the editable relations are used.
 However, some rules are being restored by quads, which can cause other relations to be edited.
--}
++}
 
 PURPOSE CONCEPT Act
 {+The basic unit of action in a transaction is the act. It is defined for the purpose of defining precisely what a transaction can and cannot do, as it is constrained by an interface.
--}
++}
 
 PURPOSE RELATION delta[Act*Pair]
 {+If an act can insert or delete a number of pairs in a relation, those pairs are identified through the relation ``delta''.
--}
++}
 
 PURPOSE RELATION changes[Act*Relation]
 {+Since every act operates on precisely one relation, that relation is known through the relation ``changes''.
--}
++}
 
 PURPOSE RULE "atoms in objects"
 {+Being an instance of an Objectdef, every object represents one pair of atoms that is in the object expression of that object.
--}
++}
 
 
 ENDCONTEXT

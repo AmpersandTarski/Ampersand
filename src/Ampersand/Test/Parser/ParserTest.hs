@@ -3,14 +3,14 @@ module Ampersand.Test.Parser.ParserTest (
     parseReparse, parseScripts, showErrors
 ) where
 
-import Prelude hiding (readFile)
 import Ampersand.ADL1.PrettyPrinters(prettyPrint)
+import Ampersand.Basics
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
 import Ampersand.Input.ADL1.Parser
 import Ampersand.Input.Parsing
 import Ampersand.Misc
-import System.IO (stderr, hPrint)
+import qualified Data.List.NonEmpty as NEL (toList)
 
 -- Tries to parse all the given files
 parseScripts :: Options -> [FilePath] -> IO Bool
@@ -18,8 +18,13 @@ parseScripts _ [] = return True
 parseScripts opts (f:fs) =
      do parsed <- parseADL opts f
         case parsed of
-            Checked _ -> do { putStrLn ("Parsed: " ++ f); parseScripts opts fs }
-            Errors  e -> do { putStrLn ("Cannot parse: " ++ f); showErrors e; return False }
+            Checked _ -> do
+                putStrLn ("Parsed: " ++ f)
+                parseScripts opts fs
+            Errors  e -> do 
+                putStrLn ("Cannot parse: " ++ f)
+                showErrors (NEL.toList e)
+                return False
 
 printErrLn :: Show a => a -> IO ()
 printErrLn = hPrint stderr

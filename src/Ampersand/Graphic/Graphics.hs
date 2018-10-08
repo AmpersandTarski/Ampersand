@@ -2,23 +2,22 @@ module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
-import Data.GraphViz
-import Ampersand.ADL1
-import Ampersand.FSpec.FSpec
-import Ampersand.Misc
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.Graphic.Fspec2ClassDiagrams
-import Ampersand.Graphic.ClassDiag2Dot
-import Data.GraphViz.Attributes.Complete
-import Data.List
-import Data.String
-
-import System.FilePath hiding (addExtension)
-import System.Directory
-import System.Process (callCommand)
-import Control.Exception (catch, IOException)
-import Prelude hiding (writeFile)
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.FSpec.FSpec
+import           Ampersand.Graphic.ClassDiag2Dot
+import           Ampersand.Graphic.Fspec2ClassDiagrams
+import           Ampersand.Misc
+import           Control.Exception (catch, IOException)
+import           Data.GraphViz
+import           Data.GraphViz.Attributes.Complete
+import           Data.List
+import qualified Data.Set as Set
+import           Data.String(fromString)
+import           System.Directory
+import           System.FilePath hiding (addExtension)
+import           System.Process (callCommand)
 
 data PictureReq = PTClassDiagram
                 | PTCDPattern Pattern
@@ -132,46 +131,44 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         PTCDConcept c ->
           let gs = fsisa fSpec
               cpts' = concs rs
-              rs    = [r | r<-vrules fSpec, c `elem` concs r]
+              rs    = [r | r<-Set.elems $ vrules fSpec, c `elem` concs r]
           in
-          CStruct { csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
-                  , csRels = [r | r@Sgn{} <- relsMentionedIn rs   -- the use of "relsMentionedIn" restricts relations to those actually used in rs
-                             , not (isProp r)
-                             ]
+          CStruct { csCpts = nub$ Set.elems cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
+                  , csRels = filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ rs   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
         --  PTCDPattern makes a picture of at least the relations within pat;
         --  extended with a limited number of more general concepts;
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTCDPattern pat ->
-          let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
-              xrels = nub [r | c<-orphans, r@Sgn{}<-vrels fSpec
+          let orphans = [c | c<-Set.elems cpts, not(c `elem` concs idgs || c `elem` concs rels)]
+              xrels = Set.fromList 
+                        [r | c<-orphans, r<-Set.elems $ vrels fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
               idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
               gs   = fsisa fSpec
-              cpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
-              cpts' = concs pat `uni` concs rels
-              rels = [r | r@Sgn{}<-relsMentionedIn pat
-                             , not (isProp r)    -- r is not a property
-                             ]
+              cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+              cpts' = concs pat `Set.union` concs rels
+              rels = Set.fromList . filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ pat
           in
-          CStruct { csCpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
-                  , csRels = rels `uni` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
+          CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+                  , csRels = Set.elems $ rels  `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
 
         -- PTDeclaredInPat makes a picture of relations and gens within pat only
         PTDeclaredInPat pat ->
           let gs   = fsisa fSpec
-              cpts = concs decs `uni` concs (gens pat)
-              decs = relsDefdIn pat `uni` relsMentionedIn (udefrules pat)
+              cpts = concs decs `Set.union` concs (gens pat)
+              decs = relsDefdIn pat `Set.union` bindedRelationsIn (udefrules pat)
           in
-          CStruct { csCpts = cpts
-                  , csRels = [r | r@Sgn{}<-decs
-                             , not (isProp r), decusr r    -- r is not a property
-                             ]
+          CStruct { csCpts = Set.elems cpts
+                  , csRels = Set.elems 
+                           . Set.filter (not . isProp . EDcD)
+                           . Set.filter decusr
+                           $ decs 
                   , csIdgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
                   }
 
@@ -179,13 +176,14 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
           let idgs = [(s,g) | (s,g)<-fsisa fSpec
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
           in
-          CStruct { csCpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
-                  , csRels = [d | d@Sgn{}<-relsMentionedIn r, decusr d
-                             , not (isProp d)    -- d is not a property
-                             ]
+          CStruct { csCpts = Set.elems $ concs r `Set.union` Set.fromList [c |(s,g)<-idgs, c<-[g,s]]
+                  , csRels = Set.elems
+                           . Set.filter (not . isProp . EDcD)
+                           . Set.filter decusr
+                           $ bindedRelationsIn r
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
-        _  -> fatal 276 "No conceptual graph defined for this type."
+        _  -> fatal "No conceptual graph defined for this type."
 
 writePicture :: Options -> Picture -> IO()
 writePicture opts pict
@@ -198,11 +196,6 @@ writePicture opts pict
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
-     dumpShow :: IO()
-     dumpShow = -- This has been hacked in in order to diagnose the issue at: https://github.com/ivan-m/graphviz/issues/13
-       do let path = imagePath opts pict -<.> "txt"
-          writeFile path (show . dotSource $ pict)
-          verboseLn opts $ "Dumpfile written: "++path 
      writeDot :: GraphvizOutput -> IO ()
      writeDot = writeDotPostProcess Nothing
      writeDotPostProcess :: Maybe (FilePath -> IO ()) --Optional postprocessor
@@ -228,8 +221,9 @@ writePicture opts pict
                    
      writePdf :: GraphvizOutput
               -> IO ()
-     writePdf = writeDotPostProcess (Just makePdf) 
-
+     writePdf x = (writeDotPostProcess (Just makePdf) x)
+       `catch` (\ e -> verboseLn opts ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+                                       "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 class ReferableFromPandoc a where
@@ -237,8 +231,12 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePath opts p =
-     dirOutput opts
-     </> (escapeNonAlphaNum . pictureID . pType ) p <.> "svg"
+    dirOutput opts
+     </> (escapeNonAlphaNum . pictureID . pType ) p <.>
+     case fspecFormat opts of
+      Fpdf   -> "png"   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
+      Fdocx  -> "svg"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
+      _      -> "pdf"
 
 {-
 class Named a => Navigatable a where
@@ -260,7 +258,7 @@ instance Navigatable A_Concept where
    interfacename _ = "Concept" --see Atlas.adl
    itemstring = name  --copied from atlas.hs
 
-instance Navigatable Declaration where
+instance Navigatable Relation where
    interfacename _ = "Relatiedetails"
    itemstring x = name x ++ "["
                   ++ (if source x==target x then name(source x) else name(source x)++"*"++name(target x))
@@ -268,7 +266,7 @@ instance Navigatable Declaration where
 -}
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
-                                   , csRels :: [Declaration]   -- ^ The relations, (the edges in the graph)
+                                   , csRels :: [Relation]   -- ^ The relations, (the edges in the graph)
                                    , csIdgs :: [(A_Concept, A_Concept)]  -- ^ list of Isa relations
                                    }
 
@@ -285,8 +283,8 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
                                  }
                 }
        where
-        cpts = cpts' `uni` concs rels `uni` concs idgs
-        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<-cpts]
+        cpts = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
+        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<- cpts]
         (relationNodes,relationEdges) = (concat a, concat b)
               where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
         isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge opts | (s,g)<-idgs]
@@ -295,11 +293,11 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
         baseNodeId c
             = case lookup c (zip cpts [(1::Int)..]) of
                 Just i -> "cpt_"++show i
-                _      -> fatal 169 $ "element "++name c++" not found by nodeLabel."
+                _      -> fatal ("element "++name c++" not found by nodeLabel.")
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         relationNodesAndEdges ::
-             (Declaration,Int)           -- ^ tuple contains the declaration and its rank
+             (Relation,Int)           -- ^ tuple contains the relation and its rank
           -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         relationNodesAndEdges (r,n)
           | doubleEdges opts
@@ -352,10 +350,10 @@ data PictureObject = CptOnlyOneNode A_Concept    -- ^ Node of a concept that ser
                    | CptConnectorNode A_Concept  -- ^ Node of a concept that serves as connector of relations to that concept
                    | CptNameNode A_Concept       -- ^ Node of a concept that shows the name
                    | CptEdge                     -- ^ Edge of a concept to connect its nodes
-                   | RelOnlyOneEdge Declaration  -- ^ Edge of a relation that connects to the source and the target
-                   | RelSrcEdge     Declaration  -- ^ Edge of a relation that connects to the source
-                   | RelTgtEdge     Declaration  -- ^ Edge of a relation that connects to the target
-                   | RelIntermediateNode    Declaration  -- ^ Intermediate node, as a hindge for the relation edges
+                   | RelOnlyOneEdge Relation  -- ^ Edge of a relation that connects to the source and the target
+                   | RelSrcEdge     Relation  -- ^ Edge of a relation that connects to the source
+                   | RelTgtEdge     Relation  -- ^ Edge of a relation that connects to the target
+                   | RelIntermediateNode    Relation  -- ^ Intermediate node, as a hindge for the relation edges
                    | IsaOnlyOneEdge              -- ^ Edge of an ISA relation without a hinge node
                    | TotalPicture                -- ^ Graph attributes
 
@@ -398,22 +396,22 @@ handleFlags po opts =
                           , Style [SItem Tapered []] , PenWidth 5
                           ]
       RelSrcEdge r -> [ ArrowHead ( if crowfoot opts   then normal                    else
-                                    if isFunction r    then noArrow                   else
+                                    if isFunction (EDcD r) then noArrow                   else
                                     directionArrow
                                   )
                       , ArrowTail ( if crowfoot opts   then crowfootArrowType False r else
-                                    if isFunction r    then noArrow                   else
-                                    if isInvFunction r then normal                    else
+                                    if isFunction (EDcD r)    then noArrow                   else
+                                    if isFunction (flp . EDcD $ r) then normal                    else
                                     noArrow
                                   )
                       ,HeadClip False
                       ]
       RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
                       , ArrowHead ( if crowfoot opts   then crowfootArrowType True r  else
-                                    if isFunction r    then normal                    else
+                                    if isFunction (EDcD r)    then normal                    else
                                     noArrow
                                   )
-                      , ArrowTail ( if crowfoot opts   || isFunction r    
+                      , ArrowTail ( if crowfoot opts   || isFunction (EDcD r)    
                                                        then noArrow                   else
                                     AType [(noMod ,Inv)]
                                   )
@@ -436,16 +434,14 @@ handleFlags po opts =
                       , Landscape False
                       ]
 
-isInvFunction :: Declaration -> Bool
-isInvFunction d = isInj d && isSur d
-
-crowfootArrowType :: Bool -> Declaration -> ArrowType
+crowfootArrowType :: Bool -> Relation -> ArrowType
 crowfootArrowType isHead r
    = AType (if isHead 
-            then getCrowfootShape (isUni r) (isTot r)
-            else getCrowfootShape (isInj r) (isSur r)
+            then getCrowfootShape (isUni bindedExpr) (isTot bindedExpr)
+            else getCrowfootShape (isInj bindedExpr) (isSur bindedExpr)
            )
        where
+         bindedExpr = EDcD r
          getCrowfootShape :: Bool -> Bool -> [( ArrowModifier , ArrowShape )]
          getCrowfootShape a b =
            case (a,b) of

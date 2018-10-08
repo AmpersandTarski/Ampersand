@@ -3,30 +3,34 @@
 {-# LANGUAGE FunctionalDependencies #-} 
 module Ampersand.Output.ToJSON.JSONutils 
   (writeJSONFile, JSON(..), ToJSON(..)
-  , module X
+  , module Ampersand.Basics
+  , module Ampersand.Classes
+  , module Ampersand.Core.ParseTree
+  , module Ampersand.Core.ShowAStruct
+  , module Ampersand.FSpec.ToFSpec.Populated
+  , module Ampersand.FSpec.FSpec
+  , module Ampersand.FSpec.SQL
+  , module Ampersand.Misc
+  , module GHC.Generics
   )
 where
-import Data.Aeson
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.ParseTree ( Role, ViewHtmlTemplate(ViewHtmlTemplateFile))
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec.ToFSpec.Populated
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder) 
+import           Ampersand.Misc
+import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
+import           Data.Aeson hiding (Options)
 import qualified Data.Aeson.Types as AT 
-import Data.List
-import Ampersand.Core.ParseTree as X
-     ( Role
-     , ViewHtmlTemplate(ViewHtmlTemplateFile)
-     )
-import Ampersand.Core.ShowAStruct as X
-import Ampersand.FSpec.ToFSpec.Populated as X
-import Ampersand.FSpec.FSpec as X
-import Ampersand.FSpec.SQL as X (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder) 
-import Ampersand.Misc as X
-import Ampersand.Basics as X
-import Ampersand.Classes as X
-import System.FilePath
-import System.Directory
+import           Data.Aeson.Encode.Pretty
 import qualified Data.ByteString.Lazy as BS
-import Ampersand.Prototype.ProtoUtil(getGenericsDir)
-import Prelude hiding (writeFile)
-import GHC.Generics as X
-import Data.Aeson.Encode.Pretty
+import           Data.List
+import           GHC.Generics
+import           System.FilePath
+import           System.Directory
 
 writeJSONFile :: ToJSON a => Options -> FilePath -> a -> IO()
 writeJSONFile opts fName x 
@@ -45,7 +49,7 @@ ampersandDefault :: AT.Options
 ampersandDefault = defaultOptions {AT.fieldLabelModifier = stripLabel}
   where stripLabel str 
           = case filter (isPrefixOf pfx) (tails str) of
-                [] -> fatal 71 $ "Label at Haskell side must contain `JSON`: "++str
+                [] -> fatal ("Label at Haskell side must contain `JSON`: "++str)
                 xs -> snd . splitAt (length pfx) . head $ xs
              where pfx = "JSON"    
   

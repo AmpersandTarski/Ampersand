@@ -3,17 +3,18 @@ module Ampersand.FSpec.ToFSpec.ADL2Plug
   ,typologies
   ,suitableAsKey)
 where
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
-import Ampersand.Misc
-import Data.Maybe
-import Data.Char
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.ADL1
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
+import           Ampersand.Misc
+import           Data.Char
+import           Data.Maybe
+import qualified Data.Set as Set
 
 makeGeneratedSqlPlugs :: Options -> A_Context 
-              -> (Declaration -> Declaration) -- Function to add calculated properties to a declaration
+              -> (Relation -> Relation) -- Function to add calculated properties to a relation
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
@@ -22,9 +23,10 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
-    calculatedDecls = (map calcProps .filter (not . decplug) . relsDefdIn) context 
+    calculatedDecls :: Relations
+    calculatedDecls = Set.map calcProps . relsDefdIn $ context 
     (conceptTableParts, linkTableParts) = dist calculatedDecls (typologies context)
-    makeConceptTable :: (Typology, [Declaration]) -> PlugSQL
+    makeConceptTable :: (Typology, [Relation]) -> PlugSQL
     makeConceptTable (typ , dcls) = 
       TblSQL
              { sqlname    = unquote . name $ tableKey
@@ -36,18 +38,18 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
           cpts = reverse $ sortSpecific2Generic (gens context) (tyCpts typ)
           -- | Make sure each attribute in the table has a unique name. Take into account that sql 
           --   is not case sensitive about names of coloums. 
-          colNameMap :: [ (Either A_Concept Declaration, String) ]
+          colNameMap :: [ (Either A_Concept Relation, String) ]
           colNameMap = f [] (cpts, dcls)
-            where f :: [ (Either A_Concept Declaration, String) ] -> ([A_Concept],[Declaration]) -> [ (Either A_Concept Declaration, String) ]
+            where f :: [ (Either A_Concept Relation, String) ] -> ([A_Concept],[Relation]) -> [ (Either A_Concept Relation, String) ]
                   f names (cs,ds) =
                      case (cs,ds) of
                        ([],[]) -> names
                        ([], _) -> f (insert (Right . head $ ds) names) ([],tail ds)
                        _       -> f (insert (Left  . head $ cs) names) (tail cs,ds)
-                  insert :: Either A_Concept Declaration -> [(Either A_Concept Declaration, String)] -> [(Either A_Concept Declaration, String)]
+                  insert :: Either A_Concept Relation -> [(Either A_Concept Relation, String)] -> [(Either A_Concept Relation, String)]
                   insert item = tryInsert item 0
                     where 
-                      tryInsert :: Either A_Concept Declaration -> Int -> [(Either A_Concept Declaration,String)] -> [(Either A_Concept Declaration,String)]
+                      tryInsert :: Either A_Concept Relation -> Int -> [(Either A_Concept Relation,String)] -> [(Either A_Concept Relation,String)]
                       tryInsert x n names =
                         let nm = either name name x ++ (if n == 0 then "" else "_"++show n)
                         in if map toLower nm `elem` map (map toLower . snd) names -- case insencitive compare, because SQL needs that.
@@ -56,10 +58,10 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 
 
           tableKey = tyroot typ
-          isStoredFlipped :: Declaration -> Bool
+          isStoredFlipped :: Relation -> Bool
           isStoredFlipped d
             = snd . fromMaybe ftl . wayToStore $ d
-              where ftl = fatal 52 $ "relation `"++name d++"` cannot be stored in this table. "++show (properties d)++"\n\n"++show d
+              where ftl = fatal ("relation `"++name d++"` cannot be stored in this table. "++show (properties d)++"\n\n"++show d)
           conceptLookuptable :: [(A_Concept,SqlAttribute)]
           conceptLookuptable    = [(cpt,cptAttrib cpt) | cpt <-cpts]
           dclLookuptable :: [RelStore]
@@ -77,13 +79,13 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 
           lookupC :: A_Concept -> SqlAttribute
           lookupC cpt           = case [f |(c',f)<-conceptLookuptable, cpt==c'] of
-                                    []  -> fatal 70 $ "Concept `"++name cpt++"` is not in the lookuptable."
+                                    []  -> fatal $ "Concept `"++name cpt++"` is not in the lookuptable."
                                          ++"\ncpts: "++show cpts
                                          ++"\ndcls: "++show (map (\d -> name d++show (sign d)++" "++show (properties d)) dcls)
                                          ++"\nlookupTable: "++show (map fst conceptLookuptable)
                                     x:_ -> x
           cptAttrib :: A_Concept -> SqlAttribute
-          cptAttrib cpt = Att { attName = fromMaybe (fatal 99 $ "No name found for `"++name cpt++"`. ")
+          cptAttrib cpt = Att { attName = fromMaybe (fatal ("No name found for `"++name cpt++"`. "))
                                                     (lookup (Left cpt) colNameMap) 
                               , attExpr = expr
                               , attType = repr cpt
@@ -99,8 +101,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                 where expr = if cpt == tableKey
                              then EDcI cpt
                              else EEps cpt (Sign tableKey cpt)
-          dclAttrib :: Declaration -> SqlAttribute
-          dclAttrib dcl = Att { attName = fromMaybe (fatal 113 $ "No name found for `"++name dcl++"`. ")
+          dclAttrib :: Relation -> SqlAttribute
+          dclAttrib dcl = Att { attName = fromMaybe (fatal ("No name found for `"++name dcl++"`. "))
                                                     (lookup (Right dcl) colNameMap)
                               , attExpr = dclAttExpression
                               , attType = repr (target dclAttExpression)
@@ -130,7 +132,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 -- a relation r (or r~) is stored in the target attribute of this plug
 
     -- | Make a binary sqlplug for a relation that is neither inj nor uni
-    makeLinkTable :: Declaration -> PlugSQL
+    makeLinkTable :: Relation -> PlugSQL
     makeLinkTable dcl 
          = BinSQL
              { sqlname = unquote . name $ dcl
@@ -141,6 +143,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
              , dLkpTbl = [theRelStore]
              }
       where
+       bindedExp :: Expression
+       bindedExp = EDcD dcl
        theRelStore =  if isFlipped trgExpr
                          then RelStore
                                { rsDcl       = dcl
@@ -154,13 +158,13 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                                }
        --the expr for the source of r
        srcExpr
-        | isTot dcl = EDcI (source dcl)
-        | isSur dcl = EDcI (target dcl)
-        | otherwise = let er=EDcD dcl in EDcI (source dcl) ./\. (er .:. flp er)
+        | isTot bindedExp = EDcI (source bindedExp)
+        | isSur bindedExp = EDcI (target bindedExp)
+        | otherwise = EDcI (source bindedExp) ./\. (bindedExp .:. flp bindedExp)
        --the expr for the target of r
        trgExpr
-        | not (isTot dcl) && isSur dcl = flp (EDcD dcl)
-        | otherwise                    = EDcD dcl
+        | not (isTot bindedExp) && isSur bindedExp = flp bindedExp
+        | otherwise                                =     bindedExp
        srcAtt = Att { attName = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
                     , attExpr = srcExpr
                     , attType = repr . source $ srcExpr
@@ -184,37 +188,36 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                     , attFlipped = isFlipped trgExpr
                     }
 
-    -- | dist will distribute the declarations amongst the sets of concepts. 
+    -- | dist will distribute the relations amongst the sets of concepts. 
     --   Preconditions: The sets of concepts are supposed to be sets of 
     --                  concepts that are to be represented in a single table. 
-    dist :: [Declaration]   -- all declarations that are to be distributed
+    dist :: Relations   -- all relations that are to be distributed
          -> [Typology]   -- the sets of concepts, each one contains all concepts that will go into a single table.
-         -> ( [(Typology, [Declaration])]  -- tuples of a set of concepts and all declarations that can be
+         -> ( [(Typology, [Relation])]  -- tuples of a set of concepts and all relations that can be
                                               -- stored into that table. The order of concepts is not modified.
-            , [Declaration]  -- The declarations that cannot be stored into one of the concept tables.
+            , [Relation]  -- The relations that cannot be stored into one of the concept tables.
             ) 
     dist dcls cptLists = 
        ( [ (t, declsInTable t) | t <- cptLists]
-       , [ d | d <- dcls, isNothing (conceptTableOf d)]
+       , [ d | d <- Set.elems dcls, isNothing (conceptTableOf d)]
        )
       where
-        declsInTable typ = [ dcl | dcl <- dcls
-                            , not . null $ maybeToList (conceptTableOf dcl) `isc` tyCpts typ ]
+        declsInTable typ = [ dcl | dcl <- Set.elems dcls
+                           , case conceptTableOf dcl of
+                               Nothing -> False
+                               Just x  -> x `elem` tyCpts typ
+                           ]
         
-        conceptTableOf :: Declaration -> Maybe A_Concept
+        conceptTableOf :: Relation -> Maybe A_Concept
         conceptTableOf d = if sqlBinTables opts
                            then Nothing
                            else fst <$> wayToStore d
 
--- | this function tells in what concepttable a given declaration is to be stored. If stored
+-- | this function tells in what concepttable a given relation is to be stored. If stored
 --   in a concept table, it returns the concept and a boolean, telling wether or not the relation
 --   is stored flipped.
-wayToStore :: Declaration -> Maybe (A_Concept,Bool)
-wayToStore d =
-  case d of 
-  Isn{} -> fatal 38 "I is not expected here." -- These relations are already in the kernel
-  Vs{}  -> fatal 39 "V is not expected here" -- Vs are not implemented at all
-  Sgn{} ->
+wayToStore :: Relation -> Maybe (A_Concept,Bool)
+wayToStore dcl =
        case (isInj d, isUni d) of
             (False  , False  ) -> Nothing --Will become a link-table
             (True   , False  ) -> Just flipped
@@ -225,13 +228,14 @@ wayToStore d =
                    (True   , False  ) -> Just plain
                    (False  , True   ) -> Just plain
                    (True   , True   ) -> Just plain
-  where plain  = (source d,False)
+  where d = EDcD dcl
+        plain   = (source d,False)
         flipped = (target d, True)
-
+        
 
 unquote :: String -> String
 unquote str 
-  | length str Prelude.< 2 = str
+  | length str < 2 = str
   | head str == '"' && last str == '"' = init . tail $ str 
   | otherwise = str
       
@@ -251,15 +255,9 @@ suitableAsKey st =
     Integer          -> True
     Float            -> False
     Object           -> True
-    TypeOfOne        -> fatal 143 "ONE has no key at all. does it?"
+    TypeOfOne        -> fatal "ONE has no key at all. does it?"
 
  
-
-isFlipped :: Expression -> Bool
-isFlipped e = 
-  case e of
-    EFlp _ -> True
-    _      -> False
 
 
 
@@ -268,4 +266,6 @@ typologies context =
    (multiKernels . ctxInfo $ context) ++ 
    [Typology { tyroot = c
              , tyCpts = [c]
-             } | c <- concs context >- concs (gens context)]
+             } 
+   | c <- Set.elems $ concs context Set.\\ concs (gens context)
+   ]

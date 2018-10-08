@@ -7,18 +7,46 @@ AmpersandLogs
 Rieks Joosten
 rieks.joosten@tno.nl
 
-1
-Thanks to JGSoft for providing the example.
 3
+Ampersand is a tool for generating prototypes from relation algebra rules
+
+This file contains navigation rules for ExecEngine log files that are produced by such prototypes.
+4
 Ampersand Log file
-1
-ExecEngine call (multiple runs)
-6697881
-10092543
-XExecEngine\sfixing(.|\r?\n)*?(?=\[.*\sEXECENGINE\.NOTICE)      XFixing\sviolation(.|\r?\n)*?(?=\[.*\sEXECENGINE\.(INFO:\s Fixing|NOTICE))
-EXECENGINE.INFO:\sExecEngine run started.*(.|\r?\n)*?(?=ExecEngine run completed)(ExecEngine run completed.*|$)
+3
+Function registration
+-16777208
+13434828
+
+ExecEngine function(.*\r?\n)*?(?=.*ExecEngine started)
+0
+0
+0
+0
+0
+2
+0
+
+0
+
+
+0
+0
+0
 1
 0
+0
+
+1
+
+0
+ExecEngine Started - Next Start
+-16777208
+13408767
+
+ExecEngine started.*?ExecEngine finished
+0
+1
 0
 3
 0
@@ -38,15 +66,41 @@ EXECENGINE.INFO:\sExecEngine run started.*(.|\r?\n)*?(?=ExecEngine run completed
 1
 
 0
-Block that fixes all violations for one rule
+ExecEngine Started - eof
+-16777208
+16751052
+
+ExecEngine started.*
+0
 1
-Block that fixes 1 rule
-65280
-13056
-EXECENGINE.INFO:\sExecEngine run started.*(.|\r?\n)*(?=ExecEngine run completed)(ExecEngine run completed.*|$)
-violations for rule.*(.|\r?\n)*?(?=(\r?\n.*EXECENGINE\.(INFO: ExecEngine run|NOTICE: ExecEngine (fixing|run \#))))
+0
+3
+0
+1
+0
+
+0
+
+
 0
 0
+0
+1
+0
+0
+
+1
+
+0
+Level 2 - ExecEngine started
+1
+ExecEngine Run
+0
+52377
+
+\{\+\s.*?\s\+\}
+0
+1
 0
 3
 0
@@ -66,15 +120,45 @@ violations for rule.*(.|\r?\n)*?(?=(\r?\n.*EXECENGINE\.(INFO: ExecEngine run|NOT
 1
 
 0
-Block that fixes a single violation
+Level 3 - ExecEngine Run
 1
-Block that fixes 1 violation
+Fixing Rule Violations
+16777215
+128
+
+\{\+\+\s.*?\s\+\+\}
+0
+1
+0
+3
+0
+3
+0
+
+0
+
+
+0
+0
+0
+1
+0
+0
+
+1
+
+0
+Level 4 - ExecEngine Run
+1
+Fix single violation pair
 52479
 6697881
-^\[.*Fixing violation(.|\r?\n)*(?=($|\r?\n\[.*\sEXECENGINE\.(NOTICE|INFO:\sFixing violation)))
-(?<=Fixing violation)(.|\r?\n)*?(?=\r?\n.*\sEXECENGINE\.(NOTICE|INFO:\s(Fixing violation|ExecEngine run completed)))
+
+2
+\{\+\+\+\s.*?\s\+\+\+\}
+
 0
-0
+1
 0
 0
 0

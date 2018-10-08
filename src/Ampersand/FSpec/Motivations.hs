@@ -1,18 +1,17 @@
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
-module Ampersand.FSpec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
+module Ampersand.FSpec.Motivations 
+   ( Motivated (purposeOf,purposesDefinedIn,explanations,explForObj)
+   , Meaning(..))
 where
-import Ampersand.Core.ParseTree
-        ( ConceptDef
-        )
-import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1
 import Ampersand.FSpec.FSpec(FSpec(..)) 
 import Ampersand.Basics
 import Text.Pandoc
 
--- The general idea is that an Ampersand declaration such as:
+-- The general idea is that an Ampersand relation such as:
 --     PURPOSE RELATION r[A*B] IN ENGLISH
---     {+This text explains why r[A*B] exists-}
+--     {+This text explains why r[A*B] exists+}
 -- produces the exact right text in the functional design document.
 
 -- The class Motivated exists so that we can write the Haskell expression 'purposeOf fSpec l x'
@@ -33,7 +32,7 @@ class  Named a => Motivated a where
                                                     --  * Different purposes from different sources make me want to document them all.
                                                     --  * Combining two overlapping scripts from (i.e. from different authors) may cause multiple purposes.
   purposeOf fSpec l x = case expls of
-                        []  -> Nothing -- fatal 40 "No purpose is generated! (should be automatically generated and available in FSpec.)"
+                        []  -> Nothing -- fatal "No purpose is generated! (should be automatically generated and available in FSpec.)"
                         ps  -> Just ps
 
    where expls = [e | e<-explanations fSpec
@@ -50,27 +49,27 @@ class  Named a => Motivated a where
         , explForObj x (explObj e)                  -- informally: "if x and e are the same"
      ]
 instance Motivated ConceptDef where
---  meaning _ cd = fatal 49 ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
+--  meaning _ cd = fatal ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
   explForObj x (ExplConceptDef x') = x == x'
   explForObj _ _ = False
   explanations _ = []
 
 instance Motivated A_Concept where
---  meaning _ c = fatal 54 ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
+--  meaning _ c = fatal ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
   explForObj x (ExplConceptDef cd) = name x == name cd
   explForObj _ _ = False
   explanations _ = []
 
-instance Motivated Declaration where
+instance Motivated Relation where
 --  meaning l decl = if null (decMean decl)
 --                   then concat [explCont expl | expl<-autoMeaning l decl, Just l == explLang expl || Nothing == explLang expl]
 --                   else decMean decl
-  explForObj d1 (ExplDeclaration d2) = d1 == d2
+  explForObj d1 (ExplRelation d2) = d1 == d2
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning lang d
 --   = [Expl { explPos   = decfpos d
---           , explObj   = ExplDeclaration d
+--           , explObj   = ExplRelation d
 --           , explLang  = Just lang
 --           , explRefIds = []
 --           , explCont  = [Para langInlines]
@@ -79,39 +78,39 @@ instance Motivated Declaration where
 --      langInlines =
 --       case lang of
 --         English
---              | null ([Sym,Asy]         >- properties d) -> [Emph [Str (name d)]]
+--              | null ([Sym,Asy]         Set.\\ properties d) -> [Emph [Str (name d)]]
 --                                                              ++[Str " is a property of a "]
 --                                                              ++[Str ((unCap.name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Sym,Rfx,Trn]     >- properties d) -> [Emph [Str (name d)]]
+--              | null ([Sym,Rfx,Trn]     Set.\\ properties d) -> [Emph [Str (name d)]]
 --                                                              ++[Str " is an equivalence relation on "]
 --                                                              ++[Str ((unCap.plural English .name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Asy,Trn]         >- properties d) -> [Emph [Str (name d)]]
+--              | null ([Asy,Trn]         Set.\\ properties d) -> [Emph [Str (name d)]]
 --                                                              ++[Str " is an ordering relation on "]
 --                                                              ++[Str ((unCap.plural English .name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Uni,Tot,Inj,Sur] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([Uni,Tot,Inj,Sur] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("exactly one "++(unCap.name.target) d)]
 --                                                              ++[Str " and vice versa."]
---              | null ([Uni,Tot,Inj    ] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([Uni,Tot,Inj    ] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("exactly one "++(unCap.name.target) d)]
 --                                                              ++[Str ", but not for each "]
 --                                                              ++[Str ((unCap.name.target) d++" there must be a "++(unCap.name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Uni,Tot,    Sur] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([Uni,Tot,    Sur] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("exactly one "++(unCap.name.target) d)]
 --                                                              ++[Str ", but each "]
 --                                                              ++[Str ((unCap.name.target) d++" is related to one or more "++(unCap.plural English .name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Uni,    Inj,Sur] >- properties d) -> [Str ("There is exactly one "++(unCap.name.source) d++" (")]
+--              | null ([Uni,    Inj,Sur] Set.\\ properties d) -> [Str ("There is exactly one "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") for each "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
 --                                                              ++[Str "), for which: "]
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str (", but not for each "++(unCap.name.source) d++" there must be a "++(unCap.name.target) d++".")]
---              | null ([    Tot,Inj,Sur] >- properties d) -> [Str ("There is exactly one "++(unCap.name.source) d++" (")]
+--              | null ([    Tot,Inj,Sur] Set.\\ properties d) -> [Str ("There is exactly one "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") for each "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
@@ -119,50 +118,50 @@ instance Motivated Declaration where
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str (", but each "++(unCap.name.source) d++" is related to one or more "++(unCap.plural English .name.target) d)]
 --                                                              ++[Str "."]
---              | null ([Uni,Tot        ] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([Uni,Tot        ] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("exactly one "++(unCap.name.target) d)]
 --                                                              ++[Str "."]
---              | null ([Uni,    Inj    ] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([Uni,    Inj    ] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("at most one "++(unCap.name.target) d)]
 --                                                              ++[Str (" and each "++(unCap.name.target) d++" is related to at most one "++(unCap.name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Uni,        Sur] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([Uni,        Sur] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("at most one "++(unCap.name.target) d)]
 --                                                              ++[Str (", whereas each "++(unCap.name.target) d++" is related to at least one "++(unCap.name.source) d)]
 --                                                              ++[Str "."]
---              | null ([    Tot,Inj    ] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([    Tot,Inj    ] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("at least one "++(unCap.name.target) d)]
 --                                                              ++[Str (", whereas each "++(unCap.name.target) d++" is related to at most one "++(unCap.name.source) d)]
 --                                                              ++[Str "."]
---              | null ([    Tot,    Sur] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([    Tot,    Sur] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("at least one "++(unCap.name.target) d)]
 --                                                              ++[Str (" and each "++(unCap.name.target) d++" is related to at least one "++(unCap.name.source) d)]
 --                                                              ++[Str "."]
---              | null ([        Inj,Sur] >- properties d) -> [Str ("There is exactly one "++(unCap.name.source) d++" (")]
+--              | null ([        Inj,Sur] Set.\\ properties d) -> [Str ("There is exactly one "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") for each "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
 --                                                              ++[Str "), for which: "]
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str "."]
---              | null ([            Sur] >- properties d) -> [Str ("There is at least one "++(unCap.name.source) d++" (")]
+--              | null ([            Sur] Set.\\ properties d) -> [Str ("There is at least one "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") for each "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
 --                                                              ++[Str "), for which: "]
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str "."]
---              | null ([        Inj    ] >- properties d) -> [Str ("There is at most one "++(unCap.name.source) d++" (")]
+--              | null ([        Inj    ] Set.\\ properties d) -> [Str ("There is at most one "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") for each "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
 --                                                              ++[Str "), for which: "]
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str "."]
---              | null ([    Tot        ] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([    Tot        ] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("at least one "++(unCap.name.target) d)]
 --                                                              ++[Str "."]
---              | null ([Uni            ] >- properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
+--              | null ([Uni            ] Set.\\ properties d) -> applyM d [Str ("each "++(unCap.name.source) d)]
 --                                                                         [Str ("zero or one "++(unCap.name.target) d)]
 --                                                              ++[Str "."]
 --              | otherwise                                    -> [Str "The sentence: "]
@@ -176,101 +175,101 @@ instance Motivated Declaration where
 --                                                              ++[(Math InlineMath . var [source d] . target) d]
 --                                                              ++[Str "."]
 --         Dutch
---              | null ([Sym,Asy]         >- properties d) -> [Emph [Str (name d)]]
+--              | null ([Sym,Asy]         Set.\\ properties d) -> [Emph [Str (name d)]]
 --                                                              ++[Str " is een eigenschap van een "]
 --                                                              ++[Str ((unCap.name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Sym,Rfx,Trn]     >- properties d) ->[Emph [Str (name d)]]
+--              | null ([Sym,Rfx,Trn]     Set.\\ properties d) ->[Emph [Str (name d)]]
 --                                                              ++[Str " is een equivalentierelatie tussen "]
 --                                                              ++[Str ((unCap.plural Dutch .name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Asy,Trn]         >- properties d) ->[Emph [Str (name d)]]
+--              | null ([Asy,Trn]         Set.\\ properties d) ->[Emph [Str (name d)]]
 --                                                              ++[Str " is een ordeningsrelatie tussen "]
 --                                                              ++[Str ((unCap.plural Dutch .name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Uni,Tot,Inj,Sur] >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([Uni,Tot,Inj,Sur] Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                              [Str ("precies één "++(unCap.name.target) d)]
 --                                                              ++[Str " en vice versa."]
---              | null ([Uni,Tot,Inj]     >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([Uni,Tot,Inj]     Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                         [Str ("precies één "++(unCap.name.target) d)]
 --                                                              ++[Str ", maar niet voor elke "]
 --                                                              ++[Str ((unCap.name.target) d)]
 --                                                              ++[Str " hoeft er een "]
 --                                                              ++[Str ((unCap.name.source) d)]
 --                                                              ++[Str " te zijn."]
---              | null ([Uni,Tot,    Sur] >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([Uni,Tot,    Sur] Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                         [Str ("precies één "++(unCap.name.target) d)]
 --                                                              ++[Str ", maar elke "]
 ----                                                            ++[Str ((unCap.name.target) d)]
 --                                                              ++[Str (" is gerelateerd aan één of meer ")]
 --                                                              ++[Str ((unCap.plural Dutch .name.source) d)]
 --                                                              ++[Str "."]
---              | null ([Uni,    Inj,Sur] >- properties d) -> [Str ("Er is precies één "++(unCap.name.source) d++" (")]
+--              | null ([Uni,    Inj,Sur] Set.\\ properties d) -> [Str ("Er is precies één "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") voor elke "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
 --                                                              ++[Str "), waarvoor geldt: "]
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str (", maar niet voor elke "++(unCap.name.source) d++" hoeft er een "++(unCap.name.target) d++" te zijn.")]
---              | null ([    Tot,Inj,Sur] >- properties d) -> [Str ("Er is precies één "++(unCap.name.source) d++" (")]
+--              | null ([    Tot,Inj,Sur] Set.\\ properties d) -> [Str ("Er is precies één "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") voor elke "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
 --                                                              ++[Str "), waarvoor geldt: "]
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str (", maar elke "++(unCap.name.source) d++" mag gerelateerd zijn aan meerdere "++(unCap.plural Dutch .name.target) d++".")]
---              | null ([Uni,Tot        ] >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([Uni,Tot        ] Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                         [Str ("precies één "++(unCap.name.target) d)]
 --                                                              ++[Str "."]
---              | null ([Uni,    Inj    ] >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([Uni,    Inj    ] Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                         [Str ("ten hoogste één "++(unCap.name.target) d)]
 --                                                              ++[Str " en elke "]
 --                                                              ++[Str ((unCap.name.target) d)]
 --                                                              ++[Str (" is gerelateerd aan ten hoogste één ")]
 --                                                              ++[Str ((unCap.name.source) d++".")]
 --                                                              ++[Str "."]
---              | null ([Uni,        Sur] >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([Uni,        Sur] Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                         [Str ("ten hoogste één "++(unCap.name.target) d)]
 --                                                              ++[Str ", terwijl elke "]
 --                                                              ++[Str ((unCap.name.target) d)]
 --                                                              ++[Str (" is gerelateerd aan tenminste één ")]
 --                                                              ++[Str ((unCap.name.source) d)]
 --                                                              ++[Str "."]
---              | null ([    Tot,Inj    ] >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([    Tot,Inj    ] Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                         [Str ("tenminste één "++(unCap.name.target) d)]
 --                                                              ++[Str ", terwijl elke "]
 --                                                              ++[Str ((unCap.name.target) d)]
 --                                                              ++[Str (" is gerelateerd aan ten hoogste één ")]
 --                                                              ++[Str ((unCap.name.source) d)]
 --                                                              ++[Str "."]
---              | null ([    Tot,    Sur] >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([    Tot,    Sur] Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                         [Str ("tenminste één "++(unCap.name.target) d)]
 --                                                              ++[Str (" en elke "++(unCap.name.target) d++" is gerelateerd aan tenminste één "++(unCap.name.source) d++".")]
---              | null ([        Inj,Sur] >- properties d) -> [Str ("Er is precies één "++(unCap.name.source) d++" (")]
+--              | null ([        Inj,Sur] Set.\\ properties d) -> [Str ("Er is precies één "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") voor elke "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
 --                                                              ++[Str "), waarvoor geldt: "]
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str "."]
---              | null ([            Sur] >- properties d) -> [Str ("Er is tenminste één "++(unCap.name.source) d++" (")]
+--              | null ([            Sur] Set.\\ properties d) -> [Str ("Er is tenminste één "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") voor elke "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
 --                                                              ++[Str "), waarvoor geldt: "]
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str "."]
---              | null ([        Inj    ] >- properties d) -> [Str ("Er is hooguit één "++(unCap.name.source) d++" (")]
+--              | null ([        Inj    ] Set.\\ properties d) -> [Str ("Er is hooguit één "++(unCap.name.source) d++" (")]
 --                                                              ++[Math InlineMath "a"]
 --                                                              ++[Str (") voor elke "++(unCap.name.target) d++" (")]
 --                                                              ++[Math InlineMath "b"]
 --                                                              ++[Str "), waarvoor geldt: "]
 --                                                              ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
 --                                                              ++[Str "."]
---              | null ([    Tot        ] >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([    Tot        ] Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                         [Str ("tenminste één "++(unCap.name.target) d)]
 --                                                              ++[Str "."]
---              | null ([Uni            ] >- properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
+--              | null ([Uni            ] Set.\\ properties d) -> applyM d [Str ("elke "++(unCap.name.source) d)]
 --                                                                         [Str ("nul of één "++(unCap.name.target) d)]
 --                                                              ++[Str "."]
 --              | otherwise                                    -> [Str "De zin: "]
@@ -284,20 +283,17 @@ instance Motivated Declaration where
 --                                                              ++[(Math InlineMath . var [source d].target) d]
 --                                                              ++[Str "."]
 --
---      applyM :: Declaration -> [Inline] -> [Inline] -> [Inline]
---      applyM decl a b =
---               case decl of
---                 Sgn{} | null (prL++prM++prR)
---                            -> a++[Space,Str "corresponds",Space,Str "to",Space]++b++[Space,Str "in",Space,Str "relation",Space,Str(name decl)]
---                       | null prL
---                            -> a++[Space,Str prM,Space]++b++[Space,Str prR]
---                       | otherwise
---                            -> [Str (upCap prL),Space]++a++[Space,Str prM,Space]++b++if null prR then [] else [Space,Str prR]
---                              where prL = decprL decl
---                                    prM = decprM decl
---                                    prR = decprR decl
---                 Isn{}     -> a++[Space,Str "equals",Space]++b
---                 Vs{}      -> [Str (show True)]
+--      applyM :: Relation -> [Inline] -> [Inline] -> [Inline]
+--      applyM decl a b
+--              | null (prL++prM++prR)
+--                   = a++[Space,Str "corresponds",Space,Str "to",Space]++b++[Space,Str "in",Space,Str "relation",Space,Str(name decl)]
+--              | null prL
+--                   = a++[Space,Str prM,Space]++b++[Space,Str prR]
+--              | otherwise
+--                   = [Str (upCap prL),Space]++a++[Space,Str prM,Space]++b++if null prR then [] else [Space,Str prR]
+--          where prL = decprL decl
+--                prM = decprM decl
+--                prR = decprR decl
 --
 --      var :: Named a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit predLogic.hs
 --      var seen c = low c ++ ['\'' | c'<-seen, low c == low c']
@@ -320,13 +316,13 @@ instance Motivated Rule where
 --           } ]
 
 instance Motivated Pattern where
---  meaning _ pat = fatal 324 ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
+--  meaning _ pat = fatal ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
   explForObj x (ExplPattern str) = name x == str
   explForObj _ _ = False
   explanations = ptxps
 
 instance Motivated Interface where
---  meaning _ obj = fatal 342 ("Interfaces have no intrinsic meaning, (used with interface '"++name obj++"')")
+--  meaning _ obj = fatal ("Interfaces have no intrinsic meaning, (used with interface '"++name obj++"')")
   explForObj x (ExplInterface str) = name x == str
   explForObj _ _ = False
   explanations _ = []
@@ -342,22 +338,19 @@ instance Meaning Rule where
   meaning l r = case filter isLang (ameaMrk (rrmean r)) of
                   []   -> Nothing
                   [m]  -> Just m
-                  _    -> fatal 381 ("In the "++show l++" language, too many meanings given for rule "++name r ++".")
+                  _    -> fatal ("In the "++show l++" language, too many meanings given for rule "++name r ++".")
                   where isLang m = l == amLang m
 
-instance Meaning Declaration where
+instance Meaning Relation where
   meaning l d =
-    case d of
-      Sgn{} -> let isLang m = l == amLang m
-               in case filter isLang (ameaMrk (decMean d)) of
-                    []   -> Nothing
-                    [m]  -> Just m
-                    _    -> fatal 388 ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
-      Isn{} -> fatal 370 "meaning is undefined for Isn"
-      Vs{}  -> fatal 371 "meaning is undefined for Vs"
+    let isLang m = l == amLang m
+    in case filter isLang (ameaMrk (decMean d)) of
+         []   -> Nothing
+         [m]  -> Just m
+         _    -> fatal ("In the "++show l++" language, too many meanings given for relation "++name d ++".")
 
 instance Motivated FSpec where
---  meaning _ fSpec = fatal 329 ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")
+--  meaning _ fSpec = fatal ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")
   explForObj x (ExplContext str) = name x == str
   explForObj _ _ = False
   explanations fSpec
