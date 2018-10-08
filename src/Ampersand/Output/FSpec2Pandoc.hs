@@ -1,12 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
-import Ampersand.Output.ToPandoc.ChapterConceptualAnalysis    (chpConceptualAnalysis)
-import Ampersand.Output.ToPandoc.ChapterDataAnalysis          (chpDataAnalysis)
-import Ampersand.Output.ToPandoc.ChapterDiagnosis             (chpDiagnosis)
-import Ampersand.Output.ToPandoc.ChapterIntroduction          (chpIntroduction)
-import Ampersand.Output.ToPandoc.ChapterNatLangReqs           (chpNatLangReqs)
-import Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.Output.ToPandoc
 import Data.Time.Format                                       (formatTime)
 import Data.List                                              (nub)
 import Text.Pandoc.CrossRef
@@ -71,11 +66,11 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
             <> tableTitle  ( (str.l) (NL "Tabel"  ,EN "Table" ))
             <> figPrefix [(str.l) (NL "fig.",EN "fig.")
                          ,(str.l) (NL "figs.",EN "figs.")]
-            <> eqnPrefix [(str.l) (NL "XXXrelatie",EN "relation")
+            <> eqnPrefix [(str.l) (NL "relatie",EN "relation")
                          ,(str.l) (NL "relaties", EN "relations")]
             <> tblPrefix [(str.l) (NL "tbl.",EN "tbl.")
                          ,(str.l) (NL "tbls.",EN "tbls.")]
-            <> lstPrefix [(str.l) (NL "XXXafspraak",EN "agreement")
+            <> lstPrefix [(str.l) (NL "afspraak",EN "agreement")
                          ,(str.l) (NL "afspraken", EN "agreements")]
             <> secPrefix [(str.l) (NL "hoofdstuk",EN "chapter")
                          ,(str.l) (NL "hoofdstukken", EN "chapters")]
@@ -110,7 +105,7 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
     thePictures = concat picturesByChapter
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (blocksByChapter, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (getOpts fSpec)]
+    (blocksByChapter, picturesByChapter) = unzip . map fspec2Blocks . chaptersInDoc $ getOpts fSpec
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
     fspec2Blocks Intro                 = (chpIntroduction           fSpec, [])

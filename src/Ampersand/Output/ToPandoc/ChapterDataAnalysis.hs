@@ -48,10 +48,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                    )
             <> para (case fsLang fSpec of
                       Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                               <> ("Deze is weergegeven in " <> hyperLinkTo fSpec classificationPicture <> "."
+                               <> ("Deze is weergegeven in " <> hyperLinkTo classificationPicture <> "."
                                   )
                       English -> "A number of concepts is organized in a classification structure. "
-                               <> ("This is shown in " <> hyperLinkTo fSpec classificationPicture <> "."
+                               <> ("This is shown in " <> hyperLinkTo classificationPicture <> "."
                                   )
                     )
             <> xDefBlck fSpec classificationPicture
@@ -75,10 +75,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                     )
       <> para (case fsLang fSpec of
                  Dutch   -> text "De afspraken zijn vertaald naar een gegevensmodel. "
-                           <> ( text "Dit gegevensmodel is in " <> hyperLinkTo fSpec logicalDataModelPicture <> text " weergegeven."
+                           <> ( text "Dit gegevensmodel is in " <> hyperLinkTo logicalDataModelPicture <> text " weergegeven."
                               )
                  English -> text "The functional requirements have been translated into a data model. "
-                           <> ( text "This model is shown by " <> hyperLinkTo fSpec logicalDataModelPicture <> text "."
+                           <> ( text "This model is shown by " <> hyperLinkTo logicalDataModelPicture <> text "."
                               )
               )
        <> xDefBlck fSpec logicalDataModelPicture
@@ -230,10 +230,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                 )
     <> para (case fsLang fSpec of
                Dutch   ->   "De afspraken zijn vertaald naar een technisch datamodel. "
-                         <> ( "Dit model is in " <> hyperLinkTo fSpec technicalDataModelPicture <> " weergegeven."
+                         <> ( "Dit model is in " <> hyperLinkTo technicalDataModelPicture <> " weergegeven."
                             )
                English ->   "The functional requirements have been translated into a technical data model. "
-                         <> ( "This model is shown by " <> hyperLinkTo fSpec technicalDataModelPicture <> "."
+                         <> ( "This model is shown by " <> hyperLinkTo technicalDataModelPicture <> "."
                             )
             )
     <> xDefBlck fSpec technicalDataModelPicture
