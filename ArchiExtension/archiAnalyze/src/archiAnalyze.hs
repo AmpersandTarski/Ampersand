@@ -65,7 +65,7 @@ where
          , []                                                                                  --  ctx_php    = 
          , []                                                                                  --  ctx_metas  = 
          )
-     where equivClasses :: [[(P_Population, P_Declaration)]]
+     where equivClasses :: [[(P_Population, P_Relation)]]
            equivClasses = eqCl snd pops
            archiPops  = [ (foldr1 mergePop.map fst) cl | cl<-equivClasses ]
            archiDecls = [ (head.nub.map snd) cl | cl<-equivClasses ]
@@ -140,7 +140,7 @@ where
                   | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
                     deriving Eq
 
-   data P_Declaration =
+   data P_Relation =
          P_Sgn { dec_nm :: String    -- ^ the name of the declaration
                , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
                , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
@@ -347,7 +347,7 @@ where
      typeMap ::        a -> [(String,String)]     -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
      grindMetaArchi :: a -> [Pop]                 -- create population for the metametamodel of Archi (i.e. folders, elements, properties, etc.)
      grindArchi ::    (String->String) -> a -> [Pop]        -- create population for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
-     grindArchiPop :: (String->String) -> a -> [(P_Population,P_Declaration)] -- create population and the corresponding metamodel for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
+     grindArchiPop :: (String->String) -> a -> [(P_Population,P_Relation)] -- create population and the corresponding metamodel for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
      keyArchi ::       a -> String                -- get the key value (dirty identifier) of an a.
 
    instance MetaArchi ArchiRepo where
@@ -433,7 +433,7 @@ where
         (concat.map (grindArchiPop typeLookup).elProps) element
      keyArchi = elemId
 
-   transform :: (String -> String) -> String -> String -> [(String, String)] -> (P_Population,P_Declaration)
+   transform :: (String -> String) -> String -> String -> [(String, String)] -> (P_Population,P_Relation)
    transform _ "name" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
       , P_Sgn "naam" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [] [] [] [] OriginUnknown False )

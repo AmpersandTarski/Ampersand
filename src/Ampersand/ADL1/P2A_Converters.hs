@@ -242,7 +242,6 @@ pCtx2aCtx opts
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       allRoleRelations <- traverse (pRoleRelation2aRoleRelation contextInfo) (p_roleRelations ++ concatMap pt_RRels p_patterns)
       declsAndPops <- traverse (pDecl2aDecl Nothing (representationOf contextInfo) deflangCtxt deffrmtCtxt) p_relations
-      let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls) :: Set.Set Type
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2
                      , ctxlang = deflangCtxt
