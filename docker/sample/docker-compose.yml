@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  prototype:
+    restart: always
+    build:
+      context: .
+      args:
+        ADL_FILE: CHANGE_ME.adl
+
+    ports:
+      - "80:80"
+    links:
+      - db
+ 
+  db:
+    restart: always
+    image: ampersandtarski/ampersand-prototype-db
+
+  phptools:
+    image: phpmyadmin/phpmyadmin
+    ports:
+       - "8080:80"
+    links:
+      - db

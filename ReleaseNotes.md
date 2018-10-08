@@ -2,6 +2,11 @@
 
 ## Unreleased changes
 
+## v3.11.3 (28 september 2018)
+
+* Bugfix: Figures are available again in the generated specification document.
+* [Issue #836](https://github.com/AmpersandTarski/Ampersand/issues/836) Bugfix switch --force-reinstall-framework
+
 ## v3.11.2 (31 august 2018)
 
 * [Issue #821](https://github.com/AmpersandTarski/Ampersand/issues/821) Fix error messages.
