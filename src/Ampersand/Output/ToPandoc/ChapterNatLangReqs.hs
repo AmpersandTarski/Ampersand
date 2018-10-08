@@ -69,7 +69,7 @@ chpNatLangReqs lev fSpec =
         null (rulesOfTheme tc) = mempty
     | otherwise =
              --  *** Header of the theme: ***
-            xDefBlck fSpec (XRefNaturalLanguageTheme (patOfTheme tc))
+            xDefBlck fSpec (XRefSharedLangTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
                  Nothing  -> 
@@ -190,9 +190,9 @@ chpNatLangReqs lev fSpec =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
             [(   (str.l) (NL "Afspraak ", EN "Agreement ")
-              <> ": "
+              <> ": " <> (xDefInln fSpec (XRefSharedLangRelation dcl))
              , -- (xDefInln fSpec (XRefSharedLangRelation dcl) 
-                [xDefBlck fSpec (XRefSharedLangRelation dcl)]
+              mempty --  [xDefBlck fSpec (XRefSharedLangRelation dcl)]
               <>(case (cDclMeaning . theLoad) nDcl of
                    Nothing
                      -> [plain $
