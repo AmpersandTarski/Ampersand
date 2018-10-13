@@ -1040,10 +1040,8 @@ pMarkup2aMarkup defLanguage defFormat
              , mString = str
              }
  = Markup { amLang = fromMaybe defLanguage ml -- The language is always defined; if not by the user, then by default.
-            , amPandoc = string2Blocks fmt str
-            }
-     where
-       fmt = fromMaybe defFormat mpdf           -- The pandoc format is always defined; if not by the user, then by default.
+          , amPandoc = string2Blocks (fromMaybe defFormat mpdf) str
+          }
 
 -- helpers for generating a lattice, not having to write `Atom' all the time
 -- the l in lJoin and lMeet denotes the lattice.

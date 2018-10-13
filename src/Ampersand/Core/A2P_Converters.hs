@@ -237,7 +237,7 @@ aMarkup2pMarkup :: Markup -> P_Markup
 aMarkup2pMarkup markup =
  P_Markup  { mLang   = Just $ amLang markup
            , mFormat = Just ReST
-           , mString = aMarkup2String  ReST markup
+           , mString = aMarkup2String markup
            } 
 
 aPairView2pPairView :: PairView Expression -> PairView (Term TermPrim)

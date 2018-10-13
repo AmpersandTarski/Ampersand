@@ -171,7 +171,7 @@ genCustomProfileElements =
     reqUML (xmiId, req) = intercalate "\n"
      ( ("   <thecustomprofile:Functional base_Requirement="++show xmiId++"/>") :
        [tagUML xmiId count puprtxt reftxt 
-       | (count, (puprtxt, reftxt)) <- zip [0::Int ..] [(aMarkup2String ReST (explMarkup p), intercalate ";" (explRefIds p)) | p <- reqPurposes req]
+       | (count, (puprtxt, reftxt)) <- zip [0::Int ..] [(aMarkup2String (explMarkup p), intercalate ";" (explRefIds p)) | p <- reqPurposes req]
        ]
      )
     tagUML xmiId nr value reftxt = intercalate "\n"
@@ -191,9 +191,9 @@ genCustomReqElements fSpec parentPackageId =
     reqUML (xmiId, req) = intercalate "\n"
      ([ "    <element xmi:idref="++show xmiId++" xmi:type=\"uml:Requirement\" name="++show (reqId req)++" scope=\"public\""++">"
       , "      <model package="++show parentPackageId++" ea_eleType=\"element\"/>"
-      , "      <properties documentation="++show (maybe "" (aMarkup2String ReST) (meaning (fsLang fSpec) req))++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
+      , "      <properties documentation="++show (maybe "" aMarkup2String (meaning (fsLang fSpec) req))++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
       , "      <tags>"]++
-      [ "         <tag name=\"Purpose"++nr++"\" value="++show p++" modelElement="++show xmiId++"/>" | (nr ,p) <- zip ("" : map show [1::Int ..]) [aMarkup2String ReST (explMarkup p) | p <- reqPurposes req]  ]++
+      [ "         <tag name=\"Purpose"++nr++"\" value="++show p++" modelElement="++show xmiId++"/>" | (nr ,p) <- zip ("" : map show [1::Int ..]) (map (aMarkup2String . explMarkup) $ reqPurposes req)  ]++
       [ "      </tags>"
       , "    </element>"
       ])

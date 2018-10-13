@@ -373,7 +373,7 @@ transformers fSpec = map toTransformer [
       )
      ,("markupText"            , "Purpose"               , "MarkupText"
       , [(dirtyId purp
-         ,PopAlphaNumeric . aMarkup2String Markdown . explMarkup $ purp
+         ,PopAlphaNumeric . aMarkup2String . explMarkup $ purp
          ) 
         | purp::Purpose <-  instances fSpec
         ]

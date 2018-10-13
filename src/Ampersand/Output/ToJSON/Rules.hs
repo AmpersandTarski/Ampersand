@@ -68,10 +68,10 @@ instance JSON Rule JsonRule where
   } 
    where 
     fSpec = userFSpec multi
-    showMeaning = maybe "" (aMarkup2String Markdown) (meaning (fsLang fSpec) rule)
+    showMeaning = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
     showMessage = case [ markup | markup <- rrmsg rule, amLang markup == fsLang fSpec ] of
                               []    -> ""
-                              markup:_ -> aMarkup2String Markdown markup
+                              markup:_ -> aMarkup2String markup
 instance JSON (PairView Expression) JsonPairView where
  fromAmpersand multi pv = JsonPairView $ map (fromAmpersand multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
