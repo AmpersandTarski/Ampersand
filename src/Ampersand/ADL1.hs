@@ -47,7 +47,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , ViewDef(..)
          , ViewSegment(..)
          , ViewSegmentPayLoad(..)
-         , BoxItem(..), BoxExp(..), BoxTxt(..), isObjExp
+         , BoxItem(..), ObjectDef(..), BoxTxt(..), isObjExp
          , Object(..)
          , Default(..)
          , SubInterface(..)

@@ -7,7 +7,6 @@ where
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec(FSpec(..)) 
 import Ampersand.Basics
-import Text.Pandoc
 
 -- The general idea is that an Ampersand relation such as:
 --     PURPOSE RELATION r[A*B] IN ENGLISH
@@ -327,27 +326,21 @@ instance Motivated Interface where
   explForObj _ _ = False
   explanations _ = []
 
-class Meaning a where
-  meaning :: Lang -> a -> Maybe Markup
-  meaning2Blocks :: Lang -> a -> [Block]
-  meaning2Blocks l a = case meaning l a of
-                         Nothing -> []
-                         Just m  -> amPandoc m
+class Named a => Meaning a where
+  meaning :: Lang -> a -> Maybe AMeaning
+  meaning l x = 
+     case filter (\(AMeaning m) -> l == amLang m) (meanings x) of
+       []   -> Nothing
+       [m]  -> Just m
+       _    -> fatal ("In the "++show l++" language, too many meanings given for "++name x ++".")             
+  meanings :: a -> [AMeaning]
+  {-# MINIMAL meanings #-}
 
 instance Meaning Rule where
-  meaning l r = case filter isLang (ameaMrk (rrmean r)) of
-                  []   -> Nothing
-                  [m]  -> Just m
-                  _    -> fatal ("In the "++show l++" language, too many meanings given for rule "++name r ++".")
-                  where isLang m = l == amLang m
+  meanings = rrmean
 
 instance Meaning Relation where
-  meaning l d =
-    let isLang m = l == amLang m
-    in case filter isLang (ameaMrk (decMean d)) of
-         []   -> Nothing
-         [m]  -> Just m
-         _    -> fatal ("In the "++show l++" language, too many meanings given for relation "++name d ++".")
+  meanings = decMean
 
 instance Motivated FSpec where
 --  meaning _ fSpec = fatal ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")

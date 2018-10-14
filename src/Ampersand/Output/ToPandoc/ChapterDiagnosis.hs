@@ -402,7 +402,7 @@ chpDiagnosis fSpec
                <> " ( " <> quoterule r <> " )"
                <> (str.l) (NL " luidt: ", EN " says: ")
                )
-       <> fromList (meaning2Blocks (fsLang fSpec) r)
+       <> printMeaning (fsLang fSpec) r
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
                           ,EN "This rule contains work (for ")
                 <>commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))

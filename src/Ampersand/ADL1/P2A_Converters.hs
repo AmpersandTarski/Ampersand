@@ -98,7 +98,7 @@ checkInterfaceCycles ctx =
                         . getCycles $ refsPerInterface
         refsPerInterface :: [(String, [String])]
         refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
-        getDeepIfcRefs :: BoxExp -> [String]
+        getDeepIfcRefs :: ObjectDef -> [String]
         getDeepIfcRefs obj = case objmsub obj of
                                Nothing -> []
                                Just si -> case si of 
@@ -577,7 +577,7 @@ pCtx2aCtx opts
                   Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
               obj crud (e,sr) s
                 = ( BxExpr
-                    BoxExp { objnm = nm
+                    ObjectDef { objnm = nm
                            , objpos = orig
                            , objExpression = e
                            , objcrud = crud
@@ -649,7 +649,7 @@ pCtx2aCtx opts
                   where fn :: (BoxItem, Bool) -> (Guarded BoxItem)
                         fn (BxExpr e,p) = fmap BxExpr $ matchWith (e,p)
                         fn (BxTxt t,_) = pure $ BxTxt t
-     where matchWith :: (BoxExp, Bool) -> (Guarded BoxExp)
+     where matchWith :: (ObjectDef, Bool) -> (Guarded ObjectDef)
            matchWith (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
@@ -760,8 +760,8 @@ pCtx2aCtx opts
           return Ru { rrnm = nm
                     , formalExpression = exp'
                     , rrfps = orig
-                    , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
-                    , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
+                    , rrmean = map (pMean2aMean deflangCtxt deffrmtCtxt) meanings
+                    , rrmsg  = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
                     , rrviol = vls
                     , rrdcl = Nothing
                     , rrpat = env
@@ -992,7 +992,7 @@ pDecl2aDecl env typ defLanguage defFormat pd
                  , decprL  = prL
                  , decprM  = prM
                  , decprR  = prR
-                 , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
+                 , decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd)
                  , decfpos = origin pd
                  , decusr  = True
                  , decpat  = env
@@ -1024,9 +1024,9 @@ pDisAmb2Expr (o,dx)      = cannotDisambiguate o dx
 
 pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
-            -> [PMeaning] -> AMeaning
-pMean2aMean defLanguage defFormat pmeanings
- = AMeaning [ pMarkup2aMarkup defLanguage defFormat pmarkup | PMeaning pmarkup <-pmeanings ]
+            -> PMeaning -> AMeaning
+pMean2aMean defLanguage defFormat (PMeaning pmarkup)
+ =  AMeaning (pMarkup2aMarkup defLanguage defFormat pmarkup)
 pMess2aMess :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
             -> PMessage -> Markup
@@ -1040,10 +1040,8 @@ pMarkup2aMarkup defLanguage defFormat
              , mString = str
              }
  = Markup { amLang = fromMaybe defLanguage ml -- The language is always defined; if not by the user, then by default.
-            , amPandoc = string2Blocks fmt str
-            }
-     where
-       fmt = fromMaybe defFormat mpdf           -- The pandoc format is always defined; if not by the user, then by default.
+          , amPandoc = string2Blocks (fromMaybe defFormat mpdf) str
+          }
 
 -- helpers for generating a lattice, not having to write `Atom' all the time
 -- the l in lJoin and lMeet denotes the lattice.

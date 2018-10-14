@@ -8,7 +8,7 @@ PATTERN Documentation
     REPRESENT MarkupText TYPE BIGALPHANUMERIC    
     RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
     MEANING "The meanings of a relation."
-    RELATION decmean[Relation * Meaning]
+    RELATION decMean[Relation * Meaning]
     MEANING "The meanings of a relation."
     RELATION purpose[Pattern*Purpose]
     MEANING "The purposes of a pattern."
