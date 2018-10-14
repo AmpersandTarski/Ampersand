@@ -429,8 +429,8 @@ instance ShowHS Rule where
      ,"  }"
      ]
 
-instance ShowHS AMeaning where
-  showHS opts indent (AMeaning x) = "AMeaning " ++ showHS opts (indent++"        ") x
+instance ShowHS Meaning where
+  showHS opts indent (Meaning x) = "Meaning " ++ showHS opts (indent++"        ") x
 
 instance ShowHSName IdentityDef where
  showHSName identity = haskellIdentifier ("identity_"++name identity)

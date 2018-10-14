@@ -227,7 +227,7 @@ aExpression2pTermPrim expr =
    o = fatal "Origin is not present in Expression"
 
 
-aMeaning2pMeaning :: AMeaning -> PMeaning
+aMeaning2pMeaning :: Meaning -> PMeaning
 aMeaning2pMeaning = PMeaning . aMarkup2pMarkup . ameaMrk
 
 aMarkup2pMessage :: Markup -> PMessage

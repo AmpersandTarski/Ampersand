@@ -302,11 +302,11 @@ instance Named t => Named (Numbered t) where
  name = name . theLoad
 data RuleCont = CRul { cRul ::  Rule
                      , cRulPurps :: [Purpose]
-                     , cRulMeanings :: [AMeaning]
+                     , cRulMeanings :: [Meaning]
                      }
 data DeclCont = CDcl { cDcl ::  Relation
                      , cDclPurps :: [Purpose]
-                     , cDclMeanings :: [AMeaning]
+                     , cDclMeanings :: [Meaning]
                      , cDclPairs :: AAtomPairs
                      }
 data CptCont  = CCpt { cCpt ::  A_Concept

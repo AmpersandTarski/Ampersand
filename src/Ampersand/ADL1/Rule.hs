@@ -62,7 +62,7 @@ rulefromProp prp d =
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
                      Prop -> fatal "Prop should have been converted by the parser"
-        meanings prop = map (AMeaning . markup) [English,Dutch]
+        meanings prop = map (Meaning . markup) [English,Dutch]
           where 
             markup lang = Markup lang (string2Blocks ReST $ f lang)
             f lang = showDcl++" is "++propFullName lang prop

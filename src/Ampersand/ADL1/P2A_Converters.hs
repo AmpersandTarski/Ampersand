@@ -1024,9 +1024,9 @@ pDisAmb2Expr (o,dx)      = cannotDisambiguate o dx
 
 pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
-            -> PMeaning -> AMeaning
+            -> PMeaning -> Meaning
 pMean2aMean defLanguage defFormat (PMeaning pmarkup)
- =  AMeaning (pMarkup2aMarkup defLanguage defFormat pmarkup)
+ =  Meaning (pMarkup2aMarkup defLanguage defFormat pmarkup)
 pMess2aMess :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
             -> PMessage -> Markup

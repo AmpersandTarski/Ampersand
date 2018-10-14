@@ -381,7 +381,7 @@ transformers fSpec = map toTransformer [
       )
      ,("markup"            , "Meaning"               , "Markup"
       , [(dirtyId mean, dirtyId . ameaMrk $ mean) 
-        | mean::AMeaning <-  instances fSpec
+        | mean::Meaning <-  instances fSpec
         ]
       )
      ,("markup"            , "Purpose"               , "Markup"
@@ -768,7 +768,7 @@ instance Instances Pattern where
   instances fSpec = ctxpats (originalContext fSpec)  
 instance Instances Population where
   instances fSpec = ctxpopus (originalContext fSpec)
-instance Instances AMeaning where
+instance Instances Meaning where
   instances fSpec = concatMap meanings (allRules fSpec) ++
                     concatMap decMean  (vrels fSpec)
 instance Instances Purpose where
