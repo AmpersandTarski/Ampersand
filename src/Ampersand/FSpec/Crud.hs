@@ -94,7 +94,7 @@ getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterf
 getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]
 getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
   where 
-    getExprs :: BoxExp -> [Expression]
+    getExprs :: ObjectDef -> [Expression]
     getExprs objExpr =
       objExpression objExpr : 
           case objmsub objExpr of 

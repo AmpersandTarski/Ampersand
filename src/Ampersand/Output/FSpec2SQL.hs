@@ -59,7 +59,7 @@ dumpSQLqueries multi
         = header ("INTERFACE: "<>Text.pack (name ifc))
         <>(map ("  " <>) . showObjDef . ifcObj) ifc
         where 
-          showObjDef :: BoxExp -> [Text.Text]
+          showObjDef :: ObjectDef -> [Text.Text]
           showObjDef obj
             = (header . Text.pack . showA . objExpression) obj
             <>[queryAsSQL . prettySQLQueryWithPlaceholder 2 fSpec . objExpression $ obj]

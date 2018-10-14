@@ -71,7 +71,7 @@ BOX [ "name" : name[Rule*RuleName]
  --   , "tgtConcept" : tgtConcept[Rule*Concept]
  --   , "srcConcept" : srcConcept[Rule*Concept]
     , "formalExpression" : formalExpression[Rule*Expression]
-    , "sign" : sign[Rule*Signature]
+    , "sign" : formalExpression[Rule*Expression];sign[Expression*Signature]
 --    , "maintains~ (Plug)" : maintains[Plug*Rule]~
  --   , "origin" : origin[Rule*Origin]
 --    , "rrviols" : rrviols
@@ -124,7 +124,7 @@ BOX [ Signature: I[Signature]
     , src : src[Signature*Concept] LINKTO INTERFACE "Concept"
     , tgt : tgt[Signature*Concept] LINKTO INTERFACE "Concept"
     , "sign~ (Relation)" : sign[Relation*Signature]~ LINKTO INTERFACE "Relation"
-    , "sign~ (Rule)" : sign[Rule*Signature]~ LINKTO INTERFACE "Rule"
+    , "sign~ (Rule)" : sign[Expression*Signature]~;formalExpression[Rule*Expression]~ LINKTO INTERFACE "Rule"
     ] 
 
 
@@ -143,7 +143,7 @@ BOX [ "gens~" : gens[Context*Isa]~
 
 INTERFACE Relation FOR Ampersand : I[Relation]
 BOX [ "declared in context" : declaredIn[Relation*Context]
-	, "decmean" : decmean[Relation*Meaning]
+	, "decMean" : decMean[Relation*Meaning]
 	, "decprL" : decprL[Relation*String]
 	, "decprM" : decprM[Relation*String]
 	, "decprR" : decprR[Relation*String]

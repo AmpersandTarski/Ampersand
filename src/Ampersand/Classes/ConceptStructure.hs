@@ -118,7 +118,7 @@ instance ConceptStructure BoxItem where
   concs (BxTxt _  ) = Set.empty
   expressionsIn (BxExpr obj) = expressionsIn obj
   expressionsIn (BxTxt _  ) = Set.empty
-instance ConceptStructure BoxExp where
+instance ConceptStructure ObjectDef where
   concs obj = (Set.singleton . target . objExpression $ obj) `Set.union` concs (objmsub obj)
   expressionsIn obj = Set.unions
                      [ (expressionsIn . objExpression) obj

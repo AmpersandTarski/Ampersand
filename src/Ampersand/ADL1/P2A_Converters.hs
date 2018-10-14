@@ -98,7 +98,7 @@ checkInterfaceCycles ctx =
                         . getCycles $ refsPerInterface
         refsPerInterface :: [(String, [String])]
         refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
-        getDeepIfcRefs :: BoxExp -> [String]
+        getDeepIfcRefs :: ObjectDef -> [String]
         getDeepIfcRefs obj = case objmsub obj of
                                Nothing -> []
                                Just si -> case si of 
@@ -577,7 +577,7 @@ pCtx2aCtx opts
                   Nothing -> Errors . pure $ mkUndeclaredError "view" objDef viewId
               obj crud (e,sr) s
                 = ( BxExpr
-                    BoxExp { objnm = nm
+                    ObjectDef { objnm = nm
                            , objpos = orig
                            , objExpression = e
                            , objcrud = crud
@@ -649,7 +649,7 @@ pCtx2aCtx opts
                   where fn :: (BoxItem, Bool) -> (Guarded BoxItem)
                         fn (BxExpr e,p) = fmap BxExpr $ matchWith (e,p)
                         fn (BxTxt t,_) = pure $ BxTxt t
-     where matchWith :: (BoxExp, Bool) -> (Guarded BoxExp)
+     where matchWith :: (ObjectDef, Bool) -> (Guarded ObjectDef)
            matchWith (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
