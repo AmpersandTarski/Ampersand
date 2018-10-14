@@ -1,8 +1,8 @@
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
 module Ampersand.FSpec.Motivations 
-   ( Motivated (purposesDefinedIn,explanations),
-     Meaning(..))
+   ( Motivated (purposesDefinedIn),
+     HasMeaning(meaning,meanings))
 where
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec(FSpec(..)) 
@@ -15,44 +15,77 @@ import Ampersand.Basics
 
 -- The class Motivated exists so that we can write the Haskell expression 'purposesDefinedIn fSpec l x'
 -- anywhere we like for every type of x that could possibly be motivated in an Purpose.
--- 'purpose fSpec l x' produces all explanations related to x from the context (fSpec)
---  that are available in the language specified in 'l'.
+-- 'purposesDefinedIn fSpec l x' produces all purposes related to x from the context (fSpec)
+-- that are available in the language specified in 'l'.
 -- The other functions in this class are solely meant to be used in the definition of purpose.
 -- They are defined once for each instance of Explainable, not be used in other code.
--- TODO: Han, kan dat worden afgeschermd, zodat de programmeur alleen 'purpose' ziet en de andere functies
---       dus niet kan gebruiken?
---     @Stef: Ja, het is al zoveel mogelijk afgeschermd (zie definities die deze module exporteert, hierboven)
---     maar er wordt nog gebruik van gemaakt voor oa foutmeldingen in de atlas, en het prototype.
---     Zodra iemand iets anders verzint voor het gebruik van "ExplainOutputFormat(..),format",
---     kunnen deze uit de export-list van deze module worden verwijderd.
+
 class  Named a => Motivated a where
-  explForObj :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
-  explanations :: a -> [Purpose]  -- ^ The explanations that are defined inside a (including that of a itself)
-  purposesDefinedIn :: FSpec -> Lang -> a -> [Purpose]  -- ^ The explanations that are defined inside a (including that of a itself)
+  isForObject :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
+  purposesDefinedIn :: FSpec -> Lang -> a -> [Purpose]  -- ^ The purposes defined for a specific a, given Langugage.
   purposesDefinedIn fSpec l x
-   = [e | e<-explanations fSpec
-        , amLang (explMarkup e) == l
-        , explForObj x (explObj e)                  -- informally: "if x and e are the same"
+   = [e | e<-fSexpls fSpec
+        , amLang (explMarkup e) == l  -- filter by language
+        , isForObject x (explObj e)   -- informally: "if x and e are the same"
      ]
 instance Motivated ConceptDef where
 --  meaning _ cd = fatal ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
-  explForObj x (ExplConceptDef x') = x == x'
-  explForObj _ _ = False
-  explanations _ = []
+  isForObject x (ExplConceptDef x') = x == x'
+  isForObject _ _ = False
 
 instance Motivated A_Concept where
 --  meaning _ c = fatal ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
-  explForObj x (ExplConceptDef cd) = name x == name cd
-  explForObj _ _ = False
-  explanations _ = []
+  isForObject x (ExplConceptDef cd) = name x == name cd
+  isForObject _ _ = False
 
 instance Motivated Relation where
+  isForObject d1 (ExplRelation d2) = d1 == d2
+  isForObject _ _ = False
+
+instance Motivated Rule where
+  isForObject x (ExplRule str) = name x == str
+  isForObject _ _ = False
+
+instance Motivated Pattern where
+  isForObject x (ExplPattern str) = name x == str
+  isForObject _ _ = False
+
+instance Motivated Interface where
+  isForObject x (ExplInterface str) = name x == str
+  isForObject _ _ = False
+
+
+
+class Named a => HasMeaning a where
+  meaning :: Lang -> a -> Maybe AMeaning
+  meaning l x = 
+     case filter (\(AMeaning m) -> l == amLang m) (meanings x) of
+       []   -> Nothing
+       [m]  -> Just m
+       _    -> fatal ("In the "++show l++" language, too many meanings given for "++name x ++".")             
+  meanings :: a -> [AMeaning]
+  generatedMeaning :: Lang -> a -> AMeaning 
+  {-# MINIMAL meanings #-}
+
+instance HasMeaning Rule where
+  meanings = rrmean
+--  meaning l rule
+--   = head (expls++map explCont (autoMeaning l rule))
+--     where
+--        expls = [econt | Means l' econt<-rrxpl rule, l'==Just l || l'==Nothing]
+--  autoMeaning lang r
+--   = [Expl { explObj   = ExplRule (name r)
+--           , explPos   = origin r
+--           , explLang  = Just lang
+--           , explRefIds = []
+--           , explCont  = [Plain [RawInline (Text.Pandoc.Builder.Format "latex") (showPredLogic lang r++".")]]
+--           } ]
+
+instance HasMeaning Relation where
+  meanings = decMean
 --  meaning l decl = if null (decMean decl)
 --                   then concat [explCont expl | expl<-autoMeaning l decl, Just l == explLang expl || Nothing == explLang expl]
 --                   else decMean decl
-  explForObj d1 (ExplRelation d2) = d1 == d2
-  explForObj _ _ = False
-  explanations _ = []
 --  autoMeaning lang d
 --   = [Expl { explPos   = decfpos d
 --           , explObj   = ExplRelation d
@@ -285,56 +318,7 @@ instance Motivated Relation where
 --      var seen c = low c ++ ['\'' | c'<-seen, low c == low c']
 --                      where low idt= if null (name idt) then "x" else [(toLower.head.name) idt]
 
-instance Motivated Rule where
---  meaning l rule
---   = head (expls++map explCont (autoMeaning l rule))
---     where
---        expls = [econt | Means l' econt<-rrxpl rule, l'==Just l || l'==Nothing]
-  explForObj x (ExplRule str) = name x == str
-  explForObj _ _ = False
-  explanations _ = []
---  autoMeaning lang r
---   = [Expl { explObj   = ExplRule (name r)
---           , explPos   = origin r
---           , explLang  = Just lang
---           , explRefIds = []
---           , explCont  = [Plain [RawInline (Text.Pandoc.Builder.Format "latex") (showPredLogic lang r++".")]]
---           } ]
-
-instance Motivated Pattern where
---  meaning _ pat = fatal ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
-  explForObj x (ExplPattern str) = name x == str
-  explForObj _ _ = False
-  explanations = ptxps
-
-instance Motivated Interface where
---  meaning _ obj = fatal ("Interfaces have no intrinsic meaning, (used with interface '"++name obj++"')")
-  explForObj x (ExplInterface str) = name x == str
-  explForObj _ _ = False
-  explanations _ = []
-
-class Named a => Meaning a where
-  meaning :: Lang -> a -> Maybe AMeaning
-  meaning l x = 
-     case filter (\(AMeaning m) -> l == amLang m) (meanings x) of
-       []   -> Nothing
-       [m]  -> Just m
-       _    -> fatal ("In the "++show l++" language, too many meanings given for "++name x ++".")             
-  meanings :: a -> [AMeaning]
-  {-# MINIMAL meanings #-}
-
-instance Meaning Rule where
-  meanings = rrmean
-
-instance Meaning Relation where
-  meanings = decMean
-
 instance Motivated FSpec where
---  meaning _ fSpec = fatal ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")
-  explForObj x (ExplContext str) = name x == str
-  explForObj _ _ = False
-  explanations fSpec
-    = fSexpls fSpec ++
-      (concatMap explanations . vpatterns)  fSpec ++
-      (concatMap explanations . interfaceS) fSpec
+  isForObject x (ExplContext str) = name x == str
+  isForObject _ _ = False
 

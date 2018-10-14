@@ -772,7 +772,7 @@ instance Instances AMeaning where
   instances fSpec = concatMap meanings (allRules fSpec) ++
                     concatMap decMean  (vrels fSpec)
 instance Instances Purpose where
-  instances fSpec = explanations fSpec
+  instances fSpec = fSexpls fSpec
 instance Instances Markup where
   instances fSpec = 
       map explMarkup (instances fSpec) ++

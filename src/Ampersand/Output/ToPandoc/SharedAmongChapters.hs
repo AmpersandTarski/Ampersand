@@ -509,7 +509,7 @@ dpRule' fSpec = dpR
         rds = ds `Set.intersection` seenRelations  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `Set.union` seenConcs) (nds `Set.union` seenRelations)
 
-printMeaning :: Meaning a => Lang -> a -> Blocks
+printMeaning :: HasMeaning a => Lang -> a -> Blocks
 printMeaning lang = fromMaybe mempty . fmap (printMarkup . ameaMrk) . meaning lang
 
 printPurposes :: [Purpose] -> Blocks

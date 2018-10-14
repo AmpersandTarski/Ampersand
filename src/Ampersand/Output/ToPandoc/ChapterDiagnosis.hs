@@ -207,7 +207,7 @@ chpDiagnosis fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
-  hasMeaning :: Meaning a => a -> Bool
+  hasMeaning :: HasMeaning a => a -> Bool
   hasMeaning = isJust . meaning (fsLang fSpec)
 
   relsNotUsed :: Blocks

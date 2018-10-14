@@ -206,7 +206,7 @@ data Req = Req { reqId :: String
                , reqPurposes :: [Purpose]
                }
 
-instance Meaning Req where
+instance HasMeaning Req where
   meanings r = case reqOrig r of
                   Right rul -> meanings rul
                   Left  dcl -> meanings dcl

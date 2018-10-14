@@ -55,12 +55,11 @@ chpNatLangReqs lev fSpec =
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
                getRefs ::FSpec ->  [LawRef]
-               getRefs f = concatMap (mapMaybe toLawRef . explRefIds) (explanations f)
+               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesDefinedIn fSpec (fsLang fSpec)
 
 
   -- | printOneTheme tells the story in natural language of a single theme.
-  -- For this purpose, Ampersand authors should take care in composing explanations.
-  -- Each explanation should state the purpose (and nothing else).
+  -- For this to work out, Ampersand authors should take care in composing PURPOSEs.
   printOneTheme :: ThemeContent -> Blocks
   printOneTheme tc 
     | isNothing (patOfTheme tc) &&
