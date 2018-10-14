@@ -55,12 +55,11 @@ chpNatLangReqs lev fSpec =
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
                getRefs ::FSpec ->  [LawRef]
-               getRefs f = concatMap (mapMaybe toLawRef . explRefIds) (explanations f)
+               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesDefinedIn fSpec (fsLang fSpec)
 
 
   -- | printOneTheme tells the story in natural language of a single theme.
-  -- For this purpose, Ampersand authors should take care in composing explanations.
-  -- Each explanation should state the purpose (and nothing else).
+  -- For this to work out, Ampersand authors should take care in composing PURPOSEs.
   printOneTheme :: ThemeContent -> Blocks
   printOneTheme tc 
     | isNothing (patOfTheme tc) &&
@@ -193,15 +192,7 @@ chpNatLangReqs lev fSpec =
               <> ": " <> (xDefInln fSpec (XRefSharedLangRelation dcl))
              , -- (xDefInln fSpec (XRefSharedLangRelation dcl) 
               mempty --  [xDefBlck fSpec (XRefSharedLangRelation dcl)]
-              <>(case (cDclMeaning . theLoad) nDcl of
-                   Nothing
-                     -> [plain $
-                             (str.l) (NL "De relatie ",EN "The relation ")
-                          <> (emph.str.name) dcl
-                          <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
-                        ]
-                   Just m -> [printMeaning m]
-                )
+              <>[printMeaning (fsLang fSpec) dcl]
               <>(case Set.elems $ properties dcl of
                     []  -> mempty
                     ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
@@ -309,8 +300,3 @@ unscanRef :: [Either String Int] -> String
 unscanRef = concatMap (either id show)
              
              
-printPurposes :: [Purpose] -> Blocks
-printPurposes  = fromList . concatMap (amPandoc . explMarkup) 
-
-printMeaning :: Markup -> Blocks
-printMeaning = fromList . amPandoc

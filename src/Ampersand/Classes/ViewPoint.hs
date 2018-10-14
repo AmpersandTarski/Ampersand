@@ -46,10 +46,10 @@ rulesFromIdentity identity
          Ru { rrnm   = ruleName
             , formalExpression  = expression
             , rrfps  = origin identity     -- position in source file
-            , rrmean = AMeaning
-                         [ Markup English (string2Blocks ReST meaningEN)
-                         , Markup Dutch (string2Blocks ReST meaningNL)
-                         ]
+            , rrmean = 
+                [ Meaning $ Markup English (string2Blocks ReST meaningEN)
+                , Meaning $ Markup Dutch (string2Blocks ReST meaningNL)
+                ]
             , rrmsg  = []
             , rrviol = Nothing
             , rrdcl  = Nothing        -- This rule was not generated from a property of some relation.

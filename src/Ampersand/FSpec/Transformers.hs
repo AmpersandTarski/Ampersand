@@ -85,10 +85,13 @@ transformers fSpec = map toTransformer [
         , Just x <- [arg expr]
         ]
       )
-     ,("attIn"                 , "Attribute"             , "BoxExp"
+     ,("asMarkdown"            , "Markup"                , "Text"
       , []  --TODO
       )
-     ,("attObj"                , "Attribute"             , "BoxExp"
+     ,("attIn"                 , "Attribute"             , "ObjectDef"
+      , []  --TODO
+      )
+     ,("attObj"                , "Attribute"             , "ObjectDef"
       , []  --TODO
       )
      ,("bind"                  , "BindedRelation"        , "Relation"
@@ -176,7 +179,7 @@ transformers fSpec = map toTransformer [
         , Just(prop,_) <- [rrdcl rul]
         ]
       )
-     ,("decmean"               , "Relation"              , "Meaning" 
+     ,("decMean"               , "Relation"              , "Meaning" 
       , []  --TODO
       )
      ,("decprL"                , "Relation"              , "String"  
@@ -282,7 +285,7 @@ transformers fSpec = map toTransformer [
      ,("ifcInputs"             , "Interface"             , "Relation"
       , []  --TODO
       )
-     ,("ifcObj"                , "Interface"             , "BoxExp"
+     ,("ifcObj"                , "Interface"             , "ObjectDef"
       , [(dirtyId ifc, dirtyId (ifcObj ifc)) 
         | ifc::Interface <- instances fSpec
         ]
@@ -310,7 +313,7 @@ transformers fSpec = map toTransformer [
      ,("inQ"                   , "Quad"                  , "Act"     
       , []  --TODO
       )
-     ,("inst"                  , "Object"                , "BoxExp"
+     ,("inst"                  , "Object"                , "ObjectDef"
       , []  --TODO
       )
      ,("inst"                  , "Transaction"           , "Interface"
@@ -363,6 +366,11 @@ transformers fSpec = map toTransformer [
         | ctx::A_Context <- instances fSpec
         ]
       )
+     ,("language"              , "Markup"               , "Language"
+      , [(dirtyId mrk,(PopAlphaNumeric . show . amLang) mrk)
+        | mrk::Markup <- instances fSpec
+        ]
+      )
      ,("left"                  , "Pair"                  , "Atom"    
       , []  --TODO
       )
@@ -371,10 +379,13 @@ transformers fSpec = map toTransformer [
         | (rol,rul) <-  fRoleRuls fSpec 
         ]
       )
-     ,("markupText"            , "Purpose"               , "MarkupText"
-      , [(dirtyId purp
-         ,PopAlphaNumeric . aMarkup2String Markdown . explMarkup $ purp
-         ) 
+     ,("markup"            , "Meaning"               , "Markup"
+      , [(dirtyId mean, dirtyId . ameaMrk $ mean) 
+        | mean::Meaning <-  instances fSpec
+        ]
+      )
+     ,("markup"            , "Purpose"               , "Markup"
+      , [(dirtyId purp, dirtyId . explMarkup $ purp) 
         | purp::Purpose <-  instances fSpec
         ]
       )
@@ -411,9 +422,9 @@ transformers fSpec = map toTransformer [
         | ifc::Interface <- instances fSpec
         ]
       )
-     ,("name"                 , "BoxExp"             , "ObjectName"  
+     ,("name"                 , "ObjectDef"             , "ObjectName"  
       , [(dirtyId obj, (PopAlphaNumeric . name) obj)
-        | obj::BoxExp <- instances fSpec
+        | obj::ObjectDef <- instances fSpec
         ]
       )
      ,("name"                  , "Pattern"               , "PatternName"
@@ -436,18 +447,18 @@ transformers fSpec = map toTransformer [
         | rul::Rule <- instances fSpec
         ]
       )
-     ,("objExpression"         , "BoxExp"             , "Expression"
+     ,("objExpression"         , "ObjectDef"             , "Expression"
       , if atlasWithoutExpressions opts then [] else
         [(dirtyId obj, dirtyId (objExpression obj))
-        | obj::BoxExp <- instances fSpec
+        | obj::ObjectDef <- instances fSpec
         ]
       )
-     ,("objmView"              , "BoxExp"             , "View"    
+     ,("objmView"              , "ObjectDef"             , "View"    
       , []  --TODO
       )
-     ,("objpos"                , "BoxExp"             , "Origin"  
+     ,("objpos"                , "ObjectDef"             , "Origin"  
       , [(dirtyId obj, PopAlphaNumeric . show . origin $ obj) 
-        | obj::BoxExp <- instances fSpec
+        | obj::ObjectDef <- instances fSpec
         ]
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
@@ -745,20 +756,27 @@ instance Instances IdentityDef where
   instances fSpec = ctxks (originalContext fSpec)
 instance Instances Interface where
   instances fSpec = ctxifcs (originalContext fSpec)
-instance Instances BoxExp where
+instance Instances ObjectDef where
   instances fSpec = 
        nub
      . concatMap (objects . ifcObj)
      . instances $ fSpec
     where
-      objects :: BoxExp -> [BoxExp]
+      objects :: ObjectDef -> [ObjectDef]
       objects obj = obj : fields obj
 instance Instances Pattern where
   instances fSpec = ctxpats (originalContext fSpec)  
 instance Instances Population where
   instances fSpec = ctxpopus (originalContext fSpec)
+instance Instances Meaning where
+  instances fSpec = concatMap meanings (allRules fSpec) ++
+                    concatMap decMean  (vrels fSpec)
 instance Instances Purpose where
-  instances fSpec = explanations fSpec
+  instances fSpec = fSexpls fSpec
+instance Instances Markup where
+  instances fSpec = 
+      map explMarkup (instances fSpec) ++
+      map ameaMrk    (instances fSpec)
 instance Instances Role where
   instances fSpec = nub $ [Role "SystemAdmin"] ++ map fst (fRoles fSpec)
 instance Instances Rule where

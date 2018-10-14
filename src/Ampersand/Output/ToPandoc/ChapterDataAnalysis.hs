@@ -124,10 +124,18 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
          ] 
          [ [ (plain.text.name) c
            ,   meaningOf c
-            <> fromList (maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c)
+            <> ( fromList 
+               . concatMap (amPandoc . explMarkup)
+               . purposesDefinedIn fSpec (fsLang fSpec) 
+               $ c
+               )
            , mempty
            ]
-         | c <- sortBy (compare `on` name) . filter keyFilter . delete ONE . Set.elems $ concs fSpec
+         | c <- sortBy (compare `on` name) 
+              . filter keyFilter 
+              . delete ONE 
+              . Set.elems 
+              $ concs fSpec
          ]
      where
        keyFilter :: A_Concept -> Bool
@@ -349,8 +357,8 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat
        [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
-       , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) rule
-       , fromList $ meaning2Blocks (fsLang fSpec) rule
+       , fromList . concatMap (amPandoc . explMarkup) . purposesDefinedIn fSpec (fsLang fSpec) $ rule
+       , printMeaning (fsLang fSpec) rule
        , para (showMath rule)
        , if isSignal rule
          then mempty

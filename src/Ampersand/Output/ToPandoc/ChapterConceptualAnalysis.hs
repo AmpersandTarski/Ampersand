@@ -101,15 +101,7 @@ chpConceptualAnalysis lev fSpec = (
                    (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the relation of the relation with its properties and its intended meaning
-               <> case meaning2Blocks (fsLang fSpec) d of
-                    [] -> case fsLang fSpec of
-                           Dutch   -> case commaNL  "en"  [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
-                                       []    -> plain "(Geen betekenis gespecificeerd)"
-                                       langs -> plain (str ("(Geen betekenis gespecificeerd, maar wel in het "++langs++")"))
-                           English -> case commaEng "and" [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
-                                       []    -> plain "(No meaning has been specified)"
-                                       langs -> plain (str ("(No meaning has been specified, except in "++langs++")"))
-                    ms -> fromList ms
+               <> printMeaning (fsLang fSpec) d
               ])
   ukadjs d  = if Uni `elem` (properties d) && Tot `elem` (properties d)
               then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
@@ -134,7 +126,7 @@ chpConceptualAnalysis lev fSpec = (
                        <> (hyperLinkTo . XRefSharedLangRule) r
                        <> str (l (NL " : ", EN " exists: "))
                    )
-               <> fromList (meaning2Blocks  (fsLang fSpec) r)
+               <> printMeaning (fsLang fSpec) r
                   -- then the formal rule
                <> plain
                    (  str (l (NL "Dit is - gebruikmakend van relaties "

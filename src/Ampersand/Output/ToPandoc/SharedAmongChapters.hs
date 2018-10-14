@@ -18,6 +18,9 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , pandocEqnArray
     , pandocEquationWithLabel
     , Purpose(..)
+    , printMeaning
+    , printMarkup
+    , printPurposes
     , purposes2Blocks
     , violation2Inlines
     , isMissing
@@ -125,16 +128,7 @@ hyperTarget fSpec a =
                                                         --       ("", ["adl"],[("caption",name r)]) 
                                                         --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
 
-                                                          <>(case meaning (fsLang fSpec) r of
-                                                              Nothing 
-                                                                  ->( plain $
-                                                                         (str.l) (NL "De regel ",EN "The rule ")
-                                                                      <> (emph.str.name) r
-                                                                      <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
-                                                                    )
-                                                              Just m
-                                                                  -> (fromList . amPandoc $ m)
-                                                            )
+                                                          <>printMeaning (fsLang fSpec) r
                                                         )
       XRefConceptualAnalysisRelation d 
             -> Right $ spanWith (xSafeLabel a,[],[]) 
@@ -308,11 +302,11 @@ instance Named t => Named (Numbered t) where
  name = name . theLoad
 data RuleCont = CRul { cRul ::  Rule
                      , cRulPurps :: [Purpose]
-                     , cRulMeaning :: Maybe Markup
+                     , cRulMeanings :: [Meaning]
                      }
 data DeclCont = CDcl { cDcl ::  Relation
                      , cDclPurps :: [Purpose]
-                     , cDclMeaning :: Maybe Markup
+                     , cDclMeanings :: [Meaning]
                      , cDclPairs :: AAtomPairs
                      }
 data CptCont  = CCpt { cCpt ::  A_Concept
@@ -375,14 +369,14 @@ orderingByTheme fSpec
   rul2rulCont :: Rule -> RuleCont
   rul2rulCont rul
     = CRul { cRul      = rul
-           , cRulPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) rul
-           , cRulMeaning = meaning (fsLang fSpec) rul
+           , cRulPurps = purposesDefinedIn fSpec (fsLang fSpec) rul
+           , cRulMeanings = meanings rul
            }
   dcl2dclCont :: Relation -> DeclCont
   dcl2dclCont dcl
     = CDcl { cDcl      = dcl
-           , cDclPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) dcl
-           , cDclMeaning = meaning (fsLang fSpec) dcl
+           , cDclPurps = purposesDefinedIn fSpec (fsLang fSpec) dcl
+           , cDclMeanings = meanings dcl
            , cDclPairs = pairsInExpr fSpec (EDcD dcl)
            }
 
@@ -390,7 +384,7 @@ orderingByTheme fSpec
   cpt2cptCont cpt
     = CCpt { cCpt      = cpt
            , cCptDefs  = sortWith origin $ concDefs fSpec cpt
-           , cCptPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) cpt
+           , cCptPurps = purposesDefinedIn fSpec (fsLang fSpec) cpt
            }
 
 
@@ -514,6 +508,15 @@ dpRule' fSpec = dpR
         nds = ds Set.\\ seenRelations     -- newly seen relations
         rds = ds `Set.intersection` seenRelations  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `Set.union` seenConcs) (nds `Set.union` seenRelations)
+
+printMeaning :: HasMeaning a => Lang -> a -> Blocks
+printMeaning lang = fromMaybe mempty . fmap (printMarkup . ameaMrk) . meaning lang
+
+printPurposes :: [Purpose] -> Blocks
+printPurposes = mconcat . map (printMarkup . explMarkup)
+
+printMarkup :: Markup -> Blocks
+printMarkup = fromList . amPandoc
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
 purposes2Blocks opts ps
