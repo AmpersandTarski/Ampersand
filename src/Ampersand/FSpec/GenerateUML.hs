@@ -1,7 +1,7 @@
 module Ampersand.FSpec.GenerateUML (generateUML) where
 
 import           Ampersand.Basics
-import           Ampersand.ADL1--Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Relation)
+import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.Graphic.ClassDiagram
 import           Ampersand.Graphic.Fspec2ClassDiagrams 
@@ -191,7 +191,7 @@ genCustomReqElements fSpec parentPackageId =
     reqUML (xmiId, req) = intercalate "\n"
      ([ "    <element xmi:idref="++show xmiId++" xmi:type=\"uml:Requirement\" name="++show (reqId req)++" scope=\"public\""++">"
       , "      <model package="++show parentPackageId++" ea_eleType=\"element\"/>"
-      , "      <properties documentation="++show (maybe "" aMarkup2String (meaning (fsLang fSpec) req))++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
+      , "      <properties documentation="++show (maybe "" aMarkup2String (fmap ameaMrk . meaning (fsLang fSpec) $ req))++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
       , "      <tags>"]++
       [ "         <tag name=\"Purpose"++nr++"\" value="++show p++" modelElement="++show xmiId++"/>" | (nr ,p) <- zip ("" : map show [1::Int ..]) (map (aMarkup2String . explMarkup) $ reqPurposes req)  ]++
       [ "      </tags>"
@@ -207,10 +207,13 @@ data Req = Req { reqId :: String
                }
 
 instance Meaning Req where
-  meaning l r = case reqOrig r of
-                  Right rul -> meaning l rul
-                  Left  dcl -> meaning l dcl
-
+  meanings r = case reqOrig r of
+                  Right rul -> meanings rul
+                  Left  dcl -> meanings dcl
+instance Named Req where
+  name r = case reqOrig r of
+             Right rul -> name rul 
+             Left  dcl -> name dcl -- fmap name (reqOrig r) 
 requirements :: FSpec -> [Req]
 requirements fSpec
    = map decl2req (Set.elems $ vrels  fSpec) 

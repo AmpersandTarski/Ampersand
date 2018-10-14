@@ -371,10 +371,8 @@ transformers fSpec = map toTransformer [
         | (rol,rul) <-  fRoleRuls fSpec 
         ]
       )
-     ,("markupText"            , "Purpose"               , "MarkupText"
-      , [(dirtyId purp
-         ,PopAlphaNumeric . aMarkup2String . explMarkup $ purp
-         ) 
+     ,("markup"            , "Purpose"               , "Markup"
+      , [(dirtyId purp, dirtyId . explMarkup $ purp) 
         | purp::Purpose <-  instances fSpec
         ]
       )

@@ -193,15 +193,7 @@ chpNatLangReqs lev fSpec =
               <> ": " <> (xDefInln fSpec (XRefSharedLangRelation dcl))
              , -- (xDefInln fSpec (XRefSharedLangRelation dcl) 
               mempty --  [xDefBlck fSpec (XRefSharedLangRelation dcl)]
-              <>(case (cDclMeaning . theLoad) nDcl of
-                   Nothing
-                     -> [plain $
-                             (str.l) (NL "De relatie ",EN "The relation ")
-                          <> (emph.str.name) dcl
-                          <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
-                        ]
-                   Just m -> [printMeaning m]
-                )
+              <>[printMeaning (fsLang fSpec) dcl]
               <>(case Set.elems $ properties dcl of
                     []  -> mempty
                     ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
@@ -309,8 +301,3 @@ unscanRef :: [Either String Int] -> String
 unscanRef = concatMap (either id show)
              
              
-printPurposes :: [Purpose] -> Blocks
-printPurposes  = fromList . concatMap (amPandoc . explMarkup) 
-
-printMeaning :: Markup -> Blocks
-printMeaning = fromList . amPandoc

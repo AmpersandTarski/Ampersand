@@ -9,6 +9,7 @@ where
 
 import           Ampersand.Basics.Languages
 import           Ampersand.Basics.Prelude
+import           Ampersand.Basics.Unique
 import           Ampersand.Basics.Version
 import           Data.Data
 import qualified Data.Text as Text
@@ -20,6 +21,9 @@ data Markup =
     Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
            , amPandoc :: [Block]
            } deriving (Show, Eq, Ord, Typeable, Data)
+instance Unique Markup where
+  showUnique x = uniqueShow True x++" in "++(show.amLang) x
+
 
 -- | a way to show the pandoc in a default way. We currently use Markdown for this purpose. 
 aMarkup2String :: Markup -> String

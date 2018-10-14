@@ -66,7 +66,7 @@ aRule2pRule rul =
  P_Ru { pos  = rrfps rul
       , rr_nm   = rrnm rul
       , rr_exp  = aExpression2pTermPrim (formalExpression rul)
-      , rr_mean = aMeaning2pMeaning (rrmean rul)
+      , rr_mean = map aMeaning2pMeaning (rrmean rul)
       , rr_msg  = map aMarkup2pMessage (rrmsg rul)
       , rr_viol = fmap aPairView2pPairView (rrviol rul)
       }
@@ -77,7 +77,7 @@ aRelation2pRelation dcl =
        , dec_sign   = aSign2pSign (decsgn dcl)
        , dec_prps   = decprps dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]
-       , dec_Mean   = aMeaning2pMeaning (decMean dcl)
+       , dec_Mean   = map aMeaning2pMeaning (decMean dcl)
        , dec_popu   = [] --TODO: should this be empty? There is nothing in the A-structure
        , pos   = decfpos dcl
        }
@@ -227,8 +227,8 @@ aExpression2pTermPrim expr =
    o = fatal "Origin is not present in Expression"
 
 
-aMeaning2pMeaning :: AMeaning -> [PMeaning]
-aMeaning2pMeaning m = map (PMeaning . aMarkup2pMarkup) (ameaMrk m)
+aMeaning2pMeaning :: AMeaning -> PMeaning
+aMeaning2pMeaning = PMeaning . aMarkup2pMarkup . ameaMrk
 
 aMarkup2pMessage :: Markup -> PMessage
 aMarkup2pMessage = PMessage . aMarkup2pMarkup

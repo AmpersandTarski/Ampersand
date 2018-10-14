@@ -760,8 +760,8 @@ pCtx2aCtx opts
           return Ru { rrnm = nm
                     , formalExpression = exp'
                     , rrfps = orig
-                    , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
-                    , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
+                    , rrmean = map (pMean2aMean deflangCtxt deffrmtCtxt) meanings
+                    , rrmsg  = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
                     , rrviol = vls
                     , rrdcl = Nothing
                     , rrpat = env
@@ -992,7 +992,7 @@ pDecl2aDecl env typ defLanguage defFormat pd
                  , decprL  = prL
                  , decprM  = prM
                  , decprR  = prR
-                 , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
+                 , decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd)
                  , decfpos = origin pd
                  , decusr  = True
                  , decpat  = env
@@ -1024,9 +1024,9 @@ pDisAmb2Expr (o,dx)      = cannotDisambiguate o dx
 
 pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
-            -> [PMeaning] -> AMeaning
-pMean2aMean defLanguage defFormat pmeanings
- = AMeaning [ pMarkup2aMarkup defLanguage defFormat pmarkup | PMeaning pmarkup <-pmeanings ]
+            -> PMeaning -> AMeaning
+pMean2aMean defLanguage defFormat (PMeaning pmarkup)
+ =  AMeaning (pMarkup2aMarkup defLanguage defFormat pmarkup)
 pMess2aMess :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
             -> PMessage -> Markup
