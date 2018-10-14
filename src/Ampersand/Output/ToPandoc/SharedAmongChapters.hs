@@ -369,13 +369,13 @@ orderingByTheme fSpec
   rul2rulCont :: Rule -> RuleCont
   rul2rulCont rul
     = CRul { cRul      = rul
-           , cRulPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) rul
+           , cRulPurps = purposesDefinedIn fSpec (fsLang fSpec) rul
            , cRulMeanings = meanings rul
            }
   dcl2dclCont :: Relation -> DeclCont
   dcl2dclCont dcl
     = CDcl { cDcl      = dcl
-           , cDclPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) dcl
+           , cDclPurps = purposesDefinedIn fSpec (fsLang fSpec) dcl
            , cDclMeanings = meanings dcl
            , cDclPairs = pairsInExpr fSpec (EDcD dcl)
            }
@@ -384,7 +384,7 @@ orderingByTheme fSpec
   cpt2cptCont cpt
     = CCpt { cCpt      = cpt
            , cCptDefs  = sortWith origin $ concDefs fSpec cpt
-           , cCptPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) cpt
+           , cCptPurps = purposesDefinedIn fSpec (fsLang fSpec) cpt
            }
 
 
