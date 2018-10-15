@@ -191,7 +191,7 @@ genCustomReqElements fSpec parentPackageId =
     reqUML (xmiId, req) = intercalate "\n"
      ([ "    <element xmi:idref="++show xmiId++" xmi:type=\"uml:Requirement\" name="++show (reqId req)++" scope=\"public\""++">"
       , "      <model package="++show parentPackageId++" ea_eleType=\"element\"/>"
-      , "      <properties documentation="++show (case meaningInLang (fsLang fSpec) req of
+      , "      <properties documentation="++show (case meaningInLang fSpec (fsLang fSpec) req of
                                                     []  -> ""
                                                     xs  -> aMarkup2String . ameaMrk . head $ xs
                                                  )++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"

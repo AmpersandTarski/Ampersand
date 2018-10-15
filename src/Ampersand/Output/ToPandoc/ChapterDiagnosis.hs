@@ -208,7 +208,7 @@ chpDiagnosis fSpec
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesInLang fSpec (fsLang fSpec)
   hasMeaning :: HasMeaning a => a -> Bool
-  hasMeaning = not . null . meaningInLang (fsLang fSpec)
+  hasMeaning = not . null . meaningInLang fSpec (fsLang fSpec)
 
   relsNotUsed :: Blocks
   pics :: [Picture]
@@ -402,7 +402,7 @@ chpDiagnosis fSpec
                <> " ( " <> quoterule r <> " )"
                <> (str.l) (NL " luidt: ", EN " says: ")
                )
-       <> printMeaning (fsLang fSpec) r
+       <> printMeaning fSpec (fsLang fSpec) r
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
                           ,EN "This rule contains work (for ")
                 <>commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))

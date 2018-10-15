@@ -358,7 +358,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
     docRule heading rule = mconcat
        [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
        , fromList . concatMap (amPandoc . explMarkup) . purposesInLang fSpec (fsLang fSpec) $ rule
-       , printMeaning (fsLang fSpec) rule
+       , printMeaning fSpec (fsLang fSpec) rule
        , para (showMath rule)
        , if isSignal rule
          then mempty

@@ -57,10 +57,13 @@ instance Motivated Interface where
 
 
 class HasMeaning a where
-  meaningInLang :: Lang -> a -> [Meaning]
-  meaningInLang l x = filter (\(Meaning m) -> l == amLang m) $ meanings x
+  meaningInLang :: FSpec -> Lang -> a -> [Meaning]
+  meaningInLang fSpec l x = 
+      filter (\(Meaning m) -> l == amLang m) $
+         (meanings x)++(generatedMeanings fSpec x)
   meanings :: a -> [Meaning]
-  generatedMeaning :: Lang -> a -> Maybe Meaning 
+  generatedMeanings :: FSpec -> a -> [Meaning]
+  generatedMeanings _ _ = []
   {-# MINIMAL meanings #-}
 
 instance HasMeaning Rule where

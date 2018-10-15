@@ -127,7 +127,7 @@ hyperTarget fSpec a =
                                                         --       ("", ["adl"],[("caption",name r)]) 
                                                         --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
 
-                                                          <>printMeaning (fsLang fSpec) r
+                                                          <>printMeaning fSpec (fsLang fSpec) r
                                                         )
       XRefConceptualAnalysisRelation d 
             -> Right $ spanWith (xSafeLabel a,[],[]) 
@@ -508,8 +508,8 @@ dpRule' fSpec = dpR
         rds = ds `Set.intersection` seenRelations  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `Set.union` seenConcs) (nds `Set.union` seenRelations)
 
-printMeaning :: HasMeaning a => Lang -> a -> Blocks
-printMeaning lang = mconcat  . fmap (printMarkup . ameaMrk) . meaningInLang lang
+printMeaning :: HasMeaning a => FSpec -> Lang -> a -> Blocks
+printMeaning fSpec lang = mconcat  . fmap (printMarkup . ameaMrk) . meaningInLang fSpec lang
 
 printPurposes :: [Purpose] -> Blocks
 printPurposes = mconcat . map (printMarkup . explMarkup)

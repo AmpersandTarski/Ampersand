@@ -192,7 +192,7 @@ chpNatLangReqs lev fSpec =
               <> ": " <> (xDefInln fSpec (XRefSharedLangRelation dcl))
              , -- (xDefInln fSpec (XRefSharedLangRelation dcl) 
               mempty --  [xDefBlck fSpec (XRefSharedLangRelation dcl)]
-              <>[printMeaning (fsLang fSpec) dcl]
+              <>[printMeaning fSpec (fsLang fSpec) dcl]
               <>(case Set.elems $ properties dcl of
                     []  -> mempty
                     ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )

@@ -101,7 +101,7 @@ chpConceptualAnalysis lev fSpec = (
                    (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the relation of the relation with its properties and its intended meaning
-               <> printMeaning (fsLang fSpec) d
+               <> printMeaning fSpec (fsLang fSpec) d
               ])
   ukadjs d  = if Uni `elem` (properties d) && Tot `elem` (properties d)
               then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
@@ -126,7 +126,7 @@ chpConceptualAnalysis lev fSpec = (
                        <> (hyperLinkTo . XRefSharedLangRule) r
                        <> str (l (NL " : ", EN " exists: "))
                    )
-               <> printMeaning (fsLang fSpec) r
+               <> printMeaning fSpec (fsLang fSpec) r
                   -- then the formal rule
                <> plain
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
