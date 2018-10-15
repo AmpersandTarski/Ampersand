@@ -132,7 +132,7 @@ chpDiagnosis fSpec
                   )
    where missing = [c | c <-ccs
                       , cd <- concDefs fSpec c
-                      , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
+                      , null (purposesInLang fSpec (fsLang fSpec) cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
          ccs = Set.elems . concs . vrels $ fSpec
@@ -206,9 +206,9 @@ chpDiagnosis fSpec
            decls = vrels fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
-  hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
+  hasPurpose = not . null . purposesInLang fSpec (fsLang fSpec)
   hasMeaning :: HasMeaning a => a -> Bool
-  hasMeaning = not . null . meaning (fsLang fSpec)
+  hasMeaning = not . null . meaningInLang (fsLang fSpec)
 
   relsNotUsed :: Blocks
   pics :: [Picture]
@@ -327,7 +327,7 @@ chpDiagnosis fSpec
                             , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
-          hasRef x = (any  ((/=[]).explRefIds)) (purposesDefinedIn fSpec (fsLang fSpec) x)
+          hasRef x = (any  ((/=[]).explRefIds)) (purposesInLang fSpec (fsLang fSpec) x)
 
           showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%"
 

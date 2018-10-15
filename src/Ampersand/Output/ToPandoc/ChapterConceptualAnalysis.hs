@@ -37,7 +37,7 @@ chpConceptualAnalysis lev fSpec = (
                     <> "This chapter allows an independent professional with sufficient background to check whether the agreements made "
                     <> "correspond to the formal rules and definitions. "
                     )
-     )<> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
+     )<> purposes2Blocks (getOpts fSpec) (purposesInLang fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
 
   caBlocks = 
          mconcat (map caSection (vpatterns fSpec))
@@ -67,7 +67,7 @@ chpConceptualAnalysis lev fSpec = (
    =    -- new section to explain this pattern
         xDefBlck fSpec (XRefConceptualAnalysisPattern pat)
         -- The section starts with the reason why this pattern exists
-     <> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
+     <> purposes2Blocks (getOpts fSpec) (purposesInLang fSpec (fsLang fSpec) pat)
         -- followed by a conceptual model for this pattern
      <> ( case fsLang fSpec of
                Dutch   -> -- announce the conceptual diagram
@@ -91,7 +91,7 @@ chpConceptualAnalysis lev fSpec = (
     )
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d
-        = let purp =  purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) d)
+        = let purp =  purposes2Blocks (getOpts fSpec) (purposesInLang fSpec (fsLang fSpec) d)
           in ((xDefInln fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMathWithSign d))
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 ( case ( isNull purp, fsLang fSpec) of
@@ -112,7 +112,7 @@ chpConceptualAnalysis lev fSpec = (
   adj = propFullName (fsLang fSpec) 
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
-        = let purp = purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r)
+        = let purp = purposes2Blocks (getOpts fSpec) (purposesInLang fSpec (fsLang fSpec) r)
           in ( mempty
              , [  -- First the reason why the rule exists, if any..
                   purp

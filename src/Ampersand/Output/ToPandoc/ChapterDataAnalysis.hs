@@ -126,7 +126,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
            ,   meaningOf c
             <> ( fromList 
                . concatMap (amPandoc . explMarkup)
-               . purposesDefinedIn fSpec (fsLang fSpec) 
+               . purposesInLang fSpec (fsLang fSpec) 
                $ c
                )
            , mempty
@@ -152,7 +152,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                   ((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl)
         <> case clcpt cl of
              Nothing -> mempty
-             Just cpt -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) cpt)
+             Just cpt -> purposes2Blocks (getOpts fSpec) (purposesInLang fSpec (fsLang fSpec) cpt)
         <> (para . text . l) ( NL "Deze gegevensverzameling bevat de volgende attributen: "
                              , EN "This entity type has the following attributes: "
                              )
@@ -357,7 +357,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat
        [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
-       , fromList . concatMap (amPandoc . explMarkup) . purposesDefinedIn fSpec (fsLang fSpec) $ rule
+       , fromList . concatMap (amPandoc . explMarkup) . purposesInLang fSpec (fsLang fSpec) $ rule
        , printMeaning (fsLang fSpec) rule
        , para (showMath rule)
        , if isSignal rule

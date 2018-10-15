@@ -368,13 +368,13 @@ orderingByTheme fSpec
   rul2rulCont :: Rule -> RuleCont
   rul2rulCont rul
     = CRul { cRul      = rul
-           , cRulPurps = purposesDefinedIn fSpec (fsLang fSpec) rul
+           , cRulPurps = purposesInLang fSpec (fsLang fSpec) rul
            , cRulMeanings = meanings rul
            }
   dcl2dclCont :: Relation -> DeclCont
   dcl2dclCont dcl
     = CDcl { cDcl      = dcl
-           , cDclPurps = purposesDefinedIn fSpec (fsLang fSpec) dcl
+           , cDclPurps = purposesInLang fSpec (fsLang fSpec) dcl
            , cDclMeanings = meanings dcl
            , cDclPairs = pairsInExpr fSpec (EDcD dcl)
            }
@@ -383,7 +383,7 @@ orderingByTheme fSpec
   cpt2cptCont cpt
     = CCpt { cCpt      = cpt
            , cCptDefs  = sortWith origin $ concDefs fSpec cpt
-           , cCptPurps = purposesDefinedIn fSpec (fsLang fSpec) cpt
+           , cCptPurps = purposesInLang fSpec (fsLang fSpec) cpt
            }
 
 
@@ -447,8 +447,8 @@ dpRule' fSpec = dpR
        where
         theBlocks :: Blocks
         theBlocks =
-            purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-         <> purposes2Blocks (getOpts fSpec) [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
+            purposes2Blocks (getOpts fSpec) (purposesInLang fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
+         <> purposes2Blocks (getOpts fSpec) [p | d<-Set.elems nds, p<-purposesInLang fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
          <> case (Set.elems . Set.map EDcD $ nds, fsLang fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
@@ -509,7 +509,7 @@ dpRule' fSpec = dpR
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `Set.union` seenConcs) (nds `Set.union` seenRelations)
 
 printMeaning :: HasMeaning a => Lang -> a -> Blocks
-printMeaning lang = mconcat  . fmap (printMarkup . ameaMrk) . meaning lang
+printMeaning lang = mconcat  . fmap (printMarkup . ameaMrk) . meaningInLang lang
 
 printPurposes :: [Purpose] -> Blocks
 printPurposes = mconcat . map (printMarkup . explMarkup)

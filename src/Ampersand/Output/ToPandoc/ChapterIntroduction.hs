@@ -114,4 +114,4 @@ chpIntroduction fSpec =
     date = formatTime (lclForLang (fsLang fSpec)) "%-d-%-m-%Y" (genTime (getOpts fSpec))
     time = formatTime (lclForLang (fsLang fSpec)) "%H:%M:%S" (genTime (getOpts fSpec))
 
-    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec (fsLang fSpec) fSpec]
+    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesInLang fSpec (fsLang fSpec) fSpec]

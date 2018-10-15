@@ -191,7 +191,7 @@ genCustomReqElements fSpec parentPackageId =
     reqUML (xmiId, req) = intercalate "\n"
      ([ "    <element xmi:idref="++show xmiId++" xmi:type=\"uml:Requirement\" name="++show (reqId req)++" scope=\"public\""++">"
       , "      <model package="++show parentPackageId++" ea_eleType=\"element\"/>"
-      , "      <properties documentation="++show (case meaning (fsLang fSpec) req of
+      , "      <properties documentation="++show (case meaningInLang (fsLang fSpec) req of
                                                     []  -> ""
                                                     xs  -> aMarkup2String . ameaMrk . head $ xs
                                                  )++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
@@ -224,11 +224,11 @@ requirements fSpec
   where
     decl2req d = Req { reqId = name d
                      , reqOrig = Right d
-                     , reqPurposes = purposesDefinedIn fSpec (fsLang fSpec) d
+                     , reqPurposes = purposesInLang fSpec (fsLang fSpec) d
                      }
     rule2req r = Req { reqId = name r
                      , reqOrig = Left r
-                     , reqPurposes = purposesDefinedIn fSpec (fsLang fSpec) r
+                     , reqPurposes = purposesInLang fSpec (fsLang fSpec) r
                      }
 
 -- State and Monad

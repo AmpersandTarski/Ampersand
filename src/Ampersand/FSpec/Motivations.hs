@@ -1,8 +1,8 @@
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
 module Ampersand.FSpec.Motivations 
-   ( Motivated (purposesDefinedIn),
-     HasMeaning(meaning,meanings))
+   ( Motivated (purposesInLang),
+     HasMeaning(meaningInLang,meanings))
 where
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec(FSpec(..)) 
@@ -13,28 +13,28 @@ import Ampersand.Basics
 --     {+This text explains why r[A*B] exists+}
 -- produces the exact right text in the functional design document.
 
--- The class Motivated exists so that we can write the Haskell expression 'purposesDefinedIn fSpec l x'
+-- The class Motivated exists so that we can write the Haskell expression 'purposesInLang fSpec l x'
 -- anywhere we like for every type of x that could possibly be motivated in an Purpose.
--- 'purposesDefinedIn fSpec l x' produces all purposes related to x from the context (fSpec)
+-- 'purposesInLang fSpec l x' produces all purposes related to x from the context (fSpec)
 -- that are available in the language specified in 'l'.
 -- The other functions in this class are solely meant to be used in the definition of purpose.
 -- They are defined once for each instance of Explainable, not be used in other code.
 
 class Motivated a where
-  isForObject :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
-  purposesDefinedIn :: FSpec -> Lang -> a -> [Purpose]  -- ^ The purposes defined for a specific a, given Langugage.
-  purposesDefinedIn fSpec l x
+  purposesInLang :: FSpec -> Lang -> a -> [Purpose]  -- ^ The purposes defined for a specific a, given Langugage.
+  purposesInLang fSpec l x
    = [e | e<-fSexpls fSpec
         , amLang (explMarkup e) == l  -- filter by language
         , isForObject x (explObj e)   -- informally: "if x and e are the same"
      ]
+  isForObject :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
+  {-# MINIMAL isForObject #-}
+
 instance Motivated ConceptDef where
---  meaning _ cd = fatal ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
   isForObject x (ExplConceptDef x') = x == x'
   isForObject _ _ = False
 
 instance Motivated A_Concept where
---  meaning _ c = fatal ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
   isForObject x (ExplConceptDef cd) = name x == name cd
   isForObject _ _ = False
 
@@ -57,8 +57,8 @@ instance Motivated Interface where
 
 
 class HasMeaning a where
-  meaning :: Lang -> a -> [Meaning]
-  meaning l x = filter (\(Meaning m) -> l == amLang m) $ meanings x
+  meaningInLang :: Lang -> a -> [Meaning]
+  meaningInLang l x = filter (\(Meaning m) -> l == amLang m) $ meanings x
   meanings :: a -> [Meaning]
   generatedMeaning :: Lang -> a -> Maybe Meaning 
   {-# MINIMAL meanings #-}
