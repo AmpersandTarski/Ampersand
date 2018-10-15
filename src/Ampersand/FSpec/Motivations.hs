@@ -56,13 +56,9 @@ instance Motivated Interface where
 
 
 
-class Named a => HasMeaning a where
+class HasMeaning a where
   meaning :: Lang -> a -> [Meaning]
   meaning l x = filter (\(Meaning m) -> l == amLang m) $ meanings x
---     case filter (\(Meaning m) -> l == amLang m) (meanings x) of
---       []   -> Nothing
---       [m]  -> Just m
---       _    -> fatal ("In the "++show l++" language, too many meanings given for "++name x ++".")             
   meanings :: a -> [Meaning]
   generatedMeaning :: Lang -> a -> Maybe Meaning 
   {-# MINIMAL meanings #-}
