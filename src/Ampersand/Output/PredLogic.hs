@@ -1,5 +1,5 @@
 module Ampersand.Output.PredLogic
-         ( PredLogicShow(..), showLatex, showRtf, mkVar
+         ( PredLogicShow(..)
          ) where
 
 import           Ampersand.ADL1
@@ -7,7 +7,7 @@ import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
-import           Ampersand.Output.PandocAux (latexEscShw,texOnlyId)
+import           Ampersand.Output.PandocAux
 import           Data.Char
 import           Data.List
 import qualified Data.Set as Set
@@ -25,9 +25,9 @@ data PredLogic
    Pred String String                |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Relation (showA e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
    PlK0 PredLogic                    |
    PlK1 PredLogic                    |
-   R PredLogic Relation PredLogic |
+   R PredLogic Relation PredLogic    |
    Atom String                       |
-   Funs String [Relation]         |
+   Funs String [Relation]            |
    Dom Expression Var                |
    Cod Expression Var                deriving Eq
 
@@ -53,82 +53,82 @@ instance PredLogicShow Expression where
 -- PanDoc, however, does not support mathematics sufficiently, as to date. For this reason we have showLatex.
 -- It circumvents the PanDoc structure and goes straight to LaTeX source code.
 -- TODO when PanDoc is up to the job.
-showLatex :: PredLogic -> [[String]]
-showLatex x 
- = chop (predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee"
-                   , "\\ \\wedge\t", "^{*}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x)
-   where rel :: Relation -> String -> String -> String 
-         rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
-           = if isIdent (EDcD r) then lhs++"\\ =\\ "++rhs else
-             case name r of
-              "lt"     -> lhs++"\\ <\\ "++rhs
-              "gt"     -> lhs++"\\ >\\ "++rhs
-              "le"     -> lhs++"\\ \\leq\\ "++rhs
-              "leq"    -> lhs++"\\ \\leq\\ "++rhs
-              "ge"     -> lhs++"\\ \\geq\\ "++rhs
-              "geq"    -> lhs++"\\ \\geq\\ "++rhs
-              _        -> lhs++"\\ \\id{"++latexEscShw (name r)++"}\\ "++rhs
-         fun :: Relation -> String -> String
-         fun r e = "\\id{"++latexEscShw (name r)++"}("++e++")"
-         implies :: String -> String -> String
-         implies antc cons = antc++" \\Rightarrow "++cons
-         apply :: Relation -> String -> String -> String    --TODO language afhankelijk maken.
-         apply decl d c =
-            d++"\\ \\id{"++latexEscShw (name decl)++"}\\ "++c
-         mathVars :: String -> [Var] -> String
-         mathVars q vs
-          = if null vs then "" else
-            q++" "++intercalate "; " [intercalate ", " var++"\\coloncolon\\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++":\n"
-            where
-             vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
-         chop :: String -> [[String]]
-         chop = map chops . lins
-          where
-            lins ""        = []
-            lins ('\n':cs) = "": lins cs
-            lins (c:cs)    = (c:r):rs where r:rs = case lins cs of  [] -> [""] ; e -> e
-            chops cs = let [a,b,c] = take 3 (tabs cs) in [a,b,c]
-            tabs "" = ["","","",""]
-            tabs ('\t':cs) = "": tabs cs
-            tabs (c:cs) = (c:r):rs where r:rs = tabs cs
+-- showLatex :: PredLogic -> [[String]]
+-- showLatex x 
+--  = chop (predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee"
+--                    , "\\ \\wedge\t", "^{*}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x)
+--    where rel :: Relation -> String -> String -> String 
+--          rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
+--            = if isIdent (EDcD r) then lhs++"\\ =\\ "++rhs else
+--              case name r of
+--               "lt"     -> lhs++"\\ <\\ "++rhs
+--               "gt"     -> lhs++"\\ >\\ "++rhs
+--               "le"     -> lhs++"\\ \\leq\\ "++rhs
+--               "leq"    -> lhs++"\\ \\leq\\ "++rhs
+--               "ge"     -> lhs++"\\ \\geq\\ "++rhs
+--               "geq"    -> lhs++"\\ \\geq\\ "++rhs
+--               _        -> lhs++"\\ \\id{"++latexEscShw (name r)++"}\\ "++rhs
+--          fun :: Relation -> String -> String
+--          fun r e = "\\id{"++latexEscShw (name r)++"}("++e++")"
+--          implies :: String -> String -> String
+--          implies antc cons = antc++" \\Rightarrow "++cons
+--          apply :: Relation -> String -> String -> String    --TODO language afhankelijk maken.
+--          apply decl d c =
+--             d++"\\ \\id{"++latexEscShw (name decl)++"}\\ "++c
+--          mathVars :: String -> [Var] -> String
+--          mathVars q vs
+--           = if null vs then "" else
+--             q++" "++intercalate "; " [intercalate ", " var++"\\coloncolon\\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++":\n"
+--             where
+--              vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
+--          chop :: String -> [[String]]
+--          chop = map chops . lins
+--           where
+--             lins ""        = []
+--             lins ('\n':cs) = "": lins cs
+--             lins (c:cs)    = (c:r):rs where r:rs = case lins cs of  [] -> [""] ; e -> e
+--             chops cs = let [a,b,c] = take 3 (tabs cs) in [a,b,c]
+--             tabs "" = ["","","",""]
+--             tabs ('\t':cs) = "": tabs cs
+--             tabs (c:cs) = (c:r):rs where r:rs = tabs cs
 
-showRtf :: PredLogic -> String
-showRtf = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el)
-  where unicodeSym :: Int -> Char -> Char -> String
-        unicodeSym fs sym altChar = "{\\fs"++show fs++" \\u"++show (ord sym)++[altChar]++"}"
-        forallP = unicodeSym 32 '∀' 'A' --"{\\fs36 \\u8704A}"
-        existsP = unicodeSym 32 '∃' 'E'
-        impliesP antc cons = antc++" "++unicodeSym 26 '⇒' '?'++" "++cons
-        equivP = unicodeSym 26 '⇔' '='
-        orP = unicodeSym 30 '∨' 'v'
-        andP = unicodeSym 30 '∧' '^'
-        k0P = "{\\super "++unicodeSym 30 '∗' '*'++"}"
-        k1P = "{\\super +}"
-        notP = unicodeSym 26 '¬' '!'
-        el = unicodeSym 30 '∈' '?' 
-        relP r lhs rhs  -- TODO: sloppy code, copied from showLatex
-         = if isIdent (EDcD r) then lhs++"\\ =\\ "++rhs else
-           case name r of
-            "lt"     -> lhs++" < "++rhs
-            "gt"     -> lhs++" > "++rhs
-            "le"     -> lhs++" "++unicodeSym 28 '≤' '?'++" "++rhs
-            "leq"    -> lhs++" "++unicodeSym 28 '≤' '?'++" "++rhs
-            "ge"     -> lhs++" "++unicodeSym 28 '≥' '?'++" "++rhs
-            "geq"    -> lhs++" "++unicodeSym 28 '≥' '?'++" "++rhs
-            _        -> lhs++" "++name r++" "++rhs
-        funP r e = name r++"("++e++")"
+-- showRtf :: PredLogic -> String
+-- showRtf = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el)
+--   where unicodeSym :: Int -> Char -> Char -> String
+--         unicodeSym fs sym altChar = "{\\fs"++show fs++" \\u"++show (ord sym)++[altChar]++"}"
+--         forallP = unicodeSym 32 '∀' 'A' --"{\\fs36 \\u8704A}"
+--         existsP = unicodeSym 32 '∃' 'E'
+--         impliesP antc cons = antc++" "++unicodeSym 26 '⇒' '?'++" "++cons
+--         equivP = unicodeSym 26 '⇔' '='
+--         orP = unicodeSym 30 '∨' 'v'
+--         andP = unicodeSym 30 '∧' '^'
+--         k0P = "{\\super "++unicodeSym 30 '∗' '*'++"}"
+--         k1P = "{\\super +}"
+--         notP = unicodeSym 26 '¬' '!'
+--         el = unicodeSym 30 '∈' '?' 
+--         relP r lhs rhs  -- TODO: sloppy code, copied from showLatex
+--          = if isIdent (EDcD r) then lhs++"\\ =\\ "++rhs else
+--            case name r of
+--             "lt"     -> lhs++" < "++rhs
+--             "gt"     -> lhs++" > "++rhs
+--             "le"     -> lhs++" "++unicodeSym 28 '≤' '?'++" "++rhs
+--             "leq"    -> lhs++" "++unicodeSym 28 '≤' '?'++" "++rhs
+--             "ge"     -> lhs++" "++unicodeSym 28 '≥' '?'++" "++rhs
+--             "geq"    -> lhs++" "++unicodeSym 28 '≥' '?'++" "++rhs
+--             _        -> lhs++" "++name r++" "++rhs
+--         funP r e = name r++"("++e++")"
         
-        apply :: Relation -> String -> String -> String
-        apply decl d c =
-           d++" "++name decl++" "++c
-        showVarsP :: String -> [Var] -> String
-        showVarsP q vs
-         = if null vs then "" else
-           q++intercalate "; " [intercalate ", " var++" "++unicodeSym 28 '∷' '?'++" "++dType | (var,dType)<-vss]++":\\par\n"
-           where
-            vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
-        breakP = ""
-        spaceP = " "
+--         apply :: Relation -> String -> String -> String
+--         apply decl d c =
+--            d++" "++name decl++" "++c
+--         showVarsP :: String -> [Var] -> String
+--         showVarsP q vs
+--          = if null vs then "" else
+--            q++intercalate "; " [intercalate ", " var++" "++unicodeSym 28 '∷' '?'++" "++dType | (var,dType)<-vss]++":\\par\n"
+--            where
+--             vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
+--         breakP = ""
+--         spaceP = " "
 
 -- natLangOps exists for the purpose of translating a predicate logic expression to natural language.
 -- It yields a vector of mostly strings, which are used to assemble a natural language text in one of the natural languages supported by Ampersand.
@@ -155,7 +155,7 @@ natLangOps l
              Dutch   -> ("Voor elke", "Er is een",    implies, "is equivalent met", "of", "en",  "*", "+", "niet", rel, fun,  langVars , "\n  ", " ", apply, "is element van")
             where
                rel = apply
-               fun r x' = texOnlyId(name r)++"("++x'++")"
+               fun r x' = show(name r)++"("++x'++")"
                implies antc cons = case l of
                                      English  -> "If "++antc++", then "++cons
                                      Dutch    -> "Als "++antc++", dan "++cons
@@ -269,8 +269,8 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
 --                     fun r x = x++"."++name r
 --                     implies antc cons = "IF "++antc++" THEN "++cons
 
--- The function 'assemble' translates a rule to predicate logic.
--- In order to remain independent of any representation, it transforms the Haskell data structure Rule
+-- The function 'assemble' translates an expression to predicate logic.
+-- In order to remain independent of any representation, it transforms the Haskell data structure Expression
 -- into the data structure PredLogic, rather than manipulate with texts.
 type Var = (String,A_Concept)
 assemble :: Expression -> PredLogic

@@ -437,7 +437,7 @@ dpRule' fSpec = dpR
    l lstr = text $ localize (fsLang fSpec) lstr
    dpR [] n seenConcs seenRelations = ([], n, seenConcs, seenRelations)
    dpR (r:rs) n seenConcs seenRelations
-     = ( ( l (NL "Regel: ",EN "Rule: ") <> (text.latexEscShw.name) r
+     = ( ( l (NL "Regel: ",EN "Rule: ") <> (text.show.name) r
          , [theBlocks]
           ): dpNext
        , n'
@@ -529,7 +529,7 @@ purposes2Blocks opts ps
         ref :: Purpose -> [Inline]
         ref purp = if fspecFormat opts `elem` [Fpdf, Flatex] && (not.null.explRefIds) purp
                    then [RawInline (Text.Pandoc.Builder.Format "latex")
-                            (texOnlyMarginNote (intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
+                            (texOnlyMarginNote (intercalate "; " (map show (explRefIds purp))++"\n"))]
                    else []
 concatMarkup :: [Markup] -> Maybe Markup
 concatMarkup es
