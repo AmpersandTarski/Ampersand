@@ -4,7 +4,7 @@ module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           Data.List(nub,partition)
-import           Data.Maybe(isJust,fromMaybe)
+import           Data.Maybe(fromMaybe)
 import qualified Data.Set as Set
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
@@ -208,7 +208,7 @@ chpDiagnosis fSpec
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
   hasMeaning :: HasMeaning a => a -> Bool
-  hasMeaning = isJust . meaning (fsLang fSpec)
+  hasMeaning = not . null . meaning (fsLang fSpec)
 
   relsNotUsed :: Blocks
   pics :: [Picture]

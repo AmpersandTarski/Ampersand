@@ -68,7 +68,10 @@ instance JSON Rule JsonRule where
   } 
    where 
     fSpec = userFSpec multi
-    showMeaning = maybe "" aMarkup2String (fmap ameaMrk . meaning (fsLang fSpec) $ rule)
+    showMeaning = 
+        case meaning (fsLang fSpec) rule of
+          []  -> ""
+          xs  -> aMarkup2String . ameaMrk . head $ xs
     showMessage = case filter (\x -> amLang x == fsLang fSpec) (rrmsg rule) of
                               [] -> ""
                               xs -> aMarkup2String (head xs)

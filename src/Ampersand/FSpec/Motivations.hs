@@ -20,7 +20,7 @@ import Ampersand.Basics
 -- The other functions in this class are solely meant to be used in the definition of purpose.
 -- They are defined once for each instance of Explainable, not be used in other code.
 
-class  Named a => Motivated a where
+class Motivated a where
   isForObject :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
   purposesDefinedIn :: FSpec -> Lang -> a -> [Purpose]  -- ^ The purposes defined for a specific a, given Langugage.
   purposesDefinedIn fSpec l x
@@ -57,14 +57,14 @@ instance Motivated Interface where
 
 
 class Named a => HasMeaning a where
-  meaning :: Lang -> a -> Maybe Meaning
-  meaning l x = 
-     case filter (\(Meaning m) -> l == amLang m) (meanings x) of
-       []   -> Nothing
-       [m]  -> Just m
-       _    -> fatal ("In the "++show l++" language, too many meanings given for "++name x ++".")             
+  meaning :: Lang -> a -> [Meaning]
+  meaning l x = filter (\(Meaning m) -> l == amLang m) $ meanings x
+--     case filter (\(Meaning m) -> l == amLang m) (meanings x) of
+--       []   -> Nothing
+--       [m]  -> Just m
+--       _    -> fatal ("In the "++show l++" language, too many meanings given for "++name x ++".")             
   meanings :: a -> [Meaning]
-  generatedMeaning :: Lang -> a -> Meaning 
+  generatedMeaning :: Lang -> a -> Maybe Meaning 
   {-# MINIMAL meanings #-}
 
 instance HasMeaning Rule where

@@ -40,7 +40,6 @@ import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc
 import           Ampersand.Output.PandocAux
 import           Data.List
-import           Data.Maybe
 import           Data.Ord
 import qualified Data.Set as Set
 import qualified Data.Time.Format as DTF
@@ -510,7 +509,7 @@ dpRule' fSpec = dpR
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `Set.union` seenConcs) (nds `Set.union` seenRelations)
 
 printMeaning :: HasMeaning a => Lang -> a -> Blocks
-printMeaning lang = fromMaybe mempty . fmap (printMarkup . ameaMrk) . meaning lang
+printMeaning lang = mconcat  . fmap (printMarkup . ameaMrk) . meaning lang
 
 printPurposes :: [Purpose] -> Blocks
 printPurposes = mconcat . map (printMarkup . explMarkup)

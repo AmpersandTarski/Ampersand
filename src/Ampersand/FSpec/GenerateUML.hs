@@ -191,7 +191,10 @@ genCustomReqElements fSpec parentPackageId =
     reqUML (xmiId, req) = intercalate "\n"
      ([ "    <element xmi:idref="++show xmiId++" xmi:type=\"uml:Requirement\" name="++show (reqId req)++" scope=\"public\""++">"
       , "      <model package="++show parentPackageId++" ea_eleType=\"element\"/>"
-      , "      <properties documentation="++show (maybe "" aMarkup2String (fmap ameaMrk . meaning (fsLang fSpec) $ req))++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
+      , "      <properties documentation="++show (case meaning (fsLang fSpec) req of
+                                                    []  -> ""
+                                                    xs  -> aMarkup2String . ameaMrk . head $ xs
+                                                 )++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
       , "      <tags>"]++
       [ "         <tag name=\"Purpose"++nr++"\" value="++show p++" modelElement="++show xmiId++"/>" | (nr ,p) <- zip ("" : map show [1::Int ..]) (map (aMarkup2String . explMarkup) $ reqPurposes req)  ]++
       [ "      </tags>"
