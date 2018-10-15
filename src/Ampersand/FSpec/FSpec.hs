@@ -350,7 +350,7 @@ showSQL tt =
 -- In case of reference to an INTERFACE, not used as a LINKTO, the
 -- expression and cruds are replaced. This is introduced with the
 -- refactoring of the frontend interfaces in oct/nov 2016. 
-substituteReferenceObjectDef :: FSpec -> BoxExp -> BoxExp
+substituteReferenceObjectDef :: FSpec -> ObjectDef -> ObjectDef
 substituteReferenceObjectDef fSpec originalObjectDef =
   case substitution of
     Nothing           -> originalObjectDef

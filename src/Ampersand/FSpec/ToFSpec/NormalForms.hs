@@ -1054,9 +1054,10 @@ delta sgn
               , decprL  = ""
               , decprM  = ""
               , decprR  = ""
-              , decMean = AMeaning [ --   Markup Dutch   (string2Blocks ReST "Delta is bedoeld als variabele, die de plaats in een expressie vasthoudt waar paren worden ingevoegd of verwijderd.")
-                                     -- , Markup English (string2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from expressions.")
-                                   ]
+              , decMean = 
+                  [ Meaning (Markup Dutch   (string2Blocks ReST "Delta is bedoeld als variabele, die de plaats in een expressie vasthoudt waar paren worden ingevoegd of verwijderd."))
+                  , Meaning (Markup English (string2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from expressions."))
+                  ]
               , decfpos = Origin ("generated relation (Delta "++show sgn++")")
               , decusr  = False
               , decpat  = Nothing

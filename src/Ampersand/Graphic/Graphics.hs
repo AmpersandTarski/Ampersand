@@ -231,8 +231,12 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePath opts p =
-     dirOutput opts
-     </> (escapeNonAlphaNum . pictureID . pType ) p <.> "svg"
+    dirOutput opts
+     </> (escapeNonAlphaNum . pictureID . pType ) p <.>
+     case fspecFormat opts of
+      Fpdf   -> "png"   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
+      Fdocx  -> "svg"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
+      _      -> "pdf"
 
 {-
 class Named a => Navigatable a where

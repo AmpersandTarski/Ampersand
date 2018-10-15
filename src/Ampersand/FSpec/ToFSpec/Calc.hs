@@ -13,7 +13,6 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc (Options(..))
 import           Data.List hiding (head)
-import           Data.Monoid
 import qualified Data.Set as Set
 import           Text.Pandoc.Builder
 

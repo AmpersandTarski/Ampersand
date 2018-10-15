@@ -170,7 +170,7 @@ classdiagram2dot opts cd
                                    , ArrowSize  2.0
                                    ] ++
                                    ( if blackWhite opts
-                                     then [Style [SItem Dashed []]]
+                                     then [GVcomp.Style [SItem Dashed []]]
                                      else [GVcomp.Color [WC (X11Color Red) Nothing]]
                                    )
                       }

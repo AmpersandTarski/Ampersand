@@ -16,7 +16,8 @@ clone_folder: "c:\\stack"
 environment:
   global:
     STACK_ROOT: "c:\\sr"
-
+    TMP: c:/tmp # https://github.com/haskell/cabal/issues/5386
+    
 # obtain the stack executable, and also perform a small hack which
 # converts ssh-based git submodules to https-based ones, that 
 # can be cloned without needing to mess about with ssh keys.

@@ -71,10 +71,10 @@ chpConceptualAnalysis lev fSpec = (
         -- followed by a conceptual model for this pattern
      <> ( case fsLang fSpec of
                Dutch   -> -- announce the conceptual diagram
-                          para (hyperLinkTo fSpec (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
+                          para (hyperLinkTo (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
                           -- draw the conceptual diagram
                           <>(xDefBlck fSpec . pictOfPat) pat
-               English -> para (hyperLinkTo fSpec (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
+               English -> para (hyperLinkTo (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
                           <>(xDefBlck fSpec . pictOfPat) pat
         ) <>
     (
@@ -92,7 +92,7 @@ chpConceptualAnalysis lev fSpec = (
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d
         = let purp =  purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) d)
-          in (mempty
+          in ((xDefInln fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMathWithSign d))
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 ( case ( isNull purp, fsLang fSpec) of
                    (True , Dutch)   -> plain ("De volgende " <> str(nladjs d) <> " is gedefinieerd ")
@@ -101,16 +101,7 @@ chpConceptualAnalysis lev fSpec = (
                    (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the relation of the relation with its properties and its intended meaning
-               <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisRelation d) (showMathWithSign d)
-               <> case meaning2Blocks (fsLang fSpec) d of
-                    [] -> case fsLang fSpec of
-                           Dutch   -> case commaNL  "en"  [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
-                                       []    -> plain "(Geen betekenis gespecificeerd)"
-                                       langs -> plain (str ("(Geen betekenis gespecificeerd, maar wel in het "++langs++")"))
-                           English -> case commaEng "and" [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
-                                       []    -> plain "(No meaning has been specified)"
-                                       langs -> plain (str ("(No meaning has been specified, except in "++langs++")"))
-                    ms -> fromList ms
+               <> printMeaning (fsLang fSpec) d
               ])
   ukadjs d  = if Uni `elem` (properties d) && Tot `elem` (properties d)
               then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
@@ -129,19 +120,19 @@ chpConceptualAnalysis lev fSpec = (
                <> plain
                    ( if isNull purp
                      then str (l (NL "De ongedocumenteerde afspraak ", EN "The undocumented agreement "))
-                       <> (hyperLinkTo fSpec . XRefSharedLangRule) r
+                       <> (hyperLinkTo . XRefSharedLangRule) r
                        <> str (l (NL " bestaat: " ,EN " has been made: "))
                      else str (l (NL "Daarom bestaat afspraak ", EN "Therefore agreement "))
-                       <> (hyperLinkTo fSpec . XRefSharedLangRule) r
+                       <> (hyperLinkTo . XRefSharedLangRule) r
                        <> str (l (NL " : ", EN " exists: "))
                    )
-               <> fromList (meaning2Blocks  (fsLang fSpec) r)
+               <> printMeaning (fsLang fSpec) r
                   -- then the formal rule
                <> plain
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
                     <> mconcat (intersperse  (str ", ")
-                                [   hyperLinkTo fSpec (XRefConceptualAnalysisRelation d)
+                                [   hyperLinkTo (XRefConceptualAnalysisRelation d)
                                  <> text (" ("++name d++")")
                                 | d<-Set.elems $ bindedRelationsIn r])
                     <> str (l (NL " - geformaliseerd als "
@@ -149,7 +140,7 @@ chpConceptualAnalysis lev fSpec = (
                    )
                <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisRule r) (showMath r) 
                -- followed by a conceptual model for this rule
-               <> para (   hyperLinkTo fSpec (pictOfRule r)
+               <> para (   hyperLinkTo (pictOfRule r)
                         <> str (l (NL " geeft een conceptueel diagram van deze regel."
                                   ,EN " shows a conceptual diagram of this rule."))
                        )

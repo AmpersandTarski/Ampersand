@@ -43,7 +43,7 @@ info x =
                                          _  -> msg
                  ) 
     ViolationsInDatabase viols
-              -> (SE.ExitFailure  10 , "ERROR: The population would violate invariants. Could not generate your database." : concatMap showViolatedRule viols)
+              -> (SE.ExitFailure  20 , "ERROR: The population would violate invariants. Could not generate your database." : concatMap showViolatedRule viols)
     InvalidSQLExpression msg
               -> (SE.ExitFailure  30 , "ERROR: Invalid SQL Expression" : map ("  "++) msg)
     NoPrototypeBecauseOfRuleViolations

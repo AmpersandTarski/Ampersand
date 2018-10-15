@@ -207,7 +207,7 @@ chpDiagnosis fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
-  hasMeaning :: Meaning a => a -> Bool
+  hasMeaning :: HasMeaning a => a -> Bool
   hasMeaning = isJust . meaning (fsLang fSpec)
 
   relsNotUsed :: Blocks
@@ -231,13 +231,13 @@ chpDiagnosis fSpec
                                   ,EN " are not used in any rule. ")
                       ) 
      <>( case pictsWithUnusedRels of
-          [pict] -> para (    hyperLinkTo fSpec pict 
+          [pict] -> para (    hyperLinkTo pict 
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          )
                  <> xDefBlck fSpec pict
           picts  -> mconcat
-                       [ para (   hyperLinkTo fSpec pict
+                       [ para (   hyperLinkTo pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
@@ -327,7 +327,7 @@ chpDiagnosis fSpec
                             , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
-          hasRef x = maybe False (any  ((/=[]).explRefIds)) (purposeOf fSpec (fsLang fSpec) x)
+          hasRef x = (any  ((/=[]).explRefIds)) (purposesDefinedIn fSpec (fsLang fSpec) x)
 
           showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%"
 
@@ -398,11 +398,11 @@ chpDiagnosis fSpec
 -- the tables containing the actual work in progress population
      mconcat
      [    para (  str (l (NL "Afspraak ", EN "Agreement "))
-               <> hyperLinkTo fSpec (XRefSharedLangRule r)
+               <> hyperLinkTo (XRefSharedLangRule r)
                <> " ( " <> quoterule r <> " )"
                <> (str.l) (NL " luidt: ", EN " says: ")
                )
-       <> fromList (meaning2Blocks (fsLang fSpec) r)
+       <> printMeaning (fsLang fSpec) r
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
                           ,EN "This rule contains work (for ")
                 <>commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
