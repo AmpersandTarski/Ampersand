@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+* [Issue #842](https://github.com/AmpersandTarski/Ampersand/issues/842) Natural language generation
+
 ## v3.11.3 (28 september 2018)
 
 * Bugfix: Figures are available again in the generated specification document.
