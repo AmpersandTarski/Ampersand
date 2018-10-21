@@ -16,7 +16,6 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.FSpecAux
 import           Data.List
 import           Data.Maybe
-import           Data.Monoid
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import           Language.SQL.SimpleSQL.Pretty
@@ -28,12 +27,12 @@ data SqlQuery = SqlQueryPlain  Text.Text -- Hardly any newlines (only within val
 placeHolderSQL :: String
 placeHolderSQL = "_SRCATOM"
 
-broadQueryWithPlaceholder :: FSpec -> BoxExp -> String
+broadQueryWithPlaceholder :: FSpec -> ObjectDef -> String
 broadQueryWithPlaceholder fSpec
   = unwords . words 
      . prettyQueryExpr theDialect
      . broadQuery fSpec 
-prettyBroadQueryWithPlaceholder :: Int -> FSpec -> BoxExp -> String
+prettyBroadQueryWithPlaceholder :: Int -> FSpec -> ObjectDef -> String
 prettyBroadQueryWithPlaceholder i fSpec
     =  intercalate ("\n"++replicate i ' ') 
      . lines
@@ -1159,14 +1158,14 @@ one = BQEComment [BlockComment "Just ONE"]
 theDialect :: Dialect 
 theDialect = MySQL  -- maybe in the future other dialects will be supported. This depends on package `simple-sql-parser`
 
-broadQuery :: FSpec -> BoxExp -> QueryExpr
+broadQuery :: FSpec -> ObjectDef -> QueryExpr
 broadQuery fSpec obj = 
   -- The idea is to fetch all columns that are available in the same Plug as the conceptTable of the 
   -- target of the object's context-expression. This dramatically reduces the number of queries required,
   -- and hence will boost performance at runtime. 
   --
   -- So here is the plan:. 
-  --   a) The BoxExp has a contextExpression. A BinQueryExpr can be built using selectExpr. 
+  --   a) The ObjectDef has a contextExpression. A BinQueryExpr can be built using selectExpr. 
   --   b) For all expressions in the subinterface, when they are in the same table as the conceptTable of 
   --     the target of the contextExpression, we want to fetch them in this single query.
   --   c) We know the table that is used to get the tgt of the result of a) This could be some intermediate table!
@@ -1187,7 +1186,7 @@ broadQuery fSpec obj =
  where  
   baseBinExpr = getBinQueryExprPlaceholder fSpec . objExpression $ obj
 
-  extendWithCols :: [BoxExp] -> BinQueryExpr -> QueryExpr
+  extendWithCols :: [ObjectDef] -> BinQueryExpr -> QueryExpr
   extendWithCols objs bqe 
     | null objs = plainQE
     | otherwise =
@@ -1219,7 +1218,7 @@ broadQuery fSpec obj =
                , qeFetchFirst    = Nothing
                }
      plainQE = toSQL bqe
-     makeCol :: Maybe Name -> BoxExp -> (ValueExpr, Maybe Name)
+     makeCol :: Maybe Name -> ObjectDef -> (ValueExpr, Maybe Name)
      makeCol tableName col =
        case attThatisInTableOf (target . objExpression $ obj) col of
             Nothing  -> fatal ("this is unexpected behaviour. "++show col)
@@ -1255,14 +1254,14 @@ broadQuery fSpec obj =
          ct  = Name "cptTbl"
      tableCpt = source . objExpression . head $ objs
 
-  isInBroadQuery :: Expression -> BoxExp -> Bool
+  isInBroadQuery :: Expression -> ObjectDef -> Bool
   isInBroadQuery ctxExpr sObj = 
        (isUni . objExpression $ sObj) 
     && (isJust . attThatisInTableOf (target . objExpression $ obj) $ sObj)
     && (source ctxExpr /= target ctxExpr || null (primitives ctxExpr)) --this is required to prevent conflicts in rows of the same broad table. See explanation in issue #627
     && (target ctxExpr /= target (objExpression sObj) || (not . isFlipped . objExpression $ sObj)) -- see issue #760 for motivation of this line.
 
-  attThatisInTableOf :: A_Concept -> BoxExp -> Maybe SqlAttribute
+  attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
   attThatisInTableOf cpt od = 
           case theDcl of
             Nothing -> Nothing

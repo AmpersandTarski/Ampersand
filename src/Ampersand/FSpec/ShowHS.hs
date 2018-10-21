@@ -429,8 +429,8 @@ instance ShowHS Rule where
      ,"  }"
      ]
 
-instance ShowHS AMeaning where
-  showHS opts indent (AMeaning x) = "AMeaning " ++ showHS opts (indent++"        ") x
+instance ShowHS Meaning where
+  showHS opts indent (Meaning x) = "Meaning " ++ showHS opts (indent++"        ") x
 
 instance ShowHSName IdentityDef where
  showHSName identity = haskellIdentifier ("identity_"++name identity)
@@ -479,13 +479,13 @@ instance ShowHS Population where
           ++indent++"                    ]"
           ++indent++"         }"
 
-instance ShowHSName BoxExp where
+instance ShowHSName ObjectDef where
  showHSName obj = haskellIdentifier ("oDef_"++name obj)
 
-instance ShowHS BoxExp where
+instance ShowHS ObjectDef where
  showHS opts indent x
   = intercalate indent
-        ["BoxExp { objnm    = " ++ show(name x)
+        ["ObjectDef { objnm    = " ++ show(name x)
         ,"       , objpos   = " ++ showHS opts "" (origin x)
         ,"       , objExpression   = " ++ showHS opts (indent++"                ") (objExpression x)
         ,"       , objcrud  = " ++ showHS opts (indent++"                ") (objcrud x)

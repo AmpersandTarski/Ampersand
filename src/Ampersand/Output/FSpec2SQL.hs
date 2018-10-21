@@ -10,7 +10,6 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.TableSpec
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
-import           Data.Monoid
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import           System.Directory
@@ -62,7 +61,7 @@ dumpSQLqueries multi
         = header ("INTERFACE: "<>Text.pack (name ifc))
         <>(map ("  " <>) . showObjDef . ifcObj) ifc
         where 
-          showObjDef :: BoxExp -> [Text.Text]
+          showObjDef :: ObjectDef -> [Text.Text]
           showObjDef obj
             = (header . Text.pack . showA . objExpression) obj
             <>[queryAsSQL . prettySQLQueryWithPlaceholder 2 fSpec . objExpression $ obj]

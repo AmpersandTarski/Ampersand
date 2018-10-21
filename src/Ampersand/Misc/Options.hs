@@ -359,16 +359,16 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option ['V']   ["verbose"]
                (NoArg (\opts -> opts{verboseP = True}))
-               "verbose error message format."
+               "verbose output, to report which files Ampersand writes."
             , Public)
           , (Option []   ["sampleConfigFile"]
                (NoArg (\opts -> opts{genSampleConfigFile = True}))
-               ("write a sample configuration file ("++sampleConfigFileName++")")
+               ("write a sample configuration file ("++sampleConfigFileName++"), to avoid retyping (and remembering) the command line options for ampersand.")
             , Public)
           , (Option []      ["config"]
                (ReqArg (\nm _ -> fatal ("config file ("++nm++")should not be treated as a regular option.")
                        ) "config.yaml")
-               "config file (*.yaml)"
+               "config file (*.yaml) that contains the command line options of ampersand."
             , Public)
           , (Option []      ["dev","ignore-invariant-violations"]
                (NoArg (\opts -> opts{allowInvariantViolations = True}))
@@ -376,18 +376,18 @@ options = [ (Option ['v']   ["version"]
             , Hidden)
           , (Option []      ["validate"]
                (NoArg (\opts -> opts{validateSQL = True}))
-               "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"
+               "Compare results of rule evaluation in Haskell and SQL, for testing expression semantics. This requires command line php with MySQL support."
             , Hidden)
           , (Option ['p']     ["proto"]
                (OptArg (\nm opts -> opts {dirPrototype = fromMaybe (dirPrototype opts) nm
                                          ,genPrototype = True}
                        ) "DIRECTORY")
-               ("generate a functional prototype (This overrules environment variable "++ dirPrototypeVarName ++ ").")
+               ("generate a functional prototype, so you can experiment with the information system specified in your script. This overrules environment variable "++ dirPrototypeVarName ++ ").")
             , Public)
           , (Option []     ["prototype-framework-version"]
                (ReqArg (\x opts -> opts {zwolleVersion = x}
                        ) "VERSION")
-               ("tag, branch or SHA of the prototype framework on Github.")
+               ("tag, branch or SHA of the prototype framework on Github. (What purpose does this serve?)")
             , Public)
           , (Option []      ["force-reinstall-framework"]
                (NoArg (\opts -> opts{forceReinstallFramework = True}))
@@ -396,46 +396,46 @@ options = [ (Option ['v']   ["version"]
           , (Option []     ["customizations"]
                (ReqArg (\names opts -> opts {dirCustomizations = splitOn ";" names}
                        ) "DIRECTORY")
-               "copy a directory into the generated prototype, instead of the default."
+               "copy a directory into the generated prototype, overriding the default directory called 'customizations'."
             , Public)
           , (Option ['d']  ["dbName"]
                (ReqArg (\nm opts -> opts{dbName = if nm == ""
                                                          then dbName opts
                                                          else map toLower nm}
                        ) "NAME")
-               ("database name (This overrules environment variable "++ dbNameVarName ++ ", defaults to filename)")
+               ("database name (This overrules environment variable "++ dbNameVarName ++ ", defaults to filename) to which the prototype will connect for persistent storage.")
             , Public)
           , (Option []  ["sqlHost"]
                (ReqArg (\nm opts -> opts{sqlHost = if nm == ""
                                                           then sqlHost opts
                                                           else nm}
                        ) "HOSTNAME")
-               "set SQL host name (Defaults to `localhost`)"
+               "set SQL host name (Defaults to `localhost`), to identify the host on which the persistent store resides"
             , Public)
           , (Option []  ["sqlLogin"]
                (ReqArg (\nm opts -> opts{sqlLogin = if nm == ""
                                                           then sqlLogin opts
                                                           else nm}
                        ) "USER")
-               "set SQL user name (Defaults to `ampersand`)"
+               "set SQL user name (Defaults to `ampersand`), to let your application login to the database."
             , Public)
           , (Option []  ["sqlPwd"]
                (ReqArg (\nm opts -> opts{sqlPwd = nm}
                        ) "PASSWORD")
-               "set SQL password (Defaults to `ampersand`)"
+               "set SQL password (Defaults to `ampersand`), to let your application login to the database."
             , Public)
           , (Option []        ["sql-bin-tables"]
                (NoArg (\opts -> opts{sqlBinTables = True}))
-               "generate binary tables only in SQL database."
+               "generate binary tables only in SQL database, for testing purposes."
             , Hidden)
           , (Option ['x']     ["interfaces"]
                (NoArg (\opts -> opts{allInterfaces  = True}))
-               "generate interfaces."
+               "generate interfaces, which currently does not work."
             , Public)
           , (Option ['e']     ["export"]
                (OptArg (\mbnm opts -> opts{export2adl = True
                                                    ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
-               "export as plain Ampersand script."
+               "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
             , Public)
           , (Option ['o']     ["outputDir"]
                (ReqArg (\nm opts -> opts{dirOutput = nm}
@@ -445,7 +445,7 @@ options = [ (Option ['v']   ["version"]
           , (Option []      ["namespace"]
                (ReqArg (\nm opts -> opts{namespace = nm}
                        ) "NAMESPACE")
-               "prefix database identifiers with this namespace, in order to isolate namespaces."
+               "prefix database identifiers with this namespace, to isolate namespaces within the same database."
             , Public)
           , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> opts
@@ -471,12 +471,12 @@ options = [ (Option ['v']   ["version"]
                                     ('T':'E':'X':'T': _ ) -> Ftextile
                                     _                     -> fspecFormat opts}
                        ) "FORMAT")
-               ("generate a functional design document in specified format (FORMAT="++allFSpecFormats++").")
+               ("generate a functional design document in specified format (FORMAT="++allFSpecFormats++"), to kick-start your functional specification.")
             , Public)
           , (Option []        ["testRule"]
                (ReqArg (\ruleName opts -> opts{ testRule = Just ruleName }
                        ) "RULE")
-               "Show contents and violations of specified rule."
+               "Show contents and violations of specified rule, for testing a single rule in your Ampersand-script."
             , Hidden)
      --     , (Option []        ["css"]
      --          (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
@@ -484,11 +484,11 @@ options = [ (Option ['v']   ["version"]
      --       , Public)
           , (Option []        ["ECA"]
                (NoArg (\opts -> opts{genEcaDoc = True}))
-               "generate documentation with ECA rules."
+               "generate documentation with ECA rules, for future purposes."
             , Hidden)
           , (Option []        ["proofs"]
                (NoArg (\opts -> opts{proofs = True}))
-               "generate derivations."
+               "generate derivations, for testing the generation of rules."
             , Hidden)
           , (Option []        ["haskell"]
                (NoArg (\opts -> opts{haskell = True}))
@@ -500,11 +500,11 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option []        ["crowfoot"]
                (NoArg (\opts -> opts{crowfoot = True}))
-               "generate crowfoot notation in graphics."
+               "generate crowfoot notation in graphics, to please crowfoot addicts."
             , Public)
           , (Option []        ["blackWhite"]
                (NoArg (\opts -> opts{blackWhite = True}))
-               "do not use colours in generated graphics"
+               "avoid coloring conventions to facilitate readable pictures in black and white."
             , Public)
           , (Option []        ["altGraphics"]
                (NoArg (\opts -> opts{doubleEdges = not (doubleEdges opts)}))
@@ -512,7 +512,7 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option []        ["noGraphics"]
                (NoArg (\opts -> opts{noGraphics = True}))
-               "omit the generation of graphics during generation of the functional design document."
+               "omit the generation of graphics during generation of the functional design document to speed up the compiler."
             , Public)
           , (Option []        ["noDiagnosis"]
                (NoArg (\opts -> opts{noDiagnosis = True}))
@@ -528,7 +528,7 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option []        ["uml"]
                (NoArg (\opts -> opts{genUML = True}))
-               "Generate a UML 2.0 data model."
+               "Generate a data model in UML 2.0 style."
             , Hidden)
           , (Option []        ["fpa"]
                (NoArg (\opts -> opts{genFPAChap = True}))
@@ -559,7 +559,7 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["meta-file"]
                (NoArg (\opts -> opts{genMetaFile = True}))
                ("Generate an .adl file that contains the relations of formal-ampersand, "++
-                "populated with the the meta-population of your own .adl model.")
+                "populated with the the meta-population of your own .adl model, in case you want a metamodel.")
             , Hidden)
           , (Option []        ["add-semantic-metamodel","meta-tables"]
                (NoArg (\opts -> opts{addSemanticMetamodel = True}))
@@ -572,7 +572,7 @@ options = [ (Option ['v']   ["version"]
             , Hidden)
           , (Option []        ["atlas-without-expressions"]
                (NoArg (\opts -> opts{atlasWithoutExpressions = True}))
-               "Temporary switch to create Atlas without expressions. (for RAP3)"
+               "Temporary switch to create Atlas without expressions, for use in RAP3"
             , Hidden)
           , (Option []        ["crud-defaults"]
                (ReqArg (\crudString opts -> let c = 'c' `notElem` crudString

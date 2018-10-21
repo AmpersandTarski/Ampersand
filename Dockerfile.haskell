@@ -1,4 +1,0 @@
-FROM ampersandtarski/utils:latest
-
-# clone git ampersand compiler repository
-RUN stack upgrade

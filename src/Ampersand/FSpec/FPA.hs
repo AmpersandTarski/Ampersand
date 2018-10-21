@@ -74,9 +74,9 @@ fpaInterface ifc =
                         | d == 2    = Gemiddeld
                         | otherwise = Moeilijk 
 
-        getDepth :: BoxExp -> Int
-        getDepth BoxExp{objmsub=Nothing} = 0
-        getDepth BoxExp{objmsub=Just si}
+        getDepth :: ObjectDef -> Int
+        getDepth ObjectDef{objmsub=Nothing} = 0
+        getDepth ObjectDef{objmsub=Just si}
           = case si of 
              InterfaceRef{} -> 1
              Box{}          -> 1 + maximum (map getDepth [x | BxExpr x <- siObjs si])

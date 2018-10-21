@@ -460,8 +460,10 @@ downloadPrototypeFramework opts =
   (do 
     x <- allowExtraction
     when x $ do 
-      when (forceReinstallFramework opts) destroyDestinationDir
-      verboseLn opts "Start downloading frontend framework."
+      when (forceReinstallFramework opts) $ do
+        verboseLn opts $ "Emptying folder because redeploying prototype framework is forced"
+        destroyDestinationDir
+      verboseLn opts "Start downloading prototype framework."
       response <- 
         parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip") >>=
         httpBS  
@@ -469,7 +471,7 @@ downloadPrototypeFramework opts =
                   . toArchive 
                   . BL.fromStrict 
                   . getResponseBody $ response
-      verboseLn opts "Start extraction of frontend framework."
+      verboseLn opts "Start extraction of prototype framework."
       let zipoptions = 
               [OptVerbose | verboseP opts]
             ++ [OptDestination destination]
@@ -478,7 +480,7 @@ downloadPrototypeFramework opts =
                 (show . zComment $ archive)
   ) `catch` \err ->  -- git failed to execute
          exitWith . FailedToInstallPrototypeFramework $
-            [ "Error encountered during installation of prototype framework:"
+            [ "Error encountered during deployment of prototype framework:"
             , show (err :: SomeException)
             ]
             
@@ -505,14 +507,15 @@ downloadPrototypeFramework opts =
           if destIsDirectory
           then do 
             dirContents <- listDirectory destination
-            unless (null dirContents)
+            let emptyOrForced = (null dirContents) || (forceReinstallFramework opts)
+            unless emptyOrForced
                    (verboseLn opts $
-                         "Didn't install prototype framework, because\n"
+                         "(Re)deploying prototype framework not allowed, because\n"
                       ++ "  "++destination++" isn't empty.")
-            return (null dirContents)
+            return emptyOrForced
           else do 
              verboseLn opts $
-                       "Didn't install prototype framework, because\n"
+                       "(Re)deploying prototype framework not allowed, because\n"
                     ++ "  "++destination++" isn't a directory."
              return False
       else return True
