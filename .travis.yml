@@ -152,13 +152,19 @@ script:
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
 # - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
+before_deploy:
+  # tag this commit
+  - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
+  - git tag '$(AMPERSAND_VERSION)'
+
 deploy:
   provider: releases
   skip_cleanup: true
   file: dist/ampersand
   on:
     repo: AmpersandTarski/Ampersand
-    tags: true
+    branch: cicd
+    tags: false
     condition: $BUILD = stack
   api-key:
     secure: ctc+qaMBb9wnQt9827grVDfqMDJsqgvGA3DQVo0P33B2J2XedHhn1PfRdSrZ8kdo55/658VQ4E94/quXYN7fdHbysFR+jO2b6ipTlo1alsOQ+t1B/s01nZ2QHZYkS+WD22bPWMO6ucbUsQ+NAUm44muL4GkdI4EXEIsZ3PEbHgg=
