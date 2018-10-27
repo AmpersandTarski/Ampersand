@@ -155,7 +155,7 @@ script:
 before_deploy:
   # tag this commit
   - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
-  - git tag '$(AMPERSAND_VERSION)'
+  - git tag $AMPERSAND_VERSION
 
 deploy:
   provider: releases
