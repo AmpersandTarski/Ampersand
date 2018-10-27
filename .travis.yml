@@ -163,7 +163,7 @@ deploy:
   file: dist/ampersand
   on:
     repo: AmpersandTarski/Ampersand
-    branch: cicd
+    branch: master
     tags: false
     condition: $BUILD = stack
   api-key:
