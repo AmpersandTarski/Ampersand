@@ -18,6 +18,9 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , pandocEqnArray
     , pandocEquationWithLabel
     , Purpose(..)
+    , printMeaning
+    , printMarkup
+    , printPurposes
     , purposes2Blocks
     , violation2Inlines
     , isMissing
@@ -49,32 +52,28 @@ import           Text.Pandoc.Builder
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]
 chaptersInDoc opts 
-     | test opts          = [ SharedLang]
      | diagnosisOnly opts = [ Diagnosis]
      | otherwise          = [ Intro
                             , SharedLang
-                       --     , Diagnosis
+                            , Diagnosis
                             , ConceptualAnalysis
-                       --     , DataAnalysis
-                       --     , Glossary
+                            , DataAnalysis
                             ]
 
 data XRefSection
              = XRefSharedLangRelation Relation
-             | XRefDataAnalysisRule Rule
              | XRefSharedLangRule Rule
-             | XRefProcessAnalysis Pattern
+             | XRefSharedLangTheme (Maybe Pattern)
+             | XRefDataAnalysisRule Rule
              | XRefConceptualAnalysisPattern Pattern
              | XRefConceptualAnalysisRelation Relation
              | XRefConceptualAnalysisRule Rule
              | XRefConceptualAnalysisExpression Rule
-             | XRefInterfacesInterface Interface
-             | XRefNaturalLanguageTheme (Maybe Pattern)
 
 ------ Symbolic referencing to a chapter/section. ---------------------------------
 class Typeable a => Xreferenceble a where
-  xSafeLabel :: FSpec -> a -> String -- The full string that is used as ID for referencing
-  hyperLinkTo :: FSpec -> a -> Inlines
+  xSafeLabel :: a -> String -- The full string that is used as ID for referencing
+  hyperLinkTo :: a -> Inlines
   xDefBlck :: FSpec -> a -> Blocks
   xDefBlck _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
   xDefInln :: FSpec -> a -> Inlines
@@ -82,92 +81,79 @@ class Typeable a => Xreferenceble a where
   {-# MINIMAL xSafeLabel, hyperLinkTo, (xDefBlck | xDefInln) #-}
 
 instance Xreferenceble Chapter where
-  xSafeLabel _ a = show Sec++show a
-  hyperLinkTo fSpec = citeGen fSpec
-  xDefBlck fSpec a = headerWith (xSafeLabel fSpec a,[],[]) 1 (chptTitle (fsLang fSpec) a)
+  xSafeLabel a = show Sec++show a
+  hyperLinkTo = citeGen
+  xDefBlck fSpec a = headerWith (xSafeLabel a,[],[]) 1 (chptTitle (fsLang fSpec) a)
   
 instance Xreferenceble Picture where
-  xSafeLabel _ a = show Fig++caption a
-  hyperLinkTo fSpec = citeGen fSpec
-  xDefBlck fSpec a = para $ imageWith (xSafeLabel fSpec a, [], []) src (xSafeLabel fSpec a)(text (caption a))
+  xSafeLabel a = show Fig++caption a
+  hyperLinkTo = citeGen
+  xDefBlck fSpec a = para $ imageWith (xSafeLabel a, [], []) src (xSafeLabel a)(text (caption a))
    where
     opts = getOpts fSpec
     src  = imagePath opts $ a
 instance Xreferenceble XRefSection where
-  xSafeLabel fSpec a = 
-       (show . xrefPrefix . refStuff fSpec $ a)
+  xSafeLabel a = 
+       (show . xrefPrefix . refStuff $ a)
      <> show (chapterOfSection x)
      <> typeOfSection x
      <> "-"
      <> nameOfThing x
     where 
-      x = refStuff fSpec a
-
-
-  hyperLinkTo fSpec = codeGen fSpec
-  xDefBlck fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff fSpec a))) (hyperTarget fSpec a)
-  xDefInln fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff fSpec a))) id (hyperTarget fSpec a)
+      x = refStuff a
+  hyperLinkTo = codeGen
+  xDefBlck fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget fSpec a)
+  xDefInln fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (hyperTarget fSpec a)
 
 hyperTarget :: FSpec -> XRefSection -> Either Blocks Inlines 
 hyperTarget fSpec a =
     case a of
-      XRefProcessAnalysis{}           -> Left . hdr $ (text.l) (NL "Proces: ",EN "Process: ")   <> (singleQuoted . str . nameOfThing . refStuff fSpec $ a)
-      XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff fSpec $ a)
-      XRefInterfacesInterface ifc     -> Left . hdr $ (text.l) (NL "Koppelvlak: ",EN "Interface: ") <> (singleQuoted . str . name $ ifc)
-      XRefNaturalLanguageTheme mPat   -> Left . hdr $ 
+      XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff $ a)
+      XRefSharedLangTheme mPat   -> Left . hdr $ 
                                        (case mPat of
                                           Nothing  -> (text.l) (NL "Losse eindjes...",EN "Loose ends...")
                                           Just pat -> text (name pat)
                                        )
-      XRefSharedLangRelation d        -> -- Right $ spanWith (xSafeLabel fSpec a,[],[]) (str . show . numberOf fSpec $ d)
-                                         Left $ divWith (xSafeLabel fSpec a,["listing"],[]) 
-                                                        (   (para . str $ showRel d)
-                                                          <>codeBlockWith 
-                                                               ("", ["adl"],[("caption",name d)]) 
-                                                               ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
-                                                        )
-      XRefSharedLangRule r            -> -- Right $ spanWith (xSafeLabel fSpec a,[],[]) (str . show . numberOf fSpec $ r)
-                                         Left $ divWith (xSafeLabel fSpec a,["listing"],[])
+      XRefSharedLangRelation d        -> Right $ spanWith (xSafeLabel a,[],[]) (str . showRel $ d)
+                                      --   Left $ divWith (xSafeLabel a,[],[]) 
+                                      --                  (   (para . str $ showRel d)
+                                      --                    <>codeBlockWith 
+                                      --                         ("", ["adl"],[("caption",showRel d)]) 
+                                      --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
+                                      --                  )
+      XRefSharedLangRule r            -> -- Right $ spanWith (xSafeLabel a,[],[]) (str . show . numberOf fSpec $ r)
+                                         Left $ divWith (xSafeLabel a,[],[])
                                                         (   (para . text $ name r)
-                                                          <>codeBlockWith 
-                                                               ("", ["adl"],[("caption",name r)]) 
-                                                               ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
+                                                        --  <>codeBlockWith 
+                                                        --       ("", ["adl"],[("caption",name r)]) 
+                                                        --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
 
-                                                          -- <>(case meaning (fsLang fSpec) r of
-                                                          --     Nothing 
-                                                          --         ->( plain $
-                                                          --                (str.l) (NL "De regel ",EN "The rule ")
-                                                          --             <> (emph.str.name) r
-                                                          --             <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
-                                                          --           )
-                                                          --     Just m
-                                                          --         -> (fromList . amPandoc $ m)
-                                                          --   )
+                                                          <>printMeaning (fsLang fSpec) r
                                                         )
       XRefConceptualAnalysisRelation d 
-            -> Right $ spanWith (xSafeLabel fSpec a,[],[]) 
+            -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Relatie ",EN "Relation ")
-                                  <> (str . show . numberOf fSpec $ d)
+                               --   <> (str . show . numberOf fSpec $ d)
                                 )  
       XRefConceptualAnalysisRule r    
-            -> Right $ spanWith (xSafeLabel fSpec a,[],[]) 
+            -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Regel ",EN "Rule ")
-                                  <> (str . show . numberOf fSpec $ r)
+                               --   <> (str . show . numberOf fSpec $ r)
                                 ) 
       XRefConceptualAnalysisExpression r
-            -> Right $ spanWith (xSafeLabel fSpec a,[],[]) 
+            -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Regel ",EN "Rule ")
-                                  <> (str . show . numberOf fSpec $ r)
+                               --   <> (str . show . numberOf fSpec $ r)
                                 ) 
-      _ ->  fatal ("hyperTarget not yet defined for "++show (refStuff fSpec a))
+      _ ->  fatal ("hyperTarget not yet defined for "++show (refStuff a))
    where
-    hdr = headerWith (xSafeLabel fSpec a, [], []) 2
+    hdr = headerWith (xSafeLabel a, [], []) 2
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
     l = localize (fsLang fSpec)
-citeGen :: Xreferenceble a => FSpec -> a -> Inlines
-citeGen fSpec l = 
-  cite [Citation { citationId = xSafeLabel fSpec l
+citeGen :: Xreferenceble a => a -> Inlines
+citeGen l = 
+  cite [Citation { citationId = xSafeLabel l
                  , citationPrefix = []
                  , citationSuffix = []
                  , citationHash = 0
@@ -175,19 +161,28 @@ citeGen fSpec l =
                  , citationMode = NormalCitation
                  }
        ] mempty
-codeGen :: Xreferenceble a => FSpec -> a -> Inlines
-codeGen fSpec = code . xSafeLabel fSpec 
+codeGen :: XRefSection -> Inlines
+codeGen a = 
+  cite [Citation { citationId = xSafeLabel a
+                 , citationPrefix = [Space]
+                 , citationSuffix = [Space]
+                 , citationHash = 0
+                 , citationNoteNum = 0
+                 , citationMode = NormalCitation
+                 }
+       ] $ code (xSafeLabel a)
 
 pandocEqnArray :: [Inlines] -> Blocks
 pandocEqnArray [] = mempty
 pandocEqnArray xs
  = orderedList (map para xs)
 
-data CrossrefType = Lst | Eq | Sec | Tbl | Fig -- Special prefixes that make pandoc-crossref work. 
+data CrossrefType = Dfn | Agr | Eq | Sec | Tbl | Fig -- Special prefixes that make pandoc-crossref work. 
 instance Show CrossrefType where
   showsPrec _ x
    = showString $ case x of
-                    Lst -> "lst:"
+                    Dfn -> "lst:"
+                    Agr -> "agr:"
                     Eq  -> "eq:"
                     Sec -> "sec:"
                     Tbl -> "tbl:"
@@ -202,14 +197,14 @@ data RefStuff =
            , nameOfThing      :: String
            , xrefPrefix       :: CrossrefType
            } deriving Show
-refStuff :: FSpec -> XRefSection -> RefStuff
-refStuff fSpec x  = 
+refStuff :: XRefSection -> RefStuff
+refStuff x  = 
    case x of
      XRefSharedLangRelation d 
        -> RefStuff { typeOfSection    = relation
                    , chapterOfSection = SharedLang
                    , nameOfThing      = showRel d
-                   , xrefPrefix       = Lst
+                   , xrefPrefix       = Dfn
                    }
      XRefDataAnalysisRule r
        -> RefStuff { typeOfSection    = rule
@@ -221,13 +216,7 @@ refStuff fSpec x  =
        -> RefStuff { typeOfSection    = rule
                    , chapterOfSection = SharedLang
                    , nameOfThing      = name r
-                   , xrefPrefix       = Lst
-                   }
-     XRefProcessAnalysis p
-       -> RefStuff { typeOfSection    = pattern
-                   , chapterOfSection = ProcessAnalysis
-                   , nameOfThing      = name p
-                   , xrefPrefix       = Sec
+                   , xrefPrefix       = Agr
                    }
      XRefConceptualAnalysisPattern p
        -> RefStuff { typeOfSection    = pattern
@@ -253,13 +242,7 @@ refStuff fSpec x  =
                    , nameOfThing      = name r
                    , xrefPrefix       = Eq
                    }
-     XRefInterfacesInterface i    
-       -> RefStuff { typeOfSection    = interface
-                   , chapterOfSection = Interfaces
-                   , nameOfThing      = name i
-                   , xrefPrefix       = Sec
-                   }
-     XRefNaturalLanguageTheme mt
+     XRefSharedLangTheme mt
        -> RefStuff { typeOfSection    = theme
                    , chapterOfSection = SharedLang
                    , nameOfThing      = case mt of
@@ -267,10 +250,9 @@ refStuff fSpec x  =
                                           Just t  -> name t
                    , xrefPrefix       = Sec
                    }
-  where (                relation , rule  , expression , pattern ,interface  , theme) =
-          case fsLang fSpec of
-            English -> ("relation","rule" ,"expression","pattern","interface","theme")
-            Dutch   -> ("relatie" ,"regel","expressie" ,"pattern","interface","thema")
+  where (relation , rule  , expression , pattern , theme) =
+          ("relation","rule" ,"expression","pattern","theme")
+         
 
 class NumberedThing a where
   numberOf :: FSpec -> a -> Int
@@ -320,11 +302,11 @@ instance Named t => Named (Numbered t) where
  name = name . theLoad
 data RuleCont = CRul { cRul ::  Rule
                      , cRulPurps :: [Purpose]
-                     , cRulMeaning :: Maybe Markup
+                     , cRulMeanings :: [Meaning]
                      }
 data DeclCont = CDcl { cDcl ::  Relation
                      , cDclPurps :: [Purpose]
-                     , cDclMeaning :: Maybe Markup
+                     , cDclMeanings :: [Meaning]
                      , cDclPairs :: AAtomPairs
                      }
 data CptCont  = CCpt { cCpt ::  A_Concept
@@ -387,14 +369,14 @@ orderingByTheme fSpec
   rul2rulCont :: Rule -> RuleCont
   rul2rulCont rul
     = CRul { cRul      = rul
-           , cRulPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) rul
-           , cRulMeaning = meaning (fsLang fSpec) rul
+           , cRulPurps = purposesDefinedIn fSpec (fsLang fSpec) rul
+           , cRulMeanings = meanings rul
            }
   dcl2dclCont :: Relation -> DeclCont
   dcl2dclCont dcl
     = CDcl { cDcl      = dcl
-           , cDclPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) dcl
-           , cDclMeaning = meaning (fsLang fSpec) dcl
+           , cDclPurps = purposesDefinedIn fSpec (fsLang fSpec) dcl
+           , cDclMeanings = meanings dcl
            , cDclPairs = pairsInExpr fSpec (EDcD dcl)
            }
 
@@ -402,7 +384,7 @@ orderingByTheme fSpec
   cpt2cptCont cpt
     = CCpt { cCpt      = cpt
            , cCptDefs  = sortWith origin $ concDefs fSpec cpt
-           , cCptPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) cpt
+           , cCptPurps = purposesDefinedIn fSpec (fsLang fSpec) cpt
            }
 
 
@@ -472,10 +454,10 @@ dpRule' fSpec = dpR
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
              ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
-             (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> hyperLinkTo fSpec (XRefSharedLangRule r)
+             (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> hyperLinkTo (XRefSharedLangRule r)
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
-             (_  ,English) -> plain ("To arrive at the formalization of "   <> hyperLinkTo fSpec (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
+             (_  ,English) -> plain ("To arrive at the formalization of "   <> hyperLinkTo (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
          <> (bulletList . map (plain . showRef) . Set.elems $ nds)
          <> (if null nds
              then case Set.elems rds of
@@ -493,11 +475,11 @@ dpRule' fSpec = dpR
                        [rd] -> plain (  l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
                                       <> showRef rd 
                                       <> l (NL " om ", EN " to formalize ")
-                                      <> hyperLinkTo fSpec (XRefSharedLangRule r)
+                                      <> hyperLinkTo (XRefSharedLangRule r)
                                       <> l (NL " te formaliseren: ", EN ": ")
                                      ) 
                        _    -> plain (   l (NL " Om ", EN " To formalize ")
-                                      <> hyperLinkTo fSpec (XRefSharedLangRule r)
+                                      <> hyperLinkTo (XRefSharedLangRule r)
                                       <> l (NL " te formaliseren, gebruiken we daarnaast ook de relaties: "
                                            ,EN " we also use relations ")
                                      ) <>
@@ -512,13 +494,13 @@ dpRule' fSpec = dpR
          <> (if length nds<=1
              then mempty
              else plain (  l (NL "Dit komt overeen met ", EN "This corresponds to ")
-                        <> hyperLinkTo fSpec (XRefSharedLangRule r)
+                        <> hyperLinkTo (XRefSharedLangRule r)
                         <> " (" <> (singleQuoted.str.name) r  <> ")."
 
                         )
             )
         showRef :: Relation -> Inlines
-        showRef dcl = hyperLinkTo fSpec (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . showRel) dcl <> ")"
+        showRef dcl = hyperLinkTo (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . showRel) dcl <> ")"
         
         ncs = concs r Set.\\ seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-Set.elems ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
@@ -526,6 +508,15 @@ dpRule' fSpec = dpR
         nds = ds Set.\\ seenRelations     -- newly seen relations
         rds = ds `Set.intersection` seenRelations  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `Set.union` seenConcs) (nds `Set.union` seenRelations)
+
+printMeaning :: HasMeaning a => Lang -> a -> Blocks
+printMeaning lang = fromMaybe mempty . fmap (printMarkup . ameaMrk) . meaning lang
+
+printPurposes :: [Purpose] -> Blocks
+printPurposes = mconcat . map (printMarkup . explMarkup)
+
+printMarkup :: Markup -> Blocks
+printMarkup = fromList . amPandoc
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
 purposes2Blocks opts ps

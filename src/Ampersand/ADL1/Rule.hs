@@ -37,7 +37,7 @@ rulefromProp prp d =
      Ru { rrnm  = show prp++" "++showDcl
         , formalExpression = rExpr
         , rrfps = origin d
-        , rrmean = AMeaning $ explain prp
+        , rrmean = meanings prp
         , rrmsg =  violMsg prp
         , rrviol = Nothing
         , rrdcl = Just (prp,d)         -- For traceability: The original property and relation.
@@ -62,9 +62,9 @@ rulefromProp prp d =
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
                      Prop -> fatal "Prop should have been converted by the parser"
-        explain prop = [ explang lang | lang <-[English,Dutch]]
+        meanings prop = map (Meaning . markup) [English,Dutch]
           where 
-            explang lang = Markup lang (string2Blocks ReST $ f lang)
+            markup lang = Markup lang (string2Blocks ReST $ f lang)
             f lang = showDcl++" is "++propFullName lang prop
          
         violMsg prop = [ msg lang | lang <-[English,Dutch]]
