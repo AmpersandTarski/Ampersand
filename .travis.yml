@@ -30,24 +30,28 @@ matrix:
   include:
   # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
   # variable, such as using --stack-yaml to point to a different file.
-  - env: BUILD=stack STACK_YAML=stack.yaml
+  - name: "linux, stack"
+    env: BUILD=stack STACK_YAML=stack.yaml
     compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
-  - env: BUILD=stack STACK_YAML=stack.yaml osx
+  - name: "osx, stack"
+    env: BUILD=stack STACK_YAML=stack.yaml osx
     compiler: ": #stack"
     os: osx
 
 
   # We grab the appropriate GHC and cabal-install versions from hvr's PPA. See:
   # https://github.com/hvr/multi-ghc-travis
-  - env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2
+  - name: "linux, cabal"
+    env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2
     compiler: ": #GHC 8.4.3"
     addons: {apt: {packages: [ cabal-install-2.2.0.1
                              , ghc-8.4.3
                              ] 
                   ,sources: [hvr-ghc]}}
-  - env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2 osx
+  - name: "osx, cabal"
+    env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2 osx
     compiler: ": #GHC 8.4.3"
     addons: {apt: {packages: [ cabal-install-2.2.0.1
                              , ghc-8.4.3
@@ -56,28 +60,30 @@ matrix:
     os: osx
 
   # Build with the newest GHC and cabal-install.
-  - env: BUILD=cabal GHCVER=head  CABALVER=head
+  - name: "linux, cabal, latest"
+    env: BUILD=cabal GHCVER=head  CABALVER=head
     compiler: ": #GHC HEAD"
     addons: {apt: {packages: [ cabal-install-head
                              , ghc-head
                              ] 
                   ,sources: [hvr-ghc]}}
-  - env: BUILD=stack ARGS="--resolver nightly"
+  - name: "linux, stack, latest"
+    env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
 
   allow_failures:
   # Temporarily, because cabal does not build, but stack does
-  - env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2
+  - name: "linux, cabal"
   
   # Nightly builds are allowed to fail
-  - env: BUILD=stack ARGS="--resolver nightly"
-  - env: BUILD=cabal GHCVER=head  CABALVER=head
+  - name: "linux, stack, latest"
+  - name: "linux, cabal, latest"
 
   # OSX builds currently (sept 2016) do not work, because PHP isn't available
-  - env: BUILD=stack STACK_YAML=stack.yaml osx
-  - env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2 osx
+  - name: "osx, stack"
+  - name: "osx, cabal"
   
 
   
