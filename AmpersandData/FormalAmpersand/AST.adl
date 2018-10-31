@@ -21,7 +21,12 @@ INCLUDE "Interfaces.adl"
 RELATION interfaces[Context*Interface]
 RELATION name[Role*RoleName]
 REPRESENT RoleName TYPE ALPHANUMERIC
-RELATION markupText[Purpose*MarkupText]
+RELATION markup[Meaning*Markup][UNI,TOT]
+RELATION markup[Purpose*Markup][UNI,TOT]
+RELATION asMarkdown[Markup*Text][UNI,TOT]
+RELATION language[Markup*Language][UNI,TOT]
+REPRESENT Language TYPE ALPHANUMERIC
+REPRESENT Text TYPE BIGALPHANUMERIC
 RELATION urlEncodedName[Concept*EncodedName]
 REPRESENT EncodedName TYPE ALPHANUMERIC
 RELATION context[Relation*Context]

@@ -2,6 +2,10 @@
 
 ## Unreleased changes
 
+## v3.11.4 (27 october 2018)
+
+* Minor changes in the releaseing of ampersand
+
 ## v3.11.3 (28 september 2018)
 
 * Bugfix: Figures are available again in the generated specification document.

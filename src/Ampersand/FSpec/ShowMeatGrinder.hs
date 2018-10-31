@@ -193,11 +193,13 @@ grindedPops formalAmpersand userFspec rel =
               ,"   Violations:"
               ] ++ map ("      "++) viols
             where 
-              viols = map showRel 
+              viols = map showRelOrigin 
                     . filter hasNoTransformer 
                     . instances $ formalAmpersand
               hasNoTransformer :: Relation -> Bool
               hasNoTransformer d = null (filter (isForRel d) (transformers userFspec))
+              showRelOrigin :: Relation -> String
+              showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
     ts  -> map transformer2Pop $ ts 
   where
     transformer2Pop :: Transformer -> Pop

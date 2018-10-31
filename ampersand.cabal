@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.11.3
+version:        3.11.4
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of enterprise information systems.
@@ -159,13 +159,8 @@ library
                      Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
                      Ampersand.Output.ToPandoc.ChapterDataAnalysis,
                      Ampersand.Output.ToPandoc.ChapterDiagnosis,
-                     Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis,
-                     Ampersand.Output.ToPandoc.ChapterGlossary,
-                     Ampersand.Output.ToPandoc.ChapterInterfaces,
                      Ampersand.Output.ToPandoc.ChapterIntroduction,
                      Ampersand.Output.ToPandoc.ChapterNatLangReqs,
-                     Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
-                     Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                      Ampersand.Output.ToPandoc.SharedAmongChapters,
                      Ampersand.Prototype.GenFrontend,
                      Ampersand.Prototype.PHP,

@@ -223,12 +223,7 @@ data Chapter = Intro
              | SharedLang
              | Diagnosis
              | ConceptualAnalysis
-             | ProcessAnalysis
              | DataAnalysis
-             | SoftwareMetrics
-             | Interfaces
-             | FunctionPointAnalysis
-             | Glossary
              deriving (Eq, Show)
 
 
@@ -239,12 +234,7 @@ chptTitle lang cpt =
     SharedLang            -> text.l $ (NL "Gemeenschappelijke taal", EN "Shared Language")
     Diagnosis             -> text.l $ (NL "Diagnose", EN "Diagnosis")
     ConceptualAnalysis    -> text.l $ (NL "Conceptuele Analyse", EN "Conceptual Analysis")
-    ProcessAnalysis       -> text.l $ (NL "Procesanalyse", EN "Process Analysis")
     DataAnalysis          -> text.l $ (NL "Gegevensstructuur", EN "Data structure")
-    SoftwareMetrics       -> text.l $ (NL "Functiepunt Analyse", EN "Function Point Analysis")
-    Interfaces            -> text.l $ (NL "Koppelvlakken", EN "Interfaces")
-    FunctionPointAnalysis -> text.l $ (NL "Functiepuntanalyse", EN "Function point analysis")
-    Glossary              -> text.l $ (NL "Begrippen", EN "Glossary")
  where 
      -- shorthand for easy localizing    
     l :: LocalizedStr -> String

@@ -47,7 +47,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , ViewDef(..)
          , ViewSegment(..)
          , ViewSegmentPayLoad(..)
-         , BoxItem(..), BoxExp(..), BoxTxt(..), isObjExp
+         , BoxItem(..), ObjectDef(..), BoxTxt(..), isObjExp
          , Object(..)
          , Default(..)
          , SubInterface(..)
@@ -65,7 +65,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , DnfClause(..)
          , A_RoleRelation(..)
          , Population(..)
-         , Purpose(..), ExplObj(..) ,AMeaning(..)
+         , Purpose(..), ExplObj(..) ,Meaning(..)
          , AAtomPair(..), AAtomValue(..), aavstr, mkAtomPair, ContextInfo(..)
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )

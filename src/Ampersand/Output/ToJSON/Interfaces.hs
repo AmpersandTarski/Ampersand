@@ -97,7 +97,7 @@ instance JSON Cruds JSONCruds where
   , crudJSONdelete            = crudD crud
   }
   
-instance JSON BoxExp JSONexpr where
+instance JSON ObjectDef JSONexpr where
  fromAmpersand multi object =
     JSONexpr
         { exprJSONsrcConceptId = escapeIdentifier . name $ srcConcept
