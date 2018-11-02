@@ -191,7 +191,7 @@ executable ampPreProc
   default-language:  Haskell2010
   ghc-options:       -Wall -threaded
   default-extensions:NoImplicitPrelude
-  build-depends:     base == 4.10.*,
+  build-depends:     base == 4.11.*,
                      ampersand                     
 
 Test-Suite regression-test
