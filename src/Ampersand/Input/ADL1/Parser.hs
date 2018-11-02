@@ -93,13 +93,14 @@ data ContextElement = CMeta Meta
                     | CPop P_Population
                     | CIncl Include    -- an INCLUDE statement
 
-data Include = Include Origin FilePath
+data Include = Include Origin FilePath [String]
 --- IncludeStatement ::= 'INCLUDE' String
 pIncludeStatement :: AmpParser Include
 pIncludeStatement = 
       Include <$> currPos
               <*  pKey "INCLUDE" 
               <*> pString
+              <*> (pBrackets (pString `sepBy` pComma) <|> return [])
 
 --- LanguageRef ::= 'IN' ('DUTCH' | 'ENGLISH')
 pLanguageRef :: AmpParser Lang
