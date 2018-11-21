@@ -155,7 +155,7 @@ buildInterfaces :: FSpec -> IO [FEInterface]
 buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
   where
     allIfcs :: [Interface]
-    allIfcs = interfaceS fSpec
+    allIfcs = filter (not . ifcIsAPI) . interfaceS $ fSpec
             
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =

@@ -239,8 +239,8 @@ instance Pretty TType where
     pretty = text . show
       
 instance Pretty P_Interface where
-    pretty (P_Ifc nm roles obj _ _) =
-      text "INTERFACE " <+> maybeQuote nm 
+    pretty (P_Ifc isAPI nm roles obj _ _) =
+      text (if isAPI then "API " else "INTERFACE ") <+> maybeQuote nm 
         <+> iroles <+>
          (case obj of
             P_BxExpr{} -> 

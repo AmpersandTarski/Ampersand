@@ -14,6 +14,7 @@ data JSONInterface = JSONInterface
   { ifcJSONinterfaceRoles     :: [String]
   , ifcJSONboxClass           :: Maybe String
   , ifcJSONifcObject          :: JSONObjectDef
+  , ifcJSONisAPI              :: Bool
   } deriving (Generic, Show)
 data JSONObjectDef = 
   JSONObjectDef
@@ -87,6 +88,7 @@ instance JSON Interface JSONInterface where
   { ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
   , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
   , ifcJSONifcObject          = fromAmpersand multi (BxExpr $ ifcObj interface)
+  , ifcJSONisAPI              = ifcIsAPI interface
   }
 
 instance JSON Cruds JSONCruds where

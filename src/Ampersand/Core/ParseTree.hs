@@ -569,7 +569,8 @@ instance Traced P_Population where
  origin = pos
 
 data P_Interface =
-     P_Ifc { ifc_Name :: String           -- ^ the name of the interface
+     P_Ifc { ifc_IsAPI :: Bool      -- ^ The interface is of type API
+           , ifc_Name :: String           -- ^ the name of the interface
            , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
            , ifc_Obj :: P_BoxItemTermPrim       -- ^ the context expression (mostly: I[c])
            , pos :: Origin

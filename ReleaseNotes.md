@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+* Add semantics to difference in API or INTERFACE keywords.
+
 ## v3.11.4 (27 october 2018)
 
 * Minor changes in the releaseing of ampersand

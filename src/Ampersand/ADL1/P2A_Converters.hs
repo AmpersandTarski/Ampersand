@@ -688,7 +688,8 @@ pCtx2aCtx opts
 
     pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc ci
-             (P_Ifc { ifc_Name = nm
+             (P_Ifc { ifc_IsAPI = isAPI
+                    , ifc_Name = nm
                     , ifc_Roles = rols
                     , ifc_Obj = _
                     , pos = orig
@@ -697,7 +698,8 @@ pCtx2aCtx opts
         = (\ obj'
              -> case obj' of
                   BxExpr o ->
-                    Ifc { ifcname = nm 
+                    Ifc { ifcIsAPI = isAPI
+                        , ifcname = nm 
                         , ifcRoles = rols
                         , ifcObj = o
                         , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked

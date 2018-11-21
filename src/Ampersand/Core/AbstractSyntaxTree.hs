@@ -332,7 +332,8 @@ instance Hashable A_Gen where
                          IsE{} -> sort $ genrhs g 
                        )
 
-data Interface = Ifc { ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
+data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type API?
+                     , ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
