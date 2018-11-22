@@ -2,9 +2,7 @@
 
 ## Unreleased changes
 
-## v3.11.4 (27 october 2018)
-
-* Minor changes in the releaseing of ampersand
+* [Issue #628](https://github.com/AmpersandTarski/Ampersand/issues/628) Fixed a performance issue for specific queries.
 
 ## v3.11.3 (28 september 2018)
 
