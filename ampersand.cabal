@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.11.4
+version:        3.11.5
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of enterprise information systems.
@@ -132,6 +132,7 @@ library
                      Ampersand.Input.ADL1.Parser,
                      Ampersand.Input.ADL1.ParsingLib,
                      Ampersand.Input.Parsing,
+                     Ampersand.Input.PreProcessor,
                      Ampersand.Input.Xslx.XLSX,
                      Ampersand.Misc,
                      Ampersand.Misc.Options,
@@ -183,6 +184,15 @@ executable ampersand
   default-extensions:NoImplicitPrelude
   build-depends:     base == 4.11.*,
                      ampersand
+                     
+executable ampPreProc
+  hs-source-dirs:    preProcApp
+  main-is:           Main.hs
+  default-language:  Haskell2010
+  ghc-options:       -Wall -threaded
+  default-extensions:NoImplicitPrelude
+  build-depends:     base == 4.11.*,
+                     ampersand                     
 
 Test-Suite regression-test
   type:              exitcode-stdio-1.0
