@@ -1,8 +1,11 @@
 # Release notes of Ampersand
 
-## v3.11.5 (23 november 2018)
+## Unreleased changes
 
 * Add semantics to difference in API or INTERFACE keywords.
+
+## v3.11.5 (23 november 2018)
+
 * [Issue #628](https://github.com/AmpersandTarski/Ampersand/issues/628) Fixed a performance issue for specific queries.
 
 ## v3.11.4 (27 october 2018)
