@@ -408,16 +408,18 @@ pViewDefLegacy = P_Vd <$> currPos
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: AmpParser P_Interface
 pInterface = lbl <$> currPos                                       
-                 <*> (pInterfaceKey *> pADLid)
+                 <*> pInterfaceIsAPI
+                 <*> pADLid
                  <*> optList pParams
                  <*> optList pRoles 
                  <*> (pColon *> pTerm)          -- the expression of the interface object
                  <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                  <*> pMaybe (pChevrons pConid)  -- The view that should be used for this object
                  <*> pSubInterface
-    where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
-          lbl p nm _params roles ctx mCrud mView sub
-             = P_Ifc { ifc_Name   = nm
+    where lbl :: Origin -> Bool -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
+          lbl p isAPI nm _params roles ctx mCrud mView sub
+             = P_Ifc { ifc_IsAPI  = isAPI
+                     , ifc_Name   = nm
                      , ifc_Roles  = roles
                      , ifc_Obj    = P_BxExpr { obj_nm   = nm
                                           , pos      = p
@@ -521,6 +523,9 @@ pPurpose = rebuild <$> currPos
 
 pInterfaceKey :: AmpParser String
 pInterfaceKey = pKey "INTERFACE" <|> pKey "API" -- On special request of Rieks, the keyword "API" is allowed everywhere where the keyword "INTERFACE" is used. https://github.com/AmpersandTarski/Ampersand/issues/789
+
+pInterfaceIsAPI :: AmpParser Bool
+pInterfaceIsAPI = ("API" ==) <$> pInterfaceKey
 
 --- Population ::= 'POPULATION' (NamedRel 'CONTAINS' Content | ConceptName 'CONTAINS' '[' ValueList ']')
 -- | Parses a population

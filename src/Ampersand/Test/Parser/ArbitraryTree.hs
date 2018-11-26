@@ -266,7 +266,8 @@ instance Arbitrary PAtomValue where
               [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints cs
               _        -> True  -- end of string
 instance Arbitrary P_Interface where
-    arbitrary = P_Ifc <$> safeStr1
+    arbitrary = P_Ifc <$> arbitrary
+                      <*> safeStr1
                       <*> listOf arbitrary
                       <*> sized (objTermPrim False) <*> arbitrary <*> safeStr
 

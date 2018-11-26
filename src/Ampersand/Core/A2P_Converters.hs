@@ -132,7 +132,8 @@ aGen2pGen gen =
 
 aInterface2pInterface :: Interface -> P_Interface
 aInterface2pInterface ifc =
- P_Ifc { ifc_Name   = name ifc
+ P_Ifc { ifc_IsAPI  = ifcIsAPI ifc
+       , ifc_Name   = name ifc
        , ifc_Roles  = ifcRoles ifc
        , ifc_Obj    = aObjectDef2pObjectDef (BxExpr (ifcObj ifc))
        , pos        = origin ifc
