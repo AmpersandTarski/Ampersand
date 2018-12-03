@@ -185,17 +185,30 @@ data PatElem = Pr (P_Rule TermPrim)
 
 --- Classify ::= 'CLASSIFY' ConceptRef 'IS' Cterm
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
-pClassify = try (P_Cy <$> currPos
-                      <* pKey "CLASSIFY"
-                      <*> pConceptRef
-                      <*  pKey "IS")
-                 <*> pCterm
+pClassify = fun <$> currPos
+                <*  pKey "CLASSIFY"
+                <*> pConceptRef -- s pComma
+                <*> (     (is  <$ pKey "IS"  <*> pConceptRefs (pOperator "/\\"))
+                      <|> (isa <$ pKey "ISA" <*> pConceptRef)
+                    )
                where
-                 --- Cterm ::= Cterm1 ('/\' Cterm1)*
-                 --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
-                 pCterm  = concat <$> pCterm1 `sepBy1` pOperator "/\\"
-                 pCterm1 = pure   <$> pConceptRef <|>
-                                      pParens pCterm  -- brackets are allowed for educational reasons.
+                 fun :: Origin -> P_Concept -> (Bool, [P_Concept]) -> P_Gen
+                 fun p lhs (True ,rhs) = 
+                    P_Cy { pos       = p
+                         , gen_spc = lhs
+                         , gen_rhs  = rhs
+                         } 
+                 fun p lhs (False ,rhs) = 
+                    PGen { pos       = p
+                         , gen_spc = lhs
+                         , gen_gen  = head rhs
+                         } 
+                 is :: [P_Concept] -> (Bool, [P_Concept])
+                 is xs = (True, xs)
+                 isa :: P_Concept -> (Bool, [P_Concept])
+                 isa gen = (False, [gen])
+                 pConceptRefs :: AmpParser String -> AmpParser [P_Concept]
+                 pConceptRefs px = pConceptRef  `sepBy1` px
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
