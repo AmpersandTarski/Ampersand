@@ -208,7 +208,7 @@ pClassify = fun <$> currPos
                  isa :: P_Concept -> (Bool, [P_Concept])
                  isa gen = (False, [gen])
                  pConceptRefs :: AmpParser String -> AmpParser [P_Concept]
-                 pConceptRefs px = pConceptRef  `sepBy1` px
+                 pConceptRefs px = (pConceptRef <|> pParens pConceptRef) `sepBy1` px
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
