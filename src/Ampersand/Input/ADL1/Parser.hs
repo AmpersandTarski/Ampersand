@@ -188,21 +188,26 @@ pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify = fun <$> currPos
                 <*  pKey "CLASSIFY"
                 <*> pConceptRef -- s pComma
-                <*> (     (is  <$ pKey "IS"  <*> pConceptRefs (pOperator "/\\"))
+                <*> (     (is  <$ pKey "IS"  <*> pCterm
                       <|> (isa <$ pKey "ISA" <*> pConceptRef)
                     )
                where
                  fun :: Origin -> P_Concept -> (Bool, [P_Concept]) -> P_Gen
                  fun p lhs (True ,rhs) = 
-                    P_Cy { pos       = p
+                    P_Cy { pos     = p
                          , gen_spc = lhs
-                         , gen_rhs  = rhs
+                         , gen_rhs = rhs
                          } 
                  fun p lhs (False ,rhs) = 
-                    PGen { pos       = p
+                    PGen { pos     = p
                          , gen_spc = lhs
-                         , gen_gen  = head rhs
+                         , gen_gen = head rhs
                          } 
+                 --- Cterm ::= Cterm1 ('/\' Cterm1)*
+                 --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
+                 pCterm  = concat <$> pCterm1 `sepBy1` pOperator "/\\"
+                 pCterm1 = pure   <$> pConceptRef <|>
+                                      pParens pCterm  -- brackets are allowed for educational reasons.
                  is :: [P_Concept] -> (Bool, [P_Concept])
                  is xs = (True, xs)
                  isa :: P_Concept -> (Bool, [P_Concept])
