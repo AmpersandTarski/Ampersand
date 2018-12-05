@@ -183,7 +183,12 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pe PPurpose
              | Pp P_Population
 
---- Classify ::= 'CLASSIFY' ConceptRef 'IS' Cterm
+--- GenDef ::= 'CLASSIFY' ConceptRef 'ISA' ConceptRef
+pGenDef :: AmpParser P_Gen
+pGenDef = try (PGen <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
+          where key = pKey "CLASSIFY"
+
+--- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'ISA' ConceptRef)
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify = fun <$> currPos
                 <*  pKey "CLASSIFY"
@@ -347,11 +352,6 @@ pAdlTType
 
   where
    k tt str = f <$> pKey str where f _ = tt
-
---- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
-pGenDef :: AmpParser P_Gen
-pGenDef = try (PGen <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
-          where key = pKey "CLASSIFY" <|> pKey "SPEC"
 
 -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
 -- which means that name<>name~ /\ address<>addres~ |- I[Person].
