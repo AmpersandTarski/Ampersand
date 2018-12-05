@@ -188,7 +188,7 @@ pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify = fun <$> currPos
                 <*  pKey "CLASSIFY"
                 <*> pConceptRef -- s pComma
-                <*> (     (is  <$ pKey "IS"  <*> pCterm
+                <*> (     (is  <$ pKey "IS"  <*> pCterm)
                       <|> (isa <$ pKey "ISA" <*> pConceptRef)
                     )
                where
@@ -212,8 +212,6 @@ pClassify = fun <$> currPos
                  is xs = (True, xs)
                  isa :: P_Concept -> (Bool, [P_Concept])
                  isa gen = (False, [gen])
-                 pConceptRefs :: AmpParser String -> AmpParser [P_Concept]
-                 pConceptRefs px = (pConceptRef <|> pParens pConceptRef) `sepBy1` px
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
