@@ -40,13 +40,13 @@ import           Ampersand.Input.ADL1.FilePos
 import           Data.Data
 import           Data.Foldable hiding (concat)
 import           Data.Hashable
-import           Data.Traversable
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head)
+import qualified Data.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
 import           Data.Time.LocalTime() -- for instance Show UTCTime
+import           Data.Traversable
 import           GHC.Generics (Generic)
-import qualified Data.Set as Set
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head)
 
 data P_Context
    = PCtx{ ctx_nm ::     String           -- ^ The name of this context
