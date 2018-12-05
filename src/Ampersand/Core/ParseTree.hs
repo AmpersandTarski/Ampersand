@@ -771,7 +771,11 @@ instance Flippable P_Sign where
                    , pTgt = pSrc sgn
                    }
 
-data P_Gen =  P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand file
+data P_Gen =  PCly{ pos       :: Origin
+                  , specifics :: NEL.NonEmpty P_Concept       -- ^ Left hand side concept expression
+                  , generics  :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
+                  }
+            | P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand file
                   , gen_spc :: P_Concept         -- ^ Left hand side concept expression
                   , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
                   }
