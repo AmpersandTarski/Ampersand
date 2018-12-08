@@ -17,7 +17,7 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Data.Maybe
 import           Data.Char
-import qualified Data.List.NonEmpty as NEL (map)
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),map,fromList)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 
@@ -121,13 +121,13 @@ aViewDef2pViewDef vDef =
 aGen2pGen :: A_Gen -> P_Gen
 aGen2pGen gen =
  case gen of
-  Isa{} -> PGen { pos  = Origin $ "Origin is not present in A_Gen"
-                , gen_spc = aConcept2pConcept (genspc gen)
-                , gen_gen = aConcept2pConcept (gengen gen)
+  Isa{} -> PCly { pos       = genpos gen
+                , specifics = aConcept2pConcept (genspc gen) NEL.:| []
+                , generics  = aConcept2pConcept (gengen gen) NEL.:| []
                 }
-  IsE{} -> P_Cy { pos  = Origin $ "Origin is not present in A_Gen"
-                , gen_spc = aConcept2pConcept (genspc gen)
-                , gen_rhs = map aConcept2pConcept (genrhs gen)
+  IsE{} -> PCly { pos     = genpos gen
+                , specifics = aConcept2pConcept (genspc gen) NEL.:| []
+                , generics = NEL.fromList . map aConcept2pConcept . genrhs $ gen
                 }
 
 aInterface2pInterface :: Interface -> P_Interface

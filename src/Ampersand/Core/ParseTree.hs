@@ -774,14 +774,6 @@ instance Flippable P_Sign where
 data P_Gen =  PCly{ pos       :: Origin
                   , specifics :: NEL.NonEmpty P_Concept       -- ^ Left hand side concept expression
                   , generics  :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
-                  }
-            | P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand file
-                  , gen_spc :: P_Concept         -- ^ Left hand side concept expression
-                  , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
-                  }
-            | PGen{ pos  :: Origin         -- ^ the position of the GEN-rule
-                  , gen_spc :: P_Concept      -- ^ specific concept
-                  , gen_gen :: P_Concept      -- ^ generic concept
                   } deriving (Show, Eq, Ord)
 
 instance Traced P_Gen where

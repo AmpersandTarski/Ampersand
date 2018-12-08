@@ -14,7 +14,7 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.ParsingLib
 import           Data.List
 import qualified Data.Set as Set
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
+import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe
 
 --- Populations ::= Population+
@@ -42,7 +42,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
             , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
             , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
-            , ctx_gs     = [g | CGen g<-ces] ++ [y | CCfy y<-ces] -- The gen definitions defined in this context, outside the scope of patterns
+            , ctx_gs     = [y | CCfy y<-ces]       -- The Classify definitions defined in this context, outside the scope of patterns
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
             , ctx_rrules = [x | Cm x <-ces]        -- The MAINTAINS statements in the context
             , ctx_rrels  = [x | Cl x <-ces]        -- The EDITS statements in the context
@@ -68,7 +68,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       Cm       <$> pRoleRule     <|>
                       Cm       <$> pServiceRule  <|>
                       Cl       <$> pRoleRelation <|>
-                      CGen     <$> pGenDef       <|>
                       CIndx    <$> pIndex        <|>
                       CView    <$> pViewDef      <|>
                       Cifc     <$> pInterface    <|>
@@ -85,7 +84,6 @@ data ContextElement = CMeta Meta
                     | CRep Representation
                     | Cm P_RoleRule
                     | Cl P_RoleRelation
-                    | CGen P_Gen
                     | CIndx P_IdentDef
                     | CView P_ViewDef
                     | Cifc P_Interface
@@ -138,7 +136,7 @@ pPatternDef' (beginKeyword,endKeyword)
      = P_Pat { pos = pos'
              , pt_nm  = nm
              , pt_rls = [r | Pr r<-pes]
-             , pt_gns = [y | Py y<-pes] ++ [g | Pg g<-pes]
+             , pt_gns = [y | Py y<-pes]
              , pt_dcs = [d | Pd d<-pes]
              , pt_RRuls = [rr | Pm rr<-pes]
              , pt_RRels = [rr | Pl rr<-pes]
@@ -163,7 +161,6 @@ pPatElem = Pr <$> pRuleDef          <|>
            Pm <$> pServiceRule      <|>
            Pl <$> pRoleRelation     <|>
            Pc <$> pConceptDef       <|>
-           Pg <$> pGenDef           <|>
            Prep <$> pRepresentation <|>
            Pk <$> pIndex            <|>
            Pv <$> pViewDef          <|>
@@ -176,17 +173,11 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pm P_RoleRule
              | Pl P_RoleRelation
              | Pc (String -> ConceptDef)
-             | Pg P_Gen
              | Prep Representation
              | Pk P_IdentDef
              | Pv P_ViewDef
              | Pe PPurpose
              | Pp P_Population
-
---- GenDef ::= 'CLASSIFY' ConceptRef 'ISA' ConceptRef
-pGenDef :: AmpParser P_Gen
-pGenDef = try (PGen <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
-          where key = pKey "CLASSIFY"
 
 --- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'ISA' ConceptRef)
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
@@ -199,14 +190,14 @@ pClassify = fun <$> currPos
                where
                  fun :: Origin -> P_Concept -> (Bool, [P_Concept]) -> P_Gen
                  fun p lhs (True ,rhs) = 
-                    P_Cy { pos     = p
-                         , gen_spc = lhs
-                         , gen_rhs = rhs
+                    PCly { pos       = p
+                         , specifics = NEL.fromList [lhs]
+                         , generics  = NEL.fromList rhs
                          } 
                  fun p lhs (False ,rhs) = 
-                    PGen { pos     = p
-                         , gen_spc = lhs
-                         , gen_gen = head rhs
+                    PCly { pos       = p
+                         , specifics = NEL.fromList [lhs]
+                         , generics  = NEL.fromList [head rhs , lhs]
                          } 
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
