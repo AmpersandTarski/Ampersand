@@ -256,7 +256,7 @@ pCtx2aCtx opts
                      , ctxRRels = allRoleRelations
                      , ctxreprs = representationOf contextInfo
                      , ctxvs = viewdefs
-                     , ctxgs = concatMap pGen2aGen p_gens
+                     , ctxgs = concatMap pClassify2aClassify p_gens
                      , ctxgenconcs = onlyUserConcepts (concGroups ++ map (:[]) (soloConcs contextInfo))
                      , ctxifcs = interfaces
                      , ctxps = purposes
@@ -299,7 +299,7 @@ pCtx2aCtx opts
                     , gens_efficient = genLattice
                     }
         where
-          gns = concatMap pGen2aGen allGens
+          gns = concatMap pClassify2aClassify allGens
           -- | function that creates a lookup table of concepts with a representation. 
           --   it is checked that concepts in the same conceptgroup share a common TType. 
           mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept , TType)]
@@ -367,12 +367,12 @@ pCtx2aCtx opts
                         x:xs -> mkCyclesInGensError (x NEL.:| xs)
                         where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
                                 where
-                                  f :: A_Gen -> [A_Gen]
+                                  f :: AClassify -> [AClassify]
                                   f g = [gn | gn <- gns
                                             , gn /= g
                                             , genspc g `elem` concs gn
                                         ]
-                                  hasMultipleSpecifics :: [A_Gen]-> Bool
+                                  hasMultipleSpecifics :: [AClassify]-> Bool
                                   hasMultipleSpecifics gs = length (nub (map genspc gs)) > 1
                [r] -> pure  
                           Typology { tyroot = r
@@ -390,7 +390,7 @@ pCtx2aCtx opts
                       case g of 
                         Isa{} -> gengen g == genspc g
                         IsE{} -> genrhs g == [genspc g]
-               isInvolved :: A_Gen -> Bool
+               isInvolved :: AClassify -> Bool
                isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
     p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
@@ -433,8 +433,8 @@ pCtx2aCtx opts
     genLattice :: Op1EqualitySystem Type
     genLattice = optimize1 (foldr addEquality emptySystem completeRules)
 
-    pGen2aGen :: P_Gen -> [A_Gen]
-    pGen2aGen pg = map fun . NEL.toList $ specifics pg
+    pClassify2aClassify :: PClassify -> [AClassify]
+    pClassify2aClassify pg = map fun . NEL.toList $ specifics pg
       where
         fun spc =
           case NEL.tail (generics pg) of
@@ -737,7 +737,7 @@ pCtx2aCtx opts
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
                    , ptrls = Set.fromList rules'
-                   , ptgns = concatMap pGen2aGen (pt_gns ppat)
+                   , ptgns = concatMap pClassify2aClassify (pt_gns ppat)
                    , ptdcs = Set.fromList $ map fst declsAndPops
                    , ptups = pops' ++ map snd declsAndPops
                    , ptids = keys'

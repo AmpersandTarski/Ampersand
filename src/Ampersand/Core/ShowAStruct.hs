@@ -19,8 +19,8 @@ instance AStruct Expression where
 instance AStruct A_Concept where
  showA = showP . aConcept2pConcept
 
-instance AStruct A_Gen where
- showA = showP . aGen2pGen 
+instance AStruct AClassify where
+ showA = showP . aClassify2pClassify 
 
 instance AStruct Rule where
  showA = showP . aRule2pRule

@@ -348,7 +348,7 @@ instance Pretty P_Sign where
               equal P_Singleton P_Singleton = True
               equal _ _ = False
 
-instance Pretty P_Gen where
+instance Pretty PClassify where
     pretty p = 
       case p of
             PCly _ spc gen -> 

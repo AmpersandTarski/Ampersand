@@ -19,7 +19,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , ViewDef(..)
  , ViewSegment(..)
  , ViewSegmentPayLoad(..)
- , A_Gen(..)
+ , AClassify(..)
  , Interface(..)
  , getInterfaceByName
  , SubInterface(..)
@@ -98,7 +98,7 @@ data A_Context
          , ctxRRels :: [A_RoleRelation] -- ^ The assignment of roles to Relations (which role mayEdit what relations)
          , ctxreprs :: A_Concept -> TType
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns
+         , ctxgs :: [AClassify]          -- ^ The specialization statements defined in this context, outside the scope of patterns
          , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
          , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context
          , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns and processes
@@ -127,7 +127,7 @@ data Pattern
            , ptpos :: Origin        -- ^ the position in the file in which this pattern was declared.
            , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
            , ptrls :: Rules        -- ^ The user defined rules in this pattern
-           , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
+           , ptgns :: [AClassify]       -- ^ The generalizations defined in this pattern
            , ptdcs :: Relations     -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
@@ -300,10 +300,10 @@ data ViewSegmentPayLoad
                            }deriving (Eq, Show)
 
 
--- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
+-- | data structure AClassify contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
 --   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
-data A_Gen = Isa { genpos :: Origin
+data AClassify = Isa { genpos :: Origin
                  , genspc :: A_Concept      -- ^ specific concept
                  , gengen :: A_Concept      -- ^ generic concept
                  }
@@ -311,20 +311,20 @@ data A_Gen = Isa { genpos :: Origin
                  , genspc :: A_Concept      -- ^ specific concept
                  , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
                  } deriving (Typeable, Eq)
-instance Traced A_Gen where
+instance Traced AClassify where
   origin = genpos
-instance Unique A_Gen where
+instance Unique AClassify where
   showUnique a =
     case a of
       Isa{} -> uniqueShow False (genspc a)++" ISA "++uniqueShow False (gengen a)
       IsE{} -> uniqueShow False (genspc a)++" IS "++intercalate " /\\ " (map (uniqueShow False) (genrhs a))
-instance Show A_Gen where
+instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
   showsPrec _ g =
     case g of
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
-instance Hashable A_Gen where
+instance Hashable AClassify where
     hashWithSalt s g = 
       s `hashWithSalt` (genspc g)
         `hashWithSalt` (case g of 
@@ -816,7 +816,7 @@ class HasSignature rel where
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
 data ContextInfo =
-  CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
+  CI { ctxiGens         :: [AClassify]      -- The generalisation relations in the context
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
      , reprList         :: [Representation] -- a list of all Representations

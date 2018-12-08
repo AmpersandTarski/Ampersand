@@ -27,7 +27,7 @@ module Ampersand.Core.ParseTree (
 
    , P_Concept(..), P_Sign(..)
 
-   , P_Gen(..)
+   , PClassify(..)
 
    , P_Markup(..)
 
@@ -62,7 +62,7 @@ data P_Context
          , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
          , ctx_reprs ::  [Representation]
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
+         , ctx_gs ::     [PClassify]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
          , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
          , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
@@ -119,7 +119,7 @@ data P_Pattern
    = P_Pat { pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
            , pt_nm :: String            -- ^ Name of this pattern
            , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
-           , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
+           , pt_gns :: [PClassify]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Relation]  -- ^ The relations that are declared in this pattern
            , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
@@ -771,12 +771,12 @@ instance Flippable P_Sign where
                    , pTgt = pSrc sgn
                    }
 
-data P_Gen =  PCly{ pos       :: Origin
+data PClassify =  PCly{ pos       :: Origin
                   , specifics :: NEL.NonEmpty P_Concept       -- ^ Left hand side concept expression
                   , generics  :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
                   } deriving (Show, Eq, Ord)
 
-instance Traced P_Gen where
+instance Traced PClassify where
  origin = pos
 
 type Props = Set.Set Prop

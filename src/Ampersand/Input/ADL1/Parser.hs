@@ -78,7 +78,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
 data ContextElement = CMeta Meta
                     | CPat P_Pattern
                     | CRul (P_Rule TermPrim)
-                    | CCfy P_Gen
+                    | CCfy PClassify
                     | CRel P_Relation
                     | CCon (String -> ConceptDef)
                     | CRep Representation
@@ -168,7 +168,7 @@ pPatElem = Pr <$> pRuleDef          <|>
            Pp <$> pPopulation
 
 data PatElem = Pr (P_Rule TermPrim)
-             | Py P_Gen
+             | Py PClassify
              | Pd P_Relation
              | Pm P_RoleRule
              | Pl P_RoleRelation
@@ -180,7 +180,7 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pp P_Population
 
 --- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'ISA' ConceptRef)
-pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
+pClassify :: AmpParser PClassify   -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify = fun <$> currPos
                 <*  pKey "CLASSIFY"
                 <*> pConceptRef -- s pComma
@@ -188,7 +188,7 @@ pClassify = fun <$> currPos
                       <|> (isa <$ pKey "ISA" <*> pConceptRef)
                     )
                where
-                 fun :: Origin -> P_Concept -> (Bool, [P_Concept]) -> P_Gen
+                 fun :: Origin -> P_Concept -> (Bool, [P_Concept]) -> PClassify
                  fun p lhs (True ,rhs) = 
                     PCly { pos       = p
                          , specifics = NEL.fromList [lhs]

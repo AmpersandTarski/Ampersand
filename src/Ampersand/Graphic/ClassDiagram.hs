@@ -6,7 +6,7 @@ module Ampersand.Graphic.ClassDiagram
 import Data.List
 import Ampersand.Basics
 import Ampersand.ADL1
-     ( A_Concept, Relation, A_Gen
+     ( A_Concept, Relation, AClassify
      )
 
 data ClassDiag = OOclassdiagram {cdName :: String
@@ -51,7 +51,7 @@ data Aggregation    = OOAggr   { aggDel :: Deleting             --
                                , aggChild ::  A_Concept         --
                                , aggParent :: A_Concept         --
                                } deriving (Show, Eq)
-data Generalization = OOGener  { genAgen :: A_Gen               --
+data Generalization = OOGener  { genAgen :: AClassify               --
                                } deriving (Show)
 
 data Deleting       = Open | Close                      --

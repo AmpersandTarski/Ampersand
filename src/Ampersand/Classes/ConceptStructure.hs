@@ -196,10 +196,10 @@ instance ConceptStructure (PairViewSegment Expression) where
       PairViewText{} -> Set.empty
       PairViewExp{}  -> expressionsIn (pvsExp pvs)
 
-instance ConceptStructure A_Gen where
+instance ConceptStructure AClassify where
   concs g@Isa{}  = Set.fromList [gengen g,genspc g]
   concs g@IsE{}  = Set.singleton (genspc g) `Set.union` Set.fromList (genrhs g)
-  expressionsIn g = fatal ("expressionsIn not allowed on A_Gen:\n"++show g)
+  expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n"++show g)
 
 instance ConceptStructure Conjunct where
   concs         = concs . rc_conjunct

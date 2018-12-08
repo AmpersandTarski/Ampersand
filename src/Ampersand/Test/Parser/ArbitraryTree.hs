@@ -326,7 +326,7 @@ genConceptOne = oneof [arbitrary, return P_Singleton]
 instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary
 
-instance Arbitrary P_Gen where
+instance Arbitrary PClassify where
     arbitrary =
         fun <$> arbitrary <*> listOf1 concept <*> listOf1 arbitrary
         where concept = PCpt <$> upperId
