@@ -63,8 +63,8 @@ ENDPROCESS
 {-
 CONTEXT Test
 PATTERN "Test"
-  SPEC "Medewerker" ISA "Persoon"
-  SPEC "Klant" ISA "Persoon"
+  CLASSIFY "Medewerker" ISA "Persoon"
+  CLASSIFY "Klant" ISA "Persoon"
   helptzichzelf :: Medewerker * Klant
   dummy :: A * B
 ENDPATTERN
@@ -156,7 +156,7 @@ BOX ["PURPOSEs" :ptxps
     ,"diagram" : ptpic
     ]
 INTERFACE "ISA-relation" FOR Student: I[Isa]
-BOX ["SPEC" : genspc
+BOX ["CLASSIFY" : genspc
     ,"ISA" : gengen
     ,"in PATTERN" : ptgns~
     ]
