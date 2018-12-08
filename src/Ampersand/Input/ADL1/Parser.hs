@@ -183,21 +183,21 @@ data PatElem = Pr (P_Rule TermPrim)
 pClassify :: AmpParser PClassify   -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify = fun <$> currPos
                 <*  pKey "CLASSIFY"
-                <*> pConceptRef -- s pComma
+                <*> pConceptRef `sepBy1` pComma
                 <*> (     (is  <$ pKey "IS"  <*> pCterm)
                       <|> (isa <$ pKey "ISA" <*> pConceptRef)
                     )
                where
-                 fun :: Origin -> P_Concept -> (Bool, [P_Concept]) -> PClassify
+                 fun :: Origin -> [P_Concept] -> (Bool, [P_Concept]) -> PClassify
                  fun p lhs (True ,rhs) = 
                     PCly { pos       = p
-                         , specifics = NEL.fromList [lhs]
+                         , specifics = NEL.fromList lhs
                          , generics  = NEL.fromList rhs
                          } 
                  fun p lhs (False ,rhs) = 
                     PCly { pos       = p
-                         , specifics = NEL.fromList [lhs]
-                         , generics  = NEL.fromList [head rhs , lhs]
+                         , specifics = NEL.fromList lhs
+                         , generics  = head rhs NEL.:| lhs
                          } 
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
