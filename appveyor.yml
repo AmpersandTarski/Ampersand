@@ -9,9 +9,9 @@ environment:
     # 64 bit builds
     - GHCVER: "8.4.2"
       CHOCOPTS:
-    # 32 bit builds
-    - GHCVER: "8.4.2"
-      CHOCOPTS: --forcex86
+    # 32 bit builds --disabled, because pandoc fails to build at 32 bit.
+    # - GHCVER: "8.4.2"
+    #   CHOCOPTS: --forcex86
 
 
 cache:
