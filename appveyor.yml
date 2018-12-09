@@ -36,3 +36,35 @@ test_script:
  - IF EXIST configure.ac bash -c "autoreconf -i"
  - "echo packages:. > cabal.project"
  - "cabal %CABOPTS% new-build -j1 all"
+
+# Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
+# - stack install weeder --resolver=nightly
+# - weeder --version
+# - weeder . --build
+- ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('--version')
+- ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('. --build')
+
+# Set a magical environment variable
+- cmd: for /f %%i in ('ampersand -v') do set AMPERSAND_VERSION=%%i
+
+# mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
+artifacts:
+- path: ampersand.exe
+  name: Windows_binary
+
+# Auto-deploy
+# specify that, for each build that completes, AppVeyor should push
+# a release with the right tag to the GitHub releases page! 
+# We only release when the branch == master.
+# (Note: probably we would want to be a bit more 
+# elaborate about when we push to the releases page; making sure 
+# that we include proper release notes, etc.)
+deploy:
+  - provider: GitHub
+    tag: '$(AMPERSAND_VERSION)'
+    release: '$(AMPERSAND_VERSION)'
+    auth_token:
+      secure: B9wxH2Me3jIbEn9xlvIY9SEWdELRgKMtEZeQZmJQm5wMGjp4YF4wQmAHCy3ofTJG
+    artifact: Windows_binary
+    on:
+      branch: master  
