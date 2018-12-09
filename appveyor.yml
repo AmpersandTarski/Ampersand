@@ -33,6 +33,9 @@ test_script:
  - "echo packages:. > cabal.project"
  - "cabal %CABOPTS% new-build -j1 all"
 
+# perform the typical stack build, and also install the 
+# ampersand.exe file that we will mark as an artifact
+build_script:
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
 # - stack install weeder --resolver=nightly
 # - weeder --version
