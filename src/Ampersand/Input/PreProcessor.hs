@@ -9,6 +9,7 @@ import qualified Data.List.NonEmpty as NEL
 import Data.String
 import Data.Maybe
 import Data.Bool
+import Data.Char
 import Data.Either
 import Data.Functor
 import Control.Monad hiding (guard)
@@ -17,6 +18,8 @@ import Text.Parsec hiding ( (<|>) )
 import Text.Parsec.Error
 import Prelude
 import Ampersand.Input.ADL1.CtxError
+
+import Debug.Trace
 
 type PreProcDefine = String
 
@@ -51,7 +54,7 @@ guard :: Guard -> String
 guard (Guard x) = x
 
 data LexLine = CodeLine String
-             | IncludeLine String (Maybe String)
+             | IncludeLine String String
              | IfNotStart Guard
              | IfStart Guard
              | ElseClause
@@ -59,12 +62,12 @@ data LexLine = CodeLine String
 instance Show LexLine where
   show = showLex
 showLex :: LexLine -> String
-showLex (CodeLine x)      = x
-showLex (IncludeLine x y) = x ++ " " ++ maybe "" id y
-showLex (IfNotStart x)    = "IFNOT " ++ guard x
-showLex (IfStart x)       = "IF "    ++ guard x
-showLex (ElseClause)      = "ELSE"
-showLex (EndIf)           = "ENDIF"
+showLex (CodeLine x)      = "LEX: CODELINE " ++ x
+showLex (IncludeLine x y) = "LEX: INCLUDE "  ++ x ++ "--#" ++ y
+showLex (IfNotStart x)    = "LEX: IFNOT "    ++ guard x
+showLex (IfStart x)       = "LEX: IF "       ++ guard x
+showLex (ElseClause)      = "LEX: ELSE"
+showLex (EndIf)           = "LEX: ENDIF"
 
 type Lexer a = Parsec String () a
 
@@ -78,13 +81,17 @@ lexLine :: Lexer LexLine
 lexLine = preProcDirective <|> includeLine <|> codeLine
 
 codeLine :: Lexer LexLine
-codeLine = CodeLine <$> untilEOL
+codeLine = (traceShowId . CodeLine) <$> untilEOL
 
 includeLine :: Lexer LexLine
 includeLine  = do {
     ; spaces'  <- try (many space <* string "INCLUDE")
-    ; included <- manyTill anyChar (lookAhead . try $ (( (:[]) <$> endOfLine) <|> string "--#"))
-    ; flags    <- optionMaybe $ (try . string $ "--#") *> untilEOL
+    ; included <- manyTill anyChar ((lookAhead . try )
+                                     (    return () <$> string "--#"
+                                      <|> return () <$> endOfLine
+                                     )
+                                   )
+    ; flags    <- string "--#" *> untilEOL <|> endOfLine *> return ""
     ; return $ IncludeLine (spaces' ++ "INCLUDE" ++ included) flags
     }
 
@@ -100,10 +107,10 @@ preProcDirective = (try preProcPrefix) *>
 -- This pattern signifies the line is meant for the preProcessor.
 -- Lines that don't start with this pattern are 'CodeLine's
 preProcPrefix :: Lexer ()
-preProcPrefix = spaces *> string "--" *> many (char '-') *> spaces *> char '#' *> spaces
+preProcPrefix = whitespace *> string "--" *> many (char '-') *> whitespace *> char '#' *> whitespace
 
 ifGuard :: Lexer LexLine
-ifGuard = (IfStart . Guard) <$>
+ifGuard = (traceShowId . IfStart . Guard) <$>
               (try(string "IF") *>
                whitespace       *>
                some alphaNum    <*
@@ -111,7 +118,7 @@ ifGuard = (IfStart . Guard) <$>
               )
 
 ifNotGuard :: Lexer LexLine
-ifNotGuard = (IfNotStart . Guard) <$>
+ifNotGuard = (traceShowId . IfNotStart . Guard) <$>
                  (try(string "IFNOT") *>
                   whitespace          *>
                   some alphaNum       <*
@@ -126,7 +133,7 @@ ifEnd = (const EndIf) <$> (try(string "ENDIF") *> untilEOL)
 
 -- Helper Lexers
 whitespace :: Lexer ()
-whitespace = skipMany1 space
+whitespace = skipMany1 $ satisfy (\x -> isSpace x && not (x == '\n' || x == '\r'))
 
 untilEOL :: Lexer String
 untilEOL = manyTill anyChar endOfLine
@@ -135,7 +142,7 @@ untilEOL = manyTill anyChar endOfLine
 
 -- | A block element is either a normal line, or a Guarded Block (i.e. an IF or IFNOT block)
 data BlockElem = LineElem String
-               | IncludeElem String (Maybe String)
+               | IncludeElem String String
                | GuardedElem GuardedBlock  -- These cover IF and IFNOT blocks
 
 type Block   = [ BlockElem ]
@@ -238,10 +245,9 @@ blockElem2string :: [PreProcDefine] -- ^ flags, the list of active flags
                  -> BlockElem       -- ^ blockElem, the block element to render
                  -> String
 blockElem2string _    True    (LineElem line)           = line ++ "\n"
-blockElem2string _    True    (IncludeElem line flags)  = line ++ "   " ++ fromMaybe "" flags ++ "\n"
+blockElem2string _    True    (IncludeElem line flags)  = line ++ "   " ++ flags ++ "\n"
 blockElem2string _    False   (LineElem line)           = "--hiden by preprocc " ++ line ++ "\n"
-blockElem2string _    False   (IncludeElem line flags)  = "--hiden by preprocc " ++ line ++
-                                                          " " ++ fromMaybe "" flags ++ "\n"
+blockElem2string _    False   (IncludeElem line flags)  = "--hiden by preprocc " ++ line ++ " " ++ flags ++ "\n"
 blockElem2string defs showing (GuardedElem guardedElem) = showGuardedBlock defs showing guardedElem
 
 -- | Renders a GuardedBlock
@@ -269,3 +275,4 @@ showElse defs showing = maybe "" (("--#ELSE\n" ++) . block2file defs showing)
 
 xor :: Bool -> Bool -> Bool
 xor p q = (p || q) && not (p && q)
+
