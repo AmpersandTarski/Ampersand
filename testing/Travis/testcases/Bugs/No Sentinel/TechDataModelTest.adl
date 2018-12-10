@@ -2,7 +2,7 @@ CONTEXT TechDataModelTest IN ENGLISH
 
 -- Kernel concepts should not get type Bool
 
-SPEC B ISA A
+CLASSIFY B ISA A
 
 CONCEPT E "testconcept E" -- disconnected concept, should not appear in technical data model
 

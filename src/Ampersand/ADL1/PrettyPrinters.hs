@@ -10,7 +10,7 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           Data.Char (toUpper)
 import           Data.List (intercalate,intersperse)
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),toList)
+import qualified Data.List.NonEmpty as NEL
 import           Data.List.Utils (replace)
 import qualified Data.Set as Set
 import           Text.PrettyPrint.Leijen
@@ -239,8 +239,8 @@ instance Pretty TType where
     pretty = text . show
       
 instance Pretty P_Interface where
-    pretty (P_Ifc nm roles obj _ _) =
-      text "INTERFACE " <+> maybeQuote nm 
+    pretty (P_Ifc isAPI nm roles obj _ _) =
+      text (if isAPI then "API " else "INTERFACE ") <+> maybeQuote nm 
         <+> iroles <+>
          (case obj of
             P_BxExpr{} -> 
@@ -348,11 +348,17 @@ instance Pretty P_Sign where
               equal P_Singleton P_Singleton = True
               equal _ _ = False
 
-instance Pretty P_Gen where
-    pretty p = case p of
-            PGen _ spc gen -> text "CLASSIFY" <~> spc <+> text "ISA" <~> gen
-            P_Cy _ spc rhs -> text "CLASSIFY" <~> spc <+> text "IS"  <+> separate "/\\" rhs
-
+instance Pretty PClassify where
+    pretty p = 
+      case p of
+            PCly _ spc gen -> 
+                 text "CLASSIFY" <+> separate "," (NEL.toList spc) <+> 
+                     (if NEL.length gen == 2 && 
+                         NEL.length spc == 1 &&
+                         length (NEL.filter (NEL.head spc ==) gen) == 1
+                      then text "ISA" <~> NEL.head spc
+                      else text "IS"  <+> separate "/\\" (NEL.toList gen)
+                     )
 instance Pretty Lang where
     pretty Dutch   = text "IN DUTCH"
     pretty English = text "IN ENGLISH"

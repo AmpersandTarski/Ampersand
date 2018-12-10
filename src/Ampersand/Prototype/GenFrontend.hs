@@ -152,11 +152,14 @@ data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the abso
                               } deriving (Show, Data,Typeable)
 
 buildInterfaces :: FSpec -> IO [FEInterface]
-buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
+buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) topLevelUserInterfaces
   where
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
-            
+
+    topLevelUserInterfaces :: [Interface]
+    topLevelUserInterfaces = filter (not . ifcIsAPI) allIfcs
+
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
  do { obj <- buildObject (BxExpr $ ifcObj ifc)

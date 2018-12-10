@@ -27,7 +27,7 @@ module Ampersand.Core.ParseTree (
 
    , P_Concept(..), P_Sign(..)
 
-   , P_Gen(..)
+   , PClassify(..)
 
    , P_Markup(..)
 
@@ -40,13 +40,13 @@ import           Ampersand.Input.ADL1.FilePos
 import           Data.Data
 import           Data.Foldable hiding (concat)
 import           Data.Hashable
-import           Data.Traversable
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head)
+import qualified Data.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
 import           Data.Time.LocalTime() -- for instance Show UTCTime
+import           Data.Traversable
 import           GHC.Generics (Generic)
-import qualified Data.Set as Set
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head)
 
 data P_Context
    = PCtx{ ctx_nm ::     String           -- ^ The name of this context
@@ -62,7 +62,7 @@ data P_Context
          , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
          , ctx_reprs ::  [Representation]
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
+         , ctx_gs ::     [PClassify]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
          , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
          , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
@@ -119,7 +119,7 @@ data P_Pattern
    = P_Pat { pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
            , pt_nm :: String            -- ^ Name of this pattern
            , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
-           , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
+           , pt_gns :: [PClassify]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Relation]  -- ^ The relations that are declared in this pattern
            , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
@@ -569,7 +569,8 @@ instance Traced P_Population where
  origin = pos
 
 data P_Interface =
-     P_Ifc { ifc_Name :: String           -- ^ the name of the interface
+     P_Ifc { ifc_IsAPI :: Bool      -- ^ The interface is of type API
+           , ifc_Name :: String           -- ^ the name of the interface
            , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
            , ifc_Obj :: P_BoxItemTermPrim       -- ^ the context expression (mostly: I[c])
            , pos :: Origin
@@ -770,16 +771,12 @@ instance Flippable P_Sign where
                    , pTgt = pSrc sgn
                    }
 
-data P_Gen =  P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand file
-                  , gen_spc :: P_Concept         -- ^ Left hand side concept expression
-                  , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
-                  }
-            | PGen{ pos  :: Origin         -- ^ the position of the GEN-rule
-                  , gen_spc :: P_Concept      -- ^ specific concept
-                  , gen_gen :: P_Concept      -- ^ generic concept
+data PClassify =  PCly{ pos       :: Origin
+                  , specifics :: NEL.NonEmpty P_Concept       -- ^ Left hand side concept expression
+                  , generics  :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
                   } deriving (Show, Eq, Ord)
 
-instance Traced P_Gen where
+instance Traced PClassify where
  origin = pos
 
 type Props = Set.Set Prop

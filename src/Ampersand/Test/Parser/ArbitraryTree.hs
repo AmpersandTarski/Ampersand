@@ -8,7 +8,7 @@ import Data.List (nub,isInfixOf)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Basics
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
+import qualified Data.List.NonEmpty as NEL
 
 -- Useful functions to build on the quick check functions
 
@@ -266,7 +266,8 @@ instance Arbitrary PAtomValue where
               [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints cs
               _        -> True  -- end of string
 instance Arbitrary P_Interface where
-    arbitrary = P_Ifc <$> safeStr1
+    arbitrary = P_Ifc <$> arbitrary
+                      <*> safeStr1
                       <*> listOf arbitrary
                       <*> sized (objTermPrim False) <*> arbitrary <*> safeStr
 
@@ -325,13 +326,11 @@ genConceptOne = oneof [arbitrary, return P_Singleton]
 instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary
 
-instance Arbitrary P_Gen where
+instance Arbitrary PClassify where
     arbitrary =
-        oneof [
-            P_Cy <$> arbitrary <*> concept <*> listOf1 arbitrary,
-            PGen <$> arbitrary <*> concept <*> concept
-        ]
+        fun <$> arbitrary <*> listOf1 concept <*> listOf1 arbitrary
         where concept = PCpt <$> upperId
+              fun p s g = PCly p (NEL.fromList s) (NEL.fromList g)
 
 instance Arbitrary Lang where
     arbitrary = elements [Dutch, English]

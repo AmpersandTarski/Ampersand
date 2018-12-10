@@ -72,7 +72,7 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 -- Experimental stuff:
                 , "SERVICE", "EDITS"
                 -- Depreciated keywords:
-                , "SPEC", "PROCESS", "ENDPROCESS"]
+                , "PROCESS", "ENDPROCESS"]
 
 -- | Retrieves a list of operators accepted by the ampersand language
 operators :: [String] -- ^ The operators
