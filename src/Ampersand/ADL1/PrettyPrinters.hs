@@ -351,12 +351,11 @@ instance Pretty P_Sign where
 instance Pretty PClassify where
     pretty p = 
       case p of
-            PCly _ spc gen -> 
-                 text "CLASSIFY" <+> separate "," (NEL.toList spc) <+> 
+            PClassify _ spc gen -> 
+                 text "CLASSIFY" <+> pretty spc <+> 
                      (if NEL.length gen == 2 && 
-                         NEL.length spc == 1 &&
-                         length (NEL.filter (NEL.head spc ==) gen) == 1
-                      then text "ISA" <~> NEL.head spc
+                         length (NEL.filter (spc /=) gen) == 1
+                      then text "ISA" <~> head (NEL.filter (spc /=) gen)
                       else text "IS"  <+> separate "/\\" (NEL.toList gen)
                      )
 instance Pretty Lang where
