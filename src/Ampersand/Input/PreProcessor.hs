@@ -19,8 +19,6 @@ import Text.Parsec.Error
 import Prelude
 import Ampersand.Input.ADL1.CtxError
 
-import Debug.Trace
-
 type PreProcDefine = String
 
 -- Shim that changes our 'Either ParseError a' from preProcess' into 'Guarded a'
@@ -81,7 +79,7 @@ lexLine :: Lexer LexLine
 lexLine = preProcDirective <|> includeLine <|> codeLine
 
 codeLine :: Lexer LexLine
-codeLine = (traceShowId . CodeLine) <$> untilEOL
+codeLine = CodeLine <$> untilEOL
 
 includeLine :: Lexer LexLine
 includeLine  = do {
@@ -110,7 +108,7 @@ preProcPrefix :: Lexer ()
 preProcPrefix = whitespace *> string "--" *> many (char '-') *> whitespace *> char '#' *> whitespace
 
 ifGuard :: Lexer LexLine
-ifGuard = (traceShowId . IfStart . Guard) <$>
+ifGuard = (IfStart . Guard) <$>
               (try(string "IF") *>
                whitespace       *>
                some alphaNum    <*
@@ -118,7 +116,7 @@ ifGuard = (traceShowId . IfStart . Guard) <$>
               )
 
 ifNotGuard :: Lexer LexLine
-ifNotGuard = (traceShowId . IfNotStart . Guard) <$>
+ifNotGuard = (IfNotStart . Guard) <$>
                  (try(string "IFNOT") *>
                   whitespace          *>
                   some alphaNum       <*
