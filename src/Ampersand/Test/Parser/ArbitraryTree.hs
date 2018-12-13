@@ -328,9 +328,9 @@ instance Arbitrary P_Sign where
 
 instance Arbitrary PClassify where
     arbitrary =
-        fun <$> arbitrary <*> listOf1 concept <*> listOf1 arbitrary
-        where concept = PCpt <$> upperId
-              fun p s g = PCly p (NEL.fromList s) (NEL.fromList g)
+        fun <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
+        where
+          fun p s g = PClassify p s (NEL.fromList g)
 
 instance Arbitrary Lang where
     arbitrary = elements [Dutch, English]

@@ -42,7 +42,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
             , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
             , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
-            , ctx_gs     = [y | CCfy y<-ces]       -- The Classify definitions defined in this context, outside the scope of patterns
+            , ctx_gs     = concat [ys | CCfy ys<-ces]       -- The Classify definitions defined in this context, outside the scope of patterns
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
             , ctx_rrules = [x | Cm x <-ces]        -- The MAINTAINS statements in the context
             , ctx_rrels  = [x | Cl x <-ces]        -- The EDITS statements in the context
@@ -56,7 +56,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
        , [s | CIncl s<-ces] -- the INCLUDE filenames
        )
 
-    --- ContextElement ::= Meta | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement
+    --- ContextElement ::= Meta | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement
     pContextElement :: AmpParser ContextElement
     pContextElement = CMeta    <$> pMeta         <|>
                       CPat     <$> pPatternDef   <|>
@@ -78,7 +78,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
 data ContextElement = CMeta Meta
                     | CPat P_Pattern
                     | CRul (P_Rule TermPrim)
-                    | CCfy PClassify
+                    | CCfy [PClassify]
                     | CRel P_Relation
                     | CCon (String -> ConceptDef)
                     | CRep Representation
@@ -136,7 +136,7 @@ pPatternDef' (beginKeyword,endKeyword)
      = P_Pat { pos = pos'
              , pt_nm  = nm
              , pt_rls = [r | Pr r<-pes]
-             , pt_gns = [y | Py y<-pes]
+             , pt_gns = concat [ys | Py ys<-pes]
              , pt_dcs = [d | Pd d<-pes]
              , pt_RRuls = [rr | Pm rr<-pes]
              , pt_RRels = [rr | Pl rr<-pes]
@@ -150,7 +150,7 @@ pPatternDef' (beginKeyword,endKeyword)
              }
 
 -- PatElem used by PATTERN and PROCESS
---- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
+--- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Purpose | Population
 pPatElem :: AmpParser PatElem
 pPatElem = Pr <$> pRuleDef          <|>
            Py <$> pClassify         <|>
@@ -168,7 +168,7 @@ pPatElem = Pr <$> pRuleDef          <|>
            Pp <$> pPopulation
 
 data PatElem = Pr (P_Rule TermPrim)
-             | Py PClassify
+             | Py [PClassify]
              | Pd P_Relation
              | Pm P_RoleRule
              | Pl P_RoleRelation
@@ -180,7 +180,7 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pp P_Population
 
 --- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'ISA' ConceptRef)
-pClassify :: AmpParser PClassify   -- Example: CLASSIFY A IS B /\ C /\ D
+pClassify :: AmpParser [PClassify]   -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify = fun <$> currPos
                 <*  pKey "CLASSIFY"
                 <*> pConceptRef `sepBy1` pComma
@@ -188,26 +188,23 @@ pClassify = fun <$> currPos
                       <|> (isa <$ pKey "ISA" <*> pConceptRef)
                     )
                where
-                 fun :: Origin -> [P_Concept] -> (Bool, [P_Concept]) -> PClassify
-                 fun p lhs (True ,rhs) = 
-                    PCly { pos       = p
-                         , specifics = NEL.fromList lhs
-                         , generics  = NEL.fromList rhs
-                         } 
-                 fun p lhs (False ,rhs) = 
-                    PCly { pos       = p
-                         , specifics = NEL.fromList lhs
-                         , generics  = head rhs NEL.:| lhs
-                         } 
+                 fun :: Origin -> [P_Concept] -> (Bool, [P_Concept]) -> [PClassify]
+                 fun p lhs (isISA ,rhs) = map f lhs
+                   where 
+                     f s = PClassify 
+                             { pos      = p
+                             , specific = s
+                             , generics = if isISA then s NEL.:| rhs else NEL.fromList rhs
+                             }
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
                  pCterm  = concat <$> pCterm1 `sepBy1` pOperator "/\\"
                  pCterm1 = pure   <$> pConceptRef <|>
                                       pParens pCterm  -- brackets are allowed for educational reasons.
                  is :: [P_Concept] -> (Bool, [P_Concept])
-                 is xs = (True, xs)
+                 is gens = (False, gens)
                  isa :: P_Concept -> (Bool, [P_Concept])
-                 isa gen = (False, [gen])
+                 isa gen = (True, [gen])
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
