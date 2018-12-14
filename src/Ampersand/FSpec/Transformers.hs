@@ -742,7 +742,7 @@ class Typeable a => Instances a where
 
 instance Instances A_Context where
   instances fSpec = [originalContext fSpec]
-instance Instances A_Gen where
+instance Instances AClassify where
   instances fSpec = gens (originalContext fSpec)
 instance Instances A_Concept where
   instances fSpec = Set.elems . concs . originalContext $ fSpec

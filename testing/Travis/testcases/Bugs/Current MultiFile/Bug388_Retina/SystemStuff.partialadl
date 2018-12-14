@@ -17,7 +17,7 @@ PRAGMA "Berichten van het type " " bevatten gegeven(s) van het type "
 
 --[Services]--
 CONCEPT Service "een geheel geautomatiseerde verwerking, die geen deelverwerkingingen heeft"
---SPEC Service ISA Service
+--CLASSIFY Service ISA Service
 IDENT "Services": Service(svcNaam)
 svcNaam :: Service * Naam  [UNI,TOT] PRAGMA "" " wordt door diens verantwoordelijke aangeduid als "
 svcOmschrijving :: Service * Omschrijving PRAGMA "" " wordt omschreven als "

@@ -1,56 +1,50 @@
-################################################
-# This file has been made according to the work of
-# Noon van der Silk. Thanks Noon!
-# https://silky.github.io/posts/2016-01-05-build-windows-haskell-app-with-stack-and-appveyor.html
-################################################
+# Example inspired by https://hub.zhox.com/posts/chocolatey-introduction/
 
-# Disable the standard build process which would use MSBuild:
-build: off
+clone_folder: "c:\\WORK"
 
-# version format
-version: build.{build}-{branch}
-
-cache:
-- "c:\\sr" # stack root, short paths == fewer problems
-clone_folder: "c:\\stack"
 environment:
   global:
-    STACK_ROOT: "c:\\sr"
-    TMP: c:\\tmp # https://github.com/haskell/cabal/issues/5386
-    
-# obtain the stack executable, and also perform a small hack which
-# converts ssh-based git submodules to https-based ones, that 
-# can be cloned without needing to mess about with ssh keys.
-before_build:
-- curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
-- 7z x stack.zip stack.exe
-- set PATH=%PATH%;C:\stack\;C:\Users\appveyor\AppData\Roaming\local\bin
+    CABOPTS:  "--store-dir=C:\\SR --http-transport=plain-http"
+  matrix:
+    # 64 bit builds
+    - GHCVER: "8.4.2"
+      CHOCOPTS:
+    # 32 bit builds --disabled, because pandoc fails to build at 32 bit.
+    # - GHCVER: "8.4.2"
+    #   CHOCOPTS: --forcex86
 
-# prevent AppVeyor from building when it sees a new tag (later
-# in this script we end up making a new tag when we push a release)
-skip_tags: true
 
-# need curl in the path (used to be in there automatically, see http://help.appveyor.com/discussions/problems/6312-curl-command-not-found
+cache:
+- "C:\\SR"
+
 install:
-- set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
+ - "choco install -y ghc --version %GHCVER% %CHOCOPTS%"
+ - "choco install -y cabal %CHOCOPTS%"
+ - "refreshenv"
+ - "set PATH=C:\\ghc\\ghc-%GHCVER%:C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;%PATH%"
+ - "cabal --version"
+ - "ghc --version"
+ - "cabal %CABOPTS% update -v"
+
+build: off
+
+test_script:
+ - IF EXIST configure.ac bash -c "autoreconf -i"
+ - "echo packages:. > cabal.project"
+ - "cabal %CABOPTS% new-build -j1 all"
 
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
 build_script:
-# Suppress output from stack setup, as there is a lot and it's not necessary.
-- stack setup --no-terminal > nul
-- stack build --only-snapshot --no-terminal
-- stack --local-bin-path . install ampersand
-
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
 # - stack install weeder --resolver=nightly
 # - weeder --version
 # - weeder . --build
-- ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('--version')
-- ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('. --build')
+### - ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('--version')
+### - ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('. --build')
 
 # Set a magical environment variable
-- cmd: for /f %%i in ('stack exec -- ampersand -v') do set AMPERSAND_VERSION=%%i
+- cmd: for /f %%i in ('ampersand -v') do set AMPERSAND_VERSION=%%i
 
 # mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
 artifacts:
@@ -73,5 +67,3 @@ deploy:
     artifact: Windows_binary
     on:
       branch: master  
-
-    

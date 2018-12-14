@@ -8,7 +8,7 @@ import Data.List (nub,isInfixOf)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Basics
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
+import qualified Data.List.NonEmpty as NEL
 
 -- Useful functions to build on the quick check functions
 
@@ -326,13 +326,11 @@ genConceptOne = oneof [arbitrary, return P_Singleton]
 instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary
 
-instance Arbitrary P_Gen where
+instance Arbitrary PClassify where
     arbitrary =
-        oneof [
-            P_Cy <$> arbitrary <*> concept <*> listOf1 arbitrary,
-            PGen <$> arbitrary <*> concept <*> concept
-        ]
-        where concept = PCpt <$> upperId
+        fun <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
+        where
+          fun p s g = PClassify p s (NEL.fromList g)
 
 instance Arbitrary Lang where
     arbitrary = elements [Dutch, English]

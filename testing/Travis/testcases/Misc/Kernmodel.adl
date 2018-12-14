@@ -405,7 +405,7 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
 In artikel 10:4 staat dat ingeval er bij wettelijk voorschrift in de mandaatverlening is voorzien, er geen instemming nodig is. Blijkbaar kan er bij sommige mandaten dit wettelijk voorschrift bestaan.
 +}
 
-   --- SPEC MandaatVerleningVoorzien ISA Mandaat
+   --- CLASSIFY MandaatVerleningVoorzien ISA Mandaat
    -- Concept MandaatVerleningVoorzien en relatie isA toegevoegd door Henk Boer, 9 mei 2013; werkt nog niet..
    RELATION isa_nietwettelijkmandaat [Mandaat * Mandaat] [SYM, ASY]
    PURPOSE RELATION isa_nietwettelijkmandaat LATEX REF "Artikel 10:4 lid 2 Awb" {+ Niet wettelijk in mandaatbevoegdheid voorzien +}

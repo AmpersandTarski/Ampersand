@@ -24,7 +24,7 @@ import           Data.Foldable (toList)
 import           Data.Function
 import           Data.Hashable
 import           Data.List as Lst
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),nonEmpty)
+import qualified Data.List.NonEmpty as NEL --(NonEmpty(..),nonEmpty)
 import qualified Data.Map as Map
 import           Data.Maybe
 import qualified Data.Set as Set
@@ -256,7 +256,7 @@ pCtx2aCtx opts
                      , ctxRRels = allRoleRelations
                      , ctxreprs = representationOf contextInfo
                      , ctxvs = viewdefs
-                     , ctxgs = map pGen2aGen p_gens
+                     , ctxgs = map pClassify2aClassify p_gens
                      , ctxgenconcs = onlyUserConcepts (concGroups ++ map (:[]) (soloConcs contextInfo))
                      , ctxifcs = interfaces
                      , ctxps = purposes
@@ -299,7 +299,7 @@ pCtx2aCtx opts
                     , gens_efficient = genLattice
                     }
         where
-          gns = map pGen2aGen allGens
+          gns = map pClassify2aClassify allGens
           -- | function that creates a lookup table of concepts with a representation. 
           --   it is checked that concepts in the same conceptgroup share a common TType. 
           mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept , TType)]
@@ -367,12 +367,12 @@ pCtx2aCtx opts
                         x:xs -> mkCyclesInGensError (x NEL.:| xs)
                         where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
                                 where
-                                  f :: A_Gen -> [A_Gen]
+                                  f :: AClassify -> [AClassify]
                                   f g = [gn | gn <- gns
                                             , gn /= g
                                             , genspc g `elem` concs gn
                                         ]
-                                  hasMultipleSpecifics :: [A_Gen]-> Bool
+                                  hasMultipleSpecifics :: [AClassify]-> Bool
                                   hasMultipleSpecifics gs = length (nub (map genspc gs)) > 1
                [r] -> pure  
                           Typology { tyroot = r
@@ -390,7 +390,7 @@ pCtx2aCtx opts
                       case g of 
                         Isa{} -> gengen g == genspc g
                         IsE{} -> genrhs g == [genspc g]
-               isInvolved :: A_Gen -> Bool
+               isInvolved :: AClassify -> Bool
                isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
     p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_BoxItem (TermPrim, DisambPrim))]
@@ -400,13 +400,11 @@ pCtx2aCtx opts
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
     genRules :: [(Set.Set Type, Set.Set Type)]
-    genRules = [ ( Set.singleton (pConcToType (gen_spc x)), Set.fromList (map pConcToType (gen_generics x)))
+    genRules = [ ( Set.fromList [ pConcToType . specific $ x]
+                 , Set.fromList . NEL.toList . NEL.map pConcToType . generics $ x
+                 )
                | x <- allGens
                ]
-      where
-        gen_generics :: P_Gen -> [P_Concept]
-        gen_generics P_Cy{gen_rhs = x} = x
-        gen_generics PGen{gen_gen = x, gen_spc = y} = [x,y]
 
     completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
@@ -435,16 +433,16 @@ pCtx2aCtx opts
     genLattice :: Op1EqualitySystem Type
     genLattice = optimize1 (foldr addEquality emptySystem completeRules)
 
-    pGen2aGen :: P_Gen -> A_Gen
-    pGen2aGen pg =
-      case pg of
-        PGen{} -> Isa{ genpos = origin pg
-                     , gengen = pCpt2aCpt (gen_gen pg)
-                     , genspc = pCpt2aCpt (gen_spc pg)
+    pClassify2aClassify :: PClassify -> AClassify
+    pClassify2aClassify pg = 
+          case NEL.tail (generics pg) of
+            [] -> Isa{ genpos = origin pg
+                     , gengen = pCpt2aCpt . NEL.head $ generics pg
+                     , genspc = pCpt2aCpt $ specific pg
                      }
-        P_Cy{} -> IsE{ genpos = origin pg
-                     , genrhs = map pCpt2aCpt (gen_rhs pg)
-                     , genspc = pCpt2aCpt (gen_spc pg)
+            _  -> IsE{ genpos = origin pg
+                     , genrhs = NEL.toList . NEL.map pCpt2aCpt $ generics pg
+                     , genspc = pCpt2aCpt $ specific pg
                      }
 
     userConcept :: String -> Type
@@ -737,7 +735,7 @@ pCtx2aCtx opts
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
                    , ptrls = Set.fromList rules'
-                   , ptgns = map pGen2aGen (pt_gns ppat)
+                   , ptgns = map pClassify2aClassify (pt_gns ppat)
                    , ptdcs = Set.fromList $ map fst declsAndPops
                    , ptups = pops' ++ map snd declsAndPops
                    , ptids = keys'
