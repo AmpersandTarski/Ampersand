@@ -3,6 +3,15 @@
 ## Unreleased changes
 
 * [Issue #842](https://github.com/AmpersandTarski/Ampersand/issues/842) Natural language generation
+* [Issue #855](https://github.com/AmpersandTarski/Ampersand/issues/855) Minor enhancement in CLASSIFY statement
+
+## v3.11.5 (23 november 2018)
+
+* [Issue #628](https://github.com/AmpersandTarski/Ampersand/issues/628) Fixed a performance issue for specific queries.
+
+## v3.11.4 (27 october 2018)
+
+* Minor changes in the releaseing of ampersand
 
 ## v3.11.3 (28 september 2018)
 

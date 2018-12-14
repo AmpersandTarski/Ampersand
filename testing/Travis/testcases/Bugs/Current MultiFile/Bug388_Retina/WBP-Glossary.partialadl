@@ -21,7 +21,7 @@ o.	VERZAMELING: het verkrijgen van PERSOONSGEGEVENs.
 
 CONCEPT Bestand "elk gestructureerd geheel van persoonsgegevens, ongeacht of dit geheel van gegevens gecentraliseerd is of verspreid is op een functioneel of geografisch bepaalde wijze, dat volgens bepaalde criteria toegankelijk is en betrekking heeft op verschillende personen" "artikel 1 sub c Wbp"
 CONCEPT Betrokkene "degene op wie een persoonsgegeven betrekking heeft" "artikel 1 sub f Wbp"
-SPEC Betrokkene ISA NatuurlijkPersoon
+CLASSIFY Betrokkene ISA NatuurlijkPersoon
 CONCEPT Bewerker "degene die ten behoeve van de verantwoordelijke persoonsgegevens verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen" "artikel 1 sub e Wbp"
 CONCEPT CBP "het College als bedoeld in artikel 51 Wbp" "artikel 1 sub k Wbp"
 CONCEPT Derde "ieder, niet zijnde de betrokkene, de verantwoordelijke, de bewerker, of enig persoon die onder rechtstreeks gezag van de verantwoordelijke of de bewerker gemachtigd is om persoonsgegevens te verwerken" "artikel 1 sub g Wbp"

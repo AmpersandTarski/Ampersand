@@ -15,7 +15,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.List (nub,delete)
        
-genericAndSpecifics :: A_Gen -> [(A_Concept,A_Concept)]
+genericAndSpecifics :: AClassify -> [(A_Concept,A_Concept)]
 genericAndSpecifics gen = 
     case gen of
       Isa{} -> [(genspc gen, gengen gen)]
@@ -23,19 +23,19 @@ genericAndSpecifics gen =
 
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
 --   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
-smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
+smallerConcepts :: [AClassify] -> A_Concept -> [A_Concept]
 smallerConcepts gs cpt
   = nub$ oneSmaller ++ concatMap (smallerConcepts gs) oneSmaller
   where oneSmaller = delete cpt. nub $ [ genspc g | g@Isa{}<-gs, gengen g==cpt ]++[ genspc g | g@IsE{}<-gs, cpt `elem` genrhs g ]
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more generic than the given concept.
-largerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
+largerConcepts :: [AClassify] -> A_Concept -> [A_Concept]
 largerConcepts gs cpt
  = nub$ oneLarger ++ concatMap (largerConcepts gs) oneLarger
   where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gs, genspc g==cpt ]++[ c | g@IsE{}<-gs, genspc g==cpt, c<-genrhs g ]
 
 -- | This function returns a list of the same concepts, but in an ordering such that if for any two elements a and b in the 
 --   list, if a is more specific than b, a will be to the left of b in the resulting list.
-sortSpecific2Generic :: [A_Gen] -> [A_Concept] -> [A_Concept]
+sortSpecific2Generic :: [AClassify] -> [A_Concept] -> [A_Concept]
 sortSpecific2Generic gens = go []
   where go xs [] = xs
         go xs (y:ys) = case [y' | y'<-nub ys, y' `elem` (Set.fromList $ smallerConcepts gens y)] of

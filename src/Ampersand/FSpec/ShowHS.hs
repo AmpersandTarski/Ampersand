@@ -560,7 +560,7 @@ instance ShowHS Expression where
 instance ShowHS Signature where
  showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
 
-instance ShowHS A_Gen where
+instance ShowHS AClassify where
  showHS _ _ gen =
    case gen of
      Isa{} -> "Isa "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "

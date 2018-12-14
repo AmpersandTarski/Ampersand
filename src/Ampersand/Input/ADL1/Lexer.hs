@@ -72,7 +72,7 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 -- Experimental stuff:
                 , "SERVICE", "EDITS"
                 -- Depreciated keywords:
-                , "SPEC", "PROCESS", "ENDPROCESS"]
+                , "PROCESS", "ENDPROCESS"]
 
 -- | Retrieves a list of operators accepted by the ampersand language
 operators :: [String] -- ^ The operators
@@ -89,9 +89,7 @@ lexer :: [Options]  -- ^ The command line options
       -> FilePath   -- ^ The file name, used for error messages
       -> String     -- ^ The content of the file
       -> Either LexerError ([Token], [LexerWarning]) -- ^ Either an error or a list of tokens and warnings
-lexer opt file input = case runLexerMonad opt file (mainLexer (initPos file) input) of
-                               Left err -> Left err
-                               Right (ts, ws) -> Right (ts, ws)
+lexer opt file input = runLexerMonad opt file (mainLexer (initPos file) input)
 
 -----------------------------------------------------------
 -- Help functions

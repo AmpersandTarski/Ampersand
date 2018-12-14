@@ -5,7 +5,7 @@ module Ampersand.Core.A2P_Converters (
   , aCtx2pCtx
   , aExpression2pTermPrim
   , aExplObj2PRef2Obj
-  , aGen2pGen
+  , aClassify2pClassify
   , aIdentityDef2pIdentityDef
   , aObjectDef2pObjectDef
   , aRelation2pRelation
@@ -17,7 +17,7 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Data.Maybe
 import           Data.Char
-import qualified Data.List.NonEmpty as NEL (map)
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),map,fromList)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 
@@ -36,7 +36,7 @@ aCtx2pCtx ctx =
       , ctx_rrels  = map aRoleRelation2pRoleRelation . ctxRRels $ ctx
       , ctx_reprs  = reprList (ctxInfo ctx)
       , ctx_vs     = map aViewDef2pViewDef . ctxvs $ ctx
-      , ctx_gs     = map aGen2pGen . ctxgs $ ctx
+      , ctx_gs     = map aClassify2pClassify . ctxgs $ ctx
       , ctx_ifcs   = map aInterface2pInterface . ctxifcs $ ctx
       , ctx_ps     = mapMaybe aPurpose2pPurpose . ctxps $ ctx
       , ctx_pops   = map aPopulation2pPopulation . ctxpopus $ ctx
@@ -47,15 +47,15 @@ aPattern2pPattern :: Pattern -> P_Pattern
 aPattern2pPattern pat = 
  P_Pat { pos   = ptpos pat
        , pt_nm    = ptnm pat
-       , pt_rls   = map aRule2pRule . Set.elems $ ptrls pat
-       , pt_gns   = map aGen2pGen (ptgns pat)
+       , pt_rls   = map aRule2pRule . Set.elems . ptrls $ pat
+       , pt_gns   = map aClassify2pClassify . ptgns $ pat
        , pt_dcs   = map aRelation2pRelation . Set.elems . ptdcs $ pat
        , pt_RRuls = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_RRels = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_cds   = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_Reprs = [] --TODO: should this be empty? There is nothing in the A-structure
-       , pt_ids   = map aIdentityDef2pIdentityDef (ptids pat)
-       , pt_vds   = map aViewDef2pViewDef (ptvds pat)
+       , pt_ids   = map aIdentityDef2pIdentityDef . ptids $ pat
+       , pt_vds   = map aViewDef2pViewDef . ptvds $ pat
        , pt_xps   = mapMaybe aPurpose2pPurpose . ptxps $ pat
        , pt_pop   = map aPopulation2pPopulation . ptups $ pat
        , pt_end   = ptend pat
@@ -118,21 +118,24 @@ aViewDef2pViewDef vDef =
       , vd_ats       = map aViewSegment2pP_ViewSegment (vdats vDef)
       }
 
-aGen2pGen :: A_Gen -> P_Gen
-aGen2pGen gen =
+aClassify2pClassify :: AClassify -> PClassify
+aClassify2pClassify gen =
  case gen of
-  Isa{} -> PGen { pos  = Origin $ "Origin is not present in A_Gen"
-                , gen_spc = aConcept2pConcept (genspc gen)
-                , gen_gen = aConcept2pConcept (gengen gen)
+  Isa{} -> PClassify 
+                { pos       = genpos gen
+                , specific  = aConcept2pConcept (genspc gen) 
+                , generics  = aConcept2pConcept (gengen gen) NEL.:| []
                 }
-  IsE{} -> P_Cy { pos  = Origin $ "Origin is not present in A_Gen"
-                , gen_spc = aConcept2pConcept (genspc gen)
-                , gen_rhs = map aConcept2pConcept (genrhs gen)
+  IsE{} -> PClassify 
+                { pos      = genpos gen
+                , specific = aConcept2pConcept (genspc gen) 
+                , generics = NEL.fromList . map aConcept2pConcept . genrhs $ gen
                 }
 
 aInterface2pInterface :: Interface -> P_Interface
 aInterface2pInterface ifc =
- P_Ifc { ifc_Name   = name ifc
+ P_Ifc { ifc_IsAPI  = ifcIsAPI ifc
+       , ifc_Name   = name ifc
        , ifc_Roles  = ifcRoles ifc
        , ifc_Obj    = aObjectDef2pObjectDef (BxExpr (ifcObj ifc))
        , pos        = origin ifc
