@@ -11,24 +11,26 @@ import Ampersand.FSpec.ToFSpec.Calc
 
 data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
-  { ifcJSONinterfaceRoles     :: [String]
+  { ifcJSONid                 :: String
+  , ifcJSONlabel              :: String
+  , ifcJSONinterfaceRoles     :: [String]
   , ifcJSONboxClass           :: Maybe String
   , ifcJSONifcObject          :: JSONObjectDef
   , ifcJSONisAPI              :: Bool
   } deriving (Generic, Show)
 data JSONObjectDef = 
   JSONObjectDef
-    { ifcJSONtype               :: String
-    , ifcJSONtxt                :: Maybe String
-    , ifcJSONid                 :: String
-    , ifcJSONlabel              :: String
-    , ifcJSONviewId             :: Maybe String
-    , ifcJSONNormalizationSteps :: Maybe [String] -- Not used in frontend. Just informative for analisys
-    , ifcJSONrelation           :: Maybe String
-    , ifcJSONrelationIsFlipped  :: Maybe Bool
-    , ifcJSONcrud               :: Maybe JSONCruds
-    , ifcJSONexpr               :: Maybe JSONexpr
-    , ifcJSONsubinterfaces      :: Maybe JSONSubInterface
+    { ifcobjJSONtype               :: String
+    , ifcobjJSONtxt                :: Maybe String
+    , ifcobjJSONid                 :: String
+    , ifcobjJSONlabel              :: String
+    , ifcobjJSONviewId             :: Maybe String
+    , ifcobjJSONNormalizationSteps :: Maybe [String] -- Not used in frontend. Just informative for analisys
+    , ifcobjJSONrelation           :: Maybe String
+    , ifcobjJSONrelationIsFlipped  :: Maybe Bool
+    , ifcobjJSONcrud               :: Maybe JSONCruds
+    , ifcobjJSONexpr               :: Maybe JSONexpr
+    , ifcobjJSONsubinterfaces      :: Maybe JSONSubInterface
     } deriving (Generic, Show)
 data JSONSubInterface = JSONSubInterface
   { subJSONboxClass           :: Maybe String
@@ -85,7 +87,9 @@ instance JSON SubInterface JSONSubInterface where
        }
 instance JSON Interface JSONInterface where
  fromAmpersand multi interface = JSONInterface
-  { ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
+  { ifcJSONid                 = escapeIdentifier . ifcname $ interface
+  , ifcJSONlabel              = ifcname interface
+  , ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
   , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
   , ifcJSONifcObject          = fromAmpersand multi (BxExpr $ ifcObj interface)
   , ifcJSONisAPI              = ifcIsAPI interface
@@ -124,17 +128,17 @@ instance JSON BoxItem JSONObjectDef where
  fromAmpersand multi obj =
    case obj of 
      BxExpr object' -> JSONObjectDef
-      { ifcJSONtype               = "ObjExpression"
-      , ifcJSONid                 = escapeIdentifier . name $ object
-      , ifcJSONlabel              = name object
-      , ifcJSONviewId             = fmap name viewToUse
-      , ifcJSONNormalizationSteps = Just $ showPrf showA.cfProof.objExpression $ object 
-      , ifcJSONrelation           = fmap (showRel . fst) mEditableDecl
-      , ifcJSONrelationIsFlipped  = fmap            snd  mEditableDecl
-      , ifcJSONcrud               = Just $ fromAmpersand multi (objcrud object)
-      , ifcJSONexpr               = Just $ fromAmpersand multi object
-      , ifcJSONsubinterfaces      = fmap (fromAmpersand multi) (objmsub object)
-      , ifcJSONtxt                = Nothing
+      { ifcobjJSONtype               = "ObjExpression"
+      , ifcobjJSONid                 = escapeIdentifier . name $ object
+      , ifcobjJSONlabel              = name object
+      , ifcobjJSONviewId             = fmap name viewToUse
+      , ifcobjJSONNormalizationSteps = Just $ showPrf showA.cfProof.objExpression $ object 
+      , ifcobjJSONrelation           = fmap (showRel . fst) mEditableDecl
+      , ifcobjJSONrelationIsFlipped  = fmap            snd  mEditableDecl
+      , ifcobjJSONcrud               = Just $ fromAmpersand multi (objcrud object)
+      , ifcobjJSONexpr               = Just $ fromAmpersand multi object
+      , ifcobjJSONsubinterfaces      = fmap (fromAmpersand multi) (objmsub object)
+      , ifcobjJSONtxt                = Nothing
       }
       where
         opts = getOpts fSpec
@@ -150,15 +154,15 @@ instance JSON BoxItem JSONObjectDef where
             Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
         object = substituteReferenceObjectDef fSpec object'
      BxTxt object -> JSONObjectDef
-      { ifcJSONtype               = "ObjText"
-      , ifcJSONid                 = escapeIdentifier . name $ object
-      , ifcJSONlabel              = name object
-      , ifcJSONviewId             = Nothing
-      , ifcJSONNormalizationSteps = Nothing
-      , ifcJSONrelation           = Nothing
-      , ifcJSONrelationIsFlipped  = Nothing
-      , ifcJSONcrud               = Nothing
-      , ifcJSONexpr               = Nothing
-      , ifcJSONsubinterfaces      = Nothing
-      , ifcJSONtxt                = Just $ objtxt object
+      { ifcobjJSONtype               = "ObjText"
+      , ifcobjJSONid                 = escapeIdentifier . name $ object
+      , ifcobjJSONlabel              = name object
+      , ifcobjJSONviewId             = Nothing
+      , ifcobjJSONNormalizationSteps = Nothing
+      , ifcobjJSONrelation           = Nothing
+      , ifcobjJSONrelationIsFlipped  = Nothing
+      , ifcobjJSONcrud               = Nothing
+      , ifcobjJSONexpr               = Nothing
+      , ifcobjJSONsubinterfaces      = Nothing
+      , ifcobjJSONtxt                = Just $ objtxt object
       }
