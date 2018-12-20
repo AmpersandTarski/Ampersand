@@ -2,6 +2,7 @@
 
 ## Unreleased changes
 
+* Only run composer install when clean install of prototype framework is downloaded
 * [Issue #855](https://github.com/AmpersandTarski/Ampersand/issues/855) Minor enhancement in CLASSIFY statement
 * Add semantics to difference in API or INTERFACE keywords.
 * Add 'public' folder in prototype directory to better distinguish between public and non-public scripts. If used, requires change in 'customizations' folder

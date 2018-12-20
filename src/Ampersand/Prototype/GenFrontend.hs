@@ -13,6 +13,7 @@ import           Codec.Archive.Zip
 import           Control.Exception
 import           Control.Monad
 import qualified Data.ByteString.Lazy  as BL
+import           Data.Char
 import           Data.Data
 import           Data.List
 import           Data.Maybe
@@ -67,7 +68,7 @@ getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStrLn "Generating frontend.."
-    ; downloadPrototypeFramework (getOpts fSpec)
+    ; isCleanInstall <- downloadPrototypeFramework (getOpts fSpec)
     ; copyTemplates fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
@@ -75,8 +76,9 @@ doGenFrontend fSpec =
     ; genRouteProvider fSpec feInterfaces
     ; copyCustomizations fSpec
     -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
-    ; putStrLn "Installing dependencies.."
-    ; installComposerLibs (getOpts fSpec)
+    ; when isCleanInstall $ do
+      putStrLn "Installing dependencies.."
+      installComposerLibs (getOpts fSpec)
     ; putStrLn "Frontend generated."
     }
 
@@ -456,14 +458,14 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 
-downloadPrototypeFramework :: Options -> IO ()
+downloadPrototypeFramework :: Options -> IO Bool
 downloadPrototypeFramework opts = 
   (do 
     x <- allowExtraction
-    when x $ do 
-      when (forceReinstallFramework opts) $ do
-        verboseLn opts $ "Emptying folder because redeploying prototype framework is forced"
-        destroyDestinationDir
+    if x
+    then do
+      verboseLn opts $ "Emptying folder to deploy prototype framework"
+      destroyDestinationDir
       verboseLn opts "Start downloading prototype framework."
       response <- 
         parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip") >>=
@@ -479,6 +481,8 @@ downloadPrototypeFramework opts =
       extractFilesFromArchive zipoptions archive
       writeFile (destination </> ".prototypeSHA")
                 (show . zComment $ archive)
+      return x
+    else return x
   ) `catch` \err ->  -- git failed to execute
          exitWith . FailedToInstallPrototypeFramework $
             [ "Error encountered during deployment of prototype framework:"
@@ -508,16 +512,36 @@ downloadPrototypeFramework opts =
           if destIsDirectory
           then do 
             dirContents <- listDirectory destination
-            let emptyOrForced = (null dirContents) || (forceReinstallFramework opts)
-            unless emptyOrForced
-                   (verboseLn opts $
+            let emptyDir = null dirContents
+            let forceReinstall = forceReinstallFramework opts
+            if emptyDir
+            then return True
+            else do
+              if forceReinstall
+              then do
+                putStrLn "Deleting all files to deploy prototype framework in"
+                putStrLn ("  " ++ destination)
+                putStrLn "Are you sure? y/n"
+                proceed <- promptUserYesNo
+                return proceed
+              else do
+                (verboseLn opts $
                          "(Re)deploying prototype framework not allowed, because\n"
-                      ++ "  "++destination++" isn't empty.")
-            return emptyOrForced
+                      ++ "  "++destination++" isn't empty. You could use the switch --force-reinstall-framework")
+                return False
           else do 
              verboseLn opts $
                        "(Re)deploying prototype framework not allowed, because\n"
                     ++ "  "++destination++" isn't a directory."
              return False
       else return True
-      
+
+promptUserYesNo :: IO Bool
+promptUserYesNo = do
+    char <- getChar -- TODO: refactor that the first character is directly processed
+    case toUpper char of
+      'Y' -> return True
+      'N' -> return False
+      _ -> do when (char /= '\n') $ putStrLn "Please specify y/n" -- Remove 'when' part if first char it directly processed
+              x <- promptUserYesNo
+              return x
