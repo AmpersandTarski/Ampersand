@@ -64,7 +64,7 @@ createMulti opts =
             addSemanticModel :: P_Context -> P_Context
             addSemanticModel pCtx  
               = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (instances fAmpFSpec)
-                     ,ctx_gs = ctx_gs pCtx ++ map aGen2pGen (instances fAmpFSpec)
+                     ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (instances fAmpFSpec)
                      ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (instances fAmpFSpec)
                      ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (instances fAmpFSpec)
                      ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)

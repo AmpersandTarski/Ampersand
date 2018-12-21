@@ -26,7 +26,7 @@ class Language a where
   allRules x = udefrules x `Set.union` multrules x `Set.union` identityRules x
   identities :: a -> [IdentityDef]   -- ^ all keys that are defined in a
   viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
-  gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
+  gens :: a -> [AClassify]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
 
  

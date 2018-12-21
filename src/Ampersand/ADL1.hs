@@ -29,7 +29,7 @@ import Ampersand.Core.ParseTree (
          , P_SubInterface,P_SubIfc(..),P_Cruds(..)
          , Term(..)
          , TermPrim(..), P_NamedRel(..)
-         , P_Gen(..)
+         , PClassify(..)
          , P_Relation(..)
          , ConceptDef(..)
          , PSingleton
@@ -40,7 +40,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , A_Context(..)
          , HasSignature(..)
          , Expression(..)
-         , A_Gen(..)
+         , AClassify(..)
          , RuleOrigin(..)
          , IdentityDef(..)
          , IdentitySegment(..)

@@ -104,10 +104,10 @@ mkMultipleTypesInTypologyError tripls
              , "of them have the same TYPE:"
              ]++
              [ "  - REPRESENT "++name c++" TYPE "++show t++" at "++showFullOrig orig | (c,t,origs) <- tripls, orig <- origs]
-mkCyclesInGensError :: NEL.NonEmpty [A_Gen] -> Guarded a
+mkCyclesInGensError :: NEL.NonEmpty [AClassify] -> Guarded a
 mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
  where 
-  mkErr :: [A_Gen] -> CtxError
+  mkErr :: [AClassify] -> CtxError
   mkErr [] = fatal "Nothing to report about!" 
   mkErr gs = CTXE o msg
     where
@@ -118,7 +118,7 @@ mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
              ]++
              [ "  - "++showA gn++" at "++showFullOrig (origin gn) | gn <- gs]
 
-mkMultipleRootsError :: [A_Concept] -> NEL.NonEmpty A_Gen -> Guarded a
+mkMultipleRootsError :: [A_Concept] -> NEL.NonEmpty AClassify -> Guarded a
 mkMultipleRootsError roots gs
  = Errors . pure $ CTXE o msg
     where 
