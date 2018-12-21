@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.12.0 (21 december 2018)
 
 * [Issue #855](https://github.com/AmpersandTarski/Ampersand/issues/855) Minor enhancement in CLASSIFY statement
 * Add semantics to difference in API or INTERFACE keywords.
