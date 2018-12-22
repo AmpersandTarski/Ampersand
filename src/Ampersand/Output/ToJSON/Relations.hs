@@ -72,7 +72,10 @@ instance JSON Relation RelTableInfo where
          (plug,srcAtt,trgAtt) = getRelationTableInfo fSpec dcl
          (plugSrc,_)          = getConceptTableInfo fSpec (source dcl)
          (plugTrg,_)          = getConceptTableInfo fSpec (target dcl)
+        -- relStore             = filter isDcl . dLkpTbl $ plug
+        -- isDcl rs = rsDcl rs == dcl
          srcOrtgt
+           | plugSrc == plugTrg = fatal "TODO: See issue #864."
            | plug == plugSrc = Just "src"
            | plug == plugTrg = Just "tgt"
            | otherwise       = Nothing 

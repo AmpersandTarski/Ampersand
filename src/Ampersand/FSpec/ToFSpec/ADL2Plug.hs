@@ -69,10 +69,12 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
             where f d 
                    = if isStoredFlipped d
                      then RelStore { rsDcl       = d
+                                   , rsStoredFlipped = isStoredFlipped d
                                    , rsSrcAtt    = dclAttrib d
                                    , rsTrgAtt    = lookupC (target d)
                                    }
                      else RelStore { rsDcl       = d
+                                   , rsStoredFlipped = isStoredFlipped d
                                    , rsSrcAtt    = lookupC (source d)
                                    , rsTrgAtt    = dclAttrib d
                                    }
@@ -221,13 +223,7 @@ wayToStore dcl =
        case (isInj d, isUni d) of
             (False  , False  ) -> Nothing --Will become a link-table
             (True   , False  ) -> Just flipped
-            (False  , True   ) -> Just plain
-            (True   , True   ) ->
-              case (isTot d, isSur d) of
-                   (False  , False  ) -> Just plain 
-                   (True   , False  ) -> Just plain
-                   (False  , True   ) -> Just plain
-                   (True   , True   ) -> Just plain
+            (_      , True   ) -> Just plain
   where d = EDcD dcl
         plain   = (source d,False)
         flipped = (target d, True)

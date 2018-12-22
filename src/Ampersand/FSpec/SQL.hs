@@ -340,7 +340,10 @@ nonSpecialSelectExpr fSpec expr=
                                         | otherwise = 
                                               let part1 = makeIntersectSelectExpr (map fst esI ++ map fst esR)
                                                   part2 = makeIntersectSelectExpr esRest
-                                              in traceComment ["Combination of optimized and non-optimized intersections"]
+                                              in traceComment ["Combination of optimized and non-optimized intersections"
+                                                              ,"  part1 : "++(showA . foldl1 (./\.) $ map fst esI ++ map fst esR)
+                                                              ,"  part2 : "++(showA . foldl1 (./\.) $ esRest)
+                                                              ]
                                                  BSE { bseSetQuantifier = SQDefault
                                                      , bseSrc = Col { cTable = []
                                                                     , cCol   = [sourceAlias]
@@ -1256,10 +1259,12 @@ broadQuery fSpec obj =
 
   isInBroadQuery :: Expression -> ObjectDef -> Bool
   isInBroadQuery ctxExpr sObj = 
-       (isUni . objExpression $ sObj) 
-    && (isJust . attThatisInTableOf (target . objExpression $ obj) $ sObj)
+       (isUni subExpr) 
+    && (isJust . attThatisInTableOf (target subExpr) $ sObj)
     && (source ctxExpr /= target ctxExpr || null (primitives ctxExpr)) --this is required to prevent conflicts in rows of the same broad table. See explanation in issue #627
-    && (target ctxExpr /= target (objExpression sObj) || (not . isFlipped . objExpression $ sObj)) -- see issue #760 for motivation of this line.
+    && (target ctxExpr /= target subExpr || (not . isFlipped $ subExpr)) -- see issue #760 for motivation of this line.
+    where
+       subExpr = objExpression sObj
 
   attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
   attThatisInTableOf cpt od = 

@@ -1,0 +1,54 @@
+CONTEXT "Issue862a" IN ENGLISH
+PURPOSE CONTEXT "Issue862a"
+{+This context has a lot of relations with different properties, that are implemented in a single broad table.+}
+
+RELATION father [Person * Person] [UNI]
+RELATION mothersChilds [Female * Person] [INJ] --this relation is the flipped 'mother' relation
+RELATION isMale [Male * Male] [PROP] 
+
+
+CLASSIFY Female ISA Person
+CLASSIFY Male ISA Person
+POPULATION isMale CONTAINS 
+    [ ("Rieks","Rieks")
+    , ("Stef","Stef")
+    , ("Han","Han")
+    , ("Pierre","Pierre")
+    , ("Bas","Bas")
+    , ("Harry","Harry")
+    , ("Timo", "Timo")
+    ]
+
+POPULATION father CONTAINS
+    [ ("Rieks", "Pierre")
+    , ("Stef", "Pierre")
+    , ("Han", "Pierre")
+    , ("Marian", "Pierre")
+    , ("Pierre", "Harry")
+    , ("Bas", "Stef")
+    , ("Suzanne", "Timo")
+    ]
+POPULATION mothersChilds CONTAINS 
+    [ ("Tiny","Rieks")
+    , ("Tiny","Stef")
+    , ("Tiny","Han")
+    , ("Tiny","Marian")
+    , ("Kate","Pierre")
+    , ("Janny","Bas")
+    , ("Marian","Suzanne")
+    ]
+
+INTERFACE "Persons": V[SESSION*Person] cRud BOX
+   [ persons: I ]
+   
+INTERFACE "Person": I[Person] cRud BOX
+   [ person : I[Person]
+   , isMale : I[Male]
+   , father : father 
+   , mother : mothersChilds~
+   , kidsOfThisFather : father~
+   , kidsOfThisMother : mothersChilds
+--   , daughters : (I[Female] /\ (father;father~)) \/ 
+--                 (I[Female] /\ (mothersChilds;mothersChilds~))
+   ]
+ENDCONTEXT
