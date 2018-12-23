@@ -65,17 +65,15 @@ instance JSON Relation RelTableInfo where
  fromAmpersand multi dcl = RelTableInfo
   { rtiJSONname    = name plug
   , rtiJSONtableOf = srcOrtgt
-  , rtiJSONsrcCol  = fromAmpersand multi srcAtt
-  , rtiJSONtgtCol  = fromAmpersand multi trgAtt
+  , rtiJSONsrcCol  = fromAmpersand multi . rsSrcAtt $ relstore
+  , rtiJSONtgtCol  = fromAmpersand multi . rsTrgAtt $ relstore
   }
    where fSpec = userFSpec multi
-         (plug,srcAtt,trgAtt) = getRelationTableInfo fSpec dcl
-         (plugSrc,_)          = getConceptTableInfo fSpec (source dcl)
-         (plugTrg,_)          = getConceptTableInfo fSpec (target dcl)
-        -- relStore             = filter isDcl . dLkpTbl $ plug
-        -- isDcl rs = rsDcl rs == dcl
+         (plug,relstore) = getRelationTableInfo fSpec dcl
+         (plugSrc,_)     = getConceptTableInfo fSpec (source dcl)
+         (plugTrg,_)     = getConceptTableInfo fSpec (target dcl)
          srcOrtgt
-           | plugSrc == plugTrg = fatal "TODO: See issue #864."
+           | plugSrc == plugTrg = Just $ if rsStoredFlipped relstore then "tgt" else "src"
            | plug == plugSrc = Just "src"
            | plug == plugTrg = Just "tgt"
            | otherwise       = Nothing 

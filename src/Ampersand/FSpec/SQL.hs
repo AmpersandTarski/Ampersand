@@ -219,7 +219,9 @@ maybeSpecialCase fSpec expr =
       (expr2Src,expr2trg,leftTable) =
          case expr2 of
            EDcD rel -> 
-               let (plug,s,t) = getRelationTableInfo fSpec rel
+               let (plug,relstore) = getRelationTableInfo fSpec rel
+                   s = rsSrcAtt relstore
+                   t = rsTrgAtt relstore
                    lt = TRSimple [QName (name plug)] `as` table2
                in if isFlipped' 
                   then (QName (name t), QName (name s), lt)
@@ -381,24 +383,28 @@ nonSpecialSelectExpr fSpec expr=
                                               isR e = 
                                                 case e of
                                                   (ECps (EDcD r, EFlp (EDcD r')))
-                                                    -> let (plug,_,t) = getRelationTableInfo fSpec r in
+                                                    -> let (plug,relstore) = getRelationTableInfo fSpec r in
                                                        if r == r' && plug == broadTable
-                                                       then Just (e,[QName (name t)])
+                                                       then Just (e,[QName . name . rsTrgAtt $ relstore])
                                                        else Nothing
                                                   (ECps (EFlp (EDcD r'), EDcD r))
-                                                    -> let (plug,s,_) = getRelationTableInfo fSpec r in
+                                                    -> let (plug,relstore) = getRelationTableInfo fSpec r in
                                                        if r' == r && plug == broadTable
-                                                       then Just (e,[QName (name s)])
+                                                       then Just (e,[QName . name . rsSrcAtt $ relstore])
                                                        else Nothing
                                                   (EDcD r)
-                                                    -> let (plug,s,t) = getRelationTableInfo fSpec r in
+                                                    -> let (plug,relstore) = getRelationTableInfo fSpec r in
                                                        if plug == broadTable
-                                                       then Just (e,[QName (name s),QName (name t)])
+                                                       then Just (e,[QName . name . rsSrcAtt $ relstore
+                                                                    ,QName . name . rsTrgAtt $ relstore
+                                                                    ])
                                                        else Nothing
                                                   (EFlp (EDcD r))
-                                                    -> let (plug,s,t) = getRelationTableInfo fSpec r in
+                                                    -> let (plug,relstore) = getRelationTableInfo fSpec r in
                                                        if plug == broadTable
-                                                       then Just (e,[QName (name s),QName (name t)])
+                                                       then Just (e,[QName . name . rsSrcAtt $ relstore
+                                                                    ,QName . name . rsTrgAtt $ relstore
+                                                                    ])
                                                        else Nothing 
                                                   _ -> Nothing
                                           esRest :: [Expression] -- all other conjuctions
@@ -900,8 +906,8 @@ selectRelation :: FSpec -> Relation -> BinQueryExpr
 selectRelation fSpec dcl =
   leafCode (getRelationTableInfo fSpec dcl)
    where
-     leafCode :: (PlugSQL,SqlAttribute,SqlAttribute) -> BinQueryExpr
-     leafCode (plug,s,t) 
+     leafCode :: (PlugSQL,RelStore) -> BinQueryExpr
+     leafCode (plug,relstore) 
          = BSE { bseSetQuantifier = SQDefault
                , bseSrc = Col { cTable = []
                               , cCol   = [QName (name s)]
@@ -915,7 +921,8 @@ selectRelation fSpec dcl =
                , bseWhr = Just . conjunctSQL . map notNull $
                                 [Iden [QName (name c)] | c<-nub [s,t]]
                }
-
+       where s = rsSrcAtt relstore
+             t = rsTrgAtt relstore
 isNotIn :: ValueExpr -> QueryExpr -> ValueExpr
 isNotIn value = In False value . InQueryExpr 
 -- | select only the source of a binary expression
@@ -1277,10 +1284,10 @@ broadQuery fSpec obj =
             (plug, _ ) = getConceptTableInfo fSpec cpt
             theDcl :: Maybe (PlugSQL, SqlAttribute)
             theDcl = case objExpression od of
-                       EFlp (EDcD d) -> let (p, s, _) = getRelationTableInfo fSpec d
-                                        in Just (p, s)
-                       EDcD d        -> let (p, _, t) = getRelationTableInfo fSpec d
-                                        in Just (p, t)
+                       EFlp (EDcD d) -> let (p,relstore) = getRelationTableInfo fSpec d
+                                        in Just (p, rsSrcAtt relstore)
+                       EDcD d        -> let (p,relstore) = getRelationTableInfo fSpec d
+                                        in Just (p, rsTrgAtt relstore)
                        EDcI c        -> Just $ getConceptTableInfo fSpec c
                        _             -> Nothing
 
