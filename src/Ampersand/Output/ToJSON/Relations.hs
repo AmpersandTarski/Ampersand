@@ -76,7 +76,7 @@ instance JSON Relation RelTableInfo where
            | plugSrc == plugTrg = Just $ if rsStoredFlipped relstore then "tgt" else "src"
            | plug == plugSrc = Just "src"
            | plug == plugTrg = Just "tgt"
-           | otherwise       = Nothing 
+           | otherwise       = fatal "I am only looking for a case where this happens." 
 instance JSON SqlAttribute TableCol where
  fromAmpersand _ att = TableCol
   { tcJSONname   = attName att
