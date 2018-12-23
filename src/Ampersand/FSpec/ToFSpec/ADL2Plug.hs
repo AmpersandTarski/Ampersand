@@ -147,14 +147,17 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
       where
        bindedExp :: Expression
        bindedExp = EDcD dcl
-       theRelStore =  if isFlipped trgExpr
+       isStoredFlipped = isFlipped trgExpr
+       theRelStore =  if isStoredFlipped
                          then RelStore
                                { rsDcl       = dcl
+                               , rsStoredFlipped = isStoredFlipped
                                , rsSrcAtt    = trgAtt
                                , rsTrgAtt    = srcAtt
                                }
                          else RelStore
                                { rsDcl       = dcl
+                               , rsStoredFlipped = isStoredFlipped
                                , rsSrcAtt    = srcAtt
                                , rsTrgAtt    = trgAtt
                                }
@@ -176,7 +179,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                     , attNull = isTot trgExpr
                     , attDBNull = False  -- false for link tables
                     , attUniq = isUni trgExpr
-                    , attFlipped = isFlipped trgExpr
+                    , attFlipped = isStoredFlipped
                     }
        trgAtt = Att { attName = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
                     , attExpr = trgExpr
@@ -187,7 +190,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                     , attNull = isSur trgExpr
                     , attDBNull = False  -- false for link tables
                     , attUniq = isInj trgExpr
-                    , attFlipped = isFlipped trgExpr
+                    , attFlipped = isStoredFlipped
                     }
 
     -- | dist will distribute the relations amongst the sets of concepts. 
