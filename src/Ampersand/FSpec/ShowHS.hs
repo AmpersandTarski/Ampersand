@@ -78,6 +78,7 @@ instance ShowHS PlugSQL where
                    ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
                                                       [ "RelStore "++showHSName (rsDcl store)++" "
+                                                                   ++show (rsStoredFlipped store)++" "
                                                                    ++showHSName (rsSrcAtt store)++" "
                                                                    ++showHSName (rsTrgAtt store)++" "
                                                       | store<-dLkpTbl plug] ++ "]"
@@ -90,6 +91,7 @@ instance ShowHS PlugSQL where
                    ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
                                                       [ "RelStore "++showHSName (rsDcl store)++" "
+                                                                   ++show (rsStoredFlipped store)++" "
                                                                    ++showHSName (rsSrcAtt store)++" "
                                                                    ++showHSName (rsTrgAtt store)++" "
                                                       | store<-dLkpTbl plug] ++ "]"
