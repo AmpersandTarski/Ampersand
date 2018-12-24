@@ -77,11 +77,8 @@ instance ShowHS PlugSQL where
                    ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
                    ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
-                                                      [ "RelStore "++showHSName (rsDcl store)++" "
-                                                                   ++show (rsStoredFlipped store)++" "
-                                                                   ++showHSName (rsSrcAtt store)++" "
-                                                                   ++showHSName (rsTrgAtt store)++" "
-                                                      | store<-dLkpTbl plug] ++ "]"
+                                                ( map (showHS opts (indent++"                        ")) . dLkpTbl $ plug) 
+                                              ++ "]"
                    ,"       }"
                    ]
        BinSQL{} -> intercalate indent
@@ -90,14 +87,20 @@ instance ShowHS PlugSQL where
                    ,"BinSQL { sqlname = " ++ (show.name) plug
                    ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
-                                                      [ "RelStore "++showHSName (rsDcl store)++" "
-                                                                   ++show (rsStoredFlipped store)++" "
-                                                                   ++showHSName (rsSrcAtt store)++" "
-                                                                   ++showHSName (rsTrgAtt store)++" "
-                                                      | store<-dLkpTbl plug] ++ "]"
-               --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
+                                                ( map (showHS opts (indent++"                        ")) . dLkpTbl $ plug) 
+                                              ++ "]"
                    ,"       }"
                    ]
+
+instance ShowHS RelStore where
+ showHS _ indent store
+   = intercalate indent
+       [  "Relstore { rsDcl           = " ++ showHSName (rsDcl store)
+       ,  "         , rsStoredFlipped = " ++ show (rsStoredFlipped store)
+       ,  "         , rsSrcAtt        = " ++ showHSName (rsSrcAtt store)
+       ,  "         , rsTrgAtt        = " ++ showHSName (rsTrgAtt store)
+       ,  "         }"
+       ]
 
 instance ShowHSName SqlAttribute where
  showHSName sqAtt = haskellIdentifier ("sqlAtt_"++attName sqAtt)
