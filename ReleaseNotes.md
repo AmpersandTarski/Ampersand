@@ -2,6 +2,7 @@
 
 ## Unreleased changes
 
+* Update to prototype framework v1.1.0 (was v1.0.1). See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information
 * Add 'public' folder in prototype directory to better distinguish between public and non-public scripts. If used, requires change in 'customizations' folder
 * [Issue #792](https://github.com/AmpersandTarski/Ampersand/issues/792) Add possibility to extend TXT in interfaces
 * Only run composer install when clean install of prototype framework is downloaded
