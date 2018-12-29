@@ -412,8 +412,8 @@ nonSpecialSelectExpr fSpec expr=
                                                           EDcI cpt   : _ -> cpt
                                                           EEps cpt _ : _ -> cpt
                                                           e          : _ -> fatal $ "Unexpected expression: "++show e
-                                                    showComment :: String -> (Expression, Name) -> Comment
-                                                    showComment str (e,n) = BlockComment $ "   "++str++": ("++showA e++", "++show n++")"
+                                       --             showComment :: String -> (Expression, Name) -> Comment
+                                       --             showComment str (e,n) = BlockComment $ "   "++str++": ("++showA e++", "++show n++")"
                                           nonOptimizedIntersectSelectExpr :: BinQueryExpr 
                                           nonOptimizedIntersectSelectExpr =
                                             case map (selectExpr fSpec) exprs of 
