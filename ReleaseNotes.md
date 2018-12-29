@@ -2,7 +2,8 @@
 
 ## Unreleased changes
 
-* [Issue #862](https://github.com/AmpersandTarski/Ampersand/issues/862) Bug in generated SQL in several cases where CLASSIFY statements were involved in combination with relations with the INJ property.
+* [Issue #862](https://github.com/AmpersandTarski/Ampersand/issues/862) Bugfix in generated SQL in several cases where CLASSIFY statements were involved in combination with relations with the INJ property.
+* [Issue #865](https://github.com/AmpersandTarski/Ampersand/issues/865) Another bugfix in the generated SQL
 
 ## v3.12.0 (21 december 2018)
 

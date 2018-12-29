@@ -385,7 +385,11 @@ nonSpecialSelectExpr fSpec expr=
                                           esRest = (exprs \\ (map fst esI)) \\ (map fst esR)
                                           optimizedIntersectSelectExpr :: BinQueryExpr
                                           optimizedIntersectSelectExpr
-                                            = BQEComment [BlockComment "Optimized intersection:"]
+                                            = BQEComment ([BlockComment "Optimized intersection:"
+                                                          ,BlockComment $ "   Expression: "++(showA . foldl1 (./\.) $ exprs)]
+                                                     --    ++map (showComment "esI") esI
+                                                     --    ++map (showComment "esR") esR
+                                                         ) 
                                               BSE { bseSetQuantifier = SQDefault
                                                   , bseSrc = Col { cTable = []
                                                                  , cCol   = [sqlAttConcept fSpec c]
@@ -397,13 +401,19 @@ nonSpecialSelectExpr fSpec expr=
                                                                  , cSpecial = Nothing}
                                                   , bseTbl = [sqlConceptTable fSpec c]
                                                   , bseWhr = Just . conjunctSQL $
-                                                       [notNull (Iden [nm]) | nm <- nub (map snd esI++map snd esR)]
+                                                       [notNull (Iden [nm]) | nm <- nub (map snd esI++map snd esR)]++
+                                                       [BinOp (Iden [nm]) [Name "="] (Iden [sqlAttConcept fSpec c]) 
+                                                       | nm <- nub (map snd esR)
+                                                       , nm /= sqlAttConcept fSpec c
+                                                       ]
                                                   }
                                               where c = case map fst esI of
                                                           [] -> fatal "This list must not be empty here."
                                                           EDcI cpt   : _ -> cpt
                                                           EEps cpt _ : _ -> cpt
                                                           e          : _ -> fatal $ "Unexpected expression: "++show e
+                                                    showComment :: String -> (Expression, Name) -> Comment
+                                                    showComment str (e,n) = BlockComment $ "   "++str++": ("++showA e++", "++show n++")"
                                           nonOptimizedIntersectSelectExpr :: BinQueryExpr 
                                           nonOptimizedIntersectSelectExpr =
                                             case map (selectExpr fSpec) exprs of 
