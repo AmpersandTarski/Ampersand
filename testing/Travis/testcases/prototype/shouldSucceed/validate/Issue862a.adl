@@ -5,7 +5,7 @@ PURPOSE CONTEXT "Issue862a"
 RELATION father [Person * Person] [UNI]
 RELATION mothersChilds [Female * Person] [INJ] --this relation is the flipped 'mother' relation
 RELATION isMale [Male * Male] [PROP] 
-
+RELATION husband[Female * Male][UNI,INJ]
 
 CLASSIFY Female ISA Person
 CLASSIFY Male ISA Person
@@ -18,7 +18,8 @@ POPULATION isMale CONTAINS
     , ("Harry","Harry")
     , ("Timo", "Timo")
     ]
-
+POPULATION Female CONTAINS
+    ["Suzanne"]
 POPULATION father CONTAINS
     [ ("Rieks", "Pierre")
     , ("Stef", "Pierre")
@@ -37,18 +38,35 @@ POPULATION mothersChilds CONTAINS
     , ("Janny","Bas")
     , ("Marian","Suzanne")
     ]
-
-INTERFACE "Persons": V[SESSION*Person] cRud BOX
-   [ persons: I ]
+POPULATION husband CONTAINS
+    [ ("Tiny","Pierre")
+    , ("Kate","Harry")
+    , ("Janny","Stef")
+    , ("Marian","Timo")
+    ]
+INTERFACE "Persons": V[SESSION*Person] cRud BOX <SHCOLS>
+   [ persons: I 
+   , husband: husband
+   , wife : husband~]
+INTERFACE "Males": V[SESSION*Male] cRud BOX <SHCOLS>
+   [ persons: I 
+   , wife : husband~]
+INTERFACE "Females": V[SESSION*Female] cRud BOX <SHCOLS>
+   [ persons: I 
+   , husband: husband]
    
 INTERFACE "Person": I[Person] cRud BOX
    [ person : I[Person]
    , isMale : I[Male]
    , father : father 
    , mother : mothersChilds~
+   , husband : husband
+   , wife : husband~
    , kidsOfThisFather : father~
    , kidsOfThisMother : mothersChilds
---   , daughters : (I[Female] /\ (father;father~)) \/ 
---                 (I[Female] /\ (mothersChilds;mothersChilds~))
+   , daughters : (father~;I[Female]) \/ 
+                 (mothersChilds;I[Female])
+   , sons : (father~;I[Male]) \/ 
+            (mothersChilds;I[Male])
    ]
 ENDCONTEXT
