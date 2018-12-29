@@ -121,12 +121,14 @@ aViewDef2pViewDef vDef =
 aClassify2pClassify :: AClassify -> PClassify
 aClassify2pClassify gen =
  case gen of
-  Isa{} -> PCly { pos       = genpos gen
-                , specifics = aConcept2pConcept (genspc gen) NEL.:| []
+  Isa{} -> PClassify 
+                { pos       = genpos gen
+                , specific  = aConcept2pConcept (genspc gen) 
                 , generics  = aConcept2pConcept (gengen gen) NEL.:| []
                 }
-  IsE{} -> PCly { pos     = genpos gen
-                , specifics = aConcept2pConcept (genspc gen) NEL.:| []
+  IsE{} -> PClassify 
+                { pos      = genpos gen
+                , specific = aConcept2pConcept (genspc gen) 
                 , generics = NEL.fromList . map aConcept2pConcept . genrhs $ gen
                 }
 

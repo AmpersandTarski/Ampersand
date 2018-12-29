@@ -771,10 +771,11 @@ instance Flippable P_Sign where
                    , pTgt = pSrc sgn
                    }
 
-data PClassify =  PCly{ pos       :: Origin
-                  , specifics :: NEL.NonEmpty P_Concept       -- ^ Left hand side concept expression
-                  , generics  :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
-                  } deriving (Show, Eq, Ord)
+data PClassify =  PClassify
+  { pos      :: Origin
+  , specific :: P_Concept       -- ^ Left hand side concept expression
+  , generics :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
+  } deriving (Show, Eq, Ord)
 
 instance Traced PClassify where
  origin = pos
