@@ -6,9 +6,7 @@ module Ampersand.Basics.Auxiliaries
           converse,
           commaEng, commaNL,
           Flippable(..),
-          showTrace,
-          showTraceTag,
-          indent
+          indent'
         ) where
 
 import           Ampersand.Basics.Prelude
@@ -74,17 +72,7 @@ commaNL  _  []     = ""
 class Flippable a where
   flp :: a -> a
 
-
--- Trace shorthands
-
-showTrace :: Show a => a -> a
-showTrace = traceShowId
-
-showTraceTag :: Show a => String -> a -> a
-showTraceTag tag x = trace (tag ++ ": " ++ show x) x
-
-
 -- Code formatting utils
 
-indent :: Int -> [String] -> [String]
-indent n = map (replicate n ' ' ++)
+indent' :: Int -> [String] -> [String]
+indent' n = map (replicate n ' ' ++)
