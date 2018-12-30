@@ -67,6 +67,7 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
                 , "BINARY", "BIGBINARY", "HUGEBINARY"
                 , "DATE", "DATETIME", "BOOLEAN", "INTEGER", "FLOAT", "AUTOINCREMENT"
+                , "OBJECT"
                 -- Keywords for values of atoms:
                 , "TRUE", "FALSE" --for booleans
                 -- Experimental stuff:
