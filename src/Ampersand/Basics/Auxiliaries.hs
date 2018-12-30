@@ -12,9 +12,7 @@ module Ampersand.Basics.Auxiliaries
         ) where
 
 import           Ampersand.Basics.Prelude
-import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.List
-import           Data.Maybe (fromMaybe)
 import qualified Data.Map as Map 
 import qualified Data.Set as Set 
 

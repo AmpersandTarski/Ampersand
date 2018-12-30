@@ -22,6 +22,7 @@ import           Data.Char(toUpper,toLower)
 import           Data.Either
 import           Data.Foldable (toList)
 import           Data.Function
+import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable
 import           Data.List as Lst
 import qualified Data.List.NonEmpty as NEL --(NonEmpty(..),nonEmpty)
