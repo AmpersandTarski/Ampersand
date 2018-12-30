@@ -1,0 +1,13 @@
+﻿CONTEXT SinterklaasTest IN DUTCH
+
+RULE toBeOrNotToBe : -"Sinterklaas"[Persoon]
+MEANING "De persoon 'Sinterklaas' bestaat niet."
+
+ENDCONTEXT
+
+{- This test is all about the question of what is in the initial population. 
+Are singletons, mentioned in expressions only, part of that population?
+
+Singletons are NOT automatically part of the initial population. This is intentional. 
+
+-}
