@@ -57,7 +57,7 @@ performQuery fSpec dbNm queryStr =
               fatal ("PHP/SQL problem: "<>queryResult)
       else case reads queryResult of
              [(pairs,"")] -> return pairs
-             _            -> fatal ("Parse error on php result: \n"<>(unlines . indent 5 . lines $ queryResult))
+             _            -> fatal ("Parse error on php result: \n"<>(unlines . map ("     " ++) . lines $ queryResult))
     } 
    where 
     opts = getOpts fSpec

@@ -22,6 +22,7 @@ import           Data.Char(toUpper,toLower)
 import           Data.Either
 import           Data.Foldable (toList)
 import           Data.Function
+import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable
 import           Data.List as Lst
 import qualified Data.List.NonEmpty as NEL --(NonEmpty(..),nonEmpty)
@@ -1105,3 +1106,12 @@ orElse :: Maybe a -> Maybe a -> Maybe a
 x `orElse` y = case x of
                  Just _  -> x
                  Nothing -> y
+
+-- | getCycles returns a list of cycles in the edges list (each edge is a pair of a from-vertex
+--   and a list of to-vertices)
+getCycles :: Eq a => [(a, [a])] -> [[a]]
+getCycles edges =
+  let allVertices = nub . concat $ [ from : to | (from, to) <- edges ]
+      keyFor v = fromMaybe (error "FATAL") $ elemIndex v allVertices
+      graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
+  in  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]
