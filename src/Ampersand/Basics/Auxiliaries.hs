@@ -6,7 +6,6 @@ module Ampersand.Basics.Auxiliaries
           converse,
           commaEng, commaNL,
           Flippable(..),
-          indent'
         ) where
 
 import           Ampersand.Basics.Prelude
@@ -72,7 +71,3 @@ commaNL  _  []     = ""
 class Flippable a where
   flp :: a -> a
 
--- Code formatting utils
-
-indent' :: Int -> [String] -> [String]
-indent' n = map (replicate n ' ' ++)
