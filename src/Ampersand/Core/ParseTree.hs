@@ -172,7 +172,7 @@ data TType
   | Date | DateTime
   | Boolean | Integer | Float | Object
   | TypeOfOne --special type for the special concept ONE.
-     deriving (Eq, Ord, Typeable)
+     deriving (Eq, Ord, Typeable, Enum, Bounded)
 instance Unique TType where
  showUnique = show
 instance Show TType where
@@ -460,7 +460,7 @@ instance Traced a => Traced (Term a) where
    PCpl orig _    -> orig
    PBrk orig _    -> orig
 
-data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic)
+data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic, Enum, Bounded)
 instance Hashable SrcOrTgt
 instance Flippable SrcOrTgt where
   flp Src = Tgt
@@ -599,7 +599,6 @@ data P_SubIfc a
                                , si_str :: String  -- Name of the interface that is reffered to
                                } 
                 deriving (Show)
-
 type P_BoxItemTermPrim = P_BoxItem TermPrim
 data P_BoxItem a =
      P_BxExpr { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
