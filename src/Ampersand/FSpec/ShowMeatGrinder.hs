@@ -65,17 +65,19 @@ extractFromPop formalAmpersand pop =
       tuples :: [PAtomPair]
       tuples =
          case string2AValue . unwords . words . show . popPairs $ pop of
-            Checked x -> case checkAtomValues (popRelation pop) x of
-                          Checked _ -> x
-                          Errors errs -> fatal . unlines $
-                             [ "ERROR in tupels that are generated in the meatgrinder for relation"
-                             , "  "++showRel (popRelation pop)
-                             ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
-                             
-            Errors errs -> fatal . unlines $
-                             [ "ERROR in tupels that are generated in the meatgrinder for relation"
-                             , "  "++showRel (popRelation pop)
-                             ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+            Checked x _ 
+              -> case checkAtomValues (popRelation pop) x of
+                   Checked _ _ -> x
+                   Errors errs -> fatal . unlines $
+                      [ "ERROR in tupels that are generated in the meatgrinder for relation"
+                      , "  "++showRel (popRelation pop)
+                      ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+
+            Errors errs 
+              -> fatal . unlines $
+                      [ "ERROR in tupels that are generated in the meatgrinder for relation"
+                      , "  "++showRel (popRelation pop)
+                      ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
       checkAtomValues :: Relation -> [PAtomPair] -> Guarded AAtomPairs
       checkAtomValues rel pps = Set.fromList <$> (sequence $ map fun pps)
             where

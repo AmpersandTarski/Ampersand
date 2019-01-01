@@ -33,9 +33,11 @@ parseXlsxFile opts mFk file =
      return . xlsx2pContext . toXlsx $ bytestr
  where
   xlsx2pContext :: Xlsx -> Guarded [P_Population]
-  xlsx2pContext xlsx 
-    = Checked $ concatMap (toPops opts file) $
-         concatMap theSheetCellsForTable (xlsx ^. xlSheets)
+  xlsx2pContext xlsx = Checked pop []
+    where 
+      pop = concatMap (toPops opts file)
+          . concatMap theSheetCellsForTable 
+          $ (xlsx ^. xlSheets)
 
 data SheetCellsForTable 
        = Mapping{ theSheetName :: String

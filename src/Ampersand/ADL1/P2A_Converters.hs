@@ -52,7 +52,7 @@ mustBeConceptBecauseMath tp
  = let fatalV :: (?loc :: CallStack) => a
        fatalV = fatal "A concept turned out to be a built-in type."
    in case getAsConcept fatalV tp of
-        Checked v -> v
+        Checked v _ -> v
         _ -> fatalV
 
 -- NOTE: Static checks like checkPurposes should ideally occur on the P-structure before type-checking, as it makes little

@@ -4,6 +4,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
+  , Warning
   , showErr, makeError
   , cannotDisambiguate
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
@@ -24,6 +25,8 @@ module Ampersand.Input.ADL1.CtxError
   , mkTypeMismatchError
   , mkMultipleRootsError
   , mkCrudForRefInterfaceError
+  , addWarning
+  , showWarning, showWarnings
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
   )
@@ -34,6 +37,8 @@ module Ampersand.Input.ADL1.CtxError
 -- see `getOneExactly' / `GetOneGuarded' as a nice example
 -- Although I also consider it ill practice to export PE
 -- for the same reasons, I did this as a quick fix for the parse errors
+-- HJO: I consider it ill practice to export any Warning constructors as well, for the same reasons as SJC stated above.
+
 where
 
 import           Ampersand.ADL1
@@ -56,7 +61,7 @@ instance Show CtxError where
     show (PE msg)   = "PE " ++ messageString msg
 
 errors :: Guarded t -> Maybe (NEL.NonEmpty CtxError)
-errors (Checked _) = Nothing
+errors (Checked _ _) = Nothing
 errors (Errors lst) = Just lst
 
 makeError :: String -> Guarded a
@@ -142,7 +147,7 @@ nonMatchingRepresentTypes orig wrongType rightType
 class GetOneGuarded a b | b -> a where
   {-# MINIMAL getOneExactly | hasNone #-}  -- we don't want endless loops, do we?
   getOneExactly :: b -> [a] -> Guarded a
-  getOneExactly _ [a] = Checked a
+  getOneExactly _ [a] = pure a 
   getOneExactly o []  = hasNone o
   getOneExactly o _ = 
     case errors (hasNone o :: Guarded a) of
@@ -158,7 +163,7 @@ instance Pretty a => GetOneGuarded SubInterface (P_SubIfc a) where
     CTXE (origin o)$ "Required: one A-subinterface in "++showP o
 
 instance GetOneGuarded Expression P_NamedRel where
-  getOneExactly _ [d] = Checked d
+  getOneExactly _ [d] = pure d
   getOneExactly o []  = Errors . pure $ CTXE (origin o) $
       "No relation for "++showP o
   getOneExactly o lst = Errors . pure $ CTXE (origin o) $
@@ -383,19 +388,37 @@ writeBind (ECpl e)
 writeBind e
  = "("++showA e++") /\\ "++showA (EDcV (sign e))
 
-data Guarded a = Errors (NEL.NonEmpty CtxError) | Checked a deriving Show
+data Warning = Warning Origin String
+instance Show Warning where
+    show (Warning o s) = "Warning: " ++ show o ++ " " ++ show s
+
+addWarning :: Warning -> Guarded a -> Guarded a
+addWarning _ (Errors a) = Errors a
+addWarning w (Checked a ws) = Checked a (ws <> [w])
+addWarnings :: [Warning] -> Guarded a -> Guarded a
+addWarnings ws ga = 
+  case ga of
+    Checked a ws' -> Checked a (ws <> ws')
+    Errors a      -> Errors a
+showWarning :: Warning -> String
+showWarning = show
+   
+data Guarded a = 
+   Errors (NEL.NonEmpty CtxError) 
+ | Checked a [Warning]
+   deriving Show
 
 instance Functor Guarded where
  fmap _ (Errors a)  = Errors a
- fmap f (Checked a) = Checked (f a)
+ fmap f (Checked a ws) = Checked (f a) ws
 instance Applicative Guarded where
- pure = Checked
- (<*>) (Checked f) (Checked a) = Checked (f a)
- (<*>) (Errors  a) (Checked _) = Errors a
- (<*>) (Checked _) (Errors  b) = Errors b
+ pure x = Checked x []
+ (<*>) (Checked f ws) (Checked a ws') = Checked (f a) (ws<>ws')
+ (<*>) (Errors  a) (Checked _ _) = Errors a
+ (<*>) (Checked _ _) (Errors  b) = Errors b
  (<*>) (Errors  a) (Errors  b) = Errors (a >> b)
 instance Monad Guarded where
- (>>=) (Checked a) f = f a
+ (>>=) (Checked a ws) f = addWarnings ws (f a)
  (>>=) (Errors x) _ = Errors x
 
 -- Shorthand for working with Guarded in IO
@@ -403,18 +426,19 @@ whenCheckedIO :: IO  (Guarded a) -> (a -> IO (Guarded b)) -> IO (Guarded b)
 whenCheckedIO ioGA fIOGB =
    do gA <- ioGA
       case gA of
-         Errors err -> return (Errors err)
-         Checked a  -> fIOGB a
+         Errors err -> return $ Errors err
+         Checked a ws1 -> do gb <- fIOGB a
+                             return $ addWarnings ws1 gb
 
 whenChecked :: Guarded a -> (a -> Guarded b) -> Guarded b
 whenChecked ga fgb =
       case ga of
-         Checked a  -> fgb a
+         Checked a ws -> addWarnings ws $ fgb a
          Errors err -> Errors err
 
 whenError :: Guarded a -> Guarded a -> Guarded a
 whenError (Errors _) a = a
-whenError a@(Checked _) _ = a
+whenError a@(Checked _ _) _ = a
 
 
 showErr :: CtxError -> String
@@ -432,3 +456,8 @@ showFullOrig x = show x
 showMinorOrigin :: Origin -> String
 showMinorOrigin (FileLoc (FilePos _ line column) _) = "line " ++ show line ++" : "++show column
 showMinorOrigin v = show v
+
+showWarnings :: [Warning] -> IO ()
+showWarnings = mapM_ putStrLn
+             . L.intercalate [""] 
+             . map (lines . showWarning)

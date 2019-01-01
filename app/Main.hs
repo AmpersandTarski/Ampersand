@@ -20,7 +20,8 @@ main =
                 Errors err    -> 
                    exitWith . NoValidFSpec . intersperse  (replicate 30 '=') 
                  . fmap showErr . NEL.toList $ err
-                Checked multi -> 
+                Checked multi ws -> do
+                   showWarnings ws
                    generateAmpersandOutput multi
             }
 
