@@ -360,7 +360,7 @@ genViewObject fSpec depth obj@FEObjE{} =
             }
   where 
     indentation :: [String] -> [String]
-    indentation = indent (if depth == 0 then 4 else 16) 
+    indentation = map ( (replicate (if depth == 0 then 4 else 16) ' ') ++)
     genView_SubObject :: FEObject2 -> IO SubObjectAttr2
     genView_SubObject subObj =
       case subObj of

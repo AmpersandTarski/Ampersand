@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #616](https://github.com/AmpersandTarski/Ampersand/issues/616) Add missing TType 'Object' to parser
 
 * Update to prototype framework v1.1.0 (was v1.0.1). See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information
 * Add 'public' folder in prototype directory to better distinguish between public and non-public scripts. If used, requires change in 'customizations' folder

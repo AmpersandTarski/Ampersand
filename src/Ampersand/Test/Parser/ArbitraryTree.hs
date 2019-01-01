@@ -125,11 +125,12 @@ instance Arbitrary P_RoleRule where
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary <*> listOf1 upperId <*> arbitrary
 
-instance Arbitrary TType where -- Not allowed are:  [ Object , TypeOfOne]
-    arbitrary = elements [Alphanumeric, BigAlphanumeric, HugeAlphanumeric, Password
+instance Arbitrary TType where -- Not allowed are:  [ TypeOfOne]
+    arbitrary = elements [ Alphanumeric, BigAlphanumeric, HugeAlphanumeric, Password
                          , Binary, BigBinary, HugeBinary
                          , Date, DateTime
                          , Boolean, Integer, Float
+                         , Object
                          ]
 
 instance Arbitrary Role where
