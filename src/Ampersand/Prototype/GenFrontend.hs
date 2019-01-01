@@ -17,6 +17,7 @@ import           Data.Char
 import           Data.Data
 import           Data.List
 import           Data.Maybe
+import           Data.Time.Clock.POSIX
 import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath
@@ -68,19 +69,23 @@ getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStrLn "Generating frontend.."
-    ; isCleanInstall <- downloadPrototypeFramework (getOpts fSpec)
+    ; isCleanInstall <- downloadPrototypeFramework options
     ; copyTemplates fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
+    ; timestamp <- getPOSIXTime >>= return . show . round
+    ; writePrototypeAppFile options ".timestamp" timestamp -- this file is used by the prototype framework to prevent browser from using the wrong files from cache
     ; copyCustomizations fSpec
     -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
     ; when isCleanInstall $ do
       putStrLn "Installing dependencies.."
-      installComposerLibs (getOpts fSpec)
+      installComposerLibs options
     ; putStrLn "Frontend generated."
     }
+  where
+    options = getOpts fSpec
 
 copyTemplates :: FSpec -> IO ()
 copyTemplates fSpec =
@@ -479,7 +484,7 @@ downloadPrototypeFramework opts =
               [OptVerbose | verboseP opts]
             ++ [OptDestination destination]
       extractFilesFromArchive zipoptions archive
-      writeFile (destination </> ".prototypeSHA")
+      writeFile (destination </> ".frameworkSHA")
                 (show . zComment $ archive)
       return x
     else return x
