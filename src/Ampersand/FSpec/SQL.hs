@@ -378,7 +378,7 @@ nonSpecialSelectExpr fSpec expr=
                                           esR = mapMaybe isR exprs
                                             where 
                                               isR :: Expression -> Maybe (Expression,Name)
-                                              isR e = case isInBroadQuery fSpec (source . head $ exprs) e of
+                                              isR e = case attInBroadQuery fSpec (source . head $ exprs) e of
                                                          Nothing -> Nothing
                                                          Just att -> Just (e, QName . name $ att)
                                           esRest :: [Expression] -- all other conjuctions
@@ -1173,16 +1173,16 @@ broadQuery fSpec obj =
    Nothing                -> toSQL baseBinExpr
    Just InterfaceRef{}    -> toSQL baseBinExpr
    Just Box{siObjs=sObjs} -> 
-      case mapMaybe (isInBroadQuery fSpec . target . objExpression $ obj) [objExpression x | BxExpr x <- sObjs] of
+      case filter (isInBroadQuery fSpec (target  . objExpression $ obj)) [x | BxExpr x <- sObjs] of
         [] -> toSQL baseBinExpr
         xs -> extendWithCols xs baseBinExpr
        
  where  
   baseBinExpr = getBinQueryExprPlaceholder fSpec . objExpression $ obj
 
-  extendWithCols :: [SqlAttribute] -> BinQueryExpr -> QueryExpr
-  extendWithCols atts bqe 
-    | null atts = plainQE
+  extendWithCols :: [ObjectDef] -> BinQueryExpr -> QueryExpr
+  extendWithCols objs bqe 
+    | null objs = plainQE
     | otherwise =
         case bqe of
           BSE{}  -> newSelect (newSelectList,newFrom,newWhere)
@@ -1191,14 +1191,14 @@ broadQuery fSpec obj =
               case qeFrom plainQE of
                 [TRSimple [n]] 
                   -> if n == sqlConcept fSpec tableCpt
-                     then ( qeSelectList plainQE ++ map (makeCol Nothing) atts
+                     then ( qeSelectList plainQE ++ map (makeCol Nothing) objs
                           , qeFrom plainQE
                           , qeWhere plainQE
                           )
                      else subThings
                 _ -> subThings
           BCQE{} -> newSelect subThings
-          BQEComment _ x -> extendWithCols atts x 
+          BQEComment _ x -> extendWithCols objs x 
    where 
      newSelect (sl,f,w) =
         Select { qeSetQuantifier = Distinct
@@ -1212,27 +1212,29 @@ broadQuery fSpec obj =
                , qeFetchFirst    = Nothing
                }
      plainQE = toSQL bqe
-     makeCol :: Maybe Name -> SqlAttribute -> (ValueExpr, Maybe Name)
-     makeCol tableName att =
-       ( Iden ( case tableName of
-                   Nothing -> [QName (name att)]
-                   Just tab -> [tab,QName (name att)]
-              )
-       , Just ( QName $ -- The name is not sufficient for two reasons:
-                        --   1) the columname must be unique. For that reason, it is prefixed:
-                        "ifc_"++ 
-                        --   2) It must be injective. Because SQL deletes trailing spaces,
-                        --      we have to cope with that:
-                        escapeIdentifier (name att)
-              )
-       )
+     makeCol :: Maybe Name -> ObjectDef -> (ValueExpr, Maybe Name)
+     makeCol tableName col =
+       case attInBroadQuery fSpec (target . objExpression $ obj) (objExpression col) of
+            Nothing  -> fatal ("this is unexpected behaviour. "++show col)
+            Just att -> ( Iden ( case tableName of
+                                   Nothing -> [QName (name att)]
+                                   Just tab -> [tab,QName (name att)]
+                               )
+                        , Just ( QName $ -- The name is not sufficient for two reasons:
+                                         --   1) the columname must be unique. For that reason, it is prefixed:
+                                         "ifc_"++ 
+                                         --   2) It must be injective. Because SQL deletes trailing spaces,
+                                         --      we have to cope with that:
+                                         escapeIdentifier (name col)
+                               )
+                        )
      subThings :: ( [(ValueExpr, Maybe Name)]
                   , [TableRef]
                   , Maybe ValueExpr
                   )
      subThings = ( [ (Iden [org,sourceAlias] , Just sourceAlias)
                    , (Iden [org,targetAlias] , Just targetAlias)
-                   ]++ map (makeCol . Just $ ct) atts
+                   ]++ map (makeCol . Just $ ct) objs
                  , [ TRQueryExpr plainQE `as` org
                    , sqlConceptTable fSpec tableCpt `as` ct
                    ]
@@ -1244,13 +1246,13 @@ broadQuery fSpec obj =
        where 
          org = Name "org"
          ct  = Name "cptTbl"
-     tableCpt = source . attExpr . head $ atts
+     tableCpt = source . objExpression . head $ objs
 
 -- Iff the expression is implemented in the concepttable of the given concept
 -- AND can be read from the same row, the implementing
 -- attribute is returnd
-isInBroadQuery :: FSpec -> A_Concept -> Expression -> Maybe SqlAttribute
-isInBroadQuery fSpec cpt = get
+attInBroadQuery :: FSpec -> A_Concept -> Expression -> Maybe SqlAttribute
+attInBroadQuery fSpec cpt = get
     where
       get expr =
         case expr of 
@@ -1276,11 +1278,10 @@ isInBroadQuery fSpec cpt = get
           EFlp (EBrk e)
                 -> get (EFlp e)
           _ -> Nothing
---       (isUni subExpr) && False
---    && (isJust . attThatisInTableOf (target subExpr) $ sObj)
---    && (source ctxExpr /= target ctxExpr || null (primitives ctxExpr)) --this is required to prevent conflicts in rows of the same broad table. See explanation in issue #627
---    && (target ctxExpr /= target subExpr || (not . isFlipped $ subExpr)) -- see issue #760 for motivation of this line.
       (broadTable, _) = getConceptTableInfo fSpec cpt
+
+isInBroadQuery :: FSpec -> A_Concept -> ObjectDef -> Bool
+isInBroadQuery fSpec cpt obj = isJust $ attInBroadQuery fSpec cpt (objExpression obj)
 
 theONESingleton :: Col
 theONESingleton = Col { cTable = []
