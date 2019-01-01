@@ -337,6 +337,7 @@ pAdlTType
       <|> k Boolean          "BOOLEAN"
       <|> k Integer          "INTEGER"
       <|> k Float            "FLOAT"
+      <|> k Object           "OBJECT"
 
   where
    k tt str = f <$> pKey str where f _ = tt

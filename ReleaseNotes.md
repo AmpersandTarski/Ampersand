@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #616](https://github.com/AmpersandTarski/Ampersand/issues/616) Add missing TType 'Object' to parser
 
 ## v3.12.0 (21 december 2018)
 
