@@ -130,17 +130,17 @@ hyperTarget fSpec a =
 
                                                           <>printMeaning (fsLang fSpec) r
                                                         )
-      XRefConceptualAnalysisRelation d 
+      XRefConceptualAnalysisRelation _d 
             -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Relatie ",EN "Relation ")
                                --   <> (str . show . numberOf fSpec $ d)
                                 )  
-      XRefConceptualAnalysisRule r    
+      XRefConceptualAnalysisRule _r    
             -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                --   <> (str . show . numberOf fSpec $ r)
                                 ) 
-      XRefConceptualAnalysisExpression r
+      XRefConceptualAnalysisExpression _r
             -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                --   <> (str . show . numberOf fSpec $ r)
@@ -254,6 +254,7 @@ refStuff x  =
           ("relation","rule" ,"expression","pattern","theme")
          
 
+{- 
 class NumberedThing a where
   numberOf :: FSpec -> a -> Int
 
@@ -281,7 +282,7 @@ instance NumberedThing A_Concept where
     where ns = concatMap cptsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered CptCont -> Bool
           isTheOne = (c ==) . cCpt . theLoad
-
+-}
 
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything

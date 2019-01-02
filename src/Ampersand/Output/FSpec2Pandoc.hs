@@ -57,7 +57,6 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
     l :: LocalizedStr -> String
     l = localize (fsLang fSpec)
     
-    wrap' p = p
     wrap :: Pandoc -> Pandoc
     wrap (Pandoc meta blocks) = 
       Pandoc meta $ runCrossRef m' Nothing crossRefBlocks blocks 

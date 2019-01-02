@@ -1,0 +1,13 @@
+﻿CONTEXT Issue865
+
+isSuccessorOf :: Assignment * Assignment [UNI,INJ,ASY] -- IRF,
+
+POPULATION isSuccessorOf CONTAINS  [ ("Ass2", "Ass1") ]
+POPULATION isSuccessorOf CONTAINS  [ ("Ass3", "Ass2"), ("aap","aap") ]
+
+
+ROLE "Iemand" MAINTAINS "Niet Successor van zichzelf"
+RULE "Niet Successor van zichzelf" : I[Assignment] |- -isSuccessorOf  
+
+ENDCONTEXT
+

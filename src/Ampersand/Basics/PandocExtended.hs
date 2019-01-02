@@ -15,7 +15,7 @@ import           Data.Data
 import qualified Data.Text as Text
 import           Text.Pandoc hiding (Meta)
 
-data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
+data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord, Enum, Bounded)
 
 data Markup =
     Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
