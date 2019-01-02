@@ -131,7 +131,7 @@ ifEnd = (const EndIf) <$> (try(string "ENDIF") *> untilEOL)
 
 -- Helper Lexers
 whitespace :: Lexer ()
-whitespace = skipMany1 $ satisfy (\x -> isSpace x && not (x == '\n' || x == '\r'))
+whitespace = skipMany $ satisfy (\x -> isSpace x && not (x == '\n' || x == '\r'))
 
 untilEOL :: Lexer String
 untilEOL = manyTill anyChar endOfLine
