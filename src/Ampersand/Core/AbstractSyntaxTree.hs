@@ -1052,11 +1052,10 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                  , "Found: `"++show x++"`,"
                  , "as representation of an atom in concept `"++name c++"`."
                  , "However, the representation-type of that concept is "++implicitly
-                 , "defined as "++show expected++". The found value does not match that type."
+                 , "defined as "++show typ++". The found value does not match that type."
                  ]++ example
         where
           c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
-          expected = if typ == Object then Alphanumeric else typ
           implicitly = if typ == Object then "(implicitly) " else ""
           example :: [String]
           example = case typ of
@@ -1069,6 +1068,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
               HugeAlphanumeric -> ["HUGEALPHANUMERIC types are texts (max 16M chars) surrounded with double quotes (\"-characters)."]
               Integer          -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
               Password         -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
+              Object           -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
               _                -> fatal $ "There is no example denotational syntax for a value of type `"++show typ++"`." 
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      maybeRead :: Read a => String -> Maybe a
