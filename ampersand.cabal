@@ -192,6 +192,7 @@ executable ampPreProc
   ghc-options:       -Wall -threaded
   default-extensions:NoImplicitPrelude
   build-depends:     base == 4.11.*,
+                     containers == 0.5.*,
                      ampersand                     
 
 Test-Suite regression-test

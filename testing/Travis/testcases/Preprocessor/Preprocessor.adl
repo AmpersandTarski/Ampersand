@@ -1,0 +1,64 @@
+CONTEXT "Preprocessor" IN DUTCH
+PURPOSE CONTEXT "Preprocessor"
+{+The purpose of this application is to provide some (limited) testing 
+of the functionality of the Ampersand Preprocessor.
+
+The purpose of the preprocessor is to allow parts of a script to be conditionally ignored,
+which enables developers to conditionally implement features/capabilities in their applications
+without them having to maintain lots of different files, as would have been the case without the preprocessor.
+
+This functionality should be (or will be) backwards compatible,
+which means that files that do not use preprocessor-specific syntax will be compiled as usual, 
+and files that use preprocessor-specific syntax can also be interpreted by ampersand versions that do not have the preprocessor,
+provided they do not use the preprocessor to resolve conflicts of rules.
+
+At the time of writing, the preprocssor specifications are as follows:
+
+A line of text, that 
+  (a) starts with optional whitespace, 
+  (b) is followed by 2 or more `-` characters, (nu is dat 2 `-` chars)
+  (c) is followed by optional whitespace, (dat mag nu nog niet)
+  (d) is followed by `#` and 
+  (e) is followed with optional whitespace,
+  is not interpreted by the Ampersand parser, but is passed to the Preprocessor instead.
+The text behind the `#`-character up till the end of the line is the `TextToBePreprocessed`.
+`TextToBePreprocessed` is defined by the (PCRE) regex `^\s*--+\s*#\s*(?P<TextToBePreprocessed>.*)$`.
+Note that Ampersand versions that do not support preprocessing will treat such texts as comment.
+
+A preprocessor Keyword is the first word in `TextToBePreprocessed`.
+`Keyword` is defined by the (PCRE) regex `(?P<Keyword>\w+\b)` when it is applied to `TextToBePreprocessed`.
+In absolute terms, that would be `^\s*--+\s*#\s*(?P<Keyword>\w+\b).*$`
+followed by optional whitespace and keyword consisting of alphanumeric characters.
+Keywords are (thus) case sensitive.
+Examples: `--#IF Debugging` or ` -- #  ENDIF`
+
+Currently, valid keyword syntax is as follows (the (PCRE) regexes are assumed to be applied on `TextToBePreprocessed`):
+- `IF`, `IFNOT` each take one argument - a variable.
+  Formally, this is defined by (PCRE) regex `(?P<Keyword>IF|IFNOT)\s+(?P<Variable>\w+)`.
+  Examples `--#IF Debugging` or `--#IFNOT UserSpecifiesLoginMethod`
+- `ELSE` and `ENDIF` do not take arguments.
+The preprocessor treats any text following these syntaxes as comments (i.e.: ignores such texts)
+
+Also the syntax of `INCLUDE` statements is extended to include an optional comment that specifies a list of quoted variable names.
+Example `INCLUDE "../SIAMv3/Login.ifc" --# [ "Debugging", "NoLogout" ]`.
+The (PCRE) regex is `\bINCLUDE\s+"(?P<fileid>[^"]+)"(\s+(--#\s*)?\[\s*"(?P<var1>!?\w+)"(\s*,\s*"(?P<var2>!?\w+)")*\])?`
+where any text in groups `var1` or `var2` are variable names that may (optionally) be preceeded with a `!` character.
+For each such variable names, a variable is created that can be referenced by its name.
+When the variable name was preceeded with a `!` character, its value is initialized as 'false';
+When the variable name was not preceeded with a `!` character, its value is initialized as 'true';
+If a variable with a specified name was already created, the newly created variable takes precedence.
+After a file inclusion terminates, the variables that the INCLUDE statement created are all destroyed.
+
+When the preprocessor parses the file that is `INCLUDE`d, 
+preprocessor commands that evaluate a variable (such as `IF` or `IFNOT`)
+will use the value as defined in that `INCLUDE` statement
+or (recursively) in that of a 'higher' `INCLUDE` statement.
+
+Files in this project contain examples of the syntax that explain the use.
++}
+
+  -- This line should be treated as comment, and not as a --#preprocessor statement.
+
+INCLUDE "./includes/PreprocTest.adl" --# [ "ShowR2", "DoNotShowR1", "EditableInterfaceA", "GenerateErrorIfThisVarIsSet" ] --dit is een test
+
+ENDCONTEXT

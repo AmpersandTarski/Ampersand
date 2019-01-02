@@ -24,6 +24,7 @@ import           Control.Exception
 import           Data.Char(toLower)
 import           Data.List
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
+import qualified Data.Set as Set
 import           Data.Maybe
 import           System.Directory
 import           System.FilePath
@@ -36,13 +37,13 @@ parseADL :: Options                    -- ^ The options given through the comman
          -> IO (Guarded P_Context)     -- ^ The resulting context
 parseADL opts fp = do curDir <- getCurrentDirectory
                       canonical <- canonicalizePath fp
-                      parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical [])
+                      parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
 
 parseMeta :: Options -> IO (Guarded P_Context)
-parseMeta opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" [])
+parseMeta opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
 
 parseSystemContext :: Options -> IO (Guarded P_Context)
-parseSystemContext opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" [])
+parseSystemContext opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
 
 parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context) 
 parseThing opts pc =
@@ -70,7 +71,7 @@ data ParseCandidate = ParseCandidate
        , pcFilePath :: FilePath -- The absolute or relative filename as found in the INCLUDE statement
        , pcFileKind :: Maybe FileKind -- In case the file is included into ampersand.exe, its FileKind.
        , pcCanonical :: FilePath -- The canonicalized path of the candicate
-       , pcDefineds :: [PreProcDefine]
+       , pcDefineds :: Set.Set PreProcDefine
        }
 instance Eq ParseCandidate where
  a == b = pcFileKind a == pcFileKind b && pcCanonical a `equalFilePath` pcCanonical b
@@ -119,12 +120,13 @@ parseSingleADL opts pc
                include2ParseCandidate :: Include -> IO ParseCandidate
                include2ParseCandidate (Include org str defs) = do
                   let canonical = myNormalise ( takeDirectory filePath </> str )
+                      defineds  = processFlags (pcDefineds pc) defs
                   return ParseCandidate { pcBasePath  = Just filePath
                                         , pcOrigin    = Just org
                                         , pcFilePath  = str
                                         , pcFileKind  = pcFileKind pc
                                         , pcCanonical = canonical
-                                        , pcDefineds  = pcDefineds pc ++ defs
+                                        , pcDefineds  = defineds
                                         }
                myNormalise :: FilePath -> FilePath 
                -- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why System.Filepath doesn't support reduction of x/foo/../bar into x/bar. 
