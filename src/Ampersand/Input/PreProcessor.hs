@@ -2,10 +2,12 @@ module Ampersand.Input.PreProcessor (
       preProcess
     , preProcess'
     , PreProcDefine
+    , processFlags
 ) where
 
 import Data.List
 import qualified Data.List.NonEmpty as NEL
+import qualified Data.Set as Set
 import Data.String
 import Data.Maybe
 import Data.Bool
@@ -21,10 +23,19 @@ import Ampersand.Input.ADL1.CtxError
 
 type PreProcDefine = String
 
+-- | Remove and add flags to the set of enabled flags based on an import statement.
+processFlags :: Set.Set PreProcDefine -- ^ Old set of preprocessor flags
+             -> [String]              -- ^ List of preprocessor flags from an import
+             -> Set.Set PreProcDefine -- ^ Set of preprocessor flags after import
+processFlags oldFlags importList = Set.difference (Set.union oldFlags addedDefines) removedDefines
+  where (addedDefines, removedDefines) =
+            (\(added, removed) -> (Set.fromList added, Set.fromList $ map (fromMaybe "" . stripPrefix "!") removed))
+            (partition (isPrefixOf "!") importList)
+
 -- Shim that changes our 'Either ParseError a' from preProcess' into 'Guarded a'
 -- | Runs the preProcessor on input
 preProcess :: String          -- ^ filename, used only for error reporting
-           -> [PreProcDefine] -- ^ list of flags, The list of defined 'flags
+           -> Set.Set PreProcDefine -- ^ list of flags, The list of defined 'flags
            -> String          -- ^ input, The actual string to processs
            -> Guarded String  -- ^ result, The result of processing
 preProcess f d i = case preProcess' f d i of
@@ -33,7 +44,7 @@ preProcess f d i = case preProcess' f d i of
 
 -- | Runs the preProcessor on input
 preProcess' :: String                   -- ^ filename, used only for error reporting
-            -> [PreProcDefine]          -- ^ list of flags, The list of defined 'flags
+            -> Set.Set PreProcDefine       -- ^ list of flags, The list of defined 'flags
             -> String                   -- ^ input, The actual string to process
             -> Either ParseError String -- ^ result, The result of processing
 -- We append "\n" because the parser cannot handle a final line not terminated by a newline.
@@ -231,14 +242,14 @@ elseClauseStart = parserToken matchIfEnd
 -}
 
 -- | Renders a Block type back into a String, according to some context
-block2file :: [PreProcDefine] -- ^ flags, List of defined flags
+block2file :: Set.Set PreProcDefine -- ^ defs, List of defined flags
            -> Bool    -- ^ showing, whether we are showing the current block, or it is hidden
            -> Block   -- ^ block, the block we want to process
            -> String
-block2file defs shown = concat . map (blockElem2string defs shown)
+block2file defs showing = concat . map (blockElem2string defs showing)
 
 -- | Renders a single block element back into text
-blockElem2string :: [PreProcDefine] -- ^ flags, the list of active flags
+blockElem2string :: Set.Set PreProcDefine -- ^ flags, the list of active flags
                  -> Bool            -- ^ showing, whether we are showing the current block element, or it is hidden
                  -> BlockElem       -- ^ blockElem, the block element to render
                  -> String
@@ -251,13 +262,13 @@ blockElem2string defs showing (GuardedElem guardedElem) = showGuardedBlock defs 
 -- | Renders a GuardedBlock
 -- This is where the rendering logic of IF and IFNOT is implemented
 -- Simplification of this function is why IF and IFNOT are both represented by the type GuardedBlock
-showGuardedBlock :: [PreProcDefine] -- ^ flags, the list of active flags
+showGuardedBlock :: Set.Set PreProcDefine -- ^ flags, the list of active flags
                  -> Bool            -- ^ showing, whether we are showing the current block element, or it is hidden
                  -> GuardedBlock    -- ^ guardedBlock, the element to render
                  -> String
 showGuardedBlock defs showing (GuardedBlock ifType (Guard guard') block elseBlock) =
     -- The  xor (not ifType)  is a succinct way to express the difference between IF blocks and NOTIF blocks
-    let showMainBody = (xor (not ifType) (guard' `elem` defs)) in
+    let showMainBody = (xor (not ifType) (guard' `Set.member` defs)) in
       concat [ guardedBlockName ifType ++ guard' ++ "\n"
              , (block2file defs (showing &&      showMainBody)  block    )
              , (showElse  defs (showing && (not showMainBody)) elseBlock)
@@ -268,7 +279,7 @@ showGuardedBlock defs showing (GuardedBlock ifType (Guard guard') block elseBloc
 guardedBlockName :: Bool -> String
 guardedBlockName ifType = (if ifType then "--#IF " else "--#IFNOT ")
 
-showElse :: [PreProcDefine] -> Bool -> Maybe Block -> String
+showElse :: Set.Set PreProcDefine -> Bool -> Maybe Block -> String
 showElse defs showing = maybe "" (("--#ELSE\n" ++) . block2file defs showing)
 
 xor :: Bool -> Bool -> Bool
