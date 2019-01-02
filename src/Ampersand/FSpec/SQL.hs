@@ -219,7 +219,9 @@ maybeSpecialCase fSpec expr =
       (expr2Src,expr2trg,leftTable) =
          case expr2 of
            EDcD rel -> 
-               let (plug,s,t) = getRelationTableInfo fSpec rel
+               let (plug,relstore) = getRelationTableInfo fSpec rel
+                   s = rsSrcAtt relstore
+                   t = rsTrgAtt relstore
                    lt = TRSimple [QName (name plug)] `as` table2
                in if isFlipped' 
                   then (QName (name t), QName (name s), lt)
@@ -340,7 +342,10 @@ nonSpecialSelectExpr fSpec expr=
                                         | otherwise = 
                                               let part1 = makeIntersectSelectExpr (map fst esI ++ map fst esR)
                                                   part2 = makeIntersectSelectExpr esRest
-                                              in traceComment ["Combination of optimized and non-optimized intersections"]
+                                              in traceComment ["Combination of optimized and non-optimized intersections"
+                                                              ,"  part1 : "++(showA . foldl1 (./\.) $ map fst esI ++ map fst esR)
+                                                              ,"  part2 : "++(showA . foldl1 (./\.) $ esRest)
+                                                              ]
                                                  BSE { bseSetQuantifier = SQDefault
                                                      , bseSrc = Col { cTable = []
                                                                     , cCol   = [sourceAlias]
@@ -360,8 +365,6 @@ nonSpecialSelectExpr fSpec expr=
                                                          ]
                                                      } 
                                         where
-                                          broadTable :: PlugSQL -- The broad table where everything in the optimized case comes from.
-                                          broadTable = fst . getConceptTableInfo fSpec . source . head $ exprs
                                           esI :: [(Expression,Name)] -- all conjunctions that are of the form I
                                           esI = mapMaybe isI exprs 
                                             where 
@@ -371,38 +374,22 @@ nonSpecialSelectExpr fSpec expr=
                                                   EDcI c   -> Just (e,sqlAttConcept fSpec c)
                                                   EEps c _ -> Just (e,sqlAttConcept fSpec c)
                                                   _        -> Nothing
-                                          esR :: [(Expression,[Name])] -- all conjuctions that are of the form r;r~ where r is in the same broad table as I
+                                          esR :: [(Expression,Name)] -- all conjuctions that are of the form r;r~ where r is in the same broad table (and same row!) as I
                                           esR = mapMaybe isR exprs
                                             where 
-                                              isR :: Expression -> Maybe (Expression,[Name])
-                                              isR e = 
-                                                case e of
-                                                  (ECps (EDcD r, EFlp (EDcD r')))
-                                                    -> let (plug,_,t) = getRelationTableInfo fSpec r in
-                                                       if r == r' && plug == broadTable
-                                                       then Just (e,[QName (name t)])
-                                                       else Nothing
-                                                  (ECps (EFlp (EDcD r'), EDcD r))
-                                                    -> let (plug,s,_) = getRelationTableInfo fSpec r in
-                                                       if r' == r && plug == broadTable
-                                                       then Just (e,[QName (name s)])
-                                                       else Nothing
-                                                  (EDcD r)
-                                                    -> let (plug,s,t) = getRelationTableInfo fSpec r in
-                                                       if plug == broadTable
-                                                       then Just (e,[QName (name s),QName (name t)])
-                                                       else Nothing
-                                                  (EFlp (EDcD r))
-                                                    -> let (plug,s,t) = getRelationTableInfo fSpec r in
-                                                       if plug == broadTable
-                                                       then Just (e,[QName (name s),QName (name t)])
-                                                       else Nothing 
-                                                  _ -> Nothing
+                                              isR :: Expression -> Maybe (Expression,Name)
+                                              isR e = case attInBroadQuery fSpec (source . head $ exprs) e of
+                                                         Nothing -> Nothing
+                                                         Just att -> Just (e, QName . name $ att)
                                           esRest :: [Expression] -- all other conjuctions
                                           esRest = (exprs \\ (map fst esI)) \\ (map fst esR)
                                           optimizedIntersectSelectExpr :: BinQueryExpr
                                           optimizedIntersectSelectExpr
-                                            = BQEComment [BlockComment "Optimized intersection:"]
+                                            = BQEComment ([BlockComment "Optimized intersection:"
+                                                          ,BlockComment $ "   Expression: "++(showA . foldl1 (./\.) $ exprs)]
+                                                     --    ++map (showComment "esI") esI
+                                                     --    ++map (showComment "esR") esR
+                                                         ) 
                                               BSE { bseSetQuantifier = SQDefault
                                                   , bseSrc = Col { cTable = []
                                                                  , cCol   = [sqlAttConcept fSpec c]
@@ -414,13 +401,19 @@ nonSpecialSelectExpr fSpec expr=
                                                                  , cSpecial = Nothing}
                                                   , bseTbl = [sqlConceptTable fSpec c]
                                                   , bseWhr = Just . conjunctSQL $
-                                                       [notNull (Iden [nm]) | nm <- nub (map snd esI++concatMap snd esR)]
+                                                       [notNull (Iden [nm]) | nm <- nub (map snd esI++map snd esR)]++
+                                                       [BinOp (Iden [nm]) [Name "="] (Iden [sqlAttConcept fSpec c]) 
+                                                       | nm <- nub (map snd esR)
+                                                       , nm /= sqlAttConcept fSpec c
+                                                       ]
                                                   }
                                               where c = case map fst esI of
                                                           [] -> fatal "This list must not be empty here."
                                                           EDcI cpt   : _ -> cpt
                                                           EEps cpt _ : _ -> cpt
                                                           e          : _ -> fatal $ "Unexpected expression: "++show e
+                                       --             showComment :: String -> (Expression, Name) -> Comment
+                                       --             showComment str (e,n) = BlockComment $ "   "++str++": ("++showA e++", "++show n++")"
                                           nonOptimizedIntersectSelectExpr :: BinQueryExpr 
                                           nonOptimizedIntersectSelectExpr =
                                             case map (selectExpr fSpec) exprs of 
@@ -897,8 +890,8 @@ selectRelation :: FSpec -> Relation -> BinQueryExpr
 selectRelation fSpec dcl =
   leafCode (getRelationTableInfo fSpec dcl)
    where
-     leafCode :: (PlugSQL,SqlAttribute,SqlAttribute) -> BinQueryExpr
-     leafCode (plug,s,t) 
+     leafCode :: (PlugSQL,RelStore) -> BinQueryExpr
+     leafCode (plug,relstore) 
          = BSE { bseSetQuantifier = SQDefault
                , bseSrc = Col { cTable = []
                               , cCol   = [QName (name s)]
@@ -912,7 +905,8 @@ selectRelation fSpec dcl =
                , bseWhr = Just . conjunctSQL . map notNull $
                                 [Iden [QName (name c)] | c<-nub [s,t]]
                }
-
+       where s = rsSrcAtt relstore
+             t = rsTrgAtt relstore
 isNotIn :: ValueExpr -> QueryExpr -> ValueExpr
 isNotIn value = In False value . InQueryExpr 
 -- | select only the source of a binary expression
@@ -1179,7 +1173,7 @@ broadQuery fSpec obj =
    Nothing                -> toSQL baseBinExpr
    Just InterfaceRef{}    -> toSQL baseBinExpr
    Just Box{siObjs=sObjs} -> 
-      case filter (isInBroadQuery (objExpression obj)) [x | BxExpr x <- sObjs] of
+      case filter (isInBroadQuery fSpec (target  . objExpression $ obj)) [x | BxExpr x <- sObjs] of
         [] -> toSQL baseBinExpr
         xs -> extendWithCols xs baseBinExpr
        
@@ -1220,7 +1214,7 @@ broadQuery fSpec obj =
      plainQE = toSQL bqe
      makeCol :: Maybe Name -> ObjectDef -> (ValueExpr, Maybe Name)
      makeCol tableName col =
-       case attThatisInTableOf (target . objExpression $ obj) col of
+       case attInBroadQuery fSpec (target . objExpression $ obj) (objExpression col) of
             Nothing  -> fatal ("this is unexpected behaviour. "++show col)
             Just att -> ( Iden ( case tableName of
                                    Nothing -> [QName (name att)]
@@ -1254,30 +1248,40 @@ broadQuery fSpec obj =
          ct  = Name "cptTbl"
      tableCpt = source . objExpression . head $ objs
 
-  isInBroadQuery :: Expression -> ObjectDef -> Bool
-  isInBroadQuery ctxExpr sObj = 
-       (isUni . objExpression $ sObj) 
-    && (isJust . attThatisInTableOf (target . objExpression $ obj) $ sObj)
-    && (source ctxExpr /= target ctxExpr || null (primitives ctxExpr)) --this is required to prevent conflicts in rows of the same broad table. See explanation in issue #627
-    && (target ctxExpr /= target (objExpression sObj) || (not . isFlipped . objExpression $ sObj)) -- see issue #760 for motivation of this line.
+-- Iff the expression is implemented in the concepttable of the given concept
+-- AND can be read from the same row, the implementing
+-- attribute is returnd
+attInBroadQuery :: FSpec -> A_Concept -> Expression -> Maybe SqlAttribute
+attInBroadQuery fSpec cpt = get
+    where
+      get expr =
+        case expr of 
+          EBrk e -> get e
+          EDcI c -> let (p, a ) = getConceptTableInfo fSpec c
+                    in if p == broadTable
+                      then Just a
+                      else Nothing
+          EEps c _ 
+                 -> let (p, a ) = getConceptTableInfo fSpec c
+                    in if p == broadTable
+                      then Just a
+                      else Nothing
+          EDcD d -> let (p,relstore) = getRelationTableInfo fSpec d
+                    in if p == broadTable && not (rsStoredFlipped relstore)
+                      then Just (rsTrgAtt relstore)
+                      else Nothing
+          EFlp (EDcD d) 
+                 -> let (p,relstore) = getRelationTableInfo fSpec d
+                    in if p == broadTable && rsStoredFlipped relstore
+                      then Just (rsSrcAtt relstore)
+                      else Nothing
+          EFlp (EBrk e)
+                -> get (EFlp e)
+          _ -> Nothing
+      (broadTable, _) = getConceptTableInfo fSpec cpt
 
-  attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
-  attThatisInTableOf cpt od = 
-          case theDcl of
-            Nothing -> Nothing
-            Just (p,att) -> if plug == p
-                            then Just att
-                            else Nothing
-         where
-            (plug, _ ) = getConceptTableInfo fSpec cpt
-            theDcl :: Maybe (PlugSQL, SqlAttribute)
-            theDcl = case objExpression od of
-                       EFlp (EDcD d) -> let (p, s, _) = getRelationTableInfo fSpec d
-                                        in Just (p, s)
-                       EDcD d        -> let (p, _, t) = getRelationTableInfo fSpec d
-                                        in Just (p, t)
-                       EDcI c        -> Just $ getConceptTableInfo fSpec c
-                       _             -> Nothing
+isInBroadQuery :: FSpec -> A_Concept -> ObjectDef -> Bool
+isInBroadQuery fSpec cpt obj = isJust $ attInBroadQuery fSpec cpt (objExpression obj)
 
 theONESingleton :: Col
 theONESingleton = Col { cTable = []

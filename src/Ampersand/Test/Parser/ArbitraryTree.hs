@@ -125,13 +125,8 @@ instance Arbitrary P_RoleRule where
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary <*> listOf1 upperId <*> arbitrary
 
-instance Arbitrary TType where -- Not allowed are:  [ TypeOfOne]
-    arbitrary = elements [ Alphanumeric, BigAlphanumeric, HugeAlphanumeric, Password
-                         , Binary, BigBinary, HugeBinary
-                         , Date, DateTime
-                         , Boolean, Integer, Float
-                         , Object
-                         ]
+instance Arbitrary TType where
+    arbitrary = elements [ tt | tt <- [minBound..] , tt /= TypeOfOne]
 
 instance Arbitrary Role where
     arbitrary =
@@ -226,7 +221,7 @@ instance Arbitrary a => Arbitrary (PairViewSegmentTerm a) where
     arbitrary = PairViewSegmentTerm <$> arbitrary -- should be only PairViewSegment (Term a)
 
 instance Arbitrary SrcOrTgt where
-    arbitrary = elements[Src, Tgt]
+    arbitrary = elements [minBound..]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
     arbitrary = P_Ru <$> arbitrary <*> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary
@@ -334,7 +329,7 @@ instance Arbitrary PClassify where
           fun p s g = PClassify p s (NEL.fromList g)
 
 instance Arbitrary Lang where
-    arbitrary = elements [Dutch, English]
+    arbitrary = elements [minBound..]
 
 instance Arbitrary P_Markup where
     arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr `suchThat` noEndMarkup
@@ -343,7 +338,7 @@ instance Arbitrary P_Markup where
        noEndMarkup = not . isInfixOf "+}"
 
 instance Arbitrary PandocFormat where
-    arbitrary = elements [HTML, ReST, LaTeX, Markdown]
+    arbitrary = elements [minBound..]
 
 instance Arbitrary Prop where
     arbitrary = elements [minBound..]

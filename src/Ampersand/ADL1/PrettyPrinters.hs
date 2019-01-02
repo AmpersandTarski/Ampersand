@@ -206,8 +206,7 @@ instance Pretty (PairViewSegment (Term TermPrim)) where
     pretty (PairViewExp _ srcTgt term) = pretty srcTgt <~> term
 
 instance Pretty SrcOrTgt where
-    pretty Src = text "SRC"
-    pretty Tgt = text "TGT"
+    pretty = text . map toUpper . show
 
 instance Pretty (P_Rule TermPrim) where
     pretty (P_Ru _ nm expr mean msg viol) =
@@ -359,32 +358,17 @@ instance Pretty PClassify where
                       else text "IS"  <+> separate "/\\" (NEL.toList gen)
                      )
 instance Pretty Lang where
-    pretty Dutch   = text "IN DUTCH"
-    pretty English = text "IN ENGLISH"
+    pretty x = text "IN" <+> (text . map toUpper . show $ x)
 
 instance Pretty P_Markup where
     pretty (P_Markup lang format str) =
         pretty lang <~> format <+\> quotePurpose str
 
 instance Pretty PandocFormat where
-    pretty p = case p of
-        ReST     -> text "REST"
-        HTML     -> text "HTML"
-        LaTeX    -> text "LATEX"
-        Markdown -> text "MARKDOWN"
+    pretty = text . map toUpper . show
 
 instance Pretty Prop where
-    pretty p = text $ case p of
-                Uni -> "UNI"
-                Inj -> "INJ"
-                Sur -> "SUR"
-                Tot -> "TOT"
-                Sym -> "SYM"
-                Asy -> "ASY"
-                Trn -> "TRN"
-                Rfx -> "RFX"
-                Irf -> "IRF"
-                Prop -> "PROP"
+    pretty = text . map toUpper . show
 
 instance Pretty PAtomPair where
     pretty (PPair _ l r) = text "(" <+> pretty l 
