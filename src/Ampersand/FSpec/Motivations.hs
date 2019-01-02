@@ -64,7 +64,6 @@ class Named a => HasMeaning a where
        [m]  -> Just m
        _    -> fatal ("In the "++show l++" language, too many meanings given for "++name x ++".")             
   meanings :: a -> [Meaning]
-  generatedMeaning :: Lang -> a -> Meaning 
   {-# MINIMAL meanings #-}
 
 instance HasMeaning Rule where
