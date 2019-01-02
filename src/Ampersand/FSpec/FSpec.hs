@@ -293,6 +293,7 @@ getConceptTableFor fSpec c = case lookupCpt fSpec c of
 data RelStore 
   = RelStore
      { rsDcl       :: Relation
+     , rsStoredFlipped :: Bool
      , rsSrcAtt    :: SqlAttribute
      , rsTrgAtt    :: SqlAttribute
      } deriving (Show, Typeable)

@@ -58,24 +58,16 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 
 
           tableKey = tyroot typ
-          isStoredFlipped :: Relation -> Bool
-          isStoredFlipped d
-            = snd . fromMaybe ftl . wayToStore $ d
-              where ftl = fatal ("relation `"++name d++"` cannot be stored in this table. "++show (properties d)++"\n\n"++show d)
           conceptLookuptable :: [(A_Concept,SqlAttribute)]
           conceptLookuptable    = [(cpt,cptAttrib cpt) | cpt <-cpts]
           dclLookuptable :: [RelStore]
           dclLookuptable = map f dcls
-            where f d 
-                   = if isStoredFlipped d
-                     then RelStore { rsDcl       = d
-                                   , rsSrcAtt    = dclAttrib d
-                                   , rsTrgAtt    = lookupC (target d)
-                                   }
-                     else RelStore { rsDcl       = d
-                                   , rsSrcAtt    = lookupC (source d)
-                                   , rsTrgAtt    = dclAttrib d
-                                   }
+            where f d =
+                   RelStore { rsDcl       = d
+                            , rsStoredFlipped = isStoredFlipped d
+                            , rsSrcAtt    = if isStoredFlipped d then dclAttrib d else lookupC (source d)
+                            , rsTrgAtt    = if isStoredFlipped d then lookupC (target d) else dclAttrib d
+                            }
 
           lookupC :: A_Concept -> SqlAttribute
           lookupC cpt           = case [f |(c',f)<-conceptLookuptable, cpt==c'] of
@@ -145,17 +137,12 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
       where
        bindedExp :: Expression
        bindedExp = EDcD dcl
-       theRelStore =  if isFlipped trgExpr
-                         then RelStore
-                               { rsDcl       = dcl
-                               , rsSrcAtt    = trgAtt
-                               , rsTrgAtt    = srcAtt
-                               }
-                         else RelStore
-                               { rsDcl       = dcl
-                               , rsSrcAtt    = srcAtt
-                               , rsTrgAtt    = trgAtt
-                               }
+       theRelStore = RelStore
+            { rsDcl       = dcl
+            , rsStoredFlipped = isStoredFlipped dcl
+            , rsSrcAtt    = if isStoredFlipped dcl then trgAtt else srcAtt
+            , rsTrgAtt    = if isStoredFlipped dcl then srcAtt else trgAtt
+            }
        --the expr for the source of r
        srcExpr
         | isTot bindedExp = EDcI (source bindedExp)
@@ -174,7 +161,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                     , attNull = isTot trgExpr
                     , attDBNull = False  -- false for link tables
                     , attUniq = isUni trgExpr
-                    , attFlipped = isFlipped trgExpr
+                    , attFlipped = isStoredFlipped dcl
                     }
        trgAtt = Att { attName = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
                     , attExpr = trgExpr
@@ -185,7 +172,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                     , attNull = isSur trgExpr
                     , attDBNull = False  -- false for link tables
                     , attUniq = isInj trgExpr
-                    , attFlipped = isFlipped trgExpr
+                    , attFlipped = isStoredFlipped dcl
                     }
 
     -- | dist will distribute the relations amongst the sets of concepts. 
@@ -207,31 +194,33 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                                Nothing -> False
                                Just x  -> x `elem` tyCpts typ
                            ]
-        
-        conceptTableOf :: Relation -> Maybe A_Concept
-        conceptTableOf d = if sqlBinTables opts
-                           then Nothing
-                           else fst <$> wayToStore d
+    conceptTableOf :: Relation -> Maybe A_Concept
+    conceptTableOf  = fst . wayToStore opts
+    isStoredFlipped :: Relation -> Bool
+    isStoredFlipped = snd . wayToStore opts
 
--- | this function tells in what concepttable a given relation is to be stored. If stored
---   in a concept table, it returns the concept and a boolean, telling wether or not the relation
---   is stored flipped.
-wayToStore :: Relation -> Maybe (A_Concept,Bool)
-wayToStore dcl =
+-- | this function tells how a given relation is to be stored. If stored
+--   in a concept table, it returns that concept. It allways returns a boolean
+--   telling wether or not the relation is stored flipped.
+wayToStore :: Options -> Relation -> (Maybe A_Concept,Bool)
+wayToStore opts dcl
+  | sqlBinTables opts = (Nothing, False)
+  | otherwise =
        case (isInj d, isUni d) of
-            (False  , False  ) -> Nothing --Will become a link-table
-            (True   , False  ) -> Just flipped
-            (False  , True   ) -> Just plain
-            (True   , True   ) ->
-              case (isTot d, isSur d) of
-                   (False  , False  ) -> Just plain 
-                   (True   , False  ) -> Just plain
-                   (False  , True   ) -> Just plain
-                   (True   , True   ) -> Just plain
+            (True   , False  ) -> inConceptTableFlipped
+            (_      , True   ) -> inConceptTablePlain
+            (False  , False  ) -> inLinkTable --Will become a link-table
   where d = EDcD dcl
-        plain   = (source d,False)
-        flipped = (target d, True)
-        
+        inConceptTablePlain   = (Just $ source d,False)
+        inConceptTableFlipped = (Just $ target d, True)
+        inLinkTable = ( Nothing
+                      , -- The order of columns in a linked table could
+                        -- potentially speed up queries, in cases where
+                        -- the relation is TOT or SUR. In that case there
+                        -- should be no need to look in the concept table,
+                        -- for all atoms are in the first colum of the link table
+                        not (isTot d) && isSur d
+                      )
 
 unquote :: String -> String
 unquote str 

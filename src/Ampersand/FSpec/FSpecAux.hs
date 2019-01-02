@@ -6,10 +6,10 @@ import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
 
 -- return table name and source and target column names for relation dcl
-getRelationTableInfo :: FSpec -> Relation -> (PlugSQL,SqlAttribute,SqlAttribute) 
+getRelationTableInfo :: FSpec -> Relation -> (PlugSQL,RelStore) 
 getRelationTableInfo fSpec dcl 
      = case filter thisDcl . concatMap getRelInfos $ [p | InternalPlug p<-plugInfos fSpec ] of
-                [(p,store)] -> (p,rsSrcAtt store,rsTrgAtt store)
+                [(p,store)] -> (p,store)
                 []          -> fatal ("Relation not found: "++name dcl)
                 _           -> fatal ("Relation found multiple times: "++name dcl)
   where

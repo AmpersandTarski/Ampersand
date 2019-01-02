@@ -433,7 +433,9 @@ tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
 tblcontents ci ps plug
    = case plug of
      BinSQL{}    -> let expr = case dLkpTbl plug of
-                                 [store] -> EDcD (rsDcl store)
+                                 [store] -> if rsStoredFlipped store
+                                            then EFlp . EDcD . rsDcl $ store
+                                            else        EDcD . rsDcl $ store
                                  ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
                     in [[(Just . apLeft) p,(Just . apRight) p] |p<-Set.elems $ fullContents ci ps expr]
      TblSQL{}    -> 
