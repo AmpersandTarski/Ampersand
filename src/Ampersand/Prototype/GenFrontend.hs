@@ -17,7 +17,6 @@ import           Data.Char
 import           Data.Data
 import           Data.List
 import           Data.Maybe
-import           Data.Time.Clock.POSIX
 import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath
@@ -75,8 +74,7 @@ doGenFrontend fSpec =
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
-    ; timestamp <- getPOSIXTime >>= return . show . round
-    ; writePrototypeAppFile options ".timestamp" timestamp -- this file is used by the prototype framework to prevent browser from using the wrong files from cache
+    ; writePrototypeAppFile options ".timestamp" (show . genTime . getOpts $ fSpec) -- this file is used by the prototype framework to prevent browser from using the wrong files from cache
     ; copyCustomizations fSpec
     -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
     ; when isCleanInstall $ do
