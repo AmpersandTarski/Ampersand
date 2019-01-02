@@ -1,10 +1,11 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-* [Issue #616](https://github.com/AmpersandTarski/Ampersand/issues/616) Add missing TType 'Object' to parser
 
+* [Issue #616](https://github.com/AmpersandTarski/Ampersand/issues/616) Add missing TType 'Object' to parser
 * [Issue #862](https://github.com/AmpersandTarski/Ampersand/issues/862) Bugfix in generated SQL in several cases where CLASSIFY statements were involved in combination with relations with the INJ property.
 * [Issue #865](https://github.com/AmpersandTarski/Ampersand/issues/865) Another bugfix in the generated SQL
+* It is now possible to provide warnings in the output while generating a script. Warnings as suggested in [issue #141](https://github.com/AmpersandTarski/Ampersand/issues/141) are now generated when appropriate
 
 ## v3.12.0 (21 december 2018)
 
