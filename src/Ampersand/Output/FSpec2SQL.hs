@@ -54,7 +54,7 @@ dumpSQLqueries multi
        <>concatMap showInterface y 
    where
      y :: [Interface]
-     y = (\x -> trace (show x) x) (interfaceS fSpec <> interfaceG fSpec)
+     y = interfaceS fSpec <> interfaceG fSpec
      fSpec = userFSpec multi
      showInterface :: Interface -> [Text.Text]
      showInterface ifc 

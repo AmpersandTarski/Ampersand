@@ -13,16 +13,14 @@ import           System.IO.Unsafe(unsafePerformIO)
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a
 exitWith x = unsafePerformIO $ do
-  exitIO message
+  mapM_ putStrLn message
   SE.exitWith exitcode
  where (exitcode,message) = info x
 
-exitIO :: [String] -> IO()
-exitIO = mapM_ putStrLn
-
 data AmpersandExit 
-  = Succes
-  | Fatal [String]
+  = --Succes [String]
+ -- | 
+    Fatal [String]
   | NoValidFSpec [String]
   | ViolationsInDatabase [(String,[String])]
   | InvalidSQLExpression [String]
@@ -35,7 +33,7 @@ data AmpersandExit
 info :: AmpersandExit -> (SE.ExitCode, [String])
 info x = 
   case x of
-    Succes    -> (SE.ExitSuccess     , [])
+  --  Succes msg -> (SE.ExitSuccess    , msg)
     Fatal msg -> (SE.ExitFailure   2 , msg) -- These specific errors are due to some bug in the Ampersand code. Please report such bugs!
     NoValidFSpec msg
               -> (SE.ExitFailure  10 , case msg of
