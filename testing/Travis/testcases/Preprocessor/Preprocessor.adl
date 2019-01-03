@@ -59,6 +59,6 @@ Files in this project contain examples of the syntax that explain the use.
 
   -- This line should be treated as comment, and not as a --#preprocessor statement.
 
-INCLUDE "./includes/PreprocTest.adl" --# [ "ShowR2", "DoNotShowR1", "EditableInterfaceA", "GenerateErrorIfThisVarIsSet" ] --dit is een test
+INCLUDE "./includes/PreprocTest.adl" --# [ "ShowR2", "DoNotShowR1", "EditableInterfaceA", "GenerateErrorIfThisVarIsSet", "ErrorIfUnset" ] --dit is een test
 
 ENDCONTEXT
