@@ -23,5 +23,10 @@ main =
                 Checked multi ws -> do
                    showWarnings ws
                    generateAmpersandOutput multi
+                   putStrLn . ("Your script has no errors " ++) $
+                      case ws of
+                        []  -> "and no warnings."
+                        [_] -> ", but one warning was found."
+                        _   -> ", but "++show (length ws)++" warnings were found."
             }
 
