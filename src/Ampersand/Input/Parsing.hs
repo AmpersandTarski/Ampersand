@@ -197,7 +197,9 @@ runParser parser filename input =
   in case lexed of
     Left err -> Errors . pure $ lexerError2CtxError err
     --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
-    Right (tokens, lexerWarnings)  -> whenChecked (parse parser filename tokens) pure
+    Right (tokens, lexerWarnings) 
+       -> addWarnings (map lexerWarning2Warning lexerWarnings) $ whenChecked (parse parser filename tokens) pure
+        
 
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.

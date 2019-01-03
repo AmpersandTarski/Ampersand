@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -25,7 +24,8 @@ module Ampersand.Input.ADL1.CtxError
   , mkTypeMismatchError
   , mkMultipleRootsError
   , mkCrudForRefInterfaceError
-  , addWarning
+  , lexerWarning2Warning
+  , addWarning, addWarnings
   , showWarning, showWarnings
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
@@ -42,6 +42,7 @@ module Ampersand.Input.ADL1.CtxError
 where
 
 import           Ampersand.ADL1
+import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Basics
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
@@ -388,9 +389,13 @@ writeBind (ECpl e)
 writeBind e
  = "("++showA e++") /\\ "++showA (EDcV (sign e))
 
+lexerWarning2Warning :: LexerWarning -> Warning 
+lexerWarning2Warning (LexerWarning a b) = 
+  Warning (FileLoc a "") (L.intercalate "\n" $ showLexerWarningInfo b)
+
 data Warning = Warning Origin String
 instance Show Warning where
-    show (Warning o s) = "Warning: " ++ show o ++ " " ++ show s
+    show (Warning o msg) = "Warning: " ++ show o ++ concatMap ("\n  "++) (lines msg)
 
 addWarning :: Warning -> Guarded a -> Guarded a
 addWarning _ (Errors a) = Errors a
@@ -400,8 +405,8 @@ addWarnings ws ga =
   case ga of
     Checked a ws' -> Checked a (ws <> ws')
     Errors a      -> Errors a
-showWarning :: Warning -> String
-showWarning = show
+showWarning :: Warning -> [String]
+showWarning = lines . show
    
 data Guarded a = 
    Errors (NEL.NonEmpty CtxError) 
@@ -458,6 +463,5 @@ showMinorOrigin (FileLoc (FilePos _ line column) _) = "line " ++ show line ++" :
 showMinorOrigin v = show v
 
 showWarnings :: [Warning] -> IO ()
-showWarnings = mapM_ putStrLn
-             . L.intercalate [""] 
-             . map (lines . showWarning)
+showWarnings = mapM_  putStrLn . concatMap showWarning 
+

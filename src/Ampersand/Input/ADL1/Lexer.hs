@@ -28,6 +28,7 @@ import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Input.ADL1.LexerMonad
 import           Ampersand.Input.ADL1.LexerToken
 import           Ampersand.Misc
+import           Control.Monad (when)
 import           Data.Char hiding(isSymbol)
 import           Data.List (nub)
 import qualified Data.Set as Set -- (member, fromList)
@@ -127,8 +128,11 @@ mainLexer _ [] =  return []
 
 mainLexer p ('-':'-':s) = mainLexer p (skipLine s) --TODO: Test if we should increase line number and reset the column number
 
-mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpace s
-                                in  mainLexer (foldl updatePos p (c:spc)) next
+mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpaceNoTab s
+                                    isSpaceNoTab x = isSpace x && (not .  isTab) x
+                                    isTab = ('\t' ==)
+                                in  do when (isTab c) (lexerWarning TabCharacter p)
+                                       mainLexer (foldl updatePos p (c:spc)) next
 
 mainLexer p ('{':'-':s) = lexNestComment mainLexer (addPos 2 p) s
 mainLexer p ('{':'+':s) = lexMarkup mainLexer (addPos 2 p) s
