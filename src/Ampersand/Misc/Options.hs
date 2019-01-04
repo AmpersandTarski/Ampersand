@@ -370,7 +370,7 @@ options = [ (Option ['v']   ["version"]
                        ) "config.yaml")
                "config file (*.yaml) that contains the command line options of ampersand."
             , Public)
-          , (Option []      ["dev","ignore-invariant-violations"]
+          , (Option []      ["ignore-invariant-violations"]
                (NoArg (\opts -> opts{allowInvariantViolations = True}))
                "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
             , Hidden)

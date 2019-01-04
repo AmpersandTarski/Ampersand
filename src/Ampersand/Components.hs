@@ -146,7 +146,7 @@ generateAmpersandOutput multi = do
    doGenProto =
     sequence_ $
        [ verboseLn opts "Checking for rule violations..."
-       , reportViolations violationsOfInvariants
+       , reportInvViolations violationsOfInvariants
        , reportSignals (initialConjunctSignals fSpec)
        ]++
        (if null violationsOfInvariants || allowInvariantViolations opts
@@ -177,11 +177,16 @@ generateAmpersandOutput multi = do
                         , "TOT objExpression[BoxItem*Expression]"
                         ]
                 else False
-          reportViolations :: [(Rule,AAtomPairs)] -> IO()
-          reportViolations []    = verboseLn opts "No violations found."
-          reportViolations viols =
-            let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
-            in  putStrLn $ 
+          reportInvViolations :: [(Rule,AAtomPairs)] -> IO()
+          reportInvViolations []    = verboseLn opts "No invariant violations found for the initial population"
+          reportInvViolations viols =
+            if (allowInvariantViolations opts) && not (verboseP opts)
+            then
+              -- TODO: this is a nice use case for outputting warnings
+              putStrLn "There are invariant violations that are ignored. Use --verbose to output the violations"
+            else
+              let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
+              in  putStrLn $ 
                          intercalate "\n"
                              [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
                              | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
@@ -191,13 +196,18 @@ generateAmpersandOutput multi = do
           showprs aprs = "["++intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
    --       showpr :: AAtomPair -> String
    --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
-          reportSignals []        = verboseLn opts "No signals for the initial population."
-          reportSignals conjViols = verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
-            [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
-            ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
-            ++"\n  Violations : " ++ showprs viols
-            | (conj, viols) <- conjViols
-            ]
+          reportSignals []        = verboseLn opts "No signals for the initial population"
+          reportSignals conjViols = 
+            if verboseP opts
+            then
+              verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
+                [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
+                ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
+                ++"\n  Violations : " ++ showprs viols
+                | (conj, viols) <- conjViols
+                ]
+            else
+              putStrLn "There are signals for the initial population. Use --verbose to output the violations"
           ruleTest :: String -> IO ()
           ruleTest ruleName =
            case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of
