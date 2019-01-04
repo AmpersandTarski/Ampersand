@@ -180,8 +180,13 @@ generateAmpersandOutput multi = do
           reportViolations :: [(Rule,AAtomPairs)] -> IO()
           reportViolations []    = verboseLn opts "No violations found."
           reportViolations viols =
-            let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
-            in  putStrLn $ 
+            if (allowInvariantViolations opts) && not (verboseP opts)
+            then
+              -- TODO: this is a nice use case for outputting warnings
+              putStrLn "There are invariant violations that are ignored. Use --verbose to output the violations"
+            else
+              let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
+              in  putStrLn $ 
                          intercalate "\n"
                              [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
                              | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
