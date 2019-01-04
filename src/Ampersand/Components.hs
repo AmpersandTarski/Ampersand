@@ -178,7 +178,7 @@ generateAmpersandOutput multi = do
                         ]
                 else False
           reportInvViolations :: [(Rule,AAtomPairs)] -> IO()
-          reportInvViolations []    = verboseLn opts "No invariant violations found for the initial population."
+          reportInvViolations []    = verboseLn opts "No invariant violations found for the initial population"
           reportInvViolations viols =
             if (allowInvariantViolations opts) && not (verboseP opts)
             then
@@ -196,13 +196,18 @@ generateAmpersandOutput multi = do
           showprs aprs = "["++intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
    --       showpr :: AAtomPair -> String
    --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
-          reportSignals []        = verboseLn opts "No signals for the initial population."
-          reportSignals conjViols = verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
-            [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
-            ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
-            ++"\n  Violations : " ++ showprs viols
-            | (conj, viols) <- conjViols
-            ]
+          reportSignals []        = verboseLn opts "No signals for the initial population"
+          reportSignals conjViols = 
+            if verboseP opts
+            then
+              verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
+                [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
+                ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
+                ++"\n  Violations : " ++ showprs viols
+                | (conj, viols) <- conjViols
+                ]
+            else
+              putStrLn "There are signals for the initial population. Use --verbose to output the violations"
           ruleTest :: String -> IO ()
           ruleTest ruleName =
            case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of
