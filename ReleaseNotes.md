@@ -2,9 +2,10 @@
 
 ## Unreleased changes
 * [Issue #616](https://github.com/AmpersandTarski/Ampersand/issues/616) Add missing TType 'Object' to parser
-
 * [Issue #862](https://github.com/AmpersandTarski/Ampersand/issues/862) Bugfix in generated SQL in several cases where CLASSIFY statements were involved in combination with relations with the INJ property.
 * [Issue #865](https://github.com/AmpersandTarski/Ampersand/issues/865) Another bugfix in the generated SQL
+* Removed --dev switch as alias of self-explanatory --ignore-invariant-violations
+* Improved output of any invariant violations or signals for initial population
 
 ## v3.12.0 (21 december 2018)
 
