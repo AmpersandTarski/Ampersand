@@ -8,38 +8,27 @@ import           Data.Hashable
 import qualified Data.Text as Text
 
 data Settings = Settings 
-  { sngJSONversionInfo :: String
-  , sngJSONcontextName :: String
-  , sngJSONmysqlSettings :: MySQLSettings
-  , sngJSONenvironment :: String
-  , sngJSONmodelHash :: String
+  { sngJSONglobal_contextName :: String
+  , sngJSONmysql_dbHost       :: String
+  , sngJSONmysql_dbName       :: String
+  , sngJSONmysql_dbUser       :: String
+  , sngJSONmysql_dbPass       :: String
+  , sngJSONcompiler_version   :: String
+  , sngJSONcompiler_env       :: String
+  , sngJSONcompiler_modelHash :: String
   } deriving (Generic, Show)
 instance ToJSON Settings where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Settings where
  fromAmpersand multi _ = Settings 
-  { sngJSONversionInfo   = ampersandVersionStr
-  , sngJSONcontextName   = Text.unpack (fsName fSpec)
-  , sngJSONmysqlSettings = fromAmpersand multi multi
-  , sngJSONenvironment   = show . environment . getOpts $ fSpec
-  , sngJSONmodelHash = show . hash $ fSpec
+  { sngJSONglobal_contextName = Text.unpack (fsName fSpec)
+  , sngJSONmysql_dbHost       = sqlHost  opts
+  , sngJSONmysql_dbName       = dbName   opts
+  , sngJSONmysql_dbUser       = sqlLogin opts
+  , sngJSONmysql_dbPass       = sqlPwd   opts
+  , sngJSONcompiler_version   = ampersandVersionStr
+  , sngJSONcompiler_env       = show . environment . getOpts $ fSpec
+  , sngJSONcompiler_modelHash = show . hash $ fSpec
   } 
    where fSpec = userFSpec multi
-
-data MySQLSettings = MySQLSettings
-  { msqlJSONdbHost :: String
-  , msqlJSONdbName :: String
-  , msqlJSONdbUser :: String
-  , msqlJSONdbPass :: String
-  } deriving (Generic, Show)
-instance ToJSON MySQLSettings where
-  toJSON = amp2Jason
-instance JSON MultiFSpecs MySQLSettings where
- fromAmpersand multi _ = MySQLSettings 
-  { msqlJSONdbHost = sqlHost  opts
-  , msqlJSONdbName = dbName   opts
-  , msqlJSONdbUser = sqlLogin opts
-  , msqlJSONdbPass = sqlPwd   opts
-  }
-   where opts = getOpts fSpec
-         fSpec = userFSpec multi
+         opts = getOpts fSpec
