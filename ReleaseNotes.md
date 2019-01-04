@@ -1,7 +1,6 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-
 * [Issue #616](https://github.com/AmpersandTarski/Ampersand/issues/616) Add missing TType 'Object' to parser
 * Update to prototype framework v1.1.0 (was v1.0.1). See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information
 * Add 'public' folder in prototype directory to better distinguish between public and non-public scripts. If used, requires change in 'customizations' folder
@@ -9,6 +8,8 @@
 * [Issue #862](https://github.com/AmpersandTarski/Ampersand/issues/862) Bugfix in generated SQL in several cases where CLASSIFY statements were involved in combination with relations with the INJ property.
 * [Issue #865](https://github.com/AmpersandTarski/Ampersand/issues/865) Another bugfix in the generated SQL
 * Only run composer install when clean install of prototype framework is downloaded
+* Removed --dev switch as alias of self-explanatory --ignore-invariant-violations
+* Improved output of any invariant violations or signals for initial population
 
 ## v3.12.0 (21 december 2018)
 
