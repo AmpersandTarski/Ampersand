@@ -146,7 +146,7 @@ generateAmpersandOutput multi = do
    doGenProto =
     sequence_ $
        [ verboseLn opts "Checking for rule violations..."
-       , reportViolations violationsOfInvariants
+       , reportInvViolations violationsOfInvariants
        , reportSignals (initialConjunctSignals fSpec)
        ]++
        (if null violationsOfInvariants || allowInvariantViolations opts
@@ -177,9 +177,9 @@ generateAmpersandOutput multi = do
                         , "TOT objExpression[BoxItem*Expression]"
                         ]
                 else False
-          reportViolations :: [(Rule,AAtomPairs)] -> IO()
-          reportViolations []    = verboseLn opts "No violations found."
-          reportViolations viols =
+          reportInvViolations :: [(Rule,AAtomPairs)] -> IO()
+          reportInvViolations []    = verboseLn opts "No invariant violations found for the initial population."
+          reportInvViolations viols =
             if (allowInvariantViolations opts) && not (verboseP opts)
             then
               -- TODO: this is a nice use case for outputting warnings
