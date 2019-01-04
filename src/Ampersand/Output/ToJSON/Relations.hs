@@ -73,7 +73,7 @@ instance JSON Relation RelTableInfo where
          (plugSrc,_)     = getConceptTableInfo fSpec (source dcl)
          (plugTrg,_)     = getConceptTableInfo fSpec (target dcl)
          srcOrtgt
-           | plugSrc == plugTrg = Just $ if rsStoredFlipped relstore then "tgt" else "src"
+           | (plug == plugSrc) && (plugSrc == plugTrg) = Just $ if rsStoredFlipped relstore then "tgt" else "src"
            | plug == plugSrc = Just "src"
            | plug == plugTrg = Just "tgt"
            | otherwise       = Nothing 
