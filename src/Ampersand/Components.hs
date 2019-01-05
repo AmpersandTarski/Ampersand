@@ -37,7 +37,6 @@ generateAmpersandOutput multi =
      ; reportInvViolations violationsOfInvariants
      ; reportSignals (initialConjunctSignals fSpec)
      ; createDirectoryIfMissing True (dirOutput opts)
-     ; when (genPrototype opts) (createDirectoryIfMissing True (dirPrototype opts))
      ; mapM_ doWhen conditionalActions
      ; putStrLn "Finished processing your model"
      }
@@ -153,6 +152,7 @@ generateAmpersandOutput multi =
      if null violationsOfInvariants || allowInvariantViolations opts
      then sequence_ $
           [ verboseLn opts "Generating prototype..."
+          , createDirectoryIfMissing True (dirPrototype opts)
           , doGenFrontend fSpec
           , generateDatabaseFile multi
           , generateJSONfiles multi
@@ -165,6 +165,7 @@ generateAmpersandOutput multi =
      if null violationsOfInvariants || allowInvariantViolations opts
      then sequence_ $
           [ verboseLn opts "Generating RAP population..."
+          , createDirectoryIfMissing True (dirPrototype opts)
           , generateJSONfiles multi
           , verboseLn opts $ "RAP population file has been written to " ++ dirPrototype opts
           ]
