@@ -39,6 +39,7 @@ generateAmpersandOutput multi =
      ; createDirectoryIfMissing True (dirOutput opts)
      ; when (genPrototype opts) (createDirectoryIfMissing True (dirPrototype opts))
      ; mapM_ doWhen conditionalActions
+     ; putStrLn "Finished processing your model"
      }
   where 
    doWhen :: (Options -> Bool, IO ()) -> IO()
@@ -58,7 +59,7 @@ generateAmpersandOutput multi =
       , ( genPrototype, doGenProto         )
       , ( genRapPopulationOnly, doGenRapPopulation)
       , ( isJust . testRule , ruleTest . fromJust . testRule $ opts )
-      , ( const True  , putStrLn "Finished processing your model.")]
+      ]
    opts = getOpts fSpec
    fSpec = userFSpec multi
    doGenADL :: IO()
