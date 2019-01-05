@@ -32,11 +32,14 @@ import           Text.Pandoc.Builder
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: MultiFSpecs -> IO ()
-generateAmpersandOutput multi = do
-   createDirectoryIfMissing True (dirOutput opts)
-   when (genPrototype opts)
-        (createDirectoryIfMissing True (dirPrototype opts))
-   mapM_ doWhen conditionalActions
+generateAmpersandOutput multi = 
+  do { verboseLn opts "Checking for rule violations..."
+     ; reportInvViolations violationsOfInvariants
+     ; reportSignals (initialConjunctSignals fSpec)
+     ; createDirectoryIfMissing True (dirOutput opts)
+     ; when (genPrototype opts) (createDirectoryIfMissing True (dirPrototype opts))
+     ; mapM_ doWhen conditionalActions
+     }
   where 
    doWhen :: (Options -> Bool, IO ()) -> IO()
    doWhen (b,x) = when (b opts) x
@@ -144,11 +147,7 @@ generateAmpersandOutput multi = do
 
    doGenProto :: IO ()
    doGenProto =
-    sequence_ $
-       [ verboseLn opts "Checking for rule violations..."
-       , reportInvViolations violationsOfInvariants
-       , reportSignals (initialConjunctSignals fSpec)
-       ]++
+     sequence_ $
        (if null violationsOfInvariants || allowInvariantViolations opts
         then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
@@ -163,65 +162,63 @@ generateAmpersandOutput multi = do
        )++
        maybeToList (fmap ruleTest (testRule opts))
 
-    where violationsOfInvariants :: [(Rule,AAtomPairs)]
-          violationsOfInvariants
-            = [(r,vs) |(r,vs) <- allViolations fSpec
-                      , not (isSignal r)
-                      , not (elemOfTemporarilyBlocked r)
-              ]
-            where
-              elemOfTemporarilyBlocked rul =
-                if atlasWithoutExpressions opts 
-                then name rul `elem` 
-                        [ "TOT formalExpression[Rule*Expression]"
-                        , "TOT objExpression[BoxItem*Expression]"
-                        ]
-                else False
-          reportInvViolations :: [(Rule,AAtomPairs)] -> IO()
-          reportInvViolations []    = verboseLn opts "No invariant violations found for the initial population"
-          reportInvViolations viols =
-            if (allowInvariantViolations opts) && not (verboseP opts)
-            then
-              -- TODO: this is a nice use case for outputting warnings
-              putStrLn "There are invariant violations that are ignored. Use --verbose to output the violations"
-            else
-              let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
-              in  putStrLn $ 
-                         intercalate "\n"
-                             [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
-                             | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
-                             ]
-
-          showprs :: AAtomPairs -> String
-          showprs aprs = "["++intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
-   --       showpr :: AAtomPair -> String
-   --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
-          reportSignals []        = verboseLn opts "No signals for the initial population"
-          reportSignals conjViols = 
-            if verboseP opts
-            then
-              verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
-                [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
-                ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
-                ++"\n  Violations : " ++ showprs viols
-                | (conj, viols) <- conjViols
-                ]
-            else
-              putStrLn "There are signals for the initial population. Use --verbose to output the violations"
-          ruleTest :: String -> IO ()
-          ruleTest ruleName =
-           case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of
-             [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
-             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
-                            ; putStrLn $ showContents rule
-                            ; let rExpr = formalExpression rule
-                            ; let ruleComplement = rule { formalExpression = notCpl (EBrk rExpr) }
-                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (formalExpression ruleComplement)++"):"
-                            ; putStrLn $ showContents ruleComplement
-                            }
-           where showContents rule = "[" ++ intercalate ", " pairs ++ "]"
-                   where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 
-                                 | (r,vs) <- allViolations fSpec, r == rule, v <- Set.elems vs]
-                               
+   violationsOfInvariants :: [(Rule,AAtomPairs)]
+   violationsOfInvariants
+     = [(r,vs) |(r,vs) <- allViolations fSpec
+               , not (isSignal r)
+               , not (elemOfTemporarilyBlocked r)
+       ]
+     where
+       elemOfTemporarilyBlocked rul =
+         if atlasWithoutExpressions opts 
+         then name rul `elem` 
+                 [ "TOT formalExpression[Rule*Expression]"
+                 , "TOT objExpression[BoxItem*Expression]"
+                 ]
+         else False
+   reportInvViolations :: [(Rule,AAtomPairs)] -> IO()
+   reportInvViolations []    = verboseLn opts "No invariant violations found for the initial population"
+   reportInvViolations viols =
+     if (allowInvariantViolations opts) && not (verboseP opts)
+     then
+       -- TODO: this is a nice use case for outputting warnings
+       putStrLn "There are invariant violations that are ignored. Use --verbose to output the violations"
+     else
+       let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
+       in  putStrLn $ 
+                  intercalate "\n"
+                      [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
+                      | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
+                      ]
    
+   showprs :: AAtomPairs -> String
+   showprs aprs = "["++intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
+   -- showpr :: AAtomPair -> String
+   -- showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
+   reportSignals []        = verboseLn opts "No signals for the initial population"
+   reportSignals conjViols = 
+     if verboseP opts
+     then
+       verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
+         [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
+         ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
+         ++"\n  Violations : " ++ showprs viols
+         | (conj, viols) <- conjViols
+         ]
+     else
+       putStrLn "There are signals for the initial population. Use --verbose to output the violations"
+   ruleTest :: String -> IO ()
+   ruleTest ruleName =
+    case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of
+      [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
+      (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
+                     ; putStrLn $ showContents rule
+                     ; let rExpr = formalExpression rule
+                     ; let ruleComplement = rule { formalExpression = notCpl (EBrk rExpr) }
+                     ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (formalExpression ruleComplement)++"):"
+                     ; putStrLn $ showContents ruleComplement
+                     }
+    where showContents rule = "[" ++ intercalate ", " pairs ++ "]"
+            where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 
+                          | (r,vs) <- allViolations fSpec, r == rule, v <- Set.elems vs]
    
