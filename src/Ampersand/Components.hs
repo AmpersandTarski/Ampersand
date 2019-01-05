@@ -45,19 +45,19 @@ generateAmpersandOutput multi =
    doWhen (b,x) = when (b opts) x
    conditionalActions :: [(Options -> Bool, IO())]
    conditionalActions = 
-      [ ( genSampleConfigFile , doGenSampleConfigFile) 
-      , ( genUML      , doGenUML           )
-      , ( haskell     , doGenHaskell       )
-      , ( sqlDump     , doGenSQLdump       )
-      , ( export2adl  , doGenADL           )
-      , ( genFSpec    , doGenDocument      )
-      , ( genFPAExcel , doGenFPAExcel      )
-      , ( genPOPExcel , doGenPopsXLSX      )
-      , ( proofs      , doGenProofs        )
-      , ( validateSQL , doValidateSQLTest  )
-      , ( genPrototype, doGenProto         )
-      , ( genRapPopulationOnly, doGenRapPopulation)
-      , ( isJust . testRule , ruleTest . fromJust . testRule $ opts )
+      [ ( genSampleConfigFile   , doGenSampleConfigFile ) 
+      , ( genUML                , doGenUML              )
+      , ( haskell               , doGenHaskell          )
+      , ( sqlDump               , doGenSQLdump          )
+      , ( export2adl            , doGenADL              )
+      , ( genFSpec              , doGenDocument         )
+      , ( genFPAExcel           , doGenFPAExcel         )
+      , ( genPOPExcel           , doGenPopsXLSX         )
+      , ( proofs                , doGenProofs           )
+      , ( validateSQL           , doValidateSQLTest     )
+      , ( genPrototype          , doGenProto            )
+      , ( genRapPopulationOnly  , doGenRapPopulation    )
+      , ( isJust . testRule     , ruleTest . fromJust . testRule $ opts )
       ]
    opts = getOpts fSpec
    fSpec = userFSpec multi
