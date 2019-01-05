@@ -56,6 +56,7 @@ generateAmpersandOutput multi =
       , ( proofs      , doGenProofs        )
       , ( validateSQL , doValidateSQLTest  )
       , ( genPrototype, doGenProto         )
+      , ( genRapPopulationOnly, doGenRapPopulation)
       , ( isJust . testRule , ruleTest . fromJust . testRule $ opts )
       , ( const True  , putStrLn "Finished processing your model.")]
    opts = getOpts fSpec
@@ -148,19 +149,25 @@ generateAmpersandOutput multi =
 
    doGenProto :: IO ()
    doGenProto =
-     sequence_ $
-       (if null violationsOfInvariants || allowInvariantViolations opts
-        then if genRapPopulationOnly (getOpts fSpec)
-             then [ generateJSONfiles multi]
-             else [ verboseLn opts "Generating prototype..."
-                  , doGenFrontend fSpec
-                  , generateDatabaseFile multi
-                  , generateJSONfiles multi
-                  , verboseLn opts "\n"
-                  , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
-                  ]
-        else [exitWith NoPrototypeBecauseOfRuleViolations]
-       )
+     if null violationsOfInvariants || allowInvariantViolations opts
+     then sequence_ $
+          [ verboseLn opts "Generating prototype..."
+          , doGenFrontend fSpec
+          , generateDatabaseFile multi
+          , generateJSONfiles multi
+          , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
+          ]
+     else do exitWith NoPrototypeBecauseOfRuleViolations
+
+   doGenRapPopulation :: IO ()
+   doGenRapPopulation =
+     if null violationsOfInvariants || allowInvariantViolations opts
+     then sequence_ $
+          [ verboseLn opts "Generating RAP population..."
+          , generateJSONfiles multi
+          , verboseLn opts $ "RAP population file has been written to " ++ dirPrototype opts
+          ]
+     else do exitWith NoPrototypeBecauseOfRuleViolations
 
    violationsOfInvariants :: [(Rule,AAtomPairs)]
    violationsOfInvariants
