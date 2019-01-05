@@ -23,7 +23,7 @@ import           Data.Function (on)
 import           Data.List
 import qualified Data.Set as Set
 import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
-import           Data.Maybe (maybeToList)
+import           Data.Maybe (isJust, fromJust)
 import           System.Directory
 import           System.FilePath
 import           Text.Pandoc
@@ -56,6 +56,7 @@ generateAmpersandOutput multi =
       , ( proofs      , doGenProofs        )
       , ( validateSQL , doValidateSQLTest  )
       , ( genPrototype, doGenProto         )
+      , ( isJust . testRule , ruleTest . fromJust . testRule $ opts )
       , ( const True  , putStrLn "Finished processing your model.")]
    opts = getOpts fSpec
    fSpec = userFSpec multi
@@ -159,8 +160,7 @@ generateAmpersandOutput multi =
                   , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
                   ]
         else [exitWith NoPrototypeBecauseOfRuleViolations]
-       )++
-       maybeToList (fmap ruleTest (testRule opts))
+       )
 
    violationsOfInvariants :: [(Rule,AAtomPairs)]
    violationsOfInvariants
