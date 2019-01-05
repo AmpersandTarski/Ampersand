@@ -38,7 +38,6 @@ generateAmpersandOutput multi =
      ; reportSignals (initialConjunctSignals fSpec)
      ; createDirectoryIfMissing True (dirOutput opts)
      ; mapM_ doWhen conditionalActions
-     ; putStrLn "Finished processing your model"
      }
   where 
    doWhen :: (Options -> Bool, IO ()) -> IO()
@@ -63,7 +62,8 @@ generateAmpersandOutput multi =
    fSpec = userFSpec multi
    doGenADL :: IO()
    doGenADL =
-    do { writeFile outputFile . showA . originalContext $ fSpec
+    do { putStrLn $ "Generating Ampersand script (ADL) for "  ++ name fSpec ++ "..."
+       ; writeFile outputFile . showA . originalContext $ fSpec
        ; verboseLn opts $ ".adl-file written to " ++ outputFile ++ "."
        }
     where outputFile = dirOutput opts </> outputfile opts
@@ -71,7 +71,7 @@ generateAmpersandOutput multi =
    doGenSampleConfigFile = writeConfigFile
    doGenProofs :: IO()
    doGenProofs =
-    do { verboseLn opts $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
+    do { putStrLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "..."
    --  ; verboseLn opts $ writeTextile def thePandoc
        ; content <- runIO (writeHtml5String def thePandoc) >>= handleError
        ; Text.writeFile outputFile content
@@ -85,7 +85,7 @@ generateAmpersandOutput multi =
 
    doGenHaskell :: IO()
    doGenHaskell =
-    do { verboseLn opts $ "Generating Haskell source code for "++name fSpec
+    do { putStrLn $ "Generating Haskell source code for " ++ name fSpec ++ "..."
    --  ; verboseLn opts $ fSpec2Haskell fSpec -- switch this on to display the contents of Installer.php on the command line. May be useful for debugging.
        ; writeFile outputFile (fSpec2Haskell fSpec)
        ; verboseLn opts $ "Haskell written into " ++ outputFile ++ "."
@@ -93,7 +93,7 @@ generateAmpersandOutput multi =
     where outputFile = dirOutput opts </> baseName opts -<.> ".hs"
    doGenSQLdump :: IO()
    doGenSQLdump =
-    do { verboseLn opts $ "Generating SQL queries dumpfile for "++name fSpec
+    do { putStrLn $ "Generating SQL queries dumpfile for " ++ name fSpec ++ "..."
        ; Text.writeFile outputFile (dumpSQLqueries multi)
        ; verboseLn opts $ "SQL queries dumpfile written into " ++ outputFile ++ "."
        }
@@ -101,7 +101,7 @@ generateAmpersandOutput multi =
    
    doGenUML :: IO()
    doGenUML =
-    do { verboseLn opts "Generating UML..."
+    do { putStrLn "Generating UML..."
        ; writeFile outputFile $ generateUML fSpec
        ; verboseLn opts $ "Generated file: " ++ outputFile ++ "."
        }
@@ -113,7 +113,7 @@ generateAmpersandOutput multi =
    -- This function generates a pandoc document, possibly with pictures from an fSpec.
    doGenDocument :: IO()
    doGenDocument =
-    do { verboseLn opts ("Processing "++name fSpec)
+    do { putStrLn $ "Generating functional design document for " ++ name fSpec ++ "..."
        ; -- First we need to output the pictures, because they should be present 
          -- before the actual document is written
          when (not(noGraphics opts) && fspecFormat opts/=FPandoc) $
@@ -126,14 +126,14 @@ generateAmpersandOutput multi =
    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
    doGenFPAExcel :: IO()
    doGenFPAExcel =
-     verboseLn opts "FPA analisys is discontinued. (It needs maintenance). Sorry. " -- See https://github.com/AmpersandTarski/Ampersand/issues/621
+     putStrLn "Sorry, FPA analisys is discontinued. It needs maintenance." -- See https://github.com/AmpersandTarski/Ampersand/issues/621
      --  ; writeFile outputFile $ fspec2FPA_Excel fSpec
     
 --      where outputFile = dirOutput opts </> "FPA_"++baseName opts -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
    doGenPopsXLSX :: IO()
    doGenPopsXLSX =
-    do { verboseLn opts "Generating .xlsx file containing the population "
+    do { putStrLn "Generating .xlsx file containing the population..."
        ; ct <- runIO getPOSIXTime >>= handleError
        ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
        ; verboseLn opts $ "Generated file: " ++ outputFile
@@ -142,7 +142,7 @@ generateAmpersandOutput multi =
 
    doValidateSQLTest :: IO ()
    doValidateSQLTest =
-    do { verboseLn opts "Validating SQL expressions..."
+    do { putStrLn "Validating SQL expressions..."
        ; errMsg <- validateRulesSQL fSpec
        ; unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
        }
@@ -151,7 +151,7 @@ generateAmpersandOutput multi =
    doGenProto =
      if null violationsOfInvariants || allowInvariantViolations opts
      then sequence_ $
-          [ verboseLn opts "Generating prototype..."
+          [ putStrLn "Generating prototype..."
           , createDirectoryIfMissing True (dirPrototype opts)
           , doGenFrontend fSpec
           , generateDatabaseFile multi
@@ -164,7 +164,7 @@ generateAmpersandOutput multi =
    doGenRapPopulation =
      if null violationsOfInvariants || allowInvariantViolations opts
      then sequence_ $
-          [ verboseLn opts "Generating RAP population..."
+          [ putStrLn "Generating RAP population..."
           , createDirectoryIfMissing True (dirPrototype opts)
           , generateJSONfiles multi
           , verboseLn opts $ "RAP population file has been written to " ++ dirPrototype opts

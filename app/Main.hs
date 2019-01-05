@@ -15,6 +15,7 @@ main =
                                          --  be thought of. 
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
     else do { verboseLn opts $ ampersandVersionStr
+            ; putStrLn "Processing your model..."
             ; gMulti <- createMulti opts
             ; case gMulti of
                 Errors err    -> 
@@ -22,5 +23,6 @@ main =
                  . fmap showErr . NEL.toList $ err
                 Checked multi -> 
                    generateAmpersandOutput multi
+            ; putStrLn "Finished processing your model"
             }
 
