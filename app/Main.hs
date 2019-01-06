@@ -1,19 +1,16 @@
 module Main where
 
 import           Ampersand
+import           Control.Monad
 import           Data.List
 import qualified Data.List.NonEmpty as NEL (toList)
 
 main :: IO ()
 main =
  do opts <- getOptions
-    if showVersion opts || showHelp opts --HJO 20161127 TODO: There are more commands that do not 
-                                         --  need a single filename to be specified, 
-                                         --  like --sampleConfigFile. Currently, this
-                                         --  does not work properly. A more generic
-                                         --  approach for handling those options should
-                                         --  be thought of. 
-    then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
+    mapM_ doWhen (actionsWithoutScript opts) -- There are commands that do not need a single filename to be speciied
+    if orList (map fst $ actionsWithoutScript opts)
+    then do { verboseLn opts $ "Skipping model processing because special action is requested"}
     else do { verboseLn opts $ ampersandVersionStr
             ; putStrLn "Processing your model..."
             ; gMulti <- createMulti opts
@@ -25,4 +22,15 @@ main =
                    generateAmpersandOutput multi
             ; putStrLn "Finished processing your model"
             }
+ where
+   doWhen :: (Bool, IO ()) -> IO()
+   doWhen (b,x) = when (b) x
+
+   orList :: [Bool] -> Bool
+   orList bools = foldr (||) False bools
+
+   actionsWithoutScript :: Options -> [(Bool, IO())]
+   actionsWithoutScript options = 
+      [ ( showVersion options || showHelp options , mapM_ putStr (helpNVersionTexts ampersandVersionStr options) )
+      ]
 
