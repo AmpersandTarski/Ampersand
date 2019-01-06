@@ -88,8 +88,7 @@ doGenFrontend fSpec =
 
 copyTemplates :: FSpec -> IO ()
 copyTemplates fSpec =
- do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          tempDir = adlSourceDir </> "templates"
+ do { let tempDir = dirSource (getOpts fSpec) </> "templates"
           toDir = dirPrototype (getOpts fSpec) </> "templates"
     ; tempDirExists <- doesDirectoryExist tempDir
     ; if tempDirExists then
@@ -104,8 +103,7 @@ copyCustomizations :: FSpec -> IO ()
 copyCustomizations fSpec = 
   mapM_ (copyDir protoDir) custDirs
     where
-      adlSourceDir = takeDirectory $ fileName opts
-      custDirs = map (adlSourceDir </>) (dirCustomizations opts)
+      custDirs = map (dirSource opts </>) (dirCustomizations opts)
       protoDir = dirPrototype opts
       opts = getOpts fSpec
       copyDir :: FilePath -> FilePath -> IO()

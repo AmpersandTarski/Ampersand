@@ -9,9 +9,9 @@ main :: IO ()
 main =
  do opts <- getOptions
     mapM_ doWhen (actionsWithoutScript opts) -- There are commands that do not need a single filename to be speciied
-    if orList (map fst $ actionsWithoutScript opts)
-    then do { verboseLn opts $ "Skipping model processing because special action is requested"}
-    else do { verboseLn opts $ ampersandVersionStr
+    case fileName opts of
+      Just _ -> do
+            { verboseLn opts $ ampersandVersionStr
             ; putStrLn "Processing your model..."
             ; gMulti <- createMulti opts
             ; case gMulti of
@@ -22,6 +22,11 @@ main =
                    generateAmpersandOutput multi
             ; putStrLn "Finished processing your model"
             }
+      Nothing -> 
+         if orList (map fst $ actionsWithoutScript opts)
+         then verboseLn opts $ "No further actions, because no ampersand script is provided"
+         else putStrLn "No ampersand script provided. Use --help for usage information"
+
  where
    doWhen :: (Bool, IO ()) -> IO()
    doWhen (b,x) = when (b) x
