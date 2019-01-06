@@ -8,7 +8,7 @@ module Ampersand.Misc.Options
         , verboseLn
         , verbose
         , showFormat
-        , helpNVersionTexts
+        , usageInfo'
         , writeConfigFile
         )
 where
@@ -649,8 +649,3 @@ verboseLn opts x
                      do hSetBuffering stdout NoBuffering
                         mapM_ putStrLn (lines x)
    | otherwise     = return ()
-helpNVersionTexts :: String -> Options -> [String]
-helpNVersionTexts vs opts = ["Executable: "++show (dirExec opts)++"\n"   | test opts       ]++
-                            [preVersion opts++vs++postVersion opts++"\n" | showVersion opts]++
-                            [usageInfo' opts                             | showHelp    opts]
-

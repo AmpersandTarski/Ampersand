@@ -36,6 +36,11 @@ main =
 
    actionsWithoutScript :: Options -> [(Bool, IO())]
    actionsWithoutScript options = 
-      [ ( showVersion options || showHelp options , mapM_ putStr (helpNVersionTexts ampersandVersionStr options) )
-      , ( genSampleConfigFile options             , writeConfigFile)
+      [ ( test options                  , putStrLn $ "Executable: " ++ show (dirExec options) )
+      , ( showVersion options           , putStrLn $ versionText options  )
+      , ( genSampleConfigFile options   , writeConfigFile                 )
+      , ( showHelp options              , putStrLn $ usageInfo' options   )
       ]
+   
+   versionText :: Options -> String
+   versionText opts = preVersion opts ++ ampersandVersionStr ++ postVersion opts
