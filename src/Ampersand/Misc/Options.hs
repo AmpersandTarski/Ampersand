@@ -185,7 +185,7 @@ getOptions' :: EnvironmentOptions -> Options
 getOptions' envOpts =  
    case errors of
      []  | allowInvariantViolations opts && validateSQL opts 
-                     -> exitWith . WrongArgumentsGiven $ ["--dev and --validate must not be used at the same time."] --(Reason: see ticket #378))
+                     -> exitWith . WrongArgumentsGiven $ ["--ignore-invariant-violations and --validate must not be used at the same time."] --(Reason: see ticket #378))
          | otherwise -> opts
      _  -> exitWith . WrongArgumentsGiven $ errors ++ [usage]
          
