@@ -197,7 +197,7 @@ getOptions' envOpts =
     (actions, fNames, errors) = getOpt Permute (map fst options) $ envArgsFromConfigFile envOpts ++ envArgsCommandLine envOpts 
     fName = case fNames of
              []   -> exitWith . WrongArgumentsGiven $ "Please supply the name of an ampersand file" : [usage]
-             [n]  -> n
+             [n]  -> if hasExtension n then n else addExtension n "adl"
              _    -> exitWith . WrongArgumentsGiven $ ("Too many files: "++ intercalate ", " fNames) : [usage]
     usage = "Type '"++envProgName envOpts++" --help' for usage info."
     startOptions :: Options
@@ -245,9 +245,7 @@ getOptions' envOpts =
                       , genPOPExcel      = False
                       , language         = Nothing
                       , progrName        = envProgName envOpts
-                      , fileName         = if hasExtension fName
-                                           then fName
-                                           else addExtension fName "adl"
+                      , fileName         = fName
                       , baseName         = takeBaseName fName
                       , export2adl       = False
                       , test             = False
