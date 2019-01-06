@@ -11,7 +11,7 @@ main =
     verboseLn opts ampersandVersionStr
     mapM_ doWhen (actionsWithoutScript opts) -- There are commands that do not need a single filename to be speciied
     case fileName opts of
-      Just _ -> do
+      Just _ -> do -- An Ampersand script is provided that can be processed
             { putStrLn "Processing your model..."
             ; gMulti <- createMulti opts
             ; case gMulti of
@@ -22,7 +22,7 @@ main =
                    generateAmpersandOutput multi
             ; putStrLn "Finished processing your model"
             }
-      Nothing -> 
+      Nothing -> -- No Ampersand script is provided 
          if orList (map fst $ actionsWithoutScript opts)
          then verboseLn opts $ "No further actions, because no ampersand script is provided"
          else putStrLn "No ampersand script provided. Use --help for usage information"
