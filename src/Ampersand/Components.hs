@@ -44,8 +44,7 @@ generateAmpersandOutput multi =
    doWhen (b,x) = when (b opts) x
    conditionalActions :: [(Options -> Bool, IO())]
    conditionalActions = 
-      [ ( genSampleConfigFile   , doGenSampleConfigFile ) 
-      , ( genUML                , doGenUML              )
+      [ ( genUML                , doGenUML              )
       , ( haskell               , doGenHaskell          )
       , ( sqlDump               , doGenSQLdump          )
       , ( export2adl            , doGenADL              )
@@ -67,8 +66,7 @@ generateAmpersandOutput multi =
        ; verboseLn opts $ ".adl-file written to " ++ outputFile ++ "."
        }
     where outputFile = dirOutput opts </> outputfile opts
-   doGenSampleConfigFile :: IO()
-   doGenSampleConfigFile = writeConfigFile
+
    doGenProofs :: IO()
    doGenProofs =
     do { putStrLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "..."

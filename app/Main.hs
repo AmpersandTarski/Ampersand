@@ -32,5 +32,5 @@ main =
    actionsWithoutScript :: Options -> [(Bool, IO())]
    actionsWithoutScript options = 
       [ ( showVersion options || showHelp options , mapM_ putStr (helpNVersionTexts ampersandVersionStr options) )
+      , ( genSampleConfigFile options             , writeConfigFile)
       ]
-
