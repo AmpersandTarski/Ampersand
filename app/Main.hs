@@ -8,11 +8,11 @@ import qualified Data.List.NonEmpty as NEL (toList)
 main :: IO ()
 main =
  do opts <- getOptions
+    verboseLn opts ampersandVersionStr
     mapM_ doWhen (actionsWithoutScript opts) -- There are commands that do not need a single filename to be speciied
     case fileName opts of
       Just _ -> do
-            { verboseLn opts $ ampersandVersionStr
-            ; putStrLn "Processing your model..."
+            { putStrLn "Processing your model..."
             ; gMulti <- createMulti opts
             ; case gMulti of
                 Errors err    -> 
