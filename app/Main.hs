@@ -23,16 +23,13 @@ main =
             ; putStrLn "Finished processing your model"
             }
       Nothing -> -- No Ampersand script is provided 
-         if orList (map fst $ actionsWithoutScript opts)
+         if or (map fst $ actionsWithoutScript opts)
          then verboseLn opts $ "No further actions, because no ampersand script is provided"
          else putStrLn "No ampersand script provided. Use --help for usage information"
 
  where
    doWhen :: (Bool, IO ()) -> IO()
    doWhen (b,x) = when (b) x
-
-   orList :: [Bool] -> Bool
-   orList bools = foldr (||) False bools
 
    actionsWithoutScript :: Options -> [(Bool, IO())]
    actionsWithoutScript options = 
