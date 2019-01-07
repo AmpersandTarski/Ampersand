@@ -68,7 +68,7 @@ getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
- do { putStrLn "Generating frontend.."
+ do { verboseLn options "Generating frontend..."
     ; isCleanInstall <- downloadPrototypeFramework options
     ; copyTemplates fSpec
     ; feInterfaces <- buildInterfaces fSpec
@@ -79,17 +79,16 @@ doGenFrontend fSpec =
     ; copyCustomizations fSpec
     -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
     ; when isCleanInstall $ do
-      putStrLn "Installing dependencies.."
+      putStrLn "Installing dependencies..." -- don't use verboseLn here, because installing dependencies takes some time and we want the user to see this
       installComposerLibs options
-    ; putStrLn "Frontend generated."
+    ; verboseLn options "Frontend generated"
     }
   where
     options = getOpts fSpec
 
 copyTemplates :: FSpec -> IO ()
 copyTemplates fSpec =
- do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          tempDir = adlSourceDir </> "templates"
+ do { let tempDir = dirSource (getOpts fSpec) </> "templates"
           toDir = dirPrototype (getOpts fSpec) </> "templates"
     ; tempDirExists <- doesDirectoryExist tempDir
     ; if tempDirExists then
@@ -104,8 +103,7 @@ copyCustomizations :: FSpec -> IO ()
 copyCustomizations fSpec = 
   mapM_ (copyDir protoDir) custDirs
     where
-      adlSourceDir = takeDirectory $ fileName opts
-      custDirs = map (adlSourceDir </>) (dirCustomizations opts)
+      custDirs = map (dirSource opts </>) (dirCustomizations opts)
       protoDir = dirPrototype opts
       opts = getOpts fSpec
       copyDir :: FilePath -> FilePath -> IO()

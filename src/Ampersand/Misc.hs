@@ -8,6 +8,6 @@ import Ampersand.Misc.Options
         , verboseLn
         , verbose
         , showFormat
-        , helpNVersionTexts
+        , usageInfo'
         , writeConfigFile
         )

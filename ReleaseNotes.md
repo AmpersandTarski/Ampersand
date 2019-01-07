@@ -11,6 +11,8 @@
 * Only run composer install when clean install of prototype framework is downloaded
 * Removed --dev switch as alias of self-explanatory --ignore-invariant-violations
 * Improved output of any invariant violations or signals for initial population
+* Improved use of compiler when no prototype is requested (reporting violations, testing specific rules and rap population output are possible)
+* Improved use of compiler when no script is provided (e.g. for --sampleConfigFile)
 
 ## v3.12.0 (21 december 2018)
 
