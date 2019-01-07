@@ -7,7 +7,6 @@ import qualified Data.List.NonEmpty as NEL (toList)
 main :: IO ()
 main =
  do opts <- getOptions
-    verboseLn opts ampersandVersionStr
     sequence_ . map snd . filter fst $ actionsWithoutScript opts -- There are commands that do not need a single filename to be speciied
     case fileName opts of
       Just _ -> do -- An Ampersand script is provided that can be processed
@@ -30,7 +29,7 @@ main =
    actionsWithoutScript :: Options -> [(Bool, IO())]
    actionsWithoutScript options = 
       [ ( test options                  , putStrLn $ "Executable: " ++ show (dirExec options) )
-      , ( showVersion options           , putStrLn $ versionText options  )
+      , ( showVersion options || verboseP options   , putStrLn $ versionText options  )
       , ( genSampleConfigFile options   , writeConfigFile                 )
       , ( showHelp options              , putStrLn $ usageInfo' options   )
       ]
