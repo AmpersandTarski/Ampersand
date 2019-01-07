@@ -37,11 +37,9 @@ generateAmpersandOutput multi =
      ; reportInvViolations violationsOfInvariants
      ; reportSignals (initialConjunctSignals fSpec)
      ; createDirectoryIfMissing True (dirOutput opts)
-     ; mapM_ doWhen conditionalActions
+     ; sequence_ . map snd $ filter (\action -> (fst action) opts) conditionalActions
      }
   where 
-   doWhen :: (Options -> Bool, IO ()) -> IO()
-   doWhen (b,x) = when (b opts) x
    conditionalActions :: [(Options -> Bool, IO())]
    conditionalActions = 
       [ ( genUML                , doGenUML              )

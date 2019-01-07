@@ -1,7 +1,6 @@
 module Main where
 
 import           Ampersand
-import           Control.Monad
 import           Data.List
 import qualified Data.List.NonEmpty as NEL (toList)
 
@@ -9,7 +8,7 @@ main :: IO ()
 main =
  do opts <- getOptions
     verboseLn opts ampersandVersionStr
-    mapM_ doWhen (actionsWithoutScript opts) -- There are commands that do not need a single filename to be speciied
+    sequence_ . map snd . filter fst $ actionsWithoutScript opts -- There are commands that do not need a single filename to be speciied
     case fileName opts of
       Just _ -> do -- An Ampersand script is provided that can be processed
             { putStrLn "Processing your model..."
@@ -28,9 +27,6 @@ main =
          else putStrLn "No ampersand script provided. Use --help for usage information"
 
  where
-   doWhen :: (Bool, IO ()) -> IO()
-   doWhen (b,x) = when (b) x
-
    actionsWithoutScript :: Options -> [(Bool, IO())]
    actionsWithoutScript options = 
       [ ( test options                  , putStrLn $ "Executable: " ++ show (dirExec options) )
