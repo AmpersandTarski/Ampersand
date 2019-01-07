@@ -28,10 +28,10 @@ main =
  where
    actionsWithoutScript :: Options -> [(Bool, IO())]
    actionsWithoutScript options = 
-      [ ( test options                  , putStrLn $ "Executable: " ++ show (dirExec options) )
+      [ ( test options                              , putStrLn $ "Executable: " ++ show (dirExec options) )
       , ( showVersion options || verboseP options   , putStrLn $ versionText options  )
-      , ( genSampleConfigFile options   , writeConfigFile                 )
-      , ( showHelp options              , putStrLn $ usageInfo' options   )
+      , ( genSampleConfigFile options               , writeConfigFile                 )
+      , ( showHelp options                          , putStrLn $ usageInfo' options   )
       ]
    
    versionText :: Options -> String
