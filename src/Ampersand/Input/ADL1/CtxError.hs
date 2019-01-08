@@ -24,9 +24,11 @@ module Ampersand.Input.ADL1.CtxError
   , mkTypeMismatchError
   , mkMultipleRootsError
   , mkCrudForRefInterfaceError
+  , mkMustBeEditableExpression
   , lexerWarning2Warning
   , addWarning, addWarnings
   , showWarning, showWarnings
+  , mkCrudWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
   )
@@ -307,6 +309,14 @@ mkOtherTupleInSessionError :: Relation -> AAtomPair -> CtxError
 mkOtherTupleInSessionError r pr =
   CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `"++showA pr++"` by populating the relation `"++showA r++"`."
 
+mkMustBeEditableExpression :: P_Cruds -> Expression -> CtxError
+mkMustBeEditableExpression (P_Cruds o crud) e =
+  CTXE o . L.intercalate "\n  " $
+      ["Non editable expression while modification specified:"
+      ,"In order to modify this field, the expression should be an editable expression. However,"
+      ,"the expression " ++ showA e
+      ,"in not editable, but you specified `"++crud++"` for it."
+      ]
 class ErrorConcept a where
   showEC :: a -> String
 
@@ -396,7 +406,8 @@ lexerWarning2Warning (LexerWarning a b) =
 data Warning = Warning Origin String
 instance Show Warning where
     show (Warning o msg) = "Warning: " ++ show o ++ concatMap ("\n  "++) (lines msg)
-
+mkCrudWarning :: P_Cruds -> [String] -> Warning
+mkCrudWarning (P_Cruds o _ ) msg = Warning o (unlines msg)
 addWarning :: Warning -> Guarded a -> Guarded a
 addWarning _ (Errors a) = Errors a
 addWarning w (Checked a ws) = Checked a (ws <> [w])

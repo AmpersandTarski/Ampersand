@@ -197,8 +197,8 @@ runParser parser filename input =
   in case lexed of
     Left err -> Errors . pure $ lexerError2CtxError err
     Right (tokens, lexerWarnings) 
-             -> addWarnings (map lexerWarning2Warning lexerWarnings) $
-                   whenChecked (parse parser filename tokens) pure
+             -> addWarnings (map lexerWarning2Warning lexerWarnings)
+                            (parse parser filename tokens)
 
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.

@@ -3,7 +3,7 @@ module Ampersand.ADL1.Expression (
                        Expressions
                       ,subst
                       ,primitives, subExpressions, isMp1, isEEps, isEDcD
-                      ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl, isFlipped
+                      ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl, isFlipped, isRelation
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
 where
@@ -147,6 +147,19 @@ isFlipped EFlp{}   = True
 isFlipped (EBrk e) = isFlipped e
 isFlipped _        = False
 
+-- | Function to determine that the expression is simple, that it
+--   could be used to edit its population
+isRelation :: Expression -> Bool
+isRelation expr = 
+   case expr of 
+     EDcD{} -> True
+     EFlp e -> isRelation e
+     EBrk e -> isRelation e
+     EEps{} -> True
+     EDcI{} -> True
+     EMp1{} -> False
+     EDcV{} -> False
+     _      -> False
 
 exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> [Expression]
 exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r

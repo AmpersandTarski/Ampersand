@@ -7,6 +7,7 @@ module Ampersand.ADL1.P2A_Converters
 where
 import           Ampersand.ADL1.Disambiguate
 import           Ampersand.ADL1.Lattices -- used for type-checking
+import           Ampersand.ADL1.Expression
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.Core.ParseTree
@@ -17,7 +18,7 @@ import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Control.Arrow(first)
 import           Control.Monad (join)
-import           Data.Char(toUpper,toLower)
+import           Data.Char(toUpper,toLower,isUpper)
 import           Data.Either
 import           Data.Foldable (toList)
 import           Data.Function
@@ -540,8 +541,8 @@ pCtx2aCtx opts
                 , obj_crud = mCrud
                 , obj_mView = mView
                 , obj_msub = subs
-                } -> do checkCrud
-                        (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
+                } -> do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
+                        checkCrud objExpr
                         crud <- pCruds2aCruds mCrud
                         maybeObj <- case subs of
                                       Just P_Box{si_box=[]} -> pure Nothing
@@ -555,18 +556,49 @@ pCtx2aCtx opts
                                     []   -> Nothing
                                     vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
                                 
-              checkCrud :: Guarded()
-              checkCrud = 
+              checkCrud :: Expression -> Guarded()
+              checkCrud e = 
                 case mCrud of -- , subs) of
-                  Nothing              -> pure()
-                  Just (P_Cruds o crd) ->
+                  Nothing                   -> pure()
+                  Just (pc@(P_Cruds _ crd)) ->
+                    let caps = filter isUpper crd
+                    in do
+                    addWarnings ( [mkCrudWarning pc 
+                                       ["C(reate) for an atom of TYPE "++(show . ttype. target) e++" is not possible. "
+                                       ,"  HINT: You might want to use U(pdate), which updates the pair in the relation."]
+                                  | ttype (target e) /= Object
+                                  , 'C' `elem` crd
+                                  ]++
+                                  [mkCrudWarning pc 
+                                       ["D(elete) for an atom of TYPE "++(show . ttype. target) e++" is not possible. "
+                                       ,"  HINT: You might want to use U(pdate), which updates the pair in the relation."]
+                                  | ttype (target e) /= Object
+                                  , 'D' `elem` crd
+                                  ]++
+                                  [mkCrudWarning pc
+                                       ["R(ead) is required to do "++intercalate ", " (transpose [caps])++"."]
+                                  | 'r' `elem` crd && not (null caps)
+                                  ]     
+                                ) 
+                      (mustBeRelationToModify caps)
                     case subs of
                       Nothing -> pure()
                       Just P_InterfaceRef{si_isLink=True}
-                                    -> pure() -- fatal $ "TODO: Is it allowed to use `"++crd++"` after an interface reference as at "++show o
+                                    -> pure() 
                       Just P_InterfaceRef{si_isLink=False}
                                     -> Errors . pure $ mkCrudForRefInterfaceError orig
                       Just P_Box{}  -> pure()
+                   where
+                     mustBeRelationToModify :: String -> Guarded()
+                     mustBeRelationToModify caps =
+                       case caps of 
+                         []  -> pure()
+                         "R" -> pure()
+                         _   -> if isRelation e 
+                                then pure()
+                                else Errors $ (mkMustBeEditableExpression pc e NEL.:| [])
+              ttype :: A_Concept -> TType
+              ttype = representationOf declMap
               typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
               typeCheckViewAnnotation _       Nothing       = pure ()
               typeCheckViewAnnotation objExpr (Just viewId) =
