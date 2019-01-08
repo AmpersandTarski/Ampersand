@@ -541,7 +541,7 @@ pCtx2aCtx opts
                 , obj_crud = mCrud
                 , obj_mView = mView
                 , obj_msub = subs
-                } -> do checkCrudForRefInterface 
+                } -> do checkCrud
                         (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
                         crud <- pCruds2aCruds mCrud
                         maybeObj <- case subs of
@@ -556,12 +556,18 @@ pCtx2aCtx opts
                                     []   -> Nothing
                                     vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
                                 
-              checkCrudForRefInterface :: Guarded()
-              checkCrudForRefInterface = 
-                case (mCrud, subs) of
-                  (Just _ , Just P_InterfaceRef{si_isLink=False}) 
-                          -> Errors . pure $ mkCrudForRefInterfaceError orig
-                  _       -> pure ()
+              checkCrud :: Guarded()
+              checkCrud = 
+                case mCrud of -- , subs) of
+                  Nothing              -> pure()
+                  Just (P_Cruds o crd) ->
+                    case subs of
+                      Nothing -> pure()
+                      Just P_InterfaceRef{si_isLink=True}
+                                    -> pure() -- fatal $ "TODO: Is it allowed to use `"++crd++"` after an interface reference as at "++show o
+                      Just P_InterfaceRef{si_isLink=False}
+                                    -> Errors . pure $ mkCrudForRefInterfaceError orig
+                      Just P_Box{}  -> pure()
               typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
               typeCheckViewAnnotation _       Nothing       = pure ()
               typeCheckViewAnnotation objExpr (Just viewId) =
