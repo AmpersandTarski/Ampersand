@@ -1,11 +1,19 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-
+**!!Before release, do a release of the prototype framework and set option zwolleVersion to this release tag**
+* Update prototype framework. See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information
+* Add 'public' folder in prototype directory to better distinguish between public and non-public scripts. If used, requires change in 'customizations' folder
 * [Issue #616](https://github.com/AmpersandTarski/Ampersand/issues/616) Add missing TType 'Object' to parser
+* [Issue #792](https://github.com/AmpersandTarski/Ampersand/issues/792) Add possibility to extend TXT in interfaces
 * [Issue #862](https://github.com/AmpersandTarski/Ampersand/issues/862) Bugfix in generated SQL in several cases where CLASSIFY statements were involved in combination with relations with the INJ property.
 * [Issue #865](https://github.com/AmpersandTarski/Ampersand/issues/865) Another bugfix in the generated SQL
 * [Issue #873](https://github.com/AmpersandTarski/Ampersand/issues/873) It is now possible to provide warnings in the output while generating a script. Several warnings are now generated as well when appropriate.
+* Only run composer install when clean install of prototype framework is downloaded
+* Removed --dev switch as alias of self-explanatory --ignore-invariant-violations
+* Improved output of any invariant violations or signals for initial population
+* Improved use of compiler when no prototype is requested (reporting violations, testing specific rules and rap population output are possible)
+* Improved use of compiler when no script is provided (e.g. for --sampleConfigFile)
 
 ## v3.12.0 (21 december 2018)
 

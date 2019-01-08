@@ -29,7 +29,7 @@ processFlags :: Set.Set PreProcDefine -- ^ Old set of preprocessor flags
              -> Set.Set PreProcDefine -- ^ Set of preprocessor flags after import
 processFlags oldFlags importList = Set.difference (Set.union oldFlags addedDefines) removedDefines
   where (addedDefines, removedDefines) =
-            (\(added, removed) -> (Set.fromList added, Set.fromList $ map (fromMaybe "" . stripPrefix "!") removed))
+            (\(removed, added) -> (Set.fromList added, Set.fromList $ map (fromMaybe "" . stripPrefix "!") removed))
             (partition (isPrefixOf "!") importList)
 
 -- Shim that changes our 'Either ParseError a' from preProcess' into 'Guarded a'

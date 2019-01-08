@@ -42,7 +42,10 @@ createMulti opts =
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
      userP_Ctx:: Guarded P_Context <- 
-           parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
+        case fileName opts of
+          Just x -> parseADL opts x -- the P_Context of the user's sourceFile
+          Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
+    
      systemP_Ctx:: Guarded P_Context <- parseSystemContext opts
 
      let fAmpFSpec :: FSpec

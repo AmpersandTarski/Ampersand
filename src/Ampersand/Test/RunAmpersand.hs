@@ -15,7 +15,7 @@ ampersand files =
 
 runAmpersand :: Options -> FilePath -> IO [CtxError]
 runAmpersand opts file = 
-        do gFSpec <- createMulti opts{ fileName = file }
+        do gFSpec <- createMulti opts{ fileName = Just file }
            case gFSpec of
               Errors err    -> return $ NEL.toList err
               --TODO: Do something with the fSpec

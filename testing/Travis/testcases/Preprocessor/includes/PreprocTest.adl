@@ -29,4 +29,6 @@ INTERFACE "Test": I[SESSION] cRud BOX <SHCOLS>
     ]
   ]
 
+--#IF ErrorIfUnset
 ENDCONTEXT
+--#ENDIF
