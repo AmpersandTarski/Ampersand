@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE LambdaCase, ImplicitParams #-}
 {-# LANGUAGE ApplicativeDo, DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.ADL1.P2A_Converters
