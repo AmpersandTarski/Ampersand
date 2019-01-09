@@ -543,7 +543,7 @@ pCtx2aCtx opts
                 , obj_msub = subs
                 } -> do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
                         checkCrud objExpr
-                        crud <- pCruds2aCruds mCrud
+                        crud <- pCruds2aCruds objExpr mCrud
                         maybeObj <- case subs of
                                       Just P_Box{si_box=[]} -> pure Nothing
                                       _ -> maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
@@ -594,7 +594,7 @@ pCtx2aCtx opts
                        case caps of 
                          []  -> pure()
                          "R" -> pure()
-                         _   -> if isRelation e 
+                         _   -> if isFitForCrudU e 
                                 then pure()
                                 else Errors $ (mkMustBeEditableExpression pc e NEL.:| [])
               ttype :: A_Concept -> TType
@@ -629,8 +629,8 @@ pCtx2aCtx opts
                                     , objtxt = str
                                     },True)
 
-    pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
-    pCruds2aCruds mCrud = 
+    pCruds2aCruds :: Expression -> Maybe P_Cruds -> Guarded Cruds
+    pCruds2aCruds expr mCrud = --TODO: Use expr to determine which default Cruds to return. Make sure that the default is as liberal as can be, but doesn't cause run time errors.
        case mCrud of 
          Nothing -> build (Origin "default for Cruds") ""
          Just (P_Cruds org str ) -> if (length . nub . map toUpper) str == length str && all (`elem` "cCrRuUdD") str

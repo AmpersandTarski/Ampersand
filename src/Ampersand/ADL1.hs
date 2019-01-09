@@ -71,8 +71,9 @@ import Ampersand.Core.AbstractSyntaxTree (
          )
 import Ampersand.ADL1.Expression
          ( primitives,subExpressions,Expressions
-         , notCpl, isCpl, isEEps, isMp1, isFlipped, isRelation
+         , notCpl, isCpl, isEEps, isMp1, isFlipped
          , isPos, isNeg
+         , isFitForCrudC ,isFitForCrudR ,isFitForCrudU ,isFitForCrudD
          , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
          , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
          , insParentheses)
