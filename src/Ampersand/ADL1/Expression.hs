@@ -179,7 +179,7 @@ isFitForCrudC expr =
 -- | Function to determine that the expression
 --   could be used to read the population of its target concept
 isFitForCrudR :: Expression -> Bool
-isFitForCrudR expr = True 
+isFitForCrudR _ = True 
 -- | Function to determine that the expression
 --   could be used to insert or delete a pair in the population of a relation
 isFitForCrudU :: Expression -> Bool
@@ -211,7 +211,7 @@ isFitForCrudU expr =
 -- | Function to determine that the expression is simple, that it
 --   could be used to update the population of a relation
 isFitForCrudD :: Expression -> Bool
-isFitForCrudD expr = True
+isFitForCrudD _ = True
 
 
 exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> [Expression]

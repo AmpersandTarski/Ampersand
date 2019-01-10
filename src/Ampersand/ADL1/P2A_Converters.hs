@@ -10,9 +10,10 @@ import           Ampersand.ADL1.Lattices -- used for type-checking
 import           Ampersand.ADL1.Expression
 import           Ampersand.Basics
 import           Ampersand.Classes
-import           Ampersand.Core.ParseTree
 import           Ampersand.Core.A2P_Converters
 import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
@@ -563,24 +564,7 @@ pCtx2aCtx opts
                   Just (pc@(P_Cruds _ crd)) ->
                     let caps = filter isUpper crd
                     in do
-                    addWarnings ( [mkCrudWarning pc 
-                                       ["C(reate) for an atom of TYPE "++(show . ttype. target) e++" is not possible. "
-                                       ,"  HINT: You might want to use U(pdate), which updates the pair in the relation."]
-                                  | ttype (target e) /= Object
-                                  , 'C' `elem` crd
-                                  ]++
-                                  [mkCrudWarning pc 
-                                       ["D(elete) for an atom of TYPE "++(show . ttype. target) e++" is not possible. "
-                                       ,"  HINT: You might want to use U(pdate), which updates the pair in the relation."]
-                                  | ttype (target e) /= Object
-                                  , 'D' `elem` crd
-                                  ]++
-                                  [mkCrudWarning pc
-                                       ["R(ead) is required to do "++intercalate ", " (transpose [caps])++"."]
-                                  | 'r' `elem` crd && not (null caps)
-                                  ]     
-                                ) 
-                      (mustBeRelationToModify caps)
+                    (mustBeRelationToModify caps)
                     case subs of
                       Nothing -> pure()
                       Just P_InterfaceRef{si_isLink=True}
@@ -630,26 +614,71 @@ pCtx2aCtx opts
                                     },True)
 
     pCruds2aCruds :: Expression -> Maybe P_Cruds -> Guarded Cruds
-    pCruds2aCruds expr mCrud = --TODO: Use expr to determine which default Cruds to return. Make sure that the default is as liberal as can be, but doesn't cause run time errors.
+    pCruds2aCruds expr mCrud = 
        case mCrud of 
-         Nothing -> build (Origin "default for Cruds") ""
-         Just (P_Cruds org str ) -> if (length . nub . map toUpper) str == length str && all (`elem` "cCrRuUdD") str
-                                    then build org str 
-                                    else Errors . pure $ mkInvalidCRUDError org str
+         Nothing -> mostLiberalCruds (Origin "Default for Cruds") ""
+         Just pc@(P_Cruds org userCrudString )
+             | (length . nub . map toUpper) userCrudString == length userCrudString &&
+                all (`elem` "cCrRuUdD") userCrudString  
+                         -> warnings pc $ mostLiberalCruds org userCrudString 
+             | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrudString
       where (defC, defR, defU, defD) = defaultCrud opts
-            build org str 
-             = pure Cruds { crudOrig = org
-                          , crudC    = f 'C' defC
-                          , crudR    = f 'R' defR
-                          , crudU    = f 'U' defU
-                          , crudD    = f 'D' defD
+            mostLiberalCruds :: Origin -> String -> Guarded Cruds
+            mostLiberalCruds o str
+             = pure Cruds { crudOrig = o
+                          , crudC    = isFitForCrudC expr && f 'C' defC
+                          , crudR    = isFitForCrudR expr && f 'R' defR
+                          , crudU    = isFitForCrudU expr && f 'U' defU
+                          , crudD    = isFitForCrudD expr && f 'D' defD
                           }
-               where f :: Char -> Bool -> Bool 
+                   where
+                     f :: Char -> Bool -> Bool 
                      f c def'
                       | toUpper c `elem` str = True
                       | toLower c `elem` str = False
                       | otherwise            = def'
-
+            warnings :: P_Cruds -> Guarded Cruds -> Guarded Cruds
+            warnings pc@(P_Cruds _ crd) aCruds = addWarnings warns aCruds
+              where
+                caps = filter isUpper crd
+                warns :: [Warning]
+                warns = map (mkCrudWarning pc) $ 
+                    [ 
+                      (
+                      [ "'C' was specified, but the expression "
+                      , "  "++showA expr
+                      , "  doesn't allow for creation of a new atom at its target concept ("++name (target expr)++") "
+                      ]
+                      )
+                       -- ++
+                   --     [ "  HINT: You might want to use U(pdate), which updates the pair in the relation."
+                   --     | isFitForCrudU expr
+                   --     ]
+                    | 'C' `elem` crd && not (isFitForCrudC expr)
+                    ]++
+                    [ [ "'R' was specified, but the expression "
+                      , "  "++showA expr
+                      , "  doesn't allow for read of the pairs in that expression."
+                      ]
+                    | 'R' `elem` crd && not (isFitForCrudR expr)
+                    ]++
+                    [ [ "'U' was specified, but the expression "
+                      , "  "++showA expr
+                      , "  doesn't allow to insert or delete pairs in it."
+                      ]
+                    | 'U' `elem` crd && not (isFitForCrudU expr)
+                    ]++
+                    [ [ "'D' was specified, but the expression "
+                      , "  "++showA expr
+                      , "  doesn't allow for deletion of an atom from its target concept ("++name (target expr)++") "
+                      ]
+                    | 'D' `elem` crd && not (isFitForCrudD expr)
+                    ]++
+                    [ [ "R(ead) is required to do "++intercalate ", " (transpose [caps])++"."
+                      , "  however, you explicitly specified 'r'."
+                      ]
+                    | 'r' `elem` crd && not (null caps)
+                    ]
     pSubi2aSubi :: ContextInfo
                 -> Expression -- Expression of the surrounding
                 -> Bool -- Whether the surrounding is bounded
