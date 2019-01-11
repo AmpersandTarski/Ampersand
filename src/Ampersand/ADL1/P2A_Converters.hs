@@ -543,7 +543,7 @@ pCtx2aCtx opts
                 , obj_mView = mView
                 , obj_msub = subs
                 } -> do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
-                        checkCrud objExpr
+                        checkCrud
                         crud <- pCruds2aCruds objExpr mCrud
                         maybeObj <- case subs of
                                       Just P_Box{si_box=[]} -> pure Nothing
@@ -557,32 +557,12 @@ pCtx2aCtx opts
                                     []   -> Nothing
                                     vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
                                 
-              checkCrud :: Expression -> Guarded()
-              checkCrud e = 
-                case mCrud of -- , subs) of
-                  Nothing                   -> pure()
-                  Just (pc@(P_Cruds _ crd)) ->
-                    let caps = filter isUpper crd
-                    in do
-                    (mustBeRelationToModify caps)
-                    case subs of
-                      Nothing -> pure()
-                      Just P_InterfaceRef{si_isLink=True}
-                                    -> pure() 
-                      Just P_InterfaceRef{si_isLink=False}
-                                    -> Errors . pure $ mkCrudForRefInterfaceError orig
-                      Just P_Box{}  -> pure()
-                   where
-                     mustBeRelationToModify :: String -> Guarded()
-                     mustBeRelationToModify caps =
-                       case caps of 
-                         []  -> pure()
-                         "R" -> pure()
-                         _   -> if isFitForCrudU e 
-                                then pure()
-                                else Errors $ (mkMustBeEditableExpression pc e NEL.:| [])
-              ttype :: A_Concept -> TType
-              ttype = representationOf declMap
+              checkCrud :: Guarded()
+              checkCrud = 
+                case (mCrud, subs) of
+                  (Just _ , Just P_InterfaceRef{si_isLink=False} )
+                      -> Errors . pure $ mkCrudForRefInterfaceError orig
+                  _   -> pure()
               typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
               typeCheckViewAnnotation _       Nothing       = pure ()
               typeCheckViewAnnotation objExpr (Just viewId) =
@@ -644,38 +624,35 @@ pCtx2aCtx opts
                 warns :: [Warning]
                 warns = map (mkCrudWarning pc) $ 
                     [ 
-                      (
                       [ "'C' was specified, but the expression "
                       , "  "++showA expr
-                      , "  doesn't allow for creation of a new atom at its target concept ("++name (target expr)++") "
+                      , "doesn't allow for the creation of a new atom at its target concept ("++name (target expr)++") "
+                      ] ++
+                      [ "  HINT: You might want to use U(pdate), which updates the pair in the relation."
+                      | isFitForCrudU expr, 'U' `notElem` crd
                       ]
-                      )
-                       -- ++
-                   --     [ "  HINT: You might want to use U(pdate), which updates the pair in the relation."
-                   --     | isFitForCrudU expr
-                   --     ]
                     | 'C' `elem` crd && not (isFitForCrudC expr)
                     ]++
                     [ [ "'R' was specified, but the expression "
                       , "  "++showA expr
-                      , "  doesn't allow for read of the pairs in that expression."
+                      , "doesn't allow for read of the pairs in that expression."
                       ]
                     | 'R' `elem` crd && not (isFitForCrudR expr)
                     ]++
                     [ [ "'U' was specified, but the expression "
                       , "  "++showA expr
-                      , "  doesn't allow to insert or delete pairs in it."
+                      , "doesn't allow to insert or delete pairs in it."
                       ]
                     | 'U' `elem` crd && not (isFitForCrudU expr)
                     ]++
                     [ [ "'D' was specified, but the expression "
                       , "  "++showA expr
-                      , "  doesn't allow for deletion of an atom from its target concept ("++name (target expr)++") "
+                      , "doesn't allow for the deletion of an atom from its target concept ("++name (target expr)++") "
                       ]
                     | 'D' `elem` crd && not (isFitForCrudD expr)
                     ]++
                     [ [ "R(ead) is required to do "++intercalate ", " (transpose [caps])++"."
-                      , "  however, you explicitly specified 'r'."
+                      , "however, you explicitly specified 'r'."
                       ]
                     | 'r' `elem` crd && not (null caps)
                     ]
@@ -752,27 +729,32 @@ pCtx2aCtx opts
         disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign s
 
     pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
-    pIfc2aIfc ci
-             (P_Ifc { ifc_IsAPI = isAPI
-                    , ifc_Name = nm
-                    , ifc_Roles = rols
-                    , ifc_Obj = _
-                    , pos = orig
-                    , ifc_Prp = prp
-                    }, objDisamb)
-        = (\ obj'
-             -> case obj' of
+    pIfc2aIfc declMap (pIfc, objDisamb) = 
+       build $ pObjDefDisamb2aObjDef declMap objDisamb
+      where 
+         build :: Guarded BoxItem -> Guarded Interface
+         build gb = 
+           case gb of
+             Errors x        -> Errors x
+             Checked obj' ws -> 
+                addWarnings ws $
+                case obj' of
                   BxExpr o ->
-                    Ifc { ifcIsAPI = isAPI
-                        , ifcname = nm 
-                        , ifcRoles = rols
-                        , ifcObj = o
-                        , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
-                        , ifcPos = orig
-                        , ifcPrp = prp
-                        }
+                    case ttype . target . objExpression $ o of
+                      Object -> 
+                          pure Ifc { ifcIsAPI = ifc_IsAPI pIfc
+                                  , ifcname = name pIfc 
+                                  , ifcRoles = ifc_Roles pIfc
+                                  , ifcObj = o
+                                  , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
+                                  , ifcPos = origin pIfc
+                                  , ifcPrp = ifc_Prp pIfc
+                                  }
+                      tt -> Errors . pure
+                            . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o) $ tt
                   BxTxt _ -> fatal "Unexpected BxTxt"  --Interface should not have TXT only. it should have an expression object.     
-          ) <$> pObjDefDisamb2aObjDef ci objDisamb
+         ttype :: A_Concept -> TType
+         ttype = representationOf declMap
 
     pRoleRelation2aRoleRelation :: ContextInfo -> P_RoleRelation -> Guarded A_RoleRelation
     pRoleRelation2aRoleRelation ci prr

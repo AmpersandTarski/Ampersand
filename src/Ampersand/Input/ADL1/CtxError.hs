@@ -24,7 +24,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkTypeMismatchError
   , mkMultipleRootsError
   , mkCrudForRefInterfaceError
-  , mkMustBeEditableExpression
+  , mkInterfaceMustBeDefinedOnObject
   , lexerWarning2Warning
   , addWarning, addWarnings
   , showWarning, showWarnings
@@ -309,13 +309,11 @@ mkOtherTupleInSessionError :: Relation -> AAtomPair -> CtxError
 mkOtherTupleInSessionError r pr =
   CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `"++showA pr++"` by populating the relation `"++showA r++"`."
 
-mkMustBeEditableExpression :: P_Cruds -> Expression -> CtxError
-mkMustBeEditableExpression (P_Cruds o crud) e =
-  CTXE o . L.intercalate "\n  " $
-      ["Non editable expression while modification specified:"
-      ,"In order to modify this field, the expression should be an editable expression. However,"
-      ,"the expression " ++ showA e
-      ,"in not editable, but you specified `"++crud++"` for it."
+mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxError
+mkInterfaceMustBeDefinedOnObject ifc cpt tt =
+  CTXE (origin ifc) . L.intercalate "\n  " $
+      ["The TYPE of the concept for wich an INTERFACE is defined should be OBJECT."
+      ,"The TYPE of the concept `"++name cpt++"`, for interface `"++name ifc++"`, however is "++show tt++"."
       ]
 class ErrorConcept a where
   showEC :: a -> String
