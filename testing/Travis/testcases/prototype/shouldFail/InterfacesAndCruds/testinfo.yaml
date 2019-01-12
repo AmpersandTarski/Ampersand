@@ -1,1 +1,2 @@
 command : ampersand --proto --verbose
+shouldSucceed : false
