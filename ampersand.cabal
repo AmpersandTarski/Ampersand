@@ -19,6 +19,11 @@ bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 data-files:
                 LICENSE
 
+Flag AmpPreProc
+  Description: Build the Ampersand Preprocessor `AmpPreProc`.
+  Default:     False
+  Manual:      True
+
 custom-setup
   setup-depends:     base == 4.11.*,
                      bytestring == 0.10.*,
@@ -186,14 +191,18 @@ executable ampersand
                      ampersand
                      
 executable ampPreProc
-  hs-source-dirs:    preProcApp
-  main-is:           Main.hs
+  hs-source-dirs:    app
+  main-is:           AmpPreProc.hs
   default-language:  Haskell2010
   ghc-options:       -Wall -threaded
   default-extensions:NoImplicitPrelude
-  build-depends:     base == 4.11.*,
-                     containers == 0.5.*,
-                     ampersand                     
+  if flag(AmpPreProc)
+    build-depends:     base == 4.11.*,
+                       containers == 0.5.*,
+                       ampersand
+    buildable:     True
+  else
+    buildable:     False
 
 Test-Suite regression-test
   type:              exitcode-stdio-1.0
