@@ -19,8 +19,8 @@ bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 data-files:
                 LICENSE
 
-Flag AmpPreProc
-  Description: Build the Ampersand Preprocessor `AmpPreProc`.
+Flag buildAll
+  Description: Build both ampersand and ampPreProc.
   Default:     False
   Manual:      True
 
@@ -196,7 +196,7 @@ executable ampPreProc
   default-language:  Haskell2010
   ghc-options:       -Wall -threaded
   default-extensions:NoImplicitPrelude
-  if flag(AmpPreProc)
+  if flag(buildAll)
     build-depends:     base == 4.11.*,
                        containers == 0.5.*,
                        ampersand
