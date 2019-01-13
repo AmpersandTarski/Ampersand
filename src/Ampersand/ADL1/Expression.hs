@@ -157,7 +157,7 @@ isFitForCrudC expr =
      EFlp e   -> isFitForCrudC e
      EBrk e   -> isFitForCrudC e
      EEps _ _ -> False
-     EDcI{}   -> False
+     EDcI{}   -> True -- TODO: set to False when functionality of +menu is adapted from I[Cpt] to V[SESSION*Cpt] expressions (see Issue #884)
      EMp1{}   -> False
      EDcV{}   -> True
      ECps ( (EEps _ _), e         ) -> isFitForCrudC e
