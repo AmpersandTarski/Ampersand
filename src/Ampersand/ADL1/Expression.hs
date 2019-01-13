@@ -162,7 +162,7 @@ isFitForCrudC expr =
      EDcV{}   -> True
      ECps ( (EEps _ _), e         ) -> isFitForCrudC e
      ECps ( e         , (EEps _ _)) -> isFitForCrudC e
-     ECps ( _         , _         ) -> False
+     ECps ( _         , _         ) -> True
      EEqu{}   -> True
      EInc{}   -> True
      EIsc{}   -> True
