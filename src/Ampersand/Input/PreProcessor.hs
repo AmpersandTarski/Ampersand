@@ -40,7 +40,7 @@ preProcess :: String          -- ^ filename, used only for error reporting
            -> Guarded String  -- ^ result, The result of processing
 preProcess f d i = case preProcess' f d i of
                    (Left  err) -> Errors $ (PE . Message . show $ err) NEL.:| []
-                   (Right out) -> Checked out
+                   (Right out) -> Checked out []
 
 -- | Runs the preProcessor on input
 preProcess' :: String                   -- ^ filename, used only for error reporting

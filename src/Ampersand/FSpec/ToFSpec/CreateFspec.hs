@@ -50,7 +50,7 @@ createMulti opts =
 
      let fAmpFSpec :: FSpec
          fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
-                       Checked f   -> f
+                       Checked f _ -> f
                        Errors errs -> fatal . unlines $
                             "The FormalAmpersand ADL scripts are not type correct:"
                           : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
@@ -85,7 +85,7 @@ createMulti opts =
            if genRapPopulationOnly opts
            then case userGFSpec of 
                   Errors err -> Errors err  
-                  Checked usrFSpec
+                  Checked usrFSpec _
                            -> let grinded :: P_Context
                                   grinded = grind fAmpFSpec usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
                                   metaPopPCtx :: Guarded P_Context
@@ -103,11 +103,11 @@ createMulti opts =
     writeMetaFile :: FSpec -> Guarded FSpec -> IO (Guarded ())
     writeMetaFile faSpec userSpec = 
        case makeMetaFile faSpec <$> userSpec of
-        Checked (filePath,metaContents) -> 
+        Checked (filePath,metaContents) ws -> 
                   do verboseLn opts ("Generating meta file in path "++dirOutput opts)
                      writeFile (dirOutput opts </> filePath) metaContents      
                      verboseLn opts ("\""++filePath++"\" written")
-                     return (pure ())
+                     return $ Checked () ws
         Errors err -> return (Errors err)
 
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec

@@ -16,9 +16,15 @@ main =
                 Errors err    -> 
                    exitWith . NoValidFSpec . intersperse  (replicate 30 '=') 
                  . fmap showErr . NEL.toList $ err
-                Checked multi -> 
+                Checked multi ws -> do
+                   showWarnings ws
                    generateAmpersandOutput multi
-            ; putStrLn "Finished processing your model"
+                   putStrLn "Finished processing your model"
+                   putStrLn . ("Your script has no errors " ++) $
+                      case ws of
+                        []  -> "and no warnings"
+                        [_] -> ", but one warning was found"
+                        _   -> ", but "++show (length ws)++" warnings were found"
             }
       Nothing -> -- No Ampersand script is provided 
          if or (map fst $ actionsWithoutScript opts)

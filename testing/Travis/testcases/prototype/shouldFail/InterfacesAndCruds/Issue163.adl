@@ -4,9 +4,9 @@ RELATION  r[A*A]
 RELATION  s[B*B]
 
 POPULATION A CONTAINS [ 3, 6, 42 ]
--- This example should fail, because A and B are in the same typology, however ther repersentation-types are different.
+-- This example should fail, because A and B are in the same typology, and B has TYPE INTEGER. 
+-- The target concept of an INTERFACE's expresion must be of type OBJECT (which is the default)
 CLASSIFY B ISA A
-REPRESENT A TYPE INTEGER
 REPRESENT B TYPE INTEGER
 
 INTERFACE Issue163 (r,s) : V[SESSION*A]

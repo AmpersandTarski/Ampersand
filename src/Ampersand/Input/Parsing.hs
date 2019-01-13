@@ -48,7 +48,7 @@ parseSystemContext opts = parseThing opts (ParseCandidate Nothing (Just $ Origin
 parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context) 
 parseThing opts pc =
   whenCheckedIO (parseADLs opts [] [pc] ) $ \ctxts ->
-      return $ Checked $ foldl1 mergeContexts ctxts
+      return . pure $ foldl1 mergeContexts ctxts
 
 -- | Parses several ADL files
 parseADLs :: Options                  -- ^ The options given through the command line
@@ -57,7 +57,7 @@ parseADLs :: Options                  -- ^ The options given through the command
           -> IO (Guarded [P_Context]) -- ^ The resulting contexts
 parseADLs opts parsedFilePaths fpIncludes =
   case fpIncludes of
-    [] -> return $ Checked []
+    [] -> return $ pure []
     x:xs -> if x `elem` parsedFilePaths
             then parseADLs opts parsedFilePaths xs
             else whenCheckedIO (parseSingleADL opts x) parseTheRest
@@ -114,7 +114,7 @@ parseSingleADL opts pc
                            (return $ parseCtx filePath =<< (preProcess filePath (pcDefineds pc) fileContents))
                            $ \(ctxts, includes) ->
                                  do parseCandidates <- mapM include2ParseCandidate includes
-                                    return (Checked (ctxts, parseCandidates))
+                                    return . pure $ (ctxts, parseCandidates)
                 }
          where 
                include2ParseCandidate :: Include -> IO ParseCandidate
@@ -173,7 +173,7 @@ parse p fn ts =
     case runP p pos' fn ts of
         --TODO: Add language support to the parser errors
         Left err -> Errors $ parseErrors English err
-        Right a -> Checked a
+        Right a -> pure a
     where pos' | null ts   = initPos fn
                | otherwise = tokPos (head ts)
 
@@ -196,8 +196,9 @@ runParser parser filename input =
   let lexed = lexer [] filename input
   in case lexed of
     Left err -> Errors . pure $ lexerError2CtxError err
-    --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
-    Right (tokens, _)  -> whenChecked (parse parser filename tokens) Checked
+    Right (tokens, lexerWarnings) 
+             -> addWarnings (map lexerWarning2Warning lexerWarnings)
+                            (parse parser filename tokens)
 
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.
@@ -206,8 +207,8 @@ parseRule :: String         -- ^ The string to be parsed
           -> Term TermPrim  -- ^ The resulting rule
 parseRule str
    = case  runParser pRule "inside Haskell code" str of
-       Checked result -> result
-       Errors  msg    -> fatal ("Parse errors in "++str++":\n   "++show msg)
+       Checked result _ -> result
+       Errors  msg      -> fatal ("Parse errors in "++str++":\n   "++show msg)
 
 -- | Parses an Ampersand context
 parseCtx :: FilePath -- ^ The file name (used for error messages)
