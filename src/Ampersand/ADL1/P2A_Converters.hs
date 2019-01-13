@@ -19,7 +19,7 @@ import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Control.Arrow(first)
 import           Control.Monad (join)
-import           Data.Char(toUpper,toLower,isUpper)
+import           Data.Char(toUpper,toLower)
 import           Data.Either
 import           Data.Foldable (toList)
 import           Data.Function
@@ -620,7 +620,6 @@ pCtx2aCtx opts
             warnings :: P_Cruds -> Guarded Cruds -> Guarded Cruds
             warnings pc@(P_Cruds _ crd) aCruds = addWarnings warns aCruds
               where
-                caps = filter isUpper crd
                 warns :: [Warning]
                 warns = map (mkCrudWarning pc) $ 
                     [ 
@@ -650,11 +649,12 @@ pCtx2aCtx opts
                       , "doesn't allow for the deletion of an atom from its target concept ("++name (target expr)++") "
                       ]
                     | 'D' `elem` crd && not (isFitForCrudD expr)
-                    ]++
-                    [ [ "R(ead) is required to do "++intercalate ", " (transpose [caps])++"."
+                    ]
+                    ++
+                    [ [ "R(ead) is required to do U(pdate) or D(elete) "
                       , "however, you explicitly specified 'r'."
                       ]
-                    | 'r' `elem` crd && not (null caps)
+                    | 'r' `elem` crd && ('U' `elem` crd || 'D' `elem` crd)
                     ]
     pSubi2aSubi :: ContextInfo
                 -> Expression -- Expression of the surrounding
