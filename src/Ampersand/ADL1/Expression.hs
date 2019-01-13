@@ -194,6 +194,7 @@ isFitForCrudU expr =
      EDcV{}   -> False
      ECps ( (EEps _ _), e         ) -> isFitForCrudU e
      ECps ( e         , (EEps _ _)) -> isFitForCrudU e
+     ECps ( e         , EDcI{}    ) -> isFitForCrudU e
      ECps ( _         , _         ) -> False
      EEqu{}   -> False
      EInc{}   -> False
