@@ -841,15 +841,17 @@ expressionInstances = allExprs
 interfaceInstances :: FSpec -> Set.Set Interface
 interfaceInstances = Set.fromList . ctxifcs . originalContext
 meaningInstances :: FSpec -> Set.Set Meaning
-meaningInstances fSpec = (Set.fromList . concat . fmap meanings . Set.toList . relationInstances $ fSpec)
-                          `Set.union`
-                         (Set.fromList . concat . fmap meanings . Set.toList . ruleInstances $ fSpec)
+meaningInstances fSpec = Set.empty
+                      --   (Set.fromList . concat . fmap meanings . Set.toList . relationInstances $ fSpec)
+                      --    `Set.union`
+                      --   (Set.fromList . concat . fmap meanings . Set.toList . ruleInstances $ fSpec)
 purposeInstances :: FSpec -> Set.Set Purpose
 purposeInstances fSpec = Set.fromList . fSexpls $ fSpec
 relationInstances :: FSpec -> Set.Set Relation
 relationInstances = relsDefdIn . originalContext
 ruleInstances :: FSpec -> Set.Set Rule
 ruleInstances = allRules . originalContext
+
 instance Instances A_Context where
   instances = Set.singleton . originalContext
 instance Instances AClassify where
@@ -865,9 +867,7 @@ instance Instances IdentityDef where
 instance Instances Interface where
   instances = interfaceInstances
 instance Instances Meaning where
-  instances fSpec = Set.fromList (concatMap meanings . ruleInstances $ fSpec) 
-                    `Set.union`
-                    Set.fromList (concatMap meanings . relationInstances $ fSpec)
+  instances = meaningInstances
 instance Instances Markup where
   instances fSpec = (Set.fromList . map explMarkup . Set.toList . purposeInstances $ fSpec) 
                     `Set.union`
