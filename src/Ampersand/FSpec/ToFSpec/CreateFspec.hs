@@ -16,6 +16,7 @@ import           Ampersand.Misc
 import           Control.Monad
 import           Data.List
 import qualified Data.List.NonEmpty as NEL (toList)
+import qualified Data.Set as Set
 import           System.FilePath
 
 -- | create an FSpec, based on the provided command-line options.
@@ -66,10 +67,10 @@ createMulti opts =
             --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
             addSemanticModel :: P_Context -> P_Context
             addSemanticModel pCtx  
-              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (instances fAmpFSpec)
-                     ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (instances fAmpFSpec)
-                     ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (instances fAmpFSpec)
-                     ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (instances fAmpFSpec)
+              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (Set.toList . instances $ fAmpFSpec)
+                     ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (Set.toList . instances $ fAmpFSpec)
+                     ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (Set.toList . instances $ fAmpFSpec)
+                     ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (Set.toList . instances $ fAmpFSpec)
                      ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)
                      }
             noPopulation :: P_Relation -> P_Relation
