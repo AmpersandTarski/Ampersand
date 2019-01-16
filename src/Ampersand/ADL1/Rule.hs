@@ -36,7 +36,7 @@ rulefromProp :: Prop -> Relation -> Rule
 rulefromProp prp d =
      Ru { rrnm  = show prp++" "++showDcl
         , formalExpression = rExpr
-        , rrfps = origin d
+        , rrfps = PropertyRule nm (origin d)
         , rrmean = meanings prp
         , rrmsg =  violMsg prp
         , rrviol = Nothing
@@ -46,6 +46,7 @@ rulefromProp prp d =
         , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
        where
+        nm = show prp++" "++showDcl
         showDcl = showRel d
         r:: Expression
         r = EDcD d

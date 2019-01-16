@@ -22,7 +22,7 @@ data Markup =
            , amPandoc :: [Block]
            } deriving (Show, Eq, Ord, Typeable, Data)
 instance Unique Markup where
-  showUnique x = uniqueShow True x++" in "++(show.amLang) x
+  showUnique = show
 
 
 -- | a way to show the pandoc in a default way. We currently use Markdown for this purpose. 

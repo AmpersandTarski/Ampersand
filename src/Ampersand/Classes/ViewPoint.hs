@@ -19,7 +19,8 @@ class Language a where
   udefrules :: a -> Rules           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.
   multrules :: a -> Rules           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = Set.fromList $ [rulefromProp p d |d<-Set.elems $ relsDefdIn x, p<-Set.elems (properties d)]
+  multrules x   = Set.fromList $ 
+                 [rulefromProp p d |d<-Set.elems $ relsDefdIn x, p<-Set.elems (properties d)]
   identityRules :: a -> Rules       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = Set.unions . map rulesFromIdentity $ identities x
   allRules :: a -> Rules
@@ -68,10 +69,10 @@ instance (Eq a,Language a) => Language [a] where
 instance (Eq a,Language a) => Language (Set.Set a) where
   relsDefdIn  = Set.unions . map relsDefdIn . Set.elems
   udefrules   = Set.unions . map udefrules  . Set.elems
-  identities  =       concatMap identities  . Set.elems
-  viewDefs    =       concatMap viewDefs    . Set.elems
+  identities  = nub . concatMap identities  . Set.elems
+  viewDefs    = nub . concatMap viewDefs    . Set.elems
   gens        = nub . concatMap gens        . Set.elems
-  patterns    =       concatMap patterns    . Set.elems
+  patterns    = nub . concatMap patterns    . Set.elems
   
 instance Language A_Context where
   relsDefdIn context = uniteRels ( relsDefdIn (patterns context)
@@ -96,7 +97,6 @@ instance Language A_Context where
 instance Language Pattern where
   relsDefdIn     = ptdcs
   udefrules      = ptrls   -- all user defined rules in this pattern
---  invariants pat = [r |r<-ptrls pat, not (isSignal r)]
   identities     = ptids
   viewDefs       = ptvds
   gens           = ptgns

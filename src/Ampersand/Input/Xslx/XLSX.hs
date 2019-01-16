@@ -59,7 +59,7 @@ toPops :: Options -> FilePath -> SheetCellsForTable -> [P_Population]
 toPops opts file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
-    popForColumn i = --trace (show x ++"(Now column: "++show i++")") $
+    popForColumn i =
       if i  == sourceCol  
       then  P_CptPopu { pos = popOrigin
                       , p_cnme = sourceConceptName 
@@ -187,8 +187,7 @@ theSheetCellsForTable (sheetName,ws)
     theMapping indexInTableStarters 
      | length okHeaderRows /= nrOfHeaderRows = Nothing  -- Because there are not enough header rows
      | otherwise
-     =  Just -- . (\x->trace (show x) x) $
-             Mapping { theSheetName = T.unpack sheetName
+     =  Just Mapping { theSheetName = T.unpack sheetName
                      , theCellMap   = ws  ^. wsCells
                      , headerRowNrs = okHeaderRows
                      , popRowNrs    = populationRows

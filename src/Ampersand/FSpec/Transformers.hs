@@ -421,14 +421,14 @@ transformers fSpec = map toTransformer [
       )
      ,("markup"            , "Meaning"               , "Markup"
       , Set.fromList
-        [(dirtyId mean, dirtyId . ameaMrk $ mean) 
-        | mean::Meaning <- instanceList fSpec
+        [ (dirtyId mean, dirtyId . ameaMrk $ mean) 
+        | mean::Meaning <- Set.toList . meaningInstances $ fSpec
         ]
       )
      ,("markup"            , "Purpose"               , "Markup"
       , Set.fromList
         [(dirtyId purp, dirtyId . explMarkup $ purp) 
-        | purp::Purpose <- instanceList fSpec
+        | purp::Purpose <- Set.toList . purposeInstances $ fSpec
         ]
       )
      ,("meaning"               , "Rule"                  , "Meaning" 
@@ -841,10 +841,9 @@ expressionInstances = allExprs
 interfaceInstances :: FSpec -> Set.Set Interface
 interfaceInstances = Set.fromList . ctxifcs . originalContext
 meaningInstances :: FSpec -> Set.Set Meaning
-meaningInstances fSpec = Set.empty
-                      --   (Set.fromList . concat . fmap meanings . Set.toList . relationInstances $ fSpec)
-                      --    `Set.union`
-                      --   (Set.fromList . concat . fmap meanings . Set.toList . ruleInstances $ fSpec)
+meaningInstances fSpec = (Set.fromList . concat . map meanings . Set.toList . relationInstances $ fSpec)
+                          `Set.union`
+                         (Set.fromList . concat . map meanings . Set.toList . ruleInstances $ fSpec)
 purposeInstances :: FSpec -> Set.Set Purpose
 purposeInstances fSpec = Set.fromList . fSexpls $ fSpec
 relationInstances :: FSpec -> Set.Set Relation
@@ -866,8 +865,8 @@ instance Instances IdentityDef where
   instances = Set.fromList . ctxks . originalContext
 instance Instances Interface where
   instances = interfaceInstances
-instance Instances Meaning where
-  instances = meaningInstances
+--instance Instances Meaning where
+--  instances = meaningInstances
 instance Instances Markup where
   instances fSpec = (Set.fromList . map explMarkup . Set.toList . purposeInstances $ fSpec) 
                     `Set.union`
@@ -923,7 +922,7 @@ class HasDirtyId a where
   rawId :: a -> String
             
 instance Unique a => HasDirtyId a where
-  rawId = uniqueShow True
+  rawId = uniqueShowWithType
 class Instances a => HasPurpose a where 
   purposes :: FSpec -> a -> [Purpose]
   purposes fSpec a = 
@@ -983,29 +982,26 @@ data ExprInfo = ExprInfo
    , singleton' :: Maybe PAtomValue -- the value of a singleton expression
    }  
 binOp :: Expression -> Maybe BinOp
-binOp = aap "binOp" $ binOp' 
+binOp = binOp' . exprInfo
 unaryOp :: Expression -> Maybe UnaryOp
-unaryOp = aap "unaryOp" $ unaryOp' 
+unaryOp = unaryOp' . exprInfo
 bindedRel :: Expression -> Maybe Relation
-bindedRel = aap "bindedRel" $ bindedRel' 
+bindedRel = bindedRel' . exprInfo
 first :: Expression -> Maybe Expression
-first = aap "first" $ first' 
+first = first' . exprInfo
 second :: Expression -> Maybe Expression
-second = aap "second" $ second' 
+second = second' . exprInfo
 arg :: Expression -> Maybe Expression
-arg = aap "arg" $ arg' 
+arg = arg' . exprInfo
 userCpt :: Expression -> Maybe A_Concept
-userCpt = aap "userCpt" $ userCpt' 
+userCpt = userCpt' . exprInfo
 userSrc :: Expression -> Maybe A_Concept
-userSrc = aap "userSrc" $ userSrc' 
+userSrc = userSrc' . exprInfo
 userTrg :: Expression -> Maybe A_Concept
-userTrg = aap "userTrg" $ userTrg' 
+userTrg = userTrg' . exprInfo
 singleton :: Expression -> Maybe PAtomValue
-singleton = aap "singleton" $ singleton' 
+singleton = singleton' . exprInfo
 
-aap :: String -> (ExprInfo->a) -> (Expression->a)
-aap _ f e = -- traceShow (str++" "++showA e) $
-       (f . exprInfo) e 
 exprInfo :: Expression -> ExprInfo
 exprInfo expr =
   case expr of
