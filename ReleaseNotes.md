@@ -14,6 +14,7 @@
 * Improved output of any invariant violations or signals for initial population
 * Improved use of compiler when no prototype is requested (reporting violations, testing specific rules and rap population output are possible)
 * Improved use of compiler when no script is provided (e.g. for --sampleConfigFile)
+* [Issue #879](https://github.com/AmpersandTarski/Ampersand/issues/879) Bugfix in the meatgrinder. Also a big performance win in generating meta-stuff.
 
 ## v3.12.0 (21 december 2018)
 

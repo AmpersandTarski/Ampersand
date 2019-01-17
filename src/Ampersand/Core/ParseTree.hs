@@ -152,7 +152,7 @@ data ConceptDef
          }   deriving (Show,Eq,Ord,Typeable)
 
 instance Unique ConceptDef where
-  showUnique cd = cdcpt cd++"At"++uniqueShow True (origin cd)
+  showUnique cd = cdcpt cd++"At"++uniqueShowWithType (origin cd)
 instance Traced ConceptDef where
  origin = pos
 instance Named ConceptDef where

@@ -16,7 +16,6 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
 import           Ampersand.Misc
 import           Data.Hashable
-import           Data.List
 import qualified Data.Set as Set
 import           Data.Typeable
 
@@ -28,7 +27,7 @@ data Transformer = Transformer
       { tRel :: String  -- name of relation
       , tSrc :: String  -- name of source
       , tTrg :: String  -- name of target
-      , tPairs :: [(PopAtom,PopAtom)] -- the population of this relation from the user's script.
+      , tPairs :: Set.Set (PopAtom,PopAtom)-- the population of this relation from the user's script.
       }
 
 -- | This datatype reflects the nature of an atom. It is use to construct
@@ -47,687 +46,778 @@ instance Show PopAtom where
         PopInt i            -> show i
 
 
-toTransformer :: (String, String, String, [(PopAtom,PopAtom)]) -> Transformer 
-toTransformer (rel, sCpt, tCpt, fun) = Transformer rel sCpt tCpt fun                   
+toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
+toTransformer (rel, sCpt, tCpt, set) = Transformer rel sCpt tCpt set
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformers :: FSpec -> [Transformer]
 transformers fSpec = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList $
         [(dirtyId ctx, dirtyId conj ) 
-        | ctx::A_Context <- instances fSpec
-        , conj::Conjunct <- instances fSpec
+        | ctx::A_Context <- instanceList fSpec
+        , conj::Conjunct <- instanceList fSpec
         ]
       )
      ,("allRoles"              , "Context"               , "Role"    
-      , [(dirtyId ctx, dirtyId rol ) 
-        | ctx::A_Context <- instances fSpec
-        , rol::Role <- instances fSpec
+      , Set.fromList $
+        [(dirtyId ctx, dirtyId rol ) 
+        | ctx::A_Context <- instanceList fSpec
+        , rol::Role <- instanceList fSpec
         ]
       )
      ,("allRules"              , "Context"               , "Rule"    
-      , [(dirtyId ctx, dirtyId rul) 
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList $
+        [(dirtyId ctx, dirtyId rul) 
+        | ctx::A_Context <- instanceList fSpec
         , rul::Rule      <- Set.elems $ allRules ctx
         ]
       )
      ,("allRules"              , "Pattern"               , "Rule"    
-      , [(dirtyId pat, dirtyId rul) 
-        | pat::Pattern <- instances fSpec
+      , Set.fromList $
+        [(dirtyId pat, dirtyId rul) 
+        | pat::Pattern <- instanceList fSpec
         , rul::Rule      <- Set.elems $ allRules pat
         ]
       )
      ,("arg"                   , "UnaryTerm"             , "Expression"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList $
         [(dirtyId expr, dirtyId x)
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just x <- [arg expr]
         ]
       )
      ,("asMarkdown"            , "Markup"                , "Text"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("attIn"                 , "Attribute"             , "ObjectDef"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("attObj"                , "Attribute"             , "ObjectDef"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("bind"                  , "BindedRelation"        , "Relation"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList $
         [(dirtyId expr, dirtyId x)
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just x <- [bindedRel expr]
         ]
       )
      ,("changes"               , "Act"                   , "Relation"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("concepts"              , "Pattern"               , "Concept" 
-      , [(dirtyId pat, dirtyId cpt)
-        | pat::Pattern <- instances fSpec
+      , Set.fromList $
+        [(dirtyId pat, dirtyId cpt)
+        | pat::Pattern <- instanceList fSpec
         , cpt <- Set.elems $ concs pat
         ]
       )
      ,("conjunct"              , "Conjunct"              , "Expression"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList $
         [(dirtyId conj, dirtyId (rc_conjunct conj))
-        | conj::Conjunct <- instances fSpec
+        | conj::Conjunct <- instanceList fSpec
         ]
       )
      ,("context"               , "Concept"               , "Context" 
-      , [(dirtyId cpt, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec 
-        , cpt::A_Concept <- instances fSpec
+      , Set.fromList $
+        [(dirtyId cpt, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec 
+        , cpt::A_Concept <- instanceList fSpec
         ]
       )
      ,("context"               , "IdentityDef"           , "Context" 
-      , [(dirtyId idf, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
-        , idf::IdentityDef <- instances fSpec
+      , Set.fromList $
+        [(dirtyId idf, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
+        , idf::IdentityDef <- instanceList fSpec
         ]
       )
      ,("context"               , "Pattern"               , "Context" 
-      , [(dirtyId pat, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
-        , pat::Pattern <- instances fSpec
+      , Set.fromList $
+        [(dirtyId pat, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
+        , pat::Pattern <- instanceList fSpec
         ]
       )
      ,("context"               , "Population"            , "Context" 
-      , [(dirtyId pop, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
-        , pop::Population <- instances fSpec
+      , Set.fromList $
+        [(dirtyId pop, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
+        , pop::Population <- instanceList fSpec
         ]
       )
      ,("context"               , "Relation"              , "Context" 
-      , [(dirtyId rel, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
-        , rel::Relation <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rel, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
+        , rel::Relation <- instanceList fSpec
         ]
       )
      ,("ctxds"                 , "Relation"              , "Context" 
-      , [(dirtyId rel, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rel, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
         , rel::Relation <- Set.elems $ ctxds ctx
         ]
       )
      ,("ctxrs"                 , "Rule"                  , "Context" 
-      , [(dirtyId rul, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
-        , rul::Rule <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rul, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
+        , rul::Rule <- instanceList fSpec
         ]
       )
      ,("dbName"                , "Context"               , "DatabaseName"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("declaredIn"            , "Relation"              , "Context" 
-      , [(dirtyId rel, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rel, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
         , rel::Relation <- Set.elems $ relsDefdIn ctx
         ]
       )
      ,("declaredIn"            , "Relation"              , "Pattern" 
-      , [(dirtyId rel, dirtyId pat) 
-        | pat::Pattern <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rel, dirtyId pat) 
+        | pat::Pattern <- instanceList fSpec
         , rel::Relation <- Set.elems $ relsDefdIn pat
         ]
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
-      , [(dirtyId rul, PopAlphaNumeric . show $ prop) 
-        | rul::Rule <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rul, PopAlphaNumeric . show $ prop) 
+        | rul::Rule <- instanceList fSpec
         , Just(prop,_) <- [rrdcl rul]
         ]
       )
      ,("decMean"               , "Relation"              , "Meaning" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("decprL"                , "Relation"              , "String"  
-      , [(dirtyId rel, (PopAlphaNumeric . decprL) rel) 
-        | rel::Relation <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rel, (PopAlphaNumeric . decprL) rel) 
+        | rel::Relation <- instanceList fSpec
         ]
       )
      ,("decprM"                , "Relation"              , "String"  
-      , [(dirtyId rel, (PopAlphaNumeric . decprM) rel) 
-        | rel::Relation <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rel, (PopAlphaNumeric . decprM) rel) 
+        | rel::Relation <- instanceList fSpec
         ]
       )
      ,("decprR"                , "Relation"              , "String"  
-      , [(dirtyId rel, (PopAlphaNumeric . decprR) rel) 
-        | rel::Relation <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rel, (PopAlphaNumeric . decprR) rel) 
+        | rel::Relation <- instanceList fSpec
         ]
       )
      ,("default"               , "View"                  , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("delta"                 , "Act"                   , "Pair"    
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("expSQL"                , "PairViewSegment"       , "MySQLQuery"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("expTgt"                , "PairViewSegment"       , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("first"                 , "BinaryTerm"            , "Expression"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList $
         [(dirtyId expr, dirtyId x)
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just x <- [first expr]
         ]
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList $
         [(dirtyId rul, dirtyId (formalExpression rul))
-        | rul::Rule <- instances fSpec
+        | rul::Rule <- instanceList fSpec
         ]
       )
      ,("gengen"                , "IsE"                   , "Concept" 
-      , [ ( dirtyId ise, dirtyId cpt) 
-        | ise@IsE{} <- instances fSpec
+      , Set.fromList $
+        [ ( dirtyId ise, dirtyId cpt) 
+        | ise@IsE{} <- instanceList fSpec
         , cpt <- genrhs ise]
       )
      ,("gengen"                , "Isa"                   , "Concept" 
-      , [ ( dirtyId isa, dirtyId (gengen isa)) 
-        | isa@Isa{} <- instances fSpec
+      , Set.fromList $
+        [ ( dirtyId isa, dirtyId (gengen isa)) 
+        | isa@Isa{} <- instanceList fSpec
         ]
       )
      ,("gens"                  , "Context"               , "IsE"     
-      , [ ( dirtyId ctx, dirtyId ise) 
-        | ctx::A_Context <- instances fSpec
-        , ise@IsE{} <- instances fSpec
+      , Set.fromList $
+        [ ( dirtyId ctx, dirtyId ise) 
+        | ctx::A_Context <- instanceList fSpec
+        , ise@IsE{} <- instanceList fSpec
         ] 
       )
      ,("gens"                  , "Context"               , "Isa"     
-      , [(dirtyId ctx, dirtyId isa) 
-        | ctx::A_Context <- instances fSpec
-        , isa@Isa{} <- instances fSpec
+      , Set.fromList $
+        [(dirtyId ctx, dirtyId isa) 
+        | ctx::A_Context <- instanceList fSpec
+        , isa@Isa{} <- instanceList fSpec
         ]
       )
      ,("genspc"                , "IsE"                   , "Concept" 
-      , [ ( dirtyId ise, dirtyId (genspc ise)) 
-        | ise@IsE{} <- instances fSpec
+      , Set.fromList $
+        [ ( dirtyId ise, dirtyId (genspc ise)) 
+        | ise@IsE{} <- instanceList fSpec
         ]
       )
      ,("genspc"                , "Isa"                   , "Concept" 
-      , [ ( dirtyId isa, dirtyId (genspc isa)) 
-        | isa@Isa{} <- instances fSpec
+      , Set.fromList $
+        [ ( dirtyId isa, dirtyId (genspc isa)) 
+        | isa@Isa{} <- instanceList fSpec
         ]
       )
      ,("getExpressionRelation" , "Expression"            , "Relation"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("hasView"               , "Concept"               , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("identityRules"         , "Rule"                  , "Context" 
-      , [(dirtyId rul, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rul, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
         , rul            <- Set.elems $ identityRules ctx
         ]
       )
      ,("identityRules"         , "Rule"                  , "Pattern" 
-      , [(dirtyId rul, dirtyId pat) 
-        | pat::Pattern <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rul, dirtyId pat) 
+        | pat::Pattern <- instanceList fSpec
         , rul          <- Set.elems $ identityRules pat
         ]
       )
      ,("ifcClass"              , "Interface"             , "String"  
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("ifcControls"           , "Interface"             , "Conjunct"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList $
         [(dirtyId ifc, dirtyId conj) 
-        | ifc::Interface <- instances fSpec
+        | ifc::Interface <- instanceList fSpec
         , conj <- ifcControls ifc
         ]
       )
      ,("ifcInputs"             , "Interface"             , "Relation"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("ifcObj"                , "Interface"             , "ObjectDef"
-      , [(dirtyId ifc, dirtyId (ifcObj ifc)) 
-        | ifc::Interface <- instances fSpec
+      , Set.fromList $
+        [(dirtyId ifc, dirtyId (ifcObj ifc)) 
+        | ifc::Interface <- instanceList fSpec
         ]
       )
      ,("ifcOutputs"            , "Interface"             , "Relation"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("ifcPos"                , "Interface"             , "Origin"  
-      , [(dirtyId ifc, PopAlphaNumeric . show . ifcPos $ ifc) 
-        | ifc::Interface <- instances fSpec
+      , Set.fromList $
+        [(dirtyId ifc, PopAlphaNumeric . show . ifcPos $ ifc) 
+        | ifc::Interface <- instanceList fSpec
         ]
       )
      ,("ifcPrp"                , "Interface"             , "String"  
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("ifcQuads"              , "Interface"             , "Quad"    
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("ifcRoles"              , "Interface"             , "Role"    
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("in"                    , "Pair"                  , "Expression"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("inQ"                   , "Quad"                  , "Act"     
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("inst"                  , "Object"                , "ObjectDef"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("inst"                  , "Transaction"           , "Interface"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("interfaces"            , "Context"               , "Interface"
-      , [(dirtyId ctx,dirtyId ifc)
-        | ctx::A_Context <- instances fSpec
-        , ifc::Interface <- instances fSpec
+      , Set.fromList $
+        [(dirtyId ctx,dirtyId ifc)
+        | ctx::A_Context <- instanceList fSpec
+        , ifc::Interface <- instanceList fSpec
         ]
       )
      ,("interfaces"            , "Role"                  , "Interface"
-      , [(dirtyId rol,dirtyId ifc)
-        | ifc <- instances fSpec
+      , Set.fromList $
+        [(dirtyId rol,dirtyId ifc)
+        | ifc <- instanceList fSpec
         , rol <- ifcRoles ifc
         ]      
       )
      ,("isa"                   , "Concept"               , "Concept" 
-      , [ ( dirtyId gCpt, dirtyId (genspc ise)) 
-        | ise@IsE{} <- instances fSpec
+      , Set.fromList 
+        [ ( dirtyId gCpt, dirtyId (genspc ise)) 
+        | ise@IsE{} <- instanceList fSpec
         , gCpt <- genrhs ise
-        ]++
+        ] `Set.union`
+        Set.fromList
         [ ( dirtyId (genspc isa), dirtyId (genspc isa)) 
-        | isa@Isa{} <- instances fSpec
+        | isa@Isa{} <- instanceList fSpec
         ]
       )
      ,("isaCopy"               , "Concept"               , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("isaPlus"               , "Concept"               , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("isaRfx"                , "Concept"               , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("isaRfxCopy"            , "Concept"               , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("isaRfxPlus"            , "Concept"               , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("isaRfxStar"            , "Concept"               , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("isaStar"               , "Concept"               , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("language"              , "Context"               , "Language"
-      , [(dirtyId ctx,(PopAlphaNumeric . show . ctxlang) ctx)
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList
+        [(dirtyId ctx,(PopAlphaNumeric . show . ctxlang) ctx)
+        | ctx::A_Context <- instanceList fSpec
         ]
       )
      ,("language"              , "Markup"               , "Language"
-      , [(dirtyId mrk,(PopAlphaNumeric . show . amLang) mrk)
-        | mrk::Markup <- instances fSpec
+      , Set.fromList
+        [(dirtyId mrk,(PopAlphaNumeric . show . amLang) mrk)
+        | mrk::Markup <- instanceList fSpec
         ]
       )
      ,("left"                  , "Pair"                  , "Atom"    
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("maintains"             , "Role"                  , "Rule"    
-      , [(dirtyId rol, dirtyId rul) 
+      , Set.fromList
+        [(dirtyId rol, dirtyId rul) 
         | (rol,rul) <-  fRoleRuls fSpec 
         ]
       )
      ,("markup"            , "Meaning"               , "Markup"
-      , [(dirtyId mean, dirtyId . ameaMrk $ mean) 
-        | mean::Meaning <-  instances fSpec
+      , Set.fromList
+        [ (dirtyId mean, dirtyId . ameaMrk $ mean) 
+        | mean::Meaning <- Set.toList . meaningInstances $ fSpec
         ]
       )
      ,("markup"            , "Purpose"               , "Markup"
-      , [(dirtyId purp, dirtyId . explMarkup $ purp) 
-        | purp::Purpose <-  instances fSpec
+      , Set.fromList
+        [(dirtyId purp, dirtyId . explMarkup $ purp) 
+        | purp::Purpose <- Set.toList . purposeInstances $ fSpec
         ]
       )
      ,("meaning"               , "Rule"                  , "Meaning" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("message"               , "Rule"                  , "Message" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("multrules"             , "Rule"                  , "Context" 
-      , [(dirtyId rul, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList
+        [(dirtyId rul, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
         , rul            <- Set.elems $ multrules ctx
         ]
       )
      ,("multrules"             , "Rule"                  , "Pattern" 
-      , [(dirtyId rul, dirtyId pat) 
-        | pat::Pattern <- instances fSpec
+      , Set.fromList
+        [(dirtyId rul, dirtyId pat) 
+        | pat::Pattern <- instanceList fSpec
         , rul            <- Set.elems $ multrules pat
         ]
       )
      ,("name"                  , "Concept"               , "ConceptName"
-      , [(dirtyId cpt,(PopAlphaNumeric . name) cpt)
-        | cpt::A_Concept <- instances fSpec
+      , Set.fromList
+        [(dirtyId cpt,(PopAlphaNumeric . name) cpt)
+        | cpt::A_Concept <- instanceList fSpec
         ]
       )
      ,("name"                  , "Context"               , "ContextName"
-      , [(dirtyId ctx,(PopAlphaNumeric . name) ctx)
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList
+        [(dirtyId ctx,(PopAlphaNumeric . name) ctx)
+        | ctx::A_Context <- instanceList fSpec
         ]
       )
      ,("name"                  , "Interface"             , "InterfaceName"  
-      , [(dirtyId ifc,(PopAlphaNumeric . name) ifc)
-        | ifc::Interface <- instances fSpec
+      , Set.fromList
+        [(dirtyId ifc,(PopAlphaNumeric . name) ifc)
+        | ifc::Interface <- instanceList fSpec
         ]
       )
      ,("name"                 , "ObjectDef"             , "ObjectName"  
-      , [(dirtyId obj, (PopAlphaNumeric . name) obj)
-        | obj::ObjectDef <- instances fSpec
+      , Set.fromList
+        [(dirtyId obj, (PopAlphaNumeric . name) obj)
+        | obj::ObjectDef <- instanceList fSpec
         ]
       )
      ,("name"                  , "Pattern"               , "PatternName"
-      , [(dirtyId pat,(PopAlphaNumeric . name) pat)
-        | pat::Pattern <- instances fSpec
+      , Set.fromList
+        [(dirtyId pat,(PopAlphaNumeric . name) pat)
+        | pat::Pattern <- instanceList fSpec
         ]
       )
      ,("name"                  , "Relation"              , "RelationName"
-      , [(dirtyId rel,(PopAlphaNumeric . name) rel)
-        | rel::Relation <- instances fSpec
+      , Set.fromList
+        [(dirtyId rel,(PopAlphaNumeric . name) rel)
+        | rel::Relation <- instanceList fSpec
         ]
       )
      ,("name"                  , "Role"                  , "RoleName"
-      , [(dirtyId rol,(PopAlphaNumeric . name) rol)
-        | rol::Role <- instances fSpec
+      , Set.fromList
+        [(dirtyId rol,(PopAlphaNumeric . name) rol)
+        | rol::Role <- instanceList fSpec
         ]
       )
      ,("name"                  , "Rule"                  , "RuleName"
-      , [(dirtyId rul,(PopAlphaNumeric . name) rul)
-        | rul::Rule <- instances fSpec
+      , Set.fromList
+        [(dirtyId rul,(PopAlphaNumeric . name) rul)
+        | rul::Rule <- instanceList fSpec
         ]
       )
      ,("objExpression"         , "ObjectDef"             , "Expression"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId obj, dirtyId (objExpression obj))
-        | obj::ObjectDef <- instances fSpec
+        | obj::ObjectDef <- instanceList fSpec
         ]
       )
      ,("objmView"              , "ObjectDef"             , "View"    
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("objpos"                , "ObjectDef"             , "Origin"  
-      , [(dirtyId obj, PopAlphaNumeric . show . origin $ obj) 
-        | obj::ObjectDef <- instances fSpec
+      , Set.fromList
+        [(dirtyId obj, PopAlphaNumeric . show . origin $ obj) 
+        | obj::ObjectDef <- instanceList fSpec
         ]
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId expr, PopAlphaNumeric . show $ op) 
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just op <- [binOp expr]
         ]
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId expr, PopAlphaNumeric . show $ op) 
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just op <- [unaryOp expr]
         ]
       )
      ,("origin"                , "Rule"                  , "Origin"  
-      , [(dirtyId rul, (PopAlphaNumeric . show . origin) rul)
-        | rul::Rule <- instances fSpec
+      , Set.fromList
+        [(dirtyId rul, (PopAlphaNumeric . show . origin) rul)
+        | rul::Rule <- instanceList fSpec
         ]
       )
      ,("originatesFrom"        , "Conjunct"              , "Rule"    
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId conj, dirtyId rul)
-        | conj::Conjunct <- instances fSpec
+        | conj::Conjunct <- instanceList fSpec
         , rul <- Set.elems $ rc_orgRules conj
         ]
       )
      ,("outQ"                  , "Quad"                  , "Act"     
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("pairView"              , "Rule"                  , "PairView"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("prop"                  , "Relation"              , "Property"
-      , [(dirtyId rel, PopAlphaNumeric . show $ prop) 
-        | rel::Relation <- instances fSpec
+      , Set.fromList
+        [(dirtyId rel, PopAlphaNumeric . show $ prop) 
+        | rel::Relation <- instanceList fSpec
         , prop <- Set.elems $ decprps rel
         ]
       )
      ,("propertyRule"          , "Relation"              , "PropertyRule"
-      , [(dirtyId rel, dirtyId rul) 
-        | rul::Rule <- instances fSpec
+      , Set.fromList
+        [(dirtyId rel, dirtyId rul) 
+        | rul::Rule <- instanceList fSpec
         , Just(_,rel) <- [rrdcl rul]
         ]
       )
      ,("purpose"               , "Concept"               , "Purpose" 
-      , [(dirtyId cpt, dirtyId purp) 
-        | cpt::A_Concept <- instances fSpec
+      , Set.fromList
+        [(dirtyId cpt, dirtyId purp) 
+        | cpt::A_Concept <- instanceList fSpec
         , purp           <- purposes fSpec cpt
         ]
       )
      ,("purpose"               , "Context"               , "Purpose" 
-      , [(dirtyId ctx, dirtyId purp) 
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList
+        [(dirtyId ctx, dirtyId purp) 
+        | ctx::A_Context <- instanceList fSpec
         , purp           <- purposes fSpec ctx
         ]
       )
      ,("purpose"               , "Identity"              , "Purpose" 
-      , [(dirtyId idn, dirtyId purp) 
-        | idn::IdentityDef <- instances fSpec
+      , Set.fromList
+        [(dirtyId idn, dirtyId purp) 
+        | idn::IdentityDef <- instanceList fSpec
         , purp           <- purposes fSpec idn
         ]
       )
      ,("purpose"               , "Interface"             , "Purpose" 
-      , [(dirtyId ifc, dirtyId purp) 
-        | ifc::Interface <- instances fSpec
+      , Set.fromList
+        [(dirtyId ifc, dirtyId purp) 
+        | ifc::Interface <- instanceList fSpec
         , purp           <- purposes fSpec ifc
         ]
       )
      ,("purpose"               , "Pattern"               , "Purpose" 
-      , [(dirtyId pat, dirtyId purp) 
-        | pat::Pattern <- instances fSpec
+      , Set.fromList
+        [(dirtyId pat, dirtyId purp) 
+        | pat::Pattern <- instanceList fSpec
         , purp           <- purposes fSpec pat
         ]
       )
      ,("purpose"               , "Relation"              , "Purpose" 
-      , [(dirtyId rel, dirtyId purp) 
-        | rel::Relation <- instances fSpec
+      , Set.fromList
+        [(dirtyId rel, dirtyId purp) 
+        | rel::Relation <- instanceList fSpec
         , purp             <- purposes fSpec rel
         ]
       )
      ,("purpose"               , "Rule"                  , "Purpose" 
-      , [(dirtyId rul, dirtyId purp) 
-        | rul::Rule <- instances fSpec
+      , Set.fromList
+        [(dirtyId rul, dirtyId purp) 
+        | rul::Rule <- instanceList fSpec
         , purp           <- purposes fSpec rul
         ]
       )
      ,("purpose"               , "View"                  , "Purpose" 
-      , [(dirtyId vw, dirtyId purp) 
-        | vw::ViewDef  <- instances fSpec
+      , Set.fromList
+        [(dirtyId vw, dirtyId purp) 
+        | vw::ViewDef  <- instanceList fSpec
         , purp         <- purposes fSpec vw
         ]
       )
      ,("relsDefdIn"            , "Pattern"               , "Relation"
-      , [(dirtyId pat, dirtyId rel) 
-        | pat::Pattern <- instances fSpec
-        , rel            <- Set.elems $ ptdcs pat
+      , Set.fromList
+        [(dirtyId pat, dirtyId rel) 
+        | pat::Pattern <- instanceList fSpec
+        , rel            <- Set.elems $ relsDefdIn pat
         ]
       )
      ,("right"                 , "Pair"                  , "Atom"    
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId rul, dirtyId (formalExpression rul))
-        | rul::Rule <- instances fSpec
+        | rul::Rule <- instanceList fSpec
         ]
       )
      ,("second"                , "BinaryTerm"            , "Expression"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId expr, dirtyId x)
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just x <- [second expr]
         ]
       )
      ,("segment"               , "PairView"              , "PairViewSegment" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("segmentType"           , "PairViewSegment"       , "PairViewSegmentType"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("sequenceNr"            , "PairViewSegment"       , "Int"     
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("sessAtom"              , "SESSION"               , "Atom"    
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("sessIfc"               , "SESSION"               , "Interface"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("sessionRole"           , "SESSION"               , "Role"    
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("showADL"               , "Expression"            , "ShowADL" 
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId expr, PopAlphaNumeric (showA expr)) 
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         ]
       )
      ,("sign"                  , "Expression"            , "Signature"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId expr, dirtyId (sign expr)) 
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         ]
       )
      ,("sign"                  , "Relation"              , "Signature"
-      , [(dirtyId rel, dirtyId (sign rel)) 
-        | rel::Relation <- instances fSpec
+      , Set.fromList
+        [(dirtyId rel, dirtyId (sign rel)) 
+        | rel::Relation <- instanceList fSpec
         ]
       )
      ,("singleton"             , "Singleton"             , "AtomValue"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId expr, dirtyId x)
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just x <- [singleton expr]
         ]
       )
      ,("source"                , "Relation"              , "Concept" 
-      , [(dirtyId rel, dirtyId (source rel)) 
-        | rel::Relation <- instances fSpec
+      , Set.fromList
+        [(dirtyId rel, dirtyId (source rel)) 
+        | rel::Relation <- instanceList fSpec
         ]
       )
      ,("src"                   , "Signature"             , "Concept" 
-      , [(dirtyId sgn, dirtyId (source sgn)) 
-        | sgn::Signature <- instances fSpec
+      , Set.fromList
+        [(dirtyId sgn, dirtyId (source sgn)) 
+        | sgn::Signature <- instanceList fSpec
         ]
       )
      ,("srcOrTgt"              , "PairViewSegment"       , "SourceOrTarget"
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("target"                , "Relation"              , "Concept" 
-      , [(dirtyId rel, dirtyId (target rel)) 
-        | rel::Relation <- instances fSpec
+      , Set.fromList
+        [(dirtyId rel, dirtyId (target rel)) 
+        | rel::Relation <- instanceList fSpec
         ]
       )
      ,("text"                  , "PairViewSegment"       , "String"  
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("tgt"                   , "Signature"             , "Concept" 
-      , [(dirtyId sgn, dirtyId (target sgn)) 
-        | sgn::Signature <- instances fSpec
+      , Set.fromList
+        [(dirtyId sgn, dirtyId (target sgn)) 
+        | sgn::Signature <- instanceList fSpec
         ]
       )
      ,("transactionObject"     , "Transaction"           , "Object"  
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("ttype"                 , "Concept"               , "TType"   
-      , [(dirtyId cpt, (PopAlphaNumeric . show . cptTType fSpec) cpt) 
-        | cpt::A_Concept <- instances fSpec
+      , Set.fromList
+        [(dirtyId cpt, (PopAlphaNumeric . show . cptTType fSpec) cpt) 
+        | cpt::A_Concept <- instanceList fSpec
         ]
       )
      ,("udefrules"             , "Rule"                  , "Context" 
-      , [(dirtyId rul, dirtyId ctx) 
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList
+        [(dirtyId rul, dirtyId ctx) 
+        | ctx::A_Context <- instanceList fSpec
         , rul            <- Set.elems $ udefrules ctx
         ]
       )
      ,("udefrules"             , "Rule"                  , "Pattern" 
-      , [(dirtyId rul, dirtyId pat) 
-        | pat::Pattern <- instances fSpec
+      , Set.fromList
+        [(dirtyId rul, dirtyId pat) 
+        | pat::Pattern <- instanceList fSpec
         , rul            <- Set.elems $ udefrules pat
         ]
       )
      ,("urlEncodedName"        , "Concept"               , "EncodedName"
-      , [(dirtyId cpt,(PopAlphaNumeric . escapeNonAlphaNum . name) cpt)
-        | cpt::A_Concept <- instances fSpec
+      , Set.fromList
+        [(dirtyId cpt,(PopAlphaNumeric . escapeNonAlphaNum . name) cpt)
+        | cpt::A_Concept <- instanceList fSpec
         ]
       )
      ,("urlEncodedName"        , "Pattern"               , "EncodedName"
-      , [(dirtyId pat,(PopAlphaNumeric . escapeNonAlphaNum . name) pat)
-        | pat::Pattern <- instances fSpec
+      , Set.fromList
+        [(dirtyId pat,(PopAlphaNumeric . escapeNonAlphaNum . name) pat)
+        | pat::Pattern <- instanceList fSpec
         ]
       )
      ,("urlEncodedName"        , "Rule"                  , "EncodedName"
-      , [(dirtyId rul,(PopAlphaNumeric . escapeNonAlphaNum . name) rul)
-        | rul::Rule <- instances fSpec
+      , Set.fromList
+        [(dirtyId rul,(PopAlphaNumeric . escapeNonAlphaNum . name) rul)
+        | rul::Rule <- instanceList fSpec
         ]
       )
      ,("usedIn"                , "Relation"              , "Expression"
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId rel, dirtyId expr)
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , rel::Relation <- Set.elems $ bindedRelationsIn expr
         ]
       )
      ,("userCpt"               , "Epsilon"                     , "Concept" 
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId expr, dirtyId x)
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just (x::A_Concept) <- [userCpt expr]
         ]
       )
      ,("userSrc"               , "V"                     , "Concept" 
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId expr, dirtyId x)
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just x <- [userSrc expr]
         ]
       )
      ,("userTrg"               , "V"                     , "Concept" 
-      , if atlasWithoutExpressions opts then [] else
+      , if atlasWithoutExpressions opts then Set.empty else
+        Set.fromList
         [(dirtyId expr, dirtyId x)
-        | expr::Expression <- instances fSpec
+        | expr::Expression <- instanceList fSpec
         , Just x <- [userTrg expr]
         ]
       )
      ,("uses"                  , "Context"               , "Pattern" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("valid"                 , "Concept"               , "Context" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("valid"                 , "Relation"              , "Context" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("valid"                 , "Rule"                  , "Context" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("versionInfo"           , "Context"               , "AmpersandVersion"
-      , [(dirtyId ctx,PopAlphaNumeric ampersandVersionStr)
-        | ctx::A_Context <- instances fSpec
+      , Set.fromList
+        [(dirtyId ctx,PopAlphaNumeric ampersandVersionStr)
+        | ctx::A_Context <- instanceList fSpec
         ]
       )
      ,("viewBy"                , "Concept"               , "Concept" 
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ,("viol"                  , "Interface"             , "Rule"    
-      , []  --TODO
+      , Set.empty  --TODO
       )
      ]
    where
@@ -737,56 +827,78 @@ transformers fSpec = map toTransformer [
 --   Concept. They are the atoms of the concepts, as looked
 --   upon from the Formal Ampersand viewpoint.
 class Typeable a => Instances a where
---TODO: This should eventially be replaced by Set a
-  instances ::  FSpec -> [a]
+  instances ::  FSpec -> Set.Set a
+  instanceList :: FSpec -> [a]
+  instanceList = Set.toList . instances
+  {-# MINIMAL instances #-} 
+
+-- --WARNING: Beware of loops!
+-- To prevent loops in the definition of instances, it is considered bad
+-- to use the `instances` function while defining it. 
+-- For this reason, some helper functions are defined here:
+expressionInstances :: FSpec -> Set.Set Expression
+expressionInstances = allExprs
+interfaceInstances :: FSpec -> Set.Set Interface
+interfaceInstances = Set.fromList . ctxifcs . originalContext
+meaningInstances :: FSpec -> Set.Set Meaning
+meaningInstances fSpec = (Set.fromList . concat . map meanings . Set.toList . relationInstances $ fSpec)
+                          `Set.union`
+                         (Set.fromList . concat . map meanings . Set.toList . ruleInstances $ fSpec)
+purposeInstances :: FSpec -> Set.Set Purpose
+purposeInstances fSpec = Set.fromList . fSexpls $ fSpec
+relationInstances :: FSpec -> Set.Set Relation
+relationInstances = relsDefdIn . originalContext
+ruleInstances :: FSpec -> Set.Set Rule
+ruleInstances = allRules . originalContext
 
 instance Instances A_Context where
-  instances fSpec = [originalContext fSpec]
+  instances = Set.singleton . originalContext
 instance Instances AClassify where
-  instances fSpec = gens (originalContext fSpec)
+  instances = Set.fromList . gens . originalContext
 instance Instances A_Concept where
-  instances fSpec = Set.elems . concs . originalContext $ fSpec
+  instances = concs . originalContext
 instance Instances Conjunct where
-  instances fSpec = allConjuncts fSpec
-instance Instances Relation where
-  instances fSpec = Set.elems $ relsDefdIn (originalContext fSpec)
+  instances = Set.fromList . allConjuncts
 instance Instances Expression where
-  instances fSpec = Set.elems $ allExprs fSpec
+  instances = expressionInstances
 instance Instances IdentityDef where
-  instances fSpec = ctxks (originalContext fSpec)
+  instances = Set.fromList . ctxks . originalContext
 instance Instances Interface where
-  instances fSpec = ctxifcs (originalContext fSpec)
+  instances = interfaceInstances
+--instance Instances Meaning where
+--  instances = meaningInstances
+instance Instances Markup where
+  instances fSpec = (Set.fromList . map explMarkup . Set.toList . purposeInstances $ fSpec) 
+                    `Set.union`
+                    (Set.fromList . map ameaMrk . Set.toList . meaningInstances $ fSpec)
 instance Instances ObjectDef where
-  instances fSpec = 
-       nub
-     . concatMap (objects . ifcObj)
-     . instances $ fSpec
+  instances fSpec = Set.fromList . concatMap (objects . ifcObj) 
+                  . interfaceInstances $ fSpec
     where
       objects :: ObjectDef -> [ObjectDef]
       objects obj = obj : fields obj
 instance Instances Pattern where
-  instances fSpec = ctxpats (originalContext fSpec)  
+  instances = Set.fromList . ctxpats . originalContext
 instance Instances Population where
-  instances fSpec = ctxpopus (originalContext fSpec)
-instance Instances Meaning where
-  instances fSpec = concatMap meanings (allRules fSpec) ++
-                    concatMap decMean  (vrels fSpec)
+  instances = Set.fromList . ctxpopus . originalContext
 instance Instances Purpose where
-  instances fSpec = fSexpls fSpec
-instance Instances Markup where
-  instances fSpec = 
-      map explMarkup (instances fSpec) ++
-      map ameaMrk    (instances fSpec)
+  instances = purposeInstances
+instance Instances Relation where
+  instances = relationInstances
 instance Instances Role where
-  instances fSpec = nub $ [Role "SystemAdmin"] ++ map fst (fRoles fSpec)
+  instances = Set.insert (Role "SystemAdmin") 
+            . Set.fromList . map fst . fRoles
 instance Instances Rule where
-  instances fSpec = Set.elems . allRules $ originalContext fSpec
+  instances = ruleInstances
+instance Instances (Role,Rule) where
+  instances = Set.fromList . fRoleRuls
 instance Instances Signature where
-  instances fSpec = nub $
-       [sign dcl  | dcl::Relation <- instances fSpec]
-    ++ [sign expr | expr::Expression <- instances fSpec]
+  instances fSpec = 
+       (Set.fromList . map sign . Set.toList . relationInstances $ fSpec)
+       `Set.union`
+       (Set.fromList . map sign . Set.toList . expressionInstances $ fSpec)
 instance Instances ViewDef where
-  instances fSpec = viewDefs (originalContext fSpec)  
+  instances = Set.fromList . viewDefs . originalContext
   
 
 -- All Concepts that are relevant in Formal Ampersand (RAP),
@@ -810,11 +922,11 @@ class HasDirtyId a where
   rawId :: a -> String
             
 instance Unique a => HasDirtyId a where
-  rawId = uniqueShow True
+  rawId = uniqueShowWithType
 class Instances a => HasPurpose a where 
   purposes :: FSpec -> a -> [Purpose]
   purposes fSpec a = 
-    filter (isFor a) (instances fSpec)
+    Set.toList . Set.filter (isFor a) . instances $ fSpec
   isFor :: a -> Purpose -> Bool 
 instance HasPurpose A_Concept where
   isFor cpt purp =
@@ -1170,3 +1282,4 @@ instance Unique BinOp where
 instance Unique (Either BinOp UnaryOp) where
   showUnique (Left  a) = showUnique a
   showUnique (Right b) = showUnique b
+

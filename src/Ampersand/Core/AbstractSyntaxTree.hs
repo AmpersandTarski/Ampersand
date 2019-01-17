@@ -8,6 +8,7 @@ module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
  , Meta(..)
+ , Origin(..)
  , Pattern(..) 
  , PairView(..)
  , PairViewSegment(..)
@@ -138,7 +139,8 @@ instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
   showUnique = optionalQuote . name
-
+instance Ord Pattern where
+ a `compare` b = name a `compare` name b
 instance Named Pattern where
  name = ptnm
 instance Traced Pattern where
@@ -169,7 +171,7 @@ data Rule =
 instance Eq Rule where
   r==r' = name r==name r' && origin r==origin r' -- Origin should be here too: A check that they all have unique names is done after typechecking.
 instance Unique Rule where
-  showUnique = rrnm
+  showUnique = optionalQuote . name
 instance Ord Rule where
   compare = compare `on` rrnm
 instance Show Rule where
@@ -233,7 +235,7 @@ instance Ord Relation where
     else compare (name a) (name b)
 instance Unique Relation where
   showUnique d =
-    name d++uniqueShow False (decsgn d)
+    name d++showUnique (decsgn d)
 instance Hashable Relation where
    hashWithSalt s Relation{dechash = v} = s `hashWithSalt` v
 instance Show Relation where  -- For debugging purposes only (and fatal messages)
@@ -245,7 +247,7 @@ showRel rel = name rel++"["++show (source rel) ++ "*"++ show (target rel)++"]"
 
 data Meaning = Meaning { ameaMrk ::Markup} deriving (Show, Eq, Ord, Typeable, Data)
 instance Unique Meaning where
-  showUnique x = uniqueShow True x++" in "++(show.amLang.ameaMrk) x
+  showUnique = show
 
 instance Named Relation where
   name d = unpack (decnm d)
@@ -265,8 +267,9 @@ instance Named IdentityDef where
 instance Traced IdentityDef where
   origin = idPos
 instance Unique IdentityDef where
-  showUnique = idLbl
-
+  showUnique = name
+instance Ord IdentityDef where
+  compare a b = name a `compare` name b
 data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
 data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
@@ -282,9 +285,11 @@ instance Named ViewDef where
 instance Traced ViewDef where
   origin = vdpos
 instance Unique ViewDef where
-  showUnique vd = vdlbl vd++"_"++name (vdcpt vd) 
+  showUnique vd = name vd++"_"++name (vdcpt vd) 
 instance Eq ViewDef where
-  a == b = vdlbl a == vdlbl b && vdcpt a == vdcpt b 
+  a == b = vdlbl a == vdlbl b && vdcpt a == vdcpt b
+instance Ord ViewDef where
+  a `compare` b = (vdlbl a,vdcpt a) `compare` (vdlbl b, vdcpt b)
 data ViewSegment = ViewSegment
      { vsmpos :: Origin
      , vsmlabel :: Maybe String
@@ -310,14 +315,14 @@ data AClassify = Isa { genpos :: Origin
            | IsE { genpos :: Origin
                  , genspc :: A_Concept      -- ^ specific concept
                  , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
-                 } deriving (Typeable, Eq)
+                 } deriving (Typeable, Eq,Ord)
 instance Traced AClassify where
   origin = genpos
 instance Unique AClassify where
   showUnique a =
     case a of
-      Isa{} -> uniqueShow False (genspc a)++" ISA "++uniqueShow False (gengen a)
-      IsE{} -> uniqueShow False (genspc a)++" IS "++intercalate " /\\ " (map (uniqueShow False) (genrhs a))
+      Isa{} -> showUnique (genspc a)++" ISA "++showUnique (gengen a)
+      IsE{} -> showUnique (genspc a)++" IS "++intercalate " /\\ " (map (showUnique) (genrhs a))
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
   showsPrec _ g =
@@ -343,6 +348,8 @@ data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type
 
 instance Eq Interface where
   s==s' = name s==name s'
+instance Ord Interface where
+  compare a b = compare (name a) (name b)
 instance Named Interface where
   name = ifcname
 instance Traced Interface where
@@ -401,6 +408,8 @@ instance Traced ObjectDef where
   origin = objpos
 instance Unique ObjectDef where
   showUnique = showUnique . origin
+instance Ord ObjectDef where
+  a `compare` b = name a `compare` name b
 instance Named BoxTxt where
   name   = objnm
 instance Traced BoxTxt where
@@ -436,9 +445,11 @@ instance Eq Purpose where
   x0 == x1  =  explObj x0 == explObj x1 &&  
                origin x0  == origin x1 &&
                (amLang . explMarkup) x0 == (amLang . explMarkup) x1
+instance Ord Purpose where
+  compare a b = compare (explObj a, origin a) (explObj b, origin b)
 instance Unique Purpose where
-  showUnique p = showUnique (explMarkup p)
-                   ++ uniqueShow True (explPos p)
+  showUnique p = uniqueShowWithType (explMarkup p)
+              ++ uniqueShowWithType (explPos p)
 instance Traced Purpose where
   origin = explPos
 
@@ -453,8 +464,8 @@ data Population -- The user defined populations
              } deriving (Eq,Ord)
 
 instance Unique Population where
-  showUnique pop@ARelPopu{} = (showUnique.popdcl) pop ++ (showUnique.popps) pop
-  showUnique pop@ACptPopu{} = (showUnique.popcpt) pop ++ (showUnique.popas) pop
+  showUnique pop@ARelPopu{} = (uniqueShowWithType.popdcl) pop ++ (showUnique.popps) pop
+  showUnique pop@ACptPopu{} = (uniqueShowWithType.popcpt) pop ++ (showUnique.popas) pop
 
 type AAtomPairs = Set.Set AAtomPair
 data AAtomPair
@@ -541,12 +552,12 @@ data ExplObj = ExplConceptDef ConceptDef
              | ExplPattern String
              | ExplInterface String
              | ExplContext String
-          deriving (Show ,Eq, Typeable)
+          deriving (Show ,Eq, Typeable, Ord)
 instance Unique ExplObj where
   showUnique e = "Explanation of "++
     case e of
-     (ExplConceptDef cd) -> uniqueShow True cd
-     (ExplRelation d)    -> uniqueShow True d
+     (ExplConceptDef cd) -> uniqueShowWithType cd
+     (ExplRelation d)    -> uniqueShowWithType d
      (ExplRule s)        -> "a Rule named "++s
      (ExplIdentityDef s) -> "an Ident named "++s
      (ExplViewDef s)     -> "a View named "++s
@@ -795,7 +806,7 @@ instance Show Signature where
   showsPrec _ (Sign s t) =
      showString (   "[" ++ show s ++ "*" ++ show t ++ "]" )
 instance Unique Signature where
-  showUnique (Sign s t) = "[" ++ uniqueShow False s ++ "*" ++ uniqueShow False t ++ "]"
+  showUnique (Sign s t) = "[" ++ showUnique s ++ "*" ++ showUnique t ++ "]"
 instance HasSignature Signature where
   source (Sign s _) = s
   target (Sign _ t) = t
