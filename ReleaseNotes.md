@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.13.0 (18 january 2019)
+
 * Update prototype framework to v1.1.0. See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information
 * Add 'public' folder in prototype directory to better distinguish between public and non-public scripts. If used, requires change in 'customizations' folder
 * [Issue #616](https://github.com/AmpersandTarski/Ampersand/issues/616) Add missing TType 'Object' to parser
