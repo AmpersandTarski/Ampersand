@@ -1,8 +1,7 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-**!!Before release, do a release of the prototype framework and set option zwolleVersion to this release tag**
-* Update prototype framework. See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information
+* Update prototype framework to v1.1.0. See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information
 * Add 'public' folder in prototype directory to better distinguish between public and non-public scripts. If used, requires change in 'customizations' folder
 * [Issue #616](https://github.com/AmpersandTarski/Ampersand/issues/616) Add missing TType 'Object' to parser
 * [Issue #792](https://github.com/AmpersandTarski/Ampersand/issues/792) Add possibility to extend TXT in interfaces
