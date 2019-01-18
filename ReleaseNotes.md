@@ -1,5 +1,8 @@
 # Release notes of Ampersand
 
+## unreleased changes
+
+
 ## v3.13.0 (18 january 2019)
 
 * Update prototype framework to v1.1.0. See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information
