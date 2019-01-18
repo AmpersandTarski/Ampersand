@@ -13,7 +13,9 @@ import           Codec.Archive.Zip
 import           Control.Exception
 import           Control.Monad
 import qualified Data.ByteString.Lazy  as BL
+import           Data.Char
 import           Data.Data
+import           Data.Hashable (hash)
 import           Data.List
 import           Data.Maybe
 import           Network.HTTP.Simple
@@ -66,24 +68,27 @@ getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
- do { putStrLn "Generating frontend.."
-    ; downloadPrototypeFramework (getOpts fSpec)
+ do { verboseLn options "Generating frontend..."
+    ; isCleanInstall <- downloadPrototypeFramework options
     ; copyTemplates fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
+    ; writePrototypeAppFile options ".timestamp" (show . hash . show . genTime $ options) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     ; copyCustomizations fSpec
     -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
-    ; putStrLn "Installing dependencies.."
-    ; installComposerLibs (getOpts fSpec)
-    ; putStrLn "Frontend generated."
+    ; when isCleanInstall $ do
+      putStrLn "Installing dependencies..." -- don't use verboseLn here, because installing dependencies takes some time and we want the user to see this
+      installComposerLibs options
+    ; verboseLn options "Frontend generated"
     }
+  where
+    options = getOpts fSpec
 
 copyTemplates :: FSpec -> IO ()
 copyTemplates fSpec =
- do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          tempDir = adlSourceDir </> "templates"
+ do { let tempDir = dirSource (getOpts fSpec) </> "templates"
           toDir = dirPrototype (getOpts fSpec) </> "templates"
     ; tempDirExists <- doesDirectoryExist tempDir
     ; if tempDirExists then
@@ -98,8 +103,7 @@ copyCustomizations :: FSpec -> IO ()
 copyCustomizations fSpec = 
   mapM_ (copyDir protoDir) custDirs
     where
-      adlSourceDir = takeDirectory $ fileName opts
-      custDirs = map (adlSourceDir </>) (dirCustomizations opts)
+      custDirs = map (dirSource opts </>) (dirCustomizations opts)
       protoDir = dirPrototype opts
       opts = getOpts fSpec
       copyDir :: FilePath -> FilePath -> IO()
@@ -358,7 +362,7 @@ genViewObject fSpec depth obj@FEObjE{} =
             }
   where 
     indentation :: [String] -> [String]
-    indentation = indent (if depth == 0 then 4 else 16) 
+    indentation = map ( (replicate (if depth == 0 then 4 else 16) ' ') ++)
     genView_SubObject :: FEObject2 -> IO SubObjectAttr2
     genView_SubObject subObj =
       case subObj of
@@ -369,14 +373,12 @@ genViewObject fSpec depth obj@FEObjE{} =
                               , subObjContents = intercalate "\n" lns
                               , subObjExprIsUni = exprIsUni subObj
                               } 
-        FEObjT{} -> fatal "No view for TXT-like objects is defined."
-{- Code already in place. Wait for Prototype framework to implement backend
+        FEObjT{} -> 
           do return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                               , subObjLabel = objName subObj
                               , subObjContents = objTxt subObj
                               , subObjExprIsUni = True
                               }
--}
     getTemplateForObject :: IO FilePath
     getTemplateForObject 
        | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
@@ -458,14 +460,14 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 
-downloadPrototypeFramework :: Options -> IO ()
+downloadPrototypeFramework :: Options -> IO Bool
 downloadPrototypeFramework opts = 
   (do 
     x <- allowExtraction
-    when x $ do 
-      when (forceReinstallFramework opts) $ do
-        verboseLn opts $ "Emptying folder because redeploying prototype framework is forced"
-        destroyDestinationDir
+    if x
+    then do
+      verboseLn opts $ "Emptying folder to deploy prototype framework"
+      destroyDestinationDir
       verboseLn opts "Start downloading prototype framework."
       response <- 
         parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip") >>=
@@ -479,8 +481,10 @@ downloadPrototypeFramework opts =
               [OptVerbose | verboseP opts]
             ++ [OptDestination destination]
       extractFilesFromArchive zipoptions archive
-      writeFile (destination </> ".prototypeSHA")
+      writeFile (destination </> ".frameworkSHA")
                 (show . zComment $ archive)
+      return x
+    else return x
   ) `catch` \err ->  -- git failed to execute
          exitWith . FailedToInstallPrototypeFramework $
             [ "Error encountered during deployment of prototype framework:"
@@ -510,16 +514,36 @@ downloadPrototypeFramework opts =
           if destIsDirectory
           then do 
             dirContents <- listDirectory destination
-            let emptyOrForced = (null dirContents) || (forceReinstallFramework opts)
-            unless emptyOrForced
-                   (verboseLn opts $
+            let emptyDir = null dirContents
+            let forceReinstall = forceReinstallFramework opts
+            if emptyDir
+            then return True
+            else do
+              if forceReinstall
+              then do
+                putStrLn "Deleting all files to deploy prototype framework in"
+                putStrLn ("  " ++ destination)
+                putStrLn "Are you sure? y/n"
+                proceed <- promptUserYesNo
+                return proceed
+              else do
+                (verboseLn opts $
                          "(Re)deploying prototype framework not allowed, because\n"
-                      ++ "  "++destination++" isn't empty.")
-            return emptyOrForced
+                      ++ "  "++destination++" isn't empty. You could use the switch --force-reinstall-framework")
+                return False
           else do 
              verboseLn opts $
                        "(Re)deploying prototype framework not allowed, because\n"
                     ++ "  "++destination++" isn't a directory."
              return False
       else return True
-      
+
+promptUserYesNo :: IO Bool
+promptUserYesNo = do
+    char <- getChar -- TODO: refactor that the first character is directly processed
+    case toUpper char of
+      'Y' -> return True
+      'N' -> return False
+      _ -> do when (char /= '\n') $ putStrLn "Please specify y/n" -- Remove 'when' part if first char it directly processed
+              x <- promptUserYesNo
+              return x

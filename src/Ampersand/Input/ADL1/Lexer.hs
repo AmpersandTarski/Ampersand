@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Input.ADL1.Lexer
     ( keywords
     , operators
@@ -21,11 +22,13 @@ module Ampersand.Input.ADL1.Lexer
 ) where
 
 import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.FilePos(updatePos)
 import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Input.ADL1.LexerMonad
 import           Ampersand.Input.ADL1.LexerToken
 import           Ampersand.Misc
+import           Control.Monad (when)
 import           Data.Char hiding(isSymbol)
 import           Data.List (nub)
 import qualified Data.Set as Set -- (member, fromList)
@@ -36,24 +39,34 @@ import           Numeric
 -- | Retrieves a list of keywords accepted by the ampersand language
 keywords :: [String] -- ^ The keywords
 keywords  = nub [ "CONTEXT", "ENDCONTEXT"
-                , "IN", "ENGLISH", "DUTCH"
-                , "INCLUDE"
+                , "IN" 
+                ] ++
+                [map toUpper $ show x | x::Lang <- [minBound..]
+                ] ++
+                [ "INCLUDE"
                 , "META"
                 , "PATTERN", "ENDPATTERN"
                 , "CONCEPT"
                 -- Keywords for Relation-statements
                 , "RELATION", "PRAGMA", "MEANING"
-                , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP"
-                , "POPULATION", "CONTAINS"
+                ] ++
+                [map toUpper $ show x | x::Prop <-[minBound..]
+                ] ++ 
+                [ "POPULATION", "CONTAINS"
                 -- Keywords for rules
-                , "RULE", "MESSAGE", "VIOLATION", "TXT", "SRC", "TGT"
-                , "I", "V", "ONE"
+                , "RULE", "MESSAGE", "VIOLATION", "TXT"
+                ] ++
+                [map toUpper $ show x | x::SrcOrTgt <-[minBound..]
+                ] ++
+                [ "I", "V", "ONE"
                 , "ROLE", "MAINTAINS"
                 -- Keywords for purposes
                 , "PURPOSE", "REF"
-                , "REST", "HTML", "LATEX", "MARKDOWN"
+                ] ++
+                [map toUpper $ show x | x::PandocFormat <-[minBound..]
+                ] ++ 
                 -- Keywords for interfaces
-                , "INTERFACE", "FOR", "LINKTO", "API"
+                [ "INTERFACE", "FOR", "LINKTO", "API"
                 , "BOX", "ROWS", "TABS", "COLS"
                 -- Keywords for identitys
                 , "IDENT"
@@ -64,11 +77,12 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 , "CLASSIFY", "ISA", "IS"
                 -- Keywords for TType:
                 , "REPRESENT", "TYPE"
-                , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
-                , "BINARY", "BIGBINARY", "HUGEBINARY"
-                , "DATE", "DATETIME", "BOOLEAN", "INTEGER", "FLOAT", "AUTOINCREMENT"
+                ]++
+                [map toUpper $ show tt | tt::TType <- [minBound..]
+                                       , tt /= TypeOfOne 
+                ]++
                 -- Keywords for values of atoms:
-                , "TRUE", "FALSE" --for booleans
+                [ "TRUE", "FALSE" --for booleans
                 -- Experimental stuff:
                 , "SERVICE", "EDITS"
                 -- Depreciated keywords:
@@ -114,8 +128,11 @@ mainLexer _ [] =  return []
 
 mainLexer p ('-':'-':s) = mainLexer p (skipLine s) --TODO: Test if we should increase line number and reset the column number
 
-mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpace s
-                                in  mainLexer (foldl updatePos p (c:spc)) next
+mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpaceNoTab s
+                                    isSpaceNoTab x = isSpace x && (not .  isTab) x
+                                    isTab = ('\t' ==)
+                                in  do when (isTab c) (lexerWarning TabCharacter p)
+                                       mainLexer (foldl updatePos p (c:spc)) next
 
 mainLexer p ('{':'-':s) = lexNestComment mainLexer (addPos 2 p) s
 mainLexer p ('{':'+':s) = lexMarkup mainLexer (addPos 2 p) s
@@ -418,7 +435,7 @@ getEscChar s@(x:xs) | isDigit x = case readDec s of
 -----------------------------------------------------------
 
 returnToken :: Lexeme -> FilePos -> Lexer -> Lexer
-returnToken lx pos continue posi input = do
-    let token = Tok lx pos
+returnToken lx fpos continue posi input = do
+    let token = Tok lx fpos
     tokens <- continue posi input
     return (token:tokens)

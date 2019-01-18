@@ -35,24 +35,24 @@ grind formalAmpersand userFspec =
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = mapMaybe (extractFromPop formalAmpersand) metaPops2
+      , ctx_ds     = mapMaybe (extractFromPop formalAmpersand) . Set.toList $ metaPops2
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
       , ctx_rrels  = []
       , ctx_reprs  = []
       , ctx_vs     = []
-      , ctx_gs     = map aClassify2pClassify (instances formalAmpersand) 
+      , ctx_gs     = map aClassify2pClassify . Set.toList . instances $ formalAmpersand
       , ctx_ifcs   = []
       , ctx_ps     = []
       , ctx_pops   = []
       , ctx_metas  = []
       }
   where
-    metaPops2 :: [Pop]
-    metaPops2 = concatMap (grindedPops formalAmpersand userFspec)
-              . instances $ formalAmpersand
-
+    metaPops2 :: Set.Set Pop
+    metaPops2 = Set.fromList 
+              . concatMap (Set.toList . grindedPops formalAmpersand userFspec)
+              . Set.toList . instances $ formalAmpersand
 
 extractFromPop :: MetaFSpec -> Pop -> Maybe P_Relation
 extractFromPop formalAmpersand pop =
@@ -65,17 +65,19 @@ extractFromPop formalAmpersand pop =
       tuples :: [PAtomPair]
       tuples =
          case string2AValue . unwords . words . show . popPairs $ pop of
-            Checked x -> case checkAtomValues (popRelation pop) x of
-                          Checked _ -> x
-                          Errors errs -> fatal . unlines $
-                             [ "ERROR in tupels that are generated in the meatgrinder for relation"
-                             , "  "++showRel (popRelation pop)
-                             ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
-                             
-            Errors errs -> fatal . unlines $
-                             [ "ERROR in tupels that are generated in the meatgrinder for relation"
-                             , "  "++showRel (popRelation pop)
-                             ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+            Checked x _ 
+              -> case checkAtomValues (popRelation pop) x of
+                   Checked _ _ -> x
+                   Errors errs -> fatal . unlines $
+                      [ "ERROR in tupels that are generated in the meatgrinder for relation"
+                      , "  "++showRel (popRelation pop)
+                      ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+
+            Errors errs 
+              -> fatal . unlines $
+                      [ "ERROR in tupels that are generated in the meatgrinder for relation"
+                      , "  "++showRel (popRelation pop)
+                      ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
       checkAtomValues :: Relation -> [PAtomPair] -> Guarded AAtomPairs
       checkAtomValues rel pps = Set.fromList <$> (sequence $ map fun pps)
             where
@@ -93,7 +95,7 @@ extractFromPop formalAmpersand pop =
       string2AValue :: String -> Guarded [PAtomPair]
       string2AValue = runParser pContent "Somewhere in formalAmpersand files"
  
-data Pop = Pop { popPairs  :: [(PopAtom,PopAtom)]
+data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
                , popRelation :: Relation
                }
          | Comment { comment :: [String]  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
@@ -102,7 +104,7 @@ data Pop = Pop { popPairs  :: [(PopAtom,PopAtom)]
 showPop :: Pop -> String
 showPop pop =
   case pop of
-      Pop{} -> showP ((aRelation2pRelation (popRelation pop)) {dec_popu = map foo . sortShow $ popPairs pop} )
+      Pop{} -> showP ((aRelation2pRelation (popRelation pop)) {dec_popu = map foo . sortShow . Set.toList $ popPairs pop} )
       Comment{} -> intercalate "\n" . map ("-- " ++) . comment $ pop
     where sortShow :: [(PopAtom,PopAtom)] -> [(PopAtom,PopAtom)]
           sortShow = sortOn x
@@ -156,36 +158,40 @@ makeMetaFile formalAmpersand userFspec
          intercalate [""]
        . sort
        . map (lines . showPop )
-       . concatMap popsOfRelation
+       . concatMap (Set.toList . popsOfRelation)
        . sortOn showRel
-       . instances $ formalAmpersand
+       . Set.toList . instances $ formalAmpersand
     listOfConcepts :: [String]
     listOfConcepts = map ("-- "++) .
                      intercalate [""] . 
-                     map showCpt $ cpts
+                     map showCpt . sortOn name . Set.toList . instances $ formalAmpersand
        where
         showCpt :: A_Concept -> [String]
         showCpt cpt = [name cpt] ++ ( map ("  "++)
                                     . sort 
                                     . map show
+                                    . Set.toList
                                     $ pAtomsOfConcept cpt
                                     )
-        cpts::[A_Concept] = sortOn name . instances $ formalAmpersand 
         
-    popsOfRelation :: Relation -> [Pop]
-    popsOfRelation = sort . grindedPops formalAmpersand userFspec
-    pAtomsOfConcept :: A_Concept -> [PopAtom]
-    pAtomsOfConcept cpt = 
-      nub $
-         (nub . map fst . concatMap popPairs . concatMap popsOfRelation . filter isForSource . instances $ formalAmpersand)
-         ++
-         (nub . map snd . concatMap popPairs . concatMap popsOfRelation . filter isForTarget . instances $ formalAmpersand)               
-      where isForSource :: Relation -> Bool
-            isForSource rel = source rel == cpt
-            isForTarget :: Relation -> Bool
-            isForTarget rel = target rel == cpt
+    popsOfRelation :: Relation -> Set.Set Pop
+    popsOfRelation = grindedPops formalAmpersand userFspec
+    pAtomsOfConcept :: A_Concept -> Set.Set PopAtom
+    pAtomsOfConcept cpt = getPopsSet Src `Set.union` getPopsSet Tgt
+      where getPopsSet :: SrcOrTgt -> Set.Set PopAtom
+            getPopsSet x = Set.fromList . map (case x of
+                                                 Src -> fst
+                                                 Tgt -> snd
+                                              )
+                         . Set.toList . Set.unions.  map popPairs 
+                         . Set.toList . Set.unions . map popsOfRelation 
+                         . Set.toList . Set.filter (\rel-> case x of
+                                                             Src -> source rel == cpt
+                                                             Tgt -> target rel == cpt
+                                                   ) 
+                         . instances $ formalAmpersand
 
-grindedPops :: FSpec -> FSpec -> Relation -> [Pop]
+grindedPops :: FSpec -> FSpec -> Relation -> Set.Set Pop
 grindedPops formalAmpersand userFspec rel = 
   case filter (isForRel rel) (transformers userFspec) of
     []  -> fatal . unlines $ 
@@ -194,17 +200,18 @@ grindedPops formalAmpersand userFspec rel =
               ] ++ map ("      "++) viols
             where 
               viols = map showRelOrigin 
-                    . filter hasNoTransformer 
+                    . Set.toList
+                    . Set.filter hasNoTransformer 
                     . instances $ formalAmpersand
               hasNoTransformer :: Relation -> Bool
               hasNoTransformer d = null (filter (isForRel d) (transformers userFspec))
               showRelOrigin :: Relation -> String
               showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
-    ts  -> map transformer2Pop $ ts 
+    ts  -> Set.fromList . map transformer2Pop $ ts 
   where
     transformer2Pop :: Transformer -> Pop
     transformer2Pop (Transformer n s t ps) 
-      | not ( all (ttypeOf (source rel)) (map fst ps) ) =
+      | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ ps) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in formalampersand.adl."
@@ -212,7 +219,7 @@ grindedPops formalAmpersand userFspec rel =
                  , "   violates this rule for concept `"++s++"`. In formalAmpersand.adl "
                  , "   the TType of this concept is "++(show . cptTType formalAmpersand $ source rel)++"."
                  ]
-      | not ( all (ttypeOf (target rel)) (map snd ps) ) =
+      | not ( all (ttypeOf (target rel)) (map snd . Set.toList $ ps) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in formalampersand.adl."

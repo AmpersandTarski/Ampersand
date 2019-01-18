@@ -147,8 +147,8 @@ instance Unique Atom where
   showUnique a = showValADL (atmVal a)++" in "
          ++case atmRoots a of
              []  -> fatal "an atom must have at least one root concept"
-             [x] -> uniqueShow True x
-             xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
+             [x] -> uniqueShowWithType x
+             xs  -> "["++intercalate ", " (map uniqueShowWithType xs)++"]"
 
 data A_Pair = Pair { lnkDcl :: Relation
                    , lnkLeft :: Atom
@@ -157,9 +157,9 @@ data A_Pair = Pair { lnkDcl :: Relation
 instance HasSignature A_Pair where
   sign = sign . lnkDcl
 instance Unique A_Pair where
-  showUnique x = uniqueShow False (lnkDcl x)
-              ++ uniqueShow False (lnkLeft x)
-              ++ uniqueShow False (lnkRight x)
+  showUnique x = showUnique (lnkDcl x)
+              ++ showUnique (lnkLeft x)
+              ++ showUnique (lnkRight x)
 concDefs :: FSpec -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
@@ -293,6 +293,7 @@ getConceptTableFor fSpec c = case lookupCpt fSpec c of
 data RelStore 
   = RelStore
      { rsDcl       :: Relation
+     , rsStoredFlipped :: Bool
      , rsSrcAtt    :: SqlAttribute
      , rsTrgAtt    :: SqlAttribute
      } deriving (Show, Typeable)

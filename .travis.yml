@@ -6,7 +6,7 @@ sudo: required
 language: php
 
 php:
-  - 7.0
+  - 7.1
 
 cache:
     directories:
@@ -127,7 +127,7 @@ install:
 - |
   case "$BUILD" in
     stack)
-      stack --no-terminal --install-ghc $ARGS test --only-dependencies
+      stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll
       ;;
     cabal)
       cabal --version
@@ -143,7 +143,7 @@ script:
 - |
   case "$BUILD" in
     stack)
-    ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build
+    ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
       ;;
     cabal)
     ./travis_long cabal test

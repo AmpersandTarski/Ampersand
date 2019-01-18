@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE LambdaCase, ImplicitParams #-}
 {-# LANGUAGE ApplicativeDo, DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.ADL1.P2A_Converters
@@ -8,11 +7,13 @@ module Ampersand.ADL1.P2A_Converters
 where
 import           Ampersand.ADL1.Disambiguate
 import           Ampersand.ADL1.Lattices -- used for type-checking
+import           Ampersand.ADL1.Expression
 import           Ampersand.Basics
 import           Ampersand.Classes
-import           Ampersand.Core.ParseTree
 import           Ampersand.Core.A2P_Converters
 import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
@@ -22,6 +23,7 @@ import           Data.Char(toUpper,toLower)
 import           Data.Either
 import           Data.Foldable (toList)
 import           Data.Function
+import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable
 import           Data.List as Lst
 import qualified Data.List.NonEmpty as NEL --(NonEmpty(..),nonEmpty)
@@ -51,7 +53,7 @@ mustBeConceptBecauseMath tp
  = let fatalV :: (?loc :: CallStack) => a
        fatalV = fatal "A concept turned out to be a built-in type."
    in case getAsConcept fatalV tp of
-        Checked v -> v
+        Checked v _ -> v
         _ -> fatalV
 
 -- NOTE: Static checks like checkPurposes should ideally occur on the P-structure before type-checking, as it makes little
@@ -540,9 +542,9 @@ pCtx2aCtx opts
                 , obj_crud = mCrud
                 , obj_mView = mView
                 , obj_msub = subs
-                } -> do checkCrudForRefInterface 
-                        (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
-                        crud <- pCruds2aCruds mCrud
+                } -> do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
+                        checkCrud
+                        crud <- pCruds2aCruds objExpr mCrud
                         maybeObj <- case subs of
                                       Just P_Box{si_box=[]} -> pure Nothing
                                       _ -> maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
@@ -555,12 +557,12 @@ pCtx2aCtx opts
                                     []   -> Nothing
                                     vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
                                 
-              checkCrudForRefInterface :: Guarded()
-              checkCrudForRefInterface = 
+              checkCrud :: Guarded()
+              checkCrud = 
                 case (mCrud, subs) of
-                  (Just _ , Just P_InterfaceRef{si_isLink=False}) 
-                          -> Errors . pure $ mkCrudForRefInterfaceError orig
-                  _       -> pure ()
+                  (Just _ , Just P_InterfaceRef{si_isLink=False} )
+                      -> Errors . pure $ mkCrudForRefInterfaceError orig
+                  _   -> pure()
               typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
               typeCheckViewAnnotation _       Nothing       = pure ()
               typeCheckViewAnnotation objExpr (Just viewId) =
@@ -591,27 +593,69 @@ pCtx2aCtx opts
                                     , objtxt = str
                                     },True)
 
-    pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
-    pCruds2aCruds mCrud = 
+    pCruds2aCruds :: Expression -> Maybe P_Cruds -> Guarded Cruds
+    pCruds2aCruds expr mCrud = 
        case mCrud of 
-         Nothing -> build (Origin "default for Cruds") ""
-         Just (P_Cruds org str ) -> if (length . nub . map toUpper) str == length str && all (`elem` "cCrRuUdD") str
-                                    then build org str 
-                                    else Errors . pure $ mkInvalidCRUDError org str
+         Nothing -> mostLiberalCruds (Origin "Default for Cruds") ""
+         Just pc@(P_Cruds org userCrudString )
+             | (length . nub . map toUpper) userCrudString == length userCrudString &&
+                all (`elem` "cCrRuUdD") userCrudString  
+                         -> warnings pc $ mostLiberalCruds org userCrudString 
+             | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrudString
       where (defC, defR, defU, defD) = defaultCrud opts
-            build org str 
-             = pure Cruds { crudOrig = org
-                          , crudC    = f 'C' defC
-                          , crudR    = f 'R' defR
-                          , crudU    = f 'U' defU
-                          , crudD    = f 'D' defD
+            mostLiberalCruds :: Origin -> String -> Guarded Cruds
+            mostLiberalCruds o str
+             = pure Cruds { crudOrig = o
+                          , crudC    = isFitForCrudC expr && f 'C' defC
+                          , crudR    = isFitForCrudR expr && f 'R' defR
+                          , crudU    = isFitForCrudU expr && f 'U' defU
+                          , crudD    = isFitForCrudD expr && f 'D' defD
                           }
-               where f :: Char -> Bool -> Bool 
+                   where
+                     f :: Char -> Bool -> Bool 
                      f c def'
                       | toUpper c `elem` str = True
                       | toLower c `elem` str = False
                       | otherwise            = def'
-
+            warnings :: P_Cruds -> Guarded Cruds -> Guarded Cruds
+            warnings pc@(P_Cruds _ crd) aCruds = addWarnings warns aCruds
+              where
+                warns :: [Warning]
+                warns = map (mkCrudWarning pc) $ 
+                    [ 
+                      [ "'C' was specified, but the expression "
+                      , "  "++showA expr
+                      , "doesn't allow for the creation of a new atom at its target concept ("++name (target expr)++") "
+                      ] ++
+                      [ "  HINT: You might want to use U(pdate), which updates the pair in the relation."
+                      | isFitForCrudU expr, 'U' `notElem` crd
+                      ]
+                    | 'C' `elem` crd && not (isFitForCrudC expr)
+                    ]++
+                    [ [ "'R' was specified, but the expression "
+                      , "  "++showA expr
+                      , "doesn't allow for read of the pairs in that expression."
+                      ]
+                    | 'R' `elem` crd && not (isFitForCrudR expr)
+                    ]++
+                    [ [ "'U' was specified, but the expression "
+                      , "  "++showA expr
+                      , "doesn't allow to insert or delete pairs in it."
+                      ]
+                    | 'U' `elem` crd && not (isFitForCrudU expr)
+                    ]++
+                    [ [ "'D' was specified, but the expression "
+                      , "  "++showA expr
+                      , "doesn't allow for the deletion of an atom from its target concept ("++name (target expr)++") "
+                      ]
+                    | 'D' `elem` crd && not (isFitForCrudD expr)
+                    ]
+                    ++
+                    [ [ "R(ead) is required to do U(pdate) or D(elete) "
+                      , "however, you explicitly specified 'r'."
+                      ]
+                    | 'r' `elem` crd && ('U' `elem` crd || 'D' `elem` crd)
+                    ]
     pSubi2aSubi :: ContextInfo
                 -> Expression -- Expression of the surrounding
                 -> Bool -- Whether the surrounding is bounded
@@ -685,27 +729,32 @@ pCtx2aCtx opts
         disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign s
 
     pIfc2aIfc :: ContextInfo -> (P_Interface, P_BoxItem (TermPrim, DisambPrim)) -> Guarded Interface
-    pIfc2aIfc ci
-             (P_Ifc { ifc_IsAPI = isAPI
-                    , ifc_Name = nm
-                    , ifc_Roles = rols
-                    , ifc_Obj = _
-                    , pos = orig
-                    , ifc_Prp = prp
-                    }, objDisamb)
-        = (\ obj'
-             -> case obj' of
+    pIfc2aIfc declMap (pIfc, objDisamb) = 
+       build $ pObjDefDisamb2aObjDef declMap objDisamb
+      where 
+         build :: Guarded BoxItem -> Guarded Interface
+         build gb = 
+           case gb of
+             Errors x        -> Errors x
+             Checked obj' ws -> 
+                addWarnings ws $
+                case obj' of
                   BxExpr o ->
-                    Ifc { ifcIsAPI = isAPI
-                        , ifcname = nm 
-                        , ifcRoles = rols
-                        , ifcObj = o
-                        , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
-                        , ifcPos = orig
-                        , ifcPrp = prp
-                        }
+                    case ttype . target . objExpression $ o of
+                      Object -> 
+                          pure Ifc { ifcIsAPI = ifc_IsAPI pIfc
+                                  , ifcname = name pIfc 
+                                  , ifcRoles = ifc_Roles pIfc
+                                  , ifcObj = o
+                                  , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
+                                  , ifcPos = origin pIfc
+                                  , ifcPrp = ifc_Prp pIfc
+                                  }
+                      tt -> Errors . pure
+                            . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o) $ tt
                   BxTxt _ -> fatal "Unexpected BxTxt"  --Interface should not have TXT only. it should have an expression object.     
-          ) <$> pObjDefDisamb2aObjDef ci objDisamb
+         ttype :: A_Concept -> TType
+         ttype = representationOf declMap
 
     pRoleRelation2aRoleRelation :: ContextInfo -> P_RoleRelation -> Guarded A_RoleRelation
     pRoleRelation2aRoleRelation ci prr
@@ -1105,3 +1154,12 @@ orElse :: Maybe a -> Maybe a -> Maybe a
 x `orElse` y = case x of
                  Just _  -> x
                  Nothing -> y
+
+-- | getCycles returns a list of cycles in the edges list (each edge is a pair of a from-vertex
+--   and a list of to-vertices)
+getCycles :: Eq a => [(a, [a])] -> [[a]]
+getCycles edges =
+  let allVertices = nub . concat $ [ from : to | (from, to) <- edges ]
+      keyFor v = fromMaybe (error "FATAL") $ elemIndex v allVertices
+      graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
+  in  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]

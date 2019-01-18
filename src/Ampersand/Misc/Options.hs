@@ -8,7 +8,7 @@ module Ampersand.Misc.Options
         , verboseLn
         , verbose
         , showFormat
-        , helpNVersionTexts
+        , usageInfo'
         , writeConfigFile
         )
 where
@@ -38,6 +38,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
+                       , dirSource :: FilePath -- the directory of the script that is being compiled
                        , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
                        , forceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
@@ -69,7 +70,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                        , progrName :: String --The name of the adl executable
-                       , fileName :: FilePath --the file with the Ampersand context
+                       , fileName :: Maybe FilePath --the file with the Ampersand context
                        , baseName :: String
                        , genTime :: LocalTime
                        , export2adl :: Bool
@@ -185,7 +186,7 @@ getOptions' :: EnvironmentOptions -> Options
 getOptions' envOpts =  
    case errors of
      []  | allowInvariantViolations opts && validateSQL opts 
-                     -> exitWith . WrongArgumentsGiven $ ["--dev and --validate must not be used at the same time."] --(Reason: see ticket #378))
+                     -> exitWith . WrongArgumentsGiven $ ["--ignore-invariant-violations and --validate must not be used at the same time."] --(Reason: see ticket #378))
          | otherwise -> opts
      _  -> exitWith . WrongArgumentsGiven $ errors ++ [usage]
          
@@ -196,8 +197,8 @@ getOptions' envOpts =
       where f a b = b a
     (actions, fNames, errors) = getOpt Permute (map fst options) $ envArgsFromConfigFile envOpts ++ envArgsCommandLine envOpts 
     fName = case fNames of
-             []   -> exitWith . WrongArgumentsGiven $ "Please supply the name of an ampersand file" : [usage]
-             [n]  -> n
+             []   -> Nothing
+             [n]  -> if hasExtension n then Just n else Just $ addExtension n "adl"
              _    -> exitWith . WrongArgumentsGiven $ ("Too many files: "++ intercalate ", " fNames) : [usage]
     usage = "Type '"++envProgName envOpts++" --help' for usage info."
     startOptions :: Options
@@ -206,11 +207,12 @@ getOptions' envOpts =
                       , genTime          = envLocalTime envOpts
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfile       = fatal "No monadic options available."
-                      , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
-                      , zwolleVersion    = "v1.0.1"
+                      , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto"
+                      , dirSource        = takeDirectory $ fromMaybe "/" fName
+                      , zwolleVersion    = "v1.1.0"
                       , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
-                      , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
+                      , dbName           = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
                       , preVersion       = fromMaybe "" $ envPreVersion envOpts
                       , postVersion      = fromMaybe "" $ envPostVersion envOpts
@@ -245,10 +247,8 @@ getOptions' envOpts =
                       , genPOPExcel      = False
                       , language         = Nothing
                       , progrName        = envProgName envOpts
-                      , fileName         = if hasExtension fName
-                                           then fName
-                                           else addExtension fName "adl"
-                      , baseName         = takeBaseName fName
+                      , fileName         = fName
+                      , baseName         = takeBaseName $ fromMaybe "unknown" fName
                       , export2adl       = False
                       , test             = False
                       , genMetaFile      = False
@@ -370,7 +370,7 @@ options = [ (Option ['v']   ["version"]
                        ) "config.yaml")
                "config file (*.yaml) that contains the command line options of ampersand."
             , Public)
-          , (Option []      ["dev","ignore-invariant-violations"]
+          , (Option []      ["ignore-invariant-violations"]
                (NoArg (\opts -> opts{allowInvariantViolations = True}))
                "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
             , Hidden)
@@ -649,8 +649,3 @@ verboseLn opts x
                      do hSetBuffering stdout NoBuffering
                         mapM_ putStrLn (lines x)
    | otherwise     = return ()
-helpNVersionTexts :: String -> Options -> [String]
-helpNVersionTexts vs opts = ["Executable: "++show (dirExec opts)++"\n"   | test opts       ]++
-                            [preVersion opts++vs++postVersion opts++"\n" | showVersion opts]++
-                            [usageInfo' opts                             | showHelp    opts]
-

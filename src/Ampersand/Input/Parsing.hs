@@ -24,6 +24,7 @@ import           Control.Exception
 import           Data.Char(toLower)
 import           Data.List
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
+import qualified Data.Set as Set
 import           Data.Maybe
 import           System.Directory
 import           System.FilePath
@@ -36,18 +37,18 @@ parseADL :: Options                    -- ^ The options given through the comman
          -> IO (Guarded P_Context)     -- ^ The resulting context
 parseADL opts fp = do curDir <- getCurrentDirectory
                       canonical <- canonicalizePath fp
-                      parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical [])
+                      parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
 
 parseMeta :: Options -> IO (Guarded P_Context)
-parseMeta opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" [])
+parseMeta opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
 
 parseSystemContext :: Options -> IO (Guarded P_Context)
-parseSystemContext opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" [])
+parseSystemContext opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
 
 parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context) 
 parseThing opts pc =
   whenCheckedIO (parseADLs opts [] [pc] ) $ \ctxts ->
-      return $ Checked $ foldl1 mergeContexts ctxts
+      return . pure $ foldl1 mergeContexts ctxts
 
 -- | Parses several ADL files
 parseADLs :: Options                  -- ^ The options given through the command line
@@ -56,7 +57,7 @@ parseADLs :: Options                  -- ^ The options given through the command
           -> IO (Guarded [P_Context]) -- ^ The resulting contexts
 parseADLs opts parsedFilePaths fpIncludes =
   case fpIncludes of
-    [] -> return $ Checked []
+    [] -> return $ pure []
     x:xs -> if x `elem` parsedFilePaths
             then parseADLs opts parsedFilePaths xs
             else whenCheckedIO (parseSingleADL opts x) parseTheRest
@@ -70,7 +71,7 @@ data ParseCandidate = ParseCandidate
        , pcFilePath :: FilePath -- The absolute or relative filename as found in the INCLUDE statement
        , pcFileKind :: Maybe FileKind -- In case the file is included into ampersand.exe, its FileKind.
        , pcCanonical :: FilePath -- The canonicalized path of the candicate
-       , pcDefineds :: [PreProcDefine]
+       , pcDefineds :: Set.Set PreProcDefine
        }
 instance Eq ParseCandidate where
  a == b = pcFileKind a == pcFileKind b && pcCanonical a `equalFilePath` pcCanonical b
@@ -113,18 +114,19 @@ parseSingleADL opts pc
                            (return $ parseCtx filePath =<< (preProcess filePath (pcDefineds pc) fileContents))
                            $ \(ctxts, includes) ->
                                  do parseCandidates <- mapM include2ParseCandidate includes
-                                    return (Checked (ctxts, parseCandidates))
+                                    return . pure $ (ctxts, parseCandidates)
                 }
          where 
                include2ParseCandidate :: Include -> IO ParseCandidate
                include2ParseCandidate (Include org str defs) = do
                   let canonical = myNormalise ( takeDirectory filePath </> str )
+                      defineds  = processFlags (pcDefineds pc) defs
                   return ParseCandidate { pcBasePath  = Just filePath
                                         , pcOrigin    = Just org
                                         , pcFilePath  = str
                                         , pcFileKind  = pcFileKind pc
                                         , pcCanonical = canonical
-                                        , pcDefineds  = pcDefineds pc ++ defs
+                                        , pcDefineds  = defineds
                                         }
                myNormalise :: FilePath -> FilePath 
                -- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why System.Filepath doesn't support reduction of x/foo/../bar into x/bar. 
@@ -171,7 +173,7 @@ parse p fn ts =
     case runP p pos' fn ts of
         --TODO: Add language support to the parser errors
         Left err -> Errors $ parseErrors English err
-        Right a -> Checked a
+        Right a -> pure a
     where pos' | null ts   = initPos fn
                | otherwise = tokPos (head ts)
 
@@ -194,8 +196,9 @@ runParser parser filename input =
   let lexed = lexer [] filename input
   in case lexed of
     Left err -> Errors . pure $ lexerError2CtxError err
-    --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
-    Right (tokens, _)  -> whenChecked (parse parser filename tokens) Checked
+    Right (tokens, lexerWarnings) 
+             -> addWarnings (map lexerWarning2Warning lexerWarnings)
+                            (parse parser filename tokens)
 
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.
@@ -204,8 +207,8 @@ parseRule :: String         -- ^ The string to be parsed
           -> Term TermPrim  -- ^ The resulting rule
 parseRule str
    = case  runParser pRule "inside Haskell code" str of
-       Checked result -> result
-       Errors  msg    -> fatal ("Parse errors in "++str++":\n   "++show msg)
+       Checked result _ -> result
+       Errors  msg      -> fatal ("Parse errors in "++str++":\n   "++show msg)
 
 -- | Parses an Ampersand context
 parseCtx :: FilePath -- ^ The file name (used for error messages)

@@ -15,14 +15,14 @@ import           Data.Data
 import qualified Data.Text as Text
 import           Text.Pandoc hiding (Meta)
 
-data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
+data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord, Enum, Bounded)
 
 data Markup =
     Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
            , amPandoc :: [Block]
            } deriving (Show, Eq, Ord, Typeable, Data)
 instance Unique Markup where
-  showUnique x = uniqueShow True x++" in "++(show.amLang) x
+  showUnique = show
 
 
 -- | a way to show the pandoc in a default way. We currently use Markdown for this purpose. 

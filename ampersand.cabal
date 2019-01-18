@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.12.0
+version:        3.13.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of enterprise information systems.
@@ -7,7 +7,7 @@ description:    You can define your business processes by means of rules, writte
 homepage:       http://ampersandtarski.github.io/
 category:       Database Design
 stability:      alpha
-cabal-version:  >= 2.0
+cabal-version:  2.0
 tested-with:    GHC == 8.4.3
 build-type:     Custom
 license:        GPL
@@ -18,6 +18,11 @@ bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 -- we would need to specify a pattern for each extension in each subdirectory.
 data-files:
                 LICENSE
+
+Flag buildAll
+  Description: Build both ampersand and ampPreProc.
+  Default:     False
+  Manual:      True
 
 custom-setup
   setup-depends:     base == 4.11.*,
@@ -186,13 +191,18 @@ executable ampersand
                      ampersand
                      
 executable ampPreProc
-  hs-source-dirs:    preProcApp
-  main-is:           Main.hs
+  hs-source-dirs:    app
+  main-is:           AmpPreProc.hs
   default-language:  Haskell2010
   ghc-options:       -Wall -threaded
   default-extensions:NoImplicitPrelude
-  build-depends:     base == 4.11.*,
-                     ampersand                     
+  if flag(buildAll)
+    build-depends:     base == 4.11.*,
+                       containers == 0.5.*,
+                       ampersand
+    buildable:     True
+  else
+    buildable:     False
 
 Test-Suite regression-test
   type:              exitcode-stdio-1.0

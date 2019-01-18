@@ -35,7 +35,7 @@ writePrototypeAppFile opts relFilePath content =
    
 getAppDir :: Options -> String
 getAppDir opts =
-  dirPrototype opts </> "app" </> "project"
+  dirPrototype opts </> "public" </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent

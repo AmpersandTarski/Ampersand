@@ -2,13 +2,16 @@ module Ampersand.Input.PreProcessor (
       preProcess
     , preProcess'
     , PreProcDefine
+    , processFlags
 ) where
 
 import Data.List
 import qualified Data.List.NonEmpty as NEL
+import qualified Data.Set as Set
 import Data.String
 import Data.Maybe
 import Data.Bool
+import Data.Char
 import Data.Either
 import Data.Functor
 import Control.Monad hiding (guard)
@@ -20,19 +23,28 @@ import Ampersand.Input.ADL1.CtxError
 
 type PreProcDefine = String
 
+-- | Remove and add flags to the set of enabled flags based on an import statement.
+processFlags :: Set.Set PreProcDefine -- ^ Old set of preprocessor flags
+             -> [String]              -- ^ List of preprocessor flags from an import
+             -> Set.Set PreProcDefine -- ^ Set of preprocessor flags after import
+processFlags oldFlags importList = Set.difference (Set.union oldFlags addedDefines) removedDefines
+  where (addedDefines, removedDefines) =
+            (\(removed, added) -> (Set.fromList added, Set.fromList $ map (fromMaybe "" . stripPrefix "!") removed))
+            (partition (isPrefixOf "!") importList)
+
 -- Shim that changes our 'Either ParseError a' from preProcess' into 'Guarded a'
 -- | Runs the preProcessor on input
 preProcess :: String          -- ^ filename, used only for error reporting
-           -> [PreProcDefine] -- ^ list of flags, The list of defined 'flags
+           -> Set.Set PreProcDefine -- ^ list of flags, The list of defined 'flags
            -> String          -- ^ input, The actual string to processs
            -> Guarded String  -- ^ result, The result of processing
 preProcess f d i = case preProcess' f d i of
                    (Left  err) -> Errors $ (PE . Message . show $ err) NEL.:| []
-                   (Right out) -> Checked out
+                   (Right out) -> Checked out []
 
 -- | Runs the preProcessor on input
 preProcess' :: String                   -- ^ filename, used only for error reporting
-            -> [PreProcDefine]          -- ^ list of flags, The list of defined 'flags
+            -> Set.Set PreProcDefine       -- ^ list of flags, The list of defined 'flags
             -> String                   -- ^ input, The actual string to process
             -> Either ParseError String -- ^ result, The result of processing
 -- We append "\n" because the parser cannot handle a final line not terminated by a newline.
@@ -51,7 +63,7 @@ guard :: Guard -> String
 guard (Guard x) = x
 
 data LexLine = CodeLine String
-             | IncludeLine String (Maybe String)
+             | IncludeLine String String
              | IfNotStart Guard
              | IfStart Guard
              | ElseClause
@@ -59,12 +71,12 @@ data LexLine = CodeLine String
 instance Show LexLine where
   show = showLex
 showLex :: LexLine -> String
-showLex (CodeLine x)      = x
-showLex (IncludeLine x y) = x ++ " " ++ maybe "" id y
-showLex (IfNotStart x)    = "IFNOT " ++ guard x
-showLex (IfStart x)       = "IF "    ++ guard x
-showLex (ElseClause)      = "ELSE"
-showLex (EndIf)           = "ENDIF"
+showLex (CodeLine x)      = "LEX: CODELINE " ++ x
+showLex (IncludeLine x y) = "LEX: INCLUDE "  ++ x ++ "--#" ++ y
+showLex (IfNotStart x)    = "LEX: IFNOT "    ++ guard x
+showLex (IfStart x)       = "LEX: IF "       ++ guard x
+showLex (ElseClause)      = "LEX: ELSE"
+showLex (EndIf)           = "LEX: ENDIF"
 
 type Lexer a = Parsec String () a
 
@@ -83,8 +95,12 @@ codeLine = CodeLine <$> untilEOL
 includeLine :: Lexer LexLine
 includeLine  = do {
     ; spaces'  <- try (many space <* string "INCLUDE")
-    ; included <- manyTill anyChar (lookAhead . try $ (( (:[]) <$> endOfLine) <|> string "--#"))
-    ; flags    <- optionMaybe $ (try . string $ "--#") *> untilEOL
+    ; included <- manyTill anyChar ((lookAhead . try )
+                                     (    return () <$> string "--#"
+                                      <|> return () <$> endOfLine
+                                     )
+                                   )
+    ; flags    <- string "--#" *> untilEOL <|> endOfLine *> return ""
     ; return $ IncludeLine (spaces' ++ "INCLUDE" ++ included) flags
     }
 
@@ -100,7 +116,7 @@ preProcDirective = (try preProcPrefix) *>
 -- This pattern signifies the line is meant for the preProcessor.
 -- Lines that don't start with this pattern are 'CodeLine's
 preProcPrefix :: Lexer ()
-preProcPrefix = spaces *> string "--" *> many (char '-') *> spaces *> char '#' *> spaces
+preProcPrefix = whitespace *> string "--" *> many (char '-') *> whitespace *> char '#' *> whitespace
 
 ifGuard :: Lexer LexLine
 ifGuard = (IfStart . Guard) <$>
@@ -126,7 +142,7 @@ ifEnd = (const EndIf) <$> (try(string "ENDIF") *> untilEOL)
 
 -- Helper Lexers
 whitespace :: Lexer ()
-whitespace = skipMany1 space
+whitespace = skipMany $ satisfy (\x -> isSpace x && not (x == '\n' || x == '\r'))
 
 untilEOL :: Lexer String
 untilEOL = manyTill anyChar endOfLine
@@ -135,7 +151,7 @@ untilEOL = manyTill anyChar endOfLine
 
 -- | A block element is either a normal line, or a Guarded Block (i.e. an IF or IFNOT block)
 data BlockElem = LineElem String
-               | IncludeElem String (Maybe String)
+               | IncludeElem String String
                | GuardedElem GuardedBlock  -- These cover IF and IFNOT blocks
 
 type Block   = [ BlockElem ]
@@ -226,34 +242,33 @@ elseClauseStart = parserToken matchIfEnd
 -}
 
 -- | Renders a Block type back into a String, according to some context
-block2file :: [PreProcDefine] -- ^ flags, List of defined flags
+block2file :: Set.Set PreProcDefine -- ^ defs, List of defined flags
            -> Bool    -- ^ showing, whether we are showing the current block, or it is hidden
            -> Block   -- ^ block, the block we want to process
            -> String
-block2file defs shown = concat . map (blockElem2string defs shown)
+block2file defs showing = concat . map (blockElem2string defs showing)
 
 -- | Renders a single block element back into text
-blockElem2string :: [PreProcDefine] -- ^ flags, the list of active flags
+blockElem2string :: Set.Set PreProcDefine -- ^ flags, the list of active flags
                  -> Bool            -- ^ showing, whether we are showing the current block element, or it is hidden
                  -> BlockElem       -- ^ blockElem, the block element to render
                  -> String
 blockElem2string _    True    (LineElem line)           = line ++ "\n"
-blockElem2string _    True    (IncludeElem line flags)  = line ++ "   " ++ fromMaybe "" flags ++ "\n"
+blockElem2string _    True    (IncludeElem line flags)  = line ++ "   " ++ flags ++ "\n"
 blockElem2string _    False   (LineElem line)           = "--hiden by preprocc " ++ line ++ "\n"
-blockElem2string _    False   (IncludeElem line flags)  = "--hiden by preprocc " ++ line ++
-                                                          " " ++ fromMaybe "" flags ++ "\n"
+blockElem2string _    False   (IncludeElem line flags)  = "--hiden by preprocc " ++ line ++ " " ++ flags ++ "\n"
 blockElem2string defs showing (GuardedElem guardedElem) = showGuardedBlock defs showing guardedElem
 
 -- | Renders a GuardedBlock
 -- This is where the rendering logic of IF and IFNOT is implemented
 -- Simplification of this function is why IF and IFNOT are both represented by the type GuardedBlock
-showGuardedBlock :: [PreProcDefine] -- ^ flags, the list of active flags
+showGuardedBlock :: Set.Set PreProcDefine -- ^ flags, the list of active flags
                  -> Bool            -- ^ showing, whether we are showing the current block element, or it is hidden
                  -> GuardedBlock    -- ^ guardedBlock, the element to render
                  -> String
 showGuardedBlock defs showing (GuardedBlock ifType (Guard guard') block elseBlock) =
     -- The  xor (not ifType)  is a succinct way to express the difference between IF blocks and NOTIF blocks
-    let showMainBody = (xor (not ifType) (guard' `elem` defs)) in
+    let showMainBody = (xor (not ifType) (guard' `Set.member` defs)) in
       concat [ guardedBlockName ifType ++ guard' ++ "\n"
              , (block2file defs (showing &&      showMainBody)  block    )
              , (showElse  defs (showing && (not showMainBody)) elseBlock)
@@ -264,8 +279,9 @@ showGuardedBlock defs showing (GuardedBlock ifType (Guard guard') block elseBloc
 guardedBlockName :: Bool -> String
 guardedBlockName ifType = (if ifType then "--#IF " else "--#IFNOT ")
 
-showElse :: [PreProcDefine] -> Bool -> Maybe Block -> String
+showElse :: Set.Set PreProcDefine -> Bool -> Maybe Block -> String
 showElse defs showing = maybe "" (("--#ELSE\n" ++) . block2file defs showing)
 
 xor :: Bool -> Bool -> Bool
 xor p q = (p || q) && not (p && q)
+
