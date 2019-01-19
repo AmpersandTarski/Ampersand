@@ -321,7 +321,6 @@ mkSubInterfaceMustBeDefinedOnObject x cpt tt =
   CTXE (origin x). L.intercalate "\n  " $
       ["The TYPE of the concept for which a "++boxClass++" is defined must be OBJECT."
       ,"The TYPE of the concept `"++name cpt++"`, for this "++boxClass++", however is "++show tt++"."
-      , show x
       ]
     where boxClass = fromMaybe "BOX" (si_class x)
                        
