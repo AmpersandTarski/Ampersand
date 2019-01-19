@@ -25,6 +25,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkMultipleRootsError
   , mkCrudForRefInterfaceError
   , mkInterfaceMustBeDefinedOnObject
+  , mkSubInterfaceMustBeDefinedOnObject
   , lexerWarning2Warning
   , addWarning, addWarnings
   , showWarning, showWarnings
@@ -315,6 +316,13 @@ mkInterfaceMustBeDefinedOnObject ifc cpt tt =
       ["The TYPE of the concept for wich an INTERFACE is defined should be OBJECT."
       ,"The TYPE of the concept `"++name cpt++"`, for interface `"++name ifc++"`, however is "++show tt++"."
       ]
+mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc (TermPrim, DisambPrim) -> A_Concept -> TType -> CtxError
+mkSubInterfaceMustBeDefinedOnObject x cpt tt =
+  CTXE (origin x). L.intercalate "\n  " $
+      ["The TYPE of the concept for wich a BOX is defined should be OBJECT."
+      ,"The TYPE of the concept `"++name cpt++"`, for this box, however is "++show tt++"."
+      ]
+
 class ErrorConcept a where
   showEC :: a -> String
 
