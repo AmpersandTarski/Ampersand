@@ -313,13 +313,13 @@ mkOtherTupleInSessionError r pr =
 mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxError
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =
   CTXE (origin ifc) . L.intercalate "\n  " $
-      ["The TYPE of the concept for wich an INTERFACE is defined should be OBJECT."
+      ["The TYPE of the concept for which an INTERFACE is defined should be OBJECT."
       ,"The TYPE of the concept `"++name cpt++"`, for interface `"++name ifc++"`, however is "++show tt++"."
       ]
 mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc (TermPrim, DisambPrim) -> A_Concept -> TType -> CtxError
 mkSubInterfaceMustBeDefinedOnObject x cpt tt =
   CTXE (origin x). L.intercalate "\n  " $
-      ["The TYPE of the concept for wich a BOX is defined should be OBJECT."
+      ["The TYPE of the concept for which a BOX is defined should be OBJECT."
       ,"The TYPE of the concept `"++name cpt++"`, for this box, however is "++show tt++"."
       ]
 
