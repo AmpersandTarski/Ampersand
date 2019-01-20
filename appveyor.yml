@@ -7,7 +7,7 @@ environment:
     CABOPTS:  "--store-dir=C:\\SR --http-transport=plain-http"
   matrix:
     # 64 bit builds
-    - GHCVER: "8.4.2"
+    - GHCVER: "8.6.2"
       CHOCOPTS:
     # 32 bit builds --disabled, because pandoc fails to build at 32 bit.
     # - GHCVER: "8.4.2"
