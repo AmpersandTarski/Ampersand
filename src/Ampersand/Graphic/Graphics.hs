@@ -5,6 +5,7 @@ module Ampersand.Graphic.Graphics
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
+import           Ampersand.Graphic.ClassDiagram(ClassDiag)
 import           Ampersand.FSpec.FSpec
 import           Ampersand.Graphic.ClassDiag2Dot
 import           Ampersand.Graphic.Fspec2ClassDiagrams
@@ -26,10 +27,12 @@ data PictureReq = PTClassDiagram
                 | PTCDRule Rule
                 | PTLogicalDM
                 | PTTechnicalDM
-
+data DotContent = 
+     ClassDiagram ClassDiag
+   | ConceptualDg ConceptualStructure
 data Picture = Pict { pType :: PictureReq             -- ^ the type of the picture
                     , scale :: String                 -- ^ a scale factor, intended to pass on to LaTeX, because Pandoc seems to have a problem with scaling.
-                    , dotSource :: DotGraph String    -- ^ the string representing the .dot
+                    , dotContent :: DotContent
                     , dotProgName :: GraphvizCommand  -- ^ the name of the program to use  ("dot" or "neato" or "fdp" or "Sfdp")
                     , caption :: String               -- ^ a human readable name of this picture
                     }
@@ -39,7 +42,7 @@ makePicture fSpec pr =
   case pr of
    PTClassDiagram      -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot (getOpts fSpec) (clAnalysis fSpec)
+                               , dotContent = ClassDiagram $ clAnalysis fSpec
                                , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
@@ -48,7 +51,7 @@ makePicture fSpec pr =
                                }
    PTLogicalDM         -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot (getOpts fSpec) (cdAnalysis fSpec)
+                               , dotContent = ClassDiagram $ cdAnalysis fSpec
                                , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
@@ -57,7 +60,7 @@ makePicture fSpec pr =
                                }
    PTTechnicalDM       -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot (getOpts fSpec) (tdAnalysis fSpec)
+                               , dotContent = ClassDiagram $ tdAnalysis fSpec
                                , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
@@ -66,7 +69,7 @@ makePicture fSpec pr =
                                }
    PTCDConcept cpt     -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec pr
+                               , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
                                    case fsLang fSpec of
@@ -75,7 +78,7 @@ makePicture fSpec pr =
                                }
    PTDeclaredInPat pat -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec pr
+                               , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
                                    case fsLang fSpec of
@@ -84,7 +87,7 @@ makePicture fSpec pr =
                                }
    PTCDPattern pat     -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec pr
+                               , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
                                    case fsLang fSpec of
@@ -93,7 +96,7 @@ makePicture fSpec pr =
                                }
    PTCDRule rul        -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec pr
+                               , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
                                    case fsLang fSpec of
@@ -123,10 +126,8 @@ pictureID pr =
       PTCDPattern pat     -> "CDPattern"++name pat
       PTCDRule r          -> "CDRule"++name r
 
-conceptualGraph' :: FSpec -> PictureReq -> DotGraph String
-conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
-  where
-    cstruct =
+conceptualStructure :: FSpec -> PictureReq -> ConceptualStructure
+conceptualStructure fSpec pr =
       case pr of
         PTCDConcept c ->
           let gs = fsisa fSpec
@@ -203,7 +204,8 @@ writePicture opts pict
               -> IO ()
      writeDotPostProcess postProcess gvOutput  =
          do verboseLn opts ("Generating "++show gvOutput++" using "++show gvCommand++".")
-            path <- addExtension (runGraphvizCommand gvCommand (dotSource pict)) gvOutput ((dropExtension . imagePath opts) pict)
+            dotSource <- mkDotGraphIO opts pict
+            path <- addExtension (runGraphvizCommand gvCommand dotSource) gvOutput ((dropExtension . imagePath opts) pict)
             verboseLn opts (path++" written.")
             case postProcess of
               Nothing -> return ()
@@ -226,6 +228,12 @@ writePicture opts pict
                                        "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
+mkDotGraphIO :: Options -> Picture -> IO (DotGraph String)
+mkDotGraphIO opts pict = 
+  case dotContent pict of
+    ClassDiagram x -> pure $ classdiagram2dot opts x
+    ConceptualDg x -> conceptual2DotIO opts x
+
 class ReferableFromPandoc a where
   imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
 
@@ -238,41 +246,15 @@ instance ReferableFromPandoc Picture where
       Fdocx  -> "svg"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
       _      -> "pdf"
 
-{-
-class Named a => Navigatable a where
-   interfacename :: a -> String
-   itemstring :: a -> String
-   theURL :: Options -> a -> EscString    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
-   theURL _ x = fromString $ "HIER KAN EEN URL WORDEN GEBOUWD voor "++ interfacename x++" "++itemstring x
---     = fromString ("Atlas.php?content=" ++ interfacename x
---                   ++  "&User=" ++ user
---                   ++  "&Script=" ++ script
---                   ++  "&"++interfacename x ++"="++qualify++itemstring x
---                  )
---      where --copied from atlas.hs
---      script = fileName opts
---      user = namespace opts
---      qualify = "("++user ++ "." ++ script ++ ")"
-
-instance Navigatable A_Concept where
-   interfacename _ = "Concept" --see Atlas.adl
-   itemstring = name  --copied from atlas.hs
-
-instance Navigatable Relation where
-   interfacename _ = "Relatiedetails"
-   itemstring x = name x ++ "["
-                  ++ (if source x==target x then name(source x) else name(source x)++"*"++name(target x))
-                  ++ "]"
--}
-
-data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
+data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to draw in the graph
                                    , csRels :: [Relation]   -- ^ The relations, (the edges in the graph)
                                    , csIdgs :: [(A_Concept, A_Concept)]  -- ^ list of Isa relations
                                    }
 
-conceptual2Dot :: Options -> ConceptualStructure -> DotGraph String
-conceptual2Dot opts (CStruct cpts' rels idgs)
-     = DotGraph { strictGraph = False
+conceptual2DotIO :: Options -> ConceptualStructure -> IO (DotGraph String)
+conceptual2DotIO opts (CStruct cpts' rels idgs)
+     = pure $ 
+       DotGraph { strictGraph = False
                 , directedGraph = True
                 , graphID = Nothing
                 , graphStatements
@@ -466,3 +448,4 @@ open  = noMod {arrowFill = OpenArrow}
 
 directionArrow :: ArrowType
 directionArrow = AType [(open,Vee)]
+
