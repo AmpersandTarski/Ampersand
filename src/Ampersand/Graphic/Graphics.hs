@@ -11,6 +11,7 @@ import           Ampersand.Graphic.ClassDiag2Dot
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Misc
 import           Control.Exception (catch, IOException)
+import           Data.Char
 import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete
 import           Data.List
@@ -113,7 +114,7 @@ makePicture fSpec pr =
             PTCDConcept{}      -> "0.7"
             PTLogicalDM    -> "1.2"
             PTTechnicalDM  -> "1.2"
-   graphVizCmdForConceptualGraph = Fdp -- (don't use Sfdp, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
+   graphVizCmdForConceptualGraph = Neato -- Dot -- (don't use Sfdp, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
 
 pictureID :: PictureReq -> String
 pictureID pr =
@@ -191,10 +192,12 @@ writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
    --   [dumpShow ]++
-   --   [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+      [writeDot DotOutput | genFSpec opts] ++ --Reproduces the input along with layout information.
       [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
-      [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
-      [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
+--      [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
+--      [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
+  []
           )
    where
      writeDot :: GraphvizOutput -> IO ()
@@ -205,7 +208,8 @@ writePicture opts pict
      writeDotPostProcess postProcess gvOutput  =
          do verboseLn opts ("Generating "++show gvOutput++" using "++show gvCommand++".")
             dotSource <- mkDotGraphIO opts pict
-            path <- addExtension (runGraphvizCommand gvCommand dotSource) gvOutput ((dropExtension . imagePath opts) pict)
+            path <- (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
+                       (dropExtension . imagePath opts) pict ++ show gvOutput
             verboseLn opts (path++" written.")
             case postProcess of
               Nothing -> return ()
@@ -232,7 +236,7 @@ mkDotGraphIO :: Options -> Picture -> IO (DotGraph String)
 mkDotGraphIO opts pict = 
   case dotContent pict of
     ClassDiagram x -> pure $ classdiagram2dot opts x
-    ConceptualDg x -> conceptual2DotIO opts x
+    ConceptualDg x -> conceptual2DotIO' opts x
 
 class ReferableFromPandoc a where
   imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
@@ -252,9 +256,115 @@ data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to
                                    }
 
 conceptual2DotIO :: Options -> ConceptualStructure -> IO (DotGraph String)
-conceptual2DotIO opts (CStruct cpts' rels idgs)
-     = pure $ 
-       DotGraph { strictGraph = False
+conceptual2DotIO opts (CStruct cpts' rels idgs)= pure $ conceptual2DotOLD opts (CStruct cpts' rels idgs)
+
+conceptual2DotIO' :: Options -> ConceptualStructure -> IO (DotGraph String)
+conceptual2DotIO' opts (CStruct cpts' rels idgs) = 
+    pure initialGraph -- >>= pure . addEdges
+  where
+    placeConceptNodes :: IO [DotNode String]
+    placeConceptNodes = undefined
+      
+    initialGraph :: DotGraph String
+    initialGraph = 
+      DotGraph { strictGraph = False
+               , directedGraph = True
+               , graphID = Nothing
+               , graphStatements =
+                   DotStmts { attrStmts = [GraphAttrs [ Landscape False
+                                                      , Mode IpSep
+                                                      , OutputOrder EdgesFirst
+                                                      , Overlap VoronoiOverlap
+                                                      , Sep (DVal 0.5)
+                                                      , NodeSep 1.0 
+                                                      , Rank SameRank
+                                                      , RankDir FromTop
+                                                      , RankSep [2.5]
+                                                      , ReMinCross True
+                                                      , Splines Curved
+                                                      ]
+                                          , NodeAttrs [ Shape BoxShape
+                                                      , Color [WC (X11Color LightGray ) Nothing
+                                                              ]
+                                                      , Style [SItem Rounded []
+                                                              ,SItem Filled  []
+                                                              ,SItem Bold []
+                                                              ]
+                                                      ] 
+                                          , EdgeAttrs [ Len 3.0 ]
+                                          ]
+                            , subGraphs = []
+                            , nodeStmts = map initialNode cpts  -- conceptNodes -- ++ relationNodes
+                            , edgeStmts = map initialRelEdge rels
+                                        ++map initialGenEdge idgs -- ++ isaEdges
+                            }
+               }
+       where
+         initialNode :: A_Concept -> DotNode String
+         initialNode c = DotNode { nodeID = baseNodeId c
+                                 , nodeAttributes = [ -- FontSize 10
+                                                      Label . StrLabel . fromString . name $ c
+                                                  -- , FontName (fromString "sans")
+                                                    ]
+                                 }
+         initialRelEdge :: Relation -> DotEdge String
+         initialRelEdge rel = DotEdge
+             { fromNode       = baseNodeId . source $ rel
+             , toNode         = baseNodeId . target $ rel
+             , edgeAttributes = [ Color [WC (X11Color Black ) Nothing]
+                                , Label . StrLabel . fromString . intercalate "\n" $ 
+                                     name rel :
+                                     case Set.toList . properties $ rel of
+                                        []   -> []
+                                        ps -> ["["++(intercalate ", " . map (map toLower . show) $ ps)++"]"]
+                                ]
+             }
+         initialGenEdge :: (A_Concept,A_Concept) -> DotEdge String
+         initialGenEdge (gen,spc) = DotEdge
+             { fromNode       = baseNodeId spc
+             , toNode         = baseNodeId gen
+             , edgeAttributes = [ Label . StrLabel . fromString $ "isa" 
+                                , Color [WC (X11Color Red ) Nothing]
+                                ]
+             }
+    addEdges :: [DotNode String] -> (DotGraph String)
+    addEdges x =
+      DotGraph { strictGraph = False
+               , directedGraph = True
+               , graphID = Nothing
+               , graphStatements =
+                   DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture opts)]
+                            , subGraphs = []
+                            , nodeStmts = x -- conceptNodes -- ++ relationNodes
+                            , edgeStmts = [] -- relationEdges ++ isaEdges
+                            }
+               }
+    cpts :: [A_Concept]
+    cpts = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
+    baseNodeId = baseNodeIds cpts
+    conceptNodes :: [DotNode String]
+    conceptNodes = undefined
+    relationNodes = undefined
+    relationEdges = undefined
+    isaEdges = undefined
+
+
+
+
+baseNodeIds :: [A_Concept] -> A_Concept -> String
+baseNodeIds cpts c = 
+  case lookup c (zip cpts [(1::Int)..]) of
+    Just i -> "cpt_"++show i
+    _      -> fatal ("element "++name c++" not found by nodeLabel.")
+
+
+
+
+
+
+conceptual2DotOLD :: Options -> ConceptualStructure -> DotGraph String
+conceptual2DotOLD opts (CStruct cpts' rels idgs)
+     = DotGraph { strictGraph = False
                 , directedGraph = True
                 , graphID = Nothing
                 , graphStatements
@@ -270,12 +380,7 @@ conceptual2DotIO opts (CStruct cpts' rels idgs)
         (relationNodes,relationEdges) = (concat a, concat b)
               where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
         isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge opts | (s,g)<-idgs]
-
-        baseNodeId :: A_Concept -> String  -- returns the NodeId of the node where edges to this node should connect to.
-        baseNodeId c
-            = case lookup c (zip cpts [(1::Int)..]) of
-                Just i -> "cpt_"++show i
-                _      -> fatal ("element "++name c++" not found by nodeLabel.")
+        baseNodeId = baseNodeIds cpts
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         relationNodesAndEdges ::
