@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
@@ -114,7 +115,10 @@ makePicture fSpec pr =
             PTCDConcept{}      -> "0.7"
             PTLogicalDM    -> "1.2"
             PTTechnicalDM  -> "1.2"
-   graphVizCmdForConceptualGraph = Neato -- Dot -- (don't use Sfdp, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
+   graphVizCmdForConceptualGraph = 
+       -- Dot gives bad results, but there seems no way to fiddle with the length of edges. 
+       Neato 
+       -- Sfdp is a bad choice, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
 
 pictureID :: PictureReq -> String
 pictureID pr =
@@ -192,13 +196,12 @@ writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
    --   [dumpShow ]++
-      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
-      [writeDot DotOutput | genFSpec opts] ++ --Reproduces the input along with layout information.
+--      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+--      [writeDot DotOutput | genFSpec opts] ++ --Reproduces the input along with layout information.
       [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
---      [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
---      [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
-  []
-          )
+      [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
+      [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
+           )
    where
      writeDot :: GraphvizOutput -> IO ()
      writeDot = writeDotPostProcess Nothing
@@ -209,7 +212,7 @@ writePicture opts pict
          do verboseLn opts ("Generating "++show gvOutput++" using "++show gvCommand++".")
             dotSource <- mkDotGraphIO opts pict
             path <- (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
-                       (dropExtension . imagePath opts) pict ++ show gvOutput
+                       (dropExtension . imagePath opts) pict
             verboseLn opts (path++" written.")
             case postProcess of
               Nothing -> return ()
@@ -236,7 +239,7 @@ mkDotGraphIO :: Options -> Picture -> IO (DotGraph String)
 mkDotGraphIO opts pict = 
   case dotContent pict of
     ClassDiagram x -> pure $ classdiagram2dot opts x
-    ConceptualDg x -> conceptual2DotIO' opts x
+    ConceptualDg x -> pure $ conceptual2DotIO opts x
 
 class ReferableFromPandoc a where
   imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
@@ -255,272 +258,130 @@ data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to
                                    , csIdgs :: [(A_Concept, A_Concept)]  -- ^ list of Isa relations
                                    }
 
-conceptual2DotIO :: Options -> ConceptualStructure -> IO (DotGraph String)
-conceptual2DotIO opts (CStruct cpts' rels idgs)= pure $ conceptual2DotOLD opts (CStruct cpts' rels idgs)
-
-conceptual2DotIO' :: Options -> ConceptualStructure -> IO (DotGraph String)
-conceptual2DotIO' opts (CStruct cpts' rels idgs) = 
-    pure initialGraph -- >>= pure . addEdges
-  where
-    placeConceptNodes :: IO [DotNode String]
-    placeConceptNodes = undefined
-      
-    initialGraph :: DotGraph String
-    initialGraph = 
+conceptual2DotIO :: Options -> ConceptualStructure -> DotGraph String
+conceptual2DotIO opts cs@(CStruct _ rels idgs) = 
       DotGraph { strictGraph = False
                , directedGraph = True
                , graphID = Nothing
                , graphStatements =
-                   DotStmts { attrStmts = [GraphAttrs [ Landscape False
+                   DotStmts { attrStmts = [GraphAttrs [ BgColor [WC (X11Color White ) Nothing]
+                                                      , Landscape False
                                                       , Mode IpSep
                                                       , OutputOrder EdgesFirst
                                                       , Overlap VoronoiOverlap
-                                                      , Sep (DVal 0.5)
+                                                      , Sep (DVal 0.8)
                                                       , NodeSep 1.0 
                                                       , Rank SameRank
                                                       , RankDir FromTop
                                                       , RankSep [2.5]
                                                       , ReMinCross True
-                                                      , Splines Curved
+                                                {-  Commented out because of an issue: See https://gitlab.com/graphviz/graphviz/issues/1485
+                                                      , Splines Curved  
+                                                -}  
                                                       ]
                                           , NodeAttrs [ Shape BoxShape
-                                                      , Color [WC (X11Color LightGray ) Nothing
-                                                              ]
+                                                      , BgColor [WC (X11Color LightGray ) Nothing]
                                                       , Style [SItem Rounded []
                                                               ,SItem Filled  []
                                                               ,SItem Bold []
                                                               ]
                                                       ] 
-                                          , EdgeAttrs [ Len 3.0 ]
+                                          , EdgeAttrs [ Color [WC (X11Color Black ) Nothing]
+                                                      , edgeLenFactor 1 ]
                                           ]
                             , subGraphs = []
-                            , nodeStmts = map initialNode cpts  -- conceptNodes -- ++ relationNodes
-                            , edgeStmts = map initialRelEdge rels
-                                        ++map initialGenEdge idgs -- ++ isaEdges
+                            , nodeStmts = concatMap nodes (allCpts cs)
+                                        ++concatMap nodes rels
+                                        ++concatMap nodes idgs
+                            , edgeStmts = concatMap edges (allCpts cs)
+                                        ++concatMap edges rels
+                                        ++concatMap edges idgs
                             }
                }
        where
-         initialNode :: A_Concept -> DotNode String
-         initialNode c = DotNode { nodeID = baseNodeId c
-                                 , nodeAttributes = [ -- FontSize 10
-                                                      Label . StrLabel . fromString . name $ c
-                                                  -- , FontName (fromString "sans")
-                                                    ]
-                                 }
-         initialRelEdge :: Relation -> DotEdge String
-         initialRelEdge rel = DotEdge
-             { fromNode       = baseNodeId . source $ rel
-             , toNode         = baseNodeId . target $ rel
-             , edgeAttributes = [ Color [WC (X11Color Black ) Nothing]
-                                , Label . StrLabel . fromString . intercalate "\n" $ 
-                                     name rel :
-                                     case Set.toList . properties $ rel of
-                                        []   -> []
-                                        ps -> ["["++(intercalate ", " . map (map toLower . show) $ ps)++"]"]
-                                ]
-             }
-         initialGenEdge :: (A_Concept,A_Concept) -> DotEdge String
-         initialGenEdge (gen,spc) = DotEdge
-             { fromNode       = baseNodeId spc
-             , toNode         = baseNodeId gen
-             , edgeAttributes = [ Label . StrLabel . fromString $ "isa" 
-                                , Color [WC (X11Color Red ) Nothing]
-                                ]
-             }
-    addEdges :: [DotNode String] -> (DotGraph String)
-    addEdges x =
-      DotGraph { strictGraph = False
-               , directedGraph = True
-               , graphID = Nothing
-               , graphStatements =
-                   DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture opts)]
-                            , subGraphs = []
-                            , nodeStmts = x -- conceptNodes -- ++ relationNodes
-                            , edgeStmts = [] -- relationEdges ++ isaEdges
-                            }
-               }
-    cpts :: [A_Concept]
-    cpts = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
-    baseNodeId = baseNodeIds cpts
-    conceptNodes :: [DotNode String]
-    conceptNodes = undefined
-    relationNodes = undefined
-    relationEdges = undefined
-    isaEdges = undefined
+    nodes :: HasDotParts a => a -> [DotNode String]
+    nodes = dotNodes opts cs
+    edges :: HasDotParts a => a -> [DotEdge String]
+    edges = dotEdges opts cs
 
+class HasDotParts a where
+  dotNodes :: Options -> ConceptualStructure -> a -> [DotNode String]
+  dotEdges :: Options -> ConceptualStructure -> a -> [DotEdge String]
 
-
-
-baseNodeIds :: [A_Concept] -> A_Concept -> String
-baseNodeIds cpts c = 
-  case lookup c (zip cpts [(1::Int)..]) of
+baseNodeId :: ConceptualStructure -> A_Concept -> String
+baseNodeId x c =
+  case lookup c (zip (allCpts x) [(1::Int)..]) of
     Just i -> "cpt_"++show i
     _      -> fatal ("element "++name c++" not found by nodeLabel.")
 
+allCpts :: ConceptualStructure -> [A_Concept]
+allCpts (CStruct cpts' rels idgs) = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
 
+edgeLenFactor :: Double -> Attribute
+edgeLenFactor x = Len (4 * x)
 
-
-
-
-conceptual2DotOLD :: Options -> ConceptualStructure -> DotGraph String
-conceptual2DotOLD opts (CStruct cpts' rels idgs)
-     = DotGraph { strictGraph = False
-                , directedGraph = True
-                , graphID = Nothing
-                , graphStatements
-                      = DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture opts)]
-                                 , subGraphs = []
-                                 , nodeStmts = conceptNodes ++ relationNodes
-                                 , edgeStmts = relationEdges ++ isaEdges
-                                 }
-                }
-       where
-        cpts = Set.elems $ Set.fromList cpts' `Set.union` concs rels `Set.union` concs idgs
-        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<- cpts]
-        (relationNodes,relationEdges) = (concat a, concat b)
-              where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
-        isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge opts | (s,g)<-idgs]
-        baseNodeId = baseNodeIds cpts
-
-        -- | This function constructs a list of NodeStatements that must be drawn for a concept.
-        relationNodesAndEdges ::
-             (Relation,Int)           -- ^ tuple contains the relation and its rank
-          -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
-        relationNodesAndEdges (r,n)
-          | doubleEdges opts
-             = (  [ relNameNode ]    -- node to place the name of the relation
-               ,  [ constrEdge (baseNodeId (source r)) (nodeID relNameNode)   (RelSrcEdge r) opts     -- edge to connect the source with the hinge
-                  , constrEdge (nodeID relNameNode)   (baseNodeId (target r)) (RelTgtEdge r) opts]     -- edge to connect the hinge to the target
-               )
-          | otherwise
-               = ( [] --No intermediate node
-                 , [constrEdge (baseNodeId (source r)) (baseNodeId (target r)) (RelOnlyOneEdge r)  opts]
-                 )
-          where
-        --    relHingeNode   = constrNode ("relHinge_"++show n) RelHingeNode   opts
-            relNameNode    = constrNode ("relName_"++show n) (RelIntermediateNode r) opts
-
-constrNode :: a -> PictureObject -> Options -> DotNode a
-constrNode nodeId pObj opts
-  = DotNode { nodeID = nodeId
-            , nodeAttributes = [ FontSize 10
-                               , FontName (fromString "sans")
-                           --    , Width 0.1
-                           --    , Height  0.1
-                               ]++handleFlags pObj opts
-            }
-
-constrEdge :: a -> a -> PictureObject -> Options -> DotEdge a
-constrEdge nodeFrom nodeTo pObj opts
-  = DotEdge { fromNode = nodeFrom
-            , toNode   = nodeTo
-            , edgeAttributes = [ FontSize 12
-                               , FontName (fromString "sans")
-                               , Dir Forward
-                            --   , LabelAngle (-25.0)
-                               , Color [WC(X11Color Gray35)Nothing]
-                               , LabelFontColor (X11Color Black)
-                               , LabelFloat False
-                               , Decorate False
-                            --   , LabelDistance 2.0
-                            --   , (HeadLabel . StrLabel . fromString) "Test"
-                               ]++handleFlags pObj opts
-            }
---DESCR -> a picture consists of arcs (relations), concepts, and ISA relations between concepts
---         arcs are attached to a source or target concept
---         arcs and concepts are points attached to a label
--- for Haddock support on GraphViz, click on:
---       http://hackage.haskell.org/packages/archive/graphviz/2999.6.0.0/doc/html/doc-index.html     or
---       http://hackage.haskell.org/packages/archive/graphviz/latest/doc/html/doc-index.html
-
-data PictureObject = CptOnlyOneNode A_Concept    -- ^ Node of a concept that serves as connector and shows the name
-                   | CptConnectorNode A_Concept  -- ^ Node of a concept that serves as connector of relations to that concept
-                   | CptNameNode A_Concept       -- ^ Node of a concept that shows the name
-                   | CptEdge                     -- ^ Edge of a concept to connect its nodes
-                   | RelOnlyOneEdge Relation  -- ^ Edge of a relation that connects to the source and the target
-                   | RelSrcEdge     Relation  -- ^ Edge of a relation that connects to the source
-                   | RelTgtEdge     Relation  -- ^ Edge of a relation that connects to the target
-                   | RelIntermediateNode    Relation  -- ^ Intermediate node, as a hindge for the relation edges
-                   | IsaOnlyOneEdge              -- ^ Edge of an ISA relation without a hinge node
-                   | TotalPicture                -- ^ Graph attributes
-
-handleFlags :: PictureObject  -> Options -> [Attribute]
-handleFlags po opts =
-    case po of
-      CptConnectorNode c
-         -> if crowfoot opts
-            then
-                 [ (Label . StrLabel . fromString . name) c
-                 , Shape PlainText
-                 , Style [filled]
-             --    , URL (theURL opts c)
-                 ]
-            else [ Shape PointShape
-                 , Style [filled]
-                 ]
-      CptNameNode c  -> if crowfoot opts
-                        then [ Shape PointShape
-                             , Style [invis]]
-                        else
-                             [ (Label . StrLabel . fromString . name) c
+instance HasDotParts A_Concept where
+  dotNodes _ x cpt =
+    [DotNode 
+      { nodeID = baseNodeId x cpt
+      , nodeAttributes = [ Label . StrLabel . fromString . name $ cpt
+                         ]
+      }
+    ]
+  dotEdges _ _ _ = []  
+instance HasDotParts Relation where
+  dotNodes _ x rel
+    | isEndo rel = 
+       [DotNode 
+          { nodeID = baseNodeId x (source rel) ++ name rel 
+          , nodeAttributes = [ Color [WC (X11Color Transparent ) Nothing]
                              , Shape PlainText
-                             , Style [filled]
-               --              , URL (theURL opts c)
+                             , Label . StrLabel . fromString . intercalate "\n" $ 
+                                  name rel :
+                                  case Set.toList . properties $ rel of
+                                     []   -> []
+                                     ps -> ["["++(intercalate ", " . map (map toLower . show) $ ps)++"]"]
+                              ]
+                          }
+       ]
+    | otherwise  = []
+  dotEdges _ x rel
+    | isEndo rel = 
+      [ DotEdge
+          { fromNode       = baseNodeId x . source $ rel
+          , toNode         = baseNodeId x (source rel) ++ name rel
+          , edgeAttributes = [ Dir NoDir
+                             , edgeLenFactor 0.4
+                             , Label . StrLabel . fromString $ "" 
                              ]
-      CptEdge    -> [Style [invis]
-                    ]
-      CptOnlyOneNode c ->
-                          [(Label . StrLabel . fromString . name) c
-                          , Shape BoxShape
-                          , Style [filled]
-                    --      , URL (theURL opts c)
-                          ]
-      RelOnlyOneEdge r ->  (XLabel . StrLabel .fromString.name) r
-                       --   , URL (theURL opts r)
-                          :
-                          [ ArrowTail noArrow, ArrowHead noArrow
-                          , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
-                          , Style [SItem Tapered []] , PenWidth 5
-                          ]
-      RelSrcEdge r -> [ ArrowHead ( if crowfoot opts   then normal                    else
-                                    if isFunction (EDcD r) then noArrow                   else
-                                    directionArrow
-                                  )
-                      , ArrowTail ( if crowfoot opts   then crowfootArrowType False r else
-                                    if isFunction (EDcD r)    then noArrow                   else
-                                    if isFunction (flp . EDcD $ r) then normal                    else
-                                    noArrow
-                                  )
-                      ,HeadClip False
-                      ]
-      RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
-                      , ArrowHead ( if crowfoot opts   then crowfootArrowType True r  else
-                                    if isFunction (EDcD r)    then normal                    else
-                                    noArrow
-                                  )
-                      , ArrowTail ( if crowfoot opts   || isFunction (EDcD r)    
-                                                       then noArrow                   else
-                                    AType [(noMod ,Inv)]
-                                  )
-                      ,TailClip False
-                      ]
-      RelIntermediateNode _ ->
-                       [ Label (StrLabel (fromString "" ))
-                       , Shape PlainText
-                       , bgColor White
-                    --   , URL (theURL opts r)
-                       ]
-      IsaOnlyOneEdge-> [ ArrowHead (AType [(open,Normal)])
-                       , ArrowTail noArrow
-                       , if blackWhite opts then Style [dotted] else Color [WC(X11Color Red)Nothing]
-                       ]
-      TotalPicture -> [ Sep (DVal (if doubleEdges opts then 1/2 else 2)) -- The minimal amount of whitespace between nodes
-                      , OutputOrder  EdgesFirst --make sure the nodes are always on top...
-                      , Overlap ScaleXYOverlaps
-                      , Splines PolyLine  -- SplineEdges could work as well.
-                      , Landscape False
-                      ]
+          }
+      ]
+    | otherwise =
+      [ DotEdge
+          { fromNode       = baseNodeId x . source $ rel
+          , toNode         = baseNodeId x . target $ rel
+          , edgeAttributes = [ Label . StrLabel . fromString . intercalate "\n" $ 
+                                  name rel :
+                                  case Set.toList . properties $ rel of
+                                     []   -> []
+                                     ps -> ["["++(intercalate ", " . map (map toLower . show) $ ps)++"]"]
+                             ]
+          }
+      ]
+instance HasDotParts (A_Concept,A_Concept) where
+  dotNodes _ _ _ = []
+  dotEdges _ x (gen,spc) = 
+    [ DotEdge
+         { fromNode       = baseNodeId x spc
+         , toNode         = baseNodeId x gen
+         , edgeAttributes = [ edgeLenFactor 0.5
+                            , Label . StrLabel . fromString $ "isa" 
+                            , Color [WC (X11Color Red ) Nothing]
+                            ]
+         }
+    ]
 
+{- 
 crowfootArrowType :: Bool -> Relation -> ArrowType
 crowfootArrowType isHead r
    = AType (if isHead 
@@ -544,13 +405,10 @@ crowfootArrowType isHead r
          my_crow :: ( ArrowModifier , ArrowShape )
          my_crow= ( open, Crow )
 
-noMod :: ArrowModifier
-noMod = ArrMod { arrowFill = FilledArrow
-               , arrowSide = BothSides
-               }
-open :: ArrowModifier
-open  = noMod {arrowFill = OpenArrow}
-
-directionArrow :: ArrowType
-directionArrow = AType [(open,Vee)]
-
+         noMod :: ArrowModifier
+         noMod = ArrMod { arrowFill = FilledArrow
+                       , arrowSide = BothSides
+                       }
+         open :: ArrowModifier
+         open  = noMod {arrowFill = OpenArrow}
+ -}
