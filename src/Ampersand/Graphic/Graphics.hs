@@ -196,8 +196,8 @@ writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
    --   [dumpShow ]++
---      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
---      [writeDot DotOutput | genFSpec opts] ++ --Reproduces the input along with layout information.
+      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+      [writeDot DotOutput | genFSpec opts] ++ --Reproduces the input along with layout information.
       [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
       [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
@@ -372,11 +372,18 @@ instance HasDotParts (A_Concept,A_Concept) where
   dotNodes _ _ _ = []
   dotEdges _ x (gen,spc) = 
     [ DotEdge
-         { fromNode       = baseNodeId x spc
-         , toNode         = baseNodeId x gen
+         { fromNode       = baseNodeId x gen
+         , toNode         = baseNodeId x spc
          , edgeAttributes = [ edgeLenFactor 0.5
-                            , Label . StrLabel . fromString $ "isa" 
+                            , Label . StrLabel . fromString $ "" 
                             , Color [WC (X11Color Red ) Nothing]
+                            , ArrowHead (AType [( ArrMod { arrowFill = OpenArrow
+                                                         , arrowSide = BothSides
+                                                         }
+                                                , Normal
+                                                )
+                                               ]
+                                        )
                             ]
          }
     ]

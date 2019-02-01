@@ -16,7 +16,7 @@ import qualified Data.Set as Set
 import           Data.List (nub,delete)
        
 genericAndSpecifics :: AClassify -> [(A_Concept,A_Concept)]
-genericAndSpecifics gen = 
+genericAndSpecifics gen = filter (\x -> fst x /= snd x) $  -- make sure that no tuples where source and target are equal are returned. 
     case gen of
       Isa{} -> [(genspc gen, gengen gen)]
       IsE{} -> [(genspc gen, g ) | g<-genrhs gen]
