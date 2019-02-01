@@ -63,8 +63,8 @@ instance JSON A_Concept Concept where
   , cptJSONtype              = show . cptTType fSpec $ cpt
   , cptJSONgeneralizations   = map (escapeIdentifier . name) . largerConcepts  (vgens fSpec) $ cpt
   , cptJSONspecializations   = map (escapeIdentifier . name) . smallerConcepts (vgens fSpec) $ cpt
-  , cptJSONdirectGens        = map (escapeIdentifier . name) $ nub [ g | (s,g) <- fsisa fSpec, s == cpt, g /= cpt] -- somehow fsisa contains pairs of (cpt,cpt). These are filtered out with 'g /= cpt'
-  , cptJSONdirectSpecs       = map (escapeIdentifier . name) $ nub [ s | (s,g) <- fsisa fSpec, g == cpt, s /= cpt] -- somehow fsisa contains pairs of (cpt,cpt). There are filtered out with 's /= cpt'
+  , cptJSONdirectGens        = map (escapeIdentifier . name) $ nub [ g | (s,g) <- fsisa fSpec, s == cpt]
+  , cptJSONdirectSpecs       = map (escapeIdentifier . name) $ nub [ s | (s,g) <- fsisa fSpec, g == cpt]
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
