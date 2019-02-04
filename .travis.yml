@@ -108,7 +108,7 @@ before_install:
 - sudo swapon /swapfile
 
 # Download and unpack the stack executable
-- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:$PATH
+- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/home/travis/build/AmpersandTarski/Ampersand/dist:$PATH
 - mkdir -p ~/.local/bin
 - |
   if [ `uname` = "Darwin" ]
