@@ -157,9 +157,10 @@ before_deploy:
   - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
   - echo "${TRAVIS_PULL_REQUEST}"
   - ls -al dist
-  - if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then \
-      git tag "testdeploy$AMPERSAND_VERSION"; \
-    fi
+  - | 
+     if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then
+        git tag "testdeploy$AMPERSAND_VERSION";
+     fi
 
 
 deploy:
