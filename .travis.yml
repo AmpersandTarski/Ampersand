@@ -35,10 +35,10 @@ matrix:
     compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
-  - name: "osx, stack"
-    env: BUILD=stack STACK_YAML=stack.yaml osx
-    compiler: ": #stack"
-    os: osx
+#  - name: "osx, stack"
+#    env: BUILD=stack STACK_YAML=stack.yaml osx
+#    compiler: ": #stack"
+#    os: osx
 
 
   # We grab the appropriate GHC and cabal-install versions from hvr's PPA. See:
@@ -50,14 +50,14 @@ matrix:
                              , ghc-8.4.3
                              ] 
                   ,sources: [hvr-ghc]}}
-  - name: "osx, cabal"
-    env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2 osx
-    compiler: ": #GHC 8.4.3"
-    addons: {apt: {packages: [ cabal-install-2.2.0.1
-                             , ghc-8.4.3
-                             ] 
-                  ,sources: [hvr-ghc]}}
-    os: osx
+#  - name: "osx, cabal"
+#    env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2 osx
+#    compiler: ": #GHC 8.4.3"
+#    addons: {apt: {packages: [ cabal-install-2.2.0.1
+#                             , ghc-8.4.3
+#                             ] 
+#                  ,sources: [hvr-ghc]}}
+#    os: osx
 
   # Build with the newest GHC and cabal-install.
   - name: "linux, cabal, latest"
@@ -81,9 +81,9 @@ matrix:
   - name: "linux, stack, latest"
   - name: "linux, cabal, latest"
 
-  # OSX builds currently (sept 2016) do not work, because PHP isn't available
-  - name: "osx, stack"
-  - name: "osx, cabal"
+#  # OSX builds currently (sept 2016) do not work, because PHP isn't available
+#  - name: "osx, stack"
+#  - name: "osx, cabal"
   
 
   
