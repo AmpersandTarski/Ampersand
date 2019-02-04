@@ -132,7 +132,7 @@ install:
     cabal)
       cabal --version
       travis_retry cabal update
-      ./travis_long cabal install --enable-tests 
+      ./travis_long cabal install
       ;;
   esac
 
