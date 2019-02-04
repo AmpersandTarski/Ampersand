@@ -1,7 +1,7 @@
 # This file is based on the travis.yml file of stack. 
 # (https://github.com/commercialhaskell/stack/blob/master/.travis.yml)
 #
-dist: trusty
+dist: xenial
 sudo: required
 language: php
 
