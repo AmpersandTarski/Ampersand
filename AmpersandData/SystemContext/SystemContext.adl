@@ -3,6 +3,9 @@ CONTEXT PrototypeFramework IN ENGLISH
   INCLUDE "Interfaces.adl"
   INCLUDE "Interfaces.ifc"
 
+  INCLUDE "Navbar.adl"
+  INCLUDE "Navbar.ifc"
+
   -- TEMPORARY. TODO: remove classify statement when Role is replaced in other (meta) models (e.g. SIAM)
   CLASSIFY Role ISA PF_Role
 
