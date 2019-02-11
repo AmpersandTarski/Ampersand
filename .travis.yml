@@ -31,12 +31,12 @@ matrix:
   # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
   # variable, such as using --stack-yaml to point to a different file.
   - name: "linux, stack"
-    env: BUILD=stack STACK_YAML=stack.yaml
+    env: BUILD=stack ARGS="--interleaved-output" STACK_YAML=stack.yaml
     compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
 #  - name: "osx, stack"
-#    env: BUILD=stack STACK_YAML=stack.yaml osx
+#    env: BUILD=stack ARGS="--interleaved-output" STACK_YAML=stack.yaml osx
 #    compiler: ": #stack"
 #    os: osx
 
@@ -68,7 +68,7 @@ matrix:
                              ] 
                   ,sources: [hvr-ghc]}}
   - name: "linux, stack, latest"
-    env: BUILD=stack ARGS="--resolver nightly"
+    env: BUILD=stack ARGS="--interleaved-output --resolver nightly"
     compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
