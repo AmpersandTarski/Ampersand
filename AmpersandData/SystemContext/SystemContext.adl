@@ -1,7 +1,5 @@
 CONTEXT SystemContext IN ENGLISH
 
-PATTERN SystemSpecific
-  
   -- TEMPORARY. TODO: remove classify statement when Role is replaced in other (meta) models (e.g. SIAM)
   CLASSIFY Role ISA PF_Role
 
@@ -16,7 +14,5 @@ PATTERN SystemSpecific
   RELATION lastAccess[SESSION*DateTime] [UNI]
   RELATION accMostRecentLogin[Account*DateTime] [UNI]
   RELATION accLoginTimestamps[Account*DateTime]
-
-ENDPATTERN
   
 ENDCONTEXT
