@@ -1,0 +1,28 @@
+CONTEXT PrototypeFramework IN ENGLISH
+
+    CONCEPT PF_Role ""
+        REPRESENT PF_Role TYPE OBJECT
+        POPULATION PF_Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
+
+    CONCEPT PF_Interface ""
+        REPRESENT PF_Interface TYPE OBJECT
+
+    RELATION label[PF_Interface*PF_Label] [UNI,TOT]
+        REPRESENT PF_Label TYPE ALPHANUMERIC
+
+    RELATION pf_ifcRoles[PF_Interface*PF_Role]
+        MEANING "This relation contains the roles for which an interface is available"
+    
+    RELATION isPublic[PF_Interface*PF_Interface] [PROP]
+        MEANING "This property defines if an interface is accessible for everyone (i.e. public)"
+
+        RULE "Public interface integrity" : V[PF_Role*PF_Interface];isPublic |- pf_ifcRoles~
+
+        ROLE ExecEngine MAINTAINS "Add public interfaces to all roles"
+        RULE "Add public interfaces to all roles": V[PF_Role*PF_Interface];isPublic |- pf_ifcRoles~
+        VIOLATION (TXT "{EX}InsPair;pf_ifcRoles;PF_Interface;", TGT I, TXT ";PF_Role;", SRC I)
+
+    RELATION isAPI[PF_Interface*PF_Interface] [PROP]
+        MEANING "This property defines if an interface is meant as API (machine-2-machine) or as UI"
+
+ENDCONTEXT
