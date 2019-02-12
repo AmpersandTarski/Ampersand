@@ -14,6 +14,10 @@ cache:
         - $HOME/.cabal
         - $HOME/.stack
 
+global:
+  - AMPERSAND_RELEASE_BRANCH=ci-cd
+
+
 
 # The different configurations we want to test. We have BUILD=cabal which uses
 # cabal-install, and BUILD=stack which uses Stack. More documentation on each
@@ -131,7 +135,7 @@ install:
       echo "TRAVIS_PULL_REQUEST_BRANCH: ${TRAVIS_PULL_REQUEST_BRANCH}"
       echo "TRAVIS_PULL_REQUEST_SHA: ${TRAVIS_PULL_REQUEST_SHA}"
       echo "TRAVIS_PULL_REQUEST_SLUG: ${TRAVIS_PULL_REQUEST_SLUG}"
-      echo "TRAVIS_REPO_SLUG: ${TRAVIS_REPO_SLUG}"
+      echo "TRAVIS_TAG: ${TRAVIS_TAG}"
       echo "./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll"
       ;;
     cabal)
@@ -157,27 +161,46 @@ script:
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
 # - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
-before_deploy:
-  # tag this commit
+after_success:
+  - echo "Succes!"
+  - echo "TRAVIS_TAG: ${TRAVIS_TAG}"
   - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
-  - ls -al dist
+  - AMPERSAND_VERSION=test_$AMPERSAND_VERSION
+  - echo "AMPERSAND_VERSION: ${AMPERSAND_VERSION}"
   - | 
-     if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then
-        git tag "testdeploy$AMPERSAND_VERSION";
+     if [ "${TRAVIS_TAG}" = "" && "${TRAVIS_BRANCH}" = "${AMPERSAND_RELEASE_BRANCH}" ]; then
+        git tag "$AMPERSAND_VERSION";
      fi
 
 
+before_deploy:
+  # tag this commit
+  - ls -al dist
+
 deploy:
-  provider: releases
-  skip_cleanup: true
-  draft: true
-  file: 
-    - dist/ampersand
-    - dist/ampPreProc
-  on:
-    repo: AmpersandTarski/Ampersand
-    branch: ci-cd
-    tags: false
-    condition: $BUILD = stack
-  api-key:
-    secure: ctc+qaMBb9wnQt9827grVDfqMDJsqgvGA3DQVo0P33B2J2XedHhn1PfRdSrZ8kdo55/658VQ4E94/quXYN7fdHbysFR+jO2b6ipTlo1alsOQ+t1B/s01nZ2QHZYkS+WD22bPWMO6ucbUsQ+NAUm44muL4GkdI4EXEIsZ3PEbHgg=
+#  # Create a tag only
+#  - provider: releases
+#    skip_cleanup: true
+#    draft: true
+#    on:
+#      repo: AmpersandTarski/Ampersand
+#      branch: ci-cd
+#      tags: false
+#      condition: $BUILD = stack
+#    api-key:
+#      secure: ctc+qaMBb9wnQt9827grVDfqMDJsqgvGA3DQVo0P33B2J2XedHhn1PfRdSrZ8kdo55/658VQ4E94/quXYN7fdHbysFR+jO2b6ipTlo1alsOQ+t1B/s01nZ2QHZYkS+WD22bPWMO6ucbUsQ+NAUm44muL4GkdI4EXEIsZ3PEbHgg=
+  # Build release from tag
+  - provider: releases
+    skip_cleanup: true
+    draft: true
+    file: 
+      - dist/ampersand
+      - dist/ampPreProc
+    on:
+      repo: AmpersandTarski/Ampersand
+      tags: true
+      condition: $BUILD = stack
+      condition: "${TRAVIS_TAG}" = ${AMPERSAND_VERSION}
+    api-key:
+      secure: ctc+qaMBb9wnQt9827grVDfqMDJsqgvGA3DQVo0P33B2J2XedHhn1PfRdSrZ8kdo55/658VQ4E94/quXYN7fdHbysFR+jO2b6ipTlo1alsOQ+t1B/s01nZ2QHZYkS+WD22bPWMO6ucbUsQ+NAUm44muL4GkdI4EXEIsZ3PEbHgg=
+
