@@ -127,6 +127,11 @@ install:
 - |
   case "$BUILD" in
     stack)
+      echo "TRAVIS_PULL_REQUEST: ${TRAVIS_PULL_REQUEST}"
+      echo "TRAVIS_PULL_REQUEST_BRANCH: ${TRAVIS_PULL_REQUEST_BRANCH}"
+      echo "TRAVIS_PULL_REQUEST_SHA: ${TRAVIS_PULL_REQUEST_SHA}"
+      echo "TRAVIS_PULL_REQUEST_SLUG: ${TRAVIS_PULL_REQUEST_SLUG}"
+      echo "TRAVIS_REPO_SLUG: ${TRAVIS_REPO_SLUG}"
       echo "./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll"
       ;;
     cabal)
@@ -151,11 +156,6 @@ script:
     esac
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
 # - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
-  - echo "TRAVIS_PULL_REQUEST: ${TRAVIS_PULL_REQUEST}"
-  - echo "TRAVIS_PULL_REQUEST_BRANCH: ${TRAVIS_PULL_REQUEST_BRANCH}"
-  - echo "TRAVIS_PULL_REQUEST_SHA: ${TRAVIS_PULL_REQUEST_SHA}"
-  - echo "TRAVIS_PULL_REQUEST_SLUG: ${TRAVIS_PULL_REQUEST_SLUG}"
-  - echo "TRAVIS_REPO_SLUG: ${TRAVIS_REPO_SLUG}"
 
 before_deploy:
   # tag this commit
