@@ -197,10 +197,10 @@ deploy:
       - dist/ampersand
       - dist/ampPreProc
     on:
-      repo: AmpersandTarski/Ampersand
-      tags: true
-      condition: $BUILD = stack
-      condition: "${TRAVIS_TAG}" = ${AMPERSAND_VERSION}
+      - repo: AmpersandTarski/Ampersand
+      - tags: true
+      - condition: $BUILD = stack
+      - condition: ${TRAVIS_TAG} = ${AMPERSAND_VERSION}
     api-key:
       secure: ctc+qaMBb9wnQt9827grVDfqMDJsqgvGA3DQVo0P33B2J2XedHhn1PfRdSrZ8kdo55/658VQ4E94/quXYN7fdHbysFR+jO2b6ipTlo1alsOQ+t1B/s01nZ2QHZYkS+WD22bPWMO6ucbUsQ+NAUm44muL4GkdI4EXEIsZ3PEbHgg=
 
