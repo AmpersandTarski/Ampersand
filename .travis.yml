@@ -175,7 +175,7 @@ after_success:
   - echo "AMPERSAND_VERSION = $AMPERSAND_VERSION"
   - echo "AMPERSAND_RELEASE_BRANCH = $AMPERSAND_RELEASE_BRANCH"
   - | 
-     if [ "${TRAVIS_TAG}" = "" ] && [ "${TRAVIS_BRANCH}" = "${AMPERSAND_RELEASE_BRANCH}"]
+     if [ -z "$TRAVIS_TAG" ] && [ $TRAVIS_BRANCH = $AMPERSAND_RELEASE_BRANCH ]
      then
        git tag "$AMPERSAND_VERSION";
      fi
