@@ -181,6 +181,7 @@ after_success:
         fi;  
      fi
   - echo "TRAVIS_TAG = $TRAVIS_TAG"
+  - cat /home/travis/.travis/functions
   
 
 
