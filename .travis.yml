@@ -170,42 +170,6 @@ after_success:
 #  - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
   - AMPERSAND_VERSION=dummyVersionNr
   - AMPERSAND_VERSION=test_$AMPERSAND_VERSION
-  - echo "TRAVIS_TAG = $TRAVIS_TAG"
-  - echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
-  - echo "AMPERSAND_VERSION = $AMPERSAND_VERSION"
-  - echo "AMPERSAND_RELEASE_BRANCH = $AMPERSAND_RELEASE_BRANCH"
-  - | 
-     if [ -z "$TRAVIS_TAG" ] 
-     then
-       echo "TRAVIS_TAG is empty"
-     else
-       echo "TRAVIS_TAG is not empty"
-     fi
-  - | 
-     if [ -z $TRAVIS_TAG ] 
-     then
-       echo "TRAVIS_TAG is empty"
-     else
-       echo "TRAVIS_TAG is not empty"
-     fi
-  - | 
-     if [ $TRAVIS_BRANCH = $AMPERSAND_RELEASE_BRANCH ]
-     then
-       echo "Branch to build is the right one"
-     else
-       echo "Branch is not the right one to create a tag" 
-     fi
-  - | 
-     if [ -z "$TRAVIS_TAG" ] && [ $TRAVIS_BRANCH = $AMPERSAND_RELEASE_BRANCH ]
-     then
-       echo "Create git tag  $AMPERSAND_VERSION"
-       git tag "$AMPERSAND_VERSION"
-     else
-       echo "No tag created"
-     fi
-  - echo "TRAVIS_TAG = $TRAVIS_TAG"
-  
-  
 
 
 before_deploy:
@@ -222,7 +186,7 @@ deploy:
       branch: ci-cd
       tags: false
       condition: $BUILD = stack
-      condition: $TRAVIS_BRANCH = $AMPERSAND_RELEASE_BRANCH
+      condition: ${TRAVIS_BRANCH} = ${AMPERSAND_RELEASE_BRANCH}
     api-key:
       secure: ctc+qaMBb9wnQt9827grVDfqMDJsqgvGA3DQVo0P33B2J2XedHhn1PfRdSrZ8kdo55/658VQ4E94/quXYN7fdHbysFR+jO2b6ipTlo1alsOQ+t1B/s01nZ2QHZYkS+WD22bPWMO6ucbUsQ+NAUm44muL4GkdI4EXEIsZ3PEbHgg=
   # Build release from tag
