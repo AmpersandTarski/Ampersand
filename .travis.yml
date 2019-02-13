@@ -132,11 +132,11 @@ install:
 - |
   case "$BUILD" in
     stack)
-      echo "TRAVIS_PULL_REQUEST: $TRAVIS_PULL_REQUEST"
-      echo "TRAVIS_PULL_REQUEST_BRANCH: $TRAVIS_PULL_REQUEST_BRANCH"
-      echo "TRAVIS_PULL_REQUEST_SHA: $TRAVIS_PULL_REQUEST_SHA"
-      echo "TRAVIS_PULL_REQUEST_SLUG: $TRAVIS_PULL_REQUEST_SLUG"
-      echo "TRAVIS_TAG: $TRAVIS_TAG"
+      echo "TRAVIS_PULL_REQUEST = $TRAVIS_PULL_REQUEST"
+      echo "TRAVIS_PULL_REQUEST_BRANCH = $TRAVIS_PULL_REQUEST_BRANCH"
+      echo "TRAVIS_PULL_REQUEST_SHA = $TRAVIS_PULL_REQUEST_SHA"
+      echo "TRAVIS_PULL_REQUEST_SLUG = $TRAVIS_PULL_REQUEST_SLUG"
+      echo "TRAVIS_TAG = $TRAVIS_TAG"
       echo "./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll"
       ;;
     cabal)
@@ -168,15 +168,15 @@ after_success:
 #  - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
   - AMPERSAND_VERSION=dummyVersionNr
   - AMPERSAND_VERSION=test_$AMPERSAND_VERSION
-  - echo "TRAVIS_TAG: $TRAVIS_TAG"
-  - echo "TRAVIS_BRANCH: $TRAVIS_BRANCH"
-  - echo "AMPERSAND_VERSION: $AMPERSAND_VERSION"
-  - echo "AMPERSAND_RELEASE_BRANCH: $AMPERSAND_RELEASE_BRANCH"
+  - echo "TRAVIS_TAG = $TRAVIS_TAG"
+  - echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
+  - echo "AMPERSAND_VERSION = $AMPERSAND_VERSION"
+  - echo "AMPERSAND_RELEASE_BRANCH = $AMPERSAND_RELEASE_BRANCH"
   - | 
      if [ "${TRAVIS_TAG}" = "" && "${TRAVIS_BRANCH}" = "${AMPERSAND_RELEASE_BRANCH}" ]; then
         git tag "$AMPERSAND_VERSION";
      fi
-  - echo "TRAVIS_TAG: $TRAVIS_TAG"
+  - echo "TRAVIS_TAG = $TRAVIS_TAG"
   
 
 
