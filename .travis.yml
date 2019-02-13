@@ -175,12 +175,33 @@ after_success:
   - echo "AMPERSAND_VERSION = $AMPERSAND_VERSION"
   - echo "AMPERSAND_RELEASE_BRANCH = $AMPERSAND_RELEASE_BRANCH"
   - | 
+     if [ -z "$TRAVIS_TAG" ] 
+     then
+       echo "TRAVIS_TAG is empty"
+     else
+       echo "TRAVIS_TAG is not empty"
+     fi
+  - | 
+     if [ -z $TRAVIS_TAG ] 
+     then
+       echo "TRAVIS_TAG is empty"
+     else
+       echo "TRAVIS_TAG is not empty"
+     fi
+  - | 
+     if [ $TRAVIS_BRANCH = $AMPERSAND_RELEASE_BRANCH ]
+     then
+       echo "Branch to build is the right one"
+     else
+       echo "Branch is not the right one to create a tag" 
+     fi
+  - | 
      if [ -z "$TRAVIS_TAG" ] && [ $TRAVIS_BRANCH = $AMPERSAND_RELEASE_BRANCH ]
      then
        git tag "$AMPERSAND_VERSION";
      fi
   - echo "TRAVIS_TAG = $TRAVIS_TAG"
-  - cat /home/travis/.travis/functions
+  
   
 
 
