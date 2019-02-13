@@ -167,10 +167,9 @@ script:
 
 after_success:
   - echo "Succes!"
-#  - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
+#  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
   - AMPERSAND_VERSION=dummyVersionNr
-  - AMPERSAND_VERSION=test_$AMPERSAND_VERSION
-
+  - export AMPERSAND_VERSION=test_$AMPERSAND_VERSION 
 
 before_deploy:
   # tag this commit
