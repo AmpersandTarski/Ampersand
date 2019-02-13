@@ -134,12 +134,7 @@ install:
 - |
   case "$BUILD" in
     stack)
-      echo "TRAVIS_PULL_REQUEST = $TRAVIS_PULL_REQUEST"
-      echo "TRAVIS_PULL_REQUEST_BRANCH = $TRAVIS_PULL_REQUEST_BRANCH"
-      echo "TRAVIS_PULL_REQUEST_SHA = $TRAVIS_PULL_REQUEST_SHA"
-      echo "TRAVIS_PULL_REQUEST_SLUG = $TRAVIS_PULL_REQUEST_SLUG"
-      echo "TRAVIS_TAG = $TRAVIS_TAG"
-      echo "./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll"
+      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll
       ;;
     cabal)
       cabal --version
@@ -156,7 +151,7 @@ script:
   - |
     case "$BUILD" in
       stack)
-      echo "./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll"
+      ./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
         ;;
       cabal)
       ./travis_long cabal test
@@ -167,8 +162,8 @@ script:
 
 after_success:
   - echo "Succes!"
-#  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
   - AMPERSAND_VERSION=dummyVersionNr
+  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
   - export AMPERSAND_VERSION=test_$AMPERSAND_VERSION 
 
 before_deploy:
