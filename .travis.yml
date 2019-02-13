@@ -163,10 +163,10 @@ script:
 
 after_success:
   - echo "Succes!"
-  - echo "TRAVIS_TAG: ${TRAVIS_TAG}"
-  - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
+#  - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
+  - AMPERSAND_VERSION=dummyVersionNr
   - AMPERSAND_VERSION=test_$AMPERSAND_VERSION
-  - echo "AMPERSAND_VERSION: ${AMPERSAND_VERSION}"
+#  - echo "AMPERSAND_VERSION: ${AMPERSAND_VERSION}"
   - | 
      if [ "${TRAVIS_TAG}" = "" && "${TRAVIS_BRANCH}" = "${AMPERSAND_RELEASE_BRANCH}" ]; then
         git tag "$AMPERSAND_VERSION";
