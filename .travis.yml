@@ -14,8 +14,6 @@ cache:
         - $HOME/.cabal
         - $HOME/.stack
 
-global:
-  - AMPERSAND_RELEASE_BRANCH=ci-cd
 
 
 
@@ -35,7 +33,11 @@ matrix:
   # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
   # variable, such as using --stack-yaml to point to a different file.
   - name: "linux, stack"
-    env: BUILD=stack ARGS="--interleaved-output" STACK_YAML=stack.yaml
+    env: 
+      - BUILD=stack
+      - ARGS="--interleaved-output"
+      - STACK_YAML=stack.yaml
+      - AMPERSAND_RELEASE_BRANCH=development
     compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
