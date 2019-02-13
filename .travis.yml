@@ -37,7 +37,7 @@ matrix:
       - BUILD=stack
       - ARGS="--interleaved-output"
       - STACK_YAML=stack.yaml
-      - AMPERSAND_RELEASE_BRANCH=development
+      - AMPERSAND_RELEASE_BRANCH=ci-cd
     compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
@@ -175,10 +175,9 @@ after_success:
   - echo "AMPERSAND_VERSION = $AMPERSAND_VERSION"
   - echo "AMPERSAND_RELEASE_BRANCH = $AMPERSAND_RELEASE_BRANCH"
   - | 
-     if [ "${TRAVIS_TAG}" = "" ]; then
-        if [ "${TRAVIS_BRANCH}" = "${AMPERSAND_RELEASE_BRANCH}"]; then
-          git tag "$AMPERSAND_VERSION";
-        fi;  
+     if [ "${TRAVIS_TAG}" = "" ] && [ "${TRAVIS_BRANCH}" = "${AMPERSAND_RELEASE_BRANCH}"]
+     then
+       git tag "$AMPERSAND_VERSION";
      fi
   - echo "TRAVIS_TAG = $TRAVIS_TAG"
   - cat /home/travis/.travis/functions
