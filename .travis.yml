@@ -134,7 +134,7 @@ install:
 - |
   case "$BUILD" in
     stack)
-#      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll
+      echo "./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll"
       echo "TODO: fix above line"
       ;;
     cabal)
@@ -152,7 +152,7 @@ script:
   - |
     case "$BUILD" in
       stack)
-#      ./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
+      echo "./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll"
       echo "TODO: fix above line"
         ;;
       cabal)
