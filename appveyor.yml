@@ -31,7 +31,8 @@ build: off
 test_script:
  - IF EXIST configure.ac bash -c "autoreconf -i"
  - "echo packages:. > cabal.project"
- - "cabal %CABOPTS% install -j1 all"
+ - "cabal %CABOPTS% build -j1 all"
+ - "cabal install"
 
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
