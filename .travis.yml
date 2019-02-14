@@ -165,12 +165,15 @@ script:
 after_success:
   - echo "Succes!"
   - AMPERSAND_VERSION=dummyVersionNr
-  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
+#  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
   - export AMPERSAND_VERSION=test_$AMPERSAND_VERSION 
 
 before_deploy:
-  # tag this commit
-  - ls -al dist
+  # Set up git user name and tag this commit
+  - git config --local user.name "Ampersand-Sentinel"
+  - git config --local user.email "han.joosten.han+Ampersand-Sentinel@gmail.com"
+  - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
+  - git tag $TRAVIS_TAG
 
 deploy:
   # Create a tag only
