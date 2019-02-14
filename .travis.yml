@@ -122,7 +122,6 @@ before_install:
   fi
 
 install:
-- echo "Start install phase."
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - chmod +x ./travis_long
 - if [ -f configure.ac ]; then autoreconf -i; fi
@@ -149,7 +148,6 @@ script:
     case "$BUILD" in
       stack)
       ./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
-      echo "TODO: fix above line"
         ;;
       cabal)
       ./travis_long cabal test
@@ -159,10 +157,8 @@ script:
 # - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
 after_success:
-  - echo "Succes!"
-#  - AMPERSAND_VERSION=dummyVersionNr
   - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
-  - export AMPERSAND_VERSION=test2_$AMPERSAND_VERSION 
+  - export AMPERSAND_VERSION=test3_$AMPERSAND_VERSION 
 
 before_deploy:
   # Set up git user name and tag this commit
@@ -172,7 +168,7 @@ before_deploy:
   - git tag $TRAVIS_TAG
 
 deploy:
-  # Create a tag only
+  # Release to Github releases
   - provider: releases
     skip_cleanup: true
     draft: false
