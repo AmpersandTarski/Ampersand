@@ -8,14 +8,11 @@ language: php
 php:
   - 7.1
 
-# cache:
-#    directories:
-#        - $HOME/.ghc
-#        - $HOME/.cabal
-#        - $HOME/.stack
-
-
-
+cache:
+   directories:
+       - $HOME/.ghc
+       - $HOME/.cabal
+       - $HOME/.stack
 
 # The different configurations we want to test. We have BUILD=cabal which uses
 # cabal-install, and BUILD=stack which uses Stack. More documentation on each
@@ -134,8 +131,7 @@ install:
 - |
   case "$BUILD" in
     stack)
-      echo "./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll"
-      echo "TODO: fix above line"
+      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll
       ;;
     cabal)
       cabal --version
@@ -152,7 +148,7 @@ script:
   - |
     case "$BUILD" in
       stack)
-      echo "./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll"
+      ./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
       echo "TODO: fix above line"
         ;;
       cabal)
@@ -164,15 +160,15 @@ script:
 
 after_success:
   - echo "Succes!"
-  - AMPERSAND_VERSION=dummyVersionNr
-#  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
+#  - AMPERSAND_VERSION=dummyVersionNr
+  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
   - export AMPERSAND_VERSION=test_$AMPERSAND_VERSION 
 
 before_deploy:
   # Set up git user name and tag this commit
   - git config --local user.name "Ampersand-Sentinel"
   - git config --local user.email "han.joosten.han+Ampersand-Sentinel@gmail.com"
-  - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
+  - export TRAVIS_TAG=${AMPERSAND_VERSION}
   - git tag $TRAVIS_TAG
 
 deploy:
