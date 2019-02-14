@@ -162,7 +162,7 @@ after_success:
   - echo "Succes!"
 #  - AMPERSAND_VERSION=dummyVersionNr
   - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
-  - export AMPERSAND_VERSION=test_$AMPERSAND_VERSION 
+  - export AMPERSAND_VERSION=test2_$AMPERSAND_VERSION 
 
 before_deploy:
   # Set up git user name and tag this commit
@@ -186,18 +186,3 @@ deploy:
       condition: $BUILD = stack
     api_key:
       secure: Mwgh+iWba66M+GFKGSOl4dQISFGBnE+FOyswA44P6JdXDQczpC9atxkPIQj7QVxJr4jMPor06Pl8Hcw1vhi5j4evLFXBONEV++7bCmNe0M0Z6hMU38NgIsfuvN3+NKgqOafBOlPmjHBKeVjiWqKQICn3tYgrKG9eXIBL3tn0aus=
-  # Build release from tag
-#  - provider: releases
-#    skip_cleanup: true
-#    draft: true
-#    file: 
-#      - dist/ampersand
-#      - dist/ampPreProc
-#    on:
-#      repo: AmpersandTarski/Ampersand
-#      tags: true
-#      condition: $BUILD = stack
-#      condition: ${TRAVIS_TAG} = ${AMPERSAND_VERSION}
-#    api_key:
-#      secure: Mwgh+iWba66M+GFKGSOl4dQISFGBnE+FOyswA44P6JdXDQczpC9atxkPIQj7QVxJr4jMPor06Pl8Hcw1vhi5j4evLFXBONEV++7bCmNe0M0Z6hMU38NgIsfuvN3+NKgqOafBOlPmjHBKeVjiWqKQICn3tYgrKG9eXIBL3tn0aus=
-
