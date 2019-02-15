@@ -34,7 +34,7 @@ matrix:
       - BUILD=stack
       - ARGS="--interleaved-output"
       - STACK_YAML=stack.yaml
-      - AMPERSAND_RELEASE_BRANCH=ci-cd
+      - AMPERSAND_RELEASE_BRANCH=master
     compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
@@ -158,7 +158,6 @@ script:
 
 after_success:
   - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
-  - export AMPERSAND_VERSION=test3_$AMPERSAND_VERSION 
 
 before_deploy:
   # Set up git user name and tag this commit
