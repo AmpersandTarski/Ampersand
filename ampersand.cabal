@@ -180,7 +180,9 @@ library
                      Ampersand.Test.Regression,
                      Ampersand.Test.RunAmpersand,
                      Ampersand.Test.TestScripts
-
+  autogen-modules:   Ampersand.Basics.BuildInfo_Generated,
+                     Ampersand.Prototype.StaticFiles_Generated
+                     
 executable ampersand
   hs-source-dirs:    app
   main-is:           Main.hs
