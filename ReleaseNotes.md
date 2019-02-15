@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## unreleased changes
+## v3.14.0 (15 february 2019)
 
 * Hotfix: update to prototype framework v1.1.1. See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information
 * [Issue #890](https://github.com/AmpersandTarski/Ampersand/issues/890) Add static check for subinterfaces. The target concept of it must be Object, not scalar.
