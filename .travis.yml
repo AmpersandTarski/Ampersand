@@ -1,7 +1,7 @@
 # This file is based on the travis.yml file of stack. 
 # (https://github.com/commercialhaskell/stack/blob/master/.travis.yml)
 #
-dist: trusty
+dist: xenial
 sudo: required
 language: php
 
@@ -9,11 +9,10 @@ php:
   - 7.1
 
 cache:
-    directories:
-        - $HOME/.ghc
-        - $HOME/.cabal
-        - $HOME/.stack
-
+   directories:
+       - $HOME/.ghc
+       - $HOME/.cabal
+       - $HOME/.stack
 
 # The different configurations we want to test. We have BUILD=cabal which uses
 # cabal-install, and BUILD=stack which uses Stack. More documentation on each
@@ -31,33 +30,37 @@ matrix:
   # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
   # variable, such as using --stack-yaml to point to a different file.
   - name: "linux, stack"
-    env: BUILD=stack STACK_YAML=stack.yaml
+    env: 
+      - BUILD=stack
+      - ARGS="--interleaved-output"
+      - STACK_YAML=stack.yaml
+      - AMPERSAND_RELEASE_BRANCH=master
     compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
-  - name: "osx, stack"
-    env: BUILD=stack STACK_YAML=stack.yaml osx
-    compiler: ": #stack"
-    os: osx
+#  - name: "osx, stack"
+#    env: BUILD=stack ARGS="--interleaved-output" STACK_YAML=stack.yaml osx
+#    compiler: ": #stack"
+#    os: osx
 
 
   # We grab the appropriate GHC and cabal-install versions from hvr's PPA. See:
   # https://github.com/hvr/multi-ghc-travis
   - name: "linux, cabal"
-    env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2
-    compiler: ": #GHC 8.4.3"
-    addons: {apt: {packages: [ cabal-install-2.2.0.1
-                             , ghc-8.4.3
+    env: BUILD=cabal GHCVER=8.6.2 CABALVER=2.4
+    compiler: ": #GHC 8.6.2"
+    addons: {apt: {packages: [ cabal-install-2.4.0.0
+                             , ghc-8.6.2
                              ] 
                   ,sources: [hvr-ghc]}}
-  - name: "osx, cabal"
-    env: BUILD=cabal GHCVER=8.4.3 CABALVER=2.2 osx
-    compiler: ": #GHC 8.4.3"
-    addons: {apt: {packages: [ cabal-install-2.2.0.1
-                             , ghc-8.4.3
-                             ] 
-                  ,sources: [hvr-ghc]}}
-    os: osx
+#  - name: "osx, cabal"
+#    env: BUILD=cabal GHCVER=8.6.2 CABALVER=2.4 osx
+#    compiler: ": #GHC 8.6.2"
+#    addons: {apt: {packages: [ cabal-install-2.4.0.0
+#                             , ghc-8.6.2
+#                             ] 
+#                  ,sources: [hvr-ghc]}}
+#    os: osx
 
   # Build with the newest GHC and cabal-install.
   - name: "linux, cabal, latest"
@@ -68,7 +71,7 @@ matrix:
                              ] 
                   ,sources: [hvr-ghc]}}
   - name: "linux, stack, latest"
-    env: BUILD=stack ARGS="--resolver nightly"
+    env: BUILD=stack ARGS="--interleaved-output --resolver nightly"
     compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
@@ -81,9 +84,9 @@ matrix:
   - name: "linux, stack, latest"
   - name: "linux, cabal, latest"
 
-  # OSX builds currently (sept 2016) do not work, because PHP isn't available
-  - name: "osx, stack"
-  - name: "osx, cabal"
+#  # OSX builds currently (sept 2016) do not work, because PHP isn't available
+#  - name: "osx, stack"
+#  - name: "osx, cabal"
   
 
   
@@ -108,7 +111,7 @@ before_install:
 - sudo swapon /swapfile
 
 # Download and unpack the stack executable
-- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:$PATH
+- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/home/travis/build/AmpersandTarski/Ampersand/dist:$PATH
 - mkdir -p ~/.local/bin
 - |
   if [ `uname` = "Darwin" ]
@@ -127,12 +130,12 @@ install:
 - |
   case "$BUILD" in
     stack)
-      stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll
+      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll
       ;;
     cabal)
       cabal --version
       travis_retry cabal update
-      cabal install --enable-tests 
+      ./travis_long cabal install
       ;;
   esac
 
@@ -140,31 +143,41 @@ install:
 before_script: composer install
 
 script:
-- |
-  case "$BUILD" in
-    stack)
-    ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
-      ;;
-    cabal)
-    ./travis_long cabal test
-      ;;
-  esac
+  - echo "Start script phase."
+  - |
+    case "$BUILD" in
+      stack)
+      ./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
+        ;;
+      cabal)
+      ./travis_long cabal test
+        ;;
+    esac
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
 # - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
+after_success:
+  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
+
 before_deploy:
-  # tag this commit
-  - AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
-  - git tag $AMPERSAND_VERSION
+  # Set up git user name and tag this commit
+  - git config --local user.name "Ampersand-Sentinel"
+  - git config --local user.email "han.joosten.han+Ampersand-Sentinel@gmail.com"
+  - export TRAVIS_TAG=${AMPERSAND_VERSION}
+  - git tag $TRAVIS_TAG
 
 deploy:
-  provider: releases
-  skip_cleanup: true
-  file: dist/ampersand
-  on:
-    repo: AmpersandTarski/Ampersand
-    branch: master
-    tags: false
-    condition: $BUILD = stack
-  api-key:
-    secure: ctc+qaMBb9wnQt9827grVDfqMDJsqgvGA3DQVo0P33B2J2XedHhn1PfRdSrZ8kdo55/658VQ4E94/quXYN7fdHbysFR+jO2b6ipTlo1alsOQ+t1B/s01nZ2QHZYkS+WD22bPWMO6ucbUsQ+NAUm44muL4GkdI4EXEIsZ3PEbHgg=
+  # Release to Github releases
+  - provider: releases
+    skip_cleanup: true
+    draft: false
+    file: 
+      - dist/ampersand
+      - dist/ampPreProc
+    on:
+      repo: AmpersandTarski/Ampersand
+      branch: ${AMPERSAND_RELEASE_BRANCH}
+      tags: false
+      condition: $BUILD = stack
+    api_key:
+      secure: Mwgh+iWba66M+GFKGSOl4dQISFGBnE+FOyswA44P6JdXDQczpC9atxkPIQj7QVxJr4jMPor06Pl8Hcw1vhi5j4evLFXBONEV++7bCmNe0M0Z6hMU38NgIsfuvN3+NKgqOafBOlPmjHBKeVjiWqKQICn3tYgrKG9eXIBL3tn0aus=

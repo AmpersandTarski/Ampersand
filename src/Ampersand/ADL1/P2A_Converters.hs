@@ -681,16 +681,22 @@ pCtx2aCtx opts
          P_Box{}
            -> case si_box x of
                 []  -> const (fatal "this fatal used to be `undefined`.") <$> (hasNone x :: Guarded SubInterface) -- error
-                l   -> (\lst -> (objExpr,Box { siConcept = target objExpr
-                                             , siMClass  = si_class x
-                                             , siObjs    = lst
-                                             }
-                                )
-                       ) <$> traverse (join . fmap fn . typecheckObjDef ci) l 
-                         <*  uniqueNames l
-                  where fn :: (BoxItem, Bool) -> (Guarded BoxItem)
+                l   -> build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
+                             <*  uniqueNames l
+                             <*  mustBeObject (target objExpr)
+                  where build :: [BoxItem] -> (Expression, SubInterface)
+                        build lst = (objExpr,Box { siConcept = target objExpr
+                                                 , siMClass  = si_class x
+                                                 , siObjs    = lst
+                                                 }
+                                    )
+                        fn :: (BoxItem, Bool) -> (Guarded BoxItem)
                         fn (BxExpr e,p) = fmap BxExpr $ matchWith (e,p)
                         fn (BxTxt t,_) = pure $ BxTxt t
+                        mustBeObject :: A_Concept -> Guarded ()
+                        mustBeObject cpt = case (representationOf ci) cpt of
+                                             Object -> pure ()
+                                             tt     -> Errors . pure $ mkSubInterfaceMustBeDefinedOnObject x cpt tt
      where matchWith :: (ObjectDef, Bool) -> (Guarded ObjectDef)
            matchWith (ojd,exprBound)
             = if b || exprBound then
