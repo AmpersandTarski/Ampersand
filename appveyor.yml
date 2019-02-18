@@ -18,6 +18,7 @@ cache:
 - "C:\\SR"
 
 install:
+ - "echo 'start installation'"
  - "choco install -y ghc --version %GHCVER% %CHOCOPTS%"
  - "choco install -y cabal %CHOCOPTS%"
  - "refreshenv"
