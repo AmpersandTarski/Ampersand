@@ -25,7 +25,6 @@ install:
  - "cabal --version"
  - "ghc --version"
  - "cabal %CABOPTS% update -v"
- - "pwd"
 
 build: off
 
@@ -33,9 +32,7 @@ test_script:
  - IF EXIST configure.ac bash -c "autoreconf -i"
  - "echo packages:. > cabal.project"
  - "cabal %CABOPTS% build -j1 all"
- - "cd \\WORK\\Ampersand"
- - "cabal install"
-
+ 
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
 build_script:
