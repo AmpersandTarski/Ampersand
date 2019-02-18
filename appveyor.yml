@@ -24,14 +24,14 @@ install:
  - "set PATH=C:\\ghc\\ghc-%GHCVER%:C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;%PATH%"
  - "cabal --version"
  - "ghc --version"
- - "cabal %CABOPTS% update -v"
+ - "cabal %CABOPTS% new-update -v"
 
 build: off
 
 test_script:
  - IF EXIST configure.ac bash -c "autoreconf -i"
  - "echo packages:. > cabal.project"
- - "cabal %CABOPTS% build -j1 all"
+ - "cabal %CABOPTS% new-build "
  
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
