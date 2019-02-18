@@ -25,13 +25,16 @@ install:
  - "cabal --version"
  - "ghc --version"
  - "cabal %CABOPTS% update -v"
+ - "pwd"
 
 build: off
 
 test_script:
  - IF EXIST configure.ac bash -c "autoreconf -i"
  - "echo packages:. > cabal.project"
- - "cabal %CABOPTS% new-build -j1 all"
+ - "cabal %CABOPTS% build -j1 all"
+ - "cd \\WORK\\Ampersand"
+ - "cabal install"
 
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
@@ -48,22 +51,18 @@ build_script:
 
 # mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
 artifacts:
-- path: ampersand.exe
-  name: Windows_binary
+  - path: ampersand.exe
+    name: Windows_ampersand_binary
+  - path: ampPreProc.exe
+    name: Windows_preprocessor_binary
 
 # Auto-deploy
-# specify that, for each build that completes, AppVeyor should push
-# a release with the right tag to the GitHub releases page! 
-# We only release when the branch == master.
-# (Note: probably we would want to be a bit more 
-# elaborate about when we push to the releases page; making sure 
-# that we include proper release notes, etc.)
+# specify that, for each build from a tag, we add the windows
+# artifacts.
 deploy:
   - provider: GitHub
-    tag: '$(AMPERSAND_VERSION)'
-    release: '$(AMPERSAND_VERSION)'
     auth_token:
       secure: B9wxH2Me3jIbEn9xlvIY9SEWdELRgKMtEZeQZmJQm5wMGjp4YF4wQmAHCy3ofTJG
-    artifact: Windows_binary
+    artifact: Windows_ampersand_binary, Windows_preprocessor_binary
     on:
-      branch: master  
+      appveyor_repo_tag: true        # deploy on tag push only

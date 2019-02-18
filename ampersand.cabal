@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.13.0
+version:        3.14.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of enterprise information systems.
@@ -180,7 +180,9 @@ library
                      Ampersand.Test.Regression,
                      Ampersand.Test.RunAmpersand,
                      Ampersand.Test.TestScripts
-
+  autogen-modules:   Ampersand.Basics.BuildInfo_Generated,
+                     Ampersand.Prototype.StaticFiles_Generated
+                     
 executable ampersand
   hs-source-dirs:    app
   main-is:           Main.hs
