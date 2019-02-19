@@ -12,12 +12,19 @@ build-type:     Custom
 license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
+bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 extra-source-files:
       - ReleaseNotes.md
       - AmpersandData/FormalAmpersand/*
       - AmpersandData/SystemContext/*
 data-files:
                 LICENSE
+Flag:
+  buildAll:
+    Description: Build both ampersand and ampPreProc.
+    Default:     False
+    Manual:      True
+
 
 ghc-options: [ -Wall]
 default-extensions: 
