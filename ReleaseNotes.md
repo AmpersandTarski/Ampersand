@@ -2,6 +2,7 @@
 
 ## unreleased changes
 
+* [Issue #578](https://github.com/AmpersandTarski/Ampersand/issues/578) Implement meta model for navigation menu
 
 
 ## v3.14.0 (15 february 2019)
