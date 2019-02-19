@@ -49,13 +49,17 @@ createMulti opts =
     
      systemP_Ctx:: Guarded P_Context <- parseSystemContext opts
 
-     let fAmpFSpec :: FSpec
-         fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
-                       Checked f _ -> f
-                       Errors errs -> fatal . unlines $
-                            "The FormalAmpersand ADL scripts are not type correct:"
-                          : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
-
+     let fAmpModel :: MetaFSpec
+         fAmpModel = MetaFSpec
+            { metaModelFileName = "FormalAmpersand.adl"
+            , model             = 
+                case pCtx2Fspec fAmpP_Ctx of
+                  Checked f _ -> f
+                  Errors errs -> fatal . unlines $
+                      "The FormalAmpersand ADL scripts are not type correct:"
+                    : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+            , transformers  = transformersFormalAmpersand
+            }
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =
               if addSemanticMetamodel opts 
@@ -67,11 +71,11 @@ createMulti opts =
             --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
             addSemanticModel :: P_Context -> P_Context
             addSemanticModel pCtx  
-              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (Set.toList . instances $ fAmpFSpec)
-                     ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (Set.toList . instances $ fAmpFSpec)
-                     ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (Set.toList . instances $ fAmpFSpec)
-                     ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (Set.toList . instances $ fAmpFSpec)
-                     ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)
+              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (Set.toList . instances . model $ fAmpModel)
+                     ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (Set.toList . instances . model $ fAmpModel)
+                     ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (Set.toList . instances . model $ fAmpModel)
+                     ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (Set.toList . instances . model $ fAmpModel)
+                     ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo . model $ fAmpModel)
                      }
             noPopulation :: P_Relation -> P_Relation
             noPopulation rel = rel{dec_popu =[]}
@@ -88,7 +92,7 @@ createMulti opts =
                   Errors err -> Errors err  
                   Checked usrFSpec _
                            -> let grinded :: P_Context
-                                  grinded = grind fAmpFSpec usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                                  grinded = grind fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
                                   metaPopPCtx :: Guarded P_Context
                                   metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
                                   metaPopFSpec :: Guarded FSpec
@@ -97,13 +101,13 @@ createMulti opts =
                                              <*> (Just <$> metaPopFSpec)
            else MultiFSpecs <$> userGFSpec <*> pure Nothing
      res <- if genMetaFile opts
-            then writeMetaFile fAmpFSpec userGFSpec
+            then writeMetaFile fAmpModel userGFSpec
             else return $ pure ()
      return (res >> result)
   where
-    writeMetaFile :: FSpec -> Guarded FSpec -> IO (Guarded ())
-    writeMetaFile faSpec userSpec = 
-       case makeMetaFile faSpec <$> userSpec of
+    writeMetaFile :: MetaFSpec -> Guarded FSpec -> IO (Guarded ())
+    writeMetaFile metaModel userSpec = 
+       case makeMetaFile metaModel <$> userSpec of
         Checked (filePath,metaContents) ws -> 
                   do verboseLn opts ("Generating meta file in path "++dirOutput opts)
                      writeFile (dirOutput opts </> filePath) metaContents      

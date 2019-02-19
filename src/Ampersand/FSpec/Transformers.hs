@@ -2,7 +2,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.Transformers 
-  ( transformers
+  ( transformersFormalAmpersand
+  , transformersSystemContext
   , Transformer(..)
   , PopAtom(..)
   , instances
@@ -50,8 +51,8 @@ toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transfo
 toTransformer (rel, sCpt, tCpt, set) = Transformer rel sCpt tCpt set
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
-transformers :: FSpec -> [Transformer]
-transformers fSpec = map toTransformer [
+transformersFormalAmpersand :: FSpec -> [Transformer]
+transformersFormalAmpersand fSpec = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"
       , if atlasWithoutExpressions opts then Set.empty else
         Set.fromList $
@@ -822,6 +823,19 @@ transformers fSpec = map toTransformer [
      ]
    where
      opts = getOpts fSpec
+
+
+ 
+-- | The list of all transformers, one for each and every relation in SystemContext.
+transformersSystemContext :: FSpec -> [Transformer]
+transformersSystemContext fSpec = map toTransformer [
+      ("label"                   , "PF_Interface"          , "PF_Label"    
+      , Set.fromList $
+        [(dirtyId ifc,(PopAlphaNumeric . name) ifc)
+        | ifc::Interface <- instanceList fSpec
+        ]
+      )
+     ]
 -- | Within a specific context there are all kinds of things.
 --   These 'things' are instances (elements / atoms) of some
 --   Concept. They are the atoms of the concepts, as looked
