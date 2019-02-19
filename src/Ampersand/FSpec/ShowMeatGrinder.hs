@@ -70,7 +70,7 @@ extractFromPop metaModel pop =
      where
       tuples :: [PAtomPair]
       tuples =
-         case string2AValue . unwords . words . show . popPairs $ pop of
+         case string2AValue . unwords . words . show . Set.toList . popPairs $ pop of
             Checked x _ 
               -> case checkAtomValues (popRelation pop) x of
                    Checked _ _ -> x
