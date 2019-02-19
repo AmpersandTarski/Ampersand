@@ -185,12 +185,15 @@ executables:
   ampPreProc:
     source-dirs: app
     main: AmpPreProc.hs
+    ghc-options: [-threaded]
 
 tests:
   regression-test:
     main: RegressionTest.hs
     source-dirs: app
+    ghc-options: [-threaded]
 
   ampersand-test:
     main: Test.hs
     source-dirs: app
+    ghc-options: [-threaded]
