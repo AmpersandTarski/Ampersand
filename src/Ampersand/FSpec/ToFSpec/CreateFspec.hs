@@ -92,8 +92,8 @@ createMulti opts =
             noPopulation :: P_Relation -> P_Relation
             noPopulation rel = rel{dec_popu =[]}
 
-         userGFSpec' :: Guarded FSpec
-         userGFSpec' = 
+         userGFSpec :: Guarded FSpec
+         userGFSpec = 
             pCtx2Fspec $ 
               if useSystemContext
               then mergeContexts <$> (grind sysCModel <$> pCtx2Fspec userPlus) <*> userP_Ctx
@@ -101,7 +101,6 @@ createMulti opts =
            where 
             userPlus :: Guarded P_Context
             userPlus = addSemanticModel (model sysCModel) <$> userP_Ctx
-         userGFSpec = userGFSpec'
          result :: Guarded MultiFSpecs
          result = 
            if genRapPopulationOnly opts
@@ -121,7 +120,7 @@ createMulti opts =
      return (res >> result)
   where
     useSystemContext :: Bool
-    useSystemContext = True --TODO: Depends on Options: Only when user generates a prototype
+    useSystemContext = genPrototype opts
     writeMetaFile :: MetaFSpec -> Guarded FSpec -> IO (Guarded ())
     writeMetaFile metaModel userSpec = 
        case makeMetaFile metaModel <$> userSpec of
