@@ -830,28 +830,36 @@ transformersFormalAmpersand fSpec = map toTransformer [
 transformersSystemContext :: FSpec -> [Transformer]
 transformersSystemContext fSpec = map toTransformer [
       ("accLoginTimestamps"    , "Account"               , "DateTime"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("accMostRecentLogin"    , "Account"               , "DateTime"
-      , Set.empty  --TODO
+      , Set.empty
       ) 
     , ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("isAPI"                 , "PF_Interface"          , "PF_Interface"
-      , Set.empty  --TODO
+      , Set.fromList $
+        [(dirtyId ifc,dirtyId ifc)
+        | ifc::Interface <- instanceList fSpec
+        , ifcIsAPI ifc
+        ]
       )
     , ("isPartOf"              , "PF_NavMenuItem"        , "PF_NavMenu"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("isPublic"              , "PF_Interface"          , "PF_Interface"
-      , Set.empty  --TODO
+      , Set.fromList $
+        [(dirtyId ifc,dirtyId ifc)
+        | ifc::Interface <- instanceList fSpec
+        , null (ifcRoles ifc)
+        ]
       )
     , ("isSubItemOf"           , "PF_NavMenuItem"        , "PF_NavMenuItem"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("isVisible"             , "PF_NavMenuItem"        , "PF_NavMenuItem"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("label"                 , "PF_Interface"          , "PF_Label"    
       , Set.fromList $
@@ -860,31 +868,34 @@ transformersSystemContext fSpec = map toTransformer [
         ]
       )
     , ("label"                 , "PF_NavMenuItem"        , "PF_Label"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("lastAccess"            , "SESSION"               , "DateTime"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("pf_ifcRoles"           , "PF_Interface"          , "PF_Role"
-      , Set.empty  --TODO
+      , Set.fromList $
+        [(dirtyId rol,(PopAlphaNumeric . name) rol)
+        | rol::Role <- instanceList fSpec
+        ]
       )
     , ("pf_navItemRoles"       , "PF_NavMenuItem"        , "PF_Role"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("seqNr"                 , "PF_NavMenuItem"        , "PF_SeqNr"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("sessionAccount"        , "SESSION"               , "Account"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("sessionActiveRoles"    , "SESSION"               , "PF_Role"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("sessionAllowedRoles"   , "SESSION"               , "PF_Role"
-      , Set.empty  --TODO
+      , Set.empty
       )
     , ("url"                   , "PF_NavMenuItem"        , "PF_URL"
-      , Set.empty  --TODO
+      , Set.empty
       )
     ]
 

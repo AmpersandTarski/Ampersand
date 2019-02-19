@@ -7,7 +7,6 @@ import           Ampersand.ADL1
 import           Ampersand.ADL1.P2A_Converters
 import           Ampersand.Basics
 import           Ampersand.Core.A2P_Converters
-import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ShowMeatGrinder
 import           Ampersand.FSpec.ToFSpec.ADL2FSpec
