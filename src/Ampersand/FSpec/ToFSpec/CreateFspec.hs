@@ -60,31 +60,48 @@ createMulti opts =
                     : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
             , transformers  = transformersFormalAmpersand
             }
+         sysCModel :: MetaFSpec
+         sysCModel = MetaFSpec
+            { metaModelFileName = "SystemContext.adl"
+            , model             = 
+                case pCtx2Fspec systemP_Ctx of
+                  Checked f _ -> f
+                  Errors errs -> fatal . unlines $
+                      "The SystemContext ADL scripts are not type correct:"
+                    : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+            , transformers  = transformersSystemContext
+            }
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =
               if addSemanticMetamodel opts 
-              then addSemanticModel <$> userP_Ctx
-              else                      userP_Ctx
-          where
-            -- | When the semantic model of Formal Ampersand is added to the user's model, we add
-            --   the relations as wel as the generalisations to it, so they are available to the user
-            --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
-            addSemanticModel :: P_Context -> P_Context
-            addSemanticModel pCtx  
-              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (Set.toList . instances . model $ fAmpModel)
-                     ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (Set.toList . instances . model $ fAmpModel)
-                     ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (Set.toList . instances . model $ fAmpModel)
-                     ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (Set.toList . instances . model $ fAmpModel)
-                     ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo . model $ fAmpModel)
+              then (addSemanticModel (model fAmpModel)) <$> userP_Ctx
+              else userP_Ctx
+         
+         -- | When the semantic model of a metamodel is added to the user's model, we add
+         --   the relations as wel as the generalisations to it, so they are available to the user
+         --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
+         addSemanticModel :: FSpec -> P_Context -> P_Context
+         addSemanticModel metamodel pCtx  
+              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (Set.toList . instances $ metamodel)
+                     ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (Set.toList . instances $ metamodel)
+                     ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (Set.toList . instances $ metamodel)
+                     ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (Set.toList . instances $ metamodel)
+                     ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ metamodel)
                      }
+           where
             noPopulation :: P_Relation -> P_Relation
             noPopulation rel = rel{dec_popu =[]}
 
-         userGFSpec :: Guarded FSpec
-         userGFSpec = pCtx2Fspec $ 
-                         mergeContexts <$> userP_CtxPlus   -- the FSpec resuting from the user's souceFile
-                                       <*> systemP_Ctx -- the system artifacts required for all ampersand prototypes
-         
+         userGFSpec' :: Guarded FSpec
+         userGFSpec' = 
+            pCtx2Fspec $ 
+              if useSystemContext
+              then mergeContexts <$> (grind sysCModel <$> pCtx2Fspec userPlus) <*> userPlus
+              else userP_Ctx
+           where 
+            userPlus :: Guarded P_Context
+            userPlus = addSemanticModel (model sysCModel) <$> userP_Ctx
+         userGFSpec = userGFSpec'
          result :: Guarded MultiFSpecs
          result = 
            if genRapPopulationOnly opts
@@ -93,10 +110,8 @@ createMulti opts =
                   Checked usrFSpec _
                            -> let grinded :: P_Context
                                   grinded = grind fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
-                                  metaPopPCtx :: Guarded P_Context
-                                  metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
                                   metaPopFSpec :: Guarded FSpec
-                                  metaPopFSpec = pCtx2Fspec metaPopPCtx
+                                  metaPopFSpec =  pCtx2Fspec $ mergeContexts <$> pure grinded  <*> fAmpP_Ctx
                               in MultiFSpecs <$> (pCtx2Fspec $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
                                              <*> (Just <$> metaPopFSpec)
            else MultiFSpecs <$> userGFSpec <*> pure Nothing
@@ -105,6 +120,8 @@ createMulti opts =
             else return $ pure ()
      return (res >> result)
   where
+    useSystemContext :: Bool
+    useSystemContext = True --TODO: Depends on Options: Only when user generates a prototype
     writeMetaFile :: MetaFSpec -> Guarded FSpec -> IO (Guarded ())
     writeMetaFile metaModel userSpec = 
        case makeMetaFile metaModel <$> userSpec of
