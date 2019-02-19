@@ -829,14 +829,68 @@ transformersFormalAmpersand fSpec = map toTransformer [
 -- | The list of all transformers, one for each and every relation in SystemContext.
 transformersSystemContext :: FSpec -> [Transformer]
 transformersSystemContext fSpec = map toTransformer [
-      ("label"                   , "PF_Interface"          , "PF_Label"    
+      ("accLoginTimestamps"    , "Account"               , "DateTime"
+      , Set.empty  --TODO
+      )
+    , ("accMostRecentLogin"    , "Account"               , "DateTime"
+      , Set.empty  --TODO
+      ) 
+    , ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
+      , Set.empty  --TODO
+      )
+    , ("isAPI"                 , "PF_Interface"          , "PF_Interface"
+      , Set.empty  --TODO
+      )
+    , ("isPartOf"              , "PF_NavMenuItem"        , "PF_NavMenu"
+      , Set.empty  --TODO
+      )
+    , ("isPublic"              , "PF_Interface"          , "PF_Interface"
+      , Set.empty  --TODO
+      )
+    , ("isSubItemOf"           , "PF_NavMenuItem"        , "PF_NavMenuItem"
+      , Set.empty  --TODO
+      )
+    , ("isVisible"             , "PF_NavMenuItem"        , "PF_NavMenuItem"
+      , Set.empty  --TODO
+      )
+    , ("label"                 , "PF_Interface"          , "PF_Label"    
       , Set.fromList $
         [(dirtyId ifc,(PopAlphaNumeric . name) ifc)
         | ifc::Interface <- instanceList fSpec
         ]
       )
-     ]
--- | Within a specific context there are all kinds of things.
+    , ("label"                 , "PF_NavMenuItem"        , "PF_Label"
+      , Set.empty  --TODO
+      )
+    , ("lastAccess"            , "SESSION"               , "DateTime"
+      , Set.empty  --TODO
+      )
+    , ("pf_ifcRoles"           , "PF_Interface"          , "PF_Role"
+      , Set.empty  --TODO
+      )
+    , ("pf_navItemRoles"       , "PF_NavMenuItem"        , "PF_Role"
+      , Set.empty  --TODO
+      )
+    , ("seqNr"                 , "PF_NavMenuItem"        , "PF_SeqNr"
+      , Set.empty  --TODO
+      )
+    , ("sessionAccount"        , "SESSION"               , "Account"
+      , Set.empty  --TODO
+      )
+    , ("sessionActiveRoles"    , "SESSION"               , "PF_Role"
+      , Set.empty  --TODO
+      )
+    , ("sessionAllowedRoles"   , "SESSION"               , "PF_Role"
+      , Set.empty  --TODO
+      )
+    , ("url"                   , "PF_NavMenuItem"        , "PF_URL"
+      , Set.empty  --TODO
+      )
+    ]
+
+
+
+     -- | Within a specific context there are all kinds of things.
 --   These 'things' are instances (elements / atoms) of some
 --   Concept. They are the atoms of the concepts, as looked
 --   upon from the Formal Ampersand viewpoint.
