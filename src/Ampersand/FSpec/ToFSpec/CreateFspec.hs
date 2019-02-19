@@ -7,6 +7,7 @@ import           Ampersand.ADL1
 import           Ampersand.ADL1.P2A_Converters
 import           Ampersand.Basics
 import           Ampersand.Core.A2P_Converters
+import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ShowMeatGrinder
 import           Ampersand.FSpec.ToFSpec.ADL2FSpec
@@ -96,7 +97,7 @@ createMulti opts =
          userGFSpec' = 
             pCtx2Fspec $ 
               if useSystemContext
-              then mergeContexts <$> (grind sysCModel <$> pCtx2Fspec userPlus) <*> userPlus
+              then mergeContexts <$> (grind sysCModel <$> pCtx2Fspec userPlus) <*> userP_Ctx
               else userP_Ctx
            where 
             userPlus :: Guarded P_Context
