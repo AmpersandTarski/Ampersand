@@ -25,9 +25,9 @@ Flag buildAll
   Manual:      True
 
 custom-setup
-  setup-depends:     base == 4.12.*,
+  setup-depends:     Cabal == 2.4.*,
+                     base == 4.12.*,
                      bytestring == 0.10.*,
-                     Cabal == 2.4.*,
                      directory == 1.3.*,
                      filepath == 1.4.*,
                      process == 1.6.*,
@@ -42,7 +42,11 @@ library
   ghc-options:       -Wall
   default-extensions:NoImplicitPrelude
   default-language:  Haskell2010
-  build-depends:     aeson == 1.4.*,
+  build-depends:     HStringTemplate == 0.8.*,
+                     MissingH == 1.4.*,
+                     QuickCheck == 2.11.*,
+                     SpreadsheetML ==0.1.*,
+                     aeson == 1.4.*,
                      aeson-pretty == 0.8.*,
                      base == 4.12.*,
                      bytestring == 0.10.*,
@@ -53,20 +57,16 @@ library
                      filepath == 1.4.*,
                      graphviz == 2999.20.*,
                      hashable == 1.2.*,
-                     HStringTemplate == 0.8.*,
                      http-conduit == 2.3.*,
                      lens == 4.17.*,
-                     MissingH == 1.4.*,
                      mtl == 2.2.*,
                      pandoc == 2.4.*,
                      pandoc-crossref == 0.3.4.0,
                      pandoc-types == 1.17.*,
                      parsec == 3.1.*,
                      process == 1.6.*,
-                     QuickCheck == 2.11.*,
                      simple-sql-parser == 0.4.4,
                      split == 0.2.*,
-                     SpreadsheetML ==0.1.*,
                      text == 1.2.*,
                      time == 1.8.*,
                      utf8-string == 1.0.*,
