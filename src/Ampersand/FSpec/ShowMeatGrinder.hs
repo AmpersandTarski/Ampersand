@@ -4,6 +4,7 @@
 {-# LANGUAGE DuplicateRecordFields#-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.FSpec.ShowMeatGrinder
   ( makeMetaFile
   , grind 
@@ -29,12 +30,12 @@ import qualified Data.Set as Set
 data MetaFSpec = MetaFSpec
     { metaModelFileName :: String
     , model             :: FSpec
-    , transformers      :: FSpec -> [Transformer]
+    , transformers      :: Options -> FSpec -> [Transformer]
     }
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.
-grind :: MetaFSpec -> FSpec -> P_Context
-grind metaModel userFspec =
+grind :: Options -> MetaFSpec -> FSpec -> P_Context
+grind opts@Options{..} metaModel userFspec =
   PCtx{ ctx_nm     = "Grinded_"++name userFspec
       , ctx_pos    = []
       , ctx_lang   = Nothing
@@ -57,7 +58,7 @@ grind metaModel userFspec =
   where
     metaPops2 :: Set.Set Pop
     metaPops2 = Set.fromList 
-              . concatMap (Set.toList . grindedPops metaModel userFspec)
+              . concatMap (Set.toList . grindedPops opts metaModel userFspec)
               . Set.toList . instances . model $ metaModel
 
 extractFromPop :: MetaFSpec -> Pop -> Maybe P_Relation
@@ -135,14 +136,14 @@ showPop pop =
 
 -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
-makeMetaFile :: MetaFSpec -> FSpec -> (FilePath,String)
-makeMetaFile metaModel userFspec
+makeMetaFile :: Options -> MetaFSpec -> FSpec -> (FilePath,String)
+makeMetaFile opts@Options{..} metaModel userFspec
   = ("MetaPopulationFile.adl", content )
   where
     content = unlines $
         ([ "{- Do not edit manually. This code has been generated!!!"
         , "    Generated with "++ampersandVersionStr
-        , "    Generated at "++show (genTime (getOpts userFspec))
+        , "    Generated at "++show genTime
         , " "
         , "The populations defined in this file are the populations from the user's"
         , "model named '"++name userFspec++"'."
@@ -179,7 +180,7 @@ makeMetaFile metaModel userFspec
                                     )
         
     popsOfRelation :: Relation -> Set.Set Pop
-    popsOfRelation = grindedPops metaModel userFspec
+    popsOfRelation = grindedPops opts metaModel userFspec
     pAtomsOfConcept :: A_Concept -> Set.Set PopAtom
     pAtomsOfConcept cpt = getPopsSet Src `Set.union` getPopsSet Tgt
       where getPopsSet :: SrcOrTgt -> Set.Set PopAtom
@@ -195,9 +196,9 @@ makeMetaFile metaModel userFspec
                                                    ) 
                          . instances . model $ metaModel
 
-grindedPops :: MetaFSpec -> FSpec -> Relation -> Set.Set Pop
-grindedPops metaModel userFspec rel = 
-  case filter (isForRel rel) ((transformers metaModel) userFspec) of
+grindedPops :: Options -> MetaFSpec -> FSpec -> Relation -> Set.Set Pop
+grindedPops opts@Options{..} metaModel userFspec rel = 
+  case filter (isForRel rel) ((transformers metaModel) opts userFspec) of
     []  -> fatal . unlines $ 
               ["Every relation in "++metaModelFileName metaModel++" must have a transformer in Transformers.hs"
               ,"   Violations:"
@@ -208,7 +209,7 @@ grindedPops metaModel userFspec rel =
                     . Set.filter hasNoTransformer 
                     . instances . model $ metaModel
               hasNoTransformer :: Relation -> Bool
-              hasNoTransformer d = null (filter (isForRel d) ((transformers metaModel) userFspec))
+              hasNoTransformer d = null (filter (isForRel d) ((transformers metaModel) opts userFspec))
               showRelOrigin :: Relation -> String
               showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
     ts  -> Set.fromList . map transformer2Pop $ ts 

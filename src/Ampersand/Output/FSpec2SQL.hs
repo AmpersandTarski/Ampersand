@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.FSpec2SQL
   (dumpSQLqueries,generateDatabaseFile)
@@ -15,13 +16,12 @@ import qualified Data.Text as Text
 import           System.Directory
 import           System.FilePath
 
-generateDatabaseFile :: MultiFSpecs -> IO()
-generateDatabaseFile multi = 
-   do verboseLn opts ("  Generating "++file)
+generateDatabaseFile :: Options -> MultiFSpecs -> IO()
+generateDatabaseFile opts@Options{..} multi = 
+   do verboseLn $ "  Generating "++file
       createDirectoryIfMissing True (takeDirectory fullFile)
       writeFile fullFile content
   where 
-   opts = getOpts (userFSpec multi)
    content = Text.unpack (databaseStructureSql multi)
    file = "database" <.> "sql"
    fullFile = getGenericsDir opts </> file
@@ -40,8 +40,8 @@ generateDBstructQueries fSpec withComment
   =    concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
     <> additionalDatabaseSettings 
 
-dumpSQLqueries :: MultiFSpecs -> Text.Text
-dumpSQLqueries multi
+dumpSQLqueries :: Options -> MultiFSpecs -> Text.Text
+dumpSQLqueries opts@Options{..} multi
    = Text.intercalate "\n" $ 
          header (Text.pack ampersandVersionStr)
        <>header "Database structure queries"
@@ -85,7 +85,7 @@ dumpSQLqueries multi
           ,"Rules for this conjunct:"]
         <>map showRule (Set.elems $ rc_orgRules conj)
         <>["*/"
-          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj) <> ";"
+          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF opts . notCpl . rc_conjunct $ conj) <> ";"
           ,""]
         where
           showRule r 

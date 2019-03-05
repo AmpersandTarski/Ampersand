@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Concepts 
   (Concepts,Segment)
 where
@@ -54,10 +55,10 @@ instance ToJSON Segment where
 instance ToJSON TableCols where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Concepts where
- fromAmpersand multi _ = Concepts (map (fromAmpersand multi) (Set.elems $ concs fSpec))
+ fromAmpersand opts@Options{..} multi _ = Concepts (map (fromAmpersand opts multi) (Set.elems $ concs fSpec))
    where fSpec = userFSpec multi
 instance JSON A_Concept Concept where
- fromAmpersand multi cpt = Concept
+ fromAmpersand opts@Options{..} multi cpt = Concept
   { cptJSONid                = escapeIdentifier . name $ cpt
   , cptJSONlabel             = name cpt
   , cptJSONtype              = show . cptTType fSpec $ cpt
@@ -68,7 +69,7 @@ instance JSON A_Concept Concept where
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
-  , cptJSONconceptTable = fromAmpersand multi cpt
+  , cptJSONconceptTable = fromAmpersand opts multi cpt
   , cptJSONlargestConcept = escapeIdentifier . name . largestConcept fSpec $ cpt
   } 
   where
@@ -77,7 +78,7 @@ instance JSON A_Concept Concept where
     hasAsSourceCpt ifc = (source . objExpression . ifcObj) ifc `elem` cpts
     cpts = cpt : largerConcepts  (vgens fSpec) cpt
 instance JSON A_Concept TableCols where
- fromAmpersand multi cpt = TableCols
+ fromAmpersand _ multi cpt = TableCols
   { tclJSONname    = name cptTable
   , tclJSONcols    = case nub . map fst $ cols of
                        [t] -> if name t == name cptTable
@@ -93,15 +94,15 @@ instance JSON A_Concept TableCols where
       []      -> fatal ("Concept `"++name cpt++"` not found in a table.")
       _       -> fatal ("Concept `"++name cpt++"` found in multiple tables.")
 instance JSON ViewDef View where
- fromAmpersand multi vd = View
+ fromAmpersand opts@Options{..} multi vd = View
   { vwJSONlabel        = name vd
   , vwJSONisDefault    = vdIsDefault vd
   , vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd
-  , vwJSONsegments     = map (fromAmpersand multi) . vdats $ vd
+  , vwJSONsegments     = map (fromAmpersand opts multi) . vdats $ vd
   }
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where
- fromAmpersand multi seg = Segment
+ fromAmpersand _ multi seg = Segment
   { segJSONseqNr = vsmSeqNr seg
   , segJSONlabel = vsmlabel seg
   , segJSONsegType = case vsmLoad seg of

@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
   (createMulti)
@@ -34,16 +35,16 @@ import           System.FilePath
 --   which is the result of createMulti.
 createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
-createMulti opts =
+createMulti opts@Options{..} =
   do fAmpP_Ctx :: Guarded P_Context <-
-        if genMetaFile opts ||
-           genRapPopulationOnly opts ||
-           addSemanticMetamodel opts
-        then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
+        if genMetaFile ||
+           genRapPopulationOnly ||
+           addSemanticMetamodel
+        then parseMeta opts -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
      userP_Ctx:: Guarded P_Context <- 
-        case fileName opts of
+        case fileName of
           Just x -> parseADL opts x -- the P_Context of the user's sourceFile
           Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     
@@ -73,7 +74,7 @@ createMulti opts =
             }
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =
-              if addSemanticMetamodel opts 
+              if addSemanticMetamodel 
               then (addSemanticModel (model fAmpModel)) <$> userP_Ctx
               else userP_Ctx
          
@@ -96,38 +97,38 @@ createMulti opts =
          userGFSpec = 
             pCtx2Fspec $ 
               if useSystemContext
-              then mergeContexts <$> (grind sysCModel <$> pCtx2Fspec userPlus) <*> userP_Ctx
+              then mergeContexts <$> (grind opts sysCModel <$> pCtx2Fspec userPlus) <*> userP_Ctx
               else userP_Ctx
            where 
             userPlus :: Guarded P_Context
             userPlus = addSemanticModel (model sysCModel) <$> userP_Ctx
          result :: Guarded MultiFSpecs
          result = 
-           if genRapPopulationOnly opts
+           if genRapPopulationOnly
            then case userGFSpec of 
                   Errors err -> Errors err  
                   Checked usrFSpec _
                            -> let grinded :: P_Context
-                                  grinded = grind fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                                  grinded = grind opts fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
                                   metaPopFSpec :: Guarded FSpec
                                   metaPopFSpec =  pCtx2Fspec $ mergeContexts <$> pure grinded  <*> fAmpP_Ctx
                               in MultiFSpecs <$> (pCtx2Fspec $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
                                              <*> (Just <$> metaPopFSpec)
            else MultiFSpecs <$> userGFSpec <*> pure Nothing
-     res <- if genMetaFile opts
+     res <- if genMetaFile
             then writeMetaFile fAmpModel userGFSpec
             else return $ pure ()
      return (res >> result)
   where
     useSystemContext :: Bool
-    useSystemContext = genPrototype opts
+    useSystemContext = genPrototype
     writeMetaFile :: MetaFSpec -> Guarded FSpec -> IO (Guarded ())
     writeMetaFile metaModel userSpec = 
-       case makeMetaFile metaModel <$> userSpec of
+       case makeMetaFile opts metaModel <$> userSpec of
         Checked (filePath,metaContents) ws -> 
-                  do verboseLn opts ("Generating meta file in path "++dirOutput opts)
-                     writeFile (dirOutput opts </> filePath) metaContents      
-                     verboseLn opts ("\""++filePath++"\" written")
+                  do verboseLn $ "Generating meta file in path "++dirOutput
+                     writeFile (dirOutput </> filePath) metaContents      
+                     verboseLn $ "\"" ++ filePath ++ "\" written"
                      return $ Checked () ws
         Errors err -> return (Errors err)
 

@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Conjuncts 
   (Conjuncts)
 where
@@ -20,13 +21,13 @@ instance ToJSON JSONConjunct where
 instance ToJSON Conjuncts where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Conjuncts where
- fromAmpersand multi _ = Conjuncts . map (fromAmpersand multi) . allConjuncts . userFSpec $ multi
+ fromAmpersand opts@Options{..} multi _ = Conjuncts . map (fromAmpersand opts multi) . allConjuncts . userFSpec $ multi
 instance JSON Conjunct JSONConjunct where
- fromAmpersand multi conj = JSONConjunct
+ fromAmpersand opts@Options{..} multi conj = JSONConjunct
   { cnjJSONid                  = rc_id conj
   , cnjJSONsignalRuleNames     = map name . filter        isSignal  . Set.elems . rc_orgRules $ conj
   , cnjJSONinvariantRuleNames  = map name . filter (not . isSignal) . Set.elems . rc_orgRules $ conj
-  , cnjJSONviolationsSQL       = sqlQuery fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj
+  , cnjJSONviolationsSQL       = sqlQuery fSpec . conjNF opts . notCpl . rc_conjunct $ conj
   }
    where 
     fSpec = userFSpec multi

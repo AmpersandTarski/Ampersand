@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Settings 
   (Settings)
 where
@@ -20,15 +21,15 @@ data Settings = Settings
 instance ToJSON Settings where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Settings where
- fromAmpersand multi _ = Settings 
+ fromAmpersand Options{..} multi _ = Settings 
   { sngJSONglobal_contextName = Text.unpack (fsName fSpec)
-  , sngJSONmysql_dbHost       = sqlHost  opts
-  , sngJSONmysql_dbName       = dbName   opts
-  , sngJSONmysql_dbUser       = sqlLogin opts
-  , sngJSONmysql_dbPass       = sqlPwd   opts
+  , sngJSONmysql_dbHost       = sqlHost
+  , sngJSONmysql_dbName       = dbName
+  , sngJSONmysql_dbUser       = sqlLogin
+  , sngJSONmysql_dbPass       = sqlPwd
   , sngJSONcompiler_version   = ampersandVersionStr
-  , sngJSONcompiler_env       = show . environment . getOpts $ fSpec
+  , sngJSONcompiler_env       = show environment
   , sngJSONcompiler_modelHash = show . hash $ fSpec
   } 
    where fSpec = userFSpec multi
-         opts = getOpts fSpec
+         

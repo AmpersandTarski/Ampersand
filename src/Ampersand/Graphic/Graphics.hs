@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
@@ -192,15 +193,15 @@ conceptualStructure fSpec pr =
         _  -> fatal "No conceptual graph defined for this type."
 
 writePicture :: Options -> Picture -> IO()
-writePicture opts pict
+writePicture opts@Options{..} pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
    --   [dumpShow ]++
-      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
-      [writeDot DotOutput | genFSpec opts] ++ --Reproduces the input along with layout information.
-      [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
-      [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
-      [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
+      [writeDot Canon  | genFSpec ]++  --Pretty-printed Dot output with no layout performed.
+      [writeDot DotOutput | genFSpec] ++ --Reproduces the input along with layout information.
+      [writeDot Png    | genFSpec ] ++  --handy format to include in github comments/issues
+      [writeDot Svg    | genFSpec ] ++ -- format that is used when docx docs are being generated.
+      [writePdf Eps    | genFSpec ] -- .eps file that is postprocessed to a .pdf file 
            )
    where
      writeDot :: GraphvizOutput -> IO ()
@@ -209,11 +210,11 @@ writePicture opts pict
               -> GraphvizOutput
               -> IO ()
      writeDotPostProcess postProcess gvOutput  =
-         do verboseLn opts ("Generating "++show gvOutput++" using "++show gvCommand++".")
+         do verboseLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
             dotSource <- mkDotGraphIO opts pict
             path <- (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
                        (dropExtension . imagePath opts) pict
-            verboseLn opts (path++" written.")
+            verboseLn $ path++" written."
             case postProcess of
               Nothing -> return ()
               Just x -> x path
@@ -223,20 +224,20 @@ writePicture opts pict
      makePdf :: FilePath -> IO ()
      makePdf path = do
          callCommand (ps2pdfCmd path)
-         verboseLn opts (replaceExtension path ".pdf" ++ " written.")
-       `catch` \ e -> verboseLn opts ("Could not invoke PostScript->PDF conversion."++
-                                      "\n  Did you install MikTex? Can the command epstopdf be found?"++
-                                      "\n  Your error message is:\n " ++ show (e :: IOException))
+         verboseLn $ replaceExtension path ".pdf" ++ " written."
+       `catch` \ e -> verboseLn ("Could not invoke PostScript->PDF conversion."++
+                                 "\n  Did you install MikTex? Can the command epstopdf be found?"++
+                                 "\n  Your error message is:\n " ++ show (e :: IOException))
                    
      writePdf :: GraphvizOutput
               -> IO ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
-       `catch` (\ e -> verboseLn opts ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
-                                       "\n  Your error message is:\n " ++ show (e :: IOException)))
+       `catch` (\ e -> verboseLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+                                  "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 mkDotGraphIO :: Options -> Picture -> IO (DotGraph String)
-mkDotGraphIO opts pict = 
+mkDotGraphIO opts@Options{..} pict = 
   case dotContent pict of
     ClassDiagram x -> pure $ classdiagram2dot opts x
     ConceptualDg x -> pure $ conceptual2DotIO opts x
@@ -245,10 +246,10 @@ class ReferableFromPandoc a where
   imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
 
 instance ReferableFromPandoc Picture where
-  imagePath opts p =
-    dirOutput opts
+  imagePath Options{..} p =
+    dirOutput
      </> (escapeNonAlphaNum . pictureID . pType ) p <.>
-     case fspecFormat opts of
+     case fspecFormat of
       Fpdf   -> "png"   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
       Fdocx  -> "svg"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
       _      -> "pdf"
@@ -259,7 +260,7 @@ data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to
                                    }
 
 conceptual2DotIO :: Options -> ConceptualStructure -> DotGraph String
-conceptual2DotIO opts cs@(CStruct _ rels idgs) = 
+conceptual2DotIO Options{..} cs@(CStruct _ rels idgs) = 
       DotGraph { strictGraph = False
                , directedGraph = True
                , graphID = Nothing
@@ -300,13 +301,13 @@ conceptual2DotIO opts cs@(CStruct _ rels idgs) =
                }
        where
     nodes :: HasDotParts a => a -> [DotNode String]
-    nodes = dotNodes opts cs
+    nodes = dotNodes cs
     edges :: HasDotParts a => a -> [DotEdge String]
-    edges = dotEdges opts cs
+    edges = dotEdges cs
 
 class HasDotParts a where
-  dotNodes :: Options -> ConceptualStructure -> a -> [DotNode String]
-  dotEdges :: Options -> ConceptualStructure -> a -> [DotEdge String]
+  dotNodes :: ConceptualStructure -> a -> [DotNode String]
+  dotEdges :: ConceptualStructure -> a -> [DotEdge String]
 
 baseNodeId :: ConceptualStructure -> A_Concept -> String
 baseNodeId x c =
@@ -321,16 +322,16 @@ edgeLenFactor :: Double -> Attribute
 edgeLenFactor x = Len (4 * x)
 
 instance HasDotParts A_Concept where
-  dotNodes _ x cpt =
+  dotNodes x cpt =
     [DotNode 
       { nodeID = baseNodeId x cpt
       , nodeAttributes = [ Label . StrLabel . fromString . name $ cpt
                          ]
       }
     ]
-  dotEdges _ _ _ = []  
+  dotEdges _ _ = []  
 instance HasDotParts Relation where
-  dotNodes _ x rel
+  dotNodes x rel
     | isEndo rel = 
        [DotNode 
           { nodeID = baseNodeId x (source rel) ++ name rel 
@@ -345,7 +346,7 @@ instance HasDotParts Relation where
                           }
        ]
     | otherwise  = []
-  dotEdges _ x rel
+  dotEdges x rel
     | isEndo rel = 
       [ DotEdge
           { fromNode       = baseNodeId x . source $ rel
@@ -369,8 +370,8 @@ instance HasDotParts Relation where
           }
       ]
 instance HasDotParts (A_Concept,A_Concept) where
-  dotNodes _ _ _ = []
-  dotEdges _ x (gen,spc) = 
+  dotNodes _ _ = []
+  dotEdges x (gen,spc) = 
     [ DotEdge
          { fromNode       = baseNodeId x gen
          , toNode         = baseNodeId x spc
