@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances,DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE RecordWildCards #-} 
 module           Ampersand.FSpec.ShowHS
     (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
 where
@@ -16,19 +17,19 @@ import           Data.Ord
 import qualified Data.Set as Set
 import           Text.Pandoc hiding (Meta)
 
-fSpec2Haskell :: FSpec -> String
-fSpec2Haskell fSpec
+fSpec2Haskell :: Options -> FSpec -> String
+fSpec2Haskell opts@Options{..} fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
-          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (getOpts fSpec))++"-}"
+          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show genTime++"-}"
           ++"\nmodule Main where\n"
           ++"\nimport Ampersand"
           ++"\nimport Text.Pandoc hiding (Meta)"
           ++"\n"
           ++"\nmain :: IO ()"
-          ++"\nmain = do (getOpts fSpec) <- getOptions"
-          ++"\n          putStr (showHS (getOpts fSpec) \"\\n  \" fSpec_"++baseName (getOpts fSpec)++")\n"
-          ++"\nfSpec_"++baseName (getOpts fSpec)++" :: FSpec"
-          ++"\nfSpec_"++baseName (getOpts fSpec)++" =\n  "++showHS (getOpts fSpec) "\n  " fSpec
+          ++"\nmain = do opts <- getOptions"
+          ++"\n          putStr (showHS opts \"\\n  \" fSpec_"++baseName++")\n"
+          ++"\nfSpec_"++baseName ++" :: FSpec"
+          ++"\nfSpec_"++baseName ++" =\n  "++showHS opts "\n  " fSpec
 
 wrap :: String->String->(String->a->String)->[a]->String
 wrap initStr indent f xs

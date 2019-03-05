@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Views 
     (Views)
 where
@@ -20,17 +21,17 @@ instance ToJSON View where
 instance ToJSON Views where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Views where
- fromAmpersand multi _ = Views . map (fromAmpersand multi) 
+ fromAmpersand opts@Options{..} multi _ = Views . map (fromAmpersand opts multi) 
                                . vviews $ fSpec
    where 
     fSpec = userFSpec multi
     
 instance JSON ViewDef View where
- fromAmpersand multi vd = View
+ fromAmpersand opts@Options{..} multi vd = View
   { vwJSONlabel      = name vd
   , vwJSONconceptId  = escapeIdentifier . name . vdcpt $ vd
   , vwJSONisDefault  = vdIsDefault vd
-  , vwJSONsegments   = map (fromAmpersand multi) . vdats $ vd
+  , vwJSONsegments   = map (fromAmpersand opts multi) . vdats $ vd
   } 
 
 

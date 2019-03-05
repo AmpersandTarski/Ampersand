@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FunctionalDependencies #-} 
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToJSON.JSONutils 
   (writeJSONFile, JSON(..), ToJSON(..)
   , module Ampersand.Basics
@@ -33,8 +34,8 @@ import           System.FilePath
 import           System.Directory
 
 writeJSONFile :: ToJSON a => Options -> FilePath -> a -> IO()
-writeJSONFile opts fName x 
-  = do verboseLn opts ("  Generating "++file)
+writeJSONFile opts@Options{..} fName x 
+  = do verboseLn ("  Generating "++file) 
        createDirectoryIfMissing True (takeDirectory fullFile)
        BS.writeFile fullFile (encodePretty x)
   where file = fName <.> "json"
@@ -43,7 +44,7 @@ writeJSONFile opts fName x
 -- We use aeson to generate .json in a simple and efficient way.
 -- For details, see http://hackage.haskell.org/package/aeson/docs/Data-Aeson.html#t:ToJSON
 class (GToJSON Zero (Rep b), Generic b) => JSON a b | b -> a where
-  fromAmpersand :: MultiFSpecs -> a -> b
+  fromAmpersand :: Options -> MultiFSpecs -> a -> b
   amp2Jason :: b -> Value
   amp2Jason = genericToJSON ampersandDefault
 

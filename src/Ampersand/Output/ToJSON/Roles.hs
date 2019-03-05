@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Roles 
     (Roles)
 where
@@ -19,10 +20,10 @@ instance ToJSON RoleJson where
 instance ToJSON Roles where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Roles where
- fromAmpersand multi _ = Roles . map (fromAmpersand multi) . fRoles $ fSpec
+ fromAmpersand opts@Options{..} multi _ = Roles . map (fromAmpersand opts multi) . fRoles $ fSpec
    where fSpec = userFSpec multi
 instance JSON (Role,Int) RoleJson where
- fromAmpersand multi (role',i) = RoleJson
+ fromAmpersand _ multi (role',i) = RoleJson
   { roleJSONid         = i
   , roleJSONname       = name role'
   , roleJSONmaintains  = map name . Set.elems .fMaintains     fSpec $ role'

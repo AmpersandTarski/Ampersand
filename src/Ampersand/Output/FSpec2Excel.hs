@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.FSpec2Excel (fspec2FPA_Excel)
 where
 import Text.XML.SpreadsheetML.Builder
@@ -13,20 +14,17 @@ import Data.Maybe
 
 -- NOTE: this code was refactored to support the new FPA module, but has not been tested yet.
 
-fspec2FPA_Excel :: FSpec -> String
-fspec2FPA_Excel = showSpreadsheet . fspec2Workbook
-
-fspec2Workbook :: FSpec -> Workbook
-fspec2Workbook fSpec =
+fspec2FPA_Excel :: Options ->FSpec -> String
+fspec2FPA_Excel Options{..} fSpec = showSpreadsheet $
    Workbook
       { workbookDocumentProperties = Just
-          DocumentProperties { documentPropertiesTitle = Just $ "FunctiePuntAnalyse van "++baseName (getOpts fSpec)
+          DocumentProperties { documentPropertiesTitle = Just $ "FunctiePuntAnalyse van "++baseName
                              , documentPropertiesSubject = Nothing
                              , documentPropertiesKeywords  = Nothing
                              , documentPropertiesDescription = Just $ "Dit document is gegenereerd dmv. "++ampersandVersionStr++"."
                              , documentPropertiesRevision = Nothing
                              , documentPropertiesAppName = Just "Ampersand"
-                             , documentPropertiesCreated = Just $ show (genTime (getOpts fSpec))
+                             , documentPropertiesCreated = Just $ show genTime
                              }
       , workbookWorksheets = [pimpWs wsResume,pimpWs wsDatasets,pimpWs wsFunctions]
       }
@@ -45,7 +43,7 @@ fspec2Workbook fSpec =
                     { tableRows =
                           [ mkRow [string $ l (NL "Gedetailleerde functiepunentelling (volgens NESMA 2.2) van het systeem "
                                               ,EN "Detailed function point count (according to NESMA 2.1) of the application ")
-                                             ++ baseName (getOpts fSpec)
+                                             ++ baseName
                                   ]
                           , emptyRow
                           , mkRow [string totalen]

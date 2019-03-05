@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
@@ -7,11 +8,11 @@ import           Data.List(nub,partition)
 import           Data.Maybe(isJust,fromMaybe)
 import qualified Data.Set as Set
 
-chpDiagnosis :: FSpec -> (Blocks,[Picture])
-chpDiagnosis fSpec
- | noDiagnosis (getOpts fSpec) = mempty
+chpDiagnosis :: Options -> FSpec -> (Blocks,[Picture])
+chpDiagnosis opts@Options{..} fSpec
+ | noDiagnosis = mempty
  | otherwise
- = (  xDefBlck fSpec Diagnosis
+ = (  xDefBlck opts fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
             <> (emph.singleQuoted.str.name) fSpec 
@@ -235,14 +236,14 @@ chpDiagnosis fSpec
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          )
-                 <> xDefBlck fSpec pict
+                 <> xDefBlck opts fSpec pict
           picts  -> mconcat
                        [ para (   hyperLinkTo pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
                               )
-                       <> xDefBlck fSpec pict
+                       <> xDefBlck opts fSpec pict
                        | (pict,pat)<-zip picts pats
                        ]
        )

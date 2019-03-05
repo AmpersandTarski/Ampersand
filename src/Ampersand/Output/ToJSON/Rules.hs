@@ -47,15 +47,15 @@ instance ToJSON JsonPairView where
 instance ToJSON JsonPairViewSegment where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Rulez where
- fromAmpersand multi _ = Rulez
-   { rulJSONinvariants = map (fromAmpersand multi) . Set.elems $ invariants fSpec
-   , rulJSONsignals    = map (fromAmpersand multi) . Set.elems $ signals fSpec
+ fromAmpersand opts multi _ = Rulez
+   { rulJSONinvariants = map (fromAmpersand opts multi) . Set.elems $ invariants fSpec
+   , rulJSONsignals    = map (fromAmpersand opts multi) . Set.elems $ signals fSpec
    }
   where
    fSpec = userFSpec multi
     
 instance JSON Rule JsonRule where
- fromAmpersand multi rule = JsonRule
+ fromAmpersand opts multi rule = JsonRule
   { rulJSONname        = rrnm         rule
   , rulJSONruleAdl     = showA.formalExpression $ rule
   , rulJSONorigin      = show.rrfps     $ rule
@@ -64,7 +64,7 @@ instance JSON Rule JsonRule where
   , rulJSONsrcConceptId = escapeIdentifier . name . source . formalExpression $ rule
   , rulJSONtgtConceptId = escapeIdentifier . name . target . formalExpression $ rule
   , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
-  , rulJSONpairView    = fmap (fromAmpersand multi) (rrviol rule)
+  , rulJSONpairView    = fmap (fromAmpersand opts multi) (rrviol rule)
   } 
    where 
     fSpec = userFSpec multi
@@ -73,9 +73,9 @@ instance JSON Rule JsonRule where
                               [] -> ""
                               xs -> aMarkup2String (head xs)
 instance JSON (PairView Expression) JsonPairView where
- fromAmpersand multi pv = JsonPairView $ map (fromAmpersand multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
+ fromAmpersand opts multi pv = JsonPairView $ map (fromAmpersand opts multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
- fromAmpersand multi (nr,pvs) = JsonPairViewSegment
+ fromAmpersand _ multi (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr
   , pvsJSONsegType = case pvs of
                            PairViewText{} -> "Text"
