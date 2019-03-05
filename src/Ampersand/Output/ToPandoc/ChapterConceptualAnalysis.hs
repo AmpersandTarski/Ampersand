@@ -1,15 +1,16 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           Data.List (intersperse )
 import qualified Data.Set as Set
 
-chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])
-chpConceptualAnalysis lev fSpec = (
+chpConceptualAnalysis :: Options -> Int -> FSpec -> (Blocks,[Picture])
+chpConceptualAnalysis opts@Options{..} lev fSpec = (
       --  *** Header ***
-   xDefBlck fSpec ConceptualAnalysis
+   xDefBlck opts fSpec ConceptualAnalysis
    <> --  *** Intro  ***
    caIntro
    <> --  *** For all patterns, a section containing the conceptual analysis for that pattern  ***
@@ -37,7 +38,7 @@ chpConceptualAnalysis lev fSpec = (
                     <> "This chapter allows an independent professional with sufficient background to check whether the agreements made "
                     <> "correspond to the formal rules and definitions. "
                     )
-     )<> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
+     )<> purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
 
   caBlocks = 
          mconcat (map caSection (vpatterns fSpec))
@@ -65,17 +66,17 @@ chpConceptualAnalysis lev fSpec = (
   caSection :: Pattern -> Blocks
   caSection pat
    =    -- new section to explain this pattern
-        xDefBlck fSpec (XRefConceptualAnalysisPattern pat)
+        xDefBlck opts fSpec (XRefConceptualAnalysisPattern pat)
         -- The section starts with the reason why this pattern exists
-     <> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
+     <> purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) pat)
         -- followed by a conceptual model for this pattern
      <> ( case fsLang fSpec of
                Dutch   -> -- announce the conceptual diagram
                           para (hyperLinkTo (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
                           -- draw the conceptual diagram
-                          <>(xDefBlck fSpec . pictOfPat) pat
+                          <>(xDefBlck opts fSpec . pictOfPat) pat
                English -> para (hyperLinkTo (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
-                          <>(xDefBlck fSpec . pictOfPat) pat
+                          <>(xDefBlck opts fSpec . pictOfPat) pat
         ) <>
     (
         -- now provide the text of this pattern.
@@ -91,7 +92,7 @@ chpConceptualAnalysis lev fSpec = (
     )
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d
-        = let purp =  purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) d)
+        = let purp =  purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) d)
           in ((xDefInln fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMathWithSign d))
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 ( case ( isNull purp, fsLang fSpec) of
@@ -112,7 +113,7 @@ chpConceptualAnalysis lev fSpec = (
   adj = propFullName (fsLang fSpec) 
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
-        = let purp = purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r)
+        = let purp = purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) r)
           in ( mempty
              , [  -- First the reason why the rule exists, if any..
                   purp
@@ -144,6 +145,6 @@ chpConceptualAnalysis lev fSpec = (
                         <> str (l (NL " geeft een conceptueel diagram van deze regel."
                                   ,EN " shows a conceptual diagram of this rule."))
                        )
-               <> xDefBlck fSpec (pictOfRule r)
+               <> xDefBlck opts fSpec (pictOfRule r)
                ]
              )

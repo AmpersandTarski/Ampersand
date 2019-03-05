@@ -34,7 +34,6 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.FSpec.Crud
-import           Ampersand.Misc
 import           Data.Function (on)
 import           Data.Hashable
 import           Data.List
@@ -49,7 +48,6 @@ data MultiFSpecs = MultiFSpecs
                    }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showA)  
-                   , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (derived)

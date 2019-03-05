@@ -107,15 +107,14 @@ library
                      Ampersand.Core.ShowPStruct
                      Ampersand.FSpec
                      Ampersand.FSpec.Crud
-                     Ampersand.FSpec.FPA
+                    --  Ampersand.FSpec.FPA
                      Ampersand.FSpec.FSpec
                      Ampersand.FSpec.FSpecAux
                      Ampersand.FSpec.GenerateUML
                      Ampersand.FSpec.Motivations
-                     Ampersand.FSpec.ShowHS
+                     Ampersand.FSpec.SQL
                      Ampersand.FSpec.ShowMeatGrinder
                      Ampersand.FSpec.Transformers
-                     Ampersand.FSpec.SQL
                      Ampersand.FSpec.ToFSpec.ADL2FSpec
                      Ampersand.FSpec.ToFSpec.ADL2Plug
                      Ampersand.FSpec.ToFSpec.Calc
@@ -141,14 +140,14 @@ library
                      Ampersand.Input.Xslx.XLSX
                      Ampersand.Misc
                      Ampersand.Misc.Options
-                     Ampersand.Output
-                     Ampersand.Output.FSpec2Excel
+                     Ampersand.Output,
+                    --  Ampersand.Output.FSpec2Excel
                      Ampersand.Output.FSpec2Pandoc
                      Ampersand.Output.FSpec2SQL
                      Ampersand.Output.PandocAux
                      Ampersand.Output.Population2Xlsx
-                     Ampersand.Output.PredLogic
-                     Ampersand.Output.Statistics
+                    --  Ampersand.Output.PredLogic
+                    --  Ampersand.Output.Statistics
                      Ampersand.Output.ToJSON.Concepts
                      Ampersand.Output.ToJSON.Conjuncts
                      Ampersand.Output.ToJSON.Interfaces
@@ -168,6 +167,7 @@ library
                      Ampersand.Output.ToPandoc.ChapterNatLangReqs
                      Ampersand.Output.ToPandoc.SharedAmongChapters
                      Ampersand.Prototype.GenFrontend
+
                      Ampersand.Prototype.PHP
                      Ampersand.Prototype.ProtoUtil
                      Ampersand.Prototype.StaticFiles_Generated
@@ -178,7 +178,7 @@ library
                      Ampersand.Test.Parser.ParserTest
                      Ampersand.Test.Parser.QuickChecks
                      Ampersand.Test.Regression
-                     Ampersand.Test.RunAmpersand
+                    --  Ampersand.Test.RunAmpersand
                      Ampersand.Test.TestScripts
   autogen-modules:   Ampersand.Basics.BuildInfo_Generated
                      Ampersand.Prototype.StaticFiles_Generated

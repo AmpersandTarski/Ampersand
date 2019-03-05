@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
@@ -22,45 +23,45 @@ import           System.Process
 
 
 getGenericsDir :: Options -> String
-getGenericsDir opts = 
-  dirPrototype opts </> "generics" 
+getGenericsDir Options{..} = 
+  dirPrototype </> "generics" 
 
 writePrototypeAppFile :: Options -> String -> String -> IO ()
-writePrototypeAppFile opts relFilePath content =
- do { verboseLn opts ("  Generating "<>relFilePath)
+writePrototypeAppFile opts@Options{..} relFilePath content =
+ do { verboseLn $ "  Generating "<>relFilePath 
     ; let filePath = getAppDir opts </> relFilePath
     ; createDirectoryIfMissing True (takeDirectory filePath)
     ; writeFile filePath content
     }
    
 getAppDir :: Options -> String
-getAppDir opts =
-  dirPrototype opts </> "public" </> "app" </> "project"
+getAppDir Options{..} =
+  dirPrototype </> "public" </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
 copyDirRecursively :: FilePath -> FilePath -> Options -> IO ()
-copyDirRecursively srcBase tgtBase opts = copy ""
+copyDirRecursively srcBase tgtBase Options{..} = copy ""
   where copy fileOrDirPth = 
          do { let srcPath = srcBase </> fileOrDirPth
                   tgtPath = tgtBase </> fileOrDirPth
             ; isDir <- doesDirectoryExist srcPath
             ; if isDir then 
                do { createDirectoryIfMissing True tgtPath
-                  ; verboseLn opts $ " Copying dir... " ++ srcPath
+                  ; verboseLn $ " Copying dir... " ++ srcPath
                   ; fOrDs <- getProperDirectoryContents srcPath
                   ; mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
                   }
               else
-               do { verboseLn opts $ "  file... " ++ fileOrDirPth
+               do { verboseLn $ "  file... " ++ fileOrDirPth
                   ; copyFile srcPath tgtPath -- directory will exist, so no need for copyDeepFile
                   }
             }
             
 -- Copy file while creating all subdirectories on the target path (if non-existent)
 copyDeepFile :: FilePath -> FilePath -> Options -> IO ()
-copyDeepFile srcPath tgtPath opts =
- do { verboseLn opts $ " Copying file... " ++ srcPath ++ " -> " ++ tgtPath
+copyDeepFile srcPath tgtPath Options{..} =
+ do { verboseLn $ " Copying file... " ++ srcPath ++ " -> " ++ tgtPath
     ; createDirectoryIfMissing True (takeDirectory tgtPath)
     ; copyFile srcPath tgtPath
     }
@@ -158,15 +159,15 @@ showPhpMaybeBool (Just b) = showPhpBool b
 
 
 installComposerLibs :: Options -> IO()
-installComposerLibs opts =
+installComposerLibs Options{..} =
   do curPath <- getCurrentDirectory
-     verboseLn opts $ "current directory: "++curPath
-     verbose opts "  Trying to download and install Composer libraries..."
+     verboseLn $ "current directory: "++curPath
+     verbose "  Trying to download and install Composer libraries..."
      (exit_code, stdout', stderr') <- readCreateProcessWithExitCode myProc ""
      case exit_code of
-       SE.ExitSuccess   -> do verboseLn opts $
+       SE.ExitSuccess   -> do verboseLn $
                                " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                              verboseLn opts stdout'
+                              verboseLn stdout'
        SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where
@@ -188,7 +189,7 @@ installComposerLibs opts =
        , child_user = Nothing
        , use_process_jobs = False
        }
-     composerTargetPath = dirPrototype opts
+     composerTargetPath = dirPrototype 
      failOutput (exit_code, stdout', stderr') =
         exitWith . FailedToInstallComposer  $
             [ "Failed!"

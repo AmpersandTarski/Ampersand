@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
   (createMulti)
@@ -34,16 +35,16 @@ import           System.FilePath
 --   which is the result of createMulti.
 createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
-createMulti opts =
+createMulti opts@Options{..} =
   do fAmpP_Ctx :: Guarded P_Context <-
-        if genMetaFile opts ||
-           genRapPopulationOnly opts ||
-           addSemanticMetamodel opts
-        then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
+        if genMetaFile ||
+           genRapPopulationOnly ||
+           addSemanticMetamodel
+        then parseMeta opts -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
      userP_Ctx:: Guarded P_Context <- 
-        case fileName opts of
+        case fileName of
           Just x -> parseADL opts x -- the P_Context of the user's sourceFile
           Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     
@@ -58,7 +59,7 @@ createMulti opts =
 
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =
-              if addSemanticMetamodel opts 
+              if addSemanticMetamodel 
               then addSemanticModel <$> userP_Ctx
               else                      userP_Ctx
           where
@@ -83,12 +84,12 @@ createMulti opts =
          
          result :: Guarded MultiFSpecs
          result = 
-           if genRapPopulationOnly opts
+           if genRapPopulationOnly
            then case userGFSpec of 
                   Errors err -> Errors err  
                   Checked usrFSpec _
                            -> let grinded :: P_Context
-                                  grinded = grind fAmpFSpec usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                                  grinded = grind opts fAmpFSpec usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
                                   metaPopPCtx :: Guarded P_Context
                                   metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
                                   metaPopFSpec :: Guarded FSpec
@@ -96,18 +97,18 @@ createMulti opts =
                               in MultiFSpecs <$> (pCtx2Fspec $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
                                              <*> (Just <$> metaPopFSpec)
            else MultiFSpecs <$> userGFSpec <*> pure Nothing
-     res <- if genMetaFile opts
+     res <- if genMetaFile
             then writeMetaFile fAmpFSpec userGFSpec
             else return $ pure ()
      return (res >> result)
   where
     writeMetaFile :: FSpec -> Guarded FSpec -> IO (Guarded ())
     writeMetaFile faSpec userSpec = 
-       case makeMetaFile faSpec <$> userSpec of
+       case makeMetaFile opts faSpec <$> userSpec of
         Checked (filePath,metaContents) ws -> 
-                  do verboseLn opts ("Generating meta file in path "++dirOutput opts)
-                     writeFile (dirOutput opts </> filePath) metaContents      
-                     verboseLn opts ("\""++filePath++"\" written")
+                  do verboseLn $ "Generating meta file in path "++dirOutput
+                     writeFile (dirOutput </> filePath) metaContents      
+                     verboseLn $ "\"" ++ filePath ++ "\" written"
                      return $ Checked () ws
         Errors err -> return (Errors err)
 

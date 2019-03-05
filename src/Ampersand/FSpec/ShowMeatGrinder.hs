@@ -4,6 +4,7 @@
 {-# LANGUAGE DuplicateRecordFields#-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.FSpec.ShowMeatGrinder
   ( makeMetaFile
   , grind 
@@ -27,8 +28,8 @@ import qualified Data.Set as Set
 
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.
-grind :: FSpec -> FSpec -> P_Context
-grind formalAmpersand userFspec =
+grind :: Options -> FSpec -> FSpec -> P_Context
+grind opts@Options{..} formalAmpersand userFspec =
   PCtx{ ctx_nm     = "Grinded_"++name userFspec
       , ctx_pos    = []
       , ctx_lang   = Nothing
@@ -51,7 +52,7 @@ grind formalAmpersand userFspec =
   where
     metaPops2 :: Set.Set Pop
     metaPops2 = Set.fromList 
-              . concatMap (Set.toList . grindedPops formalAmpersand userFspec)
+              . concatMap (Set.toList . grindedPops opts formalAmpersand userFspec)
               . Set.toList . instances $ formalAmpersand
 
 extractFromPop :: MetaFSpec -> Pop -> Maybe P_Relation
@@ -131,14 +132,14 @@ type MetaFSpec = FSpec
 
 -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
-makeMetaFile :: FSpec -> FSpec -> (FilePath,String)
-makeMetaFile formalAmpersand userFspec
+makeMetaFile :: Options -> FSpec -> FSpec -> (FilePath,String)
+makeMetaFile opts@Options{..} formalAmpersand userFspec
   = ("MetaPopulationFile.adl", content )
   where
     content = unlines $
         ([ "{- Do not edit manually. This code has been generated!!!"
         , "    Generated with "++ampersandVersionStr
-        , "    Generated at "++show (genTime (getOpts userFspec))
+        , "    Generated at "++show genTime
         , " "
         , "The populations defined in this file are the populations from the user's"
         , "model named '"++name userFspec++"'."
@@ -175,7 +176,7 @@ makeMetaFile formalAmpersand userFspec
                                     )
         
     popsOfRelation :: Relation -> Set.Set Pop
-    popsOfRelation = grindedPops formalAmpersand userFspec
+    popsOfRelation = grindedPops opts formalAmpersand userFspec
     pAtomsOfConcept :: A_Concept -> Set.Set PopAtom
     pAtomsOfConcept cpt = getPopsSet Src `Set.union` getPopsSet Tgt
       where getPopsSet :: SrcOrTgt -> Set.Set PopAtom
@@ -191,9 +192,9 @@ makeMetaFile formalAmpersand userFspec
                                                    ) 
                          . instances $ formalAmpersand
 
-grindedPops :: FSpec -> FSpec -> Relation -> Set.Set Pop
-grindedPops formalAmpersand userFspec rel = 
-  case filter (isForRel rel) (transformers userFspec) of
+grindedPops :: Options -> FSpec -> FSpec -> Relation -> Set.Set Pop
+grindedPops opts@Options{..} formalAmpersand userFspec rel = 
+  case filter (isForRel rel) (transformers opts userFspec) of
     []  -> fatal . unlines $ 
               ["Every relation in FormalAmpersand.adl must have a transformer in Transformers.hs"
               ,"   Violations:"
@@ -204,7 +205,7 @@ grindedPops formalAmpersand userFspec rel =
                     . Set.filter hasNoTransformer 
                     . instances $ formalAmpersand
               hasNoTransformer :: Relation -> Bool
-              hasNoTransformer d = null (filter (isForRel d) (transformers userFspec))
+              hasNoTransformer d = null (filter (isForRel d) (transformers opts userFspec))
               showRelOrigin :: Relation -> String
               showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
     ts  -> Set.fromList . map transformer2Pop $ ts 
