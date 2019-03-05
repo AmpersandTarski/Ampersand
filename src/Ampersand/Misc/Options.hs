@@ -5,8 +5,6 @@ module Ampersand.Misc.Options
         ( Options(..)
         , FSpecFormat(..)
         , getOptions
-        , verboseLn
-        , verbose
         , showFormat
         , usageInfo'
         , writeConfigFile
@@ -86,7 +84,9 @@ data Options = Options { environment :: EnvironmentOptions
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
-                       } deriving Show
+                       , verbose :: String -> IO()
+                       , verboseLn :: String -> IO()
+                       }
 data EnvironmentOptions = EnvironmentOptions
       { envArgs               :: [String]
       , envArgsCommandLine    :: [String]
@@ -262,6 +262,8 @@ getOptions' envOpts =
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
+                      , verbose          = \_ -> return()
+                      , verboseLn        = \_ -> return()
                       }
 writeConfigFile :: IO ()
 writeConfigFile = do
@@ -358,7 +360,13 @@ options = [ (Option ['v']   ["version"]
                "get (this) usage information."
             , Public)
           , (Option ['V']   ["verbose"]
-               (NoArg (\opts -> opts{verboseP = True}))
+               (NoArg (\opts -> opts{ verboseP  = True
+                                    , verbose   = putStr 
+                                    , verboseLn = \x-> do
+                                        -- Since verbose is for debugging purposes in general, we want no buffering, because it is confusing while debugging.
+                                        hSetBuffering stdout NoBuffering
+                                        mapM_ putStrLn (lines x)
+                                    }))
                "verbose output, to report which files Ampersand writes."
             , Public)
           , (Option []   ["sampleConfigFile"]
@@ -636,16 +644,3 @@ publishOption (Option shorts longs args expl)
                            in if length nstr > i 
                            then (str, w:ws)
                            else fillUpto i nstr ws 
-     
-
-verbose :: Options -> String -> IO ()
-verbose opts x
-   | verboseP opts = putStr x
-   | otherwise     = return ()
-
-verboseLn :: Options -> String -> IO ()
-verboseLn opts x
-   | verboseP opts = -- Since verbose is for debugging purposes in general, we want no buffering, because it is confusing while debugging.
-                     do hSetBuffering stdout NoBuffering
-                        mapM_ putStrLn (lines x)
-   | otherwise     = return ()

@@ -36,7 +36,7 @@ aMarkup2String = blocks2String . amPandoc
               Right txt -> Text.unpack txt
 
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
--- | defaultPandocReader getOpts should be used on user-defined strings.
+-- | defaultPandocReader should be used on user-defined strings.
 string2Blocks :: PandocFormat -> String -> [Block]
 string2Blocks defaultformat str
  = case runPure $ theParser (Text.pack (removeCRs str)) of

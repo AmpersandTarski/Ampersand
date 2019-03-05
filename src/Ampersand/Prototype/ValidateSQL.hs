@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import           Ampersand.Basics
@@ -15,15 +16,15 @@ with the results from Haskell-based Ampersand rule evaluator. The latter is much
 therefore most likely to be correct in case of discrepancies.
 -}
 
-validateRulesSQL :: FSpec -> IO [String]
-validateRulesSQL fSpec =
+validateRulesSQL :: Options -> FSpec -> IO [String]
+validateRulesSQL opts@Options{..} fSpec =
  do { case filter (not . isSignal . fst) (allViolations fSpec) of
          []    -> return()
          viols -> exitWith . ViolationsInDatabase . map stringify $ viols
     ; hSetBuffering stdout NoBuffering
 
-    ; verboseLn (getOpts fSpec)  "Initializing temporary database (this could take a while)"
-    ; succes <- createTempDatabase fSpec
+    ; verboseLn "Initializing temporary database (this could take a while)"
+    ; succes <- createTempDatabase opts fSpec
     ; if succes 
       then actualValidation 
       else do { putStrLn "Error: Database creation failed. No validation could be done."
@@ -38,18 +39,17 @@ validateRulesSQL fSpec =
                     getAllIdExps fSpec ++
                     getAllViewExps fSpec
 
-    ; verboseLn (getOpts fSpec)  $ "Number of expressions to be validated: "++show (length allExps)
-    ; results <- mapM (validateExp fSpec) allExps
+    ; verboseLn $ "Number of expressions to be validated: "++show (length allExps)
+    ; results <- mapM (validateExp opts fSpec) allExps
 
     ; case [ ve | (ve, False) <- results] of
-        [] -> do { verboseLn (getOpts fSpec) "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+        [] -> do { verboseLn $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
                  ; return []
                  }
         ves -> return $ "Validation error. The following expressions failed validation:"
                       : map showVExp ves
-                             
-               
     }
+
 stringify :: (Rule,AAtomPairs) -> (String,[String])
 stringify (rule,pairs) = (name rule, map f . Set.elems $ pairs )
   where f pair = "("++showValADL (apLeft pair)++", "++showValADL (apRight pair)++")"
@@ -91,13 +91,13 @@ showVExp :: (Expression, String) -> String
 showVExp (expr, orig) = "Origin: "++orig++", expression: "++showA expr
 
 -- validate a single expression and report the results
-validateExp :: FSpec -> ValidationExp -> IO (ValidationExp, Bool)
-validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
+validateExp :: Options -> FSpec -> ValidationExp -> IO (ValidationExp, Bool)
+validateExp _ _ vExp@(EDcD{}, _)   = -- skip all simple relations
  do { putStr "."
     ; return (vExp, True)
     }
-validateExp fSpec vExp@(expr, orig) =
- do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) expr
+validateExp opts@Options{..} fSpec vExp@(expr, orig) =
+ do { violationsSQL <- evaluateExpSQL opts fSpec (tempDbName opts) expr
     ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
     ; if sort violationsSQL == sort violationsAmp
       then

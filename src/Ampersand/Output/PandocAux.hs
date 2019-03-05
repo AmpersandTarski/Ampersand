@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.PandocAux
       ( writepandoc
       , Chapter(..), chptTitle
@@ -43,10 +44,10 @@ import           Text.Pandoc.PDF (makePDF)
 import qualified Text.Pandoc.UTF8 as UTF8
 
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: FSpec -> [(String , String)]
-defaultWriterVariables fSpec
-  = [ ("title", (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
-                        (Dutch  , False) -> if test (getOpts fSpec)
+defaultWriterVariables :: Options -> FSpec -> [(String , String)]
+defaultWriterVariables opts@Options{..} fSpec
+  = [ ("title", (case (fsLang fSpec, diagnosisOnly) of
+                        (Dutch  , False) -> if test
                                             then "Afspraken van "
                                             else "Functioneel Ontwerp van "
                         (English, False) -> "Functional Design of "
@@ -63,7 +64,7 @@ defaultWriterVariables fSpec
                        English -> "english")
     , ("documentclass","report")
     ] ++
-    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not (diagnosisOnly (getOpts fSpec))]++
+    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not diagnosisOnly]++
     [ ("header-includes", unlines
          [ "% ============Ampersand specific Begin================="
          , "% First a couple of LaTeX packages are included:"
@@ -108,20 +109,20 @@ defaultWriterVariables fSpec
          , ""
          , "% ============Ampersand specific End==================="
          ])
-    | fspecFormat (getOpts fSpec) `elem` [Fpdf,Flatex]
+    | fspecFormat `elem` [Fpdf,Flatex]
     ]
 
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The IO() creates the actual output
-writepandoc :: FSpec -> Pandoc -> IO()
-writepandoc fSpec thePandoc = do
-  verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
+writepandoc :: Options -> FSpec -> Pandoc -> IO()
+writepandoc opts@Options{..} fSpec thePandoc = do
+  verboseLn ("Generating "++fSpecFormatString++" to : "++outputFile)
   case writer of 
      ByteStringWriter biteStringWriter -> do 
        content <- runIO (biteStringWriter writerOptions thePandoc) >>= handleError
        BL.writeFile outputFile content
-     TextWriter f -> case fspecFormat (getOpts fSpec) of
+     TextWriter f -> case fspecFormat of
         Fpdf -> do
            res <- runIO (makePDF "pdflatex" [] f writerOptions thePandoc) >>= handleError
            case res of
@@ -137,7 +138,7 @@ writepandoc fSpec thePandoc = do
                 Nothing -> fatal $ "Undefined Pandoc writer: "++writerName
                 Just w -> w
     writerName =
-      case fspecFormat . getOpts $ fSpec of
+      case fspecFormat of
        Fpdf    -> "latex"
        Flatex  -> "latex"
        FPandoc -> "native"
@@ -145,11 +146,11 @@ writepandoc fSpec thePandoc = do
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f   = liftIO . BL.writeFile (UTF8.encodePath f)
     (outputFile,fSpecFormatString) = 
-      (dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ext
-      ,map toLower . tail . show . fspecFormat . getOpts $ fSpec )
+      (dirOutput </> baseName -<.> ext
+      ,map toLower . tail . show $ fspecFormat)
       where 
         ext =
-          case fspecFormat . getOpts $ fSpec of
+          case fspecFormat of
             Fasciidoc     -> ".txt"
             Fcontext      -> ".context"
             Fdocbook      -> ".docbook"
@@ -174,10 +175,10 @@ writepandoc fSpec thePandoc = do
                       { writerTableOfContents=True
                       , writerNumberSections=True
                       , writerTemplate=Text.unpack <$> template
-                      , writerVariables=defaultWriterVariables fSpec
+                      , writerVariables=defaultWriterVariables opts fSpec
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath
-                    --  , writerVerbose=verboseP (getOpts fSpec)
+                    --  , writerVerbose=verboseP
                       }
       where 
         template :: Maybe Text.Text

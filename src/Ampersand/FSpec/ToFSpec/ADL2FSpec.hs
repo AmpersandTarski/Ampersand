@@ -25,7 +25,6 @@ makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
  =      FSpec { fsName       = pack (name context)
               , originalContext = context 
-              , getOpts      = opts
               , fspos        = ctxpos context
               , fsLang       = printingLanguage
               , plugInfos    = allplugs
