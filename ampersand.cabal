@@ -113,6 +113,7 @@ library
                      Ampersand.FSpec.GenerateUML
                      Ampersand.FSpec.Motivations
                      Ampersand.FSpec.SQL
+                     Ampersand.FSpec.ShowHS
                      Ampersand.FSpec.ShowMeatGrinder
                      Ampersand.FSpec.Transformers
                      Ampersand.FSpec.ToFSpec.ADL2FSpec
