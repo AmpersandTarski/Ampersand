@@ -45,7 +45,7 @@ import qualified Text.Pandoc.UTF8 as UTF8
 
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: Options -> FSpec -> [(String , String)]
-defaultWriterVariables opts@Options{..} fSpec
+defaultWriterVariables Options{..} fSpec
   = [ ("title", (case (fsLang fSpec, diagnosisOnly) of
                         (Dutch  , False) -> if test
                                             then "Afspraken van "
