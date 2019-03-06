@@ -130,12 +130,12 @@ install:
 - |
   case "$BUILD" in
     stack)
-      ./travis_long stack --no-terminal --install-ghc $ARGS install --only-dependencies --flag ampersand:buildAll
+      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll
       ;;
     cabal)
       cabal --version
       travis_retry cabal update
-      ./travis_long cabal install
+      ./travis_long cabal install --enable-tests
       ;;
   esac
 
@@ -147,7 +147,7 @@ script:
   - |
     case "$BUILD" in
       stack)
-      ./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS test --flag ampersand:buildAll
+      ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
         ;;
       cabal)
       ./travis_long cabal test
@@ -170,7 +170,7 @@ deploy:
   # Release to Github releases
   - provider: releases
     skip_cleanup: true
-    draft: false
+    draft: true
     file: 
       - dist/ampersand
       - dist/ampPreProc
