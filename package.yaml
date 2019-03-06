@@ -20,7 +20,8 @@ extra-source-files:
 data-files:
                 LICENSE
 
-ghc-options: [ -Wall]
+ghc-options: 
+      - -Wall
 default-extensions: 
       - NoImplicitPrelude
 dependencies:
