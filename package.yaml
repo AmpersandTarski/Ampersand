@@ -19,12 +19,6 @@ extra-source-files:
       - AmpersandData/SystemContext/*
 data-files:
                 LICENSE
-Flag:
-  buildAll:
-    Description: Build both ampersand and ampPreProc.
-    Default:     False
-    Manual:      True
-
 
 ghc-options: [ -Wall]
 default-extensions: 
@@ -66,7 +60,8 @@ dependencies:
       - zlib == 0.6.*
 
 library:
-  source-dirs: src
+  source-dirs: 
+      - src/
   exposed-modules:
       - Ampersand
       - Ampersand.ADL1
@@ -78,7 +73,6 @@ library:
       - Ampersand.ADL1.Rule
       - Ampersand.Basics
       - Ampersand.Basics.Auxiliaries
-      - Ampersand.Basics.BuildInfo_Generated
       - Ampersand.Basics.Exit
       - Ampersand.Basics.Languages
       - Ampersand.Basics.PandocExtended
@@ -162,7 +156,6 @@ library:
       - Ampersand.Prototype.GenFrontend
       - Ampersand.Prototype.PHP
       - Ampersand.Prototype.ProtoUtil
-      - Ampersand.Prototype.StaticFiles_Generated
       - Ampersand.Prototype.TableSpec
       - Ampersand.Prototype.ValidateSQL
       - Ampersand.Test
@@ -172,7 +165,7 @@ library:
       - Ampersand.Test.Regression
 #      - Ampersand.Test.RunAmpersand
       - Ampersand.Test.TestScripts
-  autogen-modules:
+  generated-exposed-modules:
       - Ampersand.Basics.BuildInfo_Generated
       - Ampersand.Prototype.StaticFiles_Generated
 custom-setup:
@@ -188,21 +181,46 @@ custom-setup:
 
 executables:
   ampersand:
-    source-dirs: app
+    source-dirs: 
+      - app
     main: Main.hs
-    ghc-options: [-threaded]
+    ghc-options:
+      - -threaded
+    dependencies: 
+      ampersand
+
   ampPreProc:
-    source-dirs: app
+    source-dirs: 
+      - app
     main: AmpPreProc.hs
-    ghc-options: [-threaded]
+    ghc-options: 
+      - -threaded
+    dependencies: 
+      ampersand
+    when:
+      - condition: ! '!(flag(buildAll))'
+        buildable: false
 
 tests:
   regression-test:
     main: RegressionTest.hs
     source-dirs: app
-    ghc-options: [-threaded]
+    ghc-options: 
+      - -threaded
+    dependencies: 
+      ampersand
 
   ampersand-test:
     main: Test.hs
     source-dirs: app
-    ghc-options: [-threaded]
+    ghc-options: 
+      - -threaded
+    dependencies: 
+      ampersand
+
+flags:
+  buildAll:
+    description: Build both ampersand and ampPreProc.
+    default:     false 
+    manual:      true
+

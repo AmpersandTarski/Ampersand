@@ -1,4 +1,4 @@
-module Main (main) where
+module RegressionTest (main) where
 
 import Ampersand.Basics
 import Ampersand.Test.Regression(DirContent(..),DirData(..),process)

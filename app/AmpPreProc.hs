@@ -1,4 +1,4 @@
-module AmpPreProc where
+module AmpPreProc (main) where
 
 import Ampersand
 import System.Environment

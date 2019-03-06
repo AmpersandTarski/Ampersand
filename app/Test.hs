@@ -1,4 +1,4 @@
-module Main (main) where
+module Test (main) where
 
 import System.Exit (ExitCode, exitFailure, exitSuccess)
 import Ampersand
