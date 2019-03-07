@@ -183,7 +183,7 @@ custom-setup:
 executables:
   ampersand:
     source-dirs: 
-      - app
+      - app/Ampersand
     main: Main.hs
     ghc-options:
       - -threaded
@@ -192,8 +192,8 @@ executables:
 
   ampPreProc:
     source-dirs: 
-      - app
-    main: AmpPreProc.hs
+      - app/AmpPreProc
+    main: Main.hs
     ghc-options: 
       - -threaded
     dependencies: 
@@ -204,16 +204,16 @@ executables:
 
 tests:
   regression-test:
-    main: RegressionTest.hs
-    source-dirs: app
+    main: Main.hs
+    source-dirs: app/Test
     ghc-options: 
       - -threaded
     dependencies: 
       ampersand
 
   ampersand-test:
-    main: Test.hs
-    source-dirs: app
+    main: Main.hs
+    source-dirs: app/Test
     ghc-options: 
       - -threaded
     dependencies: 
