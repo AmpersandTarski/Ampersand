@@ -138,8 +138,8 @@ install:
     cabal)
       which cabal
       cabal --version
+      cabal check  --verbose=3
       travis_retry cabal new-update
-      pwd
       ./travis_long cabal new-install
       ;;
   esac

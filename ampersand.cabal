@@ -1,3 +1,4 @@
+cabal-version:  2.4
 name:           ampersand
 version:        3.14.0
 author:         Stef Joosten
@@ -7,10 +8,9 @@ description:    You can define your business processes by means of rules, writte
 homepage:       http://ampersandtarski.github.io/
 category:       Database Design
 stability:      alpha
-cabal-version:  2.4
 tested-with:    GHC == 8.6.4
 build-type:     Custom
-license:        GPL
+license:        GPL-3.0-or-later
 license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
@@ -24,7 +24,7 @@ data-files:
                 AmpersandData/**/*.ifc
                 AmpersandData/**/*.xlsx
                 AmpersandData/**/*.pop
-                AmpersandData/**/README.txt
+                AmpersandData/**/*.txt
                 
 
 Flag buildAll
