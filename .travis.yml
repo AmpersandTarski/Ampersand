@@ -47,17 +47,19 @@ matrix:
   # We grab the appropriate GHC and cabal-install versions from hvr's PPA. See:
   # https://github.com/hvr/multi-ghc-travis
   - name: "linux, cabal"
-    env: BUILD=cabal GHCVER=8.6.2 CABALVER=2.4
-    compiler: ": #GHC 8.6.2"
-    addons: {apt: {packages: [ cabal-install-2.4.1.0
-                             , ghc-8.6.2
+    env: BUILD=cabal GHCVER=8.6.4 CABALVER=2.4
+    compiler: ": #GHC 8.6.4"
+    addons: {apt: {packages: [ ghc-ppa-tools
+                             , cabal-install-2.4
+                             , ghc-8.6.4
                              ] 
                   ,sources: [hvr-ghc]}}
 #  - name: "osx, cabal"
-#    env: BUILD=cabal GHCVER=8.6.2 CABALVER=2.4 osx
-#    compiler: ": #GHC 8.6.2"
-#    addons: {apt: {packages: [ cabal-install-2.4.1.0
-#                             , ghc-8.6.2
+#    env: BUILD=cabal GHCVER=8.6.4 CABALVER=2.4 osx
+#    compiler: ": #GHC 8.6.4"
+#    addons: {apt: {packages: [ ghc-ppa-tools
+#                             , cabal-install-2.4
+#                             , ghc-8.6.4
 #                             ] 
 #                  ,sources: [hvr-ghc]}}
 #    os: osx
@@ -66,7 +68,8 @@ matrix:
   - name: "linux, cabal, latest"
     env: BUILD=cabal GHCVER=head  CABALVER=head
     compiler: ": #GHC HEAD"
-    addons: {apt: {packages: [ cabal-install-head
+    addons: {apt: {packages: [ ghc-ppa-tools
+                             , cabal-install-head
                              , ghc-head
                              ] 
                   ,sources: [hvr-ghc]}}
