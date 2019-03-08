@@ -205,7 +205,7 @@ executables:
 tests:
   regression-test:
     main: Main.hs
-    source-dirs: app/Test
+    source-dirs: app/RegressionTest
     ghc-options: 
       - -threaded
     dependencies: 
