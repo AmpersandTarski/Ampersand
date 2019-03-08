@@ -1,4 +1,4 @@
-module RegressionTest (main) where
+module Main (main) where
 
 import Ampersand.Basics
 import Ampersand.Test.Regression(DirContent(..),DirData(..),process)
@@ -11,6 +11,7 @@ import System.IO.Error (tryIOError)
 
 main :: IO ExitCode
 main = do 
+    putStrLn $ "Starting regression test."
     totalfails <- runConduit $ walk baseDir .| myVisitor .| sumarize
     failWhenNotZero totalfails 
   where 
