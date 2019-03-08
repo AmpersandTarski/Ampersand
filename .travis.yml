@@ -138,7 +138,7 @@ install:
     cabal)
       cabal --version
       travis_retry cabal update
-      ./travis_long cabal install --enable-tests 
+      ./travis_long cabal new-install --enable-tests 
       ;;
   esac
 
@@ -152,7 +152,7 @@ script:
       ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
         ;;
       cabal)
-      ./travis_long cabal test
+      ./travis_long cabal new-test
         ;;
     esac
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
