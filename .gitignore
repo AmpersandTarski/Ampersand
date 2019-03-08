@@ -3,7 +3,6 @@ ampersand.sublime-project
 ampersand.sublime-workspace
 
 # Cabal files
-ampersand.cabal
 cabal.sandbox.config
 .cabal-sandbox
 .dist-buildwrapper
