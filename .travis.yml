@@ -136,6 +136,7 @@ install:
       ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies
       ;;
     cabal)
+      which cabal
       cabal --version
       travis_retry cabal new-update
       pwd
