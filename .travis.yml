@@ -140,10 +140,7 @@ install:
       cabal --version
       cabal check  --verbose=3
       travis_retry cabal new-update
-      ./travis_long cabal new-install
-      echo "Installed ampersand."
-      which ampersand
-      echo $PATH
+      ./travis_long cabal new-install lib:ampersand exe:ampersand
       ;;
   esac
 
