@@ -875,8 +875,9 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("pf_ifcRoles"           , "PF_Interface"          , "PF_Role"
       , Set.fromList $
-        [(dirtyId rol,(PopAlphaNumeric . name) rol)
-        | rol::Role <- instanceList fSpec
+        [(dirtyId ifc, DirtyId . name $ role)
+        | ifc::Interface <- instanceList fSpec
+        , role <- ifcRoles ifc
         ]
       )
     , ("pf_navItemRoles"       , "PF_NavMenuItem"        , "PF_Role"
