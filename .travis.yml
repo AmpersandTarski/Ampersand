@@ -140,7 +140,7 @@ install:
       cabal --version
       cabal check  --verbose=3
       travis_retry cabal new-update
-      ./travis_long cabal new-install lib:ampersand exe:ampersand
+      ./travis_long cabal new-install lib:ampersand exe:ampersand -j1
       ;;
   esac
 
