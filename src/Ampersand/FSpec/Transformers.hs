@@ -840,9 +840,10 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("isAPI"                 , "PF_Interface"          , "PF_Interface"
       , Set.fromList $
-        [(dirtyId ifc,dirtyId ifc)
+        [(ifcId, ifcId)
         | ifc::Interface <- instanceList fSpec
         , ifcIsAPI ifc
+        , let ifcId = DirtyId . escapeIdentifier . name $ ifc
         ]
       )
     , ("isPartOf"              , "PF_NavMenuItem"        , "PF_NavMenu"
@@ -850,9 +851,10 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("isPublic"              , "PF_Interface"          , "PF_Interface"
       , Set.fromList $
-        [(dirtyId ifc,dirtyId ifc)
+        [(ifcId, ifcId)
         | ifc::Interface <- instanceList fSpec
         , null (ifcRoles ifc)
+        , let ifcId = DirtyId . escapeIdentifier . name $ ifc
         ]
       )
     , ("isSubItemOf"           , "PF_NavMenuItem"        , "PF_NavMenuItem"
@@ -863,8 +865,9 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("label"                 , "PF_Interface"          , "PF_Label"    
       , Set.fromList $
-        [(dirtyId ifc,(PopAlphaNumeric . name) ifc)
+        [(ifcId, PopAlphaNumeric . name $ ifc)
         | ifc::Interface <- instanceList fSpec
+        , let ifcId = DirtyId . escapeIdentifier . name $ ifc
         ]
       )
     , ("label"                 , "PF_NavMenuItem"        , "PF_Label"
@@ -875,9 +878,10 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("pf_ifcRoles"           , "PF_Interface"          , "PF_Role"
       , Set.fromList $
-        [(dirtyId ifc, DirtyId . name $ role)
+        [(ifcId, DirtyId . name $ role)
         | ifc::Interface <- instanceList fSpec
         , role <- ifcRoles ifc
+        , let ifcId = DirtyId . escapeIdentifier . name $ ifc
         ]
       )
     , ("pf_navItemRoles"       , "PF_NavMenuItem"        , "PF_Role"
