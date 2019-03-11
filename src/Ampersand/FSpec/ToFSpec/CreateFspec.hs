@@ -82,13 +82,26 @@ createMulti opts@Options{..} =
          --   the relations as wel as the generalisations to it, so they are available to the user
          --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
          addSemanticModel :: FSpec -> P_Context -> P_Context
-         addSemanticModel metamodel pCtx  
-              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (Set.toList . instances $ metamodel)
-                     ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (Set.toList . instances $ metamodel)
-                     ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (Set.toList . instances $ metamodel)
-                     ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (Set.toList . instances $ metamodel)
-                     ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ metamodel)
-                     }
+         addSemanticModel metamodel pCtx =
+            PCtx { ctx_nm     = ctx_nm pCtx
+                 , ctx_pos    = ctx_pos pCtx
+                 , ctx_lang   = ctx_lang pCtx
+                 , ctx_markup = ctx_markup pCtx
+                 , ctx_pats   = ctx_pats pCtx
+                 , ctx_rs     = ctx_rs pCtx
+                 , ctx_ds     = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (Set.toList . instances $ metamodel)
+                 , ctx_cs     = ctx_cs pCtx
+                 , ctx_ks     = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (Set.toList . instances $ metamodel)
+                 , ctx_rrules = ctx_rrules pCtx
+                 , ctx_rrels  = ctx_rrels pCtx
+                 , ctx_reprs  = ctx_reprs pCtx ++ (reprList . fcontextInfo $ metamodel)
+                 , ctx_vs     = ctx_vs pCtx ++ map aViewDef2pViewDef (Set.toList . instances $ metamodel)
+                 , ctx_gs     = ctx_gs pCtx ++ map aClassify2pClassify (Set.toList . instances $ metamodel)
+                 , ctx_ifcs   = ctx_ifcs pCtx
+                 , ctx_ps     = ctx_ps pCtx
+                 , ctx_pops   = ctx_pops pCtx
+                 , ctx_metas  = ctx_metas pCtx
+                 }
            where
             noPopulation :: P_Relation -> P_Relation
             noPopulation rel = rel{dec_popu =[]}
