@@ -98,8 +98,8 @@ createMulti opts@Options{..} =
                  , ctx_vs     = ctx_vs     pCtx `uni` map aViewDef2pViewDef     (Set.toList . instances $ metamodel)
                  , ctx_gs     = ctx_gs     pCtx `uni` map aClassify2pClassify   (Set.toList . instances $ metamodel)
                  , ctx_ifcs   = ctx_ifcs   pCtx `uni` map aInterface2pInterface (Set.toList . instances $ metamodel)
-                 , ctx_ps     = ctx_ps     pCtx
-                 , ctx_pops   = ctx_pops   pCtx
+                 , ctx_ps     = ctx_ps     pCtx 
+                 , ctx_pops   = ctx_pops   pCtx `uni` map aPopulation2pPopulation (Set.toList . instances $ metamodel)
                  , ctx_metas  = ctx_metas  pCtx
                  }
            where
@@ -111,7 +111,7 @@ createMulti opts@Options{..} =
          userGFSpec = 
             pCtx2Fspec $ 
               if useSystemContext
-              then mergeContexts <$> (grind opts sysCModel <$> pCtx2Fspec userPlus) <*> userP_Ctx
+              then mergeContexts <$> userPlus <*> (grind opts sysCModel <$> pCtx2Fspec userP_Ctx)  
               else userP_Ctx
            where 
             userPlus :: Guarded P_Context
