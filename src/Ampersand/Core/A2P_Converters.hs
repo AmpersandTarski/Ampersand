@@ -11,6 +11,9 @@ module Ampersand.Core.A2P_Converters (
   , aRelation2pRelation
   , aRule2pRule
   , aViewDef2pViewDef
+  , aPattern2pPattern
+  , aRoleRule2pRoleRule
+  , aInterface2pInterface
 ) 
 where
 import           Ampersand.ADL1

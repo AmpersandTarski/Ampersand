@@ -940,6 +940,8 @@ instance Instances AClassify where
   instances = Set.fromList . gens . originalContext
 instance Instances A_Concept where
   instances = concs . originalContext
+instance Instances ConceptDef where
+  instances = Set.fromList . ctxcds . originalContext
 instance Instances Conjunct where
   instances = Set.fromList . allConjuncts
 instance Instances Expression where
@@ -969,12 +971,11 @@ instance Instances Purpose where
 instance Instances Relation where
   instances = relationInstances
 instance Instances Role where
-  instances = Set.insert (Role "SystemAdmin") 
-            . Set.fromList . map fst . fRoles
+  instances = Set.fromList . map fst . fRoles
+instance Instances A_RoleRule where
+  instances = Set.fromList . ctxrrules . originalContext
 instance Instances Rule where
   instances = ruleInstances
-instance Instances (Role,Rule) where
-  instances = Set.fromList . fRoleRuls
 instance Instances Signature where
   instances fSpec = 
        (Set.fromList . map sign . Set.toList . relationInstances $ fSpec)
