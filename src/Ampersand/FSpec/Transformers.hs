@@ -35,7 +35,10 @@ data Transformer = Transformer
 -- | This datatype reflects the nature of an atom. It is use to construct
 --   the atom. 
 data PopAtom = 
-    DirtyId String  -- ^ Any String. must be unique of course. (TType = Object)
+    DirtyId String         -- ^ Any String. must be:
+                           --      * unique in the scope of the entire fspec
+                           --      * storable in a 255 database field
+                           --      * showable in an interface (normally done by escapeIdentifier) 
   | PopAlphaNumeric String -- ^ Intended to be observable by users. Not a 'dirty id'.
   | PopInt Integer 
   deriving (Eq,Ord)
@@ -840,10 +843,9 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("isAPI"                 , "PF_Interface"          , "PF_Interface"
       , Set.fromList $
-        [(ifcId, ifcId)
+        [(dirtyId ifc, dirtyId ifc)
         | ifc::Interface <- instanceList fSpec
         , ifcIsAPI ifc
-        , let ifcId = DirtyId . escapeIdentifier . name $ ifc
         ]
       )
     , ("isPartOf"              , "PF_NavMenuItem"        , "PF_NavMenu"
@@ -851,10 +853,9 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("isPublic"              , "PF_Interface"          , "PF_Interface"
       , Set.fromList $
-        [(ifcId, ifcId)
+        [(dirtyId ifc, dirtyId ifc)
         | ifc::Interface <- instanceList fSpec
         , null (ifcRoles ifc)
-        , let ifcId = DirtyId . escapeIdentifier . name $ ifc
         ]
       )
     , ("isSubItemOf"           , "PF_NavMenuItem"        , "PF_NavMenuItem"
@@ -865,9 +866,8 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("label"                 , "PF_Interface"          , "PF_Label"    
       , Set.fromList $
-        [(ifcId, PopAlphaNumeric . name $ ifc)
+        [(dirtyId ifc, PopAlphaNumeric . name $ ifc)
         | ifc::Interface <- instanceList fSpec
-        , let ifcId = DirtyId . escapeIdentifier . name $ ifc
         ]
       )
     , ("label"                 , "PF_NavMenuItem"        , "PF_Label"
@@ -878,10 +878,9 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("pf_ifcRoles"           , "PF_Interface"          , "PF_Role"
       , Set.fromList $
-        [(ifcId, DirtyId . name $ role)
+        [(dirtyId ifc , dirtyId role)
         | ifc::Interface <- instanceList fSpec
         , role <- ifcRoles ifc
-        , let ifcId = DirtyId . escapeIdentifier . name $ ifc
         ]
       )
     , ("pf_navItemRoles"       , "PF_NavMenuItem"        , "PF_Role"
@@ -987,9 +986,12 @@ instance Instances ViewDef where
 
 -- All Concepts that are relevant in Formal Ampersand (RAP),
 -- must be an instance of HasDirtyId:
-class HasDirtyId a where
+class Unique a => HasDirtyId a where
   dirtyId :: a -> PopAtom
-  dirtyId = DirtyId . uniqueButNotTooLong . rawId
+  dirtyId = DirtyId 
+          . escapeIdentifier    -- because we might show the dirtyId as html
+          . uniqueButNotTooLong -- because it could be stored in an SQL database
+          . uniqueShowWithType
    where
     uniqueButNotTooLong :: String -> String
     uniqueButNotTooLong str =
@@ -1003,10 +1005,9 @@ class HasDirtyId a where
                              -- left over for the hash. While theoretically this is a 
                              -- crappy solution, in practice this will prove to be well 
                              -- enough. 
-  rawId :: a -> String
             
-instance Unique a => HasDirtyId a where
-  rawId = uniqueShowWithType
+instance Unique a => HasDirtyId a
+
 class Instances a => HasPurpose a where 
   purposes :: FSpec -> a -> [Purpose]
   purposes fSpec a = 
