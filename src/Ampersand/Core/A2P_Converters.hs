@@ -188,12 +188,14 @@ aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
       P_BxExpr { obj_nm    = name oDef
-            , pos       = origin oDef
-            , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
-            , obj_crud  = aCruds2pCruds (objcrud oDef)
-            , obj_mView = objmView oDef
-            , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
-            }
+               , pos       = origin oDef
+               , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
+               , obj_crud  = case objmsub oDef of 
+                               Just (InterfaceRef False _) -> Nothing  -- Crud specification is not allowed in combination with a reference to an interface.
+                               _ -> aCruds2pCruds (objcrud oDef)
+               , obj_mView = objmView oDef
+               , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
+               }
     BxTxt oDef ->
       P_BxTxt  { obj_nm    = name oDef
             , pos       = origin oDef
