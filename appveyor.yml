@@ -9,10 +9,13 @@ environment:
     # 64 bit builds
     - GHCVER: "8.6.2"
       CHOCOPTS:
+    - GHCVER: "8.4.2"
+      CHOCOPTS:
+    - GHCVER: "8.2.2"
+      CHOCOPTS:
     # 32 bit builds --disabled, because pandoc fails to build at 32 bit.
     # - GHCVER: "8.4.2"
     #   CHOCOPTS: --forcex86
-
 
 cache:
 - "C:\\SR"
@@ -32,7 +35,7 @@ build: off
 test_script:
  - IF EXIST configure.ac bash -c "autoreconf -i"
  - "echo packages:. > cabal.project"
- - "cabal %CABOPTS% new-install exe:ampersand -j1"
+ - "cabal %CABOPTS% new-install exe:ampersand exe:ampPreProc -j1"
  
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
