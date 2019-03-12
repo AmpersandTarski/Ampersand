@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: aef69cb6854d17eb057565e89d10a20734081a578b07b6625bd59ffe4ab5a0fb
+-- hash: a4edcb5f82c03fa6e6677be49806ccf3211858df6d393b184e3e2f6a67901b4d
 
 name:           ampersand
 version:        3.14.0
@@ -22,6 +22,7 @@ license-file:   LICENSE
 tested-with:    GHC == 8.6.3
 build-type:     Custom
 extra-source-files:
+    LICENSE
     ReleaseNotes.md
     AmpersandData/FormalAmpersand/ADLTool.adl
     AmpersandData/FormalAmpersand/admin_interfaces.ifc
@@ -87,8 +88,41 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Views.xlsx
     AmpersandData/SystemContext/SystemContext.adl
     AmpersandData/SystemContext/SystemContext.docadl
-data-files:
-    LICENSE
+    outputTemplates/default.asciidoc
+    outputTemplates/default.commonmark
+    outputTemplates/default.context
+    outputTemplates/default.docbook4
+    outputTemplates/default.docbook5
+    outputTemplates/default.dokuwiki
+    outputTemplates/default.dzslides
+    outputTemplates/default.epub2
+    outputTemplates/default.epub3
+    outputTemplates/default.haddock
+    outputTemplates/default.html4
+    outputTemplates/default.html5
+    outputTemplates/default.icml
+    outputTemplates/default.jats
+    outputTemplates/default.latex
+    outputTemplates/default.man
+    outputTemplates/default.markdown
+    outputTemplates/default.mediawiki
+    outputTemplates/default.ms
+    outputTemplates/default.muse
+    outputTemplates/default.opendocument
+    outputTemplates/default.opml
+    outputTemplates/default.org
+    outputTemplates/default.plain
+    outputTemplates/default.revealjs
+    outputTemplates/default.rst
+    outputTemplates/default.rtf
+    outputTemplates/default.s5
+    outputTemplates/default.slideous
+    outputTemplates/default.slidy
+    outputTemplates/default.tei
+    outputTemplates/default.texinfo
+    outputTemplates/default.textile
+    outputTemplates/default.zimwiki
+    outputTemplates/README.markdown
 
 custom-setup
   setup-depends:

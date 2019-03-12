@@ -14,11 +14,11 @@ license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 extra-source-files:
+      - LICENSE
       - ReleaseNotes.md
       - AmpersandData/FormalAmpersand/*
       - AmpersandData/SystemContext/*
-data-files:
-                LICENSE
+      - outputTemplates/*
 
 ghc-options: 
       - -Wall
