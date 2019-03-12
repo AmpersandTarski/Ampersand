@@ -21,7 +21,7 @@ cache:
 - "C:\\SR"
 
 install:
- - "echo 'start installation'"
+ - "echo 'Start install'"
  - "choco install -y ghc --version %GHCVER% %CHOCOPTS%"
  - "choco install -y cabal %CHOCOPTS%"
  - "refreshenv"
@@ -33,13 +33,15 @@ install:
 build: off
 
 test_script:
+ - echo "Start test_script..."  
  - IF EXIST configure.ac bash -c "autoreconf -i"
  - "echo packages:. > cabal.project"
- - "cabal %CABOPTS% new-install exe:ampersand exe:ampPreProc -j1"
+ - "cabal %CABOPTS% new-install exe:ampersand exe:ampPreProc --flags=buildAll -j1"
  
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
 build_script:
+ - echo "Start build_script..."
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
 # - stack install weeder --resolver=nightly
 # - weeder --version
@@ -48,7 +50,7 @@ build_script:
 ### - ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('. --build')
 
 # Set a magical environment variable
-- cmd: for /f %%i in ('ampersand -v') do set AMPERSAND_VERSION=%%i
+ - cmd: for /f %%i in ('ampersand -v') do set AMPERSAND_VERSION=%%i
 
 # mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
 artifacts:

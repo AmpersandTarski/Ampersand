@@ -1,0 +1,447 @@
+cabal-version: 2.0
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: aef69cb6854d17eb057565e89d10a20734081a578b07b6625bd59ffe4ab5a0fb
+
+name:           ampersand
+version:        3.14.0
+synopsis:       Toolsuite for automated design of enterprise information systems.
+description:    You can define your business processes by means of rules, written in Relation Algebra.
+category:       Database Design
+stability:      alpha
+homepage:       http://ampersandtarski.github.io/
+bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
+author:         Stef Joosten
+maintainer:     stef.joosten@ou.nl
+copyright:      Stef Joosten
+license:        GPL
+license-file:   LICENSE
+tested-with:    GHC == 8.6.3
+build-type:     Custom
+extra-source-files:
+    ReleaseNotes.md
+    AmpersandData/FormalAmpersand/ADLTool.adl
+    AmpersandData/FormalAmpersand/admin_interfaces.ifc
+    AmpersandData/FormalAmpersand/AST.adl
+    AmpersandData/FormalAmpersand/AST.docadl
+    AmpersandData/FormalAmpersand/AST.ifc
+    AmpersandData/FormalAmpersand/AST.xlsx
+    AmpersandData/FormalAmpersand/Atoms.adl
+    AmpersandData/FormalAmpersand/Atoms.docadl
+    AmpersandData/FormalAmpersand/Atoms.ifc
+    AmpersandData/FormalAmpersand/Atoms.xlsx
+    AmpersandData/FormalAmpersand/AtomsAsShouldBe.adl
+    AmpersandData/FormalAmpersand/AtomsWithRepr.adl
+    AmpersandData/FormalAmpersand/Authorisation.adl
+    AmpersandData/FormalAmpersand/Concepts.adl
+    AmpersandData/FormalAmpersand/Conjuncts.adl
+    AmpersandData/FormalAmpersand/Conjuncts.docadl
+    AmpersandData/FormalAmpersand/Contexts.adl
+    AmpersandData/FormalAmpersand/Contexts.docadl
+    AmpersandData/FormalAmpersand/Contexts.ifc
+    AmpersandData/FormalAmpersand/Contexts.xlsx
+    AmpersandData/FormalAmpersand/ContextsTry.xlsx
+    AmpersandData/FormalAmpersand/Documentation.adl
+    AmpersandData/FormalAmpersand/DomainAnalysis.adl
+    AmpersandData/FormalAmpersand/DomainAnalysis.ifc
+    AmpersandData/FormalAmpersand/Enforcements.adl
+    AmpersandData/FormalAmpersand/Expressions.adl
+    AmpersandData/FormalAmpersand/Expressions.docadl
+    AmpersandData/FormalAmpersand/Expressions.ifc
+    AmpersandData/FormalAmpersand/Expressions.xlsx
+    AmpersandData/FormalAmpersand/FormalAmpersand.adl
+    AmpersandData/FormalAmpersand/FSpec.adl
+    AmpersandData/FormalAmpersand/Generics.adl
+    AmpersandData/FormalAmpersand/Interfaces.adl
+    AmpersandData/FormalAmpersand/Interfaces.docadl
+    AmpersandData/FormalAmpersand/Interfaces_WIP.adl
+    AmpersandData/FormalAmpersand/IS.adl
+    AmpersandData/FormalAmpersand/IS.docadl
+    AmpersandData/FormalAmpersand/IS.ifc
+    AmpersandData/FormalAmpersand/IS.pop
+    AmpersandData/FormalAmpersand/Login.adl
+    AmpersandData/FormalAmpersand/Login.xlsx
+    AmpersandData/FormalAmpersand/MinimalAST.xlsx
+    AmpersandData/FormalAmpersand/Modules.adl
+    AmpersandData/FormalAmpersand/Patterns.adl
+    AmpersandData/FormalAmpersand/Patterns.docadl
+    AmpersandData/FormalAmpersand/README.txt
+    AmpersandData/FormalAmpersand/Relations.adl
+    AmpersandData/FormalAmpersand/Rules.adl
+    AmpersandData/FormalAmpersand/Rules.docadl
+    AmpersandData/FormalAmpersand/Rules.ifc
+    AmpersandData/FormalAmpersand/student_AST_interfaces.ifc
+    AmpersandData/FormalAmpersand/Tables.adl
+    AmpersandData/FormalAmpersand/Tables.docadl
+    AmpersandData/FormalAmpersand/Tables.ifc
+    AmpersandData/FormalAmpersand/Tables.xlsx
+    AmpersandData/FormalAmpersand/TypeChecking.adl
+    AmpersandData/FormalAmpersand/TypeChecking.docadl
+    AmpersandData/FormalAmpersand/TypeChecking.ifc
+    AmpersandData/FormalAmpersand/Views.adl
+    AmpersandData/FormalAmpersand/Views.docadl
+    AmpersandData/FormalAmpersand/Views.ifc
+    AmpersandData/FormalAmpersand/Views.xlsx
+    AmpersandData/SystemContext/SystemContext.adl
+    AmpersandData/SystemContext/SystemContext.docadl
+data-files:
+    LICENSE
+
+custom-setup
+  setup-depends:
+      Cabal ==2.4.*
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , process ==1.6.*
+    , time ==1.8.*
+    , zlib ==0.6.*
+
+flag buildAll
+  description: Build both ampersand and ampPreProc.
+  manual: True
+  default: False
+
+library
+  exposed-modules:
+      Ampersand
+      Ampersand.ADL1
+      Ampersand.ADL1.Disambiguate
+      Ampersand.ADL1.Expression
+      Ampersand.ADL1.Lattices
+      Ampersand.ADL1.P2A_Converters
+      Ampersand.ADL1.PrettyPrinters
+      Ampersand.ADL1.Rule
+      Ampersand.Basics
+      Ampersand.Basics.Auxiliaries
+      Ampersand.Basics.Exit
+      Ampersand.Basics.Languages
+      Ampersand.Basics.PandocExtended
+      Ampersand.Basics.Prelude
+      Ampersand.Basics.String
+      Ampersand.Basics.UTF8
+      Ampersand.Basics.Unique
+      Ampersand.Basics.Version
+      Ampersand.Classes
+      Ampersand.Classes.ConceptStructure
+      Ampersand.Classes.Relational
+      Ampersand.Classes.ViewPoint
+      Ampersand.Components
+      Ampersand.Core.A2P_Converters
+      Ampersand.Core.AbstractSyntaxTree
+      Ampersand.Core.ParseTree
+      Ampersand.Core.ShowAStruct
+      Ampersand.Core.ShowPStruct
+      Ampersand.FSpec
+      Ampersand.FSpec.Crud
+      Ampersand.FSpec.FSpec
+      Ampersand.FSpec.FSpecAux
+      Ampersand.FSpec.GenerateUML
+      Ampersand.FSpec.Motivations
+      Ampersand.FSpec.SQL
+      Ampersand.FSpec.ShowHS
+      Ampersand.FSpec.ShowMeatGrinder
+      Ampersand.FSpec.ToFSpec.ADL2FSpec
+      Ampersand.FSpec.ToFSpec.ADL2Plug
+      Ampersand.FSpec.ToFSpec.Calc
+      Ampersand.FSpec.ToFSpec.CreateFspec
+      Ampersand.FSpec.ToFSpec.NormalForms
+      Ampersand.FSpec.ToFSpec.Populated
+      Ampersand.FSpec.Transformers
+      Ampersand.Graphic.ClassDiag2Dot
+      Ampersand.Graphic.ClassDiagram
+      Ampersand.Graphic.Fspec2ClassDiagrams
+      Ampersand.Graphic.Graphics
+      Ampersand.Input
+      Ampersand.Input.ADL1.CtxError
+      Ampersand.Input.ADL1.FilePos
+      Ampersand.Input.ADL1.Lexer
+      Ampersand.Input.ADL1.LexerMessage
+      Ampersand.Input.ADL1.LexerMonad
+      Ampersand.Input.ADL1.LexerTexts
+      Ampersand.Input.ADL1.LexerToken
+      Ampersand.Input.ADL1.Parser
+      Ampersand.Input.ADL1.ParsingLib
+      Ampersand.Input.Parsing
+      Ampersand.Input.PreProcessor
+      Ampersand.Input.Xslx.XLSX
+      Ampersand.Misc
+      Ampersand.Misc.Options
+      Ampersand.Output
+      Ampersand.Output.FSpec2Pandoc
+      Ampersand.Output.FSpec2SQL
+      Ampersand.Output.PandocAux
+      Ampersand.Output.Population2Xlsx
+      Ampersand.Output.ToJSON.Concepts
+      Ampersand.Output.ToJSON.Conjuncts
+      Ampersand.Output.ToJSON.Interfaces
+      Ampersand.Output.ToJSON.JSONutils
+      Ampersand.Output.ToJSON.Populations
+      Ampersand.Output.ToJSON.Relations
+      Ampersand.Output.ToJSON.Roles
+      Ampersand.Output.ToJSON.Rules
+      Ampersand.Output.ToJSON.Settings
+      Ampersand.Output.ToJSON.ToJson
+      Ampersand.Output.ToJSON.Views
+      Ampersand.Output.ToPandoc
+      Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
+      Ampersand.Output.ToPandoc.ChapterDataAnalysis
+      Ampersand.Output.ToPandoc.ChapterDiagnosis
+      Ampersand.Output.ToPandoc.ChapterIntroduction
+      Ampersand.Output.ToPandoc.ChapterNatLangReqs
+      Ampersand.Output.ToPandoc.SharedAmongChapters
+      Ampersand.Prototype.GenFrontend
+      Ampersand.Prototype.PHP
+      Ampersand.Prototype.ProtoUtil
+      Ampersand.Prototype.TableSpec
+      Ampersand.Prototype.ValidateSQL
+      Ampersand.Test
+      Ampersand.Test.Parser.ArbitraryTree
+      Ampersand.Test.Parser.ParserTest
+      Ampersand.Test.Parser.QuickChecks
+      Ampersand.Test.Regression
+      Ampersand.Test.TestScripts
+      Ampersand.Basics.BuildInfo_Generated
+      Ampersand.Prototype.StaticFiles_Generated
+  other-modules:
+      Ampersand.FSpec.FPA
+      Ampersand.Output.FSpec2Excel
+      Ampersand.Output.PredLogic
+      Ampersand.Output.Statistics
+      Ampersand.Test.RunAmpersand
+      Paths_ampersand
+  autogen-modules:
+      Ampersand.Basics.BuildInfo_Generated
+      Ampersand.Prototype.StaticFiles_Generated
+  hs-source-dirs:
+      src/
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  default-language: Haskell2010
+
+executable ampPreProc
+  main-is: Main.hs
+  other-modules:
+      Paths_ampersand
+  hs-source-dirs:
+      app/AmpPreProc
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall -threaded
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , ampersand
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  if !(flag(buildAll))
+    buildable: False
+  default-language: Haskell2010
+
+executable ampersand
+  main-is: Main.hs
+  other-modules:
+      Paths_ampersand
+  hs-source-dirs:
+      app/Ampersand
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall -threaded
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , ampersand
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  default-language: Haskell2010
+
+test-suite ampersand-test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_ampersand
+  hs-source-dirs:
+      app/Test
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall -threaded
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , ampersand
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  default-language: Haskell2010
+
+test-suite regression-test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_ampersand
+  hs-source-dirs:
+      app/RegressionTest
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall -threaded
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , ampersand
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  default-language: Haskell2010
