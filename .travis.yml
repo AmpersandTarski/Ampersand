@@ -7,9 +7,7 @@ language: php
 
 php:
   - 7.1
-addons:
-  mariadb:
-    - '10.0'
+
 cache:
    directories:
        - $HOME/.ghc
