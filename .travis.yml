@@ -81,7 +81,7 @@ matrix:
 
   allow_failures:
   # Temporarily, because cabal does not build, but stack does
-  - name: "linux, cabal"
+  # - name: "linux, cabal"
   
   # Nightly builds are allowed to fail
   - name: "linux, stack, latest"
@@ -148,6 +148,7 @@ install:
       ./travis_long cabal new-install exe:ampersand exe:ampPreProc lib:ampersand  --flags=buildAll
       ;;
   esac
+- ampersand --version
 
 # We need composer for the Ampersand Prototypes to be installed.
 before_script: composer install
