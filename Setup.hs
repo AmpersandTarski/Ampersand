@@ -100,11 +100,11 @@ getGitInfoStr = getInfoStr `catch` warnGracefully
                return $ gitInfoStr branch sha False
              _ -> do
                mapM_ print $ lefts [eSHA, eBranch] -- errors during git execution
-               warnNoCommitInfo True
+               warnNoCommitInfo
            
    warnGracefully err = do
      print (err :: IOException)
-     warnNoCommitInfo False
+     warnNoCommitInfo
    gitInfoStr sha branch isDirty =
       strip branch ++ ":" ++ strip sha ++ (if isDirty then "*" else "")   
    strip str = reverse . dropWhile isSpace . reverse $ str
@@ -116,15 +116,15 @@ getGitInfoStr = getInfoStr `catch` warnGracefully
        ExitSuccess   -> return $ Right stdoutStr
        ExitFailure _ -> return $ Left stderrStr
 
-warnNoCommitInfo :: Bool -> IO String
-warnNoCommitInfo isFatal = do
+warnNoCommitInfo :: IO String
+warnNoCommitInfo = do
   putStrLn ""
   putStrLn ""
   putStrLn "WARNING: Execution of 'git' command failed."
   putStrLn "BuildInfo_Generated.hs will not contain revision information, and"
   putStrLn "   therefore neither will fatal error messages."
   putStrLn "   Please check your installation."
-  return $ (if isFatal then error else id) "no git info"
+  return "no git info"
 
 {- For each file in the directory ampersand/static, we generate a StaticFile value,
    which contains the information necessary for Ampersand to create the file at run-time.
