@@ -18,7 +18,6 @@ cache:
 
 install:
  - "echo 'Start install'"
- - set
  - "choco install -y ghc --version %GHCVER% %CHOCOPTS%"
  - "choco install -y cabal %CHOCOPTS%"
  - "refreshenv"
@@ -31,11 +30,9 @@ install:
  - set /p GIT_SHA=<gitsha.tmp
  - del gitsha.tmp
  - echo %GIT_SHA%
- - git rev-parse --abbrev-ref HEAD > gitbranch.tmp
- - set /p GIT_Branch=<gitbranch.tmp
- - del gitbranch.tmp
+ - set /p GIT_Branch=%APPVEYOR_REPO_BRANCH%
  - echo %GIT_Branch%
-
+ 
 build: off
 
 test_script:
