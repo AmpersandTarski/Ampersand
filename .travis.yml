@@ -145,7 +145,7 @@ install:
     cabal)
       cabal --version
       travis_retry cabal new-update
-      ./travis_long cabal new-install
+      ./travis_long cabal new-install exe:ampersand exe:ampPreProc lib:ampersand
       ;;
   esac
 
