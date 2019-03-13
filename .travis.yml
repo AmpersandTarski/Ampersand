@@ -113,6 +113,12 @@ before_install:
 - sudo mkswap /swapfile
 - sudo swapon /swapfile
 
+# Export the git version for use with cabal (See https://github.com/haskell/cabal/issues/5934 for the discussion)
+- export GIT_SHA=`git rev-parse --short HEAD`
+- export GIT_Branch=`git rev-parse --abbrev-ref HEAD`
+- echo $GIT_SHA
+- echo $GIT_Branch
+
 # Download and unpack the stack executable
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/home/travis/build/AmpersandTarski/Ampersand/dist:$PATH
 - mkdir -p ~/.local/bin

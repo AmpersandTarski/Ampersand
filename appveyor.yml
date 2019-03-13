@@ -29,6 +29,15 @@ install:
  - "cabal --version"
  - "ghc --version"
  - "cabal %CABOPTS% new-update -v"
+# Export the git version for use with cabal (See https://github.com/haskell/cabal/issues/5934 for the discussion)
+ - git rev-parse --short HEAD > gitsha.tmp
+ - set /p GIT_SHA=<gitsha.tmp
+ - del gitsha.tmp
+ - echo %GIT_SHA%
+ - git rev-parse --abbrev-ref HEAD > gitbranch.tmp
+ - set /p GIT_Branch=<gitbranch.tmp
+ - del gitbranch.tmp
+ - echo %GIT_Branch%
 
 build: off
 
