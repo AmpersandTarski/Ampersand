@@ -18,6 +18,7 @@ cache:
 
 install:
  - "echo 'Start install'"
+ - set
  - "choco install -y ghc --version %GHCVER% %CHOCOPTS%"
  - "choco install -y cabal %CHOCOPTS%"
  - "refreshenv"
