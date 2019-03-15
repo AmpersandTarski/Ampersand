@@ -7,7 +7,7 @@ cabal-version: 2.0
 -- hash: 0b4501250ab7f3452b32168e685f018708cb1cf0a529820a86b90789863e61e3
 
 name:           ampersand
-version:        3.14.0
+version:        3.15.0
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
