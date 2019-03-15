@@ -145,10 +145,9 @@ install:
     cabal)
       cabal --version
       travis_retry cabal new-update
-      ./travis_long cabal new-install exe:ampersand exe:ampPreProc lib:ampersand  --flags=buildAll
+      ./travis_long cabal new-install exe:ampersand exe:ampPreProc lib:ampersand --flags=buildAll -j1
       ;;
   esac
-- ampersand --version
 
 # We need composer for the Ampersand Prototypes to be installed.
 before_script: composer install
@@ -161,7 +160,7 @@ script:
       ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
         ;;
       cabal)
-      ./travis_long cabal new-test
+      ./travis_long cabal new-test -j1
         ;;
     esac
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
