@@ -652,6 +652,12 @@ fSpec2Solidity multi =
          ,"// RULES:"]
        <>(mconcat (fmap showRule (List.zip (vrules fSpec) (List.take (List.length $ vrules fSpec) [1,2..]))))
        <>[""
+          ,"function checkRules() internal returns (bool){"]
+       <> List.foldr (\i accum -> (pack ("rule" <> show i <>"() &&")) : accum) [] [1..28] <> [" true;", "}"]
+       <>[""
+         ,"// CONCEPT METHODS:"]
+       <>(mconcat . fmap showConceptMethods . allConcepts $ fSpec)
+       <>[""
          ,"//Events"
          ,"  event Error(string _errorMessage);"
          ,"}"]
@@ -667,19 +673,27 @@ fSpec2Solidity multi =
           ,"  _name: " <> (Text.pack . show . name $ cpt) <> ","
           ,"  _ids: new bytes32[](0)"
           ,"});"
+          ]
+     showConceptMethods :: A_Concept -> [Text.Text]
+     showConceptMethods cpt
+       = fmap ("  " <>)
+       [""
+          ,"// Concept " <> (Text.pack$ showA cpt) <> " methods"
           ,"function add" <> uniqueId fSpec cpt <> "(bytes32 id) public {"
           ,"  // TODO CHECK PREVIOUS EXISTENCE"
           ,"  if (findInArray(" <> uniqueId fSpec cpt <> ".getIds(), id) == -1) {"
           ,"    " <> uniqueId fSpec cpt <> ".addId(id);"
           ,"  }"
+          ,"  if(!checkRules()){revert();}"
           ,"}"
           ,"function remove" <> uniqueId fSpec cpt <> "(bytes32 id) public {"
           ,"  " <> uniqueId fSpec cpt <> ".removeId(id);"
+          ,"  if(!checkRules()){revert();}"
           ,"}"
           ,"function exists" <> uniqueId fSpec cpt <> "(bytes32 id) public view returns (bool) {"
           ,"  return findInArray(" <> uniqueId fSpec cpt <> ".getIds(), id) != -1;"
           ,"}"
-          ]
+       ]
      showDecl :: Declaration -> [Text.Text]
      showDecl decl 
         = [""
@@ -757,7 +771,7 @@ fSpec2Solidity multi =
      showRule (rule, idx)
         = [""
           ,"//" <> replace "\n" "\n//" (Text.pack$ showA rule)
-          ,"function rule" <> (Text.pack $ show idx) <> "() internal {"
+          ,"function rule" <> (Text.pack $ show idx) <> "() internal returns (bool){"
           ,"  // " <> (Text.pack . show . rrexp $ rule)
           ,"  " <> (showExpression . rrexp $ rule) <> ";"
           ,"}"
@@ -767,7 +781,7 @@ fSpec2Solidity multi =
 class UniqueId a where
   uniqueId :: FSpec -> a -> Text
 instance UniqueId A_Concept where
-  uniqueId _ cpt = Text.pack (name cpt)   
+  uniqueId _ cpt = Text.pack (name cpt)
 instance UniqueId Declaration where
   uniqueId fSpec decl = 
     case Prelude.filter (\x -> name x == name decl) (vrels fSpec) of

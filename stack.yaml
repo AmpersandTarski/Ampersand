@@ -17,6 +17,15 @@ extra-deps:
 - data-accessor-template-0.2.1.13
 - data-accessor-transformers-0.2.1.7
 - roman-numerals-0.5.1.5
+# - base-4.9.1.0 # Had to add these on 2018-12-07
+# - bytestring-0.10.2.0
+# - directory-1.3.3.1
+# - process-1.4.3.0
+# - time-1.6.0.1
+# - transformers-0.5.5.0
+# - deepseq-1.3.0.2
+
+
 # Override default flag values for local packages and extra-deps
 flags: {}
 
