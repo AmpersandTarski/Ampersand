@@ -17,7 +17,7 @@ cache:
 - "C:\\SR"
 
 install:
- - cmd: echo "Start install"
+ - cmd: echo Start install
  - cmd: choco install -y ghc --version %GHCVER% %CHOCOPTS%
  - cmd: choco install -y cabal %CHOCOPTS%
  - cmd: refreshenv
@@ -34,16 +34,16 @@ install:
 build: off
 
 test_script:
- - cmd: echo "Start test_script..."  
+ - cmd: echo Start test_script...
  - cmd: IF EXIST configure.ac bash -c "autoreconf -i"
- - cmd: echo "packages:." > cabal.project
+ - cmd: echo packages:. > cabal.project
  - cmd: cabal %CABOPTS% new-install exe:ampersand exe:ampPreProc --flags=buildAll -j1
  - cmd: ampersand --version
  
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
 build_script:
- - cmd: echo "Start build_script..."
+ - cmd: echo Start build_script...
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
 # - stack install weeder --resolver=nightly
 # - weeder --version
