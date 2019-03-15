@@ -145,7 +145,7 @@ install:
     cabal)
       cabal --version
       travis_retry cabal new-update
-      ./travis_long cabal new-install exe:ampersand exe:ampPreProc lib:ampersand --flags=buildAll -j1
+      ./travis_long cabal new-install exe:ampersand exe:ampPreProc lib:ampersand --flags=buildAll -j1 --overwrite-policy=always
       ;;
   esac
 
@@ -160,7 +160,7 @@ script:
       ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
         ;;
       cabal)
-      ./travis_long cabal new-test -j1
+      ./travis_long cabal new-test -j1 
         ;;
     esac
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
