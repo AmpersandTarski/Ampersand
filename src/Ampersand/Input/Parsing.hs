@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
@@ -35,18 +36,19 @@ import           Text.Parsec.Prim (runP)
 parseADL :: Options                    -- ^ The options given through the command line
          -> FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
          -> IO (Guarded P_Context)     -- ^ The resulting context
-parseADL opts fp = do curDir <- getCurrentDirectory
-                      canonical <- canonicalizePath fp
-                      parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
+parseADL opts@Options{..} fp = do 
+    curDir <- getCurrentDirectory
+    canonical <- canonicalizePath fp
+    parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
 
 parseMeta :: Options -> IO (Guarded P_Context)
-parseMeta opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
+parseMeta opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
 
 parseSystemContext :: Options -> IO (Guarded P_Context)
-parseSystemContext opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
+parseSystemContext opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
 
 parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context) 
-parseThing opts pc =
+parseThing opts@Options{..} pc =
   whenCheckedIO (parseADLs opts [] [pc] ) $ \ctxts ->
       return . pure $ foldl1 mergeContexts ctxts
 
@@ -55,7 +57,7 @@ parseADLs :: Options                  -- ^ The options given through the command
           -> [ParseCandidate]         -- ^ The list of files that have already been parsed
           -> [ParseCandidate]         -- ^ A list of files that still are to be parsed.
           -> IO (Guarded [P_Context]) -- ^ The resulting contexts
-parseADLs opts parsedFilePaths fpIncludes =
+parseADLs opts@Options{..} parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ pure []
     x:xs -> if x `elem` parsedFilePaths
@@ -81,11 +83,11 @@ instance Eq ParseCandidate where
 parseSingleADL ::
     Options
  -> ParseCandidate -> IO (Guarded (P_Context, [ParseCandidate]))
-parseSingleADL opts pc
- = do verboseLn opts $ "Reading file " ++ filePath 
-                         ++ (case pcFileKind pc of
-                              Just _ -> " (from within ampersand.exe)"
-                              Nothing -> mempty)
+parseSingleADL opts@Options{..} pc
+ = do verboseLn $ "Reading file " ++ filePath 
+                    ++ (case pcFileKind pc of
+                         Just _ -> " (from within ampersand.exe)"
+                         Nothing -> mempty)
       exists <- doesFileExist filePath
       if isJust (pcFileKind pc) || exists
       then parseSingleADL'

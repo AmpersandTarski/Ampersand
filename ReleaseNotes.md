@@ -1,5 +1,9 @@
 # Release notes of Ampersand
 
+## v3.15.0 (15 march 2019)
+
+* Minor bugfixes and enhanced automatic build/release
+
 ## v3.14.0 (15 february 2019)
 
 * Hotfix: update to prototype framework v1.1.1. See [releases](https://github.com/AmpersandTarski/Prototype/releases) for more information

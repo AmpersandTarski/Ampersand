@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
       chpNatLangReqs
  ) where
@@ -11,10 +12,10 @@ import           Data.List.Split(splitOn)
 import           Data.Maybe
 import qualified Data.Set as Set
 
-chpNatLangReqs :: Int -> FSpec -> Blocks
-chpNatLangReqs lev fSpec =
+chpNatLangReqs :: Options -> Int -> FSpec -> Blocks
+chpNatLangReqs opts@Options{..} lev fSpec =
       --  *** Header ***
-   xDefBlck fSpec SharedLang
+   xDefBlck opts fSpec SharedLang
    <> --  *** Intro  ***
     case fsLang fSpec of
         Dutch   -> para
@@ -36,7 +37,7 @@ chpNatLangReqs lev fSpec =
    <> --  *** Requirements ***
    (mconcat . map printOneTheme . orderingByTheme) fSpec
    <> --  *** Legal Refs ***
-     if genLegalRefs (getOpts fSpec) then legalRefs else mempty
+     if genLegalRefs then legalRefs else mempty
 
   where
   -- shorthand for easy localizing    
@@ -68,7 +69,7 @@ chpNatLangReqs lev fSpec =
         null (rulesOfTheme tc) = mempty
     | otherwise =
              --  *** Header of the theme: ***
-            xDefBlck fSpec (XRefSharedLangTheme (patOfTheme tc))
+            xDefBlck opts fSpec (XRefSharedLangTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
                  Nothing  -> 
@@ -79,7 +80,7 @@ chpNatLangReqs lev fSpec =
                  Just pat -> 
                    case purposesDefinedIn fSpec (fsLang fSpec) pat of
                      []    -> printIntro    (cptsOfTheme tc)
-                     purps -> purposes2Blocks (getOpts fSpec) purps
+                     purps -> purposes2Blocks opts purps
              )
           <> (mconcat . map printConcept . cptsOfTheme ) tc
           <> (mconcat . map printRel     . dclsOfTheme ) tc
@@ -160,13 +161,13 @@ chpNatLangReqs lev fSpec =
          printCDef cDef suffx
            = definitionList 
               [(   str (l (NL"Definitie " ,EN "Definition "))
-                <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Flatex] 
+                <> ( if fspecFormat `elem` [Fpdf, Flatex] 
                      then (str . show .theNr) nCpt
                      else (str . name) cDef  
                    )  
                 <> str (fromMaybe "" suffx) <> ":" 
                , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
-                        <> ( if fspecFormat (getOpts fSpec) `elem` [Fpdf, Flatex]
+                        <> ( if fspecFormat `elem` [Fpdf, Flatex]
                              then rawInline "latex"
                                     ("~"++texOnlyMarginNote 
                                             ("\\gls{"++escapeNonAlphaNum 
@@ -218,7 +219,7 @@ chpNatLangReqs lev fSpec =
           samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul =
-         xDefBlck fSpec (XRefSharedLangRule rul)
+         xDefBlck opts fSpec (XRefSharedLangRule rul)
       <> (printPurposes . cRulPurps . theLoad) nRul
       -- <> definitionList 
       --       [(   str (l (NL "Afspraak ", EN "Agreement "))

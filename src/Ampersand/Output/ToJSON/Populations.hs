@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Populations 
   (Populations)
 where
@@ -36,9 +37,9 @@ instance ToJSON PairsOfRelation where
 instance ToJSON JPair where
   toJSON = amp2Jason
 instance JSON (MultiFSpecs,Bool) Populations where
- fromAmpersand _ (multi,doMeta) = Populations
-   { epJSONatoms = map (fromAmpersand multi) (zip (Set.elems $ allConcepts theFSpec) (repeat doMeta))
-   , epJSONlinks = map (fromAmpersand multi) (zip (Set.elems $ vrels       theFSpec) (repeat doMeta))
+ fromAmpersand opts@Options{..} _ (multi,doMeta) = Populations
+   { epJSONatoms = map (fromAmpersand opts multi) (zip (Set.elems $ allConcepts theFSpec) (repeat doMeta))
+   , epJSONlinks = map (fromAmpersand opts multi) (zip (Set.elems $ vrels       theFSpec) (repeat doMeta))
    }
   where 
    theFSpec 
@@ -46,7 +47,7 @@ instance JSON (MultiFSpecs,Bool) Populations where
     | otherwise = userFSpec multi
      where ftl = fatal "There is no grinded fSpec."
 instance JSON (A_Concept,Bool) AtomValuesOfConcept where
- fromAmpersand multi (cpt,doMeta) = AtomValuesOfConcept
+ fromAmpersand _ multi (cpt,doMeta) = AtomValuesOfConcept
    { avcJSONconcept = Text.pack (escapeIdentifier . name $ cpt)
    , avcJSONatoms   = map (Text.pack . showValADL) (Set.elems $ atomsBySmallestConcept theFSpec cpt)
    }
@@ -57,9 +58,9 @@ instance JSON (A_Concept,Bool) AtomValuesOfConcept where
      where ftl = fatal "There is no grinded fSpec."
 
 instance JSON (Relation,Bool) PairsOfRelation where
- fromAmpersand multi (dcl,doMeta) = PairsOfRelation
+ fromAmpersand opts@Options{..} multi (dcl,doMeta) = PairsOfRelation
    { porJSONrelation = Text.pack . showRel $ dcl
-   , porJSONlinks = map (fromAmpersand multi) . Set.elems . pairsInExpr theFSpec $ EDcD dcl
+   , porJSONlinks = map (fromAmpersand opts multi) . Set.elems . pairsInExpr theFSpec $ EDcD dcl
    }
   where 
    theFSpec 
@@ -67,7 +68,7 @@ instance JSON (Relation,Bool) PairsOfRelation where
     | otherwise = userFSpec multi
      where ftl = fatal "There is no grinded fSpec."
 instance JSON AAtomPair JPair where
-  fromAmpersand _ p = JPair
+  fromAmpersand _ _ p = JPair
     { prJSONsrc = Text.pack . showValADL . apLeft $ p 
     , prJSONtgt = Text.pack . showValADL . apRight $ p
     }

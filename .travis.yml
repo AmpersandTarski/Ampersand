@@ -47,17 +47,19 @@ matrix:
   # We grab the appropriate GHC and cabal-install versions from hvr's PPA. See:
   # https://github.com/hvr/multi-ghc-travis
   - name: "linux, cabal"
-    env: BUILD=cabal GHCVER=8.6.2 CABALVER=2.4
-    compiler: ": #GHC 8.6.2"
-    addons: {apt: {packages: [ cabal-install-2.4.0.0
-                             , ghc-8.6.2
+    env: BUILD=cabal GHCVER=8.6.4 CABALVER=2.4
+    compiler: ": #GHC 8.6.4"
+    addons: {apt: {packages: [ ghc-ppa-tools
+                             , cabal-install-2.4
+                             , ghc-8.6.4
                              ] 
                   ,sources: [hvr-ghc]}}
 #  - name: "osx, cabal"
-#    env: BUILD=cabal GHCVER=8.6.2 CABALVER=2.4 osx
-#    compiler: ": #GHC 8.6.2"
-#    addons: {apt: {packages: [ cabal-install-2.4.0.0
-#                             , ghc-8.6.2
+#    env: BUILD=cabal GHCVER=8.6.4 CABALVER=2.4 osx
+#    compiler: ": #GHC 8.6.4"
+#    addons: {apt: {packages: [ ghc-ppa-tools
+#                             , cabal-install-2.4
+#                             , ghc-8.6.4
 #                             ] 
 #                  ,sources: [hvr-ghc]}}
 #    os: osx
@@ -66,7 +68,8 @@ matrix:
   - name: "linux, cabal, latest"
     env: BUILD=cabal GHCVER=head  CABALVER=head
     compiler: ": #GHC HEAD"
-    addons: {apt: {packages: [ cabal-install-head
+    addons: {apt: {packages: [ ghc-ppa-tools
+                             , cabal-install-head
                              , ghc-head
                              ] 
                   ,sources: [hvr-ghc]}}
@@ -78,7 +81,7 @@ matrix:
 
   allow_failures:
   # Temporarily, because cabal does not build, but stack does
-  - name: "linux, cabal"
+  # - name: "linux, cabal"
   
   # Nightly builds are allowed to fail
   - name: "linux, stack, latest"
@@ -110,6 +113,12 @@ before_install:
 - sudo mkswap /swapfile
 - sudo swapon /swapfile
 
+# Export the git version for use with cabal (See https://github.com/haskell/cabal/issues/5934 for the discussion)
+- export GIT_SHA=`git rev-parse --short HEAD`
+- export GIT_Branch=`git rev-parse --abbrev-ref HEAD`
+- echo $GIT_SHA
+- echo $GIT_Branch
+
 # Download and unpack the stack executable
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/home/travis/build/AmpersandTarski/Ampersand/dist:$PATH
 - mkdir -p ~/.local/bin
@@ -122,6 +131,7 @@ before_install:
   fi
 
 install:
+- echo "Starting install"
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - chmod +x ./travis_long
 - if [ -f configure.ac ]; then autoreconf -i; fi
@@ -130,12 +140,12 @@ install:
 - |
   case "$BUILD" in
     stack)
-      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies --flag ampersand:buildAll
+      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies
       ;;
     cabal)
       cabal --version
-      travis_retry cabal update
-      ./travis_long cabal install
+      travis_retry cabal new-update
+      ./travis_long cabal new-install exe:ampersand exe:ampPreProc lib:ampersand --flags=buildAll -j1 --overwrite-policy=always
       ;;
   esac
 
@@ -143,14 +153,14 @@ install:
 before_script: composer install
 
 script:
-  - echo "Start script phase."
+  - echo "Starting script"
   - |
     case "$BUILD" in
       stack)
-      ./travis_long stack --no-terminal --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
+      ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
         ;;
       cabal)
-      ./travis_long cabal test
+      ./travis_long cabal new-test -j1 
         ;;
     esac
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
@@ -170,7 +180,7 @@ deploy:
   # Release to Github releases
   - provider: releases
     skip_cleanup: true
-    draft: false
+    draft: true
     file: 
       - dist/ampersand
       - dist/ampPreProc
