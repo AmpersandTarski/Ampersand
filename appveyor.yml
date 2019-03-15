@@ -37,7 +37,7 @@ test_script:
  - cmd: echo Start test_script...
  - cmd: IF EXIST configure.ac bash -c "autoreconf -i"
  - cmd: echo packages:. > cabal.project
- - cmd: cabal %CABOPTS% new-install exe:ampersand exe:ampPreProc --flags=buildAll -j1
+ - cmd: cabal %CABOPTS% new-install exe:ampersand exe:ampPreProc --flags=buildAll -j1 --install-method=copy
  - cmd: ampersand --version
  
 # perform the typical stack build, and also install the 
