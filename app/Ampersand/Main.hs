@@ -1,9 +1,10 @@
 {-# LANGUAGE RecordWildCards #-}
-module Main where
+module Main(main) where
 
 import           Ampersand
 import           Data.List
 import qualified Data.List.NonEmpty as NEL (toList)
+import System.Environment    (getArgs, getProgName)
 
 main :: IO ()
 main =
@@ -30,7 +31,12 @@ main =
       Nothing -> -- No Ampersand script is provided 
          if or (map fst $ actionsWithoutScript opts)
          then verboseLn "No further actions, because no ampersand script is provided"
-         else putStrLn "No ampersand script provided. Use --help for usage information"
+         else do
+            args     <- getArgs
+            progName <- getProgName
+            exitWith . NoAmpersandScript $
+                 [ "No ampersand script provided. Use --help for usage information"
+                 , "   " <> progName <> (concat $ fmap (" " <>) args) ]
 
  where
    actionsWithoutScript :: Options -> [(Bool, IO())]
