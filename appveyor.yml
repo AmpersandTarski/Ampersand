@@ -29,7 +29,9 @@ install:
  - cmd: git rev-parse --short HEAD > gitsha.tmp"
  - cmd: set /p GIT_SHA=<gitsha.tmp
  - cmd: del gitsha.tmp
+ - cmd: echo "The value of GIT_SHA is %GIT_SHA%"
  - cmd: set /p GIT_Branch=%APPVEYOR_REPO_BRANCH%
+ - cmd: echo "The value of APPVEYOR_REPO_BRANCH is %APPVEYOR_REPO_BRANCH%"
  
 build: off
 
