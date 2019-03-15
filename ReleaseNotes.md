@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 
+## unreleased changes
+
 ## v3.15.0 (15 march 2019)
 
 * Minor bugfixes and enhanced automatic build/release
