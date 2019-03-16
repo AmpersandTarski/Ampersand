@@ -1,15 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.FSpec2Solidity (fSpec2Solidity)
 where
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ShowAStruct
-import Ampersand.FSpec
-import Data.List as List
-import Data.Monoid
-import Data.Text as Text
--- import Data.List.Utils (replace)
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec
+import           Ampersand.FSpec.Transformers
+import qualified Data.List as List
+import qualified Data.Set as Set
+import qualified Data.Text as Text
 
 fSpec2Solidity :: MultiFSpecs -> Text.Text
 fSpec2Solidity multi =
@@ -642,21 +642,20 @@ fSpec2Solidity multi =
          ,"}"
          ,"// PRESENT BASED ON COMPILATION FROM ADL"
          ,""
-         ,"// CONCEPTS:"
-         ]
-       <>(mconcat . fmap showConcept . allConcepts $ fSpec)
+         ,"// CONCEPTS:"]
+       <>(mconcat . fmap showConcept . Set.toList . instances $ fSpec)
        <>[""
          ,"// RELATIONS:"]
-       <>(mconcat . fmap showDecl . vrels $ fSpec)
+       <>(mconcat . fmap showDecl . Set.toList . instances $ fSpec)
        <>[""
          ,"// RULES:"]
-       <>(mconcat (fmap showRule (List.zip (vrules fSpec) (List.take (List.length $ vrules fSpec) [1,2..]))))
+       <>(mconcat . fmap showRule $ zip (Set.toList . instances $ fSpec) [1..])
        <>[""
           ,"function checkRules() internal returns (bool){"]
-       <> List.foldr (\i accum -> (pack ("rule" <> show i <>"() &&")) : accum) [] [1..28] <> [" true;", "}"]
+       <> List.foldr (\i accum -> (Text.pack ("rule" <> show i <>"() &&")) : accum) [] [1::Int ..28] <> [" true;", "}"]
        <>[""
          ,"// CONCEPT METHODS:"]
-       <>(mconcat . fmap showConceptMethods . allConcepts $ fSpec)
+       <>(mconcat . fmap showConceptMethods . Set.toList . instances $ fSpec)
        <>[""
          ,"//Events"
          ,"  event Error(string _errorMessage);"
@@ -667,7 +666,7 @@ fSpec2Solidity multi =
      showConcept cpt 
        = fmap ("  " <>)
           [""
-          ,"// Concept " <> (Text.pack$ showA cpt)
+          ,"// Concept " <> (Text.pack $ showA cpt)
           ,"Concept internal " <> uniqueId fSpec cpt <> " = new Concept({"
           --,"  name: "<> Text.pack (name cpt)
           ,"  _name: " <> (Text.pack . show . name $ cpt) <> ","
@@ -678,7 +677,7 @@ fSpec2Solidity multi =
      showConceptMethods cpt
        = fmap ("  " <>)
        [""
-          ,"// Concept " <> (Text.pack$ showA cpt) <> " methods"
+          ,"// Concept " <> (Text.pack $ showA cpt) <> " methods"
           ,"function add" <> uniqueId fSpec cpt <> "(bytes32 id) public {"
           ,"  // TODO CHECK PREVIOUS EXISTENCE"
           ,"  if (findInArray(" <> uniqueId fSpec cpt <> ".getIds(), id) == -1) {"
@@ -694,10 +693,10 @@ fSpec2Solidity multi =
           ,"  return findInArray(" <> uniqueId fSpec cpt <> ".getIds(), id) != -1;"
           ,"}"
        ]
-     showDecl :: Declaration -> [Text.Text]
+     showDecl :: Relation -> [Text.Text]
      showDecl decl 
         = [""
-          ,"// " <> (Text.pack$ showA decl)
+          ,"// " <> (Text.pack $ showA decl)
           ,"Relation internal " <> uniqueId fSpec decl <> " = new Relation({"
           ,"  _name: " <> (Text.pack . show . name $ decl)<> ","
           ,"  _univalent: "   <> showProp isUni  <> ","
@@ -715,8 +714,8 @@ fSpec2Solidity multi =
           ,"  _flipped: false" -- initially, no relation is flipped
           ,"});"
           ] 
-       where showProp :: (Declaration -> Bool) -> Text.Text
-             showProp p = Text.toLower . Text.pack . show . p $ decl
+       where showProp :: (Expression -> Bool) -> Text.Text
+             showProp p = Text.toLower . Text.pack . show . p $ EDcD decl
      -- data Expression
 --       = EEqu (Expression,Expression)   -- ^ equivalence             =
 --       | EInc (Expression,Expression)   -- ^ inclusion               |-
@@ -734,7 +733,7 @@ fSpec2Solidity multi =
 --       | EFlp Expression                -- ^ conversion (flip, wok)  ~
 --       | ECpl Expression                -- ^ Complement
 --       | EBrk Expression                -- ^ bracketed expression ( ... )
---       | EDcD Declaration               -- ^ simple declaration
+--       | EDcD Relation               -- ^ simple declaration
 --       | EDcI A_Concept                 -- ^ Identity relation
 --       | EEps A_Concept Signature       -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
 --       | EDcV Signature                 -- ^ Cartesian product relation
@@ -761,32 +760,32 @@ fSpec2Solidity multi =
      showExpression (EDcD e) = (Text.pack . name $ e)
      showExpression (EDcI e) = "identity(" <> Text.pack(name $ e) <> ")" --(Text.pack . name $ e)
 
-     showExpression (EEps c s) = "epsilon(...)"
+     showExpression (EEps _ _) = "epsilon(...)"
      showExpression (EDcV s) = "cartesian_product_relation(" <> Text.pack(name $ source s) <> ", " <> Text.pack(name $ target s) <> ")"
      showExpression (EMp1 ps c) = "view_pAtom(" <> Text.pack(show ps) <> ", " <> Text.pack(name $ c) <> ")"
 
-     showExpression _ = Text.pack "NOT_YET_IMPLEMENTED"
+  --   showExpression _ = Text.pack "NOT_YET_IMPLEMENTED" 
 
      showRule :: (Rule, Int) -> [Text.Text]
      showRule (rule, idx)
         = [""
-          ,"//" <> replace "\n" "\n//" (Text.pack$ showA rule)
+          ,"//" <> Text.replace "\n" "\n//" (Text.pack $ showA rule)
           ,"function rule" <> (Text.pack $ show idx) <> "() internal returns (bool){"
-          ,"  // " <> (Text.pack . show . rrexp $ rule)
-          ,"  " <> (showExpression . rrexp $ rule) <> ";"
+          ,"  // " <> (Text.pack . show . formalExpression $ rule)
+          ,"  " <> (showExpression . formalExpression $ rule) <> ";"
           ,"}"
           ]
 
 
 class UniqueId a where
-  uniqueId :: FSpec -> a -> Text
+  uniqueId :: FSpec -> a -> Text.Text
 instance UniqueId A_Concept where
   uniqueId _ cpt = Text.pack (name cpt)
-instance UniqueId Declaration where
+instance UniqueId Relation where
   uniqueId fSpec decl = 
-    case Prelude.filter (\x -> name x == name decl) (vrels fSpec) of
-      []  -> fatal 97 $ "The declaration must exist in the fSpec" <> showA decl
+    case Set.toList . Set.filter (\x -> name x == name decl) $ instances fSpec of
+      []  -> fatal $ "The declaration must exist in the fSpec" <> showA decl
       [_] -> Text.pack (name decl)
       xs  -> case List.elemIndex decl xs of
-              Nothing -> fatal 102 $ "decl should be in this list of decls with the same name!" <> showA decl
+              Nothing -> fatal $ "decl should be in this list of decls with the same name!" <> showA decl
               Just i  -> Text.pack (name decl ++ show i)

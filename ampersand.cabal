@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0b4501250ab7f3452b32168e685f018708cb1cf0a529820a86b90789863e61e3
+-- hash: a11fe919576df220a69fb0295fad9b0d7331d5ec9447c57120b11d194327590a
 
 name:           ampersand
 version:        3.15.0
@@ -472,7 +472,6 @@ library
       Ampersand.Misc
       Ampersand.Misc.Options
       Ampersand.Output
-                     Ampersand.Output.FSpec2Solidity,
       Ampersand.Output.FSpec2Pandoc
       Ampersand.Output.FSpec2SQL
       Ampersand.Output.PandocAux
@@ -511,6 +510,7 @@ library
   other-modules:
       Ampersand.FSpec.FPA
       Ampersand.Output.FSpec2Excel
+      Ampersand.Output.FSpec2Solidity
       Ampersand.Output.PredLogic
       Ampersand.Output.Statistics
       Ampersand.Test.RunAmpersand

@@ -98,11 +98,11 @@ generateAmpersandOutput opts@Options{..} multi =
 
    doGenSolidity :: IO()
    doGenSolidity =
-    do { verboseLn opts $ "Generating Solidity output for "++name fSpec
+    do { verboseLn $ "Generating Solidity output for "++name fSpec
        ; Text.writeFile outputFile (fSpec2Solidity multi)
-       ; verboseLn opts $ "Solidity output written into " ++ outputFile ++ "."
+       ; verboseLn $ "Solidity output written into " ++ outputFile ++ "."
        }
-    where outputFile = dirOutput opts </> baseName opts -<.> ".sol"
+    where outputFile = dirOutput </> baseName -<.> ".sol"
    
    doGenUML :: IO()
    doGenUML =
