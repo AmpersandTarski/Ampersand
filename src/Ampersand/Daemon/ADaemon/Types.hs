@@ -2,7 +2,7 @@
 
 -- | The types types that we use in Ghcid
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Types(
+module Ampersand.Daemon.ADaemon.Types(
     GhciError(..),
     Stream(..),
     Load(..), Severity(..),

@@ -1,7 +1,7 @@
 
 -- | Utility functions
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Util(
+module Ampersand.Daemon.ADaemon.Util(
     dropPrefixRepeatedly,
     takeRemainder,
     outStr, outStrLn,
