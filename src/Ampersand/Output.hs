@@ -1,8 +1,14 @@
-module Ampersand.Output (module X) where
-import Ampersand.Output.FSpec2Pandoc as X (fSpec2Pandoc)
-import Ampersand.Output.FSpec2Solidity as X (fSpec2Solidity)
-import Ampersand.Output.PandocAux as X (writepandoc)
-import Ampersand.Output.FSpec2Excel as X
-import Ampersand.Output.Population2Xlsx as X
-import Ampersand.Output.FSpec2SQL as X
-import Ampersand.Output.ToJSON.ToJson as X (generateJSONfiles)
+module Ampersand.Output 
+   ( fSpec2Pandoc
+   , fSpec2Solidity
+   , writepandoc
+   , generateJSONfiles
+   , fSpec2PopulationXlsx
+   , dumpSQLqueries,generateDatabaseFile
+   ) where
+import Ampersand.Output.FSpec2Pandoc    (fSpec2Pandoc)
+import Ampersand.Output.PandocAux       (writepandoc)
+import Ampersand.Output.Population2Xlsx (fSpec2PopulationXlsx)
+import Ampersand.Output.FSpec2SQL       (dumpSQLqueries,generateDatabaseFile)
+import Ampersand.Output.ToJSON.ToJson   (generateJSONfiles)
+import Ampersand.Output.FSpec2Solidity  (fSpec2Solidity)

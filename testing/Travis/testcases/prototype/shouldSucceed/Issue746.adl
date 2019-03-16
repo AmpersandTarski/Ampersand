@@ -1,0 +1,21 @@
+﻿CONTEXT Issue746 IN DUTCH
+
+RULE sinterklaasBestaatNiet : -("Sinterklaas";I[Persoon])
+MEANING "De persoon 'Sinterklaas' bestaat niet."
+
+RULE sinterklaasBestaat : "Sinterklaas";I[Idee]
+MEANING "Het is ondenkbaar dat de idee 'Sinterklaas' niet bestaat." 
+
+POPULATION Idee CONTAINS ["Sinterklaas"]
+
+INTERFACE Personen : "_SESSION"
+BOX [ "Sinterklaas mag hier niet" : V[SESSION*Persoon]  ]
+
+INTERFACE Ideeen : "_SESSION"
+BOX [ "Sinterklaas moet hier altijd" : V[SESSION*Idee] ]
+
+ENDCONTEXT
+
+{-
+This issue is about the sql implementation of expressions containing singleton expressions. 
+-}

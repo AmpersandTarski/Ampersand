@@ -17,10 +17,15 @@ $endif$
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
   <link rel="stylesheet" href="$revealjs-url$/css/reveal.css">
-  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
 $if(quotes)$
-  <style type="text/css">q { quotes: "“" "”" "‘" "’"; }</style>
+      q { quotes: "“" "”" "‘" "’"; }
 $endif$
+  </style>
 $if(highlighting-css)$
   <style type="text/css">
 $highlighting-css$
@@ -60,22 +65,22 @@ $endfor$
     <div class="slides">
 
 $if(title)$
-<section>
+<section id="$idprefix$title-slide">
   <h1 class="title">$title$</h1>
 $if(subtitle)$
-  <h1 class="subtitle">$subtitle$</h1>
+  <p class="subtitle">$subtitle$</p>
 $endif$
 $for(author)$
-  <h2 class="author">$author$</h2>
+  <p class="author">$author$</p>
 $endfor$
 $if(date)$
-  <h3 class="date">$date$</h3>
+  <p class="date">$date$</p>
 $endif$
 </section>
 $endif$
 $if(toc)$
 <section id="$idprefix$TOC">
-$toc$
+$table-of-contents$
 </section>
 $endif$
 
@@ -103,9 +108,11 @@ $if(slideNumber)$
         // Display the page number of the current slide
         slideNumber: $slideNumber$,
 $endif$
-$if(history)$
         // Push each slide change to the browser history
+$if(history)$
         history: $history$,
+$else$
+        history: true,
 $endif$
 $if(keyboard)$
         // Enable keyboard shortcuts for navigation
@@ -223,11 +230,36 @@ $endif$
 $if(maxScale)$
         maxScale: $maxScale$,
 $endif$
+$if(mathjax)$
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+$endif$
 
         // Optional reveal.js plugins
         dependencies: [
           { src: '$revealjs-url$/lib/js/classList.js', condition: function() { return !document.body.classList; } },
           { src: '$revealjs-url$/plugin/zoom-js/zoom.js', async: true },
+$if(notes-server)$
+          { src: '$revealjs-url$/socket.io/socker.io.js', async: true },
+          { src: '$revealjs-url$/plugin/notes-server/client.js', async: true },
+$endif$
+$if(mathjax)$
+          { src: '$revealjs-url$/plugin/math/math.js', async: true },
+$endif$
           { src: '$revealjs-url$/plugin/notes/notes.js', async: true }
         ]
       });

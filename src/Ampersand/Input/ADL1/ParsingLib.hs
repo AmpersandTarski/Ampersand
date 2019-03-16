@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
 module Ampersand.Input.ADL1.ParsingLib(
-    AmpParser, pIsThere, optList,
+    AmpParser, pIsThere, optList, optSet,
     -- Operators
     --TODO: Maybe we shouldn't export these here, but import in the parser directly
     (DF.<$>), (P.<|>), (P.<?>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
@@ -11,7 +11,7 @@ module Ampersand.Input.ADL1.ParsingLib(
     -- Basic parsers
     pConid, pString, pAmpersandMarkup, pVarid, pCrudString,
     -- special parsers
-    pAtomInExpression, pAtomValInPopulation, Value(..),
+    pAtomValInPopulation, Value(..),
     -- Special symbols
     pComma, pParens, pBraces, pBrackets, pChevrons,
     -- Keywords
@@ -22,21 +22,19 @@ module Ampersand.Input.ADL1.ParsingLib(
     pZero, pOne
 ) where
 
-import Control.Monad.Identity (Identity)
-import Ampersand.Input.ADL1.FilePos (Origin(..))
-import Ampersand.Input.ADL1.LexerToken
-import Ampersand.Input.ADL1.Lexer (lexer)
+import           Ampersand.Basics hiding ((<$))
+import           Ampersand.Input.ADL1.FilePos (Origin(..))
+import           Ampersand.Input.ADL1.LexerToken
+import           Control.Monad.Identity (Identity)
 import qualified Control.Applicative as CA
+import           Data.Char(toLower)
 import qualified Data.Functor as DF
-import qualified Text.Parsec.Prim as P
-import Text.Parsec as P hiding(satisfy)
-import Text.Parsec.Pos (newPos)
-import Data.Time.Calendar
-import Data.Time.Clock
-import Ampersand.Basics (fatal)
-import Data.Maybe
-import Data.Char(toLower)
-import Prelude hiding ((<$))
+import qualified Data.Set as Set
+import           Data.Time.Calendar
+import           Data.Time.Clock
+import           Data.Maybe
+import           Text.Parsec as P hiding(satisfy)
+import           Text.Parsec.Pos (newPos)
 
 -- | The Ampersand parser type
 type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.
@@ -65,6 +63,12 @@ pIsThere p = (True <$ p) `opt` False
 optList :: AmpParser [a]
         -> AmpParser [a]
 optList p = p `opt` []
+
+-- | Optionally applies a Set parser, returning an empty Set if it doesn't succeed
+optSet :: Eq a => 
+           AmpParser (Set.Set a)
+        -> AmpParser (Set.Set a)
+optSet p = p `opt` Set.empty
 
 -- | Tries to apply the given parser and encapsulates the result in Maybe
 pMaybe :: AmpParser a           -- ^ The parser to apply
@@ -147,22 +151,6 @@ pCrudString = check (\lx -> case lx of
                          then test xs ys
                          else test xs (y:ys)
 
---- Atom ::= "'" Any* "'"
-pAtomInExpression :: AmpParser Value
-pAtomInExpression = check (\lx -> case lx of
-                                   LexSingleton s -> Just (VSingleton s (mval s))
-                                   _              -> Nothing
-                          ) <?> "Singleton value"
-   where
-    mval s =
-      case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
-        Left _  -> Nothing
-        Right (toks,_)
-           -> case runParser pAtomValInPopulation
-                               (FilePos ("Reparse `"++s++"` ") 0 0) -- Todo: Fix buggy position
-                                "" toks of
-                Left _ -> Nothing
-                Right a -> Just a
 
 data Value = VRealString String
            | VSingleton String (Maybe Value)
@@ -171,14 +159,21 @@ data Value = VRealString String
            | VBoolean Bool
            | VDateTime UTCTime
            | VDate Day
-pAtomValInPopulation :: AmpParser Value
-pAtomValInPopulation =
+pAtomValInPopulation :: Bool -> AmpParser Value
+-- An atomvalue can be lots of things. However, since it can be used in 
+-- as a term (singleton expression), an ambiguity might occur if we allow
+-- negative numbers. The minus sign could be confused with a complement operator. 
+-- For this reason, we introduced a possibility to constrain the value. 
+-- constrained values have the constraint that a negative number is'n allowed. 
+-- the user can lift the constraints by embeding the value in curly brackets. In 
+-- such a case, the user could use a negative number as a singleton expression. 
+pAtomValInPopulation constrainsApply =
               VBoolean True  <$ pKey "TRUE"
           <|> VBoolean False <$ pKey "FALSE"
           <|> VRealString DF.<$> pString
           <|> VDateTime DF.<$> pUTCTime
           <|> VDate DF.<$> pDay
-          <|> fromNumeric DF.<$> pNumeric
+          <|> fromNumeric DF.<$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
    where fromNumeric :: Either Int Double -> Value
          fromNumeric num = case num of
              Left i -> VInt i

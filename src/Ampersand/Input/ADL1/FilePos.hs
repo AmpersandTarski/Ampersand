@@ -55,6 +55,7 @@ instance Hashable FilePos where
 
 data Origin = OriginUnknown
             | Origin String 
+            | PropertyRule String Origin -- Constructor is used to hold the origin of a propertyrule.
             | FileLoc FilePos SymbolName 
             | XLSXLoc FilePath String (Int,Int) 
             | DBLoc String
@@ -72,6 +73,7 @@ instance Show Origin where
   show (XLSXLoc filePath sheet (row,col)) 
                        = show filePath++":"++
                          "\n   Sheet: "++sheet++", "++T.unpack (int2col col)++show row
+  show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
   show (DBLoc str)     = "Database location: "++str
   show (Origin str)    = str
   show OriginUnknown   = "Unknown origin"

@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
@@ -6,65 +7,61 @@ module Ampersand.Prototype.ProtoUtil
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
-         , indentBlockBetween,quote
-         , showValPHP,phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
+         , indentBlockBetween
+         , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
          , installComposerLibs
          ) where
  
-import Prelude hiding (putStrLn, readFile, writeFile)
-import Data.Monoid
-import Data.List
+import           Ampersand.Basics
+import           Ampersand.Misc
+import           Data.List
 import qualified Data.Text as Text
-import System.Directory
-import System.FilePath
-import Ampersand.Basics
-import Ampersand.Misc
+import           System.Directory
 import qualified System.Exit as SE (ExitCode(..))
-import System.Process
-import Ampersand.Core.AbstractSyntaxTree
-     ( showValPHP
-     )
+import           System.FilePath
+import           System.Process
+
 
 getGenericsDir :: Options -> String
-getGenericsDir opts = 
-  dirPrototype opts </> "generics" 
+getGenericsDir Options{..} = 
+  dirPrototype </> "generics" 
 
 writePrototypeAppFile :: Options -> String -> String -> IO ()
-writePrototypeAppFile opts relFilePath content =
- do { verboseLn opts ("  Generating "<>relFilePath)
+writePrototypeAppFile opts@Options{..} relFilePath content =
+ do { verboseLn $ "  Generating "<>relFilePath 
     ; let filePath = getAppDir opts </> relFilePath
     ; createDirectoryIfMissing True (takeDirectory filePath)
     ; writeFile filePath content
     }
    
 getAppDir :: Options -> String
-getAppDir opts =
-  dirPrototype opts </> "app"
+getAppDir Options{..} =
+  dirPrototype </> "public" </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
 copyDirRecursively :: FilePath -> FilePath -> Options -> IO ()
-copyDirRecursively srcBase tgtBase opts = copy ""
+copyDirRecursively srcBase tgtBase Options{..} = copy ""
   where copy fileOrDirPth = 
          do { let srcPath = srcBase </> fileOrDirPth
                   tgtPath = tgtBase </> fileOrDirPth
             ; isDir <- doesDirectoryExist srcPath
             ; if isDir then 
                do { createDirectoryIfMissing True tgtPath
-                  ; verboseLn opts $ " Copying dir... " ++ srcPath
+                  ; verboseLn $ " Copying dir... " ++ srcPath
                   ; fOrDs <- getProperDirectoryContents srcPath
                   ; mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
                   }
               else
-               do { verboseLn opts $ "  file... " ++ fileOrDirPth
+               do { verboseLn $ "  file... " ++ fileOrDirPth
                   ; copyFile srcPath tgtPath -- directory will exist, so no need for copyDeepFile
                   }
             }
             
 -- Copy file while creating all subdirectories on the target path (if non-existent)
 copyDeepFile :: FilePath -> FilePath -> Options -> IO ()
-copyDeepFile srcPath tgtPath opts =
- do { verboseLn opts $ " Copying file... " ++ srcPath ++ " -> " ++ tgtPath
+copyDeepFile srcPath tgtPath Options{..} =
+ do { verboseLn $ " Copying file... " ++ srcPath ++ " -> " ++ tgtPath
     ; createDirectoryIfMissing True (takeDirectory tgtPath)
     ; copyFile srcPath tgtPath
     }
@@ -88,20 +85,6 @@ getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = 
     filter (`notElem` [".","..",".svn"]) 
        <$> getDirectoryContents pth
-
-
-quote :: Text.Text->Text.Text
-quote = Text.pack . quote' . Text.unpack
-  where
-    quote' [] = []
-    quote' ('`':s) = '`':s  -- do nothing if already quoted
-    quote' s = "`"<>s<>"`"
---   quote s = "`"<>quo s<>"`"
---    where quo ('`':s')  = "\\`" <> quo s'
---          quo ('\\':s') = "\\\\" <> quo s'
---          quo (c:s')    = c: quo s'
---          quo []       = []
--- See http://stackoverflow.com/questions/11321491/when-to-use-single-quotes-double-quotes-and-backticks
 
 commentBlock :: [String]->[String]
 commentBlock ls = ["/*"<>replicate lnth '*'<>"*\\"]
@@ -152,7 +135,7 @@ addSlashes = Text.pack . addSlashes' . Text.unpack
     addSlashes' "" = ""
 
 addToLast :: [a] -> [[a]] -> [[a]]
-addToLast _ [] = fatal 109 "addToLast: empty list"
+addToLast _ [] = fatal "addToLast: empty list"
 addToLast s as = init as<>[last as<>s]
 
 showPhpStr :: Text.Text -> Text.Text
@@ -176,21 +159,21 @@ showPhpMaybeBool (Just b) = showPhpBool b
 
 
 installComposerLibs :: Options -> IO()
-installComposerLibs opts =
+installComposerLibs Options{..} =
   do curPath <- getCurrentDirectory
-     verboseLn opts $ "current directory: "++curPath
-     verbose opts "  Trying to download and install Composer libraries..."
+     verboseLn $ "current directory: "++curPath
+     verbose "  Trying to download and install Composer libraries..."
      (exit_code, stdout', stderr') <- readCreateProcessWithExitCode myProc ""
      case exit_code of
-       SE.ExitSuccess   -> do verboseLn opts $
+       SE.ExitSuccess   -> do verboseLn $
                                " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                              verboseLn opts stdout'
+                              verboseLn stdout'
        SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where
      myProc :: CreateProcess
      myProc = CreateProcess 
-       { cmdspec = ShellCommand $ "composer update --prefer-dist --lock --profile --working-dir="<>composerTargetPath
+       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<>composerTargetPath
        , cwd = Nothing
        , env = Nothing
        , std_in = Inherit
@@ -204,8 +187,9 @@ installComposerLibs opts =
        , new_session = False
        , child_group = Nothing
        , child_user = Nothing
+       , use_process_jobs = False
        }
-     composerTargetPath = dirPrototype opts
+     composerTargetPath = dirPrototype 
      failOutput (exit_code, stdout', stderr') =
         exitWith . FailedToInstallComposer  $
             [ "Failed!"

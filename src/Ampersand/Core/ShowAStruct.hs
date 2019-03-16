@@ -2,9 +2,10 @@ module Ampersand.Core.ShowAStruct
   (AStruct(..))
 where
 
+import Ampersand.Basics
+import Ampersand.Core.A2P_Converters
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ShowPStruct
-import Ampersand.Core.A2P_Converters
 
 class AStruct a where
  showA :: a -> String
@@ -18,14 +19,14 @@ instance AStruct Expression where
 instance AStruct A_Concept where
  showA = showP . aConcept2pConcept
 
-instance AStruct A_Gen where
- showA = showP . aGen2pGen 
+instance AStruct AClassify where
+ showA = showP . aClassify2pClassify 
 
 instance AStruct Rule where
  showA = showP . aRule2pRule
 
-instance AStruct Declaration where
- showA = showP . aDeclaration2pDeclaration
+instance AStruct Relation where
+ showA = showP . aRelation2pRelation
 
 instance AStruct AAtomPair where
  showA p = "("++showA (apLeft p)++","++ showA (apRight p)++")"

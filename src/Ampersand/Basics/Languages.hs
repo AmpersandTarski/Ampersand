@@ -4,15 +4,12 @@
 module Ampersand.Basics.Languages
          where
               
+import Ampersand.Basics.Prelude
 import Data.Char (toLower)
-import Data.List (isSuffixOf)
-import Data.Typeable
 import Data.Data
+import Data.List (isSuffixOf)
 
-data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data)
-
-allLangs :: [Lang]
-allLangs = [Dutch,English] -- All supported natural languages in Ampersand
+data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data, Enum, Bounded)
 
 -- | Returns the plural of a given word based on a specific language
 plural :: Lang -> String -> String

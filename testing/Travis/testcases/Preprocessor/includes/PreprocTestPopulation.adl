@@ -1,0 +1,49 @@
+CONTEXT PreprocTestPopulation
+
+--#IFNOT SpecifyDefPop
+POPULATION NoVar CONTAINS [ "SpecifyDefPop" ]
+--#ELSE
+POPULATION Var CONTAINS [ "SpecifyDefPop" ]
+
+POPULATION r1 CONTAINS [ ("a1","b1.1")]
+POPULATION r1 CONTAINS [ ("a1","b1.2")]
+POPULATION r1 CONTAINS [ ("a2","b1.3")]
+POPULATION r1 CONTAINS [ ("a2","b1.4")]
+
+POPULATION r2 CONTAINS [ ("a2","b2.1")]
+POPULATION r2 CONTAINS [ ("a2","b2.2")]
+POPULATION r2 CONTAINS [ ("a3","b2.3")]
+POPULATION r2 CONTAINS [ ("a3","b2.4")]
+--#ENDIF
+
+--#IF GenerateErrorIfThisVarIsSet
+"The preprocessor has a bug if this line produces an error"
+--#ENDIF
+
+--#IF EditableInterfaceA 
+POPULATION Var CONTAINS [ "EditableInterfaceA" ]
+--#ELSE
+POPULATION NoVar CONTAINS [ "EditableInterfaceA" ]
+--#ENDIF
+--#IF DoNotShowR1
+POPULATION Var CONTAINS [ "DoNotShowR1" ]
+--#ELSE
+POPULATION NoVar CONTAINS [ "DoNotShowR1" ]
+--#ENDIF
+--#IF ShowR2
+POPULATION Var CONTAINS [ "ShowR2" ]
+--#ELSE
+POPULATION NoVar CONTAINS [ "ShowR2" ]
+--#ENDIF
+--#IF Debugging 
+POPULATION Var CONTAINS [ "Debugging" ]
+--#ELSE
+POPULATION NoVar CONTAINS [ "Debugging" ]
+--#ENDIF
+--#IF Ontluizen 
+POPULATION Var CONTAINS [ "Ontluizen" ]
+--#ELSE
+POPULATION NoVar CONTAINS [ "Ontluizen" ]
+--#ENDIF
+
+ENDCONTEXT

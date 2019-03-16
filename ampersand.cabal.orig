@@ -1,0 +1,860 @@
+cabal-version: 2.0
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 0b4501250ab7f3452b32168e685f018708cb1cf0a529820a86b90789863e61e3
+
+name:           ampersand
+version:        3.15.0
+synopsis:       Toolsuite for automated design of enterprise information systems.
+description:    You can define your business processes by means of rules, written in Relation Algebra.
+category:       Database Design
+stability:      alpha
+homepage:       http://ampersandtarski.github.io/
+bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
+author:         Stef Joosten
+maintainer:     stef.joosten@ou.nl
+copyright:      Stef Joosten
+license:        GPL
+license-file:   LICENSE
+tested-with:    GHC == 8.6.3
+build-type:     Custom
+extra-source-files:
+    LICENSE
+    ReleaseNotes.md
+    AmpersandData/FormalAmpersand/ADLTool.adl
+    AmpersandData/FormalAmpersand/admin_interfaces.ifc
+    AmpersandData/FormalAmpersand/AST.adl
+    AmpersandData/FormalAmpersand/AST.docadl
+    AmpersandData/FormalAmpersand/AST.ifc
+    AmpersandData/FormalAmpersand/AST.xlsx
+    AmpersandData/FormalAmpersand/Atoms.adl
+    AmpersandData/FormalAmpersand/Atoms.docadl
+    AmpersandData/FormalAmpersand/Atoms.ifc
+    AmpersandData/FormalAmpersand/Atoms.xlsx
+    AmpersandData/FormalAmpersand/AtomsAsShouldBe.adl
+    AmpersandData/FormalAmpersand/AtomsWithRepr.adl
+    AmpersandData/FormalAmpersand/Authorisation.adl
+    AmpersandData/FormalAmpersand/Concepts.adl
+    AmpersandData/FormalAmpersand/Conjuncts.adl
+    AmpersandData/FormalAmpersand/Conjuncts.docadl
+    AmpersandData/FormalAmpersand/Contexts.adl
+    AmpersandData/FormalAmpersand/Contexts.docadl
+    AmpersandData/FormalAmpersand/Contexts.ifc
+    AmpersandData/FormalAmpersand/Contexts.xlsx
+    AmpersandData/FormalAmpersand/ContextsTry.xlsx
+    AmpersandData/FormalAmpersand/Documentation.adl
+    AmpersandData/FormalAmpersand/DomainAnalysis.adl
+    AmpersandData/FormalAmpersand/DomainAnalysis.ifc
+    AmpersandData/FormalAmpersand/Enforcements.adl
+    AmpersandData/FormalAmpersand/Expressions.adl
+    AmpersandData/FormalAmpersand/Expressions.docadl
+    AmpersandData/FormalAmpersand/Expressions.ifc
+    AmpersandData/FormalAmpersand/Expressions.xlsx
+    AmpersandData/FormalAmpersand/FormalAmpersand.adl
+    AmpersandData/FormalAmpersand/FSpec.adl
+    AmpersandData/FormalAmpersand/Generics.adl
+    AmpersandData/FormalAmpersand/Interfaces.adl
+    AmpersandData/FormalAmpersand/Interfaces.docadl
+    AmpersandData/FormalAmpersand/Interfaces_WIP.adl
+    AmpersandData/FormalAmpersand/IS.adl
+    AmpersandData/FormalAmpersand/IS.docadl
+    AmpersandData/FormalAmpersand/IS.ifc
+    AmpersandData/FormalAmpersand/IS.pop
+    AmpersandData/FormalAmpersand/Login.adl
+    AmpersandData/FormalAmpersand/Login.xlsx
+    AmpersandData/FormalAmpersand/MinimalAST.xlsx
+    AmpersandData/FormalAmpersand/Modules.adl
+    AmpersandData/FormalAmpersand/Patterns.adl
+    AmpersandData/FormalAmpersand/Patterns.docadl
+    AmpersandData/FormalAmpersand/README.txt
+    AmpersandData/FormalAmpersand/Relations.adl
+    AmpersandData/FormalAmpersand/Rules.adl
+    AmpersandData/FormalAmpersand/Rules.docadl
+    AmpersandData/FormalAmpersand/Rules.ifc
+    AmpersandData/FormalAmpersand/student_AST_interfaces.ifc
+    AmpersandData/FormalAmpersand/Tables.adl
+    AmpersandData/FormalAmpersand/Tables.docadl
+    AmpersandData/FormalAmpersand/Tables.ifc
+    AmpersandData/FormalAmpersand/Tables.xlsx
+    AmpersandData/FormalAmpersand/TypeChecking.adl
+    AmpersandData/FormalAmpersand/TypeChecking.docadl
+    AmpersandData/FormalAmpersand/TypeChecking.ifc
+    AmpersandData/FormalAmpersand/Views.adl
+    AmpersandData/FormalAmpersand/Views.docadl
+    AmpersandData/FormalAmpersand/Views.ifc
+    AmpersandData/FormalAmpersand/Views.xlsx
+    AmpersandData/SystemContext/SystemContext.adl
+    AmpersandData/SystemContext/SystemContext.docadl
+    outputTemplates/default.asciidoc
+    outputTemplates/default.commonmark
+    outputTemplates/default.context
+    outputTemplates/default.docbook4
+    outputTemplates/default.docbook5
+    outputTemplates/default.dokuwiki
+    outputTemplates/default.dzslides
+    outputTemplates/default.epub2
+    outputTemplates/default.epub3
+    outputTemplates/default.haddock
+    outputTemplates/default.html4
+    outputTemplates/default.html5
+    outputTemplates/default.icml
+    outputTemplates/default.jats
+    outputTemplates/default.latex
+    outputTemplates/default.man
+    outputTemplates/default.markdown
+    outputTemplates/default.mediawiki
+    outputTemplates/default.ms
+    outputTemplates/default.muse
+    outputTemplates/default.opendocument
+    outputTemplates/default.opml
+    outputTemplates/default.org
+    outputTemplates/default.plain
+    outputTemplates/default.revealjs
+    outputTemplates/default.rst
+    outputTemplates/default.rtf
+    outputTemplates/default.s5
+    outputTemplates/default.slideous
+    outputTemplates/default.slidy
+    outputTemplates/default.tei
+    outputTemplates/default.texinfo
+    outputTemplates/default.textile
+    outputTemplates/default.zimwiki
+    outputTemplates/README.markdown
+    testing/README.md
+    testing/Sentinel/README.md
+    testing/Sentinel/Tests/NoSentinel/Conjuncts.adl
+    testing/Sentinel/Tests/NoSentinel/Crud.adl
+    testing/Sentinel/Tests/NoSentinel/Issue191Test.adl
+    testing/Sentinel/Tests/NoSentinel/Issue191Test.xlsx
+    testing/Sentinel/Tests/NoSentinel/Issue192.xlsx
+    testing/Sentinel/Tests/NoSentinel/Issue192Test.adl
+    testing/Sentinel/Tests/NoSentinel/Multiplicities.adl
+    testing/Sentinel/Tests/ShouldFail/Issue298.adl
+    testing/Sentinel/Tests/ShouldFail/Session.adl
+    testing/Sentinel/Tests/ShouldFail/singletontest.adl
+    testing/Sentinel/Tests/ShouldSucceed/Bug335_Kl0Kl1.adl
+    testing/Sentinel/Tests/ShouldSucceed/Bug337_FatalONE.adl
+    testing/Sentinel/Tests/ShouldSucceed/Issue166.adl
+    testing/Sentinel/Tests/ShouldSucceed/Issue166_2.adl
+    testing/Sentinel/Tests/ShouldSucceed/Issue233.adl
+    testing/Sentinel/Tests/ShouldSucceed/Issue280.adl
+    testing/Sentinel/Tests/ShouldSucceed/Issue335.adl
+    testing/Sentinel/Tests/ShouldSucceed/Issue406.adl
+    testing/Sentinel/Tests/ShouldSucceed/Issue751.adl
+    testing/Sentinel/Tests/ShouldSucceed/Issue853.adl
+    testing/Sentinel/Tests/ShouldSucceed/Ticket580.adl
+    testing/Sentinel/Tests/ShouldSucceed/ViewAnnotationCheck.adl
+    testing/Travis/README.md
+    testing/Travis/testcases/Bugs/Current/Other/testinfo.yaml
+    testing/Travis/testcases/Bugs/Current/SQL/ARM20-Test8.adl
+    testing/Travis/testcases/Bugs/Current/SQL/testinfo.yaml
+    testing/Travis/testcases/Bugs/Current/SQLFail/Bug302_IgnoredV.adl
+    testing/Travis/testcases/Bugs/Current/SQLFail/Bug331_TotalInjective.adl
+    testing/Travis/testcases/Bugs/Current/SQLFail/testinfo.yaml
+    testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/ALS.pop
+    testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/IFC-Demo.ifc
+    testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/IFC-Developer.ifc
+    testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/RETINABUG.adl
+    testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/RuntimeStuff.partialadl
+    testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/SystemStuff.partialadl
+    testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/testinfo.yaml
+    testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/WBP-Glossary.partialadl
+    testing/Travis/testcases/Bugs/CurrentMultiFile/Bug388_Retina/WBP-Ontologie.partialadl
+    testing/Travis/testcases/Bugs/Fixed/Other/Bug_ColumnProperties.adl
+    testing/Travis/testcases/Bugs/Fixed/Other/Bug_DiamondOperator.adl
+    testing/Travis/testcases/Bugs/Fixed/Other/Bug_GeneratedTables.adl
+    testing/Travis/testcases/Bugs/Fixed/Other/Bug_InjectiveFunction_Fatal152.adl
+    testing/Travis/testcases/Bugs/Fixed/Other/testinfo.yaml
+    testing/Travis/testcases/Bugs/Fixed/SQL/Bug_HaskellViolationTest.adl
+    testing/Travis/testcases/Bugs/Fixed/SQL/Bug_RelAdd.adl
+    testing/Travis/testcases/Bugs/Fixed/SQL/Bug_SingletonExpression.adl
+    testing/Travis/testcases/Bugs/Fixed/SQL/Bug_Totality.adl
+    testing/Travis/testcases/Bugs/Fixed/SQL/testinfo.yaml
+    testing/Travis/testcases/Bugs/NoSentinel/Bug29_InterfaceRefLoop.adl
+    testing/Travis/testcases/Bugs/NoSentinel/Bug30_InterfaceRefBug.adl
+    testing/Travis/testcases/Bugs/NoSentinel/Bug434.adl
+    testing/Travis/testcases/Bugs/NoSentinel/TechDataModelTest.adl
+    testing/Travis/testcases/Bugs/NoSentinel/testinfo.yaml
+    testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
+    testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl
+    testing/Travis/testcases/Misc/Arbeidsduur.adl
+    testing/Travis/testcases/Misc/ArchiTest1.adl
+    testing/Travis/testcases/Misc/ArchiTest3.adl
+    testing/Travis/testcases/Misc/ArchiTest4.adl
+    testing/Travis/testcases/Misc/ArchiTest5.adl
+    testing/Travis/testcases/Misc/ARM-Test1.adl
+    testing/Travis/testcases/Misc/ARM-Test2.adl
+    testing/Travis/testcases/Misc/ARM20-Test1.adl
+    testing/Travis/testcases/Misc/ARM20-Test2.adl
+    testing/Travis/testcases/Misc/ARM20-Test3.adl
+    testing/Travis/testcases/Misc/ARM20-Test4.adl
+    testing/Travis/testcases/Misc/ARM20-Test5.adl
+    testing/Travis/testcases/Misc/ARM20-Test6.adl
+    testing/Travis/testcases/Misc/ARM20-Test7.adl
+    testing/Travis/testcases/Misc/ARM20-Test8.adl
+    testing/Travis/testcases/Misc/css/Custom.css
+    testing/Travis/testcases/Misc/FraakTest1.adl
+    testing/Travis/testcases/Misc/FraakTest2.adl
+    testing/Travis/testcases/Misc/Hello.adl
+    testing/Travis/testcases/Misc/Kernmodel.adl
+    testing/Travis/testcases/Misc/testinfo.yaml
+    testing/Travis/testcases/Preprocessor/includes/PreprocTest.adl
+    testing/Travis/testcases/Preprocessor/includes/PreprocTestPopulation.adl
+    testing/Travis/testcases/Preprocessor/Preprocessor.adl
+    testing/Travis/testcases/Preprocessor/testinfo.yaml
+    testing/Travis/testcases/prototype/ISAtest/ISAtest1.adl
+    testing/Travis/testcases/prototype/ISAtest/ISAtest2.adl
+    testing/Travis/testcases/prototype/ISAtest/Limorange-EditValidation/AddOwnedCitrus.after.pop
+    testing/Travis/testcases/prototype/ISAtest/Limorange-EditValidation/AddOwnedCitrus.before.pop
+    testing/Travis/testcases/prototype/ISAtest/Limorange-EditValidation/AddOwnedCitrus.edit.json
+    testing/Travis/testcases/prototype/ISAtest/Limorange-EditValidation/AddOwnedLimorange.after.pop
+    testing/Travis/testcases/prototype/ISAtest/Limorange-EditValidation/AddOwnedLimorange.before.pop
+    testing/Travis/testcases/prototype/ISAtest/Limorange-EditValidation/AddOwnedLimorange.edit.json
+    testing/Travis/testcases/prototype/ISAtest/Limorange.adl
+    testing/Travis/testcases/prototype/ISAtest/Strange.adl
+    testing/Travis/testcases/prototype/ISAtest/testinfo.yaml
+    testing/Travis/testcases/prototype/shouldFail/443_InterfaceRefType.adl
+    testing/Travis/testcases/prototype/shouldFail/ARM20-Test2wrong.adl
+    testing/Travis/testcases/prototype/shouldFail/ARM_Test10.adl
+    testing/Travis/testcases/prototype/shouldFail/CyclicInterfaceRef.adl
+    testing/Travis/testcases/prototype/shouldFail/DoubleLabel.adl
+    testing/Travis/testcases/prototype/shouldFail/DuplicateInterfaces.adl
+    testing/Travis/testcases/prototype/shouldFail/IDENT-test-fail.adl
+    testing/Travis/testcases/prototype/shouldFail/InterfaceRefCheck.adl
+    testing/Travis/testcases/prototype/shouldFail/InterfacesAndCruds/Issue163.adl
+    testing/Travis/testcases/prototype/shouldFail/InterfacesAndCruds/testinfo.yaml
+    testing/Travis/testcases/prototype/shouldFail/InterfaceTest1.adl
+    testing/Travis/testcases/prototype/shouldFail/Issue142Fail.adl
+    testing/Travis/testcases/prototype/shouldFail/Issue142TooGeneric.adl
+    testing/Travis/testcases/prototype/shouldFail/Issue142TooGeneric.xlsx
+    testing/Travis/testcases/prototype/shouldFail/Issue181.adl
+    testing/Travis/testcases/prototype/shouldFail/Issue726.adl
+    testing/Travis/testcases/prototype/shouldFail/Issue757.adl
+    testing/Travis/testcases/prototype/shouldFail/Issue890.adl
+    testing/Travis/testcases/prototype/shouldFail/ParseFail.adl
+    testing/Travis/testcases/prototype/shouldFail/phone.adl
+    testing/Travis/testcases/prototype/shouldFail/RuleNamesMustBeUnique.adl
+    testing/Travis/testcases/prototype/shouldFail/SingleRoot.adl
+    testing/Travis/testcases/prototype/shouldFail/testinfo.yaml
+    testing/Travis/testcases/prototype/shouldFail/Ticket237.adl
+    testing/Travis/testcases/prototype/shouldFail/Ticket441.adl
+    testing/Travis/testcases/prototype/shouldFail/Ticket442.adl
+    testing/Travis/testcases/prototype/shouldFail/Ticket726.adl
+    testing/Travis/testcases/prototype/shouldFail/Try1.adl
+    testing/Travis/testcases/prototype/shouldFail/Try10.adl
+    testing/Travis/testcases/prototype/shouldFail/try12.adl
+    testing/Travis/testcases/prototype/shouldFail/try14.adl
+    testing/Travis/testcases/prototype/shouldFail/try17.adl
+    testing/Travis/testcases/prototype/shouldFail/try17b.adl
+    testing/Travis/testcases/prototype/shouldFail/try18b.adl
+    testing/Travis/testcases/prototype/shouldFail/try2.adl
+    testing/Travis/testcases/prototype/shouldFail/try2b.adl
+    testing/Travis/testcases/prototype/shouldFail/Try34.adl
+    testing/Travis/testcases/prototype/shouldFail/try36.adl
+    testing/Travis/testcases/prototype/shouldFail/try4.adl
+    testing/Travis/testcases/prototype/shouldFail/Try41.adl
+    testing/Travis/testcases/prototype/shouldFail/try46.adl
+    testing/Travis/testcases/prototype/shouldFail/Try48.adl
+    testing/Travis/testcases/prototype/shouldFail/Try49.adl
+    testing/Travis/testcases/prototype/shouldFail/try7.adl
+    testing/Travis/testcases/prototype/shouldFail/try8.adl
+    testing/Travis/testcases/prototype/shouldFail/try9.adl
+    testing/Travis/testcases/prototype/shouldFail/tryRieks.adl
+    testing/Travis/testcases/prototype/shouldFail/typecheckerror.adl
+    testing/Travis/testcases/prototype/shouldFail/ViewAnnotationCheck.adl
+    testing/Travis/testcases/prototype/shouldSucceed/ARM-Test12.adl
+    testing/Travis/testcases/prototype/shouldSucceed/ARM_Test10.adl
+    testing/Travis/testcases/prototype/shouldSucceed/BroadTableTest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Bug435.adl
+    testing/Travis/testcases/prototype/shouldSucceed/CP23xBug1.adl
+    testing/Travis/testcases/prototype/shouldSucceed/CP23xBug2.adl
+    testing/Travis/testcases/prototype/shouldSucceed/CPLbug1.adl
+    testing/Travis/testcases/prototype/shouldSucceed/CPLbug2.adl
+    testing/Travis/testcases/prototype/shouldSucceed/empty.adl
+    testing/Travis/testcases/prototype/shouldSucceed/EscapeTest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/fatal313bug.adl
+    testing/Travis/testcases/prototype/shouldSucceed/FlipPHPBug.adl
+    testing/Travis/testcases/prototype/shouldSucceed/IDENT-test-succeed.adl
+    testing/Travis/testcases/prototype/shouldSucceed/IdentTest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/InterfaceRefCheck.adl
+    testing/Travis/testcases/prototype/shouldSucceed/InterfaceTest1.adl
+    testing/Travis/testcases/prototype/shouldSucceed/InterfaceTest2.adl
+    testing/Travis/testcases/prototype/shouldSucceed/InterfaceTest3.adl
+    testing/Travis/testcases/prototype/shouldSucceed/InterfaceTest4.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue142.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue142.xlsx
+    testing/Travis/testcases/prototype/shouldSucceed/Issue148.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue152.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue174.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue192.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue192.xlsx
+    testing/Travis/testcases/prototype/shouldSucceed/Issue194.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue194.xlsx
+    testing/Travis/testcases/prototype/shouldSucceed/Issue257.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue260.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue280.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue340.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue711.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue746.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue760.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue766.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue785.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue855.adl
+    testing/Travis/testcases/prototype/shouldSucceed/MultipleDeclaredRules.adl
+    testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/Archimate1.adl
+    testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/README.md
+    testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/testinfo.yaml
+    testing/Travis/testcases/prototype/shouldSucceed/propertytests.adl
+    testing/Travis/testcases/prototype/shouldSucceed/SelectExprTest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/SequencesBug.adl
+    testing/Travis/testcases/prototype/shouldSucceed/specializeTest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/testinfo.yaml
+    testing/Travis/testcases/prototype/shouldSucceed/Ticket237.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Ticket342.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Ticket35GitHub.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Ticket398.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Ticket445.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Ticket454.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try1.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try10.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try11.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try12.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try13.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try13b.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try15.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try16.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try18.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try18fail.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try19.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try2.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try20.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try22.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try23.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try24.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try25.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try26.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try28.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try29.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try3.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try30.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try31.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try32.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try33.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try34.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try35.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try36.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try37.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try38.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try39.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try40.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try41.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try41a.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try42.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try43.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try43a.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try44.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try45.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try46.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try47.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try5.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try50.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try51.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try52.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try53.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Try54.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try6.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try7.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try8.adl
+    testing/Travis/testcases/prototype/shouldSucceed/try9.adl
+    testing/Travis/testcases/prototype/shouldSucceed/TTypeTest1.adl
+    testing/Travis/testcases/prototype/shouldSucceed/validate/Issue148.adl
+    testing/Travis/testcases/prototype/shouldSucceed/validate/Issue862a.adl
+    testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
+    testing/Travis/testcases/prototype/shouldSucceed/validate/testinfo.yaml
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440.adl
+    testing/Travis/testcases/Simple/Delivery.adl
+    testing/Travis/testcases/Simple/DeliverySimple.adl
+    testing/Travis/testcases/Simple/DeliverySimple.css
+    testing/Travis/testcases/Simple/DeliverySimpleOPA.adl
+    testing/Travis/testcases/Simple/Roles.adl
+    testing/Travis/testcases/Simple/testinfo.yaml
+    testing/Travis/testcases/tutorial/MyModel.adl
+    testing/Travis/testcases/tutorial/README.md
+    testing/Travis/testcases/tutorial/testinfo.yaml
+
+custom-setup
+  setup-depends:
+      Cabal ==2.4.*
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , process ==1.6.*
+    , time ==1.8.*
+    , zlib ==0.6.*
+
+flag buildAll
+  description: Build both ampersand and ampPreProc.
+  manual: True
+  default: False
+
+library
+  exposed-modules:
+      Ampersand
+      Ampersand.ADL1
+      Ampersand.ADL1.Disambiguate
+      Ampersand.ADL1.Expression
+      Ampersand.ADL1.Lattices
+      Ampersand.ADL1.P2A_Converters
+      Ampersand.ADL1.PrettyPrinters
+      Ampersand.ADL1.Rule
+      Ampersand.Basics
+      Ampersand.Basics.Auxiliaries
+      Ampersand.Basics.Exit
+      Ampersand.Basics.Languages
+      Ampersand.Basics.PandocExtended
+      Ampersand.Basics.Prelude
+      Ampersand.Basics.String
+      Ampersand.Basics.UTF8
+      Ampersand.Basics.Unique
+      Ampersand.Basics.Version
+      Ampersand.Classes
+      Ampersand.Classes.ConceptStructure
+      Ampersand.Classes.Relational
+      Ampersand.Classes.ViewPoint
+      Ampersand.Components
+      Ampersand.Core.A2P_Converters
+      Ampersand.Core.AbstractSyntaxTree
+      Ampersand.Core.ParseTree
+      Ampersand.Core.ShowAStruct
+      Ampersand.Core.ShowPStruct
+      Ampersand.FSpec
+      Ampersand.FSpec.Crud
+      Ampersand.FSpec.FSpec
+      Ampersand.FSpec.FSpecAux
+      Ampersand.FSpec.GenerateUML
+      Ampersand.FSpec.Motivations
+      Ampersand.FSpec.SQL
+      Ampersand.FSpec.ShowHS
+      Ampersand.FSpec.ShowMeatGrinder
+      Ampersand.FSpec.ToFSpec.ADL2FSpec
+      Ampersand.FSpec.ToFSpec.ADL2Plug
+      Ampersand.FSpec.ToFSpec.Calc
+      Ampersand.FSpec.ToFSpec.CreateFspec
+      Ampersand.FSpec.ToFSpec.NormalForms
+      Ampersand.FSpec.ToFSpec.Populated
+      Ampersand.FSpec.Transformers
+      Ampersand.Graphic.ClassDiag2Dot
+      Ampersand.Graphic.ClassDiagram
+      Ampersand.Graphic.Fspec2ClassDiagrams
+      Ampersand.Graphic.Graphics
+      Ampersand.Input
+      Ampersand.Input.ADL1.CtxError
+      Ampersand.Input.ADL1.FilePos
+      Ampersand.Input.ADL1.Lexer
+      Ampersand.Input.ADL1.LexerMessage
+      Ampersand.Input.ADL1.LexerMonad
+      Ampersand.Input.ADL1.LexerTexts
+      Ampersand.Input.ADL1.LexerToken
+      Ampersand.Input.ADL1.Parser
+      Ampersand.Input.ADL1.ParsingLib
+      Ampersand.Input.Parsing
+      Ampersand.Input.PreProcessor
+      Ampersand.Input.Xslx.XLSX
+      Ampersand.Misc
+      Ampersand.Misc.Options
+      Ampersand.Output
+      Ampersand.Output.FSpec2Pandoc
+      Ampersand.Output.FSpec2SQL
+      Ampersand.Output.PandocAux
+      Ampersand.Output.Population2Xlsx
+      Ampersand.Output.ToJSON.Concepts
+      Ampersand.Output.ToJSON.Conjuncts
+      Ampersand.Output.ToJSON.Interfaces
+      Ampersand.Output.ToJSON.JSONutils
+      Ampersand.Output.ToJSON.Populations
+      Ampersand.Output.ToJSON.Relations
+      Ampersand.Output.ToJSON.Roles
+      Ampersand.Output.ToJSON.Rules
+      Ampersand.Output.ToJSON.Settings
+      Ampersand.Output.ToJSON.ToJson
+      Ampersand.Output.ToJSON.Views
+      Ampersand.Output.ToPandoc
+      Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
+      Ampersand.Output.ToPandoc.ChapterDataAnalysis
+      Ampersand.Output.ToPandoc.ChapterDiagnosis
+      Ampersand.Output.ToPandoc.ChapterIntroduction
+      Ampersand.Output.ToPandoc.ChapterNatLangReqs
+      Ampersand.Output.ToPandoc.SharedAmongChapters
+      Ampersand.Prototype.GenFrontend
+      Ampersand.Prototype.PHP
+      Ampersand.Prototype.ProtoUtil
+      Ampersand.Prototype.TableSpec
+      Ampersand.Prototype.ValidateSQL
+      Ampersand.Test
+      Ampersand.Test.Parser.ArbitraryTree
+      Ampersand.Test.Parser.ParserTest
+      Ampersand.Test.Parser.QuickChecks
+      Ampersand.Test.Regression
+      Ampersand.Test.TestScripts
+      Ampersand.Basics.BuildInfo_Generated
+      Ampersand.Prototype.StaticFiles_Generated
+  other-modules:
+      Ampersand.FSpec.FPA
+      Ampersand.Output.FSpec2Excel
+      Ampersand.Output.PredLogic
+      Ampersand.Output.Statistics
+      Ampersand.Test.RunAmpersand
+      Paths_ampersand
+  autogen-modules:
+      Ampersand.Basics.BuildInfo_Generated
+      Ampersand.Prototype.StaticFiles_Generated
+  hs-source-dirs:
+      src/
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  default-language: Haskell2010
+
+<<<<<<< HEAD
+  exposed-modules:   Ampersand,
+                     Ampersand.ADL1,
+                     Ampersand.ADL1.Disambiguate,
+                     Ampersand.ADL1.Expression,
+                     Ampersand.ADL1.Lattices,
+                     Ampersand.ADL1.P2A_Converters,
+                     Ampersand.ADL1.PrettyPrinters,
+                     Ampersand.ADL1.Rule,
+                     Ampersand.Basics,
+                     Ampersand.Basics.Auxiliaries,
+                     Ampersand.Basics.BuildInfo_Generated,
+                     Ampersand.Basics.Collection,
+                     Ampersand.Basics.Exit,
+                     Ampersand.Basics.Languages,
+                     Ampersand.Basics.PandocExtended,
+                     Ampersand.Basics.String,
+                     Ampersand.Basics.Unique,
+                     Ampersand.Basics.UTF8,
+                     Ampersand.Basics.Version,
+                     Ampersand.Classes,
+                     Ampersand.Classes.ConceptStructure,
+                     Ampersand.Classes.Relational,
+                     Ampersand.Classes.ViewPoint,
+                     Ampersand.Components,
+                     Ampersand.Core.A2P_Converters,
+                     Ampersand.Core.AbstractSyntaxTree,
+                     Ampersand.Core.ParseTree,
+                     Ampersand.Core.ShowAStruct,
+                     Ampersand.Core.ShowPStruct,
+                     Ampersand.FSpec,
+                     Ampersand.FSpec.Crud,
+                     Ampersand.FSpec.FPA,
+                     Ampersand.FSpec.FSpec,
+                     Ampersand.FSpec.FSpecAux,
+                     Ampersand.FSpec.GenerateUML,
+                     Ampersand.FSpec.Motivations,
+                     Ampersand.FSpec.ShowHS,
+                     Ampersand.FSpec.ShowMeatGrinder,
+                     Ampersand.FSpec.SQL,
+                     Ampersand.FSpec.ToFSpec.ADL2FSpec,
+                     Ampersand.FSpec.ToFSpec.ADL2Plug,
+                     Ampersand.FSpec.ToFSpec.Calc,
+                     Ampersand.FSpec.ToFSpec.CreateFspec,
+                     Ampersand.FSpec.ToFSpec.NormalForms,
+                     Ampersand.FSpec.ToFSpec.Populated,
+                     Ampersand.Graphic.ClassDiag2Dot,
+                     Ampersand.Graphic.ClassDiagram,
+                     Ampersand.Graphic.Fspec2ClassDiagrams,
+                     Ampersand.Graphic.Graphics,
+                     Ampersand.Input,
+                     Ampersand.Input.ADL1.CtxError,
+                     Ampersand.Input.ADL1.FilePos,
+                     Ampersand.Input.ADL1.Lexer,
+                     Ampersand.Input.ADL1.LexerMessage,
+                     Ampersand.Input.ADL1.LexerMonad,
+                     Ampersand.Input.ADL1.LexerTexts,
+                     Ampersand.Input.ADL1.LexerToken,
+                     Ampersand.Input.ADL1.Parser,
+                     Ampersand.Input.ADL1.ParsingLib,
+                     Ampersand.Input.Parsing,
+                     Ampersand.Input.Xslx.XLSX,
+                     Ampersand.Misc,
+                     Ampersand.Misc.Options,
+                     Ampersand.Output,
+                     Ampersand.Output.FSpec2Excel,
+                     Ampersand.Output.FSpec2Pandoc,
+                     Ampersand.Output.FSpec2Solidity,
+                     Ampersand.Output.FSpec2SQL,
+                     Ampersand.Output.PandocAux,
+                     Ampersand.Output.Population2Xlsx,
+                     Ampersand.Output.PredLogic,
+                     Ampersand.Output.Statistics,
+                     Ampersand.Output.ToJSON.Concepts,
+                     Ampersand.Output.ToJSON.Conjuncts,
+                     Ampersand.Output.ToJSON.Interfaces,
+                     Ampersand.Output.ToJSON.JSONutils,
+                     Ampersand.Output.ToJSON.MySQLInstaller,
+                     Ampersand.Output.ToJSON.Relations,
+                     Ampersand.Output.ToJSON.Roles,
+                     Ampersand.Output.ToJSON.Rules,
+                     Ampersand.Output.ToJSON.Settings,
+                     Ampersand.Output.ToJSON.ToJson,
+                     Ampersand.Output.ToJSON.Views,
+                     Ampersand.Output.ToPandoc
+                     Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
+                     Ampersand.Output.ToPandoc.ChapterDataAnalysis,
+                     Ampersand.Output.ToPandoc.ChapterDiagnosis,
+                     Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis,
+                     Ampersand.Output.ToPandoc.ChapterGlossary,
+                     Ampersand.Output.ToPandoc.ChapterInterfaces,
+                     Ampersand.Output.ToPandoc.ChapterIntroduction,
+                     Ampersand.Output.ToPandoc.ChapterNatLangReqs,
+                     Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
+                     Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
+                     Ampersand.Output.ToPandoc.SharedAmongChapters,
+                     Ampersand.Prototype.GenBericht,
+                     Ampersand.Prototype.Generate,
+                     Ampersand.Prototype.GenFrontend,
+                     Ampersand.Prototype.PHP,
+                     Ampersand.Prototype.ProtoUtil,
+                     Ampersand.Prototype.StaticFiles_Generated,
+                     Ampersand.Prototype.ValidateSQL,
+                     Ampersand.Prototype.WriteStaticFiles,
+                     Ampersand.Test
+                     Ampersand.Test.Parser.ArbitraryTree,
+                     Ampersand.Test.Parser.ParserTest,
+                     Ampersand.Test.Parser.QuickChecks,
+                     Ampersand.Test.Regression,
+                     Ampersand.Test.RunAmpersand,
+                     Ampersand.Test.TestScripts
+=======
+executable ampPreProc
+  main-is: Main.hs
+  other-modules:
+      Paths_ampersand
+  hs-source-dirs:
+      app/AmpPreProc
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall -threaded
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , ampersand
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  if !(flag(buildAll))
+    buildable: False
+  default-language: Haskell2010
+>>>>>>> development
+
+executable ampersand
+  main-is: Main.hs
+  other-modules:
+      Paths_ampersand
+  hs-source-dirs:
+      app/Ampersand
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall -threaded
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , ampersand
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  default-language: Haskell2010
+
+test-suite ampersand-test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_ampersand
+  hs-source-dirs:
+      app/Test
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall -threaded
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , ampersand
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  default-language: Haskell2010
+
+test-suite regression-test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_ampersand
+  hs-source-dirs:
+      app/RegressionTest
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall -threaded
+  build-depends:
+      HStringTemplate ==0.8.*
+    , MissingH ==1.4.*
+    , QuickCheck ==2.11.*
+    , SpreadsheetML ==0.1.*
+    , aeson ==1.4.*
+    , aeson-pretty ==0.8.*
+    , ampersand
+    , base ==4.12.*
+    , bytestring ==0.10.*
+    , conduit ==1.3.*
+    , containers ==0.6.*
+    , data-default ==0.7.*
+    , directory ==1.3.*
+    , filepath ==1.4.*
+    , graphviz ==2999.20.*
+    , hashable ==1.2.*
+    , http-conduit ==2.3.*
+    , lens ==4.17.*
+    , mtl ==2.2.*
+    , pandoc ==2.4.*
+    , pandoc-crossref ==0.3.4.0
+    , pandoc-types ==1.17.*
+    , parsec ==3.1.*
+    , process ==1.6.*
+    , simple-sql-parser ==0.4.4
+    , split ==0.2.*
+    , text ==1.2.*
+    , time ==1.8.*
+    , utf8-string ==1.0.*
+    , wl-pprint ==1.2.*
+    , xlsx ==0.7.*
+    , yaml ==0.10.*
+    , yaml-config ==0.4.*
+    , zip-archive
+    , zlib ==0.6.*
+  default-language: Haskell2010

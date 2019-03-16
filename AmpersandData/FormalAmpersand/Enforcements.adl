@@ -52,7 +52,7 @@ b. The rule
    can be implemented in a database simply by creating an attribute for r.
    Each time this attribute is overwritten, the new value replaces the old one.
    This implements the enforcement without having to write any code.
--}
++}
 
 PATTERN Enforcements
 RELATION context[Enforcement*Context] [UNI]

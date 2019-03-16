@@ -2,15 +2,17 @@
 {- The purpose of class Unique is to identify a Haskell object by means of a string.
 E.g.
 instance Unique Pattern where
- showUnique = name
+ showUnique = optionalQuote . name
 -}
 
 module Ampersand.Basics.Unique 
   (Unique(..),Named(..))
 where
-import Data.Typeable
-import Data.List
-import Data.Char
+import           Ampersand.Basics.Prelude
+import           Data.Char
+import           Data.List
+import qualified Data.Set as Set
+import           Data.Typeable
 
 -- | anything could have some label, can't it?
 class Named a where
@@ -21,15 +23,14 @@ class (Typeable e, Eq e) => Unique e where
   -- | a representation of a unique thing
   self :: e -> UniqueObj e
   self a = UniqueObj { theThing = a
-                     , theShow  = showUnique
+                 --    , theShow  = showUnique
                      }
   -- | representation of a Unique thing into a string.  
-  uniqueShow :: Bool ->  --  Should the type show too? 
+  uniqueShowWithType :: 
               e    ->  --  the thing to show
               String
-  uniqueShow includeType x = typePrefix ++ (showUnique . theThing . self) x
-    where
-      typePrefix = if includeType then show $ typeOf x else ""
+  uniqueShowWithType x = show (typeOf x) ++"_" ++ showUnique x
+
   -- | A function to show a unique instance. It is the responsability
   --   of the instance definition to make sure that for every a, b of 
   --   an individual type:
@@ -41,12 +42,13 @@ class (Typeable e, Eq e) => Unique e where
 -- | this is the implementation of the abstract data type. It mustn't be exported
 data UniqueObj a = 
        UniqueObj { theThing :: a
-                 , theShow  :: a -> String
                  } deriving (Typeable)
 
 instance Unique a => Unique [a] where
    showUnique [] = "[]"
    showUnique xs = "["++intercalate ", " (map showUnique xs)++"]"
+instance Unique a => Unique (Set.Set a) where
+   showUnique = showUnique . Set.elems
 
 instance Unique Bool where
  showUnique = map toLower . show 

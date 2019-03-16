@@ -67,18 +67,19 @@ fpaInterface :: Interface -> FP
 fpaInterface ifc = 
    let nm = name ifc
        cmplxty = depth2Cmplxty $ getDepth $ ifcObj ifc
-       tp = fatal 78 "TODO: fix to see if the interface contains editalbe fields"
+       tp = fatal "TODO: fix to see if the interface contains editalbe fields"
     in FP tp nm cmplxty
   where depth2Cmplxty :: Int -> Complexity
         depth2Cmplxty d | d <= 1    = Eenvoudig
                         | d == 2    = Gemiddeld
                         | otherwise = Moeilijk 
 
-        getDepth Obj{objmsub=Nothing} = 0
-        getDepth Obj{objmsub=Just si}
+        getDepth :: ObjectDef -> Int
+        getDepth ObjectDef{objmsub=Nothing} = 0
+        getDepth ObjectDef{objmsub=Just si}
           = case si of 
              InterfaceRef{} -> 1
-             Box{}          -> 1 + maximum (map getDepth (siObjs si))
+             Box{}          -> 1 + maximum (map getDepth [x | BxExpr x <- siObjs si])
 
 class ShowLang a where
   showLang :: Lang -> a -> String

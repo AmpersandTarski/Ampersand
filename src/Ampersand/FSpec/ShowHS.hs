@@ -1,32 +1,35 @@
 {-# LANGUAGE FlexibleInstances,DuplicateRecordFields,OverloadedLabels #-}
-module Ampersand.FSpec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
-import Ampersand.Core.ParseTree
-import Ampersand.Core.AbstractSyntaxTree
-import Text.Pandoc hiding (Meta)
-import Data.Char                  (isAlphaNum)
-import Ampersand.Basics hiding (indent)
-import Ampersand.FSpec.FSpec
-import Ampersand.Core.ShowAStruct  (AStruct(..))  -- for traceability, we generate comments in the Haskell code.
-import Data.List
-import Ampersand.Misc
-import Data.Hashable
-import Data.Ord
-import Data.Function
+{-# LANGUAGE RecordWildCards #-} 
+module           Ampersand.FSpec.ShowHS
+    (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
+where
+import           Ampersand.Basics
+import           Ampersand.ADL1
+import           Ampersand.Core.ShowAStruct  (AStruct(..))  -- for traceability, we generate comments in the Haskell code.
+import           Ampersand.FSpec.FSpec
+import           Ampersand.Misc
+import           Data.Char                  (isAlphaNum)
+import           Data.Function
+import           Data.Hashable
+import           Data.List
+import qualified Data.List.NonEmpty as NEL (toList)
+import           Data.Ord
+import qualified Data.Set as Set
+import           Text.Pandoc hiding (Meta)
 
-fSpec2Haskell :: FSpec -> String
-fSpec2Haskell fSpec
+fSpec2Haskell :: Options -> FSpec -> String
+fSpec2Haskell opts@Options{..} fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
-          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (getOpts fSpec))++"-}"
+          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show genTime++"-}"
           ++"\nmodule Main where\n"
           ++"\nimport Ampersand"
           ++"\nimport Text.Pandoc hiding (Meta)"
-          ++"\nimport Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
           ++"\n"
           ++"\nmain :: IO ()"
-          ++"\nmain = do (getOpts fSpec) <- getOptions"
-          ++"\n          putStr (showHS (getOpts fSpec) \"\\n  \" fSpec_"++baseName (getOpts fSpec)++")\n"
-          ++"\nfSpec_"++baseName (getOpts fSpec)++" :: FSpec"
-          ++"\nfSpec_"++baseName (getOpts fSpec)++" =\n  "++showHS (getOpts fSpec) "\n  " fSpec
+          ++"\nmain = do opts <- getOptions"
+          ++"\n          putStr (showHS opts \"\\n  \" fSpec_"++baseName++")\n"
+          ++"\nfSpec_"++baseName ++" :: FSpec"
+          ++"\nfSpec_"++baseName ++" =\n  "++showHS opts "\n  " fSpec
 
 wrap :: String->String->(String->a->String)->[a]->String
 wrap initStr indent f xs
@@ -75,10 +78,8 @@ instance ShowHS PlugSQL where
                    ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
                    ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
-                                                      [ "RelStore "++showHSName (rsDcl store)++" "
-                                                                   ++showHSName (rsSrcAtt store)++" "
-                                                                   ++showHSName (rsTrgAtt store)++" "
-                                                      | store<-dLkpTbl plug] ++ "]"
+                                                ( map (showHS opts (indent++"                        ")) . dLkpTbl $ plug) 
+                                              ++ "]"
                    ,"       }"
                    ]
        BinSQL{} -> intercalate indent
@@ -87,13 +88,20 @@ instance ShowHS PlugSQL where
                    ,"BinSQL { sqlname = " ++ (show.name) plug
                    ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
-                                                      [ "RelStore "++showHSName (rsDcl store)++" "
-                                                                   ++showHSName (rsSrcAtt store)++" "
-                                                                   ++showHSName (rsTrgAtt store)++" "
-                                                      | store<-dLkpTbl plug] ++ "]"
-               --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
+                                                ( map (showHS opts (indent++"                        ")) . dLkpTbl $ plug) 
+                                              ++ "]"
                    ,"       }"
                    ]
+
+instance ShowHS RelStore where
+ showHS _ indent store
+   = intercalate indent
+       [  "Relstore { rsDcl           = " ++ showHSName (rsDcl store)
+       ,  "         , rsStoredFlipped = " ++ show (rsStoredFlipped store)
+       ,  "         , rsSrcAtt        = " ++ showHSName (rsSrcAtt store)
+       ,  "         , rsTrgAtt        = " ++ showHSName (rsTrgAtt store)
+       ,  "         }"
+       ]
 
 instance ShowHSName SqlAttribute where
  showHSName sqAtt = haskellIdentifier ("sqlAtt_"++attName sqAtt)
@@ -150,7 +158,7 @@ instance ShowHS Conjunct where
  showHS opts indent x
    = intercalate (indent ++"    ")
        [   "Cjct{ rc_id         = " ++ show (rc_id x)
-       ,       ", rc_orgRules   = " ++ "[ "++intercalate ", " (map showHSName (rc_orgRules x))++"]"
+       ,       ", rc_orgRules   = " ++ "[ "++intercalate ", " (map showHSName . Set.elems $ rc_orgRules x)++"]"
        ,       ", rc_conjunct   = " ++ showHS opts indentA (rc_conjunct x)
        , wrap  ", rc_dnfClauses = " indentA (\_->showHS opts (indentA++"  ")) (rc_dnfClauses x)
        ,       "}"
@@ -166,13 +174,6 @@ instance ShowHS FSpec where
         [ "FSpec{ fsName        = " ++ show (name fSpec)
         , wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
         ,      ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
-        ,      ", themes        = " ++ show (themes fSpec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
-        , wrap ", pattsInScope  = " indentA (const showHSName) (pattsInScope fSpec)
-        , wrap ", rulesInScope  = " indentA (const showHSName) (rulesInScope fSpec)
-        , wrap ", declsInScope  = " indentA (const showHSName) (declsInScope fSpec)
-        , wrap ", cDefsInScope  = " indentA (\_->showHS opts (indentA++"  ")) (cDefsInScope fSpec)
-        , wrap ", gensInScope   = " indentA (showHS opts)   (gensInScope fSpec)
-        , wrap ", vplugInfos    = " indentA (\_->showHS opts (indentA++"  ")) (vplugInfos fSpec)
         , wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
         ,      ", interfaceS    = interfaceS'"
         ,      ", interfaceG    = interfaceG'"
@@ -183,13 +184,13 @@ instance ShowHS FSpec where
                  _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
         ,      ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
         , wrap ", fRoles        = " indentA (showHS opts)    [rol | (rol,_) <- fRoles fSpec]
-        , wrap ", vrules        = " indentA (const showHSName) (vrules fSpec)
-        , wrap ", grules        = " indentA (const showHSName) (grules fSpec)
-        , wrap ", invariants    = " indentA (const showHSName) (invariants fSpec)
-        , wrap ", fallRules     = " indentA (const showHSName) (fallRules fSpec)
-        , wrap ", allUsedDecls  = " indentA (const showHSName) (allUsedDecls fSpec)
-        , wrap ", vrels         = " indentA (const showHSName) (vrels fSpec)
-        , wrap ", allConcepts   = " indentA (const showHSName) (allConcepts fSpec)
+        , wrap ", vrules        = " indentA (const showHSName) (Set.elems $ vrules fSpec)
+        , wrap ", grules        = " indentA (const showHSName) (Set.elems $ grules fSpec)
+        , wrap ", invariants    = " indentA (const showHSName) (Set.elems $ invariants fSpec)
+        , wrap ", fallRules     = " indentA (const showHSName) (Set.elems $ fallRules fSpec)
+        , wrap ", allUsedDecls  = " indentA (const showHSName) (Set.elems $ allUsedDecls fSpec)
+        , wrap ", vrels         = " indentA (const showHSName) (Set.elems $ vrels fSpec)
+        , wrap ", allConcepts   = " indentA (const showHSName) (Set.elems $ allConcepts fSpec)
         , wrap ", vIndices      = " indentA (const showHSName) (vIndices fSpec)
         , wrap ", vviews        = " indentA (const showHSName) (vviews fSpec)
         , wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
@@ -201,7 +202,7 @@ instance ShowHS FSpec where
         , wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
         ,      ", metas         = allMetas"
         , wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
-        , wrap ", allExprs      = " indentA (showHS opts)    (allExprs fSpec)
+        , wrap ", allExprs      = " indentA (showHS opts)    (Set.toList $ allExprs fSpec)
         , "}"
         ] ++
     indent++"where"++
@@ -231,10 +232,10 @@ instance ShowHS FSpec where
      "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fSpec++" interfaces) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-interfaceG fSpec ]++"\n"
     )++
-    (let ds = vrels fSpec `uni` allUsedDecls fSpec `uni` (nub . map qDcl . vquads) fSpec in
+    (let ds = vrels fSpec `Set.union` allUsedDecls fSpec `Set.union` (Set.fromList . map qDcl . vquads) fSpec in
      if null ds then "" else
      "\n -- *** Declared relations (in total: "++(show.length) ds++" relations) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-ds]++"\n"
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-Set.elems ds]++"\n"
     ) ++
     (if null (vIndices fSpec)     then "" else
      "\n -- *** Indices (total: "++(show.length.vIndices) fSpec++" indices) ***: "++
@@ -246,11 +247,11 @@ instance ShowHS FSpec where
     ) ++
     (if null (vrules   fSpec ) then "" else
      "\n -- *** User defined rules (total: "++(show.length.vrules) fSpec++" rules) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vrules     fSpec ]++"\n"
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-Set.elems $ vrules     fSpec ]++"\n"
     )++
     (if null (grules   fSpec ) then "" else
      "\n -- *** Generated rules (total: "++(show.length.grules) fSpec++" rules) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-grules     fSpec ]++"\n"
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-Set.elems $ grules     fSpec ]++"\n"
     )++
     (if null (allConjuncts fSpec ) then "" else
      "\n -- *** Conjuncts (total: "++(show.length.allConjuncts) fSpec++" conjuncts) ***: "++
@@ -275,24 +276,26 @@ instance ShowHS FSpec where
     (if null (allConcepts fSpec) then "" else
      "\n -- *** Concepts (total: "++(show.length.allConcepts) fSpec++" concepts) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x
-          ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (allConcepts fSpec)]++"\n"
+          ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (Set.toList $ allConcepts fSpec)]++"\n"
     )
         where indentA = indent ++"                       "
               indentB = indent ++"             "
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map showVal (sort (atomsInCptIncludingSmaller fSpec c))
+                    strs = map showVal . sort . Set.elems . atomsInCptIncludingSmaller fSpec $ c
                       where showVal val= "`"++showValADL val++"`" 
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
-              showViolatedRule :: String -> (Rule,[AAtomPair]) -> String
+              showViolatedRule :: String -> (Rule,AAtomPairs) -> String
               showViolatedRule indent' (r,ps)
                  = intercalate indent'
                      [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++
-                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = "( "++ (show.showValADL.apLeft) p++", "++(show.showValADL.apRight) p++")"
-                                                                   in showPair) ps++
+                      indent'++" , "++ wrap "" (indent'++"   ") 
+                                               (let showPair _ p = "( "++ (show.showValADL.apLeft) p++", "++(show.showValADL.apRight) p++")"
+                                                in showPair
+                                               ) (Set.elems ps)++
                       indent'++" )"
                      ]
 
@@ -301,13 +304,10 @@ instance ShowHS Meta where
 
 instance ShowHSName PlugInfo where
  showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
- showHSName (ExternalPlug _) = fatal 336 "a PlugInfo is anonymous with respect to showHS opts"
-
+ 
 instance ShowHS PlugInfo where
  showHS _ _ (InternalPlug p)
   = "InternalPlug "++showHSName p
- showHS opts ind (ExternalPlug o)
-  = "ExternalPlug "++showHS opts (ind++"    ") o
 
 instance ShowHS A_RoleRelation where
  showHS opts ind rr
@@ -341,9 +341,9 @@ instance ShowHS Pattern where
      [ "A_Pat { ptnm  = "++show (name pat)
      , ", ptpos = "++showHS opts "" (ptpos pat)
      , ", ptend = "++showHS opts "" (ptend pat)
-     , ", ptrls = [" ++intercalate ", " [showHSName r | r<-ptrls pat] ++ concat [" {- no rules -} "        | null (ptrls pat)] ++"]"
+     , ", ptrls = [" ++intercalate ", " [showHSName r | r<-Set.elems $ ptrls pat] ++ concat [" {- no rules -} "        | Set.null (ptrls pat)] ++"]"
      , wrap ", ptgns = " indentB (showHS opts) (ptgns pat)
-     , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
+     , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-Set.elems $ ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
      , wrap ", ptups = " indentB (showHS opts) (ptups pat)
      , wrap ", ptids = " indentB (showHS opts) (ptids pat)
      , wrap ", ptvds = " indentB (showHS opts) (ptvds pat)
@@ -363,7 +363,7 @@ instance ShowHS PRef2Obj where
  showHS _ _ peObj
   = case peObj of
          PRef2ConceptDef str                    -> "PRef2ConceptDef " ++show str
-         PRef2Declaration (PNamedRel _ nm mSgn) -> "PRef2Declaration "++show nm++maybe "" show mSgn
+         PRef2Relation (PNamedRel _ nm mSgn) -> "PRef2Relation "++show nm++maybe "" show mSgn
          PRef2Rule str                          -> "PRef2Rule "       ++show str
          PRef2IdentityDef str                   -> "PRef2IdentityDef "++show str
          PRef2ViewDef str                       -> "PRef2ViewDef "    ++show str
@@ -382,7 +382,7 @@ instance ShowHS Purpose where
 instance ShowHS ExplObj where
  showHS opts i peObj = case peObj of
           ExplConceptDef cd  -> "ExplConceptDef " ++showHS opts i cd
-          ExplDeclaration d  -> "ExplDeclaration "++showHSName d
+          ExplRelation d  -> "ExplRelation "++showHSName d
           ExplRule str       -> "ExplRule "       ++show str
           ExplIdentityDef str-> "ExplIdentityDef "++show str
           ExplViewDef str    -> "ExplViewDef "    ++show str
@@ -408,7 +408,7 @@ instance ShowHS Markup where
      ]
 
 instance ShowHS (PairView Expression) where
-  showHS opts indent (PairView pvs) = "PairView "++showHS opts indent pvs
+  showHS opts indent (PairView pvs) = "PairView "++showHS opts indent (NEL.toList pvs)
 
 instance ShowHS (PairViewSegment Expression) where
   showHS _     _ (PairViewText _ txt) = "PairViewText "++show txt
@@ -418,26 +418,25 @@ instance ShowHSName Rule where
  showHSName r = haskellIdentifier ("rule_"++ rrnm r)
 
 instance ShowHS Rule where
- showHS opts indent r@(Ru _ _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
+ showHS opts indent r@(Ru _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
    = intercalate indent
      ["Ru{ rrnm   = " ++ show (rrnm   r)
-     ,"  , rrexp  = -- " ++ showA (rrexp  r) ++ indent++"             " ++ showHS opts (indent++"             ") (rrexp  r)
+     ,"  , formalExpression  = -- " ++ showA (formalExpression  r) ++ indent++"             " ++ showHS opts (indent++"             ") (formalExpression  r)
      ,"  , rrfps  = " ++ showHS opts "" (rrfps  r)
      ,"  , rrmean = " ++ showHS opts (indent++"             ") (rrmean r)
      ,"  , rrmsg  = " ++ showHS opts "" (rrmsg  r)
      ,"  , rrviol = " ++ showHS opts "" (rrviol r)
-     ,"  , rrtyp  = " ++ showHS opts "" (rrtyp  r)
      ,"  , rrdcl  = " ++ case rrdcl r of
                            Just (p,d) -> "Just ("++showHSName p++", "++showHSName d++" )"
                            Nothing    -> "Nothing"
-     ,"  , r_env  = " ++ show (r_env  r)
+     ,"  , rrpat  = " ++ show (rrpat  r)
      ,"  , r_usr  = " ++ show (r_usr  r)
      ,"  , isSignal = " ++ show (isSignal  r)
      ,"  }"
      ]
 
-instance ShowHS AMeaning where
-  showHS opts indent (AMeaning x) = "AMeaning " ++ showHS opts (indent++"        ") x
+instance ShowHS Meaning where
+  showHS opts indent (Meaning x) = "Meaning " ++ showHS opts (indent++"        ") x
 
 instance ShowHSName IdentityDef where
  showHSName identity = haskellIdentifier ("identity_"++name identity)
@@ -490,16 +489,24 @@ instance ShowHSName ObjectDef where
  showHSName obj = haskellIdentifier ("oDef_"++name obj)
 
 instance ShowHS ObjectDef where
- showHS opts indent r
+ showHS opts indent x
   = intercalate indent
-        ["Obj{ objnm    = " ++ show(objnm r)
-        ,"   , objpos   = " ++ showHS opts "" (objpos r)
-        ,"   , objctx   = " ++ showHS opts (indent++"                ") (objctx r)
-        ,"   , objcrud  = " ++ showHS opts (indent++"                ") (objcrud r)
-        ,"   , objmView = " ++ show(objmView r)
-        ,"   , objmsub  = " ++ showHS opts (indent++"                ") (objmsub r)
-        ]++indent++"   }"
-
+        ["ObjectDef { objnm    = " ++ show(name x)
+        ,"       , objpos   = " ++ showHS opts "" (origin x)
+        ,"       , objExpression   = " ++ showHS opts (indent++"                ") (objExpression x)
+        ,"       , objcrud  = " ++ showHS opts (indent++"                ") (objcrud x)
+        ,"       , objmView = " ++ show(objmView x)
+        ,"       , objmsub  = " ++ showHS opts (indent++"                ") (objmsub x)
+        ,"       }"
+        ]
+instance ShowHS BoxTxt where
+ showHS opts indent x
+  = intercalate indent
+        ["BoxTxt { objnm    = " ++ show(name x)
+        ,"       , objpos   = " ++ showHS opts "" (origin x)
+        ,"       , objtxt   = " ++ show(objtxt x)
+        ,"       }"
+        ]
 instance ShowHS Cruds where
  showHS opts indent x 
   = intercalate indent
@@ -516,15 +523,21 @@ instance ShowHSName Interface where
 instance ShowHS Interface where
  showHS opts indent ifc
   = intercalate indent
-        [ "Ifc { ifcRoles  = " ++ show(ifcRoles ifc)
+        [ "Ifc { ifcname   = " ++ show(ifcname ifc)
+        , "    , ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
         , wrap "    , ifcControls = " (indent++"                  ") (const showHSName) (ifcControls ifc)
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
         , "    , ifcPrp    = " ++ show(ifcPrp ifc)
         ]++indent++"    }"
-
+instance ShowHS BoxItem where
+ showHS opts indent obj =
+   case obj of
+     (BxExpr e) -> "BxExpr ("++showHS opts indent e++")"
+     (BxTxt t) -> "BxTxt ("++showHS opts indent t++")"
+ 
 instance ShowHS SubInterface where
- showHS _     _     (InterfaceRef isLink n cs) = "InterfaceRef "++show isLink ++" "++show n++" "++show cs
+ showHS _     _     (InterfaceRef isLink n) = "InterfaceRef "++show isLink ++" "++show n
  showHS opts indent (Box x cl objs) = "Box ("++showHS opts indent x++") ("++showHS opts indent cl++")"++indent++"     ("++showHS opts (indent++"     ") objs++")"
 
 instance ShowHS Expression where
@@ -553,46 +566,40 @@ instance ShowHS Expression where
 instance ShowHS Signature where
  showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
 
-instance ShowHS A_Gen where
+instance ShowHS AClassify where
  showHS _ _ gen =
    case gen of
      Isa{} -> "Isa "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
      IsE{} -> "IsE "++showHSName (genspc gen)++" ["++intercalate ", " (map showHSName (genrhs gen))++"] "
 
-instance ShowHSName Declaration where
- showHSName d@Isn{}       = haskellIdentifier ("rel_"++name d++"_"++name (source d)) -- identity relation
- showHSName d@Vs{}        = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- full relation
+instance ShowHSName Relation where
  showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- user defined relations
               | otherwise = haskellIdentifier ("vio_"++name d++"_"++name (source d)++"_"++name (target d)) -- relations generated per rule
 
-instance ShowHS Declaration where
+instance ShowHS Relation where
  showHS opts indent d
-    = case d of
-       Sgn{}     -> intercalate indent
-                     ["Sgn{ decnm   = " ++ show (decnm d)
-                     ,"   , decsgn  = " ++ showHS opts "" (sign d)
-                     ,"   , decprps = " ++ showL(map (showHS opts "") (decprps d))
-                     ,"   , decprps_calc = " ++ case decprps_calc d of
+    = intercalate indent
+                     ["Relation { decnm   = " ++ show (decnm d)
+                     ,"         , decsgn  = " ++ showHS opts "" (sign d)
+                     ,"         , decprps = " ++ showL(map (showHS opts "") (Set.elems $ decprps d))
+                     ,"         , decprps_calc = " ++ case decprps_calc d of
                                                  Nothing -> "Nothing"
-                                                 Just ps -> "Just "++showL(map (showHS opts "") ps)
-                     ,"   , decprL  = " ++ show (decprL d)
-                     ,"   , decprM  = " ++ show (decprM d)
-                     ,"   , decprR  = " ++ show (decprR d)
-                     ,"   , decMean = " ++ show (decMean d)
-                     ,"   , decfpos = " ++ showHS opts "" (decfpos d)
-                     ,"   , decusr  = " ++ show (decusr d)
-                     ,"   , decpat  = " ++ show (decpat d)
-                     ,"   , decplug = " ++ show (decplug d)
+                                                 Just ps -> "Just "++showL(map (showHS opts "") (Set.elems ps))
+                     ,"         , decprL  = " ++ show (decprL d)
+                     ,"         , decprM  = " ++ show (decprM d)
+                     ,"         , decprR  = " ++ show (decprR d)
+                     ,"         , decMean = " ++ show (decMean d)
+                     ,"         , decfpos = " ++ showHS opts "" (decfpos d)
+                     ,"         , decusr  = " ++ show (decusr d)
+                     ,"         , decpat  = " ++ show (decpat d)
                      ]++"}"
-       Isn{}     -> "Isn{ detyp   = " ++ showHSName (detyp d)++"}"
-       Vs{}      -> "Vs { decsgn  = " ++ showHS opts "" (sign d)++"}"
 
 --   instance ShowHSName ConceptDef where
 --    showHSName cd = haskellIdentifier ("cDef_"++cdcpt cd)
 
 instance ShowHS ConceptDef where
  showHS opts _ cd
-  = " Cd ("++showHS opts "" (origin cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
+  = " Cd ("++showHS opts "" (origin cd)++") "++show (cdcpt cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
 instance ShowHSName Char where
  showHSName = show
 instance ShowHS Char where
@@ -630,14 +637,21 @@ instance ShowHSName Origin where
               FileLoc l sym -> "FileLoc (" ++ show l ++ " " ++ sym ++ ")"
               DBLoc l       -> "DBLoc " ++ show l
               Origin s      -> "Origin " ++ show s
+              PropertyRule str declOrig 
+                            -> "PropertyRule of "++str++" "++
+                                  case declOrig of 
+                                    FileLoc l sym -> "declared at FileLoc (" ++ show l ++ " " ++ sym ++ ")"
+                                    _             -> fatal $ "This should be the origin of a Relation, but it doesn't seem like it is.\n"
+                                                               ++show declOrig 
               OriginUnknown -> "OriginUnknown"
               XLSXLoc fPath sheet (a,b) -> "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)
 instance ShowHS Origin where
- showHS opts indent (FileLoc l s) = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
- showHS _     _      (DBLoc l)    = "DBLoc "  ++ show l
- showHS _     _      (Origin s)   = "Origin " ++ show s
- showHS _     _    OriginUnknown  = "OriginUnknown"
- showHS _     _    (XLSXLoc fPath sheet (a,b)) = "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)  
+ showHS opts indent (FileLoc l s)               = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
+ showHS _     _     (DBLoc l)                   = "DBLoc " ++ show l
+ showHS opts indent (PropertyRule str declOrig) = "PropertyRule " ++ show str ++ " ("++showHS opts indent declOrig++")"
+ showHS _     _     (Origin s)                  = "Origin " ++ show s
+ showHS _     _     OriginUnknown               = "OriginUnknown"
+ showHS _     _     (XLSXLoc fPath sheet (a,b)) = "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)  
 
 instance ShowHS Block where
  showHS _ _   = show

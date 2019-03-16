@@ -10,8 +10,6 @@ PATTERN Atoms
     RELATION rAtom[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
 ENDPATTERN
 
-VIEW Pair : Pair(TXT "(",l,TXT ",",r,TXT ")")
-
 PROCESS "Compute populations"
     RELATION pop[Atom*Concept]
     MEANING "If a pop c, we say that atom  a  is in the population of concept  c."

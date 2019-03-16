@@ -6,7 +6,7 @@ PROCESS HandleBookings
 
 	ROLE FacilityDesk MAINTAINS acceptedCancelledOrRejectedBookings
 
-	RULE acceptedCancelledOrRejectedBookings: I |- (status;('Accepted'\/'Cancelled'\/'Rejected');status~)
+	RULE acceptedCancelledOrRejectedBookings: I |- (status;("Accepted"\/"Cancelled"\/"Rejected");status~)
 		MESSAGE "All bookings must be accepted, cancelled or rejected"
 		VIOLATION (SRC I)
 	

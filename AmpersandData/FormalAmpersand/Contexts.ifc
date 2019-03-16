@@ -2,7 +2,7 @@ CONTEXT RAP IN ENGLISH
 INCLUDE "Contexts.adl"
 
 VIEW Context : Context(name)
-INTERFACE Contexts (valid,relations) : '_SESSION'[SESSION]
+INTERFACE Contexts (valid,relations) : "_SESSION"[SESSION]
 TABS[ "Contexts" : V[SESSION*Context]
       BOX<SCOLS>
            [ context        : I

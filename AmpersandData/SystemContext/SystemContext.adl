@@ -1,0 +1,19 @@
+CONTEXT SystemContext IN ENGLISH
+
+PATTERN SystemSpecific
+  
+  RELATION sessionAccount[SESSION*Account] [UNI]
+  RELATION sessionAllowedRoles[SESSION*Role]
+  RELATION sessionActiveRoles[SESSION*Role]
+  
+  RULE "Active roles MUST be a subset of allowed roles": -- This rule is required for the access control mechanism.
+     sessionActiveRoles |- sessionAllowedRoles           -- It ensures that only allowed roles can be activated.
+  
+  REPRESENT DateTime TYPE DATETIME
+  RELATION lastAccess[SESSION*DateTime] [UNI]
+  RELATION accMostRecentLogin[Account*DateTime] [UNI]
+  RELATION accLoginTimestamps[Account*DateTime]
+
+ENDPATTERN
+  
+ENDCONTEXT

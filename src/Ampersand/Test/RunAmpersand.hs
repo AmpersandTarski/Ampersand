@@ -1,8 +1,12 @@
-module Ampersand.Test.RunAmpersand (ampersand) where
+module Ampersand.Test.RunAmpersand
+   ( ampersand
+    ) where
 
-import Ampersand.Misc
-import Ampersand.FSpec.ToFSpec.CreateFspec(createMulti)
-import Ampersand.Input.ADL1.CtxError
+import           Ampersand.Basics
+import           Ampersand.FSpec.ToFSpec.CreateFspec(createMulti)
+import           Ampersand.Input.ADL1.CtxError
+import           Ampersand.Misc
+import qualified Data.List.NonEmpty as NEL (toList)
 
 ampersand :: [FilePath] -> IO [[CtxError]]
 ampersand files = 
@@ -11,8 +15,8 @@ ampersand files =
 
 runAmpersand :: Options -> FilePath -> IO [CtxError]
 runAmpersand opts file = 
-        do gFSpec <- createMulti opts{ fileName = file }
+        do gFSpec <- createMulti opts{ fileName = Just file }
            case gFSpec of
-              Errors err    -> return err
+              Errors err    -> return $ NEL.toList err
               --TODO: Do something with the fSpec
-              Checked _     -> return []
+              Checked _ _   -> return []

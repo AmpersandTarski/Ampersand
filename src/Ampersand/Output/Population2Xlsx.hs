@@ -2,15 +2,17 @@
 module Ampersand.Output.Population2Xlsx
   (fSpec2PopulationXlsx)
 where
-import Ampersand.FSpec
-import Ampersand.Core.AbstractSyntaxTree
-import Codec.Xlsx
+
+import           Ampersand.Basics
+import           Ampersand.ADL1(AAtomValue(..),HasSignature(..),aavstr)
+import           Ampersand.FSpec
+import           Codec.Xlsx
 import qualified Data.ByteString.Lazy as L
+import           Data.List
+import           Data.Maybe
 import qualified Data.Text as T
-import Data.Maybe
-import Data.List
-import Data.Time.Calendar
-import Data.Time.Clock.POSIX
+import           Data.Time.Calendar
+import           Data.Time.Clock.POSIX
 
 fSpec2PopulationXlsx :: POSIXTime -> FSpec -> L.ByteString 
 fSpec2PopulationXlsx ct fSpec = 
@@ -22,13 +24,12 @@ plugs2Sheets :: FSpec -> [(T.Text, Worksheet)]
 plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
   where
     plug2sheet :: PlugInfo -> Maybe (T.Text, Worksheet)
-    plug2sheet ExternalPlug{} = Nothing  -- Not supported at present
     plug2sheet (InternalPlug plug) = fmap (\x -> (T.pack (name plug),x)) sheet
       where 
        sheet :: Maybe Worksheet
        sheet = case matrix of
                  Nothing -> Nothing
-                 Just m -> Just def{_wsCells = fromRows . numberList . Prelude.map numberList $ m }
+                 Just m -> Just def{_wsCells = fromRows . numberList . map numberList $ m }
             where 
               numberList :: [c] -> [(Int, c)]
               numberList = zip [1..] 
@@ -38,13 +39,12 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
            TblSQL{} -> if length (attributes plug) > 1
                        then Just $ headers ++ content
                        else Nothing
-           BinSQL{} -> -- trace ("## Warning: Handling of link-tables isn't correct yet. Therefor, sheet`"++name plug++"` doesn't contain proper info") $
-                       Just $ headers ++ content
+           BinSQL{} -> Just $ headers ++ content
          where
            headers :: [[Cell]]
            headers = transpose (zipWith (curry f) (True : repeat False) (plugAttributes plug)) 
              where f :: (Bool,SqlAttribute) -> [Cell]
-                   f (isFirstField,att) = Prelude.map toCell 
+                   f (isFirstField,att) = map toCell 
                          [ if isFirstField  -- In case of the first field of the table, we put the fieldname inbetween brackets,
                                             -- to be able to find the population again by the reader of the .xlsx file
                            then Just $ "["++name att++"]" 
@@ -74,7 +74,7 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
                                         AAVFloat _ x -> CellDouble x
                                         AAVBoolean _ b -> CellBool b
                                         AAVDate _ day -> (CellDouble . fromInteger) (diffDays (fromGregorian 1900 1 1) day)
-                                        _ -> fatal 87 ( "Content found that cannot be converted to Excel (yet): "++show aVal) 
+                                        _ -> fatal ( "Content found that cannot be converted to Excel (yet): "++show aVal) 
                    , _cellComment = Nothing
                    , _cellFormula = Nothing
                    }

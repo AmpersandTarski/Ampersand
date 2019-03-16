@@ -1,11 +1,20 @@
-{-# OPTIONS_GHC -Wall #-}{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
-module Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
-import Ampersand.Core.ParseTree
-import Ampersand.Core.AbstractSyntaxTree
---import Ampersand.Basics (fatal)
---import Control.Applicative
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+module Ampersand.ADL1.Disambiguate
+   ( disambiguate
+   , orWhenEmpty
+   , DisambPrim(..)
+   , pCpt2aCpt
+   ) where
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.AbstractSyntaxTree
+import qualified Data.List.NonEmpty as NEL (toList,fromList)
 import qualified Data.Set as Set
-import Control.Arrow
+import           Control.Arrow
+import           Text.PrettyPrint.Leijen (Pretty(..),text)
 
 -- this is *only* used internally!
 data D_Concept
@@ -13,8 +22,8 @@ data D_Concept
  | MayBe  A_Concept
  deriving (Show, Eq)
 
-data Constraints = Cnstr {sourceConstraintsOf :: [D_Concept]
-                         ,targetConstraintsOf :: [D_Concept]
+data Constraints = Cnstr {bottomUpSourceTypes :: [D_Concept]
+                         ,bottomUpTargetTypes :: [D_Concept]
                          }deriving Show
 
 class Traversable d => Disambiguatable d where
@@ -26,7 +35,9 @@ class Traversable d => Disambiguatable d where
 --     type Thing = ThingPolymorphic TermPrim
 --     This makes sure that "Thing" is the exact same type before and after this change.
 -- (2) Make ThingPolymorphic an instance of Traversable. The default "deriving Traversable" should be fine.
--- (3) Make ThingPolymorphic an instance of Disambiguatable. It is your responsibility to prevent loops here. The instance looks like this:
+-- (3) Make ThingPolymorphic an instance of Disambiguatable. It is your responsibility to prevent loops here, which is tricky:
+--       the result may not depend on the second argument (more later).
+--     The instance looks like this:
 --     disambInfo (Thing1 x y z) td = (Thing1 x' y' z', (bottomUpSourceTypes,bottomUpTargetTypes))
 --      where (x',resultingTypesForX) = disambInfo x' topDownTypesForX
 --            (y',resultingTypesForY) = disambInfo y' topDownTypesForY
@@ -37,7 +48,8 @@ class Traversable d => Disambiguatable d where
 --     Note that disambInfo actually performs two separate functions in one go: one to go top down, the other to go bottom up.
 --     The top-down function may use parts of the bottom-up function, but not the other way around.
 --     A nice example to look at is PCps:
---         disambInfo (PCps o a b) (ia1,ib1) = ( PCps o a' b', (ia, ib) )
+--         disambInfo (PCps o a b) (ia1,ib1)
+--            = ( PCps o a' b', (ia, ib) ) -- here only bottom-up information is allowed: don't use ia1 or ib1 here!
 --          where (a', (ia,ic1)) = disambInfo a (ia1,ic2) -- here ic2 is top-down, so that is ok
 --                (b', (ic2,ib)) = disambInfo b (ic1,ib1)
   disambInfo :: d (TermPrim,DisambPrim)  --the thing that is disabmiguated
@@ -59,24 +71,25 @@ class Traversable d => Disambiguatable d where
   disambiguationStep :: d (TermPrim, DisambPrim) -> Change (d (TermPrim, DisambPrim))
   disambiguationStep thing = traverse performUpdate withInfo
       where (withInfo, _) = disambInfo thing noConstraints
+  {-# MINIMAL disambInfo #-}
 
 noConstraints :: Constraints
 noConstraints = Cnstr [][]
 
 --TODO: Rename to a more meaningfull name
 fullConstraints :: Constraints -> Constraints
-fullConstraints cs = Cnstr { sourceConstraintsOf = sourceConstraintsOf cs ++ targetConstraintsOf cs
-                           , targetConstraintsOf = sourceConstraintsOf cs ++ targetConstraintsOf cs
+fullConstraints cs = Cnstr { bottomUpSourceTypes = bottomUpSourceTypes cs ++ bottomUpTargetTypes cs
+                           , bottomUpTargetTypes = bottomUpSourceTypes cs ++ bottomUpTargetTypes cs
                            }
 
 propagateConstraints :: Constraints -> Constraints -> Constraints
 propagateConstraints topDown bottomUp
-  = Cnstr{sourceConstraintsOf = sourceConstraintsOf topDown ++ sourceConstraintsOf bottomUp
-         ,targetConstraintsOf = targetConstraintsOf topDown ++ targetConstraintsOf bottomUp
+  = Cnstr{bottomUpSourceTypes = bottomUpSourceTypes topDown ++ bottomUpSourceTypes bottomUp
+         ,bottomUpTargetTypes = bottomUpTargetTypes topDown ++ bottomUpTargetTypes bottomUp
          }
 instance Disambiguatable P_IdentDf where
   disambInfo (P_Id o nm c []) _ = ( P_Id o nm c [], noConstraints)
-  disambInfo (P_Id o nm c (a:lst)) _     = (P_Id o nm c (a':lst'), Cnstr (sourceConstraintsOf aRestr++sourceConstraintsOf nxt) [])
+  disambInfo (P_Id o nm c (a:lst)) _     = (P_Id o nm c (a':lst'), Cnstr (bottomUpSourceTypes aRestr++bottomUpSourceTypes nxt) [])
        where (a', aRestr)            = disambInfo a (Cnstr [MustBe (pCpt2aCpt c)] [])
              (P_Id _ _ _ lst', nxt)  = disambInfo (P_Id o nm c lst) (Cnstr [MustBe (pCpt2aCpt c)] [])
 instance Disambiguatable P_IdentSegmnt where
@@ -93,14 +106,14 @@ instance Disambiguatable P_Rule where
           = disambInfo (PairViewTerm viol) rt
 instance Disambiguatable PairViewTerm where
   disambInfo (PairViewTerm (PairView lst)) x
-   = (PairViewTerm (PairView [pv' | pv <- lst, let (PairViewSegmentTerm pv',_) = disambInfo (PairViewSegmentTerm pv) x])
+   = (PairViewTerm (PairView . NEL.fromList $ [pv' | pv <- NEL.toList lst, let (PairViewSegmentTerm pv',_) = disambInfo (PairViewSegmentTerm pv) x])
      , noConstraints) -- unrelated
 instance Disambiguatable PairViewSegmentTerm where
   disambInfo (PairViewSegmentTerm (PairViewText orig s)) _ = (PairViewSegmentTerm (PairViewText orig s), noConstraints)
   disambInfo (PairViewSegmentTerm (PairViewExp orig st a)) constraints = (PairViewSegmentTerm (PairViewExp orig st res), rt)
     where (res,rt) = disambInfo a (Cnstr (case st of
-                                            Src -> sourceConstraintsOf constraints
-                                            Tgt -> targetConstraintsOf constraints) [])
+                                            Src -> bottomUpSourceTypes constraints
+                                            Tgt -> bottomUpTargetTypes constraints) [])
 instance Disambiguatable P_ViewD where
   disambInfo P_Vd { pos  = o
                   , vd_lbl  = s
@@ -122,32 +135,34 @@ instance Disambiguatable P_ViewSegmtPayLoad where
     where (a',r) = disambInfo a i
 
 instance Disambiguatable P_SubIfc where
-  disambInfo (P_InterfaceRef o a b cs) _      = (P_InterfaceRef o a b cs,noConstraints)
+  disambInfo (P_InterfaceRef o a b) _      = (P_InterfaceRef o a b,noConstraints)
   disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],noConstraints)
   disambInfo (P_Box o cl (a:lst)) env1  =
-     (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf envA++sourceConstraintsOf envB) [])
-   where (a', envA)              = disambInfo a                (Cnstr (sourceConstraintsOf envB++sourceConstraintsOf env1) [])
-         (P_Box _ cl' lst',envB) = disambInfo (P_Box o cl lst) (Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA) [])
+     (P_Box o cl' (a':lst'),Cnstr (bottomUpSourceTypes envA++bottomUpSourceTypes envB) [])
+   where (a', envA)              = disambInfo a                (Cnstr (bottomUpSourceTypes envB++bottomUpSourceTypes env1) [])
+         (P_Box _ cl' lst',envB) = disambInfo (P_Box o cl lst) (Cnstr (bottomUpSourceTypes env1++bottomUpSourceTypes envA) [])
 
-instance Disambiguatable P_ObjDef where
-  disambInfo (P_Obj a b c -- term/expression
+instance Disambiguatable P_BoxItem where
+  disambInfo (P_BxExpr a b c -- term/expression
                         mCrud
                         v
                         d -- (potential) subobject
                         )
                         env -- from the environment, only the source is important
-   = (P_Obj a b c' mCrud v d', Cnstr (sourceConstraintsOf env2) [] -- only source information should be relevant
+   = (P_BxExpr a b c' mCrud v d', Cnstr (bottomUpSourceTypes env2) [] -- only source information should be relevant
      )
     where
      (d', env1)
       = case d of
            Nothing -> (Nothing,noConstraints)
-           Just si -> Control.Arrow.first Just $ disambInfo si (Cnstr (targetConstraintsOf env2) [])
+           Just si -> Control.Arrow.first Just $ disambInfo si (Cnstr (bottomUpTargetTypes env2) [])
      (c', env2)
-      = disambInfo c (Cnstr (sourceConstraintsOf env) (sourceConstraintsOf env1))
+      = disambInfo c (Cnstr (bottomUpSourceTypes env) (bottomUpSourceTypes env1))
+  disambInfo (P_BxTxt  a b c) _ = (P_BxTxt  a b c, noConstraints)
+
 instance Disambiguatable Term where
-  disambInfo (PFlp o a  ) env1 = ( PFlp o a', Cnstr (targetConstraintsOf envA)(sourceConstraintsOf envA) )
-   where (a', envA) = disambInfo a (Cnstr (targetConstraintsOf env1)(sourceConstraintsOf env1))
+  disambInfo (PFlp o a  ) env1 = ( PFlp o a', Cnstr (bottomUpTargetTypes envA)(bottomUpSourceTypes envA) )
+   where (a', envA) = disambInfo a (Cnstr (bottomUpTargetTypes env1)(bottomUpSourceTypes env1))
   disambInfo (PCpl o a  ) env1 = ( PCpl o a', envA )
    where (a', envA) = disambInfo a env1
   disambInfo (PBrk o a  ) env1 = ( PBrk o a', envA )
@@ -171,24 +186,24 @@ instance Disambiguatable Term where
   disambInfo (PDif o a b) env1 = ( PDif o a' b', propagateConstraints envA envB )
    where (a', envA) = disambInfo a (propagateConstraints env1 envB)
          (b', envB) = disambInfo b (propagateConstraints env1 envA)
-  disambInfo (PLrs o a b) env1 = ( PLrs o a' b', Cnstr (sourceConstraintsOf envA) (sourceConstraintsOf envB) )
-   where (a', envA) = disambInfo a (Cnstr (sourceConstraintsOf env1) (targetConstraintsOf envB))
-         (b', envB) = disambInfo b (Cnstr (targetConstraintsOf env1) (targetConstraintsOf envA))
-  disambInfo (PRrs o a b) env1 = ( PRrs o a' b', Cnstr (targetConstraintsOf envA) (targetConstraintsOf envB) )
-   where (a', envA) = disambInfo a (Cnstr (sourceConstraintsOf envB) (sourceConstraintsOf env1))
-         (b', envB) = disambInfo b (Cnstr (sourceConstraintsOf envA) (targetConstraintsOf env1))
-  disambInfo (PDia o a b) env1 = ( PDia o a' b', Cnstr (sourceConstraintsOf envA) (sourceConstraintsOf envB))
-   where (a', envA) = disambInfo a (Cnstr (sourceConstraintsOf env1) (targetConstraintsOf envB))
-         (b', envB) = disambInfo b (Cnstr (targetConstraintsOf env1) (targetConstraintsOf envA))
-  disambInfo (PCps o a b) env1 = ( PCps o a' b', Cnstr (sourceConstraintsOf envA) (targetConstraintsOf envB) )
-   where (a', envA) = disambInfo a (Cnstr (sourceConstraintsOf env1) (sourceConstraintsOf envB))
-         (b', envB) = disambInfo b (Cnstr (targetConstraintsOf envA) (targetConstraintsOf env1))
-  disambInfo (PRad o a b) env1 = ( PRad o a' b', Cnstr (sourceConstraintsOf envA) (targetConstraintsOf envB) )
-   where (a', envA) = disambInfo a (Cnstr (sourceConstraintsOf env1) (sourceConstraintsOf envB))
-         (b', envB) = disambInfo b (Cnstr (targetConstraintsOf envA) (targetConstraintsOf env1))
-  disambInfo (PPrd o a b) env1 = ( PPrd o a' b', Cnstr (sourceConstraintsOf envA) (targetConstraintsOf envB) )
-   where (a', envA) = disambInfo a (Cnstr (sourceConstraintsOf env1) (sourceConstraintsOf envB))
-         (b', envB) = disambInfo b (Cnstr (targetConstraintsOf envA) (targetConstraintsOf env1))
+  disambInfo (PLrs o a b) env1 = ( PLrs o a' b', Cnstr (bottomUpSourceTypes envA) (bottomUpSourceTypes envB) )
+   where (a', envA) = disambInfo a (Cnstr (bottomUpSourceTypes env1) (bottomUpTargetTypes envB))
+         (b', envB) = disambInfo b (Cnstr (bottomUpTargetTypes env1) (bottomUpTargetTypes envA))
+  disambInfo (PRrs o a b) env1 = ( PRrs o a' b', Cnstr (bottomUpTargetTypes envA) (bottomUpTargetTypes envB) )
+   where (a', envA) = disambInfo a (Cnstr (bottomUpSourceTypes envB) (bottomUpSourceTypes env1))
+         (b', envB) = disambInfo b (Cnstr (bottomUpSourceTypes envA) (bottomUpTargetTypes env1))
+  disambInfo (PDia o a b) env1 = ( PDia o a' b', Cnstr (bottomUpSourceTypes envA) (bottomUpTargetTypes envB))
+   where (a', envA) = disambInfo a (Cnstr (bottomUpSourceTypes env1) (bottomUpSourceTypes envB))
+         (b', envB) = disambInfo b (Cnstr (bottomUpTargetTypes envA) (bottomUpTargetTypes env1))
+  disambInfo (PCps o a b) env1 = ( PCps o a' b', Cnstr (bottomUpSourceTypes envA) (bottomUpTargetTypes envB) )
+   where (a', envA) = disambInfo a (Cnstr (bottomUpSourceTypes env1) (bottomUpSourceTypes envB))
+         (b', envB) = disambInfo b (Cnstr (bottomUpTargetTypes envA) (bottomUpTargetTypes env1))
+  disambInfo (PRad o a b) env1 = ( PRad o a' b', Cnstr (bottomUpSourceTypes envA) (bottomUpTargetTypes envB) )
+   where (a', envA) = disambInfo a (Cnstr (bottomUpSourceTypes env1) (bottomUpSourceTypes envB))
+         (b', envB) = disambInfo b (Cnstr (bottomUpTargetTypes envA) (bottomUpTargetTypes env1))
+  disambInfo (PPrd o a b) env1 = ( PPrd o a' b', Cnstr (bottomUpSourceTypes envA) (bottomUpTargetTypes envB) )
+   where (a', envA) = disambInfo a (Cnstr (bottomUpSourceTypes env1) [])
+         (b', envB) = disambInfo b (Cnstr [] (bottomUpTargetTypes env1))
   disambInfo (Prim (a,b)) st = (Prim ((a,b), st), Cnstr (getDConcepts source b) (getDConcepts target b))
 
 getDConcepts :: (Expression -> A_Concept) -> DisambPrim -> [D_Concept]
@@ -203,7 +218,10 @@ data DisambPrim
  | Mp1 PSingleton -- a singleton atomvalue, type unknown
  | Known Expression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
  deriving Show  -- Here, deriving Show serves debugging purposes only.
-
+instance Pretty DisambPrim where
+  pretty = text . show
+instance Pretty a => Pretty (a,DisambPrim) where
+  pretty (t,_) = pretty t
 performUpdate :: ((t, DisambPrim),
                      Constraints)
                      -> Change (t, DisambPrim)
@@ -220,10 +238,10 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
  where
    suggest [] = pure unkn
    suggest lst = impure (Rel lst) -- TODO: find out whether it is equivalent to put "pure" here (which could be faster).
-   possibleConcs = (mustBeSrc `isc` mustBeTgt) `orWhenEmptyS`
-                   (mustBeSrc `uni` mustBeTgt) `orWhenEmptyS`
-                   (mayBeSrc  `isc` mayBeTgt ) `orWhenEmptyS`
-                   (mayBeSrc  `uni` mayBeTgt )
+   possibleConcs = (mustBeSrc `Set.intersection` mustBeTgt) `orWhenEmptyS`
+                   (mustBeSrc `Set.union` mustBeTgt) `orWhenEmptyS`
+                   (mayBeSrc  `Set.intersection` mayBeTgt ) `orWhenEmptyS`
+                   (mayBeSrc  `Set.union` mayBeTgt )
    findMatch' (a,b) = findMatch (Set.toList a,Set.toList b)
    findMatch ([],[]) _ = []
    findMatch ([],tgts) lst
@@ -242,8 +260,6 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
    determineBySize _   [a] = impure (t,Known a)
    determineBySize err lst = fmap ((,) t) (err lst)
    impure x = Change x False
-   isc = Set.intersection
-   uni = Set.union
 
 orWhenEmpty :: [a] -> [a] -> [a]
 orWhenEmpty a b = if null a then b else a
