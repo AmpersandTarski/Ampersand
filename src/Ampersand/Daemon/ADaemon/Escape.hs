@@ -1,4 +1,3 @@
-{-# LANGUAGE PatternGuards #-}
 
 -- | Module for dealing with escape codes
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.

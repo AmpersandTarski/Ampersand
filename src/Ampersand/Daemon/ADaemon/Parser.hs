@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternGuards, TupleSections #-}
+{-# LANGUAGE TupleSections #-}
 -- | Parses the output from GHCi
 module Ampersand.Daemon.ADaemon.Parser (
     parseShowModules
