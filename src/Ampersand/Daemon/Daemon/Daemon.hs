@@ -2,7 +2,7 @@
 
 -- | Library for spawning and working with Ghci sessions.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.ADaemon.Daemon(
+module Ampersand.Daemon.Daemon.Daemon(
     Ghci, GhciError(..), Stream(..),
     Load(..), Severity(..),
     startGhci, startGhciProcess, stopGhci, interrupt, process,
@@ -25,9 +25,9 @@ import Data.Unique
 
 import System.Console.CmdArgs.Verbosity
 
-import Ampersand.Daemon.ADaemon.Parser
-import Ampersand.Daemon.ADaemon.Types as T
-import Ampersand.Daemon.ADaemon.Util
+import Ampersand.Daemon.Daemon.Parser
+import Ampersand.Daemon.Daemon.Types as T
+import Ampersand.Daemon.Daemon.Util
 import Ampersand.Basics hiding (Unique, hPutStrLn)
 
 -- | A GHCi session. Created with 'startGhci', closed with 'stopGhci'.

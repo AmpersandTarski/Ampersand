@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 -- | Parses the output from GHCi
-module Ampersand.Daemon.ADaemon.Parser (
+module Ampersand.Daemon.Daemon.Parser (
     parseShowModules
   , parseShowPaths
   , parseLoad
@@ -16,8 +16,8 @@ import Data.Tuple.Extra
 import Control.Applicative
 import Ampersand.Basics
 
-import Ampersand.Daemon.ADaemon.Types
-import Ampersand.Daemon.ADaemon.Escape
+import Ampersand.Daemon.Daemon.Types
+import Ampersand.Daemon.Daemon.Escape
 
 
 -- | Parse messages from show modules command. Given the parsed lines
