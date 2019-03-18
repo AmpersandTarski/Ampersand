@@ -3,7 +3,8 @@
 
 -- | The application entry point
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Daemon(main, mainWithTerminal, TermSize(..), WordWrap(..)) where
+module Ampersand.Daemon.Daemon(runDaemon) where
+--module Ampersand.Daemon.Daemon(main, mainWithTerminal, TermSize(..), WordWrap(..)) where
 
 import Control.Exception
 import System.IO.Error
@@ -216,8 +217,8 @@ mainWithTerminal termSize termOutput =
 
 
 
-main :: IO ()
-main = mainWithTerminal termSize termOutput
+runDaemon :: IO ()
+runDaemon = mainWithTerminal termSize termOutput
     where
         termSize = do
             x <- Term.size

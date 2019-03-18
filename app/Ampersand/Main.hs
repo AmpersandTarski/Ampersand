@@ -40,11 +40,12 @@ main =
 
  where
    actionsWithoutScript :: Options -> [(Bool, IO())]
-   actionsWithoutScript options = 
-      [ ( test options                              , putStrLn $ "Executable: " ++ show (dirExec options) )
-      , ( showVersion options || verboseP options   , putStrLn $ versionText options  )
-      , ( genSampleConfigFile options               , writeConfigFile                 )
-      , ( showHelp options                          , putStrLn $ usageInfo' options   )
+   actionsWithoutScript opts@Options{..} = 
+      [ ( test                     , putStrLn $ "Executable: " ++ show dirExec )
+      , ( showVersion  || verboseP , putStrLn $ versionText opts)
+      , ( genSampleConfigFile      , writeConfigFile)
+      , ( showHelp                 , putStrLn $ usageInfo' opts)
+      , ( runAsDaemon              , runDaemon)
       ]
    
    versionText :: Options -> String
