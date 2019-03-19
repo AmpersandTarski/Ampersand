@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 -- | A persistent version of the Ghci session, encoding lots of semantics on top.
 --   Not suitable for calling multithreaded.
@@ -35,8 +36,11 @@ data Session = Session
     ,withThread :: ThreadId -- ^ Thread that called withSession
     }
 
+debugging :: Bool
+debugging = True
 
-debugShutdown x = when False $ print ("DEBUG SHUTDOWN", x)
+debugShutdown :: Show b => b -> IO ()
+debugShutdown x = when debugging $ print ("DEBUG SHUTDOWN", x)
 
 -- | The function 'withSession' expects to be run on the main thread,
 --   but the inner function will not. This ensures Ctrl-C is handled
@@ -63,7 +67,7 @@ withSession f = do
 -- | Kill. Wait just long enough to ensure you've done the job, but not to see the results.
 kill :: Ghci -> IO ()
 kill ghci = ignored $ do
-    timeout 5 $ do
+    _ <- timeout 5 $ do
         debugShutdown "Before quit"
         ignored $ quit ghci
         debugShutdown "After quit"
@@ -98,7 +102,7 @@ sessionStart Session{..} cmd setup = do
         return (v, messages)
 
     -- do whatever preparation was requested
-    exec v $ unlines setup
+    _ <- exec v $ unlines setup
 
     -- deal with current directory
     (dir, _) <- showPaths v
@@ -106,8 +110,8 @@ sessionStart Session{..} cmd setup = do
     messages <- return $ qualify dir messages
 
     -- install a handler
-    forkIO $ do
-        waitForProcess $ process v
+    _ <- forkIO $ do
+        _ <- waitForProcess $ process v
         whenJustM (readIORef ghci) $ \ghci ->
             when (ghci == v) $ do
                 sleep 0.3 -- give anyone reading from the stream a chance to throw first

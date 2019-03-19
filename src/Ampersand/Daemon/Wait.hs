@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 -- | Use 'withWaiterPoll' or 'withWaiterNotify' to create a 'Waiter' object,
 --   then access it (single-threaded) by using 'waitFiles'.
@@ -64,11 +65,11 @@ waitFiles waiter = do
         files <- fmap concat $ forM files $ \file ->
             ifM (doesDirectoryExist file) (listContentsInside (return . not . isPrefixOf "." . takeFileName) file) (return [file])
         case waiter of
-            WaiterPoll t -> return ()
+            WaiterPoll _ -> return ()
             WaiterNotify manager kick mp -> do
                 dirs <- fmap Set.fromList $ mapM canonicalizePathSafe $ nubOrd $ map takeDirectory files
                 modifyVar_ mp $ \mp -> do
-                    let (keep,del) = Map.partitionWithKey (\k v -> k `Set.member` dirs) mp
+                    let (keep,del) = Map.partitionWithKey (\k _ -> k `Set.member` dirs) mp
                     sequence_ $ Map.elems del
                     new <- forM (Set.toList $ dirs `Set.difference` Map.keysSet keep) $ \dir -> do
                         can <- watchDir manager (fromString dir) (const True) $ \event -> do

@@ -1,18 +1,30 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 -- | Library for spawning and working with Ghci sessions.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Daemon(
-    Ghci, GhciError(..), Stream(..),
-    Load(..), Severity(..),
-    startGhci, startGhciProcess, stopGhci, interrupt, process,
-    execStream, showModules, showPaths, reload, exec, quit
+    Ghci, 
+    GhciError(..), 
+    Stream(..),
+    Load(..), 
+    Severity(..),
+    startGhci, 
+    interrupt, 
+    process,
+    execStream, 
+    showModules, 
+    showPaths, 
+    reload, 
+    exec,
+    quit
     ) where
 
 import System.IO
 import System.IO.Error
 import System.Process
-import System.Time.Extra
+--import System.Time.Extra
 import Control.Concurrent.Extra
 import Control.Exception.Extra
 import Control.Monad.Extra
@@ -30,7 +42,7 @@ import Ampersand.Daemon.Daemon.Types as T
 import Ampersand.Daemon.Daemon.Util
 import Ampersand.Basics hiding (Unique, hPutStrLn)
 
--- | A GHCi session. Created with 'startGhci', closed with 'stopGhci'.
+-- | An GHCi session. Created with 'startGhci', closed with 'stopGhci'.
 --
 --   The interactions with a 'Ghci' session must all occur single-threaded,
 --   or an error will be raised. The only exception is 'interrupt', which aborts
@@ -46,6 +58,10 @@ instance Eq Ghci where
     a == b = ghciUnique a == ghciUnique b
 
 
+withCreateProc :: CreateProcess
+                        -> (Maybe Handle
+                            -> Maybe Handle -> Maybe Handle -> ProcessHandle -> IO c)
+                        -> IO c
 withCreateProc proc f = do
     let undo (_, _, _, proc) = ignored $ terminateProcess proc
     bracketOnError (createProcess proc) undo $ \(a,b,c,d) -> f a b c d
@@ -137,7 +153,7 @@ startGhciProcess process echo0 = do
                     writeInp command
                     stop <- syncFresh
                     void $ consume2 command $ \strm s ->
-                        if stop s then return $ Just () else do echo strm s; return Nothing
+                        if stop s then return $ Just () else do _ <- echo strm s; return Nothing
                 when (isNothing res) $
                     fail "Ghcid.exec, computation is already running, must be used single-threaded"
 
@@ -147,7 +163,7 @@ startGhciProcess process echo0 = do
                     interruptProcessGroupOf ghciProcess
                     -- let the person running ghciExec finish, since their sync messages
                     -- may have been the ones that got interrupted
-                    syncReplay
+                    _ <- syncReplay
                     -- now wait for the person doing ghciExec to have actually left the lock
                     withLock isRunning $ return ()
                     -- there may have been two syncs sent, so now do a fresh sync to clear everything
@@ -161,7 +177,7 @@ startGhciProcess process echo0 = do
         stdout <- newIORef []
         stderr <- newIORef []
         sync <- newIORef $ const False
-        consume2 "" $ \strm s -> do
+        _ <- consume2 "" $ \strm s -> do
             stop <- readIORef sync
             if stop s then
                 return $ Just ()
@@ -253,7 +269,7 @@ quit ghci =  do
     ignored $ void $ waitForProcess $ process ghci
 
 
--- | Stop GHCi. Attempts to interrupt and execute @:quit:@, but if that doesn't complete
+{- -- | Stop GHCi. Attempts to interrupt and execute @:quit:@, but if that doesn't complete
 --   within 5 seconds it just terminates the process.
 stopGhci :: Ghci -> IO ()
 stopGhci ghci = do
@@ -262,3 +278,4 @@ stopGhci ghci = do
         sleep 5
         terminateProcess $ process ghci
     quit ghci
+ -}

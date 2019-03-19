@@ -1,5 +1,9 @@
 {-# LANGUAGE RecordWildCards, DeriveDataTypeable, TupleSections #-}
 {-# OPTIONS_GHC -fno-cse #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# OPTIONS_GHC -fno-warn-unused-matches #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 -- | The application entry point
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
@@ -7,7 +11,7 @@ module Ampersand.Daemon.Daemon(runDaemon) where
 --module Ampersand.Daemon.Daemon(main, mainWithTerminal, TermSize(..), WordWrap(..)) where
 
 import Control.Exception
-import System.IO.Error
+--import System.IO.Error
 import Control.Monad.Extra
 import Data.List.Extra
 import Data.Maybe
@@ -17,7 +21,6 @@ import Data.Version
 import Ampersand.Daemon.Session
 import qualified System.Console.Terminal.Size as Term
 import System.Console.CmdArgs
-import System.Console.CmdArgs.Explicit
 import System.Console.ANSI
 import System.Environment
 import System.Directory.Extra
@@ -36,10 +39,10 @@ import Ampersand.Daemon.Wait
 
 import Data.Functor
 import Prelude
-
+import Ampersand.Basics (fatal)
 
 -- | Command line options
-data Options = Options
+data DaemonOptions = DaemonOptions
     {command :: String
     ,arguments :: [String]
     ,test :: [String]
@@ -60,6 +63,7 @@ data Options = Options
     ,max_messages :: Maybe Int
     ,color :: ColorMode
     ,setup :: [String]
+    ,daemon :: Bool
     }
     deriving (Data,Typeable,Show)
 
@@ -70,10 +74,10 @@ data ColorMode
     | Auto   -- ^ Terminal output will be coloured if $TERM and stdout appear to support it.
       deriving (Show, Typeable, Data)
 
-options :: Mode (CmdArgs Options)
-options = cmdArgsMode $ Options
-    {command = "" &= name "c" &= typ "COMMAND" &= help "Command to run (defaults to ghci or cabal repl)"
-    ,arguments = [] &= args &= typ "MODULE"
+options :: Mode (CmdArgs DaemonOptions)
+options = cmdArgsMode $ DaemonOptions
+    {command = "cmd" &= name "c" &= typ "COMMAND" &= help "Command to run (defaults to ghci or cabal repl)"
+    ,arguments = [ "Hello World"] &= args &= typ "MODULE"
     ,test = [] &= name "T" &= typ "EXPR" &= help "Command to run after successful loading"
     ,run = [] &= name "r" &= typ "EXPR" &= opt "main" &= help "Command to run after successful loading (defaults to main)"
     ,warnings = False &= name "W" &= help "Allow tests to run even with warnings"
@@ -92,6 +96,7 @@ options = cmdArgsMode $ Options
     ,max_messages = Nothing &= name "n" &= help "Maximum number of messages to print"
     ,color = Auto &= name "colour" &= name "color" &= opt Always &= typ "always/never/auto" &= help "Color output (defaults to when the terminal supports it)"
     ,setup = [] &= name "setup" &= typ "COMMAND" &= help "Setup commands to pass to ghci on stdin, usually :set <something>"
+    ,daemon = False
     } &= verbosity &=
     program "ghcid" &= summary ("Auto reloading GHCi daemon v" ++ showVersion version)
 
@@ -119,50 +124,40 @@ Warnings:
 
 As a result, we prefer to give users full control with a .ghci file, if available
 -}
-autoOptions :: Options -> IO Options
-autoOptions o@Options{..}
-    | command /= "" = return $ f [command] []
-    | otherwise = do
-        curdir <- getCurrentDirectory
-        files <- getDirectoryContents "."
+-- autoOptions :: DaemonOptions -> IO DaemonOptions
+-- autoOptions o@DaemonOptions{..}
+--     | command /= "" = return $ f [command] []
+--     | otherwise = do
+--         curdir <- getCurrentDirectory
+--         files <- getDirectoryContents "."
 
-        -- use unsafePerformIO to get nicer pattern matching for logic (read-only operations)
-        let findStack dir = flip catchIOError (const $ return Nothing) $ do
-                let yaml = dir </> "stack.yaml"
-                b <- doesFileExist yaml &&^ doesDirectoryExist (dir </> ".stack-work")
-                return $ if b then Just yaml else Nothing
-        stack <- firstJustM findStack [".",".."] -- stack file might be parent, see #62
+--         -- use unsafePerformIO to get nicer pattern matching for logic (read-only operations)
+--         let findStack dir = flip catchIOError (const $ return Nothing) $ do
+--                 let yaml = dir </> "stack.yaml"
+--                 b <- doesFileExist yaml &&^ doesDirectoryExist (dir </> ".stack-work")
+--                 return $ if b then Just yaml else Nothing
+--         stack <- firstJustM findStack [".",".."] -- stack file might be parent, see #62
 
-        let cabal = map (curdir </>) $ filter ((==) ".cabal" . takeExtension) files
-        let opts = [] 
-        return $ case () of
-            _ | Just stack <- stack ->
-                let flags = if null arguments then
-                                "stack ghci --test --bench" :
-                                ["--no-load" | ".ghci" `elem` files] ++
-                                map ("--ghci-options=" ++) opts
-                            else
-                                "stack exec --test --bench -- ghci" : opts
-                in f flags $ stack:cabal
-              | ".ghci" `elem` files -> f ("ghci":opts) [curdir </> ".ghci"]
-              | cabal /= [] -> f (if null arguments then "cabal repl":map ("--ghc-options=" ++) opts else "cabal exec -- ghci":opts) cabal
-              | otherwise -> f ("ghci":opts) []
-    where
-        f c r = o{command = unwords $ c ++ map escape arguments, arguments = [], restart = restart ++ r, run = [], test = run ++ test}
+--         let cabal = map (curdir </>) $ filter ((==) ".cabal" . takeExtension) files
+--         let opts = [] 
+--         return $ case () of
+--             _ | Just stack <- stack ->
+--                 let flags = if null arguments then
+--                                 "stack ghci --test --bench" :
+--                                 ["--no-load" | ".ghci" `elem` files] ++
+--                                 map ("--ghci-options=" ++) opts
+--                             else
+--                                 "stack exec --test --bench -- ghci" : opts
+--                 in f flags $ stack:cabal
+--               | ".ghci" `elem` files -> f ("ghci":opts) [curdir </> ".ghci"]
+--               | cabal /= [] -> f (if null arguments then "cabal repl":map ("--ghc-options=" ++) opts else "cabal exec -- ghci":opts) cabal
+--               | otherwise -> f ("ghci":opts) []
+--     where
+--         f c r = o{command = unwords $ c ++ map escape arguments, arguments = [], restart = restart ++ r, run = [], test = run ++ test}
 
-        -- in practice we're not expecting many arguments to have anything funky in them
-        escape x | ' ' `elem` x = "\"" ++ x ++ "\""
-                 | otherwise = x
-
--- | Use arguments from .ghcid if present
-withGhcidArgs :: IO a -> IO a
-withGhcidArgs act = do
-    b <- doesFileExist ".ghcid"
-    if not b then act else do
-        extra <- concatMap splitArgs . lines <$> readFile' ".ghcid"
-        orig <- getArgs
-        withArgs (extra ++ orig) act
-
+--         -- in practice we're not expecting many arguments to have anything funky in them
+--         escape x | ' ' `elem` x = "\"" ++ x ++ "\""
+--                  | otherwise = x
 
 data TermSize = TermSize
     {termWidth :: Int
@@ -180,15 +175,15 @@ mainWithTerminal termSize termOutput =
             -- On certain Cygwin terminals stdout defaults to BlockBuffering
             hSetBuffering stdout LineBuffering
             hSetBuffering stderr NoBuffering
-            origDir <- getCurrentDirectory
-            opts <- withGhcidArgs $ cmdArgsRun options
+        --    origDir <- getCurrentDirectory
+            opts <- cmdArgsRun options
             whenLoud $ do
                 outStrLn $ "%OS: " ++ os
                 outStrLn $ "%ARCH: " ++ arch
                 outStrLn $ "%VERSION: " ++ showVersion version
             withCurrentDirectory (directory opts) $ do
-                opts <- autoOptions opts
-                opts <- return $ opts{restart = nubOrd $ (origDir </> ".ghcid") : restart opts, reload = nubOrd $ reload opts}
+        --        opts <- autoOptions opts
+        --        opts <- return $ opts{restart = nubOrd $ (origDir </> ".ghcid") : restart opts, reload = nubOrd $ reload opts}
                 when (topmost opts) terminalTopmost
 
                 termSize <- return $ case (width opts, height opts) of
@@ -213,7 +208,7 @@ mainWithTerminal termSize termOutput =
                     return $ if useStyle then id else map unescape
 
                 maybe withWaiterNotify withWaiterPoll (poll opts) $ \waiter ->
-                    runGhcid session waiter termSize (termOutput . restyle) opts
+                    runAmpersand session waiter termSize (termOutput . restyle) opts
 
 
 
@@ -235,18 +230,18 @@ data Continue = Continue
 
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
-runGhcid :: Session -> Waiter -> IO TermSize -> ([String] -> IO ()) -> Options -> IO Continue
-runGhcid session waiter termSize termOutput opts@Options{..} = do
+runAmpersand :: Session -> Waiter -> IO TermSize -> ([String] -> IO ()) -> DaemonOptions -> IO Continue
+runAmpersand session waiter termSize termOutput dopts@DaemonOptions{..} = do
     let limitMessages = maybe id (take . max 1) max_messages
 
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()
-        outputFill currTime load msg = do
-            load <- return $ case load of
+        outputFill currTime load' msg' = do
+            load <- return $ case load' of
                 Nothing -> []
                 Just (loadedCount, msgs) -> prettyOutput currTime loadedCount $ filter isMessage msgs
             TermSize{..} <- termSize
             let wrap = concatMap (wordWrapE termWidth (termWidth `div` 5) . Esc)
-            (termHeight, msg) <- return $ takeRemainder termHeight $ wrap msg
+            (termHeight, msg) <- return $ takeRemainder termHeight $ wrap msg'
             (termHeight, load) <- return $ takeRemainder termHeight $ wrap load
             let pad = replicate termHeight ""
             let mergeSoft ((Esc x,WrapSoft):(Esc y,q):xs) = mergeSoft $ (Esc (x++y), q) : xs
@@ -361,8 +356,10 @@ showJSON xs = unlines $ concat $
     | (i,(a,bs)) <- zipFrom 0 xs] ++
     [["}"]]
 
+jString :: String -> String
 jString x = "\"" ++ escapeJSON x ++ "\""
 
+jMessage :: Load -> String
 jMessage Message{..} = jDict $
     [("severity",jString $ show loadSeverity)
     ,("file",jString loadFile)] ++
@@ -370,5 +367,6 @@ jMessage Message{..} = jDict $
     [("end", pair loadFilePosEnd) | loadFilePos /= loadFilePosEnd] ++
     [("message", jString $ intercalate "\n" loadMessage)]
     where pair (a,b) = "[" ++ show a ++ "," ++ show b ++ "]"
-
+jMessage _ = fatal "Not a message: "
+jDict :: [(String, String)] -> String
 jDict xs = "{" ++ intercalate ", " [jString a ++ ":" ++ b | (a,b) <- xs] ++ "}"

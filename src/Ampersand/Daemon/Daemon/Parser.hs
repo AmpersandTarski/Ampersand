@@ -1,4 +1,5 @@
 {-# LANGUAGE TupleSections #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 -- | Parses the output from GHCi
 module Ampersand.Daemon.Daemon.Parser (
     parseShowModules
