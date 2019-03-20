@@ -5,19 +5,23 @@
 -- | Library for spawning and working with Ghci sessions.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Daemon(
-    Ghci, 
-    GhciError(..), 
+    AmpersandDaemon,
+    
+--    Ghci, 
+--    GhciError(..), 
     Stream(..),
-    Load(..), 
+    Load(..), load,messages,loaded,
     Severity(..),
-    startGhci, 
+--    startGhci, 
+    startAmpersandDaemon,
     interrupt, 
     process,
     execStream, 
-    showModules, 
-    showPaths, 
-    reload, 
-    exec,
+--    showModules, 
+--    showPaths, 
+--    reload, 
+--    exec,
+--    quitGhci,
     quit
     ) where
 
@@ -42,7 +46,7 @@ import Ampersand.Daemon.Daemon.Types as T
 import Ampersand.Daemon.Daemon.Util
 import Ampersand.Basics hiding (Unique, hPutStrLn)
 
--- | An GHCi session. Created with 'startGhci', closed with 'stopGhci'.
+-- | An AmpersandDaemon session. Created with 'startAmpersandDaemon', closed with 'stopAmpersandDaemon'.
 --
 --   The interactions with a 'Ghci' session must all occur single-threaded,
 --   or an error will be raised. The only exception is 'interrupt', which aborts
@@ -53,9 +57,29 @@ data Ghci = Ghci
     ,ghciExec :: String -> (Stream -> String -> IO ()) -> IO ()
     ,ghciUnique :: Unique
     }
-
 instance Eq Ghci where
     a == b = ghciUnique a == ghciUnique b
+
+load :: AmpersandDaemon -> [Load]
+load = loads . adState
+messages :: AmpersandDaemon -> [Load]
+messages = filter isMessage . load
+loaded :: AmpersandDaemon -> [FilePath]
+loaded = map fst . loadResults . adState
+data AmpersandDaemon = AmpersandDaemon
+    {adInterrupt :: IO()
+    ,adExec :: String -> (Stream -> String -> IO ()) -> IO ()
+    ,adUnique :: Unique
+    ,adState :: DaemonState
+    }
+instance Eq AmpersandDaemon where
+    a == b = adUnique a == adUnique b
+    
+data DaemonState = DaemonState
+   { filesToLoad :: [FilePath]
+   , loads :: [Load]
+   , loadResults :: [(FilePath, P_Context)]
+   }
 
 
 withCreateProc :: CreateProcess
@@ -75,7 +99,7 @@ withCreateProc proc f = do
 --   'System.Process.shell' and 'System.Process.proc'.
 --
 --   @since 0.6.11
-startGhciProcess :: CreateProcess -> (Stream -> String -> IO ()) -> IO (Ghci, [Load])
+{- startGhciProcess :: CreateProcess -> (Stream -> String -> IO ()) -> IO (Ghci, [Load])
 startGhciProcess process echo0 = do
     let proc = process{std_in=CreatePipe, std_out=CreatePipe, std_err=CreatePipe, create_group=True}
     withCreateProc proc $ \(Just inp) (Just out) (Just err) ghciProcess -> do
@@ -203,21 +227,67 @@ startGhciProcess process echo0 = do
         r2 <- if any isLoading r1 then return [] else map (uncurry Loading) <$> showModules ghci
         execStream ghci "" echo0
         return (ghci, r1 ++ r2)
+ -}
 
-
--- | Start GHCi by running the given shell command, a helper around 'startGhciProcess'.
+{- -- | Start GHCi by running the given shell command, a helper around 'startGhciProcess'.
 startGhci
     :: String -- ^ Shell command
     -> Maybe FilePath -- ^ Working directory
     -> (Stream -> String -> IO ()) -- ^ Output callback
     -> IO (Ghci, [Load])
-startGhci cmd directory = startGhciProcess (shell cmd){cwd=directory}
+startGhci cmd directory callback = startGhciProcess (shell cmd){cwd=directory} callback 
+ -}
+startAmpersandDaemon 
+     :: Maybe FilePath  -- ^ Working directory
+     -> (Stream -> String -> IO ()) -- ^ Output callback
+     -> IO AmpersandDaemon
+startAmpersandDaemon directory echo' = do
+    unique <- newUnique
+
+    -- At various points I need to ensure everything the user is waiting for has completed
+    -- So I send messages on stdout/stderr and wait for them to arrive
+    syncCount <- newVar 0
+    let writeInp x = do
+            whenLoud $ outStrLn $ "%STDIN: " ++ x
 
 
+    let syncReplay = do
+            i <- readVar syncCount
+            -- useful to avoid overloaded strings by showing the ['a','b','c'] form, see #109
+            let showStr xs = "[" ++ intercalate "," (map show xs) ++ "]"
+            let msg = "#~GHCID-FINISH-" ++ show i ++ "~#"
+            writeInp $ "INTERNAL_GHCID.putStrLn " ++ showStr msg ++ "\n" ++
+                    "INTERNAL_GHCID.hPutStrLn INTERNAL_GHCID.stderr " ++ showStr msg
+            return $ isInfixOf msg
+    let syncFresh :: IO (String -> Bool)
+        syncFresh = do
+            modifyVar_ syncCount $ return . succ
+            syncReplay
+    let ad = AmpersandDaemon
+                    {adInterrupt = outStrLn "Daemon interrupted." 
+                    ,adExec = execCommand -- \cmd echo -> outStrLn $ "Daemon executes command: "++cmd 
+                    ,adUnique = unique
+                    ,adState = initialState directory}
+         where execCommand command echo = do
+                    writeInp command
+                    stop <- syncFresh
+                    void $ consume2 command $ \strm s ->
+                        if stop s then return $ Just () else do _ <- echo strm s; return Nothing
+    return ad            
+ 
+stopAmpersandDaemon :: AmpersandDaemon -> IO ()
+stopAmpersandDaemon _ = Ampersand.Basics.putStrLn "Daemon stopped."
+   
+initialState :: Maybe FilePath -> DaemonState
+initialState directory = DaemonState
+   { filesToLoad = maybeToList directory
+   , loads = []
+   , loadResults = []
+   }
 -- | Execute a command, calling a callback on each response.
 --   The callback will be called single threaded.
-execStream :: Ghci -> String -> (Stream -> String -> IO ()) -> IO ()
-execStream = ghciExec
+execStream :: AmpersandDaemon -> String -> (Stream -> String -> IO ()) -> IO ()
+execStream = adExec
 
 -- | Interrupt Ghci, stopping the current computation (if any),
 --   but leaving the process open to new input.
@@ -234,40 +304,42 @@ process = ghciProcess
 
 -- | Execute a command, calling a callback on each response.
 --   The callback will be called single threaded.
-execBuffer :: Ghci -> String -> (Stream -> String -> IO ()) -> IO [String]
-execBuffer ghci cmd echo = do
+execBuffer :: AmpersandDaemon -> String -> IO (AmpersandDaemon,[String])
+execBuffer ghci cmd = do
     stdout <- newIORef []
     stderr <- newIORef []
     execStream ghci cmd $ \strm s -> do
         modifyIORef (if strm == Stdout then stdout else stderr) (s:)
-        echo strm s
-    reverse <$> ((++) <$> readIORef stderr <*> readIORef stdout)
-
+        
+    output <- reverse <$> ((++) <$> readIORef stderr <*> readIORef stdout)
+    return (ghci,output)
 -- | Send a command, get lines of result. Must be called single-threaded.
-exec :: Ghci -> String -> IO [String]
-exec ghci cmd = execBuffer ghci cmd $ \_ _ -> return ()
+execGhci :: AmpersandDaemon -> String -> IO (AmpersandDaemon,[String])
+execGhci ghci cmd = execBuffer ghci cmd 
 
--- | List the modules currently loaded, with module name and source file.
-showModules :: Ghci -> IO [(String,FilePath)]
-showModules ghci = parseShowModules <$> exec ghci ":show modules"
-
--- | Return the current working directory, and a list of module import paths
-showPaths :: Ghci -> IO (FilePath, [FilePath])
-showPaths ghci = parseShowPaths <$> exec ghci ":show paths"
-
--- | Perform a reload, list the messages that reload generated.
+{- -- | List the modules currently loaded, with module name and source file.
+showModules :: AmpersandDaemon -> IO [(String,FilePath)]
+showModules ghci = parseShowModules <$> execGhci ghci ":show modules"
+ -}
+{- -- | Return the current working directory, and a list of module import paths
+showPaths :: AmpersandDaemon -> IO (FilePath, [FilePath])
+showPaths ghci = parseShowPaths <$> execGhci ghci ":show paths"
+ -}
+{- -- | Perform a reload, list the messages that reload generated.
 reload :: Ghci -> IO [Load]
-reload ghci = parseLoad <$> exec ghci ":reload"
-
--- | Send @:quit@ and wait for the process to quit.
-quit :: Ghci -> IO ()
-quit ghci =  do
+reload ghci = parseLoad <$> execGhci ghci ":reload"
+ -}
+{- -- | Send @:quit@ and wait for the process to quit.
+quitGhci :: Ghci -> IO ()
+quitGhci ghci =  do
     interrupt ghci
-    handle (\UnexpectedExit{} -> return ()) $ void $ exec ghci ":quit"
+    handle (\UnexpectedExit{} -> return ()) $ void $ execGhci ghci ":quit"
     -- Be aware that waitForProcess has a race condition, see https://github.com/haskell/process/issues/46.
     -- Therefore just ignore the exception anyway, its probably already terminated.
     ignored $ void $ waitForProcess $ process ghci
-
+ -}
+quit :: IO ()
+quit = return ()
 
 {- -- | Stop GHCi. Attempts to interrupt and execute @:quit:@, but if that doesn't complete
 --   within 5 seconds it just terminates the process.
@@ -279,3 +351,36 @@ stopGhci ghci = do
         terminateProcess $ process ghci
     quit ghci
  -}
+
+
+out = stdout
+err = stderr
+removePrefix = id
+-- Consume from a stream until EOF (return Nothing) or some predicate returns Just
+consume :: Stream -> (String -> IO (Maybe a)) -> IO (Maybe a)
+consume name finish = do
+                let h = if name == Stdout then out else err
+                fix $ \rec -> do
+                    el <- tryBool isEOFError $ hGetLine h
+                    case el of
+                        Left _ -> return Nothing
+                        Right l -> do
+                            whenLoud $ outStrLn $ "%" ++ upper (show name) ++ ": " ++ l
+                            res <- finish $ removePrefix l
+                            case res of
+                                Nothing -> rec
+                                Just a -> return $ Just a
+
+consume2 :: String -> (Stream -> String -> IO (Maybe a)) -> IO (a,a)
+consume2 msg finish = do
+                -- fetch the operations in different threads as hGetLine may block
+                -- and can't be aborted by async exceptions, see #154
+                res1 <- onceFork $ consume Stdout (finish Stdout)
+                res2 <- onceFork $ consume Stderr (finish Stderr)
+                res1 <- res1
+                res2 <- res2
+                case liftM2 (,) res1 res2 of
+                    Nothing -> throwIO $ UnexpectedExit "ampersand --daemon" msg
+                    Just v -> return v
+
+

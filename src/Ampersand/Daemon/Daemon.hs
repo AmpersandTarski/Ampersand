@@ -11,7 +11,7 @@ module Ampersand.Daemon.Daemon(runDaemon) where
 --module Ampersand.Daemon.Daemon(main, mainWithTerminal, TermSize(..), WordWrap(..)) where
 
 import Control.Exception
---import System.IO.Error
+import System.IO.Error
 import Control.Monad.Extra
 import Data.List.Extra
 import Data.Maybe
@@ -35,6 +35,7 @@ import Ampersand.Daemon.Daemon.Escape
 import Ampersand.Daemon.Daemon.Terminal
 import Ampersand.Daemon.Daemon.Util
 import Ampersand.Daemon.Daemon.Types
+import Ampersand.Daemon.Daemon.Daemon
 import Ampersand.Daemon.Wait
 
 import Data.Functor
@@ -77,7 +78,7 @@ data ColorMode
 options :: Mode (CmdArgs DaemonOptions)
 options = cmdArgsMode $ DaemonOptions
     {command = "cmd" &= name "c" &= typ "COMMAND" &= help "Command to run (defaults to ghci or cabal repl)"
-    ,arguments = [ "Hello World"] &= args &= typ "MODULE"
+    ,arguments = [ "echo Hello World"] &= args &= typ "MODULE"
     ,test = [] &= name "T" &= typ "EXPR" &= help "Command to run after successful loading"
     ,run = [] &= name "r" &= typ "EXPR" &= opt "main" &= help "Command to run after successful loading (defaults to main)"
     ,warnings = False &= name "W" &= help "Allow tests to run even with warnings"
@@ -88,10 +89,12 @@ options = cmdArgsMode $ DaemonOptions
     ,no_title = False &= help "Don't update the shell title/icon"
     ,project = "" &= typ "NAME" &= help "Name of the project, defaults to current directory"
     ,restart = [] &= typ "PATH" &= help "Restart the command when the given file or directory contents change (defaults to .ghci and any .cabal file)"
-    ,reload = [] &= typ "PATH" &= help "Reload when the given file or directory contents change (defaults to none)"
+    ,reload = ["."] &= typ "PATH" &= help "Reload when the given file or directory contents change (defaults to none)"
+    --,reload = [] &= typ "PATH" &= help "Reload when the given file or directory contents change (defaults to none)"
     ,directory = "." &= typDir &= name "C" &= help "Set the current directory"
     ,outputfile = [] &= typFile &= name "o" &= help "File to write the full output to"
-    ,ignoreLoaded = False &= explicit &= name "ignore-loaded" &= help "Keep going if no files are loaded. Requires --reload to be set."
+    --,ignoreLoaded = False &= explicit &= name "ignore-loaded" &= help "Keep going if no files are loaded. Requires --reload to be set."
+    ,ignoreLoaded = True &= explicit &= name "ignore-loaded" &= help "Keep going if no files are loaded. Requires --reload to be set."
     ,poll = Nothing &= typ "SECONDS" &= opt "0.1" &= explicit &= name "poll" &= help "Use polling every N seconds (defaults to using notifiers)"
     ,max_messages = Nothing &= name "n" &= help "Maximum number of messages to print"
     ,color = Auto &= name "colour" &= name "color" &= opt Always &= typ "always/never/auto" &= help "Color output (defaults to when the terminal supports it)"
@@ -124,40 +127,40 @@ Warnings:
 
 As a result, we prefer to give users full control with a .ghci file, if available
 -}
--- autoOptions :: DaemonOptions -> IO DaemonOptions
--- autoOptions o@DaemonOptions{..}
---     | command /= "" = return $ f [command] []
---     | otherwise = do
---         curdir <- getCurrentDirectory
---         files <- getDirectoryContents "."
+autoOptions :: DaemonOptions -> IO DaemonOptions
+autoOptions o@DaemonOptions{..}
+    | command /= "" = return $ f [command] []
+    | otherwise = do
+        curdir <- getCurrentDirectory
+        files <- getDirectoryContents "."
 
---         -- use unsafePerformIO to get nicer pattern matching for logic (read-only operations)
---         let findStack dir = flip catchIOError (const $ return Nothing) $ do
---                 let yaml = dir </> "stack.yaml"
---                 b <- doesFileExist yaml &&^ doesDirectoryExist (dir </> ".stack-work")
---                 return $ if b then Just yaml else Nothing
---         stack <- firstJustM findStack [".",".."] -- stack file might be parent, see #62
+        -- use unsafePerformIO to get nicer pattern matching for logic (read-only operations)
+        let findStack dir = flip catchIOError (const $ return Nothing) $ do
+                let yaml = dir </> "stack.yaml"
+                b <- doesFileExist yaml &&^ doesDirectoryExist (dir </> ".stack-work")
+                return $ if b then Just yaml else Nothing
+        stack <- firstJustM findStack [".",".."] -- stack file might be parent, see #62
 
---         let cabal = map (curdir </>) $ filter ((==) ".cabal" . takeExtension) files
---         let opts = [] 
---         return $ case () of
---             _ | Just stack <- stack ->
---                 let flags = if null arguments then
---                                 "stack ghci --test --bench" :
---                                 ["--no-load" | ".ghci" `elem` files] ++
---                                 map ("--ghci-options=" ++) opts
---                             else
---                                 "stack exec --test --bench -- ghci" : opts
---                 in f flags $ stack:cabal
---               | ".ghci" `elem` files -> f ("ghci":opts) [curdir </> ".ghci"]
---               | cabal /= [] -> f (if null arguments then "cabal repl":map ("--ghc-options=" ++) opts else "cabal exec -- ghci":opts) cabal
---               | otherwise -> f ("ghci":opts) []
---     where
---         f c r = o{command = unwords $ c ++ map escape arguments, arguments = [], restart = restart ++ r, run = [], test = run ++ test}
+        let cabal = map (curdir </>) $ filter ((==) ".cabal" . takeExtension) files
+        let opts = [] 
+        return $ case () of
+            _ | Just stack <- stack ->
+                let flags = if null arguments then
+                                "stack ghci --test --bench" :
+                                ["--no-load" | ".ghci" `elem` files] ++
+                                map ("--ghci-options=" ++) opts
+                            else
+                                "stack exec --test --bench -- ghci" : opts
+                in f flags $ stack:cabal
+              | ".ghci" `elem` files -> f ("ghci":opts) [curdir </> ".ghci"]
+              | cabal /= [] -> f (if null arguments then "cabal repl":map ("--ghc-options=" ++) opts else "cabal exec -- ghci":opts) cabal
+              | otherwise -> f ("ghci":opts) []
+    where
+        f c r = o{command = unwords $ c ++ map escape arguments, arguments = [], restart = restart ++ r, run = [], test = run ++ test}
 
---         -- in practice we're not expecting many arguments to have anything funky in them
---         escape x | ' ' `elem` x = "\"" ++ x ++ "\""
---                  | otherwise = x
+        -- in practice we're not expecting many arguments to have anything funky in them
+        escape x | ' ' `elem` x = "\"" ++ x ++ "\""
+                 | otherwise = x
 
 data TermSize = TermSize
     {termWidth :: Int
@@ -170,20 +173,20 @@ mainWithTerminal :: IO TermSize -> ([String] -> IO ()) -> IO ()
 mainWithTerminal termSize termOutput =
     handle (\(UnexpectedExit cmd _) -> do putStrLn $ "Command \"" ++ cmd ++ "\" exited unexpectedly"; exitFailure) $
         forever $ withWindowIcon $ withSession $ \session -> do
-            setVerbosity Normal -- undo any --verbose flags
+            setVerbosity Loud -- Normal -- undo any --verbose flags
 
             -- On certain Cygwin terminals stdout defaults to BlockBuffering
             hSetBuffering stdout LineBuffering
             hSetBuffering stderr NoBuffering
-        --    origDir <- getCurrentDirectory
+            origDir <- getCurrentDirectory
             opts <- cmdArgsRun options
             whenLoud $ do
                 outStrLn $ "%OS: " ++ os
                 outStrLn $ "%ARCH: " ++ arch
                 outStrLn $ "%VERSION: " ++ showVersion version
             withCurrentDirectory (directory opts) $ do
-        --        opts <- autoOptions opts
-        --        opts <- return $ opts{restart = nubOrd $ (origDir </> ".ghcid") : restart opts, reload = nubOrd $ reload opts}
+                opts <- autoOptions opts
+                opts <- return $ opts{restart = nubOrd $ (origDir </> ".ampersandghcid") : restart opts, reload = nubOrd $ reload opts}
                 when (topmost opts) terminalTopmost
 
                 termSize <- return $ case (width opts, height opts) of
@@ -254,14 +257,14 @@ runAmpersand session waiter termSize termOutput dopts@DaemonOptions{..} = do
         exitFailure
 
     nextWait <- waitFiles waiter
-    (messages, loaded) <- sessionStart session command $
+    aDaemon <- sessionStart session command $
         setup
 
-    when (null loaded && not ignoreLoaded) $ do
-        putStrLn $ "\nNo files loaded, GHCi is not working properly.\nCommand: " ++ command
+    when (null (load aDaemon) && not ignoreLoaded) $ do
+        putStrLn $ "\nNo files loaded, Ampersand daemon is not working properly.\nCommand: " ++ command
         exitFailure
 
-    restart <- return $ nubOrd $ restart ++ [x | LoadConfig x <- messages]
+    restart <- return $ nubOrd $ restart ++ [x | LoadConfig x <- load aDaemon]
     -- Note that we capture restarting items at this point, not before invoking the command
     -- The reason is some restart items may be generated by the command itself
     restartTimes <- mapM getModTime restart
@@ -269,15 +272,15 @@ runAmpersand session waiter termSize termOutput dopts@DaemonOptions{..} = do
     project <- if project /= "" then return project else takeFileName <$> getCurrentDirectory
 
     -- fire, given a waiter, the messages/loaded
-    let fire nextWait (messages, loaded) = do
+    let fire nextWait ad = do
             currTime <- getShortTime
-            let loadedCount = length loaded
+            let loadedCount = length (loaded ad)
             whenLoud $ do
-                outStrLn $ "%MESSAGES: " ++ show messages
-                outStrLn $ "%LOADED: " ++ show loaded
+                outStrLn $ "%MESSAGES: " ++ show (messages ad)
+                outStrLn $ "%LOADED: " ++ show (loaded ad)
 
             let (countErrors, countWarnings) = both sum $ unzip
-                    [if loadSeverity == Error then (1,0) else (0,1) | m@Message{..} <- messages, loadMessage /= []]
+                    [if loadSeverity == Error then (1,0) else (0,1) | m@Message{..} <- messages ad, loadMessage /= []]
             test <- return $
                 if null test || countErrors /= 0 || (countWarnings /= 0 && not warnings) then Nothing
                 else Just $ intercalate "\n" test
@@ -296,7 +299,7 @@ runAmpersand session waiter termSize termOutput dopts@DaemonOptions{..} = do
             -- order and restrict the messages
             -- nubOrdOn loadMessage because module cycles generate the same message at several different locations
             ordMessages <- do
-                let (msgError, msgWarn) = partition ((==) Error . loadSeverity) $ nubOrdOn loadMessage $ filter isMessage messages
+                let (msgError, msgWarn) = partition ((==) Error . loadSeverity) $ nubOrdOn loadMessage $ filter isMessage (messages ad)
                 -- sort error messages by modtime, so newer edits cause the errors to float to the top - see #153
                 errTimes <- sequence [(x,) <$> getModTime x | x <- nubOrd $ map loadFile msgError]
                 let f x = lookup (loadFile x) errTimes
@@ -306,30 +309,33 @@ runAmpersand session waiter termSize termOutput dopts@DaemonOptions{..} = do
             forM_ outputfile $ \file ->
                 writeFile file $
                     if takeExtension file == ".json" then
-                        showJSON [("loaded",map jString loaded),("messages",map jMessage $ filter isMessage messages)]
+                        showJSON [("loaded",map jString (loaded ad)),("messages",map jMessage $ filter isMessage (messages ad))]
                     else
                         unlines $ map unescape $ prettyOutput currTime loadedCount $ limitMessages ordMessages
-            when (null loaded && not ignoreLoaded) $ do
+            when (null (loaded ad) && not ignoreLoaded) $ do
                 putStrLn "No files loaded, nothing to wait for. Fix the last error and restart."
                 exitFailure
-            whenJust test $ \t -> do
-                whenLoud $ outStrLn $ "%TESTING: " ++ t
-                sessionExecAsync session t $ \stderr -> do
-                    whenLoud $ outStrLn "%TESTING: Completed"
-                    hFlush stdout -- may not have been a terminating newline from test output
-                    if "*** Exception: " `isPrefixOf` stderr then do
-                        updateTitle "(test failed)"
-                        setWindowIcon IconError
-                     else do
-                        updateTitle "(test done)"
-                        whenNormal $ outStrLn "\n...done"
+            -- whenJust test $ \t -> do
+            --     whenLoud $ outStrLn $ "%TESTING: " ++ t
+            --     sessionExecAsync session t $ \stderr -> do
+            --         whenLoud $ outStrLn "%TESTING: Completed"
+            --         hFlush stdout -- may not have been a terminating newline from test output
+            --         if "*** Exception: " `isPrefixOf` stderr then do
+            --             updateTitle "(test failed)"
+            --             setWindowIcon IconError
+            --          else do
+            --             updateTitle "(test done)"
+            --             whenNormal $ outStrLn "\n...done"
 
-            reason <- nextWait $ restart ++ reload ++ loaded
+            reason <- nextWait $ restart ++ reload ++ loaded ad
             whenLoud $ outStrLn $ "%RELOADING: " ++ unwords reason
             restartTimes2 <- mapM getModTime restart
             let restartChanged = [s | (False, s) <- zip (zipWith (==) restartTimes restartTimes2) restart]
             currTime <- getShortTime
-            if not $ null restartChanged then do
+            -- exit cleanly, since the whole thing is wrapped in a forever
+            unless no_status $ outputFill currTime Nothing $ "Restarting..." : map ("  " ++) restartChanged
+            return Continue
+{-             if not $ null restartChanged then do
                 -- exit cleanly, since the whole thing is wrapped in a forever
                 unless no_status $ outputFill currTime Nothing $ "Restarting..." : map ("  " ++) restartChanged
                 return Continue
@@ -337,8 +343,8 @@ runAmpersand session waiter termSize termOutput dopts@DaemonOptions{..} = do
                 unless no_status $ outputFill currTime Nothing $ "Reloading..." : map ("  " ++) reason
                 nextWait <- waitFiles waiter
                 fire nextWait =<< sessionReload session
-
-    fire nextWait (messages, loaded)
+ -}
+    fire nextWait aDaemon
 
 
 -- | Given an available height, and a set of messages to display, show them as best you can.

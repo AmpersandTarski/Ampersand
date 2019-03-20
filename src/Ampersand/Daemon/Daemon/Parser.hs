@@ -2,9 +2,11 @@
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 -- | Parses the output from GHCi
 module Ampersand.Daemon.Daemon.Parser (
-    parseShowModules
-  , parseShowPaths
-  , parseLoad
+ --   parseShowModules
+ -- , parseShowPaths
+ -- , parseLoad
+    parseADLFile
+  , P_Context
 ) where
 
 
@@ -16,11 +18,14 @@ import Text.Read
 import Data.Tuple.Extra
 import Control.Applicative
 import Ampersand.Basics
-
+import Ampersand.Core.ParseTree
+import Ampersand.Input.Parsing
 import Ampersand.Daemon.Daemon.Types
 import Ampersand.Daemon.Daemon.Escape
 
 
+parseADLFile :: String -> String -> Maybe P_Context
+parseADLFile filepath content = Nothing  
 -- | Parse messages from show modules command. Given the parsed lines
 --   return a list of (module name, file).
 parseShowModules :: [String] -> [(String, FilePath)]
