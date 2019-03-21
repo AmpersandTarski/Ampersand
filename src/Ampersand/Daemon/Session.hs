@@ -27,8 +27,8 @@ import Control.Monad.Extra
 import Data.Maybe
 import Data.List.Extra
 --import Control.Applicative
-import Prelude
-
+import Ampersand.Basics.Prelude
+import Ampersand.Misc
 
 data Session = Session
     {ghci :: IORef (Maybe AmpersandDaemon) -- ^ The Ghci session, or Nothing if there is none
@@ -82,36 +82,36 @@ qualify dir xs = [x{loadFile = dir </> loadFile x} | x <- xs]
 
 -- | Spawn a new Ghci process at a given command line. Returns the load messages, plus
 --   the list of files that were observed (both those loaded and those that failed to load).
-sessionStart :: Session -> String -> [String] -> IO (AmpersandDaemon)
-sessionStart Session{..} cmd setup = do
-    modifyVar_ running $ const $ return False
+sessionStart :: Options -> Session -> String -> [String] -> IO (AmpersandDaemon)
+sessionStart opts Session{..} cmd setup = do
+    modifyVar_ running $ const $ return True
     writeIORef command $ Just (cmd, setup)
 
     -- cleanup any old instances
     whenJustM (readIORef ghci) $ \v -> do
         writeIORef ghci Nothing
         void $ forkIO $ kill v
-
+    currentDirectory <- readIORef curdir >>= makeAbsolute
+    
     -- start the new
     outStrLn $ "Loading " ++ cmd ++ " ..."
-    daemonState <- mask $ \unmask -> do
-        daemonState <- unmask $ startAmpersandDaemon Nothing $ const outStrLn 
-      --  writeIORef ghci $ Just v
+    aDaemon <- mask $ \unmask -> do
+        daemonState <- unmask $ startAmpersandDaemon opts currentDirectory $ const outStrLn 
+        writeIORef ghci $ Just (daemonState)
         return daemonState
-
+    mapM_ outStrLn $ lines . show $ aDaemon  -- for debugging
 --    -- do whatever preparation was requested
 --    _ <- exec v $ unlines setup
-
     -- deal with current directory
     dir <- getCurrentDirectory 
     writeIORef curdir dir
---    daemonState <- return $ qualify dir daemonState
+--    aDaemon <- return $ qualify dir aDaemon
 
 
     -- handle what the process returned
-    daemonState <- return $ tidyState daemonState
+    aDaemon <- return $ tidyState aDaemon
 --    writeIORef warnings [m | m@Message{..} <- messages, loadSeverity == Warning]
-    return (daemonState)
+    return (aDaemon)
 
 
 -- -- | Call 'sessionStart' at the previous command.

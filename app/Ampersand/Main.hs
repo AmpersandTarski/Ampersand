@@ -45,7 +45,7 @@ main =
       , ( showVersion  || verboseP , putStrLn $ versionText opts)
       , ( genSampleConfigFile      , writeConfigFile)
       , ( showHelp                 , putStrLn $ usageInfo' opts)
-      , ( runAsDaemon              , runDaemon)
+      , ( runAsDaemon              , runDaemon opts)
       ]
    
    versionText :: Options -> String

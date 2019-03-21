@@ -9,6 +9,7 @@ module Ampersand.Input.Parsing (
     , parseSystemContext
     , parseRule
     , runParser
+    , ParseCandidate(..) -- exported for use with --daemon
 ) where
 
 import           Ampersand.ADL1

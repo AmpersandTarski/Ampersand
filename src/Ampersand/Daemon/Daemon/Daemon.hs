@@ -20,7 +20,7 @@ module Ampersand.Daemon.Daemon.Daemon(
 --    showModules, 
 --    showPaths, 
 --    reload, 
---    exec,
+    exec,
 --    quitGhci,
     quit
     ) where
@@ -45,6 +45,7 @@ import Ampersand.Daemon.Daemon.Parser
 import Ampersand.Daemon.Daemon.Types as T
 import Ampersand.Daemon.Daemon.Util
 import Ampersand.Basics hiding (Unique, hPutStrLn)
+import Ampersand.Misc
 
 -- | An AmpersandDaemon session. Created with 'startAmpersandDaemon', closed with 'stopAmpersandDaemon'.
 --
@@ -67,20 +68,22 @@ messages = filter isMessage . load
 loaded :: AmpersandDaemon -> [FilePath]
 loaded = map fst . loadResults . adState
 data AmpersandDaemon = AmpersandDaemon
-    {adInterrupt :: IO()
-    ,adExec :: String -> (Stream -> String -> IO ()) -> IO ()
+    {adExec :: String -> (Stream -> String -> IO ()) -> IO ()
     ,adUnique :: Unique
     ,adState :: DaemonState
     }
 instance Eq AmpersandDaemon where
     a == b = adUnique a == adUnique b
-    
+instance Show AmpersandDaemon where
+  show = show . adState     
 data DaemonState = DaemonState
    { filesToLoad :: [FilePath]
    , loads :: [Load]
    , loadResults :: [(FilePath, P_Context)]
    }
-
+instance Show DaemonState where
+  showsPrec _ x
+   = showString ("DaemonState: "++show (filesToLoad x) ++ " " ++(show .length . loads $ x))
 
 withCreateProc :: CreateProcess
                         -> (Maybe Handle
@@ -238,10 +241,11 @@ startGhci
 startGhci cmd directory callback = startGhciProcess (shell cmd){cwd=directory} callback 
  -}
 startAmpersandDaemon 
-     :: Maybe FilePath  -- ^ Working directory
+     :: Options  -- Ampersand options
+     -> FilePath  -- ^ Working directory
      -> (Stream -> String -> IO ()) -- ^ Output callback
      -> IO AmpersandDaemon
-startAmpersandDaemon directory echo' = do
+startAmpersandDaemon opts directory echo' = do
     unique <- newUnique
 
     -- At various points I need to ensure everything the user is waiting for has completed
@@ -263,27 +267,30 @@ startAmpersandDaemon directory echo' = do
         syncFresh = do
             modifyVar_ syncCount $ return . succ
             syncReplay
+    state <- initialState opts directory
     let ad = AmpersandDaemon
-                    {adInterrupt = outStrLn "Daemon interrupted." 
-                    ,adExec = execCommand -- \cmd echo -> outStrLn $ "Daemon executes command: "++cmd 
+                    {adExec = execCommand -- \cmd echo -> outStrLn $ "Daemon executes command: "++cmd 
                     ,adUnique = unique
-                    ,adState = initialState directory}
+                    ,adState = state}
          where execCommand command echo = do
-                    writeInp command
+                    writeInp $ "Weer een rondje: "++command
                     stop <- syncFresh
                     void $ consume2 command $ \strm s ->
                         if stop s then return $ Just () else do _ <- echo strm s; return Nothing
     return ad            
- 
+-- parseProject :: Options -> FilePath -> IO [Load] 
 stopAmpersandDaemon :: AmpersandDaemon -> IO ()
 stopAmpersandDaemon _ = Ampersand.Basics.putStrLn "Daemon stopped."
    
-initialState :: Maybe FilePath -> DaemonState
-initialState directory = DaemonState
-   { filesToLoad = maybeToList directory
-   , loads = []
-   , loadResults = []
-   }
+initialState :: Options -> FilePath -> IO DaemonState
+initialState opts directory = do
+   let root = directory -- TODO: Read contents of .ampersand file. Fail if not present.
+   ls <- parseProject opts root 
+   return DaemonState
+     { filesToLoad = [directory]
+     , loads = ls
+     , loadResults = []
+     }
 -- | Execute a command, calling a callback on each response.
 --   The callback will be called single threaded.
 execStream :: AmpersandDaemon -> String -> (Stream -> String -> IO ()) -> IO ()
@@ -310,12 +317,23 @@ execBuffer ghci cmd = do
     stderr <- newIORef []
     execStream ghci cmd $ \strm s -> do
         modifyIORef (if strm == Stdout then stdout else stderr) (s:)
-        
+    let dummyLoad = newLoad  cmd
     output <- reverse <$> ((++) <$> readIORef stderr <*> readIORef stdout)
-    return (ghci,output)
+    return (addLoad dummyLoad ghci,output)
 -- | Send a command, get lines of result. Must be called single-threaded.
-execGhci :: AmpersandDaemon -> String -> IO (AmpersandDaemon,[String])
-execGhci ghci cmd = execBuffer ghci cmd 
+exec :: AmpersandDaemon -> String -> IO (AmpersandDaemon,[String])
+exec ad cmd = execBuffer ad cmd 
+
+addLoad :: Load -> AmpersandDaemon -> AmpersandDaemon
+addLoad = fatal "this fatal is at `addLoad`."
+newLoad :: String -> Load
+newLoad s = Message
+   {loadSeverity = Error
+   ,loadFile = ".ampersand"
+   ,loadFilePos = (0,0) -- ^ The position in the file, @(line,col)@, both 1-based. Uses @(0,0)@ for no position information.
+   ,loadFilePosEnd = (0,0) -- ^ The end position in the file, @(line,col)@, both 1-based. If not present will be the same as 'loadFilePos'.
+   ,loadMessage = ["Commando: "++s] -- ^ The message, split into separate lines, may contain ANSI Escape codes.
+   }
 
 {- -- | List the modules currently loaded, with module name and source file.
 showModules :: AmpersandDaemon -> IO [(String,FilePath)]

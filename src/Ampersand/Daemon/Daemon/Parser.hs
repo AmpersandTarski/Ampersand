@@ -5,7 +5,7 @@ module Ampersand.Daemon.Daemon.Parser (
  --   parseShowModules
  -- , parseShowPaths
  -- , parseLoad
-    parseADLFile
+    parseProject
   , P_Context
 ) where
 
@@ -22,10 +22,13 @@ import Ampersand.Core.ParseTree
 import Ampersand.Input.Parsing
 import Ampersand.Daemon.Daemon.Types
 import Ampersand.Daemon.Daemon.Escape
+import Ampersand.Misc
 
-
-parseADLFile :: String -> String -> Maybe P_Context
-parseADLFile filepath content = Nothing  
+parseProject :: Options -> FilePath -> IO [Load]
+parseProject opts rootAdl = do
+    return [] 
+parseADLFile :: String -> String -> IO (Maybe P_Context)
+parseADLFile filepath content = pure Nothing  
 -- | Parse messages from show modules command. Given the parsed lines
 --   return a list of (module name, file).
 parseShowModules :: [String] -> [(String, FilePath)]

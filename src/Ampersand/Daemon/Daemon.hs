@@ -17,7 +17,7 @@ import Data.List.Extra
 import Data.Maybe
 import Data.Ord
 import Data.Tuple.Extra
-import Data.Version
+-- import Data.Version
 import Ampersand.Daemon.Session
 import qualified System.Console.Terminal.Size as Term
 import System.Console.CmdArgs
@@ -37,10 +37,11 @@ import Ampersand.Daemon.Daemon.Util
 import Ampersand.Daemon.Daemon.Types
 import Ampersand.Daemon.Daemon.Daemon
 import Ampersand.Daemon.Wait
+import Ampersand.Misc hiding (test)
 
 import Data.Functor
 import Prelude
-import Ampersand.Basics (fatal)
+import Ampersand.Basics (fatal,ampersandVersionWithoutBuildTimeStr)
 
 -- | Command line options
 data DaemonOptions = DaemonOptions
@@ -101,7 +102,7 @@ options = cmdArgsMode $ DaemonOptions
     ,setup = [] &= name "setup" &= typ "COMMAND" &= help "Setup commands to pass to ghci on stdin, usually :set <something>"
     ,daemon = False
     } &= verbosity &=
-    program "ghcid" &= summary ("Auto reloading GHCi daemon v" ++ showVersion version)
+    program "ampersand" &= summary ("Auto reloading ampersand daemon " ++ ampersandVersionWithoutBuildTimeStr)
 
 
 {-
@@ -169,8 +170,8 @@ data TermSize = TermSize
     }
 
 -- | Like 'main', but run with a fake terminal for testing
-mainWithTerminal :: IO TermSize -> ([String] -> IO ()) -> IO ()
-mainWithTerminal termSize termOutput =
+mainWithTerminal :: Options -> IO TermSize -> ([String] -> IO ()) -> IO ()
+mainWithTerminal opts termSize termOutput =
     handle (\(UnexpectedExit cmd _) -> do putStrLn $ "Command \"" ++ cmd ++ "\" exited unexpectedly"; exitFailure) $
         forever $ withWindowIcon $ withSession $ \session -> do
             setVerbosity Loud -- Normal -- undo any --verbose flags
@@ -179,17 +180,17 @@ mainWithTerminal termSize termOutput =
             hSetBuffering stdout LineBuffering
             hSetBuffering stderr NoBuffering
             origDir <- getCurrentDirectory
-            opts <- cmdArgsRun options
+            dOpts <- cmdArgsRun options
             whenLoud $ do
                 outStrLn $ "%OS: " ++ os
                 outStrLn $ "%ARCH: " ++ arch
-                outStrLn $ "%VERSION: " ++ showVersion version
-            withCurrentDirectory (directory opts) $ do
-                opts <- autoOptions opts
-                opts <- return $ opts{restart = nubOrd $ (origDir </> ".ampersandghcid") : restart opts, reload = nubOrd $ reload opts}
-                when (topmost opts) terminalTopmost
+                outStrLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
+            withCurrentDirectory (directory dOpts) $ do
+                dOpts <- autoOptions dOpts
+                dOpts <- return $ dOpts{restart = nubOrd $ (origDir </> ".ampersand") : restart dOpts, reload = nubOrd $ reload dOpts}
+                when (topmost dOpts) terminalTopmost
 
-                termSize <- return $ case (width opts, height opts) of
+                termSize <- return $ case (width dOpts, height dOpts) of
                     (Just w, Just h) -> return $ TermSize w h WrapHard
                     (w, h) -> do
                         term <- termSize
@@ -201,7 +202,7 @@ mainWithTerminal termSize termOutput =
                             (if isJust w then WrapHard else termWrap term)
 
                 restyle <- do
-                    useStyle <- case color opts of
+                    useStyle <- case color dOpts of
                         Always -> return True
                         Never -> return False
                         Auto -> hSupportsANSI stdout
@@ -210,13 +211,13 @@ mainWithTerminal termSize termOutput =
                         when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see #87
                     return $ if useStyle then id else map unescape
 
-                maybe withWaiterNotify withWaiterPoll (poll opts) $ \waiter ->
-                    runAmpersand session waiter termSize (termOutput . restyle) opts
+                maybe withWaiterNotify withWaiterPoll (poll dOpts) $ \waiter ->
+                    runAmpersand opts session waiter termSize (termOutput . restyle) dOpts
 
 
 
-runDaemon :: IO ()
-runDaemon = mainWithTerminal termSize termOutput
+runDaemon :: Options -> IO ()
+runDaemon opts = mainWithTerminal opts termSize termOutput
     where
         termSize = do
             x <- Term.size
@@ -233,8 +234,8 @@ data Continue = Continue
 
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
-runAmpersand :: Session -> Waiter -> IO TermSize -> ([String] -> IO ()) -> DaemonOptions -> IO Continue
-runAmpersand session waiter termSize termOutput dopts@DaemonOptions{..} = do
+runAmpersand :: Options -> Session -> Waiter -> IO TermSize -> ([String] -> IO ()) -> DaemonOptions -> IO Continue
+runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = do
     let limitMessages = maybe id (take . max 1) max_messages
 
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()
@@ -257,7 +258,7 @@ runAmpersand session waiter termSize termOutput dopts@DaemonOptions{..} = do
         exitFailure
 
     nextWait <- waitFiles waiter
-    aDaemon <- sessionStart session command $
+    aDaemon <- sessionStart opts session command $
         setup
 
     when (null (load aDaemon) && not ignoreLoaded) $ do
@@ -272,13 +273,16 @@ runAmpersand session waiter termSize termOutput dopts@DaemonOptions{..} = do
     project <- if project /= "" then return project else takeFileName <$> getCurrentDirectory
 
     -- fire, given a waiter, the messages/loaded
-    let fire nextWait ad = do
+    let fire :: ([FilePath] -> IO [String]) -> AmpersandDaemon -> IO Continue
+        fire nextWait ad = do
             currTime <- getShortTime
             let loadedCount = length (loaded ad)
             whenLoud $ do
-                outStrLn $ "%MESSAGES: " ++ show (messages ad)
-                outStrLn $ "%LOADED: " ++ show (loaded ad)
-
+                outStrLn $ "%MESSAGES: " ++ (show . length . messages $ ad)
+                outStrLn $ "%LOADED: " ++ (show . length . loaded $ ad)
+            outStrLn $ "Fall asleep..."
+            sleep 5
+            outStrLn $ "... Woke up"
             let (countErrors, countWarnings) = both sum $ unzip
                     [if loadSeverity == Error then (1,0) else (0,1) | m@Message{..} <- messages ad, loadMessage /= []]
             test <- return $
