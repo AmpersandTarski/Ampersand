@@ -174,7 +174,7 @@ mainWithTerminal :: Options -> IO TermSize -> ([String] -> IO ()) -> IO ()
 mainWithTerminal opts termSize termOutput =
     handle (\(UnexpectedExit cmd _) -> do putStrLn $ "Command \"" ++ cmd ++ "\" exited unexpectedly"; exitFailure) $
         forever $ withWindowIcon $ withSession $ \session -> do
-            setVerbosity Loud -- Normal -- undo any --verbose flags
+            setVerbosity Normal -- undo any --verbose flags
 
             -- On certain Cygwin terminals stdout defaults to BlockBuffering
             hSetBuffering stdout LineBuffering
@@ -278,11 +278,11 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
             currTime <- getShortTime
             let loadedCount = length (loaded ad)
             whenLoud $ do
-                outStrLn $ "%MESSAGES: " ++ (show . length . messages $ ad)
-                outStrLn $ "%LOADED: " ++ (show . length . loaded $ ad)
-            outStrLn $ "Fall asleep..."
-            sleep 5
-            outStrLn $ "... Woke up"
+                outStrLn $ "%MESSAGES: " ++ (show . messages $ ad)
+                outStrLn $ "%LOADED: " ++ (show . loaded $ ad)
+         --   outStrLn $ "Fall asleep..."
+         --   sleep 5
+         --   outStrLn $ "... Woke up"
             let (countErrors, countWarnings) = both sum $ unzip
                     [if loadSeverity == Error then (1,0) else (0,1) | m@Message{..} <- messages ad, loadMessage /= []]
             test <- return $

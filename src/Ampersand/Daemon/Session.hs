@@ -40,7 +40,7 @@ data Session = Session
     }
 
 debugging :: Bool
-debugging = True
+debugging = False
 
 debugShutdown :: Show b => b -> IO ()
 debugShutdown x = when debugging $ print ("DEBUG SHUTDOWN", x)

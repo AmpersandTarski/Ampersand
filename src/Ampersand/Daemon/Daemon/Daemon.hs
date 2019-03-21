@@ -25,6 +25,7 @@ module Ampersand.Daemon.Daemon.Daemon(
     quit
     ) where
 
+import System.Exit
 import System.IO
 import System.IO.Error
 import System.Process
@@ -40,11 +41,12 @@ import Control.Applicative
 import Data.Unique
 
 import System.Console.CmdArgs.Verbosity
-
+import System.Directory
+import System.FilePath
 import Ampersand.Daemon.Daemon.Parser
 import Ampersand.Daemon.Daemon.Types as T
 import Ampersand.Daemon.Daemon.Util
-import Ampersand.Basics hiding (Unique, hPutStrLn)
+import Ampersand.Basics hiding (Unique, hPutStrLn,readFile,putStrLn)
 import Ampersand.Misc
 
 -- | An AmpersandDaemon session. Created with 'startAmpersandDaemon', closed with 'stopAmpersandDaemon'.
@@ -267,7 +269,14 @@ startAmpersandDaemon opts directory echo' = do
         syncFresh = do
             modifyVar_ syncCount $ return . succ
             syncReplay
-    state <- initialState opts directory
+    state <- do 
+       init <- initialState opts directory
+       case init of
+         Left msg -> do
+           mapM_ putStrLn msg
+           exitFailure
+         Right s -> pure s  
+    
     let ad = AmpersandDaemon
                     {adExec = execCommand -- \cmd echo -> outStrLn $ "Daemon executes command: "++cmd 
                     ,adUnique = unique
@@ -278,19 +287,36 @@ startAmpersandDaemon opts directory echo' = do
                     void $ consume2 command $ \strm s ->
                         if stop s then return $ Just () else do _ <- echo strm s; return Nothing
     return ad            
--- parseProject :: Options -> FilePath -> IO [Load] 
+
 stopAmpersandDaemon :: AmpersandDaemon -> IO ()
-stopAmpersandDaemon _ = Ampersand.Basics.putStrLn "Daemon stopped."
+stopAmpersandDaemon _ = putStrLn "Daemon stopped."
    
-initialState :: Options -> FilePath -> IO DaemonState
+initialState :: Options -> FilePath -> IO (Either [String] DaemonState)
 initialState opts directory = do
-   let root = directory -- TODO: Read contents of .ampersand file. Fail if not present.
-   ls <- parseProject opts root 
-   return DaemonState
-     { filesToLoad = [directory]
-     , loads = ls
-     , loadResults = []
-     }
+   x <- findRoot directory -- TODO: Read contents of .ampersand file. Fail if not present.
+   case x of 
+     Left msg   -> return $ Left msg
+     Right root -> do 
+       ls <- parseProject opts root 
+       return $ Right DaemonState
+           { filesToLoad = [directory]
+           , loads = ls
+           , loadResults = []
+           }
+ where findRoot :: FilePath -> IO (Either [String] FilePath)
+       findRoot dir = do
+         dotAmpersand <- makeAbsolute $ dir </> ".ampersand"
+         exists <- doesFileExist dotAmpersand
+         if exists 
+         then do
+             root <- readFile dotAmpersand
+             exists' <- doesFileExist root
+             return (Right root)  
+         else return (Left $ [ "File not found: "++dotAmpersand
+                             , "  Your workspace should contain a file called .ampersand. However,"
+                             , "  it could not be found. Please provide that file, containing the "
+                             , "  name of the top file of your Ampersand project. "
+                             ]) 
 -- | Execute a command, calling a callback on each response.
 --   The callback will be called single threaded.
 execStream :: AmpersandDaemon -> String -> (Stream -> String -> IO ()) -> IO ()

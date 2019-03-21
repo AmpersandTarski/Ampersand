@@ -25,13 +25,18 @@ import qualified Data.List.NonEmpty as NEL (toList)
 import           Data.Tuple.Extra
 import           System.FilePath
 import           Text.Read
+import qualified System.IO.Extra as E
+import System.Time.Extra(sleep)
 
 parseProject :: Options -> FilePath -> IO [Load]
 parseProject opts rootAdl = do
     gPContext <- parseADL opts rootAdl
-    case gPContext of
-       Checked _ ws -> pure $ map warning2Load ws
-       Errors  es -> pure . NEL.toList . fmap error2Load $ es
+    l <- case gPContext of
+          Checked _ ws -> pure $ map warning2Load ws
+          Errors  es -> pure . NEL.toList . fmap error2Load $ es
+--    E.putStrLn $ "Parsed "++rootAdl++" and found "++(show . length $ l)++" load items."
+--    sleep 10
+    return l
     
 warning2Load :: Warning -> Load
 warning2Load warn = Message
