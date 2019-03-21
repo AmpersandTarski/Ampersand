@@ -10,25 +10,49 @@ module Ampersand.Daemon.Daemon.Parser (
 ) where
 
 
-import System.FilePath
-import Data.Char
-import Data.List.Extra
-import Data.Maybe
-import Text.Read
-import Data.Tuple.Extra
-import Control.Applicative
-import Ampersand.Basics
-import Ampersand.Core.ParseTree
-import Ampersand.Input.Parsing
-import Ampersand.Daemon.Daemon.Types
-import Ampersand.Daemon.Daemon.Escape
-import Ampersand.Misc
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
+import           Ampersand.Input.Parsing
+import           Ampersand.Daemon.Daemon.Types
+import           Ampersand.Daemon.Daemon.Escape
+import           Ampersand.Misc
+import           Ampersand.Input.ADL1.CtxError
+--import           Control.Applicative
+import           Data.Char
+import           Data.List.Extra
+import qualified Data.List.NonEmpty as NEL (toList)
+--import           Data.Maybe
+import           Data.Tuple.Extra
+import           System.FilePath
+import           Text.Read
 
 parseProject :: Options -> FilePath -> IO [Load]
 parseProject opts rootAdl = do
-    return [] 
-parseADLFile :: String -> String -> IO (Maybe P_Context)
-parseADLFile filepath content = pure Nothing  
+    gPContext <- parseADL opts rootAdl
+    case gPContext of
+       Checked _ ws -> pure $ map warning2Load ws
+       Errors  es -> pure . NEL.toList . fmap error2Load $ es
+    
+warning2Load :: Warning -> Load
+warning2Load warn = Message
+    {loadSeverity = Warning
+    ,loadFile = file 
+    ,loadFilePos = (line,col) 
+    ,loadFilePosEnd = (line,col)
+    ,loadMessage = showWarning warn
+    }
+  where (file, line, col) = (filenm warn, linenr warn, colnr warn)
+        
+error2Load :: CtxError -> Load
+error2Load err = Message
+    {loadSeverity = Error
+    ,loadFile = file 
+    ,loadFilePos = (line,col) 
+    ,loadFilePosEnd = (line,col)
+    ,loadMessage = lines $ showErr err
+    }
+  where (file, line, col) = (filenm err, linenr err, colnr err)
+
 -- | Parse messages from show modules command. Given the parsed lines
 --   return a list of (module name, file).
 parseShowModules :: [String] -> [(String, FilePath)]

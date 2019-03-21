@@ -4,7 +4,7 @@
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , Warning
-  , showErr, makeError
+  , showErr
   , cannotDisambiguate
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
@@ -27,6 +27,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkInterfaceMustBeDefinedOnObject
   , mkSubInterfaceMustBeDefinedOnObject
   , lexerWarning2Warning
+  , lexerError2CtxError
   , addWarning, addWarnings
   , showWarning, showWarnings
   , mkCrudWarning
@@ -54,22 +55,30 @@ import qualified Data.List as L   (intercalate)
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
 import           Data.Maybe
 import           GHC.Exts (groupWith)
-import           Text.Parsec.Error (Message(..), messageString)
+import           Text.Parsec
 import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
-              | PE Message
+              | PE ParseError
+              | LE LexerError
 
 instance Show CtxError where
     show (CTXE o s) = "CTXE " ++ show o ++ " " ++ show s
-    show (PE msg)   = "PE " ++ messageString msg
+    show (PE perr)  = "PE " ++ show perr
+    show (LE lerr)  = "LE " ++ show lerr
+instance Traced CtxError where
+    origin (CTXE o _) = o
+    origin (PE perr)  = let sourcePos = errorPos perr 
+                        in FileLoc (FilePos (sourceName sourcePos) (sourceLine sourcePos) (sourceColumn sourcePos)) ""
+    origin (LE (LexerError fp info)) = FileLoc fp (show info)
+
+--TODO: Give the errors in a better way
+lexerError2CtxError :: LexerError -> CtxError
+lexerError2CtxError err = LE err
 
 errors :: Guarded t -> Maybe (NEL.NonEmpty CtxError)
 errors (Checked _ _) = Nothing
 errors (Errors lst) = Just lst
-
-makeError :: String -> Guarded a
-makeError msg = Errors (PE (Message msg) NEL.:| [])
 
 unexpectedType :: Origin -> Maybe TType -> Guarded A_Concept
 unexpectedType o x = 
@@ -158,6 +167,8 @@ class GetOneGuarded a b | b -> a where
       Nothing -> fatal "No error message!"
       Just (CTXE o' s NEL.:| _) -> Errors . pure $ CTXE o' $ "Found too many:\n  "++s
       Just (PE _      NEL.:| _) -> fatal "Didn't expect a PE constructor here"
+      Just (LE _      NEL.:| _) -> fatal "Didn't expect a LE constructor here"
+      
   hasNone :: b  -- the object where the problem is arising
              -> Guarded a
   hasNone o = getOneExactly o []
@@ -413,6 +424,8 @@ lexerWarning2Warning (LexerWarning a b) =
 data Warning = Warning Origin String
 instance Show Warning where
     show (Warning o msg) = "Warning: " ++ show o ++ concatMap ("\n  "++) (lines msg)
+instance Traced Warning where
+    origin (Warning o _) = o
 mkCrudWarning :: P_Cruds -> [String] -> Warning
 mkCrudWarning (P_Cruds o _ ) msg = Warning o (unlines msg)
 addWarning :: Warning -> Guarded a -> Guarded a
@@ -466,7 +479,8 @@ whenError a@(Checked _ _) _ = a
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = showFullOrig o ++ "\n  " ++ s
-showErr (PE msg)   = messageString msg
+showErr (PE err)  = show err
+showErr (LE err)  = show err
 
 showFullOrig :: Origin -> String
 showFullOrig (FileLoc (FilePos filename line column) t)

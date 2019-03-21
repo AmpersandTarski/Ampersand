@@ -25,12 +25,10 @@ import           Ampersand.Misc
 import           Control.Exception
 import           Data.Char(toLower)
 import           Data.List
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
 import qualified Data.Set as Set
 import           Data.Maybe
 import           System.Directory
 import           System.FilePath
-import           Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import           Text.Parsec.Prim (runP)
 
 -- | Parse an Ampersand file and all transitive includes
@@ -162,31 +160,16 @@ parseSingleADL opts@Options{..} pc
                  where f :: SomeException -> IO a
                        f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "++show exception)
 
-parseErrors :: Lang -> ParseError -> NEL.NonEmpty CtxError
-parseErrors lang err = pure $ PE (Message msg)
-                where msg :: String
-                      msg = "In file " ++ show (errorPos err) ++ ":" ++ showLang lang (errorMessages err)
-                      showLang :: Lang -> [Message] -> String
-                      showLang English = showErrorMessages "or" "unknown parse error"   "at that point expecting" "Parsing stumbled upon" "end of input"
-                      showLang Dutch   = showErrorMessages "of" "onbekende parsingfout" "verwacht"  "onverwacht" "einde van de invoer"
-
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =
       -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
     case runP p pos' fn ts of
         --TODO: Add language support to the parser errors
-        Left err -> Errors $ parseErrors English err
+        Left err -> Errors $ pure $ PE err
         Right a -> pure a
     where pos' | null ts   = initPos fn
                | otherwise = tokPos (head ts)
 
---TODO: Give the errors in a better way
-lexerError2CtxError :: LexerError -> CtxError
-lexerError2CtxError (LexerError pos' err) =
-   PE (Message ("Lexer error at "++show pos'++"\n  "
-                ++ intercalate "\n    " (showLexerErrorInfo err)
-               )
-      )
 
 -- | Runs the given parser
 runParser :: AmpParser a -- ^ The parser to run
