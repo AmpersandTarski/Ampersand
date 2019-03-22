@@ -29,6 +29,7 @@ data AmpersandExit
   | PHPExecutionFailed [String]
   | WrongArgumentsGiven [String]
   | FailedToInstallPrototypeFramework [String]
+  | NoAmpersandScript [String]
 
 info :: AmpersandExit -> (SE.ExitCode, [String])
 info x = 
@@ -54,6 +55,8 @@ info x =
               -> (SE.ExitFailure  70 , msg)
     FailedToInstallPrototypeFramework msg
               -> (SE.ExitFailure  80 , msg)
+    NoAmpersandScript msg
+              -> (SE.ExitFailure  90 , msg)
   where
     showViolatedRule :: (String,[String]) -> [String]
     showViolatedRule (rule,pairs) = 
