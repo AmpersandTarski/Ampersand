@@ -13,6 +13,7 @@ module Ampersand.Daemon.Daemon.Parser (
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.Parsing
+import           Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
 import           Ampersand.Daemon.Daemon.Types
 import           Ampersand.Daemon.Daemon.Escape
 import           Ampersand.Misc
@@ -30,8 +31,9 @@ import System.Time.Extra(sleep)
 
 parseProject :: Options -> FilePath -> IO [Load]
 parseProject opts rootAdl = do
-    gPContext <- parseADL opts rootAdl
-    l <- case gPContext of
+    gPctx <- parseADL opts rootAdl 
+    let gActx = pCtx2aCtx opts <$> gPctx
+    l <- case gActx of
           Checked _ ws -> pure $ map warning2Load ws
           Errors  es -> pure . NEL.toList . fmap error2Load $ es
 --    E.putStrLn $ "Parsed "++rootAdl++" and found "++(show . length $ l)++" load items."
