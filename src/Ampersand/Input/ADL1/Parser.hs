@@ -40,7 +40,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_markup = fmt
             , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
             , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
-            , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
+            , ctx_ds     = [p | CRel (p,_)<-ces]       -- The relations defined in this context, outside the scope of patterns
             , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
             , ctx_gs     = concat [ys | CCfy ys<-ces]       -- The Classify definitions defined in this context, outside the scope of patterns
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
@@ -50,7 +50,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
             , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
-            , ctx_pops   = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]
+            , ctx_pops   = [p | CPop p<-ces] ++ concat [p | CRel (_,p)<-ces]      -- The populations defined in this contextplug<-ces]
             , ctx_metas  = [meta | CMeta meta <-ces]
             }
        , [s | CIncl s<-ces] -- the INCLUDE filenames
@@ -79,7 +79,7 @@ data ContextElement = CMeta Meta
                     | CPat P_Pattern
                     | CRul (P_Rule TermPrim)
                     | CCfy [PClassify]
-                    | CRel P_Relation
+                    | CRel (P_Relation, [P_Population])
                     | CCon (String -> ConceptDef)
                     | CRep Representation
                     | Cm P_RoleRule
@@ -137,7 +137,7 @@ pPatternDef' (beginKeyword,endKeyword)
              , pt_nm  = nm
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = concat [ys | Py ys<-pes]
-             , pt_dcs = [d | Pd d<-pes]
+             , pt_dcs = [d | Pd (d,_)<-pes]
              , pt_RRuls = [rr | Pm rr<-pes]
              , pt_RRels = [rr | Pl rr<-pes]
              , pt_cds = [c nm | Pc c<-pes]
@@ -145,7 +145,7 @@ pPatternDef' (beginKeyword,endKeyword)
              , pt_ids = [k | Pk k<-pes]
              , pt_vds = [v | Pv v<-pes]
              , pt_xps = [e | Pe e<-pes]
-             , pt_pop = [p | Pp p<-pes]
+             , pt_pop = [p | Pp p<-pes]++concat [p | Pd (_,p)<-pes]
              , pt_end = end
              }
 
@@ -169,7 +169,7 @@ pPatElem = Pr <$> pRuleDef          <|>
 
 data PatElem = Pr (P_Rule TermPrim)
              | Py [PClassify]
-             | Pd P_Relation
+             | Pd (P_Relation, [P_Population])
              | Pm P_RoleRule
              | Pl P_RoleRelation
              | Pc (String -> ConceptDef)
@@ -235,7 +235,7 @@ pRuleDef =  P_Ru <$> currPos
                                 <|> PairViewText <$> posOf (pKey "TXT") <*> pString
 
 --- RelationDef ::= (RelationNew | RelationOld) Props? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
-pRelationDef :: AmpParser P_Relation
+pRelationDef :: AmpParser (P_Relation, [P_Population])
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
                        <*> optSet pProps
@@ -243,9 +243,14 @@ pRelationDef = reorder <$> currPos
                        <*> many pMeaning
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
-            where reorder pos' (nm,sign,fun) prop pragma meanings popu =
-                    let props = prop `Set.union` fun
-                    in P_Sgn nm sign props pragma meanings popu pos'
+            where reorder pos' (nm,sign,fun) prop pragma meanings prs =
+                    (P_Sgn nm sign props pragma meanings pos', map pair2pop prs)
+                    where 
+                      props = prop `Set.union` fun
+                      pair2pop :: PAtomPair -> P_Population
+                      pair2pop a = P_RelPopu Nothing Nothing (origin a) rel [a]
+                      rel :: P_NamedRel   -- the named relation
+                      rel = PNamedRel pos' nm (Just sign)
 
 --- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (String,P_Sign,Props)

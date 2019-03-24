@@ -501,7 +501,7 @@ data AAtomValue
                 }
   | AtomValueOfONE deriving (Eq,Ord, Show)
 
-instance Unique AAtomValue where   -- TODO:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
+instance Unique AAtomValue where   -- FIXME:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
   showUnique pop@AAVString{}   = (show.aavhash) pop
   showUnique pop@AAVInteger{}  = (show.aavint) pop
   showUnique pop@AAVFloat{}    = (show.aavflt) pop

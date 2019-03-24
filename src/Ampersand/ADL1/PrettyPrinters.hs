@@ -137,14 +137,12 @@ instance Pretty P_Pattern where
         where keyword = if null rruls && null rrels then "PATTERN" else "PROCESS"
 
 instance Pretty P_Relation where
-    pretty (P_Sgn nm sign prps pragma mean popu _) =
-        text "RELATION" <+> text nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean <+\> content
+    pretty (P_Sgn nm sign prps pragma mean _) =
+        text "RELATION" <+> text nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
         where props   = if prps == Set.fromList [Sym, Asy] then text "[PROP]"
                         else text "[" <> listOf (Set.toList prps) <> text "]"
               pragmas | null pragma = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
-              content | null popu   = empty
-                      | otherwise   = text "=\n[" <+> commas (map pretty popu) <+> text "]"
 
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
