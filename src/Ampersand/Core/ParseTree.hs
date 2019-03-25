@@ -111,7 +111,7 @@ instance Named Role where
  name (Role nm) = nm
  name (Service nm) = nm
 instance Unique Role where
- showUnique = optionalQuote . name
+ showUnique = name
 instance Traced P_RoleRule where
  origin = pos
 

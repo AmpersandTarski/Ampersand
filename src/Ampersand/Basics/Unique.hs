@@ -2,7 +2,7 @@
 {- The purpose of class Unique is to identify a Haskell object by means of a string.
 E.g.
 instance Unique Pattern where
- showUnique = optionalQuote . name
+ showUnique = name
 -}
 
 module Ampersand.Basics.Unique 
@@ -26,9 +26,7 @@ class (Typeable e, Eq e) => Unique e where
                  --    , theShow  = showUnique
                      }
   -- | representation of a Unique thing into a string.  
-  uniqueShowWithType :: 
-              e    ->  --  the thing to show
-              String
+  uniqueShowWithType :: e -> String
   uniqueShowWithType x = show (typeOf x) ++"_" ++ showUnique x
 
   -- | A function to show a unique instance. It is the responsability

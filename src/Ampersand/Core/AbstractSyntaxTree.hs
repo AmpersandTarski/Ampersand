@@ -111,7 +111,7 @@ instance Show A_Context where
 instance Eq A_Context where
   c1 == c2  =  name c1 == name c2
 instance Unique A_Context where
-  showUnique = optionalQuote . name
+  showUnique = name
 instance Named A_Context where
   name  = ctxnm
 
@@ -138,7 +138,7 @@ data Pattern
 instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
-  showUnique = optionalQuote . name
+  showUnique = name
 instance Ord Pattern where
  a `compare` b = name a `compare` name b
 instance Named Pattern where
@@ -171,7 +171,7 @@ data Rule =
 instance Eq Rule where
   r==r' = name r==name r' && origin r==origin r' -- Origin should be here too: A check that they all have unique names is done after typechecking.
 instance Unique Rule where
-  showUnique = optionalQuote . name
+  showUnique = name
 instance Ord Rule where
   compare = compare `on` rrnm
 instance Show Rule where
@@ -355,7 +355,7 @@ instance Named Interface where
 instance Traced Interface where
   origin = ifcPos
 instance Unique Interface where
-  showUnique = optionalQuote . name
+  showUnique = name
 -- Utility function for looking up interface refs
 getInterfaceByName :: [Interface] -> String -> Interface
 getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
@@ -783,7 +783,7 @@ makeConcept "ONE" = ONE
 makeConcept v = PlainConcept (hash v) (pack v)
 
 instance Unique A_Concept where
-  showUnique = optionalQuote . name
+  showUnique = name
 instance Hashable A_Concept where
   hashWithSalt s cpt =
      s `hashWithSalt` (case cpt of
