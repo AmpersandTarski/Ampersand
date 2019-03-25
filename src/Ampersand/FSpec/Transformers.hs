@@ -989,11 +989,16 @@ instance Instances ViewDef where
 -- must be an instance of HasDirtyId:
 class Unique a => HasDirtyId a where
   dirtyId :: a -> PopAtom
-  dirtyId = DirtyId 
-          . escapeIdentifier    -- because a character safe identifier is needed for use in URLs, filenames and database ids
+  dirtyId = DirtyId
           . uniqueButNotTooLong -- because it could be stored in an SQL database
-          . uniqueShowWithType
+          . makeIdentifier
    where
+    makeIdentifier :: a -> String
+    makeIdentifier x = 
+      show (typeOf x)
+      ++ "_"
+      ++ (escapeIdentifier $ showUnique x) -- escape because a character safe identifier is needed for use in URLs, filenames and database ids
+
     uniqueButNotTooLong :: String -> String
     uniqueButNotTooLong str =
       case splitAt safeLength str of
