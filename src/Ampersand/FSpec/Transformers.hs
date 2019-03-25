@@ -990,7 +990,7 @@ instance Instances ViewDef where
 class Unique a => HasDirtyId a where
   dirtyId :: a -> PopAtom
   dirtyId = DirtyId 
-          . escapeIdentifier    -- because we might show the dirtyId as html
+          . escapeIdentifier    -- because a character safe identifier is needed for use in URLs, filenames and database ids
           . uniqueButNotTooLong -- because it could be stored in an SQL database
           . uniqueShowWithType
    where
