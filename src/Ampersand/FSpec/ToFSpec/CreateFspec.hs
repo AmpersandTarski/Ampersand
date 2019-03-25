@@ -68,14 +68,12 @@ createMulti opts@Options{..} =
             --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
             addSemanticModel :: P_Context -> P_Context
             addSemanticModel pCtx  
-              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (Set.toList . instances $ fAmpFSpec)
+              = pCtx {ctx_ds = ctx_ds pCtx ++ map aRelation2pRelation (Set.toList . instances $ fAmpFSpec)
                      ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (Set.toList . instances $ fAmpFSpec)
                      ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (Set.toList . instances $ fAmpFSpec)
                      ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (Set.toList . instances $ fAmpFSpec)
                      ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)
                      }
-            noPopulation :: P_Relation -> P_Relation
-            noPopulation rel = rel{dec_popu =[]}
 
          userGFSpec :: Guarded FSpec
          userGFSpec = pCtx2Fspec $ 
