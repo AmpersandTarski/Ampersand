@@ -61,8 +61,8 @@ grind opts@Options{..} formalAmpersand userFspec =
       case pop of 
         Comment{} -> Nothing
         Pop{}     -> Just $
-             P_RelPopu { p_src  = Just . name . aConcept2pConcept . source $ rel
-                       , p_tgt  = Just . name . aConcept2pConcept . source $ rel
+             P_RelPopu { p_src  = Nothing
+                       , p_tgt  = Nothing
                        , pos    = orig
                        , p_nmdr = PNamedRel 
                             { pos    = orig
@@ -72,7 +72,7 @@ grind opts@Options{..} formalAmpersand userFspec =
                        , p_popps = map convertPair . Set.toList . popPairs $ pop
                        }
           where rel = popRelation pop
-                orig = Origin "Meatgrinder"
+                orig = Origin "Population generated due to the meatgrinder"
                 convertPair :: (PopAtom,PopAtom) -> PAtomPair
                 convertPair (a,b) = 
                     PPair { pos = orig

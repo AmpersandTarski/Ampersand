@@ -840,7 +840,7 @@ instance Named Type where
   name v = case typeOrConcept v of
                 Right (Just x) -> "Built-in type "++show x
                 Right Nothing  -> "The Generic Built-in type"
-                Left  x -> "Concept "++name x
+                Left  x -> "Concept: "++name x
 
 typeOrConcept :: Type -> Either A_Concept (Maybe TType)
 typeOrConcept (BuiltIn TypeOfOne)  = Left  ONE
