@@ -83,13 +83,12 @@ createMulti opts@Options{..} =
          --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
          addSemanticModel :: FSpec -> P_Context -> P_Context
          addSemanticModel metamodel pCtx =
-              = pCtx {ctx_ds = ctx_ds pCtx ++ map aRelation2pRelation (Set.toList . instances $ fAmpFSpec)
-                 , ctx_pos    = ctx_pos    pCtx
+            pCtx { ctx_pos    = ctx_pos    pCtx
                  , ctx_lang   = ctx_lang   pCtx
                  , ctx_markup = ctx_markup pCtx
                  , ctx_pats   = ctx_pats   pCtx `uni` map aPattern2pPattern     (Set.toList . instances $ metamodel)
                  , ctx_rs     = ctx_rs     pCtx `uni` map aRule2pRule           (Set.toList . instances $ metamodel)
-                 , ctx_ds     = ctx_ds     pCtx `uni` map (noPopulation . aRelation2pRelation) (Set.toList . instances $ metamodel)
+                 , ctx_ds     = ctx_ds     pCtx `uni` map aRelation2pRelation   (Set.toList . instances $ metamodel)
                  , ctx_cs     = ctx_cs     pCtx `uni` map id                    (Set.toList . instances $ metamodel)
                  , ctx_ks     = ctx_ks     pCtx `uni` map aIdentityDef2pIdentityDef (Set.toList . instances $ metamodel)
                  , ctx_rrules = ctx_rrules pCtx `uni` map aRoleRule2pRoleRule   (Set.toList . instances $ metamodel)

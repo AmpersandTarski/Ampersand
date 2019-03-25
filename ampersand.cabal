@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0b4501250ab7f3452b32168e685f018708cb1cf0a529820a86b90789863e61e3
+-- hash: 3f92b71969a6f557ae8f50096a047d9f4a6481ff18a789b5a81932aa522ca59c
 
 name:           ampersand
 version:        3.15.0
@@ -86,6 +86,10 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Views.docadl
     AmpersandData/FormalAmpersand/Views.ifc
     AmpersandData/FormalAmpersand/Views.xlsx
+    AmpersandData/SystemContext/Interfaces.adl
+    AmpersandData/SystemContext/Interfaces.ifc
+    AmpersandData/SystemContext/Navbar.adl
+    AmpersandData/SystemContext/Navbar.ifc
     AmpersandData/SystemContext/SystemContext.adl
     AmpersandData/SystemContext/SystemContext.docadl
     outputTemplates/default.asciidoc
