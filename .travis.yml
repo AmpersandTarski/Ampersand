@@ -81,7 +81,7 @@ matrix:
 
   allow_failures:
   # Temporarily, because cabal does not build, but stack does
-  # - name: "linux, cabal"
+  - name: "linux, cabal"
   
   # Nightly builds are allowed to fail
   - name: "linux, stack, latest"
