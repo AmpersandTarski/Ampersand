@@ -9,7 +9,9 @@ module Ampersand.Core.A2P_Converters (
   , aIdentityDef2pIdentityDef
   , aObjectDef2pObjectDef
   , aRelation2pRelation
+  , aPopulation2pPopulation
   , aRule2pRule
+  , aSign2pSign
   , aViewDef2pViewDef
   , aPattern2pPattern
   , aRoleRule2pRoleRule
@@ -82,7 +84,6 @@ aRelation2pRelation dcl =
        , dec_prps   = decprps dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]
        , dec_Mean   = map aMeaning2pMeaning (decMean dcl)
-       , dec_popu   = [] --TODO: should this be empty? There is nothing in the A-structure
        , pos   = decfpos dcl
        }
 

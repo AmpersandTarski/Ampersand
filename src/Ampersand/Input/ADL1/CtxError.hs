@@ -56,7 +56,7 @@ import           Data.Maybe
 import           GHC.Exts (groupWith)
 import           Text.Parsec.Error (Message(..), messageString)
 import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
-
+import           Ampersand.Core.AbstractSyntaxTree (Type)
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message
 
@@ -175,14 +175,17 @@ instance GetOneGuarded Expression P_NamedRel where
     ++".\n  Be more specific by using one of the following matching expressions:"
     ++concat ["\n  - "++showA l | l<-lst]
 
-mkTypeMismatchError :: (Traced a2, Named a) => a2 -> Relation -> SrcOrTgt -> a -> Guarded a1
-mkTypeMismatchError o decl sot conc
+mkTypeMismatchError :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
+mkTypeMismatchError o rel sot typ
  = Errors . pure $ CTXE (origin o) message
  where
-  message = "The "++showP sot++" for the population pairs, namely "++name conc
+  message = "The "++(case sot of
+                       Src -> "source"
+                       Tgt -> "target"
+                    )++"("++name typ++") for the population pairs "
             ++"\n  must be more specific or equal to that of the "
-            ++"relation you wish to populate, namely: "
-            ++showEC (sot,decl)
+            ++"relation you wish to populate ("++name rel++show (sign rel)++" found at "++show (origin rel)++")."
+
 
 cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded Expression
 cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message

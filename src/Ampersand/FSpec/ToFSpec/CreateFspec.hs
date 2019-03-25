@@ -83,7 +83,7 @@ createMulti opts@Options{..} =
          --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
          addSemanticModel :: FSpec -> P_Context -> P_Context
          addSemanticModel metamodel pCtx =
-            PCtx { ctx_nm     = ctx_nm     pCtx
+              = pCtx {ctx_ds = ctx_ds pCtx ++ map aRelation2pRelation (Set.toList . instances $ fAmpFSpec)
                  , ctx_pos    = ctx_pos    pCtx
                  , ctx_lang   = ctx_lang   pCtx
                  , ctx_markup = ctx_markup pCtx
@@ -103,8 +103,6 @@ createMulti opts@Options{..} =
                  , ctx_metas  = ctx_metas  pCtx
                  }
            where
-            noPopulation :: P_Relation -> P_Relation
-            noPopulation rel = rel{dec_popu =[]}
             uni :: Eq a => [a] -> [a] -> [a]
             uni xs ys = nub (xs ++ ys)
          userGFSpec :: Guarded FSpec
