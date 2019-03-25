@@ -145,7 +145,6 @@ instance Arbitrary P_Relation where
                       <*> arbitrary       -- props
                       <*> listOf safeStr1 -- pragma. Should be three, but the grammar allows more.
                       <*> arbitrary       -- meaning
-                      <*> arbitrary       -- pairs
                       <*> arbitrary       -- origin
 
 instance Arbitrary a => Arbitrary (Term a) where
