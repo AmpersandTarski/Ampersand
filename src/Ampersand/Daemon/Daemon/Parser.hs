@@ -12,27 +12,23 @@ module Ampersand.Daemon.Daemon.Parser (
 
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Input.Parsing
-import           Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
-import           Ampersand.Daemon.Daemon.Types
 import           Ampersand.Daemon.Daemon.Escape
-import           Ampersand.Misc
+import           Ampersand.Daemon.Daemon.Types
+import           Ampersand.FSpec.ToFSpec.CreateFspec
+import           Ampersand.Input.Parsing
 import           Ampersand.Input.ADL1.CtxError
---import           Control.Applicative
+import           Ampersand.Misc
 import           Data.Char
 import           Data.List.Extra
 import qualified Data.List.NonEmpty as NEL (toList)
---import           Data.Maybe
 import           Data.Tuple.Extra
 import           System.FilePath
 import           Text.Read
-import qualified System.IO.Extra as E
-import System.Time.Extra(sleep)
 
 parseProject :: Options -> FilePath -> IO [Load]
 parseProject opts rootAdl = do
     gPctx <- parseADL opts rootAdl 
-    let gActx = pCtx2aCtx opts <$> gPctx
+    let gActx = pCtx2Fspec opts gPctx
     l <- case gActx of
           Checked _ ws -> pure $ map warning2Load ws
           Errors  es -> pure . NEL.toList . fmap error2Load $ es
