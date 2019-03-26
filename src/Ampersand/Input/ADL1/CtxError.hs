@@ -59,7 +59,7 @@ import           Text.Parsec
 import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
 import           Ampersand.Core.AbstractSyntaxTree (Type)
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
-              | PE ParseError
+              | PE ParseError 
               | LE LexerError
 
 instance Show CtxError where

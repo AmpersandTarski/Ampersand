@@ -58,7 +58,6 @@ data Origin = OriginUnknown
             | PropertyRule String Origin -- Constructor is used to hold the origin of a propertyrule.
             | FileLoc FilePos SymbolName 
             | XLSXLoc FilePath String (Int,Int) 
-            | DBLoc String
     deriving (Eq, Ord, Typeable, Generic, Data)
 
 instance Unique Origin where
@@ -74,7 +73,6 @@ instance Show Origin where
                        = show filePath++":"++
                          "\n   Sheet: "++sheet++", "++T.unpack (int2col col)++show row
   show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
-  show (DBLoc str)     = "Database location: "++str
   show (Origin str)    = str
   show OriginUnknown   = "Unknown origin"
 

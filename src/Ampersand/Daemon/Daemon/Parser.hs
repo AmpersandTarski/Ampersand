@@ -29,12 +29,9 @@ parseProject :: Options -> FilePath -> IO [Load]
 parseProject opts rootAdl = do
     gPctx <- parseADL opts rootAdl 
     let gActx = pCtx2Fspec opts gPctx
-    l <- case gActx of
-          Checked _ ws -> pure $ map warning2Load ws
-          Errors  es -> pure . NEL.toList . fmap error2Load $ es
---    E.putStrLn $ "Parsed "++rootAdl++" and found "++(show . length $ l)++" load items."
---    sleep 10
-    return l
+    case gActx of
+      Checked _ ws -> return . map warning2Load $ ws
+      Errors  es   -> return . NEL.toList . fmap error2Load $ es
     
 warning2Load :: Warning -> Load
 warning2Load warn = Message
