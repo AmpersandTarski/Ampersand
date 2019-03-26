@@ -85,12 +85,16 @@ class Traced a where
   colnr :: a -> Int
   filenm x = case origin x of
                FileLoc (FilePos nm _ _) _ -> nm
+               XLSXLoc filePath sheet _         -> show filePath++":"++
+                         "\n   Sheet: "++sheet
                _ -> ""
   linenr x = case origin x of
                FileLoc (FilePos _ l _) _ -> l
+               XLSXLoc _        _     (row,_  ) -> row
                _ -> 0
   colnr x  = case origin x of
                FileLoc (FilePos _ _ c) _ -> c
+               XLSXLoc _        _     (_  ,col) -> col
                _ -> 0
 
 instance Traced Origin where
