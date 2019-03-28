@@ -79,7 +79,7 @@ data ColorMode
 options :: Mode (CmdArgs DaemonOptions)
 options = cmdArgsMode $ DaemonOptions
     {command = "cmd" &= name "c" &= typ "COMMAND" &= help "Command to run (defaults to ghci or cabal repl)"
-    ,arguments = [ "echo Hello World"] &= args &= typ "MODULE"
+    ,arguments = [ "ampersand --daemon"] &= args &= typ "MODULE"
     ,test = [] &= name "T" &= typ "EXPR" &= help "Command to run after successful loading"
     ,run = [] &= name "r" &= typ "EXPR" &= opt "main" &= help "Command to run after successful loading (defaults to main)"
     ,warnings = False &= name "W" &= help "Allow tests to run even with warnings"
@@ -354,7 +354,7 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
 -- | Given an available height, and a set of messages to display, show them as best you can.
 prettyOutput :: String -> Int -> [Load] -> [String]
 prettyOutput currTime loadedCount [] =
-    [allGoodMessage ++ " (" ++ show loadedCount ++ " module" ++ ['s' | loadedCount /= 1] ++ ", at " ++ currTime ++ ")"]
+    [allGoodMessage ++ " (" ++ show loadedCount ++ " file" ++ ['s' | loadedCount /= 1] ++ ", at " ++ currTime ++ ")"]
 prettyOutput _ _ xs = concatMap loadMessage xs
 
 

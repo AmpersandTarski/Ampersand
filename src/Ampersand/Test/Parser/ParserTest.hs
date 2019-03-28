@@ -16,7 +16,7 @@ import qualified Data.List.NonEmpty as NEL (toList)
 parseScripts :: Options -> [FilePath] -> IO Bool
 parseScripts _ [] = return True
 parseScripts opts (f:fs) =
-     do parsed <- parseADL opts f
+     do parsed <- snd <$> parseADL opts f
         case parsed of
             Checked _ ws -> do
                 putStrLn ("Parsed: " ++ f)

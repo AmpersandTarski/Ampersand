@@ -34,11 +34,11 @@ import           Text.Parsec.Prim (runP)
 -- | Parse an Ampersand file and all transitive includes
 parseADL :: Options                    -- ^ The options given through the command line
          -> FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
-         -> IO (Guarded P_Context)     -- ^ The resulting context
+         -> IO ([ParseCandidate], Guarded P_Context)     -- ^ The resulting context
 parseADL opts@Options{..} fp = do 
     curDir <- getCurrentDirectory
     canonical <- canonicalizePath fp
-    parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
+    parseThing' opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
 
 parseMeta :: Options -> IO (Guarded P_Context)
 parseMeta opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
@@ -46,25 +46,32 @@ parseMeta opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Ori
 parseSystemContext :: Options -> IO (Guarded P_Context)
 parseSystemContext opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
 
-parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context) 
-parseThing opts@Options{..} pc =
-  whenCheckedIO (parseADLs opts [] [pc] ) $ \ctxts ->
-      return . pure $ foldl1 mergeContexts ctxts
+parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context)
+parseThing opts pc = snd <$> parseThing' opts pc 
+
+parseThing' :: Options -> ParseCandidate -> IO ([ParseCandidate], Guarded P_Context) 
+parseThing' opts@Options{..} pc = do
+  results <- parseADLs opts [] [pc]
+  case results of 
+     Errors err    -> return ([pc], Errors err)
+     Checked xs ws -> return ( fst . unzip $ xs
+                             , Checked (foldl1 mergeContexts . snd . unzip $ xs) ws
+                             )
 
 -- | Parses several ADL files
 parseADLs :: Options                  -- ^ The options given through the command line
           -> [ParseCandidate]         -- ^ The list of files that have already been parsed
           -> [ParseCandidate]         -- ^ A list of files that still are to be parsed.
-          -> IO (Guarded [P_Context]) -- ^ The resulting contexts
+          -> IO (Guarded [(ParseCandidate, P_Context)]) -- ^ The resulting contexts and the ParseCandidate that is the source for that P_Context
 parseADLs opts@Options{..} parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ pure []
     x:xs -> if x `elem` parsedFilePaths
             then parseADLs opts parsedFilePaths xs
             else whenCheckedIO (parseSingleADL opts x) parseTheRest
-        where parseTheRest :: (P_Context, [ParseCandidate]) -> IO (Guarded [P_Context])
+        where parseTheRest :: (P_Context, [ParseCandidate]) -> IO (Guarded [(ParseCandidate, P_Context)])
               parseTheRest (ctx, includes) = whenCheckedIO (parseADLs opts (x:parsedFilePaths) (includes++xs)) $
-                                                  return . pure . (:) ctx 
+                                                  return . pure . (:) (x,ctx) 
 
 data ParseCandidate = ParseCandidate 
        { pcBasePath :: Maybe FilePath -- The absolute path to prepend in case of relative filePaths 

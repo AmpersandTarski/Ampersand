@@ -68,7 +68,7 @@ load = loads . adState
 messages :: AmpersandDaemon -> [Load]
 messages = filter isMessage . load
 loaded :: AmpersandDaemon -> [FilePath]
-loaded = map fst . loadResults . adState
+loaded = loadResults . adState
 data AmpersandDaemon = AmpersandDaemon
     {adExec :: String -> (Stream -> String -> IO ()) -> IO ()
     ,adUnique :: Unique
@@ -81,7 +81,7 @@ instance Show AmpersandDaemon where
 data DaemonState = DaemonState
    { filesToLoad :: [FilePath]
    , loads :: [Load]
-   , loadResults :: [(FilePath, P_Context)]
+   , loadResults :: [FilePath]
    }
 instance Show DaemonState where
   showsPrec _ x
@@ -297,11 +297,11 @@ initialState opts directory = do
    case x of 
      Left msg   -> return $ Left msg
      Right root -> do 
-       ls <- parseProject opts root 
+       (ls,loadedFiles) <- parseProject opts root 
        return $ Right DaemonState
            { filesToLoad = [directory]
            , loads = ls
-           , loadResults = []
+           , loadResults = loadedFiles
            }
  where findRoot :: FilePath -> IO (Either [String] FilePath)
        findRoot dir = do

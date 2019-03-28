@@ -25,14 +25,17 @@ import           Data.Tuple.Extra
 import           System.FilePath
 import           Text.Read
 
-parseProject :: Options -> FilePath -> IO [Load]
+parseProject :: Options -> FilePath -> IO ([Load],[FilePath])
 parseProject opts rootAdl = do
-    gPctx <- parseADL opts rootAdl 
+    (pc,gPctx) <- parseADL opts rootAdl 
+    let loadedFiles = map pcCanonical pc
     let gActx = pCtx2Fspec opts gPctx
-    case gActx of
-      Checked _ ws -> return . map warning2Load $ ws
-      Errors  es   -> return . NEL.toList . fmap error2Load $ es
-    
+    return ( case gActx of
+              Checked _ ws -> map warning2Load $ ws
+              Errors  es   -> NEL.toList . fmap error2Load $ es
+           , loadedFiles
+           )
+
 warning2Load :: Warning -> Load
 warning2Load warn = Message
     {loadSeverity = Warning

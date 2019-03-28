@@ -47,7 +47,7 @@ createMulti opts@Options{..} =
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
      userP_Ctx:: Guarded P_Context <- 
         case fileName of
-          Just x -> parseADL opts x -- the P_Context of the user's sourceFile
+          Just x -> snd <$> parseADL opts x -- the P_Context of the user's sourceFile
           Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     
      systemP_Ctx:: Guarded P_Context <- parseSystemContext opts
