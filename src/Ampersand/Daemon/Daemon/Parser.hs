@@ -49,7 +49,7 @@ error2Load err = Message
     ,loadFile = file 
     ,loadFilePos = (line,col) 
     ,loadFilePosEnd = (line,col)
-    ,loadMessage = lines $ showErr err
+    ,loadMessage = lines $ show err
     }
   where (file, line, col) = (filenm err, linenr err, colnr err)
 

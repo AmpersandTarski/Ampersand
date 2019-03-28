@@ -65,12 +65,17 @@ instance Unique Origin where
 instance Hashable Origin
 
 instance Show FilePos where
-  show (FilePos fn l c) = "line " ++ show l ++ ":" ++ show c ++ ", file " ++ fn
+  show (FilePos fn l c) = fn ++ ":" ++ show l ++ ":" ++ show c
 
 instance Show Origin where
+  -- The vscode extension expects errors and warnings
+  -- to be in a standardized format. The show function
+  -- complies to that. Iff for whatever reason 
+  -- this function is changed, please verify 
+  -- the proper working of the ampersand-language-extension
   show (FileLoc pos _) = show pos
   show (XLSXLoc filePath sheet (row,col)) 
-                       = show filePath++":"++
+                       = filePath++":"++
                          "\n   Sheet: "++sheet++", "++T.unpack (int2col col)++show row
   show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
   show (Origin str)    = str

@@ -17,7 +17,7 @@ main =
             ; case gMulti of
                 Errors err    -> 
                    exitWith . NoValidFSpec . intersperse  (replicate 30 '=') 
-                 . fmap showErr . NEL.toList $ err
+                 . fmap show . NEL.toList $ err
                 Checked multi ws -> do
                    showWarnings ws
                    generateAmpersandOutput opts multi

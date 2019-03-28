@@ -57,7 +57,7 @@ createMulti opts@Options{..} =
                        Checked f _ -> f
                        Errors errs -> fatal . unlines $
                             "The FormalAmpersand ADL scripts are not type correct:"
-                          : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+                          : (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
 
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =

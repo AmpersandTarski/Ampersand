@@ -95,13 +95,13 @@ grind opts@Options{..} formalAmpersand userFspec =
       --              Errors errs -> fatal . unlines $
       --                 [ "ERROR in tupels that are generated in the meatgrinder for relation"
       --                 , "  "++showRel (popRelation pop)
-      --                 ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+      --                 ] ++ (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
 
       --       Errors errs 
       --         -> fatal . unlines $
       --                 [ "ERROR in tupels that are generated in the meatgrinder for relation"
       --                 , "  "++showRel (popRelation pop)
-      --                 ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+      --                 ] ++ (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
       -- checkAtomValues :: Relation -> [PAtomPair] -> Guarded AAtomPairs
       -- checkAtomValues rel pps = Set.fromList <$> (sequence $ map fun pps)
       --       where
