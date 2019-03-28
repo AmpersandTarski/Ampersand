@@ -39,7 +39,7 @@ warning2Load warn = Message
     ,loadFile = file 
     ,loadFilePos = (line,col) 
     ,loadFilePosEnd = (line,col)
-    ,loadMessage = showWarning warn
+    ,loadMessage = lines $ show warn
     }
   where (file, line, col) = (filenm warn, linenr warn, colnr warn)
         

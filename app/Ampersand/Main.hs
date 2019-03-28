@@ -19,7 +19,7 @@ main =
                    exitWith . NoValidFSpec . intersperse  (replicate 30 '=') 
                  . fmap show . NEL.toList $ err
                 Checked multi ws -> do
-                   showWarnings ws
+                   mapM_  putStrLn . concatMap (lines . show) $ ws
                    generateAmpersandOutput opts multi
                    putStrLn "Finished processing your model"
                    putStrLn . ("Your script has no errors " ++) $

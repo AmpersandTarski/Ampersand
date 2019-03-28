@@ -28,7 +28,6 @@ module Ampersand.Input.ADL1.CtxError
   , lexerWarning2Warning
   , lexerError2CtxError
   , addWarning, addWarnings
-  , showWarning, showWarnings
   , mkCrudWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
@@ -508,12 +507,10 @@ showFullOrig (FileLoc (FilePos filename line column) t)
                 " in file " ++ filename ++
                 " at line " ++ show line ++
                 " : " ++ show column
-
 showFullOrig x = show x
+
 showMinorOrigin :: Origin -> String
 showMinorOrigin (FileLoc (FilePos _ line column) _) = "line " ++ show line ++" : "++show column
 showMinorOrigin v = show v
 
-showWarnings :: [Warning] -> IO ()
-showWarnings = mapM_  putStrLn . concatMap showWarning 
 
