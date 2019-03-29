@@ -11,7 +11,6 @@ module Ampersand.Daemon.Daemon(runDaemon) where
 --module Ampersand.Daemon.Daemon(main, mainWithTerminal, TermSize(..), WordWrap(..)) where
 
 import Control.Exception
-import System.IO.Error
 import Control.Monad.Extra
 import Data.List.Extra
 import Data.Maybe
@@ -30,7 +29,6 @@ import System.FilePath
 import System.Info
 import System.IO.Extra
 
-import Ampersand.Daemon.Paths
 import Ampersand.Daemon.Daemon.Escape
 import Ampersand.Daemon.Daemon.Terminal
 import Ampersand.Daemon.Daemon.Util
@@ -45,8 +43,7 @@ import Ampersand.Basics (fatal,ampersandVersionWithoutBuildTimeStr)
 
 -- | Command line options
 data DaemonOptions = DaemonOptions
-    {command :: String
-    ,arguments :: [String]
+    {arguments :: [String]
     ,test :: [String]
     ,run :: [String]
     ,warnings :: Bool
@@ -78,8 +75,7 @@ data ColorMode
 
 options :: Mode (CmdArgs DaemonOptions)
 options = cmdArgsMode $ DaemonOptions
-    {command = "cmd" &= name "c" &= typ "COMMAND" &= help "Command to run (defaults to ghci or cabal repl)"
-    ,arguments = [ "ampersand --daemon"] &= args &= typ "MODULE"
+    {arguments = [ "ampersand --daemon"] &= args &= typ "MODULE"
     ,test = [] &= name "T" &= typ "EXPR" &= help "Command to run after successful loading"
     ,run = [] &= name "r" &= typ "EXPR" &= opt "main" &= help "Command to run after successful loading (defaults to main)"
     ,warnings = False &= name "W" &= help "Allow tests to run even with warnings"
@@ -128,40 +124,40 @@ Warnings:
 
 As a result, we prefer to give users full control with a .ghci file, if available
 -}
-autoOptions :: DaemonOptions -> IO DaemonOptions
-autoOptions o@DaemonOptions{..}
-    | command /= "" = return $ f [command] []
-    | otherwise = do
-        curdir <- getCurrentDirectory
-        files <- getDirectoryContents "."
+-- autoOptions :: DaemonOptions -> IO DaemonOptions
+-- autoOptions o@DaemonOptions{..}
+--     | command /= "" = return $ f [command] []
+--     | otherwise = do
+--         curdir <- getCurrentDirectory
+--         files <- getDirectoryContents "."
 
-        -- use unsafePerformIO to get nicer pattern matching for logic (read-only operations)
-        let findStack dir = flip catchIOError (const $ return Nothing) $ do
-                let yaml = dir </> "stack.yaml"
-                b <- doesFileExist yaml &&^ doesDirectoryExist (dir </> ".stack-work")
-                return $ if b then Just yaml else Nothing
-        stack <- firstJustM findStack [".",".."] -- stack file might be parent, see #62
+--         -- use unsafePerformIO to get nicer pattern matching for logic (read-only operations)
+--         let findStack dir = flip catchIOError (const $ return Nothing) $ do
+--                 let yaml = dir </> "stack.yaml"
+--                 b <- doesFileExist yaml &&^ doesDirectoryExist (dir </> ".stack-work")
+--                 return $ if b then Just yaml else Nothing
+--         stack <- firstJustM findStack [".",".."] -- stack file might be parent, see #62
 
-        let cabal = map (curdir </>) $ filter ((==) ".cabal" . takeExtension) files
-        let opts = [] 
-        return $ case () of
-            _ | Just stack <- stack ->
-                let flags = if null arguments then
-                                "stack ghci --test --bench" :
-                                ["--no-load" | ".ghci" `elem` files] ++
-                                map ("--ghci-options=" ++) opts
-                            else
-                                "stack exec --test --bench -- ghci" : opts
-                in f flags $ stack:cabal
-              | ".ghci" `elem` files -> f ("ghci":opts) [curdir </> ".ghci"]
-              | cabal /= [] -> f (if null arguments then "cabal repl":map ("--ghc-options=" ++) opts else "cabal exec -- ghci":opts) cabal
-              | otherwise -> f ("ghci":opts) []
-    where
-        f c r = o{command = unwords $ c ++ map escape arguments, arguments = [], restart = restart ++ r, run = [], test = run ++ test}
+--         let cabal = map (curdir </>) $ filter ((==) ".cabal" . takeExtension) files
+--         let opts = [] 
+--         return $ case () of
+--             _ | Just stack <- stack ->
+--                 let flags = if null arguments then
+--                                 "stack ghci --test --bench" :
+--                                 ["--no-load" | ".ghci" `elem` files] ++
+--                                 map ("--ghci-options=" ++) opts
+--                             else
+--                                 "stack exec --test --bench -- ghci" : opts
+--                 in f flags $ stack:cabal
+--               | ".ghci" `elem` files -> f ("ghci":opts) [curdir </> ".ghci"]
+--               | cabal /= [] -> f (if null arguments then "cabal repl":map ("--ghc-options=" ++) opts else "cabal exec -- ghci":opts) cabal
+--               | otherwise -> f ("ghci":opts) []
+--     where
+--         f c r = o{command = unwords $ c ++ map escape arguments, arguments = [], restart = restart ++ r, run = [], test = run ++ test}
 
-        -- in practice we're not expecting many arguments to have anything funky in them
-        escape x | ' ' `elem` x = "\"" ++ x ++ "\""
-                 | otherwise = x
+--         -- in practice we're not expecting many arguments to have anything funky in them
+--         escape x | ' ' `elem` x = "\"" ++ x ++ "\""
+--                  | otherwise = x
 
 data TermSize = TermSize
     {termWidth :: Int
@@ -186,7 +182,7 @@ mainWithTerminal opts termSize termOutput =
                 outStrLn $ "%ARCH: " ++ arch
                 outStrLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
             withCurrentDirectory (directory dOpts) $ do
-                dOpts <- autoOptions dOpts
+         --       dOpts <- autoOptions dOpts
                 dOpts <- return $ dOpts{restart = nubOrd $ (origDir </> ".ampersand") : restart dOpts, reload = nubOrd $ reload dOpts}
                 when (topmost dOpts) terminalTopmost
 
@@ -258,11 +254,11 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
         exitFailure
 
     nextWait <- waitFiles waiter
-    aDaemon <- sessionStart opts session command $
+    aDaemon <- sessionStart opts session "ampersand --daemon" $
         setup
 
     when (null (load aDaemon) && not ignoreLoaded) $ do
-        putStrLn $ "\nNo files loaded, Ampersand daemon is not working properly.\nCommand: " ++ command
+        putStrLn $ "\nNo files loaded, Ampersand daemon is not working properly.\n"
         exitFailure
 
     restart <- return $ nubOrd $ restart ++ [x | LoadConfig x <- load aDaemon]
