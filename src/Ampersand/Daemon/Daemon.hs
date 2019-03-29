@@ -242,7 +242,7 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
         exitFailure
 
     nextWait <- waitFiles waiter
-    aDaemon <- sessionStart opts session "ampersand --daemon" $
+    aDaemon <- sessionStart opts session "cmd ampersand --daemon" $
         setup
 
     when (null (load aDaemon) && not ignoreLoaded) $ do
