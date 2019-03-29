@@ -460,8 +460,6 @@ addWarnings ws ga =
   case ga of
     Checked a ws' -> Checked a (ws <> ws')
     Errors a      -> Errors a
-showWarning :: Warning -> [String]
-showWarning = lines . show
    
 data Guarded a = 
    Errors (NEL.NonEmpty CtxError) 
