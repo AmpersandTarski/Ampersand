@@ -8,17 +8,11 @@ module Ampersand.Daemon.Session(
       Session
     , withSession
     , sessionStart
---    , sessionReload
---    , sessionExecAsync
     ) where
 
 import Ampersand.Daemon.Daemon.Daemon
---import Ampersand.Daemon.Daemon.Escape
 import Ampersand.Daemon.Daemon.Util
-import Ampersand.Daemon.Daemon.Types
 import Data.IORef
---import System.Time.Extra
---import System.Process
 import System.Directory
 import System.FilePath
 import Control.Exception.Extra
@@ -26,7 +20,6 @@ import Control.Concurrent.Extra
 import Control.Monad.Extra
 import Data.Maybe
 import Data.List.Extra
---import Control.Applicative
 import Ampersand.Basics.Prelude
 import Ampersand.Misc
 
@@ -62,23 +55,17 @@ withSession f = do
         modifyVar_ running $ const $ return False
         whenJustM (readIORef ghci) $ \v -> do
             writeIORef ghci Nothing
-            debugShutdown "Calling kill"
-            kill v
+--            debugShutdown "Calling kill"
+--            kill
         debugShutdown "Finish finally"
 
 
 -- | Kill. Wait just long enough to ensure you've done the job, but not to see the results.
-kill :: AmpersandDaemon -> IO ()
-kill ghci = ignored $ do
+kill :: IO ()
+kill = ignored $ do
     debugShutdown "Before quit"
     ignored $ quit
     
-
-loadedModules :: [Load] -> [FilePath]
-loadedModules = nubOrd . map loadFile . filter (not . isLoadConfig)
-
-qualify :: FilePath -> [Load] -> [Load]
-qualify dir xs = [x{loadFile = dir </> loadFile x} | x <- xs]
 
 -- | Spawn a new Ghci process at a given command line. Returns the load messages, plus
 --   the list of files that were observed (both those loaded and those that failed to load).
@@ -90,93 +77,18 @@ sessionStart opts Session{..} cmd setup = do
     -- cleanup any old instances
     whenJustM (readIORef ghci) $ \v -> do
         writeIORef ghci Nothing
-        void $ forkIO $ kill v
+        void $ forkIO $ kill
     currentDirectory <- readIORef curdir >>= makeAbsolute
     
     -- start the new
     outStrLn $ "Loading " ++ cmd ++ " ..."
     aDaemon <- mask $ \unmask -> do
-        daemonState <- unmask $ startAmpersandDaemon opts currentDirectory $ const outStrLn 
+        daemonState <- unmask $ startAmpersandDaemon opts currentDirectory
         writeIORef ghci $ Just (daemonState)
         return daemonState
     mapM_ outStrLn $ lines . show $ aDaemon  -- for debugging
---    -- do whatever preparation was requested
---    _ <- exec v $ unlines setup
-    -- deal with current directory
     dir <- getCurrentDirectory 
     writeIORef curdir dir
---    aDaemon <- return $ qualify dir aDaemon
 
-
-    -- handle what the process returned
-    aDaemon <- return $ tidyState aDaemon
---    writeIORef warnings [m | m@Message{..} <- messages, loadSeverity == Warning]
     return (aDaemon)
 
-
--- -- | Call 'sessionStart' at the previous command.
--- sessionRestart :: Session -> IO ([Load], [FilePath])
--- sessionRestart session@Session{..} = do
---     Just (cmd, setup) <- readIORef command
---     sessionStart session cmd setup
-
-
--- | Reload, returning the same information as 'sessionStart'. In particular, any
---   information that GHCi doesn't repeat (warnings from loaded modules) will be
---   added back in.
--- sessionReload :: Session -> IO ([Load], [FilePath])
--- sessionReload session@Session{..} = do
---     -- kill anything async, set stuck if you didn't succeed
---     old <- modifyVar running $ \b -> return (False, b)
---     stuck <- if not old then return False else do
---         Just ghci <- readIORef ghci
---         fmap isNothing $ timeout 5 $ interrupt ghci
-
---     if stuck then sessionRestart session else do
---         -- actually reload
---         Just ghci <- readIORef ghci
---         dir <- readIORef curdir
---         messages <- tidyState . qualify dir <$> reload ghci
---         loaded <- map ((dir </>) . snd) <$> showModules ghci
---         let reloaded = loadedModules messages
---         warn <- readIORef warnings
-
---         -- only keep old warnings from files that are still loaded, but did not reload
---         let validWarn w = loadFile w `elem` loaded && loadFile w `notElem` reloaded
---         -- newest warnings always go first, so the file you hit save on most recently has warnings first
---         messages <- return $ messages ++ filter validWarn warn
-
---         writeIORef warnings [m | m@Message{..} <- messages, loadSeverity == Warning]
---         return (messages, nubOrd $ loaded ++ reloaded)
-
-
--- | Run an exec operation asynchronously. Should not be a @:reload@ or similar.
---   Will be automatically aborted if it takes too long. Only fires done if not aborted.
---   Argument to done is the final stderr line.
-{- sessionExecAsync :: Session -> String -> (String -> IO ()) -> IO ()
-sessionExecAsync Session{..} cmd done = do
-    Just ghci <- readIORef ghci
-    stderr <- newIORef ""
-    modifyVar_ running $ const $ return True
-    caller <- myThreadId
-    void $ flip forkFinally (either (throwTo caller) (const $ return ())) $ do
-        execStream ghci cmd $ \strm msg ->
-            when (msg /= "*** Exception: ExitSuccess") $ do
-                when (strm == Stderr) $ writeIORef stderr msg
-                outStrLn msg
-        old <- modifyVar running $ \b -> return (False, b)
-        -- don't fire Done if someone interrupted us
-        stderr <- readIORef stderr
-        when old $ done stderr
- -}
-
--- | Ignore entirely pointless messages and remove unnecessary lines.
-tidyState :: AmpersandDaemon -> AmpersandDaemon
-tidyState = id
---tidyMessage Message{loadSeverity=Warning, loadMessage=[_,x]}
---    | unescape x == "    -O conflicts with --interactive; -O ignored." = Nothing
---tidyMessage m@Message{..}
---    = Just m{loadMessage = filter (\x -> not $ any (`isPrefixOf` unescape x) bad) loadMessage}
---    where bad = ["      except perhaps to import instances from"
---                ,"    To import instances alone, use: import "]
---tidyMessage x = Just x
