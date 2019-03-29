@@ -112,9 +112,6 @@ startAmpersandDaemon opts directory = do
                         if stop s then return $ Just () else do _ <- echo strm s; return Nothing
     return ad            
 
-stopAmpersandDaemon :: AmpersandDaemon -> IO ()
-stopAmpersandDaemon _ = putStrLn "Daemon stopped."
-   
 initialState :: Options -> FilePath -> IO (Either [String] DaemonState)
 initialState opts directory = do
    x <- findRoot directory -- TODO: Read contents of .ampersand file. Fail if not present.
@@ -134,7 +131,6 @@ initialState opts directory = do
          if exists 
          then do
              root <- readFile dotAmpersand
-             exists' <- doesFileExist root
              return (Right root)  
          else return (Left $ [ "File not found: "++dotAmpersand
                              , "  Your workspace should contain a file called .ampersand. However,"
@@ -212,10 +208,9 @@ stopGhci ghci = do
     quit ghci
  -}
 
-
+out,err :: Handle
 out = stdout
 err = stderr
-removePrefix = id
 -- Consume from a stream until EOF (return Nothing) or some predicate returns Just
 consume :: Stream -> (String -> IO (Maybe a)) -> IO (Maybe a)
 consume name finish = do
@@ -226,7 +221,7 @@ consume name finish = do
                         Left _ -> return Nothing
                         Right l -> do
                             whenLoud $ outStrLn $ "%" ++ upper (show name) ++ ": " ++ l
-                            res <- finish $ removePrefix l
+                            res <- finish $ l
                             case res of
                                 Nothing -> rec
                                 Just a -> return $ Just a
