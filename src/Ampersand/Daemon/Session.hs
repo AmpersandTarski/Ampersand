@@ -55,8 +55,6 @@ withSession f = do
         modifyVar_ running $ const $ return False
         whenJustM (readIORef ghci) $ \v -> do
             writeIORef ghci Nothing
---            debugShutdown "Calling kill"
---            kill
         debugShutdown "Finish finally"
 
 
@@ -86,7 +84,6 @@ sessionStart opts Session{..} cmd setup = do
         daemonState <- unmask $ startAmpersandDaemon opts currentDirectory
         writeIORef ghci $ Just (daemonState)
         return daemonState
-    mapM_ outStrLn $ lines . show $ aDaemon  -- for debugging
     dir <- getCurrentDirectory 
     writeIORef curdir dir
 

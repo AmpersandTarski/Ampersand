@@ -8,7 +8,6 @@
 -- | The application entry point
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon(runDaemon) where
---module Ampersand.Daemon.Daemon(main, mainWithTerminal, TermSize(..), WordWrap(..)) where
 
 import Control.Exception
 import Control.Monad.Extra
@@ -16,7 +15,6 @@ import Data.List.Extra
 import Data.Maybe
 import Data.Ord
 import Data.Tuple.Extra
--- import Data.Version
 import Ampersand.Daemon.Session
 import qualified System.Console.Terminal.Size as Term
 import System.Console.CmdArgs
@@ -43,12 +41,7 @@ import Ampersand.Basics (fatal,ampersandVersionWithoutBuildTimeStr)
 
 -- | Command line options
 data DaemonOptions = DaemonOptions
-    {arguments :: [String]
-    ,test :: [String]
-    ,run :: [String]
-    ,warnings :: Bool
-    ,no_status :: Bool
-    ,height :: Maybe Int
+    {height :: Maybe Int
     ,width :: Maybe Int
     ,topmost :: Bool
     ,no_title :: Bool
@@ -75,12 +68,7 @@ data ColorMode
 
 options :: Mode (CmdArgs DaemonOptions)
 options = cmdArgsMode $ DaemonOptions
-    {arguments = [ "ampersand --daemon"] &= args &= typ "MODULE"
-    ,test = [] &= name "T" &= typ "EXPR" &= help "Command to run after successful loading"
-    ,run = [] &= name "r" &= typ "EXPR" &= opt "main" &= help "Command to run after successful loading (defaults to main)"
-    ,warnings = False &= name "W" &= help "Allow tests to run even with warnings"
-    ,no_status = False &= name "S" &= help "Suppress status messages"
-    ,height = Nothing &= help "Number of lines to use (defaults to console height)"
+    {height = Nothing &= help "Number of lines to use (defaults to console height)"
     ,width = Nothing &= name "w" &= help "Number of columns to use (defaults to console width)"
     ,topmost = False &= name "t" &= help "Set window topmost (Windows only)"
     ,no_title = False &= help "Don't update the shell title/icon"
@@ -281,9 +269,7 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
          --   outStrLn $ "... Woke up"
             let (countErrors, countWarnings) = both sum $ unzip
                     [if loadSeverity == Error then (1,0) else (0,1) | m@Message{..} <- messages ad, loadMessage /= []]
-            test <- return $
-                if null test || countErrors /= 0 || (countWarnings /= 0 && not warnings) then Nothing
-                else Just $ intercalate "\n" test
+                
 
             unless no_title $ setWindowIcon $
                 if countErrors > 0 then IconError else if countWarnings > 0 then IconWarning else IconOK
@@ -294,7 +280,7 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
                        (if countErrors >  0 && countWarnings >  0 then ", " else "") ++ f countWarnings "warning") ++
                        " " ++ extra ++ [' ' | extra /= ""] ++ "- " ++ project
 
-            updateTitle $ if isJust test then "(running test)" else ""
+            updateTitle ""
 
             -- order and restrict the messages
             -- nubOrdOn loadMessage because module cycles generate the same message at several different locations
@@ -305,7 +291,7 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
                 let f x = lookup (loadFile x) errTimes
                 return $ sortOn (Down . f) msgError ++ msgWarn
 
-            outputFill currTime (Just (loadedCount, ordMessages)) ["Running test..." | isJust test]
+            outputFill currTime (Just (loadedCount, ordMessages)) []
             forM_ outputfile $ \file ->
                 writeFile file $
                     if takeExtension file == ".json" then
@@ -315,35 +301,13 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
             when (null (loaded ad) && not ignoreLoaded) $ do
                 putStrLn "No files loaded, nothing to wait for. Fix the last error and restart."
                 exitFailure
-            -- whenJust test $ \t -> do
-            --     whenLoud $ outStrLn $ "%TESTING: " ++ t
-            --     sessionExecAsync session t $ \stderr -> do
-            --         whenLoud $ outStrLn "%TESTING: Completed"
-            --         hFlush stdout -- may not have been a terminating newline from test output
-            --         if "*** Exception: " `isPrefixOf` stderr then do
-            --             updateTitle "(test failed)"
-            --             setWindowIcon IconError
-            --          else do
-            --             updateTitle "(test done)"
-            --             whenNormal $ outStrLn "\n...done"
-
+            
             reason <- nextWait $ restart ++ reload ++ loaded ad
             whenLoud $ outStrLn $ "%RELOADING: " ++ unwords reason
             restartTimes2 <- mapM getModTime restart
             let restartChanged = [s | (False, s) <- zip (zipWith (==) restartTimes restartTimes2) restart]
             currTime <- getShortTime
-            -- exit cleanly, since the whole thing is wrapped in a forever
-            unless no_status $ outputFill currTime Nothing $ "Restarting..." : map ("  " ++) restartChanged
             return Continue
-{-             if not $ null restartChanged then do
-                -- exit cleanly, since the whole thing is wrapped in a forever
-                unless no_status $ outputFill currTime Nothing $ "Restarting..." : map ("  " ++) restartChanged
-                return Continue
-            else do
-                unless no_status $ outputFill currTime Nothing $ "Reloading..." : map ("  " ++) reason
-                nextWait <- waitFiles waiter
-                fire nextWait =<< sessionReload session
- -}
     fire nextWait aDaemon
 
 

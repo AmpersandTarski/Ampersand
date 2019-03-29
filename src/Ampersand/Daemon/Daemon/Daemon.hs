@@ -56,8 +56,8 @@ data AmpersandDaemon = AmpersandDaemon
     }
 instance Eq AmpersandDaemon where
     a == b = adUnique a == adUnique b
-instance Show AmpersandDaemon where
-  show = show . adState     
+--instance Show AmpersandDaemon where
+--  show = show . adState     
 data DaemonState = DaemonState
    { filesToLoad :: [FilePath]
    , loads :: [Load]
