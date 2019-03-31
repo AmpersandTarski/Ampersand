@@ -68,11 +68,9 @@ instance Show DaemonState where
 
 startAmpersandDaemon 
      :: Options  -- Ampersand options
-     -> FilePath  -- ^ Working directory
      -> IO AmpersandDaemon
-startAmpersandDaemon opts directory = do
+startAmpersandDaemon opts = do
     unique <- newUnique
-
     -- At various points I need to ensure everything the user is waiting for has completed
     -- So I send messages on stdout/stderr and wait for them to arrive
     syncCount <- newVar 0
@@ -93,7 +91,7 @@ startAmpersandDaemon opts directory = do
             modifyVar_ syncCount $ return . succ
             syncReplay
     state <- do 
-       init <- initialState opts directory
+       init <- initialState opts
        case init of
          Left msg -> do
            mapM_ putStrLn msg
@@ -111,16 +109,17 @@ startAmpersandDaemon opts directory = do
                         if stop s then return $ Just () else do _ <- echo strm s; return Nothing
     return ad            
 
-initialState :: Options -> FilePath -> IO (Either [String] DaemonState)
-initialState opts directory = do
-   x <- findRoot directory -- TODO: Read contents of .ampersand file. Fail if not present.
+initialState :: Options -> IO (Either [String] DaemonState)
+initialState opts = do
+   curDir <- getCurrentDirectory
+   x <- findRoot curDir -- TODO: Read contents of .ampersand file. Fail if not present.
    case x of 
      Left msg   -> return $ Left msg
      Right root -> do 
        (ls,loadedFiles) <- parseProject opts root 
        return $ Right DaemonState
            { loads = ls
-           , loadResults = nub $ [directory </> ".ampersand"] ++ loadedFiles
+           , loadResults = nub $ [curDir </> ".ampersand"] ++ loadedFiles
            }
  where findRoot :: FilePath -> IO (Either [String] FilePath)
        findRoot dir = do

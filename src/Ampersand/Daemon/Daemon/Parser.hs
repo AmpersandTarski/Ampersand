@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
--- | Parses the output from GHCi
+-- | Reads a project and parses it
 module Ampersand.Daemon.Daemon.Parser (
     parseProject
 ) where
