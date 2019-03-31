@@ -58,7 +58,8 @@ listContentsInside test dir = do
 waitFiles :: Waiter -> IO ([FilePath] -> IO [String])
 waitFiles waiter = do
     base <- getCurrentTime
-    return $ \files -> handle (\(e :: IOError) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise a ghcid bug.",show e]) $ do
+    putStrLn $ "waitFiles. Waiting for file changes. The time is "++show base
+    return $ \files -> handle (\(e :: IOError) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
         whenLoud $ outStrLn $ "%WAITING: " ++ unwords files
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
         -- will pick up new files, as creating a new file changes the containing directory's modtime.

@@ -39,25 +39,25 @@ import Data.Functor
 import Prelude
 import Ampersand.Basics (fatal,ampersandVersionWithoutBuildTimeStr)
 
--- | Command line options
-data DaemonOptions = DaemonOptions
-    {height :: Maybe Int
-    ,width :: Maybe Int
-    ,topmost :: Bool
-    ,no_title :: Bool
-    ,project :: String
-    ,reload :: [FilePath]
-    ,restart :: [FilePath]
-    ,directory :: FilePath
-    ,outputfile :: [FilePath]
-    ,ignoreLoaded :: Bool
-    ,poll :: Maybe Seconds
-    ,max_messages :: Maybe Int
-    ,color :: ColorMode
-    ,setup :: [String]
-    ,daemon :: Bool
-    }
-    deriving (Data,Typeable,Show)
+-- -- | Command line options
+-- data DaemonOptions = DaemonOptions
+--     {height :: Maybe Int
+--     ,width :: Maybe Int
+--     ,topmost :: Bool
+--     ,no_title :: Bool
+--     ,project :: String
+--     ,reload :: [FilePath]
+--     ,restart :: [FilePath]
+--     ,directory :: FilePath
+--     ,outputfile :: [FilePath]
+--     ,ignoreLoaded :: Bool
+--     ,poll :: Maybe Seconds
+--     ,max_messages :: Maybe Int
+--     ,color :: ColorMode
+--     ,setup :: [String]
+--     ,daemon :: Bool
+--     }
+--     deriving (Data,Typeable,Show)
 
 -- | When to colour terminal output.
 data ColorMode
@@ -66,27 +66,27 @@ data ColorMode
     | Auto   -- ^ Terminal output will be coloured if $TERM and stdout appear to support it.
       deriving (Show, Typeable, Data)
 
-options :: Mode (CmdArgs DaemonOptions)
-options = cmdArgsMode $ DaemonOptions
-    {height = Nothing &= help "Number of lines to use (defaults to console height)"
-    ,width = Nothing &= name "w" &= help "Number of columns to use (defaults to console width)"
-    ,topmost = False &= name "t" &= help "Set window topmost (Windows only)"
-    ,no_title = False &= help "Don't update the shell title/icon"
-    ,project = "" &= typ "NAME" &= help "Name of the project, defaults to current directory"
-    ,restart = [] &= typ "PATH" &= help "Restart the command when the given file or directory contents change (defaults to .ghci and any .cabal file)"
-    ,reload = ["."] &= typ "PATH" &= help "Reload when the given file or directory contents change (defaults to none)"
-    --,reload = [] &= typ "PATH" &= help "Reload when the given file or directory contents change (defaults to none)"
-    ,directory = "." &= typDir &= name "C" &= help "Set the current directory"
-    ,outputfile = [] &= typFile &= name "o" &= help "File to write the full output to"
-    --,ignoreLoaded = False &= explicit &= name "ignore-loaded" &= help "Keep going if no files are loaded. Requires --reload to be set."
-    ,ignoreLoaded = True &= explicit &= name "ignore-loaded" &= help "Keep going if no files are loaded. Requires --reload to be set."
-    ,poll = Nothing &= typ "SECONDS" &= opt "0.1" &= explicit &= name "poll" &= help "Use polling every N seconds (defaults to using notifiers)"
-    ,max_messages = Nothing &= name "n" &= help "Maximum number of messages to print"
-    ,color = Auto &= name "colour" &= name "color" &= opt Always &= typ "always/never/auto" &= help "Color output (defaults to when the terminal supports it)"
-    ,setup = [] &= name "setup" &= typ "COMMAND" &= help "Setup commands to pass to ghci on stdin, usually :set <something>"
-    ,daemon = False
-    } &= verbosity &=
-    program "ampersand" &= summary ("Auto reloading ampersand daemon " ++ ampersandVersionWithoutBuildTimeStr)
+-- options :: Mode (CmdArgs DaemonOptions)
+-- options = cmdArgsMode $ DaemonOptions
+--     {height = Nothing &= help "Number of lines to use (defaults to console height)"
+--     ,width = Nothing &= name "w" &= help "Number of columns to use (defaults to console width)"
+--     ,topmost = False &= name "t" &= help "Set window topmost (Windows only)"
+--     ,no_title = False &= help "Don't update the shell title/icon"
+--     ,project = "" &= typ "NAME" &= help "Name of the project, defaults to current directory"
+--     ,restart = [] &= typ "PATH" &= help "Restart the command when the given file or directory contents change (defaults to .ghci and any .cabal file)"
+--     ,reload = ["."] &= typ "PATH" &= help "Reload when the given file or directory contents change (defaults to none)"
+--     --,reload = [] &= typ "PATH" &= help "Reload when the given file or directory contents change (defaults to none)"
+--     ,directory = "." &= typDir &= name "C" &= help "Set the current directory"
+--     ,outputfile = [] &= typFile &= name "o" &= help "File to write the full output to"
+--     --,ignoreLoaded = False &= explicit &= name "ignore-loaded" &= help "Keep going if no files are loaded. Requires --reload to be set."
+--     ,ignoreLoaded = False &= explicit &= name "ignore-loaded" &= help "Keep going if no files are loaded. Requires --reload to be set."
+--     ,poll = Nothing &= typ "SECONDS" &= opt "0.1" &= explicit &= name "poll" &= help "Use polling every N seconds (defaults to using notifiers)"
+--     ,max_messages = Nothing &= name "n" &= help "Maximum number of messages to print"
+--     ,color = Auto &= name "colour" &= name "color" &= opt Always &= typ "always/never/auto" &= help "Color output (defaults to when the terminal supports it)"
+--     ,setup = [] &= name "setup" &= typ "COMMAND" &= help "Setup commands to pass to ghci on stdin, usually :set <something>"
+--     ,daemon = False
+--     } &= verbosity &=
+--     program "ampersand" &= summary ("Auto reloading ampersand daemon " ++ ampersandVersionWithoutBuildTimeStr)
 
 
 {-
@@ -158,35 +158,29 @@ mainWithTerminal :: Options -> IO TermSize -> ([String] -> IO ()) -> IO ()
 mainWithTerminal opts termSize termOutput =
     handle (\(UnexpectedExit cmd _) -> do putStrLn $ "Command \"" ++ cmd ++ "\" exited unexpectedly"; exitFailure) $
         forever $ withWindowIcon $ withSession $ \session -> do
-            setVerbosity Normal -- undo any --verbose flags
+            setVerbosity $ if verboseP opts then Loud else Normal
+                   
 
             -- On certain Cygwin terminals stdout defaults to BlockBuffering
             hSetBuffering stdout LineBuffering
             hSetBuffering stderr NoBuffering
-            origDir <- getCurrentDirectory
-            dOpts <- cmdArgsRun options
+            curDir <- getCurrentDirectory
             whenLoud $ do
                 outStrLn $ "%OS: " ++ os
                 outStrLn $ "%ARCH: " ++ arch
                 outStrLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
-            withCurrentDirectory (directory dOpts) $ do
-         --       dOpts <- autoOptions dOpts
-                dOpts <- return $ dOpts{restart = nubOrd $ (origDir </> ".ampersand") : restart dOpts, reload = nubOrd $ reload dOpts}
-                when (topmost dOpts) terminalTopmost
-
-                termSize <- return $ case (width dOpts, height dOpts) of
-                    (Just w, Just h) -> return $ TermSize w h WrapHard
-                    (w, h) -> do
+            withCurrentDirectory curDir $ do
+                termSize <- return $ do
                         term <- termSize
                         -- if we write to the final column of the window then it wraps automatically
                         -- so putStrLn width 'x' uses up two lines
                         return $ TermSize
-                            (fromMaybe (pred $ termWidth term) w)
-                            (fromMaybe (termHeight term) h)
-                            (if isJust w then WrapHard else termWrap term)
+                            (pred $ termWidth term)
+                            (termHeight term)
+                            (termWrap term)
 
                 restyle <- do
-                    useStyle <- case color dOpts of
+                    useStyle <- case Auto of
                         Always -> return True
                         Never -> return False
                         Auto -> hSupportsANSI stdout
@@ -195,8 +189,8 @@ mainWithTerminal opts termSize termOutput =
                         when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see #87
                     return $ if useStyle then id else map unescape
 
-                maybe withWaiterNotify withWaiterPoll (poll dOpts) $ \waiter ->
-                    runAmpersand opts session waiter termSize (termOutput . restyle) dOpts
+                maybe withWaiterNotify withWaiterPoll (Nothing) $ \waiter ->
+                    runAmpersand opts session waiter termSize (termOutput . restyle)
 
 
 
@@ -218,9 +212,9 @@ data Continue = Continue
 
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
-runAmpersand :: Options -> Session -> Waiter -> IO TermSize -> ([String] -> IO ()) -> DaemonOptions -> IO Continue
-runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = do
-    let limitMessages = maybe id (take . max 1) max_messages
+runAmpersand :: Options -> Session -> Waiter -> IO TermSize -> ([String] -> IO ()) -> IO Continue
+runAmpersand opts session waiter termSize termOutput = do
+    let limitMessages = id 
 
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()
         outputFill currTime load' msg' = do
@@ -237,29 +231,27 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
                 mergeSoft [] = []
             termOutput $ map fromEsc ((if termWrap == WrapSoft then mergeSoft else map fst) $ load ++ msg) ++ pad
 
-    when (ignoreLoaded && null reload) $ do
-        putStrLn "--reload must be set when using --ignore-loaded"
-        exitFailure
-
     nextWait <- waitFiles waiter
-    aDaemon <- sessionStart opts session "cmd ampersand --daemon" $
-        setup
+    let a:: [FilePath] -> IO [String]
+        a = nextWait
+    aDaemon <- sessionStart opts session "cmd ampersand --daemon" []
 
-    when (null (load aDaemon) && not ignoreLoaded) $ do
+    when (null (loadResults . adState $ aDaemon)) $ do
         putStrLn $ "\nNo files loaded, Ampersand daemon is not working properly.\n"
         exitFailure
 
-    restart <- return $ nubOrd $ restart ++ [x | LoadConfig x <- load aDaemon]
+    restart <- return $ nubOrd $ [x | LoadConfig x <- load aDaemon]
     -- Note that we capture restarting items at this point, not before invoking the command
     -- The reason is some restart items may be generated by the command itself
     restartTimes <- mapM getModTime restart
 
-    project <- if project /= "" then return project else takeFileName <$> getCurrentDirectory
+    project <- takeFileName <$> getCurrentDirectory
 
     -- fire, given a waiter, the messages/loaded
     let fire :: ([FilePath] -> IO [String]) -> AmpersandDaemon -> IO Continue
         fire nextWait ad = do
             currTime <- getShortTime
+            let no_title = False
             let loadedCount = length (loaded ad)
             whenLoud $ do
                 outStrLn $ "%MESSAGES: " ++ (show . messages $ ad)
@@ -292,17 +284,19 @@ runAmpersand opts session waiter termSize termOutput dopts@DaemonOptions{..} = d
                 return $ sortOn (Down . f) msgError ++ msgWarn
 
             outputFill currTime (Just (loadedCount, ordMessages)) []
+            let outputfile = []
             forM_ outputfile $ \file ->
                 writeFile file $
                     if takeExtension file == ".json" then
                         showJSON [("loaded",map jString (loaded ad)),("messages",map jMessage $ filter isMessage (messages ad))]
                     else
                         unlines $ map unescape $ prettyOutput currTime loadedCount $ limitMessages ordMessages
-            when (null (loaded ad) && not ignoreLoaded) $ do
+            when (null . loadResults . adState $ ad) $ do
                 putStrLn "No files loaded, nothing to wait for. Fix the last error and restart."
                 exitFailure
             
             reason <- nextWait $ restart ++ reload ++ loaded ad
+            reason <- nextWait $ restart ++ loaded ad
             whenLoud $ outStrLn $ "%RELOADING: " ++ unwords reason
             restartTimes2 <- mapM getModTime restart
             let restartChanged = [s | (False, s) <- zip (zipWith (==) restartTimes restartTimes2) restart]

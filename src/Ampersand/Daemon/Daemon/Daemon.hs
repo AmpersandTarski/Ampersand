@@ -5,7 +5,7 @@
 -- | Library for spawning and working with Ghci sessions.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Daemon(
-    AmpersandDaemon,
+    AmpersandDaemon(..),DaemonState(..),
     Stream(..),
     Load(..), load,messages,loaded,
     Severity(..),
@@ -59,13 +59,12 @@ instance Eq AmpersandDaemon where
 --instance Show AmpersandDaemon where
 --  show = show . adState     
 data DaemonState = DaemonState
-   { filesToLoad :: [FilePath]
-   , loads :: [Load]
+   { loads :: [Load]
    , loadResults :: [FilePath]
    }
 instance Show DaemonState where
   showsPrec _ x
-   = showString ("DaemonState: "++show (filesToLoad x) ++ " " ++(show .length . loads $ x))
+   = showString $ "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
 
 startAmpersandDaemon 
      :: Options  -- Ampersand options
@@ -120,9 +119,8 @@ initialState opts directory = do
      Right root -> do 
        (ls,loadedFiles) <- parseProject opts root 
        return $ Right DaemonState
-           { filesToLoad = [directory]
-           , loads = ls
-           , loadResults = loadedFiles
+           { loads = ls
+           , loadResults = nub $ [directory </> ".ampersand"] ++ loadedFiles
            }
  where findRoot :: FilePath -> IO (Either [String] FilePath)
        findRoot dir = do
