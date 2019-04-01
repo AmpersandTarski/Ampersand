@@ -3,17 +3,12 @@
 -- | The types types that we use in Ghcid
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Types(
-    Stream(..),
     Load(..), Severity(..),
     isMessage, isLoading, isLoadConfig
     ) where
 
 import Ampersand.Basics
 import Data.Data
-
--- | The stream Ghci is talking over.
-data Stream = Stdout | Stderr
-    deriving (Show,Eq,Ord,Bounded,Enum,Read,Typeable,Data)
 
 -- | Severity of messages
 data Severity = Warning | Error
