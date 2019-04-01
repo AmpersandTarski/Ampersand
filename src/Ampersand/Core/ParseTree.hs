@@ -539,24 +539,23 @@ data P_Markup =
 data P_Population
   = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
               , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
-              , pos  :: Origin       -- the origin
+              , pos     :: Origin       -- the origin
               , p_nmdr  :: P_NamedRel   -- the named relation
               , p_popps :: [PAtomPair]  -- the contents
               }
-  | P_CptPopu { pos  :: Origin  -- the origin
+  | P_CptPopu { pos     :: Origin  -- the origin
               , p_cnme  :: String  -- the name of a concept
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
    deriving (Show) --For QuickCheck error messages only!
 
 instance Ord P_Population where
-  compare p1 p2 
-   | origin p1==OriginUnknown && origin p2==OriginUnknown = case (p1,p2) of
-                                                              (P_RelPopu{},P_RelPopu{}) -> compare (p_popps p1) (p_popps p2)
-                                                              (P_CptPopu{},P_CptPopu{}) -> compare (p_popas p1) (p_popas p2)
-                                                              (P_RelPopu{},_) -> LT
-                                                              (_,P_RelPopu{}) -> GT
-   | otherwise                                            = compare (origin p1) (origin p2)
+  compare p1 p2 = case (p1,p2) of -- P_Population cannot be compaired using 'pos', because Origin of grinded population (meat grinder) is the same for all
+    ( P_RelPopu{} , P_RelPopu{} ) -> compare (p_popps p1) (p_popps p2)
+    ( P_CptPopu{} , P_CptPopu{} ) -> compare (p_popas p1) (p_popas p2)
+    ( P_RelPopu{} , _           ) -> LT
+    ( _           , P_RelPopu{} ) -> GT
+   
 instance Eq P_Population where --Required for merge of P_Contexts  -- see also the comment at `Eq P_Concept`
  p1 == p2 = compare p1 p2 == EQ
  
