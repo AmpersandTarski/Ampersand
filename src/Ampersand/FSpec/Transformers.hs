@@ -985,8 +985,7 @@ instance Instances ViewDef where
   instances = Set.fromList . viewDefs . originalContext
   
 
--- All Concepts that are relevant in Formal Ampersand (RAP),
--- must be an instance of HasDirtyId:
+-- All Concepts that are relevant in Formal Ampersand (RAP), SystemContext or any other meta-model must be an instance of HasDirtyId:
 class Unique a => HasDirtyId a where
   dirtyId :: a -> PopAtom
   dirtyId = DirtyId
