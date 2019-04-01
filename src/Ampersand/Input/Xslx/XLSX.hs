@@ -33,9 +33,11 @@ parseXlsxFile opts mFk file =
      return . xlsx2pContext . toXlsx $ bytestr
  where
   xlsx2pContext :: Xlsx -> Guarded [P_Population]
-  xlsx2pContext xlsx 
-    = Checked $ concatMap (toPops opts file) $
-         concatMap theSheetCellsForTable (xlsx ^. xlSheets)
+  xlsx2pContext xlsx = Checked pop []
+    where 
+      pop = concatMap (toPops opts file)
+          . concatMap theSheetCellsForTable 
+          $ (xlsx ^. xlSheets)
 
 data SheetCellsForTable 
        = Mapping{ theSheetName :: String
@@ -57,7 +59,7 @@ toPops :: Options -> FilePath -> SheetCellsForTable -> [P_Population]
 toPops opts file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
-    popForColumn i = --trace (show x ++"(Now column: "++show i++")") $
+    popForColumn i =
       if i  == sourceCol  
       then  P_CptPopu { pos = popOrigin
                       , p_cnme = sourceConceptName 
@@ -185,8 +187,7 @@ theSheetCellsForTable (sheetName,ws)
     theMapping indexInTableStarters 
      | length okHeaderRows /= nrOfHeaderRows = Nothing  -- Because there are not enough header rows
      | otherwise
-     =  Just -- . (\x->trace (show x) x) $
-             Mapping { theSheetName = T.unpack sheetName
+     =  Just Mapping { theSheetName = T.unpack sheetName
                      , theCellMap   = ws  ^. wsCells
                      , headerRowNrs = okHeaderRows
                      , popRowNrs    = populationRows

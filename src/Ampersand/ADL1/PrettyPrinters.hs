@@ -10,7 +10,7 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           Data.Char (toUpper)
 import           Data.List (intercalate,intersperse)
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),toList)
+import qualified Data.List.NonEmpty as NEL
 import           Data.List.Utils (replace)
 import qualified Data.Set as Set
 import           Text.PrettyPrint.Leijen
@@ -137,14 +137,12 @@ instance Pretty P_Pattern where
         where keyword = if null rruls && null rrels then "PATTERN" else "PROCESS"
 
 instance Pretty P_Relation where
-    pretty (P_Sgn nm sign prps pragma mean popu _) =
-        text "RELATION" <+> text nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean <+\> content
+    pretty (P_Sgn nm sign prps pragma mean _) =
+        text "RELATION" <+> text nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
         where props   = if prps == Set.fromList [Sym, Asy] then text "[PROP]"
                         else text "[" <> listOf (Set.toList prps) <> text "]"
               pragmas | null pragma = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
-              content | null popu   = empty
-                      | otherwise   = text "=\n[" <+> commas (map pretty popu) <+> text "]"
 
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
@@ -206,8 +204,7 @@ instance Pretty (PairViewSegment (Term TermPrim)) where
     pretty (PairViewExp _ srcTgt term) = pretty srcTgt <~> term
 
 instance Pretty SrcOrTgt where
-    pretty Src = text "SRC"
-    pretty Tgt = text "TGT"
+    pretty = text . map toUpper . show
 
 instance Pretty (P_Rule TermPrim) where
     pretty (P_Ru _ nm expr mean msg viol) =
@@ -239,8 +236,8 @@ instance Pretty TType where
     pretty = text . show
       
 instance Pretty P_Interface where
-    pretty (P_Ifc nm roles obj _ _) =
-      text "INTERFACE " <+> maybeQuote nm 
+    pretty (P_Ifc isAPI nm roles obj _ _) =
+      text (if isAPI then "API " else "INTERFACE ") <+> maybeQuote nm 
         <+> iroles <+>
          (case obj of
             P_BxExpr{} -> 
@@ -348,38 +345,28 @@ instance Pretty P_Sign where
               equal P_Singleton P_Singleton = True
               equal _ _ = False
 
-instance Pretty P_Gen where
-    pretty p = case p of
-            PGen _ spc gen -> text "CLASSIFY" <~> spc <+> text "ISA" <~> gen
-            P_Cy _ spc rhs -> text "CLASSIFY" <~> spc <+> text "IS"  <+> separate "/\\" rhs
-
+instance Pretty PClassify where
+    pretty p = 
+      case p of
+            PClassify _ spc gen -> 
+                 text "CLASSIFY" <+> pretty spc <+> 
+                     (if NEL.length gen == 2 && 
+                         length (NEL.filter (spc /=) gen) == 1
+                      then text "ISA" <~> head (NEL.filter (spc /=) gen)
+                      else text "IS"  <+> separate "/\\" (NEL.toList gen)
+                     )
 instance Pretty Lang where
-    pretty Dutch   = text "IN DUTCH"
-    pretty English = text "IN ENGLISH"
+    pretty x = text "IN" <+> (text . map toUpper . show $ x)
 
 instance Pretty P_Markup where
     pretty (P_Markup lang format str) =
         pretty lang <~> format <+\> quotePurpose str
 
 instance Pretty PandocFormat where
-    pretty p = case p of
-        ReST     -> text "REST"
-        HTML     -> text "HTML"
-        LaTeX    -> text "LATEX"
-        Markdown -> text "MARKDOWN"
+    pretty = text . map toUpper . show
 
 instance Pretty Prop where
-    pretty p = text $ case p of
-                Uni -> "UNI"
-                Inj -> "INJ"
-                Sur -> "SUR"
-                Tot -> "TOT"
-                Sym -> "SYM"
-                Asy -> "ASY"
-                Trn -> "TRN"
-                Rfx -> "RFX"
-                Irf -> "IRF"
-                Prop -> "PROP"
+    pretty = text . map toUpper . show
 
 instance Pretty PAtomPair where
     pretty (PPair _ l r) = text "(" <+> pretty l 

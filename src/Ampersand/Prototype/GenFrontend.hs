@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveDataTypeable,OverloadedStrings #-}
 module Ampersand.Prototype.GenFrontend (doGenFrontend) where
 
@@ -13,7 +14,9 @@ import           Codec.Archive.Zip
 import           Control.Exception
 import           Control.Monad
 import qualified Data.ByteString.Lazy  as BL
+import           Data.Char
 import           Data.Data
+import           Data.Hashable (hash)
 import           Data.List
 import           Data.Maybe
 import           Network.HTTP.Simple
@@ -55,8 +58,8 @@ This is considered editable iff the composition rel;relRef yields an editable re
 
 -}
 
-getTemplateDir :: FSpec -> String
-getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
+getTemplateDir :: Options -> String
+getTemplateDir Options{..} = dirPrototype </> "templates"
         
 -- For useful info on the template language, see
 -- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
@@ -64,51 +67,50 @@ getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: FSpec -> IO ()
-doGenFrontend fSpec =
- do { putStrLn "Generating frontend.."
-    ; downloadPrototypeFramework (getOpts fSpec)
-    ; copyTemplates fSpec
-    ; feInterfaces <- buildInterfaces fSpec
-    ; genViewInterfaces fSpec feInterfaces
-    ; genControllerInterfaces fSpec feInterfaces
-    ; genRouteProvider fSpec feInterfaces
-    ; copyCustomizations fSpec
+doGenFrontend :: Options -> FSpec -> IO ()
+doGenFrontend opts@Options{..} fSpec =
+ do { verboseLn "Generating frontend..."
+    ; isCleanInstall <- downloadPrototypeFramework opts
+    ; copyTemplates opts
+    ; feInterfaces <- buildInterfaces opts fSpec
+    ; genViewInterfaces opts fSpec feInterfaces
+    ; genControllerInterfaces opts fSpec feInterfaces
+    ; genRouteProvider opts fSpec feInterfaces
+    ; writePrototypeAppFile opts ".timestamp" (show . hash . show $ genTime) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
+    ; copyCustomizations opts 
     -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
-    ; putStrLn "Installing dependencies.."
-    ; installComposerLibs (getOpts fSpec)
-    ; putStrLn "Frontend generated."
+    ; when isCleanInstall $ do
+      putStrLn "Installing dependencies..." -- don't use verboseLn here, because installing dependencies takes some time and we want the user to see this
+      installComposerLibs opts
+    ; verboseLn "Frontend generated"
     }
-
-copyTemplates :: FSpec -> IO ()
-copyTemplates fSpec =
- do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          tempDir = adlSourceDir </> "templates"
-          toDir = dirPrototype (getOpts fSpec) </> "templates"
+  
+copyTemplates :: Options -> IO ()
+copyTemplates opts@Options{..} =
+ do { let tempDir = dirSource </> "templates"
+          toDir = dirPrototype </> "templates"
     ; tempDirExists <- doesDirectoryExist tempDir
     ; if tempDirExists then
-        do { verboseLn (getOpts fSpec) $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
-           ; copyDirRecursively tempDir toDir (getOpts fSpec) -- recursively copy all templates
+        do { verboseLn $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
+           ; copyDirRecursively tempDir toDir opts -- recursively copy all templates
            }
       else
-        verboseLn (getOpts fSpec) $ "No project specific templates (there is no directory " ++ tempDir ++ ")"
+        verboseLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
     }
 
-copyCustomizations :: FSpec -> IO ()
-copyCustomizations fSpec = 
+copyCustomizations :: Options -> IO ()
+copyCustomizations opts@Options{..} = 
   mapM_ (copyDir protoDir) custDirs
     where
-      adlSourceDir = takeDirectory $ fileName opts
-      custDirs = map (adlSourceDir </>) (dirCustomizations opts)
-      protoDir = dirPrototype opts
-      opts = getOpts fSpec
+      custDirs = map (dirSource </>) dirCustomizations
+      protoDir = dirPrototype
       copyDir :: FilePath -> FilePath -> IO()
       copyDir targetDir sourceDir = do
         sourceDirExists <- doesDirectoryExist sourceDir
         if sourceDirExists then
-          do verboseLn opts $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
+          do verboseLn $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
              copyDirRecursively sourceDir targetDir opts -- recursively copy all customizations
-        else verboseLn opts $ "No customizations (there is no directory " ++ sourceDir ++ ")"
+        else verboseLn $ "No customizations (there is no directory " ++ sourceDir ++ ")"
 
 -- deleteTemplateDir :: FSpec -> IO ()
 -- deleteTemplateDir fSpec = removeDirectoryRecursive $ dirPrototype (getOpts fSpec) </> "templates"
@@ -151,14 +153,17 @@ data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the abso
                               , ifcSubObjs :: [FEObject2] 
                               } deriving (Show, Data,Typeable)
 
-buildInterfaces :: FSpec -> IO [FEInterface]
-buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
+buildInterfaces :: Options -> FSpec -> IO [FEInterface]
+buildInterfaces opts@Options{..} fSpec = mapM (buildInterface opts fSpec allIfcs) topLevelUserInterfaces
   where
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
-            
-buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
-buildInterface fSpec allIfcs ifc =
+
+    topLevelUserInterfaces :: [Interface]
+    topLevelUserInterfaces = filter (not . ifcIsAPI) allIfcs
+
+buildInterface :: Options -> FSpec -> [Interface] -> Interface -> IO FEInterface
+buildInterface opts@Options{..} fSpec allIfcs ifc =
  do { obj <- buildObject (BxExpr $ ifcObj ifc)
     ; return 
         FEInterface { ifcName = escapeIdentifier $ name ifc
@@ -176,7 +181,7 @@ buildInterface fSpec allIfcs ifc =
     buildObject :: BoxItem -> IO FEObject2
     buildObject (BxExpr object') =
      do { let object = substituteReferenceObjectDef fSpec object'
-        ; let iExp = conjNF (getOpts fSpec) $ objExpression object
+        ; let iExp = conjNF opts $ objExpression object
         ; (aOrB, iExp') <-
             case objmsub object of
               Nothing                  ->
@@ -191,7 +196,7 @@ buildInterface fSpec allIfcs ifc =
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
                              do { let templatePath = "Atomic-" ++ escapeIdentifier (name tgt) ++ ".html"
-                                ; hasSpecificTemplate <- doesTemplateExist fSpec templatePath
+                                ; hasSpecificTemplate <- doesTemplateExist opts templatePath
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
                   ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
@@ -254,29 +259,27 @@ buildInterface fSpec allIfcs ifc =
 
 ------ Generate RouteProvider.js
 
-genRouteProvider :: FSpec -> [FEInterface] -> IO ()
-genRouteProvider fSpec ifcs =
- do { --verboseLn opts $ show $ map name (interfaceS fSpec)
-    ; template <- readTemplate fSpec "routeProvider.config.js"
+genRouteProvider :: Options -> FSpec -> [FEInterface] -> IO ()
+genRouteProvider opts@Options{..} fSpec ifcs =
+ do { --verboseLn . show $ map name (interfaceS fSpec)
+    ; template <- readTemplate opts "routeProvider.config.js"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (fsName fSpec)
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "ifcs"                ifcs
-                     . setAttribute "verbose"             (verboseP opts)
-
+                     . setAttribute "verbose"             verboseP
     ; writePrototypeAppFile opts "routeProvider.config.js" contents 
     }
-  where opts = getOpts fSpec
     
 ------ Generate view html code
 
-genViewInterfaces :: FSpec -> [FEInterface] -> IO ()
-genViewInterfaces fSpec = mapM_ (genViewInterface fSpec) 
+genViewInterfaces :: Options -> FSpec -> [FEInterface] -> IO ()
+genViewInterfaces opts@Options{..} fSpec = mapM_ (genViewInterface opts fSpec)
 
-genViewInterface :: FSpec -> FEInterface -> IO ()
-genViewInterface fSpec interf =
- do { lns <- genViewObject fSpec 0 (_ifcObj interf)
-    ; template <- readTemplate fSpec "interface.html"
+genViewInterface :: Options -> FSpec -> FEInterface -> IO ()
+genViewInterface opts@Options{..} fSpec interf =
+ do { lns <- genViewObject opts fSpec 0 (_ifcObj interf)
+    ; template <- readTemplate opts "interface.html"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                      . setAttribute "isTopLevel"          ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -292,12 +295,12 @@ genViewInterface fSpec interf =
                      . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"               (objCrudD (_ifcObj interf))
                      . setAttribute "contents"            (intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
-                     . setAttribute "verbose"             (verboseP opts)
+                     . setAttribute "verbose"             verboseP
 
     ; let filename = "ifc" ++ ifcName interf ++ ".view.html" 
     ; writePrototypeAppFile opts filename contents 
     }
-   where opts = getOpts fSpec
+
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr2 = SubObjAttr{ subObjName :: String
                                 , subObjLabel :: String
@@ -305,8 +308,8 @@ data SubObjectAttr2 = SubObjAttr{ subObjName :: String
                                 , subObjExprIsUni :: Bool
                                 } deriving (Show, Data, Typeable)
  
-genViewObject :: FSpec -> Int -> FEObject2 -> IO [String]
-genViewObject fSpec depth obj@FEObjE{} =
+genViewObject :: Options -> FSpec -> Int -> FEObject2 -> IO [String]
+genViewObject opts@Options{..} fSpec depth obj@FEObjE{} =
   let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
       atomicAndBoxAttrs = setAttribute "exprIsUni"  (exprIsUni obj)
                         . setAttribute "exprIsTot"  (exprIsTot obj)
@@ -319,7 +322,7 @@ genViewObject fSpec depth obj@FEObjE{} =
                         . setAttribute "crudR"      (objCrudR obj)
                         . setAttribute "crudU"      (objCrudU obj)
                         . setAttribute "crudD"      (objCrudD obj)
-                        . setAttribute "verbose"    (verboseP (getOpts fSpec))
+                        . setAttribute "verbose"    verboseP
   in  case atomicOrBox obj of
         FEAtomic{} ->
          do { {-
@@ -332,7 +335,7 @@ genViewObject fSpec depth obj@FEObjE{} =
             --; putStrLn $ nm ++ ":" ++ show mPrimTemplate
             ; conceptTemplate <- getTemplateForObject
             ; let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
-            ; template <- readTemplate fSpec templateFilename
+            ; template <- readTemplate opts templateFilename
                     
             ; return . indentation
                      . lines 
@@ -344,7 +347,7 @@ genViewObject fSpec depth obj@FEObjE{} =
          do { subObjAttrs <- mapM genView_SubObject subObjs
                     
             ; let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" ++ cl ++ ".html") mClass
-            ; parentTemplate <- readTemplate fSpec clssStr
+            ; parentTemplate <- readTemplate opts clssStr
             
             ; return . indentation
                      . lines 
@@ -355,25 +358,23 @@ genViewObject fSpec depth obj@FEObjE{} =
             }
   where 
     indentation :: [String] -> [String]
-    indentation = indent (if depth == 0 then 4 else 16) 
+    indentation = map ( (replicate (if depth == 0 then 4 else 16) ' ') ++)
     genView_SubObject :: FEObject2 -> IO SubObjectAttr2
     genView_SubObject subObj =
       case subObj of
         FEObjE{} -> 
-          do lns <- genViewObject fSpec (depth + 1) subObj
+          do lns <- genViewObject opts fSpec (depth + 1) subObj
              return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                               , subObjLabel = objName subObj -- no escaping for labels in templates needed
                               , subObjContents = intercalate "\n" lns
                               , subObjExprIsUni = exprIsUni subObj
                               } 
-        FEObjT{} -> fatal "No view for TXT-like objects is defined."
-{- Code already in place. Wait for Prototype framework to implement backend
+        FEObjT{} -> 
           do return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                               , subObjLabel = objName subObj
                               , subObjContents = objTxt subObj
                               , subObjExprIsUni = True
                               }
--}
     getTemplateForObject :: IO FilePath
     getTemplateForObject 
        | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
@@ -381,23 +382,23 @@ genViewObject fSpec depth obj@FEObjE{} =
        | otherwise = getTemplateForConcept (objTarget obj)
     getTemplateForConcept :: A_Concept -> IO FilePath
     getTemplateForConcept cpt = do 
-         exists <- doesTemplateExist fSpec cptfn
+         exists <- doesTemplateExist opts cptfn
          return $ if exists
                   then cptfn
                   else "Atomic-"++show ttp++".html" 
        where ttp = cptTType fSpec cpt
              cptfn = "Concept-"++name cpt++".html" 
-genViewObject _     _     FEObjT{} = pure []
+genViewObject _ _    _     FEObjT{} = pure []
 
 ------ Generate controller JavaScript code
-genControllerInterfaces :: FSpec -> [FEInterface] -> IO ()
-genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
+genControllerInterfaces :: Options -> FSpec -> [FEInterface] -> IO ()
+genControllerInterfaces opts fSpec = mapM_ (genControllerInterface opts fSpec)
 
-genControllerInterface :: FSpec -> FEInterface -> IO ()
-genControllerInterface fSpec interf =
+genControllerInterface :: Options -> FSpec -> FEInterface -> IO ()
+genControllerInterface opts@Options{..} fSpec interf =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let controlerTemplateName = "interface.controller.js"
-    ; template <- readTemplate fSpec controlerTemplateName
+    ; template <- readTemplate opts controlerTemplateName
     ; let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -413,27 +414,25 @@ genControllerInterface fSpec interf =
                      . setAttribute "crudR"                    (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"                    (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
-                     . setAttribute "verbose"                  (verboseP opts)
+                     . setAttribute "verbose"                  verboseP
                      . setAttribute "usedTemplate"             controlerTemplateName
     ; let filename = "ifc" ++ ifcName interf ++ ".controller.js"
     ; writePrototypeAppFile opts filename contents 
     }
-    where 
-      opts = getOpts fSpec
 ------ Utility functions
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate String) String
 
 -- TODO: better abstraction for specific template and fallback to default
-doesTemplateExist :: FSpec -> String -> IO Bool
-doesTemplateExist fSpec templatePath =
- do { let absPath = getTemplateDir fSpec </> templatePath
+doesTemplateExist :: Options -> String -> IO Bool
+doesTemplateExist opts@Options{..} templatePath =
+ do { let absPath = getTemplateDir opts </> templatePath
     ; doesFileExist absPath
     }
 
-readTemplate :: FSpec -> String -> IO Template
-readTemplate fSpec templatePath =
- do { let absPath = getTemplateDir fSpec </> templatePath
+readTemplate :: Options -> String -> IO Template
+readTemplate opts@Options{..} templatePath =
+ do { let absPath = getTemplateDir opts </> templatePath
     ; res <- readUTF8File absPath
     ; case res of
         Left err          -> error $ "Cannot read template file " ++ templatePath ++ "\n" ++ err
@@ -455,29 +454,31 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 
-downloadPrototypeFramework :: Options -> IO ()
-downloadPrototypeFramework opts = 
+downloadPrototypeFramework :: Options -> IO Bool
+downloadPrototypeFramework Options{..} = 
   (do 
     x <- allowExtraction
-    when x $ do 
-      when (forceReinstallFramework opts) $ do
-        verboseLn opts $ "Emptying folder because redeploying prototype framework is forced"
-        destroyDestinationDir
-      verboseLn opts "Start downloading prototype framework."
+    if x
+    then do
+      verboseLn "Emptying folder to deploy prototype framework"
+      destroyDestinationDir
+      verboseLn "Start downloading prototype framework."
       response <- 
-        parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion opts++".zip") >>=
+        parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion++".zip") >>=
         httpBS  
       let archive = removeTopLevelFolder 
                   . toArchive 
                   . BL.fromStrict 
                   . getResponseBody $ response
-      verboseLn opts "Start extraction of prototype framework."
+      verboseLn "Start extraction of prototype framework."
       let zipoptions = 
-              [OptVerbose | verboseP opts]
+              [OptVerbose | verboseP ]
             ++ [OptDestination destination]
       extractFilesFromArchive zipoptions archive
-      writeFile (destination </> ".prototypeSHA")
+      writeFile (destination </> ".frameworkSHA")
                 (show . zComment $ archive)
+      return x
+    else return x
   ) `catch` \err ->  -- git failed to execute
          exitWith . FailedToInstallPrototypeFramework $
             [ "Error encountered during deployment of prototype framework:"
@@ -485,7 +486,7 @@ downloadPrototypeFramework opts =
             ]
             
   where
-    destination = dirPrototype opts
+    destination = dirPrototype
     destroyDestinationDir :: IO ()
     destroyDestinationDir = removeDirectoryRecursive destination
     removeTopLevelFolder :: Archive -> Archive
@@ -507,16 +508,34 @@ downloadPrototypeFramework opts =
           if destIsDirectory
           then do 
             dirContents <- listDirectory destination
-            let emptyOrForced = (null dirContents) || (forceReinstallFramework opts)
-            unless emptyOrForced
-                   (verboseLn opts $
+            if null dirContents
+            then return True
+            else do
+              if forceReinstallFramework
+              then do
+                putStrLn "Deleting all files to deploy prototype framework in"
+                putStrLn ("  " ++ destination)
+                putStrLn "Are you sure? y/n"
+                proceed <- promptUserYesNo
+                return proceed
+              else do
+                (verboseLn $
                          "(Re)deploying prototype framework not allowed, because\n"
-                      ++ "  "++destination++" isn't empty.")
-            return emptyOrForced
+                      ++ "  "++destination++" isn't empty. You could use the switch --force-reinstall-framework")
+                return False
           else do 
-             verboseLn opts $
+             verboseLn $
                        "(Re)deploying prototype framework not allowed, because\n"
                     ++ "  "++destination++" isn't a directory."
              return False
       else return True
-      
+
+promptUserYesNo :: IO Bool
+promptUserYesNo = do
+    char <- getChar -- TODO: refactor that the first character is directly processed
+    case toUpper char of
+      'Y' -> return True
+      'N' -> return False
+      _ -> do when (char /= '\n') $ putStrLn "Please specify y/n" -- Remove 'when' part if first char it directly processed
+              x <- promptUserYesNo
+              return x

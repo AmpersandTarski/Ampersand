@@ -15,14 +15,14 @@ import           Data.Data
 import qualified Data.Text as Text
 import           Text.Pandoc hiding (Meta)
 
-data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
+data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord, Enum, Bounded)
 
 data Markup =
     Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
            , amPandoc :: [Block]
            } deriving (Show, Eq, Ord, Typeable, Data)
 instance Unique Markup where
-  showUnique x = uniqueShow True x++" in "++(show.amLang) x
+  showUnique = show
 
 
 -- | a way to show the pandoc in a default way. We currently use Markdown for this purpose. 
@@ -36,7 +36,7 @@ aMarkup2String = blocks2String . amPandoc
               Right txt -> Text.unpack txt
 
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
--- | defaultPandocReader getOpts should be used on user-defined strings.
+-- | defaultPandocReader should be used on user-defined strings.
 string2Blocks :: PandocFormat -> String -> [Block]
 string2Blocks defaultformat str
  = case runPure $ theParser (Text.pack (removeCRs str)) of

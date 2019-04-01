@@ -25,7 +25,6 @@ makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
  =      FSpec { fsName       = pack (name context)
               , originalContext = context 
-              , getOpts      = opts
               , fspos        = ctxpos context
               , fsLang       = printingLanguage
               , plugInfos    = allplugs
@@ -338,7 +337,8 @@ makeFSpec opts context
             -- Each interface gets all attributes that are required to create and delete the object.
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
-        [Ifc { ifcname     = name c
+        [Ifc { ifcIsAPI    = False
+             , ifcname     = name c
              , ifcObj      = ObjectDef
                                  { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
@@ -364,7 +364,8 @@ makeFSpec opts context
      --end otherwise: default theme
      --end stap4a
      step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
-      = [Ifc { ifcname     = nm
+      = [Ifc { ifcIsAPI    = False
+             , ifcname     = nm
              , ifcObj      = ObjectDef
                                  { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
@@ -431,7 +432,9 @@ tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
 tblcontents ci ps plug
    = case plug of
      BinSQL{}    -> let expr = case dLkpTbl plug of
-                                 [store] -> EDcD (rsDcl store)
+                                 [store] -> if rsStoredFlipped store
+                                            then EFlp . EDcD . rsDcl $ store
+                                            else        EDcD . rsDcl $ store
                                  ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
                     in [[(Just . apLeft) p,(Just . apRight) p] |p<-Set.elems $ fullContents ci ps expr]
      TblSQL{}    -> 

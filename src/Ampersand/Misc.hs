@@ -6,8 +6,7 @@ import Ampersand.Misc.Options
         , FSpecFormat(..)
         , getOptions
         , verboseLn
-        , verbose
         , showFormat
-        , helpNVersionTexts
+        , usageInfo'
         , writeConfigFile
         )

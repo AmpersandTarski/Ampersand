@@ -8,7 +8,7 @@ import Data.List (nub,isInfixOf)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Basics
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
+import qualified Data.List.NonEmpty as NEL
 
 -- Useful functions to build on the quick check functions
 
@@ -125,12 +125,8 @@ instance Arbitrary P_RoleRule where
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary <*> listOf1 upperId <*> arbitrary
 
-instance Arbitrary TType where -- Not allowed are:  [ Object , TypeOfOne]
-    arbitrary = elements [Alphanumeric, BigAlphanumeric, HugeAlphanumeric, Password
-                         , Binary, BigBinary, HugeBinary
-                         , Date, DateTime
-                         , Boolean, Integer, Float
-                         ]
+instance Arbitrary TType where
+    arbitrary = elements [ tt | tt <- [minBound..] , tt /= TypeOfOne]
 
 instance Arbitrary Role where
     arbitrary =
@@ -149,7 +145,6 @@ instance Arbitrary P_Relation where
                       <*> arbitrary       -- props
                       <*> listOf safeStr1 -- pragma. Should be three, but the grammar allows more.
                       <*> arbitrary       -- meaning
-                      <*> arbitrary       -- pairs
                       <*> arbitrary       -- origin
 
 instance Arbitrary a => Arbitrary (Term a) where
@@ -225,7 +220,7 @@ instance Arbitrary a => Arbitrary (PairViewSegmentTerm a) where
     arbitrary = PairViewSegmentTerm <$> arbitrary -- should be only PairViewSegment (Term a)
 
 instance Arbitrary SrcOrTgt where
-    arbitrary = elements[Src, Tgt]
+    arbitrary = elements [minBound..]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
     arbitrary = P_Ru <$> arbitrary <*> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary
@@ -266,7 +261,8 @@ instance Arbitrary PAtomValue where
               [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints cs
               _        -> True  -- end of string
 instance Arbitrary P_Interface where
-    arbitrary = P_Ifc <$> safeStr1
+    arbitrary = P_Ifc <$> arbitrary
+                      <*> safeStr1
                       <*> listOf arbitrary
                       <*> sized (objTermPrim False) <*> arbitrary <*> safeStr
 
@@ -325,16 +321,14 @@ genConceptOne = oneof [arbitrary, return P_Singleton]
 instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary
 
-instance Arbitrary P_Gen where
+instance Arbitrary PClassify where
     arbitrary =
-        oneof [
-            P_Cy <$> arbitrary <*> concept <*> listOf1 arbitrary,
-            PGen <$> arbitrary <*> concept <*> concept
-        ]
-        where concept = PCpt <$> upperId
+        fun <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
+        where
+          fun p s g = PClassify p s (NEL.fromList g)
 
 instance Arbitrary Lang where
-    arbitrary = elements [Dutch, English]
+    arbitrary = elements [minBound..]
 
 instance Arbitrary P_Markup where
     arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr `suchThat` noEndMarkup
@@ -343,7 +337,7 @@ instance Arbitrary P_Markup where
        noEndMarkup = not . isInfixOf "+}"
 
 instance Arbitrary PandocFormat where
-    arbitrary = elements [HTML, ReST, LaTeX, Markdown]
+    arbitrary = elements [minBound..]
 
 instance Arbitrary Prop where
     arbitrary = elements [minBound..]

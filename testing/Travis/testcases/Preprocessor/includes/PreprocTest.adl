@@ -1,0 +1,34 @@
+CONTEXT "PreprocTest1"
+
+INCLUDE "./PreprocTestPopulation.adl" --# [ "!GenerateErrorIfThisVarIsSet" ]
+
+r1 :: A * B1
+r2 :: A * B2
+
+INTERFACE "Test": I[SESSION] cRud BOX <SHCOLS>
+  [ "Vars": V[SESSION*Var] cRud 
+  , "NoVars": V[SESSION*NoVar] cRud 
+  , "Ifc" : V[SESSION*A] cRud BOX <SHCOLS>
+    [ "A = ": I cRud
+--#IF EditableInterfaceA
+  --#IFNOT DoNotShowR1
+    , "r1": r1 cRUd
+  --# ENDIF
+  --#IF ShowR2
+    , "r2": r2 cRUd
+  --#ENDIF
+--#ENDIF
+--#IFNOT EditableInterfaceA
+  --#IFNOT DoNotShowR1
+    , "r1": r1 cRud
+  --#ENDIF
+  --#IF ShowR2
+    , "r2": r2 cRud
+  --#ENDIF
+--#ENDIF
+    ]
+  ]
+
+--#IF ErrorIfUnset
+ENDCONTEXT
+--#ENDIF

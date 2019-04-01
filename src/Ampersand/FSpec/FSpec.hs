@@ -34,7 +34,6 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.FSpec.Crud
-import           Ampersand.Misc
 import           Data.Function (on)
 import           Data.Hashable
 import           Data.List
@@ -49,7 +48,6 @@ data MultiFSpecs = MultiFSpecs
                    }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showA)  
-                   , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (derived)
@@ -77,7 +75,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , getDefaultViewForConcept :: A_Concept -> Maybe ViewDef
                    , getAllViewsForConcept :: A_Concept -> [ViewDef]
                    , lookupView :: String -> ViewDef          -- ^ Lookup view by id in fSpec.
-                   , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
+                   , vgens ::        [AClassify]                  -- ^ All gens that apply in the entire FSpec
                    , allConjuncts :: [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
                    , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
                    , allConjsPerDecl :: [(Relation, [Conjunct])]   -- ^ Maps each relation to the conjuncts it appears in   
@@ -147,8 +145,8 @@ instance Unique Atom where
   showUnique a = showValADL (atmVal a)++" in "
          ++case atmRoots a of
              []  -> fatal "an atom must have at least one root concept"
-             [x] -> uniqueShow True x
-             xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
+             [x] -> uniqueShowWithType x
+             xs  -> "["++intercalate ", " (map uniqueShowWithType xs)++"]"
 
 data A_Pair = Pair { lnkDcl :: Relation
                    , lnkLeft :: Atom
@@ -157,9 +155,9 @@ data A_Pair = Pair { lnkDcl :: Relation
 instance HasSignature A_Pair where
   sign = sign . lnkDcl
 instance Unique A_Pair where
-  showUnique x = uniqueShow False (lnkDcl x)
-              ++ uniqueShow False (lnkLeft x)
-              ++ uniqueShow False (lnkRight x)
+  showUnique x = showUnique (lnkDcl x)
+              ++ showUnique (lnkLeft x)
+              ++ showUnique (lnkRight x)
 concDefs :: FSpec -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
@@ -293,6 +291,7 @@ getConceptTableFor fSpec c = case lookupCpt fSpec c of
 data RelStore 
   = RelStore
      { rsDcl       :: Relation
+     , rsStoredFlipped :: Bool
      , rsSrcAtt    :: SqlAttribute
      , rsTrgAtt    :: SqlAttribute
      } deriving (Show, Typeable)

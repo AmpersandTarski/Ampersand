@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc.Builder
     , module Text.Pandoc
@@ -74,8 +75,8 @@ data XRefSection
 class Typeable a => Xreferenceble a where
   xSafeLabel :: a -> String -- The full string that is used as ID for referencing
   hyperLinkTo :: a -> Inlines
-  xDefBlck :: FSpec -> a -> Blocks
-  xDefBlck _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
+  xDefBlck :: Options -> FSpec -> a -> Blocks
+  xDefBlck _ _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
   xDefInln :: FSpec -> a -> Inlines
   xDefInln _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
   {-# MINIMAL xSafeLabel, hyperLinkTo, (xDefBlck | xDefInln) #-}
@@ -83,14 +84,13 @@ class Typeable a => Xreferenceble a where
 instance Xreferenceble Chapter where
   xSafeLabel a = show Sec++show a
   hyperLinkTo = citeGen
-  xDefBlck fSpec a = headerWith (xSafeLabel a,[],[]) 1 (chptTitle (fsLang fSpec) a)
+  xDefBlck _ fSpec a = headerWith (xSafeLabel a,[],[]) 1 (chptTitle (fsLang fSpec) a)
   
 instance Xreferenceble Picture where
   xSafeLabel a = show Fig++caption a
   hyperLinkTo = citeGen
-  xDefBlck fSpec a = para $ imageWith (xSafeLabel a, [], []) src (xSafeLabel a)(text (caption a))
+  xDefBlck opts _ a = para $ imageWith (xSafeLabel a, [], []) src (xSafeLabel a)(text (caption a))
    where
-    opts = getOpts fSpec
     src  = imagePath opts $ a
 instance Xreferenceble XRefSection where
   xSafeLabel a = 
@@ -102,7 +102,7 @@ instance Xreferenceble XRefSection where
     where 
       x = refStuff a
   hyperLinkTo = codeGen
-  xDefBlck fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget fSpec a)
+  xDefBlck _ fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget fSpec a)
   xDefInln fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (hyperTarget fSpec a)
 
 hyperTarget :: FSpec -> XRefSection -> Either Blocks Inlines 
@@ -130,17 +130,17 @@ hyperTarget fSpec a =
 
                                                           <>printMeaning (fsLang fSpec) r
                                                         )
-      XRefConceptualAnalysisRelation d 
+      XRefConceptualAnalysisRelation _d 
             -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Relatie ",EN "Relation ")
                                --   <> (str . show . numberOf fSpec $ d)
                                 )  
-      XRefConceptualAnalysisRule r    
+      XRefConceptualAnalysisRule _r    
             -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                --   <> (str . show . numberOf fSpec $ r)
                                 ) 
-      XRefConceptualAnalysisExpression r
+      XRefConceptualAnalysisExpression _r
             -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                --   <> (str . show . numberOf fSpec $ r)
@@ -254,6 +254,7 @@ refStuff x  =
           ("relation","rule" ,"expression","pattern","theme")
          
 
+{- 
 class NumberedThing a where
   numberOf :: FSpec -> a -> Int
 
@@ -281,7 +282,7 @@ instance NumberedThing A_Concept where
     where ns = concatMap cptsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered CptCont -> Bool
           isTheOne = (c ==) . cCpt . theLoad
-
+-}
 
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
@@ -431,9 +432,9 @@ orderingByTheme fSpec
              Just pat -> x `elem` allElemsOf pat
 
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
-dpRule' :: FSpec -> [Rule] -> Int -> A_Concepts -> Relations
+dpRule' :: Options -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
           -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
-dpRule' fSpec = dpR
+dpRule' opts@Options{..} fSpec = dpR
  where
    l lstr = text $ localize (fsLang fSpec) lstr
    dpR [] n seenConcs seenRelations = ([], n, seenConcs, seenRelations)
@@ -448,8 +449,8 @@ dpRule' fSpec = dpR
        where
         theBlocks :: Blocks
         theBlocks =
-            purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-         <> purposes2Blocks (getOpts fSpec) [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
+            purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
+         <> purposes2Blocks opts [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
          <> case (Set.elems . Set.map EDcD $ nds, fsLang fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")

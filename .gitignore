@@ -7,6 +7,7 @@ cabal.sandbox.config
 .cabal-sandbox
 .dist-buildwrapper
 /dist
+/dist-newstyle
 .idea
 
 StaticFiles_Generated.hs
@@ -35,3 +36,4 @@ miscellaneous/AmpersandBackup.jgfns
 /.stack-work
 \.ghci
 ArchiExtension/archiAnalyze/.stack-work/
+/ghcid.txt

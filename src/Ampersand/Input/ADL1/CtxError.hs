@@ -1,9 +1,9 @@
-{-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FunctionalDependencies #-}
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
+  , Warning
   , showErr, makeError
   , cannotDisambiguate
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
@@ -24,6 +24,12 @@ module Ampersand.Input.ADL1.CtxError
   , mkTypeMismatchError
   , mkMultipleRootsError
   , mkCrudForRefInterfaceError
+  , mkInterfaceMustBeDefinedOnObject
+  , mkSubInterfaceMustBeDefinedOnObject
+  , lexerWarning2Warning
+  , addWarning, addWarnings
+  , showWarning, showWarnings
+  , mkCrudWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
   )
@@ -34,9 +40,12 @@ module Ampersand.Input.ADL1.CtxError
 -- see `getOneExactly' / `GetOneGuarded' as a nice example
 -- Although I also consider it ill practice to export PE
 -- for the same reasons, I did this as a quick fix for the parse errors
+-- HJO: I consider it ill practice to export any Warning constructors as well, for the same reasons as SJC stated above.
+
 where
 
 import           Ampersand.ADL1
+import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Basics
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
@@ -47,7 +56,7 @@ import           Data.Maybe
 import           GHC.Exts (groupWith)
 import           Text.Parsec.Error (Message(..), messageString)
 import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
-
+import           Ampersand.Core.AbstractSyntaxTree (Type)
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message
 
@@ -56,7 +65,7 @@ instance Show CtxError where
     show (PE msg)   = "PE " ++ messageString msg
 
 errors :: Guarded t -> Maybe (NEL.NonEmpty CtxError)
-errors (Checked _) = Nothing
+errors (Checked _ _) = Nothing
 errors (Errors lst) = Just lst
 
 makeError :: String -> Guarded a
@@ -104,10 +113,10 @@ mkMultipleTypesInTypologyError tripls
              , "of them have the same TYPE:"
              ]++
              [ "  - REPRESENT "++name c++" TYPE "++show t++" at "++showFullOrig orig | (c,t,origs) <- tripls, orig <- origs]
-mkCyclesInGensError :: NEL.NonEmpty [A_Gen] -> Guarded a
+mkCyclesInGensError :: NEL.NonEmpty [AClassify] -> Guarded a
 mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
  where 
-  mkErr :: [A_Gen] -> CtxError
+  mkErr :: [AClassify] -> CtxError
   mkErr [] = fatal "Nothing to report about!" 
   mkErr gs = CTXE o msg
     where
@@ -118,7 +127,7 @@ mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
              ]++
              [ "  - "++showA gn++" at "++showFullOrig (origin gn) | gn <- gs]
 
-mkMultipleRootsError :: [A_Concept] -> NEL.NonEmpty A_Gen -> Guarded a
+mkMultipleRootsError :: [A_Concept] -> NEL.NonEmpty AClassify -> Guarded a
 mkMultipleRootsError roots gs
  = Errors . pure $ CTXE o msg
     where 
@@ -142,7 +151,7 @@ nonMatchingRepresentTypes orig wrongType rightType
 class GetOneGuarded a b | b -> a where
   {-# MINIMAL getOneExactly | hasNone #-}  -- we don't want endless loops, do we?
   getOneExactly :: b -> [a] -> Guarded a
-  getOneExactly _ [a] = Checked a
+  getOneExactly _ [a] = pure a 
   getOneExactly o []  = hasNone o
   getOneExactly o _ = 
     case errors (hasNone o :: Guarded a) of
@@ -158,7 +167,7 @@ instance Pretty a => GetOneGuarded SubInterface (P_SubIfc a) where
     CTXE (origin o)$ "Required: one A-subinterface in "++showP o
 
 instance GetOneGuarded Expression P_NamedRel where
-  getOneExactly _ [d] = Checked d
+  getOneExactly _ [d] = pure d
   getOneExactly o []  = Errors . pure $ CTXE (origin o) $
       "No relation for "++showP o
   getOneExactly o lst = Errors . pure $ CTXE (origin o) $
@@ -166,14 +175,17 @@ instance GetOneGuarded Expression P_NamedRel where
     ++".\n  Be more specific by using one of the following matching expressions:"
     ++concat ["\n  - "++showA l | l<-lst]
 
-mkTypeMismatchError :: (Traced a2, Named a) => a2 -> Relation -> SrcOrTgt -> a -> Guarded a1
-mkTypeMismatchError o decl sot conc
+mkTypeMismatchError :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
+mkTypeMismatchError o rel sot typ
  = Errors . pure $ CTXE (origin o) message
  where
-  message = "The "++showP sot++" for the population pairs, namely "++name conc
+  message = "The "++(case sot of
+                       Src -> "source"
+                       Tgt -> "target"
+                    )++"("++name typ++") for the population pairs "
             ++"\n  must be more specific or equal to that of the "
-            ++"relation you wish to populate, namely: "
-            ++showEC (sot,decl)
+            ++"relation you wish to populate ("++name rel++show (sign rel)++" found at "++show (origin rel)++")."
+
 
 cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded Expression
 cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
@@ -301,6 +313,20 @@ mkOtherTupleInSessionError :: Relation -> AAtomPair -> CtxError
 mkOtherTupleInSessionError r pr =
   CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `"++showA pr++"` by populating the relation `"++showA r++"`."
 
+mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxError
+mkInterfaceMustBeDefinedOnObject ifc cpt tt =
+  CTXE (origin ifc) . L.intercalate "\n  " $
+      ["The TYPE of the concept for which an INTERFACE is defined must be OBJECT."
+      ,"The TYPE of the concept `"++name cpt++"`, for interface `"++name ifc++"`, however is "++show tt++"."
+      ]
+mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc (TermPrim, DisambPrim) -> A_Concept -> TType -> CtxError
+mkSubInterfaceMustBeDefinedOnObject x cpt tt =
+  CTXE (origin x). L.intercalate "\n  " $
+      ["The TYPE of the concept for which a "++boxClass++" is defined must be OBJECT."
+      ,"The TYPE of the concept `"++name cpt++"`, for this "++boxClass++", however is "++show tt++"."
+      ]
+    where boxClass = fromMaybe "BOX" (si_class x)
+                       
 class ErrorConcept a where
   showEC :: a -> String
 
@@ -383,19 +409,42 @@ writeBind (ECpl e)
 writeBind e
  = "("++showA e++") /\\ "++showA (EDcV (sign e))
 
-data Guarded a = Errors (NEL.NonEmpty CtxError) | Checked a deriving Show
+lexerWarning2Warning :: LexerWarning -> Warning 
+lexerWarning2Warning (LexerWarning a b) = 
+  Warning (FileLoc a "") (L.intercalate "\n" $ showLexerWarningInfo b)
+
+data Warning = Warning Origin String
+instance Show Warning where
+    show (Warning o msg) = "Warning: " ++ show o ++ concatMap ("\n  "++) (lines msg)
+mkCrudWarning :: P_Cruds -> [String] -> Warning
+mkCrudWarning (P_Cruds o _ ) msg = Warning o (unlines msg)
+addWarning :: Warning -> Guarded a -> Guarded a
+addWarning _ (Errors a) = Errors a
+addWarning w (Checked a ws) = Checked a (ws <> [w])
+addWarnings :: [Warning] -> Guarded a -> Guarded a
+addWarnings ws ga = 
+  case ga of
+    Checked a ws' -> Checked a (ws <> ws')
+    Errors a      -> Errors a
+showWarning :: Warning -> [String]
+showWarning = lines . show
+   
+data Guarded a = 
+   Errors (NEL.NonEmpty CtxError) 
+ | Checked a [Warning]
+   deriving Show
 
 instance Functor Guarded where
  fmap _ (Errors a)  = Errors a
- fmap f (Checked a) = Checked (f a)
+ fmap f (Checked a ws) = Checked (f a) ws
 instance Applicative Guarded where
- pure = Checked
- (<*>) (Checked f) (Checked a) = Checked (f a)
- (<*>) (Errors  a) (Checked _) = Errors a
- (<*>) (Checked _) (Errors  b) = Errors b
+ pure x = Checked x []
+ (<*>) (Checked f ws) (Checked a ws') = Checked (f a) (ws<>ws')
+ (<*>) (Errors  a) (Checked _ _) = Errors a
+ (<*>) (Checked _ _) (Errors  b) = Errors b
  (<*>) (Errors  a) (Errors  b) = Errors (a >> b)
 instance Monad Guarded where
- (>>=) (Checked a) f = f a
+ (>>=) (Checked a ws) f = addWarnings ws (f a)
  (>>=) (Errors x) _ = Errors x
 
 -- Shorthand for working with Guarded in IO
@@ -403,18 +452,19 @@ whenCheckedIO :: IO  (Guarded a) -> (a -> IO (Guarded b)) -> IO (Guarded b)
 whenCheckedIO ioGA fIOGB =
    do gA <- ioGA
       case gA of
-         Errors err -> return (Errors err)
-         Checked a  -> fIOGB a
+         Errors err -> return $ Errors err
+         Checked a ws1 -> do gb <- fIOGB a
+                             return $ addWarnings ws1 gb
 
 whenChecked :: Guarded a -> (a -> Guarded b) -> Guarded b
 whenChecked ga fgb =
       case ga of
-         Checked a  -> fgb a
+         Checked a ws -> addWarnings ws $ fgb a
          Errors err -> Errors err
 
 whenError :: Guarded a -> Guarded a -> Guarded a
 whenError (Errors _) a = a
-whenError a@(Checked _) _ = a
+whenError a@(Checked _ _) _ = a
 
 
 showErr :: CtxError -> String
@@ -432,3 +482,7 @@ showFullOrig x = show x
 showMinorOrigin :: Origin -> String
 showMinorOrigin (FileLoc (FilePos _ line column) _) = "line " ++ show line ++" : "++show column
 showMinorOrigin v = show v
+
+showWarnings :: [Warning] -> IO ()
+showWarnings = mapM_  putStrLn . concatMap showWarning 
+

@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
 import Ampersand.Output.ToPandoc
@@ -50,14 +51,13 @@ import Text.Pandoc.CrossRef
 --Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
-fSpec2Pandoc :: FSpec -> (Pandoc, [Picture])
-fSpec2Pandoc fSpec = (thePandoc,thePictures)
+fSpec2Pandoc :: Options -> FSpec -> (Pandoc, [Picture])
+fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
   where
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
     l = localize (fsLang fSpec)
     
-    wrap' p = p
     wrap :: Pandoc -> Pandoc
     wrap (Pandoc meta blocks) = 
       Pandoc meta $ runCrossRef m' Nothing crossRefBlocks blocks 
@@ -80,7 +80,7 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
     thePandoc = wrap .
         setTitle
            (case metaValues "title" fSpec of
-                [] -> (if diagnosisOnly (getOpts fSpec)
+                [] -> (if diagnosisOnly
                        then (text.l)
                                ( NL "Functioneel Ontwerp van "
                                , EN "Functional Design of ")
@@ -99,18 +99,18 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
              xs -> map text $ nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
 
         )
-      . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec))))
+      . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime)))
       . doc . mconcat $ blocksByChapter
     
     thePictures = concat picturesByChapter
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (blocksByChapter, picturesByChapter) = unzip . map fspec2Blocks . chaptersInDoc $ getOpts fSpec
+    (blocksByChapter, picturesByChapter) = unzip . map fspec2Blocks . chaptersInDoc $ opts
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
-    fspec2Blocks Intro                 = (chpIntroduction           fSpec, [])
-    fspec2Blocks SharedLang            = (chpNatLangReqs          0 fSpec, [])
-    fspec2Blocks Diagnosis             = chpDiagnosis               fSpec
-    fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis    0 fSpec
-    fspec2Blocks DataAnalysis          = chpDataAnalysis            fSpec
+    fspec2Blocks Intro                 = (chpIntroduction       opts    fSpec, [])
+    fspec2Blocks SharedLang            = (chpNatLangReqs        opts  0 fSpec, [])
+    fspec2Blocks Diagnosis             = chpDiagnosis           opts    fSpec
+    fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis  opts  0 fSpec
+    fspec2Blocks DataAnalysis          = chpDataAnalysis        opts    fSpec
 

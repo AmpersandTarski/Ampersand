@@ -27,7 +27,7 @@ module Ampersand.Core.ParseTree (
 
    , P_Concept(..), P_Sign(..)
 
-   , P_Gen(..)
+   , PClassify(..)
 
    , P_Markup(..)
 
@@ -40,13 +40,13 @@ import           Ampersand.Input.ADL1.FilePos
 import           Data.Data
 import           Data.Foldable hiding (concat)
 import           Data.Hashable
-import           Data.Traversable
+import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head)
+import qualified Data.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
 import           Data.Time.LocalTime() -- for instance Show UTCTime
+import           Data.Traversable
 import           GHC.Generics (Generic)
-import qualified Data.Set as Set
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head)
 
 data P_Context
    = PCtx{ ctx_nm ::     String           -- ^ The name of this context
@@ -62,7 +62,7 @@ data P_Context
          , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
          , ctx_reprs ::  [Representation]
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
+         , ctx_gs ::     [PClassify]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
          , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
          , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
@@ -119,7 +119,7 @@ data P_Pattern
    = P_Pat { pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
            , pt_nm :: String            -- ^ Name of this pattern
            , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
-           , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
+           , pt_gns :: [PClassify]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Relation]  -- ^ The relations that are declared in this pattern
            , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
@@ -152,7 +152,7 @@ data ConceptDef
          }   deriving (Show,Eq,Ord,Typeable)
 
 instance Unique ConceptDef where
-  showUnique cd = cdcpt cd++"At"++uniqueShow True (origin cd)
+  showUnique cd = cdcpt cd++"At"++uniqueShowWithType (origin cd)
 instance Traced ConceptDef where
  origin = pos
 instance Named ConceptDef where
@@ -172,7 +172,7 @@ data TType
   | Date | DateTime
   | Boolean | Integer | Float | Object
   | TypeOfOne --special type for the special concept ONE.
-     deriving (Eq, Ord, Typeable)
+     deriving (Eq, Ord, Typeable, Enum, Bounded)
 instance Unique TType where
  showUnique = show
 instance Show TType where
@@ -198,7 +198,6 @@ data P_Relation =
             , dec_pragma :: [String]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                                       -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a relation, possibly more than one for different languages.
-            , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
             , pos :: Origin    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
             } deriving (Show) --For QuickCheck error messages only!
 
@@ -466,7 +465,7 @@ instance Traced a => Traced (Term a) where
    PCpl orig _    -> orig
    PBrk orig _    -> orig
 
-data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic)
+data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic, Enum, Bounded)
 instance Hashable SrcOrTgt
 instance Flippable SrcOrTgt where
   flp Src = Tgt
@@ -575,7 +574,8 @@ instance Traced P_Population where
  origin = pos
 
 data P_Interface =
-     P_Ifc { ifc_Name :: String           -- ^ the name of the interface
+     P_Ifc { ifc_IsAPI :: Bool      -- ^ The interface is of type API
+           , ifc_Name :: String           -- ^ the name of the interface
            , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
            , ifc_Obj :: P_BoxItemTermPrim       -- ^ the context expression (mostly: I[c])
            , pos :: Origin
@@ -604,7 +604,6 @@ data P_SubIfc a
                                , si_str :: String  -- Name of the interface that is reffered to
                                } 
                 deriving (Show)
-
 type P_BoxItemTermPrim = P_BoxItem TermPrim
 data P_BoxItem a =
      P_BxExpr { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -776,16 +775,13 @@ instance Flippable P_Sign where
                    , pTgt = pSrc sgn
                    }
 
-data P_Gen =  P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand file
-                  , gen_spc :: P_Concept         -- ^ Left hand side concept expression
-                  , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
-                  }
-            | PGen{ pos  :: Origin         -- ^ the position of the GEN-rule
-                  , gen_spc :: P_Concept      -- ^ specific concept
-                  , gen_gen :: P_Concept      -- ^ generic concept
-                  } deriving (Show, Eq, Ord)
+data PClassify =  PClassify
+  { pos      :: Origin
+  , specific :: P_Concept       -- ^ Left hand side concept expression
+  , generics :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
+  } deriving (Show, Eq, Ord)
 
-instance Traced P_Gen where
+instance Traced PClassify where
  origin = pos
 
 type Props = Set.Set Prop

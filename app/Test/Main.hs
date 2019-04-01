@@ -19,7 +19,8 @@ testFunctions opts =
               ]
 
 main :: IO ExitCode
-main = do opts <- getOptions
+main = do putStrLn "Starting Quickcheck tests."
+          opts <- getOptions
           funcs <- testFunctions opts
           testAmpersandScripts
           tests funcs
@@ -29,5 +30,5 @@ main = do opts <- getOptions
             do mapM_ putStrLn msg
                success <- tst
                if success then tests xs
-               else do putStrLn "*** Something went wrong here***" 
+               else do putStrLn "*** Some tests failed***" 
                        exitFailure

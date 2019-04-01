@@ -5,10 +5,8 @@ module Ampersand.Misc.Options
         ( Options(..)
         , FSpecFormat(..)
         , getOptions
-        , verboseLn
-        , verbose
         , showFormat
-        , helpNVersionTexts
+        , usageInfo'
         , writeConfigFile
         )
 where
@@ -38,6 +36,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
+                       , dirSource :: FilePath -- the directory of the script that is being compiled
                        , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
                        , forceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
@@ -70,7 +69,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                        , progrName :: String --The name of the adl executable
-                       , fileName :: FilePath --the file with the Ampersand context
+                       , fileName :: Maybe FilePath --the file with the Ampersand context
                        , baseName :: String
                        , genTime :: LocalTime
                        , export2adl :: Bool
@@ -86,7 +85,9 @@ data Options = Options { environment :: EnvironmentOptions
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
-                       } deriving Show
+                       , verbose :: String -> IO()
+                       , verboseLn :: String -> IO()
+                       }
 data EnvironmentOptions = EnvironmentOptions
       { envArgs               :: [String]
       , envArgsCommandLine    :: [String]
@@ -186,7 +187,7 @@ getOptions' :: EnvironmentOptions -> Options
 getOptions' envOpts =  
    case errors of
      []  | allowInvariantViolations opts && validateSQL opts 
-                     -> exitWith . WrongArgumentsGiven $ ["--dev and --validate must not be used at the same time."] --(Reason: see ticket #378))
+                     -> exitWith . WrongArgumentsGiven $ ["--ignore-invariant-violations and --validate must not be used at the same time."] --(Reason: see ticket #378))
          | otherwise -> opts
      _  -> exitWith . WrongArgumentsGiven $ errors ++ [usage]
          
@@ -197,8 +198,8 @@ getOptions' envOpts =
       where f a b = b a
     (actions, fNames, errors) = getOpt Permute (map fst options) $ envArgsFromConfigFile envOpts ++ envArgsCommandLine envOpts 
     fName = case fNames of
-             []   -> exitWith . WrongArgumentsGiven $ "Please supply the name of an Ampersand file" : [usage]
-             [n]  -> n
+             []   -> Nothing
+             [n]  -> if hasExtension n then Just n else Just $ addExtension n "adl"
              _    -> exitWith . WrongArgumentsGiven $ ("Too many files: "++ intercalate ", " fNames) : [usage]
     usage = "Type '"++envProgName envOpts++" --help' for usage info."
     startOptions :: Options
@@ -207,11 +208,12 @@ getOptions' envOpts =
                       , genTime          = envLocalTime envOpts
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfile       = fatal "No monadic options available."
-                      , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
-                      , zwolleVersion    = "v1.0.1"
+                      , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto"
+                      , dirSource        = takeDirectory $ fromMaybe "/" fName
+                      , zwolleVersion    = "v1.1.1"
                       , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
-                      , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
+                      , dbName           = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
                       , preVersion       = fromMaybe "" $ envPreVersion envOpts
                       , postVersion      = fromMaybe "" $ envPostVersion envOpts
@@ -247,10 +249,8 @@ getOptions' envOpts =
                       , genArchiAnal     = True
                       , language         = Nothing
                       , progrName        = envProgName envOpts
-                      , fileName         = if hasExtension fName
-                                           then fName
-                                           else addExtension fName "adl"
-                      , baseName         = takeBaseName fName
+                      , fileName         = fName
+                      , baseName         = takeBaseName $ fromMaybe "unknown" fName
                       , export2adl       = False
                       , test             = False
                       , genMetaFile      = False
@@ -264,6 +264,8 @@ getOptions' envOpts =
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
+                      , verbose          = \_ -> return()
+                      , verboseLn        = \_ -> return()
                       }
 writeConfigFile :: IO ()
 writeConfigFile = do
@@ -360,7 +362,13 @@ options = [ (Option ['v']   ["version"]
                "get (this) usage information."
             , Public)
           , (Option ['V']   ["verbose"]
-               (NoArg (\opts -> opts{verboseP = True}))
+               (NoArg (\opts -> opts{ verboseP  = True
+                                    , verbose   = putStr 
+                                    , verboseLn = \x-> do
+                                        -- Since verbose is for debugging purposes in general, we want no buffering, because it is confusing while debugging.
+                                        hSetBuffering stdout NoBuffering
+                                        mapM_ putStrLn (lines x)
+                                    }))
                "verbose output, to report which files Ampersand writes."
             , Public)
           , (Option []   ["sampleConfigFile"]
@@ -372,7 +380,7 @@ options = [ (Option ['v']   ["version"]
                        ) "config.yaml")
                "config file (*.yaml) that contains the command line options of ampersand."
             , Public)
-          , (Option []      ["dev","ignore-invariant-violations"]
+          , (Option []      ["ignore-invariant-violations"]
                (NoArg (\opts -> opts{allowInvariantViolations = True}))
                "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
             , Hidden)
@@ -642,21 +650,3 @@ publishOption (Option shorts longs args expl)
                            in if length nstr > i 
                            then (str, w:ws)
                            else fillUpto i nstr ws 
-     
-
-verbose :: Options -> String -> IO ()
-verbose opts x
-   | verboseP opts = putStr x
-   | otherwise     = return ()
-
-verboseLn :: Options -> String -> IO ()
-verboseLn opts x
-   | verboseP opts = -- Since verbose is for debugging purposes in general, we want no buffering, because it is confusing while debugging.
-                     do hSetBuffering stdout NoBuffering
-                        mapM_ putStrLn (lines x)
-   | otherwise     = return ()
-helpNVersionTexts :: String -> Options -> [String]
-helpNVersionTexts vs opts = ["Executable: "++show (dirExec opts)++"\n"   | test opts       ]++
-                            [preVersion opts++vs++postVersion opts++"\n" | showVersion opts]++
-                            [usageInfo' opts                             | showHelp    opts]
-

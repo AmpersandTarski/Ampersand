@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Relations 
   (Relationz)
 where
@@ -43,9 +44,9 @@ instance ToJSON RelTableInfo where
 instance ToJSON TableCol where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Relationz where
- fromAmpersand multi _ = Relationz (map (fromAmpersand multi) (Set.elems $ vrels (userFSpec multi)))
+ fromAmpersand opts@Options{..} multi _ = Relationz (map (fromAmpersand opts multi) (Set.elems $ vrels (userFSpec multi)))
 instance JSON Relation RelationJson where
- fromAmpersand multi dcl = RelationJson 
+ fromAmpersand opts@Options{..} multi dcl = RelationJson 
          { relJSONname       = name dcl
          , relJSONsignature  = name dcl ++ (show . sign) dcl
          , relJSONsrcConceptId  = escapeIdentifier . name . source $ dcl 
@@ -56,28 +57,29 @@ instance JSON Relation RelationJson where
          , relJSONsur      = isSur bindedExp
          , relJSONprop     = isProp bindedExp
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
-         , relJSONmysqlTable = fromAmpersand multi dcl
+         , relJSONmysqlTable = fromAmpersand opts multi dcl
          }
       where bindedExp = EDcD dcl
             fSpec = userFSpec multi
          
 instance JSON Relation RelTableInfo where
- fromAmpersand multi dcl = RelTableInfo
+ fromAmpersand opts@Options{..} multi dcl = RelTableInfo
   { rtiJSONname    = name plug
   , rtiJSONtableOf = srcOrtgt
-  , rtiJSONsrcCol  = fromAmpersand multi srcAtt
-  , rtiJSONtgtCol  = fromAmpersand multi trgAtt
+  , rtiJSONsrcCol  = fromAmpersand opts multi . rsSrcAtt $ relstore
+  , rtiJSONtgtCol  = fromAmpersand opts multi . rsTrgAtt $ relstore
   }
    where fSpec = userFSpec multi
-         (plug,srcAtt,trgAtt) = getRelationTableInfo fSpec dcl
-         (plugSrc,_)          = getConceptTableInfo fSpec (source dcl)
-         (plugTrg,_)          = getConceptTableInfo fSpec (target dcl)
+         (plug,relstore) = getRelationTableInfo fSpec dcl
+         (plugSrc,_)     = getConceptTableInfo fSpec (source dcl)
+         (plugTrg,_)     = getConceptTableInfo fSpec (target dcl)
          srcOrtgt
-           | plug == plugSrc = Just "src"
-           | plug == plugTrg = Just "tgt"
-           | otherwise       = Nothing 
+           | (plug == plugSrc) && (plugSrc == plugTrg) = Just $ if rsStoredFlipped relstore then "tgt" else "src" -- relations where src and tgt concepts are in the same classification tree as well as relations that are UNI or INJ
+           | plug == plugSrc = Just "src" -- relation in same table as src concept (UNI relations)
+           | plug == plugTrg = Just "tgt" -- relation in same table as tgt concept (INJ relations that are not UNI)
+           | otherwise       = Nothing -- relations in n-n table (not UNI and not INJ)
 instance JSON SqlAttribute TableCol where
- fromAmpersand _ att = TableCol
+ fromAmpersand _ _ att = TableCol
   { tcJSONname   = attName att
   , tcJSONnull   = attDBNull att
   , tcJSONunique = attUniq att

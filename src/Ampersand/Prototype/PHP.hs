@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.PHP 
          ( evaluateExpSQL
@@ -40,27 +41,26 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: FSpec -> Text.Text -> Expression -> IO [(String,String)]
-evaluateExpSQL fSpec dbNm expr =
-  -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showA expr)
-  -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showA . cfProof (getOpts fSpec)) expr
-  -- verboseLn (getOpts fSpec) "End of proof"
-  performQuery fSpec dbNm violationsQuery
- where violationsExpr = conjNF (getOpts fSpec) expr
+evaluateExpSQL :: Options -> FSpec -> Text.Text -> Expression -> IO [(String,String)]
+evaluateExpSQL opts@Options{..} fSpec dbNm expr =
+  -- verboseLn ("evaluateExpSQL fSpec "++showA expr)
+  -- verboseLn (intercalate "\n" . showPrf showA . cfProof opts) expr
+  -- verboseLn "End of proof"
+  performQuery opts dbNm violationsQuery
+ where violationsExpr = conjNF opts expr
        violationsQuery = prettySQLQuery 26 fSpec violationsExpr
 
-performQuery :: FSpec -> Text.Text -> SqlQuery -> IO [(String,String)]
-performQuery fSpec dbNm queryStr =
+performQuery :: Options -> Text.Text -> SqlQuery -> IO [(String,String)]
+performQuery opts@Options{..} dbNm queryStr =
  do { queryResult <- (executePHPStr . showPHP) php
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-      then do verboseLn opts{verboseP=True} (Text.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******")
+      then do mapM_ putStrLn (lines (Text.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
               fatal ("PHP/SQL problem: "<>queryResult)
       else case reads queryResult of
              [(pairs,"")] -> return pairs
-             _            -> fatal ("Parse error on php result: \n"<>(unlines . indent 5 . lines $ queryResult))
+             _            -> fatal ("Parse error on php result: \n"<>(unlines . map ("     " ++) . lines $ queryResult))
     } 
    where 
-    opts = getOpts fSpec
     php :: [Text.Text]
     php =
       connectToMySqlServerPHP opts (Just dbNm) <>
@@ -121,10 +121,10 @@ showPHP phpLines = Text.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
 tempDbName :: Options -> Text.Text
-tempDbName opts = "TempDB_"<>Text.pack (dbName opts)
+tempDbName Options{..} = "TempDB_"<>Text.pack dbName
 
 connectToMySqlServerPHP :: Options -> Maybe Text.Text-> [Text.Text]
-connectToMySqlServerPHP opts mDbName =
+connectToMySqlServerPHP Options{..} mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
     , "$DB_host='"<>subst sqlHost <>"';"
@@ -146,9 +146,8 @@ connectToMySqlServerPHP opts mDbName =
          connectToTheDatabasePHP
     )
   where
-   subst :: (Options -> String) -> Text.Text
-   subst x = addSlashes . Text.pack . x $ opts
-
+   subst :: String -> Text.Text
+   subst = addSlashes . Text.pack
 connectToTheDatabasePHP :: [Text.Text]
 connectToTheDatabasePHP =
     [ "// Connect to the database"
@@ -167,14 +166,14 @@ connectToTheDatabasePHP =
     , ""
     ]
 
-createTempDatabase :: FSpec -> IO Bool
-createTempDatabase fSpec =
+createTempDatabase :: Options -> FSpec -> IO Bool
+createTempDatabase opts@Options{..} fSpec =
  do { result <- executePHPStr .
            showPHP $ phpStr
-    ; verboseLn (getOpts fSpec) 
-         (if null result 
+    ; verboseLn $ 
+         if null result 
           then "Temp database created succesfully."
-          else "Temp database creation failed! :\n"<>lineNumbers phpStr<>"\nThe result:\n"<>result  )
+          else "Temp database creation failed! :\n"<>lineNumbers phpStr<>"\nThe result:\n"<>result
     ; return (null result)
     }
  where 
@@ -185,7 +184,7 @@ createTempDatabase fSpec =
       withNumber (n,t) = "/*"<>take (5-length(show n)) "00000"<>show n<>"*/ "<>t
   phpStr :: [Text.Text]
   phpStr = 
-    connectToMySqlServerPHP (getOpts fSpec) Nothing <>
+    (connectToMySqlServerPHP opts Nothing) <>
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
     , ""
     , "    /* file_per_table is required for long columns */"
@@ -206,8 +205,7 @@ createTempDatabase fSpec =
     , "       if(!$result)"
     , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
     , ""
-    ]<> 
-    [ "$DB_name='"<>tempDbName (getOpts fSpec)<>"';"
+    , "$DB_name='"<>tempDbName opts <>"';"
     , "// Drop the database if it exists"
     , "$sql="<>queryAsPHP dropDB<>";"
     , "mysqli_query($DB_link,$sql);"
@@ -224,11 +222,14 @@ createTempDatabase fSpec =
     , "  die('Error creating the database: ' . mysqli_error($DB_link));"
     , "  }"
     , ""
-    ] <> 
-    connectToTheDatabasePHP <>       
+    ] 
+    <> 
+    connectToTheDatabasePHP 
+    <>       
     [ "/*** Create new SQL tables ***/"
     , ""
-    ] <>
+    ]
+    <>
     [ ""
     , "//// Number of plugs: " <> Text.pack (show (length (plugInfos fSpec)))
     ]
@@ -236,14 +237,14 @@ createTempDatabase fSpec =
     <> concatMap (createTablePHP . plug2TableSpec) [p | InternalPlug p <- plugInfos fSpec]
     -- Populate all plugs
     <> concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
-  
+
     where
       dropDB :: SqlQuery 
       dropDB = SqlQuerySimple $
-           "DROP DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)
+           "DROP DATABASE "<>(singleQuote $ tempDbName opts)
       createDB :: SqlQuery
       createDB = SqlQuerySimple $
-           "CREATE DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
+           "CREATE DATABASE "<>(singleQuote $ tempDbName opts)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []

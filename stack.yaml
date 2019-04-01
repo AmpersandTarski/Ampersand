@@ -2,7 +2,7 @@
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
 # resolver: lts-3.18
-resolver: nightly-2018-09-18
+resolver: nightly-2018-11-24 # temporarily no LTS. Same as pandoc-crossref.
 allow-newer: false
 # Local packages, usually specified by relative directory name
 packages:
@@ -10,15 +10,15 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: 
-- fgl-5.5.4.0
-- HsYAML-0.1.1.2
-- pandoc-2.3
-- pandoc-crossref-0.3.3.0
+- fgl-5.7.0.1
+- graphviz-2999.20.0.3
+- pandoc-crossref-0.3.4.0
 - roman-numerals-0.5.1.5
 - simple-sql-parser-0.4.4
 - SpreadsheetML-0.1
 - wl-pprint-1.2.1
 - yaml-config-0.4.0
+# - HsYAML-0.1.1.2
 
 # Override default flag values for local packages and extra-deps
 flags: {}
@@ -28,6 +28,9 @@ flags: {}
 
 # Extra package databases containing global packages
 extra-package-dbs: []
+
+build:
+    haddock-deps: false
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true

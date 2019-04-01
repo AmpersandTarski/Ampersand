@@ -1,8 +1,9 @@
 {-# LANGUAGE FlexibleInstances,DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE RecordWildCards #-} 
 module           Ampersand.FSpec.ShowHS
     (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
 where
-import           Ampersand.Basics hiding (indent)
+import           Ampersand.Basics
 import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct  (AStruct(..))  -- for traceability, we generate comments in the Haskell code.
 import           Ampersand.FSpec.FSpec
@@ -16,19 +17,19 @@ import           Data.Ord
 import qualified Data.Set as Set
 import           Text.Pandoc hiding (Meta)
 
-fSpec2Haskell :: FSpec -> String
-fSpec2Haskell fSpec
+fSpec2Haskell :: Options -> FSpec -> String
+fSpec2Haskell opts@Options{..} fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
-          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (getOpts fSpec))++"-}"
+          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show genTime++"-}"
           ++"\nmodule Main where\n"
           ++"\nimport Ampersand"
           ++"\nimport Text.Pandoc hiding (Meta)"
           ++"\n"
           ++"\nmain :: IO ()"
-          ++"\nmain = do (getOpts fSpec) <- getOptions"
-          ++"\n          putStr (showHS (getOpts fSpec) \"\\n  \" fSpec_"++baseName (getOpts fSpec)++")\n"
-          ++"\nfSpec_"++baseName (getOpts fSpec)++" :: FSpec"
-          ++"\nfSpec_"++baseName (getOpts fSpec)++" =\n  "++showHS (getOpts fSpec) "\n  " fSpec
+          ++"\nmain = do opts <- getOptions"
+          ++"\n          putStr (showHS opts \"\\n  \" fSpec_"++baseName++")\n"
+          ++"\nfSpec_"++baseName ++" :: FSpec"
+          ++"\nfSpec_"++baseName ++" =\n  "++showHS opts "\n  " fSpec
 
 wrap :: String->String->(String->a->String)->[a]->String
 wrap initStr indent f xs
@@ -77,10 +78,8 @@ instance ShowHS PlugSQL where
                    ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
                    ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
-                                                      [ "RelStore "++showHSName (rsDcl store)++" "
-                                                                   ++showHSName (rsSrcAtt store)++" "
-                                                                   ++showHSName (rsTrgAtt store)++" "
-                                                      | store<-dLkpTbl plug] ++ "]"
+                                                ( map (showHS opts (indent++"                        ")) . dLkpTbl $ plug) 
+                                              ++ "]"
                    ,"       }"
                    ]
        BinSQL{} -> intercalate indent
@@ -89,13 +88,20 @@ instance ShowHS PlugSQL where
                    ,"BinSQL { sqlname = " ++ (show.name) plug
                    ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
-                                                      [ "RelStore "++showHSName (rsDcl store)++" "
-                                                                   ++showHSName (rsSrcAtt store)++" "
-                                                                   ++showHSName (rsTrgAtt store)++" "
-                                                      | store<-dLkpTbl plug] ++ "]"
-               --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
+                                                ( map (showHS opts (indent++"                        ")) . dLkpTbl $ plug) 
+                                              ++ "]"
                    ,"       }"
                    ]
+
+instance ShowHS RelStore where
+ showHS _ indent store
+   = intercalate indent
+       [  "Relstore { rsDcl           = " ++ showHSName (rsDcl store)
+       ,  "         , rsStoredFlipped = " ++ show (rsStoredFlipped store)
+       ,  "         , rsSrcAtt        = " ++ showHSName (rsSrcAtt store)
+       ,  "         , rsTrgAtt        = " ++ showHSName (rsTrgAtt store)
+       ,  "         }"
+       ]
 
 instance ShowHSName SqlAttribute where
  showHSName sqAtt = haskellIdentifier ("sqlAtt_"++attName sqAtt)
@@ -560,7 +566,7 @@ instance ShowHS Expression where
 instance ShowHS Signature where
  showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
 
-instance ShowHS A_Gen where
+instance ShowHS AClassify where
  showHS _ _ gen =
    case gen of
      Isa{} -> "Isa "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
@@ -631,14 +637,21 @@ instance ShowHSName Origin where
               FileLoc l sym -> "FileLoc (" ++ show l ++ " " ++ sym ++ ")"
               DBLoc l       -> "DBLoc " ++ show l
               Origin s      -> "Origin " ++ show s
+              PropertyRule str declOrig 
+                            -> "PropertyRule of "++str++" "++
+                                  case declOrig of 
+                                    FileLoc l sym -> "declared at FileLoc (" ++ show l ++ " " ++ sym ++ ")"
+                                    _             -> fatal $ "This should be the origin of a Relation, but it doesn't seem like it is.\n"
+                                                               ++show declOrig 
               OriginUnknown -> "OriginUnknown"
               XLSXLoc fPath sheet (a,b) -> "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)
 instance ShowHS Origin where
- showHS opts indent (FileLoc l s) = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
- showHS _     _      (DBLoc l)    = "DBLoc "  ++ show l
- showHS _     _      (Origin s)   = "Origin " ++ show s
- showHS _     _    OriginUnknown  = "OriginUnknown"
- showHS _     _    (XLSXLoc fPath sheet (a,b)) = "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)  
+ showHS opts indent (FileLoc l s)               = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
+ showHS _     _     (DBLoc l)                   = "DBLoc " ++ show l
+ showHS opts indent (PropertyRule str declOrig) = "PropertyRule " ++ show str ++ " ("++showHS opts indent declOrig++")"
+ showHS _     _     (Origin s)                  = "Origin " ++ show s
+ showHS _     _     OriginUnknown               = "OriginUnknown"
+ showHS _     _     (XLSXLoc fPath sheet (a,b)) = "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)  
 
 instance ShowHS Block where
  showHS _ _   = show

@@ -8,6 +8,7 @@ module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
  , Meta(..)
+ , Origin(..)
  , Pattern(..) 
  , PairView(..)
  , PairViewSegment(..)
@@ -19,7 +20,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , ViewDef(..)
  , ViewSegment(..)
  , ViewSegmentPayLoad(..)
- , A_Gen(..)
+ , AClassify(..)
  , Interface(..)
  , getInterfaceByName
  , SubInterface(..)
@@ -98,7 +99,7 @@ data A_Context
          , ctxRRels :: [A_RoleRelation] -- ^ The assignment of roles to Relations (which role mayEdit what relations)
          , ctxreprs :: A_Concept -> TType
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns
+         , ctxgs :: [AClassify]          -- ^ The specialization statements defined in this context, outside the scope of patterns
          , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
          , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context
          , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns and processes
@@ -127,7 +128,7 @@ data Pattern
            , ptpos :: Origin        -- ^ the position in the file in which this pattern was declared.
            , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
            , ptrls :: Rules        -- ^ The user defined rules in this pattern
-           , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
+           , ptgns :: [AClassify]       -- ^ The generalizations defined in this pattern
            , ptdcs :: Relations     -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
@@ -138,7 +139,8 @@ instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
   showUnique = optionalQuote . name
-
+instance Ord Pattern where
+ a `compare` b = name a `compare` name b
 instance Named Pattern where
  name = ptnm
 instance Traced Pattern where
@@ -169,7 +171,7 @@ data Rule =
 instance Eq Rule where
   r==r' = name r==name r' && origin r==origin r' -- Origin should be here too: A check that they all have unique names is done after typechecking.
 instance Unique Rule where
-  showUnique = rrnm
+  showUnique = optionalQuote . name
 instance Ord Rule where
   compare = compare `on` rrnm
 instance Show Rule where
@@ -233,7 +235,7 @@ instance Ord Relation where
     else compare (name a) (name b)
 instance Unique Relation where
   showUnique d =
-    name d++uniqueShow False (decsgn d)
+    name d++showUnique (decsgn d)
 instance Hashable Relation where
    hashWithSalt s Relation{dechash = v} = s `hashWithSalt` v
 instance Show Relation where  -- For debugging purposes only (and fatal messages)
@@ -245,7 +247,7 @@ showRel rel = name rel++"["++show (source rel) ++ "*"++ show (target rel)++"]"
 
 data Meaning = Meaning { ameaMrk ::Markup} deriving (Show, Eq, Ord, Typeable, Data)
 instance Unique Meaning where
-  showUnique x = uniqueShow True x++" in "++(show.amLang.ameaMrk) x
+  showUnique = show
 
 instance Named Relation where
   name d = unpack (decnm d)
@@ -265,8 +267,9 @@ instance Named IdentityDef where
 instance Traced IdentityDef where
   origin = idPos
 instance Unique IdentityDef where
-  showUnique = idLbl
-
+  showUnique = name
+instance Ord IdentityDef where
+  compare a b = name a `compare` name b
 data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
 data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
@@ -282,9 +285,11 @@ instance Named ViewDef where
 instance Traced ViewDef where
   origin = vdpos
 instance Unique ViewDef where
-  showUnique vd = vdlbl vd++"_"++name (vdcpt vd) 
+  showUnique vd = name vd++"_"++name (vdcpt vd) 
 instance Eq ViewDef where
-  a == b = vdlbl a == vdlbl b && vdcpt a == vdcpt b 
+  a == b = vdlbl a == vdlbl b && vdcpt a == vdcpt b
+instance Ord ViewDef where
+  a `compare` b = (vdlbl a,vdcpt a) `compare` (vdlbl b, vdcpt b)
 data ViewSegment = ViewSegment
      { vsmpos :: Origin
      , vsmlabel :: Maybe String
@@ -300,31 +305,31 @@ data ViewSegmentPayLoad
                            }deriving (Eq, Show)
 
 
--- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
+-- | data structure AClassify contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
 --   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
-data A_Gen = Isa { genpos :: Origin
+data AClassify = Isa { genpos :: Origin
                  , genspc :: A_Concept      -- ^ specific concept
                  , gengen :: A_Concept      -- ^ generic concept
                  }
            | IsE { genpos :: Origin
                  , genspc :: A_Concept      -- ^ specific concept
                  , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
-                 } deriving (Typeable, Eq)
-instance Traced A_Gen where
+                 } deriving (Typeable, Eq,Ord)
+instance Traced AClassify where
   origin = genpos
-instance Unique A_Gen where
+instance Unique AClassify where
   showUnique a =
     case a of
-      Isa{} -> uniqueShow False (genspc a)++" ISA "++uniqueShow False (gengen a)
-      IsE{} -> uniqueShow False (genspc a)++" IS "++intercalate " /\\ " (map (uniqueShow False) (genrhs a))
-instance Show A_Gen where
+      Isa{} -> showUnique (genspc a)++" ISA "++showUnique (gengen a)
+      IsE{} -> showUnique (genspc a)++" IS "++intercalate " /\\ " (map (showUnique) (genrhs a))
+instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
   showsPrec _ g =
     case g of
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
-instance Hashable A_Gen where
+instance Hashable AClassify where
     hashWithSalt s g = 
       s `hashWithSalt` (genspc g)
         `hashWithSalt` (case g of 
@@ -332,7 +337,8 @@ instance Hashable A_Gen where
                          IsE{} -> sort $ genrhs g 
                        )
 
-data Interface = Ifc { ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
+data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type API?
+                     , ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
@@ -342,6 +348,8 @@ data Interface = Ifc { ifcname ::     String        -- all roles for which an in
 
 instance Eq Interface where
   s==s' = name s==name s'
+instance Ord Interface where
+  compare a b = compare (name a) (name b)
 instance Named Interface where
   name = ifcname
 instance Traced Interface where
@@ -400,6 +408,8 @@ instance Traced ObjectDef where
   origin = objpos
 instance Unique ObjectDef where
   showUnique = showUnique . origin
+instance Ord ObjectDef where
+  a `compare` b = name a `compare` name b
 instance Named BoxTxt where
   name   = objnm
 instance Traced BoxTxt where
@@ -435,9 +445,11 @@ instance Eq Purpose where
   x0 == x1  =  explObj x0 == explObj x1 &&  
                origin x0  == origin x1 &&
                (amLang . explMarkup) x0 == (amLang . explMarkup) x1
+instance Ord Purpose where
+  compare a b = compare (explObj a, origin a) (explObj b, origin b)
 instance Unique Purpose where
-  showUnique p = showUnique (explMarkup p)
-                   ++ uniqueShow True (explPos p)
+  showUnique p = uniqueShowWithType (explMarkup p)
+              ++ uniqueShowWithType (explPos p)
 instance Traced Purpose where
   origin = explPos
 
@@ -452,8 +464,8 @@ data Population -- The user defined populations
              } deriving (Eq,Ord)
 
 instance Unique Population where
-  showUnique pop@ARelPopu{} = (showUnique.popdcl) pop ++ (showUnique.popps) pop
-  showUnique pop@ACptPopu{} = (showUnique.popcpt) pop ++ (showUnique.popas) pop
+  showUnique pop@ARelPopu{} = (uniqueShowWithType.popdcl) pop ++ (showUnique.popps) pop
+  showUnique pop@ACptPopu{} = (uniqueShowWithType.popcpt) pop ++ (showUnique.popas) pop
 
 type AAtomPairs = Set.Set AAtomPair
 data AAtomPair
@@ -489,7 +501,7 @@ data AAtomValue
                 }
   | AtomValueOfONE deriving (Eq,Ord, Show)
 
-instance Unique AAtomValue where   -- TODO:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
+instance Unique AAtomValue where   -- FIXME:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
   showUnique pop@AAVString{}   = (show.aavhash) pop
   showUnique pop@AAVInteger{}  = (show.aavint) pop
   showUnique pop@AAVFloat{}    = (show.aavflt) pop
@@ -540,12 +552,12 @@ data ExplObj = ExplConceptDef ConceptDef
              | ExplPattern String
              | ExplInterface String
              | ExplContext String
-          deriving (Show ,Eq, Typeable)
+          deriving (Show ,Eq, Typeable, Ord)
 instance Unique ExplObj where
   showUnique e = "Explanation of "++
     case e of
-     (ExplConceptDef cd) -> uniqueShow True cd
-     (ExplRelation d)    -> uniqueShow True d
+     (ExplConceptDef cd) -> uniqueShowWithType cd
+     (ExplRelation d)    -> uniqueShowWithType d
      (ExplRule s)        -> "a Rule named "++s
      (ExplIdentityDef s) -> "an Ident named "++s
      (ExplViewDef s)     -> "a View named "++s
@@ -794,7 +806,7 @@ instance Show Signature where
   showsPrec _ (Sign s t) =
      showString (   "[" ++ show s ++ "*" ++ show t ++ "]" )
 instance Unique Signature where
-  showUnique (Sign s t) = "[" ++ uniqueShow False s ++ "*" ++ uniqueShow False t ++ "]"
+  showUnique (Sign s t) = "[" ++ showUnique s ++ "*" ++ showUnique t ++ "]"
 instance HasSignature Signature where
   source (Sign s _) = s
   target (Sign _ t) = t
@@ -815,7 +827,7 @@ class HasSignature rel where
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
 data ContextInfo =
-  CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
+  CI { ctxiGens         :: [AClassify]      -- The generalisation relations in the context
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
      , reprList         :: [Representation] -- a list of all Representations
@@ -828,7 +840,7 @@ instance Named Type where
   name v = case typeOrConcept v of
                 Right (Just x) -> "Built-in type "++show x
                 Right Nothing  -> "The Generic Built-in type"
-                Left  x -> "Concept "++name x
+                Left  x -> "Concept: "++name x
 
 typeOrConcept :: Type -> Either A_Concept (Maybe TType)
 typeOrConcept (BuiltIn TypeOfOne)  = Left  ONE
@@ -1051,11 +1063,10 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                  , "Found: `"++show x++"`,"
                  , "as representation of an atom in concept `"++name c++"`."
                  , "However, the representation-type of that concept is "++implicitly
-                 , "defined as "++show expected++". The found value does not match that type."
+                 , "defined as "++show typ++". The found value does not match that type."
                  ]++ example
         where
           c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
-          expected = if typ == Object then Alphanumeric else typ
           implicitly = if typ == Object then "(implicitly) " else ""
           example :: [String]
           example = case typ of
@@ -1068,6 +1079,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
               HugeAlphanumeric -> ["HUGEALPHANUMERIC types are texts (max 16M chars) surrounded with double quotes (\"-characters)."]
               Integer          -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
               Password         -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
+              Object           -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
               _                -> fatal $ "There is no example denotational syntax for a value of type `"++show typ++"`." 
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      maybeRead :: Read a => String -> Maybe a
