@@ -38,7 +38,7 @@ grind opts@Options{..} metaModel userFspec =
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = mapMaybe relationFromPop . Set.toList $ metaPops2
+      , ctx_ds     = map aRelation2pRelation . Set.toList . instances . model $ metaModel
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
@@ -56,12 +56,6 @@ grind opts@Options{..} metaModel userFspec =
     metaPops2 = Set.fromList 
               . concatMap (Set.toList . grindedPops opts metaModel userFspec)
               . Set.toList . instances . model $ metaModel
-    relationFromPop :: Pop -> Maybe P_Relation
-    relationFromPop pop =
-      case pop of 
-        Comment{} -> Nothing
-        Pop{}     -> 
-          Just (aRelation2pRelation (popRelation pop))
     populationFromPop :: Pop -> Maybe P_Population
     populationFromPop pop =
       case pop of 
