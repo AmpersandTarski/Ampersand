@@ -1,5 +1,4 @@
 {-# LANGUAGE TupleSections #-}
-{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 -- | Reads a project and parses it
 module Ampersand.Daemon.Daemon.Parser (
     parseProject

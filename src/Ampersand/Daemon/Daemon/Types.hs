@@ -3,7 +3,6 @@
 -- | The types types that we use in Ghcid
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Types(
-    GhciError(..),
     Stream(..),
     Load(..), Severity(..),
     isMessage, isLoading, isLoadConfig
@@ -11,14 +10,6 @@ module Ampersand.Daemon.Daemon.Types(
 
 import Ampersand.Basics
 import Data.Data
-import Control.Exception.Base (Exception)
-
--- | GHCi shut down
-data GhciError = UnexpectedExit String String
-    deriving (Show,Eq,Ord,Typeable,Data)
-
--- | Make GhciError an exception
-instance Exception GhciError
 
 -- | The stream Ghci is talking over.
 data Stream = Stdout | Stderr

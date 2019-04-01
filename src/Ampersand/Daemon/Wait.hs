@@ -1,10 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 -- | Use 'withWaiterPoll' or 'withWaiterNotify' to create a 'Waiter' object,
 --   then access it (single-threaded) by using 'waitFiles'.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Wait(Waiter, withWaiterPoll, withWaiterNotify, waitFiles) where
+module Ampersand.Daemon.Wait(
+    Waiter
+  , withWaiterPoll
+  , withWaiterNotify
+  , waitFiles
+) where
 
 import Control.Concurrent.Extra
 import qualified Data.Map as Map
@@ -63,14 +67,14 @@ waitFiles waiter = do
         whenLoud $ outStrLn $ "%WAITING: " ++ unwords files
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
         -- will pick up new files, as creating a new file changes the containing directory's modtime.
-        files <- fmap concat $ forM files $ \file ->
+        files' <- fmap concat $ forM files $ \file ->
             ifM (doesDirectoryExist file) (listContentsInside (return . not . isPrefixOf "." . takeFileName) file) (return [file])
         case waiter of
             WaiterPoll _ -> return ()
             WaiterNotify manager kick mp -> do
-                dirs <- fmap Set.fromList $ mapM canonicalizePathSafe $ nubOrd $ map takeDirectory files
-                modifyVar_ mp $ \mp -> do
-                    let (keep,del) = Map.partitionWithKey (\k _ -> k `Set.member` dirs) mp
+                dirs <- fmap Set.fromList $ mapM canonicalizePathSafe $ nubOrd $ map takeDirectory files'
+                modifyVar_ mp $ \mp' -> do
+                    let (keep,del) = Map.partitionWithKey (\k _ -> k `Set.member` dirs) mp'
                     sequence_ $ Map.elems del
                     new <- forM (Set.toList $ dirs `Set.difference` Map.keysSet keep) $ \dir -> do
                         can <- watchDir manager (fromString dir) (const True) $ \event -> do
@@ -81,9 +85,9 @@ waitFiles waiter = do
                     whenLoud $ outStrLn $ "%WAITING: " ++ unwords (Map.keys mp2)
                     return mp2
                 void $ tryTakeMVar kick
-        new <- mapM getModTime files
-        case [x | (x,Just t) <- zip files new, t > base] of
-            [] -> recheck files new
+        new <- mapM getModTime files'
+        case [x | (x,Just t) <- zip files' new, t > base] of
+            [] -> recheck files' new
             xs -> return xs
     where
         recheck files old = do
@@ -106,8 +110,8 @@ waitFiles waiter = do
                         -- at most 20 iterations, but stop as soon as the file returns
                         void $ flip firstJustM (replicate 20 ()) $ \_ -> do
                             sleep 0.05
-                            new <- mapM getModTime files
-                            return $ if null [x | (x, Just _, Nothing) <- zip3 files old new] then Just () else Nothing
+                            new' <- mapM getModTime files
+                            return $ if null [x | (x, Just _, Nothing) <- zip3 files old new'] then Just () else Nothing
                     return xs
 
 

@@ -13,20 +13,20 @@ module Ampersand.Input.Parsing (
 ) where
 
 import           Ampersand.ADL1
-import           Ampersand.Input.PreProcessor
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree (mkContextOfPopsOnly)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Input.ADL1.Lexer
 import           Ampersand.Input.ADL1.Parser
+import           Ampersand.Input.PreProcessor
 import           Ampersand.Input.Xslx.XLSX
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
 import           Ampersand.Misc
 import           Control.Exception
 import           Data.Char(toLower)
+import           Data.Maybe
 import           Data.List
 import qualified Data.Set as Set
-import           Data.Maybe
 import           System.Directory
 import           System.FilePath
 import           Text.Parsec.Prim (runP)

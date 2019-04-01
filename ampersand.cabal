@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 00f64f6b88dbcc47544b8c053927a22acd05743c4568d3f95cd9328c8b707348
+-- hash: 5ae770bed7a224d836f792c5636a536e1743698abfa42aae8cbc8960b58521a5
 
 name:           ampersand
 version:        3.15.0
@@ -515,7 +515,6 @@ library
       Ampersand.Daemon.Daemon.Terminal
       Ampersand.Daemon.Daemon.Types
       Ampersand.Daemon.Daemon.Util
-      Ampersand.Daemon.Paths
       Ampersand.Daemon.Wait
       Ampersand.FSpec.FPA
       Ampersand.Output.FSpec2Excel

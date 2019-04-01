@@ -1,10 +1,10 @@
-{-# LANGUAGE RecordWildCards, DeriveDataTypeable, TupleSections #-}
-
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TupleSections #-}
 -- | The application entry point
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon(runDaemon) where
 
-import Control.Exception
 import Control.Monad.Extra
 import Data.List.Extra
 import Data.Maybe
@@ -47,7 +47,6 @@ data TermSize = TermSize
 -- | Like 'main', but run with a fake terminal for testing
 mainWithTerminal :: Options -> IO TermSize -> ([String] -> IO ()) -> IO ()
 mainWithTerminal opts termSize termOutput =
-    handle (\(UnexpectedExit cmd _) -> do putStrLn $ "Command \"" ++ cmd ++ "\" exited unexpectedly"; exitFailure) $
         forever $ withWindowIcon $ do
             setVerbosity $ if verboseP opts then Loud else Normal
                    
@@ -158,7 +157,7 @@ runAmpersand opts waiter termSize termOutput = do
             -- order and restrict the messages
             -- nubOrdOn loadMessage because module cycles generate the same message at several different locations
             ordMessages <- do
-                let (msgError, msgWarn) = partition ((==) Error . loadSeverity) $ nubOrdOn loadMessage $ filter isMessage (messages ad)
+                let (msgError, msgWarn) = partition ((==) Error . loadSeverity) $ nubOrdOn loadMessage $ messages ad
                 -- sort error messages by modtime, so newer edits cause the errors to float to the top - see #153
                 errTimes <- sequence [(x,) <$> getModTime x | x <- nubOrd $ map loadFile msgError]
                 let f x = lookup (loadFile x) errTimes
