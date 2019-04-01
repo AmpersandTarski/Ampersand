@@ -223,25 +223,25 @@ grindedPops opts@Options{..} metaModel userFspec rel =
     --transformers :: FSpec -> [Transformer]
     --transformers = transformersFormalAmpersand
     transformer2Pop :: Transformer -> Pop
-    transformer2Pop (Transformer n s t ps) 
-      | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ ps) ) =
+    transformer2Pop (Transformer relName src tgt popPairs) 
+      | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ popPairs) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in "++metaModelFileName metaModel++"."
-                 , "   The population of the relation `"++n++"["++s++" * "++t++"]` "
-                 , "   violates this rule for concept `"++s++"`. In "++metaModelFileName metaModel++" "
+                 , "   The population of the relation `"++ relName ++"["++ src ++" * "++ tgt ++"]` "
+                 , "   violates this rule for concept `"++ src ++"`. In "++metaModelFileName metaModel++" "
                  , "   the TType of this concept is "++(show . cptTType (model metaModel) $ source rel)++"."
                  ]
-      | not ( all (ttypeOf (target rel)) (map snd . Set.toList $ ps) ) =
+      | not ( all (ttypeOf (target rel)) (map snd . Set.toList $ popPairs) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in "++metaModelFileName metaModel++"."
-                 , "   The population of the relation `"++n++"["++s++" * "++t++"]` "
-                 , "   violates this rule for concept `"++t++"`. In "++metaModelFileName metaModel++" "
+                 , "   The population of the relation `"++ relName ++"["++ src ++" * "++ tgt ++"]` "
+                 , "   violates this rule for concept `"++ tgt ++"`. In "++metaModelFileName metaModel++" "
                  , "   the TType of this concept is "++(show . cptTType (model metaModel) $ target rel)++"." 
                  ]
       | otherwise = Pop { popRelation = rel
-                        , popPairs    = ps
+                        , popPairs    = popPairs
                         }
       where ttypeOf :: A_Concept -> (PopAtom -> Bool)
             ttypeOf cpt =
