@@ -13,7 +13,6 @@ module Ampersand.Daemon.Daemon.Daemon(
     startAmpersandDaemon
     ) where
 
-import System.Exit
 import System.IO 
 import Control.Monad.Extra
 import Data.Function
@@ -53,9 +52,7 @@ startAmpersandDaemon opts = do
     state <- do 
        init <- initialState opts
        case init of
-         Left msg -> do
-           mapM_ putStrLn msg
-           exitFailure
+         Left msg -> exitWith . NoConfigurationFile $ msg
          Right s -> pure s  
     
     return AmpersandDaemon
