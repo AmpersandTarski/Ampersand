@@ -37,3 +37,7 @@ miscellaneous/AmpersandBackup.jgfns
 /.ghci
 /ghcid.txt
 
+# Editor related #
+##################
+*.epp
+~$*
