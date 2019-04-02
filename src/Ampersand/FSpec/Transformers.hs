@@ -37,7 +37,6 @@ data PopAtom =
     DirtyId String         -- ^ Any String. must be:
                            --      * unique in the scope of the entire fspec
                            --      * storable in a 255 database field
-                           --      * showable in an interface (normally done by escapeIdentifier) 
   | PopAlphaNumeric String -- ^ Intended to be observable by users. Not a 'dirty id'.
   | PopInt Integer 
   deriving (Eq,Ord)
