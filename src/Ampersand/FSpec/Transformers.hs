@@ -17,7 +17,6 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
 import           Ampersand.Misc
-import           Data.Hashable
 import qualified Data.Set as Set
 import           Data.Typeable
 
@@ -50,6 +49,8 @@ instance Show PopAtom where
         PopAlphaNumeric str -> show str
         PopInt i            -> show i
 
+dirtyId :: Unique a => a -> PopAtom
+dirtyId = DirtyId . idWithType
 
 toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
 toTransformer (rel, sCpt, tCpt, set) = Transformer rel sCpt tCpt set
@@ -983,35 +984,6 @@ instance Instances Signature where
        (Set.fromList . map sign . Set.toList . expressionInstances $ fSpec)
 instance Instances ViewDef where
   instances = Set.fromList . viewDefs . originalContext
-  
-
--- All Concepts that are relevant in Formal Ampersand (RAP), SystemContext or any other meta-model must be an instance of HasDirtyId:
-class Unique a => HasDirtyId a where
-  dirtyId :: a -> PopAtom
-  dirtyId = DirtyId
-          . uniqueButNotTooLong -- because it could be stored in an SQL database
-          . makeIdentifier
-   where
-    makeIdentifier :: a -> String
-    makeIdentifier x = 
-      show (typeOf x)
-      ++ "_"
-      ++ (escapeIdentifier $ showUnique x) -- escape because a character safe identifier is needed for use in URLs, filenames and database ids
-
-    uniqueButNotTooLong :: String -> String
-    uniqueButNotTooLong str =
-      case splitAt safeLength str of
-        (_ , []) -> str
-        (prfx,_) -> prfx++"#"++show (hash str)++"#"
-      where safeLength = 50 -- HJO, 20170812: Subjective value. This is based on the 
-                             -- limitation that DirtyId's are stored in an sql database
-                             -- in a field that is normally 255 long. We store the
-                             -- prefix of the string but make sure we still have space
-                             -- left over for the hash. While theoretically this is a 
-                             -- crappy solution, in practice this will prove to be well 
-                             -- enough. 
-            
-instance Unique a => HasDirtyId a
 
 class Instances a => HasPurpose a where 
   purposes :: FSpec -> a -> [Purpose]
