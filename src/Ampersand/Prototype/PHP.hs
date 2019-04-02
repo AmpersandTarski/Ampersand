@@ -103,18 +103,25 @@ normalizeNewLines = f . intercalate "\n" . lines
     f (c:cs) = c: f cs 
 
 executePHP :: String -> IO String
-executePHP phpPath =
- do { let cp = (shell command) 
-                   { cwd = Just (takeDirectory phpPath)
-                   }
-          inputFile = phpPath
-          outputFile = inputFile++"Result"
-          command = "php "++show inputFile++" > "++show outputFile
-    ; _ <- readCreateProcess cp ""
-    ; result <- readFile outputFile
-    ; removeFile outputFile
-    ; return result
-    }
+executePHP phpPath = do
+   let cp = (shell command) 
+               { cwd = Just (takeDirectory phpPath)
+               }
+       inputFile = phpPath
+       outputFile = inputFile++"Result"
+       command = "php "++show inputFile++" > "++show outputFile
+   _ <- readCreateProcess cp ""
+   result <- readFile outputFile
+   case result of
+     Right content -> do
+           removeFile outputFile
+           return content
+     Left err -> exitWith . PHPExecutionFailed $ 
+           ["PHP execution failed:"
+           ,"  Could not read file: "++outputFile
+           ,"    "++ err
+           ]
+   
 
 showPHP :: [Text.Text] -> Text.Text
 showPHP phpLines = Text.unlines $ ["<?php"]<>phpLines<>["?>"]

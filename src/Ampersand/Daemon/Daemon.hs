@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 -- | The application entry point
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon(runDaemon) where
@@ -15,12 +16,12 @@ import System.Console.CmdArgs
 import System.Console.ANSI
 import System.Environment
 import System.Directory.Extra
-import System.Exit
 import System.FilePath
 import System.Info
 import System.IO.Extra
 
 import Ampersand.Basics (ampersandVersionWithoutBuildTimeStr)
+import Ampersand.Basics.Exit
 import Ampersand.Basics.Prelude
 import Ampersand.Daemon.Daemon.Daemon
 import Ampersand.Daemon.Daemon.Escape
@@ -46,10 +47,11 @@ data TermSize = TermSize
 
 -- | Like 'main', but run with a fake terminal for testing
 mainWithTerminal :: Options -> IO TermSize -> ([String] -> IO ()) -> IO ()
-mainWithTerminal opts termSize termOutput =
-        forever $ withWindowIcon $ do
+mainWithTerminal opts termSize termOutput = goForever
+  where goForever = work `catch` errorHandler
+        work =
+         forever $ withWindowIcon $ do
             setVerbosity $ if verboseP opts then Loud else Normal
-                   
 
             -- On certain Cygwin terminals stdout defaults to BlockBuffering
             hSetBuffering stdout LineBuffering
@@ -81,7 +83,9 @@ mainWithTerminal opts termSize termOutput =
 
                 maybe withWaiterNotify withWaiterPoll (Nothing) $ \waiter ->
                     runAmpersand opts waiter termSize' (termOutput . restyle)
-
+        errorHandler :: AmpersandExit -> IO()
+        errorHandler err = do putStrLn (show err)
+                              goForever
 
 
 runDaemon :: Options -> IO ()
@@ -123,8 +127,8 @@ runAmpersand opts waiter termSize termOutput = do
     aDaemon <- startAmpersandDaemon opts
 
     when (null (loadResults . adState $ aDaemon)) $ do
-        putStrLn $ "\nNo files loaded, Ampersand daemon is not working properly.\n"
-        exitFailure
+        exitWith NoFilesToWatch 
+        
 
     restart <- return $ nubOrd $ [x | LoadConfig x <- load aDaemon]
 
@@ -165,14 +169,12 @@ runAmpersand opts waiter termSize termOutput = do
 
             outputFill currTime (Just (loadedCount, ordMessages)) []
             when (null . loadResults . adState $ ad) $ do
-                putStrLn "No files loaded, nothing to wait for. Fix the last error and restart."
-                exitFailure
+                exitWith NoFilesToWatch
             
-            reason <- nextWait' $ restart ++ loaded ad
+            reason <- nextWait' . nub $ restart ++ loaded ad ++ (map loadFile . load $ ad)
             whenLoud $ outStrLn $ "%RELOADING: " ++ unwords reason
             return Continue
     fire nextWait aDaemon
-
 
 -- | Given an available height, and a set of messages to display, show them as best you can.
 prettyOutput :: String -> Int -> [Load] -> [String]
