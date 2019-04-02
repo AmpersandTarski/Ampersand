@@ -113,6 +113,6 @@ runATest' path file = do
                   (True , []) -> "Ok.  => NOT PASSED"
                   (True , _ ) -> "Fail => Pass"
          )
-       unless shouldFail $ mapM_ putStrLn (map showErr (take 1 errs))  --for now, only show the first error
+       unless shouldFail $ mapM_ putStrLn (map show (take 1 errs))  --for now, only show the first error
     where shouldFail = "SHOULDFAIL" `isInfixOf` map toUpper (path </> file)
 -} 
