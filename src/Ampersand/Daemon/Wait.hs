@@ -62,7 +62,6 @@ listContentsInside test dir = do
 waitFiles :: Waiter -> IO ([FilePath] -> IO [String])
 waitFiles waiter = do
     base <- getCurrentTime
-    putStrLn $ "waitFiles. Waiting for file changes. The time is "++show base
     return $ \files -> handle (\(e :: IOError) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
         whenLoud $ outStrLn $ "%WAITING: " ++ unwords files
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
