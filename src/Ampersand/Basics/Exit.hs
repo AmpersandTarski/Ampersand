@@ -1,9 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Basics.Exit 
-         ( exitWith
+         ( catch
+         , exitWith
          , AmpersandExit(..)
          ) where
 
+import           Control.Exception
 import           Ampersand.Basics.Prelude
 import           Ampersand.Basics.UTF8
 import           Data.List
@@ -30,7 +32,16 @@ data AmpersandExit
   | WrongArgumentsGiven [String]
   | FailedToInstallPrototypeFramework [String]
   | NoAmpersandScript [String]
+  | NoFilesToWatch
+  | NoConfigurationFile [String]
 
+instance Exception AmpersandExit
+
+instance Show AmpersandExit where
+  show x = "["++show code++"] "
+         ++concatMap ("    "++) msg
+     where (code, msg) = info x
+    
 info :: AmpersandExit -> (SE.ExitCode, [String])
 info x = 
   case x of
@@ -57,6 +68,10 @@ info x =
               -> (SE.ExitFailure  80 , msg)
     NoAmpersandScript msg
               -> (SE.ExitFailure  90 , msg)
+    NoFilesToWatch
+              -> (SE.ExitFailure 100 , ["ERROR: No files loaded, nothing to wait for. Fix the last error and restart."])
+    NoConfigurationFile msg
+              -> (SE.ExitFailure 110 , msg)
   where
     showViolatedRule :: (String,[String]) -> [String]
     showViolatedRule (rule,pairs) = 

@@ -17,9 +17,9 @@ main =
             ; case gMulti of
                 Errors err    -> 
                    exitWith . NoValidFSpec . intersperse  (replicate 30 '=') 
-                 . fmap showErr . NEL.toList $ err
+                 . fmap show . NEL.toList $ err
                 Checked multi ws -> do
-                   showWarnings ws
+                   mapM_  putStrLn . concatMap (lines . show) $ ws
                    generateAmpersandOutput opts multi
                    putStrLn "Finished processing your model"
                    putStrLn . ("Your script has no errors " ++) $
@@ -40,11 +40,12 @@ main =
 
  where
    actionsWithoutScript :: Options -> [(Bool, IO())]
-   actionsWithoutScript options = 
-      [ ( test options                              , putStrLn $ "Executable: " ++ show (dirExec options) )
-      , ( showVersion options || verboseP options   , putStrLn $ versionText options  )
-      , ( genSampleConfigFile options               , writeConfigFile                 )
-      , ( showHelp options                          , putStrLn $ usageInfo' options   )
+   actionsWithoutScript opts@Options{..} = 
+      [ ( test                     , putStrLn $ "Executable: " ++ show dirExec )
+      , ( showVersion  || verboseP , putStrLn $ versionText opts)
+      , ( genSampleConfigFile      , writeConfigFile)
+      , ( showHelp                 , putStrLn $ usageInfo' opts)
+      , ( runAsDaemon              , runDaemon opts)
       ]
    
    versionText :: Options -> String

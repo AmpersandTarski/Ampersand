@@ -58,7 +58,6 @@ data Origin = OriginUnknown
             | PropertyRule String Origin -- Constructor is used to hold the origin of a propertyrule.
             | FileLoc FilePos SymbolName 
             | XLSXLoc FilePath String (Int,Int) 
-            | DBLoc String
     deriving (Eq, Ord, Typeable, Generic, Data)
 
 instance Unique Origin where
@@ -66,15 +65,19 @@ instance Unique Origin where
 instance Hashable Origin
 
 instance Show FilePos where
-  show (FilePos fn l c) = "line " ++ show l ++ ":" ++ show c ++ ", file " ++ fn
+  show (FilePos fn l c) = fn ++ ":" ++ show l ++ ":" ++ show c
 
 instance Show Origin where
+  -- The vscode extension expects errors and warnings
+  -- to be in a standardized format. The show function
+  -- complies to that. Iff for whatever reason 
+  -- this function is changed, please verify 
+  -- the proper working of the ampersand-language-extension
   show (FileLoc pos _) = show pos
   show (XLSXLoc filePath sheet (row,col)) 
-                       = show filePath++":"++
+                       = filePath++":"++
                          "\n   Sheet: "++sheet++", "++T.unpack (int2col col)++show row
   show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
-  show (DBLoc str)     = "Database location: "++str
   show (Origin str)    = str
   show OriginUnknown   = "Unknown origin"
 
@@ -85,12 +88,16 @@ class Traced a where
   colnr :: a -> Int
   filenm x = case origin x of
                FileLoc (FilePos nm _ _) _ -> nm
+               XLSXLoc filePath sheet _         -> show filePath++":"++
+                         "\n   Sheet: "++sheet
                _ -> ""
   linenr x = case origin x of
                FileLoc (FilePos _ l _) _ -> l
+               XLSXLoc _        _     (row,_  ) -> row
                _ -> 0
   colnr x  = case origin x of
                FileLoc (FilePos _ _ c) _ -> c
+               XLSXLoc _        _     (_  ,col) -> col
                _ -> 0
 
 instance Traced Origin where

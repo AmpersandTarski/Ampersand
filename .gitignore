@@ -34,6 +34,11 @@ miscellaneous/AmpersandBackup.jgfns
 .settings/org.eclipse.wst.common.project.facet.core.xml
 .settings/org.eclipse.php.core.prefs
 /.stack-work
-\.ghci
 ArchiExtension/archiAnalyze/.stack-work/
+/.ghci
 /ghcid.txt
+
+# Editor related #
+##################
+*.epp
+~$*

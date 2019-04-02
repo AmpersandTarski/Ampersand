@@ -635,7 +635,6 @@ instance ShowHSName Origin where
    where x :: String
          x = case ori of
               FileLoc l sym -> "FileLoc (" ++ show l ++ " " ++ sym ++ ")"
-              DBLoc l       -> "DBLoc " ++ show l
               Origin s      -> "Origin " ++ show s
               PropertyRule str declOrig 
                             -> "PropertyRule of "++str++" "++
@@ -647,7 +646,6 @@ instance ShowHSName Origin where
               XLSXLoc fPath sheet (a,b) -> "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)
 instance ShowHS Origin where
  showHS opts indent (FileLoc l s)               = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
- showHS _     _     (DBLoc l)                   = "DBLoc " ++ show l
  showHS opts indent (PropertyRule str declOrig) = "PropertyRule " ++ show str ++ " ("++showHS opts indent declOrig++")"
  showHS _     _     (Origin s)                  = "Origin " ++ show s
  showHS _     _     OriginUnknown               = "OriginUnknown"

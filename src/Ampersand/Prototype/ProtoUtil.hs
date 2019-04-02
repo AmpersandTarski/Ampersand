@@ -17,7 +17,7 @@ import           Ampersand.Misc
 import           Data.List
 import qualified Data.Text as Text
 import           System.Directory
-import qualified System.Exit as SE (ExitCode(..))
+import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))
 import           System.FilePath
 import           System.Process
 
