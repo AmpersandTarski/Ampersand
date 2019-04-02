@@ -56,7 +56,7 @@ createMulti opts@Options{..} =
          fAmpModel = MetaFSpec
             { metaModelFileName = "FormalAmpersand.adl"
             , model             = 
-                case pCtx2Fspec fAmpP_Ctx of
+                case pCtx2Fspec opts fAmpP_Ctx of
                   Checked f _ -> f
                   Errors errs -> fatal . unlines $
                       "The FormalAmpersand ADL scripts are not type correct:"
@@ -67,11 +67,11 @@ createMulti opts@Options{..} =
          sysCModel = MetaFSpec
             { metaModelFileName = "SystemContext.adl"
             , model             = 
-                case pCtx2Fspec systemP_Ctx of
+                case pCtx2Fspec opts systemP_Ctx of
                   Checked f _ -> f
                   Errors errs -> fatal . unlines $
                       "The SystemContext ADL scripts are not type correct:"
-                    : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+                    : (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
             , transformers  = transformersSystemContext
             }
          userP_CtxPlus :: Guarded P_Context
@@ -110,7 +110,7 @@ createMulti opts@Options{..} =
          userGFSpec = 
             pCtx2Fspec opts $ 
               if useSystemContext
-              then mergeContexts <$> userPlus <*> (grind opts sysCModel <$> pCtx2Fspec userP_Ctx)  
+              then mergeContexts <$> userPlus <*> (grind opts sysCModel <$> pCtx2Fspec opts userP_Ctx)  
               else userP_Ctx
            where 
             userPlus :: Guarded P_Context
@@ -123,6 +123,8 @@ createMulti opts@Options{..} =
                   Checked usrFSpec _
                            -> let grinded :: P_Context
                                   grinded = grind opts fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                                  metaPopPCtx :: Guarded P_Context
+                                  metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
                                   metaPopFSpec :: Guarded FSpec
                                   metaPopFSpec = pCtx2Fspec opts metaPopPCtx
                               in MultiFSpecs <$> (pCtx2Fspec opts $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
