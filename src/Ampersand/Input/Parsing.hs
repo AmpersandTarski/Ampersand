@@ -15,6 +15,7 @@ module Ampersand.Input.Parsing (
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree (mkContextOfPopsOnly)
+import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Input.ADL1.Lexer
 import           Ampersand.Input.ADL1.Parser
@@ -110,12 +111,12 @@ parseSingleADL opts@Options{..} pc
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts (pcFileKind pc) filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
                 }
-         | genArchiAnal opts && extension == ".xml" =
+         | genArchiAnal && extension == ".xml" =
              do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
-                ; writeFile "ArchiMetaModel.adl" (prettyPrint ctxFromArchi)
-                ; verboseLn opts ("ArchiMetaModel.adl written")
-                ; verboseLn opts (filePath ++ " has been interpreted as an Archi-repository.")
-                ; return ((\archiContents -> (archiContents,[])) <$> Checked ctxFromArchi)  -- Excel file cannot contain include files
+                ; writeFile "ArchiMetaModel.adl" (showP ctxFromArchi)
+                ; verboseLn ("ArchiMetaModel.adl written")
+                ; verboseLn (filePath ++ " has been interpreted as an Archi-repository.")
+                ; return ((\archiContents -> (archiContents,[])) <$> Checked ctxFromArchi [])  -- Excel file cannot contain include files
                 }
          | otherwise =
              do { mFileContents

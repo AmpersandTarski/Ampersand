@@ -53,7 +53,7 @@ generateAmpersandOutput opts@Options{..} multi =
       , ( proofs                , doGenProofs           )
       , ( validateSQL           , doValidateSQLTest     )
       , ( genPrototype          , doGenProto            )
-      , ( genArchiAnal          , doArchiAnalyze fSpec  )  -- awaiting an implementation of doArchiAnalyze
+--      , ( genArchiAnal          , doArchiAnalyze fSpec  )  -- awaiting an implementation of doArchiAnalyze
       , ( genRapPopulationOnly  , doGenRapPopulation    )
       , ( isJust testRule       , ruleTest . fromJust $ testRule)
       ]

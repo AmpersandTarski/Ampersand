@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5ae770bed7a224d836f792c5636a536e1743698abfa42aae8cbc8960b58521a5
+-- hash: 4d3fdd65feae91ee720e502da06416080f2f0ef9792068f7c9a26e5654cb5434
 
 name:           ampersand
 version:        3.15.0
@@ -466,7 +466,6 @@ library
       Ampersand.Input.ADL1.LexerToken
       Ampersand.Input.ADL1.Parser
       Ampersand.Input.ADL1.ParsingLib
-      Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Input.Parsing
       Ampersand.Input.PreProcessor
       Ampersand.Input.Xslx.XLSX
@@ -518,6 +517,7 @@ library
       Ampersand.Daemon.Daemon.Util
       Ampersand.Daemon.Wait
       Ampersand.FSpec.FPA
+      Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Output.FSpec2Excel
       Ampersand.Output.PredLogic
       Ampersand.Output.Statistics
@@ -551,6 +551,7 @@ library
     , graphviz ==2999.20.*
     , hashable ==1.2.*
     , http-conduit ==2.3.*
+    , hxt ==9.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
     , pandoc ==2.4.*
@@ -609,6 +610,7 @@ executable ampPreProc
     , graphviz ==2999.20.*
     , hashable ==1.2.*
     , http-conduit ==2.3.*
+    , hxt ==9.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
     , pandoc ==2.4.*
@@ -669,6 +671,7 @@ executable ampersand
     , graphviz ==2999.20.*
     , hashable ==1.2.*
     , http-conduit ==2.3.*
+    , hxt ==9.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
     , pandoc ==2.4.*
@@ -728,6 +731,7 @@ test-suite ampersand-test
     , graphviz ==2999.20.*
     , hashable ==1.2.*
     , http-conduit ==2.3.*
+    , hxt ==9.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
     , pandoc ==2.4.*
@@ -787,6 +791,7 @@ test-suite regression-test
     , graphviz ==2999.20.*
     , hashable ==1.2.*
     , http-conduit ==2.3.*
+    , hxt ==9.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
     , pandoc ==2.4.*
