@@ -51,6 +51,10 @@ instance Show PopAtom where
 dirtyId :: Unique a => a -> PopAtom
 dirtyId = DirtyId . idWithType
 
+-- Function for SystemContext transformers. These atoms don't need to have a type prefix
+dirtyIdWithoutType :: Unique a => a -> PopAtom
+dirtyIdWithoutType = DirtyId . idWithoutType
+
 toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
 toTransformer (rel, sCpt, tCpt, set) = Transformer rel sCpt tCpt set
 
@@ -843,7 +847,7 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("isAPI"                 , "PF_Interface"          , "PF_Interface"
       , Set.fromList $
-        [(dirtyId ifc, dirtyId ifc)
+        [(dirtyIdWithoutType ifc, dirtyIdWithoutType ifc)
         | ifc::Interface <- instanceList fSpec
         , ifcIsAPI ifc
         ]
@@ -853,7 +857,7 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("isPublic"              , "PF_Interface"          , "PF_Interface"
       , Set.fromList $
-        [(dirtyId ifc, dirtyId ifc)
+        [(dirtyIdWithoutType ifc, dirtyIdWithoutType ifc)
         | ifc::Interface <- instanceList fSpec
         , null (ifcRoles ifc)
         ]
@@ -866,7 +870,7 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("label"                 , "PF_Interface"          , "PF_Label"    
       , Set.fromList $
-        [(dirtyId ifc, PopAlphaNumeric . name $ ifc)
+        [(dirtyIdWithoutType ifc, PopAlphaNumeric . name $ ifc)
         | ifc::Interface <- instanceList fSpec
         ]
       )
@@ -878,7 +882,7 @@ transformersSystemContext _ fSpec = map toTransformer [
       )
     , ("pf_ifcRoles"           , "PF_Interface"          , "PF_Role"
       , Set.fromList $
-        [(dirtyId ifc , dirtyId role)
+        [(dirtyIdWithoutType ifc , dirtyIdWithoutType role)
         | ifc::Interface <- instanceList fSpec
         , role <- ifcRoles ifc
         ]
