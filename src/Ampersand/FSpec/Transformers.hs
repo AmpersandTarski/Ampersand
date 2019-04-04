@@ -877,6 +877,12 @@ transformersSystemContext _ fSpec = map toTransformer [
     , ("label"                 , "PF_NavMenuItem"        , "PF_Label"
       , Set.empty
       )
+    , ("label"                 , "PF_Role"               , "PF_Label"
+      , Set.fromList $
+        [ (dirtyIdWithoutType role, PopAlphaNumeric . name $ role)
+        | role::Role <- instanceList fSpec
+        ]
+      )
     , ("lastAccess"            , "SESSION"               , "DateTime"
       , Set.empty
       )

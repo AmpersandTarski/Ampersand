@@ -1,9 +1,5 @@
 CONTEXT PrototypeFramework IN ENGLISH
 
-    CONCEPT PF_Role ""
-        REPRESENT PF_Role TYPE OBJECT
-        POPULATION PF_Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
-
     CONCEPT PF_Interface ""
         REPRESENT PF_Interface TYPE OBJECT
 
