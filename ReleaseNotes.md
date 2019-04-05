@@ -3,6 +3,7 @@
 ## unreleased changes
 
 * New switch: --daemon. This enables automatic checking of your scripts as you type. Very nice in combination with the vscode extention [Ampersand (ADL) language support](https://marketplace.visualstudio.com/items?itemName=AmpersandTarski.language-ampersand).
+* [Issue #920](https://github.com/AmpersandTarski/Ampersand/issues/920) Warnings are generated for concepts/relations with names that are equal except for the caseing.
 
 ## v3.15.0 (15 march 2019)
 

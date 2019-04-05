@@ -29,6 +29,7 @@ module Ampersand.Input.ADL1.CtxError
   , lexerError2CtxError
   , addWarning, addWarnings
   , mkCrudWarning
+  , mkCaseProblemWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
   )
@@ -44,18 +45,19 @@ module Ampersand.Input.ADL1.CtxError
 where
 
 import           Ampersand.ADL1
-import           Ampersand.Input.ADL1.LexerMessage
+import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
 import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree (Type)
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.FilePos()
+import           Ampersand.Input.ADL1.LexerMessage
 import qualified Data.List as L   (intercalate)
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
 import           Data.Maybe
+import           Data.Typeable
 import           GHC.Exts (groupWith)
 import           Text.Parsec
-import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
-import           Ampersand.Core.AbstractSyntaxTree (Type)
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE ParseError 
@@ -452,6 +454,13 @@ instance Traced Warning where
     origin (Warning o _) = o
 mkCrudWarning :: P_Cruds -> [String] -> Warning
 mkCrudWarning (P_Cruds o _ ) msg = Warning o (unlines msg)
+mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
+mkCaseProblemWarning x y = Warning orig $ L.intercalate "\n    " 
+      ["Ampersand is case sensitive. you might have ment that the following are equal:"
+      ,    show (typeOf x) ++"`"++name x++"` and `"++name y++"`."
+      ]
+    where orig :: Origin 
+          orig = OriginUnknown
 addWarning :: Warning -> Guarded a -> Guarded a
 addWarning _ (Errors a) = Errors a
 addWarning w (Checked a ws) = Checked a (ws <> [w])
