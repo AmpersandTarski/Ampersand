@@ -153,6 +153,19 @@ checkOtherAtomsInSessionConcept ctx =
   where _isPermittedSessionValue :: AAtomValue -> Bool
         _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
         _isPermittedSessionValue _                 = False
+warnCaseProblems :: A_Context -> Guarded ()
+warnCaseProblems ctx = 
+   let warnings :: [Warning]
+       warnings = warns (concs ctx) 
+               ++ warns (relsDefdIn ctx) 
+       warns set = [ mkCaseProblemWarning x y
+                   | x <- lst, y<- lst
+                   , map toUpper (name x) == map toUpper (name y)
+                   , name x < name y 
+                   ]
+            where lst = toList set
+   in addWarnings warnings $ return ()
+     
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -270,6 +283,7 @@ pCtx2aCtx opts
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx      -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
+      warnCaseProblems actx   -- Warn if there are problems with the casing of names of relations and/or concepts  
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
