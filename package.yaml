@@ -97,7 +97,6 @@ library:
       - Ampersand.Basics.PandocExtended
       - Ampersand.Basics.Prelude
       - Ampersand.Basics.String
-      - Ampersand.Basics.UTF8
       - Ampersand.Basics.Unique
       - Ampersand.Basics.Version
       - Ampersand.Classes

@@ -1,13 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Basics.Exit 
-         ( catch
-         , exitWith
+         ( exitWith
          , AmpersandExit(..)
          ) where
 
-import           Control.Exception
+import           Control.Exception hiding (catch)
 import           Ampersand.Basics.Prelude
-import           Ampersand.Basics.UTF8
 import           Data.List
 import qualified System.Exit as SE
 import           System.IO.Unsafe(unsafePerformIO)

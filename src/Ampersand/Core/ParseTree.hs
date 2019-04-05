@@ -756,14 +756,13 @@ instance Named P_Concept where
  name P_Singleton = "ONE"
 
 instance Show P_Concept where
- showsPrec _ c = showString (name c)
+ show = name
 
 data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept } deriving (Ord,Eq)
 -- (Stef June 17th, 2016)   P_Sign is defined Ord,Eq, because P_Relation must be Ord,Eq on name and signature.
 
 instance Show P_Sign where
-  showsPrec _ sgn =
-      showString (   "[" ++ show (pSrc sgn)++"*"++show (pTgt sgn) ++ "]" )
+  show sgn = "[" <> show (pSrc sgn)<>"*"<>show (pTgt sgn) <> "]"
 instance Flippable P_Sign where
   flp sgn = P_Sign { pSrc = pTgt sgn
                    , pTgt = pSrc sgn
@@ -793,16 +792,16 @@ data Prop      = Uni          -- ^ univalent
                  deriving (Eq, Ord, Enum, Bounded,Typeable, Data)
 
 instance Show Prop where
- showsPrec _ Uni = showString "UNI"
- showsPrec _ Inj = showString "INJ"
- showsPrec _ Sur = showString "SUR"
- showsPrec _ Tot = showString "TOT"
- showsPrec _ Sym = showString "SYM"
- showsPrec _ Asy = showString "ASY"
- showsPrec _ Trn = showString "TRN"
- showsPrec _ Rfx = showString "RFX"
- showsPrec _ Irf = showString "IRF"
- showsPrec _ Prop = showString "PROP"
+ show Uni = "UNI"
+ show Inj = "INJ"
+ show Sur = "SUR"
+ show Tot = "TOT"
+ show Sym = "SYM"
+ show Asy = "ASY"
+ show Trn = "TRN"
+ show Rfx = "RFX"
+ show Irf = "IRF"
+ show Prop = "PROP"
 
 instance Unique Prop where
  showUnique = show
