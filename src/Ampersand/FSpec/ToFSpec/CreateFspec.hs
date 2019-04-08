@@ -1,7 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
-  (createMulti)
+  ( createMulti
+  , pCtx2Fspec
+  )
 
 where
 import           Ampersand.ADL1
@@ -45,17 +47,17 @@ createMulti opts@Options{..} =
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
      userP_Ctx:: Guarded P_Context <- 
         case fileName of
-          Just x -> parseADL opts x -- the P_Context of the user's sourceFile
+          Just x -> snd <$> parseADL opts x -- the P_Context of the user's sourceFile
           Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     
      systemP_Ctx:: Guarded P_Context <- parseSystemContext opts
 
      let fAmpFSpec :: FSpec
-         fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
+         fAmpFSpec = case pCtx2Fspec opts fAmpP_Ctx of
                        Checked f _ -> f
                        Errors errs -> fatal . unlines $
                             "The FormalAmpersand ADL scripts are not type correct:"
-                          : (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
+                          : (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
 
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =
@@ -68,17 +70,15 @@ createMulti opts@Options{..} =
             --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
             addSemanticModel :: P_Context -> P_Context
             addSemanticModel pCtx  
-              = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (Set.toList . instances $ fAmpFSpec)
+              = pCtx {ctx_ds = ctx_ds pCtx ++ map aRelation2pRelation (Set.toList . instances $ fAmpFSpec)
                      ,ctx_gs = ctx_gs pCtx ++ map aClassify2pClassify (Set.toList . instances $ fAmpFSpec)
                      ,ctx_vs = ctx_vs pCtx ++ map aViewDef2pViewDef (Set.toList . instances $ fAmpFSpec)
                      ,ctx_ks = ctx_ks pCtx ++ map aIdentityDef2pIdentityDef (Set.toList . instances $ fAmpFSpec)
                      ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)
                      }
-            noPopulation :: P_Relation -> P_Relation
-            noPopulation rel = rel{dec_popu =[]}
 
          userGFSpec :: Guarded FSpec
-         userGFSpec = pCtx2Fspec $ 
+         userGFSpec = pCtx2Fspec opts $ 
                          mergeContexts <$> userP_CtxPlus   -- the FSpec resuting from the user's souceFile
                                        <*> systemP_Ctx -- the system artifacts required for all ampersand prototypes
          
@@ -93,8 +93,8 @@ createMulti opts@Options{..} =
                                   metaPopPCtx :: Guarded P_Context
                                   metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
                                   metaPopFSpec :: Guarded FSpec
-                                  metaPopFSpec = pCtx2Fspec metaPopPCtx
-                              in MultiFSpecs <$> (pCtx2Fspec $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
+                                  metaPopFSpec = pCtx2Fspec opts metaPopPCtx
+                              in MultiFSpecs <$> (pCtx2Fspec opts $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
                                              <*> (Just <$> metaPopFSpec)
            else MultiFSpecs <$> userGFSpec <*> pure Nothing
      res <- if genMetaFile
@@ -112,5 +112,5 @@ createMulti opts@Options{..} =
                      return $ Checked () ws
         Errors err -> return (Errors err)
 
-    pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
-    pCtx2Fspec c = makeFSpec opts <$> join (pCtx2aCtx opts <$> c)
+pCtx2Fspec :: Options -> Guarded P_Context -> Guarded FSpec
+pCtx2Fspec opts c = makeFSpec opts <$> join (pCtx2aCtx opts <$> c)

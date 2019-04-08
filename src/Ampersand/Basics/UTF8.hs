@@ -89,8 +89,8 @@ readUTF8File pth =
     return $ Left $ show (exc :: SomeException) --  should not occur if validateUTF8 works correctly
    
 
-readFile :: FilePath -> IO String
-readFile = fmap (toString . stripBOM) . B.readFile . encodeString
+readFile :: FilePath -> IO (Either String String)
+readFile pth = readUTF8File pth
 
 writeFile :: FilePath -> String -> IO ()
 writeFile f = B.writeFile (encodeString f) . fromString

@@ -41,6 +41,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , forceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , allInterfaces :: Bool
+                       , runAsDaemon :: Bool -- run Ampersand as a daemon. (for use with the vscode extension)
                        , dbName :: String
                        , namespace :: String
                        , testRule :: Maybe String
@@ -224,6 +225,7 @@ getOptions' envOpts =
                       , genSampleConfigFile = False
                       , genPrototype     = False
                       , allInterfaces    = False
+                      , runAsDaemon      = False
                       , namespace        = ""
                       , testRule         = Nothing
               --        , customCssFile    = Nothing
@@ -440,6 +442,10 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{allInterfaces  = True}))
                "generate interfaces, which currently does not work."
             , Public)
+          , (Option []        ["daemon"]
+               (NoArg (\opts -> opts{runAsDaemon = True}))
+               "Run ampersand as daemon, for use by the vscode ampersand-language-extention."
+            , Hidden)
           , (Option ['e']     ["export"]
                (OptArg (\mbnm opts -> opts{export2adl = True
                                                    ,outputfile = fromMaybe "Export.adl" mbnm}) "file")

@@ -17,12 +17,8 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
-import           Ampersand.Input
-import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Misc
 import           Data.List
-import qualified Data.List.NonEmpty as NEL (toList)
 import           Data.Maybe
 import qualified Data.Set as Set
 
@@ -36,7 +32,7 @@ grind opts@Options{..} formalAmpersand userFspec =
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = mapMaybe (extractFromPop formalAmpersand) . Set.toList $ metaPops2
+      , ctx_ds     = mapMaybe relationFromPop . Set.toList $ metaPops2
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
@@ -46,7 +42,7 @@ grind opts@Options{..} formalAmpersand userFspec =
       , ctx_gs     = map aClassify2pClassify . Set.toList . instances $ formalAmpersand
       , ctx_ifcs   = []
       , ctx_ps     = []
-      , ctx_pops   = []
+      , ctx_pops   = mapMaybe populationFromPop . Set.toList $ metaPops2
       , ctx_metas  = []
       }
   where
@@ -54,47 +50,74 @@ grind opts@Options{..} formalAmpersand userFspec =
     metaPops2 = Set.fromList 
               . concatMap (Set.toList . grindedPops opts formalAmpersand userFspec)
               . Set.toList . instances $ formalAmpersand
-
-extractFromPop :: MetaFSpec -> Pop -> Maybe P_Relation
-extractFromPop formalAmpersand pop =
-  case pop of 
-    Comment{} -> Nothing
-    Pop{}     -> 
-      Just (aRelation2pRelation (popRelation pop)) {dec_popu = tuples}
-      
-     where
-      tuples :: [PAtomPair]
-      tuples =
-         case string2AValue . unwords . words . show . popPairs $ pop of
-            Checked x _ 
-              -> case checkAtomValues (popRelation pop) x of
-                   Checked _ _ -> x
-                   Errors errs -> fatal . unlines $
-                      [ "ERROR in tupels that are generated in the meatgrinder for relation"
-                      , "  "++showRel (popRelation pop)
-                      ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
-
-            Errors errs 
-              -> fatal . unlines $
-                      [ "ERROR in tupels that are generated in the meatgrinder for relation"
-                      , "  "++showRel (popRelation pop)
-                      ] ++ (intersperse (replicate 30 '=') . fmap showErr . NEL.toList $ errs)
-      checkAtomValues :: Relation -> [PAtomPair] -> Guarded AAtomPairs
-      checkAtomValues rel pps = Set.fromList <$> (sequence $ map fun pps)
-            where
-              fun pp = mkAtomPair 
-                <$> pAtomValue2aAtomValue (source rel) (ppLeft  pp)
-                <*> pAtomValue2aAtomValue (target rel) (ppRight pp)
+    relationFromPop :: Pop -> Maybe P_Relation
+    relationFromPop pop =
+      case pop of 
+        Comment{} -> Nothing
+        Pop{}     -> 
+          Just (aRelation2pRelation (popRelation pop))
+    populationFromPop :: Pop -> Maybe P_Population
+    populationFromPop pop =
+      case pop of 
+        Comment{} -> Nothing
+        Pop{}     -> Just $
+             P_RelPopu { p_src  = Nothing
+                       , p_tgt  = Nothing
+                       , pos    = orig
+                       , p_nmdr = PNamedRel 
+                            { pos    = orig
+                            , p_nrnm = name rel
+                            , p_mbSign = Just . aSign2pSign . sign $ rel
+                            }
+                       , p_popps = map convertPair . Set.toList . popPairs $ pop
+                       }
+          where rel = popRelation pop
+                orig = Origin "Population generated due to the meatgrinder"
+                convertPair :: (PopAtom,PopAtom) -> PAtomPair
+                convertPair (a,b) = 
+                    PPair { pos = orig
+                          , ppLeft  = pAtom2AtomValue a
+                          , ppRight = pAtom2AtomValue b
+                          }
             
-              pAtomValue2aAtomValue :: A_Concept -> PAtomValue -> Guarded AAtomValue
-              pAtomValue2aAtomValue cpt pav =
-                case unsafePAtomVal2AtomValue typ (Just cpt) pav of
-                  Left msg -> Errors . pure $ mkIncompatibleAtomValueError pav msg
-                  Right av -> pure av
-                where typ = cptTType formalAmpersand cpt
+                pAtom2AtomValue :: PopAtom -> PAtomValue
+                pAtom2AtomValue atm = 
+                  case atm of 
+                    DirtyId str         -> ScriptString orig str
+                    PopAlphaNumeric str -> ScriptString orig str
+                    PopInt i            -> ScriptInt orig i
+           
+
+      --    case string2AValue . unwords . words . show . popPairs $ pop of
+      --       Checked x _ 
+      --         -> case checkAtomValues (popRelation pop) x of
+      --              Checked _ _ -> x
+      --              Errors errs -> fatal . unlines $
+      --                 [ "ERROR in tupels that are generated in the meatgrinder for relation"
+      --                 , "  "++showRel (popRelation pop)
+      --                 ] ++ (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
+
+      --       Errors errs 
+      --         -> fatal . unlines $
+      --                 [ "ERROR in tupels that are generated in the meatgrinder for relation"
+      --                 , "  "++showRel (popRelation pop)
+      --                 ] ++ (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
+      -- checkAtomValues :: Relation -> [PAtomPair] -> Guarded AAtomPairs
+      -- checkAtomValues rel pps = Set.fromList <$> (sequence $ map fun pps)
+      --       where
+      --         fun pp = mkAtomPair 
+      --           <$> pAtomValue2aAtomValue (source rel) (ppLeft  pp)
+      --           <*> pAtomValue2aAtomValue (target rel) (ppRight pp)
             
-      string2AValue :: String -> Guarded [PAtomPair]
-      string2AValue = runParser pContent "Somewhere in formalAmpersand files"
+      --         pAtomValue2aAtomValue :: A_Concept -> PAtomValue -> Guarded AAtomValue
+      --         pAtomValue2aAtomValue cpt pav =
+      --           case unsafePAtomVal2AtomValue typ (Just cpt) pav of
+      --             Left msg -> Errors . pure $ mkIncompatibleAtomValueError pav msg
+      --             Right av -> pure av
+      --           where typ = cptTType formalAmpersand cpt
+            
+      -- string2AValue :: String -> Guarded [PAtomPair]
+      -- string2AValue = runParser pContent "Somewhere in formalAmpersand files"
  
 data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
                , popRelation :: Relation
@@ -105,30 +128,8 @@ data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
 showPop :: Pop -> String
 showPop pop =
   case pop of
-      Pop{} -> showP ((aRelation2pRelation (popRelation pop)) {dec_popu = map foo . sortShow . Set.toList $ popPairs pop} )
+      Pop{} -> showP . aRelation2pRelation . popRelation $ pop
       Comment{} -> intercalate "\n" . map ("-- " ++) . comment $ pop
-    where sortShow :: [(PopAtom,PopAtom)] -> [(PopAtom,PopAtom)]
-          sortShow = sortOn x
-            where x :: (PopAtom,PopAtom) -> String
-                  x (a,b) = show a++show b
-          foo :: (PopAtom,PopAtom) -> PAtomPair
-          foo (a,b) = PPair { pos = o
-                            , ppLeft  = pAtom2AtomValue a
-                            , ppRight = pAtom2AtomValue b
-                            }
-            where
-              pAtom2AtomValue :: PopAtom -> PAtomValue
-              pAtom2AtomValue atm = 
-                case atm of 
-                  DirtyId str         -> ScriptString o str
-                  PopAlphaNumeric str -> ScriptString o str
-                  PopInt i            -> ScriptInt o i
-              o = Origin "meatgrinder"
-
-
-type MetaFSpec = FSpec
-
-
 
 -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 

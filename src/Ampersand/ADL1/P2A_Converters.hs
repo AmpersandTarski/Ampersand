@@ -153,6 +153,19 @@ checkOtherAtomsInSessionConcept ctx =
   where _isPermittedSessionValue :: AAtomValue -> Bool
         _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
         _isPermittedSessionValue _                 = False
+warnCaseProblems :: A_Context -> Guarded ()
+warnCaseProblems ctx = 
+   let warnings :: [Warning]
+       warnings = warns (concs ctx) 
+               ++ warns (relsDefdIn ctx) 
+       warns set = [ mkCaseProblemWarning x y
+                   | x <- lst, y<- lst
+                   , map toUpper (name x) == map toUpper (name y)
+                   , name x < name y 
+                   ]
+            where lst = toList set
+   in addWarnings warnings $ return ()
+     
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -243,15 +256,15 @@ pCtx2aCtx opts
       purposes    <- traverse (pPurp2aPurp contextInfo) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       allRoleRelations <- traverse (pRoleRelation2aRoleRelation contextInfo) (p_roleRelations ++ concatMap pt_RRels p_patterns)
-      declsAndPops <- traverse (pDecl2aDecl Nothing (representationOf contextInfo) deflangCtxt deffrmtCtxt) p_relations
+      relations <- traverse (pDecl2aDecl Nothing deflangCtxt deffrmtCtxt) p_relations
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2
                      , ctxlang = deflangCtxt
                      , ctxmarkup = deffrmtCtxt
                      , ctxpats = pats
-                     , ctxrs = Set.fromList $ rules
-                     , ctxds = Set.fromList $ map fst declsAndPops
-                     , ctxpopus = Set.toList (Set.union (Set.fromList udpops) (Set.fromList (map snd declsAndPops)))
+                     , ctxrs = Set.fromList rules
+                     , ctxds = Set.fromList relations
+                     , ctxpopus = udpops
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
                      , ctxrrules = allRoleRules
@@ -270,6 +283,7 @@ pCtx2aCtx opts
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx      -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
+      warnCaseProblems actx   -- Warn if there are problems with the casing of names of relations and/or concepts  
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
@@ -287,8 +301,7 @@ pCtx2aCtx opts
                             Object -- default representation is Object (sometimes called `ugly identifiers')
                             (lookup cpt typeMap)
           multitypologies <- traverse mkTypology connectedConcepts
-          decls <- map fst
-                       <$> traverse (pDecl2aDecl Nothing findR deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
+          decls <- traverse (pDecl2aDecl Nothing deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
           let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[EDcD d]) | d <- decls])
                 where groupOnTp lst = Map.fromListWith const [(SignOrd$ sign d,d) | d <- lst]
           let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
@@ -783,16 +796,16 @@ pCtx2aCtx opts
          <*> traverse (pPop2aPop ci) (pt_pop ppat)
          <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat) 
          <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
-         <*> traverse (pDecl2aDecl (Just $ name ppat) (representationOf ci) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+         <*> traverse (pDecl2aDecl (Just $ name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
        where
-        f rules' keys' pops' views' xpls declsAndPops
+        f rules' keys' pops' views' xpls relations
            = A_Pat { ptnm  = name ppat
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
                    , ptrls = Set.fromList rules'
                    , ptgns = map pClassify2aClassify (pt_gns ppat)
-                   , ptdcs = Set.fromList $ map fst declsAndPops
-                   , ptups = pops' ++ map snd declsAndPops
+                   , ptdcs = Set.fromList relations
+                   , ptups = pops' 
                    , ptids = keys'
                    , ptvds = views'
                    , ptxps = xpls
@@ -1033,11 +1046,10 @@ pAtomValue2aAtomValue typ cpt pav =
 
 pDecl2aDecl ::
      Maybe String   -- name of pattern the rule is defined in (if any)
-  -> (A_Concept -> TType)
   -> Lang           -- The default language
   -> PandocFormat   -- The default pandocFormat
-  -> P_Relation -> Guarded (Relation,Population)
-pDecl2aDecl env typ defLanguage defFormat pd
+  -> P_Relation -> Guarded Relation
+pDecl2aDecl env defLanguage defFormat pd
  = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
        dcl = Relation
                  { decnm   = pack (dec_nm pd)
@@ -1053,13 +1065,8 @@ pDecl2aDecl env typ defLanguage defFormat pd
                  , decpat  = env
                  , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                  }
-   in checkEndoProps >> 
-      (\aps -> (dcl,ARelPopu { popdcl = dcl
-                             , popps  = Set.fromList aps
-                             , popsrc = source dcl
-                             , poptgt = target dcl
-                             })
-      ) <$> traverse (pAtomPair2aAtomPair typ dcl) (dec_popu pd)
+   in checkEndoProps >> pure dcl
+
  where
   decSign = pSign2aSign (dec_sign pd)
   checkEndoProps :: Guarded ()

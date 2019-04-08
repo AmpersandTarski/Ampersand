@@ -6,7 +6,7 @@ module Ampersand.Test.Parser.ParserTest (
 import           Ampersand.ADL1.PrettyPrinters(prettyPrint)
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError,showWarnings)
+import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
 import           Ampersand.Misc
@@ -16,11 +16,11 @@ import qualified Data.List.NonEmpty as NEL (toList)
 parseScripts :: Options -> [FilePath] -> IO Bool
 parseScripts _ [] = return True
 parseScripts opts (f:fs) =
-     do parsed <- parseADL opts f
+     do parsed <- snd <$> parseADL opts f
         case parsed of
             Checked _ ws -> do
                 putStrLn ("Parsed: " ++ f)
-                showWarnings ws
+                mapM_  putStrLn . concatMap (lines . show) $ ws
                 parseScripts opts fs
             Errors  e -> do 
                 putStrLn ("Cannot parse: " ++ f)
