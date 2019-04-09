@@ -72,7 +72,7 @@ grind opts@Options{..} metaModel userFspec =
                        , p_popps = map convertPair . Set.toList . popPairs $ pop
                        }
           where rel = popRelation pop
-                orig = Origin "Population generated due to the meatgrinder"
+                orig = MeatGrinder
                 convertPair :: (PopAtom,PopAtom) -> PAtomPair
                 convertPair (a,b) = 
                     PPair { pos = orig
