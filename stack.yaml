@@ -1,8 +1,8 @@
 # For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-# resolver: lts-3.18
-resolver: nightly-2018-11-24 # temporarily no LTS. Same as pandoc-crossref.
+resolver: lts-13.16
+# resolver: nightly-2018-11-24 # temporarily no LTS. Same as pandoc-crossref.
 allow-newer: false
 # Local packages, usually specified by relative directory name
 packages:
@@ -17,7 +17,9 @@ extra-deps:
 - simple-sql-parser-0.4.4
 - SpreadsheetML-0.1
 - wl-pprint-1.2.1
+- yaml-0.10.4.0@sha256:faaef7251bf05095ab34a3e716cfb4aaa3775aa23e38471ab8e8f44e59040b8f
 - yaml-config-0.4.0
+- zip-archive-0.3.3@sha256:53f871653059f87285f434319598f380d986cd7fd9219de555dcafc496121a7c
 # - HsYAML-0.1.1.2
 
 # Override default flag values for local packages and extra-deps
