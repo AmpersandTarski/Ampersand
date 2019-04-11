@@ -2,6 +2,7 @@
 
 ## Unrelease changes
 
+* [Issue #923](https://github.com/AmpersandTarski/Ampersand/issues/923) Lexer error message had disappeared. Now they show again.
 
 ## v3.16.0 (8 april 2019) (few days before scedule)
 
