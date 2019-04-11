@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 645622cd1c8e03c667a35811a1b1c228ddf2b20725a9e4f9510b98ef5f14ed6f
+-- hash: df35c2ee97192b6cf216a38d560d3fcb281f8c9eb82d6e7b91faa7e96b255164
 
 name:           ampersand
 version:        3.16.0
@@ -201,6 +201,8 @@ extra-source-files:
     testing/Travis/testcases/Misc/Hello.adl
     testing/Travis/testcases/Misc/Kernmodel.adl
     testing/Travis/testcases/Misc/testinfo.yaml
+    testing/Travis/testcases/Parsing/shouldFail/Issue923.adl
+    testing/Travis/testcases/Parsing/shouldFail/testinfo.yaml
     testing/Travis/testcases/Preprocessor/includes/PreprocTest.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTestPopulation.adl
     testing/Travis/testcases/Preprocessor/Preprocessor.adl
