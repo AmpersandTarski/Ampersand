@@ -72,13 +72,17 @@ instance Show CtxError where
   -- the proper working of the ampersand-language-extension
   show err = L.intercalate "\n  " $
     [show (origin err) ++ " error:"] ++ 
-    (lines $ case err of
-              CTXE _ s -> s
-              PE e     -> removeFirstLine $ show e
-              LE e     -> removeFirstLine $ show e
+    (case err of
+       CTXE _ s               -> lines s
+       PE e    -> -- The first line of a parse error allways contains
+                  -- the filename and position of the error. However,
+                  -- these are in a wrong format. So we strip the first 
+                  -- line of the error:
+                  case lines (show e) of
+                     []       -> fatal "Whoh! the impolssible just happend! (triggered by a parse error somewhere in your script)"
+                     _:xs     -> xs
+       LE (LexerError _ info) -> lines (show info)
     )
-    where removeFirstLine :: String -> String
-          removeFirstLine = unlines . tail . lines
 
 data Warning = Warning Origin String
 instance Show Warning where
