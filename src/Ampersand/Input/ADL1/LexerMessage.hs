@@ -16,7 +16,7 @@ import qualified Ampersand.Input.ADL1.LexerTexts as Texts
 
 -- | Defines a lexer error
 data LexerError = LexerError FilePos LexerErrorInfo -- ^ The lexer file position and error information
-    deriving(Show)
+
 
 -- | Defines the different lexer error types
 data LexerErrorInfo
