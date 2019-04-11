@@ -1,9 +1,14 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+* [Issue #923](https://github.com/AmpersandTarski/Ampersand/issues/923) Lexer error message had disappeared. Now they show again.
+* [Issue #925](https://github.com/AmpersandTarski/Ampersand/issues/925) Add warning when a script contains `BOX <ROWSNH>`, for this is deprecated and could result in an error when a prototype is being generated.
 * [Issue #578](https://github.com/AmpersandTarski/Ampersand/issues/578) Implement meta model for navigation menu
 
-* New switch: --daemon. This enables automatic checking of your scripts as you type. Very nice in combination with the vscode extention [Ampersand (ADL) language support](https://marketplace.visualstudio.com/items?itemName=AmpersandTarski.language-ampersand).
+## v3.16.0 (8 april 2019) (few days before scedule)
+
+* New switch: --daemon. This enables automatic checking of your scripts as you type. Very nice in combination with the vscode extension [Ampersand (ADL) language support](https://marketplace.visualstudio.com/items?itemName=AmpersandTarski.language-ampersand).
+* [Issue #920](https://github.com/AmpersandTarski/Ampersand/issues/920) Warnings are generated for concepts/relations with names that are equal except for the caseing.
 
 ## v3.15.0 (15 march 2019)
 

@@ -247,12 +247,15 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePath Options{..} p =
-    dirOutput
-     </> (escapeNonAlphaNum . pictureID . pType ) p <.>
-     case fspecFormat of
-      Fpdf   -> "png"   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
-      Fdocx  -> "svg"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
-      _      -> "pdf"
+    prefix </> filename <.> extention
+    where 
+      filename = escapeNonAlphaNum . pictureID . pType $ p
+      (prefix,extention) =
+         case fspecFormat of
+           Fpdf   -> (dirOutput ,"png")   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
+           Fdocx  -> (dirOutput ,"svg")   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
+           Fhtml  -> (""        ,"png")
+           _      -> (dirOutput ,"pdf")
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to draw in the graph
                                    , csRels :: [Relation]   -- ^ The relations, (the edges in the graph)

@@ -174,7 +174,9 @@ classdiagram2dot opts cd
                                      else [GVcomp.Color [WC (X11Color Red) Nothing]]
                                    )
                       }
-             | (spec,gener)<-splits gen]
+             | (spec,gener)<-splits gen
+             , spec /= gener -- required, until issue #896 is fixed.
+             ] 
           splits gen = case gen of
                                Isa{} -> [(genspc gen, gengen gen)]
                                IsE{} -> [(genspc gen, x ) | x<-genrhs gen]
