@@ -3,6 +3,7 @@
 ## Unrelease changes
 
 * [Issue #923](https://github.com/AmpersandTarski/Ampersand/issues/923) Lexer error message had disappeared. Now they show again.
+* [Issue #925](https://github.com/AmpersandTarski/Ampersand/issues/925) Add warning when a script contains `BOX <ROWSNH>`, for this is deprecated and could result in an error when a prototype is being generated.
 
 ## v3.16.0 (8 april 2019) (few days before scedule)
 
