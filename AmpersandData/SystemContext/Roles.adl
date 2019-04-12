@@ -6,7 +6,9 @@ CONTEXT PrototypeFramework IN ENGLISH
     
     RELATION label[PF_Role*PF_Label] [UNI,TOT]
         REPRESENT PF_Label TYPE ALPHANUMERIC
-        POPULATION label[PF_Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ]
+        -- Uncomment this population statement. Causes fatal 'Origin is not present in AAtomPair. fatal, called at src/Ampersand/Core/A2P_Converters.hs:299:18'
+        -- TODO: fix fatal. WIP of @michiel-s. Temp fix, add population statement to user script
+        -- POPULATION label[PF_Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ]
 
     API "PF_AllRoles" FOR SYSTEM : V[ONE*PF_Role] BOX
         [ "id"              : I
