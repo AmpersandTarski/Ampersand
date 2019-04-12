@@ -9,7 +9,7 @@ CONTEXT PrototypeFramework IN ENGLISH
   INCLUDE "Roles.adl"
 
   -- TEMPORARY. TODO: remove classify statement when Role is replaced in other (meta) models (e.g. SIAM)
-  CLASSIFY Role ISA PF_Role
+  CLASSIFY Role IS PF_Role
 
   RELATION sessionAccount[SESSION*Account] [UNI]
   RELATION sessionAllowedRoles[SESSION*PF_Role]
