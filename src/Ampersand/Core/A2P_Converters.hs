@@ -296,7 +296,7 @@ aExplObj2PRef2Obj obj =
 
 aAtomPair2pAtomPair :: AAtomPair -> PAtomPair
 aAtomPair2pAtomPair pr =
- PPair { pos   = fatal "Origin is not present in AAtomPair"
+ PPair { pos   = Origin "Unknown, but likely due to a meatgrinded population."
        , ppLeft  = aAtomValue2pAtomValue (apLeft pr)
        , ppRight = aAtomValue2pAtomValue (apRight pr)
        }
