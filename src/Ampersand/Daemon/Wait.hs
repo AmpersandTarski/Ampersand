@@ -10,13 +10,13 @@ module Ampersand.Daemon.Wait(
   , waitFiles
 ) where
 
-import Control.Concurrent.Extra(MVar,Var,newEmptyMVar,newVar,modifyVar_,tryPutMVar,tryTakeMVar,takeMVar)
+import Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Control.Monad.Extra(partitionM,filterM,concatMapM,forM,ifM,void,when,firstJustM)
-import Data.List.Extra(isPrefixOf,nubOrd)
+import Data.List.Extra(isPrefixOf)
 import System.FilePath
-import Control.Exception.Extra(handle)
+--import Control.Exception.Extra(handle)
 import System.Directory.Extra(doesDirectoryExist,listContents,canonicalizePath)
 import Data.Time.Clock
 import Data.String
@@ -62,7 +62,7 @@ listContentsInside test dir = do
 waitFiles :: Options -> Waiter -> IO ([FilePath] -> IO [String])
 waitFiles Options{..} waiter = do
     base <- getCurrentTime
-    return $ \files -> handle (\(e :: IOError) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
+    return $ \files -> handle (\(e :: IOException) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
         verboseLn $ "%WAITING: " ++ unwords files
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
         -- will pick up new files, as creating a new file changes the containing directory's modtime.
@@ -115,4 +115,4 @@ waitFiles Options{..} waiter = do
 
 
 canonicalizePathSafe :: FilePath -> IO FilePath
-canonicalizePathSafe x = canonicalizePath x `catch` \(_ :: IOError) -> return x
+canonicalizePathSafe x = canonicalizePath x `catch` \(_ :: IOException) -> return x

@@ -11,7 +11,7 @@ import Ampersand.Basics
 #if defined(mingw32_HOST_OS)
 import Data.Word
 import Data.Bits
-import Control.Exception
+--import Control.Exception hiding (finally)
 
 import Graphics.Win32.Misc
 import Graphics.Win32.Window

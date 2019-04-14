@@ -9,10 +9,10 @@ module Ampersand.Daemon.Daemon.Escape(
     ) where
 
 import Data.Char
-import Data.Either.Extra(rights,fromEither)
+import Data.Either.Extra(rights)
 import Data.List.Extra(unfoldr)
 import Data.Maybe
-import Data.Tuple.Extra(first,swap,both)
+import Data.Tuple.Extra(swap,both)
 import Control.Applicative
 import Ampersand.Basics
 
@@ -53,7 +53,7 @@ stripInfixE :: String -> Esc -> Maybe (Esc, Esc)
 stripInfixE needle haystack | Just rest <- stripPrefixE needle haystack = Just (Esc [], rest)
 stripInfixE needle e = case unesc e of
     Nothing -> Nothing
-    Just (x,xs) -> first (app $ fromEither $ fmap (Esc . return) x) <$> stripInfixE needle xs
+    Just (x,xs) -> first (app $ (either id id) $ fmap (Esc . return) x) <$> stripInfixE needle xs
 
 
 spanE, breakE :: (Char -> Bool) -> Esc -> (Esc, Esc)

@@ -16,7 +16,7 @@ module Ampersand.Input.ADL1.LexerTexts
     ) where
 
 import Ampersand.Basics
-import Data.IORef
+--import Data.IORef
 import Data.Maybe (fromMaybe)
 import System.IO.Unsafe(unsafePerformIO)
 
@@ -170,7 +170,8 @@ commasAndLang :: String   -- ^ The word to use for 'and'
               -> String   -- ^ The result
 commasAndLang _ [] = []
 commasAndLang _ [x] = x
-commasAndLang a (x:xs) = x ++ concatMap (", " ++) (init xs) ++ " " ++ a ++ " " ++ last xs
+commasAndLang a (x:y:[]) = x ++ " " ++ a ++ " " ++ y
+commasAndLang a (x:y:zs) = x ++ ", " ++ commasAndLang a (y:zs)
 
 commasAnd :: [String] -> String
 commasAnd = commasAndLang "and"

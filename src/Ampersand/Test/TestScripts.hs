@@ -28,7 +28,7 @@ getTestScripts =
 
 
 --data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
---                | DirError IOError               
+--                | DirError IOException               
 --data DirData = DirData FilePath DirContent       -- path and content of a directory
 
 testAmpersandScripts :: IO ()

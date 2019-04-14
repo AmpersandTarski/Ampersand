@@ -22,7 +22,7 @@ module Ampersand.Input.ADL1.ParsingLib(
     pZero, pOne
 ) where
 
-import           Ampersand.Basics hiding ((<$))
+import           Ampersand.Basics hiding ((<$),(<|>),many,try)
 import           Ampersand.Input.ADL1.FilePos (Origin(..))
 import           Ampersand.Input.ADL1.LexerToken
 import           Control.Monad.Identity (Identity)
