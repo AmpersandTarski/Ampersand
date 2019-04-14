@@ -3,14 +3,12 @@
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Util(
     takeRemainder,
-    outStr, outStrLn,
     allGoodMessage,
     getModTime,
     getShortTime
     ) where
 
-import Ampersand.Basics hiding (putStr)
-import Control.Concurrent.Extra
+import Ampersand.Basics
 import Control.Exception
 import Data.Time.Clock
 import Data.Time.Format
@@ -18,21 +16,6 @@ import Data.Time.LocalTime
 import System.Console.ANSI
 import System.Directory
 import System.IO.Error
-import System.IO.Extra
-import System.IO.Unsafe
-
-{-# NOINLINE lock #-}
-lock :: Lock
-lock = unsafePerformIO newLock
-
--- | Output a string with some level of locking
-outStr :: String -> IO ()
-outStr msg = do
-    _ <- evaluate $ length $ show msg
-    withLock lock $ putStr msg
-
-outStrLn :: String -> IO ()
-outStrLn xs = outStr $ xs ++ "\n"
 
 -- | The message to show when no errors have been reported
 allGoodMessage :: String

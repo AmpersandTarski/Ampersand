@@ -3,22 +3,20 @@
 -- | Library for spawning and working with Ghci sessions.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Daemon(
-    AmpersandDaemon(adState),
     DaemonState(loadResults),
     Severity,
     Load,
-    load,
+    loads,
     messages,
     loaded,
     startAmpersandDaemon
     ) where
 
-import System.IO 
-import Control.Monad.Extra
+import System.IO.Extra(readFile)
 import Data.Function
-import Data.List.Extra hiding (init)
+import Data.List.Extra(nub)
 import Control.Applicative
-import System.Directory
+import System.Directory.Extra(getCurrentDirectory,makeAbsolute,doesFileExist)
 import System.FilePath
 import Ampersand.Daemon.Daemon.Parser
 import Ampersand.Daemon.Daemon.Types as T
@@ -26,17 +24,10 @@ import Ampersand.Basics hiding (putStrLn, readFile, init)
 import Ampersand.Misc
 
 
-load :: AmpersandDaemon -> [Load]
-load = loads . adState
-messages :: AmpersandDaemon -> [Load]
-messages = filter isMessage . load
-loaded :: AmpersandDaemon -> [FilePath]
-loaded = loadResults . adState
-data AmpersandDaemon = AmpersandDaemon
-    {adState :: DaemonState
-    }
---instance Show AmpersandDaemon where
---  show = show . adState     
+messages :: DaemonState -> [Load]
+messages = filter isMessage . loads
+loaded :: DaemonState -> [FilePath]
+loaded = loadResults
 data DaemonState = DaemonState
    { loads :: [Load]
    , loadResults :: [FilePath]
@@ -47,7 +38,7 @@ instance Show DaemonState where
 
 startAmpersandDaemon 
      :: Options  -- Ampersand options
-     -> IO AmpersandDaemon
+     -> IO DaemonState
 startAmpersandDaemon opts = do
     state <- do 
        init <- initialState opts
@@ -55,9 +46,7 @@ startAmpersandDaemon opts = do
          Left msg -> exitWith . NoConfigurationFile $ msg
          Right s -> pure s  
     
-    return AmpersandDaemon
-             {adState = state
-             }
+    return state
 
 initialState :: Options -> IO (Either [String] DaemonState)
 initialState opts = do
