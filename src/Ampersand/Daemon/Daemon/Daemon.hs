@@ -62,26 +62,27 @@ startAmpersandDaemon opts = do
 initialState :: Options -> IO (Either [String] DaemonState)
 initialState opts = do
    curDir <- getCurrentDirectory
-   x <- findRoot curDir -- TODO: Read contents of .ampersand file. Fail if not present.
-   case x of 
-     Left msg   -> return $ Left msg
-     Right root -> do 
-       (ls,loadedFiles) <- parseProject opts root 
-       return $ Right DaemonState
-           { loads = ls
-           , loadResults = nub $ [curDir </> ".ampersand"] ++ loadedFiles
-           }
- where findRoot :: FilePath -> IO (Either [String] FilePath)
-       findRoot dir = do
-         dotAmpersand <- makeAbsolute $ dir </> ".ampersand"
-         exists <- doesFileExist dotAmpersand
-         if exists 
-         then do
-             root <- readFile dotAmpersand
-             return (Right root)  
-         else return (Left $ [ "File not found: "++dotAmpersand
-                             , "  Your workspace should contain a file called .ampersand. However,"
-                             , "  it could not be found. Please provide that file, containing the "
-                             , "  name of the top file of your Ampersand project. "
-                             ]) 
-
+   dotAmpersand <- makeAbsolute $ curDir </> ".ampersand"
+   exists <- doesFileExist dotAmpersand
+   if exists 
+   then do
+      content <- readFile dotAmpersand
+      let files = filter (\fn -> length fn > 0) --discard empty lines
+                . nub                           --discard doubles
+                . lines $ content
+      (ls,loadedFiles) <- do
+           xs <- mapM (parseProject opts) files
+           return ( nub . concatMap fst $ xs
+                  , nub . concatMap snd $ xs
+                  )
+      return $ Right DaemonState
+        { loads = ls
+        , loadResults = nub $ [dotAmpersand] ++ loadedFiles
+        }
+   else return . Left $ 
+      [ "File not found: "++dotAmpersand
+      , "  Your workspace should contain a file called .ampersand. However,"
+      , "  it could not be found. Please provide that file, containing the "
+      , "  name of the top file(s) of your Ampersand project. One name per line."
+      ] 
+ 
