@@ -30,7 +30,7 @@ import           Ampersand.Input.ADL1.LexerToken
 import           Ampersand.Misc
 import           Control.Monad (when)
 import           Data.Char hiding(isSymbol)
-import           Data.List (nub)
+import           Data.List (nub,foldl,maximum)
 import qualified Data.Set as Set -- (member, fromList)
 import           Data.Time.Calendar
 import           Data.Time.Clock
@@ -138,9 +138,10 @@ mainLexer p ('{':'-':s) = lexNestComment mainLexer (addPos 2 p) s
 mainLexer p ('{':'+':s) = lexMarkup mainLexer (addPos 2 p) s
 mainLexer p ('"':ss) =
     let (s,swidth,rest) = scanString ss
-    in if null rest || head rest /= '"'
-                              then lexerError (NonTerminatedString s) p
-                              else returnToken (LexString s) p mainLexer (addPos (swidth+2) p) (tail rest)
+    in case rest of
+         ('"':xs) -> returnToken (LexString s) p mainLexer (addPos (swidth+2) p) xs
+         _        -> lexerError (NonTerminatedString s) p
+         
 
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
@@ -203,8 +204,10 @@ isOperator :: String -> Bool
 isOperator  = locatein operators
 
 isOperatorBegin :: Char -> Bool
-isOperatorBegin  = locatein (map head operators)
-
+isOperatorBegin  = locatein (mapMaybe head operators)
+   where head :: [a] -> Maybe a
+         head (a:_) = Just a
+         head []    = Nothing
 isIdStart :: Char -> Bool
 isIdStart c = isLower c || c == '_'
 

@@ -39,12 +39,14 @@ identifier = suchThat str2 noKeyword
 -- Genrates a valid ADL upper-case identifier
 upperId :: Gen String
 upperId = suchThat identifier startUpper
-    where startUpper = isUpper . head
+    where startUpper [] = False
+          startUpper (h:_) = isUpper h
 
 -- Genrates a valid ADL lower-case identifier
 lowerId :: Gen String
 lowerId = suchThat identifier startLower
-    where startLower = isLower . head
+    where startLower [] = False
+          startLower (h:_) = isLower h
 
 -- Generates an object
 objTermPrim :: Bool -> Int -> Gen (P_BoxItem TermPrim)

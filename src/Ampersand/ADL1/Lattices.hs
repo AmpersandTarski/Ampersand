@@ -15,7 +15,7 @@ module Ampersand.ADL1.Lattices
     , FreeLattice(..),getGroups,isInSystem
     ) where
 
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (toList)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified Data.List   as Lst (partition)

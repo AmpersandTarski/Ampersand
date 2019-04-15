@@ -45,12 +45,18 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
               escape x = replace x (intersperse ' ' x)
 
 isId :: String -> Bool
-isId a = not (null a) && all isIdChar a && isFirstIdChar(head a) && a `notElem` keywords
+isId xs = 
+  case xs of
+   [] -> False
+   h:t -> all isIdChar xs && isFirstIdChar h && xs `notElem` keywords
        where isFirstIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']
              isIdChar x = isFirstIdChar x || elem x ['0'..'9']
 
 isUpperId :: String -> Bool
-isUpperId xs = isId xs && head xs `elem` ['A'..'Z']
+isUpperId xs = 
+  case xs of
+   [] -> False
+   h:t -> isId xs && h `elem` ['A'..'Z']
 
 maybeQuote :: String -> Doc
 maybeQuote a = if isId a then text a else quote a
@@ -350,10 +356,9 @@ instance Pretty PClassify where
       case p of
             PClassify _ spc gen -> 
                  text "CLASSIFY" <+> pretty spc <+> 
-                     (if NEL.length gen == 2 && 
-                         length (NEL.filter (spc /=) gen) == 1
-                      then text "ISA" <~> head (NEL.filter (spc /=) gen)
-                      else text "IS"  <+> separate "/\\" (NEL.toList gen)
+                     (case (NEL.length gen, NEL.filter (spc /=) gen) of
+                        (2,[x]) -> text "ISA" <~> x
+                        _       -> text "IS"  <+> separate "/\\" (NEL.toList gen)
                      )
 instance Pretty Lang where
     pretty x = text "IN" <+> (text . map toUpper . show $ x)
