@@ -107,7 +107,7 @@ data A_Context
          , ctxInfo :: ContextInfo
          } deriving (Typeable)              --deriving (Show) -- voor debugging
 instance Show A_Context where
-  showsPrec _ c = showString (ctxnm c)
+  show = name
 instance Eq A_Context where
   c1 == c2  =  name c1 == name c2
 instance Unique A_Context where
@@ -175,8 +175,8 @@ instance Unique Rule where
 instance Ord Rule where
   compare = compare `on` rrnm
 instance Show Rule where
-  showsPrec _ x
-   = showString $ "RULE "++ (if null (name x) then "" else name x++": ")++ show (formalExpression x)
+  show x
+   = "RULE "++ (if null (name x) then "" else name x++": ")++ show (formalExpression x)
 instance Traced Rule where
   origin = rrfps
 instance Named Rule where
@@ -239,8 +239,8 @@ instance Unique Relation where
 instance Hashable Relation where
    hashWithSalt s Relation{dechash = v} = s `hashWithSalt` v
 instance Show Relation where  -- For debugging purposes only (and fatal messages)
-  showsPrec _ decl
-   = showString (name decl++showSign (sign decl))
+  show decl
+   = name decl++showSign (sign decl)
 
 showRel :: Relation -> String
 showRel rel = name rel++"["++show (source rel) ++ "*"++ show (target rel)++"]"
@@ -325,10 +325,10 @@ instance Unique AClassify where
       IsE{} -> showUnique (genspc a)++" IS "++intercalate " /\\ " (map (showUnique) (genrhs a))
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
-  showsPrec _ g =
+  show g =
     case g of
-     Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
-     IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
+     Isa{} -> "CLASSIFY "++show (genspc g)++" ISA "++show (gengen g)
+     IsE{} -> "CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g))
 instance Hashable AClassify where
     hashWithSalt s g = 
       s `hashWithSalt` (genspc g)
@@ -795,7 +795,7 @@ instance Named A_Concept where
   name ONE = "ONE"
 
 instance Show A_Concept where
-  showsPrec _ c = showString (name c)
+  show = name
 
 instance Unique (A_Concept, PSingleton) where
   showUnique (c,val) = show val++"["++showUnique c++"]"
@@ -803,8 +803,8 @@ instance Unique (A_Concept, PSingleton) where
 data Signature = Sign A_Concept A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
 instance Hashable Signature
 instance Show Signature where
-  showsPrec _ (Sign s t) =
-     showString (   "[" ++ show s ++ "*" ++ show t ++ "]" )
+  show (Sign s t) =
+     "[" ++ show s ++ "*" ++ show t ++ "]"
 instance Unique Signature where
   showUnique (Sign s t) = "[" ++ showUnique s ++ "*" ++ showUnique t ++ "]"
 instance HasSignature Signature where
@@ -1082,8 +1082,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
               Object           -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
               _                -> fatal $ "There is no example denotational syntax for a value of type `"++show typ++"`." 
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
-     maybeRead :: Read a => String -> Maybe a
-     maybeRead = fmap fst . listToMaybe . reads
+     
 
 
 -- | The typology of a context is the partioning of the concepts in that context into 

@@ -360,4 +360,9 @@ aCruds2pCruds x =
   else Just $ P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
    where f :: (Bool,Char) -> Char
          f (b,c) = (if b then toUpper else toLower) c
-
+         zipWith :: (a->b->c) -> [a]->[b]->[c]
+         zipWith fun = go
+           where
+             go [] _ = []
+             go _ [] = []
+             go (x':xs) (y:ys) = fun x' y : go xs ys

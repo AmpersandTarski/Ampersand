@@ -3,8 +3,9 @@ module Ampersand.Basics.Prelude
   , module RIO
   , writeFile
   , zip3
+  , maybeRead
   )where
-import Prelude (putStrLn,putStr) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
+import Prelude (putStrLn,putStr,reads) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import RIO
 
 -- import Debug.Trace
@@ -27,3 +28,6 @@ zip3 :: [a] -> [b] -> [c] -> [(a,b,c)]
 -- zip3 =  zipWith3 (,,)
 zip3 (a:as) (b:bs) (c:cs) = (a,b,c) : zip3 as bs cs
 zip3 _      _      _      = []
+
+maybeRead :: Read a => String -> Maybe a
+maybeRead = fmap fst . listToMaybe . reads
