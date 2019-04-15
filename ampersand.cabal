@@ -4,10 +4,10 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5ae770bed7a224d836f792c5636a536e1743698abfa42aae8cbc8960b58521a5
+-- hash: 17e984810a63a0e31a582680738b7a8cb15adde9beb93db9954fbb29fa0910d0
 
 name:           ampersand
-version:        3.15.0
+version:        3.16.0
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -201,6 +201,8 @@ extra-source-files:
     testing/Travis/testcases/Misc/Hello.adl
     testing/Travis/testcases/Misc/Kernmodel.adl
     testing/Travis/testcases/Misc/testinfo.yaml
+    testing/Travis/testcases/Parsing/shouldFail/Issue923.adl
+    testing/Travis/testcases/Parsing/shouldFail/testinfo.yaml
     testing/Travis/testcases/Preprocessor/includes/PreprocTest.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTestPopulation.adl
     testing/Travis/testcases/Preprocessor/Preprocessor.adl
@@ -532,7 +534,7 @@ library
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
-    , QuickCheck ==2.11.*
+    , QuickCheck ==2.12.6.1
     , SpreadsheetML ==0.1.*
     , aeson ==1.4.*
     , aeson-pretty ==0.8.*
@@ -552,7 +554,7 @@ library
     , http-conduit ==2.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
-    , pandoc ==2.4.*
+    , pandoc ==2.5
     , pandoc-crossref ==0.3.4.0
     , pandoc-types ==1.17.*
     , parsec ==3.1.*
@@ -566,9 +568,9 @@ library
     , utf8-string ==1.0.*
     , wl-pprint ==1.2.*
     , xlsx ==0.7.*
-    , yaml ==0.10.*
+    , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive
+    , zip-archive ==0.4
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -589,7 +591,7 @@ executable ampPreProc
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
-    , QuickCheck ==2.11.*
+    , QuickCheck ==2.12.6.1
     , SpreadsheetML ==0.1.*
     , aeson ==1.4.*
     , aeson-pretty ==0.8.*
@@ -610,7 +612,7 @@ executable ampPreProc
     , http-conduit ==2.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
-    , pandoc ==2.4.*
+    , pandoc ==2.5
     , pandoc-crossref ==0.3.4.0
     , pandoc-types ==1.17.*
     , parsec ==3.1.*
@@ -624,9 +626,9 @@ executable ampPreProc
     , utf8-string ==1.0.*
     , wl-pprint ==1.2.*
     , xlsx ==0.7.*
-    , yaml ==0.10.*
+    , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive
+    , zip-archive ==0.4
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -649,7 +651,7 @@ executable ampersand
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
-    , QuickCheck ==2.11.*
+    , QuickCheck ==2.12.6.1
     , SpreadsheetML ==0.1.*
     , aeson ==1.4.*
     , aeson-pretty ==0.8.*
@@ -670,7 +672,7 @@ executable ampersand
     , http-conduit ==2.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
-    , pandoc ==2.4.*
+    , pandoc ==2.5
     , pandoc-crossref ==0.3.4.0
     , pandoc-types ==1.17.*
     , parsec ==3.1.*
@@ -684,9 +686,9 @@ executable ampersand
     , utf8-string ==1.0.*
     , wl-pprint ==1.2.*
     , xlsx ==0.7.*
-    , yaml ==0.10.*
+    , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive
+    , zip-archive ==0.4
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -708,7 +710,7 @@ test-suite ampersand-test
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
-    , QuickCheck ==2.11.*
+    , QuickCheck ==2.12.6.1
     , SpreadsheetML ==0.1.*
     , aeson ==1.4.*
     , aeson-pretty ==0.8.*
@@ -729,7 +731,7 @@ test-suite ampersand-test
     , http-conduit ==2.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
-    , pandoc ==2.4.*
+    , pandoc ==2.5
     , pandoc-crossref ==0.3.4.0
     , pandoc-types ==1.17.*
     , parsec ==3.1.*
@@ -743,9 +745,9 @@ test-suite ampersand-test
     , utf8-string ==1.0.*
     , wl-pprint ==1.2.*
     , xlsx ==0.7.*
-    , yaml ==0.10.*
+    , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive
+    , zip-archive ==0.4
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -767,7 +769,7 @@ test-suite regression-test
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
-    , QuickCheck ==2.11.*
+    , QuickCheck ==2.12.6.1
     , SpreadsheetML ==0.1.*
     , aeson ==1.4.*
     , aeson-pretty ==0.8.*
@@ -788,7 +790,7 @@ test-suite regression-test
     , http-conduit ==2.3.*
     , lens ==4.17.*
     , mtl ==2.2.*
-    , pandoc ==2.4.*
+    , pandoc ==2.5
     , pandoc-crossref ==0.3.4.0
     , pandoc-types ==1.17.*
     , parsec ==3.1.*
@@ -802,9 +804,9 @@ test-suite regression-test
     , utf8-string ==1.0.*
     , wl-pprint ==1.2.*
     , xlsx ==0.7.*
-    , yaml ==0.10.*
+    , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive
+    , zip-archive ==0.4
     , zlib ==0.6.*
   if os(windows)
     build-depends:

@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-
+{-# LANGUAGE RecordWildCards #-}
 -- | Use 'withWaiterPoll' or 'withWaiterNotify' to create a 'Waiter' object,
 --   then access it (single-threaded) by using 'waitFiles'.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
@@ -10,21 +10,21 @@ module Ampersand.Daemon.Wait(
   , waitFiles
 ) where
 
-import Control.Concurrent.Extra
+import Control.Concurrent.Extra(MVar,Var,newEmptyMVar,newVar,modifyVar_,tryPutMVar,tryTakeMVar,takeMVar)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Control.Monad.Extra
-import Data.List.Extra
+import Control.Monad.Extra(partitionM,filterM,concatMapM,forM,ifM,void,when,firstJustM)
+import Data.List.Extra(isPrefixOf,nubOrd)
 import System.FilePath
-import Control.Exception.Extra
-import System.Directory.Extra
+import Control.Exception.Extra(handle)
+import System.Directory.Extra(doesDirectoryExist,listContents,canonicalizePath)
 import Data.Time.Clock
 import Data.String
-import System.Console.CmdArgs
-import System.Time.Extra
+import System.Time.Extra(Seconds,sleep)
 import System.FSNotify
 import Ampersand.Daemon.Daemon.Util
 import Ampersand.Basics
+import Ampersand.Misc
 
 data Waiter = WaiterPoll Seconds
             | WaiterNotify WatchManager (MVar ()) (Var (Map.Map FilePath StopListening))
@@ -59,11 +59,11 @@ listContentsInside test dir = do
 --   starting from when 'waitFiles' was initially called.
 --
 --   Returns a message about why you are continuing (usually a file name).
-waitFiles :: Waiter -> IO ([FilePath] -> IO [String])
-waitFiles waiter = do
+waitFiles :: Options -> Waiter -> IO ([FilePath] -> IO [String])
+waitFiles Options{..} waiter = do
     base <- getCurrentTime
     return $ \files -> handle (\(e :: IOError) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
-        whenLoud $ outStrLn $ "%WAITING: " ++ unwords files
+        verboseLn $ "%WAITING: " ++ unwords files
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
         -- will pick up new files, as creating a new file changes the containing directory's modtime.
         files' <- fmap concat $ forM files $ \file ->
@@ -77,11 +77,11 @@ waitFiles waiter = do
                     sequence_ $ Map.elems del
                     new <- forM (Set.toList $ dirs `Set.difference` Map.keysSet keep) $ \dir -> do
                         can <- watchDir manager (fromString dir) (const True) $ \event -> do
-                            whenLoud $ outStrLn $ "%NOTIFY: " ++ show event
+                            verboseLn $ "%NOTIFY: " ++ show event
                             void $ tryPutMVar kick ()
                         return (dir, can)
                     let mp2 = keep `Map.union` Map.fromList new
-                    whenLoud $ outStrLn $ "%WAITING: " ++ unwords (Map.keys mp2)
+                    verboseLn $ "%WAITING: " ++ unwords (Map.keys mp2)
                     return mp2
                 void $ tryTakeMVar kick
         new <- mapM getModTime files'
@@ -95,7 +95,7 @@ waitFiles waiter = do
                 WaiterPoll t -> sleep $ max 0 $ t - 0.1 -- subtract the initial 0.1 sleep from above
                 WaiterNotify _ kick _ -> do
                     takeMVar kick
-                    whenLoud $ outStrLn "%WAITING: Notify signaled"
+                    verboseLn "%WAITING: Notify signaled"
             new <- mapM getModTime files
             case [x | (x,t1,t2) <- zip3 files old new, t1 /= t2] of
                 [] -> recheck files new
@@ -105,7 +105,7 @@ waitFiles waiter = do
                         -- if someone is deleting a needed file, give them some space to put the file back
                         -- typically caused by VIM
                         -- but try not to
-                        whenLoud $ outStrLn $ "%WAITING: Waiting max of 1s due to file removal, " ++ unwords disappeared
+                        verboseLn $ "%WAITING: Waiting max of 1s due to file removal, " ++ unwords disappeared
                         -- at most 20 iterations, but stop as soon as the file returns
                         void $ flip firstJustM (replicate 20 ()) $ \_ -> do
                             sleep 0.05
