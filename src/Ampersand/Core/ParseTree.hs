@@ -853,8 +853,8 @@ mkContextOfPopsOnly pops =
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = [ P_Sgn{dec_nm=nmdr, dec_sign=P_Sign src tgt, dec_prps=[], dec_pragma=[], dec_Mean=[], pos=origin pop }
-                     | P_RelPopu{p_nmdr = nmdr, p_popps=aps, p_src = src, p_tgt = tgt}<-pops]
+      , ctx_ds     = [ P_Sgn{dec_nm=name pop, dec_sign=P_Sign (PCpt src') (PCpt tgt'), dec_prps=Set.fromList [], dec_pragma=[], dec_Mean=[], pos=origin pop }
+                     | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-pops, Just src'<-[src], Just tgt'<-[tgt]]
       , ctx_cs     = [ Cd{pos=origin pop, cdcpt=p_cnme pop, cddef="", cdref="", cdfrom=""}
                      | pop@P_CptPopu{}<-pops]
       , ctx_ks     = []
