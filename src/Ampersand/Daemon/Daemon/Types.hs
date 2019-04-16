@@ -8,7 +8,6 @@ module Ampersand.Daemon.Daemon.Types(
     ) where
 
 import Ampersand.Basics
-import Data.Data
 
 -- | Severity of messages
 data Severity = Warning | Error

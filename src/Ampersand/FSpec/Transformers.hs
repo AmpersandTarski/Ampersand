@@ -9,7 +9,7 @@ module Ampersand.FSpec.Transformers
   , instances
   ) where
 
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (first,second)
 import           Ampersand.Classes
 import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
@@ -39,9 +39,8 @@ data PopAtom =
   | PopInt Integer 
   deriving (Eq,Ord)
 instance Show PopAtom where
- showsPrec _ x
-   = showString $ 
-      case x of
+ show x
+   = case x of
         DirtyId str         -> show str
         PopAlphaNumeric str -> show str
         PopInt i            -> show i
@@ -908,10 +907,10 @@ class HasDirtyId a where
   dirtyId = DirtyId . uniqueButNotTooLong . rawId
    where
     uniqueButNotTooLong :: String -> String
-    uniqueButNotTooLong str =
-      case splitAt safeLength str of
-        (_ , []) -> str
-        (prfx,_) -> prfx++"#"++show (hash str)++"#"
+    uniqueButNotTooLong str = 
+      if length str <= safeLength 
+      then str
+      else take safeLength str ++"#"++show (hash str)++"#"
       where safeLength = 50 -- HJO, 20170812: Subjective value. This is based on the 
                              -- limitation that DirtyId's are stored in an sql database
                              -- in a field that is normally 255 long. We store the

@@ -12,7 +12,7 @@ import           Data.Char                  (isAlphaNum)
 import           Data.Function
 import           Data.Hashable
 import           Data.List
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified Data.List.NonEmpty as NEL (toList,NonEmpty)
 import           Data.Ord
 import qualified Data.Set as Set
 import           Text.Pandoc hiding (Meta)
@@ -50,6 +50,9 @@ instance ShowHSName a => ShowHSName [a] where
 
 instance ShowHS a => ShowHS [a] where
  showHS opts indent = wrap "" (indent++" ") (showHS opts)
+
+instance ShowHS a => ShowHS (NEL.NonEmpty a) where
+ showHS opts indent = wrap "" (indent++" ") (showHS opts) . NEL.toList
 
 instance ShowHSName a => ShowHSName (Maybe a) where
  showHSName Nothing  = "Nothing"
@@ -444,7 +447,7 @@ instance ShowHSName IdentityDef where
 instance ShowHS IdentityDef where
  showHS opts indent identity
   = "Id ("++showHS opts "" (idPos identity)++") "++show (idLbl identity)++" ("++showHSName (idCpt identity)++")"
-    ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS opts indent) $ identityAts identity)++indent++"  ]"
+    ++indent++"  [ "++intercalate (indent++"  , ") (NEL.toList . fmap (showHS opts indent) $ identityAts identity)++indent++"  ]"
 
 instance ShowHS IdentitySegment where
  showHS opts indent (IdentityExp objDef) = "IdentityExp ("++ showHS opts indent objDef ++ ")"
@@ -455,7 +458,7 @@ instance ShowHSName ViewDef where
 instance ShowHS ViewDef where
  showHS opts indent vd
   = "Vd ("++showHS opts "" (vdpos vd)++") "++show (name vd)++" "++showHSName (vdcpt vd)
-    ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS opts indent) $ vdats vd)++indent++"  ]"
+    ++indent++"  [ "++intercalate (indent++"  , ") (NEL.toList . fmap (showHS opts indent) $ vdats vd)++indent++"  ]"
 
 instance ShowHS ViewSegment where
   showHS opts indent vs =

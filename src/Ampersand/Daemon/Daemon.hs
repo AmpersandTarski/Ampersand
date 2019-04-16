@@ -7,7 +7,7 @@
 module Ampersand.Daemon.Daemon(runDaemon) where
 
 import Control.Monad.Extra(forever,when,unless)
-import Data.Data
+--import Data.Data
 import Data.List.Extra(nubOrd,nubOrdOn,sortOn,nub,partition)
 import Data.Maybe
 import Data.Ord

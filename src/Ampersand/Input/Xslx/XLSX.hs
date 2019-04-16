@@ -3,13 +3,13 @@ module Ampersand.Input.Xslx.XLSX
   (parseXlsxFile)
 where
 import           Ampersand.ADL1
-import           Ampersand.Basics
+import           Ampersand.Basics hiding ((^.))
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
 import           Codec.Xlsx
 import           Control.Lens
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.ByteString.Lazy as BL
 import           Data.Char
 import qualified Data.Map as M 
@@ -83,9 +83,13 @@ toPops opts file x = map popForColumn (colNrs x)
           
        popOrigin :: Origin
        popOrigin = originOfCell (relNamesRow, targetCol)
-       conceptNamesRow = head . tail $ headerRowNrs x
-       relNamesRow     = head $ headerRowNrs x
-       sourceCol       = head $ colNrs x
+       (relNamesRow,conceptNamesRow) = case headerRowNrs x of
+                                         [] -> fatal "headerRowNrs x is empty"
+                                         [rnr] -> (rnr,fatal "headerRowNrs x has only one element")
+                                         rnr:cnr:_ -> (rnr,cnr)
+       sourceCol       = case colNrs x of
+                           [] -> fatal "colNrs x is empty"
+                           c:_ -> c
        targetCol       = i 
        sourceConceptName :: String
        mSourceConceptDelimiter :: Maybe Char
@@ -110,10 +114,9 @@ toPops opts file x = map popForColumn (colNrs x)
        (relName,isFlipped') 
           = case value (relNamesRow,targetCol) of
                 Just (CellText t) -> 
-                    let str = T.unpack . trim $ t
-                    in if last str == '~'
-                       then (init str, True )
-                       else (     str, False)
+                    case T.unpack . T.reverse . trim $ t of
+                      '~':rest -> (reverse rest, True )
+                      xs       -> (reverse xs  , False)
                 _ -> fatal ("No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol))
        thePairs :: [PAtomPair]
        thePairs =  concat . mapMaybe pairsAtRow . popRowNrs $ x
@@ -203,16 +206,21 @@ theSheetCellsForTable (sheetName,ws)
                                    ] 
                      }
      where
-       startOfTable = tableStarters !! indexInTableStarters 
+       startOfTable = tableStarters `L.genericIndex` indexInTableStarters 
        firstHeaderRowNr = fst startOfTable
        firstColumNr = snd startOfTable
        relationNameRowNr = firstHeaderRowNr
        conceptNameRowNr  = firstHeaderRowNr+1
        nrOfHeaderRows = 2
-       maxRowOfWorksheet = maximum (map fst (M.keys (ws  ^. wsCells)))
-       maxColOfWorksheet = maximum (map snd (M.keys (ws  ^. wsCells)))
+       maxRowOfWorksheet :: Int
+       maxRowOfWorksheet = case L.maximumMaybe (map fst (M.keys (ws  ^. wsCells))) of
+                             Nothing -> fatal "Maximum of an empty list is undefined!"
+                             Just m -> m
+       maxColOfWorksheet = case L.maximumMaybe (map snd (M.keys (ws  ^. wsCells))) of
+                             Nothing -> fatal "Maximum of an empty list is undefined!"
+                             Just m -> m
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
-       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1])!!(indexInTableStarters+1))-1
+       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1]) `L.genericIndex` (indexInTableStarters+1))-1
        okHeaderRows = filter isProperRow [firstHeaderRowNr,firstHeaderRowNr+nrOfHeaderRows-1]
        populationRows = filter isProperRow [firstPopRowNr..lastPopRowNr]
        isProperRow :: Int -> Bool

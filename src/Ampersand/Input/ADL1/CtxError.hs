@@ -56,7 +56,6 @@ import           Ampersand.Input.ADL1.FilePos()
 import           Ampersand.Input.ADL1.LexerMessage
 import qualified Data.List as L   (intercalate)
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
-import           Data.Maybe
 import           Data.Typeable
 import           GHC.Exts (groupWith)
 import           Text.Parsec
@@ -158,11 +157,11 @@ mkCyclesInGensError :: NEL.NonEmpty [AClassify] -> Guarded a
 mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
  where 
   mkErr :: [AClassify] -> CtxError
-  mkErr [] = fatal "Nothing to report about!" 
-  mkErr gs = CTXE o msg
-    where
-      o = origin (head gs)
-      msg = L.intercalate "\n" $
+  mkErr gs = 
+    case gs of 
+      []    -> fatal "Nothing to report about!" 
+      (g:_) -> CTXE (origin g) 
+             . L.intercalate "\n" $
              [ "Classifications must not contain cycles."
              , "The following CLASSIFY statements are cyclic:"
              ]++
@@ -293,7 +292,7 @@ mkEndoPropertyError orig ps =
                 ,"  source and target are equal."]
          _   -> ["Properties "++showAnd++" can only be used for relations where"
                 ,"  source and target are equal."]
-     where showAnd = L.intercalate ", " (map show . init $ ps)++" and "++(show . last) ps
+     where showAnd = commaEng "and" (map show ps)
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role' ifc duplicateIfcs =

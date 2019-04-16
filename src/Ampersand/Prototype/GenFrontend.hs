@@ -15,7 +15,7 @@ import           Control.Exception
 import           Control.Monad
 import qualified Data.ByteString.Lazy  as BL
 import           Data.Char
-import           Data.Data
+--import           Data.Data
 import           Data.Hashable (hash)
 import           Data.List
 import           Data.Maybe

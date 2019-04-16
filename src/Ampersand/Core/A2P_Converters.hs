@@ -92,7 +92,7 @@ aIdentityDef2pIdentityDef iDef =
  P_Id { pos    = idPos iDef
       , ix_lbl = idLbl iDef
       , ix_cpt = aConcept2pConcept (idCpt iDef)
-      , ix_ats = map aIdentitySegment2pIdentSegmnt (identityAts iDef)
+      , ix_ats = fmap aIdentitySegment2pIdentSegmnt (identityAts iDef)
       }
 
 aRoleRule2pRoleRule :: A_RoleRule -> P_RoleRule
@@ -106,7 +106,7 @@ aRoleRelation2pRoleRelation :: A_RoleRelation -> P_RoleRelation
 aRoleRelation2pRoleRelation rr =
  P_RR { pos      = rrPos rr
       , rr_Roles = rrRoles rr
-      , rr_Rels  = map aRelation2pNamedRel (rrRels rr)
+      , rr_Rels  = fmap aRelation2pNamedRel (rrRels rr)
       }
 
 aViewDef2pViewDef :: ViewDef -> P_ViewDef
@@ -116,7 +116,7 @@ aViewDef2pViewDef vDef =
       , vd_cpt       = aConcept2pConcept (vdcpt vDef)
       , vd_isDefault = vdIsDefault vDef
       , vd_html      = vdhtml vDef
-      , vd_ats       = map aViewSegment2pP_ViewSegment (vdats vDef)
+      , vd_ats       = fmap aViewSegment2pP_ViewSegment (vdats vDef)
       }
 
 aClassify2pClassify :: AClassify -> PClassify
@@ -360,9 +360,3 @@ aCruds2pCruds x =
   else Just $ P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
    where f :: (Bool,Char) -> Char
          f (b,c) = (if b then toUpper else toLower) c
-         zipWith :: (a->b->c) -> [a]->[b]->[c]
-         zipWith fun = go
-           where
-             go [] _ = []
-             go _ [] = []
-             go (x':xs) (y:ys) = fun x' y : go xs ys

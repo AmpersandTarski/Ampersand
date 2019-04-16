@@ -35,11 +35,9 @@ module Ampersand.Core.ParseTree (
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
-import           Ampersand.Basics hiding (foldr, sequence, foldl, concatMap)
+import           Ampersand.Basics hiding (foldr, sequence, concatMap)
 import           Ampersand.Input.ADL1.FilePos
-import           Data.Data
 import           Data.Foldable hiding (concat)
-import           Data.Hashable
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head)
 import qualified Data.Set as Set
 import           Data.Time.Calendar
@@ -88,8 +86,8 @@ data MetaObj = ContextMeta deriving (Eq,Ord,Show) -- for now, we just have meta 
 -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
 data P_RoleRelation
    = P_RR { pos :: Origin      -- ^ position in the Ampersand script
-          , rr_Roles :: [Role]      -- ^ list of roles
-          , rr_Rels :: [P_NamedRel] -- ^ list of named relations
+          , rr_Roles :: NEL.NonEmpty Role      -- ^ list of roles
+          , rr_Rels :: NEL.NonEmpty P_NamedRel -- ^ list of named relations
           } deriving (Show)       -- deriving Show is just for debugging
 instance Traced P_RoleRelation where
  origin = pos
@@ -98,8 +96,8 @@ instance Traced P_RoleRelation where
 data P_RoleRule
    = Maintain
      { pos :: Origin      -- ^ position in the Ampersand script
-     , mRoles :: [Role]    -- ^ names of a role
-     , mRules :: [String]  -- ^ names of a Rule
+     , mRoles :: NEL.NonEmpty Role    -- ^ names of a role
+     , mRules :: NEL.NonEmpty String  -- ^ names of a Rule
      } deriving (Eq,Ord, Show) -- deriving (Show) is just for debugging
 
 data Role = Role String
@@ -160,7 +158,7 @@ instance Named ConceptDef where
 
 data Representation
   = Repr { pos  :: Origin
-         , reprcpts  :: [String]  -- ^ the concepts
+         , reprcpts  :: NEL.NonEmpty String  -- ^ the concepts
          , reprdom :: TType     -- the type of the concept the atom is in
          } deriving (Ord,Eq,Show)
 instance Traced Representation where
@@ -624,7 +622,7 @@ data P_IdentDf a = -- so this is the parametric data-structure
          P_Id { pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
               , ix_lbl :: String         -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
               , ix_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
-              , ix_ats :: [P_IdentSegmnt a] -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
+              , ix_ats :: NEL.NonEmpty (P_IdentSegmnt a) -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
               } deriving (Show)
 instance Named (P_IdentDf a) where
  name = ix_lbl
@@ -656,7 +654,7 @@ data P_ViewD a =
               , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept
               , vd_html :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
-              , vd_ats :: [P_ViewSegment a]   -- ^ the constituent segments of this view.
+              , vd_ats :: NEL.NonEmpty (P_ViewSegment a)   -- ^ the constituent segments of this view.
               } deriving (Show)
 instance Ord (P_ViewD a) where
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)

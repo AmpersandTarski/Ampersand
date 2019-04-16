@@ -23,17 +23,17 @@ module Ampersand.Input.ADL1.ParsingLib(
 ) where
 
 import           Ampersand.Basics hiding ((<$),(<|>),many,try)
-import           Ampersand.Input.ADL1.FilePos (Origin(..))
-import           Ampersand.Input.ADL1.LexerToken
+import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
+import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
 import           Control.Monad.Identity (Identity)
 import qualified Control.Applicative as CA
 import           Data.Char(toLower)
 import qualified Data.Functor as DF
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
-import           Data.Maybe
-import           Text.Parsec as P hiding(satisfy)
+import           Text.Parsec as P hiding(satisfy,sepBy1)
 import           Text.Parsec.Pos (newPos)
 
 -- | The Ampersand parser type
@@ -81,6 +81,10 @@ opt ::  AmpParser a  -- ^ The parser to try
     -> AmpParser a   -- ^ The resulting parser
 a `opt` b = P.option b a
 
+sepBy1 :: AmpParser a -> AmpParser b -> AmpParser (NEL.NonEmpty a)
+sepBy1 x sep = foo <$> x <*> (x `sepBy` sep)
+     where foo h t = h NEL.:| t
+     
 -----------------------------------------------------------
 -- Keywords & operators
 -----------------------------------------------------------

@@ -70,12 +70,12 @@ data Method         = OOMethodC      String             -- name of this method, 
                                      String             -- result: a type
 
 instance Show Method where
-  showsPrec _ (OOMethodC nm cs)  = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"):handle")
-  showsPrec _ (OOMethodR nm as)  = showString (nm++"(handle):["++intercalate "," [ n | OOAttr n _ _<-as]++"]")
-  showsPrec _ (OOMethodS nm ks)  = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-ks]++"):handle")
-  showsPrec _ (OOMethodD nm)     = showString (nm++"(handle)")
-  showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++intercalate "," [ n | OOAttr n _ _<-cs]++")")
-  showsPrec _ (OOMethod nm cs r) = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"): "++r)
+  show (OOMethodC nm cs)  = nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"):handle"
+  show (OOMethodR nm as)  = nm++"(handle):["++intercalate "," [ n | OOAttr n _ _<-as]++"]"
+  show (OOMethodS nm ks)  = nm++"("++intercalate "," [ n | OOAttr n _ _<-ks]++"):handle"
+  show (OOMethodD nm)     = nm++"(handle)"
+  show (OOMethodU nm cs)  = nm++"(handle,"++intercalate "," [ n | OOAttr n _ _<-cs]++")"
+  show (OOMethod nm cs r) = nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"): "++r
 
 --
 --   testCD

@@ -114,11 +114,11 @@ instance Pretty MetaObj where
 
 instance Pretty P_RoleRelation where
     pretty (P_RR _ roles rels) =
-        text "ROLE" <+> listOf roles <+> text "EDITS" <+> listOf rels
+        text "ROLE" <+> listOf1 roles <+> text "EDITS" <+> listOf1 rels
 
 instance Pretty P_RoleRule where
     pretty (Maintain _ roles rules) =
-        text "ROLE" <+> listOf roles <+> text "MAINTAINS" <+> commas (map maybeQuote rules)
+        text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NEL.toList . fmap maybeQuote $ rules)
 
 instance Pretty Role where
     pretty (Role nm) = maybeQuote nm
@@ -236,7 +236,7 @@ instance Pretty P_Population where
                where contents = list . map pretty
 
 instance Pretty Representation where
-    pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf cs <~> text "TYPE" <+> pretty tt
+    pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf1 cs <~> text "TYPE" <+> pretty tt
 
 instance Pretty TType where
     pretty = text . show
@@ -277,7 +277,7 @@ instance Pretty a => Pretty (P_SubIfc a) where
 
 instance Pretty (P_IdentDf TermPrim) where
     pretty (P_Id _ lbl cpt ats) =
-        text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
+        text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
 
 instance Pretty (P_IdentSegmnt TermPrim) where
     pretty (P_IdentExp obj) =
@@ -296,11 +296,11 @@ instance Pretty (P_IdentSegmnt TermPrim) where
 instance Pretty (P_ViewD TermPrim) where
     pretty (P_Vd _ lbl cpt True Nothing ats) = -- legacy syntax
         text "VIEW" <+> maybeQuote lbl   <+> text ":"
-                    <~> cpt <+> parens (listOf ats)
+                    <~> cpt <+> parens (listOf1 ats)
     pretty (P_Vd _ lbl cpt isDefault html ats) = -- new syntax
         text "VIEW" <+> maybeQuote lbl  <+> text ":"
                     <~> cpt <+> (if isDefault then text "DEFAULT" else empty)
-                    <+> braces (listOf ats) <~> html <+> text "ENDVIEW"
+                    <+> braces (listOf1 ats) <~> html <+> text "ENDVIEW"
 
 instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str

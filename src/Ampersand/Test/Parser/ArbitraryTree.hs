@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Test.Parser.ArbitraryTree () where
 
-import Test.QuickCheck
+import Test.QuickCheck hiding (listOf1)
 import Data.Char
 import Data.List (nub,isInfixOf)
 import Ampersand.Core.ParseTree
@@ -23,7 +23,7 @@ safeStr = listOf printable `suchThat` noEsc
 
 -- Generates a simple non-empty string of ascii characters
 safeStr1 :: Gen String
-safeStr1 = listOf1 printable `suchThat` noEsc
+safeStr1 = (listOf printable `suchThat` noEsc) `suchThat` (not.null)
 
 noEsc :: String -> Bool
 noEsc = notElem '\\'
@@ -34,7 +34,7 @@ identifier = suchThat str2 noKeyword
     where noKeyword x = x `notElem` keywords
           -- The prelude functions accept Unicode characters
           idChar = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
-          str2   = suchThat (listOf1 idChar) (\s -> length s > 1)
+          str2   = listOf idChar `suchThat` (\s -> length s > 1)
 
 -- Genrates a valid ADL upper-case identifier
 upperId :: Gen String
@@ -58,7 +58,7 @@ objTermPrim isTxtAllowed i =
           --TODO: The view is never tested like this
           genView = return Nothing
           genPrim :: Gen TermPrim
-          genPrim = PNamedR <$> relationRef
+          genPrim = PNamedR <$> arbitrary
 
 --TODO: refactor obj/ifc generators
 genObj :: Arbitrary a => Bool -> Int -> Gen (P_BoxItem a)
@@ -119,10 +119,13 @@ instance Arbitrary MetaObj where
     arbitrary = return ContextMeta
 
 instance Arbitrary P_RoleRelation where
-    arbitrary = P_RR <$> arbitrary <*> listOf1 arbitrary <*> listOf1 relationRef
+    arbitrary = P_RR <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_RoleRule where
-    arbitrary = Maintain <$> arbitrary <*> listOf1 arbitrary <*> listOf1 safeStr
+    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
+
+listOf1 :: Gen a -> Gen (NEL.NonEmpty a)
+listOf1 p = (NEL.:|) <$> p <*> listOf p
 
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary <*> listOf1 upperId <*> arbitrary
@@ -198,17 +201,14 @@ instance Arbitrary TermPrim where
            Patm <$> arbitrary <*> arbitrary <*> maybeConceptOne,
            PVee <$> arbitrary,
            Pfull <$> arbitrary <*> genConceptOne <*> genConceptOne,
-           PNamedR <$> relationRef
+           PNamedR <$> arbitrary
        ]
       where maybeConceptOne = oneof [return Nothing, Just <$> genConceptOne]
 
-relationRef :: Gen P_NamedRel
-relationRef = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
-
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
-    arbitrary = f <$> listOf1 arbitrary
-         where f (x:xs) = PairView {ppv_segs = x NEL.:| xs}
-               f []     = fatal "This fatal can only occur if listOf1 doesn't do what it is supposed to do."
+    arbitrary = PairView <$> listOf1 arbitrary
+         where f x = PairView {ppv_segs = x }
+               
 instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
     arbitrary = oneof [
             PairViewText <$> arbitrary <*> safeStr,
@@ -271,9 +271,14 @@ instance Arbitrary P_Interface where
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
 
+instance Arbitrary a => Arbitrary (NEL.NonEmpty a) where
+    arbitrary = do 
+         h <- arbitrary
+         t <- arbitrary 
+         return $ h NEL.:| t
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
-                     <*> listOf1 arbitrary
+                     <*> arbitrary
 instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
@@ -299,7 +304,7 @@ instance Arbitrary PRef2Obj where
     arbitrary =
         oneof [
             PRef2ConceptDef <$> safeStr,
-            PRef2Relation <$> relationRef,
+            PRef2Relation <$> arbitrary,
             PRef2Rule <$> upperId,
             PRef2IdentityDef <$> upperId,
             PRef2ViewDef <$> upperId,
@@ -325,9 +330,7 @@ instance Arbitrary P_Sign where
 
 instance Arbitrary PClassify where
     arbitrary =
-        fun <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
-        where
-          fun p s g = PClassify p s (NEL.fromList g)
+        PClassify <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
 
 instance Arbitrary Lang where
     arbitrary = elements [minBound..]

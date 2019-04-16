@@ -4,7 +4,7 @@ module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ordering(..))
 import           Ampersand.Classes.ViewPoint
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified Data.List.NonEmpty as NEL (toList, NonEmpty)
 import qualified Data.Set as Set
 
 class ConceptStructure a where
@@ -45,6 +45,9 @@ instance ConceptStructure a => ConceptStructure (Maybe a) where
 instance ConceptStructure a => ConceptStructure [a] where
   concs         = Set.unions . map concs
   expressionsIn = Set.unions . map expressionsIn
+instance ConceptStructure a => ConceptStructure (NEL.NonEmpty a) where
+  concs         = Set.unions . fmap concs
+  expressionsIn = Set.unions . fmap expressionsIn
 instance (Eq a ,ConceptStructure a) => ConceptStructure (Set.Set a) where
   concs         = Set.unions . map concs         . Set.elems
   expressionsIn = Set.unions . map expressionsIn . Set.elems
@@ -75,10 +78,11 @@ instance ConceptStructure A_Context where
                       ]
 
 instance ConceptStructure IdentityDef where
-  concs         identity = Set.singleton (idCpt identity) `Set.union` 
-                           concs         [BxExpr objDef | IdentityExp objDef <- identityAts identity]
-  expressionsIn identity = expressionsIn [BxExpr objDef | IdentityExp objDef <- identityAts identity]
-
+  concs identity = Set.singleton (idCpt identity) 
+                    `Set.union` 
+                   (concs . fmap segment . identityAts $ identity)
+  expressionsIn = expressionsIn . fmap segment . identityAts
+ 
 instance ConceptStructure ViewDef where
   concs         vd = Set.singleton (vdcpt vd) `Set.union` concs (vdats vd)
   expressionsIn vd = expressionsIn (vdats vd)

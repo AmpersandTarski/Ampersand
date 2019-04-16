@@ -242,12 +242,12 @@ imapTranslate :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> IntSet.IntSet
 imapTranslate imap tds doneSet
  = case IntSet.minView tds of
     Nothing -> doneSet
-    Just (todo,set) -> imapTranslate imap (newSet todo set) (IntSet.insert todo doneSet)
+    Just (todo,set') -> imapTranslate imap (newSet todo set') (IntSet.insert todo doneSet)
  where
-  newSet todo set
+  newSet todo set'
    = case IntMap.lookup todo imap of
-       Nothing -> set
-       Just lst -> IntSet.unions (set:[IntSet.difference tl doneSet | (fl,tl) <- lst, IntSet.isSubsetOf fl doneSet])
+       Nothing -> set'
+       Just lst -> IntSet.unions (set':[IntSet.difference tl doneSet | (fl,tl) <- lst, IntSet.isSubsetOf fl doneSet])
 
 -- | Data structure to capture an expression in a lattice
 data FreeLattice a

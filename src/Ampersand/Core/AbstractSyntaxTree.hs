@@ -67,13 +67,16 @@ import           Ampersand.Core.ParseTree
     , Prop(..), Props
     , Representation(..), TType(..), PAtomValue(..), PSingleton
     )
+import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import           Data.Char          (toUpper,toLower)
-import           Data.Data          (Typeable,Data)
+--import           Data.Data          (Typeable,Data)
 import           Data.Default       (Default(..))
 import           Data.Function      (on)
 import           Data.Hashable      (Hashable(..),hashWithSalt)
 import           Data.List          (nub,intercalate,sort)
-import           Data.Maybe         (fromMaybe,listToMaybe)
+import qualified Data.List.NonEmpty as NEL
+import qualified Data.Map as Map
+import           Data.Maybe         (fromMaybe)
 import qualified Data.Set as Set
 import           Data.Text          (Text,unpack,pack)
 import           Data.Time.Calendar (showGregorian,Day, fromGregorian, addDays)
@@ -81,8 +84,6 @@ import           Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
 import qualified Data.Time.Format as DTF 
                           (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 import           GHC.Generics       (Generic)
-import qualified Data.Map as Map
-import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
@@ -116,8 +117,8 @@ instance Named A_Context where
   name  = ctxnm
 
 data A_RoleRelation
-   = RR { rrRoles :: [Role]     -- ^ name of a role
-        , rrRels :: [Relation]   -- ^ name of a Relation
+   = RR { rrRoles :: NEL.NonEmpty Role     -- ^ name of a role
+        , rrRels :: NEL.NonEmpty Relation   -- ^ name of a Relation
         , rrPos :: Origin       -- ^ position in the Ampersand script
         } deriving Show
 instance Traced A_RoleRelation where
@@ -147,8 +148,8 @@ instance Traced Pattern where
  origin = ptpos
 
 
-data A_RoleRule = A_RoleRule { arRoles :: [Role]
-                             , arRules ::  [String] -- the names of the rules
+data A_RoleRule = A_RoleRule { arRoles :: NEL.NonEmpty Role
+                             , arRules :: NEL.NonEmpty String -- the names of the rules
                              , arPos ::   Origin
                              } deriving (Show)
 data RuleOrigin = UserDefined     -- This rule was specified explicitly as a rule in the Ampersand script
@@ -260,7 +261,7 @@ data IdentityDef = Id { idPos :: Origin        -- ^ position of this definition 
                       , idLbl :: String        -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                       , idCpt :: A_Concept     -- ^ this expression describes the instances of this object, related to their context
                       , idPat :: Maybe String  -- ^ if defined within a pattern, then the name of that pattern.
-                      , identityAts :: [IdentitySegment]  -- ^ the constituent attributes (i.e. name/expression pairs) of this identity.
+                      , identityAts :: NEL.NonEmpty IdentitySegment  -- ^ the constituent attributes (i.e. name/expression pairs) of this identity.
                       } deriving (Eq,Show)
 instance Named IdentityDef where
   name = idLbl
@@ -270,7 +271,9 @@ instance Unique IdentityDef where
   showUnique = name
 instance Ord IdentityDef where
   compare a b = name a `compare` name b
-data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refactor to a list of terms
+data IdentitySegment = IdentityExp 
+         { segment :: ObjectDef
+         } deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
 data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                   , vdlbl :: String          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
@@ -278,7 +281,7 @@ data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in
                   , vdIsDefault :: Bool      -- ^ whether or not this is the default view for the concept
                   , vdhtml :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --                  , vdtext :: Maybe ViewText -- Future extension
-                  , vdats :: [ViewSegment]   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
+                  , vdats :: NEL.NonEmpty ViewSegment   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
                   } deriving (Show)
 instance Named ViewDef where
   name = vdlbl
@@ -964,10 +967,10 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                                    where camelCase []     = []
                                          camelCase (c:xs) = toUpper c: map toLower xs
 
-             Integer          -> case maybeRead str  of
+             Integer          -> case readMaybe str  of
                                    Just i  -> Right (AAVInteger typ i)
                                    Nothing -> message str
-             Float         -> case maybeRead str of
+             Float         -> case readMaybe str of
                                    Just r  -> Right (AAVFloat typ r)
                                    Nothing -> message str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"

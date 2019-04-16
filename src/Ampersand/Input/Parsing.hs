@@ -22,7 +22,7 @@ import           Ampersand.Input.PreProcessor
 import           Ampersand.Input.Xslx.XLSX
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
 import           Ampersand.Misc
-import           Control.Exception
+--import           Control.Exception
 import           Data.Char(toLower)
 import           Data.Maybe
 import           Data.List

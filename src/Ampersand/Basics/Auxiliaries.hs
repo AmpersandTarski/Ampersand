@@ -9,7 +9,8 @@ module Ampersand.Basics.Auxiliaries
         ) where
 
 import           Ampersand.Basics.Prelude
-import           Data.List
+import           RIO.List(foldl,intersect,nub,union)
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map as Map 
 import qualified Data.Set as Set 
 
@@ -19,9 +20,9 @@ import qualified Data.Set as Set
 --
 -- Example> eqClass "Mississippi" = ["M","iiii","ssss","pp"]
 --
-eqClass :: (a -> a -> Bool) -> [a] -> [[a]]
+eqClass :: (a -> a -> Bool) -> [a] -> [NEL.NonEmpty a]
 eqClass _ [] = []
-eqClass f (x:xs) = (x:[e |e<-xs, f x e]) : eqClass f [e |e<-xs, not (f x e)]
+eqClass f (x:xs) = (x NEL.:| [e |e<-xs, f x e]) : eqClass f [e |e<-xs, not (f x e)]
 
 -- | eqCl is used for gathering things that are equal wrt some criterion f.
 --   For instance, if you want to have persons with the same name:

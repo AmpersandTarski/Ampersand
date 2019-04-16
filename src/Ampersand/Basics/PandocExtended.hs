@@ -11,7 +11,7 @@ import           Ampersand.Basics.Languages
 import           Ampersand.Basics.Prelude
 import           Ampersand.Basics.Unique
 import           Ampersand.Basics.Version
-import           Data.Data
+--import           Data.Data
 import qualified Data.Text as Text
 import           Text.Pandoc hiding (Meta)
 
