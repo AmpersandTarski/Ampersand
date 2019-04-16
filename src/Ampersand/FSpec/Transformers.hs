@@ -836,13 +836,7 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
 -- | The list of all transformers, one for each and every relation in SystemContext.
 transformersSystemContext :: Options -> FSpec -> [Transformer]
 transformersSystemContext _ fSpec = map toTransformer [
-      ("accLoginTimestamps"    , "Account"               , "DateTime"
-      , Set.empty
-      )
-    , ("accMostRecentLogin"    , "Account"               , "DateTime"
-      , Set.empty
-      ) 
-    , ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
+      ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
       , Set.empty
       )
     , ("isAPI"                 , "PF_Interface"          , "PF_Interface"
@@ -897,9 +891,6 @@ transformersSystemContext _ fSpec = map toTransformer [
       , Set.empty
       )
     , ("seqNr"                 , "PF_NavMenuItem"        , "PF_SeqNr"
-      , Set.empty
-      )
-    , ("sessionAccount"        , "SESSION"               , "Account"
       , Set.empty
       )
     , ("sessionActiveRoles"    , "SESSION"               , "PF_Role"

@@ -11,7 +11,6 @@ CONTEXT PrototypeFramework IN ENGLISH
   -- TEMPORARY. TODO: remove classify statement when Role is replaced in other (meta) models (e.g. SIAM)
   CLASSIFY Role IS PF_Role
 
-  RELATION sessionAccount[SESSION*Account] [UNI]
   RELATION sessionAllowedRoles[SESSION*PF_Role]
   RELATION sessionActiveRoles[SESSION*PF_Role]
   
@@ -20,7 +19,5 @@ CONTEXT PrototypeFramework IN ENGLISH
   
   REPRESENT DateTime TYPE DATETIME
   RELATION lastAccess[SESSION*DateTime] [UNI]
-  RELATION accMostRecentLogin[Account*DateTime] [UNI]
-  RELATION accLoginTimestamps[Account*DateTime]
   
 ENDCONTEXT
