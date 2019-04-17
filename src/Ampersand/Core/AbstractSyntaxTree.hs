@@ -194,8 +194,8 @@ data Conjunct = Cjct { rc_id ::         String -- string that identifies this co
                      , rc_dnfClauses :: [DnfClause]
                      } deriving (Show,Typeable)
 
-data DnfClause = Dnf { antcs :: [Expression]
-                     , conss :: [Expression]
+data DnfClause = Dnf { antcs :: NEL.NonEmpty Expression
+                     , conss :: NEL.NonEmpty Expression
                      }  deriving (Show, Eq) -- Show is for debugging purposes only.
 
 {- The intended semantics of |Dnf ns ps| is the disjunction |foldr1 ( .\/. ) (map notCpl ns ++ ps)|.
