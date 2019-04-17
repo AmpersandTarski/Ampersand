@@ -8,7 +8,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.JSONutils 
 import           Data.List(nub)
-import           Data.Maybe
+import qualified Data.List.NonEmpty as NEL (toList)
 import qualified Data.Set as Set
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
@@ -98,7 +98,7 @@ instance JSON ViewDef View where
   { vwJSONlabel        = name vd
   , vwJSONisDefault    = vdIsDefault vd
   , vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd
-  , vwJSONsegments     = map (fromAmpersand opts multi) . vdats $ vd
+  , vwJSONsegments     = NEL.toList . fmap (fromAmpersand opts multi) . vdats $ vd
   }
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where

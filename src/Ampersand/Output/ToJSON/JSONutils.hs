@@ -12,7 +12,6 @@ module Ampersand.Output.ToJSON.JSONutils
   , module Ampersand.FSpec.FSpec
   , module Ampersand.FSpec.SQL
   , module Ampersand.Misc
-  , module GHC.Generics
   )
 where
 import           Ampersand.Basics

@@ -665,8 +665,8 @@ data DerivRule = DEquiR { lTerm :: RTerm  -- equivalence rule
                         }
 
 instance Show DerivRule where
-  showsPrec _ r@DEquiR{}  = showString (showIT (lTerm r)++" = " ++showIT (rTerm r))
-  showsPrec _ r@DInclR{}  = showString (showIT (lTerm r)++" |- "++showIT (rTerm r))
+  show r@DEquiR{}  = showIT (lTerm r)++" = " ++showIT (rTerm r)
+  show r@DInclR{}  = showIT (lTerm r)++" |- "++showIT (rTerm r)
 
 -- For documentation purposes, the derivation rule which proves the step is included.
 

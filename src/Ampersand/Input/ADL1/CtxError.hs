@@ -327,13 +327,16 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
         ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
   
-mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
-mkMultipleDefaultError (_, [])              = fatal "mkMultipleDefaultError called on []"
-mkMultipleDefaultError (c, vds@(vd0:_)) =
-  CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++
-                      concat ["\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")"
-                             | vd <- vds ]
-
+mkMultipleDefaultError :: NEL.NonEmpty ViewDef -> CtxError
+mkMultipleDefaultError vds =
+  CTXE (origin . NEL.head $ vds) $ 
+      "Multiple default views for concept " <> show (name cpt) <> ":" <>
+        (concatMap (\vd -> "\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")") $ vds)
+     where
+       cpt = case nubOrd . NEL.toList . fmap vdcpt $ vds of
+             [] -> fatal "There should be at least one concept found in a nonempty list of viewdefs."
+             [c] -> c 
+             _  -> fatal "Different concepts are not acceptable in calling mkMultipleDefaultError"
 mkIncompatibleViewError :: (Named b,Named c) => P_BoxItem a -> String -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   case objDef of

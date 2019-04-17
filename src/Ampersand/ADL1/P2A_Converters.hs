@@ -120,12 +120,15 @@ checkMultipleDefaultViews ctx =
      []   -> return ()
      x:xs -> Errors $ fmap mkMultipleDefaultError (x NEL.:| xs)
   where
-    conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
+    conceptsWithMultipleViews = 
+                filter (\x -> NEL.length x > 1)
+              . eqClass ((==) `on` vdcpt) 
+              . filter vdIsDefault $ ctxvs ctx
 checkDanglingRulesInRuleRoles :: A_Context -> Guarded ()
 checkDanglingRulesInRuleRoles ctx = 
    case [mkDanglingRefError "Rule" nm (arPos rr)  
         | rr <- ctxrrules ctx
-        , nm <- arRules rr
+        , nm <- NEL.toList $ arRules rr
         , nm `notElem` map name (Set.elems $ allRules ctx)
         ] of
      [] -> return ()
@@ -330,7 +333,7 @@ pCtx2aCtx opts
               reprTrios :: [(A_Concept,TType,Origin)]
               reprTrios = nub $ concatMap toReprs reprs
                 where toReprs :: Representation -> [(A_Concept,TType,Origin)]
-                      toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- reprcpts r]
+                      toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- NEL.toList $ reprcpts r]
               conceptsOfGroups :: [A_Concept]
               conceptsOfGroups = nub (concat groups)
               conceptsOfReprs :: [A_Concept]
@@ -424,7 +427,7 @@ pCtx2aCtx opts
     completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
                | x <- p_representations++concatMap pt_Reprs p_patterns
-               , cpt <- reprcpts x
+               , cpt <- NEL.toList $ reprcpts x
                ] ++
                [ ( Set.singleton RepresentSeparator
                  , Set.fromList [ BuiltIn Alphanumeric
@@ -518,8 +521,9 @@ pCtx2aCtx opts
               , vdhtml = mHtml
               , vdats  = vdts
               })
-       <$> traverse typeCheckViewSegment (zip [0..] pvs)
+       <$> traverse typeCheckViewSegment (NEL.zip infiniteNaturals pvs)
      where
+       infiniteNaturals = 0 NEL.:| [1..]
        typeCheckViewSegment :: (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
        typeCheckViewSegment (seqNr, seg)
         = do payload <- typecheckPayload (vsm_load seg)
@@ -836,7 +840,7 @@ pCtx2aCtx opts
                     , rrdcl = Nothing
                     , rrpat = env
                     , r_usr = UserDefined
-                    , isSignal = not . null . concatMap arRoles . filter (\x -> nm `elem` arRules x) $ allRoleRules 
+                    , isSignal = not . null . filter (\x -> nm `elem` arRules x) $ allRoleRules 
                     }
     pIdentity2aIdentity ::
          ContextInfo -> Maybe String -- name of pattern the rule is defined in (if any)

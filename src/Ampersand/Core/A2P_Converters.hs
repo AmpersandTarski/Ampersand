@@ -17,7 +17,6 @@ module Ampersand.Core.A2P_Converters (
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Data.Maybe
 import           Data.Char
 import qualified Data.List.NonEmpty as NEL (NonEmpty(..),map,fromList)
 import qualified Data.Set as Set
