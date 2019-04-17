@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 17e984810a63a0e31a582680738b7a8cb15adde9beb93db9954fbb29fa0910d0
+-- hash: b8278c2adf2224ad75577abfd2267bbf247be972d4729f2fed7569c6b948d21a
 
 name:           ampersand
 version:        3.16.0
