@@ -11,20 +11,16 @@ import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Codec.Archive.Zip
-import           Control.Exception
-import           Control.Monad
 import qualified Data.ByteString.Lazy  as BL
 import           Data.Char
---import           Data.Data
 import           Data.Hashable (hash)
 import           Data.List
-import           Data.Maybe
 import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath
 import           Text.StringTemplate
 import           Text.StringTemplate.GenericStandard () -- only import instances
-
+import qualified Data.List.NonEmpty as NEL (toList)
 
 
 {- TODO
@@ -192,7 +188,7 @@ buildInterface opts@Options{..} fSpec allIfcs ifc =
                   ; mSpecificTemplatePath <-
                           case mView of
                             Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                              -> return $ Just (fName, mapMaybe vsmlabel viewSegs)
+                              -> return $ Just (fName, mapMaybe vsmlabel . NEL.toList $ viewSegs)
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
                              do { let templatePath = "Atomic-" ++ escapeIdentifier (name tgt) ++ ".html"

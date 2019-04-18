@@ -5,7 +5,7 @@ module Ampersand.Basics.Prelude
   , readUTF8File
   , zip3, zipWith
   )where
-import Prelude (putStrLn,putStr,reads) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
+import Prelude (putStrLn,putStr,reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import RIO
 
 -- import Debug.Trace

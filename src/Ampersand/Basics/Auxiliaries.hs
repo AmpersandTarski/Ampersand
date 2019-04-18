@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Basics.Auxiliaries 
-        ( eqClass,
-          eqCl,
+        ( eqClass,eqClassNE,
+          eqCl,eqClNE,
           transClosureMap, transClosureMap',
           converse,
           commaEng, commaNL,
@@ -18,7 +18,7 @@ import qualified Data.Set as Set
 -- that each sublist in the result contains only equal elements, and all equal elements are in
 -- the same sublist.  For example,
 --
--- Example> eqClass "Mississippi" = ["M","iiii","ssss","pp"]
+-- Example> eqClass (==) "Mississippi" = ["M","iiii","ssss","pp"]
 --
 eqClass :: (a -> a -> Bool) -> [a] -> [NEL.NonEmpty a]
 eqClass _ [] = []
@@ -29,9 +29,16 @@ eqClass f (x:xs) = (x NEL.:| [e |e<-xs, f x e]) : eqClass f [e |e<-xs, not (f x 
 --    'eqCl name persons' produces a list,in which each element is a list of persons with the same name.
 -- Example> eqCl (=='s') "Mississippi" = "ssss"
 
-eqCl :: Ord b => (a -> b) -> [a] -> [[a]]
+eqCl :: Ord b => (a -> b) -> [a] -> [NEL.NonEmpty a]
 eqCl _ [] = []
-eqCl f lst = Map.elems (Map.fromListWith (++) [(f e,[e]) | e <- lst])
+eqCl f lst = Map.elems (Map.fromListWith (<>) [(f e,e NEL.:| []) | e <- lst])
+
+-- NonEmpty variants of eqClass and eqCl
+eqClassNE :: (a -> a -> Bool) -> NEL.NonEmpty a -> NEL.NonEmpty (NEL.NonEmpty a)
+eqClassNE f = NEL.fromList . eqClass f . NEL.toList
+eqClNE :: Ord b => (a -> b) -> NEL.NonEmpty a -> NEL.NonEmpty (NEL.NonEmpty a)
+eqClNE f = NEL.fromList . eqCl f . NEL.toList
+
 
 -- |  Warshall's transitive closure algorithm
 transClosureMap' :: Ord a => Map.Map a [a] -> Map.Map a [a]
