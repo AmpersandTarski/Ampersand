@@ -36,10 +36,10 @@ import           Ampersand.Classes
 import           Ampersand.FSpec.Crud
 import           Data.Function (on)
 import           Data.Hashable
-import           Data.List
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Data.Text (Text,unpack)
-import           Data.Typeable
+import qualified RIO.List as L
 import           Text.Pandoc.Builder (Blocks)
 
 data MultiFSpecs = MultiFSpecs
@@ -121,10 +121,10 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 instance Hashable FSpec where
     hashWithSalt salt fSpec = salt 
       `composeHash` name
-      `composeHash` (sort . Set.toList . fallRules) 
-      `composeHash` (sort . Set.toList . vrels)
-      `composeHash` (sort . Set.toList . allConcepts)
-      `composeHash` (sortBy (compare `on` genspc) . vgens)
+      `composeHash` (L.sort . Set.toList . fallRules) 
+      `composeHash` (L.sort . Set.toList . vrels)
+      `composeHash` (L.sort . Set.toList . allConcepts)
+      `composeHash` (L.sortBy (compare `on` genspc) . vgens)
       where 
         composeHash :: Hashable a => Int -> (FSpec -> a) -> Int
         composeHash s fun = s `hashWithSalt` (fun fSpec) 
@@ -146,7 +146,7 @@ instance Unique Atom where
          ++case atmRoots a of
              []  -> fatal "an atom must have at least one root concept"
              [x] -> uniqueShowWithType x
-             xs  -> "["++intercalate ", " (map uniqueShowWithType xs)++"]"
+             xs  -> "["++L.intercalate ", " (map uniqueShowWithType xs)++"]"
 
 data A_Pair = Pair { lnkDcl :: Relation
                    , lnkLeft :: Atom
@@ -198,10 +198,9 @@ instance Named FSid where
   name (FS_id nm) = nm
 
 
-
 data Quad = Quad { qDcl ::       Relation   -- The relation that, when affected, triggers a restore action.
                  , qRule ::      Rule          -- The rule from which qConjuncts is derived.
-                 , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
+                 , qConjuncts :: NEL.NonEmpty Conjunct    -- The conjuncts, with clauses included
                  } deriving Show
 
 instance Ord Quad where
@@ -211,12 +210,10 @@ instance Eq Quad where q == q' = compare q q' == EQ
 --
 dnf2expr :: DnfClause -> Expression
 dnf2expr dnf
- = case (antcs dnf, conss dnf) of
-    ([],[]) -> fatal ("empty dnf clause in "++show dnf)
-    ([],cs ) -> foldr1 (.\/.) cs
-    (as,[]) -> notCpl (foldr1 (./\.) as)
-    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. foldr1 (.\/.) cs
-
+ = case (conss dnf) of
+    []   -> es
+    c:cs -> es .\/. foldr (.\/.) c cs
+    where es = notCpl (L.foldr (./\.) (NEL.head . antcs $ dnf) (NEL.tail . antcs $ dnf))
 data PlugInfo = InternalPlug PlugSQL
                 deriving (Show, Eq,Typeable)
 instance Named PlugInfo where
