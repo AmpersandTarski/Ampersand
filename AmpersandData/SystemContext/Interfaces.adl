@@ -10,16 +10,20 @@ CONTEXT PrototypeFramework IN ENGLISH
         MEANING "This relation contains the roles for which an interface is available"
     
     RELATION isPublic[PF_Interface*PF_Interface] [PROP]
-        MEANING "This property defines if an interface is accessible for everyone (i.e. public)"
+        MEANING "This property states that an interface is accessible for all roles (i.e. public)"
 
         -- Cannot enfore this rule yet, because ExecEngine is still required to add missing roles
-        -- RULE "Public interface integrity" : V[PF_Role*PF_Interface];isPublic |- pf_ifcRoles~
+        -- RULE "Public interface integrity" : isPublic;V[PF_Interface*PF_Role] |- pf_ifcRoles
 
-        ROLE ExecEngine MAINTAINS "Add public interfaces to all roles"
-        RULE "Add public interfaces to all roles": V[PF_Role*PF_Interface];isPublic |- pf_ifcRoles~
-        VIOLATION (TXT "{EX}InsPair;pf_ifcRoles;PF_Interface;", TGT I, TXT ";PF_Role;", SRC I)
+    -- EQUIVALENCE pf_ifcRoles[PF_Interface*PF_Role] == isPublic;V[PF_Interface*PF_Role]
+    ROLE ExecEngine MAINTAINS "Equivalence - InsPair pf_ifcRoles"
+    RULE "Equivalence - InsPair pf_ifcRoles": isPublic;V[PF_Interface*PF_Role] |- pf_ifcRoles
+    VIOLATION (TXT "{EX} InsPair;pf_ifcRoles;PF_Interface;", SRC I, TXT ";PF_Role;", TGT I)
+    ROLE ExecEngine MAINTAINS "Equivalence - DelPair pf_ifcRoles"
+    RULE "Equivalence - DelPair pf_ifcRoles": pf_ifcRoles |- isPublic;V[PF_Interface*PF_Role]
+    VIOLATION (TXT "{EX} DelPair;pf_ifcRoles;PF_Interface;", SRC I, TXT ";PF_Role;", TGT I)
 
     RELATION isAPI[PF_Interface*PF_Interface] [PROP]
-        MEANING "This property defines if an interface is meant as API (machine-2-machine) or as UI"
+        MEANING "This property states that an interface is meant as API (machine-2-machine)"
 
 ENDCONTEXT
