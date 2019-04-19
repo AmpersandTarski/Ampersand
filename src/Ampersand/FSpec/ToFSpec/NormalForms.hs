@@ -387,15 +387,15 @@ dSteps drs x = dStps x
   matchableRules
    = [ (template, rewriteTerms )     -- each tuple may represent multiple rules.
      | cl<-eqCl lTerm (concatMap f drs)  -- divide into classes to save a little on the number of matches.
-     , let template = lTerm (head cl)   -- This is the template against which to match full expressions.
+     , let template = lTerm (NEL.head cl)   -- This is the template against which to match full expressions.
      , let rewriteTerms = stepTerms template cl
      , not (null rewriteTerms)
      ]
      where f (DEquiR l r) = [DInclR l r, DInclR r l]
            f inclusion = [inclusion]
-           stepTerms :: RTerm -> [DerivRule] -> [RTerm]
+           stepTerms :: RTerm -> NEL.NonEmpty DerivRule -> [RTerm]
            stepTerms template cl  -- Only select rules with bindings within the template. Otherwise, we would have to "invent" bindings.
-            = [term' | rule<-cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template ]
+            = [term' | rule<-NEL.toList cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template ]
 
 {-
      showMatchableRules :: [(RTerm,[RTerm])] -> String
@@ -1519,7 +1519,8 @@ allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (
    | null (antcs dc)|| null (conss dc) = [dc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
    | otherwise = [ Dnf { antcs = ass
                        , conss = case css of
-                                   [] -> let antcExpr = foldr1 (./\.) ass in
+                                   [] -> let antcExpr :: Expression
+                                             antcExpr = foldr1 (./\.) ass in
                                          if isEndo antcExpr then (EDcI (source antcExpr) NEL.:| []) else fatal "antcExpr should be endorelation"
                                    h:tl -> h NEL.:| tl
                        }
@@ -1557,35 +1558,34 @@ allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (
    -- [ ( [ r;s , p;r ] , [ x;y ] ), ( [ x~;r;s , x~;p;r ] , [ y ] ), ( [ y~;x~;r;s , y~;x~;p;r ] , [] ) ]
 
   shiftR :: DnfClause -> [DnfClause]
-  shiftR dc
-   | null (antcs dc) || null (conss dc) = [dc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
-   | otherwise                = [ Dnf (case ass of
-                                        [] -> let consExpr = foldr1 (.\/.) css in
-                                              if source consExpr==target consExpr then EDcI (source consExpr) NEL.:| [] else fatal "consExpr should be endorelation"
-                                        h:tl  -> h NEL.:| tl
-                                      ) css
-                                | (ass,css)<-nub (move (antcs dc) (conss dc))
-                                ]
+  shiftR dc =[ Dnf { antcs = ass --case ass of
+                         --     [] -> let consExpr = foldr1 (.\/.) css in
+                         --           if source consExpr==target consExpr then EDcI (source consExpr) NEL.:| [] else fatal "consExpr should be endorelation"
+                         --     h:tl  -> h NEL.:| tl
+                   , conss = css
+                   }
+             | (ass,css)<-nub . NEL.toList $ move (antcs dc) (conss dc)
+             ]
    where
    -- example  "r;s /\ r;r |- x;y"   and suppose r is both surjective.
    --  ass =  [ r;s , r;r ]
    --  css =  [ x;y ]
-    move :: NEL.NonEmpty Expression -> NEL.NonEmpty Expression -> [([Expression],NEL.NonEmpty Expression)]
+    move :: NEL.NonEmpty Expression -> NEL.NonEmpty Expression -> NEL.NonEmpty (NEL.NonEmpty Expression,NEL.NonEmpty Expression)
     move ass css =
-       (NEL.toList ass,css):
+       (ass, css) NEL.:|
        if and [ (not.isEDcI) as | as<-NEL.toList ass]
        then [ts | let headEs = fmap headECps ass
                 , length (eqClass (==) (NEL.toList headEs)) == 1                      -- example: True, because map headECps ass == [ "r", "r" ]
                 , let h=NEL.head headEs                                      -- example: h= "r"
                 , isSur h                                                -- example: assume True
-                , ts<-move (fmap tailECps ass) ( let fun cs = if source h==source cs then flp h.:.cs else fatal "type mismatch" in
+                , ts<-NEL.toList $ move (fmap tailECps ass) ( let fun cs = if source h==source cs then flp h.:.cs else fatal "type mismatch" in
                                                  fmap fun css)
-            ]++   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
+            ]<>   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
             [ts | let lastEs = fmap lastECps ass
                 , length (eqClass (==) (NEL.toList lastEs)) == 1                      -- example: False, because map lastECps ass == [ ["s"], ["r"] ]
                 , let l=NEL.head lastEs
                 , isTot l
-                , ts<-move (fmap initECps ass) ( let fun cs = if target cs==target l then cs.:.flp l else fatal "type mismatch" in
+                , ts<-NEL.toList $ move (fmap initECps ass) ( let fun cs = if target cs==target l then cs.:.flp l else fatal "type mismatch" in
                                                  fmap fun css)
             ]     -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
        else []
@@ -1641,20 +1641,17 @@ allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (
 
 makeAllConjs :: Options -> Rules -> [Conjunct]
 makeAllConjs opts allRls =
-  let conjExprs :: [(Expression, Rules)]
-      conjExprs = map (\(a,b) -> (a,Set.fromList b)) 
-                . converse 
-                $ [ (rule, NEL.toList $ conjuncts opts rule) | rule <- sortBy (compare `on` name) . Set.toList $ allRls ]
-      conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
-                     , rc_orgRules   = rs
-                     , rc_conjunct   = expr
-                     -- , rc_conjunct_inv = notCpl expr
-                     , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
-                     }
-              | ((expr, rs),i) <- zip conjExprs [0..]
-              ]
-  in  conjs
+   [ Cjct { rc_id = "conj_"++show (i :: Int)
+          , rc_orgRules   = rs 
+          , rc_conjunct   = expr
+          , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
+          }
+   | (i , (expr, rs)) <- zip [0..]  conjExprs
+   ]
    where
+      conjExprs :: [(Expression, NEL.NonEmpty Rule)]
+      conjExprs = converseNE . map conjTupel . Set.toList $ allRls
+      conjTupel rule = (rule , conjuncts opts rule)
       expr2dnfClause :: Expression -> DnfClause
       expr2dnfClause = split ([],[]) . exprUni2list
        where

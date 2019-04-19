@@ -141,7 +141,7 @@ instance ShowHS Quad where
    = intercalate indent
             [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
             , "    , qRule    = " ++ showHSName (qRule q)
-            , wrap "    , qConjuncts = " newindent (const showHSName) (qConjuncts q)
+            , wrap "    , qConjuncts = " newindent (const showHSName) (NEL.toList $ qConjuncts q)
             , "    }"
             ]
     where
@@ -150,8 +150,8 @@ instance ShowHS Quad where
 instance ShowHS DnfClause where
  showHS opts indent dnf
    = intercalate indent
-       [ wrap "Dnf " (indent++"    ") (\_->showHS opts (indent++"      ")) (antcs dnf)
-       , wrap "    " (indent++"    ") (\_->showHS opts (indent++"      ")) (conss dnf)
+       [ wrap "Dnf " (indent++"    ") (\_->showHS opts (indent++"      ")) (NEL.toList $ antcs dnf)
+       , wrap "    " (indent++"    ") (\_->showHS opts (indent++"      ")) (NEL.toList $ conss dnf)
        ]
 
 instance ShowHSName Conjunct where
@@ -161,7 +161,7 @@ instance ShowHS Conjunct where
  showHS opts indent x
    = intercalate (indent ++"    ")
        [   "Cjct{ rc_id         = " ++ show (rc_id x)
-       ,       ", rc_orgRules   = " ++ "[ "++intercalate ", " (map showHSName . Set.elems $ rc_orgRules x)++"]"
+       ,       ", rc_orgRules   = " ++ "[ "++intercalate ", " (NEL.toList . fmap showHSName $ rc_orgRules x)++"]"
        ,       ", rc_conjunct   = " ++ showHS opts indentA (rc_conjunct x)
        , wrap  ", rc_dnfClauses = " indentA (\_->showHS opts (indentA++"  ")) (rc_dnfClauses x)
        ,       "}"

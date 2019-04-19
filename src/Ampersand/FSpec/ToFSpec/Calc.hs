@@ -13,6 +13,7 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc (Options(..))
 import           Data.List hiding (head)
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Text.Pandoc.Builder
 
@@ -38,7 +39,7 @@ deriveProofs opts context
    bulletList [ para ("rule r:   "<>str (name r)<>linebreak<>
                       "formalExpression r:  "<>str (showA (formalExpression r))<>linebreak<>
                       "conjNF:   "<>str (showA (conjNF opts (formalExpression r)))<>linebreak<>
-                      interText linebreak [ "     conj: "<>str (showA conj) | conj<-conjuncts opts r ]
+                      interText linebreak [ "     conj: "<>str (showA conj) | conj<-NEL.toList $ conjuncts opts r ]
                      )
               | r<-Set.elems $ allRules context]
    
@@ -75,12 +76,12 @@ showPrf _  []                   = []
 
 quadsOfRules :: Options -> Rules -> [Quad]
 quadsOfRules opts rules 
-  = makeAllQuads (converse [ (conj, Set.elems $ rc_orgRules conj) | conj <- makeAllConjs opts rules ])
+  = makeAllQuads (converseNE [ (conj, rc_orgRules conj) | conj <- makeAllConjs opts rules ])
 
         -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
         -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
         -- the rule may have to be restored using functionality from one of the clauses.
-makeAllQuads :: [(Rule, [Conjunct])] -> [Quad]
+makeAllQuads :: [(Rule, NEL.NonEmpty Conjunct)] -> [Quad]
 makeAllQuads conjsPerRule =
   [ Quad { qDcl     = d
          , qRule    = rule

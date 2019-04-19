@@ -261,14 +261,14 @@ aViewSegmentPayLoad2pViewSegmentPayLoad vsp =
      ViewText{} -> P_ViewText (vsgmTxt vsp)
 
 aPairViewSegment2pPairViewSegment :: PairViewSegment Expression -> PairViewSegment (Term TermPrim)
-aPairViewSegment2pPairViewSegment segment =
- case segment of 
-  PairViewText{} -> PairViewText{ pos = origin segment
-                                , pvsStr = pvsStr segment
+aPairViewSegment2pPairViewSegment x =
+ case x of 
+  PairViewText{} -> PairViewText{ pos = origin x
+                                , pvsStr = pvsStr x
                                 }
-  PairViewExp{}  -> PairViewExp { pos = origin segment
-                                , pvsSoT = pvsSoT segment
-                                , pvsExp = aExpression2pTermPrim (pvsExp segment)
+  PairViewExp{}  -> PairViewExp { pos = origin x
+                                , pvsSoT = pvsSoT x
+                                , pvsExp = aExpression2pTermPrim (pvsExp x)
                                 }
 
 aIdentitySegment2pIdentSegmnt :: IdentitySegment -> P_IdentSegmnt TermPrim

@@ -210,9 +210,7 @@ instance Eq Quad where q == q' = compare q q' == EQ
 --
 dnf2expr :: DnfClause -> Expression
 dnf2expr dnf
- = case (conss dnf) of
-    []   -> es
-    c:cs -> es .\/. foldr (.\/.) c cs
+ = es .\/. foldr (.\/.) (NEL.head . conss $ dnf) (NEL.tail . conss $ dnf)
     where es = notCpl (L.foldr (./\.) (NEL.head . antcs $ dnf) (NEL.tail . antcs $ dnf))
 data PlugInfo = InternalPlug PlugSQL
                 deriving (Show, Eq,Typeable)

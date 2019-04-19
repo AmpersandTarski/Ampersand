@@ -16,7 +16,6 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.FSpecAux
 --import           Data.List (intercalate,nub,partition,(\\))
 import qualified Data.List.NonEmpty as NEL (partition,head,tail,toList)
-import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import           Language.SQL.SimpleSQL.Pretty
@@ -645,7 +644,7 @@ nonSpecialSelectExpr fSpec expr=
                                        , bseWhr = Just (notNull (Iden [ptgt, ftgt]))
                                        }
                      _     -> BSE { bseSetQuantifier = SQDefault
-                                  , bseSrc = Col { cTable = [first]
+                                  , bseSrc = Col { cTable = [first']
                                                  , cCol   = [fsrc]
                                                  , cAlias = []
                                                  , cSpecial = Nothing}
@@ -653,13 +652,13 @@ nonSpecialSelectExpr fSpec expr=
                                                  , cCol   = [ftgt]
                                                  , cAlias = []
                                                  , cSpecial = Nothing}
-                                  , bseTbl = [TRSimple [psrc] `as` first
+                                  , bseTbl = [TRSimple [psrc] `as` first'
                                              ,TRSimple [ptgt] `as` secnd]
                                   , bseWhr = Just $ conjunctSQL
-                                          [notNull (Iden[first, fsrc]), notNull (Iden[secnd, ftgt])]
+                                          [notNull (Iden[first', fsrc]), notNull (Iden[secnd, ftgt])]
                                   }
                                 where
-                                  first = Name "fst"
+                                  first' = Name "fst"
                                   secnd = Name "snd"
     
     (EDcI c)             -> traceComment ["case: EDcI c"] $

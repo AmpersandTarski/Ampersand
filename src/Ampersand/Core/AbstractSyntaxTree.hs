@@ -189,13 +189,13 @@ instance Hashable Rule where
 
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)
-                     , rc_orgRules ::   Rules -- All rules this conjunct originates from
+                     , rc_orgRules ::   NEL.NonEmpty Rule -- All rules this conjunct originates from
                      , rc_conjunct ::   Expression
                      , rc_dnfClauses :: [DnfClause]
                      } deriving (Show,Typeable)
 
 data DnfClause = Dnf { antcs :: NEL.NonEmpty Expression
-                     , conss :: [Expression]
+                     , conss :: NEL.NonEmpty Expression
                      }  deriving (Show, Eq) -- Show is for debugging purposes only.
 
 {- The intended semantics of |Dnf ns ps| is the disjunction |foldr1 ( .\/. ) (map notCpl ns ++ ps)|.

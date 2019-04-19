@@ -6,7 +6,6 @@ module Ampersand.Classes.Relational
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree(Prop(..),Props)
-import           Data.Maybe
 import qualified Data.Set as Set
 
 class HasProps r where

@@ -3,8 +3,9 @@ module Ampersand.Basics.Auxiliaries
         ( eqClass,eqClassNE,
           eqCl,eqClNE,
           transClosureMap, transClosureMap',
-          converse,
+          converse, converseNE, converseSet,
           commaEng, commaNL,
+          liftFst,liftSnd,
           Flippable(..),
         ) where
 
@@ -62,6 +63,15 @@ converse :: forall a b . (Ord a, Ord b) => [(a, [b])] -> [(b, [a])]
 converse aBss = let asPerB :: Map.Map b (Set.Set a)
                     asPerB = foldl (.) id [ Map.insertWith Set.union b (Set.singleton a)  | (a,bs) <- aBss, b <- bs ] Map.empty
                 in Map.toList $ fmap Set.toList asPerB -- first convert each Set to a list, and then the whole Map to a list of tuples
+converseNE :: (Ord a,Ord b) => [(a, NEL.NonEmpty b)] -> [(b, NEL.NonEmpty a)]
+converseNE = (fmap $ liftSnd NEL.fromList) . converse . (fmap $ liftSnd NEL.toList)
+converseSet :: (Ord a,Ord b) => [(a, Set b)] -> [(b, Set a)]
+converseSet = (fmap $ liftSnd Set.fromList) . converse . (fmap $ liftSnd Set.toList)
+liftFst :: (a -> b) -> (a, c) -> (b, c)
+liftFst f (a,c) = (f a, c)
+
+liftSnd :: (a -> b) -> (c, a) -> (c, b)
+liftSnd f (c,a) = (c, f a)
 
 commaEng :: String -> [String] -> String
 commaEng str [a,b,c] = a++", "++b++", "++str++" "++c
