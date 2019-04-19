@@ -17,8 +17,8 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
 import           Ampersand.Misc
 import           Data.Hashable
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
-import           Data.Typeable
 
 
 -- | The function that retrieves the population of
@@ -542,7 +542,7 @@ transformers Options{..} fSpec = map toTransformer [
         Set.fromList
         [(dirtyId conj, dirtyId rul)
         | conj::Conjunct <- instanceList fSpec
-        , rul <- Set.elems $ rc_orgRules conj
+        , rul <- NEL.toList $ rc_orgRules conj
         ]
       )
      ,("outQ"                  , "Quad"                  , "Act"     

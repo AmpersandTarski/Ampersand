@@ -3,7 +3,7 @@ module Ampersand.FSpec.ToFSpec.ADL2FSpec
    ( makeFSpec
    ) where
 import           Ampersand.ADL1
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (Identity)
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.Crud
@@ -15,6 +15,7 @@ import           Ampersand.FSpec.ToFSpec.Populated
 import           Ampersand.Misc
 import           Data.Char
 import           Data.List
+import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe
 import qualified Data.Set as Set
 import           Data.Text (pack)
@@ -37,17 +38,17 @@ makeFSpec opts context
               , fDeriveProofs = deriveProofs opts context 
               , fRoleRels    = nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
                                    | rr <- ctxRRels context
-                                   , decl <- rrRels rr
-                                   , role' <- rrRoles rr
+                                   , decl <- NEL.toList $ rrRels rr
+                                   , role' <- NEL.toList $ rrRoles rr
                                    ] 
               , fRoleRuls    = nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
                                    | rule <- Set.elems $ allrules
                                    , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
-              , fRoles       = zip ((sort . nub) (concatMap arRoles (ctxrrules context)++
-                                                  concatMap rrRoles (ctxRRels context )++
-                                                  concatMap ifcRoles (ctxifcs context )
+              , fRoles       = zip ((sort . nub) (  concatMap (NEL.toList . arRoles) (ctxrrules context)
+                                                 <> concatMap (NEL.toList . rrRoles) (ctxRRels  context)
+                                                 <> concatMap ifcRoles               (ctxifcs context )
                                                  )
                                    ) [0..] 
               , fallRules    = allrules
@@ -141,21 +142,21 @@ makeFSpec opts context
                                      rs  -> role' `elem` rs
      
      initialpopsDefinedInScript = 
-                   [ let dcl = popdcl (head eqclass)
+                   [ let dcl = popdcl (NEL.head eqclass)
                      in ARelPopu{ popsrc = source dcl
                                 , poptgt = target dcl
                                 , popdcl = dcl
-                                , popps  = Set.unions [ popps pop | pop<-eqclass ]
+                                , popps  = Set.unions [ popps pop | pop<-NEL.toList eqclass ]
                                 }
                    | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
-                   [ ACptPopu{ popcpt = popcpt (head eqclass)
-                             , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
+                   [ ACptPopu{ popcpt = popcpt (NEL.head eqclass)
+                             , popas  = (nub.concat) [ popas pop | pop<-NEL.toList eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap ptups (patterns context)       
      allConjs = makeAllConjs opts allrules
-     fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
-     fSpecAllConjsPerRule = converse [ (conj, Set.elems $ rc_orgRules conj) | conj <- allConjs ]
+     fSpecAllConjsPerRule :: [(Rule, NEL.NonEmpty Conjunct)]
+     fSpecAllConjsPerRule = converseNE [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, Set.elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = 
            converse [ (conj, nub $ smaller (source e) ++ smaller (target e)) 
@@ -170,7 +171,7 @@ makeFSpec opts context
         where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
      maintainersOf :: Rule -> [Role]
      maintainersOf r 
-       = concatMap arRoles . filter forThisRule . ctxrrules $ context
+       = nub . concatMap (NEL.toList . arRoles) . filter forThisRule . ctxrrules $ context
          where
           forThisRule :: A_RoleRule -> Bool
           forThisRule x = name r `elem` arRules x
@@ -190,15 +191,15 @@ makeFSpec opts context
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
      totsurs :: [Expression]
      totsurs
-      = nub [rel | q<- filter (isIdent . EDcD . qDcl)
+      = nub [rel | q<- filter (isIdent . EDcD . qDcl)   -- FIXME: This cannot be correct. This filter will block everything!
                      . filter (not . isSignal . qRule)
                      $ allQuads -- all quads for invariant rules
                  , dnf<- concatMap rc_dnfClauses . qConjuncts $ q
-                 , let antc = conjNF opts (foldr (./\.) (EDcV (sign (head (antcs dnf++conss dnf)))) (antcs dnf))
+                 , let antc = conjNF opts (foldr (./\.) (EDcV (sign (NEL.head (antcs dnf)))) (antcs dnf))
                  , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
-                 , cons<-map exprCps2list (conss dnf)
+                 , cons<-NEL.toList $ fmap exprCps2list (conss dnf)
             -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
-                 , rel<-init cons++[flp r | r<-tail cons]
+                 , rel<-NEL.init cons++[flp r | r<-NEL.tail cons]
                  ]
   -- Lookup view by id in fSpec.
      lookupView' :: String -> ViewDef
