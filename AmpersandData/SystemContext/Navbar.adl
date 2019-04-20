@@ -32,26 +32,26 @@ CONTEXT PrototypeFramework IN ENGLISH
     RELATION isSubItemOf[PF_NavMenuItem*PF_NavMenuItem] [UNI,IRF,ASY]
         MEANING "A navbar item can be a sub item of another item"
 
-    RELATION pf_navItemRoles[PF_NavMenuItem*PF_Role]
+    RELATION pf_navItemRoles[PF_NavMenuItem*Role]
         MEANING "A navbar item is accessible for a role"
 
     -- Add/remove menu items based on interface roles
     ROLE ExecEngine MAINTAINS "Add navItemRoles for interfaces"
     RULE "Add navItemRoles for interfaces" : ifc;pf_ifcRoles |- pf_navItemRoles
-    VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";PF_Role;", TGT I)
+    VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
 
     ROLE ExecEngine MAINTAINS "Remove navItemRoles for interfaces"
     RULE "Remove navItemRoles for interfaces" : (I /\ ifc;ifc~);pf_navItemRoles |- ifc;pf_ifcRoles
-    VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";PF_Role;", TGT I)
+    VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
 
     -- Add/remove parent menu items if needed
     ROLE ExecEngine MAINTAINS "Add navItemRoles for parent items"
     RULE "Add navItemRoles for parent items": isSubItemOf~;pf_navItemRoles |- pf_navItemRoles
-    VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";PF_Role;", TGT I)
+    VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
 
     ROLE ExecEngine MAINTAINS "Remove navItemRoles for parent items"
     RULE "Remove navItemRoles for parent items": (I /\ isSubItemOf~;isSubItemOf);pf_navItemRoles |- isSubItemOf~;pf_navItemRoles
-    VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";PF_Role;", TGT I)
+    VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
     
     --[NAV MENUS]----------------------------------------------------------------------------------
     CONCEPT PF_NavMenu ""

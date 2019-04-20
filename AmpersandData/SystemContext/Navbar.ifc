@@ -21,7 +21,7 @@ CONTEXT PrototypeFramework IN ENGLISH
         ]
 
     --[SYSTEM INTERFACES to query menu items]------------------------------------------------------
-    API "PF_MenuItems" FOR SYSTEM: sessionActiveRoles[SESSION*PF_Role];pf_navItemRoles~;isVisible BOX
+    API "PF_MenuItems" FOR SYSTEM: sessionActiveRoles[SESSION*Role];pf_navItemRoles~;isVisible BOX
         [ "id"              : I
         , "label"           : label
         , "seqNr"           : seqNr

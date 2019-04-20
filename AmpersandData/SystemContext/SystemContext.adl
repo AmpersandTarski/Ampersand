@@ -8,11 +8,8 @@ CONTEXT PrototypeFramework IN ENGLISH
 
   INCLUDE "Roles.adl"
 
-  -- TEMPORARY. TODO: remove classify statement when Role is replaced in other (meta) models (e.g. SIAM)
-  CLASSIFY Role IS PF_Role
-
-  RELATION sessionAllowedRoles[SESSION*PF_Role]
-  RELATION sessionActiveRoles[SESSION*PF_Role]
+  RELATION sessionAllowedRoles[SESSION*Role]
+  RELATION sessionActiveRoles[SESSION*Role]
   
   RULE "Active roles MUST be a subset of allowed roles": -- This rule is required for the access control mechanism.
      sessionActiveRoles |- sessionAllowedRoles           -- It ensures that only allowed roles can be activated.
