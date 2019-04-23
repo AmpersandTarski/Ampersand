@@ -16,7 +16,6 @@ import           Ampersand.Misc
 import           Data.Char
 import           Data.List
 import qualified Data.List.NonEmpty as NEL
-import           Data.Maybe
 import qualified Data.Set as Set
 import           Data.Text (pack)
 
@@ -300,8 +299,9 @@ makeFSpec opts context
              (Set.map flp . Set.filter (not.isInj) . Set.filter isUni $ toconsider)
        where toconsider = Set.map EDcD $ calculatedDecls
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
-     maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
-     maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
+     maxTotPaths,maxInjPaths :: [NEL.NonEmpty Expression]
+     maxTotPaths = map (NEL.:|[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
+     maxInjPaths = map (NEL.:|[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      --    Warshall's transitive closure algorithm, adapted for this purpose:
 --     clos1 :: [Expression] -> [[Expression]]
 --     clos1 xs
@@ -317,26 +317,43 @@ makeFSpec opts context
 --                default theme => generate interfaces from the clos total expressions and clos injective expressions (see step1-3).
 --                student theme => generate interface for each concept with relations where concept is source or target (note: step1-3 are skipped)
      interfaceGen = step4a ++ step4b
+     step4a :: [Interface]
      step4a
-      = let recur :: [[Expression]] -> [ObjectDef]
-            recur es
-             = [ ObjectDef
+      = let recur :: [NEL.NonEmpty Expression] -> [ObjectDef]
+            recur es = 
+               [ ObjectDef
                      { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objExpression  = t
                      , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
-                     , objmsub = Just . Box (target t) Nothing . map BxExpr $ recur [ pth | (_:pth)<-cl, not (null pth) ]
+                     , objmsub = Just . Box (target t) Nothing . map BxExpr $ recur [ NEL.fromList pth | pth <-map NEL.tail $ NEL.toList cl, not (null pth) ]
                      }
-               | cl<-eqCl head es, (t:_)<-take 1 cl] --
+               | cl<-eqCl NEL.head es
+               , let t = NEL.head . NEL.head $ cl
+               ] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
             -- Each expression list represents a path from the origin of a box to the attribute.
             -- 16 Aug 2011: (recur es) is applied once where es originates from (maxTotPaths `Set.union` maxInjPaths) both based on clos
             -- Interfaces for I[Concept] are generated only for concepts that have been analysed to be an entity.
             -- These concepts are collected in gPlugConcepts
+            gPlugConcepts :: [A_Concept]
             gPlugConcepts = [ c | InternalPlug plug@TblSQL{}<-genPlugs , (c,_)<-take 1 (cLkpTbl plug) ]
             -- Each interface gets all attributes that are required to create and delete the object.
             -- All total attributes must be included, because the interface must allow an object to be deleted.
+            plugPaths :: [NEL.NonEmpty Expression]
+            plugPaths = [ pth | pth <- nub (maxTotPaths <> maxInjPaths)
+                        , (source.NEL.head) pth `elem` gPlugConcepts
+                        ]
+            f :: NEL.NonEmpty (NEL.NonEmpty Expression) -> Maybe (A_Concept,NEL.NonEmpty ObjectDef)
+            f cl = 
+              case recur $ NEL.toList cl of
+                []   -> Nothing
+                h:tl -> if isIdent (objExpression h) && null tl
+                          then Nothing --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
+                          else Just ( source  . NEL.head . NEL.head $ cl
+                                    , h NEL.:| tl
+                                    )
         in
         [Ifc { ifcIsAPI    = False
              , ifcname     = name c
@@ -346,20 +363,14 @@ makeFSpec opts context
                                  , objExpression  = EDcI c
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
-                                 , objmsub = Just . Box c Nothing . map BxExpr $ objattributes
+                                 , objmsub = Just . Box c Nothing . map BxExpr $ NEL.toList objattributes
                                  }
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
              , ifcPrp      = "Interface " ++name c++" has been generated by Ampersand."
              , ifcRoles    = []
              }
-        | cl <- eqCl (source.head) [ pth | pth<-nub (maxTotPaths ++ maxInjPaths), (source.head) pth `elem` gPlugConcepts ]
-        , let objattributes = recur cl
-        , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
-        , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
-          not (length objattributes==1 && isIdent(objExpression(head objattributes)))
-        , let e0=head cl, not (null e0) || fatal "null e0"
-        , let c=source (head e0)
+        | (c, objattributes) <- mapMaybe f $ eqCl (source . NEL.head) plugPaths
         , let params = bindedRelationsIn . expressionsIn $ objattributes
         ]
      --end otherwise: default theme
@@ -420,9 +431,9 @@ class Named a => Rename a where
  uniqueNames :: [String]->[a]->[a]
  uniqueNames taken xs
   = [p | cl<-eqCl (map toLower.name) xs  -- each equivalence class cl contains (identified a) with the same map toLower (name p)
-       , p <-if name (head cl) `elem` taken || length cl>1
-             then [rename p (name p++show i) | (p,i)<-zip cl [(1::Int)..]]
-             else cl
+       , p <-if name (NEL.head cl) `elem` taken || length cl>1
+             then [rename p (name p++show i) | (p,i)<-zip (NEL.toList cl) [(1::Int)..]]
+             else NEL.toList cl
     ]
 
 instance Rename PlugSQL where
