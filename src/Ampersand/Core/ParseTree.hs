@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric, DuplicateRecordFields,OverloadedLabels  #-}
 module Ampersand.Core.ParseTree (
-     P_Context(..), mergeContexts, mkContextOfPopsOnly
+     P_Context(..), mergeContexts, mkContextOfPopsOnly, mkContextDataAnalysis
    , Meta(..)
    , MetaObj(..)
    , P_RoleRelation(..)
@@ -845,8 +845,32 @@ nubSortConcatMap f = Set.toList
                    . map Set.fromList 
                    . map f
 
+-- | To enable roundtrip testing, all data can be exported. For this purpose mkContextOfPopsOnly
+-- exports the data
 mkContextOfPopsOnly :: [P_Population] -> P_Context
 mkContextOfPopsOnly pops =
+  PCtx{ ctx_nm     = ""
+      , ctx_pos    = []
+      , ctx_lang   = Nothing
+      , ctx_markup = Nothing
+      , ctx_pats   = []
+      , ctx_rs     = []
+      , ctx_ds     = []
+      , ctx_cs     = []
+      , ctx_ks     = []
+      , ctx_rrules = []
+      , ctx_rrels  = []
+      , ctx_reprs  = []
+      , ctx_vs     = []
+      , ctx_gs     = []
+      , ctx_ifcs   = []
+      , ctx_ps     = []
+      , ctx_pops   = pops
+      , ctx_metas  = []
+      }
+
+mkContextDataAnalysis :: [P_Population] -> P_Context
+mkContextDataAnalysis pops =
   PCtx{ ctx_nm     = ""
       , ctx_pos    = []
       , ctx_lang   = Nothing

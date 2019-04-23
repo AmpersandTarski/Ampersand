@@ -14,7 +14,7 @@ module Ampersand.Input.Parsing (
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.ParseTree (mkContextOfPopsOnly)
+import           Ampersand.Core.ParseTree (mkContextOfPopsOnly,mkContextDataAnalysis)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Input.ADL1.Lexer
 import           Ampersand.Input.ADL1.Parser
@@ -103,8 +103,11 @@ parseSingleADL opts@Options{..} pc
      parseSingleADL' :: IO(Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
          | extension == ".xlsx" =
+             let crunch = if dataAnalysis
+                          then mkContextDataAnalysis     -- the command-line option  --data
+                          else mkContextOfPopsOnly  in   -- the command-line option  --export
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts (pcFileKind pc) filePath
-                ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+                ; return ((\pops -> (crunch pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
                 }
          | otherwise =
              do { mFileContents

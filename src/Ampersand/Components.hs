@@ -47,6 +47,7 @@ generateAmpersandOutput opts@Options{..} multi =
       , ( haskell               , doGenHaskell          )
       , ( sqlDump               , doGenSQLdump          )
       , ( export2adl            , doGenADL              )
+      , ( dataAnalysis          , doDataAnalysis        )
       , ( genFSpec              , doGenDocument         )
       , ( genFPAExcel           , doGenFPAExcel         )
       , ( genPOPExcel           , doGenPopsXLSX         )
@@ -65,6 +66,18 @@ generateAmpersandOutput opts@Options{..} multi =
        }
     where outputFile = dirOutput </> outputfile
 
+   -- | For analysing data, Ampersand allows you to annotate an Excel spreadsheet (.xlsx) and turn it into an Ampersand model.
+   -- By default 'doDataAnalysis' exports the model to Export.adl, ready to be picked up by the user and refined by adding rules.
+   -- To try this out, prepare your spreadsheet, foo.xlsx,  and run "Ampersand -data foo.xlsx".
+   -- Expect to find a file "Export.adl" in your working directory upon successful termination.
+   doDataAnalysis :: IO()
+   doDataAnalysis =
+    do { putStrLn $ "Generating Ampersand script (ADL) for "  ++ name fSpec ++ "..."
+       ; writeFile outputFile . showA . originalContext $ fSpec
+       ; verboseLn $ ".adl-file written to " ++ outputFile ++ "."
+       }
+    where outputFile = dirOutput </> outputfile
+ 
    doGenProofs :: IO()
    doGenProofs =
     do { putStrLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "..."

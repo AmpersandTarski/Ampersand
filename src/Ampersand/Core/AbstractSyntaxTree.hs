@@ -894,7 +894,7 @@ safePSingleton2AAtomVal ci c val =
 -- that way, unsafePAtomVal2AtomValue could create a 'Origin -> Guarded AAtomValue' instead.
 unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
 unsafePAtomVal2AtomValue typ mCpt pav =
-  case unsafePAtomVal2AtomValue' typ mCpt pav of
+  case unsafePAtomVal2AtomValue' of
     Left err -> Left err
     Right rawVal -> Right roundedVal
       where roundedVal =
@@ -910,180 +910,180 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                                     --    f:: DTF.TimeLocale -> String -> typ
                                         f fun = fun DTF.defaultTimeLocale format
               _          -> rawVal
-
-unsafePAtomVal2AtomValue' :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
-unsafePAtomVal2AtomValue' typ mCpt pav
-  = case pav of
-      PSingleton _ str mval
-         -> case typ of
-             Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
-             BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
-             HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
-             Password         -> Right (AAVString (hash str) typ (pack str))
-             Object           -> Right (AAVString (hash str) typ (pack str))
-             _                -> case mval of
-                                   Nothing -> message str
-                                   Just x -> unsafePAtomVal2AtomValue typ mCpt x
-      ScriptString _ str
-         -> case typ of
-             Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
-             BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
-             HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
-             Password         -> Right (AAVString (hash str) typ (pack str))
-             Binary           -> Left "Binary cannot be populated in an ADL script"
-             BigBinary        -> Left "Binary cannot be populated in an ADL script"
-             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> message str
-             DateTime         -> message str
-             Boolean          -> message str
-             Integer          -> message str
-             Float            -> message str
-             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> Right (AAVString (hash str) typ (pack str))
-      XlsxString _ str
-         -> case typ of
-             Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
-             BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
-             HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
-             Password         -> Right (AAVString (hash str) typ (pack str))
-             Binary           -> Left "Binary cannot be populated in an ADL script"
-             BigBinary        -> Left "Binary cannot be populated in an ADL script"
-             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> message str
-             DateTime         -> message str
-             Boolean          -> let table =
-                                        [("TRUE", True), ("FALSE" , False)
-                                        ,("YES" , True), ("NO"    , False)
-                                        ,("WAAR", True), ("ONWAAR", False)
-                                        ,("JA"  , True), ("NEE"   , False)
-                                        ,("WEL" , True), ("NIET"  , False)
-                                        ]
-                                 in case lookup (map toUpper str) table of
-                                    Just b -> Right (AAVBoolean typ b)
-                                    Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table
-                                   where camelCase []     = []
-                                         camelCase (c:xs) = toUpper c: map toLower xs
-
-             Integer          -> case maybeRead str  of
-                                   Just i  -> Right (AAVInteger typ i)
-                                   Nothing -> message str
-             Float         -> case maybeRead str of
-                                   Just r  -> Right (AAVFloat typ r)
-                                   Nothing -> message str
-             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> Right (AAVString (hash str) typ (pack str))
-      ScriptInt _ i
-         -> case typ of
-             Alphanumeric     -> message i
-             BigAlphanumeric  -> message i
-             HugeAlphanumeric -> message i
-             Password         -> message i
-             Binary           -> Left "Binary cannot be populated in an ADL script"
-             BigBinary        -> Left "Binary cannot be populated in an ADL script"
-             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> message i
-             DateTime         -> message i
-             Boolean          -> message i
-             Integer          -> Right (AAVInteger typ i)
-             Float            -> Right (AAVFloat typ (fromInteger i)) -- must convert, because `34.000` is lexed as Integer
-             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> message i
-      ScriptFloat _ x
-         -> case typ of
-             Alphanumeric     -> message x
-             BigAlphanumeric  -> message x
-             HugeAlphanumeric -> message x
-             Password         -> message x
-             Binary           -> Left "Binary cannot be populated in an ADL script"
-             BigBinary        -> Left "Binary cannot be populated in an ADL script"
-             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> message x
-             DateTime         -> message x
-             Boolean          -> message x
-             Integer          -> message x
-             Float            -> Right (AAVFloat typ x)
-             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> message x
-      XlsxDouble _ d
-         -> case typ of
-             Alphanumeric     -> relaxXLSXInput d    
-             BigAlphanumeric  -> relaxXLSXInput d
-             HugeAlphanumeric -> relaxXLSXInput d
-             Password         -> relaxXLSXInput d
-             Binary           -> Left "Binary cannot be populated in an ADL script"
-             BigBinary        -> Left "Binary cannot be populated in an ADL script"
-             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> Right AAVDate {aavtyp = typ
-                                               ,aadateDay = addDays (floor d) dayZeroExcel
-                                               }
-             DateTime         -> Right AAVDateTime {aavtyp = typ
-                                                   ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
-                                                                         (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
+  where
+    unsafePAtomVal2AtomValue' :: Either String AAtomValue
+    unsafePAtomVal2AtomValue'
+      = case pav of
+          PSingleton _ str mval
+             -> case typ of
+                 Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
+                 Password         -> Right (AAVString (hash str) typ (pack str))
+                 Object           -> Right (AAVString (hash str) typ (pack str))
+                 _                -> case mval of
+                                       Nothing -> Left (message str)
+                                       Just x -> unsafePAtomVal2AtomValue typ mCpt x
+          ScriptString _ str
+             -> case typ of
+                 Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
+                 Password         -> Right (AAVString (hash str) typ (pack str))
+                 Binary           -> Left "Binary cannot be populated in an ADL script"
+                 BigBinary        -> Left "Binary cannot be populated in an ADL script"
+                 HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+                 Date             -> Left (message str)
+                 DateTime         -> Left (message str)
+                 Boolean          -> Left (message str)
+                 Integer          -> Left (message str)
+                 Float            -> Left (message str)
+                 TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+                 Object           -> Right (AAVString (hash str) typ (pack str))
+          XlsxString _ str
+             -> case typ of
+                 Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
+                 Password         -> Right (AAVString (hash str) typ (pack str))
+                 Binary           -> Left "Binary cannot be populated in an ADL script"
+                 BigBinary        -> Left "Binary cannot be populated in an ADL script"
+                 HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+                 Date             -> Left (message str)
+                 DateTime         -> Left (message str)
+                 Boolean          -> let table =
+                                            [("TRUE", True), ("FALSE" , False)
+                                            ,("YES" , True), ("NO"    , False)
+                                            ,("WAAR", True), ("ONWAAR", False)
+                                            ,("JA"  , True), ("NEE"   , False)
+                                            ,("WEL" , True), ("NIET"  , False)
+                                            ]
+                                     in case lookup (map toUpper str) table of
+                                        Just b -> Right (AAVBoolean typ b)
+                                        Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table
+                                       where camelCase []     = []
+                                             camelCase (c:xs) = toUpper c: map toLower xs
+                                    
+                 Integer          -> case maybeRead str  of
+                                       Just i  -> Right (AAVInteger typ i)
+                                       Nothing -> Left (message str)
+                 Float         -> case maybeRead str of
+                                       Just r  -> Right (AAVFloat typ r)
+                                       Nothing -> Left (message str)
+                 TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+                 Object           -> Right (AAVString (hash str) typ (pack str))
+          ScriptInt _ i
+             -> case typ of
+                 Alphanumeric     -> Left (message i)
+                 BigAlphanumeric  -> Left (message i)
+                 HugeAlphanumeric -> Left (message i)
+                 Password         -> Left (message i)
+                 Binary           -> Left "Binary ca)not be populated in an ADL script"
+                 BigBinary        -> Left "Binary cannot be populated in an ADL script"
+                 HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+                 Date             -> Left (message i)
+                 DateTime         -> Left (message i)
+                 Boolean          -> Left (message i)
+                 Integer          -> Right (AAVInteger typ i)
+                 Float            -> Right (AAVFloat typ (fromInteger i)) -- must convert, because `34.000` is lexed as Integer
+                 TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+                 Object           -> Left (message i)
+          ScriptFloat _ x
+             -> case typ of
+                 Alphanumeric     -> Left (message x)
+                 BigAlphanumeric  -> Left (message x)
+                 HugeAlphanumeric -> Left (message x)
+                 Password         -> Left (message x)
+                 Binary           -> Left "Binary cannot be populated in an ADL script"
+                 BigBinary        -> Left "Binary cannot be populated in an ADL script"
+                 HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+                 Date             -> Left (message x)
+                 DateTime         -> Left (message x)
+                 Boolean          -> Left (message x)
+                 Integer          -> Left (message x)
+                 Float            -> Right (AAVFloat typ x)
+                 TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+                 Object           -> Left (message x)
+          XlsxDouble _ d
+             -> case typ of
+                 Alphanumeric     -> relaxXLSXInput d    
+                 BigAlphanumeric  -> relaxXLSXInput d
+                 HugeAlphanumeric -> relaxXLSXInput d
+                 Password         -> relaxXLSXInput d
+                 Binary           -> Left "Binary cannot be populated in an ADL script"
+                 BigBinary        -> Left "Binary cannot be populated in an ADL script"
+                 HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+                 Date             -> Right AAVDate {aavtyp = typ
+                                                   ,aadateDay = addDays (floor d) dayZeroExcel
                                                    }
-                                     where picosecondsPerDay = 24*60*60*1000000000000
-                                           (daysSinceZero, fractionOfDay) = properFraction d
-             Boolean          -> message d
-             Integer          -> if frac == 0
-                                 then Right (AAVInteger typ int)
-                                 else message d
-                                  where
-                                    (int,frac) = properFraction d
-             Float            -> Right (AAVFloat typ d)
-             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> relaxXLSXInput d
-      ComnBool _ b
-         -> if typ == Boolean
-            then Right (AAVBoolean typ b)
-            else message b
-      ScriptDate _ x
-         -> if typ == Date
-            then Right (AAVDate typ x)
-            else message x
-      ScriptDateTime _ x
-         -> if typ == DateTime
-            then Right (AAVDateTime typ x)
-            else message x
-
-   where
-     relaxXLSXInput :: Double -> Either String AAtomValue
-     relaxXLSXInput v = Right (AAVString (hash v) typ (pack (neat (show v))))
-       where neat :: String -> String
-             neat s 
-               | onlyZeroes dotAndAfter = beforeDot
-               | otherwise = s
-               where (beforeDot, dotAndAfter) = span (/= '.') s
-                     onlyZeroes s' =
-                      case s' of 
-                       [] -> True
-                       '.':zeros ->  nub zeros == "0"
-                       _ -> False
-     message :: Show x => x -> Either String a
-     message x = Left . intercalate "\n    " $
-                 ["Representation mismatch"
-                 , "Found: `"++show x++"`,"
-                 , "as representation of an atom in concept `"++name c++"`."
-                 , "However, the representation-type of that concept is "++implicitly
-                 , "defined as "++show typ++". The found value does not match that type."
-                 ]++ example
-        where
-          c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
-          implicitly = if typ == Object then "(implicitly) " else ""
-          example :: [String]
-          example = case typ of
-              Alphanumeric     -> ["ALPHANUMERIC types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
-              BigAlphanumeric  -> ["BIGALPHANUMERIC types are texts (max 64k chars) surrounded with double quotes (\"-characters)."]
-              Boolean          -> ["BOOLEAN types can have the value TRUE or FALSE (without surrounding quotes)."]
-              Date             -> ["DATE types are defined by ISO8601, e.g. 2013-07-04 (without surrounding quotes)."]
-              DateTime         -> ["DATETIME types follow ISO 8601 format, e.g. 2013-07-04T11:11:11+00:00 or 2015-06-03T13:21:58Z (without surrounding quotes)."]
-              Float            -> ["FLOAT type are floating point numbers. There should be a dot character (.) in it."]
-              HugeAlphanumeric -> ["HUGEALPHANUMERIC types are texts (max 16M chars) surrounded with double quotes (\"-characters)."]
-              Integer          -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
-              Password         -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
-              Object           -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
-              _                -> fatal $ "There is no example denotational syntax for a value of type `"++show typ++"`." 
-     dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
-     maybeRead :: Read a => String -> Maybe a
-     maybeRead = fmap fst . listToMaybe . reads
+                 DateTime         -> Right AAVDateTime {aavtyp = typ
+                                                       ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
+                                                                             (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
+                                                       }
+                                         where picosecondsPerDay = 24*60*60*1000000000000
+                                               (daysSinceZero, fractionOfDay) = properFraction d
+                 Boolean          -> Left (message d)
+                 Integer          -> if frac == 0
+                                     then Right (AAVInteger typ int)
+                                     else Left (message d)
+                                      where
+                                        (int,frac) = properFraction d
+                 Float            -> Right (AAVFloat typ d)
+                 TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+                 Object           -> relaxXLSXInput d
+          ComnBool _ b
+             -> if typ == Boolean
+                then Right (AAVBoolean typ b)
+                else Left (message b)
+          ScriptDate _ x
+             -> if typ == Date
+                then Right (AAVDate typ x)
+                else Left (message x)
+          ScriptDateTime _ x
+             -> if typ == DateTime
+                then Right (AAVDateTime typ x)
+                else Left (message x)
+            
+       where
+         relaxXLSXInput :: Double -> Either String AAtomValue
+         relaxXLSXInput v = Right (AAVString (hash v) typ (pack (neat (show v))))
+           where neat :: String -> String
+                 neat s 
+                   | onlyZeroes dotAndAfter = beforeDot
+                   | otherwise = s
+                   where (beforeDot, dotAndAfter) = span (/= '.') s
+                         onlyZeroes s' =
+                          case s' of 
+                           [] -> True
+                           '.':zeros ->  nub zeros == "0"
+                           _ -> False
+         message :: Show x => x -> String
+         message x = intercalate "\n    " $
+                     ["Representation mismatch"
+                     , "Found: `"++show x++"`,"
+                     , "as representation of an atom in concept `"++name c++"`."
+                     , "However, the representation-type of that concept is "++implicitly
+                     , "defined as "++show typ++". The found value does not match that type."
+                     ]++ example
+            where
+              c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
+              implicitly = if typ == Object then "(implicitly) " else ""
+              example :: [String]
+              example = case typ of
+                  Alphanumeric     -> ["ALPHANUMERIC types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
+                  BigAlphanumeric  -> ["BIGALPHANUMERIC types are texts (max 64k chars) surrounded with double quotes (\"-characters)."]
+                  Boolean          -> ["BOOLEAN types can have the value TRUE or FALSE (without surrounding quotes)."]
+                  Date             -> ["DATE types are defined by ISO8601, e.g. 2013-07-04 (without surrounding quotes)."]
+                  DateTime         -> ["DATETIME types follow ISO 8601 format, e.g. 2013-07-04T11:11:11+00:00 or 2015-06-03T13:21:58Z (without surrounding quotes)."]
+                  Float            -> ["FLOAT type are floating point numbers. There should be a dot character (.) in it."]
+                  HugeAlphanumeric -> ["HUGEALPHANUMERIC types are texts (max 16M chars) surrounded with double quotes (\"-characters)."]
+                  Integer          -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
+                  Password         -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
+                  Object           -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
+                  _                -> fatal $ "There is no example denotational syntax for a value of type `"++show typ++"`." 
+         dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
+         maybeRead :: Read a => String -> Maybe a
+         maybeRead = fmap fst . listToMaybe . reads
 
 
 -- | The typology of a context is the partioning of the concepts in that context into 

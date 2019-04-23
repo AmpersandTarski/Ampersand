@@ -72,7 +72,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , fileName :: Maybe FilePath --the file with the Ampersand context
                        , baseName :: String
                        , genTime :: LocalTime
-                       , export2adl :: Bool
+                       , export2adl :: Bool  -- generate the population in Ampersand source code format
+                       , dataAnalysis :: Bool  -- generate a data analysis. This is useful to analyse spreadsheets.
                        , test :: Bool
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
                        , addSemanticMetamodel :: Bool -- When set, the user can use all artefacts defined in Formal Ampersand, without the need to specify them explicitly
@@ -252,6 +253,7 @@ getOptions' envOpts =
                       , fileName         = fName
                       , baseName         = takeBaseName $ fromMaybe "unknown" fName
                       , export2adl       = False
+                      , dataAnalysis     = False
                       , test             = False
                       , genMetaFile      = False
                       , addSemanticMetamodel = False
@@ -451,17 +453,22 @@ options = [ (Option ['v']   ["version"]
                                                    ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
                "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
             , Public)
+          , (Option []        ["data"]
+               (OptArg (\mbnm opts -> opts{dataAnalysis = True
+                                                   ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
+               "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
+            , Public)
           , (Option ['o']     ["outputDir"]
                (ReqArg (\nm opts -> opts{dirOutput = nm}
                        ) "DIR")
                ("output directory (This overrules environment variable "++ dirOutputVarName ++ ").")
             , Public)
-          , (Option []      ["namespace"]
+          , (Option []        ["namespace"]
                (ReqArg (\nm opts -> opts{namespace = nm}
                        ) "NAMESPACE")
                "prefix database identifiers with this namespace, to isolate namespaces within the same database."
             , Public)
-          , (Option ['f']   ["fspec"]
+          , (Option ['f']     ["fspec"]
                (ReqArg (\w opts -> opts
                                 { genFSpec=True
                                 , fspecFormat= case map toUpper w of
@@ -469,6 +476,8 @@ options = [ (Option ['v']   ["version"]
                                     ('C': _ )             -> Fcontext
                                     ('D':'O':'C':'B': _ ) -> Fdocbook
                                     ('D':'O':'C':'X': _ ) -> Fdocx
+                                    ('D':'O':'C': _ )     -> Fdocx
+                                    ('D': _ )             -> Fdocx
                                     ('H': _ )             -> Fhtml
                                     ('L': _ )             -> Flatex
                                     ('M':'A':'N': _ )     -> Fman
