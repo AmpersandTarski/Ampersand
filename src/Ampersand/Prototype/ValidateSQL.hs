@@ -77,12 +77,12 @@ getAllPairViewExps fSpec = concatMap getPairViewExps . Set.elems $ vrules fSpec 
 getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
  where getIdExps identity = [ (objExpression objDef, "identity "++show (name identity))
-                            | IdentityExp objDef <- identityAts identity ]
+                            | IdentityExp objDef <- NEL.toList $ identityAts identity ]
 
 getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
  where getViewExps view = [ (expr, "view "++show (name view))
-                          | ViewExp expr <- map vsmLoad (vdats view) ]
+                          | ViewExp expr <- NEL.toList $ fmap vsmLoad (vdats view) ]
 
 type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we
@@ -111,9 +111,9 @@ validateExp opts@Options{..} fSpec vExp@(expr, orig) =
           ; putStrLn "Mismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp
           ; putStrLn "SQL violations:"
-          ; print violationsSQL
+          ; putStrLn $ show violationsSQL
           ; putStrLn "Ampersand violations:"
-          ; print violationsAmp
+          ; putStrLn $ show violationsAmp
           ; return (vExp, False)
           }
     }

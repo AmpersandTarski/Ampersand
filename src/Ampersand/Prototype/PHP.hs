@@ -13,7 +13,7 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
-import           Control.Exception
+--import           Control.Exception
 import           Data.List
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
@@ -86,7 +86,7 @@ executePHPStr :: Text.Text -> IO String
 executePHPStr phpStr =
  do { tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
-                                 hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " <> err)
+                                 putStrLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
                                  return ".")
     ; (tempPhpFile, temph) <- openTempFile tempdir "tmpPhpQueryOfAmpersand.php"
     ; Text.hPutStr temph phpStr
@@ -111,7 +111,7 @@ executePHP phpPath = do
        outputFile = inputFile++"Result"
        command = "php "++show inputFile++" > "++show outputFile
    _ <- readCreateProcess cp ""
-   result <- readFile outputFile
+   result <- readUTF8File outputFile
    case result of
      Right content -> do
            removeFile outputFile

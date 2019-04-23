@@ -63,7 +63,7 @@ instance JSON Rule JsonRule where
   , rulJSONmessage     = showMessage
   , rulJSONsrcConceptId = escapeIdentifier . name . source . formalExpression $ rule
   , rulJSONtgtConceptId = escapeIdentifier . name . target . formalExpression $ rule
-  , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
+  , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (fmap NEL.toList . lookup rule $ allConjsPerRule fSpec)
   , rulJSONpairView    = fmap (fromAmpersand opts multi) (rrviol rule)
   } 
    where 
@@ -71,7 +71,7 @@ instance JSON Rule JsonRule where
     showMeaning = maybe "" aMarkup2String (fmap ameaMrk . meaning (fsLang fSpec) $ rule)
     showMessage = case filter (\x -> amLang x == fsLang fSpec) (rrmsg rule) of
                               [] -> ""
-                              xs -> aMarkup2String (head xs)
+                              h:_ -> aMarkup2String h
 instance JSON (PairView Expression) JsonPairView where
  fromAmpersand opts multi pv = JsonPairView $ map (fromAmpersand opts multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where

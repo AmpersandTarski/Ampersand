@@ -4,9 +4,11 @@ module Ampersand.Basics.Prelude
   , writeFile
   , readUTF8File
   , zip3, zipWith
+  , openTempFile
   )where
 import Prelude (putStrLn,putStr,reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import RIO
+import System.IO (openTempFile)
 
 -- import Debug.Trace
 -- import Prelude hiding ( 
