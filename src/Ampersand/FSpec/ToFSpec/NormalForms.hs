@@ -13,9 +13,7 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input (parseRule)
 import           Ampersand.Misc
-import           Data.Function (on)
 import           Data.Hashable
-import           Data.List (nub, intercalate, permutations, partition, sortBy)
 import qualified Data.List.NonEmpty as NEL
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -44,7 +42,7 @@ cfProofs, dfProofs :: Expression -> [(Expression, Proof Expression)]
  where
    prfs :: Bool -> Expression -> [(Expression, Proof Expression)]
    prfs dnf expr
-    = nub [ (rTerm2expr t, map makeExpr derivs) | (t, derivs)<-f (expr2RTerm expr) ]
+    = L.nub [ (rTerm2expr t, map makeExpr derivs) | (t, derivs)<-f (expr2RTerm expr) ]
       where
         f :: RTerm -> [(RTerm,[(RTerm, [String], String)])]
         f term = [ (term,[(term, [], "<=>")]) | null dsteps ]++
@@ -611,15 +609,15 @@ instance ShowIT RTerm where
      showExpr :: Int -> RTerm -> String
      showExpr i expr
       = case expr of
-          RIsc ls    -> wrap i 2 (intercalate inter  [showExpr 3 e | e<-Set.toList ls ])
-          RUni ls    -> wrap i 2 (intercalate union' [showExpr 3 e | e<-Set.toList ls ])
+          RIsc ls    -> wrap i 2 (L.intercalate inter  [showExpr 3 e | e<-Set.toList ls ])
+          RUni ls    -> wrap i 2 (L.intercalate union' [showExpr 3 e | e<-Set.toList ls ])
           RDif l r   -> wrap i 4 (showExpr 5 l++diff++showExpr 5 r)
           RLrs l r   -> wrap i 6 (showExpr 7 l++lresi++showExpr 7 r)
           RRrs l r   -> wrap i 6 (showExpr 7 l++rresi++showExpr 7 r)
           RDia l r   -> wrap i 6 (showExpr 7 l++rDia ++showExpr 7 r)
-          RCps ls    -> wrap i 2 (intercalate rMul [showExpr 3 e | e<-ls ])
-          RRad ls    -> wrap i 2 (intercalate rAdd [showExpr 3 e | e<-ls ])
-          RPrd ls    -> wrap i 2 (intercalate rPrd [showExpr 3 e | e<-ls ])
+          RCps ls    -> wrap i 2 (L.intercalate rMul [showExpr 3 e | e<-ls ])
+          RRad ls    -> wrap i 2 (L.intercalate rAdd [showExpr 3 e | e<-ls ])
+          RPrd ls    -> wrap i 2 (L.intercalate rPrd [showExpr 3 e | e<-ls ])
           RKl0 e     -> wrap i 9 (showExpr 9 e++closK0)
           RKl1 e     -> wrap i 9 (showExpr 9 e++closK1)
           RFlp e     -> wrap i 9 (showExpr 9 e++flp')
@@ -707,7 +705,7 @@ weightNF dnf = w
 type Unifier = Set (String, RTerm)
 
 instance ShowIT Unifier where
-  showIT s = "{"++intercalate ", " [ str++"->"++showIT t | (str,t)<-Set.toList s ]++"}"
+  showIT s = "{"++L.intercalate ", " [ str++"->"++showIT t | (str,t)<-Set.toList s ]++"}"
 
 substitute :: String    -- A string to document fatals
            -> Unifier   -- the substitution, which in reality is a set of string/expression pairs.
@@ -736,18 +734,18 @@ substitute ruleDoc unifier term
                            [e] -> e
                            [] ->  fatal ("Rule:  "++ruleDoc++"\nVariable "++r++" is not in term "++showIT term++ " using unifier "++show unifier)
                            -- e.g. Variable r is not in term -V[A*B] /\ r[A*B] using unifier fromList [("A",RId Verzoek),("B",RId Persoon)]
-                           es ->  fatal ("Rule:  "++ruleDoc++"\nVariable "++r++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
+                           es ->  fatal ("Rule:  "++ruleDoc++"\nVariable "++r++" in term "++showIT term++" has been bound to multiple expressions:\n   "++L.intercalate "\n   " [showIT e | e<-es])
     subs (RId c)      = case [ e | (v,e)<-Set.toList unifier, v==name c] of
                            [e] -> e  -- This is e@(RId c')
                            []  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showIT term)
-                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
+                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++L.intercalate "\n   " [showIT e | e<-es])
     subs (RVee s t)   = case ([ e | (v,e)<-Set.toList unifier, v==name s], [ e | (v,e)<-Set.toList unifier, v==name t]) of
                            ([RId s'], [RId t']) -> RVee s' t'
                            (_,_)  -> fatal ("Rule:  "++ruleDoc++"\nSomething wrong with RVee in term "++showIT term++" with unifier "++show unifier)
     subs (RAtm a c)   = case [ e | (v,e)<-Set.toList unifier, v==name c] of
                            [RId c'] -> RAtm a c'
                            []  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showIT term)
-                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
+                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++L.intercalate "\n   " [showIT e | e<-es])
     subs e@RConst{}   = e
 --     subs t            = fatal ("Rule:  "++ruleDoc++"\nError: "++showIT t++"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
 
@@ -800,7 +798,7 @@ matchLists rCombinator es es'
    , n /= 0 || fatal "n equals 0"
    , ms <- dist n es'     -- determine segments from es' (which is variable free) that have the same length as the template es
    , not (or [null m | m<-ms]) ||
-     fatal (concat ["\nms:  ["++intercalate ", " (map showIT m)++"]" | m<-ms])
+     fatal (concat ["\nms:  ["++L.intercalate ", " (map showIT m)++"]" | m<-ms])
    , let subTerms = map (combLst rCombinator) ms     -- make an RTerm from each sublist in ms
    , unif<-mix [ matches l r | (l,r)<-safezip es subTerms ]
    , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
@@ -838,14 +836,14 @@ matchSets :: (Set RTerm -> RTerm) -> Set RTerm -> Set RTerm -> [Unifier]
 matchSets rCombinator es es'
  -- set sizes are not necessarily equal.
  | Set.null es || Set.null es' = fatal "cannot match empty sets"
- | or [ not (isValid e) | e<-Set.toList es ] = fatal ("Invalid subterm(s): "++intercalate ", " [ showIT e | e<-Set.toList es,  not (isValid e) ])
- | or [ not (isValid e) | e<-Set.toList es'] = fatal ("Invalid subexpr(s): "++intercalate ", " [ showIT e | e<-Set.toList es', not (isValid e) ])
+ | or [ not (isValid e) | e<-Set.toList es ] = fatal ("Invalid subterm(s): "++L.intercalate ", " [ showIT e | e<-Set.toList es,  not (isValid e) ])
+ | or [ not (isValid e) | e<-Set.toList es'] = fatal ("Invalid subexpr(s): "++L.intercalate ", " [ showIT e | e<-Set.toList es', not (isValid e) ])
  | otherwise =
    [ unif
    | let n = Set.size cdes                      -- the length of the template, which contains variables
    , partition' <- parts n cdes'                 -- determine segments from the expression with the same length. partition' :: Set (Set RTerm)
    , let subTerms = Set.map (combSet rCombinator) partition'      -- make an RTerm from each subset in ms. subTerms :: Set RTerm
-   , template <- permutations (Set.toList cdes)
+   , template <- L.permutations (Set.toList cdes)
    , unif <- mix [ matches l r | (l,r) <- safezip template (Set.toList subTerms) ]
    , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
    ]
@@ -1281,14 +1279,14 @@ Until the new normalizer works, we will have to work with this one. So I have in
       | isEUni l && not (null absor1)
            = ( case head absor1 of
                  (_,[]) -> r
-                 (_,t:ts) -> foldr (.\/.) t ts ./\. r
+                 (_,t':ts) -> foldr (.\/.) t' ts ./\. r
              , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',_)<-absor1]
              , "<=>"
              )
       | isEUni r && not (null absor1')
            = ( case head absor1' of
                  (_,[]) -> l
-                 (_,t:ts) -> l ./\. foldr (.\/.) t ts
+                 (_,t':ts) -> l ./\. foldr (.\/.) t' ts
              , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',_)<-absor1']
              , "<=>"
              )
@@ -1304,8 +1302,8 @@ Until the new normalizer works, we will have to work with this one. So I have in
             (f,steps',equ'') = nM posCpl r (l:rs)
             absorbClasses :: NEL.NonEmpty (NEL.NonEmpty Expression)
             absorbClasses = case eqClass (==) (NEL.toList $ exprIsc2list l<>exprIsc2list r) of
-                               [] -> fatal "Impossible"
-                               x:xs -> x NEL.:| xs 
+                               []   -> fatal "Impossible"
+                               h:tl -> h NEL.:| tl 
             incons = NEL.filter (\conjunct -> conjunct ==notCpl l) $ exprIsc2list r
             absor0  = [disjunct | disjunct<-NEL.toList $ exprUni2list l
                                 , f'<-NEL.toList . appendLeft rs $ exprIsc2list r
@@ -1381,14 +1379,14 @@ Until the new normalizer works, we will have to work with this one. So I have in
       | isEIsc l && not (null absor1)
            = ( case head absor1 of
                  (_,[]) -> r
-                 (_,t:ts) -> foldr (./\.) t ts .\/. r
+                 (_,t':ts) -> foldr (./\.) t' ts .\/. r
              , ["absorb "++shw t'++", using law (x/\\-y)\\/y  =  x\\/y" | (t',_)<-absor1]
              , "<=>"
              )
       | isEIsc r && not (null absor1')
            = ( case head absor1' of
                  (_,[]) -> l
-                 (_,t:ts) -> l .\/. foldr (./\.) t ts
+                 (_,t':ts) -> l .\/. foldr (./\.) t' ts
              , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
              , "<=>"
              )
@@ -1399,7 +1397,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
             absorbClasses :: NEL.NonEmpty (NEL.NonEmpty Expression)
             absorbClasses = case eqClass (==) (NEL.toList $ exprUni2list l<>exprUni2list r) of
                               [] -> fatal "Impossible"
-                              x:xs -> x NEL.:| xs
+                              h:tl -> h NEL.:| tl
          -- tautologies occur if -r\/r, so we are looking for pairs, (x,l) such that x== -l
             tauts = [t' |disjunct<-NEL.toList $ exprUni2list r,disjunct==notCpl l, ECpl t'<-[disjunct,l]]
             absor0 :: [Expression]
@@ -1519,7 +1517,7 @@ allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (
                                          if isEndo antcExpr then (EDcI (source antcExpr) NEL.:| []) else fatal "antcExpr should be endorelation"
                                    h:tl -> h NEL.:| tl
                        }
-                 | (ass,css)<-nub (move (antcs dc) (NEL.toList $ conss dc))
+                 | (ass,css)<-L.nub (move (antcs dc) (NEL.toList $ conss dc))
                  ]
    where
    -- example:  r;s /\ p;r |- x;y   and suppose x and y are both univalent.
@@ -1559,7 +1557,7 @@ allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (
                          --     h:tl  -> h NEL.:| tl
                    , conss = css
                    }
-             | (ass,css)<-nub . NEL.toList $ move (antcs dc) (conss dc)
+             | (ass,css)<-L.nub . NEL.toList $ move (antcs dc) (conss dc)
              ]
    where
    -- example  "r;s /\ r;r |- x;y"   and suppose r is both surjective.

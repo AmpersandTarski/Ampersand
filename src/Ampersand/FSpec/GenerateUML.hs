@@ -110,7 +110,7 @@ genUMLClass cl =
     }
 
 genUMAttribute :: CdAttribute -> UML
-genUMAttribute  (OOAttr nm attrType optional) =
+genUMAttribute  (OOAttr nm attrType isOptional) =
  do { attrId <- mkUnlabeledId "Attr"
     ; lIntId <- mkUnlabeledId "Int"
     ; uIntId <- mkUnlabeledId "Int"
@@ -118,7 +118,7 @@ genUMAttribute  (OOAttr nm attrType optional) =
     ; return [ "       <ownedAttribute xmi:type=\"uml:Property\" xmi:id=\""++attrId++"\" name=\""++nm++"\" visibility=\"public\" isStatic=\"false\""++
                                     " isReadOnly=\"false\" isDerived=\"false\" isOrdered=\"false\" isUnique=\"true\" isDerivedUnion=\"false\">"
              , "        <type xmi:idref=\""++classId++"\"/>"
-             , "        <lowerValue xmi:type=\"uml:LiteralInteger\" xmi:id=\""++lIntId++"\" value=\""++(if optional then "0" else "1")++"\"/>"
+             , "        <lowerValue xmi:type=\"uml:LiteralInteger\" xmi:id=\""++lIntId++"\" value=\""++(if isOptional then "0" else "1")++"\"/>"
              , "        <upperValue xmi:type=\"uml:LiteralInteger\" xmi:id=\""++uIntId++"\" value=\"1\"/>"
              , "       </ownedAttribute>"]
     }

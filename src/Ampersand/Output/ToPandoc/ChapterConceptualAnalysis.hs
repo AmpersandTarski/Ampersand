@@ -4,7 +4,7 @@
 module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
-import           Data.List (intersperse )
+import qualified RIO.List as L
 import qualified Data.Set as Set
 
 chpConceptualAnalysis :: Options -> Int -> FSpec -> (Blocks,[Picture])
@@ -132,7 +132,7 @@ chpConceptualAnalysis opts@Options{..} lev fSpec = (
                <> plain
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
-                    <> mconcat (intersperse  (str ", ")
+                    <> mconcat (L.intersperse  (str ", ")
                                 [   hyperLinkTo (XRefConceptualAnalysisRelation d)
                                  <> text (" ("++name d++")")
                                 | d<-Set.elems $ bindedRelationsIn r])

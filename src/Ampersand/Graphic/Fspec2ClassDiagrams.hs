@@ -7,9 +7,7 @@ import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.FSpec
 import           Ampersand.Graphic.ClassDiagram
-import           Data.Either
 import qualified Data.List.NonEmpty as NEL
-import           Data.Maybe
 import qualified Data.Set as Set
 
 -- | This function makes the classification diagram.

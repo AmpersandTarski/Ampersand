@@ -10,7 +10,7 @@ import           Ampersand.Input.ADL1.CtxError
 import           Control.Applicative ((<|>),some)
 import           Control.Monad ((<=<))
 import           Data.Char(isSpace)
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Text.Parsec hiding ( (<|>) )

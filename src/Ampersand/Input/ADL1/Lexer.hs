@@ -30,7 +30,7 @@ import           Ampersand.Input.ADL1.LexerToken
 import           Ampersand.Misc
 import           Control.Monad (when)
 import           Data.Char hiding(isSymbol)
-import           Data.List (nub,foldl,maximum)
+import qualified RIO.List as L
 import qualified Data.Set as Set -- (member, fromList)
 import           Data.Time.Calendar
 import           Data.Time.Clock
@@ -38,7 +38,8 @@ import           Numeric
 
 -- | Retrieves a list of keywords accepted by the ampersand language
 keywords :: [String] -- ^ The keywords
-keywords  = nub [ "CONTEXT", "ENDCONTEXT"
+keywords  = L.nub $
+                [ "CONTEXT", "ENDCONTEXT"
                 , "IN" 
                 ] ++
                 [map toUpper $ show x | x::Lang <- [minBound..]
@@ -132,7 +133,7 @@ mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpaceNoTab s
                                     isSpaceNoTab x = isSpace x && (not .  isTab) x
                                     isTab = ('\t' ==)
                                 in  do when (isTab c) (lexerWarning TabCharacter p)
-                                       mainLexer (foldl updatePos p (c:spc)) next
+                                       mainLexer (L.foldl updatePos p (c:spc)) next
 
 mainLexer p ('{':'-':s) = lexNestComment mainLexer (addPos 2 p) s
 mainLexer p ('{':'+':s) = lexMarkup mainLexer (addPos 2 p) s
@@ -163,7 +164,7 @@ mainLexer p cs@(c:s)
            in returnToken tokt p mainLexer p' s'
      | isOperatorBegin c
          = let (name', s') = getOp cs
-           in returnToken (LexOperator name') p mainLexer (foldl updatePos p name') s'
+           in returnToken (LexOperator name') p mainLexer (L.foldl updatePos p name') s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
      | isDigit c
          = case  getDateTime cs of
@@ -423,7 +424,7 @@ getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
 getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
-                                      | val >= 0 && val <= ord (maximum [chr 1 ..]) -> (Just (chr val),length s - length rest, rest)
+                                      | val >= 0 && val <= ord (maxBound :: Char) -> (Just (chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
                                     _  -> fatal ("Impossible! first char is a digit.. "++take 40 s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)

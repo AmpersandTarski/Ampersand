@@ -19,9 +19,8 @@ import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
 import           Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import           Ampersand.Prototype.ProtoUtil
-import           Data.List
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import           Data.Maybe
 import           Data.String (IsString(fromString))
 import qualified Data.Text as Text
 
@@ -59,7 +58,7 @@ plug2TableSpec plug
      , tsKey  = case (plug, (NEL.head . plugAttributes) plug) of
                  (BinSQL{}, _)   -> if all (suitableAsKey . attType) (plugAttributes plug)
                                     then "PRIMARY KEY (" 
-                                            <> intercalate ", " (NEL.toList $ fmap (show . attName) (plugAttributes plug))
+                                            <> L.intercalate ", " (NEL.toList $ fmap (show . attName) (plugAttributes plug))
                                             <> ")"
                                     else ""
                  (TblSQL{}, primFld) ->
@@ -88,7 +87,7 @@ createTableSql withComment tSpec
     header = "CREATE TABLE "<>(doubleQuote . Text.pack . tsName $ tSpec)
     cols :: [Text.Text]
     cols = [ Text.pack [pref] <> " " <> addColumn att 
-           | (pref, att) <- zip ('(' : repeat ',') (tsflds tSpec)]
+           | (pref, att) <- zip ('(' : L.repeat ',') (tsflds tSpec)]
     mKey :: Maybe Text.Text
     mKey =
       case tsKey tSpec of

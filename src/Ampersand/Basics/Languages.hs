@@ -6,8 +6,7 @@ module Ampersand.Basics.Languages
               
 import Ampersand.Basics.Prelude
 import Data.Char (toLower)
---import Data.Data
-import Data.List (isSuffixOf)
+import qualified RIO.List as L
 
 data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data, Enum, Bounded)
 
@@ -17,8 +16,8 @@ plural English str =
   case reverse str of
     []   -> str
     'y':cs -> reverse cs<>"ies"
-    's':cs -> str<>"es"
-    'x':cs -> str<>"es"
+    's':_  -> str<>"es"
+    'x':_  -> str<>"es"
     'f':cs -> reverse cs<>"ves"
     _      -> case lookup str exceptions of
                 Just a -> a
@@ -27,20 +26,20 @@ plural English str =
 plural Dutch str = 
   case str of 
     [] -> str
-    x:xs -> case matches of
+    h:tl -> case matches of
               m:_ -> m
               []  -> foo
       where 
             foo 
                 | take 3 (reverse str)== reverse "ium" = (reverse.drop 3.reverse) str++"ia"
                 | take 2 (reverse str) `elem` map reverse ["el", "em", "en", "er", "um", "ie"] = str++"s"
-                | "ij" `isSuffixOf` str = str++"en"
-                | "io" `isSuffixOf` str = str++"'s"
+                | "ij" `L.isSuffixOf` str = str++"en"
+                | "io" `L.isSuffixOf` str = str++"'s"
                 | klinker last = str++"s"
                 | (take 2.drop 1.reverse) str `elem` ["aa","oo","ee","uu"] = (reverse.drop 2.reverse) str++mede (drop (length str-1) str)++"en"
                 | otherwise                  = str++"en"
-            last = case reverse xs of
-                     [] -> x
+            last = case reverse tl of
+                     [] -> h
                      c:_ -> c
             mede "f" = "v"
             mede "s" = "z"

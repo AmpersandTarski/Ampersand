@@ -15,7 +15,6 @@ import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Control.Arrow
 import           Text.PrettyPrint.Leijen (Pretty(..),text)
-import qualified RIO.List as L
 
 -- this is *only* used internally!
 data D_Concept

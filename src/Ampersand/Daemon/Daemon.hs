@@ -191,9 +191,11 @@ nubOrdOn f = map snd . nubOrdBy (compare `on` fst) . map (f &&& id)
 -- > nubOrdBy (compare `on` length) ["a","test","of","this"] == ["a","test","of"]
 nubOrdBy :: (a -> a -> Ordering) -> [a] -> [a]
 nubOrdBy cmp xs = f E xs
-    where f seen [] = []
-          f seen (x:xs) | memberRB cmp x seen = f seen xs
-                        | otherwise = x : f (insertRB cmp x seen) xs
+    where f seen rest = 
+            case rest of 
+              [] -> []
+              h:tl | memberRB cmp h seen -> f seen tl
+                   | otherwise -> h : f (insertRB cmp h seen) tl
 
 ---------------------------------------------------------------------
 -- OKASAKI RED BLACK TREE
@@ -209,21 +211,23 @@ insertRB cmp x s =
     where
     T _ a z b = ins s
     ins E = T R E x E
-    ins s@(T B a y b) = case cmp x y of
-        LT -> balance (ins a) y b
-        GT -> balance a y (ins b)
-        EQ -> s
-    ins s@(T R a y b) = case cmp x y of
-        LT -> T R (ins a) y b
-        GT -> T R a y (ins b)
-        EQ -> s
+    ins s'@(T B a' y b') = case cmp x y of
+        LT -> balance (ins a') y b'
+        GT -> balance a' y (ins b')
+        EQ -> s'
+    ins s'@(T R a' y b') = case cmp x y of
+        LT -> T R (ins a') y b'
+        GT -> T R a' y (ins b')
+        EQ -> s'
 
 memberRB :: (a -> a -> Ordering) -> a -> RB a -> Bool
-memberRB cmp x E = False
-memberRB cmp x (T _ a y b) = case cmp x y of
-    LT -> memberRB cmp x a
-    GT -> memberRB cmp x b
-    EQ -> True
+memberRB cmp x rb = 
+   case rb of
+     E           -> False
+     (T _ a y b) -> case cmp x y of
+                        LT -> memberRB cmp x a
+                        GT -> memberRB cmp x b
+                        EQ -> True
 
 {- balance: first equation is new,
    to make it work with a weaker invariant -}

@@ -5,11 +5,11 @@
 module Ampersand.ADL1.PrettyPrinters(Pretty(..),prettyPrint)
 where
 
-import           Ampersand.Basics hiding ((<$>))
+import           Ampersand.Basics hiding ((<$>),view)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           Data.Char (toUpper)
-import           Data.List (intercalate,intersperse)
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import           Data.List.Utils (replace)
 import qualified Data.Set as Set
@@ -42,21 +42,21 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
               escapeCommentStart = escape "{-"
               escapeLineComment = escape "--"
               escapeExplEnd = escape "+}"
-              escape x = replace x (intersperse ' ' x)
+              escape x = replace x (L.intersperse ' ' x)
 
 isId :: String -> Bool
 isId xs = 
   case xs of
-   [] -> False
-   h:t -> all isIdChar xs && isFirstIdChar h && xs `notElem` keywords
+   []  -> False
+   h:_ -> all isIdChar xs && isFirstIdChar h && xs `notElem` keywords
        where isFirstIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']
              isIdChar x = isFirstIdChar x || elem x ['0'..'9']
 
 isUpperId :: String -> Bool
 isUpperId xs = 
   case xs of
-   [] -> False
-   h:t -> isId xs && h `elem` ['A'..'Z']
+   []  -> False
+   h:_ -> isId xs && h `elem` ['A'..'Z']
 
 maybeQuote :: String -> Doc
 maybeQuote a = if isId a then text a else quote a
@@ -320,7 +320,7 @@ instance Pretty PPurpose where
              <+\> quotePurpose (mString markup)
         where lang = mFormat markup
               refs rs = if null rs then empty
-                        else text "REF" <+> quote (intercalate "; " rs)
+                        else text "REF" <+> quote (L.intercalate "; " rs)
 
 instance Pretty PRef2Obj where
     pretty p = case p of

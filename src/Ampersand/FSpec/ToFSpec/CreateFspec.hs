@@ -16,8 +16,7 @@ import           Ampersand.FSpec.ToFSpec.ADL2FSpec
 import           Ampersand.FSpec.Transformers 
 import           Ampersand.Input
 import           Ampersand.Misc
-import           Control.Monad
-import           Data.List
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL (toList)
 import qualified Data.Set as Set
 import           System.FilePath
@@ -57,7 +56,7 @@ createMulti opts@Options{..} =
                        Checked f _ -> f
                        Errors errs -> fatal . unlines $
                             "The FormalAmpersand ADL scripts are not type correct:"
-                          : (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
+                          : (L.intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
 
          userP_CtxPlus :: Guarded P_Context
          userP_CtxPlus =

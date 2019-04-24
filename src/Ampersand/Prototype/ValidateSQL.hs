@@ -81,8 +81,8 @@ getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
 
 getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
- where getViewExps view = [ (expr, "view "++show (name view))
-                          | ViewExp expr <- NEL.toList $ fmap vsmLoad (vdats view) ]
+ where getViewExps x = [ (expr, "view "++show (name x))
+                       | ViewExp expr <- NEL.toList $ fmap vsmLoad (vdats x) ]
 
 type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we

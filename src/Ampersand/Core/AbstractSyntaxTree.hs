@@ -73,7 +73,7 @@ import           Data.Char          (toUpper,toLower)
 import           Data.Default       (Default(..))
 import           Data.Function      (on)
 import           Data.Hashable      (Hashable(..),hashWithSalt)
-import           Data.List          (nub,intercalate,sort)
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map as Map
 import           Data.Maybe         (fromMaybe)
@@ -325,19 +325,19 @@ instance Unique AClassify where
   showUnique a =
     case a of
       Isa{} -> showUnique (genspc a)++" ISA "++showUnique (gengen a)
-      IsE{} -> showUnique (genspc a)++" IS "++intercalate " /\\ " (map (showUnique) (genrhs a))
+      IsE{} -> showUnique (genspc a)++" IS "++L.intercalate " /\\ " (map (showUnique) (genrhs a))
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
   show g =
     case g of
      Isa{} -> "CLASSIFY "++show (genspc g)++" ISA "++show (gengen g)
-     IsE{} -> "CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g))
+     IsE{} -> "CLASSIFY "++show (genspc g)++" IS "++L.intercalate " /\\ " (map show (genrhs g))
 instance Hashable AClassify where
     hashWithSalt s g = 
       s `hashWithSalt` (genspc g)
         `hashWithSalt` (case g of 
                          Isa{} -> [genspc g]
-                         IsE{} -> sort $ genrhs g 
+                         IsE{} -> L.sort $ genrhs g 
                        )
 
 data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type API?
@@ -872,7 +872,7 @@ instance Eq SignOrd where
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
 safePSingleton2AAtomVal ci c val =
    case unsafePAtomVal2AtomValue typ (Just c) val of
-     Left _ -> fatal . intercalate "\n  " $
+     Left _ -> fatal . L.intercalate "\n  " $
                   [ "This should be impossible: after checking everything an unhandled singleton value found!"
                   , "Concept: "++show c
                   , "TType: "++show typ
@@ -1058,10 +1058,10 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                      onlyZeroes s' =
                       case s' of 
                        [] -> True
-                       '.':zeros ->  nub zeros == "0"
+                       '.':zeros ->  L.nub zeros == "0"
                        _ -> False
      message :: Show x => x -> Either String a
-     message x = Left . intercalate "\n    " $
+     message x = Left . L.intercalate "\n    " $
                  ["Representation mismatch"
                  , "Found: `"++show x++"`,"
                  , "as representation of an atom in concept `"++name c++"`."

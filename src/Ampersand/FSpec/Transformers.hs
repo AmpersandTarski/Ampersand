@@ -47,7 +47,7 @@ instance Show PopAtom where
 
 
 toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
-toTransformer (rel, sCpt, tCpt, set) = Transformer rel sCpt tCpt set
+toTransformer (a,b,c,d) = Transformer a b c d
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformers :: Options -> FSpec -> [Transformer]

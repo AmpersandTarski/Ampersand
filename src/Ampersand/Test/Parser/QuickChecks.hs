@@ -2,6 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-deprecations #-} --to avoid warning for trace
+
 module Ampersand.Test.Parser.QuickChecks
     ( parserQuickChecks
     ) where

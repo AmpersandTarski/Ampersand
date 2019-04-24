@@ -18,7 +18,7 @@ module Ampersand.ADL1.Lattices
 import           Ampersand.Basics hiding (toList)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
-import qualified Data.List   as Lst (partition)
+import qualified RIO.List    as L
 import qualified Data.Map    as Map
 import qualified Data.Set    as Set
 
@@ -181,12 +181,12 @@ reverseMap :: (Ord a) => [(a,[Int])] -> RevMap a
 reverseMap lst
  = RevMap (Set.fromList (map fst empties)) (buildMap rest)
  where
-   (empties,rest) = Lst.partition (null . snd) lst
+   (empties,rest) = L.partition (null . snd) lst
    buildMap [] = IntMap.empty
    buildMap o@((_,~(f:_)):_)
      = IntMap.insert f (reverseMap (map tail2 h)) (buildMap tl)
      where tail2 (a,b) = (a, tail b)
-           (h,tl) = Lst.partition ((== f) . head . snd) o
+           (h,tl) = L.partition ((== f) . head . snd) o
            tail [] = fatal "tail called on empty list"
            tail (_:t) = t
            head [] = fatal "head used on empty list."

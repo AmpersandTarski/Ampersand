@@ -54,8 +54,8 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.FilePos()
 import           Ampersand.Input.ADL1.LexerMessage
-import qualified Data.List as L   (intercalate)
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
 import           Data.Typeable
 import           GHC.Exts (groupWith)
 import           Text.Parsec

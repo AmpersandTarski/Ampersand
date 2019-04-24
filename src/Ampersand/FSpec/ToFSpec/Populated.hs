@@ -13,7 +13,7 @@ import           Ampersand.Basics
 import qualified Data.Map as Map
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import qualified Data.Set as Set
-import           Data.List (nub,delete)
+import qualified RIO.List as L
        
 genericAndSpecifics :: AClassify -> [(A_Concept,A_Concept)]
 genericAndSpecifics gen = filter (\x -> fst x /= snd x) $  -- make sure that no tuples where source and target are equal are returned. 
@@ -25,20 +25,20 @@ genericAndSpecifics gen = filter (\x -> fst x /= snd x) $  -- make sure that no 
 --   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
 smallerConcepts :: [AClassify] -> A_Concept -> [A_Concept]
 smallerConcepts gs cpt
-  = nub$ oneSmaller ++ concatMap (smallerConcepts gs) oneSmaller
-  where oneSmaller = delete cpt. nub $ [ genspc g | g@Isa{}<-gs, gengen g==cpt ]++[ genspc g | g@IsE{}<-gs, cpt `elem` genrhs g ]
+  = L.nub$ oneSmaller ++ concatMap (smallerConcepts gs) oneSmaller
+  where oneSmaller = L.delete cpt. L.nub $ [ genspc g | g@Isa{}<-gs, gengen g==cpt ]++[ genspc g | g@IsE{}<-gs, cpt `elem` genrhs g ]
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more generic than the given concept.
 largerConcepts :: [AClassify] -> A_Concept -> [A_Concept]
 largerConcepts gs cpt
- = nub$ oneLarger ++ concatMap (largerConcepts gs) oneLarger
-  where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gs, genspc g==cpt ]++[ c | g@IsE{}<-gs, genspc g==cpt, c<-genrhs g ]
+ = L.nub$ oneLarger ++ concatMap (largerConcepts gs) oneLarger
+  where oneLarger  = L.delete cpt. L.nub $[ gengen g | g@Isa{}<-gs, genspc g==cpt ]++[ c | g@IsE{}<-gs, genspc g==cpt, c<-genrhs g ]
 
 -- | This function returns a list of the same concepts, but in an ordering such that if for any two elements a and b in the 
 --   list, if a is more specific than b, a will be to the left of b in the resulting list.
 sortSpecific2Generic :: [AClassify] -> [A_Concept] -> [A_Concept]
 sortSpecific2Generic gens = go []
   where go xs [] = xs
-        go xs (y:ys) = case [y' | y'<-nub ys, y' `elem` (Set.fromList $ smallerConcepts gens y)] of
+        go xs (y:ys) = case [y' | y'<-L.nub ys, y' `elem` (Set.fromList $ smallerConcepts gens y)] of
                           []  -> go (xs++[y]) ys
                           _:_ -> go xs (ys++[y])
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)

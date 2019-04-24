@@ -107,7 +107,7 @@ header title =
   where 
     width = case L.maximumMaybe [80 , l + 8] of
               Nothing -> fatal "Impossible"
-              Just l  -> l
+              Just x  -> x
     l = Text.length title
     spaces :: Int -> Text.Text
     spaces i = Text.replicate i " "

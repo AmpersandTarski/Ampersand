@@ -14,7 +14,6 @@ import           Data.GraphViz.Attributes.HTML as Html
 import           Data.GraphViz.Types.Canonical hiding (attrs)
 import           Data.List
 import qualified Data.Set as Set
-import           Data.String
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
 classdiagram2dot :: Options -> ClassDiag -> DotGraph String

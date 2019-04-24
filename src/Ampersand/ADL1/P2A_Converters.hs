@@ -8,7 +8,7 @@ where
 import           Ampersand.ADL1.Disambiguate
 import           Ampersand.ADL1.Lattices -- used for type-checking
 import           Ampersand.ADL1.Expression
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (to,set,conc)
 import           Ampersand.Classes
 import           Ampersand.Core.A2P_Converters
 import           Ampersand.Core.AbstractSyntaxTree
@@ -20,18 +20,14 @@ import           Ampersand.Misc
 import           Control.Arrow(first)
 import           Control.Monad (join)
 import           Data.Char(toUpper,toLower)
-import           Data.Either
 import           Data.Foldable (toList)
-import           Data.Function
 import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable
-import           Data.List as Lst
-import qualified Data.List.NonEmpty as NEL --(NonEmpty(..),nonEmpty)
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map as Map
-import           Data.Maybe
 import qualified Data.Set as Set
 import           Data.Text (pack)
-import           GHC.Stack
 
 pConcToType :: P_Concept -> Type
 pConcToType P_Singleton = BuiltIn TypeOfOne
@@ -189,7 +185,7 @@ findRelsLooselyTyped declMap x (Just src) (Just tgt)
    `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `unin` findRelsLooselyTyped declMap x Nothing (Just tgt))
    `orWhenEmpty` findDecls' declMap x
  where isct lsta lstb = [a | a<-lsta, a `elem` lstb]
-       unin lsta lstb = Lst.nub (lsta ++ lstb)
+       unin lsta lstb = L.nub (lsta ++ lstb)
 findRelsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
 findRelsLooselyTyped declMap x (Just src) Nothing
  = [dcl | dcl <- findDecls' declMap x, name (source dcl) == name src ]
@@ -331,19 +327,19 @@ pCtx2aCtx opts
               stripOrigin ::  (A_Concept,TType,[Origin]) -> (A_Concept,TType)
               stripOrigin (cpt,t,_) = (cpt,t)
               reprTrios :: [(A_Concept,TType,Origin)]
-              reprTrios = nub $ concatMap toReprs reprs
+              reprTrios = L.nub $ concatMap toReprs reprs
                 where toReprs :: Representation -> [(A_Concept,TType,Origin)]
                       toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- NEL.toList $ reprcpts r]
               conceptsOfGroups :: [A_Concept]
-              conceptsOfGroups = nub (concat groups)
+              conceptsOfGroups = L.nub (concat groups)
               conceptsOfReprs :: [A_Concept]
-              conceptsOfReprs = nub $ map fstOf3 reprTrios
+              conceptsOfReprs = L.nub $ map fstOf3 reprTrios
                  where fstOf3 (cpt,_,_)=cpt
               typeOfSingle :: A_Concept -> Guarded (Maybe (A_Concept,TType,[Origin]))
               typeOfSingle cpt 
                 = case filter ofCpt reprTrios of
                    [] -> pure Nothing
-                   rs -> case nub (map getTType rs) of
+                   rs -> case L.nub (map getTType rs) of
                            []  -> fatal "Impossible empty list."
                            [t] -> pure ( Just (cpt,t, map getOrigin rs))
                            _   -> mkMultipleRepresentTypesError cpt lst
@@ -358,7 +354,7 @@ pCtx2aCtx opts
               typeOfGroup grp 
                 = do singleTypes <- traverse typeOfSingle grp
                      let typeList = catMaybes singleTypes
-                     case nub (map getTType typeList) of
+                     case L.nub (map getTType typeList) of
                        []  -> pure []
                        [t] -> pure [(cpt,t) | cpt <- grp]
                        _   -> mkMultipleTypesInTypologyError typeList
@@ -370,9 +366,9 @@ pCtx2aCtx opts
                x:xs -> connect (t:typols) rest
                  where 
                     (t,rest) = g x xs 
-                    g a as = case partition (hasConceptsOf a) as of
+                    g a as = case L.partition (hasConceptsOf a) as of
                               (_,[])   -> (a,as)
-                              (hs',hs) -> g (nub $ a ++ concat hs) hs'
+                              (hs',hs) -> g (L.nub $ a ++ concat hs) hs'
                     hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool
                     hasConceptsOf a b = and [ x' `notElem` b | x' <- a]
 
@@ -380,7 +376,7 @@ pCtx2aCtx opts
           mkTypology cs = 
             case filter (not . isSpecific) cs of
                []  -> -- there must be at least one cycle in the CLASSIFY statements.
-                      case nub cycles of
+                      case L.nub cycles of
                         []  -> fatal "No cycles found!"
                         x:xs -> mkCyclesInGensError (x NEL.:| xs)
                         where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
@@ -391,7 +387,7 @@ pCtx2aCtx opts
                                             , genspc g `elem` concs gn
                                         ]
                                   hasMultipleSpecifics :: [AClassify]-> Bool
-                                  hasMultipleSpecifics gs = length (nub (map genspc gs)) > 1
+                                  hasMultipleSpecifics gs = length (L.nub (map genspc gs)) > 1
                [r] -> pure  
                           Typology { tyroot = r
                                    , tyCpts = reverse . sortSpecific2Generic gns $ cs
@@ -539,8 +535,8 @@ pCtx2aCtx opts
               P_ViewExp term -> 
                  do (viewExpr,(srcBounded,_)) <- typecheckTerm ci term
                     case userList$toList$ findExact genLattice (flType$ lMeet c (source viewExpr)) of
-                       [] -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
-                       r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft genLattice (head r) viewExpr))
+                       []  -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
+                       r@(h:_) -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft genLattice h viewExpr))
                              else mustBeBound (origin seg) [(Tgt,viewExpr)]
               P_ViewText str -> pure$ ViewText str
        c = mustBeConceptBecauseMath (pConcToType (vd_cpt o))
@@ -613,7 +609,7 @@ pCtx2aCtx opts
        case mCrud of 
          Nothing -> mostLiberalCruds (Origin "Default for Cruds") ""
          Just pc@(P_Cruds org userCrudString )
-             | (length . nub . map toUpper) userCrudString == length userCrudString &&
+             | (length . L.nub . map toUpper) userCrudString == length userCrudString &&
                 all (`elem` "cCrRuUdD") userCrudString  
                          -> warnings pc $ mostLiberalCruds org userCrudString 
              | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrudString
@@ -1027,7 +1023,7 @@ typecheckTerm ci tct
       getExactType flf (p1,e1) (p2,e2)
        = case userList$toList$ findExact genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of
           [] -> mustBeOrdered o (p1,e1) (p2,e2)
-          r  -> pure$ head r
+          h:_ -> pure h
       getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
        = case fmap (userList . toList)$toList$ findUpperbounds genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
@@ -1178,7 +1174,7 @@ x `orElse` y = case x of
 --   and a list of to-vertices)
 getCycles :: Eq a => [(a, [a])] -> [[a]]
 getCycles edges =
-  let allVertices = nub . concat $ [ from : to | (from, to) <- edges ]
-      keyFor v = fromMaybe (error "FATAL") $ elemIndex v allVertices
+  let allVertices = L.nub . concat $ [ from : to | (from, to) <- edges ]
+      keyFor v = fromMaybe (error "FATAL") $ L.elemIndex v allVertices
       graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
   in  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]

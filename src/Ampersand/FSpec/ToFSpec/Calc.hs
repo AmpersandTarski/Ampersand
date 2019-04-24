@@ -12,7 +12,7 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc (Options(..))
-import           Data.List hiding (head)
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Text.Pandoc.Builder
@@ -52,11 +52,11 @@ deriveProofs opts context
 type Proof expr = [(expr,[String],String)]
 
 showProof :: (expr->Blocks) -> Proof expr -> Blocks
-showProof shw [(expr,ss,_)]       = shw expr<> para ( str(" { "++intercalate " and " ss++" }"))
+showProof shw [(expr,ss,_)]       = shw expr<> para ( str(" { "++L.intercalate " and " ss++" }"))
 showProof shw ((expr,ss,equ):prf) = shw expr<>
                                     para (if null ss  then str equ else
                                           if null equ then str (unwords ss) else
-                                          str equ<>str (" { "++intercalate " and " ss++" }"))<>
+                                          str equ<>str (" { "++L.intercalate " and " ss++" }"))<>
                                     showProof shw prf
                                     --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr
 showProof _  []                   = fromList []
@@ -67,7 +67,7 @@ showPrf shw [(expr,_ ,_)]       = [ "    "++shw expr]
 showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr] ++
                                   (if null ss  then [ equ ] else
                                    if null equ then [ unwords ss ] else
-                                   [ equ++" { "++intercalate " and " ss++" }" ])++
+                                   [ equ++" { "++L.intercalate " and " ss++" }" ])++
                                   showPrf shw prf
 showPrf _  []                   = []
 

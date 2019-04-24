@@ -4,7 +4,7 @@ module Ampersand.Test.Parser.ArbitraryTree () where
 
 import Test.QuickCheck hiding (listOf1)
 import Data.Char
-import Data.List (nub,isInfixOf)
+import qualified RIO.List as L
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
 import Ampersand.Basics
@@ -86,7 +86,7 @@ subIfc objGen n =
 instance Arbitrary P_Cruds where
     arbitrary = P_Cruds <$> arbitrary
                         <*> suchThat (sublistOf "cCrRuUdD") isCrud
-      where isCrud str = nub (map toUpper str) == map toUpper str
+      where isCrud str = L.nub (map toUpper str) == map toUpper str
 
 instance Arbitrary Origin where
     arbitrary = return OriginUnknown
@@ -207,7 +207,6 @@ instance Arbitrary TermPrim where
 
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
     arbitrary = PairView <$> listOf1 arbitrary
-         where f x = PairView {ppv_segs = x }
                
 instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
     arbitrary = oneof [
@@ -339,7 +338,7 @@ instance Arbitrary P_Markup where
     arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr `suchThat` noEndMarkup
      where 
        noEndMarkup :: String -> Bool
-       noEndMarkup = not . isInfixOf "+}"
+       noEndMarkup = not . L.isInfixOf "+}"
 
 instance Arbitrary PandocFormat where
     arbitrary = elements [minBound..]
