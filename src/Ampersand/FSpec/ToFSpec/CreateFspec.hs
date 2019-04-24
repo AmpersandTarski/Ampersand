@@ -78,9 +78,12 @@ createMulti opts@Options{..} =
                      }
 
          userGFSpec :: Guarded FSpec
-         userGFSpec = pCtx2Fspec opts $ 
-                         mergeContexts <$> userP_CtxPlus   -- the FSpec resuting from the user's souceFile
-                                       <*> systemP_Ctx -- the system artifacts required for all ampersand prototypes
+         userGFSpec = 
+            pCtx2Fspec opts $ 
+              if useSystemContext
+              then mergeContexts <$> userP_CtxPlus   -- the FSpec resuting from the user's souceFile
+                                 <*> systemP_Ctx -- the system artifacts required for all ampersand prototypes
+              else userP_Ctx
          
          result :: Guarded MultiFSpecs
          result = 
@@ -102,6 +105,8 @@ createMulti opts@Options{..} =
             else return $ pure ()
      return (res >> result)
   where
+    useSystemContext :: Bool
+    useSystemContext = genPrototype
     writeMetaFile :: FSpec -> Guarded FSpec -> IO (Guarded ())
     writeMetaFile faSpec userSpec = 
        case makeMetaFile opts faSpec <$> userSpec of
