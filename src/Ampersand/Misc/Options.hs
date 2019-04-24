@@ -42,6 +42,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , allInterfaces :: Bool
                        , runAsDaemon :: Bool -- run Ampersand as a daemon. (for use with the vscode extension)
+                       , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
                        , dbName :: String
                        , namespace :: String
                        , testRule :: Maybe String
@@ -227,6 +228,7 @@ getOptions' envOpts =
                       , genPrototype     = False
                       , allInterfaces    = False
                       , runAsDaemon      = False
+                      , daemonConfig     = ".ampersand"
                       , namespace        = ""
                       , testRule         = Nothing
               --        , customCssFile    = Nothing
@@ -445,12 +447,14 @@ options = [ (Option ['v']   ["version"]
                "generate interfaces, which currently does not work."
             , Public)
           , (Option []        ["daemon"]
-               (NoArg (\opts -> opts{runAsDaemon = True}))
-               "Run ampersand as daemon, for use by the vscode ampersand-language-extention."
-            , Hidden)
+               (OptArg (\fn opts -> opts{runAsDaemon = True
+                                        ,daemonConfig = fromMaybe (daemonConfig opts) fn
+                                        })"configfile")
+               "Run ampersand as daemon, for use by the vscode ampersand-language-extention. An optional parameter may be specified to tell what config file is used. This defaults to `.ampersand`."
+            , Public)
           , (Option ['e']     ["export"]
                (OptArg (\mbnm opts -> opts{export2adl = True
-                                                   ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
+                                          ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
                "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
             , Public)
           , (Option []        ["data"]
