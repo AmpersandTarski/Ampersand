@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 81bfa1972b727512826319fdc90663162b6c99c5ca9dbf17f18fae88f25c832f
+-- hash: 3cdd17daa77f5129821b439fe60fc588fe87428b45d10d0b87cd4d6086c0388d
 
 name:           ampersand
 version:        3.16.0
@@ -406,7 +406,7 @@ custom-setup
 flag buildAll
   description: Build both ampersand and ampPreProc.
   manual: True
-  default: False
+  default: True
 
 library
   exposed-modules:

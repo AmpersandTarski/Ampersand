@@ -146,7 +146,7 @@ library:
       - Ampersand.Misc
       - Ampersand.Misc.Options
       - Ampersand.Output
-#      - Ampersand.Output.FSpec2Excel
+      - Ampersand.Output.FSpec2Excel
       - Ampersand.Output.FSpec2Pandoc
       - Ampersand.Output.FSpec2SQL
       - Ampersand.Output.PandocAux

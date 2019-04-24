@@ -4,7 +4,7 @@ module Ampersand.FSpec.FPA (FPA(..), FP(..), FPType(..), ShowLang(..), fpAnalyze
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
 import Ampersand.Basics
-import Data.Maybe
+import qualified RIO.List as L
 
 data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) } deriving Show
 
@@ -79,7 +79,7 @@ fpaInterface ifc =
         getDepth ObjectDef{objmsub=Just si}
           = case si of 
              InterfaceRef{} -> 1
-             Box{}          -> 1 + maximum (map getDepth [x | BxExpr x <- siObjs si])
+             Box{}          -> 1 + (fromMaybe 0 . L.maximumMaybe . map getDepth $ [x | BxExpr x <- siObjs si])
 
 class ShowLang a where
   showLang :: Lang -> a -> String
