@@ -11,8 +11,9 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.TableSpec
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Text as Text
+import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
 
@@ -83,7 +84,7 @@ dumpSQLqueries opts@Options{..} multi
           ,"Conjunct expression:"
           ,"  " <> (Text.pack . showA . rc_conjunct $ conj)
           ,"Rules for this conjunct:"]
-        <>map showRule (Set.elems $ rc_orgRules conj)
+        <>map showRule (NEL.toList $ rc_orgRules conj)
         <>["*/"
           ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF opts . notCpl . rc_conjunct $ conj) <> ";"
           ,""]
@@ -104,7 +105,9 @@ header title =
     , "*/"
     ]
   where 
-    width = maximum [80 , l + 8]
+    width = case L.maximumMaybe [80 , l + 8] of
+              Nothing -> fatal "Impossible"
+              Just l  -> l
     l = Text.length title
     spaces :: Int -> Text.Text
     spaces i = Text.replicate i " "

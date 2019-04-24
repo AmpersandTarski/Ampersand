@@ -76,7 +76,8 @@ instance ShowHS PlugSQL where
    = case plug of
        TblSQL{} -> intercalate indent
                    ["let " ++ intercalate (indent++"    ")
-                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-plugAttributes plug] ++indent++"in"
+                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f 
+                                          | f<-NEL.toList $ plugAttributes plug] ++indent++"in"
                    ,"TblSQL { sqlname    = " ++ (show.name) plug
                    ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
                    ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
@@ -87,7 +88,8 @@ instance ShowHS PlugSQL where
                    ]
        BinSQL{} -> intercalate indent
                    ["let " ++ intercalate (indent++"    ")
-                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-plugAttributes plug] ++indent++"in"
+                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f 
+                                          | f<-NEL.toList $ plugAttributes plug] ++indent++"in"
                    ,"BinSQL { sqlname = " ++ (show.name) plug
                    ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 

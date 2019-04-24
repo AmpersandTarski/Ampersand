@@ -20,6 +20,7 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import           Ampersand.Prototype.ProtoUtil
 import           Data.List
+import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe
 import           Data.String (IsString(fromString))
 import qualified Data.Text as Text
@@ -51,14 +52,14 @@ plug2TableSpec plug
                    ]<> concat
                    [ [showA (attExpr x)
                      ]
-                   | x <- plugAttributes plug
+                   | x <- NEL.toList $ plugAttributes plug
                    ]
      , tsName = name plug
-     , tsflds = map fld2AttributeSpec $ plugAttributes plug
-     , tsKey  = case (plug, (head.plugAttributes) plug) of
+     , tsflds = NEL.toList . fmap fld2AttributeSpec $ plugAttributes plug
+     , tsKey  = case (plug, (NEL.head . plugAttributes) plug) of
                  (BinSQL{}, _)   -> if all (suitableAsKey . attType) (plugAttributes plug)
                                     then "PRIMARY KEY (" 
-                                            <> intercalate ", " (map (show . attName) (plugAttributes plug))
+                                            <> intercalate ", " (NEL.toList $ fmap (show . attName) (plugAttributes plug))
                                             <> ")"
                                     else ""
                  (TblSQL{}, primFld) ->
@@ -131,20 +132,20 @@ fld2AttributeSpec att
 insertQuery :: SomeValue val =>
        Bool          -- prettyprinted?
     -> Text.Text     -- The name of the table
-    -> [Text.Text]   -- The names of the attributes
+    -> NEL.NonEmpty Text.Text   -- The names of the attributes
     -> [[Maybe val]] -- The rows to insert
     -> SqlQuery
 insertQuery withComments tableName attNames tblRecords
   | withComments = SqlQueryPretty $
      [ "INSERT INTO "<>doubleQuote tableName
-     , "   ("<>Text.intercalate ", " (map doubleQuote attNames) <>")"
+     , "   ("<>Text.intercalate ", " (NEL.toList $ fmap doubleQuote attNames) <>")"
      , "VALUES " 
      ]
    <> (Text.lines . ("   "<>) .Text.intercalate "\n , " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
    <> [""]
   | otherwise = SqlQueryPlain $
         "INSERT INTO "<>doubleQuote tableName
-     <> " ("<>Text.intercalate ", " (map doubleQuote attNames) <>")"
+     <> " ("<>Text.intercalate ", " (NEL.toList $ fmap  doubleQuote attNames) <>")"
      <> " VALUES "
      <> (Text.intercalate ", " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
   where

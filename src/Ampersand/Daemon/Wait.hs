@@ -16,7 +16,6 @@ import qualified Data.Set as Set
 import Control.Monad.Extra(partitionM,filterM,concatMapM,forM,ifM,void,when,firstJustM)
 import Data.List.Extra(isPrefixOf)
 import System.FilePath
---import Control.Exception.Extra(handle)
 import System.Directory.Extra(doesDirectoryExist,listContents,canonicalizePath)
 import Data.Time.Clock
 import Data.String

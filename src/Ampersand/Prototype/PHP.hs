@@ -13,7 +13,6 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
---import           Control.Exception
 import           Data.List
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
@@ -260,5 +259,5 @@ createTempDatabase opts@Options{..} fSpec =
                 ):["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
                where query = insertQuery True tableName attrNames tblRecords
                      tableName = Text.pack . name $ plug
-                     attrNames = map (Text.pack . attName) . plugAttributes $ plug
+                     attrNames = fmap (Text.pack . attName) . plugAttributes $ plug
            

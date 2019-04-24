@@ -4,7 +4,7 @@ module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
 import Ampersand.Output.ToPandoc
 import Data.Time.Format                                       (formatTime)
-import Data.List                                              (nub)
+import qualified RIO.List as L
 import Text.Pandoc.CrossRef
 
 --DESCR ->
@@ -88,7 +88,7 @@ fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
                                ( NL "Diagnose van "
                                , EN "Diagnosis of ")
                       ) <> (singleQuoted.text.name) fSpec
-                titles -> (text.concat.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
+                titles -> (text . concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
            )
       . setAuthors ( 
            case metaValues "authors" fSpec of
@@ -96,7 +96,7 @@ fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
                     ( NL "Specificeer auteurs in Ampersand met: META \"authors\" \"<auteursnamen>\""
                     , EN "Specify authors in Ampersand with: META \"authors\" \"<author names>\"")
                    ] 
-             xs -> map text $ nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
+             xs -> fmap text $ L.nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
 
         )
       . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime)))
@@ -105,7 +105,7 @@ fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
     thePictures = concat picturesByChapter
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (blocksByChapter, picturesByChapter) = unzip . map fspec2Blocks . chaptersInDoc $ opts
+    (blocksByChapter, picturesByChapter) = L.unzip . map fspec2Blocks . chaptersInDoc $ opts
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
     fspec2Blocks Intro                 = (chpIntroduction       opts    fSpec, [])

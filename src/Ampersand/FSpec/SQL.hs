@@ -1071,7 +1071,8 @@ sqlConceptPlug fSpec c
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c | c==ONE = QName "ONE"
                       | otherwise
-             = case [name f |f<-plugAttributes (sqlConceptPlug fSpec c), c'<-Set.elems $ concs f,c==c'] of
+             = case [name f |f<-NEL.toList $ plugAttributes (sqlConceptPlug fSpec c)
+                    , c'<-Set.elems $ concs f,c==c'] of
                 [] -> fatal ("A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\"")
                 h:_ -> QName h
 

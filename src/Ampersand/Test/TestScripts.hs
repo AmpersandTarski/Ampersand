@@ -1,16 +1,6 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
 module Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
 
---import Data.List
---import Data.Char(toUpper)
---import System.FilePath ((</>),takeExtension)
---import Control.Monad --(filterM, forM_, foldM,when)
---import Control.Exception.Base
---import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
---import Control.Monad.Trans.Class (lift)
---import Data.Conduit
---import Ampersand.Test.RunAmpersand (ampersand)
---import Ampersand.Input.ADL1.CtxError
 
 import Ampersand.Basics
 --endswith :: String -> String -> Bool

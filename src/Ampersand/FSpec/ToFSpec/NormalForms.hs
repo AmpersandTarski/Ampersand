@@ -676,11 +676,6 @@ data DerivStep = DStep { lhs :: RTerm
                        , rhs :: RTerm
                        }
 
--- instance Show DerivStep where
---  showsPrec _ r@DStep{}  = showString ("    "++showIT (lhs r)++"\n =  {" ++show (rul r)++"}\n    " ++showIT (rhs r))
-
-
-
 dRule :: Term TermPrim -> [DerivRule]
 dRule (PEqu _ l r) = [DEquiR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule (PInc _ l r) = [DInclR { lTerm=term2rTerm l, rTerm=term2rTerm r }]

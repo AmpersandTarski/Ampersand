@@ -9,7 +9,8 @@ import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           Data.Char
 import           Data.Function (on)
-import           Data.List
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 
 ------------------------------------------------------------
@@ -99,7 +100,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                                )
        <> conceptTable True
        <> conceptTable False
-       <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
+       <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (classes oocd)))
 
   logicalDataModelPicture = makePicture fSpec PTLogicalDM
 
@@ -132,9 +133,9 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                )
            , mempty
            ]
-         | c <- sortBy (compare `on` name) 
+         | c <- L.sortBy (compare `on` name) 
               . filter keyFilter 
-              . delete ONE 
+              . L.delete ONE 
               . Set.elems 
               $ concs fSpec
          ]
@@ -252,7 +253,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
         Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
         English -> text ("The technical datamodel consists of the following "++show nrOfTables++" tables:")
             )
-    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
+    <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
    where
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
@@ -286,8 +287,8 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                        )
                      <> showAttributes (plugAttributes bin)
 
-      showAttributes :: [SqlAttribute] -> Blocks
-      showAttributes atts = bulletList (map showAttribute atts)
+      showAttributes :: NEL.NonEmpty SqlAttribute -> Blocks
+      showAttributes = bulletList . NEL.toList . fmap showAttribute
         where
           showAttribute att =
                 para (  (strong.text.attName) att

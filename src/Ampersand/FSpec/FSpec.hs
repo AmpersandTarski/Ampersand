@@ -261,14 +261,16 @@ instance Unique PlugSQL where
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
-plugAttributes :: PlugSQL->[SqlAttribute]
+plugAttributes :: PlugSQL-> NEL.NonEmpty SqlAttribute
 plugAttributes plug = case plug of
-    TblSQL{}    -> attributes plug
+    TblSQL{}    -> case attributes plug of
+                     [] -> fatal "attributes should contain at least one element" -- FIXME: change type of attributes to  attributes :: NEL.NonEmpty SqlAttribute
+                     h:tl -> h NEL.:| tl
     BinSQL{}    -> let store = case dLkpTbl plug of
                          [x] -> x
                          _   -> fatal $ "Relation lookup table of a binary table should contain exactly one element:\n" ++
                                             show (dLkpTbl plug)
-                   in [rsSrcAtt store,rsTrgAtt store]
+                   in rsSrcAtt store NEL.:| [rsTrgAtt store]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated

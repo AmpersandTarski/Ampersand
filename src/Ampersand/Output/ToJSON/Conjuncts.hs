@@ -7,8 +7,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import           Ampersand.Output.ToJSON.JSONutils 
-import qualified Data.List.NonEmpty as NEL (toList)
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL
 
 data Conjuncts = Conjuncts [JSONConjunct] deriving (Generic, Show)
 data JSONConjunct = JSONConjunct

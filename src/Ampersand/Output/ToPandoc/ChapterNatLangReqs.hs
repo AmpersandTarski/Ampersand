@@ -7,9 +7,9 @@ module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           Data.Char hiding (Space)
-import           Data.List
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
 import           Data.List.Split(splitOn)
-import           Data.Maybe
 import qualified Data.Set as Set
 
 chpNatLangReqs :: Options -> Int -> FSpec -> Blocks
@@ -49,7 +49,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                      [(AlignLeft,1/4),(AlignLeft,3/4)]
                      [plain lawHeader, plain articleHeader]  --headers
                      [ [(para.str.aOlLaw) art  , (para.str.unscanRef.aOlArt) art]
-                     | art <-(sort.nub.concatMap getArticlesOfLaw.getRefs) fSpec  ]
+                     | art <-(L.sort . L.nub . concatMap getArticlesOfLaw.getRefs) fSpec  ]
 
          where (sectionTitle, lawHeader, articleHeader, caption') =
                  case fsLang fSpec of
@@ -154,7 +154,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
         where
-         nubByText = nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
+         nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
          printCDef :: ConceptDef -- the definition to print
                 -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
                 -> Blocks
@@ -271,12 +271,16 @@ toLawRef:: String -> Maybe LawRef
 toLawRef s = case s of
               [] -> Nothing
               _  -> (Just . LawRef) s
-
+wordsOf :: LawRef -> NEL.NonEmpty String
+wordsOf ref = case words . lawRef $ ref of
+                [] -> fatal $ "string in LaWRef must not be empty."
+                h:tl -> h NEL.:| tl
 -- the article is everything but the law (and we also drop any trailing commas)
 getArticlesOfLaw :: LawRef -> [ArticleOfLaw]
-getArticlesOfLaw ref = map buildLA  ((splitOn ", ".unwords.init.words.lawRef) ref)
+getArticlesOfLaw ref = map buildLA . splitOn ", " . unwords .NEL.init .wordsOf $ ref
+                             
    where
-     buildLA art = ArticleOfLaw ((last.words.lawRef) ref) (scanRef art)
+     buildLA art = ArticleOfLaw ((NEL.last . wordsOf) ref) (scanRef art)
        where
     -- group string in number and text sequences, so "Art 12" appears after "Art 2" when sorting (unlike in normal lexicographic string sort)
          scanRef :: String -> [Either String Int]
@@ -289,7 +293,10 @@ getArticlesOfLaw ref = map buildLA  ((splitOn ", ".unwords.init.words.lawRef) re
 
          scanRefInt "" = []
          scanRefInt str' = let (digits, rest) = span isDigit str'
-                           in  Right (read digits) : scanRefTxt rest
+                           in  Right (case readMaybe digits of
+                                        Nothing  -> fatal $ "Impossible: This cannot be interpreted as digits: "<> digits
+                                        Just x -> x
+                                     ) : scanRefTxt rest
 
 instance Ord ArticleOfLaw where
  compare a b =
