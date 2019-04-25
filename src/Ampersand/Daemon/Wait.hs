@@ -10,20 +10,19 @@ module Ampersand.Daemon.Wait(
   , waitFiles
 ) where
 
-import Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
+import           Ampersand.Basics
+import           Ampersand.Daemon.Daemon.Util
+import           Ampersand.Misc
+import           Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
+import           Control.Monad.Extra(partitionM,concatMapM,ifM,firstJustM)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Control.Monad.Extra(partitionM,filterM,concatMapM,forM,ifM,void,when,firstJustM)
-import Data.List.Extra(isPrefixOf)
-import System.FilePath
-import System.Directory.Extra(doesDirectoryExist,listContents,canonicalizePath)
-import Data.Time.Clock
-import Data.String
-import System.Time.Extra(Seconds,sleep)
-import System.FSNotify
-import Ampersand.Daemon.Daemon.Util
-import Ampersand.Basics
-import Ampersand.Misc
+import           Data.Time.Clock
+import qualified RIO.List as L
+import           System.Directory.Extra(doesDirectoryExist,listContents,canonicalizePath)
+import           System.FilePath
+import           System.FSNotify
+import           System.Time.Extra(Seconds,sleep)
 
 data Waiter = WaiterPoll Seconds
             | WaiterNotify WatchManager (MVar ()) (Var (Map.Map FilePath StopListening))
@@ -66,7 +65,7 @@ waitFiles Options{..} waiter = do
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
         -- will pick up new files, as creating a new file changes the containing directory's modtime.
         files' <- fmap concat $ forM files $ \file ->
-            ifM (doesDirectoryExist file) (listContentsInside (return . not . isPrefixOf "." . takeFileName) file) (return [file])
+            ifM (doesDirectoryExist file) (listContentsInside (return . not . L.isPrefixOf "." . takeFileName) file) (return [file])
         case waiter of
             WaiterPoll _ -> return ()
             WaiterNotify manager kick mp -> do

@@ -6,10 +6,6 @@
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon(runDaemon) where
 
-import Control.Monad.Extra(forever,when,unless)
---import Data.Data
---import Data.List.Extra(nubOrdOn,sortOn,nub,partition)
-import Data.Maybe
 import Data.Ord
 import Data.Tuple.Extra(both)
 import qualified System.Console.Terminal.Size as Term
@@ -18,11 +14,6 @@ import System.Environment
 import System.Directory.Extra(getCurrentDirectory,withCurrentDirectory)
 import System.FilePath
 import System.Info
-import System.IO.Extra( BufferMode(LineBuffering,NoBuffering)
-                      , stdout,stderr
-                      , putStrLn, putStr
-                      
-                      )
 import qualified RIO.List as L
 import Ampersand.Basics (ampersandVersionWithoutBuildTimeStr)
 import Ampersand.Basics.Exit

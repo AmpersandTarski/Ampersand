@@ -28,7 +28,6 @@ import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Input.ADL1.LexerMonad
 import           Ampersand.Input.ADL1.LexerToken
 import           Ampersand.Misc
-import           Control.Monad (when)
 import           Data.Char hiding(isSymbol)
 import qualified RIO.List as L
 import qualified Data.Set as Set -- (member, fromList)

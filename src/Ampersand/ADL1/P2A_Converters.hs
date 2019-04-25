@@ -18,7 +18,6 @@ import           Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Control.Arrow(first)
-import           Control.Monad (join)
 import           Data.Char(toUpper,toLower)
 import           Data.Foldable (toList)
 import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))

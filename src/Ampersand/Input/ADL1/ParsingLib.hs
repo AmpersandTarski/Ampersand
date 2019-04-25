@@ -25,7 +25,6 @@ module Ampersand.Input.ADL1.ParsingLib(
 import           Ampersand.Basics hiding ((<$),(<|>),many,try)
 import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
 import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
-import           Control.Monad.Identity (Identity)
 import qualified Control.Applicative as CA
 import           Data.Char(toLower)
 import qualified Data.Functor as DF

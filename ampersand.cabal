@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3cdd17daa77f5129821b439fe60fc588fe87428b45d10d0b87cd4d6086c0388d
+-- hash: 4393e65237b2d8d2e6c57a14f261f63a24d96d2dd15916b3ab8d15ef126ca66c
 
 name:           ampersand
 version:        3.16.0
@@ -406,7 +406,7 @@ custom-setup
 flag buildAll
   description: Build both ampersand and ampPreProc.
   manual: True
-  default: True
+  default: False
 
 library
   exposed-modules:
@@ -473,6 +473,7 @@ library
       Ampersand.Misc
       Ampersand.Misc.Options
       Ampersand.Output
+      Ampersand.Output.FSpec2Excel
       Ampersand.Output.FSpec2Pandoc
       Ampersand.Output.FSpec2SQL
       Ampersand.Output.PandocAux
@@ -518,7 +519,6 @@ library
       Ampersand.Daemon.Daemon.Util
       Ampersand.Daemon.Wait
       Ampersand.FSpec.FPA
-      Ampersand.Output.FSpec2Excel
       Ampersand.Output.PredLogic
       Ampersand.Output.Statistics
       Ampersand.Test.RunAmpersand
