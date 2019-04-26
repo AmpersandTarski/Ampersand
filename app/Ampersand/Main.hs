@@ -2,7 +2,7 @@
 module Main(main) where
 
 import           Ampersand
-import           Data.List
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL (toList)
 import System.Environment    (getArgs, getProgName)
 
@@ -16,7 +16,7 @@ main =
             ; gMulti <- createMulti opts
             ; case gMulti of
                 Errors err    -> 
-                   exitWith . NoValidFSpec . intersperse  (replicate 30 '=') 
+                   exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
                  . fmap show . NEL.toList $ err
                 Checked multi ws -> do
                    mapM_  putStrLn . concatMap (lines . show) $ ws

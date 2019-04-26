@@ -11,7 +11,8 @@ import           Ampersand.Input.ADL1.Lexer(keywords)
 import           Data.Char (toUpper)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import           Data.List.Utils (replace)
+import qualified RIO.Text as T
+import           RIO.Text.Partial (replace)  --TODO: Get rid of replace, because it is partial
 import qualified Data.Set as Set
 import           Text.PrettyPrint.Leijen
 
@@ -42,7 +43,7 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
               escapeCommentStart = escape "{-"
               escapeLineComment = escape "--"
               escapeExplEnd = escape "+}"
-              escape x = replace x (L.intersperse ' ' x)
+              escape x = replace' x (L.intersperse ' ' x)
 
 isId :: String -> Bool
 isId xs = 
@@ -81,7 +82,7 @@ separate d xs = encloseSep empty empty (text d) $ map pretty xs
 --TODO: This replace shouldn't be necessary, I don't know why quotes are getting into the Prel
 -- Example to test: AmpersandData\FormalAmpersand\AST.adl
 takeQuote :: String -> String
-takeQuote = replace "\"" ""
+takeQuote = replace' "\"" ""
 
 instance Pretty P_Context where
     pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops metas) =
@@ -394,5 +395,9 @@ instance Pretty PAtomValue where
        ScriptDateTime _ x -> text . show $ x
 
 
-
+replace' :: String -> String -> String -> String
+replace' needle replacement haystack =
+   case needle of 
+     [] -> fatal "Empty needle."
+     _  -> T.unpack $ replace (T.pack needle) (T.pack replacement) (T.pack haystack)
 

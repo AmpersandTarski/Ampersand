@@ -346,7 +346,7 @@ assemble expr
       res = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
      -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
       frels :: Var -> Var -> [PredLogic]
-      frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]
+      frels src trg = [r v w | ((r,_,_),v,w)<-L.zip3 res' (src: ivs) (ivs++[trg]) ]
      -- Step 3: compute the intermediate variables and their types
       res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
       res' = [triple | triple<-res, not (atomic triple)]
@@ -401,7 +401,7 @@ assemble expr
              if null x then fatal "Entering in an empty foldr1" else x
      -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
       frels :: Var -> Var -> [PredLogic]
-      frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]
+      frels src trg = [r v w | ((r,_,_),v,w)<-L.zip3 res' (src: ivs) (ivs++[trg]) ]
      -- Step 3: compute the intermediate variables and their types
       res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
       res' = [triple | triple<-res, not (atomic triple)]
