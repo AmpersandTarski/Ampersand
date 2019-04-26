@@ -3,7 +3,7 @@ module Ampersand.Basics.Prelude
   , module RIO
   , writeFile
   , readUTF8File
-  , zip3, zipWith
+  , zipWith
   , openTempFile
   )where
 import Prelude (putStrLn,putStr,reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
@@ -27,13 +27,6 @@ readUTF8File fp = (Right . show <$> readFileUtf8 fp) `catch` handler
   where 
      handler :: IOException -> IO (Either String String)
      handler err = return . Left . show $ err
--- | 'zip3' takes three lists and returns a list of triples, analogous to
--- 'zip'.
-zip3 :: [a] -> [b] -> [c] -> [(a,b,c)]
--- Specification
--- zip3 =  zipWith3 (,,)
-zip3 (a:as) (b:bs) (c:cs) = (a,b,c) : zip3 as bs cs
-zip3 _      _      _      = []
 
 zipWith :: (a->b->c) -> [a]->[b]->[c]
 zipWith fun = go

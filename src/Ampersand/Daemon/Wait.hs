@@ -95,10 +95,10 @@ waitFiles Options{..} waiter = do
                     takeMVar kick
                     verboseLn "%WAITING: Notify signaled"
             new <- mapM getModTime files
-            case [x | (x,t1,t2) <- zip3 files old new, t1 /= t2] of
+            case [x | (x,t1,t2) <- L.zip3 files old new, t1 /= t2] of
                 [] -> recheck files new
                 xs -> do
-                    let disappeared = [x | (x, Just _, Nothing) <- zip3 files old new]
+                    let disappeared = [x | (x, Just _, Nothing) <- L.zip3 files old new]
                     when (disappeared /= []) $ do
                         -- if someone is deleting a needed file, give them some space to put the file back
                         -- typically caused by VIM
@@ -108,7 +108,7 @@ waitFiles Options{..} waiter = do
                         void $ flip firstJustM (replicate 20 ()) $ \_ -> do
                             sleep 0.05
                             new' <- mapM getModTime files
-                            return $ if null [x | (x, Just _, Nothing) <- zip3 files old new'] then Just () else Nothing
+                            return $ if null [x | (x, Just _, Nothing) <- L.zip3 files old new'] then Just () else Nothing
                     return xs
 
 
