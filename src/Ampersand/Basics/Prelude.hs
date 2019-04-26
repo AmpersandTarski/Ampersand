@@ -9,7 +9,7 @@ module Ampersand.Basics.Prelude
 import Prelude (putStrLn,putStr,reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import RIO
 import System.IO (openTempFile)
-
+import qualified RIO.Text as T
 -- import Debug.Trace
 -- import Prelude hiding ( 
 --                    getContents
@@ -23,7 +23,7 @@ import System.IO (openTempFile)
 writeFile :: FilePath -> String -> IO ()
 writeFile fp x = writeFileUtf8 fp . tshow $ x
 readUTF8File :: FilePath -> IO (Either String String)
-readUTF8File fp = (Right . show <$> readFileUtf8 fp) `catch` handler
+readUTF8File fp = (Right . T.unpack <$> readFileUtf8 fp) `catch` handler
   where 
      handler :: IOException -> IO (Either String String)
      handler err = return . Left . show $ err
