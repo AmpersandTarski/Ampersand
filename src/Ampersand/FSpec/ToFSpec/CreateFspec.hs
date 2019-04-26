@@ -172,7 +172,18 @@ analyse pCtx
            domR = Set.mapMonotonic ppLeft popR   --  The use of `mapMonotonic :: (a->b) -> Set a -> Set b` requires that ppLeft is strictly increasing.
            codR = Set.mapMonotonic ppRight popR
            isUni = null [ () | pair0<-Set.toList popR, pair1<-Set.toList popR, ppLeft pair0==ppLeft pair1, ppRight pair0/=ppRight pair1]
-           --isUni'= isNull 
+           isUni'= null [(pair0,pair1) | (pair0,pair1) <- Set.toList $ Set.cartesianProduct popR popR
+                                       , equalLefts (pair0,pair1)
+                                       , not . equalRights $ (pair0,pair1)
+                                       ]
+         --  isUni'' = isNull . filter (not . equalRights) . filter equalLefts $ [(pair0,pair1) | pair0 <-Set.toList popR, pair1 <-Set.toList popR]
+           
+           isUni5 :: Set.Set PAtomPair -> Bool
+           isUni5 x = null . Set.filter (not . equalRights) . Set.filter equalLefts $ Set.cartesianProduct x x
+           equalLefts, equalRights :: (PAtomPair,PAtomPair) -> Bool
+           equalLefts  (a,b) = ppLeft a == ppLeft b
+           equalRights (a,b) = ppRight a == ppLeft b
+           
            isTot = popS `Set.isSubsetOf` domR
            isInj = null [ () | pair0<-Set.toList popR, pair1<-Set.toList popR, ppRight pair0==ppRight pair1, ppLeft pair0/=ppLeft pair1]
            isSur = popT `Set.isSubsetOf` codR
