@@ -457,10 +457,10 @@ options = [ (Option ['v']   ["version"]
                                           ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
                "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
             , Public)
-          , (Option []        ["data"]
+          , (Option ['D']        ["dataAnalysis"]
                (OptArg (\mbnm opts -> opts{dataAnalysis = True
-                                                   ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
-               "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
+                                                   ,outputfile = fromMaybe "DataModel.adl" mbnm}) "file")
+               "export a data model as plain Ampersand script, for analysing Excel-data."
             , Public)
           , (Option ['o']     ["outputDir"]
                (ReqArg (\nm opts -> opts{dirOutput = nm}

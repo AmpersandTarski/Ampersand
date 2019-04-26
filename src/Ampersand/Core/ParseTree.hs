@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric, DuplicateRecordFields,OverloadedLabels  #-}
 module Ampersand.Core.ParseTree (
-     P_Context(..), mergeContexts, mkContextOfPopsOnly, mkContextDataAnalysis
+     P_Context(..), mergeContexts
    , Meta(..)
    , MetaObj(..)
    , P_RoleRelation(..)
@@ -208,7 +208,7 @@ data P_Relation =
 --   For this reason, equality in the P-structure is defined on origin.
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
---   As a consequence, name and signature are always sufficient knowledge to determine the equality of P_Relations.
+--   The only reason for having Ord P_Relation is to represent sets of P_Relations by Data.Set
 instance Eq P_Relation where
  decl==decl' = compare decl decl' == EQ
 instance Ord P_Relation where
@@ -837,63 +837,15 @@ mergeContexts ctx1 ctx2 =
       , ctx_pops   = nubSortConcatMap ctx_pops contexts
       , ctx_metas  = nubSortConcatMap ctx_metas contexts
       }
-    where contexts = [ctx1,ctx2]
-
-nubSortConcatMap :: Ord b => (a -> [b]) -> [a] -> [b]
-nubSortConcatMap f = Set.toList 
-                   . Set.unions 
-                   . map Set.fromList 
-                   . map f
-
--- | To enable roundtrip testing, all data can be exported. For this purpose mkContextOfPopsOnly
--- exports the data
-mkContextOfPopsOnly :: [P_Population] -> P_Context
-mkContextOfPopsOnly pops =
-  PCtx{ ctx_nm     = ""
-      , ctx_pos    = []
-      , ctx_lang   = Nothing
-      , ctx_markup = Nothing
-      , ctx_pats   = []
-      , ctx_rs     = []
-      , ctx_ds     = []
-      , ctx_cs     = []
-      , ctx_ks     = []
-      , ctx_rrules = []
-      , ctx_rrels  = []
-      , ctx_reprs  = []
-      , ctx_vs     = []
-      , ctx_gs     = []
-      , ctx_ifcs   = []
-      , ctx_ps     = []
-      , ctx_pops   = pops
-      , ctx_metas  = []
-      }
-
-mkContextDataAnalysis :: [P_Population] -> P_Context
-mkContextDataAnalysis pops =
-  PCtx{ ctx_nm     = ""
-      , ctx_pos    = []
-      , ctx_lang   = Nothing
-      , ctx_markup = Nothing
-      , ctx_pats   = []
-      , ctx_rs     = []
-      , ctx_ds     = [ P_Sgn{dec_nm=name pop, dec_sign=P_Sign (PCpt src') (PCpt tgt'), dec_prps=Set.fromList [], dec_pragma=[], dec_Mean=[], pos=origin pop }
-                     | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-pops, Just src'<-[src], Just tgt'<-[tgt]]
-      , ctx_cs     = [ Cd{pos=origin pop, cdcpt=p_cnme pop, cddef="", cdref="", cdfrom=""}
-                     | pop@P_CptPopu{}<-pops]
-      , ctx_ks     = []
-      , ctx_rrules = []
-      , ctx_rrels  = []
-      , ctx_reprs  = []
-      , ctx_vs     = []
-      , ctx_gs     = []
-      , ctx_ifcs   = []
-      , ctx_ps     = []
-      , ctx_pops   = pops
-      , ctx_metas  = []
-      }
--- | Left-biased choice on maybes
-orElse :: Maybe a -> Maybe a -> Maybe a
-x `orElse` y = case x of
-                 Just _  -> x
-                 Nothing -> y
+    where
+      contexts = [ctx1,ctx2]
+      nubSortConcatMap :: Ord b => (a -> [b]) -> [a] -> [b]
+      nubSortConcatMap f = Set.toList 
+                         . Set.unions 
+                         . map Set.fromList 
+                         . map f
+      -- | Left-biased choice on maybes
+      orElse :: Maybe a -> Maybe a -> Maybe a
+      x `orElse` y = case x of
+                       Just _  -> x
+                       Nothing -> y

@@ -1,4 +1,0 @@
-:set -fwarn-unused-binds -fwarn-unused-imports -fwarn-orphans -fwarn-incomplete-patterns -ferror-spans
-:set -isrc
-:load Main
-:set prompt "ghci> "

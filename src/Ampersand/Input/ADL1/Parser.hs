@@ -473,7 +473,7 @@ pObjDef = pBoxItem <$> currPos
     pObj :: AmpParser (P_BoxItemTermPrim)
     pObj = obj     <$> pTerm            -- the context expression (for example: I[c])
                    <*> pMaybe pCruds
-                   <*> pMaybe (pChevrons pConid) --for the views
+                   <*> pMaybe (pChevrons pConid) --for the view
                    <*> pMaybe pSubInterface  -- the optional subinterface
           where obj ctx mCrud mView msub =
                   P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."

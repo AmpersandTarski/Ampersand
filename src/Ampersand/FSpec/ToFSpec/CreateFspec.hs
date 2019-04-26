@@ -118,4 +118,61 @@ createMulti opts@Options{..} =
         Errors err -> return (Errors err)
 
 pCtx2Fspec :: Options -> Guarded P_Context -> Guarded FSpec
-pCtx2Fspec opts c = makeFSpec opts <$> join (pCtx2aCtx opts <$> c)
+pCtx2Fspec opts c = makeFSpec opts <$> join (pCtx2aCtx opts <$> encloseInConstraints opts c)
+
+encloseInConstraints :: Options -> Guarded P_Context -> Guarded P_Context
+encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked (analyse pCtx) warnings
+encloseInConstraints _ gCtx = gCtx
+
+analyse :: P_Context -> P_Context
+analyse pCtx
+ = PCtx{ ctx_nm     = ctx_nm     pCtx
+       , ctx_pos    = ctx_pos    pCtx
+       , ctx_lang   = ctx_lang   pCtx
+       , ctx_markup = ctx_markup pCtx
+       , ctx_pats   = ctx_pats   pCtx
+       , ctx_rs     = ctx_rs     pCtx
+       , ctx_ds     = [ rel{dec_prps = computeProps rel}
+                      | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx, Just src'<-[src], Just tgt'<-[tgt]
+                      , rel<-[P_Sgn{dec_nm=name pop, dec_sign=P_Sign (PCpt src') (PCpt tgt'), dec_prps=Set.fromList [], dec_pragma=[], dec_Mean=[], pos=origin pop }]
+                      , signature rel `notElem` map signature (ctx_ds pCtx)] ++
+                      ctx_ds pCtx
+       , ctx_cs     = [ c
+                      | pop@P_CptPopu{}<-ctx_pops pCtx
+                      , c<-[Cd{pos=origin pop, cdcpt=p_cnme pop, cddef="", cdref="", cdfrom=""}]
+                      , name c `notElem` map name (ctx_cs pCtx)] ++
+                      ctx_cs pCtx
+       , ctx_ks     = ctx_ks     pCtx
+       , ctx_rrules = ctx_rrules pCtx
+       , ctx_rrels  = ctx_rrels  pCtx
+       , ctx_reprs  = ctx_reprs  pCtx
+       , ctx_vs     = ctx_vs     pCtx
+       , ctx_gs     = ctx_gs     pCtx
+       , ctx_ifcs   = ctx_ifcs   pCtx
+       , ctx_ps     = ctx_ps     pCtx
+       , ctx_pops   = ctx_pops   pCtx
+       , ctx_metas  = ctx_metas  pCtx
+       }
+    where
+      signature :: P_Relation -> (String, P_Sign)
+      signature rel =(name rel, dec_sign rel)
+      pops = ctx_pops pCtx
+      computeProps rel
+       = Set.fromList ([ Uni | isUni ]++[ Tot | isTot ]++[ Inj | isInj ]++[ Sur | isSur ])
+          where
+           sgn  = dec_sign rel
+           s = pSrc sgn; t = pTgt sgn
+           popS = Set.fromList (concat [ p_popas pop | pop@P_CptPopu{}<-pops, name s==name pop ])
+           popT = Set.fromList (concat [ p_popas pop | pop@P_CptPopu{}<-pops, name t==name pop ])
+           popR = (Set.fromList . concat)
+                  [ p_popps pop
+                  | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-pops, Just src'<-[src], Just tgt'<-[tgt]
+                  , name rel==name pop, src'==name s, tgt'==name t
+                  ]
+           domR = Set.mapMonotonic ppLeft popR   --  The use of `mapMonotonic :: (a->b) -> Set a -> Set b` requires that ppLeft is strictly increasing.
+           codR = Set.mapMonotonic ppRight popR
+           isUni = null [ () | pair0<-Set.toList popR, pair1<-Set.toList popR, ppLeft pair0==ppLeft pair1, ppRight pair0/=ppRight pair1]
+           --isUni'= isNull 
+           isTot = popS `Set.isSubsetOf` domR
+           isInj = null [ () | pair0<-Set.toList popR, pair1<-Set.toList popR, ppRight pair0==ppRight pair1, ppLeft pair0/=ppLeft pair1]
+           isSur = popT `Set.isSubsetOf` codR
