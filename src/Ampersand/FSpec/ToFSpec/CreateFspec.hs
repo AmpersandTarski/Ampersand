@@ -137,11 +137,7 @@ analyse pCtx
                       , rel<-[P_Sgn{dec_nm=name pop, dec_sign=P_Sign (PCpt src') (PCpt tgt'), dec_prps=Set.fromList [], dec_pragma=[], dec_Mean=[], pos=origin pop }]
                       , signature rel `notElem` map signature (ctx_ds pCtx)] ++
                       ctx_ds pCtx
-       , ctx_cs     = [ c
-                      | pop@P_CptPopu{}<-ctx_pops pCtx
-                      , c<-[Cd{pos=origin pop, cdcpt=p_cnme pop, cddef="", cdref="", cdfrom=""}]
-                      , name c `notElem` map name (ctx_cs pCtx)] ++
-                      ctx_cs pCtx
+       , ctx_cs     = ctx_cs pCtx
        , ctx_ks     = ctx_ks     pCtx
        , ctx_rrules = ctx_rrules pCtx
        , ctx_rrels  = ctx_rrels  pCtx
@@ -150,29 +146,48 @@ analyse pCtx
        , ctx_gs     = ctx_gs     pCtx
        , ctx_ifcs   = ctx_ifcs   pCtx
        , ctx_ps     = ctx_ps     pCtx
-       , ctx_pops   = ctx_pops   pCtx
+       , ctx_pops   = pops
        , ctx_metas  = ctx_metas  pCtx
        }
     where
       signature :: P_Relation -> (String, P_Sign)
       signature rel =(name rel, dec_sign rel)
-      pops = ctx_pops pCtx
+      pops = computePops (ctx_pops pCtx)
+      computePops :: [P_Population] -> [P_Population]
+      computePops pps
+       = [ P_CptPopu{pos = OriginUnknown, p_cnme = name c, p_popas = nub $
+                         [ atom | cpt@P_CptPopu{}<-pps, name cpt==name c, atom<-p_popas cpt]++
+                         [ ppLeft pair
+                         | pop@P_RelPopu{p_src = src}<-pps, Just src'<-[src], src'==name c
+                         , pair<-p_popps pop]++
+                         [ ppRight pair
+                         | pop@P_RelPopu{p_tgt = tgt}<-pps, Just tgt'<-[tgt], tgt'==name c
+                         , pair<-p_popps pop]}
+         | c<-nub $
+              [ PCpt (name pop) | pop@P_CptPopu{}<-ctx_pops pCtx] ++
+              [ PCpt src' | P_RelPopu{p_src = src}<-pps, Just src'<-[src]] ++
+              [ PCpt tgt' | P_RelPopu{p_tgt = tgt}<-pps, Just tgt'<-[tgt]]
+         ]
+      computeProps :: P_Relation -> Set.Set Prop
       computeProps rel
-       = Set.fromList ([ Uni | isUni ]++[ Tot | isTot ]++[ Inj | isInj ]++[ Sur | isSur ])
+       = Set.fromList ([ Uni | isUni popR]++[ Tot | isTot ]++[ Inj | isInj popR ]++[ Sur | isSur ])
           where
            sgn  = dec_sign rel
            s = pSrc sgn; t = pTgt sgn
-           popS = Set.fromList (concat [ p_popas pop | pop@P_CptPopu{}<-pops, name s==name pop ])
-           popT = Set.fromList (concat [ p_popas pop | pop@P_CptPopu{}<-pops, name t==name pop ])
-           popR = (Set.fromList . concat)
-                  [ p_popps pop
+           popu :: P_Concept -> Set.Set PAtomValue
+           popu c = (Set.fromList . concat .map p_popas) [ pop | pop@P_CptPopu{}<-pops, name c==name pop ]
+           popR :: Set.Set PAtomPair
+           popR = (Set.fromList . concat. map p_popps )
+                  [ pop
                   | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-pops, Just src'<-[src], Just tgt'<-[tgt]
                   , name rel==name pop, src'==name s, tgt'==name t
                   ]
            domR = Set.mapMonotonic ppLeft popR   --  The use of `mapMonotonic :: (a->b) -> Set a -> Set b` requires that ppLeft is strictly increasing.
            codR = Set.mapMonotonic ppRight popR
            equal f (a,b) = f a == f b
+           isUni :: Set.Set PAtomPair -> Bool
            isUni x = null . Set.filter (not . equal ppRight) . Set.filter (equal ppLeft) $ Set.cartesianProduct x x
-           isTot = popS `Set.isSubsetOf` domR
+           isTot = popu s `Set.isSubsetOf` domR
+           isInj :: Set.Set PAtomPair -> Bool
            isInj x = null . Set.filter (not . equal ppLeft) . Set.filter (equal ppRight) $ Set.cartesianProduct x x
-           isSur = popT `Set.isSubsetOf` codR
+           isSur = popu t `Set.isSubsetOf` codR
