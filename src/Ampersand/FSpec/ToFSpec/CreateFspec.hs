@@ -110,7 +110,8 @@ createMulti opts@Options{..} =
          userGFSpec = 
             pCtx2Fspec opts $ 
               if useSystemContext
-              then mergeContexts <$> userPlus <*> (grind opts sysCModel <$> pCtx2Fspec opts userPlus)  
+              then mergeContexts <$> userPlus
+                                 <*> (grind opts sysCModel <$> pCtx2Fspec opts userPlus)
               else userP_Ctx
            where 
             userPlus :: Guarded P_Context

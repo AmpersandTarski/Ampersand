@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b8a7de99b22a6e5a415955bc0bd51e81b5999f260d52e2daf42a5842f225f528
+-- hash: dd9b1059a52da8378220788b0b2f9016eca9ed43d94b3197f4f874fcb70ad83c
 
 name:           ampersand
 version:        3.16.0
@@ -575,7 +575,7 @@ library
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.3.3
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -633,7 +633,7 @@ executable ampPreProc
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.3.3
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -693,7 +693,7 @@ executable ampersand
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.3.3
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -752,7 +752,7 @@ test-suite ampersand-test
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.3.3
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -811,7 +811,7 @@ test-suite regression-test
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.3.3
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:
