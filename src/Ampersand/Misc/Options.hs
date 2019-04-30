@@ -40,6 +40,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
                        , forceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
+                       , runComposer :: Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
                        , allInterfaces :: Bool
                        , runAsDaemon :: Bool -- run Ampersand as a daemon. (for use with the vscode extension)
                        , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
@@ -214,6 +215,7 @@ getOptions' envOpts =
                       , zwolleVersion    = "development"
                       , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
+                      , runComposer      = True -- by default run Composer (php package manager) when deploying prototype for backward compatibility
                       , dbName           = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
                       , preVersion       = fromMaybe "" $ envPreVersion envOpts
@@ -410,6 +412,10 @@ options = [ (Option ['v']   ["version"]
                        ) "DIRECTORY")
                "copy a directory into the generated prototype, overriding the default directory called 'customizations'."
             , Public)
+          , (Option []      ["skip-composer"]
+               (NoArg (\opts -> opts{runComposer = False}))
+               "skip installing php dependencies (using Composer) for prototype framework."
+            , Hidden)
           , (Option ['d']  ["dbName"]
                (ReqArg (\nm opts -> opts{dbName = if nm == ""
                                                          then dbName opts
