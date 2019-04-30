@@ -19,8 +19,9 @@ CONTEXT PrototypeFramework IN ENGLISH
     ROLE ExecEngine MAINTAINS "Equivalence - InsPair pf_ifcRoles"
     RULE "Equivalence - InsPair pf_ifcRoles": isPublic;V[PF_Interface*Role] |- pf_ifcRoles
     VIOLATION (TXT "{EX} InsPair;pf_ifcRoles;PF_Interface;", SRC I, TXT ";Role;", TGT I)
+    
     ROLE ExecEngine MAINTAINS "Equivalence - DelPair pf_ifcRoles"
-    RULE "Equivalence - DelPair pf_ifcRoles": pf_ifcRoles |- isPublic;V[PF_Interface*Role]
+    RULE "Equivalence - DelPair pf_ifcRoles": isPublic;pf_ifcRoles |- isPublic;V[PF_Interface*Role]
     VIOLATION (TXT "{EX} DelPair;pf_ifcRoles;PF_Interface;", SRC I, TXT ";Role;", TGT I)
 
     RELATION isAPI[PF_Interface*PF_Interface] [PROP]
