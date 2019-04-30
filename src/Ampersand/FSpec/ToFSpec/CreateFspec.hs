@@ -132,12 +132,8 @@ analyse pCtx
        , ctx_markup = ctx_markup pCtx
        , ctx_pats   = ctx_pats   pCtx
        , ctx_rs     = ctx_rs     pCtx
-       , ctx_ds     = [ rel{dec_prps = computeProps rel}
-                      | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx, Just src'<-[src], Just tgt'<-[tgt]
-                      , rel<-[P_Sgn{dec_nm=name pop, dec_sign=P_Sign (PCpt src') (PCpt tgt'), dec_prps=Set.fromList [], dec_pragma=[], dec_Mean=[], pos=origin pop }]
-                      , signature rel `notElem` map signature (ctx_ds pCtx)] ++
-                      ctx_ds pCtx
-       , ctx_cs     = ctx_cs pCtx
+       , ctx_ds     = declaredRelations ++ map computeProps (filter (not.obsolete) (popRelations ++ genericRelations))
+       , ctx_cs     = ctx_cs     pCtx
        , ctx_ks     = ctx_ks     pCtx
        , ctx_rrules = ctx_rrules pCtx
        , ctx_rrels  = ctx_rrels  pCtx
@@ -150,8 +146,38 @@ analyse pCtx
        , ctx_metas  = ctx_metas  pCtx
        }
     where
+      declaredRelations, popRelations, genericRelations :: [P_Relation]
+      declaredRelations = nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
+      popRelations -- all relations that are "invented" using information from the populations
+       = [ rel
+         | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx, Just src'<-[src], Just tgt'<-[tgt]
+         , rel<-[P_Sgn{dec_nm=name pop, dec_sign=P_Sign (PCpt src') (PCpt tgt'), dec_prps=Set.fromList [], dec_pragma=[], dec_Mean=[], pos=origin pop }]
+         , signature rel `notElem` map signature declaredRelations]
+      genericRelations  = nub (map fst relPairs)
+      obsolete rel = signature rel `elem` map signature (concat (map snd relPairs))
+      relPairs :: [(P_Relation,[P_Relation])] -- the relations shared by all generalizations of a concept
+      relPairs
+       = [ ((head crels){dec_sign=P_Sign c tgt},crels)
+         | (c,spcs)<-trace (show invGen) invGen, rels<-eqNmRels, trels<-eqCl (pTgt.dec_sign) rels, tgt<-take 1 [ pTgt (dec_sign r)| r<-trels]
+         , crels<-[[rel| rel@P_Sgn{dec_sign=P_Sign src _}<-trels, src `elem` spcs]]
+         , Set.fromList (map (pSrc.dec_sign) crels) == spcs
+         ]++
+         [ ((head crels){dec_sign=P_Sign src c},crels)
+         | (c,spcs)<-invGen, rels<-eqNmRels, srels<-eqCl (pSrc.dec_sign) rels, src<-[ pSrc (dec_sign r)| r<-take 1 srels]
+         , crels<-[[rel| rel@P_Sgn{dec_sign=P_Sign _ tgt}<-srels, tgt `elem` spcs]]
+         , Set.fromList (map (pTgt.dec_sign) crels) == spcs
+         ]
+      invGen :: [(P_Concept,Set.Set P_Concept)]  -- each pair contains a concept with all of its specializations
+      invGen = [ (fst (head cl), Set.fromList (map snd cl))
+               | cl<-eqCl fst [ (g,specific gen) | gen<-ctx_gs pCtx, g<-NEL.toList (generics gen)]
+               , fst (head cl) `notElem` Set.fromList (map snd cl)]
+      eqNmRels = eqCl name popRelations
       signature :: P_Relation -> (String, P_Sign)
       signature rel =(name rel, dec_sign rel)
+      concepts = nub $
+              [ PCpt (name pop) | pop@P_CptPopu{}<-ctx_pops pCtx] ++
+              [ PCpt src' | P_RelPopu{p_src = src}<-ctx_pops pCtx, Just src'<-[src]] ++
+              [ PCpt tgt' | P_RelPopu{p_tgt = tgt}<-ctx_pops pCtx, Just tgt'<-[tgt]]
       pops = computePops (ctx_pops pCtx)
       computePops :: [P_Population] -> [P_Population]
       computePops pps
@@ -163,14 +189,11 @@ analyse pCtx
                          [ ppRight pair
                          | pop@P_RelPopu{p_tgt = tgt}<-pps, Just tgt'<-[tgt], tgt'==name c
                          , pair<-p_popps pop]}
-         | c<-nub $
-              [ PCpt (name pop) | pop@P_CptPopu{}<-ctx_pops pCtx] ++
-              [ PCpt src' | P_RelPopu{p_src = src}<-pps, Just src'<-[src]] ++
-              [ PCpt tgt' | P_RelPopu{p_tgt = tgt}<-pps, Just tgt'<-[tgt]]
+         | c<-concepts
          ]
-      computeProps :: P_Relation -> Set.Set Prop
+      computeProps :: P_Relation -> P_Relation
       computeProps rel
-       = Set.fromList ([ Uni | isUni popR]++[ Tot | isTot ]++[ Inj | isInj popR ]++[ Sur | isSur ])
+       = rel{dec_prps = Set.fromList ([ Uni | isUni popR]++[ Tot | isTot ]++[ Inj | isInj popR ]++[ Sur | isSur ])}
           where
            sgn  = dec_sign rel
            s = pSrc sgn; t = pTgt sgn
@@ -191,3 +214,7 @@ analyse pCtx
            isInj :: Set.Set PAtomPair -> Bool
            isInj x = null . Set.filter (not . equal ppLeft) . Set.filter (equal ppRight) $ Set.cartesianProduct x x
            isSur = popu t `Set.isSubsetOf` codR
+--    specializations :: P_Concept -> [P_Concept]
+--    specializations cpt = nub $ cpt: [ specific gen | gen<-ctx_gs pCtx, cpt `elem` generics gen ]
+--    generalizations :: P_Concept -> [P_Concept]
+--    generalizations cpt = nub $ cpt: [ g | gen<-ctx_gs pCtx, g<-NEL.toList (generics gen), cpt==specific gen ]

@@ -116,20 +116,20 @@ instance Traced P_RoleRule where
  origin = pos
 
 data P_Pattern
-   = P_Pat { pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
-           , pt_nm :: String            -- ^ Name of this pattern
-           , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
-           , pt_gns :: [PClassify]          -- ^ The generalizations defined in this pattern
-           , pt_dcs :: [P_Relation]  -- ^ The relations that are declared in this pattern
-           , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
-           , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
-           , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
-           , pt_Reprs :: [Representation] -- ^ The type into which concepts is represented
-           , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
-           , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
-           , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
-           , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
-           , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
+   = P_Pat { pos ::      Origin            -- ^ the starting position in the file in which this pattern was declared.
+           , pt_nm ::    String            -- ^ Name of this pattern
+           , pt_rls ::   [P_Rule TermPrim] -- ^ The user defined rules in this pattern
+           , pt_gns ::   [PClassify]       -- ^ The generalizations defined in this pattern
+           , pt_dcs ::   [P_Relation]      -- ^ The relations that are declared in this pattern
+           , pt_RRuls :: [P_RoleRule]      -- ^ The assignment of roles to rules.
+           , pt_RRels :: [P_RoleRelation]  -- ^ The assignment of roles to Relations.
+           , pt_cds ::   [ConceptDef]      -- ^ The concept definitions defined in this pattern
+           , pt_Reprs :: [Representation]  -- ^ The type into which concepts is represented
+           , pt_ids ::   [P_IdentDef]      -- ^ The identity definitions defined in this pattern
+           , pt_vds ::   [P_ViewDef]       -- ^ The view definitions defined in this pattern
+           , pt_xps ::   [PPurpose]        -- ^ The purposes of elements defined in this pattern
+           , pt_pop ::   [P_Population]    -- ^ The populations that are local to this pattern
+           , pt_end ::   Origin            -- ^ the end position in the file in which this pattern was declared.
            } deriving Show -- for QuickCheck
 
 instance Ord P_Pattern where
@@ -221,6 +221,9 @@ instance Named P_Relation where
  name = dec_nm
 instance Traced P_Relation where
  origin = pos
+-- instance Flippable P_Relation where
+--   flp rel = rel{dec_nm = if last (name rel)=='~' then init (name rel) else (name rel)++"~"
+--                ,dec_sign = flp (dec_sign rel)}
 
 data PAtomPair
   = PPair { pos :: Origin
@@ -771,7 +774,7 @@ instance Flippable P_Sign where
 
 data PClassify =  PClassify
   { pos      :: Origin
-  , specific :: P_Concept       -- ^ Left hand side concept expression
+  , specific :: P_Concept                    -- ^ Left hand side concept expression
   , generics :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
   } deriving (Show, Eq, Ord)
 
