@@ -10,6 +10,7 @@ import           Ampersand.ADL1
 import           Ampersand.ADL1.P2A_Converters
 import           Ampersand.Basics
 import           Ampersand.Core.A2P_Converters
+-- import           Ampersand.Core.ShowPStruct  -- Just for debugging purposes
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ShowMeatGrinder
 import           Ampersand.FSpec.ToFSpec.ADL2FSpec
@@ -132,7 +133,8 @@ analyse pCtx
        , ctx_markup = ctx_markup pCtx
        , ctx_pats   = ctx_pats   pCtx
        , ctx_rs     = ctx_rs     pCtx
-       , ctx_ds     = declaredRelations ++ map computeProps (filter (not.obsolete) (popRelations ++ genericRelations))
+       , ctx_ds     = [ if rel `elem` declaredRelations then rel else computeProps rel
+                      | rel<-genericRelations ]
        , ctx_cs     = ctx_cs     pCtx
        , ctx_ks     = ctx_ks     pCtx
        , ctx_rrules = ctx_rrules pCtx
@@ -146,32 +148,52 @@ analyse pCtx
        , ctx_metas  = ctx_metas  pCtx
        }
     where
-      declaredRelations, popRelations, genericRelations :: [P_Relation]
+      declaredRelations :: [P_Relation] -- relations declared in the script
+      popRelations      :: [P_Relation] -- relations that are "annotated" by the user in Excel-sheets.
+                                        -- popRelations are derived from P_Populations only.
+      genericRelations  :: [P_Relation] -- generalization of popRelations due to CLASSIFY statements
       declaredRelations = nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
-      popRelations -- all relations that are "invented" using information from the populations
+      popRelations 
        = [ rel
          | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx, Just src'<-[src], Just tgt'<-[tgt]
          , rel<-[P_Sgn{dec_nm=name pop, dec_sign=P_Sign (PCpt src') (PCpt tgt'), dec_prps=Set.fromList [], dec_pragma=[], dec_Mean=[], pos=origin pop }]
          , signature rel `notElem` map signature declaredRelations]
-      genericRelations  = nub (map fst relPairs)
-      obsolete rel = signature rel `elem` map signature (concat (map snd relPairs))
-      relPairs :: [(P_Relation,[P_Relation])] -- the relations shared by all generalizations of a concept
-      relPairs
-       = [ ((head crels){dec_sign=P_Sign c tgt},crels)
-         | (c,spcs)<-trace (show invGen) invGen, rels<-eqNmRels, trels<-eqCl (pTgt.dec_sign) rels, tgt<-take 1 [ pTgt (dec_sign r)| r<-trels]
-         , crels<-[[rel| rel@P_Sgn{dec_sign=P_Sign src _}<-trels, src `elem` spcs]]
-         , Set.fromList (map (pSrc.dec_sign) crels) == spcs
-         ]++
-         [ ((head crels){dec_sign=P_Sign src c},crels)
-         | (c,spcs)<-invGen, rels<-eqNmRels, srels<-eqCl (pSrc.dec_sign) rels, src<-[ pSrc (dec_sign r)| r<-take 1 srels]
-         , crels<-[[rel| rel@P_Sgn{dec_sign=P_Sign _ tgt}<-srels, tgt `elem` spcs]]
-         , Set.fromList (map (pTgt.dec_sign) crels) == spcs
-         ]
+      genericRelations
+       = recur [] (popRelations++declaredRelations) invGen
+         where
+          recur :: [P_Concept]->[P_Relation]->[(P_Concept,Set.Set P_Concept)]->[P_Relation]
+          recur seen unseenrels ((g,specs):invGens)
+           = if g `elem` seen then fatal ("Concept "++name g++" has caused a cycle error.") else
+             recur (g:seen) (genericRels++remainder) invGens
+             where
+              sameNameTargetRels :: [[P_Relation]]
+              sameNameTargetRels = eqCl (\r->(name r,targt r)) unseenrels
+              genericRels   :: [P_Relation]
+              remainingRels :: [[P_Relation]]
+              (genericRels, remainingRels)
+               = unzip
+                 [ ( headrel{dec_sign=P_Sign g (targt headrel)}    -- the generic relation that summarizes sRel
+              --   , [ rel| rel<-sRel, sourc rel `elem` specs ]    -- the specific (and therefore obsolete) relations
+                   , [ rel| rel<-sRel, sourc rel `notElem` specs ] -- the remaining relations
+                   )
+                 | sRel<-sameNameTargetRels
+                 , specs `Set.isSubsetOf` Set.fromList (map sourc sRel)
+                 , headrel<-take 1 sRel ]
+              remainder :: [P_Relation]
+              remainder
+               = concat (remainingRels++
+                         [ sRel | sRel<-sameNameTargetRels
+                         , not (specs `Set.isSubsetOf` Set.fromList (map sourc sRel))]
+                        )
+          recur _ rels [] = rels
+          sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
+          sourc = pSrc . dec_sign
+          targt = pTgt . dec_sign
       invGen :: [(P_Concept,Set.Set P_Concept)]  -- each pair contains a concept with all of its specializations
-      invGen = [ (fst (head cl), Set.fromList (map snd cl))
+      invGen = [ (fst (head cl), Set.fromList spcs)
                | cl<-eqCl fst [ (g,specific gen) | gen<-ctx_gs pCtx, g<-NEL.toList (generics gen)]
-               , fst (head cl) `notElem` Set.fromList (map snd cl)]
-      eqNmRels = eqCl name popRelations
+               , g<-[fst (head cl)], spcs<-[[snd c | c<-cl, snd c/=g]], not (null spcs)
+               ]
       signature :: P_Relation -> (String, P_Sign)
       signature rel =(name rel, dec_sign rel)
       concepts = nub $
