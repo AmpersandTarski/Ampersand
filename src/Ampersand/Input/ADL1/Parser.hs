@@ -12,6 +12,7 @@ module Ampersand.Input.ADL1.Parser
 import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.ParsingLib
+import           Data.List
 import qualified Data.Set as Set
 import qualified Data.List.NonEmpty as NEL
 
@@ -510,9 +511,13 @@ pPurpose = rebuild <$> currPos
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NEL.NonEmpty String) -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
-           = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn (NEL.fromList ";")) (fromMaybe [] . fmap NEL.toList $ refs))
+           = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") (fromMaybe [] . fmap NEL.toList $ refs))
               -- TODO: This separation should not happen in the parser
-              
+              where splitOn :: Eq a => [a] -> [a] -> [[a]]
+                    splitOn [] s = [s]
+                    splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
+                                     Nothing -> [t]
+                                     Just i  -> take i t : splitOn s (drop (i+length s) t)
        --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' NamedRel | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
        pRef2Obj :: AmpParser PRef2Obj
        pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>

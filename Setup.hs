@@ -6,7 +6,7 @@ import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as BS
 import           RIO.Char
 import           Data.Either
-import qualified RIO.List as L
+import           Data.List
 import           Data.Time.Clock
 import qualified Data.Time.Format as DTF
 import           Data.Time.LocalTime
@@ -205,7 +205,7 @@ data FileKind = PandocTemplates | FormalAmpersand | SystemContext deriving (Show
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
   unlines staticFileModuleHeader ++
-  "  [ " ++ L.intercalate "\n  , " sfDeclStrs ++ "\n" ++
+  "  [ " ++ intercalate "\n  , " sfDeclStrs ++ "\n" ++
   "  ]\n"
 
 staticFileModuleHeader :: [String]

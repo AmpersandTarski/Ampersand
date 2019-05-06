@@ -10,7 +10,7 @@ module Ampersand.Basics.Unique
 where
 import           Ampersand.Basics.Prelude
 import           RIO.Char
-import qualified RIO.List as L
+import           Data.List
 import qualified Data.Set as Set
 import           Data.Typeable
 
@@ -46,7 +46,7 @@ data UniqueObj a =
 
 instance Unique a => Unique [a] where
    showUnique [] = "[]"
-   showUnique xs = "["++L.intercalate ", " (map showUnique xs)++"]"
+   showUnique xs = "["++intercalate ", " (map showUnique xs)++"]"
 instance Unique a => Unique (Set.Set a) where
    showUnique = showUnique . Set.elems
 

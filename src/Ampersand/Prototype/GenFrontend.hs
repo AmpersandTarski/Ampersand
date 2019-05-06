@@ -14,13 +14,13 @@ import           Codec.Archive.Zip
 import qualified Data.ByteString.Lazy  as BL
 import           RIO.Char
 import           Data.Hashable (hash)
-import qualified RIO.List as L
+import           Data.List
 import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath
 import           Text.StringTemplate
 import           Text.StringTemplate.GenericStandard () -- only import instances
-import qualified Data.List.NonEmpty as NEL
+import qualified Data.List.NonEmpty as NEL (toList)
 
 
 {- TODO
@@ -290,7 +290,7 @@ genViewInterface opts@Options{..} fSpec interf =
                      . setAttribute "crudR"               (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"               (objCrudD (_ifcObj interf))
-                     . setAttribute "contents"            (L.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
+                     . setAttribute "contents"            (intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
                      . setAttribute "verbose"             verboseP
 
     ; let filename = "ifc" ++ ifcName interf ++ ".view.html" 
@@ -362,7 +362,7 @@ genViewObject opts@Options{..} fSpec depth obj@FEObjE{} =
           do lns <- genViewObject opts fSpec (depth + 1) subObj
              return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                               , subObjLabel = objName subObj -- no escaping for labels in templates needed
-                              , subObjContents = L.intercalate "\n" lns
+                              , subObjContents = intercalate "\n" lns
                               , subObjExprIsUni = exprIsUni subObj
                               } 
         FEObjT{} -> 
@@ -491,10 +491,9 @@ downloadPrototypeFramework Options{..} =
       where
         removeTopLevelPath :: Entry -> Maybe Entry
         removeTopLevelPath entry = 
-            case splitPath . eRelativePath $ entry of
-              [] -> fatal "Impossible"
-              _:[] -> Nothing
-              _:_:tl -> Just entry{eRelativePath = joinPath tl}
+            case tail . splitPath . eRelativePath $ entry of
+              [] -> Nothing
+              xs -> Just entry{eRelativePath = joinPath xs}
 
     allowExtraction :: IO Bool
     allowExtraction = do

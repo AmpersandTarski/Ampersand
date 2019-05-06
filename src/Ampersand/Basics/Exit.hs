@@ -6,7 +6,7 @@ module Ampersand.Basics.Exit
 
 import           Control.Exception hiding (catch)
 import           Ampersand.Basics.Prelude
-import qualified RIO.List as L
+import           Data.List
 import qualified System.Exit as SE
 import           System.IO.Unsafe(unsafePerformIO)
 
@@ -74,5 +74,5 @@ info x =
     showViolatedRule :: (String,[String]) -> [String]
     showViolatedRule (rule,pairs) = 
          [ "Rule: "++rule
-         , "   violations: "++L.intercalate ", " pairs
+         , "   violations: "++intercalate ", " pairs
          ]

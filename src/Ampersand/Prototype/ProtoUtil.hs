@@ -6,14 +6,15 @@ module Ampersand.Prototype.ProtoUtil
          , copyDirRecursively, copyDeepFile, removeAllDirectoryFiles, getProperDirectoryContents
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
-         , indentBlock
+         , indentBlock,addToLast
+         , indentBlockBetween
          , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
          , installComposerLibs
          ) where
  
 import           Ampersand.Basics
 import           Ampersand.Misc
-import qualified RIO.List as L
+import           Data.List
 import qualified Data.Text as Text
 import           System.Directory
 import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))
@@ -90,10 +91,21 @@ commentBlock ls = ["/*"<>replicate lnth '*'<>"*\\"]
                      <> ["* "<>strReplace "*/" "**" line<>replicate (lnth - length line) ' '<>" *" | line <- ls]
                      <> ["\\*"<>replicate lnth '*'<>"*/"]
    where
-     lnth = L.foldl max 0 (map length ls)
+     lnth = foldl max 0 (map length ls)
 indentBlock :: Int -> [String] -> [String]
 indentBlock i = map (replicate i ' ' <>)
 
+-- | will put the block after the first string, and put the second after the block
+-- | If the block is just 1 line, indentBlockBetween will return just 1 line as well
+indentBlockBetween :: Text.Text -- ^ precedes the block
+                   -> Text.Text -- ^ comes at the end of the block
+                   -> [Text.Text] -- ^ the block itself, (will be indented)
+                   -> Text.Text -- ^ result
+indentBlockBetween pre post [] = pre<>post
+indentBlockBetween pre post [s] = pre<>s<>post
+indentBlockBetween pre post block
+ = Text.intercalate (phpIndent (Text.length pre)) ((pre<>head block):(init rest<>[last rest<>post]))
+ where  rest = tail block
 
 strReplace :: String -> String -> String -> String
 strReplace _ _ "" = ""
@@ -104,7 +116,7 @@ strReplace src dst inp
         n = length src
         process "" = ""
         process st@(c:cs)
-          | src `L.isPrefixOf` st = dst <> process (drop n st)
+          | src `isPrefixOf` st = dst <> process (drop n st)
           | otherwise           = c:process cs
 
 phpIndent :: Int -> Text.Text
@@ -121,6 +133,10 @@ addSlashes = Text.pack . addSlashes' . Text.unpack
     addSlashes' ('\\': cs) = "\\\\"<>addSlashes' cs
     addSlashes' (c:cs) = c:addSlashes' cs
     addSlashes' "" = ""
+
+addToLast :: [a] -> [[a]] -> [[a]]
+addToLast _ [] = fatal "addToLast: empty list"
+addToLast s as = init as<>[last as<>s]
 
 showPhpStr :: Text.Text -> Text.Text
 showPhpStr str = q<>Text.pack (escapePhpStr (Text.unpack str))<>q

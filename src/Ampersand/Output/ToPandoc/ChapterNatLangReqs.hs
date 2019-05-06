@@ -9,6 +9,7 @@ import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           RIO.Char hiding (Space)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
+import           Data.List.Split(splitOn)
 import qualified Data.Set as Set
 
 chpNatLangReqs :: Options -> Int -> FSpec -> Blocks
@@ -276,7 +277,7 @@ wordsOf ref = case words . lawRef $ ref of
                 h:tl -> h NEL.:| tl
 -- the article is everything but the law (and we also drop any trailing commas)
 getArticlesOfLaw :: LawRef -> [ArticleOfLaw]
-getArticlesOfLaw ref = map buildLA . splitOn (NEL.fromList ", ") . unwords .NEL.init .wordsOf $ ref
+getArticlesOfLaw ref = map buildLA . splitOn ", " . unwords .NEL.init .wordsOf $ ref
                              
    where
      buildLA art = ArticleOfLaw ((NEL.last . wordsOf) ref) (scanRef art)

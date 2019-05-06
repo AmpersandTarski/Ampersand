@@ -23,7 +23,7 @@ import           Ampersand.Input.Xslx.XLSX
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
 import           Ampersand.Misc
 import           RIO.Char(toLower)
-import qualified RIO.List as L
+import           Data.List
 import qualified Data.Set as Set
 import           System.Directory
 import           System.FilePath
@@ -52,10 +52,8 @@ parseThing' opts@Options{..} pc = do
   results <- parseADLs opts [] [pc]
   case results of 
      Errors err    -> return ([pc], Errors err)
-     Checked xs ws -> return ( fst . L.unzip $ xs
-                             , case snd . L.unzip $ xs of
-                                 []   -> fatal "Impossible"
-                                 h:tl -> Checked (L.foldl mergeContexts h tl) ws
+     Checked xs ws -> return ( fst . unzip $ xs
+                             , Checked (foldl1 mergeContexts . snd . unzip $ xs) ws
                              )
 
 -- | Parses several ADL files
@@ -143,19 +141,19 @@ parseSingleADL opts@Options{..} pc
                myNormalise fp = joinDrive drive . joinPath $ f [] dirs ++ [file]
                  where
                    (drive,path) = splitDrive (normalise fp)
-                   (dirs,file)  = case reverse $ splitPath path of
+                   (dirs,file)  = case splitPath path of
                                    [] -> fatal ("Illegal filePath: "++show fp)
-                                   h:tl -> (reverse tl,h)
+                                   xs -> (init xs,last xs)
                    
                    f :: [FilePath] -> [FilePath] -> [FilePath]
                    f ds [] = ds
                    f ds (x:xs) | is "."  x = f ds xs   -- reduce /a/b/./c to /a/b/c/ 
-                               | is ".." x = case reverse ds of
-                                              []   -> fatal ("Illegal filePath: "++show fp)
-                                              _:tl -> f (reverse tl) xs --reduce a/b/c/../d/ to a/b/d/
+                               | is ".." x = case ds of
+                                              [] -> fatal ("Illegal filePath: "++show fp)
+                                              _  -> f (init ds) xs --reduce a/b/c/../d/ to a/b/d/
                                | otherwise = f (ds++[x]) xs
                is :: String -> FilePath -> Bool
-               is str fp = case L.stripPrefix str fp of
+               is str fp = case stripPrefix str fp of
                              Just [chr] -> chr `elem` pathSeparators  
                              _          -> False
                stripBom :: String -> String
@@ -174,9 +172,8 @@ parse p fn ts =
         --TODO: Add language support to the parser errors
         Left err -> Errors $ pure $ PE err
         Right a -> pure a
-    where pos' = case ts of
-                  []  -> initPos fn
-                  h:_ -> tokPos h
+    where pos' | null ts   = initPos fn
+               | otherwise = tokPos (head ts)
 
 
 -- | Runs the given parser

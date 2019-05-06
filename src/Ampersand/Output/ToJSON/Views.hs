@@ -8,7 +8,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.Concepts 
 import           Ampersand.Output.ToJSON.JSONutils 
-import qualified Data.List.NonEmpty as NEL
+import qualified Data.List.NonEmpty as NEL (toList)
 
 data Views = Views [View] deriving (Generic, Show)
 data View = View
