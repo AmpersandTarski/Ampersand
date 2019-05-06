@@ -81,7 +81,7 @@ opt ::  AmpParser a  -- ^ The parser to try
 a `opt` b = P.option b a
 
 sepBy1 :: AmpParser a -> AmpParser b -> AmpParser (NEL.NonEmpty a)
-sepBy1 x sep = foo <$> x <*> (x `sepBy` sep)
+sepBy1 x sep = foo <$> x <* sep <*> (x `sepBy` sep)
      where foo h t = h NEL.:| t
      
 -----------------------------------------------------------
