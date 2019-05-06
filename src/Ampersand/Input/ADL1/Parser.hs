@@ -50,7 +50,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
             , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
-            , ctx_pops   = [p | CPop p<-ces] ++ concat [p | CRel (_,p)<-ces]      -- The populations defined in this contextplug<-ces]
+            , ctx_pops   = [p | CPop p<-ces] ++ concat [p | CRel (_,p)<-ces]  -- The populations defined in this contextplug, from POPULATION statements as well as from Relation declarations.
             , ctx_metas  = [meta | CMeta meta <-ces]
             }
        , [s | CIncl s<-ces] -- the INCLUDE filenames

@@ -114,7 +114,7 @@ instance ShowHS SqlAttribute where
        ,      ", attType    = " ++ showHS opts "" (attType sqAtt)
        ,      ", attUse     = " ++ showHS opts "" (attUse sqAtt)
        ,      ", attNull    = " ++ show (attNull sqAtt)
-       ,      ", attDBNull    = " ++ show (attDBNull sqAtt)
+       ,      ", attDBNull  = " ++ show (attDBNull sqAtt)
        ,      ", attUniq    = " ++ show (attUniq sqAtt)
        ,      ", attFlipped = " ++ show (attFlipped sqAtt)
        ,      "}"

@@ -35,7 +35,7 @@ import           Text.Pandoc.Builder
 generateAmpersandOutput :: Options -> MultiFSpecs -> IO ()
 generateAmpersandOutput opts@Options{..} multi = 
   do { verboseLn "Checking for rule violations..."
-     ; reportInvViolations violationsOfInvariants
+     ; if dataAnalysis then verboseLn "Not checking for rule violations because of data analysis." else reportInvViolations violationsOfInvariants
      ; reportSignals (initialConjunctSignals fSpec)
      ; createDirectoryIfMissing True dirOutput
      ; sequence_ . map snd . filter fst $ conditionalActions

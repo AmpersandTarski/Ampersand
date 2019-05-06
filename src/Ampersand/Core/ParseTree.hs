@@ -65,7 +65,7 @@ data P_Context
          , ctx_gs ::     [PClassify]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
          , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
-         , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
+         , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
          } deriving Show --for QuickCheck
 
@@ -827,7 +827,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
       , ctx_pats   = nubSortConcatMap ctx_pats contexts
       , ctx_rs     = nubSortConcatMap ctx_rs contexts
-      , ctx_ds     = nubSortConcatMap ctx_ds contexts
+      , ctx_ds     = nubConcatDecls
       , ctx_cs     = nubSortConcatMap ctx_cs contexts
       , ctx_ks     = nubSortConcatMap ctx_ks contexts
       , ctx_rrules = nubSortConcatMap ctx_rrules contexts
@@ -847,6 +847,22 @@ mergeContexts ctx1 ctx2 =
                          . Set.unions 
                          . map Set.fromList 
                          . map f
+      nubConcatDecls :: [P_Relation]
+      nubConcatDecls = map (foldr1 unionRel)
+                         (eqCl (\r->(name r,sourc r,targt r)) (ctx_ds ctx1++ctx_ds ctx2))
+        where
+          sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
+          sourc = pSrc . dec_sign
+          targt = pTgt . dec_sign
+          unionRel r0 r1
+           = P_Sgn { dec_nm     = name r0    -- ^ the name of the relation
+                   , dec_sign   = dec_sign r0    -- ^ the type. Parser must guarantee it is not empty.
+                   , dec_prps   = dec_prps r0 `Set.union` dec_prps r1    -- ^ the user defined multiplicity constraints (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+                   , dec_pragma = if (null.concat.dec_pragma) r1 then dec_pragma r0 else  dec_pragma r1
+                                             -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+                   , dec_Mean   = dec_Mean r0++dec_Mean r1  -- ^ the optional meaning of a relation, possibly more than one for different languages.
+                   , pos        = if origin r1==OriginUnknown then origin r0 else origin r1    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
+                   }
       -- | Left-biased choice on maybes
       orElse :: Maybe a -> Maybe a -> Maybe a
       x `orElse` y = case x of

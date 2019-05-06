@@ -124,17 +124,17 @@ instance Traced A_RoleRelation where
    origin = rrPos
 
 data Pattern
-   = A_Pat { ptnm :: String         -- ^ Name of this pattern
+   = A_Pat { ptnm ::  String        -- ^ Name of this pattern
            , ptpos :: Origin        -- ^ the position in the file in which this pattern was declared.
            , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
-           , ptrls :: Rules        -- ^ The user defined rules in this pattern
-           , ptgns :: [AClassify]       -- ^ The generalizations defined in this pattern
+           , ptrls :: Rules         -- ^ The user defined rules in this pattern
+           , ptgns :: [AClassify]   -- ^ The generalizations defined in this pattern
            , ptdcs :: Relations     -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           }   deriving (Typeable)    -- Show for debugging purposes
+           }   deriving (Typeable)  -- Show for debugging purposes
 instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
@@ -148,7 +148,7 @@ instance Traced Pattern where
 
 
 data A_RoleRule = A_RoleRule { arRoles :: [Role]
-                             , arRules ::  [String] -- the names of the rules
+                             , arRules :: [String] -- the names of the rules
                              , arPos ::   Origin
                              } deriving (Show)
 data RuleOrigin = UserDefined     -- This rule was specified explicitly as a rule in the Ampersand script

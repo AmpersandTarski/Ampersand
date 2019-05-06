@@ -264,7 +264,7 @@ pCtx2aCtx opts
                      , ctxpats = pats
                      , ctxrs = Set.fromList rules
                      , ctxds = Set.fromList relations
-                     , ctxpopus = udpops
+                     , ctxpopus = udpops  -- the content is copied from p_pops
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
                      , ctxrrules = allRoleRules
