@@ -5,11 +5,14 @@ module Ampersand.Basics.Prelude
   , readUTF8File
   , zipWith
   , openTempFile
+  , splitOn
   )where
 import Prelude (putStrLn,putStr,reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import RIO
 import System.IO (openTempFile)
-import qualified RIO.Text as T
+import qualified RIO.Text as Text
+import qualified RIO.Text.Partial as Partial 
+import qualified Data.List.NonEmpty as NEL
 -- import Debug.Trace
 -- import Prelude hiding ( 
 --                    getContents
@@ -23,7 +26,7 @@ import qualified RIO.Text as T
 writeFile :: FilePath -> String -> IO ()
 writeFile fp x = writeFileUtf8 fp . tshow $ x
 readUTF8File :: FilePath -> IO (Either String String)
-readUTF8File fp = (Right . T.unpack <$> readFileUtf8 fp) `catch` handler
+readUTF8File fp = (Right . Text.unpack <$> readFileUtf8 fp) `catch` handler
   where 
      handler :: IOException -> IO (Either String String)
      handler err = return . Left . show $ err
@@ -34,3 +37,6 @@ zipWith fun = go
     go [] _ = []
     go _ [] = []
     go (x':xs) (y:ys) = fun x' y : go xs ys
+
+splitOn :: NEL.NonEmpty Char -> String -> [String]
+splitOn sep str = fmap Text.unpack . Partial.splitOn (Text.pack . toList $ sep) . Text.pack $ str

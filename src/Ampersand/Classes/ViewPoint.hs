@@ -4,7 +4,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ord(..),Identity)
 import           Ampersand.Classes.Relational  (HasProps(properties))
-import           Data.List(nub)
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 
@@ -65,17 +65,17 @@ rulesFromIdentity identity
 instance (Eq a,Language a) => Language [a] where
   relsDefdIn  = Set.unions . map relsDefdIn 
   udefrules   = Set.unions . map udefrules 
-  identities  =       concatMap identities
-  viewDefs    =       concatMap viewDefs
-  gens        = nub . concatMap gens
-  patterns    =       concatMap patterns
+  identities  = L.nub . concatMap identities
+  viewDefs    = L.nub . concatMap viewDefs
+  gens        = L.nub . concatMap gens
+  patterns    = L.nub . concatMap patterns
 instance (Eq a,Language a) => Language (Set.Set a) where
   relsDefdIn  = Set.unions . map relsDefdIn . Set.elems
   udefrules   = Set.unions . map udefrules  . Set.elems
-  identities  = nub . concatMap identities  . Set.elems
-  viewDefs    = nub . concatMap viewDefs    . Set.elems
-  gens        = nub . concatMap gens        . Set.elems
-  patterns    = nub . concatMap patterns    . Set.elems
+  identities  = L.nub . concatMap identities  . Set.elems
+  viewDefs    = L.nub . concatMap viewDefs    . Set.elems
+  gens        = L.nub . concatMap gens        . Set.elems
+  patterns    = L.nub . concatMap patterns    . Set.elems
   
 instance Language A_Context where
   relsDefdIn context = uniteRels ( relsDefdIn (patterns context)
@@ -93,7 +93,7 @@ instance Language A_Context where
   udefrules    context = (Set.unions . map udefrules $ ctxpats context) `Set.union` ctxrs context
   identities   context =       concatMap identities (ctxpats context) ++ ctxks context
   viewDefs     context =       concatMap viewDefs   (ctxpats context) ++ ctxvs context
-  gens         context = nub $ concatMap gens       (ctxpats context) ++ ctxgs context
+  gens         context = L.nub $ concatMap gens       (ctxpats context) ++ ctxgs context
   patterns             =       ctxpats
 
 instance Language Pattern where

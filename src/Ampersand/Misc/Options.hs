@@ -10,16 +10,16 @@ module Ampersand.Misc.Options
         , writeConfigFile
         )
 where
-import Ampersand.Basics
-import RIO.Char
+import           Ampersand.Basics
+import           RIO.Char
 import qualified RIO.List as L
-import Data.List.Split (splitOn)
-import Data.Time.Clock
-import Data.Time.LocalTime
-import System.Console.GetOpt
-import System.Directory
-import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
-import System.FilePath
+import qualified Data.List.NonEmpty as NEL
+import           Data.Time.Clock
+import           Data.Time.LocalTime
+import           System.Console.GetOpt
+import           System.Directory
+import           System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
+import           System.FilePath
 import "yaml-config" Data.Yaml.Config as YC 
 
 -- | This data constructor is able to hold all kind of information that is useful to
@@ -405,7 +405,7 @@ options = [ (Option ['v']   ["version"]
                "re-install the prototype framework. This discards any previously installed version."
             , Public)
           , (Option []     ["customizations"]
-               (ReqArg (\names opts -> opts {dirCustomizations = splitOn ";" names}
+               (ReqArg (\names opts -> opts {dirCustomizations = splitOn (NEL.fromList ";") names}
                        ) "DIRECTORY")
                "copy a directory into the generated prototype, overriding the default directory called 'customizations'."
             , Public)

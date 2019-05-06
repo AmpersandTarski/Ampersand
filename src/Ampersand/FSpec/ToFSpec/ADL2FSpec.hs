@@ -14,7 +14,7 @@ import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.FSpec.ToFSpec.Populated 
 import           Ampersand.Misc
 import           RIO.Char
-import           Data.List
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Data.Text (pack)
@@ -35,17 +35,18 @@ makeFSpec opts context
                                       || ctxrel `notElem` map (objExpression.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fDeriveProofs = deriveProofs opts context 
-              , fRoleRels    = nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
-                                   | rr <- ctxRRels context
-                                   , decl <- NEL.toList $ rrRels rr
-                                   , role' <- NEL.toList $ rrRoles rr
-                                   ] 
-              , fRoleRuls    = nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
-                                   | rule <- Set.elems $ allrules
-                                   , role' <- maintainersOf rule
-                                   ]
+              , fRoleRels    = L.nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
+                                     | rr <- ctxRRels context
+                                     , decl <- NEL.toList $ rrRels rr
+                                     , role' <- NEL.toList $ rrRoles rr
+                                     ] 
+              , fRoleRuls    = L.nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
+                                     | rule <- Set.elems $ allrules
+                                     , role' <- maintainersOf rule
+                                     ]
               , fMaintains   = fMaintains'
-              , fRoles       = zip ((sort . nub) (  concatMap (NEL.toList . arRoles) (ctxrrules context)
+              , fRoles       = zip ((L.sort . L.nub) 
+                                                 (  concatMap (NEL.toList . arRoles) (ctxrrules context)
                                                  <> concatMap (NEL.toList . rrRoles) (ctxRRels  context)
                                                  <> concatMap ifcRoles               (ctxifcs context )
                                                  )
@@ -64,7 +65,7 @@ makeFSpec opts context
               , vrels        = calculatedDecls
               , allConcepts  = fSpecAllConcepts
               , cptTType     = representationOf contextinfo
-              , fsisa        = nub . concatMap genericAndSpecifics . gens $ context
+              , fsisa        = L.nub . concatMap genericAndSpecifics . gens $ context
               , vpatterns    = patterns context
               , vgens        = gens context
               , vIndices     = identities context
@@ -79,7 +80,7 @@ makeFSpec opts context
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
               , atomsBySmallestConcept = \cpt -> Set.map apLeft 
                                                . pairsinexpr 
-                                               . foldl (.-.) (EDcI cpt) 
+                                               . L.foldl (.-.) (EDcI cpt) 
                                                . map (handleType cpt)
                                                . smallerConcepts (gens context) $ cpt
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
@@ -149,7 +150,7 @@ makeFSpec opts context
                                 }
                    | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
                    [ ACptPopu{ popcpt = popcpt (NEL.head eqclass)
-                             , popas  = (nub.concat) [ popas pop | pop<-NEL.toList eqclass ]
+                             , popas  = (L.nub . concat) [ popas pop | pop<-NEL.toList eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap ptups (patterns context)       
@@ -158,19 +159,19 @@ makeFSpec opts context
      fSpecAllConjsPerRule = converseNE [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, Set.elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = 
-           converse [ (conj, nub $ smaller (source e) ++ smaller (target e)) 
+           converse [ (conj, L.nub $ smaller (source e) ++ smaller (target e)) 
                     | conj <- allConjs
                     , e    <- Set.elems . modifyablesByInsOrDel . rc_conjunct $ conj ]
                where 
                  smaller :: A_Concept -> [A_Concept]
-                 smaller cpt = nub $ cpt : smallerConcepts (gens context) cpt
+                 smaller cpt = L.nub $ cpt : smallerConcepts (gens context) cpt
      allQuads = quadsOfRules opts allrules 
      
      allrules = Set.map setIsSignal (allRules context)
         where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
      maintainersOf :: Rule -> [Role]
      maintainersOf r 
-       = nub . concatMap (NEL.toList . arRoles) . filter forThisRule . ctxrrules $ context
+       = L.nub . concatMap (NEL.toList . arRoles) . filter forThisRule . ctxrrules $ context
          where
           forThisRule :: A_RoleRule -> Bool
           forThisRule x = name r `elem` arRules x
@@ -190,7 +191,7 @@ makeFSpec opts context
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
      totsurs :: [Expression]
      totsurs
-      = nub [rel | q<- filter (isIdent . EDcD . qDcl)   -- FIXME: This cannot be correct. This filter will block everything!
+      = L.nub [rel | q<- filter (isIdent . EDcD . qDcl)   -- FIXME: This cannot be correct. This filter will block everything!
                      . filter (not . isSignal . qRule)
                      $ allQuads -- all quads for invariant rules
                  , dnf<- concatMap rc_dnfClauses . qConjuncts $ q
@@ -342,7 +343,7 @@ makeFSpec opts context
             -- Each interface gets all attributes that are required to create and delete the object.
             -- All total attributes must be included, because the interface must allow an object to be deleted.
             plugPaths :: [NEL.NonEmpty Expression]
-            plugPaths = [ pth | pth <- nub (maxTotPaths <> maxInjPaths)
+            plugPaths = [ pth | pth <- L.nub (maxTotPaths <> maxInjPaths)
                         , (source.NEL.head) pth `elem` gPlugConcepts
                         ]
             f :: NEL.NonEmpty (NEL.NonEmpty Expression) -> Maybe (A_Concept,NEL.NonEmpty ObjectDef)
@@ -396,10 +397,9 @@ makeFSpec opts context
               nm'::Int->String
               nm' 0  = plural printingLanguage (name c)
               nm' i  = plural printingLanguage (name c) ++ show i
-              nms = [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)]
-              nm
-                | null nms = fatal "impossible"
-                | otherwise = head nms
+              nm = case [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)] of
+                []  -> fatal "impossible"
+                h:_-> h
               att = ObjectDef
                         { objnm    = name c
                         , objpos   = Origin "generated attribute object: step 4b"
@@ -457,7 +457,7 @@ tblcontents ci ps plug
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
         case attributes plug of 
          []   -> fatal "no attributes in plug."
-         f:fs -> (nub.transpose)
+         f:fs -> (L.nub . L.transpose)
                  ( map Just (Set.elems cAtoms)
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-Set.elems $ cAtoms ]

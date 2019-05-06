@@ -12,15 +12,15 @@ module Ampersand.Daemon.Daemon.Daemon(
     startAmpersandDaemon
     ) where
 
-import System.IO.Extra(readFile)
-import Data.Function
-import Data.List.Extra(nub)
-import System.Directory.Extra(getCurrentDirectory,makeAbsolute,doesFileExist)
-import System.FilePath
-import Ampersand.Daemon.Daemon.Parser
-import Ampersand.Daemon.Daemon.Types as T
-import Ampersand.Basics hiding (putStrLn)
-import Ampersand.Misc
+import           System.IO.Extra(readFile)
+import           Data.Function
+import qualified RIO.List as L
+import           System.Directory.Extra(getCurrentDirectory,makeAbsolute,doesFileExist)
+import           System.FilePath
+import           Ampersand.Daemon.Daemon.Parser
+import           Ampersand.Daemon.Daemon.Types as T
+import           Ampersand.Basics hiding (putStrLn)
+import           Ampersand.Misc
 
 
 messages :: DaemonState -> [Load]
@@ -56,16 +56,16 @@ initialState opts = do
    then do
       content <- readFile dotAmpersand
       let files = filter (\fn -> length fn > 0) --discard empty lines
-                . nub                           --discard doubles
+                . L.nub                           --discard doubles
                 . lines $ content
       (ls,loadedFiles) <- do
            xs <- mapM (parseProject opts) files
-           return ( nub . concatMap fst $ xs
-                  , nub . concatMap snd $ xs
+           return ( L.nub . concatMap fst $ xs
+                  , L.nub . concatMap snd $ xs
                   )
       return $ Right DaemonState
         { loads = ls
-        , loadResults = nub $ [dotAmpersand] ++ loadedFiles
+        , loadResults = L.nub $ [dotAmpersand] ++ loadedFiles
         }
    else return . Left $ 
       [ "File not found: "++dotAmpersand

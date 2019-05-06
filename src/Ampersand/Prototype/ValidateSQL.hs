@@ -7,8 +7,8 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc
 import           Ampersand.Prototype.PHP
-import           Data.List
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
@@ -99,7 +99,7 @@ validateExp _ _ vExp@(EDcD{}, _)   = -- skip all simple relations
 validateExp opts@Options{..} fSpec vExp@(expr, orig) =
  do { violationsSQL <- evaluateExpSQL opts fSpec (tempDbName opts) expr
     ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
-    ; if sort violationsSQL == sort violationsAmp
+    ; if L.sort violationsSQL == L.sort violationsAmp
       then
        do { putStr "."
           ; return (vExp, True)

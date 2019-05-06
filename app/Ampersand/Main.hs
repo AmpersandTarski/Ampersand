@@ -3,7 +3,7 @@ module Main(main) where
 
 import           Ampersand
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified Data.List.NonEmpty as NEL
 import System.Environment    (getArgs, getProgName)
 
 main :: IO ()

@@ -15,7 +15,7 @@ import           Ampersand.Misc
 import           RIO.Char
 import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete
-import           Data.List
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Data.String(fromString)
@@ -140,7 +140,7 @@ conceptualStructure fSpec pr =
               cpts' = concs rs
               rs    = [r | r<-Set.elems $ vrules fSpec, c `elem` concs r]
           in
-          CStruct { csCpts = nub$ Set.elems cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
+          CStruct { csCpts = L.nub$ Set.elems cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
                   , csRels = filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ rs   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
@@ -340,11 +340,11 @@ instance HasDotParts Relation where
           { nodeID = baseNodeId x (source rel) ++ name rel 
           , nodeAttributes = [ Color [WC (X11Color Transparent ) Nothing]
                              , Shape PlainText
-                             , Label . StrLabel . fromString . intercalate "\n" $ 
+                             , Label . StrLabel . fromString . L.intercalate "\n" $ 
                                   name rel :
                                   case Set.toList . properties $ rel of
                                      []   -> []
-                                     ps -> ["["++(intercalate ", " . map (map toLower . show) $ ps)++"]"]
+                                     ps -> ["["++(L.intercalate ", " . map (map toLower . show) $ ps)++"]"]
                               ]
                           }
        ]
@@ -364,11 +364,11 @@ instance HasDotParts Relation where
       [ DotEdge
           { fromNode       = baseNodeId x . source $ rel
           , toNode         = baseNodeId x . target $ rel
-          , edgeAttributes = [ Label . StrLabel . fromString . intercalate "\n" $ 
+          , edgeAttributes = [ Label . StrLabel . fromString . L.intercalate "\n" $ 
                                   name rel :
                                   case Set.toList . properties $ rel of
                                      []   -> []
-                                     ps -> ["["++(intercalate ", " . map (map toLower . show) $ ps)++"]"]
+                                     ps -> ["["++(L.intercalate ", " . map (map toLower . show) $ ps)++"]"]
                              ]
           }
       ]
