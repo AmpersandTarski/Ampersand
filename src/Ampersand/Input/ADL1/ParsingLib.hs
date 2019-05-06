@@ -33,6 +33,7 @@ import qualified Data.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
 import           Text.Parsec as P hiding(satisfy,sepBy1)
+import qualified Text.Parsec as P (sepBy1)
 import           Text.Parsec.Pos (newPos)
 
 -- | The Ampersand parser type
@@ -81,9 +82,11 @@ opt ::  AmpParser a  -- ^ The parser to try
 a `opt` b = P.option b a
 
 sepBy1 :: AmpParser a -> AmpParser b -> AmpParser (NEL.NonEmpty a)
-sepBy1 x sep = foo <$> x <* sep <*> (x `sepBy` sep)
-     where foo h t = h NEL.:| t
-     
+sepBy1 x sep = foo <$> P.sepBy1 x sep
+   where foo :: [a] -> NEL.NonEmpty a
+         foo []  = fatal "P.sepBy1 does not return any value!"
+         foo (h:tl) = h NEL.:| tl
+
 -----------------------------------------------------------
 -- Keywords & operators
 -----------------------------------------------------------
