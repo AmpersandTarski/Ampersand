@@ -30,7 +30,7 @@ import           Ampersand.FSpec
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
 import           Conduit (liftIO, MonadIO)  
-import           Data.Char hiding    (Space)
+import           RIO.Char hiding    (Space)
 import qualified Data.ByteString.Lazy as BL
 import           Data.Text as Text (Text,pack,unpack,replace)
 import qualified Data.Text.Encoding.Error as TE

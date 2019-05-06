@@ -12,7 +12,7 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.Graphic.ClassDiag2Dot
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Misc
-import           Data.Char
+import           RIO.Char
 import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete
 import           Data.List

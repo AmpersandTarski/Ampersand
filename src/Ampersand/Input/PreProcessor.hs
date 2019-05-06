@@ -7,7 +7,7 @@ module Ampersand.Input.PreProcessor (
 
 import           Ampersand.Basics hiding (guard,many,try)
 import           Ampersand.Input.ADL1.CtxError
-import           Data.Char(isSpace)
+import           RIO.Char(isSpace)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set

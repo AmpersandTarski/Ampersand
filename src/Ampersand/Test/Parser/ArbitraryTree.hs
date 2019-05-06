@@ -3,7 +3,7 @@
 module Ampersand.Test.Parser.ArbitraryTree () where
 
 import Test.QuickCheck hiding (listOf1)
-import Data.Char
+import RIO.Char
 import qualified RIO.List as L
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)

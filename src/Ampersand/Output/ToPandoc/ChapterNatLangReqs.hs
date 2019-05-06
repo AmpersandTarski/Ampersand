@@ -6,7 +6,7 @@ module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
  ) where
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
-import           Data.Char hiding (Space)
+import           RIO.Char hiding (Space)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import           Data.List.Split(splitOn)

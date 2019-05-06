@@ -28,8 +28,9 @@ import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Input.ADL1.LexerMonad
 import           Ampersand.Input.ADL1.LexerToken
 import           Ampersand.Misc
-import           Data.Char hiding(isSymbol)
+import           RIO.Char hiding(isSymbol)
 import qualified RIO.List as L
+import qualified RIO.Char.Partial as Partial (chr)
 import qualified Data.Set as Set -- (member, fromList)
 import           Data.Time.Calendar
 import           Data.Time.Clock
@@ -423,7 +424,7 @@ getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
 getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
-                                      | val >= 0 && val <= ord (maxBound :: Char) -> (Just (chr val),length s - length rest, rest)
+                                      | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
                                     _  -> fatal ("Impossible! first char is a digit.. "++take 40 s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)

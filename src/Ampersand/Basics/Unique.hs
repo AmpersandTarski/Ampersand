@@ -9,7 +9,7 @@ module Ampersand.Basics.Unique
   (Unique(..),Named(..))
 where
 import           Ampersand.Basics.Prelude
-import           Data.Char
+import           RIO.Char
 import           Data.List
 import qualified Data.Set as Set
 import           Data.Typeable

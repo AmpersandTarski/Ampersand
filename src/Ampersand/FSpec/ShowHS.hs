@@ -8,7 +8,7 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct  (AStruct(..))  -- for traceability, we generate comments in the Haskell code.
 import           Ampersand.FSpec.FSpec
 import           Ampersand.Misc
-import           Data.Char                  (isAlphaNum)
+import           RIO.Char                  (isAlphaNum)
 import           Data.Hashable
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL (toList,NonEmpty)

@@ -24,7 +24,7 @@ module Ampersand.Input.ADL1.ParsingLib(
 import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
 import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
-import           Data.Char(toLower)
+import           RIO.Char(toLower)
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Data.Time.Calendar

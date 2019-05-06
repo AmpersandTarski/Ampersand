@@ -18,7 +18,7 @@ import           Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Control.Arrow(first)
-import           Data.Char(toUpper,toLower)
+import           RIO.Char(toUpper,toLower)
 import           Data.Foldable (toList)
 import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable

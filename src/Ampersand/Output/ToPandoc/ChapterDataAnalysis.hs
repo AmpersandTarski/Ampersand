@@ -7,7 +7,7 @@ import           Ampersand.FSpec.Crud
 import           Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
-import           Data.Char
+import           RIO.Char
 import           Data.Function (on)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL

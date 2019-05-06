@@ -8,7 +8,7 @@ where
 import           Ampersand.Basics hiding ((<$>),view)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
-import           Data.Char (toUpper)
+import           RIO.Char (toUpper)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Text as T

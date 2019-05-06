@@ -12,7 +12,7 @@ import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Codec.Archive.Zip
 import qualified Data.ByteString.Lazy  as BL
-import           Data.Char
+import           RIO.Char
 import           Data.Hashable (hash)
 import           Data.List
 import           Network.HTTP.Simple

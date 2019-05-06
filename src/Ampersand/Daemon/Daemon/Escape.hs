@@ -8,7 +8,7 @@ module Ampersand.Daemon.Daemon.Escape(
     wordWrapE
     ) where
 
-import Data.Char
+import RIO.Char
 import Data.Either.Extra(rights)
 import Data.List.Extra(unfoldr)
 import Data.Maybe

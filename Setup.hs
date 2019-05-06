@@ -4,7 +4,7 @@ where
 import qualified Codec.Compression.GZip as GZip
 import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as BS
-import           Data.Char
+import           RIO.Char
 import           Data.Either
 import           Data.List
 import           Data.Time.Clock

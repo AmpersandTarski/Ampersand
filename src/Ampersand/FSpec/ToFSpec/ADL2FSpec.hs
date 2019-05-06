@@ -13,7 +13,7 @@ import           Ampersand.FSpec.ToFSpec.Calc
 import           Ampersand.FSpec.ToFSpec.NormalForms 
 import           Ampersand.FSpec.ToFSpec.Populated 
 import           Ampersand.Misc
-import           Data.Char
+import           RIO.Char
 import           Data.List
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set

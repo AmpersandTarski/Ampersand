@@ -9,7 +9,7 @@ import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import           Ampersand.Misc
-import           Data.Char
+import           RIO.Char
 import qualified Data.Set as Set
 
 makeGeneratedSqlPlugs :: Options -> A_Context 

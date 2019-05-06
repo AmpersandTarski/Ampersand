@@ -68,7 +68,7 @@ import           Ampersand.Core.ParseTree
     , Representation(..), TType(..), PAtomValue(..), PSingleton
     )
 import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
-import           Data.Char          (toUpper,toLower)
+import           RIO.Char          (toUpper,toLower)
 --import           Data.Data          (Typeable,Data)
 import           Data.Default       (Default(..))
 import           Data.Function      (on)

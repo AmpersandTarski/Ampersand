@@ -5,7 +5,7 @@ module Ampersand.Basics.Languages
          where
               
 import Ampersand.Basics.Prelude
-import Data.Char (toLower)
+import RIO.Char (toLower)
 import qualified RIO.List as L
 
 data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data, Enum, Bounded)

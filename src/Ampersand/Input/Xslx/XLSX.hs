@@ -11,7 +11,7 @@ import           Codec.Xlsx
 import           Control.Lens
 import qualified RIO.List as L
 import qualified Data.ByteString.Lazy as BL
-import           Data.Char
+import           RIO.Char
 import qualified Data.Map as M 
 import qualified Data.Text as T
 import           Data.Tuple

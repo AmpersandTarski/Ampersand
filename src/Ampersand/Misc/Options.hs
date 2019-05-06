@@ -11,7 +11,7 @@ module Ampersand.Misc.Options
         )
 where
 import Ampersand.Basics
-import Data.Char
+import RIO.Char
 import qualified RIO.List as L
 import Data.List.Split (splitOn)
 import Data.Time.Clock
