@@ -2,8 +2,7 @@
 module Ampersand.Input.ADL1.ParsingLib(
     AmpParser, pIsThere, optList, optSet,
     -- Operators
-    --TODO: Maybe we shouldn't export these here, but import in the parser directly
-    (DF.<$>), (P.<|>), (P.<?>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
+    (<?>), (<??>),
     -- Combinators
     sepBy, sepBy1, many, many1, opt, try, choice, pMaybe,
     -- Positions
@@ -22,17 +21,15 @@ module Ampersand.Input.ADL1.ParsingLib(
     pZero, pOne
 ) where
 
-import           Ampersand.Basics hiding ((<$),(<|>),many,try)
+import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
 import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
-import qualified Control.Applicative as CA
 import           Data.Char(toLower)
-import qualified Data.Functor as DF
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
-import           Text.Parsec as P hiding(satisfy,sepBy1)
+import           Text.Parsec as P hiding(satisfy,sepBy1,(<|>))
 import           Text.Parsec.Pos (newPos)
 
 -- | The Ampersand parser type
@@ -42,16 +39,8 @@ type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser f
 -- Useful functions
 -----------------------------------------------------------
 
-infixl 4 <$
-
--- | Applies the given parser and returns the given constructor
-(<$) :: a           -- ^ The value to return
-     -> AmpParser b -- ^ The parser to apply
-     -> AmpParser a -- ^ The result
-a <$ p = do { _ <- p; return a }
-
 (<??>) :: AmpParser a -> AmpParser (a -> a) -> AmpParser a
-p <??> q = (\x f -> f x) CA.<$> p CA.<*> (q `opt` id)
+p <??> q = (\x f -> f x) <$> p <*> (q `opt` id)
 
 -- | Tries to apply the given parser and returns a parser with a boolean indicating whether it succeeded
 pIsThere :: AmpParser a     -- ^ The parser to run
@@ -72,7 +61,7 @@ optSet p = p `opt` Set.empty
 -- | Tries to apply the given parser and encapsulates the result in Maybe
 pMaybe :: AmpParser a           -- ^ The parser to apply
        -> AmpParser (Maybe a)   -- ^ The result
-pMaybe p = Just CA.<$> p <|> P.parserReturn Nothing
+pMaybe p = Just <$> p <|> P.parserReturn Nothing
 
 -- | Tries to apply the given parser and returns the second argument if it doesn't succeed
 opt ::  AmpParser a  -- ^ The parser to try
@@ -172,10 +161,10 @@ pAtomValInPopulation :: Bool -> AmpParser Value
 pAtomValInPopulation constrainsApply =
               VBoolean True  <$ pKey "TRUE"
           <|> VBoolean False <$ pKey "FALSE"
-          <|> VRealString DF.<$> pString
-          <|> VDateTime DF.<$> pUTCTime
-          <|> VDate DF.<$> pDay
-          <|> fromNumeric DF.<$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
+          <|> VRealString <$> pString
+          <|> VDateTime <$> pUTCTime
+          <|> VDate <$> pDay
+          <|> fromNumeric <$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
    where fromNumeric :: Either Int Double -> Value
          fromNumeric num = case num of
              Left i -> VInt i
@@ -198,7 +187,7 @@ pNumber :: Int -> AmpParser String
 pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
 
 pNumeric :: AmpParser (Either Int Double)
-pNumeric = (f DF.<$> pIsNeg CA.<*> pUnsignedNumeric) <?> "numerical value"
+pNumeric = (f <$> pIsNeg <*> pUnsignedNumeric) <?> "numerical value"
   where
      f :: Bool -> Either Int Double -> Either Int Double
      f isNeg b =
@@ -208,7 +197,7 @@ pNumeric = (f DF.<$> pIsNeg CA.<*> pUnsignedNumeric) <?> "numerical value"
 
 pIsNeg :: AmpParser Bool
 pIsNeg = fromMaybe False
-            DF.<$> pMaybe ( True  <$ pOperator "-" <|>
+               <$> pMaybe ( True  <$ pOperator "-" <|>
                             False <$ pOperator "+"
                           )
 pUnsignedNumeric :: AmpParser (Either Int Double)
@@ -237,16 +226,16 @@ pComma :: AmpParser String
 pComma  = pSpec ','
 
 pParens :: AmpParser a -> AmpParser a
-pParens parser = pSpec '(' CA.*> parser CA.<* pSpec ')'
+pParens parser = pSpec '(' *> parser <* pSpec ')'
 
 pBraces :: AmpParser a -> AmpParser a
-pBraces parser = pSpec '{' CA.*> parser CA.<* pSpec '}'
+pBraces parser = pSpec '{' *> parser <* pSpec '}'
 
 pBrackets :: AmpParser a -> AmpParser a
-pBrackets parser = pSpec '[' CA.*> parser CA.<* pSpec ']'
+pBrackets parser = pSpec '[' *> parser <* pSpec ']'
 
 pChevrons :: AmpParser a -> AmpParser a
-pChevrons parser = pSpec '<' CA.*> parser CA.<* pSpec '>'
+pChevrons parser = pSpec '<' *> parser <* pSpec '>'
 
 -----------------------------------------------------------
 -- Token positioning

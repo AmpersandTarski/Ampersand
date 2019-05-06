@@ -15,7 +15,6 @@ module Ampersand.Daemon.Daemon.Daemon(
 import System.IO.Extra(readFile)
 import Data.Function
 import Data.List.Extra(nub)
-import Control.Applicative
 import System.Directory.Extra(getCurrentDirectory,makeAbsolute,doesFileExist)
 import System.FilePath
 import Ampersand.Daemon.Daemon.Parser

@@ -13,7 +13,6 @@ import Data.Either.Extra(rights)
 import Data.List.Extra(unfoldr)
 import Data.Maybe
 import Data.Tuple.Extra(swap,both)
-import Control.Applicative
 import Ampersand.Basics
 
 

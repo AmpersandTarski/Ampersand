@@ -9,7 +9,7 @@ module Ampersand.Input.ADL1.Parser
     , pRule
     ) where
 
-import           Ampersand.Basics hiding ((<$),(<|>),many,try)
+import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.ParsingLib
 import           Data.List
