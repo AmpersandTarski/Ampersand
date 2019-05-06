@@ -8,7 +8,7 @@ module Ampersand.Core.ParseTree (
    , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
-   , P_Relation(..)
+   , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
    , SrcOrTgt(..)
@@ -224,6 +224,23 @@ instance Traced P_Relation where
 -- instance Flippable P_Relation where
 --   flp rel = rel{dec_nm = if last (name rel)=='~' then init (name rel) else (name rel)++"~"
 --                ,dec_sign = flp (dec_sign rel)}
+
+-- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
+--   Relations with the same signature are merged. Relations with different signatures are left alone.
+mergeRels :: [P_Relation] -> [P_Relation]
+mergeRels rs = map (foldr1 mergeRel) (eqCl signat rs) -- each equiv. class contains at least 1 element, so foldr1 is just right!
+  where
+    signat rel = (name rel, pSrc (dec_sign rel), pTgt (dec_sign rel))
+    mergeRel :: P_Relation -> P_Relation -> P_Relation -- merges attributes, assuming both signatures are equal.
+    mergeRel r0 r1
+     = P_Sgn { dec_nm     = name r0     -- ^ the name of the relation
+             , dec_sign   = dec_sign r0 -- ^ the type. Parser must guarantee it is not empty.
+             , dec_prps   = dec_prps r0 `Set.union` dec_prps r1    -- ^ the user defined multiplicity constraints (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+             , dec_pragma = if (null.concat.dec_pragma) r1 then dec_pragma r0 else  dec_pragma r1
+                                        -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+             , dec_Mean   = dec_Mean r0++dec_Mean r1  -- ^ the optional meaning of a relation, possibly more than one for different languages.
+             , pos        = if origin r1==OriginUnknown then origin r0 else origin r1    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
+             }
 
 data PAtomPair
   = PPair { pos :: Origin
@@ -827,7 +844,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
       , ctx_pats   = nubSortConcatMap ctx_pats contexts
       , ctx_rs     = nubSortConcatMap ctx_rs contexts
-      , ctx_ds     = nubConcatDecls
+      , ctx_ds     = mergeRels (ctx_ds ctx1++ctx_ds ctx2)
       , ctx_cs     = nubSortConcatMap ctx_cs contexts
       , ctx_ks     = nubSortConcatMap ctx_ks contexts
       , ctx_rrules = nubSortConcatMap ctx_rrules contexts
@@ -847,22 +864,6 @@ mergeContexts ctx1 ctx2 =
                          . Set.unions 
                          . map Set.fromList 
                          . map f
-      nubConcatDecls :: [P_Relation]
-      nubConcatDecls = map (foldr1 unionRel)
-                         (eqCl (\r->(name r,sourc r,targt r)) (ctx_ds ctx1++ctx_ds ctx2))
-        where
-          sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
-          sourc = pSrc . dec_sign
-          targt = pTgt . dec_sign
-          unionRel r0 r1
-           = P_Sgn { dec_nm     = name r0    -- ^ the name of the relation
-                   , dec_sign   = dec_sign r0    -- ^ the type. Parser must guarantee it is not empty.
-                   , dec_prps   = dec_prps r0 `Set.union` dec_prps r1    -- ^ the user defined multiplicity constraints (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
-                   , dec_pragma = if (null.concat.dec_pragma) r1 then dec_pragma r0 else  dec_pragma r1
-                                             -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-                   , dec_Mean   = dec_Mean r0++dec_Mean r1  -- ^ the optional meaning of a relation, possibly more than one for different languages.
-                   , pos        = if origin r1==OriginUnknown then origin r0 else origin r1    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
-                   }
       -- | Left-biased choice on maybes
       orElse :: Maybe a -> Maybe a -> Maybe a
       x `orElse` y = case x of

@@ -9,6 +9,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.ADL1.P2A_Converters
 import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
 import           Ampersand.Core.A2P_Converters
 import           Ampersand.Core.ShowPStruct  -- Just for debugging purposes
 import           Ampersand.FSpec.FSpec
@@ -129,7 +130,7 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
   where
     enrichedContext :: P_Context
     enrichedContext
-     = pCtx{ ctx_ds     = genericRelations
+     = pCtx{ ctx_ds     = mergeRels (genericRelations++declaredRelations)
            , ctx_pops   = genericPopulations
            }
     declaredRelations ::  [P_Relation]   -- relations declared in the script
@@ -172,7 +173,7 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
                isInj x = null . Set.filter (not . equal ppLeft) . Set.filter (equal ppRight) $ Set.cartesianProduct x x
                isSur = popu t `Set.isSubsetOf` codR
     (genericRelations, genericPopulations)
-     = recur [] (popRelations++declaredRelations) pops invGen
+     = recur [] popRelations pops invGen
        where
         recur :: [P_Concept]->[P_Relation]->[P_Population]->[(P_Concept,Set.Set P_Concept)]->([P_Relation], [P_Population])
         recur     seen         unseenrels    unseenpops      ((g,specs):invGens)
@@ -186,8 +187,7 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
             (genericRels, remainingRels)
              = unzip
                [ ( headrel{ dec_sign = P_Sign g (targt headrel)
-                          , dec_prps = let test prop = and [ prop `elem` dec_prps r | r<-sRel ] &&
-                                                       prop `elem` foldr1 Set.intersection (map dec_prps sRel)
+                          , dec_prps = let test prop = prop `elem` foldr1 Set.intersection (map dec_prps sRel)
                                        in Set.fromList ([Uni |test Uni]++[Tot |test Tot]++[Inj |test Inj]++[Sur |test Sur])
                           }  -- the generic relation that summarizes sRel
             --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations

@@ -75,6 +75,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , baseName :: String
                        , genTime :: LocalTime
                        , export2adl :: Bool
+                       , dataAnalysis :: Bool
                        , test :: Bool
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
                        , addSemanticMetamodel :: Bool -- When set, the user can use all artefacts defined in Formal Ampersand, without the need to specify them explicitly
@@ -256,6 +257,7 @@ getOptions' envOpts =
                       , fileName         = fName
                       , baseName         = takeBaseName $ fromMaybe "unknown" fName
                       , export2adl       = False
+                      , dataAnalysis     = False
                       , test             = False
                       , genMetaFile      = False
                       , addSemanticMetamodel = False
@@ -461,22 +463,22 @@ options = [ (Option ['v']   ["version"]
                                           ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
                "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
             , Public)
-          , (Option ['D']        ["dataAnalysis"]
-               (OptArg (\mbnm opts -> opts{dataAnalysis = True
-                                                   ,outputfile = fromMaybe "DataModel.adl" mbnm}) "file")
-               "export a data model as plain Ampersand script, for analysing Excel-data."
-            , Public)
-          , (Option ['o']     ["outputDir"]
+            , (Option ['D']        ["dataAnalysis"]
+            (OptArg (\mbnm opts -> opts{dataAnalysis = True
+                                                ,outputfile = fromMaybe "DataModel.adl" mbnm}) "file")
+            "export a data model as plain Ampersand script, for analysing Excel-data."
+         , Public)
+       , (Option ['o']     ["outputDir"]
                (ReqArg (\nm opts -> opts{dirOutput = nm}
                        ) "DIR")
                ("output directory (This overrules environment variable "++ dirOutputVarName ++ ").")
             , Public)
-          , (Option []        ["namespace"]
+          , (Option []      ["namespace"]
                (ReqArg (\nm opts -> opts{namespace = nm}
                        ) "NAMESPACE")
                "prefix database identifiers with this namespace, to isolate namespaces within the same database."
-            , Public)
-          , (Option ['f']     ["fspec"]
+            , Hidden)
+          , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> opts
                                 { genFSpec=True
                                 , fspecFormat= case map toUpper w of
