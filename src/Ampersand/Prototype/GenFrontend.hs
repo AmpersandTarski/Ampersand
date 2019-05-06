@@ -79,7 +79,7 @@ doGenFrontend opts@Options{..} fSpec =
     ; writePrototypeAppFile opts ".timestamp" (show . hash . show $ genTime) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     ; copyCustomizations opts 
     -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
-    ; when isCleanInstall $ do
+    ; when (isCleanInstall && runComposer) $ do
       putStrLn "Installing dependencies..." -- don't use verboseLn here, because installing dependencies takes some time and we want the user to see this
       installComposerLibs opts
     ; verboseLn "Frontend generated"
