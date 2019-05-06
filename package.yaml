@@ -25,6 +25,8 @@ ghc-options:
       - -Wall
       - -Wcompat
       - -Widentities
+      # TODO: Remove this option once https://github.com/haskell/cabal/issues/4739 is fixed
+      - -optP-Wno-nonportable-include-path  # Workaround, See issue #937
 #      - -Wincomplete-record-updates
 #      - -Wincomplete-uni-patterns
 #      - -Wredundant-constraints
@@ -69,7 +71,7 @@ dependencies:
       - xlsx == 0.7.*
       - yaml == 0.11.*
       - yaml-config == 0.4.*
-      - zip-archive == 0.3.3
+      - zip-archive >= 0.4.1
       - zlib == 0.6.*
 when:
   - condition: os(windows)
