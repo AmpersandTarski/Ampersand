@@ -50,7 +50,7 @@ startAmpersandDaemon opts = do
 initialState :: Options -> IO (Either [String] DaemonState)
 initialState opts = do
    curDir <- getCurrentDirectory
-   dotAmpersand <- makeAbsolute $ curDir </> ".ampersand"
+   dotAmpersand <- makeAbsolute $ curDir </> daemonConfig opts
    exists <- doesFileExist dotAmpersand
    if exists 
    then do

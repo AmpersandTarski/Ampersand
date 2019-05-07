@@ -75,7 +75,7 @@ doGenFrontend opts@Options{..} fSpec =
     ; writePrototypeAppFile opts ".timestamp" (show . hash . show $ genTime) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     ; copyCustomizations opts 
     -- ; deleteTemplateDir fSpec -- don't delete template dir anymore, because it is required the next time the frontend is generated
-    ; when isCleanInstall $ do
+    ; when (isCleanInstall && runComposer) $ do
       putStrLn "Installing dependencies..." -- don't use verboseLn here, because installing dependencies takes some time and we want the user to see this
       installComposerLibs opts
     ; verboseLn "Frontend generated"
@@ -458,10 +458,14 @@ downloadPrototypeFramework Options{..} =
     then do
       verboseLn "Emptying folder to deploy prototype framework"
       destroyDestinationDir
+      let url = "https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion++".zip"
       verboseLn "Start downloading prototype framework."
-      response <- 
-        parseRequest ("https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion++".zip") >>=
-        httpBS  
+      response <- (parseRequest url >>= httpBS) `catch` \err ->  
+                          exitWith . FailedToInstallPrototypeFramework $
+                              [ "Error encountered during deployment of prototype framework:"
+                              , "  Failed to download "<>url
+                              , show (err :: SomeException)
+                              ]
       let archive = removeTopLevelFolder 
                   . toArchive 
                   . BL.fromStrict 
@@ -470,9 +474,20 @@ downloadPrototypeFramework Options{..} =
       let zipoptions = 
               [OptVerbose | verboseP ]
             ++ [OptDestination destination]
-      extractFilesFromArchive zipoptions archive
-      writeFile (destination </> ".frameworkSHA")
-                (show . zComment $ archive)
+      (extractFilesFromArchive zipoptions archive `catch` \err ->  
+                          exitWith . FailedToInstallPrototypeFramework $
+                              [ "Error encountered during deployment of prototype framework:"
+                              , "  Failed to extract the archive found at "<>url
+                              , show (err :: SomeException)
+                              ])
+      let dest = destination </> ".frameworkSHA"  
+      (writeFile dest (show . zComment $ archive) `catch` \err ->  
+                          exitWith . FailedToInstallPrototypeFramework $
+                              [ "Error encountered during deployment of prototype framework:"
+                              , "Archive seems valid: "<>url
+                              , "  Failed to write contents of archive to "<>dest
+                              , show (err :: SomeException)
+                              ])
       return x
     else return x
   ) `catch` \err ->  -- git failed to execute

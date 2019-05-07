@@ -4,7 +4,11 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
+<<<<<<< HEAD
 -- hash: 4393e65237b2d8d2e6c57a14f261f63a24d96d2dd15916b3ab8d15ef126ca66c
+=======
+-- hash: d12c6ef918ae011f087cbf7ef6d7cb0de97292740ce4e971b2fdfb502024ec69
+>>>>>>> development
 
 name:           ampersand
 version:        3.16.0
@@ -529,7 +533,7 @@ library
   hs-source-dirs:
       src/
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
@@ -569,7 +573,7 @@ library
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.4
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -586,7 +590,7 @@ executable ampPreProc
   hs-source-dirs:
       app/AmpPreProc
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
@@ -627,7 +631,7 @@ executable ampPreProc
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.4
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -646,7 +650,7 @@ executable ampersand
   hs-source-dirs:
       app/Ampersand
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
@@ -687,7 +691,7 @@ executable ampersand
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.4
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -705,7 +709,7 @@ test-suite ampersand-test
   hs-source-dirs:
       app/Test
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
@@ -746,7 +750,7 @@ test-suite ampersand-test
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.4
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:
@@ -764,7 +768,7 @@ test-suite regression-test
   hs-source-dirs:
       app/RegressionTest
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
@@ -805,7 +809,7 @@ test-suite regression-test
     , xlsx ==0.7.*
     , yaml ==0.11.*
     , yaml-config ==0.4.*
-    , zip-archive ==0.4
+    , zip-archive >=0.4.1
     , zlib ==0.6.*
   if os(windows)
     build-depends:

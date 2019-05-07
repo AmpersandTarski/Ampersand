@@ -18,6 +18,7 @@ extra-deps:
 - SpreadsheetML-0.1
 - wl-pprint-1.2.1
 - yaml-config-0.4.0
+- zip-archive-0.4.1@sha256:51774bdc747d20b8f23172315f9c3fdd6c11de01607e98e9890eb87fb49566d7 # can be removed when LTS >= lts-13.19
 
 # Override default flag values for local packages and extra-deps
 flags: {}

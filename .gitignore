@@ -10,6 +10,9 @@ cabal.sandbox.config
 /dist-newstyle
 .idea
 
+# Temporarily disable ampersand.cabal (See issue #931)
+/ampersand.cabal
+
 StaticFiles_Generated.hs
 BuildInfo_Generated.hs
 
