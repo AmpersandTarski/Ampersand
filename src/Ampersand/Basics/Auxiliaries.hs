@@ -13,7 +13,7 @@ import           Ampersand.Basics.Prelude
 import           RIO.List(foldl,intersect,nub,union)
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map as Map 
-import qualified Data.Set as Set 
+import qualified RIO.Set as Set 
 
 -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
 -- that each sublist in the result contains only equal elements, and all equal elements are in

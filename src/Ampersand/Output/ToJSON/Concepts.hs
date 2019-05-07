@@ -9,7 +9,7 @@ import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.JSONutils 
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
 data Concept = Concept

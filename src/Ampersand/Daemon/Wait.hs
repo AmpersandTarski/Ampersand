@@ -16,7 +16,7 @@ import           Ampersand.Misc
 import           Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
 import           Control.Monad.Extra(partitionM,concatMapM,ifM,firstJustM)
 import qualified Data.Map as Map
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           Data.Time.Clock
 import qualified RIO.List as L
 import           System.Directory.Extra(doesDirectoryExist,listContents,canonicalizePath)

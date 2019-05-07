@@ -77,7 +77,7 @@ import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map as Map
 import           Data.Maybe         (fromMaybe)
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           Data.Text          (Text,unpack,pack)
 import           Data.Time.Calendar (showGregorian,Day, fromGregorian, addDays)
 import           Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)

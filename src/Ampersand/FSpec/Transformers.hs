@@ -18,7 +18,7 @@ import           Ampersand.FSpec.Motivations
 import           Ampersand.Misc
 import           Data.Hashable
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 
 -- | The function that retrieves the population of

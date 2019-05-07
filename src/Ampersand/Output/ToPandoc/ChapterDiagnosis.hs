@@ -6,7 +6,7 @@ module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import           Data.Maybe(isJust,fromMaybe)
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 chpDiagnosis :: Options -> FSpec -> (Blocks,[Picture])
 chpDiagnosis opts@Options{..} fSpec
@@ -408,11 +408,11 @@ chpDiagnosis opts@Options{..} fSpec
                           ,EN "This rule contains work (for ")
                 <>commaPandocOr (fsLang fSpec) (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                 <>")"
-                <> if Set.size ps == 1
-                   then   (str.l) (NL ", te weten ", EN " by ")
-                       <> oneviol r (Set.elemAt 0 ps)
-                       <> "."
-                   else   (str.l) (NL $ ". De volgende tabel laat de "++(if Set.size ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
+                <> case Set.toList ps of
+                     [v] ->   (str.l) (NL ", te weten ", EN " by ")
+                           <> oneviol r v
+                           <> "."
+                     _ -> (str.l) (NL $ ". De volgende tabel laat de "++(if Set.size ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
                                   ,EN $ "The following table shows the "++(if Set.size ps>10 then "first ten " else "")++"items that require attention.")
                )
        <> if Set.size ps <= 1

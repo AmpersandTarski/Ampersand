@@ -9,7 +9,7 @@ import           Ampersand.Misc
 import           Ampersand.Prototype.PHP
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and

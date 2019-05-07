@@ -20,7 +20,7 @@ import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified RIO.List    as L
 import qualified Data.Map    as Map
-import qualified Data.Set    as Set
+import qualified RIO.Set    as Set
 
 -- optimisations possible for the EqualitySystem(s):
 -- (1) apply optimize1 inline, that is: don't use EqualitySystem but use ES1 instead

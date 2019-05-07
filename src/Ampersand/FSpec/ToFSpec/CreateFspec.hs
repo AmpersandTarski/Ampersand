@@ -18,7 +18,7 @@ import           Ampersand.Input
 import           Ampersand.Misc
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           System.FilePath
 
 -- | create an FSpec, based on the provided command-line options.

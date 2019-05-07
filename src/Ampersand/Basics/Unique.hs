@@ -11,7 +11,7 @@ where
 import           Ampersand.Basics.Prelude
 import           RIO.Char
 import qualified RIO.List as L
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           Data.Typeable
 
 -- | anything could have some label, can't it?

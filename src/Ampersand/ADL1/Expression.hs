@@ -11,7 +11,7 @@ where
 import           Ampersand.Basics
 import           Ampersand.Core.AbstractSyntaxTree
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to an

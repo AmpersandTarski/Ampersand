@@ -7,7 +7,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpecAux
 import           Ampersand.Output.ToJSON.JSONutils 
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 data Relationz = Relationz [RelationJson]deriving (Generic, Show)
 data RelationJson = RelationJson

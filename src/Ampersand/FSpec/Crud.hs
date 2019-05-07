@@ -5,7 +5,7 @@ import           Ampersand.Classes
 import           Ampersand.ADL1
 import qualified RIO.List as L
 import qualified Data.Map as Map 
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
 
 -- NOTE: The definitions of the various CRUD aspects are still a bit quirky and will most-likely need refinement. 

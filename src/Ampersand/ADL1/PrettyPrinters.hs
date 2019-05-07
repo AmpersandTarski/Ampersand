@@ -13,7 +13,7 @@ import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Text as T
 import           RIO.Text.Partial (replace)  --TODO: Get rid of replace, because it is partial
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           Text.PrettyPrint.Leijen
 
 prettyPrint :: Pretty a => a -> String

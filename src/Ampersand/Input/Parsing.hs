@@ -24,7 +24,7 @@ import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,
 import           Ampersand.Misc
 import           RIO.Char(toLower)
 import qualified RIO.List as L
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           System.Directory
 import           System.FilePath
 import           Text.Parsec.Prim (runP)

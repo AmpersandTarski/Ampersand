@@ -8,7 +8,7 @@ import           Ampersand.Classes
 import           Ampersand.FSpec
 import           Ampersand.Graphic.ClassDiagram
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.

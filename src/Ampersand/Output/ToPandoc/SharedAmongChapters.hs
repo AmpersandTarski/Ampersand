@@ -41,7 +41,7 @@ import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc
 import           Ampersand.Output.PandocAux
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import qualified Data.Time.Format as DTF
 import           Data.Typeable (typeOf)
 import           GHC.Exts(sortWith)

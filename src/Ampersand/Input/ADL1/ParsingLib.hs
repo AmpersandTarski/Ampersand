@@ -26,7 +26,7 @@ import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
 import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
 import           RIO.Char(toLower)
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
 import           Text.Parsec as P hiding(satisfy,sepBy1,(<|>))

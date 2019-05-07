@@ -37,7 +37,7 @@ import           Ampersand.FSpec.Crud
 import           Data.Function (on)
 import           Data.Hashable
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           Data.Text (Text,unpack)
 import qualified RIO.List as L
 import           Text.Pandoc.Builder (Blocks)

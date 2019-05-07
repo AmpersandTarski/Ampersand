@@ -10,7 +10,7 @@ import           RIO.Char hiding (Space)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import           Data.List.Split(splitOn)
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 chpNatLangReqs :: Options -> Int -> FSpec -> Blocks
 chpNatLangReqs opts@Options{..} lev fSpec =

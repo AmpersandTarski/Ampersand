@@ -15,8 +15,8 @@ import           Ampersand.Input (parseRule)
 import           Ampersand.Misc
 import           Data.Hashable
 import qualified Data.List.NonEmpty as NEL
-import           Data.Set (Set)
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
+import qualified RIO.Set.Partial as SetPartial 
 import           Data.Text (pack)
 import qualified RIO.List as L
 
@@ -405,8 +405,8 @@ splitList :: [a] -> [([a],a,[a])]
 splitList lst = [(take i lst,l,drop (i+1) lst) | (i,l) <- zip [0..] lst]
 
 instance HasSignature RTerm where
-  sign (RIsc a)      = sign$ Set.findMin a
-  sign (RUni a)      = sign$ Set.findMin a
+  sign (RIsc a)      = sign$ SetPartial.findMin a
+  sign (RUni a)      = sign$ SetPartial.findMin a
   sign (RDif a _)    = sign a
   sign (RCpl a)      = sign a
   sign (RDia a b)    = Sign (source a) (target b)

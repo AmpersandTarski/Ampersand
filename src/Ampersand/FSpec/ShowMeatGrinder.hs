@@ -19,7 +19,7 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
 import           Ampersand.Misc
 import qualified RIO.List as L
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.

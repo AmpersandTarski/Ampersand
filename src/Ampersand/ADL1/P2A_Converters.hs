@@ -25,7 +25,7 @@ import           Data.Hashable
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map as Map
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           Data.Text (pack)
 
 pConcToType :: P_Concept -> Type

@@ -12,7 +12,7 @@ import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.AbstractSyntaxTree
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           Control.Arrow
 import           Text.PrettyPrint.Leijen (Pretty(..),text)
 

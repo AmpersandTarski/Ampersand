@@ -11,7 +11,7 @@ import           RIO.Char
 import           Data.Function (on)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec

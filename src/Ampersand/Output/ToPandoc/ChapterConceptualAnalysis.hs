@@ -5,7 +5,7 @@ module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 chpConceptualAnalysis :: Options -> Int -> FSpec -> (Blocks,[Picture])
 chpConceptualAnalysis opts@Options{..} lev fSpec = (

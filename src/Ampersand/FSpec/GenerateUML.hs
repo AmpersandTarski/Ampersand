@@ -8,7 +8,7 @@ import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Control.Monad.State.Lazy  (State, gets, evalState, modify)  --TODO: Replace by RIO state
 import qualified RIO.List as L
 import qualified Data.Map as Map
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 -- TODO: escape
 -- TODO: names of model, package, assoc (empty?), etc.

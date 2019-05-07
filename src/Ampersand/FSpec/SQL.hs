@@ -15,7 +15,7 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.FSpecAux
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import qualified Data.Text as Text
 import           Language.SQL.SimpleSQL.Pretty
 import           Language.SQL.SimpleSQL.Syntax

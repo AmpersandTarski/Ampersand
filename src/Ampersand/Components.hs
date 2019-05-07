@@ -22,7 +22,7 @@ import qualified Data.ByteString.Lazy as BSL
 import           Data.Function (on)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
 import           Data.Maybe (isJust, fromJust)
 import           System.Directory

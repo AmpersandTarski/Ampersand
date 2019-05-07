@@ -3,7 +3,7 @@ module Main (main) where
 import Ampersand
 import System.Environment
 import Ampersand.Input.PreProcessor
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 main :: IO ()
 main =

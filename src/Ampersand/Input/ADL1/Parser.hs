@@ -13,7 +13,7 @@ import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.List as L
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import qualified Data.List.NonEmpty as NEL
 
 --- Populations ::= Population+

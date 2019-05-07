@@ -8,7 +8,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Output.ToJSON.JSONutils
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import qualified Data.Text as Text
 import qualified RIO.List as L
 
