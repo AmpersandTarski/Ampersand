@@ -175,7 +175,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                      ]
                        ( [[ (plain.text.name) attr
                           , (plain.text) ((name.target.attExpr) attr++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
-                          , (plain . text) (show (Set.size pairs)++"("++show (round ((fromIntegral(Set.size pairs)*100.0/fromIntegral n)::Float)::Int)++"%)")
+                          , (plain . text) (percent (Set.size pairs) n)
                           , (plain . text . show . Set.size . Set.map apRight) pairs
                           ]
                          | Just cpt <-[clcpt cl], attr<-attributesOfConcept fSpec cpt
@@ -185,13 +185,13 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                          <>
                          [[ (plain.text.name) attr
                           , (plain.text) ((name.target.attExpr) attr++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
-                          , (plain . text) (show (Set.size pairs)++"("++show (round ((fromIntegral(Set.size pairs)*100.0/fromIntegral n)::Float)::Int)++"%)")
+                          , (plain . text) (percent (Set.size pairs) n)
                           , (plain . text . show . Set.size . Set.map apRight) pairs
                        -- , (plain . text . show) nTgtConcept
                           ]
                          | Just cpt <-[clcpt cl], cpt'<-generalizationsOf fSpec cpt, cpt/=cpt', attr<-attributesOfConcept fSpec cpt'
                          , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr::SqlAttribute)]
-                         , pairs<-[pairsInExpr fSpec (EDcI cpt .:. attExpr attr)]
+                         , pairs<-[pairsInExpr fSpec (EDcI cpt .:. EEps cpt' (Sign cpt cpt') .:. attExpr attr)]
                          ]
                        )
         <> let asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
@@ -199,34 +199,33 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
            in  case asscs of
                  [] -> para ( text (name cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
                  _  -> para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
-                         <> orderedList (map assocToRow asscs) 
-                         <> simpleTable [(plain.text.l) (NL "Attribuut", EN "Attribute")
-                         ,(plain.text.l) (NL "Type"     , EN "Type")
-                         ,(plain.text.l) (NL "gevuld"   , EN "filled")
-                         ,(plain.text.l) (NL "#uniek"   , EN "#unique")
-                         ]
-                         [[ (plain.text.name) attr
-                          , (plain.text) ((name.target.attExpr) attr++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
-                          , (plain . text) (show (Set.size pairs)++"("++show (round ((fromIntegral(Set.size pairs)*100.0/fromIntegral n)::Float)::Int)++"%)")
-                          , (plain . text . show . Set.size . Set.map apRight) pairs
-                          ]
-                         | Just cpt <-[clcpt cl], attr<-attributesOfConcept fSpec cpt
-                         , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr::SqlAttribute)]
-                         , pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
-                         ]
+                       <> simpleTable
+                            [(plain.text.l) (NL "Source" , EN "Source")
+                            ,(plain.text.l) (NL "uniek"   , EN "unique")
+                            ,(plain.text.l) (NL "Associatie", EN "Association")
+                            ,(plain.text.l) (NL "Target" , EN "Target")
+                            ,(plain.text.l) (NL "uniek"   , EN "unique")
+                            ]
+                            [[ (plain.text) ((name.source) rel++"("++show nSrcConcept++")")   -- use "show.attType" for the technical type.
+                             , (plain . text) (percent (Set.size (Set.map apLeft pairs)) nSrcConcept)
+                             , (plain.text) (name rel++"("++show (Set.size pairs)++")")
+                             , (plain.text) ((name.target) rel++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                             , (plain . text) (percent (Set.size (Set.map apRight pairs)) nTgtConcept)
+                             ]
+                            | Just rel<-map assmdcl asscs
+                            , nSrcConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . source) rel]
+                            , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target) rel]
+                            , pairs<-[(pairsInExpr fSpec . EDcD) rel]
+                            ]
     where
+     percent :: (Integral a, Show a) => a -> a -> String
+     percent num denom
+      = if denom==0
+        then show num
+        else show num++"("++show ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)++"%)"
      n ::Int
      n = (Set.size .atomsInCptIncludingSmaller fSpec . unJust . clcpt) cl
          where unJust (Just cpt) = cpt; unJust _ = fatal "unexpected Just"
-     assocToRow :: Association -> Blocks
-     assocToRow assoc  =
-         plain (  (text.assrhr) assoc
-                <>(text.l) (NL " (van ",EN " (from ")
-                <>(text.assSrc) assoc
-                <>(text.l) (NL " naar ", EN " to ")
-                <>(text.assTgt) assoc
-                <>text ")."
-               ) 
      {- <>
         if (null.assrhr) assoc
         then fatal "Shouldn't happen: flip the relation for the right direction!"
