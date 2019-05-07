@@ -13,7 +13,7 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import           System.Directory

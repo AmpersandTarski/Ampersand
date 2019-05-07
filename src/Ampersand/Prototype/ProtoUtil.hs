@@ -13,7 +13,7 @@ module Ampersand.Prototype.ProtoUtil
  
 import           Ampersand.Basics
 import           Ampersand.Misc
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.Text as Text
 import           System.Directory
 import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))

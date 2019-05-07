@@ -12,7 +12,7 @@ import           Data.GraphViz.Attributes as GVatt
 import           Data.GraphViz.Attributes.Complete as GVcomp
 import           Data.GraphViz.Attributes.HTML as Html
 import           Data.GraphViz.Types.Canonical hiding (attrs)
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.Set as Set
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.

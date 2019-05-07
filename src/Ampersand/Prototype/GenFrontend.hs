@@ -14,7 +14,7 @@ import           Codec.Archive.Zip
 import qualified Data.ByteString.Lazy  as BL
 import           RIO.Char
 import           Data.Hashable (hash)
-import qualified Data.List as L
+import qualified RIO.List as L
 import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath

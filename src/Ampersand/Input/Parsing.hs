@@ -23,7 +23,7 @@ import           Ampersand.Input.Xslx.XLSX
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
 import           Ampersand.Misc
 import           RIO.Char(toLower)
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.Set as Set
 import           System.Directory
 import           System.FilePath
@@ -52,9 +52,13 @@ parseThing' opts@Options{..} pc = do
   results <- parseADLs opts [] [pc]
   case results of 
      Errors err    -> return ([pc], Errors err)
-     Checked xs ws -> return ( fst . L.unzip $ xs
-                             , Checked (L.foldl1 mergeContexts . snd . L.unzip $ xs) ws
+     Checked xs ws -> return ( candidates
+                             , Checked mergedContexts ws
                              )
+              where (candidates,contexts) = L.unzip xs
+                    mergedContexts = case contexts of
+                          [] -> fatal "Impossible"
+                          h:tl -> foldr mergeContexts h tl
 
 -- | Parses several ADL files
 parseADLs :: Options                  -- ^ The options given through the command line

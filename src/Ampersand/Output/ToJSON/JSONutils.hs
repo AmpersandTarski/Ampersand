@@ -27,7 +27,7 @@ import           Data.Aeson hiding (Options)
 import qualified Data.Aeson.Types as AT 
 import           Data.Aeson.Encode.Pretty
 import qualified Data.ByteString.Lazy as BS
-import qualified Data.List as L
+import qualified RIO.List as L
 import           GHC.Generics
 import           System.FilePath
 import           System.Directory

@@ -7,7 +7,7 @@ module Ampersand.Output.ToJSON.Concepts
 where
 import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.JSONutils 
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 

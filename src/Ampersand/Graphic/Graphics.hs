@@ -15,7 +15,7 @@ import           Ampersand.Misc
 import           RIO.Char
 import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Data.String(fromString)

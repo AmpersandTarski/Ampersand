@@ -10,7 +10,7 @@ module Ampersand.Basics.Unique
 where
 import           Ampersand.Basics.Prelude
 import           RIO.Char
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.Set as Set
 import           Data.Typeable
 

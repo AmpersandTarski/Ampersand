@@ -4,7 +4,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ord(..),Identity)
 import           Ampersand.Classes.Relational  (HasProps(properties))
-import qualified Data.List as L
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 
