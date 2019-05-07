@@ -17,7 +17,7 @@ import           Ampersand.FSpec.Transformers
 import           Ampersand.Input
 import           Ampersand.Misc
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           System.FilePath
 

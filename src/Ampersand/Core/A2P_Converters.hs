@@ -18,7 +18,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           RIO.Char
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),map,fromList)
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import qualified Data.Text as T
 

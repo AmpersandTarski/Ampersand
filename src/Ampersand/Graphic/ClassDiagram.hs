@@ -3,7 +3,7 @@ module Ampersand.Graphic.ClassDiagram
           Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..) , MinValue(..), MaxValue(..)
            ) where
-import Data.List
+import qualified RIO.List as L
 import Ampersand.Basics
 import Ampersand.ADL1
      ( A_Concept, Relation, AClassify
@@ -70,12 +70,12 @@ data Method         = OOMethodC      String             -- name of this method, 
                                      String             -- result: a type
 
 instance Show Method where
-  show (OOMethodC nm cs)  = nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"):handle"
-  show (OOMethodR nm as)  = nm++"(handle):["++intercalate "," [ n | OOAttr n _ _<-as]++"]"
-  show (OOMethodS nm ks)  = nm++"("++intercalate "," [ n | OOAttr n _ _<-ks]++"):handle"
+  show (OOMethodC nm cs)  = nm++"("++L.intercalate "," [ n | OOAttr n _ _<-cs]++"):handle"
+  show (OOMethodR nm as)  = nm++"(handle):["++L.intercalate "," [ n | OOAttr n _ _<-as]++"]"
+  show (OOMethodS nm ks)  = nm++"("++L.intercalate "," [ n | OOAttr n _ _<-ks]++"):handle"
   show (OOMethodD nm)     = nm++"(handle)"
-  show (OOMethodU nm cs)  = nm++"(handle,"++intercalate "," [ n | OOAttr n _ _<-cs]++")"
-  show (OOMethod nm cs r) = nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"): "++r
+  show (OOMethodU nm cs)  = nm++"(handle,"++L.intercalate "," [ n | OOAttr n _ _<-cs]++")"
+  show (OOMethod nm cs r) = nm++"("++L.intercalate "," [ n | OOAttr n _ _<-cs]++"): "++r
 
 --
 --   testCD

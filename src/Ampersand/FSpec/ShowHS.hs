@@ -11,7 +11,7 @@ import           Ampersand.Misc
 import           RIO.Char                  (isAlphaNum)
 import           Data.Hashable
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL (toList,NonEmpty)
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Text.Pandoc hiding (Meta)
 

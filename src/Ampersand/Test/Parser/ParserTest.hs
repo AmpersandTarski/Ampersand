@@ -10,7 +10,7 @@ import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
 import           Ampersand.Misc
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified Data.List.NonEmpty as NEL
 
 -- Tries to parse all the given files
 parseScripts :: Options -> [FilePath] -> IO Bool

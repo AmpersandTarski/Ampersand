@@ -14,7 +14,7 @@ import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.FSpecAux
-import qualified Data.List.NonEmpty as NEL (partition,head,tail,toList)
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import           Language.SQL.SimpleSQL.Pretty

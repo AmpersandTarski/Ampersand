@@ -13,7 +13,7 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
-import           Data.List
+import qualified Data.List as L
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import           System.Directory
@@ -52,7 +52,7 @@ evaluateExpSQL opts@Options{..} fSpec dbNm expr =
 performQuery :: Options -> Text.Text -> SqlQuery -> IO [(String,String)]
 performQuery opts@Options{..} dbNm queryStr =
  do { queryResult <- (executePHPStr . showPHP) php
-    ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
+    ; if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do mapM_ putStrLn (lines (Text.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
               fatal ("PHP/SQL problem: "<>queryResult)
       else case reads queryResult of
@@ -95,7 +95,7 @@ executePHPStr phpStr =
     ; return (normalizeNewLines results)
     }
 normalizeNewLines :: String -> String
-normalizeNewLines = f . intercalate "\n" . lines
+normalizeNewLines = f . L.intercalate "\n" . lines
   where 
     f [] = []
     f ('\r':'\n':rest) = '\n':f rest
@@ -184,7 +184,7 @@ createTempDatabase opts@Options{..} fSpec =
     }
  where 
   lineNumbers :: [Text.Text] -> String
-  lineNumbers = intercalate "  \n" . map withNumber . zip [1..] . map Text.unpack
+  lineNumbers = L.intercalate "  \n" . map withNumber . zip [1..] . map Text.unpack
     where
       withNumber :: (Int,String) -> String
       withNumber (n,t) = "/*"<>take (5-length(show n)) "00000"<>show n<>"*/ "<>t

@@ -4,7 +4,7 @@ module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ordering(..))
 import           Ampersand.Classes.ViewPoint
-import qualified Data.List.NonEmpty as NEL (toList, NonEmpty)
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 
 class ConceptStructure a where

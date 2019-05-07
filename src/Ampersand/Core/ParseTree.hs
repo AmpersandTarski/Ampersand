@@ -38,7 +38,7 @@ module Ampersand.Core.ParseTree (
 import           Ampersand.Basics hiding (foldr, sequence, concatMap)
 import           Ampersand.Input.ADL1.FilePos
 import           Data.Foldable hiding (concat)
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head)
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock

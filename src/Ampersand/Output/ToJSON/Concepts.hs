@@ -7,8 +7,8 @@ module Ampersand.Output.ToJSON.Concepts
 where
 import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.JSONutils 
-import           Data.List(nub)
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified Data.List as L
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Set as Set
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
@@ -64,8 +64,8 @@ instance JSON A_Concept Concept where
   , cptJSONtype              = show . cptTType fSpec $ cpt
   , cptJSONgeneralizations   = map (escapeIdentifier . name) . largerConcepts  (vgens fSpec) $ cpt
   , cptJSONspecializations   = map (escapeIdentifier . name) . smallerConcepts (vgens fSpec) $ cpt
-  , cptJSONdirectGens        = map (escapeIdentifier . name) $ nub [ g | (s,g) <- fsisa fSpec, s == cpt]
-  , cptJSONdirectSpecs       = map (escapeIdentifier . name) $ nub [ s | (s,g) <- fsisa fSpec, g == cpt]
+  , cptJSONdirectGens        = map (escapeIdentifier . name) $ L.nub [ g | (s,g) <- fsisa fSpec, s == cpt]
+  , cptJSONdirectSpecs       = map (escapeIdentifier . name) $ L.nub [ s | (s,g) <- fsisa fSpec, g == cpt]
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
@@ -80,7 +80,7 @@ instance JSON A_Concept Concept where
 instance JSON A_Concept TableCols where
  fromAmpersand _ multi cpt = TableCols
   { tclJSONname    = name cptTable
-  , tclJSONcols    = case nub . map fst $ cols of
+  , tclJSONcols    = case L.nub . map fst $ cols of
                        [t] -> if name t == name cptTable
                               then map (attName . snd) cols
                               else fatal $ "Table names should match: "++name t++" "++name cptTable++"." 
