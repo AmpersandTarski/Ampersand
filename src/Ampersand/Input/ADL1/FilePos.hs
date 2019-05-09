@@ -76,7 +76,7 @@ instance Show Origin where
   show (FileLoc pos _) = show pos
   show (XLSXLoc filePath sheet (row,col)) 
                        = filePath++":"++
-                         "\n   Sheet: "++sheet++", "++T.unpack (int2col col)++show row
+                         "\n   Sheet: "++sheet++", Cell: "++T.unpack (int2col col)++show row
   show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
   show (Origin str)    = str
   show OriginUnknown   = "Unknown origin"
@@ -85,11 +85,10 @@ class Traced a where
   origin :: a -> Origin
   filenm :: a -> String
   linenr :: a -> Int
-  colnr :: a -> Int
+  colnr  :: a -> Int
   filenm x = case origin x of
                FileLoc (FilePos nm _ _) _ -> nm
-               XLSXLoc filePath sheet _         -> show filePath++":"++
-                         "\n   Sheet: "++sheet
+               XLSXLoc filePath _ _       -> filePath
                _ -> ""
   linenr x = case origin x of
                FileLoc (FilePos _ l _) _ -> l
