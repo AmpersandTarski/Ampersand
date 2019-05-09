@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dd9b1059a52da8378220788b0b2f9016eca9ed43d94b3197f4f874fcb70ad83c
+-- hash: d12c6ef918ae011f087cbf7ef6d7cb0de97292740ce4e971b2fdfb502024ec69
 
 name:           ampersand
 version:        3.16.0
@@ -535,7 +535,7 @@ library
   hs-source-dirs:
       src/
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
@@ -592,7 +592,7 @@ executable ampPreProc
   hs-source-dirs:
       app/AmpPreProc
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
@@ -652,7 +652,7 @@ executable ampersand
   hs-source-dirs:
       app/Ampersand
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
@@ -711,7 +711,7 @@ test-suite ampersand-test
   hs-source-dirs:
       app/Test
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*
@@ -770,7 +770,7 @@ test-suite regression-test
   hs-source-dirs:
       app/RegressionTest
   default-extensions: NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -threaded
   build-depends:
       HStringTemplate ==0.8.*
     , MissingH ==1.4.*

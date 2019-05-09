@@ -6,6 +6,7 @@
 * [Issue #578](https://github.com/AmpersandTarski/Ampersand/issues/578) Implement meta model for navigation menu
 * [Issue #932](https://github.com/AmpersandTarski/Ampersand/issues/932) `--daemon` now has an optional parameter to tell what config file is used. defaults to `.ampersand`.
 * [Issue #903](https://github.com/AmpersandTarski/Ampersand/issues/903) Add switch to skip installing php dependencies (using Composer package manager).
+* [Issue #952](https://github.com/AmpersandTarski/Ampersand/issues/952) Fixed bug causing the ampersand daemon to crash when an .xlsx file had an error.
 * Upgrade to [prototype framework v1.2.0](https://github.com/AmpersandTarski/Prototype/releases/tag/v1.2.0). Needed for [Issue #578](https://github.com/AmpersandTarski/Ampersand/issues/578)
 
 ## v3.16.0 (8 april 2019) (few days before scedule)
