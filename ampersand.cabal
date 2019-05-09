@@ -4,10 +4,10 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d12c6ef918ae011f087cbf7ef6d7cb0de97292740ce4e971b2fdfb502024ec69
+-- hash: 902021d6af0b4c369be0cd4e33186046577fa5fdc7dee6d59e3d5fa786bfbc07
 
 name:           ampersand
-version:        3.16.0
+version:        3.16.1
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design

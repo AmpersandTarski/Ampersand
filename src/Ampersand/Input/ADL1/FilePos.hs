@@ -76,7 +76,7 @@ instance Show Origin where
   show (FileLoc pos _) = show pos
   show (XLSXLoc filePath sheet (row,col)) 
                        = filePath++":"++
-                         "\n   Sheet: "++sheet++", Cell: "++T.unpack (int2col col)++show row
+                         "\n   Sheet: "++sheet++", Cell: "++T.unpack (int2col col)++show row++". "
   show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
   show (Origin str)    = str
   show OriginUnknown   = "Unknown origin"
