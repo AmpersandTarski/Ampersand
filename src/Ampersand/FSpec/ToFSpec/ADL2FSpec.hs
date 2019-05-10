@@ -480,7 +480,3 @@ tblcontents ci ps plug
                                   --  , when there are violations
                                   --  , when you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)
                                   --  , when a relation in formalAmpersand is declared UNI, but actually it isn't.
-
-                               
-                        
-                        

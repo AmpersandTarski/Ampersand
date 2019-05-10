@@ -245,7 +245,7 @@ theSheetCellsForTable (sheetName,ws)
             _ -> False
        isProperRelName k 
          = case value k of
-            Just (CellText t) -> (not . T.null . trim) t && (isLower . T.head . trim) t
+            Just (CellText t) -> (not . T.null . trim) t -- && (isLower . T.head . trim) t
             _ -> False
                
 conceptNameWithOptionalDelimiter :: T.Text -> Maybe ( String     {- Conceptname -} 

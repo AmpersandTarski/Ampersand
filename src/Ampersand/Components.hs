@@ -35,7 +35,7 @@ import           Text.Pandoc.Builder
 generateAmpersandOutput :: Options -> MultiFSpecs -> IO ()
 generateAmpersandOutput opts@Options{..} multi = 
   do { verboseLn "Checking for rule violations..."
-     ; reportInvViolations violationsOfInvariants
+     ; if dataAnalysis then verboseLn "Not checking for rule violations because of data analysis." else reportInvViolations violationsOfInvariants
      ; reportSignals (initialConjunctSignals fSpec)
      ; createDirectoryIfMissing True dirOutput
      ; sequence_ . map snd . filter fst $ conditionalActions
@@ -43,10 +43,11 @@ generateAmpersandOutput opts@Options{..} multi =
   where 
    conditionalActions :: [(Bool, IO())]
    conditionalActions = 
-      [ ( genUML               , doGenUML              )
+      [ ( genUML                , doGenUML              )
       , ( haskell               , doGenHaskell          )
       , ( sqlDump               , doGenSQLdump          )
       , ( export2adl            , doGenADL              )
+      , ( dataAnalysis          , doGenADL              )
       , ( genFSpec              , doGenDocument         )
       , ( genFPAExcel           , doGenFPAExcel         )
       , ( genPOPExcel           , doGenPopsXLSX         )
@@ -57,14 +58,22 @@ generateAmpersandOutput opts@Options{..} multi =
       , ( isJust testRule       , ruleTest . fromJust $ testRule)
       ]
    fSpec = userFSpec multi
+
+   -- | For importing and analysing data, Ampersand allows you to annotate an Excel spreadsheet (.xlsx) and turn it into an Ampersand model.
+   -- By default 'doGenADL' exports the model to Export.adl, ready to be picked up by the user and refined by adding rules.
+   -- 1. To analyze data in a spreadsheet, prepare your spreadsheet, foo.xlsx,  and run "Ampersand --dataAnalysis foo.xlsx".
+   --    Expect to find a file "MetaModel.adl" in your working directory upon successful termination.
+   -- 2. To perform a round-trip test, use an Ampersand-script foo.adl and run and run "Ampersand --export foo.adl".
+   --    Expect to find a file "Export.adl" in your working directory which should be semantically equivalent to foo.adl.
    doGenADL :: IO()
    doGenADL =
-    do { putStrLn $ "Generating Ampersand script (ADL) for "  ++ name fSpec ++ "..."
-       ; writeFile outputFile . showA . originalContext $ fSpec
+    do { verboseLn $ "Generating Ampersand script (ADL) for "  ++ name fSpec ++ "..."
+       ; writeFile outputFile (showA ctx) 
        ; verboseLn $ ".adl-file written to " ++ outputFile ++ "."
        }
     where outputFile = dirOutput </> outputfile
-
+          ctx = originalContext fSpec
+ 
    doGenProofs :: IO()
    doGenProofs =
     do { putStrLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "..."
@@ -181,6 +190,7 @@ generateAmpersandOutput opts@Options{..} multi =
                  , "TOT objExpression[BoxItem*Expression]"
                  ]
          else False
+
    reportInvViolations :: [(Rule,AAtomPairs)] -> IO()
    reportInvViolations []    = verboseLn $ "No invariant violations found for the initial population"
    reportInvViolations viols =

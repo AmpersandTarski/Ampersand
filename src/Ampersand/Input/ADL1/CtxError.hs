@@ -475,7 +475,7 @@ mkCrudWarning :: P_Cruds -> [String] -> Warning
 mkCrudWarning (P_Cruds o _ ) msg = Warning o (unlines msg)
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
 mkCaseProblemWarning x y = Warning orig $ L.intercalate "\n    " 
-      ["Ampersand is case sensitive. you might have ment that the following are equal:"
+      ["Ampersand is case sensitive. you might have meant that the following are equal:"
       ,    show (typeOf x) ++"`"++name x++"` and `"++name y++"`."
       ]
     where orig :: Origin 

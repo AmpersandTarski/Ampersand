@@ -1,7 +1,8 @@
 module Ampersand.FSpec.ToFSpec.ADL2Plug
   (makeGeneratedSqlPlugs
   ,typologies
-  ,suitableAsKey)
+  ,suitableAsKey
+  ,attributesOfConcept)
 where
 import           Ampersand.Basics
 import           Ampersand.Classes
@@ -11,6 +12,19 @@ import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import           Ampersand.Misc
 import           RIO.Char
 import qualified RIO.Set as Set
+import qualified Data.List.NonEmpty as NEL
+
+attributesOfConcept :: FSpec -> A_Concept -> [SqlAttribute]
+attributesOfConcept fSpec c
+ = [  att | att<-NEL.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
+   where
+     inKernel :: SqlAttribute -> Bool
+     inKernel att = isUni expr 
+                 && isInj expr
+                 && isSur expr
+                 && (not . isProp) expr
+         where expr = attExpr att 
+              --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
 makeGeneratedSqlPlugs :: Options -> A_Context 
               -> (Relation -> Relation) -- Function to add calculated properties to a relation
@@ -78,15 +92,15 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
           cptAttrib :: A_Concept -> SqlAttribute
           cptAttrib cpt = Att { attName = fromMaybe (fatal ("No name found for `"++name cpt++"`. "))
                                                     (lookup (Left cpt) colNameMap) 
-                              , attExpr = expr
-                              , attType = repr cpt
-                              , attUse  = if cpt == tableKey 
-                                             && repr cpt == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
-                                          then PrimaryKey cpt  
-                                          else PlainAttr
-                              , attNull   = not . isTot $ expr
-                              , attDBNull = cpt /= tableKey 
-                              , attUniq = True
+                              , attExpr    = expr
+                              , attType    = repr cpt
+                              , attUse     = if cpt == tableKey 
+                                                && repr cpt == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
+                                             then PrimaryKey cpt  
+                                             else PlainAttr
+                              , attNull    = not . isTot $ expr
+                              , attDBNull  = cpt /= tableKey 
+                              , attUniq    = True
                               , attFlipped = False
                               }
                 where expr = if cpt == tableKey
@@ -157,8 +171,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                     , attUse  = if suitableAsKey . repr . source $ srcExpr
                                 then ForeignKey (target srcExpr)
                                 else PlainAttr
-                    , attNull = isTot trgExpr
-                    , attDBNull = False  -- false for link tables
+                    , attNull = False  -- false for link tables. This was 'isTot trgExpr' (was this a mistake?)
+                    , attDBNull = False
                     , attUniq = isUni trgExpr
                     , attFlipped = isStoredFlipped dcl
                     }

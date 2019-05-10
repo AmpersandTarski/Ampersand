@@ -127,7 +127,6 @@ fld2AttributeSpec att
                   , fsDbNull = attDBNull att 
                   }
 
-
 insertQuery :: SomeValue val =>
        Bool          -- prettyprinted?
     -> Text.Text     -- The name of the table

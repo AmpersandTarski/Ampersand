@@ -8,9 +8,9 @@ import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
 
 class ConceptStructure a where
-  concs                 :: a -> A_Concepts -- ^ the set of all concepts used in data structure a
-  expressionsIn         :: a -> Expressions -- ^ The set of all expressions within data structure a
-  bindedRelationsIn     :: a -> Relations  -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
+  concs ::             a -> A_Concepts  -- ^ the set of all concepts used in data structure a
+  expressionsIn ::     a -> Expressions -- ^ The set of all expressions within data structure a
+  bindedRelationsIn :: a -> Relations   -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
   bindedRelationsIn = Set.map theBindedRel . Set.filter isBindedRelation . primsMentionedIn
     where 
       isBindedRelation :: Expression -> Bool

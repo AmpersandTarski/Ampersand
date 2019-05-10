@@ -6,6 +6,7 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.FSpec
+import           Ampersand.FSpec.ToFSpec.ADL2Plug
 import           Ampersand.Graphic.ClassDiagram
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
@@ -21,31 +22,18 @@ clAnalysis fSpec =
                    , geners  = map OOGener . vgens $ fSpec
                    , ooCpts  = Set.elems . concs $ fSpec
                    }
-
  where
-    classOf :: A_Concept -> Class
-    classOf c = OOClass { clName = name c
-                        , clcpt  = Just c
-                        , clAtts = attrs c
-                        , clMths = []
-                        }
-    attrs c    = [ makeAttr att 
-                 | att<-NEL.tail  . plugAttributes  $ getConceptTableFor fSpec c
-                 , not (inKernel att), source (attExpr att)==c
-                 ]
-    makeAttr :: SqlAttribute -> CdAttribute
-    makeAttr att 
-              = OOAttr { attNm       = attName att
-                       , attTyp      = if isProp (attExpr att) then "Prop" else (name.target.attExpr) att
-                       , attOptional = attNull att
+   classOf :: A_Concept -> Class
+   classOf c = OOClass { clName = name c
+                       , clcpt  = Just c
+                       , clAtts = (map makeAttr . attributesOfConcept fSpec) c
+                       , clMths = []
                        }
-    inKernel :: SqlAttribute -> Bool
-    inKernel att = isUni expr 
-                && isInj expr
-                && isSur expr
-                && (not . isProp) expr
-        where expr = attExpr att 
-             --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
+   makeAttr :: SqlAttribute -> CdAttribute
+   makeAttr att = OOAttr { attNm       = attName att
+                         , attTyp      = if isProp (attExpr att) then "Prop" else (name.target.attExpr) att
+                         , attOptional = attNull att -- optional if NULL is allowed
+                         }
 
 -- | This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
@@ -163,7 +151,7 @@ tdAnalysis fSpec =
                                 where mkOOattr a =
                                         OOAttr { attNm       = attName a
                                                , attTyp      = (name.target.attExpr) a
-                                               , attOptional = False
+                                               , attOptional = False -- A BinSQL contains pairs, so NULL cannot occur.
                                                }
                , clMths = []
                }
@@ -183,7 +171,7 @@ tdAnalysis fSpec =
             , attTyp = if isProp (attExpr f) && (f `notElem` kernelAtts)
                        then "Prop"
                        else (name.target.attExpr) f
-            , attOptional = attNull f
+            , attOptional = attNull f -- optional if NULL is allowed
             }
    allAssocs = filter isAssocBetweenClasses $ concatMap relsOf tables
      where
