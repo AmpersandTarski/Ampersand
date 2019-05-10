@@ -107,8 +107,8 @@ instance JSON Cruds JSONCruds where
 instance JSON ObjectDef JSONexpr where
  fromAmpersand opts@Options{..} multi object =
     JSONexpr
-        { exprJSONsrcConceptId = escapeIdentifier . name $ srcConcept
-        , exprJSONtgtConceptId = escapeIdentifier . name $ tgtConcept
+        { exprJSONsrcConceptId = idWithoutType srcConcept
+        , exprJSONtgtConceptId = idWithoutType tgtConcept
         , exprJSONisUni        = isUni normalizedInterfaceExp
         , exprJSONisTot        = isTot normalizedInterfaceExp
         , exprJSONisIdent      = isIdent normalizedInterfaceExp

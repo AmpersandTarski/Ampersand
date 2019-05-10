@@ -257,7 +257,7 @@ instance Named PlugSQL where
 instance Eq PlugSQL where
   x==y = name x==name y
 instance Unique PlugSQL where
-  showUnique = optionalQuote . name
+  showUnique = name
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 

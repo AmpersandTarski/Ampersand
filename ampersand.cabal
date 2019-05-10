@@ -4,10 +4,10 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 227ddf18c51f671bb00ce4396af81ddf72091a42d6107b0ff783e0fe31b5339d
+-- hash: 0ef14d8568a85691095b7cf9307fc8211e09d60274b3351a92a8511aecb2f523
 
 name:           ampersand
-version:        3.16.0
+version:        3.17.0
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -86,6 +86,11 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Views.docadl
     AmpersandData/FormalAmpersand/Views.ifc
     AmpersandData/FormalAmpersand/Views.xlsx
+    AmpersandData/SystemContext/Interfaces.adl
+    AmpersandData/SystemContext/Interfaces.ifc
+    AmpersandData/SystemContext/Navbar.adl
+    AmpersandData/SystemContext/Navbar.ifc
+    AmpersandData/SystemContext/Roles.adl
     AmpersandData/SystemContext/SystemContext.adl
     AmpersandData/SystemContext/SystemContext.docadl
     outputTemplates/default.asciidoc

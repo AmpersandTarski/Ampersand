@@ -10,7 +10,7 @@ import qualified RIO.Set as Set
 
 data Roles = Roles [RoleJson] deriving (Generic, Show)
 data RoleJson = RoleJson
-  { roleJSONid         :: Int
+  { roleJSONid         :: String
   , roleJSONname       :: String
   , roleJSONmaintains  :: [String] 
   , roleJSONinterfaces :: [String] 
@@ -23,11 +23,11 @@ instance JSON MultiFSpecs Roles where
  fromAmpersand opts@Options{..} multi _ = Roles . map (fromAmpersand opts multi) . fRoles $ fSpec
    where fSpec = userFSpec multi
 instance JSON (Role,Int) RoleJson where
- fromAmpersand _ multi (role',i) = RoleJson
-  { roleJSONid         = i
+ fromAmpersand _ multi (role',_) = RoleJson
+  { roleJSONid         = idWithoutType role'
   , roleJSONname       = name role'
   , roleJSONmaintains  = map name . Set.elems .fMaintains     fSpec $ role'
-  , roleJSONinterfaces = map (escapeIdentifier . name) . roleInterfaces fSpec $ role'
+  , roleJSONinterfaces = map idWithoutType . roleInterfaces fSpec $ role'
   }
    where fSpec = userFSpec multi
 

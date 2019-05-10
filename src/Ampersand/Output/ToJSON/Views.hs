@@ -30,7 +30,7 @@ instance JSON MultiFSpecs Views where
 instance JSON ViewDef View where
  fromAmpersand opts@Options{..} multi vd = View
   { vwJSONlabel      = name vd
-  , vwJSONconceptId  = escapeIdentifier . name . vdcpt $ vd
+  , vwJSONconceptId  = idWithoutType . vdcpt $ vd
   , vwJSONisDefault  = vdIsDefault vd
   , vwJSONsegments   = NEL.toList . fmap (fromAmpersand opts multi) . vdats $ vd
   } 

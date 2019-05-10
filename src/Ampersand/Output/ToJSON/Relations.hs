@@ -48,8 +48,8 @@ instance JSON Relation RelationJson where
  fromAmpersand opts@Options{..} multi dcl = RelationJson 
          { relJSONname       = name dcl
          , relJSONsignature  = name dcl ++ (show . sign) dcl
-         , relJSONsrcConceptId  = escapeIdentifier . name . source $ dcl 
-         , relJSONtgtConceptId  = escapeIdentifier . name . target $ dcl
+         , relJSONsrcConceptId  = idWithoutType . source $ dcl 
+         , relJSONtgtConceptId  = idWithoutType . target $ dcl
          , relJSONuni      = isUni bindedExp
          , relJSONtot      = isTot bindedExp
          , relJSONinj      = isInj bindedExp

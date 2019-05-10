@@ -191,7 +191,7 @@ buildInterface opts@Options{..} fSpec allIfcs ifc =
                               -> return $ Just (fName, mapMaybe vsmlabel . NEL.toList $ viewSegs)
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                             do { let templatePath = "Atomic-" ++ escapeIdentifier (name tgt) ++ ".html"
+                             do { let templatePath = "Atomic-" ++ (idWithoutType tgt) ++ ".html"
                                 ; hasSpecificTemplate <- doesTemplateExist opts templatePath
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
@@ -284,8 +284,8 @@ genViewInterface opts@Options{..} fSpec interf =
                      . setAttribute "interfaceName"       (ifcName  interf)
                      . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"              (showA . _ifcExp $ interf)
-                     . setAttribute "source"              (escapeIdentifier . name . _ifcSource $ interf)
-                     . setAttribute "target"              (escapeIdentifier . name . _ifcTarget $ interf)
+                     . setAttribute "source"              (idWithoutType . _ifcSource $ interf)
+                     . setAttribute "target"              (idWithoutType . _ifcTarget $ interf)
                      . setAttribute "crudC"               (objCrudC (_ifcObj interf))
                      . setAttribute "crudR"               (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"               (objCrudU (_ifcObj interf))
@@ -312,8 +312,8 @@ genViewObject opts@Options{..} fSpec depth obj@FEObjE{} =
                         . setAttribute "name"       (escapeIdentifier . objName $ obj)
                         . setAttribute "label"      (objName obj) -- no escaping for labels in templates needed
                         . setAttribute "expAdl"     (showA . objExp $ obj) 
-                        . setAttribute "source"     (escapeIdentifier . name . objSource $ obj)
-                        . setAttribute "target"     (escapeIdentifier . name . objTarget $ obj)
+                        . setAttribute "source"     (idWithoutType . objSource $ obj)
+                        . setAttribute "target"     (idWithoutType . objTarget $ obj)
                         . setAttribute "crudC"      (objCrudC obj)
                         . setAttribute "crudR"      (objCrudR obj)
                         . setAttribute "crudU"      (objCrudU obj)
@@ -404,8 +404,8 @@ genControllerInterface opts@Options{..} fSpec interf =
                      . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"                   (showA . _ifcExp $ interf)
                      . setAttribute "exprIsUni"                (exprIsUni (_ifcObj interf))
-                     . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
-                     . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
+                     . setAttribute "source"                   (idWithoutType . _ifcSource $ interf)
+                     . setAttribute "target"                   (idWithoutType . _ifcTarget $ interf)
                      . setAttribute "crudC"                    (objCrudC (_ifcObj interf))
                      . setAttribute "crudR"                    (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"                    (objCrudU (_ifcObj interf))

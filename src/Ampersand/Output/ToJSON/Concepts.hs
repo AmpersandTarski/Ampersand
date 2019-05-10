@@ -59,18 +59,18 @@ instance JSON MultiFSpecs Concepts where
    where fSpec = userFSpec multi
 instance JSON A_Concept Concept where
  fromAmpersand opts@Options{..} multi cpt = Concept
-  { cptJSONid                = escapeIdentifier . name $ cpt
+  { cptJSONid                = idWithoutType cpt
   , cptJSONlabel             = name cpt
   , cptJSONtype              = show . cptTType fSpec $ cpt
-  , cptJSONgeneralizations   = map (escapeIdentifier . name) . largerConcepts  (vgens fSpec) $ cpt
-  , cptJSONspecializations   = map (escapeIdentifier . name) . smallerConcepts (vgens fSpec) $ cpt
-  , cptJSONdirectGens        = map (escapeIdentifier . name) $ L.nub [ g | (s,g) <- fsisa fSpec, s == cpt]
-  , cptJSONdirectSpecs       = map (escapeIdentifier . name) $ L.nub [ s | (s,g) <- fsisa fSpec, g == cpt]
+  , cptJSONgeneralizations   = map idWithoutType . largerConcepts  (vgens fSpec) $ cpt
+  , cptJSONspecializations   = map idWithoutType . smallerConcepts (vgens fSpec) $ cpt
+  , cptJSONdirectGens        = map idWithoutType $ L.nub [ g | (s,g) <- fsisa fSpec, s == cpt]
+  , cptJSONdirectSpecs       = map idWithoutType $ L.nub [ s | (s,g) <- fsisa fSpec, g == cpt]
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
-  , cptJSONconceptTable = fromAmpersand opts multi cpt
-  , cptJSONlargestConcept = escapeIdentifier . name . largestConcept fSpec $ cpt
+  , cptJSONconceptTable      = fromAmpersand opts multi cpt
+  , cptJSONlargestConcept    = idWithoutType . largestConcept fSpec $ cpt
   } 
   where
     fSpec = userFSpec multi
