@@ -6,19 +6,23 @@
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon(runDaemon) where
 
-import Control.Monad.Extra
-import Data.List.Extra
+import Control.Monad.Extra(forever,when,unless)
+import Data.Data
+import Data.List.Extra(nubOrd,nubOrdOn,sortOn,nub,partition)
 import Data.Maybe
 import Data.Ord
-import Data.Tuple.Extra
+import Data.Tuple.Extra(both)
 import qualified System.Console.Terminal.Size as Term
-import System.Console.CmdArgs
 import System.Console.ANSI
 import System.Environment
-import System.Directory.Extra
+import System.Directory.Extra(getCurrentDirectory,withCurrentDirectory)
 import System.FilePath
 import System.Info
-import System.IO.Extra
+import System.IO.Extra( hSetBuffering, BufferMode(LineBuffering,NoBuffering)
+                      , stdout,stderr
+                      , putStrLn, putStr
+                      , hFlush
+                      )
 
 import Ampersand.Basics (ampersandVersionWithoutBuildTimeStr)
 import Ampersand.Basics.Exit
@@ -47,20 +51,17 @@ data TermSize = TermSize
 
 -- | Like 'main', but run with a fake terminal for testing
 mainWithTerminal :: Options -> IO TermSize -> ([String] -> IO ()) -> IO ()
-mainWithTerminal opts termSize termOutput = goForever
+mainWithTerminal opts@Options{..} termSize termOutput = goForever
   where goForever = work `catch` errorHandler
-        work =
-         forever $ withWindowIcon $ do
-            setVerbosity $ if verboseP opts then Loud else Normal
-
+        work = forever $ withWindowIcon $ do
+            
             -- On certain Cygwin terminals stdout defaults to BlockBuffering
             hSetBuffering stdout LineBuffering
             hSetBuffering stderr NoBuffering
             curDir <- getCurrentDirectory
-            whenLoud $ do
-                outStrLn $ "%OS: " ++ os
-                outStrLn $ "%ARCH: " ++ arch
-                outStrLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
+            verboseLn $ "%OS: " ++ os
+            verboseLn $ "%ARCH: " ++ arch
+            verboseLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
             withCurrentDirectory curDir $ do
                 termSize' <- return $ do
                         term <- termSize
@@ -98,7 +99,7 @@ runDaemon opts = mainWithTerminal opts termSize termOutput
                 Just t -> TermSize (Term.width t) (Term.height t) WrapSoft
 
         termOutput xs = do
-            outStr $ concatMap ('\n':) xs
+            putStr $ concatMap ('\n':) xs
             hFlush stdout -- must flush, since we don't finish with a newline
 
 
@@ -107,7 +108,7 @@ data Continue = Continue
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
 runAmpersand :: Options -> Waiter -> IO TermSize -> ([String] -> IO ()) -> IO Continue
-runAmpersand opts waiter termSize termOutput = do
+runAmpersand opts@Options{..} waiter termSize termOutput = do
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()
         outputFill currTime load' msg' = do
             load'' <- return $ case load' of
@@ -123,26 +124,22 @@ runAmpersand opts waiter termSize termOutput = do
                 mergeSoft [] = []
             termOutput $ map fromEsc ((if termWrap == WrapSoft then mergeSoft else map fst) $ load''' ++ msg) ++ pad
 
-    nextWait <- waitFiles waiter
+    nextWait <- waitFiles opts waiter
     aDaemon <- startAmpersandDaemon opts
 
-    when (null (loadResults . adState $ aDaemon)) $ do
+    when (null . loadResults $ aDaemon) $ do
         exitWith NoFilesToWatch 
-        
-
-    restart <- return $ nubOrd $ [x | LoadConfig x <- load aDaemon]
 
     project <- takeFileName <$> getCurrentDirectory
 
     -- fire, given a waiter, the messages/loaded
-    let fire :: ([FilePath] -> IO [String]) -> AmpersandDaemon -> IO Continue
+    let fire :: ([FilePath] -> IO [String]) -> DaemonState -> IO Continue
         fire nextWait' ad = do
             currTime <- getShortTime
             let no_title = False
             let loadedCount = length (loaded ad)
-            whenLoud $ do
-                outStrLn $ "%MESSAGES: " ++ (show . messages $ ad)
-                outStrLn $ "%LOADED: " ++ (show . loaded $ ad)
+            verboseLn $ "%MESSAGES: " ++ (show . messages $ ad)
+            verboseLn $ "%LOADED: " ++ (show . loaded $ ad)
 
             let (countErrors, countWarnings) = both sum $ unzip
                     [if loadSeverity == Error then (1::Int,0::Int) else (0,1) | Message{..} <- messages ad, loadMessage /= []]
@@ -168,11 +165,10 @@ runAmpersand opts waiter termSize termOutput = do
                 return $ sortOn (Down . f) msgError ++ msgWarn
 
             outputFill currTime (Just (loadedCount, ordMessages)) []
-            when (null . loadResults . adState $ ad) $ do
-                exitWith NoFilesToWatch
+            when (null . loadResults $ ad) $ exitWith NoFilesToWatch
             
-            reason <- nextWait' . nub $ restart ++ loaded ad ++ (map loadFile . load $ ad)
-            whenLoud $ outStrLn $ "%RELOADING: " ++ unwords reason
+            reason <- nextWait' . nub $ loaded ad ++ (map loadFile . loads $ ad)
+            verboseLn $ "%RELOADING: " ++ unwords reason
             return Continue
     fire nextWait aDaemon
 

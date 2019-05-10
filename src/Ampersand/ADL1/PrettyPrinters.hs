@@ -267,7 +267,9 @@ instance Pretty a => Pretty (P_SubIfc a) where
                 P_Box _ c bs         -> box_type c <+> text "[" <> listOf bs <> text "]"
                 P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO "else "")++"INTERFACE") <+> maybeQuote str
             where box_type Nothing  = text "BOX"
-                  box_type (Just x) = text x -- ROWS, COLS, TABS
+                  box_type (Just x) 
+                   | x `elem` ["ROWS", "COLS", "TABS"] = text x
+                   | otherwise = text "BOX" <+> text ("<"++x++">") 
 
 instance Pretty (P_IdentDf TermPrim) where
     pretty (P_Id _ lbl cpt ats) =

@@ -8,6 +8,7 @@
 module Ampersand.FSpec.ShowMeatGrinder
   ( makeMetaFile
   , grind 
+  , MetaFSpec(..)
   )
 where
 
@@ -22,24 +23,29 @@ import           Data.List
 import           Data.Maybe
 import qualified Data.Set as Set
 
+data MetaFSpec = MetaFSpec
+    { metaModelFileName :: String
+    , model             :: FSpec
+    , transformers      :: Options -> FSpec -> [Transformer]
+    }
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.
-grind :: Options -> FSpec -> FSpec -> P_Context
-grind opts@Options{..} formalAmpersand userFspec =
+grind :: Options -> MetaFSpec -> FSpec -> P_Context
+grind opts@Options{..} metaModel userFspec =
   PCtx{ ctx_nm     = "Grinded_"++name userFspec
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = mapMaybe relationFromPop . Set.toList $ metaPops2
+      , ctx_ds     = map aRelation2pRelation . Set.toList . instances . model $ metaModel
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
       , ctx_rrels  = []
       , ctx_reprs  = []
       , ctx_vs     = []
-      , ctx_gs     = map aClassify2pClassify . Set.toList . instances $ formalAmpersand
+      , ctx_gs     = map aClassify2pClassify . Set.toList . instances . model $ metaModel
       , ctx_ifcs   = []
       , ctx_ps     = []
       , ctx_pops   = mapMaybe populationFromPop . Set.toList $ metaPops2
@@ -48,14 +54,8 @@ grind opts@Options{..} formalAmpersand userFspec =
   where
     metaPops2 :: Set.Set Pop
     metaPops2 = Set.fromList 
-              . concatMap (Set.toList . grindedPops opts formalAmpersand userFspec)
-              . Set.toList . instances $ formalAmpersand
-    relationFromPop :: Pop -> Maybe P_Relation
-    relationFromPop pop =
-      case pop of 
-        Comment{} -> Nothing
-        Pop{}     -> 
-          Just (aRelation2pRelation (popRelation pop))
+              . concatMap (Set.toList . grindedPops opts metaModel userFspec)
+              . Set.toList . instances . model $ metaModel
     populationFromPop :: Pop -> Maybe P_Population
     populationFromPop pop =
       case pop of 
@@ -72,7 +72,7 @@ grind opts@Options{..} formalAmpersand userFspec =
                        , p_popps = map convertPair . Set.toList . popPairs $ pop
                        }
           where rel = popRelation pop
-                orig = Origin "Population generated due to the meatgrinder"
+                orig = MeatGrinder
                 convertPair :: (PopAtom,PopAtom) -> PAtomPair
                 convertPair (a,b) = 
                     PPair { pos = orig
@@ -87,6 +87,8 @@ grind opts@Options{..} formalAmpersand userFspec =
                     PopAlphaNumeric str -> ScriptString orig str
                     PopInt i            -> ScriptInt orig i
            
+
+
 
       --    case string2AValue . unwords . words . show . popPairs $ pop of
       --       Checked x _ 
@@ -130,11 +132,10 @@ showPop pop =
   case pop of
       Pop{} -> showP . aRelation2pRelation . popRelation $ pop
       Comment{} -> intercalate "\n" . map ("-- " ++) . comment $ pop
-
 -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
-makeMetaFile :: Options -> FSpec -> FSpec -> (FilePath,String)
-makeMetaFile opts@Options{..} formalAmpersand userFspec
+makeMetaFile :: Options -> MetaFSpec -> FSpec -> (FilePath,String)
+makeMetaFile opts@Options{..} metaModel userFspec
   = ("MetaPopulationFile.adl", content )
   where
     content = unlines $
@@ -162,11 +163,11 @@ makeMetaFile opts@Options{..} formalAmpersand userFspec
        . map (lines . showPop )
        . concatMap (Set.toList . popsOfRelation)
        . sortOn showRel
-       . Set.toList . instances $ formalAmpersand
+       . Set.toList . instances . model $ metaModel
     listOfConcepts :: [String]
     listOfConcepts = map ("-- "++) .
                      intercalate [""] . 
-                     map showCpt . sortOn name . Set.toList . instances $ formalAmpersand
+                     map showCpt . sortOn name . Set.toList . instances . model $ metaModel
        where
         showCpt :: A_Concept -> [String]
         showCpt cpt = [name cpt] ++ ( map ("  "++)
@@ -177,7 +178,7 @@ makeMetaFile opts@Options{..} formalAmpersand userFspec
                                     )
         
     popsOfRelation :: Relation -> Set.Set Pop
-    popsOfRelation = grindedPops opts formalAmpersand userFspec
+    popsOfRelation = grindedPops opts metaModel userFspec
     pAtomsOfConcept :: A_Concept -> Set.Set PopAtom
     pAtomsOfConcept cpt = getPopsSet Src `Set.union` getPopsSet Tgt
       where getPopsSet :: SrcOrTgt -> Set.Set PopAtom
@@ -191,55 +192,59 @@ makeMetaFile opts@Options{..} formalAmpersand userFspec
                                                              Src -> source rel == cpt
                                                              Tgt -> target rel == cpt
                                                    ) 
-                         . instances $ formalAmpersand
+                         . instances . model $ metaModel
 
-grindedPops :: Options -> FSpec -> FSpec -> Relation -> Set.Set Pop
-grindedPops opts@Options{..} formalAmpersand userFspec rel = 
-  case filter (isForRel rel) (transformers opts userFspec) of
+grindedPops :: Options -> MetaFSpec -> FSpec -> Relation -> Set.Set Pop
+grindedPops opts@Options{..} metaModel userFspec rel = 
+  case filter (isForRel rel) ((transformers metaModel) opts userFspec) of
     []  -> fatal . unlines $ 
-              ["Every relation in FormalAmpersand.adl must have a transformer in Transformers.hs"
+              ["Every relation in "++metaModelFileName metaModel++" must have a transformer in Transformers.hs"
               ,"   Violations:"
               ] ++ map ("      "++) viols
             where 
               viols = map showRelOrigin 
                     . Set.toList
                     . Set.filter hasNoTransformer 
-                    . instances $ formalAmpersand
+                    . instances . model $ metaModel
               hasNoTransformer :: Relation -> Bool
-              hasNoTransformer d = null (filter (isForRel d) (transformers opts userFspec))
+              hasNoTransformer d = null (filter (isForRel d) ((transformers metaModel) opts userFspec))
               showRelOrigin :: Relation -> String
               showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
     ts  -> Set.fromList . map transformer2Pop $ ts 
   where
+    --metaModelFileName :: String
+    --metaModelFileName = "formalAmpersand.adl"
+    --transformers :: FSpec -> [Transformer]
+    --transformers = transformersFormalAmpersand
     transformer2Pop :: Transformer -> Pop
-    transformer2Pop (Transformer n s t ps) 
-      | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ ps) ) =
+    transformer2Pop (Transformer relName src tgt popPairs) 
+      | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ popPairs) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
-                 , "   match the TType of the concept as specified in formalampersand.adl."
-                 , "   The population of the relation `"++n++"["++s++" * "++t++"]` "
-                 , "   violates this rule for concept `"++s++"`. In formalAmpersand.adl "
-                 , "   the TType of this concept is "++(show . cptTType formalAmpersand $ source rel)++"."
+                 , "   match the TType of the concept as specified in "++metaModelFileName metaModel++"."
+                 , "   The population of the relation `"++ relName ++"["++ src ++" * "++ tgt ++"]` "
+                 , "   violates this rule for concept `"++ src ++"`. In "++metaModelFileName metaModel++" "
+                 , "   the TType of this concept is "++(show . cptTType (model metaModel) $ source rel)++"."
                  ]
-      | not ( all (ttypeOf (target rel)) (map snd . Set.toList $ ps) ) =
+      | not ( all (ttypeOf (target rel)) (map snd . Set.toList $ popPairs) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
-                 , "   match the TType of the concept as specified in formalampersand.adl."
-                 , "   The population of the relation `"++n++"["++s++" * "++t++"]` "
-                 , "   violates this rule for concept `"++t++"`. In formalAmpersand.adl "
-                 , "   the TType of this concept is "++(show . cptTType formalAmpersand $ target rel)++"." 
+                 , "   match the TType of the concept as specified in "++metaModelFileName metaModel++"."
+                 , "   The population of the relation `"++ relName ++"["++ src ++" * "++ tgt ++"]` "
+                 , "   violates this rule for concept `"++ tgt ++"`. In "++metaModelFileName metaModel++" "
+                 , "   the TType of this concept is "++(show . cptTType (model metaModel) $ target rel)++"." 
                  ]
       | otherwise = Pop { popRelation = rel
-                        , popPairs    = ps
+                        , popPairs    = popPairs
                         }
       where ttypeOf :: A_Concept -> (PopAtom -> Bool)
             ttypeOf cpt =
-              case (cptTType formalAmpersand) cpt of
+              case (cptTType (model metaModel)) cpt of
                 Object          -> isDirtyId
                 Alphanumeric    -> isTextual
                 BigAlphanumeric -> isTextual
                 HugeAlphanumeric -> isTextual
-                tt              -> fatal $ "No test available yet. "++show tt++" encountered for the first time in FormalAmpersand.adl"
+                tt              -> fatal $ "No test available yet. "++show tt++" encountered for the first time in "++metaModelFileName metaModel++""
             isDirtyId pa = case pa of
                             DirtyId{}         -> True
                             _                 -> False

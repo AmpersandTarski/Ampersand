@@ -61,8 +61,8 @@ instance JSON Rule JsonRule where
   , rulJSONorigin      = show.rrfps     $ rule
   , rulJSONmeaning     = showMeaning
   , rulJSONmessage     = showMessage
-  , rulJSONsrcConceptId = escapeIdentifier . name . source . formalExpression $ rule
-  , rulJSONtgtConceptId = escapeIdentifier . name . target . formalExpression $ rule
+  , rulJSONsrcConceptId = idWithoutType . source . formalExpression $ rule
+  , rulJSONtgtConceptId = idWithoutType . target . formalExpression $ rule
   , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
   , rulJSONpairView    = fmap (fromAmpersand opts multi) (rrviol rule)
   } 

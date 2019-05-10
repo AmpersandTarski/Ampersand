@@ -29,7 +29,9 @@ module Ampersand.Input.ADL1.CtxError
   , lexerError2CtxError
   , addWarning, addWarnings
   , mkCrudWarning
+  , mkBOX_ROWSNH_Warning
   , mkCaseProblemWarning
+  , mkNoBoxItemsWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
   )
@@ -70,13 +72,17 @@ instance Show CtxError where
   -- the proper working of the ampersand-language-extension
   show err = L.intercalate "\n  " $
     [show (origin err) ++ " error:"] ++ 
-    (lines $ case err of
-              CTXE _ s -> s
-              PE e     -> removeFirstLine $ show e
-              LE e     -> removeFirstLine $ show e
+    (case err of
+       CTXE _ s               -> lines s
+       PE e    -> -- The first line of a parse error allways contains
+                  -- the filename and position of the error. However,
+                  -- these are in a wrong format. So we strip the first 
+                  -- line of the error:
+                  case lines (show e) of
+                     []       -> fatal "Whoh! the impolssible just happend! (triggered by a parse error somewhere in your script)"
+                     _:xs     -> xs
+       LE (LexerError _ info) -> lines (show info)
     )
-    where removeFirstLine :: String -> String
-          removeFirstLine = unlines . tail . lines
 
 data Warning = Warning Origin String
 instance Show Warning where
@@ -198,10 +204,6 @@ class GetOneGuarded a b | b -> a where
   hasNone :: b  -- the object where the problem is arising
              -> Guarded a
   hasNone o = getOneExactly o []
-
-instance Pretty a => GetOneGuarded SubInterface (P_SubIfc a) where
-  hasNone o = Errors . pure $
-    CTXE (origin o)$ "Required: one A-subinterface in "++showP o
 
 instance GetOneGuarded Expression P_NamedRel where
   getOneExactly _ [d] = pure d
@@ -452,6 +454,21 @@ lexerWarning2Warning (LexerWarning a b) =
 
 instance Traced Warning where
     origin (Warning o _) = o
+mkBOX_ROWSNH_Warning :: Origin -> Warning
+mkBOX_ROWSNH_Warning orig =
+  Warning orig $ L.intercalate "\n   "
+     ["The common use of BOX <ROWSNH> has become obsolete. It was used to be able"
+     ,   "to have rows without header."
+     ,   "In that case, please use ROWS for this purpose."
+     ,   "If you still want to use this class for some reason, you have to provide"
+     ,   "the template for youself. Failing to do so will cause an error when you"
+     ,   "generate your prototype."
+     ]
+mkNoBoxItemsWarning :: Origin -> Warning
+mkNoBoxItemsWarning orig = 
+  Warning orig $ L.intercalate "\n    "
+     ["This list of BOX-items is empty."
+     ]
 mkCrudWarning :: P_Cruds -> [String] -> Warning
 mkCrudWarning (P_Cruds o _ ) msg = Warning o (unlines msg)
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
