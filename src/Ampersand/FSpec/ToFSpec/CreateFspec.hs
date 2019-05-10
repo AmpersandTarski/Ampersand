@@ -245,7 +245,7 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
                  )
                | sPop<-sameNameTargetPops
                , specs `Set.isSubsetOf` Set.fromList (map srcPop sPop)
-               , headPop<-take 1 sPop ]
+               , headPop@P_RelPopu{}<-take 1 sPop ] -- Restrict to @P_RelPopu{} because field name p_src is being used
             remainPop :: [P_Population]
             remainPop
              = concat (remainingPops++

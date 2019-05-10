@@ -112,11 +112,11 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
   conceptTables = 
     table (text.l $ (NL "Logische gegevensverzamelingen"
                     ,EN "Logical entity types"))
-         [(AlignLeft,1/8),(AlignLeft,5/8),(AlignLeft,1/8),(AlignLeft,1/8)]
+         [(AlignLeft,1/8),(AlignLeft,4/8),(AlignLeft,1/8),(AlignLeft,1/8),(AlignLeft,1/8)]
          [ (plain.text.l) (NL "Concept"       , EN "Concept")
          , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
-         , (plain.text.l) (NL "Type"          , EN "Type") 
          , (plain.text.l) (NL "Aantal"        , EN "Count") 
+         , (plain.text.l) (NL "Vullingsgraad" , EN "Filling degree") 
          ] 
          [ [ (plain.text.name) c
            ,   meaningOf c
@@ -125,8 +125,10 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                . purposesDefinedIn fSpec (fsLang fSpec) 
                $ c
                )
-           , mempty
            , (plain . text . show . Set.size . atomsInCptIncludingSmaller fSpec) c
+           , (plain . text . show) (percent (sum [ Set.size pairs
+                                                 | attr<-attributesOfConcept fSpec c, pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
+                                                 ]) (Set.size (atomsInCptIncludingSmaller fSpec c)*length (attributesOfConcept fSpec c)))
            ]
          | c <- sortBy (compare `on` name) 
               . filter isKey 
@@ -157,7 +159,14 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
        isKey cpt = cpt `elem` ooCpts oocd
        meaningOf :: A_Concept -> Blocks
        meaningOf = mconcat . map (fromList . string2Blocks ReST . cddef) . concDefs fSpec 
-       
+
+  percent :: (Integral a, Show a) => a -> a -> String
+  percent num denom
+   = if denom==0
+     then show num
+     else show num++"("++show ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)++"%)"
+  
+
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
            header (sectionLevel+1) 
@@ -218,11 +227,6 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                             , pairs<-[(pairsInExpr fSpec . EDcD) rel]
                             ]
     where
-     percent :: (Integral a, Show a) => a -> a -> String
-     percent num denom
-      = if denom==0
-        then show num
-        else show num++"("++show ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)++"%)"
      n ::Int
      n = (Set.size .atomsInCptIncludingSmaller fSpec . unJust . clcpt) cl
          where unJust (Just cpt) = cpt; unJust _ = fatal "unexpected Just"

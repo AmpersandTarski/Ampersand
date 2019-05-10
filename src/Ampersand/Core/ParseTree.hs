@@ -291,7 +291,7 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     XlsxString     _ s -> show s
     ScriptInt      _ i -> show i
     ScriptFloat    _ d -> show d
-    XlsxDouble     _ _ -> fatal "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+    XlsxDouble     o d -> fatal ("We got a value "++show d++" from "++show o++", which has to be shown in an expression, however the technicaltype is not known.")
     ComnBool       _ b -> show b
     ScriptDate     _ x -> show x
     ScriptDateTime _ x -> show x
