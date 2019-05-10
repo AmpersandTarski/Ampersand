@@ -1,8 +1,13 @@
-CONTEXT SystemContext IN ENGLISH
+CONTEXT PrototypeFramework IN ENGLISH
 
-PATTERN SystemSpecific
-  
-  RELATION sessionAccount[SESSION*Account] [UNI]
+  INCLUDE "Interfaces.adl"
+  INCLUDE "Interfaces.ifc"
+
+  INCLUDE "Navbar.adl"
+  INCLUDE "Navbar.ifc"
+
+  INCLUDE "Roles.adl"
+
   RELATION sessionAllowedRoles[SESSION*Role]
   RELATION sessionActiveRoles[SESSION*Role]
   
@@ -11,9 +16,5 @@ PATTERN SystemSpecific
   
   REPRESENT DateTime TYPE DATETIME
   RELATION lastAccess[SESSION*DateTime] [UNI]
-  RELATION accMostRecentLogin[Account*DateTime] [UNI]
-  RELATION accLoginTimestamps[Account*DateTime]
-
-ENDPATTERN
   
 ENDCONTEXT

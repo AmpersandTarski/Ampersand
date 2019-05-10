@@ -58,6 +58,7 @@ data Origin = OriginUnknown
             | PropertyRule String Origin -- Constructor is used to hold the origin of a propertyrule.
             | FileLoc FilePos SymbolName 
             | XLSXLoc FilePath String (Int,Int) 
+            | MeatGrinder -- Constructor is used to specify stuff that originates from meatgrinder
     deriving (Eq, Ord, Typeable, Generic, Data)
 
 instance Unique Origin where
@@ -80,6 +81,7 @@ instance Show Origin where
   show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
   show (Origin str)    = str
   show OriginUnknown   = "Unknown origin"
+  show MeatGrinder     = "MeatGrinder"
 
 class Traced a where
   origin :: a -> Origin

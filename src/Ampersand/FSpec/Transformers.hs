@@ -3,7 +3,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.FSpec.Transformers 
-  ( transformers
+  ( transformersFormalAmpersand
+  , transformersSystemContext
   , Transformer(..)
   , PopAtom(..)
   , instances
@@ -16,7 +17,6 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
 import           Ampersand.Misc
-import           Data.Hashable
 import qualified Data.Set as Set
 import           Data.Typeable
 
@@ -34,7 +34,9 @@ data Transformer = Transformer
 -- | This datatype reflects the nature of an atom. It is use to construct
 --   the atom. 
 data PopAtom = 
-    DirtyId String  -- ^ Any String. must be unique of course. (TType = Object)
+    DirtyId String         -- ^ Any String. must be:
+                           --      * unique in the scope of the entire fspec
+                           --      * storable in a 255 database field
   | PopAlphaNumeric String -- ^ Intended to be observable by users. Not a 'dirty id'.
   | PopInt Integer 
   deriving (Eq,Ord)
@@ -46,13 +48,19 @@ instance Show PopAtom where
         PopAlphaNumeric str -> show str
         PopInt i            -> show i
 
+dirtyId :: Unique a => a -> PopAtom
+dirtyId = DirtyId . idWithType
+
+-- Function for SystemContext transformers. These atoms don't need to have a type prefix
+dirtyIdWithoutType :: Unique a => a -> PopAtom
+dirtyIdWithoutType = DirtyId . idWithoutType
 
 toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
 toTransformer (rel, sCpt, tCpt, set) = Transformer rel sCpt tCpt set
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
-transformers :: Options -> FSpec -> [Transformer]
-transformers Options{..} fSpec = map toTransformer [
+transformersFormalAmpersand :: Options -> FSpec -> [Transformer]
+transformersFormalAmpersand Options{..} fSpec = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"
       , if atlasWithoutExpressions then Set.empty else
         Set.fromList $
@@ -822,7 +830,83 @@ transformers Options{..} fSpec = map toTransformer [
       )
      ]
    
--- | Within a specific context there are all kinds of things.
+
+
+ 
+-- | The list of all transformers, one for each and every relation in SystemContext.
+transformersSystemContext :: Options -> FSpec -> [Transformer]
+transformersSystemContext _ fSpec = map toTransformer [
+      ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
+      , Set.empty
+      )
+    , ("isAPI"                 , "PF_Interface"          , "PF_Interface"
+      , Set.fromList $
+        [(dirtyIdWithoutType ifc, dirtyIdWithoutType ifc)
+        | ifc::Interface <- instanceList fSpec
+        , ifcIsAPI ifc
+        ]
+      )
+    , ("isPartOf"              , "PF_NavMenuItem"        , "PF_NavMenu"
+      , Set.empty
+      )
+    , ("isPublic"              , "PF_Interface"          , "PF_Interface"
+      , Set.fromList $
+        [(dirtyIdWithoutType ifc, dirtyIdWithoutType ifc)
+        | ifc::Interface <- instanceList fSpec
+        , null (ifcRoles ifc)
+        ]
+      )
+    , ("isSubItemOf"           , "PF_NavMenuItem"        , "PF_NavMenuItem"
+      , Set.empty
+      )
+    , ("isVisible"             , "PF_NavMenuItem"        , "PF_NavMenuItem"
+      , Set.empty
+      )
+    , ("label"                 , "PF_Interface"          , "PF_Label"    
+      , Set.fromList $
+        [(dirtyIdWithoutType ifc, PopAlphaNumeric . name $ ifc)
+        | ifc::Interface <- instanceList fSpec
+        ]
+      )
+    , ("label"                 , "PF_NavMenuItem"        , "PF_Label"
+      , Set.empty
+      )
+    , ("label"                 , "Role"               , "PF_Label"
+      , Set.fromList $
+        [ (dirtyIdWithoutType role, PopAlphaNumeric . name $ role)
+        | role::Role <- instanceList fSpec
+        ]
+      )
+    , ("lastAccess"            , "SESSION"               , "DateTime"
+      , Set.empty
+      )
+    , ("pf_ifcRoles"           , "PF_Interface"          , "Role"
+      , Set.fromList $
+        [(dirtyIdWithoutType ifc , dirtyIdWithoutType role)
+        | ifc::Interface <- instanceList fSpec
+        , role <- ifcRoles ifc
+        ]
+      )
+    , ("pf_navItemRoles"       , "PF_NavMenuItem"        , "Role"
+      , Set.empty
+      )
+    , ("seqNr"                 , "PF_NavMenuItem"        , "PF_SeqNr"
+      , Set.empty
+      )
+    , ("sessionActiveRoles"    , "SESSION"               , "Role"
+      , Set.empty
+      )
+    , ("sessionAllowedRoles"   , "SESSION"               , "Role"
+      , Set.empty
+      )
+    , ("url"                   , "PF_NavMenuItem"        , "PF_URL"
+      , Set.empty
+      )
+    ]
+
+
+
+     -- | Within a specific context there are all kinds of things.
 --   These 'things' are instances (elements / atoms) of some
 --   Concept. They are the atoms of the concepts, as looked
 --   upon from the Formal Ampersand viewpoint.
@@ -857,6 +941,8 @@ instance Instances AClassify where
   instances = Set.fromList . gens . originalContext
 instance Instances A_Concept where
   instances = concs . originalContext
+instance Instances ConceptDef where
+  instances = Set.fromList . ctxcds . originalContext
 instance Instances Conjunct where
   instances = Set.fromList . allConjuncts
 instance Instances Expression where
@@ -886,12 +972,11 @@ instance Instances Purpose where
 instance Instances Relation where
   instances = relationInstances
 instance Instances Role where
-  instances = Set.insert (Role "SystemAdmin") 
-            . Set.fromList . map fst . fRoles
+  instances = Set.fromList . map fst . fRoles
+instance Instances A_RoleRule where
+  instances = Set.fromList . ctxrrules . originalContext
 instance Instances Rule where
   instances = ruleInstances
-instance Instances (Role,Rule) where
-  instances = Set.fromList . fRoleRuls
 instance Instances Signature where
   instances fSpec = 
        (Set.fromList . map sign . Set.toList . relationInstances $ fSpec)
@@ -899,30 +984,7 @@ instance Instances Signature where
        (Set.fromList . map sign . Set.toList . expressionInstances $ fSpec)
 instance Instances ViewDef where
   instances = Set.fromList . viewDefs . originalContext
-  
 
--- All Concepts that are relevant in Formal Ampersand (RAP),
--- must be an instance of HasDirtyId:
-class HasDirtyId a where
-  dirtyId :: a -> PopAtom
-  dirtyId = DirtyId . uniqueButNotTooLong . rawId
-   where
-    uniqueButNotTooLong :: String -> String
-    uniqueButNotTooLong str =
-      case splitAt safeLength str of
-        (_ , []) -> str
-        (prfx,_) -> prfx++"#"++show (hash str)++"#"
-      where safeLength = 50 -- HJO, 20170812: Subjective value. This is based on the 
-                             -- limitation that DirtyId's are stored in an sql database
-                             -- in a field that is normally 255 long. We store the
-                             -- prefix of the string but make sure we still have space
-                             -- left over for the hash. While theoretically this is a 
-                             -- crappy solution, in practice this will prove to be well 
-                             -- enough. 
-  rawId :: a -> String
-            
-instance Unique a => HasDirtyId a where
-  rawId = uniqueShowWithType
 class Instances a => HasPurpose a where 
   purposes :: FSpec -> a -> [Purpose]
   purposes fSpec a = 

@@ -644,12 +644,14 @@ instance ShowHSName Origin where
                                                                ++show declOrig 
               OriginUnknown -> "OriginUnknown"
               XLSXLoc fPath sheet (a,b) -> "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)
+              MeatGrinder   -> "MeatGrinder"
 instance ShowHS Origin where
  showHS opts indent (FileLoc l s)               = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
  showHS opts indent (PropertyRule str declOrig) = "PropertyRule " ++ show str ++ " ("++showHS opts indent declOrig++")"
  showHS _     _     (Origin s)                  = "Origin " ++ show s
  showHS _     _     OriginUnknown               = "OriginUnknown"
  showHS _     _     (XLSXLoc fPath sheet (a,b)) = "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)  
+ showHS _     _     MeatGrinder                 = "MeatGrinder"
 
 instance ShowHS Block where
  showHS _ _   = show

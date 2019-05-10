@@ -1,0 +1,76 @@
+CONTEXT PrototypeFramework IN ENGLISH
+
+    --[NAV MENU ITEMS]-----------------------------------------------------------------------------
+    CONCEPT PF_NavMenuItem ""
+        REPRESENT PF_NavMenuItem TYPE OBJECT
+  
+    RELATION label[PF_NavMenuItem*PF_Label] [UNI,TOT] 
+        MEANING "The human readable text that represents the navbar item and is shown to the user"
+        CONCEPT PF_Label ""
+        REPRESENT PF_Label TYPE ALPHANUMERIC
+
+    RELATION isVisible[PF_NavMenuItem*PF_NavMenuItem] [PROP]
+        MEANING "A navbar item can be visible or not"
+    
+    RELATION ifc[PF_NavMenuItem*PF_Interface] [UNI] 
+        MEANING "A navbar item can direct to an interface"
+        CONCEPT PF_Interface "Representation of an Ampersand interface"
+
+    RULE "Do not allow references to API interfaces" : ifc;isAPI |- -V
+        MESSAGE "A navbar item can not reference an API interface"
+  
+    RELATION url[PF_NavMenuItem*PF_URL] [UNI]
+        MEANING "A navbar item can direct to an (external) url. This can also be used for extensions like the excelimporter"
+        CONCEPT PF_URL "a uniform resource locator as defined by RFC3986"
+        REPRESENT PF_URL TYPE BIGALPHANUMERIC
+  
+    RELATION seqNr[PF_NavMenuItem*PF_SeqNr] [UNI]
+        MEANING "A navbar item has a seq nr (default 0) which determines the position of the item"
+        CONCEPT PF_SeqNr ""
+        REPRESENT PF_SeqNr TYPE INTEGER
+    
+    RELATION isSubItemOf[PF_NavMenuItem*PF_NavMenuItem] [UNI,IRF,ASY]
+        MEANING "A navbar item can be a sub item of another item"
+
+    RELATION pf_navItemRoles[PF_NavMenuItem*Role]
+        MEANING "A navbar item is accessible for a role"
+
+    -- Add/remove menu items based on interface roles
+    ROLE ExecEngine MAINTAINS "Add navItemRoles for interfaces"
+    RULE "Add navItemRoles for interfaces" : ifc;pf_ifcRoles |- pf_navItemRoles
+    VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "Remove navItemRoles for interfaces"
+    RULE "Remove navItemRoles for interfaces" : (I /\ ifc;ifc~);pf_navItemRoles |- ifc;pf_ifcRoles
+    VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+
+    -- Add/remove parent menu items if needed
+    ROLE ExecEngine MAINTAINS "Add navItemRoles for parent items"
+    RULE "Add navItemRoles for parent items": isSubItemOf~;pf_navItemRoles |- pf_navItemRoles
+    VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "Remove navItemRoles for parent items"
+    RULE "Remove navItemRoles for parent items": (I /\ isSubItemOf~;isSubItemOf);pf_navItemRoles |- isSubItemOf~;pf_navItemRoles
+    VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+    
+    --[NAV MENUS]----------------------------------------------------------------------------------
+    CONCEPT PF_NavMenu ""
+        CLASSIFY PF_NavMenu ISA PF_NavMenuItem
+        REPRESENT PF_NavMenu TYPE OBJECT
+
+    RELATION isPartOf[PF_NavMenuItem*PF_NavMenu] [UNI,TOT]
+        MEANING "A navbar item is part of a certain navmenu"
+
+    ROLE ExecEngine MAINTAINS "Fix TOT for isPartOf[PF_NavMenuItem*PF_NavMenu]"
+    RULE "Fix TOT for isPartOf[PF_NavMenuItem*PF_NavMenu]": I[PF_NavMenuItem];isSubItemOf;isPartOf |- isPartOf
+    VIOLATION (TXT "{EX}InsPair;isPartOf;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenu;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "Automatically designate root of PF_NavMenItem tree as PF_NavMenu"
+    RULE "Automatically designate root of PF_NavMenItem tree as PF_NavMenu": I[PF_NavMenuItem] - isSubItemOf;isSubItemOf~ |- I[PF_NavMenu]
+    VIOLATION (TXT "{EX} SetConcept;PF_NavMenuItem;PF_NavMenu;", SRC I[PF_NavMenuItem])
+
+    ROLE ExecEngine MAINTAINS "De-assign non-root PF_NavMenItems as PF_NavMenu"
+    RULE "De-assign non-root PF_NavMenItems as PF_NavMenu": I[PF_NavMenu] |- I[PF_NavMenuItem] - isSubItemOf;isSubItemOf~ 
+    VIOLATION (TXT "{EX} ClearConcept;PF_NavMenu;", SRC I[PF_NavMenu])
+
+ENDCONTEXT

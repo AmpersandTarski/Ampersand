@@ -86,6 +86,11 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Views.docadl
     AmpersandData/FormalAmpersand/Views.ifc
     AmpersandData/FormalAmpersand/Views.xlsx
+    AmpersandData/SystemContext/Interfaces.adl
+    AmpersandData/SystemContext/Interfaces.ifc
+    AmpersandData/SystemContext/Navbar.adl
+    AmpersandData/SystemContext/Navbar.ifc
+    AmpersandData/SystemContext/Roles.adl
     AmpersandData/SystemContext/SystemContext.adl
     AmpersandData/SystemContext/SystemContext.docadl
     outputTemplates/default.asciidoc
