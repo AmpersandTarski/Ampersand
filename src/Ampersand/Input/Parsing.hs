@@ -14,7 +14,6 @@ module Ampersand.Input.Parsing (
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.ParseTree (mkContextOfPopsOnly)
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Input.ADL1.Lexer
@@ -178,6 +177,30 @@ parseSingleADL opts@Options{..} pc
                catchInvalidXlsx m = catch m f
                  where f :: SomeException -> IO a
                        f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "++show exception)
+
+-- | To enable roundtrip testing, all data can be exported.
+-- For this purpose mkContextOfPopsOnly exports the population only
+mkContextOfPopsOnly :: [P_Population] -> P_Context
+mkContextOfPopsOnly pops =
+  PCtx{ ctx_nm     = ""
+      , ctx_pos    = []
+      , ctx_lang   = Nothing
+      , ctx_markup = Nothing
+      , ctx_pats   = []
+      , ctx_rs     = []
+      , ctx_ds     = []
+      , ctx_cs     = []
+      , ctx_ks     = []
+      , ctx_rrules = []
+      , ctx_rrels  = []
+      , ctx_reprs  = []
+      , ctx_vs     = []
+      , ctx_gs     = []
+      , ctx_ifcs   = []
+      , ctx_ps     = []
+      , ctx_pops   = pops
+      , ctx_metas  = []
+      }
 
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =

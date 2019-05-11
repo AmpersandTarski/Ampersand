@@ -9,10 +9,10 @@ module Ampersand.Daemon.Daemon.Escape(
     ) where
 
 import Data.Char
-import Data.Either.Extra
-import Data.List.Extra
+import Data.Either.Extra(rights,fromEither)
+import Data.List.Extra(unfoldr)
 import Data.Maybe
-import Data.Tuple.Extra
+import Data.Tuple.Extra(first,swap,both)
 import Control.Applicative
 import Ampersand.Basics
 

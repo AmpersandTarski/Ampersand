@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.15.0
+version:        3.17.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of enterprise information systems.
@@ -25,6 +25,8 @@ ghc-options:
       - -Wall
       - -Wcompat
       - -Widentities
+      # TODO: Remove this option once https://github.com/haskell/cabal/issues/4739 is fixed
+      - -optP-Wno-nonportable-include-path  # Workaround, See issue #937
 #      - -Wincomplete-record-updates
 #      - -Wincomplete-uni-patterns
 #      - -Wredundant-constraints
@@ -52,12 +54,12 @@ dependencies:
       - lens == 4.17.*
       - MissingH == 1.4.*
       - mtl == 2.2.*
-      - pandoc == 2.4.*
+      - pandoc == 2.5
       - pandoc-crossref == 0.3.4.0
       - pandoc-types == 1.17.*
       - parsec == 3.1.*
       - process == 1.6.*
-      - QuickCheck == 2.11.*
+      - QuickCheck == 2.12.6.1
       - rio == 0.1.*
       - simple-sql-parser == 0.4.4
       - split == 0.2.*
@@ -68,9 +70,9 @@ dependencies:
       - utf8-string == 1.0.*
       - wl-pprint == 1.2.* 
       - xlsx == 0.7.*
-      - yaml == 0.10.*
+      - yaml == 0.11.*
       - yaml-config == 0.4.*
-      - zip-archive
+      - zip-archive >= 0.4.1
       - zlib == 0.6.*
 when:
   - condition: os(windows)

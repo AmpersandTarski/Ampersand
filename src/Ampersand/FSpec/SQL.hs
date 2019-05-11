@@ -1266,13 +1266,13 @@ attInBroadQuery fSpec cpt = get
                     in if p == broadTable
                       then Just a
                       else Nothing
-          EDcD d -> let (p,relstore) = getRelationTableInfo fSpec d
-                    in if p == broadTable && not (rsStoredFlipped relstore)
+          EDcD d -> let (plug,relstore) = getRelationTableInfo fSpec d
+                    in if plug == broadTable && not (rsStoredFlipped relstore)
                       then Just (rsTrgAtt relstore)
                       else Nothing
           EFlp (EDcD d) 
-                 -> let (p,relstore) = getRelationTableInfo fSpec d
-                    in if p == broadTable && rsStoredFlipped relstore
+                 -> let (plug,relstore) = getRelationTableInfo fSpec d
+                    in if plug == broadTable && rsStoredFlipped relstore
                       then Just (rsSrcAtt relstore)
                       else Nothing
           EFlp (EBrk e)

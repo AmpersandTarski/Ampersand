@@ -1,14 +1,14 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric, DuplicateRecordFields,OverloadedLabels  #-}
 module Ampersand.Core.ParseTree (
-     P_Context(..), mergeContexts, mkContextOfPopsOnly
+     P_Context(..), mergeContexts
    , Meta(..)
    , MetaObj(..)
    , P_RoleRelation(..)
    , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
-   , P_Relation(..)
+   , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
    , SrcOrTgt(..)
@@ -65,7 +65,7 @@ data P_Context
          , ctx_gs ::     [PClassify]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
          , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
-         , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
+         , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
          } deriving Show --for QuickCheck
 
@@ -111,25 +111,25 @@ instance Named Role where
  name (Role nm) = nm
  name (Service nm) = nm
 instance Unique Role where
- showUnique = optionalQuote . name
+ showUnique = name
 instance Traced P_RoleRule where
  origin = pos
 
 data P_Pattern
-   = P_Pat { pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
-           , pt_nm :: String            -- ^ Name of this pattern
-           , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
-           , pt_gns :: [PClassify]          -- ^ The generalizations defined in this pattern
-           , pt_dcs :: [P_Relation]  -- ^ The relations that are declared in this pattern
-           , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
-           , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
-           , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
-           , pt_Reprs :: [Representation] -- ^ The type into which concepts is represented
-           , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
-           , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
-           , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
-           , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
-           , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
+   = P_Pat { pos ::      Origin            -- ^ the starting position in the file in which this pattern was declared.
+           , pt_nm ::    String            -- ^ Name of this pattern
+           , pt_rls ::   [P_Rule TermPrim] -- ^ The user defined rules in this pattern
+           , pt_gns ::   [PClassify]       -- ^ The generalizations defined in this pattern
+           , pt_dcs ::   [P_Relation]      -- ^ The relations that are declared in this pattern
+           , pt_RRuls :: [P_RoleRule]      -- ^ The assignment of roles to rules.
+           , pt_RRels :: [P_RoleRelation]  -- ^ The assignment of roles to Relations.
+           , pt_cds ::   [ConceptDef]      -- ^ The concept definitions defined in this pattern
+           , pt_Reprs :: [Representation]  -- ^ The type into which concepts is represented
+           , pt_ids ::   [P_IdentDef]      -- ^ The identity definitions defined in this pattern
+           , pt_vds ::   [P_ViewDef]       -- ^ The view definitions defined in this pattern
+           , pt_xps ::   [PPurpose]        -- ^ The purposes of elements defined in this pattern
+           , pt_pop ::   [P_Population]    -- ^ The populations that are local to this pattern
+           , pt_end ::   Origin            -- ^ the end position in the file in which this pattern was declared.
            } deriving Show -- for QuickCheck
 
 instance Ord P_Pattern where
@@ -208,7 +208,7 @@ data P_Relation =
 --   For this reason, equality in the P-structure is defined on origin.
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
---   As a consequence, name and signature are always sufficient knowledge to determine the equality of P_Relations.
+--   The only reason for having Ord P_Relation is to represent sets of P_Relations by Data.Set
 instance Eq P_Relation where
  decl==decl' = compare decl decl' == EQ
 instance Ord P_Relation where
@@ -221,6 +221,26 @@ instance Named P_Relation where
  name = dec_nm
 instance Traced P_Relation where
  origin = pos
+-- instance Flippable P_Relation where
+--   flp rel = rel{dec_nm = if last (name rel)=='~' then init (name rel) else (name rel)++"~"
+--                ,dec_sign = flp (dec_sign rel)}
+
+-- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
+--   Relations with the same signature are merged. Relations with different signatures are left alone.
+mergeRels :: [P_Relation] -> [P_Relation]
+mergeRels rs = map (foldr1 mergeRel) (eqCl signat rs) -- each equiv. class contains at least 1 element, so foldr1 is just right!
+  where
+    signat rel = (name rel, pSrc (dec_sign rel), pTgt (dec_sign rel))
+    mergeRel :: P_Relation -> P_Relation -> P_Relation -- merges attributes, assuming both signatures are equal.
+    mergeRel r0 r1
+     = P_Sgn { dec_nm     = name r0     -- ^ the name of the relation
+             , dec_sign   = dec_sign r0 -- ^ the type. Parser must guarantee it is not empty.
+             , dec_prps   = dec_prps r0 `Set.union` dec_prps r1    -- ^ the user defined multiplicity constraints (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+             , dec_pragma = if (null.concat.dec_pragma) r1 then dec_pragma r0 else  dec_pragma r1
+                                        -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+             , dec_Mean   = dec_Mean r0++dec_Mean r1  -- ^ the optional meaning of a relation, possibly more than one for different languages.
+             , pos        = if origin r1==OriginUnknown then origin r0 else origin r1    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
+             }
 
 data PAtomPair
   = PPair { pos :: Origin
@@ -271,7 +291,7 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     XlsxString     _ s -> show s
     ScriptInt      _ i -> show i
     ScriptFloat    _ d -> show d
-    XlsxDouble     _ _ -> fatal "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+    XlsxDouble     o d -> fatal ("We got a value "++show d++" from "++show o++", which has to be shown in an expression, however the technicaltype is not known.")
     ComnBool       _ b -> show b
     ScriptDate     _ x -> show x
     ScriptDateTime _ x -> show x
@@ -545,24 +565,23 @@ data P_Markup =
 data P_Population
   = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
               , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
-              , pos  :: Origin       -- the origin
+              , pos     :: Origin       -- the origin
               , p_nmdr  :: P_NamedRel   -- the named relation
               , p_popps :: [PAtomPair]  -- the contents
               }
-  | P_CptPopu { pos  :: Origin  -- the origin
+  | P_CptPopu { pos     :: Origin  -- the origin
               , p_cnme  :: String  -- the name of a concept
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
    deriving (Show) --For QuickCheck error messages only!
 
 instance Ord P_Population where
-  compare p1 p2 
-   | origin p1==OriginUnknown && origin p2==OriginUnknown = case (p1,p2) of
-                                                              (P_RelPopu{},P_RelPopu{}) -> compare (p_popps p1) (p_popps p2)
-                                                              (P_CptPopu{},P_CptPopu{}) -> compare (p_popas p1) (p_popas p2)
-                                                              (P_RelPopu{},_) -> LT
-                                                              (_,P_RelPopu{}) -> GT
-   | otherwise                                            = compare (origin p1) (origin p2)
+  compare p1 p2 = case (p1,p2) of -- P_Population cannot be compaired using 'pos', because Origin of grinded population (meat grinder) is the same for all
+    ( P_RelPopu{} , P_RelPopu{} ) -> compare (p_popps p1) (p_popps p2)
+    ( P_CptPopu{} , P_CptPopu{} ) -> compare (p_popas p1) (p_popas p2)
+    ( P_RelPopu{} , _           ) -> LT
+    ( _           , P_RelPopu{} ) -> GT
+   
 instance Eq P_Population where --Required for merge of P_Contexts  -- see also the comment at `Eq P_Concept`
  p1 == p2 = compare p1 p2 == EQ
  
@@ -777,7 +796,7 @@ instance Flippable P_Sign where
 
 data PClassify =  PClassify
   { pos      :: Origin
-  , specific :: P_Concept       -- ^ Left hand side concept expression
+  , specific :: P_Concept                    -- ^ Left hand side concept expression
   , generics :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
   } deriving (Show, Eq, Ord)
 
@@ -830,7 +849,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
       , ctx_pats   = nubSortConcatMap ctx_pats contexts
       , ctx_rs     = nubSortConcatMap ctx_rs contexts
-      , ctx_ds     = nubSortConcatMap ctx_ds contexts
+      , ctx_ds     = mergeRels (ctx_ds ctx1++ctx_ds ctx2)
       , ctx_cs     = nubSortConcatMap ctx_cs contexts
       , ctx_ks     = nubSortConcatMap ctx_ks contexts
       , ctx_rrules = nubSortConcatMap ctx_rrules contexts
@@ -843,37 +862,15 @@ mergeContexts ctx1 ctx2 =
       , ctx_pops   = nubSortConcatMap ctx_pops contexts
       , ctx_metas  = nubSortConcatMap ctx_metas contexts
       }
-    where contexts = [ctx1,ctx2]
-
-nubSortConcatMap :: Ord b => (a -> [b]) -> [a] -> [b]
-nubSortConcatMap f = Set.toList 
-                   . Set.unions 
-                   . map Set.fromList 
-                   . map f
-
-mkContextOfPopsOnly :: [P_Population] -> P_Context
-mkContextOfPopsOnly pops =
-  PCtx{ ctx_nm     = ""
-      , ctx_pos    = []
-      , ctx_lang   = Nothing
-      , ctx_markup = Nothing
-      , ctx_pats   = []
-      , ctx_rs     = []
-      , ctx_ds     = []
-      , ctx_cs     = []
-      , ctx_ks     = []
-      , ctx_rrules = []
-      , ctx_rrels  = []
-      , ctx_reprs  = []
-      , ctx_vs     = []
-      , ctx_gs     = []
-      , ctx_ifcs   = []
-      , ctx_ps     = []
-      , ctx_pops   = pops
-      , ctx_metas  = []
-      }
--- | Left-biased choice on maybes
-orElse :: Maybe a -> Maybe a -> Maybe a
-x `orElse` y = case x of
-                 Just _  -> x
-                 Nothing -> y
+    where
+      contexts = [ctx1,ctx2]
+      nubSortConcatMap :: Ord b => (a -> [b]) -> [a] -> [b]
+      nubSortConcatMap f = Set.toList 
+                         . Set.unions 
+                         . map Set.fromList 
+                         . map f
+      -- | Left-biased choice on maybes
+      orElse :: Maybe a -> Maybe a -> Maybe a
+      x `orElse` y = case x of
+                       Just _  -> x
+                       Nothing -> y

@@ -153,6 +153,19 @@ checkOtherAtomsInSessionConcept ctx =
   where _isPermittedSessionValue :: AAtomValue -> Bool
         _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
         _isPermittedSessionValue _                 = False
+warnCaseProblems :: A_Context -> Guarded ()
+warnCaseProblems ctx = 
+   let warnings :: [Warning]
+       warnings = warns (concs ctx) 
+               ++ warns (relsDefdIn ctx) 
+       warns set = [ mkCaseProblemWarning x y
+                   | x <- lst, y<- lst
+                   , map toUpper (name x) == map toUpper (name y)
+                   , name x < name y 
+                   ]
+            where lst = toList set
+   in addWarnings warnings $ return ()
+     
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -251,7 +264,7 @@ pCtx2aCtx opts
                      , ctxpats = pats
                      , ctxrs = Set.fromList rules
                      , ctxds = Set.fromList relations
-                     , ctxpopus = udpops
+                     , ctxpopus = udpops  -- the content is copied from p_pops
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
                      , ctxrrules = allRoleRules
@@ -270,6 +283,7 @@ pCtx2aCtx opts
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx      -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
+      warnCaseProblems actx   -- Warn if there are problems with the casing of names of relations and/or concepts  
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
@@ -544,9 +558,7 @@ pCtx2aCtx opts
                 } -> do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
                         checkCrud
                         crud <- pCruds2aCruds objExpr mCrud
-                        maybeObj <- case subs of
-                                      Just P_Box{si_box=[]} -> pure Nothing
-                                      _ -> maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
+                        maybeObj <- maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
                         case maybeObj of
                           Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
                           Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
@@ -678,12 +690,12 @@ pCtx2aCtx opts
                                                  }
                          )
          P_Box{}
-           -> case si_box x of
-                []  -> const (fatal "this fatal used to be `undefined`.") <$> (hasNone x :: Guarded SubInterface) -- error
-                l   -> build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
+           -> addWarnings warnings $
+                       build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
                              <*  uniqueNames l
                              <*  mustBeObject (target objExpr)
-                  where build :: [BoxItem] -> (Expression, SubInterface)
+                  where l = si_box x
+                        build :: [BoxItem] -> (Expression, SubInterface)
                         build lst = (objExpr,Box { siConcept = target objExpr
                                                  , siMClass  = si_class x
                                                  , siObjs    = lst
@@ -703,6 +715,10 @@ pCtx2aCtx opts
                     [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef $ BxExpr ojd)]
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
+           warnings :: [Warning]
+           warnings = [mkBOX_ROWSNH_Warning (origin x) | si_class x == Just "ROWSNH"] -- See issue #925
+                    ++[mkNoBoxItemsWarning  (origin x) | null (si_box x)            ]
+ 
     typeCheckInterfaceRef :: P_BoxItem a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
       let expTarget = target objExpr

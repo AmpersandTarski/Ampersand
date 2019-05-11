@@ -95,7 +95,9 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                                                                       -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
                                                                       -- HJO 2016-09-05: Answer: Broad tables may contain rows where some of the attributes implement a relation that is UNI, but not TOT. In such case,
                                                                       --                         we may see empty attributes. (NULL values in database terminology)
-                   , pairsInExpr :: Expression -> AAtomPairs   
+                                                                      -- 'tableContents fSpec plug' is used in `PHP.hs` for filling the database initially.
+                                                                      -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
+                                                                      , pairsInExpr :: Expression -> AAtomPairs   
                    , initialConjunctSignals :: [(Conjunct,AAtomPairs)] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,AAtomPairs)]   -- ^ All invariant rules with violations.
                    , allExprs ::     Expressions             -- ^ All expressions in the fSpec
@@ -262,7 +264,7 @@ instance Named PlugSQL where
 instance Eq PlugSQL where
   x==y = name x==name y
 instance Unique PlugSQL where
-  showUnique = optionalQuote . name
+  showUnique = name
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
@@ -300,13 +302,13 @@ data SqlAttributeUsage = PrimaryKey A_Concept
                        | PlainAttr             -- None of the above
                        deriving (Eq, Show)
 
-data SqlAttribute = Att { attName :: String
-                        , attExpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-                        , attType :: TType
-                        , attUse ::  SqlAttributeUsage
-                        , attNull :: Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for data dictionary of DB-implementation)
-                        , attDBNull :: Bool       -- True for all fields, to disable strict checking by the database itself. 
-                        , attUniq :: Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for data dictionary of DB-implementation)
+data SqlAttribute = Att { attName ::    String
+                        , attExpr ::    Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
+                        , attType ::    TType
+                        , attUse ::     SqlAttributeUsage
+                        , attNull ::    Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for data dictionary of DB-implementation)
+                        , attDBNull ::  Bool           -- ^ True for all fields, to disable strict checking by the database itself. 
+                        , attUniq ::    Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for data dictionary of DB-implementation)
                         , attFlipped :: Bool
                         } deriving (Eq, Show,Typeable)
 instance Named SqlAttribute where

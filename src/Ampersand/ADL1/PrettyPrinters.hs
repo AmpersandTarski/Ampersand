@@ -139,9 +139,10 @@ instance Pretty P_Pattern where
 instance Pretty P_Relation where
     pretty (P_Sgn nm sign prps pragma mean _) =
         text "RELATION" <+> text nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
-        where props   = if prps == Set.fromList [Sym, Asy] then text "[PROP]"
-                        else text "[" <> listOf (Set.toList prps) <> text "]"
-              pragmas | null pragma = empty
+        where props | prps == Set.fromList [Sym, Asy] = text "[PROP]"
+                    | null prps                       = empty
+                    | otherwise                       = text ("["++(intercalate ",". map show . Set.toList) prps ++ "]") -- do not prettyprint list of properties.
+              pragmas | null (concat pragma) = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
 
 instance Pretty a => Pretty (Term a) where
@@ -267,7 +268,9 @@ instance Pretty a => Pretty (P_SubIfc a) where
                 P_Box _ c bs         -> box_type c <+> text "[" <> listOf bs <> text "]"
                 P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO "else "")++"INTERFACE") <+> maybeQuote str
             where box_type Nothing  = text "BOX"
-                  box_type (Just x) = text x -- ROWS, COLS, TABS
+                  box_type (Just x) 
+                   | x `elem` ["ROWS", "COLS", "TABS"] = text x
+                   | otherwise = text "BOX" <+> text ("<"++x++">") 
 
 instance Pretty (P_IdentDf TermPrim) where
     pretty (P_Id _ lbl cpt ats) =
