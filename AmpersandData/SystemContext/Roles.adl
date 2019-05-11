@@ -7,6 +7,8 @@ CONTEXT PrototypeFramework IN ENGLISH
     RELATION label[Role*PF_Label] [UNI,TOT] -- Text that is used to show users when referring to this role
         REPRESENT PF_Label TYPE ALPHANUMERIC
         POPULATION label[Role*PF_Label] CONTAINS [ ("SYSTEM", "SYSTEM") ]
+        POPULATION label[Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ]
+        POPULATION label[Role*PF_Label] CONTAINS [ ("User", "User") ]
 
 --[System Roles]
     -- The below stuff is copied from SIAM and should be kept as such for integration and backward compatibility purposes
