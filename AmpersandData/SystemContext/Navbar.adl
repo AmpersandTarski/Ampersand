@@ -1,7 +1,8 @@
 CONTEXT PrototypeFramework IN ENGLISH
 
-    --[NAV MENU ITEMS]-----------------------------------------------------------------------------
-    CONCEPT PF_NavMenuItem ""
+--[NavMenuItems]
+
+    CONCEPT PF_NavMenuItem "entry in a menu that allows users to change the (user)interface they use"
         REPRESENT PF_NavMenuItem TYPE OBJECT
   
     RELATION label[PF_NavMenuItem*PF_Label] [UNI,TOT] 
@@ -10,56 +11,52 @@ CONTEXT PrototypeFramework IN ENGLISH
         REPRESENT PF_Label TYPE ALPHANUMERIC
 
     RELATION isVisible[PF_NavMenuItem*PF_NavMenuItem] [PROP]
-        MEANING "A navbar item can be visible or not"
+        MEANING "A NavMenuItem can be visible to the user, or not"
     
     RELATION ifc[PF_NavMenuItem*PF_Interface] [UNI] 
-        MEANING "A navbar item can direct to an interface"
+        MEANING "A NavMenuItem can specify the interface that will be navigated to when the item is selected by the user"
         CONCEPT PF_Interface "Representation of an Ampersand interface"
 
     RULE "Do not allow references to API interfaces" : ifc;isAPI |- -V
-        MESSAGE "A navbar item can not reference an API interface"
-  
+        MESSAGE "A NavMenuItem can not reference an machine-2-machine interface (API)"
+
+    PURPOSE RELATION url[PF_NavMenuItem*PF_URL]
+    {+We want to be able to create NavMenuItems that allow users to navigate both to internal and external interfaces.
+      For the latter, this requires the ability to navigate to a site that is identified by means of a URL.
+      This ability can be used also for navigating to extensions like the excelimporter"+}
     RELATION url[PF_NavMenuItem*PF_URL] [UNI]
-        MEANING "A navbar item can direct to an (external) url. This can also be used for extensions like the excelimporter"
+        MEANING "A NavMenuItem can specify an (external) url that will be navigated to when the item is seleected by the user"
         CONCEPT PF_URL "a uniform resource locator as defined by RFC3986"
         REPRESENT PF_URL TYPE BIGALPHANUMERIC
   
     RELATION seqNr[PF_NavMenuItem*PF_SeqNr] [UNI]
-        MEANING "A navbar item has a seq nr (default 0) which determines the position of the item"
+        MEANING "A NavMenuItem has a seq nr (default 0) which determines its rank (heigth) in the menu of which it is part"
         CONCEPT PF_SeqNr ""
         REPRESENT PF_SeqNr TYPE INTEGER
     
     RELATION isSubItemOf[PF_NavMenuItem*PF_NavMenuItem] [UNI,IRF,ASY]
-        MEANING "A navbar item can be a sub item of another item"
+        MEANING "A NavMenuItem can be a sub item of another NavMenuItem"
 
-    RELATION pf_navItemRoles[PF_NavMenuItem*Role]
-        MEANING "A navbar item is accessible for a role"
+    RELATION pf_navItemRoles[PF_NavMenuItem*Role] --  pf_navItemRoles == ifc;pf_ifcRoles \/ isSubItemOf~;pf_navItemRoles
+        MEANING "A NavMenuItem is accessible/viewable for specific roles"
 
-    -- Add/remove menu items based on interface roles
-    ROLE ExecEngine MAINTAINS "Add navItemRoles for interfaces"
-    RULE "Add navItemRoles for interfaces" : ifc;pf_ifcRoles |- pf_navItemRoles
-    VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
-
-    ROLE ExecEngine MAINTAINS "Remove navItemRoles for interfaces"
-    RULE "Remove navItemRoles for interfaces" : (I /\ ifc;ifc~);pf_navItemRoles |- ifc;pf_ifcRoles
-    VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
-
-    -- Add/remove parent menu items if needed
-    ROLE ExecEngine MAINTAINS "Add navItemRoles for parent items"
-    RULE "Add navItemRoles for parent items": isSubItemOf~;pf_navItemRoles |- pf_navItemRoles
-    VIOLATION (TXT "{EX}InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
-
-    ROLE ExecEngine MAINTAINS "Remove navItemRoles for parent items"
-    RULE "Remove navItemRoles for parent items": (I /\ isSubItemOf~;isSubItemOf);pf_navItemRoles |- isSubItemOf~;pf_navItemRoles
-    VIOLATION (TXT "{EX}DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+--[Add/remove roles to/from NavMenuItems]
     
-    --[NAV MENUS]----------------------------------------------------------------------------------
-    CONCEPT PF_NavMenu ""
+    ROLE ExecEngine MAINTAINS "Add roles to NavMenuItem"
+    RULE "Add roles to NavMenuItem": ifc;pf_ifcRoles \/ isSubItemOf~;pf_navItemRoles |- pf_navItemRoles[PF_NavMenuItem*Role]
+    VIOLATION (TXT "{EX} InsPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "Remove roles from NavMenuItem"
+    RULE "Remove roles from NavMenuItem": pf_navItemRoles[PF_NavMenuItem*Role] |- ifc;pf_ifcRoles \/ isSubItemOf~;pf_navItemRoles
+    VIOLATION (TXT "{EX} DelPair;pf_navItemRoles;PF_NavMenuItem;", SRC I, TXT ";Role;", TGT I)
+
+--[NavMenus]
+    CONCEPT PF_NavMenu "ordered/prioritized list of NavMenuItems"
         CLASSIFY PF_NavMenu ISA PF_NavMenuItem
         REPRESENT PF_NavMenu TYPE OBJECT
 
     RELATION isPartOf[PF_NavMenuItem*PF_NavMenu] [UNI,TOT]
-        MEANING "A navbar item is part of a certain navmenu"
+        MEANING "Every NavMenuItem is part of a specific NavMenu"
 
     ROLE ExecEngine MAINTAINS "Fix TOT for isPartOf[PF_NavMenuItem*PF_NavMenu]"
     RULE "Fix TOT for isPartOf[PF_NavMenuItem*PF_NavMenu]": I[PF_NavMenuItem];isSubItemOf;isPartOf |- isPartOf
