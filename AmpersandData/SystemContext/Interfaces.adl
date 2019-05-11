@@ -19,13 +19,13 @@ CONTEXT PrototypeFramework IN ENGLISH
     -- Cannot enforce this rule yet, because ExecEngine is still required to add missing roles
     -- RULE "Public interface integrity" : isPublic;V[PF_Interface*Role] |- pf_ifcRoles
 
-    -- EQUIVALENCE pf_ifcRoles[PF_Interface*Role] == isPublic;V;(I-systemRoles)
+    -- EQUIVALENCE pf_ifcRoles[PF_Interface*Role] == isPublic;V;(I-systemRole)
     ROLE ExecEngine MAINTAINS "Equivalence - InsPair pf_ifcRoles"
-    RULE "Equivalence - InsPair pf_ifcRoles": isPublic;V;(I-systemRoles) |- pf_ifcRoles
+    RULE "Equivalence - InsPair pf_ifcRoles": isPublic;V;(I-systemRole) |- pf_ifcRoles
     VIOLATION (TXT "{EX} InsPair;pf_ifcRoles;PF_Interface;", SRC I, TXT ";Role;", TGT I)
     
     ROLE ExecEngine MAINTAINS "Equivalence - DelPair pf_ifcRoles"
-    RULE "Equivalence - DelPair pf_ifcRoles": isPublic;pf_ifcRoles |- isPublic;V;(I-systemRoles)
+    RULE "Equivalence - DelPair pf_ifcRoles": isPublic;pf_ifcRoles |- isPublic;V;(I-systemRole)
     VIOLATION (TXT "{EX} DelPair;pf_ifcRoles;PF_Interface;", SRC I, TXT ";Role;", TGT I)
 
 ENDCONTEXT
