@@ -11,8 +11,7 @@ where
    import Data.Tree.NTree.TypeDefs
    import Text.XML.HXT.Core hiding (utf8, fatal,trace)
    import Ampersand.Core.ParseTree
-   import Data.List  -- for things such as nub
-   import Data.Maybe
+   import qualified RIO.List as L
    import qualified Data.Set as Set
    import qualified Data.List.NonEmpty as NEL
 
@@ -45,9 +44,9 @@ where
                             (show.length.eqCl ppRight.p_popps) pop ++"\t"++
                             (showMaybeInt.elemCount.pTgt) signature
          writeFile "ArchiCount.txt"
-          ( (intercalate "\n" . map countPop) relPops )
-         appendFile "ArchiCount.txt"
-          ( (concat . map showArchiElems . atomCount . atomMap ) (relPops++cptPops ) )
+          (   (L.intercalate "\n" . map countPop) relPops
+           <> (concat . map showArchiElems . atomCount . atomMap ) (relPops++cptPops ) 
+          )
          putStrLn ("ArchiCount.txt written")
          return (mkArchiContext archiRepoWithProps)
 {- reminder:
@@ -72,13 +71,13 @@ data PAtomPair
           } deriving (Eq,Ord,Show) -- Show is for QuickCheck error messages and/or input redundancy removal only!
 -}
       where sortRelPops, sortCptPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
-            sortRelPops pops = [ (head cl){p_popps = foldr union [] [p_popps decl | decl<-cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-pops] ]
-            sortCptPops pops = [ (head cl){p_popas = foldr union [] [p_popas cpt  | cpt <-cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-pops] ]
+            sortRelPops pops = [ (NEL.head cl){p_popps = foldr L.union [] [p_popps decl | decl<-NEL.toList cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-pops] ]
+            sortCptPops pops = [ (NEL.head cl){p_popas = foldr L.union [] [p_popas cpt  | cpt <-NEL.toList cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-pops] ]
             atomMap :: [P_Population] -> Map.Map P_Concept [PAtomValue]
-            atomMap pops = Map.fromListWith union
-                              ([ (pSrc sgn, (nub.map ppLeft.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]++
-                               [ (pTgt sgn, (nub.map ppRight.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]++
-                               [ ((PCpt . p_cnme) pop, (nub.p_popas) pop) | pop@P_CptPopu{}<-pops ]
+            atomMap pops = Map.fromListWith L.union
+                              ([ (pSrc sgn, (L.nub.map ppLeft.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]++
+                               [ (pTgt sgn, (L.nub.map ppRight.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]++
+                               [ ((PCpt . p_cnme) pop, (L.nub.p_popas) pop) | pop@P_CptPopu{}<-pops ]
                               )
             atomCount :: Map.Map c [a] -> [(c,Int)]
             atomCount am = [ (archiElem,length atoms) | (archiElem,atoms)<-Map.toList am ]
@@ -105,14 +104,14 @@ data PAtomPair
          , ctx_markup = Nothing
          , ctx_pats   = []
          , ctx_rs     = []
-         , ctx_ds     = nub [ ad | Just ad<-archiDecls ]
+         , ctx_ds     = L.nub [ ad | Just ad<-archiDecls ]
          , ctx_cs     = []
          , ctx_ks     = []
          , ctx_rrules = []
          , ctx_rrels  = []
          , ctx_reprs  = []
          , ctx_vs     = []
-         , ctx_gs     = nub (concat archiGenss)
+         , ctx_gs     = L.nub (concat archiGenss)
          , ctx_ifcs   = []
          , ctx_ps     = []
          , ctx_pops   = sortRelPops archiPops ++ sortCptPops archiPops
@@ -121,10 +120,10 @@ data PAtomPair
      where archiPops ::  [P_Population]
            archiDecls :: [Maybe P_Relation]
            archiGenss :: [[PClassify]]
-           (archiPops, archiDecls, archiGenss) = unzip3 pops
+           (archiPops, archiDecls, archiGenss) = L.unzip3 pops
            sortRelPops, sortCptPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
-           sortRelPops popus = [ (head cl){p_popps = foldr union [] [p_popps decl | decl<-cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-popus] ]
-           sortCptPops popus = [ (head cl){p_popas = foldr union [] [p_popas cpt  | cpt <-cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-popus] ]
+           sortRelPops popus = [ (NEL.head cl){p_popps = foldr L.union [] [p_popps decl | decl<-NEL.toList cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-popus] ]
+           sortCptPops popus = [ (NEL.head cl){p_popas = foldr L.union [] [p_popas cpt  | cpt <-NEL.toList cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-popus] ]
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
@@ -549,7 +548,8 @@ data PAtomPair
         uri = "file://" ++ n (g <$> absFilePath)
           where
             g x = if x == '\\' then '/' else x
-            n x = if head x /= '/' then '/' : x else x
+            n [] = fatal "absFilePath is an empty list."
+            n x@(h:_) = if h /= '/' then '/' : x else x
         analArchiRepo :: ArrowXml a => a XmlTree ArchiRepo
         analArchiRepo
           = (atTag "archimate:model"<+>atTag "archimate:ArchimateModel") >>>
