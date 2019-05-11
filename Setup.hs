@@ -4,9 +4,9 @@ where
 import qualified Codec.Compression.GZip as GZip
 import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as BS
-import           Data.Char
+import           RIO.Char
 import           Data.Either
-import           Data.List
+import qualified RIO.List as L
 import           Data.Time.Clock
 import qualified Data.Time.Format as DTF
 import           Data.Time.LocalTime
@@ -205,7 +205,7 @@ data FileKind = PandocTemplates | FormalAmpersand | SystemContext deriving (Show
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
   unlines staticFileModuleHeader ++
-  "  [ " ++ intercalate "\n  , " sfDeclStrs ++ "\n" ++
+  "  [ " ++ L.intercalate "\n  , " sfDeclStrs ++ "\n" ++
   "  ]\n"
 
 staticFileModuleHeader :: [String]

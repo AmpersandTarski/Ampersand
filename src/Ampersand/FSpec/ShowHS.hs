@@ -8,13 +8,11 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct  (AStruct(..))  -- for traceability, we generate comments in the Haskell code.
 import           Ampersand.FSpec.FSpec
 import           Ampersand.Misc
-import           Data.Char                  (isAlphaNum)
-import           Data.Function
+import           RIO.Char                  (isAlphaNum)
 import           Data.Hashable
-import           Data.List
-import qualified Data.List.NonEmpty as NEL (toList)
-import           Data.Ord
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import           Text.Pandoc hiding (Meta)
 
 fSpec2Haskell :: Options -> FSpec -> String
@@ -37,7 +35,7 @@ wrap initStr indent f xs
    case xs of
      []  -> "[]"
      [x] -> "[ "++f (indent++"  ") x++" ]"
-     _   -> "[ "++intercalate (indent++", ") [f (indent++"  ") x | x<-xs]++indent++"]"
+     _   -> "[ "++L.intercalate (indent++", ") [f (indent++"  ") x | x<-xs]++indent++"]"
 
 class ShowHSName a where
  showHSName :: a -> String
@@ -46,10 +44,13 @@ class ShowHS a where
  showHS :: Options -> String -> a -> String
 
 instance ShowHSName a => ShowHSName [a] where
- showHSName xs = "["++intercalate "," (map showHSName xs)++"]"
+ showHSName xs = "["++L.intercalate "," (map showHSName xs)++"]"
 
 instance ShowHS a => ShowHS [a] where
  showHS opts indent = wrap "" (indent++" ") (showHS opts)
+
+instance ShowHS a => ShowHS (NEL.NonEmpty a) where
+ showHS opts indent = wrap "" (indent++" ") (showHS opts) . NEL.toList
 
 instance ShowHSName a => ShowHSName (Maybe a) where
  showHSName Nothing  = "Nothing"
@@ -71,23 +72,25 @@ instance ShowHSName PlugSQL where
 instance ShowHS PlugSQL where
  showHS opts indent plug
    = case plug of
-       TblSQL{} -> intercalate indent
-                   ["let " ++ intercalate (indent++"    ")
-                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-plugAttributes plug] ++indent++"in"
+       TblSQL{} -> L.intercalate indent
+                   ["let " ++ L.intercalate (indent++"    ")
+                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f 
+                                          | f<-NEL.toList $ plugAttributes plug] ++indent++"in"
                    ,"TblSQL { sqlname    = " ++ (show.name) plug
-                   ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
-                   ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
-                   ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
+                   ,"       , attributes = ["++L.intercalate ", " (map showHSName (attributes plug))++"]"
+                   ,"       , cLkpTbl    = [ "++L.intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
+                   ,"       , dLkpTbl    = [ "++L.intercalate (indent++"                      , ") 
                                                 ( map (showHS opts (indent++"                        ")) . dLkpTbl $ plug) 
                                               ++ "]"
                    ,"       }"
                    ]
-       BinSQL{} -> intercalate indent
-                   ["let " ++ intercalate (indent++"    ")
-                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-plugAttributes plug] ++indent++"in"
+       BinSQL{} -> L.intercalate indent
+                   ["let " ++ L.intercalate (indent++"    ")
+                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f 
+                                          | f<-NEL.toList $ plugAttributes plug] ++indent++"in"
                    ,"BinSQL { sqlname = " ++ (show.name) plug
-                   ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
-                   ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
+                   ,"       , cLkpTbl = [ "++L.intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
+                   ,"       , dLkpTbl    = [ "++L.intercalate (indent++"                      , ") 
                                                 ( map (showHS opts (indent++"                        ")) . dLkpTbl $ plug) 
                                               ++ "]"
                    ,"       }"
@@ -95,7 +98,7 @@ instance ShowHS PlugSQL where
 
 instance ShowHS RelStore where
  showHS _ indent store
-   = intercalate indent
+   = L.intercalate indent
        [  "Relstore { rsDcl           = " ++ showHSName (rsDcl store)
        ,  "         , rsStoredFlipped = " ++ show (rsStoredFlipped store)
        ,  "         , rsSrcAtt        = " ++ showHSName (rsSrcAtt store)
@@ -108,13 +111,13 @@ instance ShowHSName SqlAttribute where
 
 instance ShowHS SqlAttribute where
  showHS opts indent sqAtt
-   = intercalate indentA
+   = L.intercalate indentA
        [  "Att { attName    = " ++ show (attName sqAtt)
        ,      ", attExpr    = " ++ showHS opts indentB (attExpr sqAtt)
        ,      ", attType    = " ++ showHS opts "" (attType sqAtt)
        ,      ", attUse     = " ++ showHS opts "" (attUse sqAtt)
        ,      ", attNull    = " ++ show (attNull sqAtt)
-       ,      ", attDBNull    = " ++ show (attDBNull sqAtt)
+       ,      ", attDBNull  = " ++ show (attDBNull sqAtt)
        ,      ", attUniq    = " ++ show (attUniq sqAtt)
        ,      ", attFlipped = " ++ show (attFlipped sqAtt)
        ,      "}"
@@ -135,10 +138,10 @@ instance ShowHSName Quad where
 
 instance ShowHS Quad where
  showHS _ indent q
-   = intercalate indent
+   = L.intercalate indent
             [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
             , "    , qRule    = " ++ showHSName (qRule q)
-            , wrap "    , qConjuncts = " newindent (const showHSName) (qConjuncts q)
+            , wrap "    , qConjuncts = " newindent (const showHSName) (NEL.toList $ qConjuncts q)
             , "    }"
             ]
     where
@@ -146,9 +149,9 @@ instance ShowHS Quad where
 
 instance ShowHS DnfClause where
  showHS opts indent dnf
-   = intercalate indent
-       [ wrap "Dnf " (indent++"    ") (\_->showHS opts (indent++"      ")) (antcs dnf)
-       , wrap "    " (indent++"    ") (\_->showHS opts (indent++"      ")) (conss dnf)
+   = L.intercalate indent
+       [ wrap "Dnf " (indent++"    ") (\_->showHS opts (indent++"      ")) (NEL.toList $ antcs dnf)
+       , wrap "    " (indent++"    ") (\_->showHS opts (indent++"      ")) (NEL.toList $ conss dnf)
        ]
 
 instance ShowHSName Conjunct where
@@ -156,9 +159,9 @@ instance ShowHSName Conjunct where
 
 instance ShowHS Conjunct where
  showHS opts indent x
-   = intercalate (indent ++"    ")
+   = L.intercalate (indent ++"    ")
        [   "Cjct{ rc_id         = " ++ show (rc_id x)
-       ,       ", rc_orgRules   = " ++ "[ "++intercalate ", " (map showHSName . Set.elems $ rc_orgRules x)++"]"
+       ,       ", rc_orgRules   = " ++ "[ "++L.intercalate ", " (NEL.toList . fmap showHSName $ rc_orgRules x)++"]"
        ,       ", rc_conjunct   = " ++ showHS opts indentA (rc_conjunct x)
        , wrap  ", rc_dnfClauses = " indentA (\_->showHS opts (indentA++"  ")) (rc_dnfClauses x)
        ,       "}"
@@ -170,7 +173,7 @@ instance ShowHSName FSpec where
 
 instance ShowHS FSpec where
  showHS opts indent fSpec
-  = intercalate (indent ++"     ")
+  = L.intercalate (indent ++"     ")
         [ "FSpec{ fsName        = " ++ show (name fSpec)
         , wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
         ,      ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
@@ -181,7 +184,7 @@ instance ShowHS FSpec where
                case fRoleRels fSpec of
                  []        -> "[]"
                  [(r,rel)] -> "[ ("++show r++", "++showHS opts "" rel++") ]"
-                 _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
+                 _         -> "[ "++L.intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
         ,      ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
         , wrap ", fRoles        = " indentA (showHS opts)    [rol | (rol,_) <- fRoles fSpec]
         , wrap ", vrules        = " indentA (const showHSName) (Set.elems $ vrules fSpec)
@@ -208,12 +211,12 @@ instance ShowHS FSpec where
     indent++"where"++
      "\n -- ***Interfaces Specified in Ampersand script***: "++
     indent++" interfaceS' = "++(if null (interfaceS fSpec) then "[]" else
-                              "[ "++intercalate (indentB++"  , ") (map showHSName (interfaceS fSpec))++indentB++"  ]")++
+                              "[ "++L.intercalate (indentB++"  , ") (map showHSName (interfaceS fSpec))++indentB++"  ]")++
      "\n -- ***Activities Generated by the Ampersand compiler ***: " ++
     indent++" interfaceG' = "++(if null (interfaceG fSpec) then "[]" else
-                              "[ "++intercalate (indentB++", ") (map showHSName (interfaceG fSpec))++indentB++"]")++
+                              "[ "++L.intercalate (indentB++", ") (map showHSName (interfaceG fSpec))++indentB++"]")++
     indent++" allMetas = "++(if null (metas fSpec) then "[]" else
-                              "[ "++intercalate (indentB++", ") (map (showHS opts (indent ++ "         ")) (metas fSpec))++indentB++"]") ++
+                              "[ "++L.intercalate (indentB++", ") (map (showHS opts (indent ++ "         ")) (metas fSpec))++indentB++"]") ++
 
 -- WHY?  staan hier verschillende lijstjes met interfaces?
 -- BECAUSE! Een Ampersand engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
@@ -263,7 +266,7 @@ instance ShowHS FSpec where
     )++
     (if null (plugInfos fSpec ) then "" else
      "\n -- *** PlugInfos (total: "++(show.length.plugInfos) fSpec++" plugInfos) ***: "++
-     concat [indent++" "++showHSName p++indent++"  = "++showHS opts (indent++"    ") p |InternalPlug p<-sortBy (compare `on` name) (plugInfos fSpec) ]++"\n"
+     concat [indent++" "++showHSName p++indent++"  = "++showHS opts (indent++"    ") p |InternalPlug p<-L.sortBy (compare `on` name) (plugInfos fSpec) ]++"\n"
     )++
     (if null (vpatterns fSpec) then "" else
      "\n -- *** Patterns (total: "++(show.length.vpatterns) fSpec++" patterns) ***: "++
@@ -276,21 +279,21 @@ instance ShowHS FSpec where
     (if null (allConcepts fSpec) then "" else
      "\n -- *** Concepts (total: "++(show.length.allConcepts) fSpec++" concepts) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x
-          ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (Set.toList $ allConcepts fSpec)]++"\n"
+          ++ indent++"    "++showAtomsOfConcept x |x<-L.sortBy (comparing showHSName) (Set.toList $ allConcepts fSpec)]++"\n"
     )
         where indentA = indent ++"                       "
               indentB = indent ++"             "
               showAtomsOfConcept c =
-                           "-- atoms: [ "++ intercalate indentC strs++"]"
+                           "-- atoms: [ "++ L.intercalate indentC strs++"]"
                   where
-                    strs = map showVal . sort . Set.elems . atomsInCptIncludingSmaller fSpec $ c
+                    strs = map showVal . L.sort . Set.elems . atomsInCptIncludingSmaller fSpec $ c
                       where showVal val= "`"++showValADL val++"`" 
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
               showViolatedRule :: String -> (Rule,AAtomPairs) -> String
               showViolatedRule indent' (r,ps)
-                 = intercalate indent'
+                 = L.intercalate indent'
                      [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++
                       indent'++" , "++ wrap "" (indent'++"   ") 
                                                (let showPair _ p = "( "++ (show.showValADL.apLeft) p++", "++(show.showValADL.apRight) p++")"
@@ -337,13 +340,13 @@ instance ShowHSName Pattern where
 
 instance ShowHS Pattern where
  showHS opts indent pat
-  = intercalate indentA
+  = L.intercalate indentA
      [ "A_Pat { ptnm  = "++show (name pat)
      , ", ptpos = "++showHS opts "" (ptpos pat)
      , ", ptend = "++showHS opts "" (ptend pat)
-     , ", ptrls = [" ++intercalate ", " [showHSName r | r<-Set.elems $ ptrls pat] ++ concat [" {- no rules -} "        | Set.null (ptrls pat)] ++"]"
+     , ", ptrls = [" ++L.intercalate ", " [showHSName r | r<-Set.elems $ ptrls pat] ++ concat [" {- no rules -} "        | Set.null (ptrls pat)] ++"]"
      , wrap ", ptgns = " indentB (showHS opts) (ptgns pat)
-     , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-Set.elems $ ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
+     , ", ptdcs = [ " ++L.intercalate (indentB++", ") [showHSName d | d<-Set.elems $ ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
      , wrap ", ptups = " indentB (showHS opts) (ptups pat)
      , wrap ", ptids = " indentB (showHS opts) (ptids pat)
      , wrap ", ptvds = " indentB (showHS opts) (ptvds pat)
@@ -357,7 +360,7 @@ instance ShowHS PPurpose where
     "PRef2 ("++showHS opts "" (origin     expl)++") "++
           "("++showHS opts "" (pexObj     expl)++") "++
           "("++showHS opts "" (pexMarkup  expl)++") "
-             ++show (intercalate ";" (pexRefIDs expl))++" "
+             ++show (L.intercalate ";" (pexRefIDs expl))++" "
 
 instance ShowHS PRef2Obj where
  showHS _ _ peObj
@@ -392,7 +395,7 @@ instance ShowHS ExplObj where
 
 instance ShowHS P_Markup where
  showHS _ indent m
-   = intercalate indent
+   = L.intercalate indent
      ["P_Markup{ mLang   = "++ show (mLang m)
      ,"        , mFormat = "++ show (mFormat m)
      ,"        , mString = "++ show (mString m)
@@ -401,7 +404,7 @@ instance ShowHS P_Markup where
 
 instance ShowHS Markup where
  showHS _ indent m
-   = intercalate indent
+   = L.intercalate indent
      ["Markup{ amLang   = "++ show (amLang m)
      ,"        , amPandoc = "++ show (amPandoc m)
      ,"        }"
@@ -419,7 +422,7 @@ instance ShowHSName Rule where
 
 instance ShowHS Rule where
  showHS opts indent r@(Ru _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
-   = intercalate indent
+   = L.intercalate indent
      ["Ru{ rrnm   = " ++ show (rrnm   r)
      ,"  , formalExpression  = -- " ++ showA (formalExpression  r) ++ indent++"             " ++ showHS opts (indent++"             ") (formalExpression  r)
      ,"  , rrfps  = " ++ showHS opts "" (rrfps  r)
@@ -444,7 +447,7 @@ instance ShowHSName IdentityDef where
 instance ShowHS IdentityDef where
  showHS opts indent identity
   = "Id ("++showHS opts "" (idPos identity)++") "++show (idLbl identity)++" ("++showHSName (idCpt identity)++")"
-    ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS opts indent) $ identityAts identity)++indent++"  ]"
+    ++indent++"  [ "++L.intercalate (indent++"  , ") (NEL.toList . fmap (showHS opts indent) $ identityAts identity)++indent++"  ]"
 
 instance ShowHS IdentitySegment where
  showHS opts indent (IdentityExp objDef) = "IdentityExp ("++ showHS opts indent objDef ++ ")"
@@ -455,7 +458,7 @@ instance ShowHSName ViewDef where
 instance ShowHS ViewDef where
  showHS opts indent vd
   = "Vd ("++showHS opts "" (vdpos vd)++") "++show (name vd)++" "++showHSName (vdcpt vd)
-    ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS opts indent) $ vdats vd)++indent++"  ]"
+    ++indent++"  [ "++L.intercalate (indent++"  , ") (NEL.toList . fmap (showHS opts indent) $ vdats vd)++indent++"  ]"
 
 instance ShowHS ViewSegment where
   showHS opts indent vs =
@@ -474,13 +477,13 @@ instance ShowHS Population where
   = case pop of
       ARelPopu{} -> "ARelPopu { popdcl = "++showHSName (popdcl pop)
 --TODOFIX
---          ++indent++"         , popps  = [ "++intercalate
+--          ++indent++"         , popps  = [ "++L.intercalate
 --           (indent++"                    , ") (map show (popps pop))
           ++indent++"                    ]"
           ++indent++"         }"
       ACptPopu{} -> "ACptPopu { popcpt = "++showHSName (popcpt pop)
 --TODOFIX
---          ++indent++"         , popas  = [ "++intercalate
+--          ++indent++"         , popas  = [ "++L.intercalate
 --           (indent++"                    , ") (map show (popas pop))
           ++indent++"                    ]"
           ++indent++"         }"
@@ -490,7 +493,7 @@ instance ShowHSName ObjectDef where
 
 instance ShowHS ObjectDef where
  showHS opts indent x
-  = intercalate indent
+  = L.intercalate indent
         ["ObjectDef { objnm    = " ++ show(name x)
         ,"       , objpos   = " ++ showHS opts "" (origin x)
         ,"       , objExpression   = " ++ showHS opts (indent++"                ") (objExpression x)
@@ -501,7 +504,7 @@ instance ShowHS ObjectDef where
         ]
 instance ShowHS BoxTxt where
  showHS opts indent x
-  = intercalate indent
+  = L.intercalate indent
         ["BoxTxt { objnm    = " ++ show(name x)
         ,"       , objpos   = " ++ showHS opts "" (origin x)
         ,"       , objtxt   = " ++ show(objtxt x)
@@ -509,7 +512,7 @@ instance ShowHS BoxTxt where
         ]
 instance ShowHS Cruds where
  showHS opts indent x 
-  = intercalate indent
+  = L.intercalate indent
       ["Cruds { crudOrig = "++ showHS opts "" (crudOrig x)
       ,"      , crudC    = "++ show (crudC x)
       ,"      , crudR    = "++ show (crudR x)
@@ -522,7 +525,7 @@ instance ShowHSName Interface where
 
 instance ShowHS Interface where
  showHS opts indent ifc
-  = intercalate indent
+  = L.intercalate indent
         [ "Ifc { ifcname   = " ++ show(ifcname ifc)
         , "    , ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
@@ -570,7 +573,7 @@ instance ShowHS AClassify where
  showHS _ _ gen =
    case gen of
      Isa{} -> "Isa "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
-     IsE{} -> "IsE "++showHSName (genspc gen)++" ["++intercalate ", " (map showHSName (genrhs gen))++"] "
+     IsE{} -> "IsE "++showHSName (genspc gen)++" ["++L.intercalate ", " (map showHSName (genrhs gen))++"] "
 
 instance ShowHSName Relation where
  showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- user defined relations
@@ -578,7 +581,7 @@ instance ShowHSName Relation where
 
 instance ShowHS Relation where
  showHS opts indent d
-    = intercalate indent
+    = L.intercalate indent
                      ["Relation { decnm   = " ++ show (decnm d)
                      ,"         , decsgn  = " ++ showHS opts "" (sign d)
                      ,"         , decprps = " ++ showL(map (showHS opts "") (Set.elems $ decprps d))
@@ -725,4 +728,4 @@ haskellIdentifier cs = unCap (hsId cs)
    hsId ""                     = ""
 
 showL :: [String] -> String
-showL xs = "["++intercalate "," xs++"]"
+showL xs = "["++L.intercalate "," xs++"]"

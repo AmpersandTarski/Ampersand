@@ -11,20 +11,16 @@ import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Codec.Archive.Zip
-import           Control.Exception
-import           Control.Monad
 import qualified Data.ByteString.Lazy  as BL
-import           Data.Char
-import           Data.Data
+import           RIO.Char
 import           Data.Hashable (hash)
-import           Data.List
-import           Data.Maybe
+import qualified RIO.List as L
 import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath
 import           Text.StringTemplate
 import           Text.StringTemplate.GenericStandard () -- only import instances
-
+import qualified Data.List.NonEmpty as NEL
 
 
 {- TODO
@@ -192,7 +188,7 @@ buildInterface opts@Options{..} fSpec allIfcs ifc =
                   ; mSpecificTemplatePath <-
                           case mView of
                             Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                              -> return $ Just (fName, mapMaybe vsmlabel viewSegs)
+                              -> return $ Just (fName, mapMaybe vsmlabel . NEL.toList $ viewSegs)
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
                              do { let templatePath = "Atomic-" ++ (idWithoutType tgt) ++ ".html"
@@ -294,7 +290,7 @@ genViewInterface opts@Options{..} fSpec interf =
                      . setAttribute "crudR"               (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"               (objCrudD (_ifcObj interf))
-                     . setAttribute "contents"            (intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
+                     . setAttribute "contents"            (L.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
                      . setAttribute "verbose"             verboseP
 
     ; let filename = "ifc" ++ ifcName interf ++ ".view.html" 
@@ -366,7 +362,7 @@ genViewObject opts@Options{..} fSpec depth obj@FEObjE{} =
           do lns <- genViewObject opts fSpec (depth + 1) subObj
              return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                               , subObjLabel = objName subObj -- no escaping for labels in templates needed
-                              , subObjContents = intercalate "\n" lns
+                              , subObjContents = L.intercalate "\n" lns
                               , subObjExprIsUni = exprIsUni subObj
                               } 
         FEObjT{} -> 
@@ -510,9 +506,10 @@ downloadPrototypeFramework Options{..} =
       where
         removeTopLevelPath :: Entry -> Maybe Entry
         removeTopLevelPath entry = 
-            case tail . splitPath . eRelativePath $ entry of
-              [] -> Nothing
-              xs -> Just entry{eRelativePath = joinPath xs}
+            case splitPath . eRelativePath $ entry of
+              [] -> fatal "Impossible"
+              _:[] -> Nothing
+              _:tl -> Just entry{eRelativePath = joinPath tl}
 
     allowExtraction :: IO Bool
     allowExtraction = do

@@ -10,7 +10,7 @@ import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
 import           Ampersand.Misc
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified Data.List.NonEmpty as NEL
 
 -- Tries to parse all the given files
 parseScripts :: Options -> [FilePath] -> IO Bool
@@ -27,12 +27,8 @@ parseScripts opts (f:fs) =
                 showErrors (NEL.toList e)
                 return False
 
-printErrLn :: Show a => a -> IO ()
-printErrLn = hPrint stderr
-
-showErrors :: [CtxError] -> IO ()
-showErrors [] = return ()
-showErrors (e:es) = do { printErrLn e; showErrors es }
+showErrors :: [CtxError] -> IO ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
+showErrors = mapM_ $ mapM_ putStrLn . lines . show
 
 parse :: FilePath -> String -> Guarded P_Context
 parse file txt = whenChecked (runParser pContext file txt) (pure . fst)

@@ -54,9 +54,8 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.FilePos()
 import           Ampersand.Input.ADL1.LexerMessage
-import qualified Data.List as L   (intercalate)
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
-import           Data.Maybe
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
 import           Data.Typeable
 import           GHC.Exts (groupWith)
 import           Text.Parsec
@@ -158,11 +157,11 @@ mkCyclesInGensError :: NEL.NonEmpty [AClassify] -> Guarded a
 mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
  where 
   mkErr :: [AClassify] -> CtxError
-  mkErr [] = fatal "Nothing to report about!" 
-  mkErr gs = CTXE o msg
-    where
-      o = origin (head gs)
-      msg = L.intercalate "\n" $
+  mkErr gs = 
+    case gs of 
+      []    -> fatal "Nothing to report about!" 
+      (g:_) -> CTXE (origin g) 
+             . L.intercalate "\n" $
              [ "Classifications must not contain cycles."
              , "The following CLASSIFY statements are cyclic:"
              ]++
@@ -293,7 +292,7 @@ mkEndoPropertyError orig ps =
                 ,"  source and target are equal."]
          _   -> ["Properties "++showAnd++" can only be used for relations where"
                 ,"  source and target are equal."]
-     where showAnd = L.intercalate ", " (map show . init $ ps)++" and "++(show . last) ps
+     where showAnd = commaEng "and" (map show ps)
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role' ifc duplicateIfcs =
@@ -328,13 +327,16 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
         ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
   
-mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
-mkMultipleDefaultError (_, [])              = fatal "mkMultipleDefaultError called on []"
-mkMultipleDefaultError (c, vds@(vd0:_)) =
-  CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++
-                      concat ["\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")"
-                             | vd <- vds ]
-
+mkMultipleDefaultError :: NEL.NonEmpty ViewDef -> CtxError
+mkMultipleDefaultError vds =
+  CTXE (origin . NEL.head $ vds) $ 
+      "Multiple default views for concept " <> show (name cpt) <> ":" <>
+        (concatMap (\vd -> "\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")") $ vds)
+     where
+       cpt = case nubOrd . NEL.toList . fmap vdcpt $ vds of
+             [] -> fatal "There should be at least one concept found in a nonempty list of viewdefs."
+             [c] -> c 
+             _  -> fatal "Different concepts are not acceptable in calling mkMultipleDefaultError"
 mkIncompatibleViewError :: (Named b,Named c) => P_BoxItem a -> String -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   case objDef of
@@ -473,7 +475,7 @@ mkCrudWarning :: P_Cruds -> [String] -> Warning
 mkCrudWarning (P_Cruds o _ ) msg = Warning o (unlines msg)
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
 mkCaseProblemWarning x y = Warning orig $ L.intercalate "\n    " 
-      ["Ampersand is case sensitive. you might have ment that the following are equal:"
+      ["Ampersand is case sensitive. you might have meant that the following are equal:"
       ,    show (typeOf x) ++"`"++name x++"` and `"++name y++"`."
       ]
     where orig :: Origin 

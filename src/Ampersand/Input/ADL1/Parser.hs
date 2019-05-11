@@ -9,13 +9,12 @@ module Ampersand.Input.ADL1.Parser
     , pRule
     ) where
 
-import           Ampersand.Basics hiding ((<$))
+import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.ParsingLib
-import           Data.List
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified RIO.Set as Set
 import qualified Data.List.NonEmpty as NEL
-import           Data.Maybe
 
 --- Populations ::= Population+
 -- | Parses a list of populations
@@ -50,7 +49,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
             , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
-            , ctx_pops   = [p | CPop p<-ces] ++ concat [p | CRel (_,p)<-ces]      -- The populations defined in this contextplug<-ces]
+            , ctx_pops   = [p | CPop p<-ces] ++ concat [p | CRel (_,p)<-ces]  -- The populations defined in this contextplug, from POPULATION statements as well as from Relation declarations.
             , ctx_metas  = [meta | CMeta meta <-ces]
             }
        , [s | CIncl s<-ces] -- the INCLUDE filenames
@@ -188,8 +187,8 @@ pClassify = fun <$> currPos
                       <|> (isa <$ pKey "ISA" <*> pConceptRef)
                     )
                where
-                 fun :: Origin -> [P_Concept] -> (Bool, [P_Concept]) -> [PClassify]
-                 fun p lhs (isISA ,rhs) = map f lhs
+                 fun :: Origin -> NEL.NonEmpty P_Concept -> (Bool, [P_Concept]) -> [PClassify]
+                 fun p lhs (isISA ,rhs) = NEL.toList $ fmap f lhs
                    where 
                      f s = PClassify 
                              { pos      = p
@@ -224,9 +223,9 @@ pRuleDef =  P_Ru <$> currPos
 
                  --- PairView ::= '(' PairViewSegmentList ')'
                  pPairView :: AmpParser (PairView (Term TermPrim))
-                 pPairView = f <$> pParens (pPairViewSegment `sepBy1` pComma)
-                       where f (x:xs) = PairView {ppv_segs = x NEL.:| xs}
-                             f []     = fatal "This fatal can only occur if sepBy1 doesn't do what it is supposed to do."
+                 pPairView = PairView <$> pParens (pPairViewSegment `sepBy1` pComma)
+                   --    where f xs = PairView {ppv_segs = xs}
+                             
                  --- PairViewSegmentList ::= PairViewSegment (',' PairViewSegment)*
                  --- PairViewSegment ::= 'SRC' Term | 'TGT' Term | 'TXT' String
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
@@ -369,14 +368,14 @@ pIndex  = P_Id <$> currPos
 pViewDef :: AmpParser P_ViewDef
 pViewDef = try pFancyViewDef <|> try pViewDefLegacy -- introduces backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
---- FancyViewDef ::= 'VIEW' Label ConceptOneRef 'DEFAULT'? ('{' ViewObjList? '}')?  HtmlView? 'ENDVIEW'
+--- FancyViewDef ::= 'VIEW' Label ConceptOneRef 'DEFAULT'? ('{' ViewObjList '}')?  HtmlView? 'ENDVIEW'
 pFancyViewDef :: AmpParser P_ViewDef
 pFancyViewDef  = mkViewDef <$> currPos
                       <*  pKey "VIEW"
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> pBraces (pViewSegment False `sepBy` pComma) `opt` []
+                      <*> pBraces (pViewSegment False `sepBy1` pComma)
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos' nm cpt isDef ats html =
@@ -420,17 +419,17 @@ pInterface :: AmpParser P_Interface
 pInterface = lbl <$> currPos                                       
                  <*> pInterfaceIsAPI
                  <*> pADLid
-                 <*> optList pParams
-                 <*> optList pRoles 
+                 <*> pMaybe pParams
+                 <*> pMaybe pRoles 
                  <*> (pColon *> pTerm)          -- the expression of the interface object
                  <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                  <*> pMaybe (pChevrons pConid)  -- The view that should be used for this object
                  <*> pSubInterface
-    where lbl :: Origin -> Bool -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
+    where lbl :: Origin -> Bool -> String ->  a -> Maybe (NEL.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
           lbl p isAPI nm _params roles ctx mCrud mView sub
              = P_Ifc { ifc_IsAPI  = isAPI
                      , ifc_Name   = nm
-                     , ifc_Roles  = roles
+                     , ifc_Roles  = fromMaybe [] . fmap NEL.toList $ roles
                      , ifc_Obj    = P_BxExpr { obj_nm   = nm
                                           , pos      = p
                                           , obj_ctx  = ctx
@@ -473,7 +472,7 @@ pObjDef = pBoxItem <$> currPos
     pObj :: AmpParser (P_BoxItemTermPrim)
     pObj = obj     <$> pTerm            -- the context expression (for example: I[c])
                    <*> pMaybe pCruds
-                   <*> pMaybe (pChevrons pConid) --for the views
+                   <*> pMaybe (pChevrons pConid) --for the view
                    <*> pMaybe pSubInterface  -- the optional subinterface
           where obj ctx mCrud mView msub =
                   P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."
@@ -507,16 +506,16 @@ pPurpose = rebuild <$> currPos
                    <*> pRef2Obj
                    <*> pMaybe pLanguageRef
                    <*> pMaybe pTextMarkup
-                   <*> optList (pKey "REF" *> pString `sepBy1` pSemi)
+                   <*> pMaybe (pKey "REF" *> pString `sepBy1` pSemi)
                    <*> pAmpersandMarkup
      where
-       rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
+       rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NEL.NonEmpty String) -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
-           = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") refs)
+           = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") (fromMaybe [] . fmap NEL.toList $ refs))
               -- TODO: This separation should not happen in the parser
               where splitOn :: Eq a => [a] -> [a] -> [[a]]
                     splitOn [] s = [s]
-                    splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
+                    splitOn s t  = case L.findIndex (L.isPrefixOf s) (L.tails t) of
                                      Nothing -> [t]
                                      Just i  -> take i t : splitOn s (drop (i+length s) t)
        --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' NamedRel | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid

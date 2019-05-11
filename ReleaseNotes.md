@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## v3.16.1 (10 may 2019)
+## v3.17.0 (10 may 2019)
 
 * [Issue #923](https://github.com/AmpersandTarski/Ampersand/issues/923) Lexer error message had disappeared. Now they show again.
 * [Issue #925](https://github.com/AmpersandTarski/Ampersand/issues/925) Add warning when a script contains `BOX <ROWSNH>`, for this is deprecated and could result in an error when a prototype is being generated.
@@ -9,6 +9,7 @@
 * [Issue #903](https://github.com/AmpersandTarski/Ampersand/issues/903) Add switch to skip installing php dependencies (using Composer package manager).
 * [Issue #952](https://github.com/AmpersandTarski/Ampersand/issues/952) Fixed bug causing the ampersand daemon to crash when an .xlsx file had an error.
 * Upgrade to [prototype framework v1.2.0](https://github.com/AmpersandTarski/Prototype/releases/tag/v1.2.0). Needed for [Issue #578](https://github.com/AmpersandTarski/Ampersand/issues/578)
+* [Issue #578](https://github.com/AmpersandTarski/Ampersand/issues/578) Improvements on the way the navigation bar of a prototype works.
 
 ## v3.16.0 (8 april 2019) (few days before scedule)
 

@@ -8,7 +8,7 @@ import Ampersand.Misc
 import Ampersand.FSpec
 import Ampersand.FSpec.FPA
 import Ampersand.Basics
-import Data.Maybe
+import qualified RIO.List as L
 
 -- TODO: Get rid of package SpreadsheetML. Use http://hackage.haskell.org/package/xlsx (Reason: SpreadsheetML doesn.t have a writer. xlsx package does.
 
@@ -140,7 +140,10 @@ pimpWs ws = ws{worksheetTable = fmap pimpWsT (worksheetTable ws)
               }
 pimpWsT :: Table -> Table
 pimpWsT t = t{tableColumns = map (\c -> c{columnAutoFitWidth = Just AutoFitWidth})
-                              (tableColumns t ++ replicate (maximum (map (length.rowCells) (tableRows t))) emptyColumn)
+                              (tableColumns t ++ replicate (case L.maximumMaybe . map (length.rowCells) $ tableRows t of
+                                                               Nothing -> fatal "maximum is not defined on an empty list"
+                                                               Just m -> m
+                                                           ) emptyColumn)
              ,tableRows = map pimpRow (tableRows t)
              }
 pimpRow :: Row -> Row

@@ -7,7 +7,7 @@ module Ampersand.Basics.String
         ) where
 
 import Ampersand.Basics.Prelude
-import Data.Char
+import RIO.Char
 
 -- | Converts the first character of a string to lowercase, with the exception that there is a second character, which is uppercase.
 -- uncap "AbcDe" == "abcDe"

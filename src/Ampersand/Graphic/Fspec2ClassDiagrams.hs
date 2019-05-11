@@ -6,10 +6,10 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.FSpec
+import           Ampersand.FSpec.ToFSpec.ADL2Plug
 import           Ampersand.Graphic.ClassDiagram
-import           Data.Either
-import           Data.Maybe
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
@@ -22,29 +22,18 @@ clAnalysis fSpec =
                    , geners  = map OOGener . vgens $ fSpec
                    , ooCpts  = Set.elems . concs $ fSpec
                    }
-
  where
-    classOf :: A_Concept -> Class
-    classOf c = OOClass { clName = name c
-                        , clcpt  = Just c
-                        , clAtts = attrs c
-                        , clMths = []
-                        }
-    attrs c    = [ makeAttr att 
-                 | att<-tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
-    makeAttr :: SqlAttribute -> CdAttribute
-    makeAttr att 
-              = OOAttr { attNm       = attName att
-                       , attTyp      = if isProp (attExpr att) then "Prop" else (name.target.attExpr) att
-                       , attOptional = attNull att
+   classOf :: A_Concept -> Class
+   classOf c = OOClass { clName = name c
+                       , clcpt  = Just c
+                       , clAtts = (map makeAttr . attributesOfConcept fSpec) c
+                       , clMths = []
                        }
-    inKernel :: SqlAttribute -> Bool
-    inKernel att = isUni expr 
-                && isInj expr
-                && isSur expr
-                && (not . isProp) expr
-        where expr = attExpr att 
-             --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
+   makeAttr :: SqlAttribute -> CdAttribute
+   makeAttr att = OOAttr { attNm       = attName att
+                         , attTyp      = if isProp (attExpr att) then "Prop" else (name.target.attExpr) att
+                         , attOptional = attNull att -- optional if NULL is allowed
+                         }
 
 -- | This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
@@ -73,7 +62,7 @@ cdAnalysis fSpec =
          Just exprs ->
            OOClass { clName = name root
                    , clcpt  = Just root
-                   , clAtts = map ooAttr exprs
+                   , clAtts = NEL.toList $ fmap ooAttr exprs
                    , clMths = []
                    }
    cptIsShown :: A_Concept -> Bool
@@ -81,20 +70,21 @@ cdAnalysis fSpec =
      where 
       isInScope _ = True 
       hasClass = isJust . classOf
-   classOf :: A_Concept -> Maybe [Expression]
+   classOf :: A_Concept -> Maybe (NEL.NonEmpty Expression)
    classOf cpt = 
      case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
         []   -> Nothing
         [es] -> Just es
         _    -> fatal "Only one list of expressions is expected here"
      where
-      isOfCpt :: [Expression] -> Bool
-      isOfCpt []    = fatal "List must not be empty!"
-      isOfCpt (e:_) = source e == cpt
-      attribs = map (flipWhenNeeded . EDcD) attribDcls
+      isOfCpt :: NEL.NonEmpty Expression -> Bool
+      isOfCpt es = source (NEL.head es) == cpt
+      attribs = fmap (flipWhenNeeded . EDcD) attribDcls
       flipWhenNeeded x = if isInj x && (not.isUni) x then flp x else x
    ooAttr :: Expression -> CdAttribute
-   ooAttr r = OOAttr { attNm = (name . head . Set.elems . bindedRelationsIn) r
+   ooAttr r = OOAttr { attNm = case Set.elems $ bindedRelationsIn r of
+                                []  -> fatal $ "No bindedRelations in an expression: " <> show r
+                                h:_ -> name h
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
@@ -156,12 +146,12 @@ tdAnalysis fSpec =
                               let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
                               in  map (ooAttr kernelAtts) kernelAtts
                                 ++map (ooAttr kernelAtts . rsTrgAtt) (dLkpTbl table) 
-                            BinSQL{}      ->
-                              map mkOOattr (plugAttributes table)
+                            BinSQL{}      -> NEL.toList $
+                              fmap mkOOattr (plugAttributes table)
                                 where mkOOattr a =
                                         OOAttr { attNm       = attName a
                                                , attTyp      = (name.target.attExpr) a
-                                               , attOptional = False
+                                               , attOptional = False -- A BinSQL contains pairs, so NULL cannot occur.
                                                }
                , clMths = []
                }
@@ -181,7 +171,7 @@ tdAnalysis fSpec =
             , attTyp = if isProp (attExpr f) && (f `notElem` kernelAtts)
                        then "Prop"
                        else (name.target.attExpr) f
-            , attOptional = attNull f
+            , attOptional = attNull f -- optional if NULL is allowed
             }
    allAssocs = filter isAssocBetweenClasses $ concatMap relsOf tables
      where
@@ -192,7 +182,7 @@ tdAnalysis fSpec =
        relsOf t =
          case t of
            TblSQL{} -> map (mkRel t) . mapMaybe relOf . attributes $ t
-           BinSQL{} -> map mkOOAssoc (plugAttributes t)
+           BinSQL{} -> NEL.toList $ fmap mkOOAssoc (plugAttributes t)
                         where mkOOAssoc a =
                                 OOAssoc { assSrc = sqlname t
                                         , assSrcPort = attName a

@@ -7,9 +7,9 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc
 import           Ampersand.Prototype.PHP
-import           Data.List
-import qualified Data.List.NonEmpty as NEL (toList)
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
@@ -77,12 +77,12 @@ getAllPairViewExps fSpec = concatMap getPairViewExps . Set.elems $ vrules fSpec 
 getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
  where getIdExps identity = [ (objExpression objDef, "identity "++show (name identity))
-                            | IdentityExp objDef <- identityAts identity ]
+                            | IdentityExp objDef <- NEL.toList $ identityAts identity ]
 
 getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
- where getViewExps view = [ (expr, "view "++show (name view))
-                          | ViewExp expr <- map vsmLoad (vdats view) ]
+ where getViewExps x = [ (expr, "view "++show (name x))
+                       | ViewExp expr <- NEL.toList $ fmap vsmLoad (vdats x) ]
 
 type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we
@@ -99,7 +99,7 @@ validateExp _ _ vExp@(EDcD{}, _)   = -- skip all simple relations
 validateExp opts@Options{..} fSpec vExp@(expr, orig) =
  do { violationsSQL <- evaluateExpSQL opts fSpec (tempDbName opts) expr
     ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
-    ; if sort violationsSQL == sort violationsAmp
+    ; if L.sort violationsSQL == L.sort violationsAmp
       then
        do { putStr "."
           ; return (vExp, True)
@@ -111,9 +111,9 @@ validateExp opts@Options{..} fSpec vExp@(expr, orig) =
           ; putStrLn "Mismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp
           ; putStrLn "SQL violations:"
-          ; print violationsSQL
+          ; putStrLn $ show violationsSQL
           ; putStrLn "Ampersand violations:"
-          ; print violationsAmp
+          ; putStrLn $ show violationsAmp
           ; return (vExp, False)
           }
     }

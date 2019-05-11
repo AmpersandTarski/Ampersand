@@ -6,10 +6,8 @@ module Ampersand.Input.ADL1.FilePos (
 ) where
 
 import Ampersand.Basics
-import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
-import Data.Data
 import Codec.Xlsx.Types
 import qualified Data.Text as T
 

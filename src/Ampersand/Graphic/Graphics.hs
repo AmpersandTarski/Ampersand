@@ -12,12 +12,12 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.Graphic.ClassDiag2Dot
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Misc
-import           Control.Exception (catch, IOException)
-import           Data.Char
+import           RIO.Char
 import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete
-import           Data.List
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import           Data.String(fromString)
 import           System.Directory
 import           System.FilePath hiding (addExtension)
@@ -140,7 +140,7 @@ conceptualStructure fSpec pr =
               cpts' = concs rs
               rs    = [r | r<-Set.elems $ vrules fSpec, c `elem` concs r]
           in
-          CStruct { csCpts = nub$ Set.elems cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
+          CStruct { csCpts = L.nub$ Set.elems cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
                   , csRels = filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ rs   -- the use of "bindedRelationsIn" restricts relations to those actually used in rs
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
@@ -156,11 +156,11 @@ conceptualStructure fSpec pr =
                         ]
               idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
               gs   = fsisa fSpec
-              cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+              cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NEL.toList cl] -- up to two more general concepts
               cpts' = concs pat `Set.union` concs rels
               rels = Set.fromList . filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ pat
           in
-          CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+          CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NEL.toList cl] -- up to two more general concepts
                   , csRels = Set.elems $ rels  `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
@@ -340,11 +340,11 @@ instance HasDotParts Relation where
           { nodeID = baseNodeId x (source rel) ++ name rel 
           , nodeAttributes = [ Color [WC (X11Color Transparent ) Nothing]
                              , Shape PlainText
-                             , Label . StrLabel . fromString . intercalate "\n" $ 
+                             , Label . StrLabel . fromString . L.intercalate "\n" $ 
                                   name rel :
                                   case Set.toList . properties $ rel of
                                      []   -> []
-                                     ps -> ["["++(intercalate ", " . map (map toLower . show) $ ps)++"]"]
+                                     ps -> ["["++(L.intercalate ", " . map (map toLower . show) $ ps)++"]"]
                               ]
                           }
        ]
@@ -364,11 +364,11 @@ instance HasDotParts Relation where
       [ DotEdge
           { fromNode       = baseNodeId x . source $ rel
           , toNode         = baseNodeId x . target $ rel
-          , edgeAttributes = [ Label . StrLabel . fromString . intercalate "\n" $ 
+          , edgeAttributes = [ Label . StrLabel . fromString . L.intercalate "\n" $ 
                                   name rel :
                                   case Set.toList . properties $ rel of
                                      []   -> []
-                                     ps -> ["["++(intercalate ", " . map (map toLower . show) $ ps)++"]"]
+                                     ps -> ["["++(L.intercalate ", " . map (map toLower . show) $ ps)++"]"]
                              ]
           }
       ]

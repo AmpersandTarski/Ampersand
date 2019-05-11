@@ -10,15 +10,15 @@ module Ampersand.FSpec.Transformers
   , instances
   ) where
 
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (first,second)
 import           Ampersand.Classes
 import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
 import           Ampersand.Misc
-import qualified Data.Set as Set
-import           Data.Typeable
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 
 
 -- | The function that retrieves the population of
@@ -41,9 +41,8 @@ data PopAtom =
   | PopInt Integer 
   deriving (Eq,Ord)
 instance Show PopAtom where
- showsPrec _ x
-   = showString $ 
-      case x of
+ show x
+   = case x of
         DirtyId str         -> show str
         PopAlphaNumeric str -> show str
         PopInt i            -> show i
@@ -56,7 +55,7 @@ dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
-toTransformer (rel, sCpt, tCpt, set) = Transformer rel sCpt tCpt set
+toTransformer (a,b,c,d) = Transformer a b c d
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: Options -> FSpec -> [Transformer]
@@ -551,7 +550,7 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
         Set.fromList
         [(dirtyId conj, dirtyId rul)
         | conj::Conjunct <- instanceList fSpec
-        , rul <- Set.elems $ rc_orgRules conj
+        , rul <- NEL.toList $ rc_orgRules conj
         ]
       )
      ,("outQ"                  , "Quad"                  , "Act"     

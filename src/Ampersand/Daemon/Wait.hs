@@ -10,21 +10,19 @@ module Ampersand.Daemon.Wait(
   , waitFiles
 ) where
 
-import Control.Concurrent.Extra(MVar,Var,newEmptyMVar,newVar,modifyVar_,tryPutMVar,tryTakeMVar,takeMVar)
+import           Ampersand.Basics
+import           Ampersand.Daemon.Daemon.Util
+import           Ampersand.Misc
+import           Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
+import           Control.Monad.Extra(partitionM,concatMapM,ifM,firstJustM)
 import qualified Data.Map as Map
-import qualified Data.Set as Set
-import Control.Monad.Extra(partitionM,filterM,concatMapM,forM,ifM,void,when,firstJustM)
-import Data.List.Extra(isPrefixOf,nubOrd)
-import System.FilePath
-import Control.Exception.Extra(handle)
-import System.Directory.Extra(doesDirectoryExist,listContents,canonicalizePath)
-import Data.Time.Clock
-import Data.String
-import System.Time.Extra(Seconds,sleep)
-import System.FSNotify
-import Ampersand.Daemon.Daemon.Util
-import Ampersand.Basics
-import Ampersand.Misc
+import qualified RIO.Set as Set
+import           Data.Time.Clock
+import qualified RIO.List as L
+import           System.Directory.Extra(doesDirectoryExist,listContents,canonicalizePath)
+import           System.FilePath
+import           System.FSNotify
+import           System.Time.Extra(Seconds,sleep)
 
 data Waiter = WaiterPoll Seconds
             | WaiterNotify WatchManager (MVar ()) (Var (Map.Map FilePath StopListening))
@@ -62,12 +60,12 @@ listContentsInside test dir = do
 waitFiles :: Options -> Waiter -> IO ([FilePath] -> IO [String])
 waitFiles Options{..} waiter = do
     base <- getCurrentTime
-    return $ \files -> handle (\(e :: IOError) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
+    return $ \files -> handle (\(e :: IOException) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
         verboseLn $ "%WAITING: " ++ unwords files
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
         -- will pick up new files, as creating a new file changes the containing directory's modtime.
         files' <- fmap concat $ forM files $ \file ->
-            ifM (doesDirectoryExist file) (listContentsInside (return . not . isPrefixOf "." . takeFileName) file) (return [file])
+            ifM (doesDirectoryExist file) (listContentsInside (return . not . L.isPrefixOf "." . takeFileName) file) (return [file])
         case waiter of
             WaiterPoll _ -> return ()
             WaiterNotify manager kick mp -> do
@@ -97,10 +95,10 @@ waitFiles Options{..} waiter = do
                     takeMVar kick
                     verboseLn "%WAITING: Notify signaled"
             new <- mapM getModTime files
-            case [x | (x,t1,t2) <- zip3 files old new, t1 /= t2] of
+            case [x | (x,t1,t2) <- L.zip3 files old new, t1 /= t2] of
                 [] -> recheck files new
                 xs -> do
-                    let disappeared = [x | (x, Just _, Nothing) <- zip3 files old new]
+                    let disappeared = [x | (x, Just _, Nothing) <- L.zip3 files old new]
                     when (disappeared /= []) $ do
                         -- if someone is deleting a needed file, give them some space to put the file back
                         -- typically caused by VIM
@@ -110,9 +108,9 @@ waitFiles Options{..} waiter = do
                         void $ flip firstJustM (replicate 20 ()) $ \_ -> do
                             sleep 0.05
                             new' <- mapM getModTime files
-                            return $ if null [x | (x, Just _, Nothing) <- zip3 files old new'] then Just () else Nothing
+                            return $ if null [x | (x, Just _, Nothing) <- L.zip3 files old new'] then Just () else Nothing
                     return xs
 
 
 canonicalizePathSafe :: FilePath -> IO FilePath
-canonicalizePathSafe x = canonicalizePath x `catch` \(_ :: IOError) -> return x
+canonicalizePathSafe x = canonicalizePath x `catch` \(_ :: IOException) -> return x
