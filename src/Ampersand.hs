@@ -12,7 +12,7 @@ module Ampersand
   ) 
 where
 import Ampersand.ADL1
-import Ampersand.Basics
+import Ampersand.Basics hiding (Identity)
 import Ampersand.Classes
 import Ampersand.Components
 import Ampersand.Daemon.Daemon

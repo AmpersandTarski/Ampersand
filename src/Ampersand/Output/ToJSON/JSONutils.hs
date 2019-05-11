@@ -12,7 +12,6 @@ module Ampersand.Output.ToJSON.JSONutils
   , module Ampersand.FSpec.FSpec
   , module Ampersand.FSpec.SQL
   , module Ampersand.Misc
-  , module GHC.Generics
   )
 where
 import           Ampersand.Basics
@@ -28,7 +27,7 @@ import           Data.Aeson hiding (Options)
 import qualified Data.Aeson.Types as AT 
 import           Data.Aeson.Encode.Pretty
 import qualified Data.ByteString.Lazy as BS
-import           Data.List
+import qualified RIO.List as L
 import           GHC.Generics
 import           System.FilePath
 import           System.Directory
@@ -58,9 +57,9 @@ ampersandDefault = defaultOptions {AT.fieldLabelModifier = alterLabel}
     -- of the prefix "JSON" (which is mandatory). in the rest of that string, we 
     -- substitute all underscores with dots.
     alterLabel str =
-      case filter (isPrefixOf pfx) (tails str) of
-        [] -> fatal ("Label at Haskell side must contain `JSON`: "++str)
-        xs -> replace '_' '.' . snd . splitAt (length pfx) . head $ xs
+      case filter (L.isPrefixOf pfx) (L.tails str) of
+        []  -> fatal ("Label at Haskell side must contain `JSON`: "++str)
+        h:_ -> replace '_' '.' . snd . L.splitAt (length pfx) $ h
       where pfx = "JSON"
 
 -- | Replaces all instances of a value in a list by another value.

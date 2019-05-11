@@ -1,4 +1,4 @@
-﻿CONTEXT Issue152 IN ENGLISH
+CONTEXT Issue152 IN ENGLISH
 
 VIEW SessionProperty: SESSION { value : I }  ENDVIEW
 

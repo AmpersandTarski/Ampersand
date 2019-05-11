@@ -7,7 +7,6 @@ where
 
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
-import Data.Maybe
 
 hasantecedent :: Rule -> Bool
 hasantecedent r

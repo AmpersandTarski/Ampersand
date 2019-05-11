@@ -1,14 +1,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Basics.Exit 
-         ( catch
-         , exitWith
+         ( exitWith
          , AmpersandExit(..)
          ) where
 
-import           Control.Exception
+import           Control.Exception hiding (catch)
 import           Ampersand.Basics.Prelude
-import           Ampersand.Basics.UTF8
-import           Data.List
+import qualified RIO.List as L
 import qualified System.Exit as SE
 import           System.IO.Unsafe(unsafePerformIO)
 
@@ -76,5 +74,5 @@ info x =
     showViolatedRule :: (String,[String]) -> [String]
     showViolatedRule (rule,pairs) = 
          [ "Rule: "++rule
-         , "   violations: "++intercalate ", " pairs
+         , "   violations: "++L.intercalate ", " pairs
          ]

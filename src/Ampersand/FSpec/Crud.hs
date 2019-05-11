@@ -3,11 +3,9 @@ module Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, getCrudObjectsForInterf
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.ADL1
-import           Data.Function
-import           Data.List
+import qualified RIO.List as L
 import qualified Data.Map as Map 
-import           Data.Maybe
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
 
 -- NOTE: The definitions of the various CRUD aspects are still a bit quirky and will most-likely need refinement. 
@@ -42,10 +40,10 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
   where allConcs = [ c | c <- Set.elems allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
         nonCrudConcpts = (map source . filter isUni . filter isSur . map EDcD . Set.elems $ decls) ++
                          (map target . filter isInj . filter isTot . map EDcD . Set.elems $ decls)
-        crudCncpts = allConcs \\ nonCrudConcpts
+        crudCncpts = allConcs L.\\ nonCrudConcpts
         
         transSurjClosureMap :: Map.Map A_Concept [A_Concept]
-        transSurjClosureMap = transClosureMap' . Map.fromListWith union $
+        transSurjClosureMap = transClosureMap' . Map.fromListWith L.union $
           (map (mkMapItem . flp) . filter isSur . map EDcD $ Set.elems decls) ++ -- TODO: no isUni?
           (map (mkMapItem      ) . filter isTot . map EDcD $ Set.elems decls)    -- TODO: no isInj?
           -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
@@ -80,7 +78,7 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
                 crudReadCncpts   = concs (bindedRelationsIn ifc) -- NOTE: this includes interface params, even if they do not appear in any of the field expressions
                 crudDeleteCncpts = crudCreateCncpts -- We can't currently distinguish between these two.
                 crudUpdateCncpts = concatMap (getCrudUpdateConcpts .EDcD) editableDecls
-                (editableDecls, editableTgts) = unzip $ getEditableDeclsAndTargets allIfcs ifc
+                (editableDecls, editableTgts) = L.unzip $ getEditableDeclsAndTargets allIfcs ifc
                                              
 -- NOTE: editable target is not necessarily the target of decl, as it may have been flipped (in which case it's the source)
 getEditableDeclsAndTargets :: [Interface] -> Interface -> [(Relation, A_Concept)]
@@ -112,7 +110,7 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
 
 getCrudObjsPerConcept :: [(Interface, [(A_Concept,Bool,Bool,Bool,Bool)])] ->
                          [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
-getCrudObjsPerConcept crudsPerIfc = sortBy (compare `on` fst)  conceptsAndInterfaces
+getCrudObjsPerConcept crudsPerIfc = L.sortBy (compare `on` fst)  conceptsAndInterfaces
   where conceptsAndInterfaces :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
         conceptsAndInterfaces = concatMap toIfcPerConcept crudsPerIfc
         

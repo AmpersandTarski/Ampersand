@@ -18,11 +18,11 @@ import           Ampersand.Misc
 import           Ampersand.Output
 import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import           Control.Monad
-import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy as BSL
 import           Data.Function (on)
-import           Data.List
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
 import           Data.Maybe (isJust, fromJust)
 import           System.Directory
@@ -140,7 +140,7 @@ generateAmpersandOutput opts@Options{..} multi =
    doGenPopsXLSX =
     do { putStrLn "Generating .xlsx file containing the population..."
        ; ct <- runIO getPOSIXTime >>= handleError
-       ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
+       ; BSL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
        ; verboseLn ("Generated file: " ++ outputFile)
        }
       where outputFile = dirOutput </> baseName ++ "_generated_pop" -<.> ".xlsx"
@@ -201,21 +201,21 @@ generateAmpersandOutput opts@Options{..} multi =
      else
        let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
        in  putStrLn $ 
-                  intercalate "\n"
+                  L.intercalate "\n"
                       [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
-                      | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
+                      | rps@((r,_):_) <- L.groupBy (on (==) fst) $ L.sort ruleNamesAndViolStrings
                       ]
    
    showprs :: AAtomPairs -> String
-   showprs aprs = "["++intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
+   showprs aprs = "["++L.intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
    -- showpr :: AAtomPair -> String
    -- showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
    reportSignals []        = verboseLn "No signals for the initial population" 
    reportSignals conjViols = 
      if verboseP
      then
-       verboseLn $ "Signals for initial population:\n" ++ intercalate "\n"
-         [   "Rule(s): "++(show . map name . Set.elems . rc_orgRules) conj
+       verboseLn $ "Signals for initial population:\n" ++ L.intercalate "\n"
+         [   "Rule(s): "++(show . map name . NEL.toList . rc_orgRules) conj
          ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
          ++"\n  Violations : " ++ showprs viols
          | (conj, viols) <- conjViols
@@ -233,7 +233,7 @@ generateAmpersandOutput opts@Options{..} multi =
                      ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (formalExpression ruleComplement)++"):"
                      ; putStrLn $ showContents ruleComplement
                      }
-    where showContents rule = "[" ++ intercalate ", " pairs ++ "]"
+    where showContents rule = "[" ++ L.intercalate ", " pairs ++ "]"
             where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 
                           | (r,vs) <- allViolations fSpec, r == rule, v <- Set.elems vs]
    
