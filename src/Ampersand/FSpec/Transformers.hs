@@ -835,7 +835,13 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
 -- | The list of all transformers, one for each and every relation in SystemContext.
 transformersSystemContext :: Options -> FSpec -> [Transformer]
 transformersSystemContext _ fSpec = map toTransformer [
-      ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
+      ("accAllowedRoles"       , "Account"               ,   "Role"
+      , Set.empty
+      )
+    , ("agaccAllowedRoles"     , "AgentAccount"          ,   "Role"
+      , Set.empty
+      )
+    , ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
       , Set.empty
       )
     , ("isAPI"                 , "PF_Interface"          , "PF_Interface"
@@ -870,7 +876,7 @@ transformersSystemContext _ fSpec = map toTransformer [
     , ("label"                 , "PF_NavMenuItem"        , "PF_Label"
       , Set.empty
       )
-    , ("label"                 , "Role"               , "PF_Label"
+    , ("label"                 , "Role"                  , "PF_Label"
       , Set.fromList $
         [ (dirtyIdWithoutType role, PopAlphaNumeric . name $ role)
         | role::Role <- instanceList fSpec
@@ -892,10 +898,28 @@ transformersSystemContext _ fSpec = map toTransformer [
     , ("seqNr"                 , "PF_NavMenuItem"        , "PF_SeqNr"
       , Set.empty
       )
+    , ("sessionAccount"        , "SESSION"               , "Account"
+      , Set.empty
+      )
     , ("sessionActiveRoles"    , "SESSION"               , "Role"
       , Set.empty
       )
+    , ("sessionAgentAccount"   , "SESSION"               , "AgentAccount"
+      , Set.empty
+      )
     , ("sessionAllowedRoles"   , "SESSION"               , "Role"
+      , Set.empty
+      )
+    , ("sessionIsAgent"        , "SESSION"               , "SESSION"
+      , Set.empty
+      )
+    , ("sessionIsAnon"         , "SESSION"               , "SESSION"
+      , Set.empty
+      )
+    , ("sessionIsUser"         , "SESSION"               , "SESSION"
+      , Set.empty
+      )
+    , ("systemRole"            , "Role"                  , "Role"
       , Set.empty
       )
     , ("url"                   , "PF_NavMenuItem"        , "PF_URL"
