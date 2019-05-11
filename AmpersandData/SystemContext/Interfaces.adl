@@ -3,28 +3,29 @@ CONTEXT PrototypeFramework IN ENGLISH
     CONCEPT PF_Interface ""
         REPRESENT PF_Interface TYPE OBJECT
 
-    RELATION label[PF_Interface*PF_Label] [UNI,TOT]
+    RELATION isAPI[PF_Interface*PF_Interface] [PROP]
+        MEANING "This property states that an interface is meant as API (machine-2-machine)"
+
+    RELATION label[PF_Interface*PF_Label] [INJ,UNI,TOT]
+        MEANING "Text that is used to show users when referring to this interface"
         REPRESENT PF_Label TYPE ALPHANUMERIC
 
     RELATION pf_ifcRoles[PF_Interface*Role]
         MEANING "This relation contains the roles for which an interface is available"
     
     RELATION isPublic[PF_Interface*PF_Interface] [PROP]
-        MEANING "This property states that an interface is accessible for all roles (i.e. public)"
+        MEANING "This property states that an interface is accessible for all non-system-roles (i.e. public)"
 
-        -- Cannot enfore this rule yet, because ExecEngine is still required to add missing roles
-        -- RULE "Public interface integrity" : isPublic;V[PF_Interface*Role] |- pf_ifcRoles
+    -- Cannot enforce this rule yet, because ExecEngine is still required to add missing roles
+    -- RULE "Public interface integrity" : isPublic;V[PF_Interface*Role] |- pf_ifcRoles
 
-    -- EQUIVALENCE pf_ifcRoles[PF_Interface*Role] == isPublic;V[PF_Interface*Role]
+    -- EQUIVALENCE pf_ifcRoles[PF_Interface*Role] == isPublic;V;(I-systemRoles)
     ROLE ExecEngine MAINTAINS "Equivalence - InsPair pf_ifcRoles"
-    RULE "Equivalence - InsPair pf_ifcRoles": isPublic;V[PF_Interface*Role] |- pf_ifcRoles
+    RULE "Equivalence - InsPair pf_ifcRoles": isPublic;V;(I-systemRoles) |- pf_ifcRoles
     VIOLATION (TXT "{EX} InsPair;pf_ifcRoles;PF_Interface;", SRC I, TXT ";Role;", TGT I)
     
     ROLE ExecEngine MAINTAINS "Equivalence - DelPair pf_ifcRoles"
-    RULE "Equivalence - DelPair pf_ifcRoles": isPublic;pf_ifcRoles |- isPublic;V[PF_Interface*Role]
+    RULE "Equivalence - DelPair pf_ifcRoles": isPublic;pf_ifcRoles |- isPublic;V;(I-systemRoles)
     VIOLATION (TXT "{EX} DelPair;pf_ifcRoles;PF_Interface;", SRC I, TXT ";Role;", TGT I)
-
-    RELATION isAPI[PF_Interface*PF_Interface] [PROP]
-        MEANING "This property states that an interface is meant as API (machine-2-machine)"
 
 ENDCONTEXT

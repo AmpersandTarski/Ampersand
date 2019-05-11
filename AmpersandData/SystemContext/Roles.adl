@@ -2,13 +2,45 @@ CONTEXT PrototypeFramework IN ENGLISH
 
     CONCEPT Role ""
         REPRESENT Role TYPE OBJECT
-        POPULATION Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
+        POPULATION Role CONTAINS ["User", "Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
     
-    RELATION label[Role*PF_Label] [UNI,TOT]
+    RELATION label[Role*PF_Label] [UNI,TOT] -- Text that is used to show users when referring to this role
         REPRESENT PF_Label TYPE ALPHANUMERIC
-        POPULATION label[Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ]
+        POPULATION label[Role*PF_Label] CONTAINS [ ("SYSTEM", "SYSTEM") ]
 
-    API "PF_AllRoles" FOR SYSTEM : V[ONE*Role] BOX
+--[System Roles]
+    -- The below stuff is copied from SIAM and should be kept as such for integration and backward compatibility purposes
+    RELATION systemRole[Role * Role] [PROP] -- Roles that are not allowed for any Account (including 'god-accounts).
+    PURPOSE RELATION systemRole
+        {+Some roles exist for purposes that are internal to the system, e.g. `SYSTEM`, or `ExecEngine`.
+        These roles cannot be allowed (and hence also not activated) in sessions.
+        Also, these roles should be ignored when selecting/using interfaces.+}
+
+        POPULATION systemRole CONTAINS [ ("SYSTEM", "SYSTEM") ]
+        POPULATION systemRole CONTAINS [ ("Anonymous", "Anonymous") ]
+        POPULATION systemRole CONTAINS [ ("ExecEngine", "ExecEngine") ]
+
+--[Session Types]
+-- While the following properties are defined here, they need to be populated elsewhere (e.g. using SIAM)
+    RELATION sessionIsUser[SESSION*SESSION] [PROP] -- SESSION interfaces with a User that has logged in
+    RELATION sessionIsAnon[SESSION*SESSION] [PROP] -- SESSION interfaces with a User that has not logged in
+    RELATION sessionIsAgent[SESSION*SESSION] [PROP] -- SESSION interfaces with an Agent (i.e. another system)
+
+--[Allowed and Active Roles]
+    RELATION sessionAllowedRoles[SESSION*Role] -- Roles that may be (de)activated in a session
+    RELATION sessionActiveRoles[SESSION*Role] -- Roles that have been activated in a session
+    
+    RULE "Active roles MUST be a subset of allowed roles": -- This rule is required for the access control mechanism.
+        sessionActiveRoles |- sessionAllowedRoles          -- It ensures that only allowed roles can be activated.
+
+    RULE "In Anonymous sessions, the single, only active role must be `Anonymous`":
+        sessionIsAnon = I /\ sessionActiveRoles;"Anonymous";sessionActiveRoles~
+
+    RULE "In User sessions, non-system roles are not allowed and (hence) may not be activated":
+        sessionIsUser;sessionActiveRoles |- sessionAllowedRoles;(I-systemRole)
+
+--[API that lists all (non-system) roles]
+    API "PF_AllRoles" FOR SYSTEM : V[ONE*Role];(I-systemRole) BOX -- Do not export systemroles outside the system
         [ "id"              : I
         , "label"           : label
         -- , "maintains"       : 
