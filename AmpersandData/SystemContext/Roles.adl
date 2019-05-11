@@ -20,24 +20,116 @@ CONTEXT PrototypeFramework IN ENGLISH
         POPULATION systemRole CONTAINS [ ("Anonymous", "Anonymous") ]
         POPULATION systemRole CONTAINS [ ("ExecEngine", "ExecEngine") ]
 
---[Session Types]
--- While the following properties are defined here, they need to be populated elsewhere (e.g. using SIAM)
-    RELATION sessionIsUser[SESSION*SESSION] [PROP] -- SESSION interfaces with a User that has logged in
-    RELATION sessionIsAnon[SESSION*SESSION] [PROP] -- SESSION interfaces with a User that has not logged in
-    RELATION sessionIsAgent[SESSION*SESSION] [PROP] -- SESSION interfaces with an Agent (i.e. another system)
+--[Sessions and Roles]
+    RELATION sessionAllowedRoles[SESSION*Role]
+    MEANING "the set of roles that may be activated in a session"
 
---[Allowed and Active Roles]
-    RELATION sessionAllowedRoles[SESSION*Role] -- Roles that may be (de)activated in a session
-    RELATION sessionActiveRoles[SESSION*Role] -- Roles that have been activated in a session
-    
-    RULE "Active roles MUST be a subset of allowed roles": -- This rule is required for the access control mechanism.
-        sessionActiveRoles |- sessionAllowedRoles          -- It ensures that only allowed roles can be activated.
+    RELATION sessionActiveRoles[SESSION*Role]
+    MEANING "the set of roles that have been activated in a session"
+
+    RULE "Only when a role is allowed can it be active": sessionActiveRoles |- sessionAllowedRoles
+
+--[Role handling in Anonymous sessions] -- i.e. sessions in which there is no login (not from a User, nor from an Agent)
+    RELATION sessionIsAnon[SESSION*SESSION] [PROP] -- SESSION where neither a User nor an Agent has logged in
+
+    ROLE ExecEngine MAINTAINS "Set property 'sessionIsAnon'"
+    RULE "Set property 'sessionIsAnon'": I - (sessionAccount;sessionAccount~ \/ sessionAgentAccount;sessionAgentAccount~) |- sessionIsAnon
+    VIOLATION (TXT "{EX} InsPair;sessionIsAnon;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "Clear property 'sessionIsAnon'"
+    RULE "Clear property 'sessionIsAnon'": sessionIsAnon |- I - (sessionAccount;sessionAccount~ \/ sessionAgentAccount;sessionAgentAccount~)
+    VIOLATION (TXT "{EX} DelPair;sessionIsAnon;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
     RULE "In Anonymous sessions, the single, only active role must be `Anonymous`":
         sessionIsAnon = I /\ sessionActiveRoles;"Anonymous";sessionActiveRoles~
 
+    ROLE ExecEngine MAINTAINS "Set roles in Anonymous sessions"
+    RULE "Set roles in Anonymous sessions": sessionIsAnon;V;"Anonymous" |- sessionActiveRoles
+    VIOLATION (TXT "{EX} InsPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role]
+              ,TXT "{EX} InsPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role]
+              )
+
+    ROLE ExecEngine MAINTAINS "Clear roles in Anonymous sessions"
+    RULE "Clear roles in Anonymous sessions": sessionIsAnon;sessionActiveRoles |- sessionActiveRoles;"Anonymous"
+    VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role]
+              ,TXT "{EX} InsPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role]
+              )
+
+--[Role handling in User sessions]
+    CONCEPT Account "registration of attributes of people, organizations or persona, for the purpose of configuring the context of a SESSION"
+
+    RELATION accAllowedRoles[Account*Role]
+    MEANING "An Account registers the Roles that MAY be activated in a SESSION to which the Account is assigned"
+
+    RULE "Accounts may not be assigned system-roles": accAllowedRoles |- accAllowedRoles;(I-systemRole)
+
+    RELATION sessionIsUser[SESSION*SESSION] [PROP]
+    MEANING "SESSION where a user (i.e. a person) has logged in"
+
+    RELATION sessionAccount[SESSION*Account] [UNI]
+    MEANING "the Account that the user identified as (s)he logged in"
+
+    ROLE ExecEngine MAINTAINS "Set property 'sessionIsUser'"
+    RULE "Set property 'sessionIsUser'": I /\ sessionAccount;sessionAccount~ |- sessionIsUser
+    VIOLATION (TXT "{EX} InsPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "Clear property 'sessionIsUser'"
+    RULE "Clear property 'sessionIsUser'": sessionIsUser |- I /\ sessionAccount;sessionAccount~
+    VIOLATION (TXT "{EX} DelPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "Set allowed session roles in User sessions"
+    RULE "Set allowed session roles in User sessions": sessionAccount;accAllowedRoles |- sessionAllowedRoles
+    VIOLATION (TXT "{EX} InsPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role])
+
+    ROLE ExecEngine MAINTAINS "Clear allowed session roles in User sessions"
+    RULE "Clear allowed session roles in User sessions": sessionIsUser;sessionAllowedRoles |- sessionAccount;accAllowedRoles
+    VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role])
+
+    ROLE ExecEngine MAINTAINS "Deactivate roles in a User session that are revoked from the User's Account"
+    RULE "Deactivate roles in a User session that are revoked from the User's Account":
+    sessionIsUser;sessionAllowedRoles |- sessionAccount;accAllowedRoles
+    VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role])
+
     RULE "In User sessions, non-system roles are not allowed and (hence) may not be activated":
         sessionIsUser;sessionActiveRoles |- sessionAllowedRoles;(I-systemRole)
+
+--[Role handling in Agent sessions]
+    CONCEPT AgentAccount "registration of attributes of digital components, for the purpose of configuring the context of a SESSION"
+
+    RELATION agaccAllowedRoles[AgentAccount*Role]
+    MEANING "An AgentAccount registers the Roles that MAY be activated in a SESSION to which the AgentAccount is assigned"
+
+    RULE "AgentAccounts may not be assigned system-roles": agaccAllowedRoles |- agaccAllowedRoles;(I-systemRole)
+
+    RELATION sessionIsAgent[SESSION*SESSION] [PROP]
+    MEANING "SESSION where an agent (i.e. another system) has logged in"
+
+    RELATION sessionAgentAccount[SESSION*AgentAccount] [UNI]
+    MEANING "the AgentAccount that the agent identified as it logged in"
+
+    ROLE ExecEngine MAINTAINS "Set property 'sessionIsAgent'"
+    RULE "Set property 'sessionIsAgent'": I /\ sessionAgentAccount;sessionAgentAccount~ |- sessionIsAgent
+    VIOLATION (TXT "{EX} InsPair;sessionIsAgent;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "Clear property 'sessionIsAgent'"
+    RULE "Clear property 'sessionIsAgent'": sessionIsAgent |- I /\ sessionAgentAccount;sessionAgentAccount~
+    VIOLATION (TXT "{EX} DelPair;sessionIsAgent;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "Set allowed session roles in Agent sessions"
+    RULE "Set allowed session roles in Agent sessions": sessionAgentAccount;agaccAllowedRoles |- sessionAllowedRoles
+    VIOLATION (TXT "{EX} InsPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role])
+
+    ROLE ExecEngine MAINTAINS "Clear allowed session roles in Agent sessions"
+    RULE "Clear allowed session roles in Agent sessions": sessionIsAgent;sessionAllowedRoles |- sessionAgentAccount;agaccAllowedRoles
+    VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role])
+
+    ROLE ExecEngine MAINTAINS "Deactivate roles in a Agent session that are revoked from the Agent's Account"
+    RULE "Deactivate roles in a Agent session that are revoked from the Agent's Account":
+    sessionIsAgent;sessionAllowedRoles |- sessionAgentAccount;agaccAllowedRoles
+    VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I[Role])
+
+    RULE "In Agent sessions, non-system roles are not allowed and (hence) may not be activated":
+        sessionIsAgent;sessionActiveRoles |- sessionAllowedRoles;(I-systemRole)
 
 --[API that lists all (non-system) roles]
     API "PF_AllRoles" FOR SYSTEM : V[ONE*Role];(I-systemRole) BOX -- Do not export systemroles outside the system
