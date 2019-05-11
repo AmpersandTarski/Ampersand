@@ -4,9 +4,9 @@
 module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
-import           Data.List(nub,partition)
+import qualified RIO.List as L
 import           Data.Maybe(isJust,fromMaybe)
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 chpDiagnosis :: Options -> FSpec -> (Blocks,[Picture])
 chpDiagnosis opts@Options{..} fSpec
@@ -82,9 +82,9 @@ chpDiagnosis opts@Options{..} fSpec
       f :: Role -> Rule -> Blocks
       f rol rul | (rol,rul) `elem` dead = (plain.str) [timesSymbol] 
                 | otherwise                      = mempty
-          where timesSymbol = toEnum 215      
+          where timesSymbol = '\x215'
       mayedit :: Role -> Relation -> Bool
-      mayedit role' decl = decl `elem` (snd . unzip) (filter (\x -> role' == fst x) (fRoleRels fSpec))
+      mayedit role' decl = decl `elem` (snd . L.unzip) (filter (\x -> role' == fst x) (fRoleRels fSpec))
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role',rul)
          | (role',rul)<-fRoleRuls fSpec
@@ -406,13 +406,13 @@ chpDiagnosis opts@Options{..} fSpec
        <> printMeaning (fsLang fSpec) r
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
                           ,EN "This rule contains work (for ")
-                <>commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                <>commaPandocOr (fsLang fSpec) (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                 <>")"
-                <> if Set.size ps == 1
-                   then   (str.l) (NL ", te weten ", EN " by ")
-                       <> oneviol r (Set.elemAt 0 ps)
-                       <> "."
-                   else   (str.l) (NL $ ". De volgende tabel laat de "++(if Set.size ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
+                <> case Set.toList ps of
+                     [v] ->   (str.l) (NL ", te weten ", EN " by ")
+                           <> oneviol r v
+                           <> "."
+                     _ -> (str.l) (NL $ ". De volgende tabel laat de "++(if Set.size ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
                                   ,EN $ "The following table shows the "++(if Set.size ps>10 then "first ten " else "")++"items that require attention.")
                )
        <> if Set.size ps <= 1
@@ -460,7 +460,7 @@ chpDiagnosis opts@Options{..} fSpec
      <> bulletList (map showViolatedRule invariantViolations)
      <> bulletList (map showViolatedRule processViolations)
     where
-         (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
+         (processViolations,invariantViolations) = L.partition (isSignal.fst) (allViolations fSpec)
          showViolatedRule :: (Rule,AAtomPairs) -> Blocks
          showViolatedRule (r,ps)
              =    (para.emph)
@@ -476,7 +476,7 @@ chpDiagnosis opts@Options{..} fSpec
                <> table -- Caption
                         (if isSignal r
                          then   (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
-                             <> commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                             <> commaPandocOr (fsLang fSpec) (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                          else   (str.l) (NL "Overtredingen van invariant ",EN "Violations of invariant ")
                               <>(str.name) r
                         )  

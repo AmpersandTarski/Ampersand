@@ -9,11 +9,11 @@ module Ampersand.Basics.Unique
   (Unique(..),Named(..))
 where
 import           Ampersand.Basics.Prelude
-import           Ampersand.Basics.String
-import           Data.Char
+import           Ampersand.Basics.String(escapeIdentifier)
+import           RIO.Char
+import qualified RIO.List as L
+import qualified RIO.Set as Set
 import           Data.Hashable
-import           Data.List
-import qualified Data.Set as Set
 import           Data.Typeable
 
 -- | anything could have some label, can't it?
@@ -54,7 +54,7 @@ class (Typeable e, Eq e) => Unique e where
 
 uniqueButNotTooLong :: String -> String
 uniqueButNotTooLong str =
-  case splitAt safeLength str of
+  case L.splitAt safeLength str of
     (_ , []) -> str
     (prfx,_) -> prfx++"#"++show (hash str)++"#"
   where safeLength = 50 -- HJO, 20170812: Subjective value. This is based on the 
@@ -73,7 +73,7 @@ data UniqueObj a =
 
 instance Unique a => Unique [a] where
    showUnique [] = "[]"
-   showUnique xs = "["++intercalate ", " (map showUnique xs)++"]"
+   showUnique xs = "["++L.intercalate ", " (map showUnique xs)++"]"
 instance Unique a => Unique (Set.Set a) where
    showUnique = showUnique . Set.elems
 

@@ -8,10 +8,11 @@ import           Ampersand.FSpec.ToFSpec.ADL2Plug
 import           Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
-import           Data.Char
+import           RIO.Char
 import           Data.Function (on)
-import           Data.List
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
@@ -99,7 +100,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                                     <> text "The details of each entity type are described (in alphabetical order) in the following two tables:"
                                )
        <> conceptTables
-       <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
+       <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (classes oocd)))
 
   logicalDataModelPicture = makePicture fSpec PTLogicalDM
 
@@ -130,9 +131,9 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                                                  | attr<-attributesOfConcept fSpec c, pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
                                                  ]) (Set.size (atomsInCptIncludingSmaller fSpec c)*length (attributesOfConcept fSpec c)))
            ]
-         | c <- sortBy (compare `on` name) 
+         | c <- L.sortBy (compare `on` name) 
               . filter isKey 
-              . delete ONE 
+              . L.delete ONE 
               . Set.elems 
               $ concs fSpec
          ]  <>
@@ -145,13 +146,12 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
          ] 
          [ [ (plain . text . name) c
            ,   -- max 20 voorbeelden van atomen van concept c
-             (plain . text . intercalate "\n" . map showA . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
+             (plain . text . L.intercalate "\n" . map showA . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
            , (plain . text . show . Set.size . atomsInCptIncludingSmaller fSpec) c
            ]
-         | c <- sortBy (compare `on` name) 
-              . filter (not.isKey) 
-              . delete ONE 
+         | c <- L.sortBy (compare `on` name) 
               . Set.elems 
+              . Set.filter (not.isKey) 
               $ concs fSpec
          ]
      where
@@ -293,7 +293,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
         Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
         English -> text ("The technical datamodel consists of the following "++show nrOfTables++" tables:")
             )
-    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
+    <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
    where
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
@@ -327,8 +327,8 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                        )
                      <> showAttributes (plugAttributes bin)
 
-      showAttributes :: [SqlAttribute] -> Blocks
-      showAttributes atts = bulletList (map showAttribute atts)
+      showAttributes :: NEL.NonEmpty SqlAttribute -> Blocks
+      showAttributes = bulletList . NEL.toList . fmap showAttribute
         where
           showAttribute att =
                 para (  (strong.text.attName) att

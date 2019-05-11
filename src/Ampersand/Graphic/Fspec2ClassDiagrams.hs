@@ -8,9 +8,8 @@ import           Ampersand.Classes
 import           Ampersand.FSpec
 import           Ampersand.FSpec.ToFSpec.ADL2Plug
 import           Ampersand.Graphic.ClassDiagram
-import           Data.Either
-import           Data.Maybe
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
@@ -63,7 +62,7 @@ cdAnalysis fSpec =
          Just exprs ->
            OOClass { clName = name root
                    , clcpt  = Just root
-                   , clAtts = map ooAttr exprs
+                   , clAtts = NEL.toList $ fmap ooAttr exprs
                    , clMths = []
                    }
    cptIsShown :: A_Concept -> Bool
@@ -71,20 +70,21 @@ cdAnalysis fSpec =
      where 
       isInScope _ = True 
       hasClass = isJust . classOf
-   classOf :: A_Concept -> Maybe [Expression]
+   classOf :: A_Concept -> Maybe (NEL.NonEmpty Expression)
    classOf cpt = 
      case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
         []   -> Nothing
         [es] -> Just es
         _    -> fatal "Only one list of expressions is expected here"
      where
-      isOfCpt :: [Expression] -> Bool
-      isOfCpt []    = fatal "List must not be empty!"
-      isOfCpt (e:_) = source e == cpt
-      attribs = map (flipWhenNeeded . EDcD) attribDcls
+      isOfCpt :: NEL.NonEmpty Expression -> Bool
+      isOfCpt es = source (NEL.head es) == cpt
+      attribs = fmap (flipWhenNeeded . EDcD) attribDcls
       flipWhenNeeded x = if isInj x && (not.isUni) x then flp x else x
    ooAttr :: Expression -> CdAttribute
-   ooAttr r = OOAttr { attNm = (name . head . Set.elems . bindedRelationsIn) r
+   ooAttr r = OOAttr { attNm = case Set.elems $ bindedRelationsIn r of
+                                []  -> fatal $ "No bindedRelations in an expression: " <> show r
+                                h:_ -> name h
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
@@ -146,8 +146,8 @@ tdAnalysis fSpec =
                               let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
                               in  map (ooAttr kernelAtts) kernelAtts
                                 ++map (ooAttr kernelAtts . rsTrgAtt) (dLkpTbl table) 
-                            BinSQL{}      ->
-                              map mkOOattr (plugAttributes table)
+                            BinSQL{}      -> NEL.toList $
+                              fmap mkOOattr (plugAttributes table)
                                 where mkOOattr a =
                                         OOAttr { attNm       = attName a
                                                , attTyp      = (name.target.attExpr) a
@@ -182,7 +182,7 @@ tdAnalysis fSpec =
        relsOf t =
          case t of
            TblSQL{} -> map (mkRel t) . mapMaybe relOf . attributes $ t
-           BinSQL{} -> map mkOOAssoc (plugAttributes t)
+           BinSQL{} -> NEL.toList $ fmap mkOOAssoc (plugAttributes t)
                         where mkOOAssoc a =
                                 OOAssoc { assSrc = sqlname t
                                         , assSrcPort = attName a

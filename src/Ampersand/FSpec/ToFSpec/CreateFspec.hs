@@ -18,10 +18,9 @@ import           Ampersand.FSpec.ToFSpec.ADL2FSpec
 import           Ampersand.FSpec.Transformers 
 import           Ampersand.Input
 import           Ampersand.Misc
-import           Control.Monad
-import           Data.List
-import qualified Data.List.NonEmpty as NEL (toList)
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import           System.FilePath
 
 -- | create an FSpec, based on the provided command-line options.
@@ -62,7 +61,7 @@ createMulti opts@Options{..} =
                   Checked f _ -> f
                   Errors errs -> fatal . unlines $
                       "The FormalAmpersand ADL scripts are not type correct:"
-                    : (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
+                    : (L.intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
             , transformers  = transformersFormalAmpersand
             }
          sysCModel :: MetaFSpec
@@ -73,7 +72,7 @@ createMulti opts@Options{..} =
                   Checked f _ -> f
                   Errors errs -> fatal . unlines $
                       "The SystemContext ADL scripts are not type correct:"
-                    : (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
+                    : (L.intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
             , transformers  = transformersSystemContext
             }
          userP_CtxPlus :: Guarded P_Context
@@ -107,7 +106,7 @@ createMulti opts@Options{..} =
                  }
            where
             uni :: Eq a => [a] -> [a] -> [a]
-            uni xs ys = nub (xs ++ ys)
+            uni xs ys = L.nub (xs ++ ys)
          userGFSpec :: Guarded FSpec
          userGFSpec = 
             pCtx2Fspec opts $ 
@@ -169,14 +168,20 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
                                          -- popRelations are derived from P_Populations only.
     genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
     genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
-    declaredRelations = nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
+    declaredRelations = L.nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
     -- | To derive relations from populations, we derive the signature from the population's signature directly.
     --   Multiplicity properties are added to constrain the population without introducing violations.
     popRelations 
      = [ computeProps rel
        | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx++[pop |pat<-ctx_pats pCtx, pop<-pt_pop pat]
        , Just src'<-[src], Just tgt'<-[tgt]
-       , rel<-[P_Sgn{dec_nm=name pop, dec_sign=P_Sign (PCpt src') (PCpt tgt'), dec_prps=Set.fromList [], dec_pragma=[], dec_Mean=[], pos=origin pop }]
+       , rel<-[ P_Sgn{ dec_nm     = name pop
+                     , dec_sign   = P_Sign (PCpt src') (PCpt tgt')
+                     , dec_prps   = mempty
+                     , dec_pragma = mempty
+                     , dec_Mean   = mempty
+                     , pos        = origin pop
+                     }]
        , signature rel `notElem` map signature declaredRelations
        ]
        where
@@ -194,15 +199,18 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
                       | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-pops, Just src'<-[src], Just tgt'<-[tgt]
                       , name rel==name pop, src'==name s, tgt'==name t
                       ]
-               domR = Set.mapMonotonic ppLeft popR   --  The use of `mapMonotonic :: (a->b) -> Set a -> Set b` requires that ppLeft is strictly increasing.
-               codR = Set.mapMonotonic ppRight popR  --  Alert: `mapMonotonic` does NOT check. It just produces erroneous results if it doesn't...
+               domR = Set.fromList . map ppLeft  . Set.toList $ popR
+               codR = Set.fromList . map ppRight . Set.toList $ popR
                equal f (a,b) = f a == f b
                isUni :: Set.Set PAtomPair -> Bool
-               isUni x = null . Set.filter (not . equal ppRight) . Set.filter (equal ppLeft) $ Set.cartesianProduct x x
+               isUni x = null . Set.filter (not . equal ppRight) . Set.filter (equal ppLeft) $ cartesianProduct x x
                isTot = popu s `Set.isSubsetOf` domR
                isInj :: Set.Set PAtomPair -> Bool
-               isInj x = null . Set.filter (not . equal ppLeft) . Set.filter (equal ppRight) $ Set.cartesianProduct x x
+               isInj x = null . Set.filter (not . equal ppLeft) . Set.filter (equal ppRight) $ cartesianProduct x x
                isSur = popu t `Set.isSubsetOf` codR
+               cartesianProduct :: -- Should be implemented as Set.cartesianProduct, but isn't. See https://github.com/commercialhaskell/rio/issues/177
+                                   (Ord a, Ord b) => Set a -> Set b -> Set (a, b)
+               cartesianProduct xs ys = Set.fromList $ liftA2 (,) (toList xs) (toList ys)
     (genericRelations, genericPopulations)
      = recur [] popRelations pops invGen
        where
@@ -211,46 +219,48 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
          = if g `elem` seen then fatal ("Concept "++name g++" has caused a cycle error.") else
            recur (g:seen) (genericRels++remainder) (genericPops++remainPop) invGens
            where
-            sameNameTargetRels :: [[P_Relation]]
+            sameNameTargetRels :: [NEL.NonEmpty P_Relation]
             sameNameTargetRels = eqCl (\r->(name r,targt r)) unseenrels
             genericRels ::    [P_Relation]
             remainingRels :: [[P_Relation]]
             (genericRels, remainingRels)
-             = unzip
-               [ ( headrel{ dec_sign = P_Sign g (targt headrel)
-                          , dec_prps = let test prop = prop `elem` foldr1 Set.intersection (map dec_prps sRel)
+             = L.unzip
+               [ ( headrel{ dec_sign = P_Sign g (targt (NEL.head sRel))
+                          , dec_prps = let test prop = prop `elem` foldr Set.intersection Set.empty (fmap dec_prps sRel)
                                        in Set.fromList ([Uni |test Uni]++[Tot |test Tot]++[Inj |test Inj]++[Sur |test Sur])
                           }  -- the generic relation that summarizes sRel
             --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations
-                 , [ rel| rel<-sRel, sourc rel `notElem` specs ]                 -- the remaining relations
+                 , [ rel| rel<-NEL.toList sRel, sourc rel `notElem` specs ]                 -- the remaining relations
                  )
                | sRel<-sameNameTargetRels
-               , specs `Set.isSubsetOf` Set.fromList (map sourc sRel)
-               , headrel<-take 1 sRel ]
+               , specs `Set.isSubsetOf` (Set.fromList . NEL.toList $ (fmap sourc sRel))
+               , headrel<-[NEL.head sRel]
+               ]
             remainder :: [P_Relation]
             remainder
-             = concat (remainingRels++
+             = concat (remainingRels++fmap NEL.toList
                        [ sRel | sRel<-sameNameTargetRels
-                       , not (specs `Set.isSubsetOf` Set.fromList (map sourc sRel))]
+                       , not (specs `Set.isSubsetOf` (Set.fromList . NEL.toList $ fmap sourc sRel))]
                       )
-            sameNameTargetPops :: [[P_Population]]
+            sameNameTargetPops :: [NEL.NonEmpty P_Population]
             sameNameTargetPops = eqCl (\r->(name r,tgtPop r)) unseenpops
             genericPops ::    [P_Population]
             remainingPops :: [[P_Population]]
             (genericPops, remainingPops)
-             = unzip
+             = L.unzip
                [ ( headPop{p_src=Just (name g)}                   -- the generic relation that summarizes sRel
             --   , [ pop| pop<-sPop, srcPop pop `elem` specs ]    -- the specific (and therefore obsolete) populations
-                 , [ pop| pop<-sPop, srcPop pop `notElem` specs ] -- the remaining relations
+                 , [ pop| pop<-NEL.toList sPop, srcPop pop `notElem` specs ] -- the remaining relations
                  )
                | sPop<-sameNameTargetPops
-               , specs `Set.isSubsetOf` Set.fromList (map srcPop sPop)
-               , headPop@P_RelPopu{}<-take 1 sPop ] -- Restrict to @P_RelPopu{} because field name p_src is being used
+               , specs `Set.isSubsetOf` (Set.fromList . NEL.toList $ fmap srcPop sPop)
+               , headPop@P_RelPopu{}<-[NEL.head sPop] -- Restrict to @P_RelPopu{} because field name p_src is being used
+               ]
             remainPop :: [P_Population]
             remainPop
-             = concat (remainingPops++
+             = concat (remainingPops++fmap NEL.toList
                        [ sPop | sPop<-sameNameTargetPops
-                       , not (specs `Set.isSubsetOf` Set.fromList (map srcPop sPop))]
+                       , not (specs `Set.isSubsetOf` (Set.fromList . NEL.toList $ fmap srcPop sPop))]
                       )
         recur _ rels popus [] = (rels,popus)
         srcPop, tgtPop :: P_Population -> P_Concept -- get the source concept of a P_Population.
@@ -262,13 +272,13 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
     sourc = pSrc . dec_sign
     targt = pTgt . dec_sign
     invGen :: [(P_Concept,Set.Set P_Concept)]  -- each pair contains a concept with all of its specializations
-    invGen = [ (fst (head cl), Set.fromList spcs)
+    invGen = [ (fst (NEL.head cl), Set.fromList spcs)
              | cl<-eqCl fst [ (g,specific gen) | gen<-ctx_gs pCtx, g<-NEL.toList (generics gen)]
-             , g<-[fst (head cl)], spcs<-[[snd c | c<-cl, snd c/=g]], not (null spcs)
+             , g<-[fst (NEL.head cl)], spcs<-[[snd c | c<-NEL.toList cl, snd c/=g]], not (null spcs)
              ]
     signature :: P_Relation -> (String, P_Sign)
     signature rel =(name rel, dec_sign rel)
-    concepts = nub $
+    concepts = L.nub $
             [ PCpt (name pop) | pop@P_CptPopu{}<-ctx_pops pCtx] ++
             [ PCpt src' | P_RelPopu{p_src = src}<-ctx_pops pCtx, Just src'<-[src]] ++
             [ PCpt tgt' | P_RelPopu{p_tgt = tgt}<-ctx_pops pCtx, Just tgt'<-[tgt]] ++
@@ -277,7 +287,7 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
     pops = computeConceptPopulations (ctx_pops pCtx++[p |pat<-ctx_pats pCtx, p<-pt_pop pat])   -- All populations defined in this context, from POPULATION statements as well as from Relation declarations.
     computeConceptPopulations :: [P_Population] -> [P_Population]
     computeConceptPopulations pps -- I feel this computation should be done in P2A_Converters.hs, so every A_structure has compliant populations.
-     = [ P_CptPopu{pos = OriginUnknown, p_cnme = name c, p_popas = nub $
+     = [ P_CptPopu{pos = OriginUnknown, p_cnme = name c, p_popas = L.nub $
                        [ atom | cpt@P_CptPopu{}<-pps, PCpt (name cpt) == c, atom<-p_popas cpt]++
                        [ ppLeft pair
                        | pop@P_RelPopu{p_src = src}<-pps, Just src'<-[src], PCpt src' == c
@@ -287,8 +297,8 @@ encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked 
                        , pair<-p_popps pop]}
        | c<-concepts
        ] ++
-       [ rpop{p_popps=concat (map p_popps cl)}
-       | cl<-eqCl (\pop->(name pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-take 1 cl
+       [ rpop{p_popps=concat (fmap p_popps cl)}
+       | cl<-eqCl (\pop->(name pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NEL.head cl]
        ]
 encloseInConstraints _ gCtx = gCtx
 

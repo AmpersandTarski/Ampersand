@@ -3,7 +3,7 @@ module Ampersand.FSpec.ToFSpec.ADL2FSpec
    ( makeFSpec
    ) where
 import           Ampersand.ADL1
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (Identity)
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.Crud
@@ -13,10 +13,10 @@ import           Ampersand.FSpec.ToFSpec.Calc
 import           Ampersand.FSpec.ToFSpec.NormalForms 
 import           Ampersand.FSpec.ToFSpec.Populated 
 import           Ampersand.Misc
-import           Data.Char
-import           Data.List
-import           Data.Maybe
-import qualified Data.Set as Set
+import           RIO.Char
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import           Data.Text (pack)
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
@@ -35,19 +35,19 @@ makeFSpec opts context
                                       || ctxrel `notElem` map (objExpression.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fDeriveProofs = deriveProofs opts context 
-              , fRoleRels    = nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
+              , fRoleRels    = L.nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
                                    | rr <- ctxRRels context
-                                   , decl <- rrRels rr
-                                   , role' <- rrRoles rr
+                                   , decl <- NEL.toList $ rrRels rr
+                                   , role' <- NEL.toList $ rrRoles rr
                                    ] 
-              , fRoleRuls    = nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
+              , fRoleRuls    = L.nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
                                    | rule <- Set.elems $ allrules
                                    , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
-              , fRoles       = zip ((sort . nub) (concatMap arRoles (ctxrrules context)++
-                                                  concatMap rrRoles (ctxRRels context )++
-                                                  concatMap ifcRoles (ctxifcs context )
+              , fRoles       = zip ((L.sort . L.nub) (  concatMap (NEL.toList . arRoles) (ctxrrules context)
+                                                 <> concatMap (NEL.toList . rrRoles) (ctxRRels  context)
+                                                 <> concatMap ifcRoles               (ctxifcs context )
                                                  )
                                    ) [0..] 
               , fallRules    = allrules
@@ -64,7 +64,7 @@ makeFSpec opts context
               , vrels        = calculatedDecls
               , allConcepts  = fSpecAllConcepts
               , cptTType     = representationOf contextinfo
-              , fsisa        = nub . concatMap genericAndSpecifics . gens $ context
+              , fsisa        = L.nub . concatMap genericAndSpecifics . gens $ context
               , vpatterns    = patterns context
               , vgens        = gens context
               , vIndices     = identities context
@@ -79,7 +79,7 @@ makeFSpec opts context
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
               , atomsBySmallestConcept = \cpt -> Set.map apLeft 
                                                . pairsinexpr 
-                                               . foldl (.-.) (EDcI cpt) 
+                                               . L.foldl (.-.) (EDcI cpt) 
                                                . map (handleType cpt)
                                                . smallerConcepts (gens context) $ cpt
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
@@ -141,36 +141,36 @@ makeFSpec opts context
                                      rs  -> role' `elem` rs
      
      initialpopsDefinedInScript = 
-                   [ let dcl = popdcl (head eqclass)
+                   [ let dcl = popdcl (NEL.head eqclass)
                      in ARelPopu{ popsrc = source dcl
                                 , poptgt = target dcl
                                 , popdcl = dcl
-                                , popps  = Set.unions [ popps pop | pop<-eqclass ]
+                                , popps  = Set.unions [ popps pop | pop<-NEL.toList eqclass ]
                                 }
                    | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
-                   [ ACptPopu{ popcpt = popcpt (head eqclass)
-                             , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
+                   [ ACptPopu{ popcpt = popcpt (NEL.head eqclass)
+                             , popas  = (L.nub.concat) [ popas pop | pop<-NEL.toList eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap ptups (patterns context)       
      allConjs = makeAllConjs opts allrules
-     fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
-     fSpecAllConjsPerRule = converse [ (conj, Set.elems $ rc_orgRules conj) | conj <- allConjs ]
+     fSpecAllConjsPerRule :: [(Rule, NEL.NonEmpty Conjunct)]
+     fSpecAllConjsPerRule = converseNE [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, Set.elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = 
-           converse [ (conj, nub $ smaller (source e) ++ smaller (target e)) 
+           converse [ (conj, L.nub $ smaller (source e) ++ smaller (target e)) 
                     | conj <- allConjs
                     , e    <- Set.elems . modifyablesByInsOrDel . rc_conjunct $ conj ]
                where 
                  smaller :: A_Concept -> [A_Concept]
-                 smaller cpt = nub $ cpt : smallerConcepts (gens context) cpt
+                 smaller cpt = L.nub $ cpt : smallerConcepts (gens context) cpt
      allQuads = quadsOfRules opts allrules 
      
      allrules = Set.map setIsSignal (allRules context)
         where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
      maintainersOf :: Rule -> [Role]
      maintainersOf r 
-       = concatMap arRoles . filter forThisRule . ctxrrules $ context
+       = L.nub . concatMap (NEL.toList . arRoles) . filter forThisRule . ctxrrules $ context
          where
           forThisRule :: A_RoleRule -> Bool
           forThisRule x = name r `elem` arRules x
@@ -190,15 +190,15 @@ makeFSpec opts context
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
      totsurs :: [Expression]
      totsurs
-      = nub [rel | q<- filter (isIdent . EDcD . qDcl)
+      = L.nub [rel | q<- filter (isIdent . EDcD . qDcl)   -- FIXME: This cannot be correct. This filter will block everything!
                      . filter (not . isSignal . qRule)
                      $ allQuads -- all quads for invariant rules
                  , dnf<- concatMap rc_dnfClauses . qConjuncts $ q
-                 , let antc = conjNF opts (foldr (./\.) (EDcV (sign (head (antcs dnf++conss dnf)))) (antcs dnf))
+                 , let antc = conjNF opts (foldr (./\.) (EDcV (sign (NEL.head (antcs dnf)))) (antcs dnf))
                  , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
-                 , cons<-map exprCps2list (conss dnf)
+                 , cons<-NEL.toList $ fmap exprCps2list (conss dnf)
             -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
-                 , rel<-init cons++[flp r | r<-tail cons]
+                 , rel<-NEL.init cons++[flp r | r<-NEL.tail cons]
                  ]
   -- Lookup view by id in fSpec.
      lookupView' :: String -> ViewDef
@@ -299,8 +299,9 @@ makeFSpec opts context
              (Set.map flp . Set.filter (not.isInj) . Set.filter isUni $ toconsider)
        where toconsider = Set.map EDcD $ calculatedDecls
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
-     maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
-     maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
+     maxTotPaths,maxInjPaths :: [NEL.NonEmpty Expression]
+     maxTotPaths = map (NEL.:|[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
+     maxInjPaths = map (NEL.:|[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      --    Warshall's transitive closure algorithm, adapted for this purpose:
 --     clos1 :: [Expression] -> [[Expression]]
 --     clos1 xs
@@ -316,26 +317,43 @@ makeFSpec opts context
 --                default theme => generate interfaces from the clos total expressions and clos injective expressions (see step1-3).
 --                student theme => generate interface for each concept with relations where concept is source or target (note: step1-3 are skipped)
      interfaceGen = step4a ++ step4b
+     step4a :: [Interface]
      step4a
-      = let recur :: [[Expression]] -> [ObjectDef]
-            recur es
-             = [ ObjectDef
+      = let recur :: [NEL.NonEmpty Expression] -> [ObjectDef]
+            recur es = 
+               [ ObjectDef
                      { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objExpression  = t
                      , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
-                     , objmsub = Just . Box (target t) Nothing . map BxExpr $ recur [ pth | (_:pth)<-cl, not (null pth) ]
+                     , objmsub = Just . Box (target t) Nothing . map BxExpr $ recur [ NEL.fromList pth | pth <-map NEL.tail $ NEL.toList cl, not (null pth) ]
                      }
-               | cl<-eqCl head es, (t:_)<-take 1 cl] --
+               | cl<-eqCl NEL.head es
+               , let t = NEL.head . NEL.head $ cl
+               ] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
             -- Each expression list represents a path from the origin of a box to the attribute.
             -- 16 Aug 2011: (recur es) is applied once where es originates from (maxTotPaths `Set.union` maxInjPaths) both based on clos
             -- Interfaces for I[Concept] are generated only for concepts that have been analysed to be an entity.
             -- These concepts are collected in gPlugConcepts
+            gPlugConcepts :: [A_Concept]
             gPlugConcepts = [ c | InternalPlug plug@TblSQL{}<-genPlugs , (c,_)<-take 1 (cLkpTbl plug) ]
             -- Each interface gets all attributes that are required to create and delete the object.
             -- All total attributes must be included, because the interface must allow an object to be deleted.
+            plugPaths :: [NEL.NonEmpty Expression]
+            plugPaths = [ pth | pth <- L.nub (maxTotPaths <> maxInjPaths)
+                        , (source.NEL.head) pth `elem` gPlugConcepts
+                        ]
+            f :: NEL.NonEmpty (NEL.NonEmpty Expression) -> Maybe (A_Concept,NEL.NonEmpty ObjectDef)
+            f cl = 
+              case recur $ NEL.toList cl of
+                []   -> Nothing
+                h:tl -> if isIdent (objExpression h) && null tl
+                          then Nothing --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
+                          else Just ( source  . NEL.head . NEL.head $ cl
+                                    , h NEL.:| tl
+                                    )
         in
         [Ifc { ifcIsAPI    = False
              , ifcname     = name c
@@ -345,20 +363,14 @@ makeFSpec opts context
                                  , objExpression  = EDcI c
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
-                                 , objmsub = Just . Box c Nothing . map BxExpr $ objattributes
+                                 , objmsub = Just . Box c Nothing . map BxExpr $ NEL.toList objattributes
                                  }
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
              , ifcPrp      = "Interface " ++name c++" has been generated by Ampersand."
              , ifcRoles    = []
              }
-        | cl <- eqCl (source.head) [ pth | pth<-nub (maxTotPaths ++ maxInjPaths), (source.head) pth `elem` gPlugConcepts ]
-        , let objattributes = recur cl
-        , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
-        , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
-          not (length objattributes==1 && isIdent(objExpression(head objattributes)))
-        , let e0=head cl, not (null e0) || fatal "null e0"
-        , let c=source (head e0)
+        | (c, objattributes) <- mapMaybe f $ eqCl (source . NEL.head) plugPaths
         , let params = bindedRelationsIn . expressionsIn $ objattributes
         ]
      --end otherwise: default theme
@@ -384,10 +396,9 @@ makeFSpec opts context
               nm'::Int->String
               nm' 0  = plural printingLanguage (name c)
               nm' i  = plural printingLanguage (name c) ++ show i
-              nms = [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)]
-              nm
-                | null nms = fatal "impossible"
-                | otherwise = head nms
+              nm = case [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)] of
+                     []  -> fatal "impossible"
+                     h:_ -> h
               att = ObjectDef
                         { objnm    = name c
                         , objpos   = Origin "generated attribute object: step 4b"
@@ -419,9 +430,9 @@ class Named a => Rename a where
  uniqueNames :: [String]->[a]->[a]
  uniqueNames taken xs
   = [p | cl<-eqCl (map toLower.name) xs  -- each equivalence class cl contains (identified a) with the same map toLower (name p)
-       , p <-if name (head cl) `elem` taken || length cl>1
-             then [rename p (name p++show i) | (p,i)<-zip cl [(1::Int)..]]
-             else cl
+       , p <-if name (NEL.head cl) `elem` taken || length cl>1
+             then [rename p (name p++show i) | (p,i)<-zip (NEL.toList cl) [(1::Int)..]]
+             else NEL.toList cl
     ]
 
 instance Rename PlugSQL where
@@ -445,7 +456,7 @@ tblcontents ci ps plug
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
         case attributes plug of 
          []   -> fatal "no attributes in plug."
-         f:fs -> (nub.transpose)
+         f:fs -> (L.nub . L.transpose)
                  ( map Just (Set.elems cAtoms)
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-Set.elems $ cAtoms ]

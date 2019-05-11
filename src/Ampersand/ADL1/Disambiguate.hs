@@ -11,8 +11,8 @@ module Ampersand.ADL1.Disambiguate
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.AbstractSyntaxTree
-import qualified Data.List.NonEmpty as NEL (toList,fromList)
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import           Control.Arrow
 import           Text.PrettyPrint.Leijen (Pretty(..),text)
 
@@ -88,10 +88,14 @@ propagateConstraints topDown bottomUp
          ,bottomUpTargetTypes = bottomUpTargetTypes topDown ++ bottomUpTargetTypes bottomUp
          }
 instance Disambiguatable P_IdentDf where
-  disambInfo (P_Id o nm c []) _ = ( P_Id o nm c [], noConstraints)
-  disambInfo (P_Id o nm c (a:lst)) _     = (P_Id o nm c (a':lst'), Cnstr (bottomUpSourceTypes aRestr++bottomUpSourceTypes nxt) [])
-       where (a', aRestr)            = disambInfo a (Cnstr [MustBe (pCpt2aCpt c)] [])
-             (P_Id _ _ _ lst', nxt)  = disambInfo (P_Id o nm c lst) (Cnstr [MustBe (pCpt2aCpt c)] [])
+--  disambInfo (P_Id o nm c []) _ = ( P_Id o nm c [], noConstraints)
+--  disambInfo (P_Id o nm c (a:lst)) _     = (P_Id o nm c (a':lst'), Cnstr (bottomUpSourceTypes aRestr++bottomUpSourceTypes nxt) [])
+--       where (a', aRestr)            = disambInfo a (Cnstr [MustBe (pCpt2aCpt c)] [])
+--             (P_Id _ _ _ lst', nxt)  = disambInfo (P_Id o nm c lst) (Cnstr [MustBe (pCpt2aCpt c)] [])
+  disambInfo (P_Id o nm c atts) _     = (P_Id o nm c atts', Cnstr (concatMap bottomUpSourceTypes . NEL.toList $ restr') [])
+     where
+      (atts', restr') = NEL.unzip $
+           fmap (\a -> disambInfo a (Cnstr [MustBe (pCpt2aCpt c)] [])) atts
 instance Disambiguatable P_IdentSegmnt where
   disambInfo (P_IdentExp v) x = (P_IdentExp v', rt)
      where (v',rt) = disambInfo v x
@@ -121,7 +125,7 @@ instance Disambiguatable P_ViewD where
                   , vd_isDefault = d
                   , vd_html = h
                   , vd_ats  = a
-                  } _ = ( P_Vd o s c d h (map (\x -> fst (disambInfo x constraints)) a)
+                  } _ = ( P_Vd o s c d h (fmap (\x -> fst (disambInfo x constraints)) a)
                         , constraints
                         )
    where constraints = Cnstr [MustBe (pCpt2aCpt c)] []

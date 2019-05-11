@@ -4,6 +4,7 @@ where
 import Ampersand.Basics
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
+import RIO.List(repeat)
 
 -- return table name and source and target column names for relation dcl
 getRelationTableInfo :: FSpec -> Relation -> (PlugSQL,RelStore) 

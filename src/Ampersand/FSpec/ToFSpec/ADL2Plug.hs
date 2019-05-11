@@ -10,13 +10,13 @@ import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import           Ampersand.Misc
-import           Data.Char
-import           Data.Maybe
-import qualified Data.Set as Set
+import           RIO.Char
+import qualified RIO.Set as Set
+import qualified Data.List.NonEmpty as NEL
 
 attributesOfConcept :: FSpec -> A_Concept -> [SqlAttribute]
 attributesOfConcept fSpec c
- = [  att | att<-tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
+ = [  att | att<-NEL.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
    where
      inKernel :: SqlAttribute -> Bool
      inKernel att = isUni expr 
@@ -57,8 +57,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                   f names (cs,ds) =
                      case (cs,ds) of
                        ([],[]) -> names
-                       ([], _) -> f (insert (Right . head $ ds) names) ([],tail ds)
-                       _       -> f (insert (Left  . head $ cs) names) (tail cs,ds)
+                       ([], h:tl) -> f (insert (Right h) names) ([],tl)
+                       (h:tl,_  ) -> f (insert (Left h) names) (tl,ds)
                   insert :: Either A_Concept Relation -> [(Either A_Concept Relation, String)] -> [(Either A_Concept Relation, String)]
                   insert item = tryInsert item 0
                     where 
@@ -236,10 +236,12 @@ wayToStore opts dcl
                       )
 
 unquote :: String -> String
-unquote str 
-  | length str < 2 = str
-  | head str == '"' && last str == '"' = init . tail $ str 
-  | otherwise = str
+unquote str =
+  case str of
+   '"':tl  -> case reverse tl of
+                '"':mid -> reverse mid
+                _       -> str
+   _       -> str
       
 suitableAsKey :: TType -> Bool
 suitableAsKey st =

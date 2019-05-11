@@ -28,17 +28,18 @@ import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Input.ADL1.LexerMonad
 import           Ampersand.Input.ADL1.LexerToken
 import           Ampersand.Misc
-import           Control.Monad (when)
-import           Data.Char hiding(isSymbol)
-import           Data.List (nub)
-import qualified Data.Set as Set -- (member, fromList)
+import           RIO.Char hiding(isSymbol)
+import qualified RIO.List as L
+import qualified RIO.Char.Partial as Partial (chr)
+import qualified RIO.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
 import           Numeric
 
 -- | Retrieves a list of keywords accepted by the Ampersand language
 keywords :: [String] -- ^ The keywords
-keywords  = nub [ "CONTEXT", "ENDCONTEXT"
+keywords  = L.nub $
+                [ "CONTEXT", "ENDCONTEXT"
                 , "IN" 
                 ] ++
                 [map toUpper $ show x | x::Lang <- [minBound..]
@@ -132,15 +133,16 @@ mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpaceNoTab s
                                     isSpaceNoTab x = isSpace x && (not .  isTab) x
                                     isTab = ('\t' ==)
                                 in  do when (isTab c) (lexerWarning TabCharacter p)
-                                       mainLexer (foldl updatePos p (c:spc)) next
+                                       mainLexer (L.foldl updatePos p (c:spc)) next
 
 mainLexer p ('{':'-':s) = lexNestComment mainLexer (addPos 2 p) s
 mainLexer p ('{':'+':s) = lexMarkup mainLexer (addPos 2 p) s
 mainLexer p ('"':ss) =
     let (s,swidth,rest) = scanString ss
-    in if null rest || head rest /= '"'
-                              then lexerError (NonTerminatedString s) p
-                              else returnToken (LexString s) p mainLexer (addPos (swidth+2) p) (tail rest)
+    in case rest of
+         ('"':xs) -> returnToken (LexString s) p mainLexer (addPos (swidth+2) p) xs
+         _        -> lexerError (NonTerminatedString s) p
+         
 
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
@@ -162,7 +164,7 @@ mainLexer p cs@(c:s)
            in returnToken tokt p mainLexer p' s'
      | isOperatorBegin c
          = let (name', s') = getOp cs
-           in returnToken (LexOperator name') p mainLexer (foldl updatePos p name') s'
+           in returnToken (LexOperator name') p mainLexer (L.foldl updatePos p name') s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
      | isDigit c
          = case  getDateTime cs of
@@ -203,8 +205,10 @@ isOperator :: String -> Bool
 isOperator  = locatein operators
 
 isOperatorBegin :: Char -> Bool
-isOperatorBegin  = locatein (map head operators)
-
+isOperatorBegin  = locatein (mapMaybe head operators)
+   where head :: [a] -> Maybe a
+         head (a:_) = Just a
+         head []    = Nothing
 isIdStart :: Char -> Bool
 isIdStart c = isLower c || c == '_'
 
@@ -420,7 +424,7 @@ getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
 getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
-                                      | val >= 0 && val <= ord (maximum [chr 1 ..]) -> (Just (chr val),length s - length rest, rest)
+                                      | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
                                     _  -> fatal ("Impossible! first char is a digit.. "++take 40 s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)
