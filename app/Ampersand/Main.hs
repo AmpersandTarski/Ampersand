@@ -7,7 +7,7 @@ import qualified Data.List.NonEmpty as NEL
 import           System.Environment    (getArgs, getProgName)
 -- This datatype contains global information available throughout the lifefime of the application.
 data App = App
-  { options :: !Options
+  { opts :: !Options
   , appHandle :: !Handle
   }
 
@@ -15,7 +15,7 @@ main :: IO ()
 main = do
   opts@Options{..} <- getOptions
   let app = App
-       { options = opts
+       { opts = opts
        , appHandle = stderr
        }
   runRIO app $ do
@@ -24,19 +24,19 @@ main = do
 ampersand :: RIO App ()
 ampersand = do
  app <- ask
- do let opts@Options{..} = options app
-    liftIO . sequence_ . map snd . filter fst $ actionsWithoutScript opts-- There are commands that do not need a single filename to be speciied
+ do let opts'@Options{..} = opts app
+    sequence_ . map snd . filter fst $ actionsWithoutScript opts'-- There are commands that do not need a single filename to be speciied
     case fileName of
-      Just _ -> liftIO $ do -- An Ampersand script is provided that can be processed
-            { putStrLn "Processing your model..."
-            ; gMulti <- createMulti opts
-            ; case gMulti of
+      Just _ -> do -- An Ampersand script is provided that can be processed
+            { liftIO $ putStrLn "Processing your model..."
+            ; gMulti <- liftIO $ createMulti opts'
+            ; liftIO $ case gMulti of
                 Errors err    -> 
                    exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
                  . fmap show . NEL.toList $ err
                 Checked multi ws -> do
                    mapM_  putStrLn . concatMap (lines . show) $ ws
-                   generateAmpersandOutput opts multi
+                   generateAmpersandOutput opts' multi
                    putStrLn "Finished processing your model"
                    putStrLn . ("Your script has no errors " ++) $
                       case ws of
@@ -45,7 +45,7 @@ ampersand = do
                         _   -> ", but "++show (length ws)++" warnings were found"
             }
       Nothing -> liftIO $ -- No Ampersand script is provided 
-         if or (map fst $ actionsWithoutScript opts)
+         if or (map fst $ actionsWithoutScript opts')
          then verboseLn "No further actions, because no ampersand script is provided"
          else do
             args     <- getArgs
@@ -55,13 +55,13 @@ ampersand = do
                  , "   " <> progName <> (concat $ fmap (" " <>) args) ]
 
  where
-   actionsWithoutScript :: Options -> [(Bool, IO())]
+   actionsWithoutScript :: Options -> [(Bool, RIO App ())]
    actionsWithoutScript opts@Options{..} = 
-      [ ( test                     , putStrLn $ "Executable: " ++ show dirExec )
-      , ( showVersion  || verboseP , putStrLn $ versionText opts)
-      , ( genSampleConfigFile      , writeConfigFile)
-      , ( showHelp                 , putStrLn $ usageInfo' opts)
-      , ( runAsDaemon              , runDaemon opts)
+      [ ( test                     , liftIO . putStrLn $ "Executable: " ++ show dirExec )
+      , ( showVersion  || verboseP , liftIO . putStrLn $ versionText opts)
+      , ( genSampleConfigFile      , liftIO $ writeConfigFile)
+      , ( showHelp                 , liftIO . putStrLn $ usageInfo' opts)
+      , ( runAsDaemon              , liftIO $ runDaemon opts)
       ]
    
    versionText :: Options -> String
