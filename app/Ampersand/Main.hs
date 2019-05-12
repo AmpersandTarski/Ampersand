@@ -4,14 +4,30 @@ module Main(main) where
 import           Ampersand
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import System.Environment    (getArgs, getProgName)
+import           System.Environment    (getArgs, getProgName)
+-- This datatype contains global information available throughout the lifefime of the application.
+data App = App
+  { options :: !Options
+  , appHandle :: !Handle
+  }
 
 main :: IO ()
-main =
- do opts@Options{..} <- getOptions
-    sequence_ . map snd . filter fst $ actionsWithoutScript opts-- There are commands that do not need a single filename to be speciied
+main = do
+  opts@Options{..} <- getOptions
+  let app = App
+       { options = opts
+       , appHandle = stderr
+       }
+  runRIO app $ do
+     ampersand
+
+ampersand :: RIO App ()
+ampersand = do
+ app <- ask
+ do let opts@Options{..} = options app
+    liftIO . sequence_ . map snd . filter fst $ actionsWithoutScript opts-- There are commands that do not need a single filename to be speciied
     case fileName of
-      Just _ -> do -- An Ampersand script is provided that can be processed
+      Just _ -> liftIO $ do -- An Ampersand script is provided that can be processed
             { putStrLn "Processing your model..."
             ; gMulti <- createMulti opts
             ; case gMulti of
@@ -28,7 +44,7 @@ main =
                         [_] -> ", but one warning was found"
                         _   -> ", but "++show (length ws)++" warnings were found"
             }
-      Nothing -> -- No Ampersand script is provided 
+      Nothing -> liftIO $ -- No Ampersand script is provided 
          if or (map fst $ actionsWithoutScript opts)
          then verboseLn "No further actions, because no ampersand script is provided"
          else do
