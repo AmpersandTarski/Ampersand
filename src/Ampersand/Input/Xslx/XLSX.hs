@@ -16,22 +16,23 @@ import qualified Data.Map as M
 import qualified Data.Text as T
 import           Data.Tuple
 
-parseXlsxFile :: Options 
-              -> Maybe FileKind
-              -> FilePath -> IO (Guarded [P_Population])
-parseXlsxFile opts mFk file =
-  do bytestr <- 
+parseXlsxFile :: HasOptions env => Maybe FileKind
+              -> FilePath -> RIO env (Guarded [P_Population])
+parseXlsxFile mFk file =
+  do env <- ask
+     let opts = getOptions env
+     bytestr <- 
         case mFk of
           Just fileKind 
              -> case getStaticFileContent fileKind file of
                       Just cont -> return $ fromString cont
                       Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++file++"`.")
           Nothing
-             -> BL.readFile file
-     return . xlsx2pContext . toXlsx $ bytestr
+             -> liftIO $ BL.readFile file
+     return . xlsx2pContext opts . toXlsx $ bytestr
  where
-  xlsx2pContext :: Xlsx -> Guarded [P_Population]
-  xlsx2pContext xlsx = Checked pop []
+  xlsx2pContext :: Options -> Xlsx -> Guarded [P_Population]
+  xlsx2pContext opts xlsx = Checked pop []
     where 
       pop = concatMap (toPops opts file)
           . concatMap theSheetCellsForTable 

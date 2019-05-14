@@ -6,17 +6,13 @@ import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import           System.Environment    (getArgs, getProgName)
 -- This datatype contains global information available throughout the lifefime of the application.
-data App = App
-  { opts :: !Options
-  , appHandle :: !Handle
-  }
 
 main :: IO ()
 main = do
   opts@Options{..} <- getOptions
   let app = App
        { opts = opts
-       , appHandle = stderr
+       , appHandle = stdout
        }
   runRIO app $ do
      ampersand

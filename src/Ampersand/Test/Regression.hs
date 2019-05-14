@@ -22,21 +22,21 @@ data DirData = DirData FilePath DirContent       -- path and content of a direct
 
 -- | process does the tests for a specific DirData. Currently, 
 --   only the amount of failed tests is returned. 
-process :: Int -> DirData -> IO Int 
+process :: Int -> DirData -> RIO env Int 
 process indnt (DirData path dirContent) =
   case dirContent of
-    DirError err     -> do
+    DirError err     -> runRIO stdout $ do
         putStrLn $ "I've tried to look in " ++ path ++ "."
         putStrLn   "    There was an error: "
         putStrLn $ "       " ++ show err
         return 1
-    DirList _ files -> do
+    DirList _ files -> runRIO stdout $ do
         putStrLn $ path ++" : "
         doTestSet indnt path files
  
 yaml :: String
 yaml = "testinfo.yaml"  -- the required name of the file that contains the test info for this directory.
-doTestSet :: Int -> FilePath -> [FilePath] -> IO Int
+doTestSet :: HasHandles env => Int -> FilePath -> [FilePath] -> RIO env Int
 doTestSet indnt dir fs 
   | yaml `elem` fs = 
        do res <- parseYaml
@@ -45,14 +45,14 @@ doTestSet indnt dir fs
                              putStrLni $ prettyPrintParseException err
                              return 1
               Right ti -> do putStrLni $ "Command: "++command ti++if shouldSucceed ti then " (should succeed)." else " (should fail)."
-                             runConduit $ runTests ti .| getResults
+                             liftIO $ runConduit $ runTests ti .| getResults
   | otherwise =
        do putStrLni $ "Nothing to do. ("++yaml++" not present)"
           return 0
 
   where
-    parseYaml ::  IO (Either ParseException TestInfo) 
-    parseYaml = decodeFileEither $ dir </> yaml
+    parseYaml ::  RIO env (Either ParseException TestInfo) 
+    parseYaml = liftIO $ decodeFileEither $ dir </> yaml
     runTests :: TestInfo -> ConduitM () Int IO () 
     runTests ti = testsSource .| doATest
       where 
@@ -63,7 +63,7 @@ doTestSet indnt dir fs
         doATest = awaitForever dotheTest
           where 
              dotheTest file = 
-                do liftIO $ putStri $ "Start testing of `"++file++"`: "
+                do liftIO $ runRIO stdout $ putStri $ "Start testing of `"++file++"`: "
                    res <- liftIO $ testAdlfile (indnt + 2) dir file ti
                    yield (if res then 0 else 1) 
     getResults :: ConduitT Int Void IO Int
@@ -119,14 +119,14 @@ testAdlfile indnt path adl tinfo = runMyProc myProc
           (False , ExitSuccess  ) -> failOutput (exit_code, out, err)
           (False , ExitFailure _) -> passOutput
      passOutput = do -- putStrLni out
-                     putStrLn "***Pass***"
+                     runRIO stdout $ putStrLn "***Pass***"
                      return True 
      failOutput (exit_code, out, err) =
-                  do putStrLn $ "\n*FAIL*. Exit code: "++show exit_code++". "
+                  do runRIO stdout $ putStrLn $ "\n*FAIL*. Exit code: "++show exit_code++". "
                      case exit_code of
                          ExitSuccess -> return()
-                         _           -> do putStrLni out
-                                           putStrLni err
+                         _           -> do runRIO stdout $ putStrLni out
+                                           runRIO stderr $ putStrLni err
                      return False
 
      putStrLni  = mapM_ (putStrLn . (replicate indnt ' ' ++)) . lines 

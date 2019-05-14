@@ -28,38 +28,38 @@ messages = filter isMessage . loads
 loaded :: DaemonState -> [FilePath]
 loaded = loadResults
 data DaemonState = DaemonState
-   { loads :: [Load]
-   , loadResults :: [FilePath]
-   }
+    { loads :: [Load]
+    , loadResults :: [FilePath]
+    }
 instance Show DaemonState where
   show x
    = "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
 
 startAmpersandDaemon 
-     :: Options  -- Ampersand options
-     -> IO DaemonState
-startAmpersandDaemon opts = do
-    state <- do 
-       init <- initialState opts
-       case init of
-         Left msg -> exitWith . NoConfigurationFile $ msg
-         Right s -> pure s  
-    
-    return state
+     :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+        RIO env DaemonState
+startAmpersandDaemon = do
+    init <- initialState
+    case init of
+        Left msg -> exitWith . NoConfigurationFile $ msg
+        Right s -> pure s  
 
-initialState :: Options -> IO (Either [String] DaemonState)
-initialState opts = do
-   curDir <- getCurrentDirectory
-   dotAmpersand <- makeAbsolute $ curDir </> daemonConfig opts
-   exists <- doesFileExist dotAmpersand
-   if exists 
-   then do
-      content <- readFile dotAmpersand
+initialState :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+                RIO env (Either [String] DaemonState)
+initialState = do
+    env <- ask
+    let opts = getOptions env
+    curDir <- liftIO $ getCurrentDirectory
+    dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig opts
+    exists <- liftIO $ doesFileExist dotAmpersand
+    if exists 
+    then do
+      content <- liftIO $ readFile dotAmpersand
       let files = filter (\fn -> length fn > 0) --discard empty lines
                 . nub                           --discard doubles
                 . lines $ content
       (ls,loadedFiles) <- do
-           xs <- mapM (parseProject opts) files
+           xs <- mapM parseProject files
            return ( nub . concatMap fst $ xs
                   , nub . concatMap snd $ xs
                   )
@@ -67,7 +67,7 @@ initialState opts = do
         { loads = ls
         , loadResults = nub $ [dotAmpersand] ++ loadedFiles
         }
-   else return . Left $ 
+    else return . Left $ 
       [ "File not found: "++dotAmpersand
       , "  Your workspace should contain a file called .ampersand. However,"
       , "  it could not be found. Please provide that file, containing the "

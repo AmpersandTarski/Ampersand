@@ -3,10 +3,11 @@ module Ampersand.Misc
    ) where
 import Ampersand.Misc.Options
         ( Options(..)
+        , App(..)
         , FSpecFormat(..)
-        , getOptions
-        , verboseLn
+        , getOptionsIO
         , showFormat
         , usageInfo'
         , writeConfigFile
+        , HasOptions(..),HasHandles(..)
         )

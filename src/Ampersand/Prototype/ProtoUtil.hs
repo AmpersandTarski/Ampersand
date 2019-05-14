@@ -3,7 +3,7 @@
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
          , writePrototypeAppFile
-         , copyDirRecursively, copyDeepFile, removeAllDirectoryFiles, getProperDirectoryContents
+         , copyDirRecursively, removeAllDirectoryFiles, getProperDirectoryContents
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock
@@ -25,65 +25,57 @@ getGenericsDir :: Options -> String
 getGenericsDir Options{..} = 
   dirPrototype </> "generics" 
 
-writePrototypeAppFile :: Options -> String -> String -> IO ()
-writePrototypeAppFile opts@Options{..} relFilePath content =
- do { verboseLn $ "  Generating "<>relFilePath 
-    ; let filePath = getAppDir opts </> relFilePath
-    ; createDirectoryIfMissing True (takeDirectory filePath)
-    ; writeFile filePath content
-    }
-   
+writePrototypeAppFile :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+                         String -> String -> RIO env ()
+writePrototypeAppFile relFilePath content = do
+  verboseLn $ "  Generating "<>relFilePath 
+  env <- ask
+  let filePath = getAppDir (getOptions env) </> relFilePath
+  liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
+  liftIO $ writeFile filePath content
+     
 getAppDir :: Options -> String
 getAppDir Options{..} =
   dirPrototype </> "public" </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
-copyDirRecursively :: FilePath -> FilePath -> Options -> IO ()
-copyDirRecursively srcBase tgtBase Options{..} = copy ""
-  where copy fileOrDirPth = 
-         do { let srcPath = srcBase </> fileOrDirPth
-                  tgtPath = tgtBase </> fileOrDirPth
-            ; isDir <- doesDirectoryExist srcPath
-            ; if isDir then 
-               do { createDirectoryIfMissing True tgtPath
-                  ; verboseLn $ " Copying dir... " ++ srcPath
-                  ; fOrDs <- getProperDirectoryContents srcPath
-                  ; mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
-                  }
-              else
-               do { verboseLn $ "  file... " ++ fileOrDirPth
-                  ; copyFile srcPath tgtPath -- directory will exist, so no need for copyDeepFile
-                  }
-            }
-            
--- Copy file while creating all subdirectories on the target path (if non-existent)
-copyDeepFile :: FilePath -> FilePath -> Options -> IO ()
-copyDeepFile srcPath tgtPath Options{..} =
- do { verboseLn $ " Copying file... " ++ srcPath ++ " -> " ++ tgtPath
-    ; createDirectoryIfMissing True (takeDirectory tgtPath)
-    ; copyFile srcPath tgtPath
-    }
+copyDirRecursively :: (HasVerbosity  env, HasHandles env) =>
+                      FilePath -> FilePath -> RIO env ()
+copyDirRecursively srcBase tgtBase = copy ""
+  where copy fileOrDirPth = do
+          let srcPath = srcBase </> fileOrDirPth
+              tgtPath = tgtBase </> fileOrDirPth
+          isDir <- liftIO $ doesDirectoryExist srcPath
+          if isDir then do
+              liftIO $ createDirectoryIfMissing True tgtPath
+              verboseLn $ " Copying dir... " ++ srcPath
+              fOrDs <- getProperDirectoryContents srcPath
+              mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
+          else do
+              verboseLn $ "  file... " ++ fileOrDirPth
+              liftIO $ copyFile srcPath tgtPath
+             
 
 -- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
-removeAllDirectoryFiles :: FilePath -> IO ()
-removeAllDirectoryFiles dirPath =
- do { dirContents <- getProperDirectoryContents dirPath
-    ; mapM_ removeDirectoryFile dirContents 
-    }
+removeAllDirectoryFiles :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+                           FilePath -> RIO env ()
+removeAllDirectoryFiles dirPath = do
+    dirContents <- getProperDirectoryContents dirPath
+    mapM_ removeDirectoryFile dirContents 
   where removeDirectoryFile path = 
          do { let absPath = dirPath </> path
-            ; isDir <- doesDirectoryExist absPath
+            ; isDir <- liftIO $ doesDirectoryExist absPath
             ; if isDir then
                 putStrLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
               else
-                removeFile absPath
+                liftIO $ removeFile absPath
             }
      
-getProperDirectoryContents :: FilePath -> IO [String]
+getProperDirectoryContents :: FilePath -> RIO env [String]
 getProperDirectoryContents pth = 
     filter (`notElem` [".","..",".svn"]) 
-       <$> getDirectoryContents pth
+       <$> (liftIO $ getDirectoryContents pth)
 
 commentBlock :: [String]->[String]
 commentBlock ls = ["/*"<>replicate lnth '*'<>"*\\"]
@@ -141,22 +133,24 @@ showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
 
 
-installComposerLibs :: Options -> IO()
-installComposerLibs Options{..} =
-  do curPath <- getCurrentDirectory
-     verboseLn $ "current directory: "++curPath
-     verbose "  Trying to download and install Composer libraries..."
-     (exit_code, stdout', stderr') <- readCreateProcessWithExitCode myProc ""
-     case exit_code of
-       SE.ExitSuccess   -> do verboseLn $
-                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                              verboseLn stdout'
-       SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
+installComposerLibs :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+                       RIO env ()
+installComposerLibs = do
+    env <- ask
+    curPath <- liftIO $ getCurrentDirectory
+    verboseLn $ "current directory: "++curPath
+    verbose "  Trying to download and install Composer libraries..."
+    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc $ getOptions env)""
+    case exit_code of
+      SE.ExitSuccess   -> do verboseLn $
+                              " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
+                             verboseLn stdout'
+      SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where
-     myProc :: CreateProcess
-     myProc = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<>composerTargetPath
+     myProc :: Options -> CreateProcess
+     myProc opts = CreateProcess 
+       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<>composerTargetPath opts
        , cwd = Nothing
        , env = Nothing
        , std_in = Inherit
@@ -173,10 +167,13 @@ installComposerLibs Options{..} =
        , use_process_jobs = False
        }
      composerTargetPath = dirPrototype 
-     failOutput (exit_code, stdout', stderr') =
+     failOutput :: (HasOptions env) =>
+                   (ExitCode, String, String) -> RIO env ()
+     failOutput (exit_code, stdout', stderr') = do
+        env <- ask
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
-            , "composerTargetPath: "++composerTargetPath
+            , "composerTargetPath: "++composerTargetPath (getOptions env)
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
             (if null stdout' then [] else "stdout:" : lines stdout') ++

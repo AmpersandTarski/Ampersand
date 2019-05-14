@@ -2,8 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.PHP 
          ( evaluateExpSQL
-          , createTempDatabase
-          , tempDbName
+         , createTempDatabase
+         , tempDbName
          ) where
 
 import           Ampersand.Basics
@@ -40,28 +40,31 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: Options -> FSpec -> Text.Text -> Expression -> IO [(String,String)]
-evaluateExpSQL opts@Options{..} fSpec dbNm expr =
-  -- verboseLn ("evaluateExpSQL fSpec "++showA expr)
-  -- verboseLn (intercalate "\n" . showPrf showA . cfProof opts) expr
-  -- verboseLn "End of proof"
-  performQuery opts dbNm violationsQuery
- where violationsExpr = conjNF opts expr
-       violationsQuery = prettySQLQuery 26 fSpec violationsExpr
+evaluateExpSQL :: (HasOptions env, HasHandles env) => FSpec -> Text.Text -> Expression ->  RIO env [(String,String)]
+evaluateExpSQL fSpec dbNm expr = do
+    env <- ask 
+    let violationsExpr = conjNF (getOptions env) expr
+        violationsQuery = prettySQLQuery 26 fSpec violationsExpr
+    -- verboseLn ("evaluateExpSQL fSpec "++showA expr)
+    -- verboseLn (intercalate "\n" . showPrf showA . cfProof opts) expr
+    -- verboseLn "End of proof"
+    performQuery dbNm violationsQuery
 
-performQuery :: Options -> Text.Text -> SqlQuery -> IO [(String,String)]
-performQuery opts@Options{..} dbNm queryStr =
- do { queryResult <- (executePHPStr . showPHP) php
-    ; if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-      then do mapM_ putStrLn (lines (Text.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
-              fatal ("PHP/SQL problem: "<>queryResult)
-      else case reads queryResult of
-             [(pairs,"")] -> return pairs
-             _            -> fatal ("Parse error on php result: \n"<>(unlines . map ("     " ++) . lines $ queryResult))
-    } 
+performQuery :: (HasOptions env, HasHandles env) =>
+                Text.Text -> SqlQuery ->  RIO env [(String,String)]
+performQuery dbNm queryStr = do
+    env <- ask
+    queryResult <- (executePHPStr . showPHP) (php $ getOptions env)
+    if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
+    then do mapM_ putStrLn (lines (Text.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
+            fatal ("PHP/SQL problem: "<>queryResult)
+    else case reads queryResult of
+           [(pairs,"")] -> return pairs
+           _            -> fatal ("Parse error on php result: \n"<>(unlines . map ("     " ++) . lines $ queryResult))
+     
    where 
-    php :: [Text.Text]
-    php =
+    php :: Options -> [Text.Text]
+    php opts =
       connectToMySqlServerPHP opts (Just dbNm) <>
       [ "$sql="<>queryAsPHP queryStr<>";"
       , "$result=mysqli_query($DB_link,$sql);"
@@ -81,45 +84,46 @@ performQuery opts@Options{..} dbNm queryStr =
       ]
 
 -- call the command-line php with phpStr as input
-executePHPStr :: Text.Text -> IO String
-executePHPStr phpStr =
- do { tempdir <- catch getTemporaryDirectory
-                       (\e -> do let err = show (e :: IOException)
-                                 putStrLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
-                                 return ".")
-    ; (tempPhpFile, temph) <- openTempFile tempdir "tmpPhpQueryOfAmpersand.php"
-    ; Text.hPutStr temph phpStr
-    ; hClose temph
-    ; results <- executePHP tempPhpFile
-  --  ; removeFile tempPhpFile
-    ; return (normalizeNewLines results)
-    }
-normalizeNewLines :: String -> String
+executePHPStr :: (HasHandles env) => Text.Text -> RIO env String
+executePHPStr phpStr = do
+    tempdir <- catch (liftIO getTemporaryDirectory)
+                     (\e -> do 
+                          let err = show (e :: IOException)
+                          putStrLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
+                          return "."
+                     )
+    (tempPhpFile, temph) <- liftIO $ openTempFile tempdir "tmpPhpQueryOfAmpersand.php"
+    liftIO $ Text.hPutStr temph phpStr
+    hClose temph
+    results <- executePHP tempPhpFile
+    return (normalizeNewLines results)
+    
+normalizeNewLines :: String -> String   --TODO: If Text is used for output, there will be no more need for normalization
 normalizeNewLines = f . L.intercalate "\n" . lines
   where 
     f [] = []
     f ('\r':'\n':rest) = '\n':f rest
     f (c:cs) = c: f cs 
 
-executePHP :: String -> IO String
+executePHP :: String ->  RIO env String
 executePHP phpPath = do
-   let cp = (shell command) 
-               { cwd = Just (takeDirectory phpPath)
-               }
-       inputFile = phpPath
-       outputFile = inputFile++"Result"
-       command = "php "++show inputFile++" > "++show outputFile
-   _ <- readCreateProcess cp ""
-   result <- readUTF8File outputFile
-   case result of
-     Right content -> do
-           removeFile outputFile
-           return content
-     Left err -> exitWith . PHPExecutionFailed $ 
-           ["PHP execution failed:"
-           ,"  Could not read file: "++outputFile
-           ,"    "++ err
-           ]
+    let cp = (shell command) 
+                { cwd = Just (takeDirectory phpPath)
+                }
+        inputFile = phpPath
+        outputFile = inputFile++"Result"
+        command = "php "++show inputFile++" > "++show outputFile
+    _ <- liftIO $ readCreateProcess cp ""
+    result <- liftIO $ readUTF8File outputFile
+    case result of
+      Right content -> do
+            liftIO $ removeFile outputFile
+            return content
+      Left err -> exitWith . PHPExecutionFailed $ 
+            ["PHP execution failed:"
+            ,"  Could not read file: "++outputFile
+            ,"    "++ err
+            ]
    
 
 showPHP :: [Text.Text] -> Text.Text
@@ -172,24 +176,26 @@ connectToTheDatabasePHP =
     , ""
     ]
 
-createTempDatabase :: Options -> FSpec -> IO Bool
-createTempDatabase opts@Options{..} fSpec =
- do { result <- executePHPStr .
-           showPHP $ phpStr
-    ; verboseLn $ 
+createTempDatabase :: (HasOptions env, HasHandles env, HasVerbosity env) =>
+                      FSpec ->  RIO env Bool
+createTempDatabase fSpec = do
+    env <- ask
+    let opts = getOptions env
+    result <- executePHPStr .
+              showPHP $ phpStr opts
+    verboseLn $ 
          if null result 
           then "Temp database created succesfully."
-          else "Temp database creation failed! :\n"<>lineNumbers phpStr<>"\nThe result:\n"<>result
-    ; return (null result)
-    }
+          else "Temp database creation failed! :\n"<>lineNumbers (phpStr opts)<>"\nThe result:\n"<>result
+    return (null result)
  where 
   lineNumbers :: [Text.Text] -> String
   lineNumbers = L.intercalate "  \n" . map withNumber . zip [1..] . map Text.unpack
     where
       withNumber :: (Int,String) -> String
       withNumber (n,t) = "/*"<>take (5-length(show n)) "00000"<>show n<>"*/ "<>t
-  phpStr :: [Text.Text]
-  phpStr = 
+  phpStr :: Options -> [Text.Text]
+  phpStr opts = 
     (connectToMySqlServerPHP opts Nothing) <>
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
     , ""

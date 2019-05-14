@@ -3,8 +3,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Misc.Options
         ( Options(..)
+        , App
+        , HasOptions(..),HasHandles(..)
         , FSpecFormat(..)
-        , getOptions
+        , getOptionsIO
         , showFormat
         , usageInfo'
         , writeConfigFile
@@ -87,8 +89,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
-                       , verbose :: String -> IO()
-                       , verboseLn :: String -> IO()
+                    --   , verbose :: String -> IO()
+                    --   , verboseLn :: String -> IO()
                        }
 data EnvironmentOptions = EnvironmentOptions
       { envArgs               :: [String]
@@ -103,6 +105,11 @@ data EnvironmentOptions = EnvironmentOptions
       , envPreVersion         :: Maybe String
       , envPostVersion        :: Maybe String  
       } deriving Show
+
+class HasOptions env where
+  getOptions :: env -> Options
+instance HasOptions Options where
+  getOptions = id
 
 dirPrototypeVarName :: String
 dirPrototypeVarName = "CCdirPrototype"
@@ -160,7 +167,7 @@ getEnvironmentOptions =
          Just fName -> readConfigFile fName
         where 
            readConfigFile yaml = do
-              putStrLn $ "Reading config file: "++yaml
+              runRIO stdout $ putStrLn $ "Reading config file: "++yaml
               config <- load yaml
               case keys config L.\\ ["switches"] of
                 []  -> do let switches :: [String] = YC.lookupDefault "switches" [] config
@@ -180,8 +187,8 @@ getEnvironmentOptions =
                      ] 
 
 
-getOptions :: IO Options
-getOptions = 
+getOptionsIO :: IO Options
+getOptionsIO = 
    do envOpts <- getEnvironmentOptions
       return (getOptions' envOpts)
 
@@ -269,13 +276,13 @@ getOptions' envOpts =
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
-                      , verbose          = \_ -> return()
-                      , verboseLn        = \_ -> return()
+                --      , verbose          = \_ -> return()
+                --      , verboseLn        = \_ -> return()
                       }
 writeConfigFile :: IO ()
 writeConfigFile = do
     writeFile sampleConfigFileName (unlines sampleConfigFile)
-    putStrLn (sampleConfigFileName++" written.")
+    runRIO stdout $ putStrLn (sampleConfigFileName++" written.")
     
 sampleConfigFileName :: FilePath
 sampleConfigFileName = "sampleconfig.yaml"
@@ -348,7 +355,7 @@ data FSpecFormat =
        | Ftexinfo
        | Ftextile
        deriving (Show, Eq, Enum, Bounded)
-allFSpecFormats :: String
+allFSpecFormats :: String   --TODO: Should be: allFSpecFormats :: [FSpecFormat]
 allFSpecFormats = 
      "[" ++
      L.intercalate ", " ((L.sort . map showFormat) [minBound..]) ++
@@ -370,11 +377,11 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option ['V']   ["verbose"]
                (NoArg (\opts -> opts{ verboseP  = True
-                                    , verbose   = putStr 
-                                    , verboseLn = \x-> do
+                                --    , verbose   = putStr 
+                                --    , verboseLn = \x-> do
                                         -- Since verbose is for debugging purposes in general, we want no buffering, because it is confusing while debugging.
-                                        hSetBuffering stdout NoBuffering
-                                        mapM_ putStrLn (lines x)
+                                --        hSetBuffering stdout NoBuffering
+                                --        mapM_ putStrLn (lines x)
                                     }))
                "verbose output, to report which files Ampersand writes."
             , Public)
@@ -668,3 +675,16 @@ publishOption (Option shorts longs args expl)
                            in if length nstr > i 
                            then (str, w:ws)
                            else fillUpto i nstr ws 
+
+data App = App
+  { opts :: !Options
+  , appHandle :: !Handle
+  }
+instance HasHandles App where
+  getHandle = appHandle
+
+instance HasVerbosity App where
+  getVerbosity app = 
+    if verboseP (getOptions app) then Loud else Silent
+instance HasOptions App where
+  getOptions = opts

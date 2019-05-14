@@ -11,10 +11,10 @@ import qualified Data.List.NonEmpty as NEL
 ampersand :: [FilePath] -> IO [[CtxError]]
 ampersand files = 
   do opts <- getOptions
-     mapM (runAmpersand opts) files
+     mapM (runAmpersand' opts) files
 
-runAmpersand :: Options -> FilePath -> IO [CtxError]
-runAmpersand opts file = 
+runAmpersand' :: Options -> FilePath -> IO [CtxError]
+runAmpersand' opts file = 
         do gFSpec <- createMulti opts{ fileName = Just file }
            case gFSpec of
               Errors err    -> return $ NEL.toList err

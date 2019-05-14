@@ -13,7 +13,7 @@ import           System.IO.Unsafe(unsafePerformIO)
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a
 exitWith x = unsafePerformIO $ do
-  mapM_ putStrLn message
+  runRIO stderr (mapM_ putStrLn message)
   SE.exitWith exitcode
  where (exitcode,message) = info x
 

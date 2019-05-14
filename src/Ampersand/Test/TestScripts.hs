@@ -22,7 +22,7 @@ getTestScripts =
 --data DirData = DirData FilePath DirContent       -- path and content of a directory
 
 testAmpersandScripts :: IO ()
-testAmpersandScripts = putStrLn "Testscripts of this kind are not available."
+testAmpersandScripts = runRIO stdout $ putStrLn "Testscripts of this kind are not available."
 {-
 testAmpersandScripts' :: IO ()
 testAmpersandScripts'

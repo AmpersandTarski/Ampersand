@@ -16,39 +16,36 @@ with the results from Haskell-based Ampersand rule evaluator. The latter is much
 therefore most likely to be correct in case of discrepancies.
 -}
 
-validateRulesSQL :: Options -> FSpec -> IO [String]
-validateRulesSQL opts@Options{..} fSpec =
- do { case filter (not . isSignal . fst) (allViolations fSpec) of
-         []    -> return()
-         viols -> exitWith . ViolationsInDatabase . map stringify $ viols
-    ; hSetBuffering stdout NoBuffering
+validateRulesSQL :: (HasOptions env, HasHandles env, HasVerbosity env) => FSpec ->  RIO env [String]
+validateRulesSQL fSpec = do
+    case filter (not . isSignal . fst) (allViolations fSpec) of
+       []    -> return()
+       viols -> exitWith . ViolationsInDatabase . map stringify $ viols
+    hSetBuffering stdout NoBuffering
 
-    ; verboseLn "Initializing temporary database (this could take a while)"
-    ; succes <- createTempDatabase opts fSpec
-    ; if succes 
-      then actualValidation 
-      else do { putStrLn "Error: Database creation failed. No validation could be done."
-              ; return []
-              }
-    } 
+    verboseLn "Initializing temporary database (this could take a while)"
+    succes <- createTempDatabase fSpec
+    if succes 
+    then actualValidation 
+    else do 
+        putStrLn "Error: Database creation failed. No validation could be done."
+        return []
   where
-   actualValidation = do
-    { let allExps = getAllInterfaceExps fSpec ++
-                    getAllRuleExps fSpec ++
-                    getAllPairViewExps fSpec ++
-                    getAllIdExps fSpec ++
-                    getAllViewExps fSpec
-
-    ; verboseLn $ "Number of expressions to be validated: "++show (length allExps)
-    ; results <- mapM (validateExp opts fSpec) allExps
-
-    ; case [ ve | (ve, False) <- results] of
-        [] -> do { verboseLn $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
-                 ; return []
-                 }
-        ves -> return $ "Validation error. The following expressions failed validation:"
-                      : map showVExp ves
-    }
+    actualValidation = do
+        let allExps = getAllInterfaceExps fSpec ++
+                      getAllRuleExps fSpec ++
+                      getAllPairViewExps fSpec ++
+                      getAllIdExps fSpec ++
+                      getAllViewExps fSpec
+        verboseLn $ "Number of expressions to be validated: "++show (length allExps)
+        results <- mapM (validateExp fSpec) allExps
+        case [ ve | (ve, False) <- results] of
+           [] -> do
+               verboseLn $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+               return []
+           ves -> return $ "Validation error. The following expressions failed validation:"
+                         : map showVExp ves
+    
 
 stringify :: (Rule,AAtomPairs) -> (String,[String])
 stringify (rule,pairs) = (name rule, map f . Set.elems $ pairs )
@@ -91,30 +88,28 @@ showVExp :: (Expression, String) -> String
 showVExp (expr, orig) = "Origin: "++orig++", expression: "++showA expr
 
 -- validate a single expression and report the results
-validateExp :: Options -> FSpec -> ValidationExp -> IO (ValidationExp, Bool)
-validateExp _ _ vExp@(EDcD{}, _)   = -- skip all simple relations
- do { putStr "."
-    ; return (vExp, True)
-    }
-validateExp opts@Options{..} fSpec vExp@(expr, orig) =
- do { violationsSQL <- evaluateExpSQL opts fSpec (tempDbName opts) expr
-    ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
-    ; if L.sort violationsSQL == L.sort violationsAmp
-      then
-       do { putStr "."
-          ; return (vExp, True)
-          }
-      else
-       do { putStrLn ""
-          ; putStrLn $ "Checking "++orig ++": expression = "++showA expr
-          ; putStrLn ""
-          ; putStrLn "Mismatch between SQL and Ampersand"
-          ; putStrLn $ showVExp vExp
-          ; putStrLn "SQL violations:"
-          ; putStrLn $ show violationsSQL
-          ; putStrLn "Ampersand violations:"
-          ; putStrLn $ show violationsAmp
-          ; return (vExp, False)
-          }
-    }
-
+validateExp :: (HasOptions env, HasHandles env) => FSpec -> ValidationExp ->  RIO env (ValidationExp, Bool)
+validateExp fSpec vExp =
+    case vExp of
+        (EDcD{}, _) -> do -- skip all simple relations
+            putStr "."
+            return (vExp, True)
+        (expr, orig) -> do
+            env <- ask
+            violationsSQL <- evaluateExpSQL fSpec (tempDbName $ getOptions env) expr
+            let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
+            if L.sort violationsSQL == L.sort violationsAmp
+            then do
+                putStr "."
+                return (vExp, True)
+            else do
+                putStrLn ""
+                putStrLn $ "Checking "++orig ++": expression = "++showA expr
+                putStrLn ""
+                putStrLn "Mismatch between SQL and Ampersand"
+                putStrLn $ showVExp vExp
+                putStrLn "SQL violations:"
+                putStrLn $ show violationsSQL
+                putStrLn "Ampersand violations:"
+                putStrLn $ show violationsAmp
+                return (vExp, False)
