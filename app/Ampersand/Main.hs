@@ -1,9 +1,10 @@
 {-# LANGUAGE RecordWildCards #-}
-module Main where
+module Main(main) where
 
 import           Ampersand
-import           Data.List
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import System.Environment    (getArgs, getProgName)
 
 main :: IO ()
 main =
@@ -15,10 +16,10 @@ main =
             ; gMulti <- createMulti opts
             ; case gMulti of
                 Errors err    -> 
-                   exitWith . NoValidFSpec . intersperse  (replicate 30 '=') 
-                 . fmap showErr . NEL.toList $ err
+                   exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
+                 . fmap show . NEL.toList $ err
                 Checked multi ws -> do
-                   showWarnings ws
+                   mapM_  putStrLn . concatMap (lines . show) $ ws
                    generateAmpersandOutput opts multi
                    putStrLn "Finished processing your model"
                    putStrLn . ("Your script has no errors " ++) $
@@ -30,15 +31,21 @@ main =
       Nothing -> -- No Ampersand script is provided 
          if or (map fst $ actionsWithoutScript opts)
          then verboseLn "No further actions, because no ampersand script is provided"
-         else putStrLn "No ampersand script provided. Use --help for usage information"
+         else do
+            args     <- getArgs
+            progName <- getProgName
+            exitWith . NoAmpersandScript $
+                 [ "No ampersand script provided. Use --help for usage information"
+                 , "   " <> progName <> (concat $ fmap (" " <>) args) ]
 
  where
    actionsWithoutScript :: Options -> [(Bool, IO())]
-   actionsWithoutScript options = 
-      [ ( test options                              , putStrLn $ "Executable: " ++ show (dirExec options) )
-      , ( showVersion options || verboseP options   , putStrLn $ versionText options  )
-      , ( genSampleConfigFile options               , writeConfigFile                 )
-      , ( showHelp options                          , putStrLn $ usageInfo' options   )
+   actionsWithoutScript opts@Options{..} = 
+      [ ( test                     , putStrLn $ "Executable: " ++ show dirExec )
+      , ( showVersion  || verboseP , putStrLn $ versionText opts)
+      , ( genSampleConfigFile      , writeConfigFile)
+      , ( showHelp                 , putStrLn $ usageInfo' opts)
+      , ( runAsDaemon              , runDaemon opts)
       ]
    
    versionText :: Options -> String

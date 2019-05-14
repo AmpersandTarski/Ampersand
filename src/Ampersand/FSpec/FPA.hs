@@ -4,7 +4,7 @@ module Ampersand.FSpec.FPA (FPA(..), FP(..), FPType(..), ShowLang(..), fpAnalyze
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
 import Ampersand.Basics
-import Data.Maybe
+import qualified RIO.List as L
 
 data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) } deriving Show
 
@@ -67,7 +67,7 @@ fpaInterface :: Interface -> FP
 fpaInterface ifc = 
    let nm = name ifc
        cmplxty = depth2Cmplxty $ getDepth $ ifcObj ifc
-       tp = fatal "TODO: fix to see if the interface contains editalbe fields"
+       tp = fatal "TODO: fix to see if the interface contains editable fields"
     in FP tp nm cmplxty
   where depth2Cmplxty :: Int -> Complexity
         depth2Cmplxty d | d <= 1    = Eenvoudig
@@ -79,7 +79,7 @@ fpaInterface ifc =
         getDepth ObjectDef{objmsub=Just si}
           = case si of 
              InterfaceRef{} -> 1
-             Box{}          -> 1 + maximum (map getDepth [x | BxExpr x <- siObjs si])
+             Box{}          -> 1 + (fromMaybe 0 . L.maximumMaybe . map getDepth $ [x | BxExpr x <- siObjs si])
 
 class ShowLang a where
   showLang :: Lang -> a -> String

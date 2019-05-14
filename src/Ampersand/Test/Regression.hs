@@ -8,16 +8,14 @@ where
 import Ampersand.Basics
 import Conduit
 import qualified Data.Conduit.List as CL
-import Data.Char
+import RIO.Char
 import System.FilePath ((</>),takeExtension)
-import System.Exit --(ExitCode, exitFailure, exitSuccess)
 import System.Process
 
 import Data.Yaml
-import GHC.Generics
 
 data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
-                | DirError IOError               
+                | DirError IOException               
 data DirData = DirData FilePath DirContent       -- path and content of a directory
 --data DirInfo = DirInfo FilePath [FilePath] TestInfo       -- list of testscripts and information on how to test them
 

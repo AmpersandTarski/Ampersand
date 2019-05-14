@@ -13,13 +13,12 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input (parseRule)
 import           Ampersand.Misc
-import           Data.Function (on)
 import           Data.Hashable
-import           Data.List (nub, intercalate, permutations, partition, sortBy)
-import           Data.Set (Set)
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
+import qualified RIO.Set.Partial as SetPartial 
 import           Data.Text (pack)
-
+import qualified RIO.List as L
 
 {- SJC:
 Ideas for future work:
@@ -43,7 +42,7 @@ cfProofs, dfProofs :: Expression -> [(Expression, Proof Expression)]
  where
    prfs :: Bool -> Expression -> [(Expression, Proof Expression)]
    prfs dnf expr
-    = nub [ (rTerm2expr t, map makeExpr derivs) | (t, derivs)<-f (expr2RTerm expr) ]
+    = L.nub [ (rTerm2expr t, map makeExpr derivs) | (t, derivs)<-f (expr2RTerm expr) ]
       where
         f :: RTerm -> [(RTerm,[(RTerm, [String], String)])]
         f term = [ (term,[(term, [], "<=>")]) | null dsteps ]++
@@ -386,15 +385,15 @@ dSteps drs x = dStps x
   matchableRules
    = [ (template, rewriteTerms )     -- each tuple may represent multiple rules.
      | cl<-eqCl lTerm (concatMap f drs)  -- divide into classes to save a little on the number of matches.
-     , let template = lTerm (head cl)   -- This is the template against which to match full expressions.
+     , let template = lTerm (NEL.head cl)   -- This is the template against which to match full expressions.
      , let rewriteTerms = stepTerms template cl
      , not (null rewriteTerms)
      ]
      where f (DEquiR l r) = [DInclR l r, DInclR r l]
            f inclusion = [inclusion]
-           stepTerms :: RTerm -> [DerivRule] -> [RTerm]
+           stepTerms :: RTerm -> NEL.NonEmpty DerivRule -> [RTerm]
            stepTerms template cl  -- Only select rules with bindings within the template. Otherwise, we would have to "invent" bindings.
-            = [term' | rule<-cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template ]
+            = [term' | rule<-NEL.toList cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template ]
 
 {-
      showMatchableRules :: [(RTerm,[RTerm])] -> String
@@ -406,8 +405,8 @@ splitList :: [a] -> [([a],a,[a])]
 splitList lst = [(take i lst,l,drop (i+1) lst) | (i,l) <- zip [0..] lst]
 
 instance HasSignature RTerm where
-  sign (RIsc a)      = sign$ Set.findMin a
-  sign (RUni a)      = sign$ Set.findMin a
+  sign (RIsc a)      = sign$ SetPartial.findMin a
+  sign (RUni a)      = sign$ SetPartial.findMin a
   sign (RDif a _)    = sign a
   sign (RCpl a)      = sign a
   sign (RDia a b)    = Sign (source a) (target b)
@@ -553,11 +552,11 @@ rTerm2expr term
      RIsc rs    -> case Set.toList (Set.map rTerm2expr rs) of
                     [e] -> e
                     []  -> fatal "empty set in RIsc is illegal."
-                    es  -> let oper l r = EIsc (l,r) in foldr1 oper es
+                    e:es  -> let oper l r = EIsc (l,r) in foldr oper e es
      RUni rs    -> case Set.toList (Set.map rTerm2expr rs) of
                     [e] -> e
                     []  -> fatal "empty set in RUni is illegal."
-                    es  -> let oper l r = EUni (l,r) in foldr1 oper es
+                    e:es  -> let oper l r = EUni (l,r) in foldr oper e es
      RDif l r   -> EDif (rTerm2expr l, rTerm2expr r)
      RCpl e     -> ECpl (rTerm2expr e)
      RDia l r   -> EDia (rTerm2expr l, rTerm2expr r)
@@ -566,15 +565,15 @@ rTerm2expr term
      RRad rs    -> case map rTerm2expr rs of
                     [e] -> e
                     []  -> fatal "empty set in RRad is illegal."
-                    es  -> let oper l r = ERad (l,r) in foldr1 oper es
+                    e:es  -> let oper l r = ERad (l,r) in foldr oper e es
      RCps rs    -> case map rTerm2expr rs of
                     [e] -> e
                     []  -> fatal "empty set in RCps is illegal."
-                    es  -> let oper l r = ECps (l,r) in foldr1 oper es
+                    e:es  -> let oper l r = ECps (l,r) in foldr oper e es
      RPrd rs    -> case map rTerm2expr rs of
                     [e] -> e
                     []  -> fatal "empty set in RPrd is illegal."
-                    es  -> let oper l r = EPrd (l,r) in foldr1 oper es
+                    e:es  -> let oper l r = EPrd (l,r) in foldr oper e es
      RKl0 e     -> EKl0$ rTerm2expr e
      RKl1 e     -> EKl1$ rTerm2expr e
      RFlp e     -> EFlp$ rTerm2expr e
@@ -610,15 +609,15 @@ instance ShowIT RTerm where
      showExpr :: Int -> RTerm -> String
      showExpr i expr
       = case expr of
-          RIsc ls    -> wrap i 2 (intercalate inter  [showExpr 3 e | e<-Set.toList ls ])
-          RUni ls    -> wrap i 2 (intercalate union' [showExpr 3 e | e<-Set.toList ls ])
+          RIsc ls    -> wrap i 2 (L.intercalate inter  [showExpr 3 e | e<-Set.toList ls ])
+          RUni ls    -> wrap i 2 (L.intercalate union' [showExpr 3 e | e<-Set.toList ls ])
           RDif l r   -> wrap i 4 (showExpr 5 l++diff++showExpr 5 r)
           RLrs l r   -> wrap i 6 (showExpr 7 l++lresi++showExpr 7 r)
           RRrs l r   -> wrap i 6 (showExpr 7 l++rresi++showExpr 7 r)
           RDia l r   -> wrap i 6 (showExpr 7 l++rDia ++showExpr 7 r)
-          RCps ls    -> wrap i 2 (intercalate rMul [showExpr 3 e | e<-ls ])
-          RRad ls    -> wrap i 2 (intercalate rAdd [showExpr 3 e | e<-ls ])
-          RPrd ls    -> wrap i 2 (intercalate rPrd [showExpr 3 e | e<-ls ])
+          RCps ls    -> wrap i 2 (L.intercalate rMul [showExpr 3 e | e<-ls ])
+          RRad ls    -> wrap i 2 (L.intercalate rAdd [showExpr 3 e | e<-ls ])
+          RPrd ls    -> wrap i 2 (L.intercalate rPrd [showExpr 3 e | e<-ls ])
           RKl0 e     -> wrap i 9 (showExpr 9 e++closK0)
           RKl1 e     -> wrap i 9 (showExpr 9 e++closK1)
           RFlp e     -> wrap i 9 (showExpr 9 e++flp')
@@ -665,8 +664,8 @@ data DerivRule = DEquiR { lTerm :: RTerm  -- equivalence rule
                         }
 
 instance Show DerivRule where
-  showsPrec _ r@DEquiR{}  = showString (showIT (lTerm r)++" = " ++showIT (rTerm r))
-  showsPrec _ r@DInclR{}  = showString (showIT (lTerm r)++" |- "++showIT (rTerm r))
+  show r@DEquiR{}  = showIT (lTerm r)++" = " ++showIT (rTerm r)
+  show r@DInclR{}  = showIT (lTerm r)++" |- "++showIT (rTerm r)
 
 -- For documentation purposes, the derivation rule which proves the step is included.
 
@@ -674,11 +673,6 @@ data DerivStep = DStep { lhs :: RTerm
                        , rul :: (RTerm,Unifier,RTerm)
                        , rhs :: RTerm
                        }
-
--- instance Show DerivStep where
---  showsPrec _ r@DStep{}  = showString ("    "++showIT (lhs r)++"\n =  {" ++show (rul r)++"}\n    " ++showIT (rhs r))
-
-
 
 dRule :: Term TermPrim -> [DerivRule]
 dRule (PEqu _ l r) = [DEquiR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
@@ -711,7 +705,7 @@ weightNF dnf = w
 type Unifier = Set (String, RTerm)
 
 instance ShowIT Unifier where
-  showIT s = "{"++intercalate ", " [ str++"->"++showIT t | (str,t)<-Set.toList s ]++"}"
+  showIT s = "{"++L.intercalate ", " [ str++"->"++showIT t | (str,t)<-Set.toList s ]++"}"
 
 substitute :: String    -- A string to document fatals
            -> Unifier   -- the substitution, which in reality is a set of string/expression pairs.
@@ -740,18 +734,18 @@ substitute ruleDoc unifier term
                            [e] -> e
                            [] ->  fatal ("Rule:  "++ruleDoc++"\nVariable "++r++" is not in term "++showIT term++ " using unifier "++show unifier)
                            -- e.g. Variable r is not in term -V[A*B] /\ r[A*B] using unifier fromList [("A",RId Verzoek),("B",RId Persoon)]
-                           es ->  fatal ("Rule:  "++ruleDoc++"\nVariable "++r++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
+                           es ->  fatal ("Rule:  "++ruleDoc++"\nVariable "++r++" in term "++showIT term++" has been bound to multiple expressions:\n   "++L.intercalate "\n   " [showIT e | e<-es])
     subs (RId c)      = case [ e | (v,e)<-Set.toList unifier, v==name c] of
                            [e] -> e  -- This is e@(RId c')
                            []  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showIT term)
-                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
+                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++L.intercalate "\n   " [showIT e | e<-es])
     subs (RVee s t)   = case ([ e | (v,e)<-Set.toList unifier, v==name s], [ e | (v,e)<-Set.toList unifier, v==name t]) of
                            ([RId s'], [RId t']) -> RVee s' t'
                            (_,_)  -> fatal ("Rule:  "++ruleDoc++"\nSomething wrong with RVee in term "++showIT term++" with unifier "++show unifier)
     subs (RAtm a c)   = case [ e | (v,e)<-Set.toList unifier, v==name c] of
                            [RId c'] -> RAtm a c'
                            []  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showIT term)
-                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showIT e | e<-es])
+                           es  -> fatal ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showIT term++" has been bound to multiple expressions:\n   "++L.intercalate "\n   " [showIT e | e<-es])
     subs e@RConst{}   = e
 --     subs t            = fatal ("Rule:  "++ruleDoc++"\nError: "++showIT t++"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
 
@@ -804,7 +798,7 @@ matchLists rCombinator es es'
    , n /= 0 || fatal "n equals 0"
    , ms <- dist n es'     -- determine segments from es' (which is variable free) that have the same length as the template es
    , not (or [null m | m<-ms]) ||
-     fatal (concat ["\nms:  ["++intercalate ", " (map showIT m)++"]" | m<-ms])
+     fatal (concat ["\nms:  ["++L.intercalate ", " (map showIT m)++"]" | m<-ms])
    , let subTerms = map (combLst rCombinator) ms     -- make an RTerm from each sublist in ms
    , unif<-mix [ matches l r | (l,r)<-safezip es subTerms ]
    , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
@@ -842,14 +836,14 @@ matchSets :: (Set RTerm -> RTerm) -> Set RTerm -> Set RTerm -> [Unifier]
 matchSets rCombinator es es'
  -- set sizes are not necessarily equal.
  | Set.null es || Set.null es' = fatal "cannot match empty sets"
- | or [ not (isValid e) | e<-Set.toList es ] = fatal ("Invalid subterm(s): "++intercalate ", " [ showIT e | e<-Set.toList es,  not (isValid e) ])
- | or [ not (isValid e) | e<-Set.toList es'] = fatal ("Invalid subexpr(s): "++intercalate ", " [ showIT e | e<-Set.toList es', not (isValid e) ])
+ | or [ not (isValid e) | e<-Set.toList es ] = fatal ("Invalid subterm(s): "++L.intercalate ", " [ showIT e | e<-Set.toList es,  not (isValid e) ])
+ | or [ not (isValid e) | e<-Set.toList es'] = fatal ("Invalid subexpr(s): "++L.intercalate ", " [ showIT e | e<-Set.toList es', not (isValid e) ])
  | otherwise =
    [ unif
    | let n = Set.size cdes                      -- the length of the template, which contains variables
    , partition' <- parts n cdes'                 -- determine segments from the expression with the same length. partition' :: Set (Set RTerm)
    , let subTerms = Set.map (combSet rCombinator) partition'      -- make an RTerm from each subset in ms. subTerms :: Set RTerm
-   , template <- permutations (Set.toList cdes)
+   , template <- L.permutations (Set.toList cdes)
    , unif <- mix [ matches l r | (l,r) <- safezip template (Set.toList subTerms) ]
    , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
    ]
@@ -1238,9 +1232,9 @@ Until the new normalizer works, we will have to work with this one. So I have in
                                                                     (f,steps',equ'') = nM posCpl r []
   nM posCpl x@(EIsc (l,r)) rs
 -- Absorb equals:    r/\r  -->  r
-      | or [length cl>1 |cl<-absorbClasses]
-           = ( case absorbClasses of [] -> fatal "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (./\.) [head cl | cl<-absorbClasses]
-             , [shw e++" /\\ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
+      | or [length cl>1 |cl<-NEL.toList absorbClasses]
+           = ( foldr1 (./\.) (fmap NEL.head absorbClasses)
+             , [shw e++" /\\ "++shw e++" = "++shw e | cl<-NEL.toList absorbClasses, length cl>1, let e=NEL.head cl]
              , "<=>"
              )
 -- Absorb True:    r/\V  --> r
@@ -1256,14 +1250,24 @@ Until the new normalizer works, we will have to work with this one. So I have in
       | t/=l || f/=r
            = (t ./\. f, steps++steps', fEqu [equ',equ''])
       | not eq && or [length cl>1 |cl<-absorbAsy]
-           = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsy, let e=head cl]
-             , [shw e++" /\\ "++shw (flp e)++" |- I, because"++shw e++" is antisymmetric" | cl<-absorbAsy, let e=head cl]
+           = ( foldr1 (./\.) ( let absorbAsy1 = case absorbAsy of
+                                                  [] -> fatal "impossible" -- because of above or-clause
+                                                  h:tl -> h NEL.:| tl
+                                   fun cl = let e = NEL.head cl in
+                                            if length cl>1 then EDcI (source e) else e in
+                               fmap fun absorbAsy1) 
+             , [shw e++" /\\ "++shw (flp e)++" |- I, because"++shw e++" is antisymmetric" | cl<-absorbAsy, let e=NEL.head cl]
              , "==>"
              )
 -- Absorb if r is antisymmetric and reflexive:    r/\r~ = I
       | or [length cl>1 |cl<-absorbAsyRfx]
-           = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsyRfx, let e=head cl]
-             , [shw e++" /\\ "++shw (flp e)++" = I, because"++shw e++" is antisymmetric and reflexive" | cl<-absorbAsyRfx, let e=head cl]
+           = ( foldr1 (./\.) ( let absorbAsyRfx1 = case absorbAsyRfx of
+                                                  [] -> fatal "impossible" -- because of above or-clause
+                                                  h:tl -> h NEL.:| tl
+                                   fun cl = let e = NEL.head cl in
+                                            if length cl>1 then EDcI (source e) else e in
+                               fmap fun absorbAsyRfx1)
+             , [shw e++" /\\ "++shw (flp e)++" = I, because"++shw e++" is antisymmetric and reflexive" | cl<-absorbAsyRfx, let e=NEL.head cl]
              , "<=>"
              )
 -- Absorb:    (x\\/y)/\\y  =  y
@@ -1275,38 +1279,63 @@ Until the new normalizer works, we will have to work with this one. So I have in
       | isEUni l && not (null absor1)
            = ( case head absor1 of
                  (_,[]) -> r
-                 (_,ts) -> foldr1 (.\/.) ts ./\. r
+                 (_,t':ts) -> foldr (.\/.) t' ts ./\. r
              , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',_)<-absor1]
              , "<=>"
              )
       | isEUni r && not (null absor1')
            = ( case head absor1' of
                  (_,[]) -> l
-                 (_,ts) -> l ./\. foldr1 (.\/.) ts
+                 (_,t':ts) -> l ./\. foldr (.\/.) t' ts
              , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',_)<-absor1']
              , "<=>"
              )
 -- Avoid complements: x/\\-y = x-y
       | (not.null) negList && (not.null) posList
-           = ( foldl (.-.) (foldr1 (./\.) posList) (map notCpl negList)
+           = let posList' = head posList NEL.:| tail posList in
+             ( L.foldl (.-.) (foldr1 (./\.) posList') (map notCpl negList)
              , [ "Avoid complements, using law x/\\-y = x-y" ]
              , "<=>"
              )
       | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
       where (t,steps, equ')  = nM posCpl l []
             (f,steps',equ'') = nM posCpl r (l:rs)
-            absorbClasses = eqClass (==) (exprIsc2list l++exprIsc2list r)
-            incons = [conjunct |conjunct<-exprIsc2list r,conjunct==notCpl l]
-            absor0  = [disjunct | disjunct<-exprUni2list l, f'<-rs++exprIsc2list r, disjunct==f']
-            absor0' = [disjunct | disjunct<-exprUni2list r, f'<-rs++exprIsc2list l, disjunct==f']
-            absor1  = [(disjunct, filter (disjunct /=) (exprUni2list l)) | disjunct<-exprUni2list l, ECpl f'<-rs++exprIsc2list r, disjunct==f']++
-                      [(disjunct, filter (disjunct /=) (exprUni2list l)) | disjunct@(ECpl t')<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
-            absor1' = [(disjunct, filter (disjunct /=) (exprUni2list r)) | disjunct<-exprUni2list r, ECpl f'<-rs++exprIsc2list l, disjunct==f']++
-                      [(disjunct, filter (disjunct /=) (exprUni2list r)) | disjunct@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
-            absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
-            absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
-            (negList,posList) = partition isNeg (exprIsc2list l++exprIsc2list r)
-            eList  = rs++exprIsc2list l++exprIsc2list r
+            absorbClasses :: NEL.NonEmpty (NEL.NonEmpty Expression)
+            absorbClasses = case eqClass (==) (NEL.toList $ exprIsc2list l<>exprIsc2list r) of
+                               []   -> fatal "Impossible"
+                               h:tl -> h NEL.:| tl 
+            incons = NEL.filter (\conjunct -> conjunct ==notCpl l) $ exprIsc2list r
+            absor0  = [disjunct | disjunct<-NEL.toList $ exprUni2list l
+                                , f'<-NEL.toList . appendLeft rs $ exprIsc2list r
+                                , disjunct==f']
+            absor0' = [disjunct | disjunct<-NEL.toList $ exprUni2list r
+                                , f'<-NEL.toList . appendLeft rs $ exprIsc2list l
+                                , disjunct==f']
+            absor1  = [(disjunct, NEL.filter (disjunct /=) (exprUni2list l)) 
+                      | disjunct<-NEL.toList $ exprUni2list l
+                      , ECpl f'<-NEL.toList . appendLeft rs $ exprIsc2list r
+                      , disjunct==f'
+                      ]++
+                      [(disjunct, NEL.filter (disjunct /=) (exprUni2list l)) 
+                      | disjunct@(ECpl t')<-NEL.toList $ exprUni2list l
+                      , f'<-NEL.toList . appendLeft rs $ exprIsc2list r
+                      , t'==f']
+            absor1' = [(disjunct, NEL.filter (disjunct /=) (exprUni2list r)) 
+                      | disjunct<-NEL.toList $ exprUni2list r
+                      , ECpl f'<-NEL.toList . appendLeft rs $ exprIsc2list l
+                      , disjunct==f'
+                      ]++
+                      [(disjunct, NEL.filter (disjunct /=) (exprUni2list r))
+                      | disjunct@(ECpl t')<-NEL.toList $ exprUni2list r
+                      , f'<-NEL.toList . appendLeft rs $ exprIsc2list l
+                      , t'==f']
+            absorbAsy :: [NEL.NonEmpty Expression]
+            absorbAsy = eqClass same (NEL.toList eList) where e `same` e' = isAsy e && isAsy e' && e == flp e'
+            absorbAsyRfx :: [NEL.NonEmpty Expression]
+            absorbAsyRfx = eqClass same (NEL.toList eList) where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
+            (negList,posList) = NEL.partition isNeg (exprIsc2list l<>exprIsc2list r)
+            eList :: NEL.NonEmpty Expression
+            eList  = appendLeft rs $ exprIsc2list l<>exprIsc2list r
   nM posCpl (EUni (ECpl x,r@(ELrs (z,y)))) _          = if sign x==sign z -- necessary to guarantee that sign expr is equal to sign of the result
                                                         then (notCpl (x .:. y) .\/. z, ["remove left residual (/)"],"<=>")
                                                         else (notCpl t .\/. f, steps++steps', fEqu [equ',equ''])
@@ -1331,9 +1360,9 @@ Until the new normalizer works, we will have to work with this one. So I have in
 -- Absorb equals:    r\/r  -->  r
       | t/=l || f/=r
            = (t .\/. f, steps++steps', fEqu [equ',equ''])
-      | or [length cl>1 |cl<-absorbClasses]   -- yields False if absorbClasses is empty
-           = ( foldr1 (.\/.) [head cl | cl<-absorbClasses]  -- cl cannot be empty, because it is made by eqClass
-             , [shw e++" \\/ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
+      | or [length cl>1 |cl<-NEL.toList absorbClasses]   -- yields False if absorbClasses is empty
+           = ( foldr1 (.\/.) (fmap NEL.head absorbClasses)  -- cl cannot be empty, because it is made by eqClass
+             , [shw e++" \\/ "++shw e++" = "++shw e | cl<-NEL.toList absorbClasses, length cl>1, let e=NEL.head cl]
              , "<=>"
              )
 -- Tautologies:
@@ -1350,14 +1379,14 @@ Until the new normalizer works, we will have to work with this one. So I have in
       | isEIsc l && not (null absor1)
            = ( case head absor1 of
                  (_,[]) -> r
-                 (_,ts) -> foldr1 (./\.) ts .\/. r
+                 (_,t':ts) -> foldr (./\.) t' ts .\/. r
              , ["absorb "++shw t'++", using law (x/\\-y)\\/y  =  x\\/y" | (t',_)<-absor1]
              , "<=>"
              )
       | isEIsc r && not (null absor1')
            = ( case head absor1' of
                  (_,[]) -> l
-                 (_,ts) -> l .\/. foldr1 (./\.) ts
+                 (_,t':ts) -> l .\/. foldr (./\.) t' ts
              , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
              , "<=>"
              )
@@ -1365,13 +1394,42 @@ Until the new normalizer works, we will have to work with this one. So I have in
       where (t,steps, equ')  = nM posCpl l []
             (f,steps',equ'') = nM posCpl r (l:rs)
          -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
-            absorbClasses = eqClass (==) (exprUni2list l++exprUni2list r)
+            absorbClasses :: NEL.NonEmpty (NEL.NonEmpty Expression)
+            absorbClasses = case eqClass (==) (NEL.toList $ exprUni2list l<>exprUni2list r) of
+                              [] -> fatal "Impossible"
+                              h:tl -> h NEL.:| tl
          -- tautologies occur if -r\/r, so we are looking for pairs, (x,l) such that x== -l
-            tauts = [t' |disjunct<-exprUni2list r,disjunct==notCpl l, ECpl t'<-[disjunct,l]]
-            absor0  = [t' | t'<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
-            absor0' = [t' | t'<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
-            absor1  = [(t', filter (t' /=) (exprIsc2list l)) | t'<-exprIsc2list l, ECpl f'<-rs++exprUni2list r, t'==f']++[(e, filter (e /=) (exprIsc2list l)) | e@(ECpl t')<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
-            absor1' = [(t', filter (t' /=) (exprIsc2list r)) | t'<-exprIsc2list r, ECpl f'<-rs++exprUni2list l, t'==f']++[(e, filter (e /=) (exprIsc2list r)) | e@(ECpl t')<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
+            tauts = [t' |disjunct<-NEL.toList $ exprUni2list r,disjunct==notCpl l, ECpl t'<-[disjunct,l]]
+            absor0 :: [Expression]
+            absor0  = [t' 
+                      | t'<-NEL.toList $ exprIsc2list l
+                      , f'<-NEL.toList . appendLeft rs $ exprUni2list r
+                      , t'==f']
+            absor0' :: [Expression]
+            absor0' = [t' 
+                      | t'<-NEL.toList $ exprIsc2list r
+                      , f'<-NEL.toList . appendLeft rs $ exprUni2list l
+                      , t'==f']
+            absor1 ::[(Expression, [Expression])]
+            absor1  = [(t', NEL.filter (t' /=) (exprIsc2list l)) 
+                      | t'<-NEL.toList $ exprIsc2list l
+                      , ECpl f'<-NEL.toList . appendLeft rs $ exprUni2list r
+                      , t'==f'
+                      ]++
+                      [(e, filter (e /=) (NEL.toList $ exprIsc2list l)) 
+                      | e@(ECpl t')<-NEL.toList $ exprIsc2list l
+                      , f'<-NEL.toList . appendLeft rs $ exprUni2list r
+                      , t'==f']
+            absor1':: [(Expression, [Expression])]
+            absor1' = [(t', filter (t' /=) (NEL.toList $ exprIsc2list r)) 
+                      | t'<-NEL.toList $ exprIsc2list r
+                      , ECpl f'<-NEL.toList . appendLeft rs $ exprUni2list l
+                      , t'==f'
+                      ]++
+                      [(e, filter (e /=) (NEL.toList $ exprIsc2list r)) 
+                      | e@(ECpl t')<-NEL.toList $ exprIsc2list r
+                      , f'<-NEL.toList . appendLeft rs $ exprUni2list l
+                      , t'==f']
 -- Issue #72: The following rule may not be used, because multiplicities are not yet proven but must be enforced. So the normalizer may not assume them.
 --  nM _ (EFlp e) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
   nM _ x _               = (x,[],"<=>")
@@ -1432,7 +1490,7 @@ isEIsc :: Expression -> Bool
 isEIsc EIsc{}  = True
 isEIsc _       = False
 
-conjuncts :: Options -> Rule -> [Expression]
+conjuncts :: Options -> Rule -> NEL.NonEmpty Expression
 conjuncts opts r = exprIsc2list
                --  . (\e -> trace ("conjNF of that expression: "++show e) e)
                  . conjNF opts
@@ -1440,7 +1498,7 @@ conjuncts opts r = exprIsc2list
                  . formalExpression $ r
 
 allShifts :: Options -> DnfClause -> [DnfClause]
-allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
+allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
  where
  {-
@@ -1454,17 +1512,18 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
    | null (antcs dc)|| null (conss dc) = [dc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
    | otherwise = [ Dnf { antcs = ass
                        , conss = case css of
-                                   [] -> let antcExpr = foldr1 (./\.) ass in
-                                         if isEndo antcExpr then [EDcI (source antcExpr)] else fatal "antcExpr should be endorelation"
-                                   _  -> css
+                                   [] -> let antcExpr :: Expression
+                                             antcExpr = foldr1 (./\.) ass in
+                                         if isEndo antcExpr then (EDcI (source antcExpr) NEL.:| []) else fatal "antcExpr should be endorelation"
+                                   h:tl -> h NEL.:| tl
                        }
-                 | (ass,css)<-nub (move (antcs dc) (conss dc))
+                 | (ass,css)<-L.nub (move (antcs dc) (NEL.toList $ conss dc))
                  ]
    where
    -- example:  r;s /\ p;r |- x;y   and suppose x and y are both univalent.
    --  antcs =  [ r;s, p;r ]
    --  conss =  [ x;y ]
-    move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
+    move :: NEL.NonEmpty Expression -> [Expression] -> [(NEL.NonEmpty Expression,[Expression])]
     move ass [] = [(ass,[])]
     move ass css
      = (ass,css):
@@ -1473,14 +1532,16 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
                 , length (eqClass (==) headEs) == 1                    -- example: True, because map head css == [ "x" ]
                 , let h=head headEs                                    -- example: h= "x"
                 , isUni h                                              -- example: assume True
-                , ts<-move [if source h==source as then flp h.:.as else fatal "type mismatch"
-                           |as<-ass] (map tailECps css)]++ -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
+                , ts<-move ( let fun as = if source h==source as then flp h.:.as else fatal "type mismatch" in
+                             fmap fun ass
+                           ) (map tailECps css)]++ -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
             [ts | let lastEs = map lastECps css
                 , length (eqClass (==) lastEs) == 1
                 , let l=head lastEs
                 , isInj l
-                , ts<-move [if target as==target l then as.:.flp l else fatal "type mismatch"
-                           |as<-ass] (map initECps css)]   -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
+                , ts<-move ( let fun as = if target as==target l then as.:.flp l else fatal "type mismatch" in
+                             fmap fun ass
+                           ) (map initECps css)]   -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
        else []
    -- Here is (informally) what the example does:
    -- move [ r;s , p;r ] [ x;y ]
@@ -1490,38 +1551,36 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
    -- [ ( [ r;s , p;r ] , [ x;y ] ), ( [ x~;r;s , x~;p;r ] , [ y ] ), ( [ y~;x~;r;s , y~;x~;p;r ] , [] ) ]
 
   shiftR :: DnfClause -> [DnfClause]
-  shiftR dc
-   | null (antcs dc) || null (conss dc) = [dc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
-   | otherwise                = [ Dnf (case ass of
-                                        [] -> let consExpr = foldr1 (.\/.) css in
-                                              if source consExpr==target consExpr then [EDcI (source consExpr)] else fatal "consExpr should be endorelation"
-                                        _  -> ass
-                                      ) css
-                                | (ass,css)<-nub (move (antcs dc) (conss dc))
-                                ]
+  shiftR dc =[ Dnf { antcs = ass --case ass of
+                         --     [] -> let consExpr = foldr1 (.\/.) css in
+                         --           if source consExpr==target consExpr then EDcI (source consExpr) NEL.:| [] else fatal "consExpr should be endorelation"
+                         --     h:tl  -> h NEL.:| tl
+                   , conss = css
+                   }
+             | (ass,css)<-L.nub . NEL.toList $ move (antcs dc) (conss dc)
+             ]
    where
    -- example  "r;s /\ r;r |- x;y"   and suppose r is both surjective.
    --  ass =  [ r;s , r;r ]
    --  css =  [ x;y ]
-    move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
+    move :: NEL.NonEmpty Expression -> NEL.NonEmpty Expression -> NEL.NonEmpty (NEL.NonEmpty Expression,NEL.NonEmpty Expression)
     move ass css =
-     case ass of
-      [] -> [] -- was [([EDcI (target (last css))],css)]
-      _  ->
-       (ass,css):
-       if and [ (not.isEDcI) as | as<-ass]
-       then [ts | let headEs = map headECps ass
-                , length (eqClass (==) headEs) == 1                      -- example: True, because map headECps ass == [ "r", "r" ]
-                , let h=head headEs                                      -- example: h= "r"
+       (ass, css) NEL.:|
+       if and [ (not.isEDcI) as | as<-NEL.toList ass]
+       then [ts | let headEs = fmap headECps ass
+                , length (eqClass (==) (NEL.toList headEs)) == 1                      -- example: True, because map headECps ass == [ "r", "r" ]
+                , let h=NEL.head headEs                                      -- example: h= "r"
                 , isSur h                                                -- example: assume True
-                , ts<-move (map tailECps ass) [if source h==source cs then flp h.:.cs else fatal "type mismatch"
-                                              |cs<-css]]++   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
-            [ts | let lastEs = map lastECps ass
-                , length (eqClass (==) lastEs) == 1                      -- example: False, because map lastECps ass == [ ["s"], ["r"] ]
-                , let l=head lastEs
+                , ts<-NEL.toList $ move (fmap tailECps ass) ( let fun cs = if source h==source cs then flp h.:.cs else fatal "type mismatch" in
+                                                 fmap fun css)
+            ]<>   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
+            [ts | let lastEs = fmap lastECps ass
+                , length (eqClass (==) (NEL.toList lastEs)) == 1                      -- example: False, because map lastECps ass == [ ["s"], ["r"] ]
+                , let l=NEL.head lastEs
                 , isTot l
-                , ts<-move (map initECps ass) [if target cs==target l then cs.:.flp l else fatal "type mismatch"
-                                              |cs<-css]]     -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
+                , ts<-NEL.toList $ move (fmap initECps ass) ( let fun cs = if target cs==target l then cs.:.flp l else fatal "type mismatch" in
+                                                 fmap fun css)
+            ]     -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
        else []
    -- Here is (informally) what the example does:
    -- move [ r;s , r;r ] [ x;y ]
@@ -1537,12 +1596,8 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
 
   normDNF :: DnfClause -> DnfClause
   normDNF dc = 
-    Dnf { antcs = case antcs dc of
-                   [] -> []
-                   _  -> (exprIsc2list . conjNF opts . foldr1 (./\.)) (antcs dc)
-        , conss = case conss dc of
-                   [] -> []
-                   _  -> (exprUni2list . disjNF opts . foldr1 (.\/.)) (conss dc)
+    Dnf { antcs = exprIsc2list . conjNF opts . foldr1 (./\.) $ antcs dc
+        , conss = exprUni2list . disjNF opts . foldr1 (.\/.) $ conss dc
         }
 
   pnEq :: DnfClause -> Bool
@@ -1579,25 +1634,52 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
 
 makeAllConjs :: Options -> Rules -> [Conjunct]
 makeAllConjs opts allRls =
-  let conjExprs :: [(Expression, Rules)]
-      conjExprs = map (\(a,b) -> (a,Set.fromList b)) 
-                . converse 
-                $ [ (rule, conjuncts opts rule) | rule <- sortBy (compare `on` name) . Set.toList $ allRls ]
-      conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
-                     , rc_orgRules   = rs
-                     , rc_conjunct   = expr
-                     -- , rc_conjunct_inv = notCpl expr
-                     , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
-                     }
-              | ((expr, rs),i) <- zip conjExprs [0..]
-              ]
-  in  conjs
+   [ Cjct { rc_id = "conj_"++show (i :: Int)
+          , rc_orgRules   = rs 
+          , rc_conjunct   = expr
+          , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
+          }
+   | (i , (expr, rs)) <- zip [0..]  conjExprs
+   ]
    where
+      conjExprs :: [(Expression, NEL.NonEmpty Rule)]
+      conjExprs = converseNE . map conjTupel . Set.toList $ allRls
+      conjTupel rule = (rule , conjuncts opts rule)
       expr2dnfClause :: Expression -> DnfClause
-      expr2dnfClause = split (Dnf [] []) . exprUni2list
+      expr2dnfClause = split ([],[]) . exprUni2list
        where
-         split :: DnfClause -> [Expression] -> DnfClause
-         split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest
-         split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
-         split dc              []             = dc
+         split :: ([Expression],[Expression] ) -> NEL.NonEmpty Expression -> DnfClause
+         split (antc, cons) expr =
+           case NEL.head expr of
+              ECpl e -> split' (e:antc, cons) (NEL.tail expr)
+              e      -> split' (antc,e:cons)  (NEL.tail expr)
+         split' :: ([Expression],[Expression] ) -> [Expression] -> DnfClause
+         split' (antc, cons) [] = Dnf (case antc of
+                                        [] -> fatal "This should be impossible"
+                                        h:tl -> h NEL.:| tl)
+                                      (case cons of
+                                        [] -> fatal "This should be impossible"
+                                        h:tl -> h NEL.:| tl)
+         split' (antc, cons) (h:tl) = split (antc, cons) (h NEL.:| tl)
 
+
+
+appendLeft :: [a] -> NEL.NonEmpty a -> NEL.NonEmpty a
+appendLeft lst ne = 
+  case reverse lst of
+    [] -> ne
+    x:xs -> appendLeft xs $ x NEL.<| ne
+
+foldr1 :: (Expression -> Expression -> Expression) -> NEL.NonEmpty Expression -> Expression
+foldr1 fun ne = foldr fun (NEL.head ne) (NEL.tail ne)
+
+-- TODO: Get rid of head', tail', init' and last' in this module. These are introduced here 
+--  whith the introduction to RIO. However, in this module there is too much useage of these functions
+
+head,last :: [a] -> a
+head = fromMaybe (fatal "Illegal use of head") . L.headMaybe
+last = fromMaybe (fatal "Illegal use of last") . L.lastMaybe
+
+tail,init :: [a] -> [a]
+tail = fromMaybe (fatal "Illegal use of tail") . L.tailMaybe
+init = fromMaybe (fatal "Illegal use of init") . L.initMaybe

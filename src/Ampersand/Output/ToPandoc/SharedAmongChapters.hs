@@ -33,20 +33,19 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , sortWith)
 where
 import           Ampersand.ADL1 hiding (Meta)
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (Reader,Identity,toList,link)
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc
 import           Ampersand.Output.PandocAux
-import           Data.List
-import           Data.Maybe
-import           Data.Ord
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import qualified Data.Time.Format as DTF
-import           Data.Typeable
+import           Data.Typeable (typeOf)
 import           GHC.Exts(sortWith)
+import qualified RIO.List as L
 import           Text.Pandoc hiding (trace)
 import           Text.Pandoc.Builder
 
@@ -179,14 +178,13 @@ pandocEqnArray xs
 
 data CrossrefType = Dfn | Agr | Eq | Sec | Tbl | Fig -- Special prefixes that make pandoc-crossref work. 
 instance Show CrossrefType where
-  showsPrec _ x
-   = showString $ case x of
-                    Dfn -> "lst:"
-                    Agr -> "agr:"
-                    Eq  -> "eq:"
-                    Sec -> "sec:"
-                    Tbl -> "tbl:"
-                    Fig -> "fig:"
+  show x = case x of
+            Dfn -> "lst:"
+            Agr -> "agr:"
+            Eq  -> "eq:"
+            Sec -> "sec:"
+            Tbl -> "tbl:"
+            Fig -> "fig:"
 pandocEquationWithLabel :: FSpec -> XRefSection -> Inlines -> Blocks
 pandocEquationWithLabel fSpec xref x = 
   para (strong (xDefInln fSpec xref) <> x)
@@ -333,7 +331,7 @@ orderingByTheme fSpec
  = f ( Counter 1 1 1 --the initial numbers of the countes
      , (sortWith origin . filter rulMustBeShown . Set.elems . fallRules)  fSpec
      , (sortWith origin . filter relMustBeShown . Set.elems . relsDefdIn) fSpec 
-     , (sortBy conceptOrder . filter cptMustBeShown . Set.elems . concs)  fSpec
+     , (L.sortBy conceptOrder . filter cptMustBeShown . Set.elems . concs)  fSpec
      ) $
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
      ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
@@ -420,11 +418,11 @@ orderingByTheme fSpec
         , restRuls, restDcls, restCpts)
         )
      where
-       (thmRuls,restRuls) = partition (inThisTheme rulesInTheme) ruls
+       (thmRuls,restRuls) = L.partition (inThisTheme rulesInTheme) ruls
           where rulesInTheme p = Set.filter ( \r -> Just (name p) == rrpat r) (fallRules fSpec)
-       (themeDcls,restDcls) = partition (inThisTheme relsInTheme) rels
+       (themeDcls,restDcls) = L.partition (inThisTheme relsInTheme) rels
           where relsInTheme p = relsDefdIn p `Set.union` bindedRelationsIn p
-       (themeCpts,restCpts) = partition (inThisTheme concs) cpts
+       (themeCpts,restCpts) = L.partition (inThisTheme concs) cpts
        inThisTheme :: Eq a => (Pattern -> Set.Set a) -> a -> Bool
        inThisTheme allElemsOf x
          = case mPat of
@@ -531,17 +529,18 @@ purposes2Blocks opts ps
         ref :: Purpose -> [Inline]
         ref purp = if fspecFormat opts `elem` [Fpdf, Flatex] && (not.null.explRefIds) purp
                    then [RawInline (Text.Pandoc.Builder.Format "latex")
-                            (texOnlyMarginNote (intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
+                            (texOnlyMarginNote (L.intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
                    else []
 concatMarkup :: [Markup] -> Maybe Markup
 concatMarkup es
  = case eqCl amLang es of
     []   -> Nothing
-    [cl] -> Just Markup { amLang   = amLang (head cl)
-                          , amPandoc = concatMap amPandoc es
-                          }
+    [cl] -> Just Markup { amLang   = amLang (NEL.head cl)
+                        , amPandoc = concatMap amPandoc es
+                        }
     cls  -> fatal ("don't call concatMarkup with different languages and formats\n   "++
-                   intercalate "\n   " [(show.amLang.head) cl | cl<-cls])
+                   L.intercalate "\n   " (map (show . amLang . NEL.head) cls)
+                  )
 
 -- Insert an inline after the first inline in the list of blocks, if possible.
 insertAfterFirstInline :: [Inline] -> [Block] -> [Block]

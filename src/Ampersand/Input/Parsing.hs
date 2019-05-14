@@ -9,37 +9,33 @@ module Ampersand.Input.Parsing (
     , parseSystemContext
     , parseRule
     , runParser
+    , ParseCandidate(..) -- exported for use with --daemon
 ) where
 
 import           Ampersand.ADL1
-import           Ampersand.Input.PreProcessor
 import           Ampersand.Basics
-import           Ampersand.Core.ParseTree (mkContextOfPopsOnly)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Input.ADL1.Lexer
 import           Ampersand.Input.ADL1.Parser
+import           Ampersand.Input.PreProcessor
 import           Ampersand.Input.Xslx.XLSX
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
 import           Ampersand.Misc
-import           Control.Exception
-import           Data.Char(toLower)
-import           Data.List
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..))
-import qualified Data.Set as Set
-import           Data.Maybe
+import           RIO.Char(toLower)
+import qualified RIO.List as L
+import qualified RIO.Set as Set
 import           System.Directory
 import           System.FilePath
-import           Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import           Text.Parsec.Prim (runP)
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL :: Options                    -- ^ The options given through the command line
          -> FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
-         -> IO (Guarded P_Context)     -- ^ The resulting context
+         -> IO ([ParseCandidate], Guarded P_Context)     -- ^ The resulting context
 parseADL opts@Options{..} fp = do 
     curDir <- getCurrentDirectory
     canonical <- canonicalizePath fp
-    parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
+    parseThing' opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
 
 parseMeta :: Options -> IO (Guarded P_Context)
 parseMeta opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
@@ -47,25 +43,36 @@ parseMeta opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Ori
 parseSystemContext :: Options -> IO (Guarded P_Context)
 parseSystemContext opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
 
-parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context) 
-parseThing opts@Options{..} pc =
-  whenCheckedIO (parseADLs opts [] [pc] ) $ \ctxts ->
-      return . pure $ foldl1 mergeContexts ctxts
+parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context)
+parseThing opts pc = snd <$> parseThing' opts pc 
+
+parseThing' :: Options -> ParseCandidate -> IO ([ParseCandidate], Guarded P_Context) 
+parseThing' opts@Options{..} pc = do
+  results <- parseADLs opts [] [pc]
+  case results of 
+     Errors err    -> return ([pc], Errors err)
+     Checked xs ws -> return ( candidates
+                             , Checked mergedContexts ws
+                             )
+              where (candidates,contexts) = L.unzip xs
+                    mergedContexts = case contexts of
+                          [] -> fatal "Impossible"
+                          h:tl -> foldr mergeContexts h tl
 
 -- | Parses several ADL files
 parseADLs :: Options                  -- ^ The options given through the command line
           -> [ParseCandidate]         -- ^ The list of files that have already been parsed
           -> [ParseCandidate]         -- ^ A list of files that still are to be parsed.
-          -> IO (Guarded [P_Context]) -- ^ The resulting contexts
+          -> IO (Guarded [(ParseCandidate, P_Context)]) -- ^ The resulting contexts and the ParseCandidate that is the source for that P_Context
 parseADLs opts@Options{..} parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ pure []
     x:xs -> if x `elem` parsedFilePaths
             then parseADLs opts parsedFilePaths xs
             else whenCheckedIO (parseSingleADL opts x) parseTheRest
-        where parseTheRest :: (P_Context, [ParseCandidate]) -> IO (Guarded [P_Context])
+        where parseTheRest :: (P_Context, [ParseCandidate]) -> IO (Guarded [(ParseCandidate, P_Context)])
               parseTheRest (ctx, includes) = whenCheckedIO (parseADLs opts (x:parsedFilePaths) (includes++xs)) $
-                                                  return . pure . (:) ctx 
+                                                  return . pure . (:) (x,ctx) 
 
 data ParseCandidate = ParseCandidate 
        { pcBasePath :: Maybe FilePath -- The absolute path to prepend in case of relative filePaths 
@@ -137,19 +144,19 @@ parseSingleADL opts@Options{..} pc
                myNormalise fp = joinDrive drive . joinPath $ f [] dirs ++ [file]
                  where
                    (drive,path) = splitDrive (normalise fp)
-                   (dirs,file)  = case splitPath path of
+                   (dirs,file)  = case reverse $ splitPath path of
                                    [] -> fatal ("Illegal filePath: "++show fp)
-                                   xs -> (init xs,last xs)
+                                   last:reverseInit -> (reverse reverseInit,last)
                    
                    f :: [FilePath] -> [FilePath] -> [FilePath]
                    f ds [] = ds
                    f ds (x:xs) | is "."  x = f ds xs   -- reduce /a/b/./c to /a/b/c/ 
-                               | is ".." x = case ds of
+                               | is ".." x = case reverse ds of
                                               [] -> fatal ("Illegal filePath: "++show fp)
-                                              _  -> f (init ds) xs --reduce a/b/c/../d/ to a/b/d/
+                                              _:reverseInit -> f (reverse reverseInit) xs --reduce a/b/c/../d/ to a/b/d/
                                | otherwise = f (ds++[x]) xs
                is :: String -> FilePath -> Bool
-               is str fp = case stripPrefix str fp of
+               is str fp = case L.stripPrefix str fp of
                              Just [chr] -> chr `elem` pathSeparators  
                              _          -> False
                stripBom :: String -> String
@@ -161,31 +168,41 @@ parseSingleADL opts@Options{..} pc
                  where f :: SomeException -> IO a
                        f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "++show exception)
 
-parseErrors :: Lang -> ParseError -> NEL.NonEmpty CtxError
-parseErrors lang err = pure $ PE (Message msg)
-                where msg :: String
-                      msg = "In file " ++ show (errorPos err) ++ ":" ++ showLang lang (errorMessages err)
-                      showLang :: Lang -> [Message] -> String
-                      showLang English = showErrorMessages "or" "unknown parse error"   "at that point expecting" "Parsing stumbled upon" "end of input"
-                      showLang Dutch   = showErrorMessages "of" "onbekende parsingfout" "verwacht"  "onverwacht" "einde van de invoer"
+-- | To enable roundtrip testing, all data can be exported.
+-- For this purpose mkContextOfPopsOnly exports the population only
+mkContextOfPopsOnly :: [P_Population] -> P_Context
+mkContextOfPopsOnly pops =
+  PCtx{ ctx_nm     = ""
+      , ctx_pos    = []
+      , ctx_lang   = Nothing
+      , ctx_markup = Nothing
+      , ctx_pats   = []
+      , ctx_rs     = []
+      , ctx_ds     = []
+      , ctx_cs     = []
+      , ctx_ks     = []
+      , ctx_rrules = []
+      , ctx_rrels  = []
+      , ctx_reprs  = []
+      , ctx_vs     = []
+      , ctx_gs     = []
+      , ctx_ifcs   = []
+      , ctx_ps     = []
+      , ctx_pops   = pops
+      , ctx_metas  = []
+      }
 
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =
       -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
     case runP p pos' fn ts of
         --TODO: Add language support to the parser errors
-        Left err -> Errors $ parseErrors English err
+        Left err -> Errors $ pure $ PE err
         Right a -> pure a
-    where pos' | null ts   = initPos fn
-               | otherwise = tokPos (head ts)
+    where pos' = case ts of
+                   [] -> initPos fn
+                   h:_ -> tokPos h
 
---TODO: Give the errors in a better way
-lexerError2CtxError :: LexerError -> CtxError
-lexerError2CtxError (LexerError pos' err) =
-   PE (Message ("Lexer error at "++show pos'++"\n  "
-                ++ intercalate "\n    " (showLexerErrorInfo err)
-               )
-      )
 
 -- | Runs the given parser
 runParser :: AmpParser a -- ^ The parser to run

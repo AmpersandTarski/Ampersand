@@ -4,7 +4,6 @@
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , Warning
-  , showErr, makeError
   , cannotDisambiguate
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
@@ -27,9 +26,12 @@ module Ampersand.Input.ADL1.CtxError
   , mkInterfaceMustBeDefinedOnObject
   , mkSubInterfaceMustBeDefinedOnObject
   , lexerWarning2Warning
+  , lexerError2CtxError
   , addWarning, addWarnings
-  , showWarning, showWarnings
   , mkCrudWarning
+  , mkBOX_ROWSNH_Warning
+  , mkCaseProblemWarning
+  , mkNoBoxItemsWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
   )
@@ -45,31 +47,69 @@ module Ampersand.Input.ADL1.CtxError
 where
 
 import           Ampersand.ADL1
-import           Ampersand.Input.ADL1.LexerMessage
+import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
 import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree (Type)
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.FilePos()
-import qualified Data.List as L   (intercalate)
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),head,toList)
-import           Data.Maybe
+import           Ampersand.Input.ADL1.LexerMessage
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import           Data.Typeable
 import           GHC.Exts (groupWith)
-import           Text.Parsec.Error (Message(..), messageString)
-import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
+import           Text.Parsec
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
-              | PE Message
-
+              | PE ParseError 
+              | LE LexerError
 instance Show CtxError where
-    show (CTXE o s) = "CTXE " ++ show o ++ " " ++ show s
-    show (PE msg)   = "PE " ++ messageString msg
+  -- The vscode extension expects errors and warnings
+  -- to be in a standardized format. The show function
+  -- complies to that. Iff for whatever reason 
+  -- this function is changed, please verify 
+  -- the proper working of the ampersand-language-extension
+  show err = L.intercalate "\n  " $
+    [show (origin err) ++ " error:"] ++ 
+    (case err of
+       CTXE _ s               -> lines s
+       PE e    -> -- The first line of a parse error allways contains
+                  -- the filename and position of the error. However,
+                  -- these are in a wrong format. So we strip the first 
+                  -- line of the error:
+                  case lines (show e) of
+                     []       -> fatal "Whoh! the impolssible just happend! (triggered by a parse error somewhere in your script)"
+                     _:xs     -> xs
+       LE (LexerError _ info) -> lines (show info)
+    )
+
+data Warning = Warning Origin String
+instance Show Warning where
+  -- The vscode extension expects errors and warnings
+  -- to be in a standardized format. The show function
+  -- complies to that. Iff for whatever reason 
+  -- this function is changed, please verify 
+  -- the proper working of the ampersand-language-extension
+  show (Warning o msg) = L.intercalate "\n  " $
+       [show o ++ " warning: "]
+    ++ lines msg
+
+
+
+
+instance Traced CtxError where
+    origin (CTXE o _) = o
+    origin (PE perr)  = let sourcePos = errorPos perr 
+                        in FileLoc (FilePos (sourceName sourcePos) (sourceLine sourcePos) (sourceColumn sourcePos)) ""
+    origin (LE (LexerError fp info)) = FileLoc fp (show info)
+
+--TODO: Give the errors in a better way
+lexerError2CtxError :: LexerError -> CtxError
+lexerError2CtxError err = LE err
 
 errors :: Guarded t -> Maybe (NEL.NonEmpty CtxError)
 errors (Checked _ _) = Nothing
 errors (Errors lst) = Just lst
-
-makeError :: String -> Guarded a
-makeError msg = Errors (PE (Message msg) NEL.:| [])
 
 unexpectedType :: Origin -> Maybe TType -> Guarded A_Concept
 unexpectedType o x = 
@@ -117,11 +157,11 @@ mkCyclesInGensError :: NEL.NonEmpty [AClassify] -> Guarded a
 mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
  where 
   mkErr :: [AClassify] -> CtxError
-  mkErr [] = fatal "Nothing to report about!" 
-  mkErr gs = CTXE o msg
-    where
-      o = origin (head gs)
-      msg = L.intercalate "\n" $
+  mkErr gs = 
+    case gs of 
+      []    -> fatal "Nothing to report about!" 
+      (g:_) -> CTXE (origin g) 
+             . L.intercalate "\n" $
              [ "Classifications must not contain cycles."
              , "The following CLASSIFY statements are cyclic:"
              ]++
@@ -158,13 +198,11 @@ class GetOneGuarded a b | b -> a where
       Nothing -> fatal "No error message!"
       Just (CTXE o' s NEL.:| _) -> Errors . pure $ CTXE o' $ "Found too many:\n  "++s
       Just (PE _      NEL.:| _) -> fatal "Didn't expect a PE constructor here"
+      Just (LE _      NEL.:| _) -> fatal "Didn't expect a LE constructor here"
+      
   hasNone :: b  -- the object where the problem is arising
              -> Guarded a
   hasNone o = getOneExactly o []
-
-instance Pretty a => GetOneGuarded SubInterface (P_SubIfc a) where
-  hasNone o = Errors . pure $
-    CTXE (origin o)$ "Required: one A-subinterface in "++showP o
 
 instance GetOneGuarded Expression P_NamedRel where
   getOneExactly _ [d] = pure d
@@ -175,14 +213,17 @@ instance GetOneGuarded Expression P_NamedRel where
     ++".\n  Be more specific by using one of the following matching expressions:"
     ++concat ["\n  - "++showA l | l<-lst]
 
-mkTypeMismatchError :: (Traced a2, Named a) => a2 -> Relation -> SrcOrTgt -> a -> Guarded a1
-mkTypeMismatchError o decl sot conc
+mkTypeMismatchError :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
+mkTypeMismatchError o rel sot typ
  = Errors . pure $ CTXE (origin o) message
  where
-  message = "The "++showP sot++" for the population pairs, namely "++name conc
+  message = "The "++(case sot of
+                       Src -> "source"
+                       Tgt -> "target"
+                    )++"("++name typ++") for the population pairs "
             ++"\n  must be more specific or equal to that of the "
-            ++"relation you wish to populate, namely: "
-            ++showEC (sot,decl)
+            ++"relation you wish to populate ("++name rel++show (sign rel)++" found at "++show (origin rel)++")."
+
 
 cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded Expression
 cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
@@ -251,7 +292,7 @@ mkEndoPropertyError orig ps =
                 ,"  source and target are equal."]
          _   -> ["Properties "++showAnd++" can only be used for relations where"
                 ,"  source and target are equal."]
-     where showAnd = L.intercalate ", " (map show . init $ ps)++" and "++(show . last) ps
+     where showAnd = commaEng "and" (map show ps)
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role' ifc duplicateIfcs =
@@ -286,13 +327,16 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
         ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
   
-mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
-mkMultipleDefaultError (_, [])              = fatal "mkMultipleDefaultError called on []"
-mkMultipleDefaultError (c, vds@(vd0:_)) =
-  CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++
-                      concat ["\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")"
-                             | vd <- vds ]
-
+mkMultipleDefaultError :: NEL.NonEmpty ViewDef -> CtxError
+mkMultipleDefaultError vds =
+  CTXE (origin . NEL.head $ vds) $ 
+      "Multiple default views for concept " <> show (name cpt) <> ":" <>
+        (concatMap (\vd -> "\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")") $ vds)
+     where
+       cpt = case nubOrd . NEL.toList . fmap vdcpt $ vds of
+             [] -> fatal "There should be at least one concept found in a nonempty list of viewdefs."
+             [c] -> c 
+             _  -> fatal "Different concepts are not acceptable in calling mkMultipleDefaultError"
 mkIncompatibleViewError :: (Named b,Named c) => P_BoxItem a -> String -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   case objDef of
@@ -410,11 +454,32 @@ lexerWarning2Warning :: LexerWarning -> Warning
 lexerWarning2Warning (LexerWarning a b) = 
   Warning (FileLoc a "") (L.intercalate "\n" $ showLexerWarningInfo b)
 
-data Warning = Warning Origin String
-instance Show Warning where
-    show (Warning o msg) = "Warning: " ++ show o ++ concatMap ("\n  "++) (lines msg)
+instance Traced Warning where
+    origin (Warning o _) = o
+mkBOX_ROWSNH_Warning :: Origin -> Warning
+mkBOX_ROWSNH_Warning orig =
+  Warning orig $ L.intercalate "\n   "
+     ["The common use of BOX <ROWSNH> has become obsolete. It was used to be able"
+     ,   "to have rows without header."
+     ,   "In that case, please use ROWS for this purpose."
+     ,   "If you still want to use this class for some reason, you have to provide"
+     ,   "the template for youself. Failing to do so will cause an error when you"
+     ,   "generate your prototype."
+     ]
+mkNoBoxItemsWarning :: Origin -> Warning
+mkNoBoxItemsWarning orig = 
+  Warning orig $ L.intercalate "\n    "
+     ["This list of BOX-items is empty."
+     ]
 mkCrudWarning :: P_Cruds -> [String] -> Warning
 mkCrudWarning (P_Cruds o _ ) msg = Warning o (unlines msg)
+mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
+mkCaseProblemWarning x y = Warning orig $ L.intercalate "\n    " 
+      ["Ampersand is case sensitive. you might have meant that the following are equal:"
+      ,    show (typeOf x) ++"`"++name x++"` and `"++name y++"`."
+      ]
+    where orig :: Origin 
+          orig = OriginUnknown
 addWarning :: Warning -> Guarded a -> Guarded a
 addWarning _ (Errors a) = Errors a
 addWarning w (Checked a ws) = Checked a (ws <> [w])
@@ -423,13 +488,11 @@ addWarnings ws ga =
   case ga of
     Checked a ws' -> Checked a (ws <> ws')
     Errors a      -> Errors a
-showWarning :: Warning -> [String]
-showWarning = lines . show
    
 data Guarded a = 
    Errors (NEL.NonEmpty CtxError) 
  | Checked a [Warning]
-   deriving Show
+--   deriving Show
 
 instance Functor Guarded where
  fmap _ (Errors a)  = Errors a
@@ -464,22 +527,16 @@ whenError (Errors _) a = a
 whenError a@(Checked _ _) _ = a
 
 
-showErr :: CtxError -> String
-showErr (CTXE o s) = showFullOrig o ++ "\n  " ++ s
-showErr (PE msg)   = messageString msg
-
 showFullOrig :: Origin -> String
 showFullOrig (FileLoc (FilePos filename line column) t)
               = "Error at symbol " ++ t ++
                 " in file " ++ filename ++
                 " at line " ++ show line ++
                 " : " ++ show column
-
 showFullOrig x = show x
+
 showMinorOrigin :: Origin -> String
 showMinorOrigin (FileLoc (FilePos _ line column) _) = "line " ++ show line ++" : "++show column
 showMinorOrigin v = show v
 
-showWarnings :: [Warning] -> IO ()
-showWarnings = mapM_  putStrLn . concatMap showWarning 
 

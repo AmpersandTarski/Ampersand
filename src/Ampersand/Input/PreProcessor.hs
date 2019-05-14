@@ -5,21 +5,13 @@ module Ampersand.Input.PreProcessor (
     , processFlags
 ) where
 
-import Data.List
+import           Ampersand.Basics hiding (guard,many,try)
+import           Ampersand.Input.ADL1.CtxError
+import           RIO.Char(isSpace)
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Set as Set
-import Data.String
-import Data.Maybe
-import Data.Bool
-import Data.Char
-import Data.Either
-import Data.Functor
-import Control.Monad hiding (guard)
-import Control.Applicative hiding ( many )
-import Text.Parsec hiding ( (<|>) )
-import Text.Parsec.Error
-import Prelude
-import Ampersand.Input.ADL1.CtxError
+import qualified RIO.Set as Set
+import           Text.Parsec hiding ( (<|>) )
 
 type PreProcDefine = String
 
@@ -29,8 +21,8 @@ processFlags :: Set.Set PreProcDefine -- ^ Old set of preprocessor flags
              -> Set.Set PreProcDefine -- ^ Set of preprocessor flags after import
 processFlags oldFlags importList = Set.difference (Set.union oldFlags addedDefines) removedDefines
   where (addedDefines, removedDefines) =
-            (\(removed, added) -> (Set.fromList added, Set.fromList $ map (fromMaybe "" . stripPrefix "!") removed))
-            (partition (isPrefixOf "!") importList)
+            (\(removed, added) -> (Set.fromList added, Set.fromList $ map (fromMaybe "" . L.stripPrefix "!") removed))
+            (L.partition (L.isPrefixOf "!") importList)
 
 -- Shim that changes our 'Either ParseError a' from preProcess' into 'Guarded a'
 -- | Runs the preProcessor on input
@@ -39,7 +31,7 @@ preProcess :: String          -- ^ filename, used only for error reporting
            -> String          -- ^ input, The actual string to processs
            -> Guarded String  -- ^ result, The result of processing
 preProcess f d i = case preProcess' f d i of
-                   (Left  err) -> Errors $ (PE . Message . show $ err) NEL.:| []
+                   (Left  err) -> Errors $ (PE err) NEL.:| []
                    (Right out) -> Checked out []
 
 -- | Runs the preProcessor on input

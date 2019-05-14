@@ -4,13 +4,15 @@ module Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
 import           Ampersand.ADL1
 import           Ampersand.FSpec.Crud
+import           Ampersand.FSpec.ToFSpec.ADL2Plug
 import           Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
-import           Data.Char
+import           RIO.Char
 import           Data.Function (on)
-import           Data.List
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
@@ -97,31 +99,25 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                                   _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
                                     <> text "The details of each entity type are described (in alphabetical order) in the following two tables:"
                                )
-       <> conceptTable True
-       <> conceptTable False
-       <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
+       <> conceptTables
+       <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (classes oocd)))
 
   logicalDataModelPicture = makePicture fSpec PTLogicalDM
 
   oocd :: ClassDiag
   oocd = cdAnalysis fSpec
 
-  conceptTable :: Bool    -- this bool is introduced to split the table into two separate tables. The first table contains
-                          -- the concepts that have their own table in the logical data model. The second table contains
-                          -- all other concepts.  
-               -> Blocks
-  conceptTable keys = 
-    table (if keys
-           then text.l $ (NL "Logische gegevensverzamelingen"
-                         ,EN "Logical entity types")
-           else text.l $ (NL "Overige attributen"
-                         ,EN "Other attributes"
-                         )
-          )
-         [(AlignLeft,1/6),(AlignLeft,4/6),(AlignLeft,1/6)]
+  conceptTables :: Blocks  -- This produces two separate tables:
+                           -- The first table contains the concepts that have their own table in the logical data model.
+                           -- The second table contains all other concepts.  
+  conceptTables = 
+    table (text.l $ (NL "Logische gegevensverzamelingen"
+                    ,EN "Logical entity types"))
+         [(AlignLeft,1/8),(AlignLeft,4/8),(AlignLeft,1/8),(AlignLeft,1/8),(AlignLeft,1/8)]
          [ (plain.text.l) (NL "Concept"       , EN "Concept")
          , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
-         , (plain.text.l) (NL "Type"          , EN "Type") 
+         , (plain.text.l) (NL "Aantal"        , EN "Count") 
+         , (plain.text.l) (NL "Vullingsgraad" , EN "Filling degree") 
          ] 
          [ [ (plain.text.name) c
            ,   meaningOf c
@@ -130,23 +126,47 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                . purposesDefinedIn fSpec (fsLang fSpec) 
                $ c
                )
-           , mempty
+           , (plain . text . show . Set.size . atomsInCptIncludingSmaller fSpec) c
+           , (plain . text . show) (percent (sum [ Set.size pairs
+                                                 | attr<-attributesOfConcept fSpec c, pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
+                                                 ]) (Set.size (atomsInCptIncludingSmaller fSpec c)*length (attributesOfConcept fSpec c)))
            ]
-         | c <- sortBy (compare `on` name) 
-              . filter keyFilter 
-              . delete ONE 
+         | c <- L.sortBy (compare `on` name) 
+              . filter isKey 
+              . L.delete ONE 
               . Set.elems 
+              $ concs fSpec
+         ]  <>
+    table (text.l $ (NL "Overige attributen"
+                    ,EN "Other attributes"))
+         [(AlignLeft,1/6),(AlignLeft,4/6),(AlignLeft,1/6)]
+         [ (plain.text.l) (NL "Concept"       , EN "Concept")
+         , (plain.text.l) (NL "Voorbeelden"   , EN "Examples")
+         , (plain.text.l) (NL "Aantal"        , EN "Count") 
+         ] 
+         [ [ (plain . text . name) c
+           ,   -- max 20 voorbeelden van atomen van concept c
+             (plain . text . L.intercalate "\n" . map showA . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
+           , (plain . text . show . Set.size . atomsInCptIncludingSmaller fSpec) c
+           ]
+         | c <- L.sortBy (compare `on` name) 
+              . Set.elems 
+              . Set.filter (not.isKey) 
               $ concs fSpec
          ]
      where
-       keyFilter :: A_Concept -> Bool
-       keyFilter cpt = (    keys &&      isKey  cpt)
-                     ||(not keys && (not.isKey) cpt)
        isKey :: A_Concept -> Bool
        isKey cpt = cpt `elem` ooCpts oocd
        meaningOf :: A_Concept -> Blocks
        meaningOf = mconcat . map (fromList . string2Blocks ReST . cddef) . concDefs fSpec 
-       
+
+  percent :: (Integral a, Show a) => a -> a -> String
+  percent num denom
+   = if denom==0
+     then show num
+     else show num++"("++show ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)++"%)"
+  
+
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
            header (sectionLevel+1) 
@@ -154,41 +174,62 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
         <> case clcpt cl of
              Nothing -> mempty
              Just cpt -> purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) cpt)
-        <> (para . text . l) ( NL "Deze gegevensverzameling bevat de volgende attributen: "
-                             , EN "This entity type has the following attributes: "
+        <> (para . text . l) ( NL ("Deze gegevensverzameling heeft "++show n++" elementen en bevat de volgende attributen: ")
+                             , EN ("This entity type has "++show n++" elements and contains the following attributes: ")
                              )
         <> simpleTable [(plain.text.l) (NL "Attribuut", EN "Attribute")
                        ,(plain.text.l) (NL "Type"     , EN "Type")
-                       ,mempty
-                       ]
-                       ( [[ (plain.text) "Id"
-                          , (plain.text.name) cl
-                          , (plain.text.l) (NL "Sleutel" , EN "Primary key")
-                         ]] 
+                       ,(plain.text.l) (NL "gevuld"   , EN "filled")
+                       ,(plain.text.l) (NL "#uniek"   , EN "#unique")
+                     ]
+                       ( [[ (plain.text.name) attr
+                          , (plain.text) ((name.target.attExpr) attr++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                          , (plain . text) (percent (Set.size pairs) n)
+                          , (plain . text . show . Set.size . Set.map apRight) pairs
+                          ]
+                         | Just cpt <-[clcpt cl], attr<-attributesOfConcept fSpec cpt
+                         , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr::SqlAttribute)]
+                         , pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
+                         ]
                          <>
                          [[ (plain.text.name) attr
-                          , (plain.text.attTyp) attr
-                          , (plain.text.l) (if attOptional attr 
-                                            then (NL "Optioneel", EN "Optional")
-                                            else (NL "Verplicht", EN "Mandatory")
-                                           )] | attr <- clAtts cl]
+                          , (plain.text) ((name.target.attExpr) attr++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                          , (plain . text) (percent (Set.size pairs) n)
+                          , (plain . text . show . Set.size . Set.map apRight) pairs
+                       -- , (plain . text . show) nTgtConcept
+                          ]
+                         | Just cpt <-[clcpt cl], cpt'<-generalizationsOf fSpec cpt, cpt/=cpt', attr<-attributesOfConcept fSpec cpt'
+                         , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr::SqlAttribute)]
+                         , pairs<-[pairsInExpr fSpec (EDcI cpt .:. EEps cpt' (Sign cpt cpt') .:. attExpr attr)]
+                         ]
                        )
         <> let asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
                        ] 
            in  case asscs of
                  [] -> para ( text (name cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
                  _  -> para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
-                         <> orderedList (map assocToRow asscs) 
+                       <> simpleTable
+                            [(plain.text.l) (NL "Source" , EN "Source")
+                            ,(plain.text.l) (NL "uniek"   , EN "unique")
+                            ,(plain.text.l) (NL "Associatie", EN "Association")
+                            ,(plain.text.l) (NL "Target" , EN "Target")
+                            ,(plain.text.l) (NL "uniek"   , EN "unique")
+                            ]
+                            [[ (plain.text) ((name.source) rel++"("++show nSrcConcept++")")   -- use "show.attType" for the technical type.
+                             , (plain . text) (percent (Set.size (Set.map apLeft pairs)) nSrcConcept)
+                             , (plain.text) (name rel++"("++show (Set.size pairs)++")")
+                             , (plain.text) ((name.target) rel++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                             , (plain . text) (percent (Set.size (Set.map apRight pairs)) nTgtConcept)
+                             ]
+                            | Just rel<-map assmdcl asscs
+                            , nSrcConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . source) rel]
+                            , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target) rel]
+                            , pairs<-[(pairsInExpr fSpec . EDcD) rel]
+                            ]
     where
-     assocToRow :: Association -> Blocks
-     assocToRow assoc  =
-         plain (  (text.assrhr) assoc
-                <>(text.l) (NL " (van ",EN " (from ")
-                <>(text.assSrc) assoc
-                <>(text.l) (NL " naar ", EN " to ")
-                <>(text.assTgt) assoc
-                <>text ")."
-               ) 
+     n ::Int
+     n = (Set.size .atomsInCptIncludingSmaller fSpec . unJust . clcpt) cl
+         where unJust (Just cpt) = cpt; unJust _ = fatal "unexpected Just"
      {- <>
         if (null.assrhr) assoc
         then fatal "Shouldn't happen: flip the relation for the right direction!"
@@ -252,7 +293,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
         Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
         English -> text ("The technical datamodel consists of the following "++show nrOfTables++" tables:")
             )
-    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
+    <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
    where
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
@@ -286,8 +327,8 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                        )
                      <> showAttributes (plugAttributes bin)
 
-      showAttributes :: [SqlAttribute] -> Blocks
-      showAttributes atts = bulletList (map showAttribute atts)
+      showAttributes :: NEL.NonEmpty SqlAttribute -> Blocks
+      showAttributes = bulletList . NEL.toList . fmap showAttribute
         where
           showAttribute att =
                 para (  (strong.text.attName) att

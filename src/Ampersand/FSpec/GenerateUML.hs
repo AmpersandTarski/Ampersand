@@ -5,10 +5,10 @@ import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.Graphic.ClassDiagram
 import           Ampersand.Graphic.Fspec2ClassDiagrams 
-import           Control.Monad.State.Lazy  (State, gets, evalState, modify)
-import           Data.List
+import           Control.Monad.State.Lazy  (State, gets, evalState, modify)  --TODO: Replace by RIO state
+import qualified RIO.List as L
 import qualified Data.Map as Map
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 -- TODO: escape
 -- TODO: names of model, package, assoc (empty?), etc.
@@ -110,7 +110,7 @@ genUMLClass cl =
     }
 
 genUMAttribute :: CdAttribute -> UML
-genUMAttribute  (OOAttr nm attrType optional) =
+genUMAttribute  (OOAttr nm attrType isOptional) =
  do { attrId <- mkUnlabeledId "Attr"
     ; lIntId <- mkUnlabeledId "Int"
     ; uIntId <- mkUnlabeledId "Int"
@@ -118,7 +118,7 @@ genUMAttribute  (OOAttr nm attrType optional) =
     ; return [ "       <ownedAttribute xmi:type=\"uml:Property\" xmi:id=\""++attrId++"\" name=\""++nm++"\" visibility=\"public\" isStatic=\"false\""++
                                     " isReadOnly=\"false\" isDerived=\"false\" isOrdered=\"false\" isUnique=\"true\" isDerivedUnion=\"false\">"
              , "        <type xmi:idref=\""++classId++"\"/>"
-             , "        <lowerValue xmi:type=\"uml:LiteralInteger\" xmi:id=\""++lIntId++"\" value=\""++(if optional then "0" else "1")++"\"/>"
+             , "        <lowerValue xmi:type=\"uml:LiteralInteger\" xmi:id=\""++lIntId++"\" value=\""++(if isOptional then "0" else "1")++"\"/>"
              , "        <upperValue xmi:type=\"uml:LiteralInteger\" xmi:id=\""++uIntId++"\" value=\"1\"/>"
              , "       </ownedAttribute>"]
     }
@@ -168,13 +168,13 @@ genCustomProfileElements =
     }
   where
     reqUML :: ReqValue2 -> String
-    reqUML (xmiId, req) = intercalate "\n"
+    reqUML (xmiId, req) = L.intercalate "\n"
      ( ("   <thecustomprofile:Functional base_Requirement="++show xmiId++"/>") :
        [tagUML xmiId count puprtxt reftxt 
-       | (count, (puprtxt, reftxt)) <- zip [0::Int ..] [(aMarkup2String (explMarkup p), intercalate ";" (explRefIds p)) | p <- reqPurposes req]
+       | (count, (puprtxt, reftxt)) <- zip [0::Int ..] [(aMarkup2String (explMarkup p), L.intercalate ";" (explRefIds p)) | p <- reqPurposes req]
        ]
      )
-    tagUML xmiId nr value reftxt = intercalate "\n"
+    tagUML xmiId nr value reftxt = L.intercalate "\n"
       [ "     <thecustomprofile:"++keyMeaning++" base_Requirement="++show xmiId++" "++keyMeaning++"="++show value++"/>"
       , "     <thecustomprofile:"++keyRef    ++" base_Requirement="++show xmiId++" "++keyRef++"="++show reftxt++"/>"
       ]
@@ -188,7 +188,7 @@ genCustomReqElements fSpec parentPackageId =
     }
   where
     reqUML :: ReqValue2 -> String
-    reqUML (xmiId, req) = intercalate "\n"
+    reqUML (xmiId, req) = L.intercalate "\n"
      ([ "    <element xmi:idref="++show xmiId++" xmi:type=\"uml:Requirement\" name="++show (reqId req)++" scope=\"public\""++">"
       , "      <model package="++show parentPackageId++" ea_eleType=\"element\"/>"
       , "      <properties documentation="++show (maybe "" aMarkup2String (fmap ameaMrk . meaning (fsLang fSpec) $ req))++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"

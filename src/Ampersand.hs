@@ -3,6 +3,7 @@ module Ampersand
   , module Ampersand.Basics
   , module Ampersand.Classes
   , module Ampersand.Components
+  , module Ampersand.Daemon.Daemon
   , module Ampersand.FSpec
   , module Ampersand.Input
   , module Ampersand.Misc
@@ -11,9 +12,10 @@ module Ampersand
   ) 
 where
 import Ampersand.ADL1
-import Ampersand.Basics
+import Ampersand.Basics hiding (Identity)
 import Ampersand.Classes
 import Ampersand.Components
+import Ampersand.Daemon.Daemon
 import Ampersand.FSpec
 import Ampersand.Input
 import Ampersand.Misc

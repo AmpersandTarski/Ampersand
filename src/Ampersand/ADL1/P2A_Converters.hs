@@ -8,7 +8,7 @@ where
 import           Ampersand.ADL1.Disambiguate
 import           Ampersand.ADL1.Lattices -- used for type-checking
 import           Ampersand.ADL1.Expression
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (to,set,conc)
 import           Ampersand.Classes
 import           Ampersand.Core.A2P_Converters
 import           Ampersand.Core.AbstractSyntaxTree
@@ -18,20 +18,15 @@ import           Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Control.Arrow(first)
-import           Control.Monad (join)
-import           Data.Char(toUpper,toLower)
-import           Data.Either
+import           RIO.Char(toUpper,toLower)
 import           Data.Foldable (toList)
-import           Data.Function
 import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable
-import           Data.List as Lst
-import qualified Data.List.NonEmpty as NEL --(NonEmpty(..),nonEmpty)
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map as Map
-import           Data.Maybe
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import           Data.Text (pack)
-import           GHC.Stack
 
 pConcToType :: P_Concept -> Type
 pConcToType P_Singleton = BuiltIn TypeOfOne
@@ -120,12 +115,15 @@ checkMultipleDefaultViews ctx =
      []   -> return ()
      x:xs -> Errors $ fmap mkMultipleDefaultError (x NEL.:| xs)
   where
-    conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
+    conceptsWithMultipleViews = 
+                filter (\x -> NEL.length x > 1)
+              . eqClass ((==) `on` vdcpt) 
+              . filter vdIsDefault $ ctxvs ctx
 checkDanglingRulesInRuleRoles :: A_Context -> Guarded ()
 checkDanglingRulesInRuleRoles ctx = 
    case [mkDanglingRefError "Rule" nm (arPos rr)  
         | rr <- ctxrrules ctx
-        , nm <- arRules rr
+        , nm <- NEL.toList $ arRules rr
         , nm `notElem` map name (Set.elems $ allRules ctx)
         ] of
      [] -> return ()
@@ -153,6 +151,19 @@ checkOtherAtomsInSessionConcept ctx =
   where _isPermittedSessionValue :: AAtomValue -> Bool
         _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
         _isPermittedSessionValue _                 = False
+warnCaseProblems :: A_Context -> Guarded ()
+warnCaseProblems ctx = 
+   let warnings :: [Warning]
+       warnings = warns (concs ctx) 
+               ++ warns (relsDefdIn ctx) 
+       warns set = [ mkCaseProblemWarning x y
+                   | x <- lst, y<- lst
+                   , map toUpper (name x) == map toUpper (name y)
+                   , name x < name y 
+                   ]
+            where lst = toList set
+   in addWarnings warnings $ return ()
+     
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -173,7 +184,7 @@ findRelsLooselyTyped declMap x (Just src) (Just tgt)
    `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `unin` findRelsLooselyTyped declMap x Nothing (Just tgt))
    `orWhenEmpty` findDecls' declMap x
  where isct lsta lstb = [a | a<-lsta, a `elem` lstb]
-       unin lsta lstb = Lst.nub (lsta ++ lstb)
+       unin lsta lstb = L.nub (lsta ++ lstb)
 findRelsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
 findRelsLooselyTyped declMap x (Just src) Nothing
  = [dcl | dcl <- findDecls' declMap x, name (source dcl) == name src ]
@@ -243,15 +254,15 @@ pCtx2aCtx opts
       purposes    <- traverse (pPurp2aPurp contextInfo) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       allRoleRelations <- traverse (pRoleRelation2aRoleRelation contextInfo) (p_roleRelations ++ concatMap pt_RRels p_patterns)
-      declsAndPops <- traverse (pDecl2aDecl Nothing (representationOf contextInfo) deflangCtxt deffrmtCtxt) p_relations
+      relations <- traverse (pDecl2aDecl Nothing deflangCtxt deffrmtCtxt) p_relations
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2
                      , ctxlang = deflangCtxt
                      , ctxmarkup = deffrmtCtxt
                      , ctxpats = pats
-                     , ctxrs = Set.fromList $ rules
-                     , ctxds = Set.fromList $ map fst declsAndPops
-                     , ctxpopus = Set.toList (Set.union (Set.fromList udpops) (Set.fromList (map snd declsAndPops)))
+                     , ctxrs = Set.fromList rules
+                     , ctxds = Set.fromList relations
+                     , ctxpopus = udpops  -- the content is copied from p_pops
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
                      , ctxrrules = allRoleRules
@@ -270,6 +281,7 @@ pCtx2aCtx opts
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
       checkInterfaceCycles actx      -- Check that interface references are not cyclic
       checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
+      warnCaseProblems actx   -- Warn if there are problems with the casing of names of relations and/or concepts  
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
@@ -287,8 +299,7 @@ pCtx2aCtx opts
                             Object -- default representation is Object (sometimes called `ugly identifiers')
                             (lookup cpt typeMap)
           multitypologies <- traverse mkTypology connectedConcepts
-          decls <- map fst
-                       <$> traverse (pDecl2aDecl Nothing findR deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
+          decls <- traverse (pDecl2aDecl Nothing deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
           let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[EDcD d]) | d <- decls])
                 where groupOnTp lst = Map.fromListWith const [(SignOrd$ sign d,d) | d <- lst]
           let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
@@ -315,19 +326,19 @@ pCtx2aCtx opts
               stripOrigin ::  (A_Concept,TType,[Origin]) -> (A_Concept,TType)
               stripOrigin (cpt,t,_) = (cpt,t)
               reprTrios :: [(A_Concept,TType,Origin)]
-              reprTrios = nub $ concatMap toReprs reprs
+              reprTrios = L.nub $ concatMap toReprs reprs
                 where toReprs :: Representation -> [(A_Concept,TType,Origin)]
-                      toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- reprcpts r]
+                      toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- NEL.toList $ reprcpts r]
               conceptsOfGroups :: [A_Concept]
-              conceptsOfGroups = nub (concat groups)
+              conceptsOfGroups = L.nub (concat groups)
               conceptsOfReprs :: [A_Concept]
-              conceptsOfReprs = nub $ map fstOf3 reprTrios
+              conceptsOfReprs = L.nub $ map fstOf3 reprTrios
                  where fstOf3 (cpt,_,_)=cpt
               typeOfSingle :: A_Concept -> Guarded (Maybe (A_Concept,TType,[Origin]))
               typeOfSingle cpt 
                 = case filter ofCpt reprTrios of
                    [] -> pure Nothing
-                   rs -> case nub (map getTType rs) of
+                   rs -> case L.nub (map getTType rs) of
                            []  -> fatal "Impossible empty list."
                            [t] -> pure ( Just (cpt,t, map getOrigin rs))
                            _   -> mkMultipleRepresentTypesError cpt lst
@@ -342,7 +353,7 @@ pCtx2aCtx opts
               typeOfGroup grp 
                 = do singleTypes <- traverse typeOfSingle grp
                      let typeList = catMaybes singleTypes
-                     case nub (map getTType typeList) of
+                     case L.nub (map getTType typeList) of
                        []  -> pure []
                        [t] -> pure [(cpt,t) | cpt <- grp]
                        _   -> mkMultipleTypesInTypologyError typeList
@@ -354,9 +365,9 @@ pCtx2aCtx opts
                x:xs -> connect (t:typols) rest
                  where 
                     (t,rest) = g x xs 
-                    g a as = case partition (hasConceptsOf a) as of
+                    g a as = case L.partition (hasConceptsOf a) as of
                               (_,[])   -> (a,as)
-                              (hs',hs) -> g (nub $ a ++ concat hs) hs'
+                              (hs',hs) -> g (L.nub $ a ++ concat hs) hs'
                     hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool
                     hasConceptsOf a b = and [ x' `notElem` b | x' <- a]
 
@@ -364,7 +375,7 @@ pCtx2aCtx opts
           mkTypology cs = 
             case filter (not . isSpecific) cs of
                []  -> -- there must be at least one cycle in the CLASSIFY statements.
-                      case nub cycles of
+                      case L.nub cycles of
                         []  -> fatal "No cycles found!"
                         x:xs -> mkCyclesInGensError (x NEL.:| xs)
                         where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
@@ -375,7 +386,7 @@ pCtx2aCtx opts
                                             , genspc g `elem` concs gn
                                         ]
                                   hasMultipleSpecifics :: [AClassify]-> Bool
-                                  hasMultipleSpecifics gs = length (nub (map genspc gs)) > 1
+                                  hasMultipleSpecifics gs = length (L.nub (map genspc gs)) > 1
                [r] -> pure  
                           Typology { tyroot = r
                                    , tyCpts = reverse . sortSpecific2Generic gns $ cs
@@ -411,7 +422,7 @@ pCtx2aCtx opts
     completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
                | x <- p_representations++concatMap pt_Reprs p_patterns
-               , cpt <- reprcpts x
+               , cpt <- NEL.toList $ reprcpts x
                ] ++
                [ ( Set.singleton RepresentSeparator
                  , Set.fromList [ BuiltIn Alphanumeric
@@ -522,8 +533,8 @@ pCtx2aCtx opts
               P_ViewExp term -> 
                  do (viewExpr,(srcBounded,_)) <- typecheckTerm ci term
                     case userList$toList$ findExact genLattice (flType$ lMeet c (source viewExpr)) of
-                       [] -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
-                       r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft genLattice (head r) viewExpr))
+                       []  -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
+                       r@(h:_) -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft genLattice h viewExpr))
                              else mustBeBound (origin seg) [(Tgt,viewExpr)]
               P_ViewText str -> pure$ ViewText str
        c = mustBeConceptBecauseMath (pConcToType (vd_cpt o))
@@ -545,9 +556,7 @@ pCtx2aCtx opts
                 } -> do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm declMap ctx
                         checkCrud
                         crud <- pCruds2aCruds objExpr mCrud
-                        maybeObj <- case subs of
-                                      Just P_Box{si_box=[]} -> pure Nothing
-                                      _ -> maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
+                        maybeObj <- maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded objDef) subs <* typeCheckViewAnnotation objExpr mView
                         case maybeObj of
                           Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
                           Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
@@ -598,7 +607,7 @@ pCtx2aCtx opts
        case mCrud of 
          Nothing -> mostLiberalCruds (Origin "Default for Cruds") ""
          Just pc@(P_Cruds org userCrudString )
-             | (length . nub . map toUpper) userCrudString == length userCrudString &&
+             | (length . L.nub . map toUpper) userCrudString == length userCrudString &&
                 all (`elem` "cCrRuUdD") userCrudString  
                          -> warnings pc $ mostLiberalCruds org userCrudString 
              | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrudString
@@ -679,12 +688,12 @@ pCtx2aCtx opts
                                                  }
                          )
          P_Box{}
-           -> case si_box x of
-                []  -> const (fatal "this fatal used to be `undefined`.") <$> (hasNone x :: Guarded SubInterface) -- error
-                l   -> build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
+           -> addWarnings warnings $
+                       build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
                              <*  uniqueNames l
                              <*  mustBeObject (target objExpr)
-                  where build :: [BoxItem] -> (Expression, SubInterface)
+                  where l = si_box x
+                        build :: [BoxItem] -> (Expression, SubInterface)
                         build lst = (objExpr,Box { siConcept = target objExpr
                                                  , siMClass  = si_class x
                                                  , siObjs    = lst
@@ -704,6 +713,10 @@ pCtx2aCtx opts
                     [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef $ BxExpr ojd)]
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
+           warnings :: [Warning]
+           warnings = [mkBOX_ROWSNH_Warning (origin x) | si_class x == Just "ROWSNH"] -- See issue #925
+                    ++[mkNoBoxItemsWarning  (origin x) | null (si_box x)            ]
+ 
     typeCheckInterfaceRef :: P_BoxItem a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
       let expTarget = target objExpr
@@ -783,16 +796,16 @@ pCtx2aCtx opts
          <*> traverse (pPop2aPop ci) (pt_pop ppat)
          <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat) 
          <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
-         <*> traverse (pDecl2aDecl (Just $ name ppat) (representationOf ci) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+         <*> traverse (pDecl2aDecl (Just $ name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
        where
-        f rules' keys' pops' views' xpls declsAndPops
+        f rules' keys' pops' views' xpls relations
            = A_Pat { ptnm  = name ppat
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
                    , ptrls = Set.fromList rules'
                    , ptgns = map pClassify2aClassify (pt_gns ppat)
-                   , ptdcs = Set.fromList $ map fst declsAndPops
-                   , ptups = pops' ++ map snd declsAndPops
+                   , ptdcs = Set.fromList relations
+                   , ptups = pops' 
                    , ptids = keys'
                    , ptvds = views'
                    , ptxps = xpls
@@ -821,7 +834,7 @@ pCtx2aCtx opts
                     , rrdcl = Nothing
                     , rrpat = env
                     , r_usr = UserDefined
-                    , isSignal = not . null . concatMap arRoles . filter (\x -> nm `elem` arRules x) $ allRoleRules 
+                    , isSignal = not . null . filter (\x -> nm `elem` arRules x) $ allRoleRules 
                     }
     pIdentity2aIdentity ::
          ContextInfo -> Maybe String -- name of pattern the rule is defined in (if any)
@@ -1008,7 +1021,7 @@ typecheckTerm ci tct
       getExactType flf (p1,e1) (p2,e2)
        = case userList$toList$ findExact genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of
           [] -> mustBeOrdered o (p1,e1) (p2,e2)
-          r  -> pure$ head r
+          h:_ -> pure h
       getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
        = case fmap (userList . toList)$toList$ findUpperbounds genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
@@ -1033,11 +1046,10 @@ pAtomValue2aAtomValue typ cpt pav =
 
 pDecl2aDecl ::
      Maybe String   -- name of pattern the rule is defined in (if any)
-  -> (A_Concept -> TType)
   -> Lang           -- The default language
   -> PandocFormat   -- The default pandocFormat
-  -> P_Relation -> Guarded (Relation,Population)
-pDecl2aDecl env typ defLanguage defFormat pd
+  -> P_Relation -> Guarded Relation
+pDecl2aDecl env defLanguage defFormat pd
  = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
        dcl = Relation
                  { decnm   = pack (dec_nm pd)
@@ -1053,13 +1065,8 @@ pDecl2aDecl env typ defLanguage defFormat pd
                  , decpat  = env
                  , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                  }
-   in checkEndoProps >> 
-      (\aps -> (dcl,ARelPopu { popdcl = dcl
-                             , popps  = Set.fromList aps
-                             , popsrc = source dcl
-                             , poptgt = target dcl
-                             })
-      ) <$> traverse (pAtomPair2aAtomPair typ dcl) (dec_popu pd)
+   in checkEndoProps >> pure dcl
+
  where
   decSign = pSign2aSign (dec_sign pd)
   checkEndoProps :: Guarded ()
@@ -1165,7 +1172,7 @@ x `orElse` y = case x of
 --   and a list of to-vertices)
 getCycles :: Eq a => [(a, [a])] -> [[a]]
 getCycles edges =
-  let allVertices = nub . concat $ [ from : to | (from, to) <- edges ]
-      keyFor v = fromMaybe (error "FATAL") $ elemIndex v allVertices
+  let allVertices = L.nub . concat $ [ from : to | (from, to) <- edges ]
+      keyFor v = fromMaybe (error "FATAL") $ L.elemIndex v allVertices
       graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
   in  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]

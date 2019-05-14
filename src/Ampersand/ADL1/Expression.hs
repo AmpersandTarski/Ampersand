@@ -10,7 +10,8 @@ module Ampersand.ADL1.Expression (
 where
 import           Ampersand.Basics
 import           Ampersand.Core.AbstractSyntaxTree
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to an
@@ -215,17 +216,17 @@ isFitForCrudD :: Expression -> Bool
 isFitForCrudD _ = True
 
 
-exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> [Expression]
-exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r
-exprIsc2list r            = [r]
-exprUni2list (EUni (l,r)) = exprUni2list l++exprUni2list r
-exprUni2list r            = [r]
-exprCps2list (ECps (l,r)) = exprCps2list l++exprCps2list r
-exprCps2list r            = [r]
-exprRad2list (ERad (l,r)) = exprRad2list l++exprRad2list r
-exprRad2list r            = [r]
-exprPrd2list (EPrd (l,r)) = exprPrd2list l++exprPrd2list r
-exprPrd2list r            = [r]
+exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> NEL.NonEmpty Expression
+exprIsc2list (EIsc (l,r)) = exprIsc2list l <> exprIsc2list r
+exprIsc2list r            = r NEL.:| []
+exprUni2list (EUni (l,r)) = exprUni2list l <> exprUni2list r
+exprUni2list r            = r NEL.:| []
+exprCps2list (ECps (l,r)) = exprCps2list l <> exprCps2list r
+exprCps2list r            = r NEL.:| []
+exprRad2list (ERad (l,r)) = exprRad2list l <> exprRad2list r
+exprRad2list r            = r NEL.:| []
+exprPrd2list (EPrd (l,r)) = exprPrd2list l <> exprPrd2list r
+exprPrd2list r            = r NEL.:| []
 
 insParentheses :: Expression -> Expression
 insParentheses = insPar 0
@@ -235,22 +236,23 @@ insParentheses = insPar 0
      insPar :: Integer -> Expression -> Expression
      insPar i  (EEqu (l,r)) = wrap i 0 (insPar 1 l .==. insPar 1 r)
      insPar i  (EInc (l,r)) = wrap i 0 (insPar 1 l .|-. insPar 1 r)
-     insPar i x@EIsc{}      = wrap i 2 (foldr1 (./\.) [insPar 3 e | e<-exprIsc2list x ])
-     insPar i x@EUni{}      = wrap i 2 (foldr1 (.\/.) [insPar 3 e | e<-exprUni2list x ])
+     insPar i x@EIsc{}      = wrap i 2 (foldr1 (./\.) (fmap (insPar 3) (exprIsc2list x)))
+     insPar i x@EUni{}      = wrap i 2 (foldr1 (.\/.) (fmap (insPar 3) (exprUni2list x)))
      insPar i  (EDif (l,r)) = wrap i 4 (insPar 5 l .-. insPar 5 r)
      insPar i  (ELrs (l,r)) = wrap i 6 (insPar 7 l ./. insPar 7 r)
      insPar i  (ERrs (l,r)) = wrap i 6 (insPar 7 l .\. insPar 7 r)
      insPar i  (EDia (l,r)) = wrap i 6 (insPar 7 l .<>. insPar 7 r)
-     insPar i x@ECps{}      = wrap i 8 (foldr1 (.:.) [insPar 9 e | e<-exprCps2list x ])
-     insPar i x@ERad{}      = wrap i 8 (foldr1 (.!.) [insPar 9 e | e<-exprRad2list x ])
-     insPar i x@EPrd{}      = wrap i 8 (foldr1 (.*.) [insPar 9 e | e<-exprPrd2list x ])
+     insPar i x@ECps{}      = wrap i 8 (foldr1 (.:.) (fmap (insPar 9) (exprCps2list x)))
+     insPar i x@ERad{}      = wrap i 8 (foldr1 (.!.) (fmap (insPar 9) (exprRad2list x)))
+     insPar i x@EPrd{}      = wrap i 8 (foldr1 (.*.) (fmap (insPar 9) (exprPrd2list x)))
      insPar _  (EKl0 e)     = EKl0 (insPar 10 e)
      insPar _  (EKl1 e)     = EKl1 (insPar 10 e)
      insPar _  (EFlp e)     = EFlp (insPar 10 e)
      insPar _  (ECpl e)     = ECpl (insPar 10 e)
      insPar i  (EBrk e)     = insPar i e
      insPar _  x            = x
-
+     foldr1 :: (Expression -> Expression -> Expression) -> NEL.NonEmpty Expression -> Expression
+     foldr1 fun nonempty = foldr fun (NEL.head nonempty) (NEL.tail nonempty)
 {-
    insPar 0 (r/\s/\t/\x/\y |- p)
 =

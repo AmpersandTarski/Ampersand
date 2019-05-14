@@ -11,10 +11,9 @@ module Ampersand.Misc.Options
         )
 where
 import Ampersand.Basics
-import Data.Char
-import Data.List as DL
+import RIO.Char
+import qualified RIO.List as L
 import Data.List.Split (splitOn)
-import Data.Maybe
 import Data.Time.Clock
 import Data.Time.LocalTime
 import System.Console.GetOpt
@@ -40,7 +39,10 @@ data Options = Options { environment :: EnvironmentOptions
                        , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
                        , forceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
+                       , runComposer :: Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
                        , allInterfaces :: Bool
+                       , runAsDaemon :: Bool -- run Ampersand as a daemon. (for use with the vscode extension)
+                       , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
                        , dbName :: String
                        , namespace :: String
                        , testRule :: Maybe String
@@ -72,6 +74,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , baseName :: String
                        , genTime :: LocalTime
                        , export2adl :: Bool
+                       , dataAnalysis :: Bool
                        , test :: Bool
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
                        , addSemanticMetamodel :: Bool -- When set, the user can use all artefacts defined in Formal Ampersand, without the need to specify them explicitly
@@ -111,7 +114,7 @@ dbNameVarName = "CCdbName"
 getEnvironmentOptions :: IO EnvironmentOptions
 getEnvironmentOptions = 
    do args     <- getArgs
-      let (configSwitches,otherArgs) = partition isConfigSwitch args
+      let (configSwitches,otherArgs) = L.partition isConfigSwitch args
       argsFromConfigFile <- readConfigFileArgs (mConfigFile configSwitches)
       progName <- getProgName
       execPth  <- getExecutablePath -- on some operating systems, `getExecutablePath` gives a relative path. That may lead to a runtime error.
@@ -125,19 +128,19 @@ getEnvironmentOptions =
         , envProgName           = progName
         , envExePath            = exePath
         , envLocalTime          = localTime
-        , envDirOutput          = DL.lookup dirOutputVarName    env
-        , envDirPrototype       = DL.lookup dirPrototypeVarName env  
-        , envDbName             = DL.lookup dbNameVarName       env
-        , envPreVersion         = DL.lookup "CCPreVersion"      env
-        , envPostVersion        = DL.lookup "CCPostVersion"     env
+        , envDirOutput          = L.lookup dirOutputVarName    env
+        , envDirPrototype       = L.lookup dirPrototypeVarName env  
+        , envDbName             = L.lookup dbNameVarName       env
+        , envPreVersion         = L.lookup "CCPreVersion"      env
+        , envPostVersion        = L.lookup "CCPostVersion"     env
         }
   where
     isConfigSwitch :: String -> Bool
-    isConfigSwitch = isPrefixOf configSwitch
+    isConfigSwitch = L.isPrefixOf configSwitch
     configSwitch :: String
     configSwitch = "--config"    
     mConfigFile :: [String] -> Maybe FilePath
-    mConfigFile switches = case mapMaybe (stripPrefix configSwitch) switches of
+    mConfigFile switches = case mapMaybe (L.stripPrefix configSwitch) switches of
                     []  -> Nothing
                     ['=':x] -> Just x
                     [err]   -> exitWith . WrongArgumentsGiven $ ["No file specified in `"++configSwitch++err++"`"]
@@ -159,15 +162,15 @@ getEnvironmentOptions =
            readConfigFile yaml = do
               putStrLn $ "Reading config file: "++yaml
               config <- load yaml
-              case keys config \\ ["switches"] of
+              case keys config L.\\ ["switches"] of
                 []  -> do let switches :: [String] = YC.lookupDefault "switches" [] config
                           case filter (not . isValidSwitch) switches of
                             []  -> return $ map ("--"++) switches
                             [x] -> configFail $ "Invalid switch: "++x
-                            xs  -> configFail $ "Invalid switches: "++intercalate ", " xs
+                            xs  -> configFail $ "Invalid switches: "++L.intercalate ", " xs
                            
                 [x] -> configFail $ "Unknown key: "++show x 
-                xs  -> configFail $ "Unknown keys: "++intercalate ", " (map show xs)
+                xs  -> configFail $ "Unknown keys: "++L.intercalate ", " (map show xs)
              where
               configFail :: String -> a
               configFail msg
@@ -193,13 +196,13 @@ getOptions' envOpts =
  where
     opts :: Options
     -- Here we thread startOptions through all supplied option actions
-    opts = foldl f startOptions actions
+    opts = L.foldl f startOptions actions
       where f a b = b a
     (actions, fNames, errors) = getOpt Permute (map fst options) $ envArgsFromConfigFile envOpts ++ envArgsCommandLine envOpts 
     fName = case fNames of
              []   -> Nothing
              [n]  -> if hasExtension n then Just n else Just $ addExtension n "adl"
-             _    -> exitWith . WrongArgumentsGiven $ ("Too many files: "++ intercalate ", " fNames) : [usage]
+             _    -> exitWith . WrongArgumentsGiven $ ("Too many files: "++ L.intercalate ", " fNames) : [usage]
     usage = "Type '"++envProgName envOpts++" --help' for usage info."
     startOptions :: Options
     startOptions =
@@ -209,9 +212,10 @@ getOptions' envOpts =
                       , outputfile       = fatal "No monadic options available."
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto"
                       , dirSource        = takeDirectory $ fromMaybe "/" fName
-                      , zwolleVersion    = "v1.1.1"
+                      , zwolleVersion    = "v1.2.0"
                       , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
+                      , runComposer      = True -- by default run Composer (php package manager) when deploying prototype for backward compatibility
                       , dbName           = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
                       , preVersion       = fromMaybe "" $ envPreVersion envOpts
@@ -224,6 +228,8 @@ getOptions' envOpts =
                       , genSampleConfigFile = False
                       , genPrototype     = False
                       , allInterfaces    = False
+                      , runAsDaemon      = False
+                      , daemonConfig     = ".ampersand"
                       , namespace        = ""
                       , testRule         = Nothing
               --        , customCssFile    = Nothing
@@ -250,6 +256,7 @@ getOptions' envOpts =
                       , fileName         = fName
                       , baseName         = takeBaseName $ fromMaybe "unknown" fName
                       , export2adl       = False
+                      , dataAnalysis     = False
                       , test             = False
                       , genMetaFile      = False
                       , addSemanticMetamodel = False
@@ -285,16 +292,18 @@ sampleConfigFile =
   where
     yamlItem :: OptionDef -> [String]
     yamlItem (Option _ label kind info ) 
-      = if head label `elem` validSwitches
-        then
-         [ "  ### "++info++":"
-         , "  # - "++head label++case kind of
+      = case label of
+          [] -> fatal "label cannot be empty"
+          h:_ -> if h `elem` validSwitches
+                  then
+                  [ "  ### "++info++":"
+                  , "  # - "++h++case kind of
                                    NoArg _ -> "" 
                                    ReqArg _ str -> "="++str
                                    OptArg _ str -> "[="++str++"]"
-         , ""
-         ]
-        else []   
+                  , ""
+                  ]
+                  else []   
 isValidSwitch :: String -> Bool
 isValidSwitch str = 
   case mapMaybe (matches . fst) options of
@@ -309,11 +318,11 @@ isValidSwitch str =
   where 
     matches :: OptionDef -> Maybe OptionDef
     matches x@(Option _ labels _ _) 
-     = if takeWhile (/= '=') str `elem` labels \\ ["version","help","config","sampleConfigFile"]
+     = if takeWhile (/= '=') str `elem` labels L.\\ ["version","help","config","sampleConfigFile"]
        then Just x
        else Nothing
 validSwitches :: [String]
-validSwitches =  filter canBeYamlSwitch [head label | Option _ label _ _ <- map fst options]
+validSwitches =  filter canBeYamlSwitch [h | Option _ (h:_) _ _ <- map fst options]
 canBeYamlSwitch :: String -> Bool
 canBeYamlSwitch str =
    takeWhile (/= '=') str `notElem` ["version","help","config","sampleConfigFile"]  
@@ -342,7 +351,7 @@ data FSpecFormat =
 allFSpecFormats :: String
 allFSpecFormats = 
      "[" ++
-     intercalate ", " ((sort . map showFormat) [minBound..]) ++
+     L.intercalate ", " ((L.sort . map showFormat) [minBound..]) ++
      "]"
 showFormat :: FSpecFormat -> String
 showFormat fmt = case show fmt of
@@ -357,7 +366,7 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option ['h','?'] ["help"]
                (NoArg (\opts -> opts{showHelp = True}))
-               "get (this) usage information."
+               "get (this) usage information. Add --verbose for more advanced options."
             , Public)
           , (Option ['V']   ["verbose"]
                (NoArg (\opts -> opts{ verboseP  = True
@@ -396,42 +405,46 @@ options = [ (Option ['v']   ["version"]
                (ReqArg (\x opts -> opts {zwolleVersion = x}
                        ) "VERSION")
                ("tag, branch or SHA of the prototype framework on Github. (What purpose does this serve?)")
-            , Public)
+            , Hidden)
           , (Option []      ["force-reinstall-framework"]
                (NoArg (\opts -> opts{forceReinstallFramework = True}))
                "re-install the prototype framework. This discards any previously installed version."
-            , Public)
+            , Hidden)
           , (Option []     ["customizations"]
                (ReqArg (\names opts -> opts {dirCustomizations = splitOn ";" names}
                        ) "DIRECTORY")
                "copy a directory into the generated prototype, overriding the default directory called 'customizations'."
-            , Public)
+            , Hidden)
+          , (Option []      ["skip-composer"]
+               (NoArg (\opts -> opts{runComposer = False}))
+               "skip installing php dependencies (using Composer) for prototype framework."
+            , Hidden)
           , (Option ['d']  ["dbName"]
                (ReqArg (\nm opts -> opts{dbName = if nm == ""
                                                          then dbName opts
                                                          else map toLower nm}
                        ) "NAME")
                ("database name (This overrules environment variable "++ dbNameVarName ++ ", defaults to filename) to which the prototype will connect for persistent storage.")
-            , Public)
+            , Hidden)
           , (Option []  ["sqlHost"]
                (ReqArg (\nm opts -> opts{sqlHost = if nm == ""
                                                           then sqlHost opts
                                                           else nm}
                        ) "HOSTNAME")
                "set SQL host name (Defaults to `localhost`), to identify the host on which the persistent store resides"
-            , Public)
+            , Hidden)
           , (Option []  ["sqlLogin"]
                (ReqArg (\nm opts -> opts{sqlLogin = if nm == ""
                                                           then sqlLogin opts
                                                           else nm}
                        ) "USER")
                "set SQL user name (Defaults to `ampersand`), to let your application login to the database."
-            , Public)
+            , Hidden)
           , (Option []  ["sqlPwd"]
                (ReqArg (\nm opts -> opts{sqlPwd = nm}
                        ) "PASSWORD")
                "set SQL password (Defaults to `ampersand`), to let your application login to the database."
-            , Public)
+            , Hidden)
           , (Option []        ["sql-bin-tables"]
                (NoArg (\opts -> opts{sqlBinTables = True}))
                "generate binary tables only in SQL database, for testing purposes."
@@ -439,13 +452,24 @@ options = [ (Option ['v']   ["version"]
           , (Option ['x']     ["interfaces"]
                (NoArg (\opts -> opts{allInterfaces  = True}))
                "generate interfaces, which currently does not work."
+            , Hidden)
+          , (Option []        ["daemon"]
+               (OptArg (\fn opts -> opts{runAsDaemon = True
+                                        ,daemonConfig = fromMaybe (daemonConfig opts) fn
+                                        })"configfile")
+               "Run ampersand as daemon, for use by the vscode ampersand-language-extention. An optional parameter may be specified to tell what config file is used. This defaults to `.ampersand`."
             , Public)
           , (Option ['e']     ["export"]
                (OptArg (\mbnm opts -> opts{export2adl = True
-                                                   ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
+                                          ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
                "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
             , Public)
-          , (Option ['o']     ["outputDir"]
+            , (Option ['D']        ["dataAnalysis"]
+            (OptArg (\mbnm opts -> opts{dataAnalysis = True
+                                                ,outputfile = fromMaybe "DataModel.adl" mbnm}) "file")
+            "export a data model as plain Ampersand script, for analysing Excel-data."
+         , Public)
+       , (Option ['o']     ["outputDir"]
                (ReqArg (\nm opts -> opts{dirOutput = nm}
                        ) "DIR")
                ("output directory (This overrules environment variable "++ dirOutputVarName ++ ").")
@@ -454,7 +478,7 @@ options = [ (Option ['v']   ["version"]
                (ReqArg (\nm opts -> opts{namespace = nm}
                        ) "NAMESPACE")
                "prefix database identifiers with this namespace, to isolate namespaces within the same database."
-            , Public)
+            , Hidden)
           , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> opts
                                 { genFSpec=True
@@ -505,19 +529,19 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["sqldump"]
                (NoArg (\opts -> opts{sqlDump = True}))
                "generate a dump of SQL queries (for debugging)."
-            , Public)
+            , Hidden)
           , (Option []        ["crowfoot"]
                (NoArg (\opts -> opts{crowfoot = True}))
                "generate crowfoot notation in graphics, to please crowfoot addicts."
-            , Public)
+            , Hidden)
           , (Option []        ["blackWhite"]
                (NoArg (\opts -> opts{blackWhite = True}))
                "avoid coloring conventions to facilitate readable pictures in black and white."
-            , Public)
+            , Hidden)
           , (Option []        ["altGraphics"]
                (NoArg (\opts -> opts{doubleEdges = not (doubleEdges opts)}))
                "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
-            , Public)
+            , Hidden)
           , (Option []        ["noGraphics"]
                (NoArg (\opts -> opts{noGraphics = True}))
                "omit the generation of graphics during generation of the functional design document to speed up the compiler."
@@ -549,7 +573,7 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["pop-xlsx"]
                (NoArg (\opts -> opts{genPOPExcel = True}))
                "Generate an .xmlx file containing the populations of your script."
-            , Public)
+            , Hidden)
           , (Option []        ["language"]
                (ReqArg (\l opts-> opts{language = case map toUpper l of
                                                        "NL"  -> Just Dutch
@@ -603,14 +627,14 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["do-not-trim-cellvalues"]
                (NoArg (\opts -> opts{trimXLSXCells = False}))
                "Do not ignore leading and trailing spaces in .xlsx files that are INCLUDED in the script." -- :-)
-            , Public)
+            , Hidden)
           ]
 
 usageInfo' :: Options -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.
 usageInfo' opts = 
   infoHeader (progrName opts) ++"\n"++
-    (concat . sort . map publishOption) [od | (od,x) <- options, verboseP opts || x == Public] 
+    (concat . L.sort . map publishOption) [od | (od,x) <- options, verboseP opts || x == Public] 
 
 infoHeader :: String -> String
 infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
@@ -619,19 +643,19 @@ infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nLi
 publishOption:: OptDescr a -> String
 publishOption (Option shorts longs args expl) 
   = unlines (
-    ( "  "++intercalate ", " ["--"++l | l <-longs] 
+    ( "  "++L.intercalate ", " ["--"++l | l <-longs] 
       ++case args of
          NoArg _      -> "" 
          ReqArg _ str -> "="++str
          OptArg _ str -> "[="++str++"]"
-      ++case intercalate ", " [ "-"++[c] | c <- shorts] of
+      ++case L.intercalate ", " [ "-"++[c] | c <- shorts] of
           []  -> []
           xs  -> " ("++xs++")"
     ): 
      map (replicate 10 ' '++) (lines (limit 65 expl)))
   where
    limit :: Int -> String -> String
-   limit i = intercalate "\n" . map (singleLine i . words) . lines
+   limit i = L.intercalate "\n" . map (singleLine i . words) . lines
    singleLine :: Int -> [String] -> String 
    singleLine i wrds = 
      case fillUpto i "" wrds of

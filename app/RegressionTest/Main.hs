@@ -3,18 +3,18 @@ module Main (main) where
 import Ampersand.Basics
 import Ampersand.Test.Regression(DirContent(..),DirData(..),process)
 import Conduit
-import Control.Monad --(filterM, forM_, foldM,when)
-import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
+import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist, makeAbsolute)
 import System.Exit --(ExitCode, exitFailure, exitSuccess)
 import System.FilePath ((</>))
 import System.IO.Error (tryIOError)
 
 main :: IO ExitCode
 main = do 
+    putStrLn $ "Starting regression test."
+    baseDir <- makeAbsolute $ "." </> "testing"
     totalfails <- runConduit $ walk baseDir .| myVisitor .| sumarize
     failWhenNotZero totalfails 
   where 
-    baseDir = "." </> "testing"
     failWhenNotZero :: Int -> IO ExitCode
     failWhenNotZero x 
       | x==0 =
@@ -51,7 +51,8 @@ walk path = do
             isFile entry = doesFileExist (path </> entry)
             isDir entry = doesDirectoryExist (path </> entry)
             filterHidden paths = return $ filter (not.isHidden) paths
-            isHidden dir = head dir == '.'
+            isHidden ('.':_) = True
+            isHidden _       = False
             
 -- Convert a DirData into an Int that contains the number of failed tests
 myVisitor :: ConduitT DirData Int IO ()

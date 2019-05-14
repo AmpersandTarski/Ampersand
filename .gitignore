@@ -7,7 +7,11 @@ cabal.sandbox.config
 .cabal-sandbox
 .dist-buildwrapper
 /dist
+/dist-newstyle
 .idea
+
+# Temporarily disable ampersand.cabal (See issue #931)
+/ampersand.cabal
 
 StaticFiles_Generated.hs
 BuildInfo_Generated.hs
@@ -36,3 +40,7 @@ miscellaneous/AmpersandBackup.jgfns
 /.ghci
 /ghcid.txt
 
+# Editor related #
+##################
+*.epp
+~$*

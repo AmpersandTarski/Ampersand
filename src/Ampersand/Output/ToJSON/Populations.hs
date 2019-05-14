@@ -8,9 +8,9 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Output.ToJSON.JSONutils
-import           Data.Maybe
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 import qualified Data.Text as Text
+import qualified RIO.List as L
 
 data Populations = Populations
    { epJSONatoms :: [AtomValuesOfConcept]
@@ -38,8 +38,8 @@ instance ToJSON JPair where
   toJSON = amp2Jason
 instance JSON (MultiFSpecs,Bool) Populations where
  fromAmpersand opts@Options{..} _ (multi,doMeta) = Populations
-   { epJSONatoms = map (fromAmpersand opts multi) (zip (Set.elems $ allConcepts theFSpec) (repeat doMeta))
-   , epJSONlinks = map (fromAmpersand opts multi) (zip (Set.elems $ vrels       theFSpec) (repeat doMeta))
+   { epJSONatoms = map (fromAmpersand opts multi) (zip (Set.elems $ allConcepts theFSpec) (L.repeat doMeta))
+   , epJSONlinks = map (fromAmpersand opts multi) (zip (Set.elems $ vrels       theFSpec) (L.repeat doMeta))
    }
   where 
    theFSpec 
@@ -48,7 +48,7 @@ instance JSON (MultiFSpecs,Bool) Populations where
      where ftl = fatal "There is no grinded fSpec."
 instance JSON (A_Concept,Bool) AtomValuesOfConcept where
  fromAmpersand _ multi (cpt,doMeta) = AtomValuesOfConcept
-   { avcJSONconcept = Text.pack (escapeIdentifier . name $ cpt)
+   { avcJSONconcept = Text.pack (idWithoutType cpt)
    , avcJSONatoms   = map (Text.pack . showValADL) (Set.elems $ atomsBySmallestConcept theFSpec cpt)
    }
   where 

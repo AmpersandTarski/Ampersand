@@ -4,9 +4,9 @@ where
 import qualified Codec.Compression.GZip as GZip
 import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as BS
-import           Data.Char
+import           RIO.Char
 import           Data.Either
-import           Data.List
+import qualified RIO.List as L
 import           Data.Time.Clock
 import qualified Data.Time.Format as DTF
 import           Data.Time.LocalTime
@@ -16,10 +16,11 @@ import           Distribution.Simple.Setup
 import           Distribution.PackageDescription
 import           Distribution.Pretty (prettyShow)
 import           System.Directory
+import           System.Environment (getEnvironment)
 import           System.Exit
 import           System.FilePath
 import           System.IO(withFile,IOMode(ReadMode),hGetContents)
-import           System.Process
+import           System.Process(readProcessWithExitCode)
 
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
@@ -76,40 +77,54 @@ buildInfoModule cabalVersion gitInfo time = unlines
   ]
 
 getGitInfoStr :: IO String
-getGitInfoStr =
- do { eSHA <- readProcessEither "git" ["rev-parse", "--short", "HEAD"] ""
-    ; eBranch <- readProcessEither "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
-    ; (exitCode, _, _) <- readProcessWithExitCode "git" ["diff", "--quiet"] ""
-    ; let isDirty = exitCode /= ExitSuccess -- exit code signals whether branch is dirty
-    ; case (eSHA, eBranch) of
-        (Right sha, Right branch) ->
-         return $ strip branch ++ ":" ++ strip sha ++ (if isDirty then "*" else "")
-        _ ->
-         do { mapM_ print $ lefts [eSHA, eBranch] -- errors during git execution
-            ; warnNoCommitInfo
-            }
-    } `catch` \err ->  -- git failed to execute
-         do { print (err :: IOException)
-            ; warnNoCommitInfo
-            }
- where strip str = reverse . dropWhile isSpace . reverse $ str
+getGitInfoStr = getInfoStr `catch` warnGracefully
+  where 
+   getInfoStr = do
+     eSHA <- readProcessEither "git" ["rev-parse", "--short", "HEAD"] ""
+     eBranch <- readProcessEither "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
+     (exitCode, _, _) <- readProcessWithExitCode "git" ["diff", "--quiet"] ""
+     let isDirty = exitCode /= ExitSuccess -- exit code signals whether branch is dirty
+     case (eSHA, eBranch) of
+       (Right sha, Right branch) ->
+           return $ gitInfoStr sha branch isDirty
+       _ -> do 
+           -- ci/cd will create some custom environment variables.
+           -- This is required in case of usage of cabal 2.4 or greater.
+           -- (See https://github.com/haskell/cabal/issues/5934 for 
+           -- the discussion)
+           env <- getEnvironment
+           case ( lookup "GIT_SHA" env
+                , lookup "GIT_Branch" env
+                ) of
+             (Just sha, Just branch) ->
+               return $ gitInfoStr branch sha False
+             _ -> do
+               mapM_ print $ lefts [eSHA, eBranch] -- errors during git execution
+               warnNoCommitInfo
+           
+   warnGracefully err = do
+     print (err :: IOException)
+     warnNoCommitInfo
+   gitInfoStr sha branch isDirty =
+      strip branch ++ ":" ++ strip sha ++ (if isDirty then "*" else "")   
+   strip str = reverse . dropWhile isSpace . reverse $ str
 
-       readProcessEither :: String -> [String] -> String -> IO (Either String String)
-       readProcessEither cmd args stdinStr =
-        do { (exitCode,stdoutStr,stderrStr) <- readProcessWithExitCode cmd args stdinStr
-           ; case exitCode of
-               ExitSuccess   -> return $ Right stdoutStr
-               ExitFailure _ -> return $ Left stderrStr
-           }
+   readProcessEither :: String -> [String] -> String -> IO (Either String String)
+   readProcessEither cmd args stdinStr = do
+     (exitCode,stdoutStr,stderrStr) <- readProcessWithExitCode cmd args stdinStr
+     case exitCode of
+       ExitSuccess   -> return $ Right stdoutStr
+       ExitFailure _ -> return $ Left stderrStr
 
 warnNoCommitInfo :: IO String
-warnNoCommitInfo =
- do { putStrLn "\n\n\nWARNING: Execution of 'git' command failed."
-    ; putStrLn $ "BuildInfo_Generated.hs will not contain revision information, and therefore\nneither will fatal error messages.\n"++
-                 "Please check your installation\n"
-    ; return "no git info"
-    }
-
+warnNoCommitInfo = do
+  putStrLn ""
+  putStrLn ""
+  putStrLn "WARNING: Execution of 'git' command failed."
+  putStrLn "BuildInfo_Generated.hs will not contain revision information, and"
+  putStrLn "   therefore neither will fatal error messages."
+  putStrLn "   Please check your installation."
+  return "no git info"
 
 {- For each file in the directory ampersand/static, we generate a StaticFile value,
    which contains the information necessary for Ampersand to create the file at run-time.
@@ -190,7 +205,7 @@ data FileKind = PandocTemplates | FormalAmpersand | SystemContext deriving (Show
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
   unlines staticFileModuleHeader ++
-  "  [ " ++ intercalate "\n  , " sfDeclStrs ++ "\n" ++
+  "  [ " ++ L.intercalate "\n  , " sfDeclStrs ++ "\n" ++
   "  ]\n"
 
 staticFileModuleHeader :: [String]

@@ -13,32 +13,37 @@ environment:
     # - GHCVER: "8.4.2"
     #   CHOCOPTS: --forcex86
 
-
 cache:
 - "C:\\SR"
 
 install:
- - "choco install -y ghc --version %GHCVER% %CHOCOPTS%"
- - "choco install -y cabal %CHOCOPTS%"
- - "refreshenv"
- - "set PATH=C:\\ghc\\ghc-%GHCVER%:C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;%PATH%"
- - "cabal --version"
- - "ghc --version"
- - "cabal %CABOPTS% update -v"
- - "pwd"
-
+ - cmd: echo Start install
+ - cmd: choco install -y ghc --version %GHCVER% %CHOCOPTS%
+ - cmd: choco install -y cabal %CHOCOPTS%
+ - cmd: refreshenv
+ - cmd: set PATH=C:\\ghc\\ghc-%GHCVER%:C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;%PATH%
+ - cmd: cabal --version
+ - cmd: ghc --version
+ - cmd: cabal %CABOPTS% new-update -v
+# Export the git version for use with cabal (See https://github.com/haskell/cabal/issues/5934 for the discussion)
+ - cmd: git rev-parse --short HEAD > gitsha.tmp"
+ - cmd: set /p GIT_SHA=<gitsha.tmp
+ - cmd: del gitsha.tmp
+ - cmd: set GIT_Branch=%APPVEYOR_REPO_BRANCH%
+ 
 build: off
 
 test_script:
- - IF EXIST configure.ac bash -c "autoreconf -i"
- - "echo packages:. > cabal.project"
- - "cabal %CABOPTS% build -j1 all"
- - "cd \\WORK\\Ampersand"
- - "cabal install"
-
+ - cmd: echo Start test_script...
+ - cmd: IF EXIST configure.ac bash -c "autoreconf -i"
+ - cmd: echo packages:. > cabal.project
+ - cmd: cabal %CABOPTS% new-install exe:ampersand exe:ampPreProc --flags=buildAll -j1 --install-method=copy
+ - cmd: ampersand --version
+ 
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
 build_script:
+ - cmd: echo Start build_script...
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
 # - stack install weeder --resolver=nightly
 # - weeder --version
@@ -47,7 +52,7 @@ build_script:
 ### - ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('. --build')
 
 # Set a magical environment variable
-- cmd: for /f %%i in ('ampersand -v') do set AMPERSAND_VERSION=%%i
+ - cmd: for /f %%i in ('ampersand -v') do set AMPERSAND_VERSION=%%i
 
 # mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
 artifacts:

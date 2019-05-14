@@ -7,9 +7,8 @@ module Ampersand.Output.ToJSON.Concepts
 where
 import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.JSONutils 
-import           Data.List(nub)
-import           Data.Maybe
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified RIO.Set as Set
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
 data Concept = Concept
@@ -59,18 +58,18 @@ instance JSON MultiFSpecs Concepts where
    where fSpec = userFSpec multi
 instance JSON A_Concept Concept where
  fromAmpersand opts@Options{..} multi cpt = Concept
-  { cptJSONid                = escapeIdentifier . name $ cpt
+  { cptJSONid                = idWithoutType cpt
   , cptJSONlabel             = name cpt
   , cptJSONtype              = show . cptTType fSpec $ cpt
-  , cptJSONgeneralizations   = map (escapeIdentifier . name) . largerConcepts  (vgens fSpec) $ cpt
-  , cptJSONspecializations   = map (escapeIdentifier . name) . smallerConcepts (vgens fSpec) $ cpt
-  , cptJSONdirectGens        = map (escapeIdentifier . name) $ nub [ g | (s,g) <- fsisa fSpec, s == cpt]
-  , cptJSONdirectSpecs       = map (escapeIdentifier . name) $ nub [ s | (s,g) <- fsisa fSpec, g == cpt]
+  , cptJSONgeneralizations   = map idWithoutType . largerConcepts  (vgens fSpec) $ cpt
+  , cptJSONspecializations   = map idWithoutType . smallerConcepts (vgens fSpec) $ cpt
+  , cptJSONdirectGens        = map idWithoutType $ L.nub [ g | (s,g) <- fsisa fSpec, s == cpt]
+  , cptJSONdirectSpecs       = map idWithoutType $ L.nub [ s | (s,g) <- fsisa fSpec, g == cpt]
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
-  , cptJSONconceptTable = fromAmpersand opts multi cpt
-  , cptJSONlargestConcept = escapeIdentifier . name . largestConcept fSpec $ cpt
+  , cptJSONconceptTable      = fromAmpersand opts multi cpt
+  , cptJSONlargestConcept    = idWithoutType . largestConcept fSpec $ cpt
   } 
   where
     fSpec = userFSpec multi
@@ -80,7 +79,7 @@ instance JSON A_Concept Concept where
 instance JSON A_Concept TableCols where
  fromAmpersand _ multi cpt = TableCols
   { tclJSONname    = name cptTable
-  , tclJSONcols    = case nub . map fst $ cols of
+  , tclJSONcols    = case L.nub . map fst $ cols of
                        [t] -> if name t == name cptTable
                               then map (attName . snd) cols
                               else fatal $ "Table names should match: "++name t++" "++name cptTable++"." 
@@ -98,7 +97,7 @@ instance JSON ViewDef View where
   { vwJSONlabel        = name vd
   , vwJSONisDefault    = vdIsDefault vd
   , vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd
-  , vwJSONsegments     = map (fromAmpersand opts multi) . vdats $ vd
+  , vwJSONsegments     = fmap (fromAmpersand opts multi) . vdats $ vd
   }
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where
