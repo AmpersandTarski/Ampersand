@@ -300,11 +300,11 @@ instance Pretty (P_IdentSegmnt TermPrim) where
 instance Pretty (P_ViewD TermPrim) where
     pretty (P_Vd _ lbl cpt True Nothing ats) = -- legacy syntax
         text "VIEW" <+> maybeQuote lbl   <+> text ":"
-                    <~> cpt <+> parens (listOf1 ats)
+                    <~> cpt <+> parens (listOf ats)
     pretty (P_Vd _ lbl cpt isDefault html ats) = -- new syntax
         text "VIEW" <+> maybeQuote lbl  <+> text ":"
                     <~> cpt <+> (if isDefault then text "DEFAULT" else empty)
-                    <+> braces (listOf1 ats) <~> html <+> text "ENDVIEW"
+                    <+> braces (listOf ats) <~> html <+> text "ENDVIEW"
 
 instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str

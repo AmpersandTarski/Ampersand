@@ -673,7 +673,7 @@ data P_ViewD a =
               , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept
               , vd_html :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
-              , vd_ats :: NEL.NonEmpty (P_ViewSegment a)   -- ^ the constituent segments of this view.
+              , vd_ats :: [(P_ViewSegment a)] -- ^ the constituent segments of this view.
               } deriving (Show)
 instance Ord (P_ViewD a) where
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
