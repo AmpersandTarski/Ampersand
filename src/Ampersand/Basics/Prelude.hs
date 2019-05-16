@@ -21,7 +21,7 @@ import qualified RIO.Text as T
 
 -- Functions to be replaced later on:
 writeFile :: FilePath -> String -> IO ()
-writeFile fp x = writeFileUtf8 fp . tshow $ x
+writeFile fp x = writeFileUtf8 fp . T.pack $ x
 readUTF8File :: FilePath -> IO (Either String String)
 readUTF8File fp = (Right . T.unpack <$> readFileUtf8 fp) `catch` handler
   where 
