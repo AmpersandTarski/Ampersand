@@ -516,9 +516,8 @@ pCtx2aCtx opts
               , vdhtml = mHtml
               , vdats  = vdts
               })
-       <$> traverse typeCheckViewSegment (NEL.zip infiniteNaturals pvs)
+       <$> traverse typeCheckViewSegment (zip [0..] pvs)
      where
-       infiniteNaturals = 0 NEL.:| [1..]
        typeCheckViewSegment :: (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
        typeCheckViewSegment (seqNr, seg)
         = do payload <- typecheckPayload (vsm_load seg)

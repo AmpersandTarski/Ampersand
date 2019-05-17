@@ -281,7 +281,7 @@ data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in
                   , vdIsDefault :: Bool      -- ^ whether or not this is the default view for the concept
                   , vdhtml :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --                  , vdtext :: Maybe ViewText -- Future extension
-                  , vdats :: NEL.NonEmpty ViewSegment   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
+                  , vdats :: [ViewSegment]   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
                   } deriving (Show)
 instance Named ViewDef where
   name = vdlbl

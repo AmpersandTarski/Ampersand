@@ -283,7 +283,7 @@ instance Arbitrary P_IdentSegment where
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
     arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                    <*> arbitrary <*> arbitrary <*> listOf1 arbitrary
+                    <*> arbitrary <*> arbitrary <*> listOf arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeStr
