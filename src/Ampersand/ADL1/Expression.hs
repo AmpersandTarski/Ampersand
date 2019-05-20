@@ -229,7 +229,9 @@ exprPrd2list (EPrd (l,r)) = exprPrd2list l <> exprPrd2list r
 exprPrd2list r            = r NEL.:| []
 
 insParentheses :: Expression -> Expression
-insParentheses = insPar 0
+insParentheses = 
+  id -- TODO: Needs a fix. isParantheses is broken. It causes a fatal. See issue #964
+     -- insPar 0
    where
      wrap :: Integer -> Integer -> Expression -> Expression
      wrap i j e' = if i<=j then e' else EBrk (insPar 0 e')
