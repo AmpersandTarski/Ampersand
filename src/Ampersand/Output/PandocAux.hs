@@ -175,6 +175,7 @@ writepandoc opts@Options{..} fSpec thePandoc = do
                       , writerNumberSections=True
                       , writerTemplate=Text.unpack <$> template
                       , writerVariables=defaultWriterVariables opts fSpec
+                      , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath
                     --  , writerVerbose=verboseP
@@ -275,7 +276,7 @@ instance ShowMath Expression where
           showExpr (EKl0 e)     = showExpr (addParensToSuper e)++inMathStar
           showExpr (EKl1 e)     = showExpr (addParensToSuper e)++inMathPlus
           showExpr (EFlp e)     = showExpr (addParensToSuper e)++inMathFlip
-          showExpr (ECpl e)     = "\\overline{"++showExpr e++"}"
+          showExpr (ECpl e)     = inMathOverline (showExpr e)
           showExpr (EBrk e)     = "("++showExpr e++")"
           showExpr (EDcD d)     = inMathText (name d)
           showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
@@ -497,6 +498,9 @@ inMathDiamond = " \\Diamond "
 
 inMathFlip :: String
 inMathFlip = "^{\\smallsmile}"
+
+inMathOverline :: String -> String
+inMathOverline x = " \\overline{"++x++"} "
 
 newGlossaryEntry :: String -> String -> Inlines
 newGlossaryEntry nm cnt =
