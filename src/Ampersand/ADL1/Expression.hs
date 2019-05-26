@@ -250,7 +250,11 @@ insParentheses = insPar 0
      insPar _  (EFlp e)     = EFlp (insPar 10 e)
      insPar _  (ECpl e)     = ECpl (insPar 10 e)
      insPar i  (EBrk e)     = insPar i e
-     insPar _  x            = x
+     insPar _ x@EDcD{}      = x  
+     insPar _ x@EDcI{}      = x  
+     insPar _ x@EEps{}      = x  
+     insPar _ x@EDcV{}      = x  
+     insPar _ x@EMp1{}      = x  
      foldr1 :: (Expression -> Expression -> Expression) -> NEL.NonEmpty Expression -> Expression
      foldr1 fun nonempty = foldr fun (NEL.head nonempty) (NEL.tail nonempty)
 {-
