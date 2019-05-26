@@ -458,7 +458,7 @@ instance ShowHSName ViewDef where
 instance ShowHS ViewDef where
  showHS opts indent vd
   = "Vd ("++showHS opts "" (vdpos vd)++") "++show (name vd)++" "++showHSName (vdcpt vd)
-    ++indent++"  [ "++L.intercalate (indent++"  , ") (NEL.toList . fmap (showHS opts indent) $ vdats vd)++indent++"  ]"
+    ++indent++"  [ "++L.intercalate (indent++"  , ") (fmap (showHS opts indent) $ vdats vd)++indent++"  ]"
 
 instance ShowHS ViewSegment where
   showHS opts indent vs =

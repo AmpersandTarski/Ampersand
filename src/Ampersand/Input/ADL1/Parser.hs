@@ -375,7 +375,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> pBraces (pViewSegment False `sepBy1` pComma)
+                      <*> (pBraces (pViewSegment False `sepBy` pComma) `opt` [])
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos' nm cpt isDef ats html =
@@ -411,7 +411,7 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> pConceptOneRef
                       <*> return True
                       <*> return Nothing
-                      <*> pParens (pViewSegment True `sepBy1` pComma)
+                      <*> pParens (pViewSegment True `sepBy` pComma)
 
 
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?

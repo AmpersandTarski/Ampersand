@@ -20,8 +20,6 @@ import           System.Directory
 import           System.FilePath
 import           Text.StringTemplate
 import           Text.StringTemplate.GenericStandard () -- only import instances
-import qualified Data.List.NonEmpty as NEL
-
 
 {- TODO
 - Be more consistent with record selectors/pattern matching
@@ -192,7 +190,7 @@ buildInterface fSpec allIfcs ifc = do
             mSpecificTemplatePath <-
                   case mView of
                     Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                      -> return $ Just (fName, mapMaybe vsmlabel . NEL.toList $ viewSegs)
+                              -> return $ Just (fName, mapMaybe vsmlabel $ viewSegs)
                     _ -> do
                        -- no view, or no view with an html template, so we fall back to target-concept template
                        -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
