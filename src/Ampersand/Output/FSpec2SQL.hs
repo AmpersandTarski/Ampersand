@@ -17,15 +17,17 @@ import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
 
-generateDatabaseFile :: Options -> MultiFSpecs -> IO()
-generateDatabaseFile opts@Options{..} multi = 
-   do verboseLn $ "  Generating "++file
-      createDirectoryIfMissing True (takeDirectory fullFile)
-      writeFile fullFile content
+generateDatabaseFile :: MultiFSpecs -> RIO App ()
+generateDatabaseFile multi = 
+   do env <- ask
+      let opts@Options{..} = getOptions env
+      verboseLn $ "  Generating "++file
+      liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile opts))
+      liftIO $ writeFile (fullFile opts) content
   where 
    content = Text.unpack (databaseStructureSql multi)
    file = "database" <.> "sql"
-   fullFile = getGenericsDir opts </> file
+   fullFile opts = getGenericsDir opts </> file
 
 databaseStructureSql :: MultiFSpecs -> Text.Text
 databaseStructureSql multi

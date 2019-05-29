@@ -32,16 +32,15 @@ import           Text.Pandoc.Builder
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
-generateAmpersandOutput :: Options -> MultiFSpecs -> IO ()
-generateAmpersandOutput opts@Options{..} multi = 
-  do { verboseLn "Checking for rule violations..."
-     ; if dataAnalysis then verboseLn "Not checking for rule violations because of data analysis." else reportInvViolations violationsOfInvariants
-     ; reportSignals (initialConjunctSignals fSpec)
-     ; createDirectoryIfMissing True dirOutput
-     ; sequence_ . map snd . filter fst $ conditionalActions
-     }
+generateAmpersandOutput :: Options -> MultiFSpecs -> RIO App ()
+generateAmpersandOutput opts@Options{..} multi = do
+    verboseLn "Checking for rule violations..."
+    if dataAnalysis then verboseLn "Not checking for rule violations because of data analysis." else reportInvViolations violationsOfInvariants
+    reportSignals (initialConjunctSignals fSpec)
+    liftIO $ createDirectoryIfMissing True dirOutput
+    sequence_ . map snd . filter fst $ conditionalActions
   where 
-   conditionalActions :: [(Bool, IO())]
+   conditionalActions :: [(Bool, RIO App ())]
    conditionalActions = 
       [ ( genUML                , doGenUML              )
       , ( haskell               , doGenHaskell          )
@@ -65,113 +64,104 @@ generateAmpersandOutput opts@Options{..} multi =
    --    Expect to find a file "MetaModel.adl" in your working directory upon successful termination.
    -- 2. To perform a round-trip test, use an Ampersand-script foo.adl and run and run "Ampersand --export foo.adl".
    --    Expect to find a file "Export.adl" in your working directory which should be semantically equivalent to foo.adl.
-   doGenADL :: IO()
-   doGenADL =
-    do { verboseLn $ "Generating Ampersand script (ADL) for "  ++ name fSpec ++ "..."
-       ; writeFile outputFile (showA ctx) 
-       ; verboseLn $ ".adl-file written to " ++ outputFile ++ "."
-       }
+   doGenADL :: RIO App ()
+   doGenADL = do
+       verboseLn $ "Generating Ampersand script (ADL) for "  ++ name fSpec ++ "..."
+       liftIO $ writeFile outputFile (showA ctx) 
+       verboseLn $ ".adl-file written to " ++ outputFile ++ "."
     where outputFile = dirOutput </> outputfile
           ctx = originalContext fSpec
  
-   doGenProofs :: IO()
-   doGenProofs =
-    do { putStrLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "..."
-   --  ; verboseLn $ writeTextile def thePandoc
-       ; content <- runIO (writeHtml5String def thePandoc) >>= handleError
-       ; Text.writeFile outputFile content
-       ; verboseLn "Proof written."
-       }
+   doGenProofs :: RIO App ()
+   doGenProofs = do 
+       putStrLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "..."
+       content <- liftIO $ (runIO (writeHtml5String def thePandoc)) >>= handleError
+       liftIO $ Text.writeFile outputFile content
+       verboseLn "Proof written."
     where outputFile = dirOutput </> "proofs_of_"++baseName -<.> ".html"
           thePandoc = setTitle title (doc theDoc)
           title  = text $ "Proofs for "++name fSpec
           theDoc = fDeriveProofs fSpec
           --theDoc = plain (text "Aap")  -- use for testing...
 
-   doGenHaskell :: IO()
-   doGenHaskell =
-    do { putStrLn $ "Generating Haskell source code for " ++ name fSpec ++ "..."
-   --  ; verboseLn $ fSpec2Haskell fSpec -- switch this on to display the contents of Installer.php on the command line. May be useful for debugging.
-       ; writeFile outputFile (fSpec2Haskell opts fSpec)
-       ; verboseLn ("Haskell written into " ++ outputFile ++ ".")
-       }
+   doGenHaskell :: RIO App ()
+   doGenHaskell = do
+       putStrLn $ "Generating Haskell source code for " ++ name fSpec ++ "..."
+       liftIO $ writeFile outputFile (fSpec2Haskell opts fSpec)
+       verboseLn ("Haskell written into " ++ outputFile ++ ".")
     where outputFile = dirOutput </> baseName -<.> ".hs"
-   doGenSQLdump :: IO()
-   doGenSQLdump =
-    do { putStrLn $ "Generating SQL queries dumpfile for " ++ name fSpec ++ "..."
-       ; Text.writeFile outputFile (dumpSQLqueries opts multi)
-       ; verboseLn ("SQL queries dumpfile written into " ++ outputFile ++ ".")
-       }
+
+   doGenSQLdump :: RIO App ()
+   doGenSQLdump = do
+       putStrLn $ "Generating SQL queries dumpfile for " ++ name fSpec ++ "..."
+       liftIO $ Text.writeFile outputFile (dumpSQLqueries opts multi)
+       verboseLn ("SQL queries dumpfile written into " ++ outputFile ++ ".")
     where outputFile = dirOutput </> baseName ++ "_dump" -<.> ".sql"
    
-   doGenUML :: IO()
-   doGenUML =
-    do { putStrLn "Generating UML..."
-       ; writeFile outputFile $ generateUML fSpec
-       ; verboseLn ("Generated file: " ++ outputFile ++ ".")
-       }
+   doGenUML :: RIO App ()
+   doGenUML = do
+       putStrLn "Generating UML..."
+       liftIO . writeFile outputFile $ generateUML fSpec
+       verboseLn ("Generated file: " ++ outputFile ++ ".")
       where outputFile = dirOutput </> baseName -<.> ".xmi"
 
    -- This function will generate all Pictures for a given FSpec.
    -- the returned FSpec contains the details about the Pictures, so they
    -- can be referenced while rendering the FSpec.
    -- This function generates a pandoc document, possibly with pictures from an fSpec.
-   doGenDocument :: IO()
-   doGenDocument =
-    do { putStrLn $ "Generating functional design document for " ++ name fSpec ++ "..."
-       ; -- First we need to output the pictures, because they should be present 
-         -- before the actual document is written
-         when (not(noGraphics) && fspecFormat /=FPandoc) $
-           mapM_ (writePicture opts) (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
-       ; writepandoc opts fSpec thePandoc
-       }
+   doGenDocument :: RIO App ()
+   doGenDocument = do
+       putStrLn $ "Generating functional design document for " ++ name fSpec ++ "..."
+       -- First we need to output the pictures, because they should be present 
+       -- before the actual document is written
+       when (not(noGraphics) && fspecFormat /=FPandoc) $
+         mapM_ writePicture (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
+       writepandoc fSpec thePandoc
      where (thePandoc,thePictures) = fSpec2Pandoc opts fSpec
         
 
    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
-   doGenFPAExcel :: IO()
+   doGenFPAExcel :: RIO App ()
    doGenFPAExcel =
      putStrLn "Sorry, FPA analisys is discontinued. It needs maintenance." -- See https://github.com/AmpersandTarski/Ampersand/issues/621
      --  ; writeFile outputFile $ fspec2FPA_Excel fSpec
     
 --      where outputFile = dirOutput </> "FPA_"++baseName -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
-   doGenPopsXLSX :: IO()
-   doGenPopsXLSX =
-    do { putStrLn "Generating .xlsx file containing the population..."
-       ; ct <- runIO getPOSIXTime >>= handleError
-       ; BSL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
-       ; verboseLn ("Generated file: " ++ outputFile)
-       }
-      where outputFile = dirOutput </> baseName ++ "_generated_pop" -<.> ".xlsx"
+   doGenPopsXLSX :: RIO App ()
+   doGenPopsXLSX = do
+       putStrLn "Generating .xlsx file containing the population..."
+       ct <- liftIO $ runIO getPOSIXTime >>= handleError
+       liftIO $ BSL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
+       verboseLn ("Generated file: " ++ outputFile)
+     where outputFile = dirOutput </> baseName ++ "_generated_pop" -<.> ".xlsx"
 
-   doValidateSQLTest :: IO ()
-   doValidateSQLTest =
-    do { putStrLn "Validating SQL expressions..."
-       ; errMsg <- validateRulesSQL opts fSpec
-       ; unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
-       }
+   doValidateSQLTest :: RIO App ()
+   doValidateSQLTest = do
+       putStrLn "Validating SQL expressions..."
+       errMsg <- validateRulesSQL fSpec
+       unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
 
-   doGenProto :: IO ()
+   doGenProto :: RIO App ()
    doGenProto =
      if null violationsOfInvariants || allowInvariantViolations
      then sequence_ $
           [ putStrLn "Generating prototype..."
-          , createDirectoryIfMissing True dirPrototype
-          , doGenFrontend opts fSpec
-          , generateDatabaseFile opts multi
-          , generateJSONfiles opts multi
+          , liftIO $ createDirectoryIfMissing True dirPrototype
+          , doGenFrontend fSpec
+          , generateDatabaseFile multi
+          , generateJSONfiles multi
           , verboseLn $ "Prototype files have been written to " ++ dirPrototype
           ]
      else do exitWith NoPrototypeBecauseOfRuleViolations
 
-   doGenRapPopulation :: IO ()
+   doGenRapPopulation :: RIO App ()
    doGenRapPopulation =
      if null violationsOfInvariants || allowInvariantViolations
      then sequence_ $
           [ putStrLn "Generating RAP population..."
-          , createDirectoryIfMissing True dirPrototype
-          , generateJSONfiles opts multi
+          , liftIO $ createDirectoryIfMissing True dirPrototype
+          , generateJSONfiles multi
           , verboseLn $ "RAP population file has been written to " ++ dirPrototype
           ]
      else do exitWith NoPrototypeBecauseOfRuleViolations
@@ -191,7 +181,7 @@ generateAmpersandOutput opts@Options{..} multi =
                  ]
          else False
 
-   reportInvViolations :: [(Rule,AAtomPairs)] -> IO()
+   reportInvViolations :: [(Rule,AAtomPairs)] -> RIO App ()
    reportInvViolations []    = verboseLn $ "No invariant violations found for the initial population"
    reportInvViolations viols =
      if allowInvariantViolations && not verboseP
@@ -222,17 +212,17 @@ generateAmpersandOutput opts@Options{..} multi =
          ]
      else
        putStrLn "There are signals for the initial population. Use --verbose to output the violations"
-   ruleTest :: String -> IO ()
+   ruleTest :: String -> RIO App ()
    ruleTest ruleName =
     case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of
       [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
-      (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
-                     ; putStrLn $ showContents rule
-                     ; let rExpr = formalExpression rule
-                     ; let ruleComplement = rule { formalExpression = notCpl (EBrk rExpr) }
-                     ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (formalExpression ruleComplement)++"):"
-                     ; putStrLn $ showContents ruleComplement
-                     }
+      (rule:_) -> do 
+            putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
+            putStrLn $ showContents rule
+            let rExpr = formalExpression rule
+                ruleComplement = rule { formalExpression = notCpl (EBrk rExpr) }
+            putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (formalExpression ruleComplement)++"):"
+            putStrLn $ showContents ruleComplement
     where showContents rule = "[" ++ L.intercalate ", " pairs ++ "]"
             where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 
                           | (r,vs) <- allViolations fSpec, r == rule, v <- Set.elems vs]

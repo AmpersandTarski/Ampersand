@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Misc.Options
         ( Options(..)
-        , App
+        , App, mkApp
         , HasOptions(..),HasHandles(..)
         , FSpecFormat(..)
         , getOptionsIO
@@ -680,6 +680,8 @@ data App = App
   { opts :: !Options
   , appHandle :: !Handle
   }
+mkApp :: Options -> Handle -> App
+mkApp = App
 instance HasHandles App where
   getHandle = appHandle
 

@@ -117,7 +117,7 @@ defaultWriterVariables Options{..} fSpec
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The IO() creates the actual output
-writepandoc :: (HasOptions env, HasHandles env, HasVerbosity env) => FSpec -> Pandoc -> RIO env ()
+writepandoc :: FSpec -> Pandoc -> RIO App ()
 writepandoc fSpec thePandoc = do
   env <- ask
   let opts@Options{..} = getOptions env
