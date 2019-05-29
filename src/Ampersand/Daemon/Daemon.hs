@@ -6,26 +6,23 @@
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon(runDaemon) where
 
-import Data.Ord
-import Data.Tuple.Extra(both)
-import qualified System.Console.Terminal.Size as Term
-import System.Console.ANSI (hSupportsANSI,setTitle)
-import System.Environment
-import System.Directory(getCurrentDirectory,setCurrentDirectory)
-import System.FilePath
-import System.Info
+import           Ampersand.Basics
+import           Ampersand.Daemon.Daemon.Daemon
+import           Ampersand.Daemon.Daemon.Escape
+import           Ampersand.Daemon.Daemon.Terminal
+import           Ampersand.Daemon.Daemon.Types
+import           Ampersand.Daemon.Daemon.Util
+import           Ampersand.Daemon.Wait
+import           Ampersand.Misc
+import           Data.Ord
+import           Data.Tuple.Extra(both)
 import qualified RIO.List as L
-import Ampersand.Basics (ampersandVersionWithoutBuildTimeStr, fatal)
-import Ampersand.Basics.Exit
-import Ampersand.Basics.Prelude
-import Ampersand.Daemon.Daemon.Daemon
-import Ampersand.Daemon.Daemon.Escape
-import Ampersand.Daemon.Daemon.Terminal
-import Ampersand.Daemon.Daemon.Types
-import Ampersand.Daemon.Daemon.Util
-import Ampersand.Daemon.Wait
-import Ampersand.Misc
-
+import           System.Console.ANSI (hSupportsANSI,setTitle)
+import qualified System.Console.Terminal.Size as Term
+import           System.Directory(getCurrentDirectory,setCurrentDirectory)
+import           System.Environment
+import           System.FilePath
+import           System.Info
 
 -- | When to colour terminal output.
 data ColorMode
