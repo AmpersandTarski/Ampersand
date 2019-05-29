@@ -74,12 +74,11 @@ mainWithTerminal termSize termOutput = goForever
                         when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see #87
                     return $ if useStyle then id else map unescape
 
-                let aap waiter = runAmpersand env waiter termSize' (termOutput . restyle)
                 withWaiterNotify env $ \waiter ->
-                    runAmpersand env waiter termSize' (termOutput . restyle)
+                    runRIO env $ do 
+                       runAmpersand env waiter termSize' (termOutput . restyle)
 
-     --   errorHandler :: AmpersandExit -> RIO env ()
-        errorHandler :: AmpersandExit -> RIO App b0
+        errorHandler :: AmpersandExit -> RIO App ()
         errorHandler (err :: AmpersandExit) = do 
               putStrLn (show err)
               goForever
@@ -103,9 +102,8 @@ data Continue = Continue
 
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
-runAmpersand :: (HasOptions env, HasVerbosity env, HasHandles env) => 
-                env -> Waiter -> IO TermSize -> ([String] -> IO ()) -> RIO env Continue
-runAmpersand env waiter termSize termOutput = do
+runAmpersand :: App -> Waiter -> IO TermSize -> ([String] -> RIO App ()) -> RIO App Continue
+runAmpersand app waiter termSize termOutput = do
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()
         outputFill currTime load' msg' = do
             load'' <- return $ case load' of
@@ -119,7 +117,8 @@ runAmpersand env waiter termSize termOutput = do
             let mergeSoft ((Esc x,WrapSoft):(Esc y,q):xs) = mergeSoft $ (Esc (x++y), q) : xs
                 mergeSoft ((x,_):xs) = x : mergeSoft xs
                 mergeSoft [] = []
-            termOutput $ map fromEsc ((if termWrap == WrapSoft then mergeSoft else map fst) $ load''' ++ msg) ++ pad
+            runRIO app $ do 
+               termOutput $ map fromEsc ((if termWrap == WrapSoft then mergeSoft else map fst) $ load''' ++ msg) ++ pad
 
 
     nextWait <- waitFiles waiter
@@ -169,7 +168,7 @@ runAmpersand env waiter termSize termOutput = do
             reason <- nextWait' . L.nub $ loaded ad ++ (map loadFile . loads $ ad)
             verboseLn $ "%RELOADING: " ++ unwords reason
             return Continue
-    runRIO env $ fire nextWait aDaemon
+    runRIO app $ fire nextWait aDaemon
 
 -- | Given an available height, and a set of messages to display, show them as best you can.
 prettyOutput :: String -> Int -> [Load] -> [String]
