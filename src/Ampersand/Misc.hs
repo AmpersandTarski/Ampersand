@@ -3,8 +3,7 @@ module Ampersand.Misc
    ) where
 import Ampersand.Misc.Options
         ( Options(..)
-        , App
-        , mkApp
+        , App(..)
         , FSpecFormat(..)
         , getOptionsIO
         , showFormat

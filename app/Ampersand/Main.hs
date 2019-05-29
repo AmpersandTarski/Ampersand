@@ -10,10 +10,9 @@ import           System.Environment    (getArgs, getProgName)
 main :: IO ()
 main = do
   opts@Options{..} <- getOptionsIO
-  let app = mkApp opts stdout
+  let app = App opts stdout
   runRIO app $ do
      ampersand
-
 ampersand :: RIO App ()
 ampersand = do
     app <- ask
