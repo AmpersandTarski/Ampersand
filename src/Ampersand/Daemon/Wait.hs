@@ -29,10 +29,13 @@ data Waiter = WaiterPoll Seconds
 withWaiterPoll :: Seconds -> (Waiter -> IO a) -> IO a
 withWaiterPoll x f = f $ WaiterPoll x
 
-withWaiterNotify :: (Waiter -> IO a) -> IO a
-withWaiterNotify f = withManagerConf defaultConfig{confDebounce=NoDebounce} $ \manager -> do
-    mvar <- newEmptyMVar
-    var <- newVar Map.empty
+withWaiterNotify :: env -> (Waiter -> IO a) -> RIO env a
+withWaiterNotify env f = 
+    runRIO env $ do liftIO (withWaiterNotify' f)
+withWaiterNotify' :: (Waiter -> IO a) -> IO a
+withWaiterNotify' f = withManagerConf defaultConfig{confDebounce=NoDebounce} $ \manager -> do
+    mvar <- liftIO newEmptyMVar
+    var <- liftIO $ newVar Map.empty
     f $ WaiterNotify manager mvar var
 
 -- `listContentsInside test dir` will list files and directories inside `dir`,

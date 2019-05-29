@@ -41,7 +41,7 @@ data TermSize = TermSize
     }
 
 -- | Like 'main', but run with a fake terminal for testing
-mainWithTerminal :: IO TermSize -> ([String] -> IO ()) -> RIO App ()
+mainWithTerminal :: IO TermSize -> ([String] -> RIO App ()) -> RIO App ()
 mainWithTerminal termSize termOutput = goForever
   where goForever = work `catch` errorHandler
         work = forever $ withWindowIcon $ do
@@ -54,7 +54,7 @@ mainWithTerminal termSize termOutput = goForever
             verboseLn $ "%ARCH: " ++ arch
             verboseLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
             env <- ask
-            id {-withCurrentDirectory curDir-} $ do
+            withCurrentDirectory curDir $ do
                 termSize' <- liftIO $ return $ do
                         term <- termSize
                         -- if we write to the final column of the window then it wraps automatically
@@ -74,9 +74,9 @@ mainWithTerminal termSize termOutput = goForever
                         when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see #87
                     return $ if useStyle then id else map unescape
 
-                fatal "Verder uitwerken" 
-            --    withWaiterNotify $ \waiter ->
-            --        runAmpersand env waiter termSize' (termOutput . restyle)
+                let aap waiter = runAmpersand env waiter termSize' (termOutput . restyle)
+                withWaiterNotify env $ \waiter ->
+                    runAmpersand env waiter termSize' (termOutput . restyle)
 
      --   errorHandler :: AmpersandExit -> RIO env ()
         errorHandler :: AmpersandExit -> RIO App b0
@@ -85,7 +85,7 @@ mainWithTerminal termSize termOutput = goForever
               goForever
 
 runDaemon :: RIO App ()
-runDaemon = mainWithTerminal termSize (termOutput)
+runDaemon = mainWithTerminal termSize termOutput
     where
         termSize = do
             x <- Term.size
@@ -93,10 +93,8 @@ runDaemon = mainWithTerminal termSize (termOutput)
                 Nothing -> TermSize 80 8 WrapHard
                 Just t -> TermSize (Term.width t) (Term.height t) WrapSoft
 
-        termOutput :: [String] -> IO ()
-        termOutput xs = 
-        termOutput' :: [String] -> RIO env ()
-        termOutput' xs = do
+        termOutput :: (HasHandles env) => [String] -> RIO env ()
+        termOutput xs = do
             putStr $ concatMap ('\n':) xs
             hFlush stdout -- must flush, since we don't finish with a newline
 
@@ -250,18 +248,18 @@ balance a x b = T B a x b
 -- > withTempDir $ \dir -> do writeFile (dir </> "foo.txt") ""; withCurrentDirectory dir $ doesFileExist "foo.txt"
 withCurrentDirectory :: FilePath -> RIO env a -> RIO env a
 withCurrentDirectory dir act =
-    bracket getCurrentDirectory setCurrentDirectory $ const ( do
+    bracket' getCurrentDirectory setCurrentDirectory $ const ( do
         liftIO $ setCurrentDirectory dir
         act)
   where 
-    bracket
+    bracket'
             :: IO a         -- ^ computation to run first (\"acquire resource\")
             -> (a -> IO b)  -- ^ computation to run last (\"release resource\")
             -> (a -> RIO env c)  -- ^ computation to run in-between
             -> RIO env c         -- returns the value from the in-between computation
-    bracket before after thing =
+    bracket' before after thing =
         mask $ \restore -> do
-            a <- before
-            r <- restore (thing a) `onException` after a
-            _ <- after a
+            a <- liftIO before
+            r <- restore (thing a) `onException` (liftIO $ after a)
+            _ <- liftIO $ after a
             return r

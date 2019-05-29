@@ -30,8 +30,11 @@ import           Ampersand.FSpec
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
 import           Conduit (liftIO, MonadIO)  
+import qualified RIO.ByteString as B
 import           RIO.Char hiding    (Space)
-import qualified Data.ByteString.Lazy as BL
+import qualified RIO.Text as T
+--import qualified Data.ByteString.Lazy as BL
+import qualified RIO.ByteString.Lazy as BL
 import           Data.Text as Text (Text,pack,unpack,replace)
 import qualified Data.Text.Encoding.Error as TE
 import qualified Data.Text.Lazy as TL
@@ -114,63 +117,67 @@ defaultWriterVariables Options{..} fSpec
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The IO() creates the actual output
-writepandoc :: Options -> FSpec -> Pandoc -> IO()
-writepandoc opts@Options{..} fSpec thePandoc = do
-  verboseLn ("Generating "++fSpecFormatString++" to : "++outputFile)
-  case writer of 
+writepandoc :: (HasOptions env, HasHandles env, HasVerbosity env) => FSpec -> Pandoc -> RIO env ()
+writepandoc fSpec thePandoc = do
+  env <- ask
+  let opts@Options{..} = getOptions env
+  verboseLn ("Generating "++fSpecFormatString opts ++" to : "++outputFile opts)
+  case writer opts of 
      ByteStringWriter biteStringWriter -> do 
-       content <- runIO (biteStringWriter writerOptions thePandoc) >>= handleError
-       BL.writeFile outputFile content
+       content <- undefined -- (biteStringWriter writerOptions thePandoc) >>= handleError
+       BL.writeFile (outputFile opts) content
      TextWriter f -> case fspecFormat of
         Fpdf -> do
-           res <- runIO (makePDF "pdflatex" [] f writerOptions thePandoc) >>= handleError
+           res <-  liftIO $ runIO (makePDF "pdflatex" [] f (writerOptions opts) thePandoc) >>= handleError
            case res of
-             Right pdf -> writeFnBinary outputFile pdf
+             Right pdf -> writeFnBinary (outputFile opts) pdf
              Left err' -> liftIO . throwIO . PandocPDFError .
                             TL.unpack . TE.decodeUtf8With TE.lenientDecode $ err'
-        _     -> do
-                output <- runIO (f writerOptions thePandoc) >>= handleError
-                writeFile outputFile (Text.unpack output)
+        _     -> liftIO $ do
+                output <- runIO (f (writerOptions opts) thePandoc) >>= handleError
+                writeFile (outputFile opts) (Text.unpack output)
  where   
-    writer :: PandocMonad m => Writer m
-    writer = case lookup writerName writers of
-                Nothing -> fatal $ "Undefined Pandoc writer: "++writerName
+    writer :: PandocMonad m => Options -> Writer m
+    writer opts = case lookup nm writers of
+                Nothing -> fatal $ "Undefined Pandoc writer: "++nm
                 Just w -> w
-    writerName =
-      case fspecFormat of
+        where nm = writerName opts
+    writerName opts =
+      case fspecFormat opts of
        Fpdf    -> "latex"
        Flatex  -> "latex"
        FPandoc -> "native"
        fmt     -> map toLower . drop 1 . show $ fmt
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f   = liftIO . BL.writeFile (UTF8.encodePath f)
-    (outputFile,fSpecFormatString) = 
-      (dirOutput </> baseName -<.> ext
-      ,map toLower . drop 1 . show $ fspecFormat)
-      where 
-        ext =
-          case fspecFormat of
-            Fasciidoc     -> ".txt"
-            Fcontext      -> ".context"
-            Fdocbook      -> ".docbook"
-            Fdocx         -> ".docx"
-            Fhtml         -> ".html"
-            Fpdf          -> ".pdf"
-            Fman          -> ".man"
-            Fmarkdown     -> ".md"
-            Fmediawiki    -> ".mediawiki"
-            Fopendocument -> ".odt"
-            Forg          -> ".org"
-            FPandoc       -> ".pandoc"
-            Fplain        -> ".plain"
-            Frst          -> ".rst"
-            Frtf          -> ".rtf"
-            Flatex          -> ".ltx"
-            Ftexinfo      -> ".texinfo"
-            Ftextile      -> ".textile"
+    outputFile Options{..} = dirOutput </> baseName -<.> ext fspecFormat 
+    fSpecFormatString :: Options -> String 
+    fSpecFormatString = map toLower . drop 1 . show . fspecFormat
+       
+    ext :: FSpecFormat -> String
+    ext format =
+      case format of
+        Fasciidoc     -> ".txt"
+        Fcontext      -> ".context"
+        Fdocbook      -> ".docbook"
+        Fdocx         -> ".docx"
+        Fhtml         -> ".html"
+        Fpdf          -> ".pdf"
+        Fman          -> ".man"
+        Fmarkdown     -> ".md"
+        Fmediawiki    -> ".mediawiki"
+        Fopendocument -> ".odt"
+        Forg          -> ".org"
+        FPandoc       -> ".pandoc"
+        Fplain        -> ".plain"
+        Frst          -> ".rst"
+        Frtf          -> ".rtf"
+        Flatex        -> ".ltx"
+        Ftexinfo      -> ".texinfo"
+        Ftextile      -> ".textile"
                    
-    writerOptions :: WriterOptions
-    writerOptions = def
+    writerOptions :: Options -> WriterOptions
+    writerOptions opts = def
                       { writerTableOfContents=True
                       , writerNumberSections=True
                       , writerTemplate=Text.unpack <$> template
@@ -182,7 +189,7 @@ writepandoc opts@Options{..} fSpec thePandoc = do
                       }
       where 
         template :: Maybe Text.Text
-        template  = substitute substMap <$> Text.pack <$> getStaticFileContent PandocTemplates ("default."++writerName)
+        template  = substitute substMap <$> Text.pack <$> getStaticFileContent PandocTemplates ("default."++writerName opts)
         substitute :: [(Text.Text,Text.Text)] -> Text.Text -> Text.Text
         substitute subs tmpl = foldr replaceAll tmpl subs
         replaceAll :: (Text.Text,Text.Text) -> Text.Text -> Text.Text
