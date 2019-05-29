@@ -677,7 +677,7 @@ publishOption (Option shorts longs args expl)
                            else fillUpto i nstr ws 
 
 data App = App
-  { opts :: !Options
+  { options' :: !Options
   , appHandle :: !Handle
   }
 mkApp :: Options -> Handle -> App
@@ -689,4 +689,4 @@ instance HasVerbosity App where
   getVerbosity app = 
     if verboseP (getOptions app) then Loud else Silent
 instance HasOptions App where
-  getOptions = opts
+  getOptions = options'
