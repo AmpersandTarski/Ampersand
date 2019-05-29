@@ -9,7 +9,7 @@ import           Ampersand.FSpec
 import           Codec.Xlsx
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Text as T
+import qualified RIO.Text as T
 import           Data.Time.Calendar
 import           Data.Time.Clock.POSIX
 import qualified RIO.List as L

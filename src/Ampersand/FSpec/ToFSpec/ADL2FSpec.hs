@@ -17,13 +17,13 @@ import           RIO.Char
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
-import           Data.Text (pack)
+import qualified RIO.Text as T
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
 makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
- =      FSpec { fsName       = pack (name context)
+ =      FSpec { fsName       = T.pack (name context)
               , originalContext = context 
               , fspos        = ctxpos context
               , fsLang       = printingLanguage

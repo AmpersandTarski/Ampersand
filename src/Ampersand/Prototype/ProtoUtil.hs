@@ -14,7 +14,7 @@ module Ampersand.Prototype.ProtoUtil
 import           Ampersand.Basics
 import           Ampersand.Misc
 import qualified RIO.List as L
-import qualified Data.Text as Text
+import qualified RIO.Text as T
 import           System.Directory
 import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))
 import           System.FilePath
@@ -98,14 +98,14 @@ strReplace src dst inp
           | src `L.isPrefixOf` st = dst <> process (drop n st)
           | otherwise           = c:process cs
 
-phpIndent :: Int -> Text.Text
+phpIndent :: Int -> T.Text
 phpIndent i
- | i < 0     = Text.pack " " --space instead of \n
- | otherwise = Text.pack $ '\n':replicate i ' '
+ | i < 0     = T.pack " " --space instead of \n
+ | otherwise = T.pack $ '\n':replicate i ' '
 
 
-addSlashes :: Text.Text -> Text.Text
-addSlashes = Text.pack . addSlashes' . Text.unpack
+addSlashes :: T.Text -> T.Text
+addSlashes = T.pack . addSlashes' . T.unpack
   where
     addSlashes' ('\'': cs) = "\\'"<>addSlashes' cs
     addSlashes' ('"': cs) = "\\\""<>addSlashes' cs
@@ -113,9 +113,9 @@ addSlashes = Text.pack . addSlashes' . Text.unpack
     addSlashes' (c:cs) = c:addSlashes' cs
     addSlashes' "" = ""
 
-showPhpStr :: Text.Text -> Text.Text
-showPhpStr str = q<>Text.pack (escapePhpStr (Text.unpack str))<>q
-  where q = Text.pack "'"
+showPhpStr :: T.Text -> T.Text
+showPhpStr str = q<>T.pack (escapePhpStr (T.unpack str))<>q
+  where q = T.pack "'"
 
 -- NOTE: we assume a single quote php string, so $ and " are not escaped
 escapePhpStr :: String -> String

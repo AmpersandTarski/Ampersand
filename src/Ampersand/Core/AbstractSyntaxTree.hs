@@ -78,7 +78,7 @@ import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map as Map
 import           Data.Maybe         (fromMaybe)
 import qualified RIO.Set as Set
-import           Data.Text          (Text,unpack,pack)
+import qualified RIO.Text as T
 import           Data.Time.Calendar (showGregorian,Day, fromGregorian, addDays)
 import           Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
 import qualified Data.Time.Format as DTF 
@@ -251,7 +251,7 @@ instance Unique Meaning where
   showUnique = show
 
 instance Named Relation where
-  name d = unpack (decnm d)
+  name = T.unpack . decnm
 instance HasSignature Relation where
   sign = decsgn
 instance Traced Relation where
@@ -514,7 +514,7 @@ instance Unique AAtomValue where   -- FIXME:  this in incorrect! (AAtomValue sho
   showUnique AtomValueOfONE    = "ONE"
 
 aavstr :: AAtomValue -> String
-aavstr = unpack.aavtxt
+aavstr = T.unpack . aavtxt
 
 showValSQL :: AAtomValue -> String
 showValSQL val =
@@ -783,7 +783,7 @@ instance Eq A_Concept where
   
 makeConcept :: String -> A_Concept
 makeConcept "ONE" = ONE
-makeConcept v = PlainConcept (hash v) (pack v)
+makeConcept v = PlainConcept (hash v) (T.pack v)
 
 instance Unique A_Concept where
   showUnique = name
@@ -794,7 +794,7 @@ instance Hashable A_Concept where
                         ONE            -> 1::Int
                       )
 instance Named A_Concept where
-  name PlainConcept{cptnm = nm} = unpack nm
+  name PlainConcept{cptnm = nm} = T.unpack nm
   name ONE = "ONE"
 
 instance Show A_Concept where
@@ -919,20 +919,20 @@ unsafePAtomVal2AtomValue typ mCpt pav =
       = case pav of
           PSingleton o str mval
              -> case typ of
-                 Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
-                 BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
-                 HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
-                 Password         -> Right (AAVString (hash str) typ (pack str))
-                 Object           -> Right (AAVString (hash str) typ (pack str))
+                 Alphanumeric     -> Right (AAVString (hash str) typ (T.pack str))
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ (T.pack str))
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ (T.pack str))
+                 Password         -> Right (AAVString (hash str) typ (T.pack str))
+                 Object           -> Right (AAVString (hash str) typ (T.pack str))
                  _                -> case mval of
                                        Nothing -> Left (message o str)
                                        Just x -> unsafePAtomVal2AtomValue typ mCpt x
           ScriptString o str
              -> case typ of
-                 Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
-                 BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
-                 HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
-                 Password         -> Right (AAVString (hash str) typ (pack str))
+                 Alphanumeric     -> Right (AAVString (hash str) typ (T.pack str))
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ (T.pack str))
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ (T.pack str))
+                 Password         -> Right (AAVString (hash str) typ (T.pack str))
                  Binary           -> Left "Binary cannot be populated in an ADL script"
                  BigBinary        -> Left "Binary cannot be populated in an ADL script"
                  HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -942,13 +942,13 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                  Integer          -> Left (message o str)
                  Float            -> Left (message o str)
                  TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-                 Object           -> Right (AAVString (hash str) typ (pack str))
+                 Object           -> Right (AAVString (hash str) typ (T.pack str))
           XlsxString o str
              -> case typ of
-                 Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
-                 BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
-                 HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
-                 Password         -> Right (AAVString (hash str) typ (pack str))
+                 Alphanumeric     -> Right (AAVString (hash str) typ (T.pack str))
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ (T.pack str))
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ (T.pack str))
+                 Password         -> Right (AAVString (hash str) typ (T.pack str))
                  Binary           -> Left "Binary cannot be populated in an ADL script"
                  BigBinary        -> Left "Binary cannot be populated in an ADL script"
                  HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -973,7 +973,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                                            Just r  -> Right (AAVFloat typ r)
                                            Nothing -> Left (message o str)
                  TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-                 Object           -> Right (AAVString (hash str) typ (pack str))
+                 Object           -> Right (AAVString (hash str) typ (T.pack str))
           ScriptInt o i
              -> case typ of
                  Alphanumeric     -> Left (message o i)
@@ -1048,7 +1048,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
             
        where
          relaxXLSXInput :: Double -> Either String AAtomValue
-         relaxXLSXInput v = Right (AAVString (hash v) typ (pack (neat (show v))))
+         relaxXLSXInput v = Right (AAVString (hash v) typ (T.pack (neat (show v))))
            where neat :: String -> String
                  neat s 
                    | onlyZeroes dotAndAfter = beforeDot

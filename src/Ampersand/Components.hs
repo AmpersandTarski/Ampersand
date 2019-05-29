@@ -23,7 +23,7 @@ import           Data.Function (on)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
-import qualified Data.Text.IO as Text (writeFile)-- This should become the standard way to write all files as Text, not String.
+import qualified RIO.Text as T
 import           Data.Maybe (isJust, fromJust)
 import           System.Directory
 import           System.FilePath
@@ -76,7 +76,7 @@ generateAmpersandOutput opts@Options{..} multi = do
    doGenProofs = do 
        putStrLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "..."
        content <- liftIO $ (runIO (writeHtml5String def thePandoc)) >>= handleError
-       liftIO $ Text.writeFile outputFile content
+       writeFileUtf8 outputFile content
        verboseLn "Proof written."
     where outputFile = dirOutput </> "proofs_of_"++baseName -<.> ".html"
           thePandoc = setTitle title (doc theDoc)
@@ -87,14 +87,14 @@ generateAmpersandOutput opts@Options{..} multi = do
    doGenHaskell :: RIO App ()
    doGenHaskell = do
        putStrLn $ "Generating Haskell source code for " ++ name fSpec ++ "..."
-       liftIO $ writeFile outputFile (fSpec2Haskell opts fSpec)
+       writeFileUtf8 outputFile (T.pack $ fSpec2Haskell opts fSpec)
        verboseLn ("Haskell written into " ++ outputFile ++ ".")
     where outputFile = dirOutput </> baseName -<.> ".hs"
 
    doGenSQLdump :: RIO App ()
    doGenSQLdump = do
        putStrLn $ "Generating SQL queries dumpfile for " ++ name fSpec ++ "..."
-       liftIO $ Text.writeFile outputFile (dumpSQLqueries opts multi)
+       writeFileUtf8 outputFile (dumpSQLqueries opts multi)
        verboseLn ("SQL queries dumpfile written into " ++ outputFile ++ ".")
     where outputFile = dirOutput </> baseName ++ "_dump" -<.> ".sql"
    

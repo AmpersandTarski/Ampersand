@@ -13,7 +13,7 @@ import qualified RIO.List as L
 import qualified Data.ByteString.Lazy as BL
 import           RIO.Char
 import qualified Data.Map as M 
-import qualified Data.Text as T
+import qualified RIO.Text as T
 import           Data.Tuple
 
 parseXlsxFile :: HasOptions env => Maybe FileKind
@@ -173,18 +173,18 @@ theSheetCellsForTable (sheetName,ws)
       where isStartOfTable :: (Int,Int) -> Bool
             isStartOfTable (rowNr,colNr)
               | colNr /= 1 = False
-              | rowNr == 1 = isBracketed (rowNr,colNr) 
-              | otherwise  =           isBracketed  (rowNr     ,colNr)  
-                             && (not . isBracketed) (rowNr - 1, colNr)             
+              | rowNr == 1 = isBracketed' (rowNr,colNr) 
+              | otherwise  =           isBracketed'  (rowNr     ,colNr)  
+                             && (not . isBracketed') (rowNr - 1, colNr)             
               
     value :: (Int,Int) -> Maybe CellValue
     value k = (ws  ^. wsCells) ^? ix k . cellValue . _Just
-    isBracketed :: (Int,Int) -> Bool
-    isBracketed k = 
+    isBracketed' :: (Int,Int) -> Bool
+    isBracketed' k = 
        case value k of
-         Just (CellText t) -> (not . T.null ) trimmed && T.head trimmed == '[' && T.last trimmed == ']'
-               where trimmed = trim t
-         _                 -> False      
+         Just (CellText t) -> isBracketed t
+         _                 -> False 
+        
     theMapping :: Int -> Maybe SheetCellsForTable
     theMapping indexInTableStarters 
      | length okHeaderRows /= nrOfHeaderRows = Nothing  -- Because there are not enough header rows
@@ -257,16 +257,17 @@ conceptNameWithOptionalDelimiter :: T.Text -> Maybe ( String     {- Conceptname 
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
 conceptNameWithOptionalDelimiter t
-  | T.null t = Nothing
-  | T.head t == '[' && T.last t == ']'
-             = let mid = (T.reverse . T.tail . T.reverse . T.tail) t
-                   (nm,d) = (T.init mid, T.last mid)
-               in if isDelimiter d && isConceptName nm
-                  then Just (T.unpack nm , Just d)
-                  else Nothing
-  | otherwise = if isConceptName t
-                then Just (T.unpack t, Nothing)
-                else Nothing
+  | isBracketed t   = 
+       let mid = T.dropEnd 1 . T.drop 1 $ t
+       in case T.uncons . T.reverse $ mid of 
+            Nothing -> Nothing 
+            Just (d,revInit) -> 
+                       let nm = T.reverse revInit
+                       in if isDelimiter d && isConceptName (T.reverse nm)
+                          then Just (T.unpack nm , Just d)
+                          else Nothing
+  | isConceptName t = Just (T.unpack t, Nothing)
+  | otherwise       = Nothing
            
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation
@@ -283,3 +284,10 @@ trim = T.reverse . trim' . T.reverse . trim'
     trim' t = case uncons t of
                Just (' ',t') -> trim' t'
                _  -> t 
+isBracketed :: T.Text -> Bool
+isBracketed t =
+    case T.uncons (trim t) of
+      Just ('[',tl) -> case T.uncons (T.reverse tl) of
+                         Just (']',_) -> True
+                         _ -> False
+      _ -> False

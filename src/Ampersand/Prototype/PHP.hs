@@ -14,16 +14,15 @@ import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
 import qualified RIO.List as L
-import qualified Data.Text as Text
-import qualified Data.Text.IO as Text
+import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           System.Process
 
 
-createTablePHP :: TableSpec -> [Text.Text]
+createTablePHP :: TableSpec -> [T.Text]
 createTablePHP tSpec =
-  map (Text.pack . ("// "<>)) (tsCmnt tSpec) <>
+  map (T.pack . ("// "<>)) (tsCmnt tSpec) <>
   [-- Drop table if it already exists
     "if($columns = mysqli_query($DB_link, "<>queryAsPHP (showColumsSql tSpec)<>")){"
   , "    mysqli_query($DB_link, "<>queryAsPHP (dropTableSql tSpec)<>");"
@@ -40,7 +39,7 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: (HasOptions env, HasHandles env) => FSpec -> Text.Text -> Expression ->  RIO env [(String,String)]
+evaluateExpSQL :: (HasOptions env, HasHandles env) => FSpec -> T.Text -> Expression ->  RIO env [(String,String)]
 evaluateExpSQL fSpec dbNm expr = do
     env <- ask 
     let violationsExpr = conjNF (getOptions env) expr
@@ -51,19 +50,19 @@ evaluateExpSQL fSpec dbNm expr = do
     performQuery dbNm violationsQuery
 
 performQuery :: (HasOptions env, HasHandles env) =>
-                Text.Text -> SqlQuery ->  RIO env [(String,String)]
+                T.Text -> SqlQuery ->  RIO env [(String,String)]
 performQuery dbNm queryStr = do
     env <- ask
     queryResult <- (executePHPStr . showPHP) (php $ getOptions env)
     if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-    then do mapM_ putStrLn (lines (Text.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
+    then do mapM_ putStrLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
     else case reads queryResult of
            [(pairs,"")] -> return pairs
            _            -> fatal ("Parse error on php result: \n"<>(unlines . map ("     " ++) . lines $ queryResult))
      
    where 
-    php :: Options -> [Text.Text]
+    php :: Options -> [T.Text]
     php opts =
       connectToMySqlServerPHP opts (Just dbNm) <>
       [ "$sql="<>queryAsPHP queryStr<>";"
@@ -84,18 +83,19 @@ performQuery dbNm queryStr = do
       ]
 
 -- call the command-line php with phpStr as input
-executePHPStr :: (HasHandles env) => Text.Text -> RIO env String
+executePHPStr :: (HasHandles env) => T.Text -> RIO env String
 executePHPStr phpStr = do
-    tempdir <- catch (liftIO getTemporaryDirectory)
+    tempdir <- liftIO getTemporaryDirectory 
+                 `catch`
                      (\e -> do 
                           let err = show (e :: IOException)
                           putStrLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
                           return "."
                      )
-    (tempPhpFile, temph) <- liftIO $ openTempFile tempdir "tmpPhpQueryOfAmpersand.php"
-    liftIO $ Text.hPutStr temph phpStr
-    hClose temph
-    results <- executePHP tempPhpFile
+    let phpPath = tempdir </> "tmpPhpQueryOfAmpersand" <.> "php"
+    writeFileUtf8 phpPath phpStr
+    
+    results <- executePHP phpPath
     return (normalizeNewLines results)
     
 normalizeNewLines :: String -> String   --TODO: If Text is used for output, there will be no more need for normalization
@@ -126,14 +126,14 @@ executePHP phpPath = do
             ]
    
 
-showPHP :: [Text.Text] -> Text.Text
-showPHP phpLines = Text.unlines $ ["<?php"]<>phpLines<>["?>"]
+showPHP :: [T.Text] -> T.Text
+showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
-tempDbName :: Options -> Text.Text
-tempDbName Options{..} = "TempDB_"<>Text.pack dbName
+tempDbName :: Options -> T.Text
+tempDbName Options{..} = "TempDB_"<>T.pack dbName
 
-connectToMySqlServerPHP :: Options -> Maybe Text.Text-> [Text.Text]
+connectToMySqlServerPHP :: Options -> Maybe T.Text-> [T.Text]
 connectToMySqlServerPHP Options{..} mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
@@ -156,9 +156,9 @@ connectToMySqlServerPHP Options{..} mDbName =
          connectToTheDatabasePHP
     )
   where
-   subst :: String -> Text.Text
-   subst = addSlashes . Text.pack
-connectToTheDatabasePHP :: [Text.Text]
+   subst :: String -> T.Text
+   subst = addSlashes . T.pack
+connectToTheDatabasePHP :: [T.Text]
 connectToTheDatabasePHP =
     [ "// Connect to the database"
     , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
@@ -189,12 +189,12 @@ createTempDatabase fSpec = do
           else "Temp database creation failed! :\n"<>lineNumbers (phpStr opts)<>"\nThe result:\n"<>result
     return (null result)
  where 
-  lineNumbers :: [Text.Text] -> String
-  lineNumbers = L.intercalate "  \n" . map withNumber . zip [1..] . map Text.unpack
+  lineNumbers :: [T.Text] -> String
+  lineNumbers = L.intercalate "  \n" . map withNumber . zip [1..] . map T.unpack
     where
       withNumber :: (Int,String) -> String
       withNumber (n,t) = "/*"<>take (5-length(show n)) "00000"<>show n<>"*/ "<>t
-  phpStr :: Options -> [Text.Text]
+  phpStr :: Options -> [T.Text]
   phpStr opts = 
     (connectToMySqlServerPHP opts Nothing) <>
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
@@ -243,7 +243,7 @@ createTempDatabase fSpec = do
     ]
     <>
     [ ""
-    , "//// Number of plugs: " <> Text.pack (show (length (plugInfos fSpec)))
+    , "//// Number of plugs: " <> T.pack (show (length (plugInfos fSpec)))
     ]
     -- Create all plugs
     <> concatMap (createTablePHP . plug2TableSpec) [p | InternalPlug p <- plugInfos fSpec]
@@ -264,6 +264,6 @@ createTempDatabase fSpec = do
              -> ( "mysqli_query($DB_link, "<> queryAsPHP query <>");"
                 ):["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
                where query = insertQuery True tableName attrNames tblRecords
-                     tableName = Text.pack . name $ plug
-                     attrNames = fmap (Text.pack . attName) . plugAttributes $ plug
+                     tableName = T.pack . name $ plug
+                     attrNames = fmap (T.pack . attName) . plugAttributes $ plug
            
