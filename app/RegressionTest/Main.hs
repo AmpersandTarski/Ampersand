@@ -2,4 +2,6 @@ module Main(main) where
 import MainApps
 
 main :: IO ()
-main = regressionTest
+main = do
+   x <- regressionTest
+   exitWith x
