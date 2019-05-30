@@ -185,6 +185,7 @@ library:
       - Ampersand.Test.Regression
 #      - Ampersand.Test.RunAmpersand
       - Ampersand.Test.TestScripts
+      - MainApps
   generated-exposed-modules:
       - Ampersand.Basics.BuildInfo_Generated
       - Ampersand.Prototype.StaticFiles_Generated

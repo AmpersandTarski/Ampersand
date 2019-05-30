@@ -8,7 +8,7 @@ import Ampersand.Basics
 
 
 
-getTestScripts :: IO [FilePath]
+getTestScripts :: RIO env [FilePath]
 getTestScripts =
 --        fs <- getFiles ".adl" "ArchitectureAndDesign"
 --        ss <- getFiles ".adl" $ ".." </> "ampersand-models" </> "Tests" </> "ShouldSucceed"
@@ -21,8 +21,9 @@ getTestScripts =
 --                | DirError IOException               
 --data DirData = DirData FilePath DirContent       -- path and content of a directory
 
-testAmpersandScripts :: IO ()
-testAmpersandScripts = runRIO stdout $ putStrLn "Testscripts of this kind are not available."
+testAmpersandScripts :: HasHandles env => RIO env ()
+testAmpersandScripts = do
+    putStrLn "Testscripts of this kind are not available."
 {-
 testAmpersandScripts' :: IO ()
 testAmpersandScripts'
