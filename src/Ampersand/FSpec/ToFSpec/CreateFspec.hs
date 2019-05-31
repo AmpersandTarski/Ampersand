@@ -39,18 +39,21 @@ import           System.FilePath
 createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
 createMulti opts@Options{..} =
-  do fAmpP_Ctx :: Guarded P_Context <-
+  do fAmpP_Ctx :: Guarded P_Context <-  -- fAmpP_Ctx is a P_Context that contains the formalAmpersand metamodel
         if genMetaFile ||
            genRapPopulationOnly ||
            addSemanticMetamodel
-        then parseMeta opts -- the P_Context of the formalAmpersand metamodel
+        then parseMeta opts 
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
-     userP_Ctx:: Guarded P_Context <- 
+
+    -- userP_Ctx contains the user-specified context from the user's Ampersand source code
+     userP_Ctx :: Guarded P_Context <- 
         case fileName of
           Just x -> snd <$> parseADL opts x -- the P_Context of the user's sourceFile
           Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     
+    -- systemP_Ctx contains the metamodel of sessions, which is needed to generate protoypes.
      systemP_Ctx:: Guarded P_Context <- parseSystemContext opts
 
      let fAmpModel :: MetaFSpec
@@ -112,7 +115,7 @@ createMulti opts@Options{..} =
             pCtx2Fspec opts $ 
               if useSystemContext
               then mergeContexts <$> userPlus
-                                 <*> (grind opts sysCModel <$> pCtx2Fspec opts userPlus)
+                                 <*> (grind opts sysCModel <$> pCtx2Fspec opts userPlus) -- grinds the session information out of the user's script
               else userP_Ctx
            where 
             userPlus :: Guarded P_Context
@@ -153,17 +156,21 @@ pCtx2Fspec :: Options -> Guarded P_Context -> Guarded FSpec
 pCtx2Fspec opts c = makeFSpec opts <$> join (pCtx2aCtx opts <$> encloseInConstraints opts c)
 
 -- | To analyse spreadsheets means to enrich the context with the relations that are defined in the spreadsheet.
+--   The function encloseInConstraints does not populate existing relations.
+--   Instead it invents relations from a given population, which typically comes from a spreadsheet.
 --   This is different from the normal behaviour, which checks whether the spreadsheets comply with the Ampersand-script.
---   The function analyse is therefore called only with option 'dataAnalysis' on.
+--   This function is called only with option 'dataAnalysis' on.
 encloseInConstraints :: Options -> Guarded P_Context -> Guarded P_Context
 encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked enrichedContext warnings
   where
+  --The result of encloseInConstraints is a P_Context enriched with the relations in genericRelations
+  --The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
     enrichedContext :: P_Context
     enrichedContext
      = pCtx{ ctx_ds     = mergeRels (genericRelations++declaredRelations)
            , ctx_pops   = genericPopulations
            }
-    declaredRelations ::  [P_Relation]   -- relations declared in the script
+    declaredRelations ::  [P_Relation]   -- relations declared in the user's script
     popRelations ::       [P_Relation]   -- relations that are "annotated" by the user in Excel-sheets.
                                          -- popRelations are derived from P_Populations only.
     genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
