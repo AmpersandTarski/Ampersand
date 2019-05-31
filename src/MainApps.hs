@@ -15,7 +15,6 @@ import qualified RIO.List as L
 import qualified RIO.Set as Set
 import           System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist, makeAbsolute)
 import           System.Environment    (getArgs, getProgName)
-import           System.Exit (ExitCode, exitFailure, exitSuccess)
 import           System.FilePath ((</>))
 import           System.IO.Error (tryIOError)
 
@@ -91,26 +90,26 @@ preProcessor' =
         inputString <- return $ either id id input
         putStr $ either show id (preProcess' filename (Set.fromList defs) inputString) ++ "\n"
 
-mainTest :: IO ExitCode
+mainTest :: IO ()
 mainTest = do
    env <- defEnv
    runRIO env mainTest'
 
-mainTest' :: RIO App ExitCode
+mainTest' :: RIO App ()
 mainTest' = do 
     putStrLn "Starting Quickcheck tests."
     funcs <- testFunctions
     testAmpersandScripts
     tests funcs
   where 
-      tests :: (HasHandles env) => [([String], RIO env Bool)] -> RIO env ExitCode
-      tests [] = liftIO exitSuccess
+      tests :: (HasHandles env) => [([String], RIO env Bool)] -> RIO env ()
+      tests [] = pure ()
       tests ((msg,tst):xs) = do
           mapM_ putStrLn msg
           success <- tst
           if success then tests xs
-          else do putStrLn "*** Some tests failed***" 
-                  liftIO exitFailure
+          else exitWith (SomeTestsFailed ["*** Some tests failed***"])
+               
 
       testFunctions :: RIO App [([String], RIO App Bool)]
       testFunctions = do
@@ -126,79 +125,71 @@ mainTest' = do
                    )
                  ]
 
-
-regressionTest :: IO ExitCode
+regressionTest :: IO ()
 regressionTest = do
    env <- defEnv
    runRIO env regressionTest'
 
 
-regressionTest' :: RIO App ExitCode
+regressionTest' :: RIO App ()
 regressionTest' = do 
     putStrLn $ "Starting regression test."
     baseDir <- liftIO . makeAbsolute $ "." </> "testing"
     totalfails <- runConduit $ walk baseDir .| myVisitor .| sumarize
-    failWhenNotZero totalfails 
-  where 
-    failWhenNotZero :: Int -> RIO App ExitCode
-    failWhenNotZero x 
-      | x==0 =
-          do putStrLn $ "Regression test of all scripts succeeded."
-             liftIO exitSuccess
-      | otherwise = 
-          do putStrLn $ "Regression test failed! ("++show x++" tests failed.)"
-             liftIO exitFailure
-   
+    if totalfails == 0
+    then putStrLn $ "Regression test of all scripts succeeded."
+    else exitWith (SomeTestsFailed ["Regression test failed! ("++show totalfails++" tests failed.)"])
+  where   
 
--- Produces directory data
-walk :: FilePath -> ConduitT () DirData (RIO env) ()
-walk path = do 
-    result <- liftIO $ tryIOError (liftIO listdir)
-    case result of
-        Right dl
-            -> case dl of 
-                DirList subdirs _
-                 -> do
-                     yield (DirData path dl)
-                     forM_ subdirs (walk . (path </>))
-                DirError err 
-                 -> yield (DirData path (DirError err))
-        Left err
-            -> yield (DirData path (DirError err))
+    -- Produces directory data
+    walk :: FilePath -> ConduitT () DirData (RIO env) ()
+    walk path = do 
+        result <- liftIO $ tryIOError (liftIO listdir)
+        case result of
+          Right dl
+              -> case dl of 
+                   DirList subdirs _
+                    -> do
+                        yield (DirData path dl)
+                        forM_ subdirs (walk . (path </>))
+                   DirError err 
+                    -> yield (DirData path (DirError err))
+          Left err
+              -> yield (DirData path (DirError err))
 
-  where
-    listdir = do
-        entries <- getDirectoryContents path >>= filterHidden
-        subdirs <- filterM isDir entries
-        files <- filterM isFile entries
-        return $ DirList subdirs files
-        where 
-            isFile entry = doesFileExist (path </> entry)
-            isDir entry = doesDirectoryExist (path </> entry)
-            filterHidden paths = return $ filter (not.isHidden) paths
-            isHidden ('.':_) = True
-            isHidden _       = False
-            
--- Convert a DirData into an Int that contains the number of failed tests
-myVisitor :: ConduitT DirData Int (RIO App) ()
-myVisitor = loop 1
-  where
-    loop :: Int -> ConduitT DirData Int (RIO App) ()
-    loop n = 
-        awaitForever 
-          (\dird -> do lift $ putStr $ ">> " ++ show n ++ ". "
-                       x <- lift $ process 4 dird     
-                       yield x
-                       loop (n + 1)
-          ) 
+      where
+        listdir = do
+            entries <- getDirectoryContents path >>= filterHidden
+            subdirs <- filterM isDir entries
+            files <- filterM isFile entries
+            return $ DirList subdirs files
+            where 
+                isFile entry = doesFileExist (path </> entry)
+                isDir entry = doesDirectoryExist (path </> entry)
+                filterHidden paths = return $ filter (not.isHidden) paths
+                isHidden ('.':_) = True
+                isHidden _       = False
                 
+    -- Convert a DirData into an Int that contains the number of failed tests
+    myVisitor :: ConduitT DirData Int (RIO App) ()
+    myVisitor = loop 1
+      where
+        loop :: Int -> ConduitT DirData Int (RIO App) ()
+        loop n = awaitForever $
+            (\dird -> do 
+                lift $ putStr $ ">> " ++ show n ++ ". "
+                x <- lift $ process 4 dird     
+                yield x
+                loop (n + 1)
+            ) 
+                    
 
-sumarize :: ConduitT Int Void (RIO env) Int
-sumarize = loop 0 
-  where
-    loop :: Int -> ConduitT Int Void (RIO env) Int
-    loop i = 
-      await >>= maybe (return i) 
-                      (\x -> loop $! (i+x))
+    sumarize :: ConduitT Int Void (RIO env) Int
+    sumarize = loop 0 
+      where
+        loop :: Int -> ConduitT Int Void (RIO env) Int
+        loop i = 
+          await >>= maybe (return i) 
+                          (\x -> loop $! (i+x))
 
 

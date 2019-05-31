@@ -32,6 +32,7 @@ data AmpersandExit
   | NoAmpersandScript [String]
   | NoFilesToWatch
   | NoConfigurationFile [String]
+  | SomeTestsFailed [String]
 
 instance Exception AmpersandExit
 
@@ -70,6 +71,8 @@ info x =
               -> (SE.ExitFailure 100 , ["ERROR: No files loaded, nothing to wait for. Fix the last error and restart."])
     NoConfigurationFile msg
               -> (SE.ExitFailure 110 , msg)
+    SomeTestsFailed msg
+              -> (SE.ExitFailure 120 , msg)
   where
     showViolatedRule :: (String,[String]) -> [String]
     showViolatedRule (rule,pairs) = 
