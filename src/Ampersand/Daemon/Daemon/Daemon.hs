@@ -4,24 +4,20 @@
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Daemon(
     DaemonState(loadResults),
-    Severity,
-    Load,
     loads,
     messages,
     loaded,
     startAmpersandDaemon
     ) where
 
-import System.IO.Extra(readFile)
-import Data.Function
-import Data.List.Extra(nub)
-import System.Directory.Extra(getCurrentDirectory,makeAbsolute,doesFileExist)
-import System.FilePath
-import Ampersand.Daemon.Daemon.Parser
-import Ampersand.Daemon.Daemon.Types as T
-import Ampersand.Basics hiding (putStrLn)
-import Ampersand.Misc
-
+import           Ampersand.Basics
+import           Ampersand.Daemon.Daemon.Parser
+import           Ampersand.Daemon.Daemon.Types
+import           Ampersand.Misc
+import qualified RIO.List as L
+import qualified RIO.Text as T
+import           System.Directory
+import           System.FilePath
 
 messages :: DaemonState -> [Load]
 messages = filter isMessage . loads
@@ -54,18 +50,19 @@ initialState = do
     exists <- liftIO $ doesFileExist dotAmpersand
     if exists 
     then do
-      content <- liftIO $ readFile dotAmpersand
-      let files = filter (\fn -> length fn > 0) --discard empty lines
-                . nub                           --discard doubles
-                . lines $ content
+      content <- readFileUtf8 dotAmpersand
+      let files = map T.unpack
+                . filter (\fn -> T.length fn > 0) --discard empty lines
+                . L.nub                           --discard doubles
+                . T.lines $ content
       (ls,loadedFiles) <- do
            xs <- mapM parseProject files
-           return ( nub . concatMap fst $ xs
-                  , nub . concatMap snd $ xs
+           return ( L.nub . concatMap fst $ xs
+                  , L.nub . concatMap snd $ xs
                   )
       return $ Right DaemonState
         { loads = ls
-        , loadResults = nub $ [dotAmpersand] ++ loadedFiles
+        , loadResults = L.nub $ [dotAmpersand] ++ loadedFiles
         }
     else return . Left $ 
       [ "File not found: "++dotAmpersand

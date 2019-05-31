@@ -15,6 +15,7 @@ import qualified Data.ByteString.Lazy  as BL
 import           RIO.Char
 import           Data.Hashable (hash)
 import qualified RIO.List as L
+import qualified RIO.Text as T
 import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath
@@ -440,10 +441,10 @@ readTemplate :: (HasOptions env) =>
 readTemplate templatePath = do
   env <- ask
   let absPath = getTemplateDir (getOptions env) </> templatePath
-  res <- liftIO $ readUTF8File absPath
+  res <- readUTF8File absPath
   case res of
-    Left err          -> error $ "Cannot read template file " ++ templatePath ++ "\n" ++ err
-    Right templateStr -> return $ Template (newSTMP templateStr) absPath
+    Left err   -> error $ "Cannot read template file " ++ templatePath ++ "\n" ++ err
+    Right cont -> return $ Template (newSTMP . T.unpack $ cont) absPath
 
 -- having Bool attributes prevents us from using a [(String, String)] parameter for attribute settings
 renderTemplate :: Template -> (StringTemplate String -> StringTemplate String) -> String

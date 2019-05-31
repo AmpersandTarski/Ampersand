@@ -13,6 +13,7 @@ import           Conduit
 import qualified Data.List.NonEmpty as NEL (toList)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist, makeAbsolute)
 import           System.Environment    (getArgs, getProgName)
 import           System.FilePath ((</>))
@@ -86,8 +87,8 @@ preProcessor' =
     case args of 
       []  -> fatal "No arguments given"
       filename:defs -> do
-        input       <- liftIO $ readUTF8File filename
-        inputString <- return $ either id id input
+        input       <- readUTF8File filename
+        inputString <- return $ either id T.unpack input
         putStr $ either show id (preProcess' filename (Set.fromList defs) inputString) ++ "\n"
 
 mainTest :: IO ()

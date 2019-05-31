@@ -24,6 +24,7 @@ import           Ampersand.Misc
 import           RIO.Char(toLower)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           Text.Parsec.Prim (runP)
@@ -116,17 +117,17 @@ parseSingleADL pc
                     <- case pcFileKind pc of
                        Just fileKind
                          -> case getStaticFileContent fileKind filePath of
-                              Just cont -> return (Right $ stripBom cont)
+                              Just cont -> return (Right . T.pack $ stripBom cont)
                               Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++filePath++"`.")
                        Nothing
-                         -> liftIO $ readUTF8File filePath
+                         -> readUTF8File filePath
                 ; case mFileContents of
                     Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) filePath err
                     Right fileContents ->
                          let -- TODO: This should be cleaned up. Probably better to do all the file reading
                              --       first, then parsing and typechecking of each module, building a tree P_Contexts
                              meat :: Guarded (P_Context, [Include])
-                             meat = preProcess filePath (pcDefineds pc) fileContents >>= parseCtx filePath
+                             meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= parseCtx filePath
                              proces :: Guarded (P_Context,[Include]) -> RIO env (Guarded (P_Context, [ParseCandidate]))
                              proces (Errors err) = pure (Errors err)
                              proces (Checked (ctxts, includes) ws) = 

@@ -53,7 +53,7 @@ performQuery :: (HasOptions env, HasHandles env) =>
                 T.Text -> SqlQuery ->  RIO env [(String,String)]
 performQuery dbNm queryStr = do
     env <- ask
-    queryResult <- (executePHPStr . showPHP) (php $ getOptions env)
+    queryResult <- T.unpack <$> (executePHPStr . showPHP) (php $ getOptions env)
     if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
     then do mapM_ putStrLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
@@ -83,7 +83,7 @@ performQuery dbNm queryStr = do
       ]
 
 -- call the command-line php with phpStr as input
-executePHPStr :: (HasHandles env) => T.Text -> RIO env String
+executePHPStr :: (HasHandles env) => T.Text -> RIO env T.Text
 executePHPStr phpStr = do
     tempdir <- liftIO getTemporaryDirectory 
                  `catch`
@@ -95,17 +95,10 @@ executePHPStr phpStr = do
     let phpPath = tempdir </> "tmpPhpQueryOfAmpersand" <.> "php"
     writeFileUtf8 phpPath phpStr
     
-    results <- executePHP phpPath
-    return (normalizeNewLines results)
+    executePHP phpPath
     
-normalizeNewLines :: String -> String   --TODO: If Text is used for output, there will be no more need for normalization
-normalizeNewLines = f . L.intercalate "\n" . lines
-  where 
-    f [] = []
-    f ('\r':'\n':rest) = '\n':f rest
-    f (c:cs) = c: f cs 
 
-executePHP :: String ->  RIO env String
+executePHP :: String ->  RIO env T.Text
 executePHP phpPath = do
     let cp = (shell command) 
                 { cwd = Just (takeDirectory phpPath)
@@ -114,7 +107,7 @@ executePHP phpPath = do
         outputFile = inputFile++"Result"
         command = "php "++show inputFile++" > "++show outputFile
     _ <- liftIO $ readCreateProcess cp ""
-    result <- liftIO $ readUTF8File outputFile
+    result <- readUTF8File outputFile
     case result of
       Right content -> do
             liftIO $ removeFile outputFile
@@ -184,10 +177,14 @@ createTempDatabase fSpec = do
     result <- executePHPStr .
               showPHP $ phpStr opts
     verboseLn $ 
-         if null result 
+         if T.null result 
           then "Temp database created succesfully."
-          else "Temp database creation failed! :\n"<>lineNumbers (phpStr opts)<>"\nThe result:\n"<>result
-    return (null result)
+          else "Temp database creation failed! :\n"
+             <>"The result:\n"
+             <>T.unpack result
+             <>"The statements:\n"
+             <>lineNumbers (phpStr opts)
+    return (T.null result)
  where 
   lineNumbers :: [T.Text] -> String
   lineNumbers = L.intercalate "  \n" . map withNumber . zip [1..] . map T.unpack

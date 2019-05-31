@@ -58,10 +58,10 @@ verboseLn msg = do
 -- Functions to be replaced later on:
 writeFile :: FilePath -> String -> IO ()
 writeFile fp x = writeFileUtf8 fp . T.pack $ x
-readUTF8File :: FilePath -> IO (Either String String)
-readUTF8File fp = (Right . T.unpack <$> readFileUtf8 fp) `catch` handler
+readUTF8File :: FilePath -> RIO env (Either String T.Text)
+readUTF8File fp = (Right <$> readFileUtf8 fp) `catch` handler
   where 
-     handler :: IOException -> IO (Either String String)
+     handler :: IOException -> RIO env (Either String a)
      handler err = return . Left . show $ err
 
 zipWith :: (a->b->c) -> [a]->[b]->[c]
