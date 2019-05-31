@@ -113,10 +113,9 @@ executePHP phpPath = do
             liftIO $ removeFile outputFile
             return content
       Left err -> exitWith . PHPExecutionFailed $ 
-            ["PHP execution failed:"
-            ,"  Could not read file: "++outputFile
-            ,"    "++ err
-            ]
+            "PHP execution failed:"
+            : fmap ("  "++) err
+            
    
 
 showPHP :: [T.Text] -> T.Text

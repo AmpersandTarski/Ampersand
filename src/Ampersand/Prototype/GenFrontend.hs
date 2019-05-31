@@ -437,13 +437,13 @@ doesTemplateExist templatePath = do
   liftIO $ doesFileExist absPath
 
 readTemplate :: (HasOptions env) =>
-                String -> RIO env Template
+                FilePath -> RIO env Template
 readTemplate templatePath = do
   env <- ask
   let absPath = getTemplateDir (getOptions env) </> templatePath
   res <- readUTF8File absPath
   case res of
-    Left err   -> error $ "Cannot read template file " ++ templatePath ++ "\n" ++ err
+    Left err   -> exitWith $ ReadFileError $ "Error while reading template.\n" : err
     Right cont -> return $ Template (newSTMP . T.unpack $ cont) absPath
 
 -- having Bool attributes prevents us from using a [(String, String)] parameter for attribute settings
@@ -456,7 +456,10 @@ renderTemplate (Template template absPath) setAttrs =
                                                                       | (tmplt,err) <- parseErrs]
              ([], attrs@(_:_), _)        -> templateError $ "The following attributes are expected by the template, but not supplied: " ++ show attrs
              ([], [], ts@(_:_)) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
-  where templateError msg = error $ "\n\n*** TEMPLATE ERROR in:\n" ++ absPath ++ "\n\n" ++ msg
+  where templateError msg = exitWith $ ReadFileError 
+            ["*** TEMPLATE ERROR in:" ++ absPath
+            , msg
+            ]
 
 
 

@@ -103,7 +103,8 @@ parseSingleADL pc
       exists <- liftIO $ doesFileExist filePath
       if isJust (pcFileKind pc) || exists
       then parseSingleADL'
-      else return $ mkErrorReadingINCLUDE (pcOrigin pc) filePath "File does not exist."
+      else return $ mkErrorReadingINCLUDE (pcOrigin pc) [ "While looking for "<>filePath
+                                                        , "   File does not exist." ]
     where
      filePath = pcCanonical pc
      parseSingleADL' :: (HasVerbosity env,HasHandles env,HasOptions env) => RIO env (Guarded (P_Context, [ParseCandidate]))
@@ -122,7 +123,7 @@ parseSingleADL pc
                        Nothing
                          -> readUTF8File filePath
                 ; case mFileContents of
-                    Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) filePath err
+                    Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
                     Right fileContents ->
                          let -- TODO: This should be cleaned up. Probably better to do all the file reading
                              --       first, then parsing and typechecking of each module, building a tree P_Contexts

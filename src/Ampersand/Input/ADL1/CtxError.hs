@@ -120,13 +120,9 @@ unexpectedType o x =
            NEL.:| []
           )
 
-mkErrorReadingINCLUDE :: Maybe Origin -> FilePath -> String -> Guarded a
-mkErrorReadingINCLUDE mo file str
- = Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) msg
-    where 
-      msg = L.intercalate "\n    " $
-             ("While looking for file '"++file++"':" )
-             : lines str
+mkErrorReadingINCLUDE :: Maybe Origin -> [String] -> Guarded a
+mkErrorReadingINCLUDE mo msg
+ = Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) (L.intercalate "\n    " msg)
 
 mkMultipleRepresentTypesError :: A_Concept -> [(TType,Origin)] -> Guarded a
 mkMultipleRepresentTypesError cpt rs

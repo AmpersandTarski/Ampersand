@@ -87,9 +87,12 @@ preProcessor' =
     case args of 
       []  -> fatal "No arguments given"
       filename:defs -> do
-        input       <- readUTF8File filename
-        inputString <- return $ either id T.unpack input
-        putStr $ either show id (preProcess' filename (Set.fromList defs) inputString) ++ "\n"
+        result  <- readUTF8File filename
+        content <- do
+             case result of
+               Left err   -> exitWith $ ReadFileError $ "Error while reading input file.\n" : err
+               Right cont -> return cont
+        putStr $ either show id (preProcess' filename (Set.fromList defs) (T.unpack content)) ++ "\n"
 
 mainTest :: IO ()
 mainTest = do
