@@ -11,7 +11,7 @@ import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Codec.Archive.Zip
-import qualified Data.ByteString.Lazy  as BL
+import qualified RIO.ByteString.Lazy  as BL
 import           RIO.Char
 import           Data.Hashable (hash)
 import qualified RIO.List as L

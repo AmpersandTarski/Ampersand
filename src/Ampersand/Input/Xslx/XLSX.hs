@@ -10,7 +10,7 @@ import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent
 import           Codec.Xlsx
 import           Control.Lens
 import qualified RIO.List as L
-import qualified Data.ByteString.Lazy as BL
+import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
 import qualified Data.Map as M 
 import qualified RIO.Text as T

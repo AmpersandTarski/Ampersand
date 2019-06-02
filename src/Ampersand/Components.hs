@@ -18,7 +18,7 @@ import           Ampersand.Misc
 import           Ampersand.Output
 import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import qualified Data.ByteString.Lazy as BSL
+import qualified RIO.ByteString.Lazy as BL
 import           Data.Function (on)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
@@ -132,7 +132,7 @@ generateAmpersandOutput opts@Options{..} multi = do
    doGenPopsXLSX = do
        putStrLn "Generating .xlsx file containing the population..."
        ct <- liftIO $ runIO getPOSIXTime >>= handleError
-       liftIO $ BSL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
+       BL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
        verboseLn ("Generated file: " ++ outputFile)
      where outputFile = dirOutput </> baseName ++ "_generated_pop" -<.> ".xlsx"
 

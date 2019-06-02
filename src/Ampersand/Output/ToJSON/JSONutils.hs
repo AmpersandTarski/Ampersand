@@ -26,7 +26,7 @@ import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import           Data.Aeson hiding (Options)
 import qualified Data.Aeson.Types as AT 
 import           Data.Aeson.Encode.Pretty
-import qualified Data.ByteString.Lazy as BS
+import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.List as L
 import           GHC.Generics
 import           System.FilePath
@@ -39,7 +39,7 @@ writeJSONFile fName x = do
     let fullFile = getGenericsDir (getOptions env) </> file
     verboseLn ("  Generating "++file) 
     liftIO $ createDirectoryIfMissing True (takeDirectory fullFile)
-    liftIO $ BS.writeFile fullFile (encodePretty x)
+    liftIO $ BL.writeFile fullFile (encodePretty x)
   where file = fName <.> "json"
         
 
