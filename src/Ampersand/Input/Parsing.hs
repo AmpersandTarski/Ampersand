@@ -37,13 +37,17 @@ parseADL :: (HasVerbosity env,HasHandles env,HasOptions env) =>
 parseADL fp = do 
     curDir <- liftIO getCurrentDirectory
     canonical <- liftIO $ canonicalizePath fp
-    parseThing' (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
-
+    parseThing' ParseCandidate
+       { pcBasePath  = Just curDir
+       , pcOrigin    = Nothing
+       , pcFileKind  = Nothing
+       , pcCanonical = canonical
+       , pcDefineds  = Set.empty
+       }
 parseFormalAmpersand :: RIO App (Guarded P_Context)
 parseFormalAmpersand = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Formal Ampersand specification"
-       , pcFilePath  = "AST.adl"
        , pcFileKind  = Just FormalAmpersand
        , pcCanonical = "AST.adl"
        , pcDefineds  = Set.empty
@@ -52,16 +56,14 @@ parseFormalAmpersandDocumented :: RIO App (Guarded P_Context)
 parseFormalAmpersandDocumented = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Formal Ampersand specification + documentation"
-       , pcFilePath  = "AST.docadl"
        , pcFileKind  = Just FormalAmpersand
-       , pcCanonical = "AST.docadl"
+       , pcCanonical = "AST.adl"  --TODO: Must be replaced by documented formal ampersand script
        , pcDefineds  = Set.empty
        }
 parseSystemContext :: RIO App (Guarded P_Context)
 parseSystemContext = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Ampersand specific system context"
-       , pcFilePath  = "SystemContext.adl"
        , pcFileKind  = Just SystemContext
        , pcCanonical = "SystemContext.adl"
        , pcDefineds  = Set.empty
@@ -104,7 +106,6 @@ parseADLs parsedFilePaths fpIncludes =
 data ParseCandidate = ParseCandidate 
        { pcBasePath :: Maybe FilePath -- The absolute path to prepend in case of relative filePaths 
        , pcOrigin   :: Maybe Origin
-       , pcFilePath :: FilePath -- The absolute or relative filename as found in the INCLUDE statement
        , pcFileKind :: Maybe FileKind -- In case the file is included into ampersand.exe, its FileKind.
        , pcCanonical :: FilePath -- The canonicalized path of the candicate
        , pcDefineds :: Set.Set PreProcDefine
@@ -167,7 +168,6 @@ parseSingleADL pc
                       defineds  = processFlags (pcDefineds pc) defs
                   return $ Checked ParseCandidate { pcBasePath  = Just filePath
                                         , pcOrigin    = Just org
-                                        , pcFilePath  = str
                                         , pcFileKind  = pcFileKind pc
                                         , pcCanonical = canonical
                                         , pcDefineds  = defineds
