@@ -189,17 +189,19 @@ makeFSpec opts context
      totals      = [ d |       EDcD d  <- totsurs ]
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
      totsurs :: [Expression]
-     totsurs
-      = L.nub [rel | q<- filter (isIdent . EDcD . qDcl)   -- FIXME: This cannot be correct. This filter will block everything!
-                     . filter (not . isSignal . qRule)
-                     $ allQuads -- all quads for invariant rules
-                 , dnf<- concatMap rc_dnfClauses . qConjuncts $ q
-                 , let antc = conjNF opts (foldr (./\.) (EDcV (sign (NEL.head (antcs dnf)))) (antcs dnf))
-                 , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
-                 , cons<-NEL.toList $ fmap exprCps2list (conss dnf)
-            -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
-                 , rel<-NEL.init cons++[flp r | r<-NEL.tail cons]
-                 ]
+     totsurs = []
+--      = L.nub [rel | q<- filter (isIdent . EDcD . qDcl)   -- FIXME: This cannot be correct. This filter will block everything!
+--                     . filter (not . isSignal . qRule)
+--                     $ allQuads -- all quads for invariant rules
+--                 , dnf<- concatMap rc_dnfClauses . qConjuncts $ q
+--                 , let antc = conjNF opts (foldr (./\.) (EDcV (sign (NEL.head (antcs dnf)))) (antcs dnf))
+--                 , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
+--                 , cons<- case conss dnf of
+--                            []   -> []
+--                            h:tl -> NEL.toList $ fmap exprCps2list (h NEL.:| tl)
+--            -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
+--                 , rel<-NEL.init cons++[flp r | r<-NEL.tail cons]
+--                 ]
   -- Lookup view by id in fSpec.
      lookupView' :: String -> ViewDef
      lookupView'  viewId =
