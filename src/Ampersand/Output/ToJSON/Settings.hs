@@ -20,8 +20,8 @@ data Settings = Settings
   } deriving (Generic, Show)
 instance ToJSON Settings where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Settings where
- fromAmpersand Options{..} multi _ = Settings 
+instance JSON FSpec Settings where
+ fromAmpersand Options{..} fSpec _ = Settings 
   { sngJSONglobal_contextName = T.unpack (fsName fSpec)
   , sngJSONmysql_dbHost       = sqlHost
   , sngJSONmysql_dbName       = dbName
@@ -31,5 +31,5 @@ instance JSON MultiFSpecs Settings where
   , sngJSONcompiler_env       = show environment
   , sngJSONcompiler_modelHash = show . hash $ fSpec
   } 
-   where fSpec = userFSpec multi
+
          

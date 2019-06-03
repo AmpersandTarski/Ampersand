@@ -43,8 +43,10 @@ import qualified RIO.List as L
 import           Text.Pandoc.Builder (Blocks)
 
 data MultiFSpecs = MultiFSpecs
-                   { userFSpec :: FSpec        -- ^ The FSpec based on the user's script, potentionally extended with metadata.
-                   , metaFSpec :: Maybe FSpec  -- ^ The FormalAmpersand metamodel, populated with the items from the user's script 
+                   { plainFSpec    :: FSpec       -- ^ The FSpec based on the user's script only.
+                   , rapPopulation :: FSpec       -- ^ FSpec that contains the grinded (with Formal Ampersand) population
+                   , plainProto    :: FSpec       -- ^ FSpec that contains the systemContext stuff, for building a prototype
+                   , docuFSpec     :: FSpec       -- ^ FSpec that contains the documentation ???
                    }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showA)  

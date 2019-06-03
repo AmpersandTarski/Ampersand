@@ -19,17 +19,16 @@ instance ToJSON RoleJson where
   toJSON = amp2Jason
 instance ToJSON Roles where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Roles where
- fromAmpersand opts@Options{..} multi _ = Roles . map (fromAmpersand opts multi) . fRoles $ fSpec
-   where fSpec = userFSpec multi
+instance JSON FSpec Roles where
+ fromAmpersand opts@Options{..} fSpec _ = Roles . map (fromAmpersand opts fSpec) . fRoles $ fSpec
 instance JSON (Role,Int) RoleJson where
- fromAmpersand _ multi (role',_) = RoleJson
+ fromAmpersand _ fSpec (role',_) = RoleJson
   { roleJSONid         = idWithoutType role'
   , roleJSONname       = name role'
   , roleJSONmaintains  = map name . Set.elems .fMaintains     fSpec $ role'
   , roleJSONinterfaces = map idWithoutType . roleInterfaces fSpec $ role'
   }
-   where fSpec = userFSpec multi
+
 
 
 

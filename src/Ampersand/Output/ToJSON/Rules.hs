@@ -45,16 +45,14 @@ instance ToJSON JsonPairView where
   toJSON = amp2Jason
 instance ToJSON JsonPairViewSegment where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Rulez where
- fromAmpersand opts multi _ = Rulez
-   { rulJSONinvariants = map (fromAmpersand opts multi) . Set.elems $ invariants fSpec
-   , rulJSONsignals    = map (fromAmpersand opts multi) . Set.elems $ signals fSpec
+instance JSON FSpec Rulez where
+ fromAmpersand opts fSpec _ = Rulez
+   { rulJSONinvariants = map (fromAmpersand opts fSpec) . Set.elems $ invariants fSpec
+   , rulJSONsignals    = map (fromAmpersand opts fSpec) . Set.elems $ signals fSpec
    }
-  where
-   fSpec = userFSpec multi
     
 instance JSON Rule JsonRule where
- fromAmpersand opts multi rule = JsonRule
+ fromAmpersand opts fSpec rule = JsonRule
   { rulJSONname        = rrnm         rule
   , rulJSONruleAdl     = showA.formalExpression $ rule
   , rulJSONorigin      = show.rrfps     $ rule
@@ -63,10 +61,9 @@ instance JSON Rule JsonRule where
   , rulJSONsrcConceptId = idWithoutType . source . formalExpression $ rule
   , rulJSONtgtConceptId = idWithoutType . target . formalExpression $ rule
   , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (fmap NEL.toList . lookup rule $ allConjsPerRule fSpec)
-  , rulJSONpairView    = fmap (fromAmpersand opts multi) (rrviol rule)
+  , rulJSONpairView    = fmap (fromAmpersand opts fSpec) (rrviol rule)
   } 
    where 
-    fSpec = userFSpec multi
     showMeaning = maybe "" aMarkup2String (fmap ameaMrk . meaning (fsLang fSpec) $ rule)
     showMessage = case filter (\x -> amLang x == fsLang fSpec) (rrmsg rule) of
                               [] -> ""
@@ -74,7 +71,7 @@ instance JSON Rule JsonRule where
 instance JSON (PairView Expression) JsonPairView where
  fromAmpersand opts multi pv = JsonPairView $ map (fromAmpersand opts multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
- fromAmpersand _ multi (nr,pvs) = JsonPairViewSegment
+ fromAmpersand _ fSpec (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr
   , pvsJSONsegType = case pvs of
                            PairViewText{} -> "Text"
@@ -95,8 +92,6 @@ instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
                            PairViewText{} -> Nothing
                            PairViewExp _ _ e         -> Just . isIdent $ e --show $ e
   } 
-  where
-    fSpec = userFSpec multi
     
  
   

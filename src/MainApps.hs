@@ -33,8 +33,8 @@ ampersand = do
 ampersand' :: RIO App ()
 ampersand' = do
     app <- ask
-    let opts'@Options{..} = getOptions app
-    sequence_ . map snd . filter fst $ actionsWithoutScript opts'-- There are commands that do not need a single filename to be speciied
+    let opts@Options{..} = getOptions app
+    sequence_ . map snd . filter fst $ actionsWithoutScript opts-- There are commands that do not need a single filename to be speciied
     case fileName of
       Just _ -> do -- An Ampersand script is provided that can be processed
             putStrLn "Processing your model..."
@@ -45,7 +45,7 @@ ampersand' = do
                . fmap show . NEL.toList $ err
               Checked multi ws -> do
                  mapM_  putStrLn . concatMap (lines . show) $ ws
-                 generateAmpersandOutput opts' multi
+                 generateAmpersandOutput opts multi
                  putStrLn "Finished processing your model"
                  putStrLn . ("Your script has no errors " ++) $
                     case ws of
@@ -54,7 +54,7 @@ ampersand' = do
                       _   -> ", but "++show (length ws)++" warnings were found"
            
       Nothing -> -- No Ampersand script is provided 
-         if or (map fst $ actionsWithoutScript opts')
+         if or (map fst $ actionsWithoutScript opts)
          then verboseLn "No further actions, because no ampersand script is provided"
          else liftIO $ do 
             args     <- getArgs

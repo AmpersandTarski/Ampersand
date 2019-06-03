@@ -118,6 +118,7 @@ library:
       - Ampersand.FSpec.SQL
       - Ampersand.FSpec.ShowHS
       - Ampersand.FSpec.ShowMeatGrinder
+      - Ampersand.FSpec.MetaModels
       - Ampersand.FSpec.ToFSpec.ADL2FSpec
       - Ampersand.FSpec.ToFSpec.ADL2Plug
       - Ampersand.FSpec.ToFSpec.Calc

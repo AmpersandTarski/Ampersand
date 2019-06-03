@@ -53,11 +53,11 @@ instance ToJSON Segment where
   toJSON = amp2Jason
 instance ToJSON TableCols where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Concepts where
- fromAmpersand opts@Options{..} multi _ = Concepts (map (fromAmpersand opts multi) (Set.elems $ concs fSpec))
-   where fSpec = userFSpec multi
+instance JSON FSpec Concepts where
+ fromAmpersand opts fSpec _ = Concepts (map (fromAmpersand opts fSpec) (Set.elems $ concs fSpec))
+
 instance JSON A_Concept Concept where
- fromAmpersand opts@Options{..} multi cpt = Concept
+ fromAmpersand opts@Options{..} fSpec cpt = Concept
   { cptJSONid                = idWithoutType cpt
   , cptJSONlabel             = name cpt
   , cptJSONtype              = show . cptTType fSpec $ cpt
@@ -68,16 +68,15 @@ instance JSON A_Concept Concept where
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
-  , cptJSONconceptTable      = fromAmpersand opts multi cpt
+  , cptJSONconceptTable      = fromAmpersand opts fSpec cpt
   , cptJSONlargestConcept    = idWithoutType . largestConcept fSpec $ cpt
   } 
   where
-    fSpec = userFSpec multi
     hasAsSourceCpt :: Interface -> Bool
     hasAsSourceCpt ifc = (source . objExpression . ifcObj) ifc `elem` cpts
     cpts = cpt : largerConcepts  (vgens fSpec) cpt
 instance JSON A_Concept TableCols where
- fromAmpersand _ multi cpt = TableCols
+ fromAmpersand _ fSpec cpt = TableCols
   { tclJSONname    = name cptTable
   , tclJSONcols    = case L.nub . map fst $ cols of
                        [t] -> if name t == name cptTable
@@ -86,7 +85,6 @@ instance JSON A_Concept TableCols where
                        _   -> fatal "All concepts in a typology should be in exactly one table."
   }
   where
-    fSpec = userFSpec multi
     cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
     cptTable = case lookupCpt fSpec cpt of
       [(table,_)] -> table
@@ -101,7 +99,7 @@ instance JSON ViewDef View where
   }
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where
- fromAmpersand _ multi seg = Segment
+ fromAmpersand _ fSpec seg = Segment
   { segJSONseqNr = vsmSeqNr seg
   , segJSONlabel = vsmlabel seg
   , segJSONsegType = case vsmLoad seg of
@@ -117,6 +115,5 @@ instance JSON ViewSegment Segment where
                        ViewText str -> Just str
                        _            -> Nothing
   }
-  where
-    fSpec = userFSpec multi
+
     

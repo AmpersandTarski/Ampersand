@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToJSON.ToJson
-  (generateJSONfiles)
+  (generateJSONfiles
+  ,generateJSONfilesRap)
 where
 import Ampersand.Output.ToJSON.JSONutils
 import Ampersand.Output.ToJSON.Settings
@@ -13,24 +14,28 @@ import Ampersand.Output.ToJSON.Interfaces
 import Ampersand.Output.ToJSON.Views
 import Ampersand.Output.ToJSON.Roles
 
-generateJSONfiles :: MultiFSpecs -> RIO App ()
-generateJSONfiles multi = do
- env <- ask
- let opts@Options{..} = getOptions env
- sequence_ $
-  if genRapPopulationOnly
-  then [ writeJSONFile "metaPopulation" 
-                                (fromAmpersand opts multi (multi,True) :: Populations)
+generateJSONfilesRap :: FSpec -> RIO App ()
+generateJSONfilesRap fSpec = do
+  env <- ask
+  let opts = getOptions env
+  sequence_ $
+       [ writeJSONFile "metaPopulation" 
+                                (fromAmpersand opts fSpec fSpec :: Populations)
        ]
-  else [ writeJSONFile "settings"   (fromAmpersand opts multi multi :: Settings)
-       , writeJSONFile "relations"  (fromAmpersand opts multi multi :: Relationz)
-       , writeJSONFile "rules"      (fromAmpersand opts multi multi :: Rulez)
-       , writeJSONFile "concepts"   (fromAmpersand opts multi multi :: Concepts)
-       , writeJSONFile "conjuncts"  (fromAmpersand opts multi multi :: Conjuncts)
-       , writeJSONFile "interfaces" (fromAmpersand opts multi multi :: Interfaces)
-       , writeJSONFile "views"      (fromAmpersand opts multi multi :: Views)
-       , writeJSONFile "roles"      (fromAmpersand opts multi multi :: Roles)
-       , writeJSONFile "populations"(fromAmpersand opts multi (multi,False) :: Populations)
+generateJSONfiles :: FSpec -> RIO App ()
+generateJSONfiles fSpec = do 
+  env <- ask
+  let opts = getOptions env
+  sequence_ $
+       [ writeJSONFile "settings"   (fromAmpersand opts fSpec fSpec :: Settings)
+       , writeJSONFile "relations"  (fromAmpersand opts fSpec fSpec :: Relationz)
+       , writeJSONFile "rules"      (fromAmpersand opts fSpec fSpec :: Rulez)
+       , writeJSONFile "concepts"   (fromAmpersand opts fSpec fSpec :: Concepts)
+       , writeJSONFile "conjuncts"  (fromAmpersand opts fSpec fSpec :: Conjuncts)
+       , writeJSONFile "interfaces" (fromAmpersand opts fSpec fSpec :: Interfaces)
+       , writeJSONFile "views"      (fromAmpersand opts fSpec fSpec :: Views)
+       , writeJSONFile "roles"      (fromAmpersand opts fSpec fSpec :: Roles)
+       , writeJSONFile "populations"(fromAmpersand opts fSpec fSpec :: Populations)
        ]
 
 

@@ -5,7 +5,8 @@
 -- This might include that RAP is included in the returned FSpec.
 module Ampersand.Input.Parsing (
       parseADL
-    , parseMeta
+    , parseFormalAmpersand
+    , parseFormalAmpersandDocumented
     , parseSystemContext
     , parseRule
     , runParser
@@ -38,13 +39,33 @@ parseADL fp = do
     canonical <- liftIO $ canonicalizePath fp
     parseThing' (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
 
-parseMeta :: (HasVerbosity env,HasHandles env,HasOptions env) =>
-             RIO env (Guarded P_Context)
-parseMeta = parseThing (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
-
-parseSystemContext :: (HasVerbosity env,HasHandles env,HasOptions env) =>
-                      RIO env (Guarded P_Context)
-parseSystemContext = parseThing (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
+parseFormalAmpersand :: RIO App (Guarded P_Context)
+parseFormalAmpersand = parseThing ParseCandidate
+       { pcBasePath  = Nothing
+       , pcOrigin    = Just $ Origin "Formal Ampersand specification"
+       , pcFilePath  = "AST.adl"
+       , pcFileKind  = Just FormalAmpersand
+       , pcCanonical = "AST.adl"
+       , pcDefineds  = Set.empty
+       }
+parseFormalAmpersandDocumented :: RIO App (Guarded P_Context)
+parseFormalAmpersandDocumented = parseThing ParseCandidate
+       { pcBasePath  = Nothing
+       , pcOrigin    = Just $ Origin "Formal Ampersand specification + documentation"
+       , pcFilePath  = "AST.docadl"
+       , pcFileKind  = Just FormalAmpersand
+       , pcCanonical = "AST.docadl"
+       , pcDefineds  = Set.empty
+       }
+parseSystemContext :: RIO App (Guarded P_Context)
+parseSystemContext = parseThing ParseCandidate
+       { pcBasePath  = Nothing
+       , pcOrigin    = Just $ Origin "Ampersand specific system context"
+       , pcFilePath  = "SystemContext.adl"
+       , pcFileKind  = Just SystemContext
+       , pcCanonical = "SystemContext.adl"
+       , pcDefineds  = Set.empty
+       }
 
 parseThing :: (HasVerbosity env,HasHandles env,HasOptions env) =>
               ParseCandidate -> RIO env (Guarded P_Context)

@@ -19,7 +19,7 @@ parseProject rootAdl = do
     env <- ask
     (pc,gPctx) <- parseADL rootAdl 
     let loadedFiles = map pcCanonical pc
-    let gActx = pCtx2Fspec (getOptions env) gPctx
+    let gActx = gPctx >>= pCtx2Fspec (getOptions env) 
     return ( case gActx of
               Checked _ ws -> map warning2Load $ ws
               Errors  es   -> NEL.toList . fmap error2Load $ es

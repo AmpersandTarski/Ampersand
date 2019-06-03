@@ -17,34 +17,32 @@ import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
 
-generateDatabaseFile :: MultiFSpecs -> RIO App ()
-generateDatabaseFile multi = 
+generateDatabaseFile :: FSpec -> RIO App ()
+generateDatabaseFile fSpec = 
    do env <- ask
       let opts@Options{..} = getOptions env
       verboseLn $ "  Generating "++file
       liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile opts))
       liftIO $ writeFile (fullFile opts) content
   where 
-   content = T.unpack (databaseStructureSql multi)
+   content = T.unpack (databaseStructureSql fSpec)
    file = "database" <.> "sql"
    fullFile opts = getGenericsDir opts </> file
 
-databaseStructureSql :: MultiFSpecs -> T.Text
-databaseStructureSql multi
+databaseStructureSql :: FSpec -> T.Text
+databaseStructureSql fSpec
    = T.intercalate "\n" $ 
          header (T.pack ampersandVersionStr)
        <>header "Database structure queries"
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
-   where
-     fSpec = userFSpec multi
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment 
   =    concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
     <> additionalDatabaseSettings 
 
-dumpSQLqueries :: Options -> MultiFSpecs -> T.Text
-dumpSQLqueries opts@Options{..} multi
+dumpSQLqueries :: Options -> FSpec -> T.Text
+dumpSQLqueries opts@Options{..} fSpec
    = T.intercalate "\n" $ 
          header (T.pack ampersandVersionStr)
        <>header "Database structure queries"
@@ -58,7 +56,6 @@ dumpSQLqueries opts@Options{..} multi
    where
      y :: [Interface]
      y = interfaceS fSpec <> interfaceG fSpec
-     fSpec = userFSpec multi
      showInterface :: Interface -> [T.Text]
      showInterface ifc 
         = header ("INTERFACE: "<>T.pack (name ifc))
