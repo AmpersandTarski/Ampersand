@@ -211,9 +211,12 @@ instance Eq Quad where q == q' = compare q q' == EQ
 
 --
 dnf2expr :: DnfClause -> Expression
-dnf2expr dnf
- = es .\/. foldr (.\/.) (NEL.head . conss $ dnf) (NEL.tail . conss $ dnf)
-    where es = notCpl (L.foldr (./\.) (NEL.head . antcs $ dnf) (NEL.tail . antcs $ dnf))
+dnf2expr dnf =
+  case (antcs dnf, conss dnf) of
+    ([],[]) -> fatal ("empty dnf clause in "++show dnf)
+    ([],hc:tlc ) -> foldr (.\/.) hc tlc
+    (ha:tla,[]) -> notCpl (foldr (./\.) ha tla)
+    (ha:tla,hc:tlc) -> notCpl (foldr (./\.) ha tla) .\/. foldr (.\/.) hc tlc
 data PlugInfo = InternalPlug PlugSQL
                 deriving (Show, Eq,Typeable)
 instance Named PlugInfo where

@@ -150,8 +150,8 @@ instance ShowHS Quad where
 instance ShowHS DnfClause where
  showHS opts indent dnf
    = L.intercalate indent
-       [ wrap "Dnf " (indent++"    ") (\_->showHS opts (indent++"      ")) (NEL.toList $ antcs dnf)
-       , wrap "    " (indent++"    ") (\_->showHS opts (indent++"      ")) (NEL.toList $ conss dnf)
+       [ wrap "Dnf " (indent++"    ") (\_->showHS opts (indent++"      ")) (antcs dnf)
+       , wrap "    " (indent++"    ") (\_->showHS opts (indent++"      ")) (conss dnf)
        ]
 
 instance ShowHSName Conjunct where
