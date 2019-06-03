@@ -54,8 +54,9 @@ createMulti = do
       Checked plainFSpec' ws -> do
           rapPopulation' :: Guarded P_Context <- 
                 grindWith FormalAmpersand plainFSpec' 
-          plainProto' :: Guarded P_Context <-
-                grindWith SystemContext plainFSpec'
+          plainProto' :: Guarded P_Context <- do
+                c <- grindWith SystemContext plainFSpec'
+                return $ addSemanticModel opts SystemContext <$> c
           docuFSpec' :: Guarded P_Context <-
                 grindWith FADocumented plainFSpec'
           return $ Checked MultiFSpecs
