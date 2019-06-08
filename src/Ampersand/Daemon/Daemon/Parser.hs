@@ -11,7 +11,7 @@ import           Ampersand.FSpec.ToFSpec.CreateFspec
 import           Ampersand.Input.Parsing
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
-import qualified Data.List.NonEmpty as NEL (toList)
+import qualified Data.List.NonEmpty as NEL
 
 parseProject :: Options -> FilePath -> IO ([Load],[FilePath])
 parseProject opts rootAdl = do

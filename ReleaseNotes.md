@@ -1,5 +1,9 @@
 # Release notes of Ampersand
 
+## v3.17.1 (7 june 2019)
+
+* A lot of refactoring took place this release, embracing best practices from the RIO library. First phase. In the next couple of releases, we plan to gradually do more of this refactoring.
+
 ## v3.17.0 (10 may 2019)
 
 * [Issue #923](https://github.com/AmpersandTarski/Ampersand/issues/923) Lexer error message had disappeared. Now they show again.

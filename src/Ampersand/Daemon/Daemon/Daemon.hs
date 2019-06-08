@@ -15,12 +15,11 @@ module Ampersand.Daemon.Daemon.Daemon(
 import System.IO.Extra(readFile)
 import Data.Function
 import Data.List.Extra(nub)
-import Control.Applicative
 import System.Directory.Extra(getCurrentDirectory,makeAbsolute,doesFileExist)
 import System.FilePath
 import Ampersand.Daemon.Daemon.Parser
 import Ampersand.Daemon.Daemon.Types as T
-import Ampersand.Basics hiding (putStrLn, readFile, init)
+import Ampersand.Basics hiding (putStrLn)
 import Ampersand.Misc
 
 
@@ -33,8 +32,8 @@ data DaemonState = DaemonState
    , loadResults :: [FilePath]
    }
 instance Show DaemonState where
-  showsPrec _ x
-   = showString $ "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
+  show x
+   = "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
 
 startAmpersandDaemon 
      :: Options  -- Ampersand options

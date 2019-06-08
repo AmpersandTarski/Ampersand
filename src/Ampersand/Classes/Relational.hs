@@ -6,8 +6,7 @@ module Ampersand.Classes.Relational
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree(Prop(..),Props)
-import           Data.Maybe
-import qualified Data.Set as Set
+import qualified RIO.Set as Set
 
 class HasProps r where
     properties :: r -> Props
@@ -55,8 +54,7 @@ properties' expr = case expr of
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
      EBrk f     -> properties' f
-     ECps (l,r) -> Set.fromList $ [m | m<-Set.elems (properties' l `Set.intersection` properties' r)
-                                  , m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are properties (TODO)
+     ECps (l,r) -> Set.filter (\x->x `elem` [Uni,Tot,Inj,Sur]) (properties' l `Set.intersection` properties' r)
      EPrd (l,r) -> Set.fromList $ [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
      EKl0 e'    -> Set.fromList [Rfx,Trn] `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])
      EKl1 e'    -> Set.singleton Trn `Set.union` (properties' e' Set.\\ Set.fromList [Uni,Inj])

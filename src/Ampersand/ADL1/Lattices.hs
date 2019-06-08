@@ -15,12 +15,12 @@ module Ampersand.ADL1.Lattices
     , FreeLattice(..),getGroups,isInSystem
     ) where
 
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (toList)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
-import qualified Data.List   as Lst (partition)
+import qualified RIO.List    as L
 import qualified Data.Map    as Map
-import qualified Data.Set    as Set
+import qualified RIO.Set    as Set
 
 -- optimisations possible for the EqualitySystem(s):
 -- (1) apply optimize1 inline, that is: don't use EqualitySystem but use ES1 instead
@@ -63,6 +63,8 @@ getGroups (ES1 tran _ imap)
       overlap = IntMap.intersection allElems (IntMap.fromSet id im) -- overlap between im and the previously treated elements
       oldKeys = IntMap.elems overlap -- sets to which the overlapping items belong
       newKey = head oldKeys -- get any key name
+        where head [] = fatal "head used on empty list."
+              head (x:_) = x
       oldKeySet = IntSet.fromList oldKeys -- remove duplicates, provide efficient lookup
       -- newRev' is all items that will remain the same
       -- newItm' is all (old) items that must be renamed
@@ -97,7 +99,7 @@ findWith f f2 es@(ES1 _ back _) trmUnsimplified
             ) back
   where it = simplifySet es
         intersections [] = IntSet.empty
-        intersections x = foldr1 IntSet.intersection x
+        intersections (x:xs) = foldr IntSet.intersection x xs
         trm' = latticeToTranslatable es trm
         trm = simpl trmUnsimplified
         simpl (Meet a b)
@@ -179,13 +181,16 @@ reverseMap :: (Ord a) => [(a,[Int])] -> RevMap a
 reverseMap lst
  = RevMap (Set.fromList (map fst empties)) (buildMap rest)
  where
-   (empties,rest) = Lst.partition (null . snd) lst
+   (empties,rest) = L.partition (null . snd) lst
    buildMap [] = IntMap.empty
    buildMap o@((_,~(f:_)):_)
      = IntMap.insert f (reverseMap (map tail2 h)) (buildMap tl)
      where tail2 (a,b) = (a, tail b)
-           (h,tl) = Lst.partition ((== f) . head . snd) o
-
+           (h,tl) = L.partition ((== f) . head . snd) o
+           tail [] = fatal "tail called on empty list"
+           tail (_:t) = t
+           head [] = fatal "head used on empty list."
+           head (x:_) = x
 -- | Change the system into one with fast reverse lookups
 optimize1 :: Ord a => EqualitySystem a -> Op1EqualitySystem a
 optimize1 (ES oldmap oldimap)
@@ -218,7 +223,7 @@ addEquality' ~(ES nms imap) set1 set2
    uni' = IntSet.union set1 set2
    addRule :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> IntSet.IntSet -> IntSet.IntSet -> IntSet.IntSet -> IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)]
    addRule oldimap origSet triggers newSet
-    = foldl updateMapForTrigger oldimap (IntSet.toList triggers)
+    = foldl' updateMapForTrigger oldimap (IntSet.toList triggers)
     where dif = IntSet.difference newSet origSet
           updateMapForTrigger :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> Int -> IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)]
           updateMapForTrigger mp trigger
@@ -237,12 +242,12 @@ imapTranslate :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> IntSet.IntSet
 imapTranslate imap tds doneSet
  = case IntSet.minView tds of
     Nothing -> doneSet
-    Just (todo,set) -> imapTranslate imap (newSet todo set) (IntSet.insert todo doneSet)
+    Just (todo,set') -> imapTranslate imap (newSet todo set') (IntSet.insert todo doneSet)
  where
-  newSet todo set
+  newSet todo set'
    = case IntMap.lookup todo imap of
-       Nothing -> set
-       Just lst -> IntSet.unions (set:[IntSet.difference tl doneSet | (fl,tl) <- lst, IntSet.isSubsetOf fl doneSet])
+       Nothing -> set'
+       Just lst -> IntSet.unions (set':[IntSet.difference tl doneSet | (fl,tl) <- lst, IntSet.isSubsetOf fl doneSet])
 
 -- | Data structure to capture an expression in a lattice
 data FreeLattice a

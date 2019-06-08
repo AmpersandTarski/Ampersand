@@ -20,10 +20,9 @@ module Ampersand.Core.A2P_Converters (
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Data.Maybe
-import           Data.Char
-import qualified Data.List.NonEmpty as NEL (NonEmpty(..),map,fromList)
-import qualified Data.Set as Set
+import           RIO.Char
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import qualified Data.Text as T
 
 aCtx2pCtx :: A_Context -> P_Context
@@ -95,7 +94,7 @@ aIdentityDef2pIdentityDef iDef =
  P_Id { pos    = idPos iDef
       , ix_lbl = idLbl iDef
       , ix_cpt = aConcept2pConcept (idCpt iDef)
-      , ix_ats = map aIdentitySegment2pIdentSegmnt (identityAts iDef)
+      , ix_ats = fmap aIdentitySegment2pIdentSegmnt (identityAts iDef)
       }
 
 aRoleRule2pRoleRule :: A_RoleRule -> P_RoleRule
@@ -109,7 +108,7 @@ aRoleRelation2pRoleRelation :: A_RoleRelation -> P_RoleRelation
 aRoleRelation2pRoleRelation rr =
  P_RR { pos      = rrPos rr
       , rr_Roles = rrRoles rr
-      , rr_Rels  = map aRelation2pNamedRel (rrRels rr)
+      , rr_Rels  = fmap aRelation2pNamedRel (rrRels rr)
       }
 
 aViewDef2pViewDef :: ViewDef -> P_ViewDef
@@ -119,7 +118,7 @@ aViewDef2pViewDef vDef =
       , vd_cpt       = aConcept2pConcept (vdcpt vDef)
       , vd_isDefault = vdIsDefault vDef
       , vd_html      = vdhtml vDef
-      , vd_ats       = map aViewSegment2pP_ViewSegment (vdats vDef)
+      , vd_ats       = fmap aViewSegment2pP_ViewSegment (vdats vDef)
       }
 
 aClassify2pClassify :: AClassify -> PClassify
@@ -267,14 +266,14 @@ aViewSegmentPayLoad2pViewSegmentPayLoad vsp =
      ViewText{} -> P_ViewText (vsgmTxt vsp)
 
 aPairViewSegment2pPairViewSegment :: PairViewSegment Expression -> PairViewSegment (Term TermPrim)
-aPairViewSegment2pPairViewSegment segment =
- case segment of 
-  PairViewText{} -> PairViewText{ pos = origin segment
-                                , pvsStr = pvsStr segment
+aPairViewSegment2pPairViewSegment x =
+ case x of 
+  PairViewText{} -> PairViewText{ pos = origin x
+                                , pvsStr = pvsStr x
                                 }
-  PairViewExp{}  -> PairViewExp { pos = origin segment
-                                , pvsSoT = pvsSoT segment
-                                , pvsExp = aExpression2pTermPrim (pvsExp segment)
+  PairViewExp{}  -> PairViewExp { pos = origin x
+                                , pvsSoT = pvsSoT x
+                                , pvsExp = aExpression2pTermPrim (pvsExp x)
                                 }
 
 aIdentitySegment2pIdentSegmnt :: IdentitySegment -> P_IdentSegmnt TermPrim
@@ -365,4 +364,3 @@ aCruds2pCruds x =
   else Just $ P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
    where f :: (Bool,Char) -> Char
          f (b,c) = (if b then toUpper else toLower) c
-

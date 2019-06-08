@@ -23,15 +23,14 @@ module Ampersand.Output.PandocAux
       )
 where
 import           Ampersand.ADL1
-import           Ampersand.Basics hiding (hPutStrLn)
+import           Ampersand.Basics
 import           Ampersand.Classes (isFunction)
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
 import           Conduit (liftIO, MonadIO)  
-import qualified Control.Exception as E
-import           Data.Char hiding    (Space)
+import           RIO.Char hiding    (Space)
 import qualified Data.ByteString.Lazy as BL
 import           Data.Text as Text (Text,pack,unpack,replace)
 import qualified Data.Text.Encoding.Error as TE
@@ -127,7 +126,7 @@ writepandoc opts@Options{..} fSpec thePandoc = do
            res <- runIO (makePDF "pdflatex" [] f writerOptions thePandoc) >>= handleError
            case res of
              Right pdf -> writeFnBinary outputFile pdf
-             Left err' -> liftIO . E.throwIO . PandocPDFError .
+             Left err' -> liftIO . throwIO . PandocPDFError .
                             TL.unpack . TE.decodeUtf8With TE.lenientDecode $ err'
         _     -> do
                 output <- runIO (f writerOptions thePandoc) >>= handleError
@@ -142,12 +141,12 @@ writepandoc opts@Options{..} fSpec thePandoc = do
        Fpdf    -> "latex"
        Flatex  -> "latex"
        FPandoc -> "native"
-       fmt     -> map toLower . tail . show $ fmt
+       fmt     -> map toLower . drop 1 . show $ fmt
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f   = liftIO . BL.writeFile (UTF8.encodePath f)
     (outputFile,fSpecFormatString) = 
       (dirOutput </> baseName -<.> ext
-      ,map toLower . tail . show $ fspecFormat)
+      ,map toLower . drop 1 . show $ fspecFormat)
       where 
         ext =
           case fspecFormat of
@@ -176,6 +175,7 @@ writepandoc opts@Options{..} fSpec thePandoc = do
                       , writerNumberSections=True
                       , writerTemplate=Text.unpack <$> template
                       , writerVariables=defaultWriterVariables opts fSpec
+                      , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath
                     --  , writerVerbose=verboseP
@@ -276,7 +276,7 @@ instance ShowMath Expression where
           showExpr (EKl0 e)     = showExpr (addParensToSuper e)++inMathStar
           showExpr (EKl1 e)     = showExpr (addParensToSuper e)++inMathPlus
           showExpr (EFlp e)     = showExpr (addParensToSuper e)++inMathFlip
-          showExpr (ECpl e)     = "\\overline{"++showExpr e++"}"
+          showExpr (ECpl e)     = inMathOverline (showExpr e)
           showExpr (EBrk e)     = "("++showExpr e++")"
           showExpr (EDcD d)     = inMathText (name d)
           showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
@@ -498,6 +498,9 @@ inMathDiamond = " \\Diamond "
 
 inMathFlip :: String
 inMathFlip = "^{\\smallsmile}"
+
+inMathOverline :: String -> String
+inMathOverline x = " \\overline{"++x++"} "
 
 newGlossaryEntry :: String -> String -> Inlines
 newGlossaryEntry nm cnt =

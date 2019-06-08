@@ -8,10 +8,11 @@ import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Output.PandocAux (latexEscShw,texOnlyId)
-import           Data.Char
-import           Data.List
-import qualified Data.Set as Set
+import           RIO.Char
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import           Data.Text (pack)
+import qualified RIO.List as L
 
 --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
 data PredLogic
@@ -78,9 +79,9 @@ showLatex x
          mathVars :: String -> [Var] -> String
          mathVars q vs
           = if null vs then "" else
-            q++" "++intercalate "; " [intercalate ", " var++"\\coloncolon\\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++":\n"
+            q++" "++L.intercalate "; " [L.intercalate ", " var++"\\coloncolon\\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++":\n"
             where
-             vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
+             vss = [(NEL.toList $ fmap fst varCl,show(snd (NEL.head varCl))) |varCl<-eqCl snd vs]
          chop :: String -> [[String]]
          chop = map chops . lins
           where
@@ -124,9 +125,9 @@ showRtf = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, no
         showVarsP :: String -> [Var] -> String
         showVarsP q vs
          = if null vs then "" else
-           q++intercalate "; " [intercalate ", " var++" "++unicodeSym 28 '∷' '?'++" "++dType | (var,dType)<-vss]++":\\par\n"
+           q++L.intercalate "; " [L.intercalate ", " var++" "++unicodeSym 28 '∷' '?'++" "++dType | (var,dType)<-vss]++":\\par\n"
            where
-            vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
+            vss = [(NEL.toList $ fmap fst varCl,show(snd (NEL.head varCl))) |varCl<-eqCl snd vs]
         breakP = ""
         spaceP = " "
 
@@ -171,22 +172,22 @@ natLangOps l
                    = case l of
                       English | null vs     -> ""
                               | q=="Exists" ->
-                                  intercalate " and "
+                                  L.intercalate " and "
                                   ["there exist"
                                    ++(if length vs'==1 then "s a "++dType else ' ':plural English dType)
                                    ++" called "
-                                   ++intercalate ", " ['$':v'++"$" | v'<-vs'] | (vs',dType)<-vss]
+                                   ++L.intercalate ", " ['$':v'++"$" | v'<-vs'] | (vs',dType)<-vss]
                               | otherwise   -> "If "++langVars "Exists" vs++", "
                       Dutch   | null vs     -> ""
                               | q=="Er is"  ->
-                                  intercalate " en "
+                                  L.intercalate " en "
                                   ["er "
                                     ++(if length vs'==1 then "is een "++dType else "zijn "++plural Dutch dType)
                                     ++" genaamd "
-                                    ++intercalate ", " ['$':v'++"$" | v'<-vs'] | (vs',dType)<-vss]
+                                    ++L.intercalate ", " ['$':v'++"$" | v'<-vs'] | (vs',dType)<-vss]
                               | otherwise   -> "Als "++langVars "Er is" vs++", "
                     where
-                     vss = [(map fst vs',show(snd (head vs'))) |vs'<-eqCl snd vs]
+                     vss = [(NEL.toList $ fmap fst vs',show(snd (NEL.head vs'))) |vs'<-eqCl snd vs]
 
 -- predLshow exists for the purpose of translating a predicate logic expression to natural language.
 -- It uses a vector of operators (mostly strings) in order to produce text. This vector can be produced by, for example, natLangOps.
@@ -222,10 +223,10 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                Equiv lhs rhs       -> wrap i 2 (breakP++charshow 2 lhs++spaceP++equivP++spaceP++ charshow 2 rhs)
                Disj rs             -> if null rs
                                       then ""
-                                      else wrap i 3 (intercalate (spaceP++orP ++spaceP) (map (charshow 3) rs))
+                                      else wrap i 3 (L.intercalate (spaceP++orP ++spaceP) (map (charshow 3) rs))
                Conj rs             -> if null rs
                                       then ""
-                                      else wrap i 4 (intercalate (spaceP++andP++spaceP) (map (charshow 4) rs))
+                                      else wrap i 4 (L.intercalate (spaceP++andP++spaceP) (map (charshow 4) rs))
                Funs x ls           -> case ls of
                                          []    -> x
                                          r:ms  -> if isIdent (EDcD r) then charshow i (Funs x ms) else charshow i (Funs (funP r x) ms)
@@ -286,8 +287,8 @@ assemble expr
    f :: [Var] -> Expression -> (Var,Var) -> PredLogic
    f exclVars (EEqu (l,r)) (a,b)  = Equiv (f exclVars l (a,b)) (f exclVars r (a,b))
    f exclVars (EInc (l,r)) (a,b)  = Implies (f exclVars l (a,b)) (f exclVars r (a,b))
-   f exclVars e@EIsc{}     (a,b)  = Conj [f exclVars e' (a,b) | e'<-exprIsc2list e]
-   f exclVars e@EUni{}     (a,b)  = Disj [f exclVars e' (a,b) | e'<-exprUni2list e]
+   f exclVars e@EIsc{}     (a,b)  = Conj [f exclVars e' (a,b) | e'<-NEL.toList $ exprIsc2list e]
+   f exclVars e@EUni{}     (a,b)  = Disj [f exclVars e' (a,b) | e'<-NEL.toList $ exprUni2list e]
    f exclVars (EDif (l,r)) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
    f exclVars (ELrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
                                     where [c]   = mkVar exclVars [target l]
@@ -337,7 +338,7 @@ assemble expr
      | otherwise               = Exists ivs (Conj (frels a b))
      where
       es :: [Expression]
-      es   = [ x | x<-exprCps2list e, not (isEpsilon x) ]
+      es   = NEL.filter (not . isEpsilon) $ exprCps2list e
      -- Step 1: split in fragments at those points where an exists-quantifier is needed.
      --         Each fragment represents a subexpression with variables
      --         at the outside only. Fragments will be reconstructed in a conjunct.
@@ -345,7 +346,7 @@ assemble expr
       res = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
      -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
       frels :: Var -> Var -> [PredLogic]
-      frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]
+      frels src trg = [r v w | ((r,_,_),v,w)<-L.zip3 res' (src: ivs) (ivs++[trg]) ]
      -- Step 3: compute the intermediate variables and their types
       res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
       res' = [triple | triple<-res, not (atomic triple)]
@@ -388,7 +389,7 @@ assemble expr
                                   where alls = [f (exclVars++ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
 -}
      where
-      es   = [ x | x<-exprRad2list e, not (isEpsilon x) ] -- The definition of exprRad2list guarantees that length es>=2
+      es   = NEL.filter (not . isEpsilon) $ exprRad2list e -- The definition of exprRad2list guarantees that length es>=2
       res  = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
       conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                 -- So conr is not empty.
@@ -400,7 +401,7 @@ assemble expr
              if null x then fatal "Entering in an empty foldr1" else x
      -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
       frels :: Var -> Var -> [PredLogic]
-      frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]
+      frels src trg = [r v w | ((r,_,_),v,w)<-L.zip3 res' (src: ivs) (ivs++[trg]) ]
      -- Step 3: compute the intermediate variables and their types
       res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
       res' = [triple | triple<-res, not (atomic triple)]
@@ -505,3 +506,18 @@ mkVar ex cs = mknew (map fst ex) [([(toLower.head.(++"x").name) c],c) |c<-cs]
   mknew ex' ((x,c):xs) = if x `elem` ex'
                          then mknew ex' ((x++"'",c):xs)
                          else (x,c): mknew (ex'++[x]) xs
+
+
+-- TODO: Rewrite this module. Also get rid of:
+head,last :: [a] -> a
+head [] = fatal $ "head is used on an empty list."
+head (h:_) = h
+last [] = fatal $ "last is used on an empty list."
+last x = head . reverse $ x
+tail, init :: [a] -> [a]
+tail [] = fatal $ "tail is used on an empty list."
+tail (_:tl) = tl
+init [] = fatal $ "init is used on an empty list."
+init x = tail . reverse $ x
+foldr1 :: (a -> a -> a) -> [a] -> a
+foldr1 fun nonEmptyList = foldr fun (head nonEmptyList) (tail nonEmptyList)

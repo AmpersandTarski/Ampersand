@@ -13,8 +13,7 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
-import           Control.Exception
-import           Data.List
+import qualified RIO.List as L
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import           System.Directory
@@ -53,7 +52,7 @@ evaluateExpSQL opts@Options{..} fSpec dbNm expr =
 performQuery :: Options -> Text.Text -> SqlQuery -> IO [(String,String)]
 performQuery opts@Options{..} dbNm queryStr =
  do { queryResult <- (executePHPStr . showPHP) php
-    ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
+    ; if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do mapM_ putStrLn (lines (Text.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
               fatal ("PHP/SQL problem: "<>queryResult)
       else case reads queryResult of
@@ -86,7 +85,7 @@ executePHPStr :: Text.Text -> IO String
 executePHPStr phpStr =
  do { tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
-                                 hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " <> err)
+                                 putStrLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
                                  return ".")
     ; (tempPhpFile, temph) <- openTempFile tempdir "tmpPhpQueryOfAmpersand.php"
     ; Text.hPutStr temph phpStr
@@ -96,7 +95,7 @@ executePHPStr phpStr =
     ; return (normalizeNewLines results)
     }
 normalizeNewLines :: String -> String
-normalizeNewLines = f . intercalate "\n" . lines
+normalizeNewLines = f . L.intercalate "\n" . lines
   where 
     f [] = []
     f ('\r':'\n':rest) = '\n':f rest
@@ -111,7 +110,7 @@ executePHP phpPath = do
        outputFile = inputFile++"Result"
        command = "php "++show inputFile++" > "++show outputFile
    _ <- readCreateProcess cp ""
-   result <- readFile outputFile
+   result <- readUTF8File outputFile
    case result of
      Right content -> do
            removeFile outputFile
@@ -185,7 +184,7 @@ createTempDatabase opts@Options{..} fSpec =
     }
  where 
   lineNumbers :: [Text.Text] -> String
-  lineNumbers = intercalate "  \n" . map withNumber . zip [1..] . map Text.unpack
+  lineNumbers = L.intercalate "  \n" . map withNumber . zip [1..] . map Text.unpack
     where
       withNumber :: (Int,String) -> String
       withNumber (n,t) = "/*"<>take (5-length(show n)) "00000"<>show n<>"*/ "<>t
@@ -260,5 +259,5 @@ createTempDatabase opts@Options{..} fSpec =
                 ):["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
                where query = insertQuery True tableName attrNames tblRecords
                      tableName = Text.pack . name $ plug
-                     attrNames = map (Text.pack . attName) . plugAttributes $ plug
+                     attrNames = fmap (Text.pack . attName) . plugAttributes $ plug
            

@@ -5,9 +5,9 @@
 module Ampersand.Output.ToJSON.Views 
     (Views)
 where
-import Ampersand.Output.ToJSON.JSONutils 
-import Ampersand.ADL1
-import Ampersand.Output.ToJSON.Concepts 
+import           Ampersand.ADL1
+import           Ampersand.Output.ToJSON.Concepts 
+import           Ampersand.Output.ToJSON.JSONutils 
 
 data Views = Views [View] deriving (Generic, Show)
 data View = View
@@ -31,7 +31,7 @@ instance JSON ViewDef View where
   { vwJSONlabel      = name vd
   , vwJSONconceptId  = idWithoutType . vdcpt $ vd
   , vwJSONisDefault  = vdIsDefault vd
-  , vwJSONsegments   = map (fromAmpersand opts multi) . vdats $ vd
+  , vwJSONsegments   = fmap (fromAmpersand opts multi) . vdats $ vd
   } 
 
 

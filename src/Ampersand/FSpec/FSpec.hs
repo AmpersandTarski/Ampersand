@@ -36,10 +36,10 @@ import           Ampersand.Classes
 import           Ampersand.FSpec.Crud
 import           Data.Function (on)
 import           Data.Hashable
-import           Data.List
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
 import           Data.Text (Text,unpack)
-import           Data.Typeable
+import qualified RIO.List as L
 import           Text.Pandoc.Builder (Blocks)
 
 data MultiFSpecs = MultiFSpecs
@@ -77,7 +77,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , lookupView :: String -> ViewDef          -- ^ Lookup view by id in fSpec.
                    , vgens ::        [AClassify]                  -- ^ All gens that apply in the entire FSpec
                    , allConjuncts :: [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
-                   , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
+                   , allConjsPerRule :: [(Rule,NEL.NonEmpty Conjunct)]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
                    , allConjsPerDecl :: [(Relation, [Conjunct])]   -- ^ Maps each relation to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
@@ -95,7 +95,9 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                                                                       -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
                                                                       -- HJO 2016-09-05: Answer: Broad tables may contain rows where some of the attributes implement a relation that is UNI, but not TOT. In such case,
                                                                       --                         we may see empty attributes. (NULL values in database terminology)
-                   , pairsInExpr :: Expression -> AAtomPairs   
+                                                                      -- 'tableContents fSpec plug' is used in `PHP.hs` for filling the database initially.
+                                                                      -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
+                                                                      , pairsInExpr :: Expression -> AAtomPairs   
                    , initialConjunctSignals :: [(Conjunct,AAtomPairs)] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,AAtomPairs)]   -- ^ All invariant rules with violations.
                    , allExprs ::     Expressions             -- ^ All expressions in the fSpec
@@ -121,10 +123,10 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 instance Hashable FSpec where
     hashWithSalt salt fSpec = salt 
       `composeHash` name
-      `composeHash` (sort . Set.toList . fallRules) 
-      `composeHash` (sort . Set.toList . vrels)
-      `composeHash` (sort . Set.toList . allConcepts)
-      `composeHash` (sortBy (compare `on` genspc) . vgens)
+      `composeHash` (L.sort . Set.toList . fallRules) 
+      `composeHash` (L.sort . Set.toList . vrels)
+      `composeHash` (L.sort . Set.toList . allConcepts)
+      `composeHash` (L.sortBy (compare `on` genspc) . vgens)
       where 
         composeHash :: Hashable a => Int -> (FSpec -> a) -> Int
         composeHash s fun = s `hashWithSalt` (fun fSpec) 
@@ -146,7 +148,7 @@ instance Unique Atom where
          ++case atmRoots a of
              []  -> fatal "an atom must have at least one root concept"
              [x] -> uniqueShowWithType x
-             xs  -> "["++intercalate ", " (map uniqueShowWithType xs)++"]"
+             xs  -> "["++L.intercalate ", " (map uniqueShowWithType xs)++"]"
 
 data A_Pair = Pair { lnkDcl :: Relation
                    , lnkLeft :: Atom
@@ -198,10 +200,9 @@ instance Named FSid where
   name (FS_id nm) = nm
 
 
-
 data Quad = Quad { qDcl ::       Relation   -- The relation that, when affected, triggers a restore action.
                  , qRule ::      Rule          -- The rule from which qConjuncts is derived.
-                 , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
+                 , qConjuncts :: NEL.NonEmpty Conjunct    -- The conjuncts, with clauses included
                  } deriving Show
 
 instance Ord Quad where
@@ -210,13 +211,12 @@ instance Eq Quad where q == q' = compare q q' == EQ
 
 --
 dnf2expr :: DnfClause -> Expression
-dnf2expr dnf
- = case (antcs dnf, conss dnf) of
+dnf2expr dnf =
+  case (antcs dnf, conss dnf) of
     ([],[]) -> fatal ("empty dnf clause in "++show dnf)
-    ([],cs ) -> foldr1 (.\/.) cs
-    (as,[]) -> notCpl (foldr1 (./\.) as)
-    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. foldr1 (.\/.) cs
-
+    ([],hc:tlc ) -> foldr (.\/.) hc tlc
+    (ha:tla,[]) -> notCpl (foldr (./\.) ha tla)
+    (ha:tla,hc:tlc) -> notCpl (foldr (./\.) ha tla) .\/. foldr (.\/.) hc tlc
 data PlugInfo = InternalPlug PlugSQL
                 deriving (Show, Eq,Typeable)
 instance Named PlugInfo where
@@ -266,14 +266,16 @@ instance Unique PlugSQL where
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
-plugAttributes :: PlugSQL->[SqlAttribute]
+plugAttributes :: PlugSQL-> NEL.NonEmpty SqlAttribute
 plugAttributes plug = case plug of
-    TblSQL{}    -> attributes plug
+    TblSQL{}    -> case attributes plug of
+                     [] -> fatal "attributes should contain at least one element" -- FIXME: change type of attributes to  attributes :: NEL.NonEmpty SqlAttribute
+                     h:tl -> h NEL.:| tl
     BinSQL{}    -> let store = case dLkpTbl plug of
                          [x] -> x
                          _   -> fatal $ "Relation lookup table of a binary table should contain exactly one element:\n" ++
                                             show (dLkpTbl plug)
-                   in [rsSrcAtt store,rsTrgAtt store]
+                   in rsSrcAtt store NEL.:| [rsTrgAtt store]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
@@ -300,13 +302,13 @@ data SqlAttributeUsage = PrimaryKey A_Concept
                        | PlainAttr             -- None of the above
                        deriving (Eq, Show)
 
-data SqlAttribute = Att { attName :: String
-                        , attExpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-                        , attType :: TType
-                        , attUse ::  SqlAttributeUsage
-                        , attNull :: Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for data dictionary of DB-implementation)
-                        , attDBNull :: Bool       -- True for all fields, to disable strict checking by the database itself. 
-                        , attUniq :: Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for data dictionary of DB-implementation)
+data SqlAttribute = Att { attName ::    String
+                        , attExpr ::    Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
+                        , attType ::    TType
+                        , attUse ::     SqlAttributeUsage
+                        , attNull ::    Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for data dictionary of DB-implementation)
+                        , attDBNull ::  Bool           -- ^ True for all fields, to disable strict checking by the database itself. 
+                        , attUniq ::    Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for data dictionary of DB-implementation)
                         , attFlipped :: Bool
                         } deriving (Eq, Show,Typeable)
 instance Named SqlAttribute where

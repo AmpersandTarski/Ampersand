@@ -9,7 +9,6 @@ module Ampersand.Daemon.Daemon.Util(
     ) where
 
 import Ampersand.Basics
-import Control.Exception
 import Data.Time.Clock
 import Data.Time.Format
 import Data.Time.LocalTime

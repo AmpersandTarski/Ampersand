@@ -5,14 +5,15 @@
 module Ampersand.ADL1.PrettyPrinters(Pretty(..),prettyPrint)
 where
 
-import           Ampersand.Basics hiding ((<$>))
+import           Ampersand.Basics hiding ((<$>),view)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
-import           Data.Char (toUpper)
-import           Data.List (intercalate,intersperse)
+import           RIO.Char (toUpper)
+import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import           Data.List.Utils (replace)
-import qualified Data.Set as Set
+import qualified RIO.Text as T
+import           RIO.Text.Partial (replace)  --TODO: Get rid of replace, because it is partial
+import qualified RIO.Set as Set
 import           Text.PrettyPrint.Leijen
 
 prettyPrint :: Pretty a => a -> String
@@ -42,15 +43,21 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
               escapeCommentStart = escape "{-"
               escapeLineComment = escape "--"
               escapeExplEnd = escape "+}"
-              escape x = replace x (intersperse ' ' x)
+              escape x = replace' x (L.intersperse ' ' x)
 
 isId :: String -> Bool
-isId a = not (null a) && all isIdChar a && isFirstIdChar(head a) && a `notElem` keywords
+isId xs = 
+  case xs of
+   []  -> False
+   h:_ -> all isIdChar xs && isFirstIdChar h && xs `notElem` keywords
        where isFirstIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']
              isIdChar x = isFirstIdChar x || elem x ['0'..'9']
 
 isUpperId :: String -> Bool
-isUpperId xs = isId xs && head xs `elem` ['A'..'Z']
+isUpperId xs = 
+  case xs of
+   []  -> False
+   h:_ -> isId xs && h `elem` ['A'..'Z']
 
 maybeQuote :: String -> Doc
 maybeQuote a = if isId a then text a else quote a
@@ -75,7 +82,7 @@ separate d xs = encloseSep empty empty (text d) $ map pretty xs
 --TODO: This replace shouldn't be necessary, I don't know why quotes are getting into the Prel
 -- Example to test: AmpersandData\FormalAmpersand\AST.adl
 takeQuote :: String -> String
-takeQuote = replace "\"" ""
+takeQuote = replace' "\"" ""
 
 instance Pretty P_Context where
     pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops metas) =
@@ -108,11 +115,11 @@ instance Pretty MetaObj where
 
 instance Pretty P_RoleRelation where
     pretty (P_RR _ roles rels) =
-        text "ROLE" <+> listOf roles <+> text "EDITS" <+> listOf rels
+        text "ROLE" <+> listOf1 roles <+> text "EDITS" <+> listOf1 rels
 
 instance Pretty P_RoleRule where
     pretty (Maintain _ roles rules) =
-        text "ROLE" <+> listOf roles <+> text "MAINTAINS" <+> commas (map maybeQuote rules)
+        text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NEL.toList . fmap maybeQuote $ rules)
 
 instance Pretty Role where
     pretty (Role nm) = maybeQuote nm
@@ -139,9 +146,10 @@ instance Pretty P_Pattern where
 instance Pretty P_Relation where
     pretty (P_Sgn nm sign prps pragma mean _) =
         text "RELATION" <+> text nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
-        where props   = if prps == Set.fromList [Sym, Asy] then text "[PROP]"
-                        else text "[" <> listOf (Set.toList prps) <> text "]"
-              pragmas | null pragma = empty
+        where props | prps == Set.fromList [Sym, Asy] = text "[PROP]"
+                    | null prps                       = empty
+                    | otherwise                       = text ("["++(L.intercalate ",". map show . Set.toList) prps ++ "]") -- do not prettyprint list of properties.
+              pragmas | null (concat pragma) = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
 
 instance Pretty a => Pretty (Term a) where
@@ -230,7 +238,7 @@ instance Pretty P_Population where
                where contents = list . map pretty
 
 instance Pretty Representation where
-    pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf cs <~> text "TYPE" <+> pretty tt
+    pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf1 cs <~> text "TYPE" <+> pretty tt
 
 instance Pretty TType where
     pretty = text . show
@@ -273,7 +281,7 @@ instance Pretty a => Pretty (P_SubIfc a) where
 
 instance Pretty (P_IdentDf TermPrim) where
     pretty (P_Id _ lbl cpt ats) =
-        text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
+        text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
 
 instance Pretty (P_IdentSegmnt TermPrim) where
     pretty (P_IdentExp obj) =
@@ -316,7 +324,7 @@ instance Pretty PPurpose where
              <+\> quotePurpose (mString markup)
         where lang = mFormat markup
               refs rs = if null rs then empty
-                        else text "REF" <+> quote (intercalate "; " rs)
+                        else text "REF" <+> quote (L.intercalate "; " rs)
 
 instance Pretty PRef2Obj where
     pretty p = case p of
@@ -352,10 +360,9 @@ instance Pretty PClassify where
       case p of
             PClassify _ spc gen -> 
                  text "CLASSIFY" <+> pretty spc <+> 
-                     (if NEL.length gen == 2 && 
-                         length (NEL.filter (spc /=) gen) == 1
-                      then text "ISA" <~> head (NEL.filter (spc /=) gen)
-                      else text "IS"  <+> separate "/\\" (NEL.toList gen)
+                     (case (NEL.length gen, NEL.filter (spc /=) gen) of
+                        (2,[x]) -> text "ISA" <~> x
+                        _       -> text "IS"  <+> separate "/\\" (NEL.toList gen)
                      )
 instance Pretty Lang where
     pretty x = text "IN" <+> (text . map toUpper . show $ x)
@@ -391,5 +398,9 @@ instance Pretty PAtomValue where
        ScriptDateTime _ x -> text . show $ x
 
 
-
+replace' :: String -> String -> String -> String
+replace' needle replacement haystack =
+   case needle of 
+     [] -> fatal "Empty needle."
+     _  -> T.unpack $ replace (T.pack needle) (T.pack replacement) (T.pack haystack)
 

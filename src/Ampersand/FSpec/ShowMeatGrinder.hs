@@ -19,9 +19,8 @@ import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
 import           Ampersand.Misc
-import           Data.List
-import           Data.Maybe
-import qualified Data.Set as Set
+import qualified RIO.List as L
+import qualified RIO.Set as Set
 
 data MetaFSpec = MetaFSpec
     { metaModelFileName :: String
@@ -131,7 +130,7 @@ showPop :: Pop -> String
 showPop pop =
   case pop of
       Pop{} -> showP . aRelation2pRelation . popRelation $ pop
-      Comment{} -> intercalate "\n" . map ("-- " ++) . comment $ pop
+      Comment{} -> L.intercalate "\n" . map ("-- " ++) . comment $ pop
 -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
 makeMetaFile :: Options -> MetaFSpec -> FSpec -> (FilePath,String)
@@ -158,20 +157,20 @@ makeMetaFile opts@Options{..} metaModel userFspec
         ])
     body :: [String]
     body =
-         intercalate [""]
-       . sort
+         L.intercalate [""]
+       . L.sort
        . map (lines . showPop )
        . concatMap (Set.toList . popsOfRelation)
-       . sortOn showRel
+       . L.sortOn showRel
        . Set.toList . instances . model $ metaModel
     listOfConcepts :: [String]
     listOfConcepts = map ("-- "++) .
-                     intercalate [""] . 
-                     map showCpt . sortOn name . Set.toList . instances . model $ metaModel
+                     L.intercalate [""] . 
+                     map showCpt . L.sortOn name . Set.toList . instances . model $ metaModel
        where
         showCpt :: A_Concept -> [String]
         showCpt cpt = [name cpt] ++ ( map ("  "++)
-                                    . sort 
+                                    . L.sort 
                                     . map show
                                     . Set.toList
                                     $ pAtomsOfConcept cpt
