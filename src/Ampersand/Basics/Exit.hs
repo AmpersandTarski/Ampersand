@@ -13,7 +13,7 @@ import           System.IO.Unsafe(unsafePerformIO)
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a
 exitWith x = unsafePerformIO $ do
-  mapM_ putStrLn message
+  runRIO stderr (mapM_ putStrLn message)
   SE.exitWith exitcode
  where (exitcode,message) = info x
 
@@ -32,6 +32,8 @@ data AmpersandExit
   | NoAmpersandScript [String]
   | NoFilesToWatch
   | NoConfigurationFile [String]
+  | SomeTestsFailed [String]
+  | ReadFileError [String]
 
 instance Exception AmpersandExit
 
@@ -70,6 +72,10 @@ info x =
               -> (SE.ExitFailure 100 , ["ERROR: No files loaded, nothing to wait for. Fix the last error and restart."])
     NoConfigurationFile msg
               -> (SE.ExitFailure 110 , msg)
+    SomeTestsFailed msg
+              -> (SE.ExitFailure 120 , msg)
+    ReadFileError msg
+              -> (SE.ExitFailure 130 , msg)
   where
     showViolatedRule :: (String,[String]) -> [String]
     showViolatedRule (rule,pairs) = 

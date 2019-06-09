@@ -31,11 +31,9 @@ import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
 import           Conduit (liftIO, MonadIO)  
 import           RIO.Char hiding    (Space)
-import qualified Data.ByteString.Lazy as BL
-import           Data.Text as Text (Text,pack,unpack,replace)
-import qualified Data.Text.Encoding.Error as TE
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TE
+import qualified RIO.Text as T
+import qualified RIO.ByteString.Lazy as BL
+import qualified RIO.Text.Partial as Partial (replace)
 import           System.FilePath  -- (combine,addExtension,replaceExtension)
 import           Text.Pandoc
 import           Text.Pandoc.Builder
@@ -114,23 +112,59 @@ defaultWriterVariables Options{..} fSpec
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The IO() creates the actual output
-writepandoc :: Options -> FSpec -> Pandoc -> IO()
-writepandoc opts@Options{..} fSpec thePandoc = do
-  verboseLn ("Generating "++fSpecFormatString++" to : "++outputFile)
+writepandoc :: FSpec -> Pandoc -> RIO App ()
+writepandoc fSpec thePandoc = do
+  env <- ask
+  let opts@Options{..} = getOptions env
+  verboseLn ("Generating "++fSpecFormatString opts ++" to : "++outputFile opts)
+  liftIO $ writepandoc' opts fSpec thePandoc
+ where
+    fSpecFormatString :: Options -> String 
+    fSpecFormatString = map toLower . drop 1 . show . fspecFormat
+
+outputFile :: Options -> FilePath
+outputFile Options{..} = dirOutput </> baseName -<.> ext fspecFormat 
+       
+ext :: FSpecFormat -> String
+ext format =
+      case format of
+        Fasciidoc     -> ".txt"
+        Fcontext      -> ".context"
+        Fdocbook      -> ".docbook"
+        Fdocx         -> ".docx"
+        Fhtml         -> ".html"
+        Fpdf          -> ".pdf"
+        Fman          -> ".man"
+        Fmarkdown     -> ".md"
+        Fmediawiki    -> ".mediawiki"
+        Fopendocument -> ".odt"
+        Forg          -> ".org"
+        FPandoc       -> ".pandoc"
+        Fplain        -> ".plain"
+        Frst          -> ".rst"
+        Frtf          -> ".rtf"
+        Flatex        -> ".ltx"
+        Ftexinfo      -> ".texinfo"
+        Ftextile      -> ".textile"
+                   
+writepandoc' :: Options -> FSpec -> Pandoc -> IO ()
+writepandoc' opts@Options{..} fSpec thePandoc = liftIO . runIOorExplode $ do
   case writer of 
-     ByteStringWriter biteStringWriter -> do 
-       content <- runIO (biteStringWriter writerOptions thePandoc) >>= handleError
-       BL.writeFile outputFile content
+     ByteStringWriter f -> do 
+       res <- f writerOptions thePandoc -- >>= handleError
+       let content :: LByteString
+           content = res
+       BL.writeFile (outputFile opts) content
      TextWriter f -> case fspecFormat of
         Fpdf -> do
-           res <- runIO (makePDF "pdflatex" [] f writerOptions thePandoc) >>= handleError
+           res <- makePDF "pdflatex" [] f writerOptions thePandoc -- >>= handleError)
            case res of
-             Right pdf -> writeFnBinary outputFile pdf
+             Right pdf -> writeFnBinary (outputFile opts) pdf
              Left err' -> liftIO . throwIO . PandocPDFError .
-                            TL.unpack . TE.decodeUtf8With TE.lenientDecode $ err'
-        _     -> do
+                               T.unpack . decodeUtf8With lenientDecode . BL.toStrict $ err'
+        _     -> liftIO $ do
                 output <- runIO (f writerOptions thePandoc) >>= handleError
-                writeFile outputFile (Text.unpack output)
+                writeFileUtf8 (outputFile opts) (output)
  where   
     writer :: PandocMonad m => Writer m
     writer = case lookup writerName writers of
@@ -144,36 +178,12 @@ writepandoc opts@Options{..} fSpec thePandoc = do
        fmt     -> map toLower . drop 1 . show $ fmt
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f   = liftIO . BL.writeFile (UTF8.encodePath f)
-    (outputFile,fSpecFormatString) = 
-      (dirOutput </> baseName -<.> ext
-      ,map toLower . drop 1 . show $ fspecFormat)
-      where 
-        ext =
-          case fspecFormat of
-            Fasciidoc     -> ".txt"
-            Fcontext      -> ".context"
-            Fdocbook      -> ".docbook"
-            Fdocx         -> ".docx"
-            Fhtml         -> ".html"
-            Fpdf          -> ".pdf"
-            Fman          -> ".man"
-            Fmarkdown     -> ".md"
-            Fmediawiki    -> ".mediawiki"
-            Fopendocument -> ".odt"
-            Forg          -> ".org"
-            FPandoc       -> ".pandoc"
-            Fplain        -> ".plain"
-            Frst          -> ".rst"
-            Frtf          -> ".rtf"
-            Flatex          -> ".ltx"
-            Ftexinfo      -> ".texinfo"
-            Ftextile      -> ".textile"
-                   
+    
     writerOptions :: WriterOptions
     writerOptions = def
                       { writerTableOfContents=True
                       , writerNumberSections=True
-                      , writerTemplate=Text.unpack <$> template
+                      , writerTemplate=T.unpack <$> template
                       , writerVariables=defaultWriterVariables opts fSpec
                       , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
@@ -181,13 +191,13 @@ writepandoc opts@Options{..} fSpec thePandoc = do
                     --  , writerVerbose=verboseP
                       }
       where 
-        template :: Maybe Text.Text
-        template  = substitute substMap <$> Text.pack <$> getStaticFileContent PandocTemplates ("default."++writerName)
-        substitute :: [(Text.Text,Text.Text)] -> Text.Text -> Text.Text
+        template :: Maybe T.Text
+        template  = substitute substMap <$> T.pack <$> getStaticFileContent PandocTemplates ("default."++writerName)
+        substitute :: [(T.Text,T.Text)] -> T.Text -> T.Text
         substitute subs tmpl = foldr replaceAll tmpl subs
-        replaceAll :: (Text.Text,Text.Text) -> Text.Text -> Text.Text
-        replaceAll (needle,replacement) = Text.replace needle replacement
-        substMap :: [(Text.Text,Text.Text)]
+        replaceAll :: (T.Text,T.Text) -> T.Text -> T.Text
+        replaceAll (needle,replacement) = Partial.replace needle replacement
+        substMap :: [(T.Text,T.Text)]
         -- This substitusions are required so we can use the 
         -- templates from pandoc unchanged. Without this substitutions
         -- all kind of crazy errors occur with LaTeX, and possibly other

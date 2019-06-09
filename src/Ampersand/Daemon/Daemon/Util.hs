@@ -14,7 +14,7 @@ import Data.Time.Format
 import Data.Time.LocalTime
 import System.Console.ANSI
 import System.Directory
-import System.IO.Error
+import System.IO.Error(isDoesNotExistError)
 
 -- | The message to show when no errors have been reported
 allGoodMessage :: String

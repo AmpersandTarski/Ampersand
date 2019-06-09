@@ -46,7 +46,7 @@ import qualified Data.Time.Format as DTF
 import           Data.Typeable (typeOf)
 import           GHC.Exts(sortWith)
 import qualified RIO.List as L
-import           Text.Pandoc hiding (trace)
+import           Text.Pandoc hiding (trace,Verbosity,getVerbosity)
 import           Text.Pandoc.Builder
 
 -- | Define the order of the chapters in the document.

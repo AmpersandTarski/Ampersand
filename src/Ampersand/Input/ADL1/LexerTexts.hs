@@ -16,7 +16,6 @@ module Ampersand.Input.ADL1.LexerTexts
     ) where
 
 import Ampersand.Basics
---import Data.IORef
 import Data.Maybe (fromMaybe)
 import System.IO.Unsafe(unsafePerformIO)
 

@@ -11,7 +11,7 @@ import           Ampersand.Output.PandocAux (latexEscShw,texOnlyId)
 import           RIO.Char
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
-import           Data.Text (pack)
+import qualified RIO.Text as T
 import qualified RIO.List as L
 
 --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
@@ -250,7 +250,7 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                Pred nm v'          -> nm++"{"++v'++"}"
       makeRel :: String -> Relation -- This function exists solely for the purpose of dom and cod
       makeRel str
-          = Relation { decnm   = pack str
+          = Relation { decnm   = T.pack str
                    , decsgn  = fatal "Do not refer to decsgn of this dummy relation"
                    , decprps = Set.fromList [Uni,Tot]
                    , decprps_calc = Nothing

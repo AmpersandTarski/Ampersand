@@ -33,7 +33,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkCaseProblemWarning
   , mkNoBoxItemsWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
-  , whenCheckedIO, whenChecked, whenError
+  , whenCheckedM, whenChecked, whenError
   )
 -- SJC: I consider it ill practice to export any CtxError constructors
 -- Reason: All error messages should pass through the CtxError module
@@ -120,13 +120,9 @@ unexpectedType o x =
            NEL.:| []
           )
 
-mkErrorReadingINCLUDE :: Maybe Origin -> FilePath -> String -> Guarded a
-mkErrorReadingINCLUDE mo file str
- = Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) msg
-    where 
-      msg = L.intercalate "\n    " $
-             ("While looking for file '"++file++"':" )
-             : lines str
+mkErrorReadingINCLUDE :: Maybe Origin -> [String] -> Guarded a
+mkErrorReadingINCLUDE mo msg
+ = Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) (L.intercalate "\n    " msg)
 
 mkMultipleRepresentTypesError :: A_Concept -> [(TType,Origin)] -> Guarded a
 mkMultipleRepresentTypesError cpt rs
@@ -507,9 +503,9 @@ instance Monad Guarded where
  (>>=) (Checked a ws) f = addWarnings ws (f a)
  (>>=) (Errors x) _ = Errors x
 
--- Shorthand for working with Guarded in IO
-whenCheckedIO :: IO  (Guarded a) -> (a -> IO (Guarded b)) -> IO (Guarded b)
-whenCheckedIO ioGA fIOGB =
+-- Shorthand for working with Guarded in a monad 
+whenCheckedM :: Monad m => m (Guarded a) -> (a -> m (Guarded b)) -> m (Guarded b)
+whenCheckedM ioGA fIOGB =
    do gA <- ioGA
       case gA of
          Errors err -> return $ Errors err

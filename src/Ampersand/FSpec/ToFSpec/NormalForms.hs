@@ -17,7 +17,7 @@ import           Data.Hashable
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
 import qualified RIO.Set.Partial as SetPartial 
-import           Data.Text (pack)
+import qualified RIO.Text as T
 import qualified RIO.List as L
 
 {- SJC:
@@ -585,7 +585,7 @@ rTerm2expr term
    where
      makeDecl nm sgn
       = Relation
-            { decnm   = pack nm
+            { decnm   = T.pack nm
             , decsgn  = sgn
             , decprps = fatal "Illegal RTerm in rTerm2expr"
             , decprps_calc = Nothing
@@ -1041,7 +1041,7 @@ taeDerivRules = concatMap (dRule.parseRule)
 delta :: Signature -> Expression
 delta sgn
  = EDcD Relation
-              { decnm   = pack "Delta"
+              { decnm   = T.pack "Delta"
               , decsgn  = sgn
               , decprps = Set.empty
               , decprps_calc = Nothing
