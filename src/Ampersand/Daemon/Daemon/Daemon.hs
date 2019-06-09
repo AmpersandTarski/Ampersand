@@ -43,8 +43,7 @@ startAmpersandDaemon = do
 initialState :: (HasOptions env, HasVerbosity env, HasHandle env) =>
                 RIO env (Either [String] DaemonState)
 initialState = do
-    env <- ask
-    let opts = getOptions env
+    opts <- view optionsL
     curDir <- liftIO $ getCurrentDirectory
     dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig opts
     exists <- liftIO $ doesFileExist dotAmpersand

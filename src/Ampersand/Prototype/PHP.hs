@@ -41,8 +41,8 @@ createTablePHP tSpec =
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: (HasOptions env, HasHandle env) => FSpec -> T.Text -> Expression ->  RIO env [(String,String)]
 evaluateExpSQL fSpec dbNm expr = do
-    env <- ask 
-    let violationsExpr = conjNF (getOptions env) expr
+    opts <- view optionsL
+    let violationsExpr = conjNF opts expr
         violationsQuery = prettySQLQuery 26 fSpec violationsExpr
     -- verboseLn ("evaluateExpSQL fSpec "++showA expr)
     -- verboseLn (intercalate "\n" . showPrf showA . cfProof opts) expr
@@ -52,8 +52,8 @@ evaluateExpSQL fSpec dbNm expr = do
 performQuery :: (HasOptions env, HasHandle env) =>
                 T.Text -> SqlQuery ->  RIO env [(String,String)]
 performQuery dbNm queryStr = do
-    env <- ask
-    queryResult <- T.unpack <$> (executePHPStr . showPHP) (php $ getOptions env)
+    opts <- view optionsL
+    queryResult <- T.unpack <$> (executePHPStr . showPHP) (php opts)
     if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
     then do mapM_ putStrLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
@@ -171,8 +171,7 @@ connectToTheDatabasePHP =
 createTempDatabase :: (HasOptions env, HasHandle env, HasVerbosity env) =>
                       FSpec ->  RIO env Bool
 createTempDatabase fSpec = do
-    env <- ask
-    let opts = getOptions env
+    opts <- view optionsL
     result <- executePHPStr .
               showPHP $ phpStr opts
     verboseLn $ 

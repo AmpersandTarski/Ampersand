@@ -94,6 +94,8 @@ data Options = Options { environment :: EnvironmentOptions
                     --   , verbose :: String -> IO()
                     --   , verboseLn :: String -> IO()
                        }
+instance HasVerbosity Options where
+  verbosityL = lens verbosity (\x y -> x { verbosity = y })
 data EnvironmentOptions = EnvironmentOptions
       { envArgs               :: [String]
       , envArgsCommandLine    :: [String]
@@ -109,10 +111,8 @@ data EnvironmentOptions = EnvironmentOptions
       } deriving Show
 
 class HasOptions env where
-  getOptions :: env -> Options
   optionsL :: Lens' env Options
 instance HasOptions Options where
-  getOptions = id
   optionsL = id
 
 dirPrototypeVarName :: String
@@ -683,9 +683,9 @@ instance HasHandle App where
   handleL = lens appHandle (\env h -> env { appHandle = h })
 
 instance HasVerbosity App where
-  verbosityL = 
-     lens (\env -> verbosity . getOptions $ env)
-          (\env v -> env{options' = (options' env){verbosity= v}})
+  verbosityL =  optionsL . verbosityL
+    -- lens (\env -> verbosity . getOptions $ env)
+    --      (\env v -> env{options' = (options' env){verbosity= v}})
 -- instance HasVerbosity Options where
 --   verbosityL = 
 --      lens verbosity (\env v -> env{verbosity= v})

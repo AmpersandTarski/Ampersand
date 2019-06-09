@@ -24,6 +24,6 @@ runFile file = switchFileName file $ do
 switchFileName :: FilePath -> RIO App a -> RIO App a
 switchFileName file inner = do
   app <- ask
-  let opts = getOptions app
+  opts <- view optionsL
       app' = app { options' = opts{ fileName = Just file } }
   runRIO app' inner

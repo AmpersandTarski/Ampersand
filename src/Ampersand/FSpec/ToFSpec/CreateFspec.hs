@@ -39,8 +39,7 @@ import           System.FilePath
 createMulti :: (HasOptions env, HasHandle env, HasVerbosity env) => 
                RIO env (Guarded MultiFSpecs)
 createMulti =
-  do env <- ask
-     let opts@Options{..} = getOptions env
+  do opts@Options{..} <- view optionsL
      fAmpP_Ctx :: Guarded P_Context <-
         if genMetaFile ||
            genRapPopulationOnly ||
@@ -145,8 +144,7 @@ createMulti =
     useSystemContext = genPrototype
     writeMetaFile :: (HasOptions env , HasVerbosity env, HasHandle env) => MetaFSpec -> Guarded FSpec -> RIO env (Guarded ())
     writeMetaFile metaModel userSpec = do
-       env <- ask
-       let opts@Options{..} = getOptions env
+       opts@Options{..} <- view optionsL
        case makeMetaFile opts metaModel <$> userSpec of
         Checked (filePath,metaContents) ws -> 
                   do verboseLn $ "Generating meta file in path "++dirOutput

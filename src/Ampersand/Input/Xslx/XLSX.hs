@@ -3,12 +3,12 @@ module Ampersand.Input.Xslx.XLSX
   (parseXlsxFile)
 where
 import           Ampersand.ADL1
-import           Ampersand.Basics hiding ((^.))
+import           Ampersand.Basics hiding (view, (^.))
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
 import           Codec.Xlsx
-import           Control.Lens
+import           Control.Lens -- ((^?),ix)
 import qualified RIO.List as L
 import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
@@ -19,8 +19,7 @@ import           Data.Tuple
 parseXlsxFile :: HasOptions env => Maybe FileKind
               -> FilePath -> RIO env (Guarded [P_Population])
 parseXlsxFile mFk file =
-  do env <- ask
-     let opts = getOptions env
+  do opts <- view optionsL
      bytestr <- 
         case mFk of
           Just fileKind 

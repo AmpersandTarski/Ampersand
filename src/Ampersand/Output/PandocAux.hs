@@ -114,8 +114,7 @@ defaultWriterVariables Options{..} fSpec
 --         The IO() creates the actual output
 writepandoc :: FSpec -> Pandoc -> RIO App ()
 writepandoc fSpec thePandoc = do
-  env <- ask
-  let opts@Options{..} = getOptions env
+  opts@Options{..} <- view optionsL
   verboseLn ("Generating "++fSpecFormatString opts ++" to : "++outputFile opts)
   liftIO $ writepandoc' opts fSpec thePandoc
  where

@@ -65,8 +65,7 @@ getTemplateDir Options{..} = dirPrototype </> "templates"
 doGenFrontend :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
-    env <- ask
-    let Options{..} = getOptions env
+    Options{..} <- view optionsL
     verboseLn "Generating frontend..."
     isCleanInstall <- downloadPrototypeFramework
     copyTemplates
@@ -84,9 +83,8 @@ doGenFrontend fSpec = do
 copyTemplates :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                  RIO env ()
 copyTemplates = do
-  env <- ask
-  let Options{..} = getOptions env
-      tempDir = dirSource </> "templates"
+  Options{..} <- view optionsL
+  let tempDir = dirSource </> "templates"
       toDir = dirPrototype </> "templates"
   tempDirExists <- liftIO $ doesDirectoryExist tempDir
   if tempDirExists then do
@@ -98,9 +96,8 @@ copyTemplates = do
 copyCustomizations :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                       RIO env ()
 copyCustomizations = do
-  env <- ask
-  let Options{..} = getOptions env
-      custDirs = map (dirSource </>) dirCustomizations
+  Options{..} <- view optionsL
+  let custDirs = map (dirSource </>) dirCustomizations
       protoDir = dirPrototype
   mapM_ (copyDir protoDir) custDirs
     where
@@ -178,9 +175,9 @@ buildInterface fSpec allIfcs ifc = do
   where    
     buildObject :: (HasOptions env) => BoxItem -> RIO env FEObject2
     buildObject (BxExpr object') = do
-      env <- ask
+      opts <- view optionsL
       let object = substituteReferenceObjectDef fSpec object'
-      let iExp = conjNF (getOptions env) $ objExpression object
+      let iExp = conjNF opts $ objExpression object
       (aOrB, iExp') <-
         case objmsub object of
           Nothing -> do
@@ -404,7 +401,7 @@ genControllerInterface fSpec interf = do
     -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     let controlerTemplateName = "interface.controller.js"
     template <- readTemplate controlerTemplateName
-    env <- ask
+    opts <- view optionsL
     let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -420,7 +417,7 @@ genControllerInterface fSpec interf = do
                      . setAttribute "crudR"                    (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"                    (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
-                     . setAttribute "verbose"                  (verbosity $ getOptions env)
+                     . setAttribute "verbose"                  (verbosity opts)
                      . setAttribute "usedTemplate"             controlerTemplateName
     let filename = "ifc" ++ ifcName interf ++ ".controller.js"
     writePrototypeAppFile filename contents 
@@ -432,15 +429,15 @@ data Template = Template (StringTemplate String) String
 -- TODO: better abstraction for specific template and fallback to default
 doesTemplateExist :: (HasOptions env) => String -> RIO env Bool
 doesTemplateExist templatePath = do
-  env <- ask
-  let absPath = getTemplateDir (getOptions env) </> templatePath
+  opts <- view optionsL
+  let absPath = getTemplateDir opts </> templatePath
   liftIO $ doesFileExist absPath
 
 readTemplate :: (HasOptions env) =>
                 FilePath -> RIO env Template
 readTemplate templatePath = do
-  env <- ask
-  let absPath = getTemplateDir (getOptions env) </> templatePath
+  opts <- view optionsL
+  let absPath = getTemplateDir opts </> templatePath
   res <- readUTF8File absPath
   case res of
     Left err   -> exitWith $ ReadFileError $ "Error while reading template.\n" : err
@@ -467,9 +464,8 @@ renderTemplate (Template template absPath) setAttrs =
 downloadPrototypeFramework :: (HasOptions env, HasHandle env, HasVerbosity env) =>
                              RIO env Bool
 downloadPrototypeFramework = ( do 
-    env <- ask
-    let Options{..} = getOptions env
-        destination = dirPrototype
+    Options{..} <- view optionsL
+    let destination = dirPrototype
     x <- extractionIsAllowed destination
     if x
     then do
@@ -530,6 +526,7 @@ downloadPrototypeFramework = ( do
     extractionIsAllowed destination = do
       pathExist <- liftIO $ doesPathExist destination
       destIsDirectory <- liftIO $ doesDirectoryExist destination 
+      opts <- view optionsL 
       if pathExist
       then 
           if destIsDirectory
@@ -538,8 +535,7 @@ downloadPrototypeFramework = ( do
             if null dirContents
             then return True
             else do
-              env <- ask
-              if forceReinstallFramework (getOptions env)
+              if forceReinstallFramework opts
               then do
                 putStrLn "Deleting all files to deploy prototype framework in"
                 putStrLn ("  " ++ destination)

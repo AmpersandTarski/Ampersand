@@ -39,8 +39,7 @@ ampersand = do
   runRIO env ampersand'
 ampersand' :: RIO App ()
 ampersand' = do
-    app <- ask
-    let opts'@Options{..} = getOptions app
+    opts'@Options{..} <- view optionsL
     sequence_ . map snd . filter fst $ actionsWithoutScript opts'-- There are commands that do not need a single filename to be speciied
     case fileName of
       Just _ -> do -- An Ampersand script is provided that can be processed

@@ -195,8 +195,7 @@ conceptualStructure fSpec pr =
 writePicture :: (HasOptions env, HasVerbosity env, HasHandle env) =>
                 Picture -> RIO env ()
 writePicture pict = do
-    env <- ask
-    let opts@Options{..} = getOptions env
+    opts@Options{..} <- view optionsL
     sequence_ (
       [liftIO $ createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
    --   [dumpShow ]++
@@ -215,11 +214,11 @@ writePicture pict = do
               -> GraphvizOutput
               -> RIO env ()
      writeDotPostProcess postProcess gvOutput  =
-         do verboseLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
+         do opts <- view optionsL
+            verboseLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
             dotSource <- mkDotGraphIO pict
-            env <- ask
             path <- liftIO $ (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
-                       (dropExtension . imagePath (getOptions env)) pict
+                       (dropExtension . imagePath opts) pict
             verboseLn $ path++" written."
             case postProcess of
               Nothing -> return ()
@@ -245,8 +244,7 @@ writePicture pict = do
 
 mkDotGraphIO :: HasOptions env => Picture -> RIO env (DotGraph String)
 mkDotGraphIO pict = do
-  env <- ask
-  let opts = getOptions env
+  opts <- view optionsL
   case dotContent pict of
     ClassDiagram x -> pure $ classdiagram2dot opts x
     ConceptualDg x -> pure $ conceptual2DotIO opts x

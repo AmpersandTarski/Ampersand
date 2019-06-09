@@ -29,8 +29,8 @@ writePrototypeAppFile :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                          String -> String -> RIO env ()
 writePrototypeAppFile relFilePath content = do
   verboseLn $ "  Generating "<>relFilePath 
-  env <- ask
-  let filePath = getAppDir (getOptions env) </> relFilePath
+  opts <- view optionsL
+  let filePath = getAppDir opts </> relFilePath
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
   liftIO $ writeFile filePath content
      
@@ -136,11 +136,11 @@ showPhpMaybeBool (Just b) = showPhpBool b
 installComposerLibs :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                        RIO env ()
 installComposerLibs = do
-    env <- ask
+    opts <- view optionsL 
     curPath <- liftIO $ getCurrentDirectory
     verboseLn $ "current directory: "++curPath
     verbose "  Trying to download and install Composer libraries..."
-    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc $ getOptions env)""
+    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc opts)""
     case exit_code of
       SE.ExitSuccess   -> do verboseLn $
                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
@@ -170,10 +170,10 @@ installComposerLibs = do
      failOutput :: (HasOptions env) =>
                    (ExitCode, String, String) -> RIO env ()
      failOutput (exit_code, stdout', stderr') = do
-        env <- ask
+        opts <- view optionsL 
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
-            , "composerTargetPath: "++composerTargetPath (getOptions env)
+            , "composerTargetPath: "++composerTargetPath opts
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
             (if null stdout' then [] else "stdout:" : lines stdout') ++
