@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.Prelude
   ( module Prelude
   , module RIO
@@ -7,7 +8,7 @@ module Ampersand.Basics.Prelude
   , readUTF8File
   , zipWith
   , openTempFile
-  , HasHandles(..)
+  , HasHandle(..)
   , HasVerbosity(..), Verbosity (..)
   )where
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
@@ -23,35 +24,37 @@ import qualified RIO.Text as T
 --                  , writeFile
 --                       )
 
-class HasHandles env where
-  getHandle :: env -> Handle
-instance HasHandles Handle where
-  getHandle = id  
+class HasHandle env where
+  handleL :: Lens' env Handle
+instance HasHandle Handle where
+  handleL = id  
 
-data Verbosity = Loud | Silent deriving Eq
+data Verbosity = Loud | Silent deriving (Eq, Data)
 class HasVerbosity env where
- getVerbosity :: env -> Verbosity  
+  verbosityL :: Lens' env Verbosity  
+
 -- Functions to be upgraded later on:
-putStrLn :: HasHandles env => String -> RIO env ()
+putStrLn :: HasHandle env => String -> RIO env ()
 putStrLn msg = do
-  env <- ask
-  liftIO $ hPutStrLn (getHandle env) msg
-putStr :: HasHandles env => String -> RIO env ()
+  h <- view handleL
+  liftIO $ hPutStrLn h msg
+putStr :: HasHandle env => String -> RIO env ()
 putStr msg = do 
-  env <- ask
-  liftIO $ hPutStr (getHandle env) msg
-verbose :: (HasHandles env, HasVerbosity env) => String -> RIO env ()
+  h <- view handleL
+  liftIO $ hPutStr h msg
+verbose :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
 verbose msg = do
-  env <- ask
-  case getVerbosity env of
+  v <- view verbosityL
+  case v of
     Loud   -> putStr msg
     Silent -> return ()
-verboseLn :: (HasHandles env, HasVerbosity env) => String -> RIO env ()
+verboseLn :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
 verboseLn msg = do
-  env <- ask
-  case getVerbosity env of
+  v <- view verbosityL
+  case v of
     Loud   -> do
-        hSetBuffering (getHandle env) NoBuffering
+        h <- view handleL
+        hSetBuffering h NoBuffering
         mapM_ putStrLn (lines msg)
     Silent -> return ()
 

@@ -21,8 +21,15 @@ import           System.IO.Error (tryIOError)
 
 defEnv :: IO App
 defEnv = do
-  opts <- getOptionsIO
-  return (App opts stdout)
+  logOptions' <- logOptionsHandle stderr False
+  let logOptions = setLogUseTime True $ setLogUseLoc True logOptions'
+  withLogFunc logOptions $ \logFunc -> do
+    opts <- getOptionsIO
+    return App
+          { appLogFunc = logFunc
+          , options' = opts 
+          , appHandle = stdout
+          }
 
   
 
@@ -67,7 +74,7 @@ ampersand' = do
    actionsWithoutScript :: Options -> [(Bool, RIO App ())]
    actionsWithoutScript opts@Options{..} = 
       [ ( test                     , putStrLn $ "Executable: " ++ show dirExec )
-      , ( showVersion  || verboseP , putStrLn $ versionText opts)
+      , ( showVersion  || verbosity == Loud , putStrLn $ versionText opts)
       , ( genSampleConfigFile      , liftIO writeConfigFile)
       , ( showHelp                 , putStrLn $ usageInfo' opts)
       , ( runAsDaemon              , runDaemon)
@@ -80,7 +87,7 @@ preProcessor :: IO()
 preProcessor = 
    runRIO stdout preProcessor' 
 
-preProcessor' :: (HasHandles env) => RIO env ()
+preProcessor' :: (HasHandle env) => RIO env ()
 preProcessor' =
   do
     args <- liftIO getArgs;
@@ -106,7 +113,7 @@ mainTest' = do
     testAmpersandScripts
     tests funcs
   where 
-      tests :: (HasHandles env) => [([String], RIO env Bool)] -> RIO env ()
+      tests :: (HasHandle env) => [([String], RIO env Bool)] -> RIO env ()
       tests [] = pure ()
       tests ((msg,tst):xs) = do
           mapM_ putStrLn msg

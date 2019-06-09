@@ -13,7 +13,7 @@ import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
 
 -- Tries to parse all the given files
-parseScripts :: (HasOptions env, HasHandles env, HasVerbosity env) => 
+parseScripts :: (HasOptions env, HasHandle env, HasVerbosity env) => 
                 [FilePath] ->  RIO env Bool
 parseScripts paths =
   case paths of
@@ -30,7 +30,7 @@ parseScripts paths =
                 showErrors (NEL.toList e)
                 return False
 
-showErrors :: (HasHandles env) => [CtxError] ->  RIO env ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
+showErrors :: (HasHandle env) => [CtxError] ->  RIO env ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
 showErrors = mapM_ $ mapM_ putStrLn . lines . show
 
 parse :: FilePath -> String -> Guarded P_Context

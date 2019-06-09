@@ -192,7 +192,7 @@ conceptualStructure fSpec pr =
                   }
         _  -> fatal "No conceptual graph defined for this type."
 
-writePicture :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+writePicture :: (HasOptions env, HasVerbosity env, HasHandle env) =>
                 Picture -> RIO env ()
 writePicture pict = do
     env <- ask
@@ -207,10 +207,10 @@ writePicture pict = do
       [writePdf Eps    | genFSpec ] -- .eps file that is postprocessed to a .pdf file 
            )
    where
-     writeDot :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+     writeDot :: (HasOptions env, HasVerbosity env, HasHandle env) =>
                  GraphvizOutput -> RIO env ()
      writeDot = writeDotPostProcess Nothing
-     writeDotPostProcess :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+     writeDotPostProcess :: (HasOptions env, HasVerbosity env, HasHandle env) =>
                  Maybe (FilePath -> RIO env ()) --Optional postprocessor
               -> GraphvizOutput
               -> RIO env ()
@@ -227,7 +227,7 @@ writePicture pict = do
        where  gvCommand = dotProgName pict
      -- The GraphVizOutput Pdf generates pixelised graphics on Linux
      -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
-     makePdf :: (HasVerbosity env, HasHandles env ) => 
+     makePdf :: (HasVerbosity env, HasHandle env ) => 
                 FilePath -> RIO env ()
      makePdf path = do
          liftIO $ callCommand (ps2pdfCmd path)
@@ -236,7 +236,7 @@ writePicture pict = do
                                  "\n  Did you install MikTex? Can the command epstopdf be found?"++
                                  "\n  Your error message is:\n " ++ show (e :: IOException))
                    
-     writePdf :: (HasOptions env,HasVerbosity env, HasHandles env) => GraphvizOutput
+     writePdf :: (HasOptions env,HasVerbosity env, HasHandle env) => GraphvizOutput
               -> RIO env ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
        `catch` (\ e -> verboseLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21

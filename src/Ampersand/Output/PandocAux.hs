@@ -188,7 +188,7 @@ writepandoc' opts@Options{..} fSpec thePandoc = liftIO . runIOorExplode $ do
                       , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath
-                    --  , writerVerbose=verboseP
+                    --  , writerVerbose=optVerbosity
                       }
       where 
         template :: Maybe T.Text

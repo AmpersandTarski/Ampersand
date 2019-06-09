@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 
+* [Issue #921](https://github.com/AmpersandTarski/Ampersand/issues/921) Third round of enhancements for RIO.
+
 ## v3.17.1 (7 june 2019)
 
 * A lot of refactoring took place this release, embracing best practices from the RIO library. First phase. In the next couple of releases, we plan to gradually do more of this refactoring.

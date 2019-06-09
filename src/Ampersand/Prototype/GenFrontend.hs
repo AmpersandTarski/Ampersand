@@ -62,7 +62,7 @@ getTemplateDir Options{..} = dirPrototype </> "templates"
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+doGenFrontend :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     env <- ask
@@ -81,7 +81,7 @@ doGenFrontend fSpec = do
       installComposerLibs
     verboseLn "Frontend generated"
   
-copyTemplates :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+copyTemplates :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                  RIO env ()
 copyTemplates = do
   env <- ask
@@ -95,7 +95,7 @@ copyTemplates = do
   else
          verboseLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
 
-copyCustomizations :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+copyCustomizations :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                       RIO env ()
 copyCustomizations = do
   env <- ask
@@ -104,7 +104,7 @@ copyCustomizations = do
       protoDir = dirPrototype
   mapM_ (copyDir protoDir) custDirs
     where
-      copyDir :: (HasVerbosity  env, HasHandles env) =>
+      copyDir :: (HasVerbosity  env, HasHandle env) =>
                  FilePath -> FilePath -> RIO env()
       copyDir targetDir sourceDir = do
         sourceDirExists <- liftIO $ doesDirectoryExist sourceDir
@@ -254,29 +254,29 @@ buildInterface fSpec allIfcs ifc = do
 
 ------ Generate RouteProvider.js
 
-genRouteProvider :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+genRouteProvider :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                     FSpec -> [FEInterface] -> RIO env ()
 genRouteProvider fSpec ifcs = do
   --verboseLn . show $ map name (interfaceS fSpec)
-  env <- ask
+  verbosity <- view verbosityL
   template <- readTemplate "routeProvider.config.js"
   let contents = renderTemplate template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" ampersandVersionStr
                  . setAttribute "ifcs"                ifcs
-                 . setAttribute "verbose"             (verboseP $ getOptions env)
+                 . setAttribute "verbose"             verbosity
   writePrototypeAppFile "routeProvider.config.js" contents 
       
 ------ Generate view html code
 
-genViewInterfaces :: (HasOptions env, HasVerbosity  env, HasHandles env) => 
+genViewInterfaces :: (HasOptions env, HasVerbosity  env, HasHandle env) => 
                      FSpec -> [FEInterface] -> RIO env ()
 genViewInterfaces fSpec = mapM_ (genViewInterface fSpec)
 
-genViewInterface :: (HasOptions env, HasVerbosity  env, HasHandles env) => 
+genViewInterface :: (HasOptions env, HasVerbosity  env, HasHandle env) => 
                     FSpec -> FEInterface -> RIO env ()
 genViewInterface fSpec interf = do
-  env <- ask
+  verbosity <- view verbosityL
   lns <- genViewObject fSpec 0 (_ifcObj interf)
   template <- readTemplate "interface.html"
   let contents = renderTemplate template $
@@ -294,7 +294,7 @@ genViewInterface fSpec interf = do
                   . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                   . setAttribute "crudD"               (objCrudD (_ifcObj interf))
                   . setAttribute "contents"            (L.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
-                  . setAttribute "verbose"             (verboseP $ getOptions env)
+                  . setAttribute "verbose"             (verbosity)
   let filename = "ifc" ++ ifcName interf ++ ".view.html" 
   writePrototypeAppFile filename contents 
   
@@ -305,12 +305,12 @@ data SubObjectAttr2 = SubObjAttr{ subObjName :: String
                                 , subObjExprIsUni :: Bool
                                 } deriving (Show, Data, Typeable)
  
-genViewObject :: (HasOptions env) =>
+genViewObject :: (HasVerbosity env, HasOptions env) =>
                  FSpec -> Int -> FEObject2 -> RIO env [String]
 genViewObject fSpec depth obj =
   case obj of 
     FEObjE{} -> do
-      env <- ask
+      verbosity <- view verbosityL
       let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
           atomicAndBoxAttrs = setAttribute "exprIsUni"  (exprIsUni obj)
                             . setAttribute "exprIsTot"  (exprIsTot obj)
@@ -323,7 +323,7 @@ genViewObject fSpec depth obj =
                             . setAttribute "crudR"      (objCrudR obj)
                             . setAttribute "crudU"      (objCrudU obj)
                             . setAttribute "crudD"      (objCrudD obj)
-                            . setAttribute "verbose"    (verboseP $ getOptions env)
+                            . setAttribute "verbose"    (verbosity)
       case atomicOrBox obj of
             FEAtomic{} -> do
               {-
@@ -361,7 +361,7 @@ genViewObject fSpec depth obj =
   where 
     indentation :: [String] -> [String]
     indentation = map ( (replicate (if depth == 0 then 4 else 16) ' ') ++)
-    genView_SubObject :: (HasOptions env) =>
+    genView_SubObject :: (HasVerbosity env, HasOptions env) =>
                          FEObject2 -> RIO env SubObjectAttr2
     genView_SubObject subObj =
       case subObj of
@@ -396,10 +396,10 @@ genViewObject fSpec depth obj =
 
 
 ------ Generate controller JavaScript code
-genControllerInterfaces :: (HasOptions env, HasVerbosity env, HasHandles env) => FSpec -> [FEInterface] -> RIO env ()
+genControllerInterfaces :: (HasOptions env, HasVerbosity env, HasHandle env) => FSpec -> [FEInterface] -> RIO env ()
 genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 
-genControllerInterface :: (HasOptions env, HasVerbosity env, HasHandles env) => FSpec -> FEInterface -> RIO env ()
+genControllerInterface :: (HasOptions env, HasVerbosity env, HasHandle env) => FSpec -> FEInterface -> RIO env ()
 genControllerInterface fSpec interf = do
     -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     let controlerTemplateName = "interface.controller.js"
@@ -420,7 +420,7 @@ genControllerInterface fSpec interf = do
                      . setAttribute "crudR"                    (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"                    (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
-                     . setAttribute "verbose"                  (verboseP $ getOptions env)
+                     . setAttribute "verbose"                  (verbosity $ getOptions env)
                      . setAttribute "usedTemplate"             controlerTemplateName
     let filename = "ifc" ++ ifcName interf ++ ".controller.js"
     writePrototypeAppFile filename contents 
@@ -464,7 +464,7 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 
-downloadPrototypeFramework :: (HasOptions env, HasHandles env, HasVerbosity env) =>
+downloadPrototypeFramework :: (HasOptions env, HasHandle env, HasVerbosity env) =>
                              RIO env Bool
 downloadPrototypeFramework = ( do 
     env <- ask
@@ -489,7 +489,7 @@ downloadPrototypeFramework = ( do
                   . getResponseBody $ response
       verboseLn "Start extraction of prototype framework."
       let zipoptions = 
-              [OptVerbose | verboseP]
+              [OptVerbose | verbosity == Loud]
             ++ [OptDestination destination]
       ((liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
@@ -525,7 +525,7 @@ downloadPrototypeFramework = ( do
               _:[] -> Nothing
               _:tl -> Just entry{eRelativePath = joinPath tl}
 
-    extractionIsAllowed :: (HasOptions env, HasHandles env, HasVerbosity env) =>
+    extractionIsAllowed :: (HasOptions env, HasHandle env, HasVerbosity env) =>
                            FilePath ->  RIO env Bool
     extractionIsAllowed destination = do
       pathExist <- liftIO $ doesPathExist destination
@@ -558,7 +558,7 @@ downloadPrototypeFramework = ( do
              return False
       else return True
 
-promptUserYesNo :: (HasHandles env) => RIO env Bool
+promptUserYesNo :: (HasHandle env) => RIO env Bool
 promptUserYesNo = do
     char <- liftIO $ getChar -- TODO: refactor that the first character is directly processed
     case toUpper char of

@@ -36,7 +36,7 @@ process indnt (DirData path dirContent) =
  
 yaml :: String
 yaml = "testinfo.yaml"  -- the required name of the file that contains the test info for this directory.
-doTestSet :: HasHandles env => Int -> FilePath -> [FilePath] -> RIO env Int
+doTestSet :: HasHandle env => Int -> FilePath -> [FilePath] -> RIO env Int
 doTestSet indnt dir fs 
   | yaml `elem` fs = 
        do res <- parseYaml

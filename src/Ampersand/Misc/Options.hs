@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.Options
         ( Options(..)
         , App(..)
-        , HasOptions(..),HasHandles(..)
+        , HasOptions(..),HasHandle(..)
         , FSpecFormat(..)
         , getOptionsIO
         , showFormat
@@ -31,7 +33,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , preVersion :: String
                        , postVersion :: String  --built in to aid DOS scripting... 8-(( Bummer.
                        , showHelp :: Bool
-                       , verboseP :: Bool
+                       , verbosity :: Verbosity
                        , allowInvariantViolations :: Bool
                        , validateSQL :: Bool
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
@@ -108,8 +110,10 @@ data EnvironmentOptions = EnvironmentOptions
 
 class HasOptions env where
   getOptions :: env -> Options
+  optionsL :: Lens' env Options
 instance HasOptions Options where
   getOptions = id
+  optionsL = id
 
 dirPrototypeVarName :: String
 dirPrototypeVarName = "CCdirPrototype"
@@ -229,7 +233,7 @@ getOptions' envOpts =
                       , postVersion      = fromMaybe "" $ envPostVersion envOpts
                       , showVersion      = False
                       , showHelp         = False
-                      , verboseP         = False
+                      , verbosity         = Silent
                       , allowInvariantViolations = False
                       , validateSQL      = False
                       , genSampleConfigFile = False
@@ -376,13 +380,7 @@ options = [ (Option ['v']   ["version"]
                "get (this) usage information. Add --verbose for more advanced options."
             , Public)
           , (Option ['V']   ["verbose"]
-               (NoArg (\opts -> opts{ verboseP  = True
-                                --    , verbose   = putStr 
-                                --    , verboseLn = \x-> do
-                                        -- Since verbose is for debugging purposes in general, we want no buffering, because it is confusing while debugging.
-                                --        hSetBuffering stdout NoBuffering
-                                --        mapM_ putStrLn (lines x)
-                                    }))
+               (NoArg (\opts -> opts{ verbosity  = Loud}))
                "verbose output, to report which files Ampersand writes."
             , Public)
           , (Option []   ["sampleConfigFile"]
@@ -641,7 +639,7 @@ usageInfo' :: Options -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.
 usageInfo' opts = 
   infoHeader (progrName opts) ++"\n"++
-    (concat . L.sort . map publishOption) [od | (od,x) <- options, verboseP opts || x == Public] 
+    (concat . L.sort . map publishOption) [od | (od,x) <- options, verbosity opts == Loud || x == Public] 
 
 infoHeader :: String -> String
 infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
@@ -679,12 +677,24 @@ publishOption (Option shorts longs args expl)
 data App = App
   { options' :: !Options
   , appHandle :: !Handle
+  , appLogFunc :: !LogFunc
   }
-instance HasHandles App where
-  getHandle = appHandle
+instance HasHandle App where
+  handleL = lens appHandle (\env h -> env { appHandle = h })
 
 instance HasVerbosity App where
-  getVerbosity app = 
-    if verboseP (getOptions app) then Loud else Silent
+  verbosityL = 
+     lens (\env -> verbosity . getOptions $ env)
+          (\env v -> env{options' = (options' env){verbosity= v}})
+-- instance HasVerbosity Options where
+--   verbosityL = 
+--      lens verbosity (\env v -> env{verbosity= v})
+--     where aap :: Options -> Verbosity
+--           aap = verbosity
+--           noot :: Options -> Verbosity -> Options
+--           noot = (\env v -> env{verbosity= v})
 instance HasOptions App where
-  getOptions = options'
+  optionsL = lens options' (\env opts -> env{ options' = opts})
+instance HasLogFunc App where
+  logFuncL = lens appLogFunc (\x y -> x { appLogFunc = y })
+

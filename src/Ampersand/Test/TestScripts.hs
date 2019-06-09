@@ -21,7 +21,7 @@ getTestScripts =
 --                | DirError IOException               
 --data DirData = DirData FilePath DirContent       -- path and content of a directory
 
-testAmpersandScripts :: HasHandles env => RIO env ()
+testAmpersandScripts :: HasHandle env => RIO env ()
 testAmpersandScripts = do
     putStrLn "Testscripts of this kind are not available."
 {-

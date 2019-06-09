@@ -59,7 +59,7 @@ listContentsInside test dir = do
 --   starting from when 'waitFiles' was initially called.
 --
 --   Returns a message about why you are continuing (usually a file name).
-waitFiles :: (HasHandles env, HasVerbosity env) => 
+waitFiles :: (HasHandle env, HasVerbosity env) => 
              Waiter -> RIO env ([FilePath] -> RIO env [String])
 waitFiles waiter = do
     base <- liftIO getCurrentTime
@@ -93,7 +93,7 @@ waitFiles waiter = do
             [] -> recheck files' new
             xs -> return xs
     where
-        recheck :: (HasHandles env, HasVerbosity env) => 
+        recheck :: (HasHandle env, HasVerbosity env) => 
                    [FilePath] -> [Maybe UTCTime] -> RIO env [FilePath]
         recheck files old = do
             liftIO $ sleep 0.1

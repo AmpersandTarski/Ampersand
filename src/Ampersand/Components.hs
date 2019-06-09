@@ -184,7 +184,7 @@ generateAmpersandOutput opts@Options{..} multi = do
    reportInvViolations :: [(Rule,AAtomPairs)] -> RIO App ()
    reportInvViolations []    = verboseLn $ "No invariant violations found for the initial population"
    reportInvViolations viols =
-     if allowInvariantViolations && not verboseP
+     if allowInvariantViolations && verbosity == Silent
      then
        -- TODO: this is a nice use case for outputting warnings
        putStrLn "There are invariant violations that are ignored. Use --verbose to output the violations"
@@ -202,7 +202,7 @@ generateAmpersandOutput opts@Options{..} multi = do
    -- showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
    reportSignals []        = verboseLn "No signals for the initial population" 
    reportSignals conjViols = 
-     if verboseP
+     if verbosity == Loud
      then
        verboseLn $ "Signals for initial population:\n" ++ L.intercalate "\n"
          [   "Rule(s): "++(show . map name . NEL.toList . rc_orgRules) conj

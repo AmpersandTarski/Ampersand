@@ -39,7 +39,7 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: (HasOptions env, HasHandles env) => FSpec -> T.Text -> Expression ->  RIO env [(String,String)]
+evaluateExpSQL :: (HasOptions env, HasHandle env) => FSpec -> T.Text -> Expression ->  RIO env [(String,String)]
 evaluateExpSQL fSpec dbNm expr = do
     env <- ask 
     let violationsExpr = conjNF (getOptions env) expr
@@ -49,7 +49,7 @@ evaluateExpSQL fSpec dbNm expr = do
     -- verboseLn "End of proof"
     performQuery dbNm violationsQuery
 
-performQuery :: (HasOptions env, HasHandles env) =>
+performQuery :: (HasOptions env, HasHandle env) =>
                 T.Text -> SqlQuery ->  RIO env [(String,String)]
 performQuery dbNm queryStr = do
     env <- ask
@@ -83,7 +83,7 @@ performQuery dbNm queryStr = do
       ]
 
 -- call the command-line php with phpStr as input
-executePHPStr :: (HasHandles env) => T.Text -> RIO env T.Text
+executePHPStr :: (HasHandle env) => T.Text -> RIO env T.Text
 executePHPStr phpStr = do
     tempdir <- liftIO getTemporaryDirectory 
                  `catch`
@@ -168,7 +168,7 @@ connectToTheDatabasePHP =
     , ""
     ]
 
-createTempDatabase :: (HasOptions env, HasHandles env, HasVerbosity env) =>
+createTempDatabase :: (HasOptions env, HasHandle env, HasVerbosity env) =>
                       FSpec ->  RIO env Bool
 createTempDatabase fSpec = do
     env <- ask

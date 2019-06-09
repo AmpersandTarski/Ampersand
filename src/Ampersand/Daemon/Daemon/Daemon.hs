@@ -32,7 +32,7 @@ instance Show DaemonState where
    = "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
 
 startAmpersandDaemon 
-     :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+     :: (HasOptions env, HasVerbosity env, HasHandle env) =>
         RIO env DaemonState
 startAmpersandDaemon = do
     init <- initialState
@@ -40,7 +40,7 @@ startAmpersandDaemon = do
         Left msg -> exitWith . NoConfigurationFile $ msg
         Right s -> pure s  
 
-initialState :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+initialState :: (HasOptions env, HasVerbosity env, HasHandle env) =>
                 RIO env (Either [String] DaemonState)
 initialState = do
     env <- ask
