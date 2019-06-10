@@ -23,12 +23,12 @@ validateRulesSQL fSpec = do
        viols -> exitWith . ViolationsInDatabase . map stringify $ viols
     hSetBuffering stdout NoBuffering
 
-    verboseLn "Initializing temporary database (this could take a while)"
+    sayWhenLoudLn "Initializing temporary database (this could take a while)"
     succes <- createTempDatabase fSpec
     if succes 
     then actualValidation 
     else do 
-        putStrLn "Error: Database creation failed. No validation could be done."
+        sayLn "Error: Database creation failed. No validation could be done."
         return []
   where
     actualValidation = do
@@ -37,11 +37,11 @@ validateRulesSQL fSpec = do
                       getAllPairViewExps fSpec ++
                       getAllIdExps fSpec ++
                       getAllViewExps fSpec
-        verboseLn $ "Number of expressions to be validated: "++show (length allExps)
+        sayWhenLoudLn $ "Number of expressions to be validated: "++show (length allExps)
         results <- mapM (validateExp fSpec) allExps
         case [ ve | (ve, False) <- results] of
            [] -> do
-               verboseLn $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+               sayWhenLoudLn $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
                return []
            ves -> return $ "Validation error. The following expressions failed validation:"
                          : map showVExp ves
@@ -92,7 +92,7 @@ validateExp :: (HasOptions env, HasHandle env) => FSpec -> ValidationExp ->  RIO
 validateExp fSpec vExp =
     case vExp of
         (EDcD{}, _) -> do -- skip all simple relations
-            putStr "."
+            say "."
             return (vExp, True)
         (expr, orig) -> do
             opts <- view optionsL
@@ -100,16 +100,16 @@ validateExp fSpec vExp =
             let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
             if L.sort violationsSQL == L.sort violationsAmp
             then do
-                putStr "."
+                say "."
                 return (vExp, True)
             else do
-                putStrLn ""
-                putStrLn $ "Checking "++orig ++": expression = "++showA expr
-                putStrLn ""
-                putStrLn "Mismatch between SQL and Ampersand"
-                putStrLn $ showVExp vExp
-                putStrLn "SQL violations:"
-                putStrLn $ show violationsSQL
-                putStrLn "Ampersand violations:"
-                putStrLn $ show violationsAmp
+                sayLn ""
+                sayLn $ "Checking "++orig ++": expression = "++showA expr
+                sayLn ""
+                sayLn "Mismatch between SQL and Ampersand"
+                sayLn $ showVExp vExp
+                sayLn "SQL violations:"
+                sayLn $ show violationsSQL
+                sayLn "Ampersand violations:"
+                sayLn $ show violationsAmp
                 return (vExp, False)

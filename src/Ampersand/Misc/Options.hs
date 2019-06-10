@@ -91,8 +91,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
-                    --   , verbose :: String -> IO()
-                    --   , verboseLn :: String -> IO()
                        }
 instance HasVerbosity Options where
   verbosityL = lens verbosity (\x y -> x { verbosity = y })
@@ -171,7 +169,7 @@ getEnvironmentOptions =
          Just fName -> readConfigFile fName
         where 
            readConfigFile yaml = do
-              runRIO stdout $ putStrLn $ "Reading config file: "++yaml
+              runRIO stdout $ sayLn $ "Reading config file: "++yaml
               config <- load yaml
               case keys config L.\\ ["switches"] of
                 []  -> do let switches :: [String] = YC.lookupDefault "switches" [] config
@@ -280,13 +278,11 @@ getOptions' envOpts =
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
-                --      , verbose          = \_ -> return()
-                --      , verboseLn        = \_ -> return()
                       }
 writeConfigFile :: IO ()
 writeConfigFile = do
     writeFile sampleConfigFileName (unlines sampleConfigFile)
-    runRIO stdout $ putStrLn (sampleConfigFileName++" written.")
+    runRIO stdout $ sayLn (sampleConfigFileName++" written.")
     
 sampleConfigFileName :: FilePath
 sampleConfigFileName = "sampleconfig.yaml"

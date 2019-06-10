@@ -25,7 +25,7 @@ fSpec2Haskell opts@Options{..} fSpec
           ++"\n"
           ++"\nmain :: IO ()"
           ++"\nmain = do opts <- getOptions"
-          ++"\n          putStr (showHS opts \"\\n  \" fSpec_"++baseName++")\n"
+          ++"\n          say (showHS opts \"\\n  \" fSpec_"++baseName++")\n"
           ++"\nfSpec_"++baseName ++" :: FSpec"
           ++"\nfSpec_"++baseName ++" =\n  "++showHS opts "\n  " fSpec
 

@@ -22,16 +22,16 @@ parseScripts paths =
         parsed <- snd <$> parseADL f
         case parsed of
             Checked _ ws -> do
-                putStrLn ("Parsed: " ++ f)
-                mapM_  putStrLn . concatMap (lines . show) $ ws
+                sayLn ("Parsed: " ++ f)
+                mapM_  sayLn . concatMap (lines . show) $ ws
                 parseScripts fs
             Errors  e -> do 
-                putStrLn ("Cannot parse: " ++ f)
+                sayLn ("Cannot parse: " ++ f)
                 showErrors (NEL.toList e)
                 return False
 
 showErrors :: (HasHandle env) => [CtxError] ->  RIO env ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
-showErrors = mapM_ $ mapM_ putStrLn . lines . show
+showErrors = mapM_ $ mapM_ sayLn . lines . show
 
 parse :: FilePath -> String -> Guarded P_Context
 parse file txt = whenChecked (runParser pContext file txt) (pure . fst)

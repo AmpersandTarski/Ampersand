@@ -115,7 +115,7 @@ defaultWriterVariables Options{..} fSpec
 writepandoc :: FSpec -> Pandoc -> RIO App ()
 writepandoc fSpec thePandoc = do
   opts@Options{..} <- view optionsL
-  verboseLn ("Generating "++fSpecFormatString opts ++" to : "++outputFile opts)
+  sayWhenLoudLn ("Generating "++fSpecFormatString opts ++" to : "++outputFile opts)
   liftIO $ writepandoc' opts fSpec thePandoc
  where
     fSpecFormatString :: Options -> String 

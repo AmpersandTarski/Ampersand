@@ -47,15 +47,15 @@ mainWithTerminal termSize termOutput = goForever
             hSetBuffering stdout LineBuffering
             hSetBuffering stderr NoBuffering
             curDir <- liftIO $ getCurrentDirectory
-            verboseLn $ "%OS: " ++ os
-            verboseLn $ "%ARCH: " ++ arch
-            verboseLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
+            sayWhenLoudLn $ "%OS: " ++ os
+            sayWhenLoudLn $ "%ARCH: " ++ arch
+            sayWhenLoudLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
             env <- ask
             withCurrentDirectory curDir $ do
                 termSize' <- liftIO $ return $ do
                         term <- termSize
                         -- if we write to the final column of the window then it wraps automatically
-                        -- so putStrLn width 'x' uses up two lines
+                        -- so sayLn width 'x' uses up two lines
                         return $ TermSize
                             (termWidth term - 1)
                             (termHeight term)
@@ -77,7 +77,7 @@ mainWithTerminal termSize termOutput = goForever
 
         errorHandler :: AmpersandExit -> RIO App ()
         errorHandler (err :: AmpersandExit) = do 
-              putStrLn (show err)
+              sayLn (show err)
               goForever
 
 runDaemon :: RIO App ()
@@ -91,7 +91,7 @@ runDaemon = mainWithTerminal termSize termOutput
 
         termOutput :: (HasHandle env) => [String] -> RIO env ()
         termOutput xs = do
-            putStr $ concatMap ('\n':) xs
+            say $ concatMap ('\n':) xs
             hFlush stdout -- must flush, since we don't finish with a newline
 
 
@@ -133,8 +133,8 @@ runAmpersand app waiter termSize termOutput = do
             currTime <- liftIO $ getShortTime
             let no_title = False
             let loadedCount = length (loaded ad)
-            verboseLn $ "%MESSAGES: " ++ (show . messages $ ad)
-            verboseLn $ "%LOADED: " ++ (show . loaded $ ad)
+            sayWhenLoudLn $ "%MESSAGES: " ++ (show . messages $ ad)
+            sayWhenLoudLn $ "%LOADED: " ++ (show . loaded $ ad)
 
             let (countErrors, countWarnings) = both sum $ L.unzip
                     [if loadSeverity == Error then (1::Int,0::Int) else (0,1) | Message{..} <- messages ad, loadMessage /= []]
@@ -163,7 +163,7 @@ runAmpersand app waiter termSize termOutput = do
             when (null . loadResults $ ad) $ exitWith NoFilesToWatch
             
             reason <- nextWait' . L.nub $ loaded ad ++ (map loadFile . loads $ ad)
-            verboseLn $ "%RELOADING: " ++ unwords reason
+            sayWhenLoudLn $ "%RELOADING: " ++ unwords reason
             return Continue
     runRIO app $ fire nextWait aDaemon
 

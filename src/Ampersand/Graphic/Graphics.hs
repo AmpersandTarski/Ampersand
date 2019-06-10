@@ -215,11 +215,11 @@ writePicture pict = do
               -> RIO env ()
      writeDotPostProcess postProcess gvOutput  =
          do opts <- view optionsL
-            verboseLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
+            sayWhenLoudLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
             dotSource <- mkDotGraphIO pict
             path <- liftIO $ (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
                        (dropExtension . imagePath opts) pict
-            verboseLn $ path++" written."
+            sayWhenLoudLn $ path++" written."
             case postProcess of
               Nothing -> return ()
               Just x -> x path
@@ -230,15 +230,15 @@ writePicture pict = do
                 FilePath -> RIO env ()
      makePdf path = do
          liftIO $ callCommand (ps2pdfCmd path)
-         verboseLn $ replaceExtension path ".pdf" ++ " written."
-       `catch` \ e -> verboseLn ("Could not invoke PostScript->PDF conversion."++
+         sayWhenLoudLn $ replaceExtension path ".pdf" ++ " written."
+       `catch` \ e -> sayWhenLoudLn ("Could not invoke PostScript->PDF conversion."++
                                  "\n  Did you install MikTex? Can the command epstopdf be found?"++
                                  "\n  Your error message is:\n " ++ show (e :: IOException))
                    
      writePdf :: (HasOptions env,HasVerbosity env, HasHandle env) => GraphvizOutput
               -> RIO env ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
-       `catch` (\ e -> verboseLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+       `catch` (\ e -> sayWhenLoudLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
                                   "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 

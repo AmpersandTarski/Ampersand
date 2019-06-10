@@ -66,7 +66,7 @@ doGenFrontend :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     Options{..} <- view optionsL
-    verboseLn "Generating frontend..."
+    sayWhenLoudLn "Generating frontend..."
     isCleanInstall <- downloadPrototypeFramework
     copyTemplates
     feInterfaces <- buildInterfaces fSpec
@@ -76,9 +76,9 @@ doGenFrontend fSpec = do
     writePrototypeAppFile ".timestamp" (show . hash . show $ genTime) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     copyCustomizations 
     when (isCleanInstall && runComposer) $ do
-      putStrLn "Installing dependencies..." -- don't use verboseLn here, because installing dependencies takes some time and we want the user to see this
+      sayLn "Installing dependencies..." -- don't use sayWhenLoudLn here, because installing dependencies takes some time and we want the user to see this
       installComposerLibs
-    verboseLn "Frontend generated"
+    sayWhenLoudLn "Frontend generated"
   
 copyTemplates :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                  RIO env ()
@@ -88,10 +88,10 @@ copyTemplates = do
       toDir = dirPrototype </> "templates"
   tempDirExists <- liftIO $ doesDirectoryExist tempDir
   if tempDirExists then do
-         verboseLn $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
+         sayWhenLoudLn $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
          copyDirRecursively tempDir toDir -- recursively copy all templates
   else
-         verboseLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
+         sayWhenLoudLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
 
 copyCustomizations :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                       RIO env ()
@@ -106,9 +106,9 @@ copyCustomizations = do
       copyDir targetDir sourceDir = do
         sourceDirExists <- liftIO $ doesDirectoryExist sourceDir
         if sourceDirExists then
-          do verboseLn $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
+          do sayWhenLoudLn $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
              copyDirRecursively sourceDir targetDir -- recursively copy all customizations
-        else verboseLn $ "No customizations (there is no directory " ++ sourceDir ++ ")"
+        else sayWhenLoudLn $ "No customizations (there is no directory " ++ sourceDir ++ ")"
 
 ------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
@@ -254,7 +254,6 @@ buildInterface fSpec allIfcs ifc = do
 genRouteProvider :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                     FSpec -> [FEInterface] -> RIO env ()
 genRouteProvider fSpec ifcs = do
-  --verboseLn . show $ map name (interfaceS fSpec)
   verbosity <- view verbosityL
   template <- readTemplate "routeProvider.config.js"
   let contents = renderTemplate template $
@@ -324,13 +323,13 @@ genViewObject fSpec depth obj =
       case atomicOrBox obj of
             FEAtomic{} -> do
               {-
-                  verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
+                  sayWhenLoudLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
                                                 " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                                 (if isEditable then "" else "not ") ++ "editable"
               -}
               -- For now, we choose specific template based on target concept. This will probably be too weak. 
               -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
-              -- putStrLn $ nm ++ ":" ++ show mPrimTemplate
+              -- sayLn $ nm ++ ":" ++ show mPrimTemplate
               conceptTemplate <- getTemplateForObject
               let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
               template <- readTemplate templateFilename
@@ -398,7 +397,6 @@ genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 
 genControllerInterface :: (HasOptions env, HasVerbosity env, HasHandle env) => FSpec -> FEInterface -> RIO env ()
 genControllerInterface fSpec interf = do
-    -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     let controlerTemplateName = "interface.controller.js"
     template <- readTemplate controlerTemplateName
     opts <- view optionsL
@@ -469,10 +467,10 @@ downloadPrototypeFramework = ( do
     x <- extractionIsAllowed destination
     if x
     then do
-      verboseLn "Emptying folder to deploy prototype framework"
+      sayWhenLoudLn "Emptying folder to deploy prototype framework"
       liftIO $ removeDirectoryRecursive destination
       let url = "https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion++".zip"
-      verboseLn "Start downloading prototype framework."
+      sayWhenLoudLn "Start downloading prototype framework."
       response <- (parseRequest url >>= httpBS) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
@@ -483,7 +481,7 @@ downloadPrototypeFramework = ( do
                   . toArchive 
                   . BL.fromStrict 
                   . getResponseBody $ response
-      verboseLn "Start extraction of prototype framework."
+      sayWhenLoudLn "Start extraction of prototype framework."
       let zipoptions = 
               [OptVerbose | verbosity == Loud]
             ++ [OptDestination destination]
@@ -537,18 +535,18 @@ downloadPrototypeFramework = ( do
             else do
               if forceReinstallFramework opts
               then do
-                putStrLn "Deleting all files to deploy prototype framework in"
-                putStrLn ("  " ++ destination)
-                putStrLn "Are you sure? y/n"
+                sayLn "Deleting all files to deploy prototype framework in"
+                sayLn ("  " ++ destination)
+                sayLn "Are you sure? y/n"
                 proceed <- promptUserYesNo
                 return proceed
               else do
-                (verboseLn $
+                (sayWhenLoudLn $
                          "(Re)deploying prototype framework not allowed, because\n"
                       ++ "  "++destination++" isn't empty. You could use the switch --force-reinstall-framework")
                 return False
           else do 
-             verboseLn $
+             sayWhenLoudLn $
                        "(Re)deploying prototype framework not allowed, because\n"
                     ++ "  "++destination++" isn't a directory."
              return False
@@ -560,6 +558,6 @@ promptUserYesNo = do
     case toUpper char of
       'Y' -> return True
       'N' -> return False
-      _ -> do when (char /= '\n') $ putStrLn "Please specify y/n" -- Remove 'when' part if first char it directly processed
+      _ -> do when (char /= '\n') $ sayLn "Please specify y/n" -- Remove 'when' part if first char it directly processed
               x <- promptUserYesNo
               return x

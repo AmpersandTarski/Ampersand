@@ -96,7 +96,7 @@ instance Eq ParseCandidate where
 parseSingleADL :: (HasVerbosity env,HasHandle env,HasOptions env) =>
     ParseCandidate -> RIO env (Guarded (P_Context, [ParseCandidate]))
 parseSingleADL pc
- = do verboseLn $ "Reading file " ++ filePath 
+ = do sayWhenLoudLn $ "Reading file " ++ filePath 
                     ++ (case pcFileKind pc of
                          Just _ -> " (from within ampersand.exe)"
                          Nothing -> mempty)

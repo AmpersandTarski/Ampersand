@@ -37,7 +37,7 @@ writeJSONFile :: (ToJSON a, HasOptions env, HasHandle env, HasVerbosity env) =>
 writeJSONFile fName x = do
     opts <- view optionsL 
     let fullFile = getGenericsDir opts </> file
-    verboseLn ("  Generating "++file) 
+    sayWhenLoudLn ("  Generating "++file) 
     liftIO $ createDirectoryIfMissing True (takeDirectory fullFile)
     liftIO $ BL.writeFile fullFile (encodePretty x)
   where file = fName <.> "json"

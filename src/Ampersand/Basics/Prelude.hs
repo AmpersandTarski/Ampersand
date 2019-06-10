@@ -2,8 +2,8 @@
 module Ampersand.Basics.Prelude
   ( module Prelude
   , module RIO
-  , putStr, putStrLn
-  , verbose, verboseLn
+  , say, sayLn
+  , sayWhenLoud, sayWhenLoudLn
   , writeFile
   , readUTF8File
   , zipWith
@@ -15,14 +15,6 @@ import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.f
 import RIO
 import System.IO (openTempFile,hPutStr,hPutStrLn, stderr)
 import qualified RIO.Text as T
--- import Debug.Trace
--- import Prelude hiding ( 
---                    getContents
---                  , putStr
---                  , putStrLn
---                  , readFile
---                  , writeFile
---                       )
 
 class HasHandle env where
   handleL :: Lens' env Handle
@@ -34,28 +26,28 @@ class HasVerbosity env where
   verbosityL :: Lens' env Verbosity  
 
 -- Functions to be upgraded later on:
-putStrLn :: HasHandle env => String -> RIO env ()
-putStrLn msg = do
+sayLn :: HasHandle env => String -> RIO env ()
+sayLn msg = do
   h <- view handleL
   liftIO $ hPutStrLn h msg
-putStr :: HasHandle env => String -> RIO env ()
-putStr msg = do 
+say :: HasHandle env => String -> RIO env ()
+say msg = do 
   h <- view handleL
   liftIO $ hPutStr h msg
-verbose :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
-verbose msg = do
+sayWhenLoud :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
+sayWhenLoud msg = do
   v <- view verbosityL
   case v of
-    Loud   -> putStr msg
+    Loud   -> say msg
     Silent -> return ()
-verboseLn :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
-verboseLn msg = do
+sayWhenLoudLn :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
+sayWhenLoudLn msg = do
   v <- view verbosityL
   case v of
     Loud   -> do
         h <- view handleL
         hSetBuffering h NoBuffering
-        mapM_ putStrLn (lines msg)
+        mapM_ sayLn (lines msg)
     Silent -> return ()
 
 -- Functions to be replaced later on:

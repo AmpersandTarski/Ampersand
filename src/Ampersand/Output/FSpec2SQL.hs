@@ -20,7 +20,7 @@ import           System.FilePath
 generateDatabaseFile :: MultiFSpecs -> RIO App ()
 generateDatabaseFile multi = 
    do opts@Options{..} <- view optionsL
-      verboseLn $ "  Generating "++file
+      sayWhenLoudLn $ "  Generating "++file
       liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile opts))
       liftIO $ writeFile (fullFile opts) content
   where 

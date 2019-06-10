@@ -147,9 +147,9 @@ createMulti =
        opts@Options{..} <- view optionsL
        case makeMetaFile opts metaModel <$> userSpec of
         Checked (filePath,metaContents) ws -> 
-                  do verboseLn $ "Generating meta file in path "++dirOutput
+                  do sayWhenLoudLn $ "Generating meta file in path "++dirOutput
                      liftIO $ writeFile (dirOutput </> filePath) metaContents      
-                     verboseLn $ "\"" ++ filePath ++ "\" written"
+                     sayWhenLoudLn $ "\"" ++ filePath ++ "\" written"
                      return $ Checked () ws
         Errors err -> return (Errors err)
 

@@ -28,7 +28,7 @@ getGenericsDir Options{..} =
 writePrototypeAppFile :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
                          String -> String -> RIO env ()
 writePrototypeAppFile relFilePath content = do
-  verboseLn $ "  Generating "<>relFilePath 
+  sayWhenLoudLn $ "  Generating "<>relFilePath 
   opts <- view optionsL
   let filePath = getAppDir opts </> relFilePath
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
@@ -49,11 +49,11 @@ copyDirRecursively srcBase tgtBase = copy ""
           isDir <- liftIO $ doesDirectoryExist srcPath
           if isDir then do
               liftIO $ createDirectoryIfMissing True tgtPath
-              verboseLn $ " Copying dir... " ++ srcPath
+              sayWhenLoudLn $ " Copying dir... " ++ srcPath
               fOrDs <- getProperDirectoryContents srcPath
               mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
           else do
-              verboseLn $ "  file... " ++ fileOrDirPth
+              sayWhenLoudLn $ "  file... " ++ fileOrDirPth
               liftIO $ copyFile srcPath tgtPath
              
 
@@ -67,7 +67,7 @@ removeAllDirectoryFiles dirPath = do
          do { let absPath = dirPath </> path
             ; isDir <- liftIO $ doesDirectoryExist absPath
             ; if isDir then
-                putStrLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
+                sayLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
               else
                 liftIO $ removeFile absPath
             }
@@ -138,13 +138,13 @@ installComposerLibs :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
 installComposerLibs = do
     opts <- view optionsL 
     curPath <- liftIO $ getCurrentDirectory
-    verboseLn $ "current directory: "++curPath
-    verbose "  Trying to download and install Composer libraries..."
+    sayWhenLoudLn $ "current directory: "++curPath
+    sayWhenLoud "  Trying to download and install Composer libraries..."
     (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc opts)""
     case exit_code of
-      SE.ExitSuccess   -> do verboseLn $
+      SE.ExitSuccess   -> do sayWhenLoudLn $
                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                             verboseLn stdout'
+                             sayWhenLoudLn stdout'
       SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where

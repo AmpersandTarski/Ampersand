@@ -44,9 +44,6 @@ evaluateExpSQL fSpec dbNm expr = do
     opts <- view optionsL
     let violationsExpr = conjNF opts expr
         violationsQuery = prettySQLQuery 26 fSpec violationsExpr
-    -- verboseLn ("evaluateExpSQL fSpec "++showA expr)
-    -- verboseLn (intercalate "\n" . showPrf showA . cfProof opts) expr
-    -- verboseLn "End of proof"
     performQuery dbNm violationsQuery
 
 performQuery :: (HasOptions env, HasHandle env) =>
@@ -55,7 +52,7 @@ performQuery dbNm queryStr = do
     opts <- view optionsL
     queryResult <- T.unpack <$> (executePHPStr . showPHP) (php opts)
     if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-    then do mapM_ putStrLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
+    then do mapM_ sayLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
     else case reads queryResult of
            [(pairs,"")] -> return pairs
@@ -89,7 +86,7 @@ executePHPStr phpStr = do
                  `catch`
                      (\e -> do 
                           let err = show (e :: IOException)
-                          putStrLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
+                          sayLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
                           return "."
                      )
     let phpPath = tempdir </> "tmpPhpQueryOfAmpersand" <.> "php"
@@ -174,7 +171,7 @@ createTempDatabase fSpec = do
     opts <- view optionsL
     result <- executePHPStr .
               showPHP $ phpStr opts
-    verboseLn $ 
+    sayWhenLoudLn $ 
          if T.null result 
           then "Temp database created succesfully."
           else "Temp database creation failed! :\n"
