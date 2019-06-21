@@ -157,8 +157,6 @@ script:
   - |
     case "$BUILD" in
       stack)
-      stack --version
-        ;;
       ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
         ;;
       cabal)
@@ -169,6 +167,7 @@ script:
 # - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
 after_success:
+  - export RIO_VERBOSE=1
   - stack --version
   - stack exec -- ampersand -v
   - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
