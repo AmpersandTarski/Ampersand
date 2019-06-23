@@ -169,6 +169,7 @@ script:
 after_success:
   - export RIO_VERBOSE=1
   - stack --version
+  - stack --verbose exec which ampersand
   - stack exec -- which ampersand
   - stack exec -- echo $PATH
   - stack exec -- ampersand -v
