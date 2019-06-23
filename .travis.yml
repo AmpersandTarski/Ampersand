@@ -169,6 +169,8 @@ script:
 after_success:
   - export RIO_VERBOSE=1
   - stack --version
+  - stack exec -- which ampersand
+  - stack exec -- echo $PATH
   - stack exec -- ampersand -v
   - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
 
