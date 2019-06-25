@@ -365,7 +365,7 @@ substituteReferenceObjectDef fSpec originalObjectDef =
       case objmsub originalObjectDef of
         Just InterfaceRef{ siIsLink=False
                           , siIfcId=interfaceId} 
-          -> let ifc = ifcObj (lookupInterface interfaceId)
+          -> let ifc = substituteReferenceObjectDef fSpec (ifcObj (lookupInterface interfaceId))
               in Just (objExpression originalObjectDef .:. objExpression ifc, objcrud ifc)
         _ -> Nothing
     lookupInterface :: String -> Interface
