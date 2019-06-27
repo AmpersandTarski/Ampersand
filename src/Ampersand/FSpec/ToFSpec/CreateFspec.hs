@@ -2,18 +2,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
   ( createMulti
-  , pCtx2Fspec
   )
 
 where
 import           Ampersand.ADL1
-import           Ampersand.ADL1.P2A_Converters
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.ShowPStruct  -- Just for debugging purposes
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.MetaModels
-import           Ampersand.FSpec.ToFSpec.ADL2FSpec
 import           Ampersand.Input
 import           Ampersand.Misc
 import qualified RIO.List as L
@@ -49,7 +46,7 @@ createMulti = do
               (if False then addSemanticModel opts FormalAmpersand else id)
             . (if False then addSemanticModel opts SystemContext   else id)
           <$> rawUserP_Ctx
-    case userP_Ctx >>= pCtx2Fspec opts of
+    case userP_Ctx >>= pCtx2Fspec' opts of
       Errors err -> return $ Errors err
       Checked plainFSpec' ws -> do
           rapPopulation' :: Guarded P_Context <- 
@@ -61,23 +58,23 @@ createMulti = do
                 grindWith FADocumented plainFSpec'
           return $ Checked MultiFSpecs
              { plainFSpec    = plainFSpec'
-             , rapPopulation = case rapPopulation' >>= pCtx2Fspec opts of
+             , rapPopulation = case rapPopulation' >>= pCtx2Fspec' opts of
                                   Checked x _ -> x
                                   Errors err -> fatal $ "No more errors should be present, because the user's script had no errors." 
                                                          ++ show err
-             , plainProto    = case plainProto' >>= pCtx2Fspec opts of
+             , plainProto    = case plainProto' >>= pCtx2Fspec' opts of
                                   Checked x _ -> x
                                   Errors err -> fatal $ "No more errors should be present, because the user's script had no errors." 
                                                          ++ show err
-             , docuFSpec     = case docuFSpec' >>= pCtx2Fspec opts of
+             , docuFSpec     = case docuFSpec' >>= pCtx2Fspec' opts of
                                   Checked x _ -> x
                                   Errors err -> fatal $ "No more errors should be present, because the user's script had no errors." 
                                                          ++ show err
              } ws
 
          
-pCtx2Fspec :: Options -> P_Context -> Guarded FSpec
-pCtx2Fspec opts c = makeFSpec opts <$> (pCtx2aCtx opts $ encloseInConstraints opts c) 
+pCtx2Fspec' :: Options -> P_Context -> Guarded FSpec
+pCtx2Fspec' opts c = pCtx2Fspec opts (encloseInConstraints opts c) 
     
 
 -- | To analyse spreadsheets means to enrich the context with the relations that are defined in the spreadsheet.

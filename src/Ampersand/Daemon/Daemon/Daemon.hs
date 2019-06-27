@@ -32,16 +32,14 @@ instance Show DaemonState where
    = "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
 
 startAmpersandDaemon 
-     :: (HasOptions env, HasVerbosity env, HasHandles env) =>
-        RIO env DaemonState
+     :: RIO App DaemonState
 startAmpersandDaemon = do
     init <- initialState
     case init of
         Left msg -> exitWith . NoConfigurationFile $ msg
         Right s -> pure s  
 
-initialState :: (HasOptions env, HasVerbosity env, HasHandles env) =>
-                RIO env (Either [String] DaemonState)
+initialState :: RIO App (Either [String] DaemonState)
 initialState = do
     env <- ask
     let opts = getOptions env

@@ -3,7 +3,9 @@
 module Ampersand.FSpec.MetaModels
   ( Grinder(..)
   , grindWith
-  , addSemanticModel)
+  , addSemanticModel
+  , pCtx2Fspec
+  )
 
 where
 import           Ampersand.ADL1
