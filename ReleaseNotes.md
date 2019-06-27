@@ -1,5 +1,9 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
+* [Issue #976](https://github.com/AmpersandTarski/Ampersand/issues/976) Lines in --deamon configuration file can be commented out by prepending such line with "#" or "--" (MUST be at beginning of line)
+
 ## v3.17.1 (7 june 2019)
 
 * A lot of refactoring took place this release, embracing best practices from the RIO library. First phase. In the next couple of releases, we plan to gradually do more of this refactoring.
