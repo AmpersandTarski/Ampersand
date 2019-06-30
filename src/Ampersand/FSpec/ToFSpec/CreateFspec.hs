@@ -15,6 +15,7 @@ import           Ampersand.Input
 import           Ampersand.Misc
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 
 -- | create an FSpec, based on the provided command-line options.
@@ -30,22 +31,45 @@ import qualified RIO.Set as Set
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createMulti.
-createMulti :: RIO App (Guarded MultiFSpecs)
+createMulti :: RIO App (Guarded FSpecKinds)
 createMulti = do
     env <- ask
     let opts@Options{..} = getOptions env
-     
-    rawUserP_Ctx:: Guarded P_Context <- 
+    grindInfoMap <- let fun :: MetaModel -> RIO App (MetaModel, GrindInfo)
+                        fun m = do 
+                          gInfo <- mkGrindInfo opts m
+                          return (m , gInfo)
+       in do
+         m <- sequence $ fun <$> [minBound ..]
+         return (Map.fromList m)
 
+    rawUserP_Ctx:: Guarded P_Context <- 
     -- userP_Ctx contains the user-specified context from the user's Ampersand source code
        case fileName of
          Just x -> snd <$> parseADL x -- the P_Context of the user's sourceFile
          Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
-    let userP_Ctx = 
-              -- TODO: replace `False` by conditions based on switches
-              (if False then addSemanticModel opts FormalAmpersand else id)
-            . (if False then addSemanticModel opts SystemContext   else id)
-          <$> rawUserP_Ctx
+--    let userP_Ctx = 
+--              -- TODO: replace `False` by conditions based on switches
+--              (if False then addSemanticModel opts FormalAmpersand else id)
+--            . (if genPrototype then addSemanticModel opts SystemContext   else id)
+--          <$> rawUserP_Ctx
+    let rawUserFSpec :: Guarded FSpec 
+        rawUserFSpec = join $ pCtx2Fspec' opts <$> rawUserP_Ctx  
+    return . join $ build opts grindInfoMap <$> rawUserFSpec
+      where 
+        build :: Options -> (Map MetaModel GrindInfo) -> FSpec -> Guarded FSpecKinds
+        build opts theMap userFspec = 
+          (\rp x -> FSpecKinds
+               { plainFSpec    = userFspec
+               , rapPopulation = rp
+               , plainProto    = x
+               }
+          ) <$> (pCtx2Fspec opts $ grind opts (gInfo FormalAmpersand) userFspec)
+            <*> (pCtx2Fspec opts $ grind opts (gInfo SystemContext  ) userFspec)
+          where gInfo :: MetaModel -> GrindInfo
+                gInfo mm = fromMaybe (fatal $ "The map doesn't contain grindinfo for "++name mm)
+                                     (theMap Map.!? mm) 
+{-                      } <$> rawUserFSpec 
     case userP_Ctx >>= pCtx2Fspec' opts of
       Errors err -> return $ Errors err
       Checked plainFSpec' ws -> do
@@ -53,10 +77,10 @@ createMulti = do
                 grindWith FormalAmpersand plainFSpec' 
           plainProto' :: Guarded P_Context <- do
                 c <- grindWith SystemContext plainFSpec'
-                return $ addSemanticModel opts SystemContext <$> c
+                return $ fmap (addSemanticModel SystemContext) c
           docuFSpec' :: Guarded P_Context <-
                 grindWith FADocumented plainFSpec'
-          return $ Checked MultiFSpecs
+          return $ Checked FSpecKinds
              { plainFSpec    = plainFSpec'
              , rapPopulation = case rapPopulation' >>= pCtx2Fspec' opts of
                                   Checked x _ -> x
@@ -66,12 +90,12 @@ createMulti = do
                                   Checked x _ -> x
                                   Errors err -> fatal $ "No more errors should be present, because the user's script had no errors." 
                                                          ++ show err
-             , docuFSpec     = case docuFSpec' >>= pCtx2Fspec' opts of
-                                  Checked x _ -> x
-                                  Errors err -> fatal $ "No more errors should be present, because the user's script had no errors." 
-                                                         ++ show err
+    --         , docuFSpec     = case docuFSpec' >>= pCtx2Fspec' opts of
+    --                              Checked x _ -> x
+    --                              Errors err -> fatal $ "No more errors should be present, because the user's script had no errors." 
+    --                                                     ++ show err
              } ws
-
+ -}
          
 pCtx2Fspec' :: Options -> P_Context -> Guarded FSpec
 pCtx2Fspec' opts c = pCtx2Fspec opts (encloseInConstraints opts c) 

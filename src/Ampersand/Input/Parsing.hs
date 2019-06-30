@@ -99,9 +99,11 @@ parseADLs parsedFilePaths fpIncludes =
             then parseADLs parsedFilePaths xs
             else whenCheckedM (parseSingleADL x) parseTheRest
         where parseTheRest :: (HasVerbosity env,HasHandles env,HasOptions env) =>
-                              (P_Context, [ParseCandidate]) -> RIO env (Guarded [(ParseCandidate, P_Context)])
-              parseTheRest (ctx, includes) = whenCheckedM (parseADLs (x:parsedFilePaths) (includes++xs)) $
-                                                  return . pure . (:) (x,ctx) 
+                              (P_Context, [ParseCandidate]) 
+                           -> RIO env (Guarded [(ParseCandidate, P_Context)])
+              parseTheRest (ctx, includes) = 
+                  whenCheckedM (parseADLs (parsedFilePaths++[x]) (includes++xs)) 
+                                          (\rst -> pure . pure $ (x,ctx):rst)        --return . pure . (:) (x,ctx) 
 
 data ParseCandidate = ParseCandidate 
        { pcBasePath :: Maybe FilePath -- The absolute path to prepend in case of relative filePaths 

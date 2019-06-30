@@ -32,31 +32,32 @@ import           Text.Pandoc.Builder
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
-generateAmpersandOutput :: Options -> MultiFSpecs -> RIO App ()
-generateAmpersandOutput opts@Options{..} multi = do
+generateAmpersandOutput :: Options -> FSpecKinds -> RIO App ()
+generateAmpersandOutput opts@Options{..} fsKinds = do
     verboseLn "Checking for rule violations..."
     if dataAnalysis 
     then verboseLn "Not checking for rule violations because of data analysis." 
-    else reportInvViolations $ violationsOfInvariants (plainFSpec multi)
-    reportSignals (initialConjunctSignals $ plainProto multi)
+    else do
+      reportInvViolations $ violationsOfInvariants (plainFSpec fsKinds)
+      reportSignals (initialConjunctSignals $ plainProto fsKinds)
     liftIO $ createDirectoryIfMissing True dirOutput
     sequence_ . map snd . filter fst $ conditionalActions
   where 
    conditionalActions :: [(Bool, RIO App ())]
    conditionalActions = 
-      [ ( genUML                , doGenUML      (plainFSpec multi))
-      , ( haskell               , doGenHaskell  (plainFSpec multi))
-      , ( sqlDump               , doGenSQLdump  (plainProto multi))
-      , ( export2adl            , doGenADL      (plainFSpec multi))
-      , ( dataAnalysis          , doGenADL      (plainFSpec multi))
-      , ( genFSpec              , doGenDocument (docuFSpec  multi))
-      , ( genFPAExcel           , doGenFPAExcel (plainFSpec multi))
-      , ( genPOPExcel           , doGenPopsXLSX (plainFSpec multi))
-      , ( proofs                , doGenProofs   (plainFSpec multi))
-      , ( validateSQL           , doValidateSQLTest (plainProto multi))
-      , ( genPrototype          , doGenProto    (plainProto multi))
-      , ( genRapPopulationOnly  , doGenRapPopulation    )
-      , ( isJust testRule       , ruleTest (plainProto multi) . fromJust $ testRule )
+      [ ( genUML                , doGenUML      (plainFSpec fsKinds))
+      , ( haskell               , doGenHaskell  (plainFSpec fsKinds))
+      , ( sqlDump               , doGenSQLdump  (plainProto fsKinds))
+      , ( export2adl            , doGenADL      (plainFSpec fsKinds))
+      , ( dataAnalysis          , doGenADL      (plainFSpec fsKinds))
+      , ( genFSpec              , doGenDocument (plainFSpec fsKinds))
+      , ( genFPAExcel           , doGenFPAExcel (plainFSpec fsKinds))
+      , ( genPOPExcel           , doGenPopsXLSX (plainFSpec fsKinds))
+      , ( proofs                , doGenProofs   (plainFSpec fsKinds))
+      , ( validateSQL           , doValidateSQL (plainProto fsKinds))
+      , ( genPrototype          , doGenProto    (plainProto fsKinds))
+      , ( genRapPopulationOnly  , doGenRapPopulation (rapPopulation fsKinds))
+      , ( isJust testRule       , ruleTest (plainProto fsKinds) . fromJust $ testRule )
       ]
      
    -- | For importing and analysing data, Ampersand allows you to annotate an Excel spreadsheet (.xlsx) and turn it into an Ampersand model.
@@ -137,15 +138,15 @@ generateAmpersandOutput opts@Options{..} multi = do
        verboseLn ("Generated file: " ++ outputFile)
      where outputFile = dirOutput </> baseName ++ "_generated_pop" -<.> ".xlsx"
 
-   doValidateSQLTest :: FSpec -> RIO App ()
-   doValidateSQLTest fSpec = do
+   doValidateSQL :: FSpec -> RIO App ()
+   doValidateSQL fSpec = do
        putStrLn "Validating SQL expressions..."
        errMsg <- validateRulesSQL fSpec
        unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
 
    doGenProto :: FSpec -> RIO App ()
    doGenProto fSpec =
-     if null (violationsOfInvariants $ plainFSpec multi)|| allowInvariantViolations
+     if null (violationsOfInvariants $ plainFSpec fsKinds)|| allowInvariantViolations
      then if genRapPopulationOnly then fatal $ "A prototype cannot be generated while only asking for RAP population."
           else sequence_ $
           [ putStrLn "Generating prototype..."
@@ -157,13 +158,13 @@ generateAmpersandOutput opts@Options{..} multi = do
           ]
      else do exitWith NoPrototypeBecauseOfRuleViolations
 
-   doGenRapPopulation :: RIO App ()
-   doGenRapPopulation =
-     if null (violationsOfInvariants $ plainFSpec multi) || allowInvariantViolations
+   doGenRapPopulation :: FSpec -> RIO App ()
+   doGenRapPopulation fSpec =
+     if null (violationsOfInvariants fSpec) || allowInvariantViolations
      then sequence_ $
           [ putStrLn "Generating RAP population..."
           , liftIO $ createDirectoryIfMissing True dirPrototype
-          , generateJSONfilesRap . rapPopulation $ multi
+          , generateJSONfilesRap fSpec 
           , verboseLn $ "RAP population file has been written to " ++ dirPrototype
           ]
      else do exitWith NoPrototypeBecauseOfRuleViolations
