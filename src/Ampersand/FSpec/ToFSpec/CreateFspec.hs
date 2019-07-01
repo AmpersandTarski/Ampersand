@@ -44,58 +44,33 @@ createMulti = do
          return (Map.fromList m)
 
     rawUserP_Ctx:: Guarded P_Context <- 
-    -- userP_Ctx contains the user-specified context from the user's Ampersand source code
        case fileName of
          Just x -> snd <$> parseADL x -- the P_Context of the user's sourceFile
          Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
---    let userP_Ctx = 
---              -- TODO: replace `False` by conditions based on switches
---              (if False then addSemanticModel opts FormalAmpersand else id)
---            . (if genPrototype then addSemanticModel opts SystemContext   else id)
---          <$> rawUserP_Ctx
     let rawUserFSpec :: Guarded FSpec 
         rawUserFSpec = join $ pCtx2Fspec' opts <$> rawUserP_Ctx  
-    return . join $ build opts grindInfoMap <$> rawUserFSpec
+    return . join $ build opts grindInfoMap <$> rawUserFSpec <*> rawUserP_Ctx
       where 
-        build :: Options -> (Map MetaModel GrindInfo) -> FSpec -> Guarded FSpecKinds
-        build opts theMap userFspec = 
+        build :: Options -> (Map MetaModel GrindInfo) -> FSpec -> P_Context -> Guarded FSpecKinds
+        build opts theMap userFspec userPContext = 
           (\rp x -> FSpecKinds
                { plainFSpec    = userFspec
                , rapPopulation = rp
                , plainProto    = x
                }
-          ) <$> (pCtx2Fspec opts $ grind opts (gInfo FormalAmpersand) userFspec)
-            <*> (pCtx2Fspec opts $ grind opts (gInfo SystemContext  ) userFspec)
+          ) <$> grindAndAdd opts (gInfo FormalAmpersand) userPContext
+            <*> grindAndAdd opts (gInfo SystemContext  ) userPContext
           where gInfo :: MetaModel -> GrindInfo
                 gInfo mm = fromMaybe (fatal $ "The map doesn't contain grindinfo for "++name mm)
                                      (theMap Map.!? mm) 
-{-                      } <$> rawUserFSpec 
-    case userP_Ctx >>= pCtx2Fspec' opts of
-      Errors err -> return $ Errors err
-      Checked plainFSpec' ws -> do
-          rapPopulation' :: Guarded P_Context <- 
-                grindWith FormalAmpersand plainFSpec' 
-          plainProto' :: Guarded P_Context <- do
-                c <- grindWith SystemContext plainFSpec'
-                return $ fmap (addSemanticModel SystemContext) c
-          docuFSpec' :: Guarded P_Context <-
-                grindWith FADocumented plainFSpec'
-          return $ Checked FSpecKinds
-             { plainFSpec    = plainFSpec'
-             , rapPopulation = case rapPopulation' >>= pCtx2Fspec' opts of
-                                  Checked x _ -> x
-                                  Errors err -> fatal $ "No more errors should be present, because the user's script had no errors." 
-                                                         ++ show err
-             , plainProto    = case plainProto' >>= pCtx2Fspec' opts of
-                                  Checked x _ -> x
-                                  Errors err -> fatal $ "No more errors should be present, because the user's script had no errors." 
-                                                         ++ show err
-    --         , docuFSpec     = case docuFSpec' >>= pCtx2Fspec' opts of
-    --                              Checked x _ -> x
-    --                              Errors err -> fatal $ "No more errors should be present, because the user's script had no errors." 
-    --                                                     ++ show err
-             } ws
- -}
+        grindAndAdd :: Options -> GrindInfo -> P_Context -> Guarded FSpec
+        grindAndAdd opts gInfo userP = do
+           let grindedP :: Guarded P_Context
+               grindedP = grind opts gInfo <$> pCtx2Fspec opts userP
+               mergedP :: Guarded P_Context
+               mergedP = addSemanticModel gInfo <$> mergeContexts userP <$> grindedP
+           join $ pCtx2Fspec opts <$> mergedP
+           
          
 pCtx2Fspec' :: Options -> P_Context -> Guarded FSpec
 pCtx2Fspec' opts c = pCtx2Fspec opts (encloseInConstraints opts c) 
