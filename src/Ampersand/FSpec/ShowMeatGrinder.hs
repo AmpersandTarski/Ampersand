@@ -8,6 +8,7 @@
 module Ampersand.FSpec.ShowMeatGrinder
   ( makeMetaFile
   , grind 
+  , addSemanticModel
   , GrindInfo(..)
   , MetaModel(..)
   )
@@ -96,39 +97,35 @@ grind opts metaModel userFspec =
                     PopAlphaNumeric str -> ScriptString orig str
                     PopInt i            -> ScriptInt orig i
            
-
-
-
-      --    case string2AValue . unwords . words . show . popPairs $ pop of
-      --       Checked x _ 
-      --         -> case checkAtomValues (popRelation pop) x of
-      --              Checked _ _ -> x
-      --              Errors errs -> fatal . unlines $
-      --                 [ "ERROR in tupels that are generated in the meatgrinder for relation"
-      --                 , "  "++showRel (popRelation pop)
-      --                 ] ++ (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
-
-      --       Errors errs 
-      --         -> fatal . unlines $
-      --                 [ "ERROR in tupels that are generated in the meatgrinder for relation"
-      --                 , "  "++showRel (popRelation pop)
-      --                 ] ++ (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
-      -- checkAtomValues :: Relation -> [PAtomPair] -> Guarded AAtomPairs
-      -- checkAtomValues rel pps = Set.fromList <$> (sequence $ map fun pps)
-      --       where
-      --         fun pp = mkAtomPair 
-      --           <$> pAtomValue2aAtomValue (source rel) (ppLeft  pp)
-      --           <*> pAtomValue2aAtomValue (target rel) (ppRight pp)
-            
-      --         pAtomValue2aAtomValue :: A_Concept -> PAtomValue -> Guarded AAtomValue
-      --         pAtomValue2aAtomValue cpt pav =
-      --           case unsafePAtomVal2AtomValue typ (Just cpt) pav of
-      --             Left msg -> Errors . pure $ mkIncompatibleAtomValueError pav msg
-      --             Right av -> pure av
-      --           where typ = cptTType formalAmpersand cpt
-            
-      -- string2AValue :: String -> Guarded [PAtomPair]
-      -- string2AValue = runParser pContent "Somewhere in formalAmpersand files"
+-- | When the semantic model of a metamodel is added to the user's model, we add
+--   the relations as wel as the generalisations to it, so they are available to the user
+--   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
+addSemanticModel :: GrindInfo -> P_Context -> P_Context
+addSemanticModel gInfo pCtx = 
+   PCtx    
+        { ctx_nm     = ctx_nm     pCtx
+        , ctx_pos    = ctx_pos    pCtx
+        , ctx_lang   = ctx_lang   pCtx
+        , ctx_markup = ctx_markup pCtx
+        , ctx_pats   = ctx_pats   pCtx `uni` ctx_pats   pCtxOfMetaModel
+        , ctx_rs     = ctx_rs     pCtx `uni` ctx_rs     pCtxOfMetaModel
+        , ctx_ds     = ctx_ds     pCtx `uni` ctx_ds     pCtxOfMetaModel
+        , ctx_cs     = ctx_cs     pCtx `uni` ctx_cs     pCtxOfMetaModel
+        , ctx_ks     = ctx_ks     pCtx `uni` ctx_ks     pCtxOfMetaModel
+        , ctx_rrules = ctx_rrules pCtx `uni` ctx_rrules pCtxOfMetaModel
+        , ctx_rrels  = ctx_rrels  pCtx
+        , ctx_reprs  = ctx_reprs  pCtx `uni` ctx_reprs  pCtxOfMetaModel
+        , ctx_vs     = ctx_vs     pCtx `uni` ctx_vs     pCtxOfMetaModel
+        , ctx_gs     = ctx_gs     pCtx `uni` ctx_gs     pCtxOfMetaModel
+        , ctx_ifcs   = ctx_ifcs   pCtx `uni` ctx_ifcs   pCtxOfMetaModel
+        , ctx_ps     = ctx_ps     pCtx 
+        , ctx_pops   = ctx_pops   pCtx `uni` ctx_pops   pCtxOfMetaModel
+        , ctx_metas  = ctx_metas  pCtx
+        }
+           where
+            pCtxOfMetaModel = pModel gInfo
+            uni :: Eq a => [a] -> [a] -> [a]
+            uni xs ys = L.nub (xs ++ ys)
  
 data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
                , popRelation :: Relation
