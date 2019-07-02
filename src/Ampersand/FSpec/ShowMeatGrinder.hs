@@ -118,7 +118,9 @@ addSemanticModel gInfo pCtx =
         , ctx_reprs  = ctx_reprs  pCtx `uni` ctx_reprs  pCtxOfMetaModel
         , ctx_vs     = ctx_vs     pCtx `uni` ctx_vs     pCtxOfMetaModel
         , ctx_gs     = ctx_gs     pCtx `uni` ctx_gs     pCtxOfMetaModel
-        , ctx_ifcs   = ctx_ifcs   pCtx `uni` ctx_ifcs   pCtxOfMetaModel
+        , ctx_ifcs   = ctx_ifcs   pCtx `uni` (if True -- DISABLED. See issue #979
+                                              then [] 
+                                              else ctx_ifcs   pCtxOfMetaModel)
         , ctx_ps     = ctx_ps     pCtx 
         , ctx_pops   = ctx_pops   pCtx `uni` ctx_pops   pCtxOfMetaModel
         , ctx_metas  = ctx_metas  pCtx
