@@ -38,24 +38,25 @@ data GrindInfo = GrindInfo
     , transformers :: Options -> FSpec -> [Transformer]
     }
 
--- ^ Create a P_Context that contains meta-information from 
---   an FSpec.
+-- | The 'grind' function creates a P_Context that contains the population for every
+--   relation in the metamodel. The population is defined by the given FSpec,
+--   which usually is the FSpec of the user. 
 grind :: Options -> GrindInfo -> FSpec -> P_Context
-grind opts metaModel userFspec =
+grind opts grindInfo userFspec =
   PCtx{ ctx_nm     = "Grinded_"++name userFspec
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = map aRelation2pRelation . Set.toList . instances . fModel $ metaModel
+      , ctx_ds     = map aRelation2pRelation . Set.toList . instances . fModel $ grindInfo
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
       , ctx_rrels  = []
       , ctx_reprs  = []
       , ctx_vs     = []
-      , ctx_gs     = map aClassify2pClassify . Set.toList . instances . fModel $ metaModel
+      , ctx_gs     = map aClassify2pClassify . Set.toList . instances . fModel $ grindInfo
       , ctx_ifcs   = []
       , ctx_ps     = []
       , ctx_pops   = mapMaybe populationFromPop . Set.toList $ metaPops2
@@ -64,8 +65,8 @@ grind opts metaModel userFspec =
   where
     metaPops2 :: Set.Set Pop
     metaPops2 = Set.fromList 
-              . concatMap (Set.toList . grindedPops opts metaModel userFspec)
-              . Set.toList . instances . fModel $ metaModel
+              . concatMap (Set.toList . grindedPops opts grindInfo userFspec)
+              . Set.toList . instances . fModel $ grindInfo
     populationFromPop :: Pop -> Maybe P_Population
     populationFromPop pop =
       case pop of 
