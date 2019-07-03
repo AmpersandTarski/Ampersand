@@ -128,12 +128,11 @@ install:
 - echo "Starting install"
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - chmod +x ./travis_long
-- if [ -f configure.ac ]; then autoreconf -i; fi
-- PATH=$PATH:~/.cabal/bin
 - mkdir dist
 - |
   case "$BUILD" in
     stack)
+      ./travis_long stack --no-terminal --install-ghc $ARGS install --flags=buildAll
       ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies
       ;;
     cabal)
