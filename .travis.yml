@@ -35,7 +35,7 @@ matrix:
       - ARGS="--interleaved-output"
       - STACK_YAML=stack.yaml
       - AMPERSAND_RELEASE_BRANCH=master
-    compiler: ": #stack"
+#    compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
 #  - name: "osx, stack"
@@ -48,7 +48,7 @@ matrix:
   # https://github.com/hvr/multi-ghc-travis
   - name: "linux, cabal"
     env: BUILD=cabal GHCVER=8.6.4 CABALVER=2.4
-    compiler: ": #GHC 8.6.4"
+#    compiler: ": #GHC 8.6.4"
     addons: {apt: {packages: [ ghc-ppa-tools
                              , cabal-install-2.4
                              , ghc-8.6.4
@@ -67,15 +67,15 @@ matrix:
   # Build with the newest GHC and cabal-install.
   - name: "linux, cabal, latest"
     env: BUILD=cabal GHCVER=head  CABALVER=head
-    compiler: ": #GHC HEAD"
+#    compiler: ": #GHC HEAD"
     addons: {apt: {packages: [ ghc-ppa-tools
                              , cabal-install-head
                              , ghc-head
                              ] 
                   ,sources: [hvr-ghc]}}
   - name: "linux, stack, latest"
-    env: BUILD=stack ARGS="--interleaved-output --resolver nightly"
-    compiler: ": #stack nightly"
+    env: BUILD=stack ARGS="--resolver nightly"
+#    compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
 
