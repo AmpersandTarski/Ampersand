@@ -119,16 +119,10 @@ before_install:
 - echo $GIT_SHA
 - echo $GIT_Branch
 
-# Download and unpack the stack executable
-- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/home/travis/build/AmpersandTarski/Ampersand/dist:$PATH
+# Download and unpack the stack executable (Copied from https://docs.haskellstack.org/en/stable/travis_ci/#installing-stack )
 - mkdir -p ~/.local/bin
-- |
-  if [ `uname` = "Darwin" ]
-  then
-    curl --insecure -L https://www.stackage.org/stack/osx-x86_64 | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
-  else
-    curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-  fi
+- export PATH=$HOME/.local/bin:$PATH
+- travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
 install:
 - echo "Starting install"
