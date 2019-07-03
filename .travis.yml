@@ -133,7 +133,6 @@ install:
   case "$BUILD" in
     stack)
       travis_wait stack --no-terminal --install-ghc $ARGS install --flags=buildAll
-#      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies
       ;;
     cabal)
       cabal --version
@@ -141,6 +140,7 @@ install:
       ./travis_long cabal new-install exe:ampersand exe:ampPreProc lib:ampersand --flags=buildAll -j1 --overwrite-policy=always
       ;;
   esac
+#      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies
 
 # We need composer for the Ampersand Prototypes to be installed.
 before_script: composer install
