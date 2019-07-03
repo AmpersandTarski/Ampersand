@@ -6,10 +6,10 @@ rel :: A*B []
 INTERFACE Accounts : V[ONE*B]
 BOX [ bug : "b1" ]
 
-PROCESS Bugs
+PATTERN Bugs
   ROLE tester MAINTAINS singletonBug1, singletonBug2
   RULE singletonBug1 : "b1"[B]    -- fixed: yields b1b1
   RULE singletonBug2 : rel; "b1"  -- fixed: yields a1b1 a2b1
-ENDPROCESS
+ENDPATTERN
 
 ENDCONTEXT

@@ -103,7 +103,6 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- concepts
        <*> listOf arbitrary -- identities
        <*> listOf arbitrary -- role rules
-       <*> listOf arbitrary -- role relations
        <*> listOf arbitrary -- representation
        <*> listOf arbitrary -- views
        <*> listOf arbitrary -- gen definitions
@@ -117,9 +116,6 @@ instance Arbitrary Meta where
 
 instance Arbitrary MetaObj where
     arbitrary = return ContextMeta
-
-instance Arbitrary P_RoleRelation where
-    arbitrary = P_RR <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
@@ -142,7 +138,7 @@ instance Arbitrary Role where
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> arbitrary <*> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Relation where
     arbitrary = P_Sgn <$> lowerId         -- name

@@ -1,11 +1,11 @@
 ﻿CONTEXT InterfaceTest2 IN ENGLISH
 
-PROCESS TryECA1
+PATTERN TryECA1
 RELATION r[A*C]
 RELATION s[A*C]
 ROLE tester MAINTAINS invariant
 RULE invariant : r |- s
-ENDPROCESS
+ENDPATTERN
 
 POPULATION r[A*C] CONTAINS
    [ ("Aap", "Cent") ]

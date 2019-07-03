@@ -38,8 +38,8 @@ BOX[ "Mandaat"      : I
    
    ]
 
-PROCESS ToevoegenMandaat
+PATTERN ToevoegenMandaat
 ROLE Bestuurder MAINTAINS "Artikel 10:2 Awb"
-ENDPROCESS
+ENDPATTERN
 
 ENDCONTEXT

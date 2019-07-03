@@ -87,7 +87,7 @@ keywords  = L.nub $
                 -- Experimental stuff:
                 , "SERVICE", "EDITS"
                 -- Depreciated keywords:
-                , "PROCESS", "ENDPROCESS"]
+                ]
 
 -- | Retrieves a list of operators accepted by the ampersand language
 operators :: [String] -- ^ The operators

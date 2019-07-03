@@ -27,7 +27,7 @@ PatternDef      ::= 'PATTERN' Id LanguageRef?
                     Purpose      |
                     Population
                   )* 'ENDPATTERN'
-ProcessDef      ::= 'PROCESS' Id LanguageRef?
+ProcessDef      ::= 'PATTERN' Id LanguageRef?
                   ( RuleDef      |
                     RelationDef  |
                     RoleRule     |
@@ -37,7 +37,7 @@ ProcessDef      ::= 'PROCESS' Id LanguageRef?
                     KeyDef       |
                     Purpose      |
                     Population
-                  )* 'ENDPROCESS'
+                  )* 'ENDPATTERN'
 RuleDef         ::= 'RULE' (ADLid ':')? Expr Meaning* 
                     ('MESSAGE' LanguageRef? TextMarkup? (String | Expl))* 
                     ('VIOLATION' (('TXT' | 'SRC' | 'TGT') String)(',' (('TXT' | 'SRC' | 'TGT') String))* )?
@@ -75,7 +75,7 @@ Purpose         ::= 'PURPOSE'
                      'RULE'      Id      |
                      'KEY'       Id      |
                      'PATTERN'   Id      |
-                     'PROCESS'   Id      |
+                     'PATTERN'   Id      |
                      'INTERFACE' Id      |
                      'CONTEXT'   Id
                     )

@@ -85,7 +85,7 @@ takeQuote :: String -> String
 takeQuote = replace' "\"" ""
 
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops metas) =
+    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
@@ -98,7 +98,6 @@ instance Pretty P_Context where
                <+\> perline cs
                <+\> perline ks
                <+\> perline rrules
-               <+\> perline rrels
                <+\> perline reprs
                <+\> perline vs
                <+\> perline gs
@@ -113,10 +112,6 @@ instance Pretty Meta where
 instance Pretty MetaObj where
     pretty ContextMeta = empty -- for the context meta we don't need a keyword
 
-instance Pretty P_RoleRelation where
-    pretty (P_RR _ roles rels) =
-        text "ROLE" <+> listOf1 roles <+> text "EDITS" <+> listOf1 rels
-
 instance Pretty P_RoleRule where
     pretty (Maintain _ roles rules) =
         text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NEL.toList . fmap maybeQuote $ rules)
@@ -126,22 +121,20 @@ instance Pretty Role where
     pretty (Service nm) = maybeQuote nm
 
 instance Pretty P_Pattern where
-    pretty (P_Pat _ nm rls gns dcs rruls rrels reprs cds ids vds xps pop _) =
-          text keyword
+    pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _) =
+          text "PATTERN"
           <+>  quoteConcept nm
           <+\> perline rls
           <+\> perline gns
           <+\> perline dcs
           <+\> perline rruls
-          <+\> perline rrels
           <+\> perline reprs
           <+\> perline cds
           <+\> perline ids
           <+\> perline vds
           <+\> perline xps
           <+\> perline pop
-          <+>  text ("END"++keyword)
-        where keyword = if null rruls && null rrels then "PATTERN" else "PROCESS"
+          <+>  text "ENDPATTERN"
 
 instance Pretty P_Relation where
     pretty (P_Sgn nm sign prps pragma mean _) =
