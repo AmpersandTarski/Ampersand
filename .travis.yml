@@ -10,8 +10,8 @@ php:
 
 cache:
    directories:
-       - $HOME/.ghc
-       - $HOME/.cabal
+#       - $HOME/.ghc
+#       - $HOME/.cabal
        - $HOME/.stack
 
 # The different configurations we want to test. We have BUILD=cabal which uses
@@ -100,9 +100,6 @@ matrix:
 # - in before_install we install build tools
 # - in install we install (haskell) dependencies
 before_install:
-# Using compiler above sets CC to an invalid value, so unset it
-- unset CC
-
 # We want to always allow newer versions of packages when building on GHC HEAD
 - CABALARGS=""
 - if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
@@ -124,6 +121,18 @@ before_install:
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
+
+#Diagnosis: Copied from https://github.com/simonmichael/hledger/blob/master/.travis.yml
+- which stack
+- type -a stack
+- stack --version
+- echo ~
+- ~/.local/bin/stack --version
+
+# GHC: Copied from https://github.com/simonmichael/hledger/blob/master/.travis.yml
+- stack setup
+- stack exec -- ghc --version
+
 install:
 - echo "Starting install"
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
@@ -132,8 +141,8 @@ install:
 - |
   case "$BUILD" in
     stack)
-      ./travis_long stack --no-terminal --install-ghc $ARGS install --flags=buildAll
-      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies
+      travis_wait stack --no-terminal --install-ghc $ARGS install --flags=buildAll
+#      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies
       ;;
     cabal)
       cabal --version
