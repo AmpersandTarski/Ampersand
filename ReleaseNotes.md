@@ -2,6 +2,7 @@
 
 ## Unreleased changes
 
+* Removed depricated stuff: keywords "EDITS", "PROCESS" and "ENDPROCESS". EDITS did not have any effect at all since about 2015, (END)PROCESS has been the same as (END)PATTERN for a long time.
 * [Issue #976](https://github.com/AmpersandTarski/Ampersand/issues/976) Lines in --deamon configuration file can be commented out by prepending such line with "#" or "--" (MUST be at beginning of line)
 
 ## v3.17.1 (7 june 2019)

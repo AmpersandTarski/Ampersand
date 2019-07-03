@@ -85,7 +85,7 @@ keywords  = L.nub $
                 -- Keywords for values of atoms:
                 [ "TRUE", "FALSE" --for booleans
                 -- Experimental stuff:
-                , "SERVICE", "EDITS"
+                , "SERVICE"
                 -- Depreciated keywords:
                 ]
 
