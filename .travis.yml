@@ -157,7 +157,7 @@ script:
   - |
     case "$BUILD" in
       stack)
-      ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
+      ./travis_long stack --no-terminal --test --copy-bins $ARGS build --flag ampersand:buildAll
         ;;
       cabal)
       ./travis_long cabal new-test -j1 
