@@ -10,8 +10,8 @@ php:
 
 cache:
    directories:
-#       - $HOME/.ghc
-#       - $HOME/.cabal
+       - $HOME/.ghc
+       - $HOME/.cabal
        - $HOME/.stack
 
 # The different configurations we want to test. We have BUILD=cabal which uses
@@ -166,16 +166,9 @@ script:
 # - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
 after_success:
-#  - export RIO_VERBOSE=1
-#  - stack --version
-#  - stack --verbose exec which ampersand
-#  - stack exec -- which ampersand
-#  - stack exec -- echo $PATH
-#  - stack exec -- ampersand -v
   - export AMPERSAND_VERSION=`ampersand -v | sed 's/ .*//'`
   - echo $AMPERSAND_VERSION
-  - which ampersand
-  
+
 before_deploy:
   # Set up git user name and tag this commit
   - git config --local user.name "Ampersand-Sentinel"
