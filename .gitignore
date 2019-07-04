@@ -10,6 +10,8 @@ cabal.sandbox.config
 /dist-newstyle
 .idea
 
+stack.yaml.lock
+
 # Temporarily disable ampersand.cabal (See issue #931)
 /ampersand.cabal
 /stack.yaml.lock
