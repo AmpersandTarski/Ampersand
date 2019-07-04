@@ -35,7 +35,7 @@ matrix:
       - ARGS="--interleaved-output"
       - STACK_YAML=stack.yaml
       - AMPERSAND_RELEASE_BRANCH=master
-    compiler: ": #stack"
+#    compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
 #  - name: "osx, stack"
@@ -48,7 +48,7 @@ matrix:
   # https://github.com/hvr/multi-ghc-travis
   - name: "linux, cabal"
     env: BUILD=cabal GHCVER=8.6.4 CABALVER=2.4
-    compiler: ": #GHC 8.6.4"
+#    compiler: ": #GHC 8.6.4"
     addons: {apt: {packages: [ ghc-ppa-tools
                              , cabal-install-2.4
                              , ghc-8.6.4
@@ -67,15 +67,15 @@ matrix:
   # Build with the newest GHC and cabal-install.
   - name: "linux, cabal, latest"
     env: BUILD=cabal GHCVER=head  CABALVER=head
-    compiler: ": #GHC HEAD"
+#    compiler: ": #GHC HEAD"
     addons: {apt: {packages: [ ghc-ppa-tools
                              , cabal-install-head
                              , ghc-head
                              ] 
                   ,sources: [hvr-ghc]}}
   - name: "linux, stack, latest"
-    env: BUILD=stack ARGS="--interleaved-output --resolver nightly"
-    compiler: ": #stack nightly"
+    env: BUILD=stack ARGS="--resolver nightly --allow-newer"
+#    compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
 
@@ -92,20 +92,10 @@ matrix:
 #  - name: "osx, cabal"
   
 
-  
-
-
-
 # Note: the distinction between `before_install` and `install` is not important.
 # - in before_install we install build tools
 # - in install we install (haskell) dependencies
 before_install:
-# Using compiler above sets CC to an invalid value, so unset it
-- unset CC
-
-# We want to always allow newer versions of packages when building on GHC HEAD
-- CABALARGS=""
-- if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
 
 # We need to ensure that there is enough memory. See:
 # http://stackoverflow.com/questions/13104630/exitfailure-9-when-trying-to-install-ghc-mod-using-cabal 
@@ -114,33 +104,44 @@ before_install:
 - sudo swapon /swapfile
 
 # Export the git version for use with cabal (See https://github.com/haskell/cabal/issues/5934 for the discussion)
+# Purpose is to have info to decide when to release
 - export GIT_SHA=`git rev-parse --short HEAD`
 - export GIT_Branch=`git rev-parse --abbrev-ref HEAD`
 - echo $GIT_SHA
 - echo $GIT_Branch
 
-# Download and unpack the stack executable
-- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/home/travis/build/AmpersandTarski/Ampersand/dist:$PATH
+# Download and unpack the stack executable (Copied from https://docs.haskellstack.org/en/stable/travis_ci/#installing-stack )
 - mkdir -p ~/.local/bin
-- |
-  if [ `uname` = "Darwin" ]
-  then
-    curl --insecure -L https://www.stackage.org/stack/osx-x86_64 | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
-  else
-    curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-  fi
+- export PATH=$HOME/.local/bin:$PATH
+- travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+
+
+#Diagnosis: Copied from https://github.com/simonmichael/hledger/blob/master/.travis.yml
+- which stack
+- type -a stack
+- stack --version
+- echo ~
+- ~/.local/bin/stack --version
+
+# GHC: Copied from https://github.com/simonmichael/hledger/blob/master/.travis.yml
+- stack setup
+- stack exec -- ghc --version
 
 install:
 - echo "Starting install"
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - chmod +x ./travis_long
-- if [ -f configure.ac ]; then autoreconf -i; fi
-- PATH=$PATH:~/.cabal/bin
 - mkdir dist
 - |
   case "$BUILD" in
     stack)
-      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies
+      ./travis_long `# guarantee that something is written to output every minute, so travis doesn't stop premature` \
+           stack build `# build is the common task which is composable.` \
+                --test `# run the tests` \
+                --copy-bins `# install executables to the path` \
+                --no-terminal `# fixes bug with sticky output on travis` \
+                $ARGS  `#` \
+                --flag ampersand:buildAll `# build all executables of ampersand`
       ;;
     cabal)
       cabal --version
@@ -148,6 +149,7 @@ install:
       ./travis_long cabal new-install exe:ampersand exe:ampPreProc lib:ampersand --flags=buildAll -j1 --overwrite-policy=always
       ;;
   esac
+#      ./travis_long stack --no-terminal --install-ghc $ARGS test --only-dependencies
 
 # We need composer for the Ampersand Prototypes to be installed.
 before_script: composer install
@@ -156,9 +158,6 @@ script:
   - echo "Starting script"
   - |
     case "$BUILD" in
-      stack)
-      ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build --flag ampersand:buildAll
-        ;;
       cabal)
       ./travis_long cabal new-test -j1 
         ;;
@@ -167,7 +166,8 @@ script:
 # - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
 after_success:
-  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
+  - export AMPERSAND_VERSION=`ampersand -v | sed 's/ .*//'`
+  - echo $AMPERSAND_VERSION
 
 before_deploy:
   # Set up git user name and tag this commit
@@ -182,8 +182,8 @@ deploy:
     skip_cleanup: true
     draft: true
     file: 
-      - dist/ampersand
-      - dist/ampPreProc
+      - .local/bin/ampersand
+      - .local/bin/ampPreProc
     on:
       repo: AmpersandTarski/Ampersand
       branch: ${AMPERSAND_RELEASE_BRANCH}
