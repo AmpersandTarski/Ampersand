@@ -141,7 +141,7 @@ install:
 - |
   case "$BUILD" in
     stack)
-      travis_wait stack --no-terminal --install-ghc $ARGS install --flags=buildAll
+      ./travis_long stack --no-terminal --install-ghc $ARGS install --flags=buildAll
       ;;
     cabal)
       cabal --version
