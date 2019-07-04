@@ -158,9 +158,6 @@ script:
   - echo "Starting script"
   - |
     case "$BUILD" in
-      stack)
-      echo "In case of stack, tests are run earlier."
-        ;;
       cabal)
       ./travis_long cabal new-test -j1 
         ;;
@@ -169,14 +166,16 @@ script:
 # - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
 after_success:
-  - export RIO_VERBOSE=1
-  - stack --version
-  - stack --verbose exec which ampersand
-  - stack exec -- which ampersand
-  - stack exec -- echo $PATH
-  - stack exec -- ampersand -v
-  - export AMPERSAND_VERSION=`stack exec -- ampersand -v | sed 's/ .*//'`
-
+#  - export RIO_VERBOSE=1
+#  - stack --version
+#  - stack --verbose exec which ampersand
+#  - stack exec -- which ampersand
+#  - stack exec -- echo $PATH
+#  - stack exec -- ampersand -v
+  - export AMPERSAND_VERSION=`ampersand -v | sed 's/ .*//'`
+  - echo $AMPERSAND_VERSION
+  - which ampersand
+  
 before_deploy:
   # Set up git user name and tag this commit
   - git config --local user.name "Ampersand-Sentinel"
@@ -190,8 +189,8 @@ deploy:
     skip_cleanup: true
     draft: true
     file: 
-      - dist/ampersand
-      - dist/ampPreProc
+      - .local/bin/ampersand
+      - .local/bin/ampPreProc
     on:
       repo: AmpersandTarski/Ampersand
       branch: ${AMPERSAND_RELEASE_BRANCH}
