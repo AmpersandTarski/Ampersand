@@ -74,7 +74,7 @@ matrix:
                              ] 
                   ,sources: [hvr-ghc]}}
   - name: "linux, stack, latest"
-    env: BUILD=stack ARGS="--resolver nightly"
+    env: BUILD=stack ARGS="--resolver nightly --allow-newer"
 #    compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
@@ -92,17 +92,10 @@ matrix:
 #  - name: "osx, cabal"
   
 
-  
-
-
-
 # Note: the distinction between `before_install` and `install` is not important.
 # - in before_install we install build tools
 # - in install we install (haskell) dependencies
 before_install:
-# We want to always allow newer versions of packages when building on GHC HEAD
-- CABALARGS=""
-- if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
 
 # We need to ensure that there is enough memory. See:
 # http://stackoverflow.com/questions/13104630/exitfailure-9-when-trying-to-install-ghc-mod-using-cabal 
@@ -111,6 +104,7 @@ before_install:
 - sudo swapon /swapfile
 
 # Export the git version for use with cabal (See https://github.com/haskell/cabal/issues/5934 for the discussion)
+# Purpose is to have info to decide when to release
 - export GIT_SHA=`git rev-parse --short HEAD`
 - export GIT_Branch=`git rev-parse --abbrev-ref HEAD`
 - echo $GIT_SHA
@@ -141,7 +135,7 @@ install:
 - |
   case "$BUILD" in
     stack)
-      ./travis_long stack install --no-terminal --install-ghc $ARGS --flag ampersand:buildAll
+      ./travis_long stack build --test --copy-bins --no-terminal --install-ghc $ARGS --flag ampersand:buildAll
       ;;
     cabal)
       cabal --version
@@ -159,7 +153,7 @@ script:
   - |
     case "$BUILD" in
       stack)
-      ./travis_long stack --no-terminal --test --copy-bins $ARGS build --flag ampersand:buildAll
+      echo "In case of stack, tests are run earlier."
         ;;
       cabal)
       ./travis_long cabal new-test -j1 
