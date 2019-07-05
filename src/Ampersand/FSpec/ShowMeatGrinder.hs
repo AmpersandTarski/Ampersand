@@ -113,7 +113,6 @@ addSemanticModel gInfo pCtx =
         , ctx_cs     = ctx_cs     pCtx `uni` ctx_cs     pCtxOfMetaModel
         , ctx_ks     = ctx_ks     pCtx `uni` ctx_ks     pCtxOfMetaModel
         , ctx_rrules = ctx_rrules pCtx `uni` ctx_rrules pCtxOfMetaModel
-        , ctx_rrels  = ctx_rrels  pCtx
         , ctx_reprs  = ctx_reprs  pCtx `uni` ctx_reprs  pCtxOfMetaModel
         , ctx_vs     = ctx_vs     pCtx `uni` ctx_vs     pCtxOfMetaModel
         , ctx_gs     = ctx_gs     pCtx `uni` ctx_gs     pCtxOfMetaModel
