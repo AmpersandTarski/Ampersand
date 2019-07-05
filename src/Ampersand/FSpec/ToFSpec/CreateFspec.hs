@@ -45,10 +45,12 @@ createMulti = do
 
     rawUserP_Ctx:: Guarded P_Context <- 
        case fileName of
-         Just x -> snd <$> parseADL x -- the P_Context of the user's sourceFile
+         Just x -> do
+             pctx <- snd <$> parseADL x -- the P_Context of the user's sourceFile
+             return $ encloseInConstraints opts <$> pctx 
          Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     let rawUserFSpec :: Guarded FSpec 
-        rawUserFSpec = join $ pCtx2Fspec' opts <$> rawUserP_Ctx  
+        rawUserFSpec = join $ pCtx2Fspec opts <$> rawUserP_Ctx  
     return . join $ build opts grindInfoMap <$> rawUserFSpec <*> rawUserP_Ctx
       where 
         build :: Options -> (Map MetaModel GrindInfo) -> FSpec -> P_Context -> Guarded FSpecKinds
@@ -71,10 +73,6 @@ createMulti = do
                mergedP = addSemanticModel gInfo <$> mergeContexts userP <$> grindedP
            join $ pCtx2Fspec opts <$> mergedP
            
-         
-pCtx2Fspec' :: Options -> P_Context -> Guarded FSpec
-pCtx2Fspec' opts c = pCtx2Fspec opts (encloseInConstraints opts c) 
-    
 
 -- | To analyse spreadsheets means to enrich the context with the relations that are defined in the spreadsheet.
 --   The function encloseInConstraints does not populate existing relations.
