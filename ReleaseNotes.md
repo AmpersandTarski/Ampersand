@@ -1,7 +1,8 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.17.2 (5 july 2019)
 
+* Again some major refactoring has been done to leverage the [RIO library](https://haskell.fpcomplete.com/library/rio).
 * [Issue #976](https://github.com/AmpersandTarski/Ampersand/issues/976) Lines in --deamon configuration file can be commented out by prepending such line with "#" or "--" (MUST be at beginning of line)
 
 ## v3.17.1 (7 june 2019)
