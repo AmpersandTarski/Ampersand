@@ -13,12 +13,12 @@ Je kunt eenvoudig vaststellen dat deze bug niet meer aanwezig is als:
 - je de regel 'Criteria' overtreedbaar maakt
 -}
 ------------------------------------------------------------
-PROCESS ARM20Test8
+PATTERN ARM20Test8
 bfEigenaar :: Bedrijfsfunctie * Persoon [UNI]
 critTAV :: Criterium * Bedrijfsfunctie [UNI]
 RULE "Criteria": I[Criterium] |- critTAV;critTAV~
 
-ENDPROCESS
+ENDPATTERN
 ------------------------------------------------------------
 INTERFACE "Overzicht" : I[ONE]
 BOX[ "Personen"         : V[ONE*Persoon]

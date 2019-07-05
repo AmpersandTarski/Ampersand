@@ -85,9 +85,9 @@ keywords  = L.nub $
                 -- Keywords for values of atoms:
                 [ "TRUE", "FALSE" --for booleans
                 -- Experimental stuff:
-                , "SERVICE", "EDITS"
+                , "SERVICE"
                 -- Depreciated keywords:
-                , "PROCESS", "ENDPROCESS"]
+                ]
 
 -- | Retrieves a list of operators accepted by the ampersand language
 operators :: [String] -- ^ The operators

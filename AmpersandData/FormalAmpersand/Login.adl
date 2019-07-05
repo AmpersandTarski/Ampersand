@@ -3,7 +3,7 @@
 
 META "authors" "Stef Joosten"
 
-PROCESS Login
+PATTERN Login
 
 RELATION accLogin[Account*Loginnaam] [UNI,INJ] PRAGMA "" " heeft als loginnaam "
 MEANING "Elk account heeft een unieke loginnaam."
@@ -65,7 +65,7 @@ VIOLATION (TXT "{EX} InsPair;sessionLoginnaam;SESSION;", SRC I, TXT ";Loginnaam;
 RULE "username password combination": sessionLoginnaam~;sessionPassword |- accLogin~;accPassword
 MEANING "Elke loginnaam/wachtwoord combinatie dient een persoon te identificeren, van wie een loginnaam/wachtwoord combinatie in het systeem is geregistreerd."
 MESSAGE "Ongeldige combinatie van gebruikernaam en password!"
-ENDPROCESS
+ENDPATTERN
 
 VIEW SESSION : SESSION(sessionLoginnaam)
 

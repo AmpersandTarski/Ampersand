@@ -21,15 +21,6 @@ Meta            ::= 'META' String String
 PatternDef      ::= 'PATTERN' Id LanguageRef?
                   ( RuleDef      |
                     RelationDef  |
-                    ConceptDef   |
-                    GenDef       |
-                    KeyDef       |
-                    Purpose      |
-                    Population
-                  )* 'ENDPATTERN'
-ProcessDef      ::= 'PROCESS' Id LanguageRef?
-                  ( RuleDef      |
-                    RelationDef  |
                     RoleRule     |
                     RoleRelation |
                     ConceptDef   |
@@ -37,7 +28,7 @@ ProcessDef      ::= 'PROCESS' Id LanguageRef?
                     KeyDef       |
                     Purpose      |
                     Population
-                  )* 'ENDPROCESS'
+                  )* 'ENDPATTERN'
 RuleDef         ::= 'RULE' (ADLid ':')? Expr Meaning* 
                     ('MESSAGE' LanguageRef? TextMarkup? (String | Expl))* 
                     ('VIOLATION' (('TXT' | 'SRC' | 'TGT') String)(',' (('TXT' | 'SRC' | 'TGT') String))* )?
@@ -75,7 +66,6 @@ Purpose         ::= 'PURPOSE'
                      'RULE'      Id      |
                      'KEY'       Id      |
                      'PATTERN'   Id      |
-                     'PROCESS'   Id      |
                      'INTERFACE' Id      |
                      'CONTEXT'   Id
                     )
@@ -84,7 +74,6 @@ Purpose         ::= 'PURPOSE'
                     ('REF' String)? Expl
 Expl            ::= '{+' String '-}'
 Population      ::= 'POPULATION' RelSign 'CONTAINS' Content
-RoleRelation    ::= 'ROLE' Id (',' Id)* 'EDITS'     RelSign (',' RelSign)*
 RoleRule        ::= 'ROLE' Id (',' Id)* 'MAINTAINS' Id (',' Id)*
 Meaning         ::= 'MEANING' LanguageRef? TextMarkup? Expl
 

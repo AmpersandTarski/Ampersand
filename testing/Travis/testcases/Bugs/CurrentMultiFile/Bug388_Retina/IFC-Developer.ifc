@@ -11,10 +11,10 @@ BOX[ "Verwerkingen"            : V[ONE*Verwerking]
    , "Persoonsgegevens"        : V[ONE*Persoonsgegeven]
    ]
 ------------------------------------------------------------
-PROCESS Developer
+PATTERN Developer
 RULE "Triviality" : I[Verwerking] = I[Verwerking]
 ROLE Developer MAINTAINS "Triviality"
-ENDPROCESS
+ENDPATTERN
 ------------------------------------------------------------
 --[Verwerkingen]--------------------------------------------
 INTERFACE "[Verwerking]"

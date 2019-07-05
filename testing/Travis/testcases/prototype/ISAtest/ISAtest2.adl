@@ -1,6 +1,6 @@
 CONTEXT ARMISATEST IN DUTCH
 
-PROCESS ARMISATEST
+PATTERN ARMISATEST
 --[Bedrijfsfuncties]--
 -- KEY BedrijfsfunctieNaam: Bedrijfsfunctie(bfNaam)
 IDENT BedrijfsfunctieIdent: Bedrijfsfunctie(bfNaam) -- lokaal in de DB
@@ -60,7 +60,7 @@ ROLE ExecEngine MAINTAINS delvvBF_Def
 RULE delvvBF_Def: vvBF_Def |- vvVerplichting;critBF
 VIOLATION (TXT "{EX} DelPair vvBF_Def;Verwachtingsverzameling;", SRC I, TXT ";Bedrijfsfunctie;", TGT I)
 
-ENDPROCESS
+ENDPATTERN
 ------------------------------------------------------------
 INTERFACE "Overzicht" FOR Developer, ExecEngine : I[ONE]
 BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
@@ -105,7 +105,7 @@ BOX[ "Algemeen" : I
    ]
 
 
-PROCESS "{EE} BIA-lijst interface"
+PATTERN "{EE} BIA-lijst interface"
 nieuweVerplichting :: Bedrijfsfunctie * Verplichting -- in deze relatie worden nieuwe verplichtingen aangemaakt.
 
 ROLE ExecEngine MAINTAINS "nieuwe BIA verplichtingen"
@@ -117,7 +117,7 @@ VIOLATION (TXT "{EX} InsPair;critBF;Verplichting;", TGT I, TXT ";Bedrijfsfunctie
           ,TXT "{EX} DelPair;nieuweVerplichting;Bedrijfsfunctie;", SRC I, TXT ";Verplichting;", TGT I
           )
 
-ENDPROCESS
+ENDPATTERN
 
 --[Verplichtingen]-----------------------------------------
 
