@@ -10,7 +10,7 @@ INCLUDE "DomainAnalysis.adl"
 --    RULE SURrelations : I[Relation] |- relations~;relations
 --    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 
-PROCESS "Type checking"
+PATTERN "Type checking"
     RULE "Unambiguous pretype"
      : pretype |- pretype~\I[Concept]
     MESSAGE "Every type-term must be subset of one concept only."
@@ -53,9 +53,9 @@ PROCESS "Type checking"
                 , TXT " is the source concept of ", SRC second
                 , TXT ", which is a mismatch.")
       ROLE "Type Checker" MAINTAINS checkRightResidual
-ENDPROCESS
+ENDPATTERN
 
-PROCESS "Reflexive isa closures"
+PATTERN "Reflexive isa closures"
     RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa\/isa~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
     RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa\/isa~
@@ -78,11 +78,11 @@ PROCESS "Reflexive isa closures"
     VIOLATION (TXT "{EX} InsPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
     RULE "Compute isaRfxStar by Del" : isaRfxStar |- isaRfxPlus\/I
     VIOLATION (TXT "{EX} DelPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-ENDPROCESS
+ENDPATTERN
 
 
 {- I can't get the following to work...  Grrr!
-PROCESS "Type graph"
+PATTERN "Type graph"
     RELATION elem[TypeTerm*Node] [UNI]
 
     ROLE ExecEngine MAINTAINS elemFill, elemNew
@@ -92,6 +92,6 @@ PROCESS "Type graph"
               )
     RULE elemFill : (subStar/\subStar~);elem |- elem
     VIOLATION (TXT "{EX} InsPair;elem;TypeTerm;", SRC I, TXT ";Node;", TGT I)
-ENDPROCESS -}
+ENDPATTERN -}
 
 ENDCONTEXT

@@ -1,6 +1,6 @@
 CONTEXT RuntimeStuff IN DUTCH
 ------------------------------------------------------------
-PROCESS RuntimeStuff
+PATTERN RuntimeStuff
 
 runtimeVerzamelendeService :: Persoonsgegeven * Service [UNI,TOT]
 PRAGMA "" " is verzameld door een instantie van "
@@ -56,6 +56,6 @@ ROLE User MAINTAINS "Runtime verwerkingen hebben een doel"
 PURPOSE RULE "Runtime verwerkingen hebben een doel" REF "Artikel 9 eerste lid Wbp"
 {+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.+}
 
-ENDPROCESS
+ENDPATTERN
 ------------------------------------------------------------
 ENDCONTEXT

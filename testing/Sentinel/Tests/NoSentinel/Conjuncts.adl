@@ -1,7 +1,7 @@
 CONTEXT Conjuncts IN ENGLISH
 -- Test file for signal conjuncts
 
-PROCESS P
+PATTERN P
 
 ri1 :: A * X -- = [ ("Ai1", "X1") ]
 ri2 :: A * X -- = [ ("Ai2", "X1") ]
@@ -32,7 +32,7 @@ RULE fancy2: -rs2 /\ -rs3 VIOLATION (TXT "Fancy signal-2: (", SRC show, TXT ", "
 ROLE role1 MAINTAINS signal1, fancy1
 ROLE role2 MAINTAINS signal2, fancy2
 ROLE role3 MAINTAINS signal3, signal4
-ENDPROCESS
+ENDPATTERN
 
 INTERFACE Overview (ri1,ri2,ri3,ri4,rs1,rs2,rs3,rs4)  : I[ONE]
 BOX[ "ri1"  : V[ONE*A]

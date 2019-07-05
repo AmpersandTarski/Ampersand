@@ -2,6 +2,11 @@
 
 ## Unreleased changes
 
+* Removed depricated stuff: keywords "EDITS", "PROCESS" and "ENDPROCESS". EDITS did not have any effect at all since about 2015, (END)PROCESS has been the same as (END)PATTERN for a long time.
+
+## v3.17.2 (5 july 2019)
+
+* Again some major refactoring has been done to leverage the [RIO library](https://haskell.fpcomplete.com/library/rio).
 * [Issue #976](https://github.com/AmpersandTarski/Ampersand/issues/976) Lines in --deamon configuration file can be commented out by prepending such line with "#" or "--" (MUST be at beginning of line)
 * [Issue #971](https://github.com/AmpersandTarski/Ampersand/issues/971) The functionality of meatgrinding has been refactored. It is now far more composable. It is expected that in the near future this will lead to a set of different switches.
 

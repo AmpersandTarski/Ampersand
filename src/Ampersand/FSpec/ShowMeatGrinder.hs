@@ -53,7 +53,6 @@ grind opts grindInfo userFspec =
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
-      , ctx_rrels  = []
       , ctx_reprs  = []
       , ctx_vs     = []
       , ctx_gs     = map aClassify2pClassify . Set.toList . instances . fModel $ grindInfo

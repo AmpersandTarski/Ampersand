@@ -58,7 +58,6 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
-                   , fRoleRels ::    [(Role,Relation)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
                    , fMaintains ::   Role -> Rules
                    , fRoles ::       [(Role,Int)]             -- ^ All roles mentioned in this context, numbered.

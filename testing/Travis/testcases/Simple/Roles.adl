@@ -14,7 +14,7 @@ INTERFACE Consumer FOR Consumer : I[ONE]
 BOX [ "one" : V[ONE] ]
 
 
-PROCESS Test
+PATTERN Test
 
 RULE ProducerSignal : V[ONE]
 
@@ -24,6 +24,6 @@ ROLE Producer MAINTAINS ProducerSignal
 
 ROLE Consumer MAINTAINS ConsumerSignal
 
-ENDPROCESS
+ENDPATTERN
 
 ENDCONTEXT
