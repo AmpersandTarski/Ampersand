@@ -43,9 +43,9 @@ getAsConcept o v = case typeOrConcept v of
 userList :: [Type] -> [A_Concept]
 userList = lefts . fmap typeOrConcept
 
-mustBeConceptBecauseMath :: (?loc :: CallStack) => Type -> A_Concept
+mustBeConceptBecauseMath :: Type -> A_Concept
 mustBeConceptBecauseMath tp
- = let fatalV :: (?loc :: CallStack) => a
+ = let fatalV :: a
        fatalV = fatal "A concept turned out to be a built-in type."
    in case getAsConcept fatalV tp of
         Checked v _ -> v

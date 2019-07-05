@@ -107,7 +107,7 @@ parseSingleADL pc
                                                         , "   File does not exist." ]
     where
      filePath = pcCanonical pc
-     parseSingleADL' :: (HasVerbosity env,HasHandle env,HasOptions env) => RIO env (Guarded (P_Context, [ParseCandidate]))
+     parseSingleADL' :: HasOptions env => RIO env (Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
          | extension == ".xlsx" =
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath

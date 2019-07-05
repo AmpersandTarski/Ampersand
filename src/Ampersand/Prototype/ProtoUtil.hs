@@ -58,7 +58,7 @@ copyDirRecursively srcBase tgtBase = copy ""
              
 
 -- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
-removeAllDirectoryFiles :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
+removeAllDirectoryFiles :: HasHandle env =>
                            FilePath -> RIO env ()
 removeAllDirectoryFiles dirPath = do
     dirContents <- getProperDirectoryContents dirPath
