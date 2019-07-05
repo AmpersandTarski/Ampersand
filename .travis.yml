@@ -182,8 +182,8 @@ deploy:
     skip_cleanup: true
     draft: true
     file: 
-      - .local/bin/ampersand
-      - .local/bin/ampPreProc
+      - ~/.local/bin/ampersand
+      - ~/.local/bin/ampPreProc
     on:
       repo: AmpersandTarski/Ampersand
       branch: ${AMPERSAND_RELEASE_BRANCH}
