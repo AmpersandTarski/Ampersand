@@ -1,6 +1,14 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
 * [Issue #921](https://github.com/AmpersandTarski/Ampersand/issues/921) Third round of enhancements for RIO.
+* Removed depricated stuff: keywords "EDITS", "PROCESS" and "ENDPROCESS". EDITS did not have any effect at all since about 2015, (END)PROCESS has been the same as (END)PATTERN for a long time.
+
+## v3.17.2 (5 july 2019)
+
+* Again some major refactoring has been done to leverage the [RIO library](https://haskell.fpcomplete.com/library/rio).
+* [Issue #976](https://github.com/AmpersandTarski/Ampersand/issues/976) Lines in --deamon configuration file can be commented out by prepending such line with "#" or "--" (MUST be at beginning of line)
 
 ## v3.17.1 (7 june 2019)
 

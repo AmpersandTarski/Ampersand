@@ -35,18 +35,12 @@ makeFSpec opts context
                                       || ctxrel `notElem` map (objExpression.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fDeriveProofs = deriveProofs opts context 
-              , fRoleRels    = L.nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
-                                   | rr <- ctxRRels context
-                                   , decl <- NEL.toList $ rrRels rr
-                                   , role' <- NEL.toList $ rrRoles rr
-                                   ] 
               , fRoleRuls    = L.nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
                                    | rule <- Set.elems $ allrules
                                    , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
               , fRoles       = zip ((L.sort . L.nub) (  concatMap (NEL.toList . arRoles) (ctxrrules context)
-                                                 <> concatMap (NEL.toList . rrRoles) (ctxRRels  context)
                                                  <> concatMap ifcRoles               (ctxifcs context )
                                                  )
                                    ) [0..] 

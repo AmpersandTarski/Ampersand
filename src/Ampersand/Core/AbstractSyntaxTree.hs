@@ -35,7 +35,6 @@ module Ampersand.Core.AbstractSyntaxTree (
  , A_Concept(..), A_Concepts
  , Meaning(..)
  , A_RoleRule(..)
- , A_RoleRelation(..)
  , Representation(..), TType(..)
  , unsafePAtomVal2AtomValue, safePSingleton2AAtomVal
  , Signature(..)
@@ -97,7 +96,6 @@ data A_Context
          , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxrrules :: [A_RoleRule]
-         , ctxRRels :: [A_RoleRelation] -- ^ The assignment of roles to Relations (which role mayEdit what relations)
          , ctxreprs :: A_Concept -> TType
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctxgs :: [AClassify]          -- ^ The specialization statements defined in this context, outside the scope of patterns
@@ -115,14 +113,6 @@ instance Unique A_Context where
   showUnique = name
 instance Named A_Context where
   name  = ctxnm
-
-data A_RoleRelation
-   = RR { rrRoles :: NEL.NonEmpty Role     -- ^ name of a role
-        , rrRels :: NEL.NonEmpty Relation   -- ^ name of a Relation
-        , rrPos :: Origin       -- ^ position in the Ampersand script
-        } deriving Show
-instance Traced A_RoleRelation where
-   origin = rrPos
 
 data Pattern
    = A_Pat { ptnm ::  String        -- ^ Name of this pattern

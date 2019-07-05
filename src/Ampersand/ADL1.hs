@@ -15,7 +15,7 @@ import Ampersand.Core.ParseTree (
          , P_Context(..), mergeContexts
          , Meta(..)
          , MetaObj(..)
-         , P_RoleRelation(..), P_RoleRule(..)
+         , P_RoleRule(..)
          , P_Pattern(..)
          , PairView(..), PairViewSegment(..)
          , SrcOrTgt(..)
@@ -63,7 +63,6 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Cruds(..)
          , Typology(..)
          , DnfClause(..)
-         , A_RoleRelation(..)
          , Population(..)
          , Purpose(..), ExplObj(..) ,Meaning(..)
          , AAtomPair(..), AAtomValue(..), aavstr, mkAtomPair, ContextInfo(..)

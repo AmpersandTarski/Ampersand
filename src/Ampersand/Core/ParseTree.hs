@@ -4,7 +4,6 @@ module Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
    , Meta(..)
    , MetaObj(..)
-   , P_RoleRelation(..)
    , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
@@ -57,7 +56,6 @@ data P_Context
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
-         , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
          , ctx_reprs ::  [Representation]
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctx_gs ::     [PClassify]          -- ^ The gen definitions defined in this context, outside the scope of patterns
@@ -82,15 +80,6 @@ data Meta = Meta { pos :: Origin
 instance Traced Meta where
   origin = pos
 data MetaObj = ContextMeta deriving (Eq,Ord,Show) -- for now, we just have meta data for the entire context
-
--- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
-data P_RoleRelation
-   = P_RR { pos :: Origin      -- ^ position in the Ampersand script
-          , rr_Roles :: NEL.NonEmpty Role      -- ^ list of roles
-          , rr_Rels :: NEL.NonEmpty P_NamedRel -- ^ list of named relations
-          } deriving (Show)       -- deriving Show is just for debugging
-instance Traced P_RoleRelation where
- origin = pos
 
  -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
@@ -120,7 +109,6 @@ data P_Pattern
            , pt_gns ::   [PClassify]       -- ^ The generalizations defined in this pattern
            , pt_dcs ::   [P_Relation]      -- ^ The relations that are declared in this pattern
            , pt_RRuls :: [P_RoleRule]      -- ^ The assignment of roles to rules.
-           , pt_RRels :: [P_RoleRelation]  -- ^ The assignment of roles to Relations.
            , pt_cds ::   [ConceptDef]      -- ^ The concept definitions defined in this pattern
            , pt_Reprs :: [Representation]  -- ^ The type into which concepts is represented
            , pt_ids ::   [P_IdentDef]      -- ^ The identity definitions defined in this pattern
@@ -844,7 +832,6 @@ mergeContexts ctx1 ctx2 =
       , ctx_cs     = nubSortConcatMap ctx_cs contexts
       , ctx_ks     = nubSortConcatMap ctx_ks contexts
       , ctx_rrules = nubSortConcatMap ctx_rrules contexts
-      , ctx_rrels  =        concatMap ctx_rrels contexts
       , ctx_reprs  = nubSortConcatMap ctx_reprs contexts
       , ctx_vs     = nubSortConcatMap ctx_vs contexts
       , ctx_gs     = nubSortConcatMap ctx_gs contexts

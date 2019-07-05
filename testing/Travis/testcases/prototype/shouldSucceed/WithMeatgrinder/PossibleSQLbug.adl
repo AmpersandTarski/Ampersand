@@ -1,4 +1,4 @@
-﻿CONTEXT PossibleSqlbug2 IN DUTCH
+CONTEXT PossibleSqlbug2 IN DUTCH
 -- script met regels moet je plaatsen in mapje ??? (iets met SQLtest of zo?)
 -- regelovertredeingen worden uitgerekend
 -- zelfde populatie wordt in Haskell en in SQL uitgerekend en verschillen gedetecteerd 

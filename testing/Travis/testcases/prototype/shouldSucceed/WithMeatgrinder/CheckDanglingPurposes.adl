@@ -15,7 +15,7 @@ PURPOSE RULE      pattRule   {+Rule purpose: pattRule+}
 PURPOSE IDENT     pattIdent  {+Identity purpose: pattIdent+}
 PURPOSE VIEW      pattView   {+View purpose: pattView+}
 
-PURPOSE PROCESS   Proc       {+Process purpose: Proc+}
+PURPOSE PATTERN   Proc       {+Process purpose: Proc+}
 PURPOSE CONCEPT   ProcConcpt {+Concept purpose: ProcConcpt+}
 PURPOSE RELATION  procRel    {+Relation purpose: procRel+}
 PURPOSE RULE      procRule   {+Rule purpose: procRule+}
@@ -39,7 +39,7 @@ PATTERN Patt
   PURPOSE CONCEPT Concpt2 {+Concept purpose: Concpt2+} -- test purpose inside pattern
 ENDPATTERN
 
-PROCESS Proc
+PATTERN Proc
   CONCEPT ProcConcpt "{definition of ProcConcpt}"
   procRel :: Concpt1 * ProcConcpt
   RULE procRule: rel
@@ -47,7 +47,7 @@ PROCESS Proc
   VIEW procView: ProcConcpt("":I[ProcConcpt])
 
   PURPOSE CONCEPT Concpt3 {+Concept purpose: Concpt3+} -- test purpose inside process
-ENDPROCESS
+ENDPATTERN
 
 CONCEPT Concpt2 "{definition of Concpt2}"
 CONCEPT Concpt3 "{definition of Concpt3}"

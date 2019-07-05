@@ -1,5 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 -- | Library for spawning and working with Ghci sessions.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Daemon(
@@ -51,7 +51,10 @@ initialState = do
     then do
       content <- readFileUtf8 dotAmpersand
       let files = map T.unpack
-                . filter (\fn -> T.length fn > 0) --discard empty lines
+                . filter (\fn -> T.length fn > 0  --discard empty lines
+                               && (not $ "#"  `T.isPrefixOf` fn)  -- line commented out yaml style
+                               && (not $ "--" `T.isPrefixOf` fn)  -- line commented out haskellish style
+                         )
                 . L.nub                           --discard doubles
                 . T.lines $ content
       (ls,loadedFiles) <- do

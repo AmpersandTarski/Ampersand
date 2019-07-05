@@ -1,6 +1,6 @@
 ﻿CONTEXT Ticket440 IN DUTCH
 
-PROCESS "Voldoen aan normen"
+PATTERN "Voldoen aan normen"
 heeftVoldaanAan   :: Afdeling * Norm   MEANING "Een afdeling heeft voldaan aan een norm."
 isDeelnormVan :: Norm * Norm [ASY,IRF] MEANING "Een norm kan deelnorm zijn van een andere norm."
 
@@ -18,7 +18,7 @@ RULE "Voldoen aan normen [3]": (heeftVoldaanAan!-isDeelnormVan) = -(-heeftVoldaa
 MEANING "Of je het nu op de ene of de andere manier uitrekent zou niet uit moeten maken"
 VIOLATION (TXT "Berekening voor Afdeling '", SRC I, TXT "' en norm '", TGT I, TXT "' zijn verschillend.")
 
-ENDPROCESS
+ENDPATTERN
 --------------------------------------------------------
 POPULATION isDeelnormVan     CONTAINS [ ("N1", "N") ]
 POPULATION isDeelnormVan     CONTAINS [ ("N2", "N") ]

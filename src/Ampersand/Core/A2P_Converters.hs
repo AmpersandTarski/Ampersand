@@ -37,7 +37,6 @@ aCtx2pCtx ctx =
       , ctx_cs     = ctxcds ctx
       , ctx_ks     = map aIdentityDef2pIdentityDef . ctxks $ ctx
       , ctx_rrules = map aRoleRule2pRoleRule  .ctxrrules $ ctx
-      , ctx_rrels  = map aRoleRelation2pRoleRelation . ctxRRels $ ctx
       , ctx_reprs  = reprList (ctxInfo ctx)
       , ctx_vs     = map aViewDef2pViewDef . ctxvs $ ctx
       , ctx_gs     = map aClassify2pClassify . ctxgs $ ctx
@@ -55,7 +54,6 @@ aPattern2pPattern pat =
        , pt_gns   = map aClassify2pClassify . ptgns $ pat
        , pt_dcs   = map aRelation2pRelation . Set.elems . ptdcs $ pat
        , pt_RRuls = [] --TODO: should this be empty? There is nothing in the A-structure
-       , pt_RRels = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_cds   = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_Reprs = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_ids   = map aIdentityDef2pIdentityDef . ptids $ pat
@@ -103,13 +101,6 @@ aRoleRule2pRoleRule rr =
           , mRoles = arRoles rr
           , mRules = arRules rr
           }
-
-aRoleRelation2pRoleRelation :: A_RoleRelation -> P_RoleRelation
-aRoleRelation2pRoleRelation rr =
- P_RR { pos      = rrPos rr
-      , rr_Roles = rrRoles rr
-      , rr_Rels  = fmap aRelation2pNamedRel (rrRels rr)
-      }
 
 aViewDef2pViewDef :: ViewDef -> P_ViewDef
 aViewDef2pViewDef vDef =

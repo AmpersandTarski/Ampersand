@@ -1,6 +1,6 @@
 CONTEXT Ticket398 IN ENGLISH
 
-PROCESS Ticket398
+PATTERN Ticket398
 actTask :: Activity -> Task MEANING "Activities are carried out as part of  a task"
 actEndTime :: Activity * Timestamp [UNI] MEANING "Activities may be  completed at a specific time"
 taskCompleted :: Task * Task [PROP] MEANING "Tasks may have the property  of being completed"
@@ -9,5 +9,5 @@ taskCmpStatIsGreen :: Task * Task
 ROLE Developer MAINTAINS "Complete task"
 RULE "Complete task": I[Task] /\ (-actTask~!(I /\  actEndTime;actEndTime~));actTask |- taskCmpStatIsGreen  MEANING  "When all activities of the task have terminated, the task status  must be Green"
 
-ENDPROCESS
+ENDPATTERN
 ENDCONTEXT
