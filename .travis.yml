@@ -168,6 +168,7 @@ script:
 after_success:
   - export AMPERSAND_VERSION=`ampersand -v | sed 's/ .*//'`
   - echo $AMPERSAND_VERSION
+  - which ampersand
 
 before_deploy:
   # Set up git user name and tag this commit
@@ -182,8 +183,8 @@ deploy:
     skip_cleanup: true
     draft: true
     file: 
-      - ~/.local/bin/ampersand
-      - ~/.local/bin/ampPreProc
+      - $HOME/.local/bin/ampersand
+      - $HOME/.local/bin/ampPreProc
     on:
       repo: AmpersandTarski/Ampersand
       branch: ${AMPERSAND_RELEASE_BRANCH}
