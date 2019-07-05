@@ -9,7 +9,7 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.Set as Set
-import qualified Data.Text as Text
+import qualified RIO.Text as T
 import qualified RIO.List as L
 
 data Populations = Populations
@@ -17,16 +17,16 @@ data Populations = Populations
    , epJSONlinks :: [PairsOfRelation]
    } deriving (Generic, Show)
 data AtomValuesOfConcept = AtomValuesOfConcept
-   { avcJSONconcept :: Text.Text
-   , avcJSONatoms :: [Text.Text]
+   { avcJSONconcept :: T.Text
+   , avcJSONatoms :: [T.Text]
    } deriving (Generic, Show)
 data PairsOfRelation = PairsOfRelation
-   { porJSONrelation :: Text.Text
+   { porJSONrelation :: T.Text
    , porJSONlinks :: [JPair]
    } deriving (Generic, Show)
 data JPair = JPair
-   { prJSONsrc :: Text.Text
-   , prJSONtgt :: Text.Text
+   { prJSONsrc :: T.Text
+   , prJSONtgt :: T.Text
    } deriving (Generic, Show)
 instance ToJSON Populations where
   toJSON = amp2Jason
@@ -48,8 +48,8 @@ instance JSON (MultiFSpecs,Bool) Populations where
      where ftl = fatal "There is no grinded fSpec."
 instance JSON (A_Concept,Bool) AtomValuesOfConcept where
  fromAmpersand _ multi (cpt,doMeta) = AtomValuesOfConcept
-   { avcJSONconcept = Text.pack (idWithoutType cpt)
-   , avcJSONatoms   = map (Text.pack . showValADL) (Set.elems $ atomsBySmallestConcept theFSpec cpt)
+   { avcJSONconcept = T.pack (idWithoutType cpt)
+   , avcJSONatoms   = map (T.pack . showValADL) (Set.elems $ atomsBySmallestConcept theFSpec cpt)
    }
   where 
    theFSpec 
@@ -59,7 +59,7 @@ instance JSON (A_Concept,Bool) AtomValuesOfConcept where
 
 instance JSON (Relation,Bool) PairsOfRelation where
  fromAmpersand opts@Options{..} multi (dcl,doMeta) = PairsOfRelation
-   { porJSONrelation = Text.pack . showRel $ dcl
+   { porJSONrelation = T.pack . showRel $ dcl
    , porJSONlinks = map (fromAmpersand opts multi) . Set.elems . pairsInExpr theFSpec $ EDcD dcl
    }
   where 
@@ -69,7 +69,7 @@ instance JSON (Relation,Bool) PairsOfRelation where
      where ftl = fatal "There is no grinded fSpec."
 instance JSON AAtomPair JPair where
   fromAmpersand _ _ p = JPair
-    { prJSONsrc = Text.pack . showValADL . apLeft $ p 
-    , prJSONtgt = Text.pack . showValADL . apRight $ p
+    { prJSONsrc = T.pack . showValADL . apLeft $ p 
+    , prJSONtgt = T.pack . showValADL . apRight $ p
     }
 

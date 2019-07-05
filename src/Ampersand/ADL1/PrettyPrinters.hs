@@ -12,7 +12,7 @@ import           RIO.Char (toUpper)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Text as T
-import           RIO.Text.Partial (replace)  --TODO: Get rid of replace, because it is partial
+import qualified RIO.Text.Partial as Partial(replace)  --TODO: Get rid of replace, because it is partial
 import qualified RIO.Set as Set
 import           Text.PrettyPrint.Leijen
 
@@ -402,5 +402,5 @@ replace' :: String -> String -> String -> String
 replace' needle replacement haystack =
    case needle of 
      [] -> fatal "Empty needle."
-     _  -> T.unpack $ replace (T.pack needle) (T.pack replacement) (T.pack haystack)
+     _  -> T.unpack $ Partial.replace (T.pack needle) (T.pack replacement) (T.pack haystack)
 

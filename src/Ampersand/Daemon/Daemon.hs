@@ -6,26 +6,23 @@
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon(runDaemon) where
 
-import Data.Ord
-import Data.Tuple.Extra(both)
-import qualified System.Console.Terminal.Size as Term
-import System.Console.ANSI (hSupportsANSI,setTitle)
-import System.Environment
-import System.Directory.Extra(getCurrentDirectory,withCurrentDirectory)
-import System.FilePath
-import System.Info
+import           Ampersand.Basics
+import           Ampersand.Daemon.Daemon.Daemon
+import           Ampersand.Daemon.Daemon.Escape
+import           Ampersand.Daemon.Daemon.Terminal
+import           Ampersand.Daemon.Daemon.Types
+import           Ampersand.Daemon.Daemon.Util
+import           Ampersand.Daemon.Wait
+import           Ampersand.Misc
+import           Data.Ord
+import           Data.Tuple.Extra(both)
 import qualified RIO.List as L
-import Ampersand.Basics (ampersandVersionWithoutBuildTimeStr)
-import Ampersand.Basics.Exit
-import Ampersand.Basics.Prelude
-import Ampersand.Daemon.Daemon.Daemon
-import Ampersand.Daemon.Daemon.Escape
-import Ampersand.Daemon.Daemon.Terminal
-import Ampersand.Daemon.Daemon.Types
-import Ampersand.Daemon.Daemon.Util
-import Ampersand.Daemon.Wait
-import Ampersand.Misc
-
+import           System.Console.ANSI (hSupportsANSI,setTitle)
+import qualified System.Console.Terminal.Size as Term
+import           System.Directory(getCurrentDirectory,setCurrentDirectory)
+import           System.Environment
+import           System.FilePath
+import           System.Info
 
 -- | When to colour terminal output.
 data ColorMode
@@ -41,20 +38,21 @@ data TermSize = TermSize
     }
 
 -- | Like 'main', but run with a fake terminal for testing
-mainWithTerminal :: Options -> IO TermSize -> ([String] -> IO ()) -> IO ()
-mainWithTerminal opts@Options{..} termSize termOutput = goForever
+mainWithTerminal :: IO TermSize -> ([String] -> RIO App ()) -> RIO App ()
+mainWithTerminal termSize termOutput = goForever
   where goForever = work `catch` errorHandler
         work = forever $ withWindowIcon $ do
             
             -- On certain Cygwin terminals stdout defaults to BlockBuffering
             hSetBuffering stdout LineBuffering
             hSetBuffering stderr NoBuffering
-            curDir <- getCurrentDirectory
+            curDir <- liftIO $ getCurrentDirectory
             verboseLn $ "%OS: " ++ os
             verboseLn $ "%ARCH: " ++ arch
             verboseLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
+            env <- ask
             withCurrentDirectory curDir $ do
-                termSize' <- return $ do
+                termSize' <- liftIO $ return $ do
                         term <- termSize
                         -- if we write to the final column of the window then it wraps automatically
                         -- so putStrLn width 'x' uses up two lines
@@ -63,25 +61,27 @@ mainWithTerminal opts@Options{..} termSize termOutput = goForever
                             (termHeight term)
                             (termWrap term)
 
-                restyle <- do
+                restyle <- liftIO $ do
                     useStyle <- case Auto of
                         Always -> return True
                         Never -> return False
-                        Auto -> hSupportsANSI stdout
-                    when useStyle $ do
+                        Auto -> liftIO $ hSupportsANSI stdout
+                    when useStyle $ liftIO $ do
                         h <- lookupEnv "HSPEC_OPTIONS"
                         when (isNothing h) $ setEnv "HSPEC_OPTIONS" "--color" -- see #87
                     return $ if useStyle then id else map unescape
 
-                maybe withWaiterNotify withWaiterPoll (Nothing) $ \waiter ->
-                    runAmpersand opts waiter termSize' (termOutput . restyle)
-        errorHandler :: AmpersandExit -> IO()
-        errorHandler err = do putStrLn (show err)
-                              goForever
+                withWaiterNotify env $ \waiter ->
+                    runRIO env $ do 
+                       runAmpersand env waiter termSize' (termOutput . restyle)
 
+        errorHandler :: AmpersandExit -> RIO App ()
+        errorHandler (err :: AmpersandExit) = do 
+              putStrLn (show err)
+              goForever
 
-runDaemon :: Options -> IO ()
-runDaemon opts = mainWithTerminal opts termSize termOutput
+runDaemon :: RIO App ()
+runDaemon = mainWithTerminal termSize termOutput
     where
         termSize = do
             x <- Term.size
@@ -89,6 +89,7 @@ runDaemon opts = mainWithTerminal opts termSize termOutput
                 Nothing -> TermSize 80 8 WrapHard
                 Just t -> TermSize (Term.width t) (Term.height t) WrapSoft
 
+        termOutput :: (HasHandles env) => [String] -> RIO env ()
         termOutput xs = do
             putStr $ concatMap ('\n':) xs
             hFlush stdout -- must flush, since we don't finish with a newline
@@ -98,8 +99,8 @@ data Continue = Continue
 
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
-runAmpersand :: Options -> Waiter -> IO TermSize -> ([String] -> IO ()) -> IO Continue
-runAmpersand opts@Options{..} waiter termSize termOutput = do
+runAmpersand :: App -> Waiter -> IO TermSize -> ([String] -> RIO App ()) -> RIO App Continue
+runAmpersand app waiter termSize termOutput = do
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()
         outputFill currTime load' msg' = do
             load'' <- return $ case load' of
@@ -113,20 +114,23 @@ runAmpersand opts@Options{..} waiter termSize termOutput = do
             let mergeSoft ((Esc x,WrapSoft):(Esc y,q):xs) = mergeSoft $ (Esc (x++y), q) : xs
                 mergeSoft ((x,_):xs) = x : mergeSoft xs
                 mergeSoft [] = []
-            termOutput $ map fromEsc ((if termWrap == WrapSoft then mergeSoft else map fst) $ load''' ++ msg) ++ pad
+            runRIO app $ do 
+               termOutput $ map fromEsc ((if termWrap == WrapSoft then mergeSoft else map fst) $ load''' ++ msg) ++ pad
 
-    nextWait <- waitFiles opts waiter
-    aDaemon <- startAmpersandDaemon opts
+
+    nextWait <- waitFiles waiter
+    aDaemon <- startAmpersandDaemon
 
     when (null . loadResults $ aDaemon) $ do
         exitWith NoFilesToWatch 
 
-    project <- takeFileName <$> getCurrentDirectory
+    project <- takeFileName <$> (liftIO $ getCurrentDirectory)
 
     -- fire, given a waiter, the messages/loaded
-    let fire :: ([FilePath] -> IO [String]) -> DaemonState -> IO Continue
+    let fire :: (HasHandles env, HasVerbosity env) =>
+                ([FilePath] -> RIO env [String]) -> DaemonState -> RIO env Continue
         fire nextWait' ad = do
-            currTime <- getShortTime
+            currTime <- liftIO $ getShortTime
             let no_title = False
             let loadedCount = length (loaded ad)
             verboseLn $ "%MESSAGES: " ++ (show . messages $ ad)
@@ -135,7 +139,7 @@ runAmpersand opts@Options{..} waiter termSize termOutput = do
             let (countErrors, countWarnings) = both sum $ L.unzip
                     [if loadSeverity == Error then (1::Int,0::Int) else (0,1) | Message{..} <- messages ad, loadMessage /= []]
 
-            unless no_title $ setWindowIcon $
+            liftIO $ unless no_title $ setWindowIcon $
                 if countErrors > 0 then IconError else if countWarnings > 0 then IconWarning else IconOK
 
             let updateTitle extra = unless no_title $ setTitle $ unescape $
@@ -144,24 +148,24 @@ runAmpersand opts@Options{..} waiter termSize termOutput = do
                        (if countErrors >  0 && countWarnings >  0 then ", " else "") ++ f countWarnings "warning") ++
                        " " ++ extra ++ [' ' | extra /= ""] ++ "- " ++ project
 
-            updateTitle ""
+            liftIO $ updateTitle ""
 
             -- order and restrict the messages
             -- nubOrdOn loadMessage because module cycles generate the same message at several different locations
             ordMessages <- do
                 let (msgError, msgWarn) = L.partition ((==) Error . loadSeverity) $ nubOrdOn loadMessage $ messages ad
                 -- sort error messages by modtime, so newer edits cause the errors to float to the top - see #153
-                errTimes <- sequence [(x,) <$> getModTime x | x <- nubOrd $ map loadFile msgError]
+                errTimes <- liftIO $ sequence [(x,) <$> getModTime x | x <- nubOrd $ map loadFile msgError]
                 let f x = lookup (loadFile x) errTimes
                 return $ L.sortOn (Down . f) msgError ++ msgWarn
 
-            outputFill currTime (Just (loadedCount, ordMessages)) []
+            liftIO $ outputFill currTime (Just (loadedCount, ordMessages)) []
             when (null . loadResults $ ad) $ exitWith NoFilesToWatch
             
             reason <- nextWait' . L.nub $ loaded ad ++ (map loadFile . loads $ ad)
             verboseLn $ "%RELOADING: " ++ unwords reason
             return Continue
-    fire nextWait aDaemon
+    runRIO app $ fire nextWait aDaemon
 
 -- | Given an available height, and a set of messages to display, show them as best you can.
 prettyOutput :: String -> Int -> [Load] -> [String]
@@ -229,3 +233,29 @@ balance (T R a x (T R b y c)) z d = T R (T B a x b) y (T B c z d)
 balance a x (T R b y (T R c z d)) = T R (T B a x b) y (T B c z d)
 balance a x (T R (T R b y c) z d) = T R (T B a x b) y (T B c z d)
 balance a x b = T B a x b
+
+
+-- Copied from 
+
+-- | Set the current directory, perform an operation, then change back.
+--   Remember that the current directory is a global variable, so calling this function
+--   multithreaded is almost certain to go wrong. Avoid changing the current directory if you can.
+--
+-- > withTempDir $ \dir -> do writeFile (dir </> "foo.txt") ""; withCurrentDirectory dir $ doesFileExist "foo.txt"
+withCurrentDirectory :: FilePath -> RIO env a -> RIO env a
+withCurrentDirectory dir act =
+    bracket' getCurrentDirectory setCurrentDirectory $ const ( do
+        liftIO $ setCurrentDirectory dir
+        act)
+  where 
+    bracket'
+            :: IO a         -- ^ computation to run first (\"acquire resource\")
+            -> (a -> IO b)  -- ^ computation to run last (\"release resource\")
+            -> (a -> RIO env c)  -- ^ computation to run in-between
+            -> RIO env c         -- returns the value from the in-between computation
+    bracket' before after thing =
+        mask $ \restore -> do
+            a <- liftIO before
+            r <- restore (thing a) `onException` (liftIO $ after a)
+            _ <- liftIO $ after a
+            return r

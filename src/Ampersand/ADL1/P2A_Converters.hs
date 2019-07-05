@@ -26,7 +26,7 @@ import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map as Map
 import qualified RIO.Set as Set
-import           Data.Text (pack)
+import qualified RIO.Text as T
 
 pConcToType :: P_Concept -> Type
 pConcToType P_Singleton = BuiltIn TypeOfOne
@@ -1052,7 +1052,7 @@ pDecl2aDecl ::
 pDecl2aDecl env defLanguage defFormat pd
  = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
        dcl = Relation
-                 { decnm   = pack (dec_nm pd)
+                 { decnm   = T.pack (dec_nm pd)
                  , decsgn  = decSign
                  , decprps = dec_prps pd
                  , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.

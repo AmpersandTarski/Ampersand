@@ -1,14 +1,5 @@
-module Main (main) where
-
-import Ampersand
-import System.Environment
-import Ampersand.Input.PreProcessor
-import qualified RIO.Set as Set
+module Main(main) where
+import MainApps
 
 main :: IO ()
-main =
-  do
-    filename:defs <- getArgs;
-    input       <- readUTF8File filename
-    inputString <- return $ either id id input
-    putStr $ either show id (preProcess' filename (Set.fromList defs) inputString) ++ "\n"
+main = preProcessor

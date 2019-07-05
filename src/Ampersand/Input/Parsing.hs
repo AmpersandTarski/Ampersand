@@ -24,31 +24,36 @@ import           Ampersand.Misc
 import           RIO.Char(toLower)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           Text.Parsec.Prim (runP)
 
 -- | Parse an Ampersand file and all transitive includes
-parseADL :: Options                    -- ^ The options given through the command line
-         -> FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
-         -> IO ([ParseCandidate], Guarded P_Context)     -- ^ The resulting context
-parseADL opts@Options{..} fp = do 
-    curDir <- getCurrentDirectory
-    canonical <- canonicalizePath fp
-    parseThing' opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
+parseADL :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+            FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
+         -> RIO env ([ParseCandidate], Guarded P_Context)     -- ^ The resulting context
+parseADL fp = do 
+    curDir <- liftIO getCurrentDirectory
+    canonical <- liftIO $ canonicalizePath fp
+    parseThing' (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
 
-parseMeta :: Options -> IO (Guarded P_Context)
-parseMeta opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
+parseMeta :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+             RIO env (Guarded P_Context)
+parseMeta = parseThing (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
 
-parseSystemContext :: Options -> IO (Guarded P_Context)
-parseSystemContext opts@Options{..} = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
+parseSystemContext :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+                      RIO env (Guarded P_Context)
+parseSystemContext = parseThing (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
 
-parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context)
-parseThing opts pc = snd <$> parseThing' opts pc 
+parseThing :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+              ParseCandidate -> RIO env (Guarded P_Context)
+parseThing pc = snd <$> parseThing' pc 
 
-parseThing' :: Options -> ParseCandidate -> IO ([ParseCandidate], Guarded P_Context) 
-parseThing' opts@Options{..} pc = do
-  results <- parseADLs opts [] [pc]
+parseThing' :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+               ParseCandidate -> RIO env ([ParseCandidate], Guarded P_Context) 
+parseThing' pc = do
+  results <- parseADLs [] [pc]
   case results of 
      Errors err    -> return ([pc], Errors err)
      Checked xs ws -> return ( candidates
@@ -60,18 +65,19 @@ parseThing' opts@Options{..} pc = do
                           h:tl -> foldr mergeContexts h tl
 
 -- | Parses several ADL files
-parseADLs :: Options                  -- ^ The options given through the command line
-          -> [ParseCandidate]         -- ^ The list of files that have already been parsed
+parseADLs :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+             [ParseCandidate]         -- ^ The list of files that have already been parsed
           -> [ParseCandidate]         -- ^ A list of files that still are to be parsed.
-          -> IO (Guarded [(ParseCandidate, P_Context)]) -- ^ The resulting contexts and the ParseCandidate that is the source for that P_Context
-parseADLs opts@Options{..} parsedFilePaths fpIncludes =
+          -> RIO env (Guarded [(ParseCandidate, P_Context)]) -- ^ The resulting contexts and the ParseCandidate that is the source for that P_Context
+parseADLs parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ pure []
     x:xs -> if x `elem` parsedFilePaths
-            then parseADLs opts parsedFilePaths xs
-            else whenCheckedIO (parseSingleADL opts x) parseTheRest
-        where parseTheRest :: (P_Context, [ParseCandidate]) -> IO (Guarded [(ParseCandidate, P_Context)])
-              parseTheRest (ctx, includes) = whenCheckedIO (parseADLs opts (x:parsedFilePaths) (includes++xs)) $
+            then parseADLs parsedFilePaths xs
+            else whenCheckedM (parseSingleADL x) parseTheRest
+        where parseTheRest :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+                              (P_Context, [ParseCandidate]) -> RIO env (Guarded [(ParseCandidate, P_Context)])
+              parseTheRest (ctx, includes) = whenCheckedM (parseADLs (x:parsedFilePaths) (includes++xs)) $
                                                   return . pure . (:) (x,ctx) 
 
 data ParseCandidate = ParseCandidate 
@@ -87,24 +93,24 @@ instance Eq ParseCandidate where
 
 
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
-parseSingleADL ::
-    Options
- -> ParseCandidate -> IO (Guarded (P_Context, [ParseCandidate]))
-parseSingleADL opts@Options{..} pc
+parseSingleADL :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+    ParseCandidate -> RIO env (Guarded (P_Context, [ParseCandidate]))
+parseSingleADL pc
  = do verboseLn $ "Reading file " ++ filePath 
                     ++ (case pcFileKind pc of
                          Just _ -> " (from within ampersand.exe)"
                          Nothing -> mempty)
-      exists <- doesFileExist filePath
+      exists <- liftIO $ doesFileExist filePath
       if isJust (pcFileKind pc) || exists
       then parseSingleADL'
-      else return $ mkErrorReadingINCLUDE (pcOrigin pc) filePath "File does not exist."
+      else return $ mkErrorReadingINCLUDE (pcOrigin pc) [ "While looking for "<>filePath
+                                                        , "   File does not exist." ]
     where
      filePath = pcCanonical pc
-     parseSingleADL' :: IO(Guarded (P_Context, [ParseCandidate]))
+     parseSingleADL' :: (HasVerbosity env,HasHandles env,HasOptions env) => RIO env (Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
          | extension == ".xlsx" =
-             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts (pcFileKind pc) filePath
+             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
                 }
          | otherwise =
@@ -112,31 +118,39 @@ parseSingleADL opts@Options{..} pc
                     <- case pcFileKind pc of
                        Just fileKind
                          -> case getStaticFileContent fileKind filePath of
-                              Just cont -> return (Right $ stripBom cont)
+                              Just cont -> return (Right . T.pack $ stripBom cont)
                               Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++filePath++"`.")
                        Nothing
                          -> readUTF8File filePath
                 ; case mFileContents of
-                    Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) filePath err
+                    Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
                     Right fileContents ->
-                         whenCheckedIO
-                           (return $ parseCtx filePath =<< (preProcess filePath (pcDefineds pc) fileContents))
-                           $ \(ctxts, includes) ->
-                                 do parseCandidates <- mapM include2ParseCandidate includes
-                                    return . pure $ (ctxts, parseCandidates)
+                         let -- TODO: This should be cleaned up. Probably better to do all the file reading
+                             --       first, then parsing and typechecking of each module, building a tree P_Contexts
+                             meat :: Guarded (P_Context, [Include])
+                             meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= parseCtx filePath
+                             proces :: Guarded (P_Context,[Include]) -> RIO env (Guarded (P_Context, [ParseCandidate]))
+                             proces (Errors err) = pure (Errors err)
+                             proces (Checked (ctxts, includes) ws) = 
+                                addWarnings ws <$> foo <$> mapM include2ParseCandidate includes
+                              where
+                                foo :: [Guarded ParseCandidate] -> (Guarded (P_Context, [ParseCandidate]))
+                                foo xs = (\x -> (ctxts,x)) <$> sequence xs
+                         in
+                         proces meat
                 }
          where 
-               include2ParseCandidate :: Include -> IO ParseCandidate
+               include2ParseCandidate :: Include -> RIO env (Guarded ParseCandidate)
                include2ParseCandidate (Include org str defs) = do
                   let canonical = myNormalise ( takeDirectory filePath </> str )
                       defineds  = processFlags (pcDefineds pc) defs
-                  return ParseCandidate { pcBasePath  = Just filePath
+                  return $ Checked ParseCandidate { pcBasePath  = Just filePath
                                         , pcOrigin    = Just org
                                         , pcFilePath  = str
                                         , pcFileKind  = pcFileKind pc
                                         , pcCanonical = canonical
                                         , pcDefineds  = defineds
-                                        }
+                                        } []
                myNormalise :: FilePath -> FilePath 
                -- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why System.Filepath doesn't support reduction of x/foo/../bar into x/bar. 
                -- However, for most Ampersand use cases, we will not deal with symlinks. 
@@ -163,9 +177,9 @@ parseSingleADL opts@Options{..} pc
                stripBom ('\239':'\187':'\191': s) = s
                stripBom s = s
                extension = map toLower $ takeExtension filePath
-               catchInvalidXlsx :: IO a -> IO a
+               catchInvalidXlsx :: RIO env a -> RIO env a
                catchInvalidXlsx m = catch m f
-                 where f :: SomeException -> IO a
+                 where f :: SomeException -> RIO env a
                        f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "++show exception)
 
 -- | To enable roundtrip testing, all data can be exported.

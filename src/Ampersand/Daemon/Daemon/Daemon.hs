@@ -1,73 +1,73 @@
 {-# LANGUAGE RecordWildCards #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 -- | Library for spawning and working with Ghci sessions.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Daemon.Daemon.Daemon(
     DaemonState(loadResults),
-    Severity,
-    Load,
     loads,
     messages,
     loaded,
     startAmpersandDaemon
     ) where
 
-import System.IO.Extra(readFile)
-import Data.Function
-import Data.List.Extra(nub)
-import System.Directory.Extra(getCurrentDirectory,makeAbsolute,doesFileExist)
-import System.FilePath
-import Ampersand.Daemon.Daemon.Parser
-import Ampersand.Daemon.Daemon.Types as T
-import Ampersand.Basics hiding (putStrLn)
-import Ampersand.Misc
-
+import           Ampersand.Basics
+import           Ampersand.Daemon.Daemon.Parser
+import           Ampersand.Daemon.Daemon.Types
+import           Ampersand.Misc
+import qualified RIO.List as L
+import qualified RIO.Text as T
+import           System.Directory
+import           System.FilePath
 
 messages :: DaemonState -> [Load]
 messages = filter isMessage . loads
 loaded :: DaemonState -> [FilePath]
 loaded = loadResults
 data DaemonState = DaemonState
-   { loads :: [Load]
-   , loadResults :: [FilePath]
-   }
+    { loads :: [Load]
+    , loadResults :: [FilePath]
+    }
 instance Show DaemonState where
   show x
    = "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
 
 startAmpersandDaemon 
-     :: Options  -- Ampersand options
-     -> IO DaemonState
-startAmpersandDaemon opts = do
-    state <- do 
-       init <- initialState opts
-       case init of
-         Left msg -> exitWith . NoConfigurationFile $ msg
-         Right s -> pure s  
-    
-    return state
+     :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+        RIO env DaemonState
+startAmpersandDaemon = do
+    init <- initialState
+    case init of
+        Left msg -> exitWith . NoConfigurationFile $ msg
+        Right s -> pure s  
 
-initialState :: Options -> IO (Either [String] DaemonState)
-initialState opts = do
-   curDir <- getCurrentDirectory
-   dotAmpersand <- makeAbsolute $ curDir </> daemonConfig opts
-   exists <- doesFileExist dotAmpersand
-   if exists 
-   then do
-      content <- readFile dotAmpersand
-      let files = filter (\fn -> length fn > 0) --discard empty lines
-                . nub                           --discard doubles
-                . lines $ content
+initialState :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+                RIO env (Either [String] DaemonState)
+initialState = do
+    env <- ask
+    let opts = getOptions env
+    curDir <- liftIO $ getCurrentDirectory
+    dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig opts
+    exists <- liftIO $ doesFileExist dotAmpersand
+    if exists 
+    then do
+      content <- readFileUtf8 dotAmpersand
+      let files = map T.unpack
+                . filter (\fn -> T.length fn > 0  --discard empty lines
+                               && (not $ "#"  `T.isPrefixOf` fn)  -- line commented out yaml style
+                               && (not $ "--" `T.isPrefixOf` fn)  -- line commented out haskellish style
+                         )
+                . L.nub                           --discard doubles
+                . T.lines $ content
       (ls,loadedFiles) <- do
-           xs <- mapM (parseProject opts) files
-           return ( nub . concatMap fst $ xs
-                  , nub . concatMap snd $ xs
+           xs <- mapM parseProject files
+           return ( L.nub . concatMap fst $ xs
+                  , L.nub . concatMap snd $ xs
                   )
       return $ Right DaemonState
         { loads = ls
-        , loadResults = nub $ [dotAmpersand] ++ loadedFiles
+        , loadResults = L.nub $ [dotAmpersand] ++ loadedFiles
         }
-   else return . Left $ 
+    else return . Left $ 
       [ "File not found: "++dotAmpersand
       , "  Your workspace should contain a file called .ampersand. However,"
       , "  it could not be found. Please provide that file, containing the "

@@ -9,7 +9,7 @@ import Ampersand.Basics
 import GHC.Generics (Generic)
 import Data.Hashable
 import Codec.Xlsx.Types
-import qualified Data.Text as T
+import qualified RIO.Text as T
 
 -- | The line number
 type Line = Int

@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
 module Main 
 where
-import qualified Codec.Compression.GZip as GZip
+import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive.Zip from package zip-archive. This reduces the amount of packages. (We now use two for zipping/unzipping)
 import           Control.Exception
-import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Data.ByteString.Lazy.Char8 as BLC
 import           RIO.Char
 import           Data.Either
 import qualified RIO.List as L
@@ -191,9 +191,9 @@ readStaticFiles fkind base fileOrDirPth =
            }
        else
         do { timeStamp <- getModificationTime path
-           ; fileContents <- BS.readFile path
+           ; fileContents <- BLC.readFile path
            ; return [ "SF "++show fkind++" "++show fileOrDirPth++" "++utcToEpochTime timeStamp ++
-                             " {-"++show timeStamp++" -} (BS.unpack$ GZip.decompress "++show (GZip.compress fileContents)++")"
+                             " {-"++show timeStamp++" -} (BLC.unpack$ GZip.decompress "++show (GZip.compress fileContents)++")"
                     ]
            }
      }
@@ -217,7 +217,7 @@ staticFileModuleHeader =
   , "   )"
   , "where"
   , "import Ampersand.Basics"
-  , "import qualified Data.ByteString.Lazy.Char8 as BS"
+  , "import qualified Data.ByteString.Lazy.Char8 as BLC"
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"
   , ""

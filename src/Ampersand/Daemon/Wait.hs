@@ -12,7 +12,6 @@ module Ampersand.Daemon.Wait(
 
 import           Ampersand.Basics
 import           Ampersand.Daemon.Daemon.Util
-import           Ampersand.Misc
 import           Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
 import           Control.Monad.Extra(partitionM,concatMapM,ifM,firstJustM)
 import qualified Data.Map as Map
@@ -30,10 +29,13 @@ data Waiter = WaiterPoll Seconds
 withWaiterPoll :: Seconds -> (Waiter -> IO a) -> IO a
 withWaiterPoll x f = f $ WaiterPoll x
 
-withWaiterNotify :: (Waiter -> IO a) -> IO a
-withWaiterNotify f = withManagerConf defaultConfig{confDebounce=NoDebounce} $ \manager -> do
-    mvar <- newEmptyMVar
-    var <- newVar Map.empty
+withWaiterNotify :: env -> (Waiter -> IO a) -> RIO env a
+withWaiterNotify env f = 
+    runRIO env $ do liftIO (withWaiterNotify' f)
+withWaiterNotify' :: (Waiter -> IO a) -> IO a
+withWaiterNotify' f = withManagerConf defaultConfig{confDebounce=NoDebounce} $ \manager -> do
+    mvar <- liftIO newEmptyMVar
+    var <- liftIO $ newVar Map.empty
     f $ WaiterNotify manager mvar var
 
 -- `listContentsInside test dir` will list files and directories inside `dir`,
@@ -57,44 +59,50 @@ listContentsInside test dir = do
 --   starting from when 'waitFiles' was initially called.
 --
 --   Returns a message about why you are continuing (usually a file name).
-waitFiles :: Options -> Waiter -> IO ([FilePath] -> IO [String])
-waitFiles Options{..} waiter = do
-    base <- getCurrentTime
-    return $ \files -> handle (\(e :: IOException) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
+waitFiles :: (HasHandles env, HasVerbosity env) => 
+             Waiter -> RIO env ([FilePath] -> RIO env [String])
+waitFiles waiter = do
+    base <- liftIO getCurrentTime
+    return $ \files -> do -- handle (\(e :: IOException) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
         verboseLn $ "%WAITING: " ++ unwords files
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
         -- will pick up new files, as creating a new file changes the containing directory's modtime.
-        files' <- fmap concat $ forM files $ \file ->
+        files' <- liftIO $ fmap concat $ forM files $ \file ->
             ifM (doesDirectoryExist file) (listContentsInside (return . not . L.isPrefixOf "." . takeFileName) file) (return [file])
         case waiter of
-            WaiterPoll _ -> return ()
+            WaiterPoll _ -> pure ()
             WaiterNotify manager kick mp -> do
-                dirs <- fmap Set.fromList $ mapM canonicalizePathSafe $ nubOrd $ map takeDirectory files'
-                modifyVar_ mp $ \mp' -> do
-                    let (keep,del) = Map.partitionWithKey (\k _ -> k `Set.member` dirs) mp'
-                    sequence_ $ Map.elems del
+                dirs <- liftIO $ fmap Set.fromList $ mapM canonicalizePathSafe $ nubOrd $ map takeDirectory files'
+                env <- ask
+                liftIO $ modifyVar_ mp $ \mp' -> do
+                    let keep, del :: Map FilePath StopListening
+                        (keep,del) = Map.partitionWithKey (\k _ -> k `Set.member` dirs) mp'
+                    liftIO $ sequence_ $ Map.elems del
                     new <- forM (Set.toList $ dirs `Set.difference` Map.keysSet keep) $ \dir -> do
-                        can <- watchDir manager (fromString dir) (const True) $ \event -> do
-                            verboseLn $ "%NOTIFY: " ++ show event
+                        can <- liftIO $ watchDir manager (fromString dir) (const True) $ \event -> do
+                            runRIO env $ verboseLn $ "%NOTIFY: " ++ show event
                             void $ tryPutMVar kick ()
                         return (dir, can)
-                    let mp2 = keep `Map.union` Map.fromList new
-                    verboseLn $ "%WAITING: " ++ unwords (Map.keys mp2)
+                    let mp2 :: Map FilePath StopListening
+                        mp2 = keep `Map.union` Map.fromList new
+                    runRIO env $ verboseLn $ "%WAITING: " ++ unwords (Map.keys mp2)
                     return mp2
                 void $ tryTakeMVar kick
-        new <- mapM getModTime files'
+        new <- liftIO $ mapM getModTime files'
         case [x | (x,Just t) <- zip files' new, t > base] of
             [] -> recheck files' new
             xs -> return xs
     where
+        recheck :: (HasHandles env, HasVerbosity env) => 
+                   [FilePath] -> [Maybe UTCTime] -> RIO env [FilePath]
         recheck files old = do
-            sleep 0.1
+            liftIO $ sleep 0.1
             case waiter of
-                WaiterPoll t -> sleep $ max 0 $ t - 0.1 -- subtract the initial 0.1 sleep from above
+                WaiterPoll t -> liftIO $ sleep $ max 0 $ t - 0.1 -- subtract the initial 0.1 sleep from above
                 WaiterNotify _ kick _ -> do
                     takeMVar kick
                     verboseLn "%WAITING: Notify signaled"
-            new <- mapM getModTime files
+            new <- liftIO $ mapM getModTime files
             case [x | (x,t1,t2) <- L.zip3 files old new, t1 /= t2] of
                 [] -> recheck files new
                 xs -> do
@@ -106,11 +114,12 @@ waitFiles Options{..} waiter = do
                         verboseLn $ "%WAITING: Waiting max of 1s due to file removal, " ++ unwords disappeared
                         -- at most 20 iterations, but stop as soon as the file returns
                         void $ flip firstJustM (replicate 20 ()) $ \_ -> do
-                            sleep 0.05
-                            new' <- mapM getModTime files
+                            liftIO $ sleep 0.05
+                            new' <- liftIO $ mapM getModTime files
                             return $ if null [x | (x, Just _, Nothing) <- L.zip3 files old new'] then Just () else Nothing
                     return xs
 
 
 canonicalizePathSafe :: FilePath -> IO FilePath
 canonicalizePathSafe x = canonicalizePath x `catch` \(_ :: IOException) -> return x
+

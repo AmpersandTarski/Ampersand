@@ -38,7 +38,7 @@ import           Data.Function (on)
 import           Data.Hashable
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
-import           Data.Text (Text,unpack)
+import qualified RIO.Text as T 
 import qualified RIO.List as L
 import           Text.Pandoc.Builder (Blocks)
 
@@ -194,7 +194,7 @@ instance ConceptStructure FSpec where
 data FSid = FS_id String     -- Identifiers in Ampersand contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
 instance Named FSpec where
-  name = unpack . fsName
+  name = T.unpack . fsName
 
 instance Named FSid where
   name (FS_id nm) = nm
@@ -365,7 +365,7 @@ substituteReferenceObjectDef fSpec originalObjectDef =
       case objmsub originalObjectDef of
         Just InterfaceRef{ siIsLink=False
                           , siIfcId=interfaceId} 
-          -> let ifc = ifcObj (lookupInterface interfaceId)
+          -> let ifc = substituteReferenceObjectDef fSpec (ifcObj (lookupInterface interfaceId))
               in Just (objExpression originalObjectDef .:. objExpression ifc, objcrud ifc)
         _ -> Nothing
     lookupInterface :: String -> Interface

@@ -16,13 +16,13 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.FSpecAux
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
-import qualified Data.Text as Text
+import qualified RIO.Text as T
 import           Language.SQL.SimpleSQL.Pretty
 import           Language.SQL.SimpleSQL.Syntax
 import           RIO.List (intercalate,nub,partition,(\\),lastMaybe,maximumMaybe)
-data SqlQuery = SqlQueryPlain  Text.Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
-              | SqlQueryPretty [Text.Text] -- Human readable, neatly prettyprinted
-              | SqlQuerySimple Text.Text -- Simple sql statement, could be both plain and pretty.
+data SqlQuery = SqlQueryPlain  T.Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
+              | SqlQueryPretty [T.Text] -- Human readable, neatly prettyprinted
+              | SqlQuerySimple T.Text -- Simple sql statement, could be both plain and pretty.
 placeHolderSQL :: String
 placeHolderSQL = "_SRCATOM"
 
@@ -68,8 +68,8 @@ class SQLAble a where
   doPretty :: (FSpec -> a -> BinQueryExpr) -> Int -> FSpec -> a -> SqlQuery
   doPretty fun i fSpec
     =  SqlQueryPretty 
-     . Text.lines
-     . Text.pack
+     . T.lines
+     . T.pack
      . intercalate ("\n"++replicate i ' ') 
      . lines
      . prettyQueryExpr theDialect

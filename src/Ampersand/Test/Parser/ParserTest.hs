@@ -13,21 +13,24 @@ import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
 
 -- Tries to parse all the given files
-parseScripts :: Options -> [FilePath] -> IO Bool
-parseScripts _ [] = return True
-parseScripts opts (f:fs) =
-     do parsed <- snd <$> parseADL opts f
+parseScripts :: (HasOptions env, HasHandles env, HasVerbosity env) => 
+                [FilePath] ->  RIO env Bool
+parseScripts paths =
+  case paths of
+    [] -> return True
+    (f:fs) -> do
+        parsed <- snd <$> parseADL f
         case parsed of
             Checked _ ws -> do
                 putStrLn ("Parsed: " ++ f)
                 mapM_  putStrLn . concatMap (lines . show) $ ws
-                parseScripts opts fs
+                parseScripts fs
             Errors  e -> do 
                 putStrLn ("Cannot parse: " ++ f)
                 showErrors (NEL.toList e)
                 return False
 
-showErrors :: [CtxError] -> IO ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
+showErrors :: (HasHandles env) => [CtxError] ->  RIO env ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
 showErrors = mapM_ $ mapM_ putStrLn . lines . show
 
 parse :: FilePath -> String -> Guarded P_Context

@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.17.1
+version:        3.17.2
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of enterprise information systems.
@@ -38,7 +38,6 @@ dependencies:
       - ansi-terminal == 0.8.*
       - base == 4.12.*
       - bytestring == 0.10.*
-      - cmdargs == 0.10.*
       - conduit == 1.3.*
       - containers == 0.6.*
       - data-default == 0.7.*
@@ -51,7 +50,6 @@ dependencies:
       - HStringTemplate == 0.8.*
       - http-conduit == 2.3.*
       - lens == 4.17.*
-      - MissingH == 1.4.*
       - mtl == 2.2.*
       - pandoc == 2.5
       - pandoc-crossref == 0.3.4.0
@@ -66,7 +64,6 @@ dependencies:
       - terminal-size == 0.3.*
       - text == 1.2.*
       - time == 1.8.*
-      - utf8-string == 1.0.*
       - wl-pprint == 1.2.* 
       - xlsx == 0.7.*
       - yaml == 0.11.*
@@ -185,6 +182,7 @@ library:
       - Ampersand.Test.Regression
 #      - Ampersand.Test.RunAmpersand
       - Ampersand.Test.TestScripts
+      - MainApps
   generated-exposed-modules:
       - Ampersand.Basics.BuildInfo_Generated
       - Ampersand.Prototype.StaticFiles_Generated

@@ -26,19 +26,22 @@ import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import           Data.Aeson hiding (Options)
 import qualified Data.Aeson.Types as AT 
 import           Data.Aeson.Encode.Pretty
-import qualified Data.ByteString.Lazy as BS
+import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.List as L
 import           GHC.Generics
 import           System.FilePath
 import           System.Directory
 
-writeJSONFile :: ToJSON a => Options -> FilePath -> a -> IO()
-writeJSONFile opts@Options{..} fName x 
-  = do verboseLn ("  Generating "++file) 
-       createDirectoryIfMissing True (takeDirectory fullFile)
-       BS.writeFile fullFile (encodePretty x)
+writeJSONFile :: (ToJSON a, HasOptions env, HasHandles env, HasVerbosity env) => 
+                 FilePath -> a -> RIO env ()
+writeJSONFile fName x = do
+    env <- ask
+    let fullFile = getGenericsDir (getOptions env) </> file
+    verboseLn ("  Generating "++file) 
+    liftIO $ createDirectoryIfMissing True (takeDirectory fullFile)
+    liftIO $ BL.writeFile fullFile (encodePretty x)
   where file = fName <.> "json"
-        fullFile = getGenericsDir opts </> file
+        
 
 -- We use aeson to generate .json in a simple and efficient way.
 -- For details, see http://hackage.haskell.org/package/aeson/docs/Data-Aeson.html#t:ToJSON

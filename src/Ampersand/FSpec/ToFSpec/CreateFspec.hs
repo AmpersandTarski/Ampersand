@@ -36,25 +36,26 @@ import           System.FilePath
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createMulti.
-createMulti :: Options  -- ^The options derived from the command line
-            -> IO(Guarded MultiFSpecs)
-createMulti opts@Options{..} =
-  do fAmpP_Ctx :: Guarded P_Context <-  -- fAmpP_Ctx is a P_Context that contains the formalAmpersand metamodel
+createMulti :: (HasOptions env, HasHandles env, HasVerbosity env) => 
+               RIO env (Guarded MultiFSpecs)
+createMulti =
+  do env <- ask
+     let opts@Options{..} = getOptions env
+     fAmpP_Ctx :: Guarded P_Context <-
         if genMetaFile ||
            genRapPopulationOnly ||
            addSemanticMetamodel
-        then parseMeta opts 
+        then parseMeta  -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
 
     -- userP_Ctx contains the user-specified context from the user's Ampersand source code
      userP_Ctx :: Guarded P_Context <- 
         case fileName of
-          Just x -> snd <$> parseADL opts x -- the P_Context of the user's sourceFile
+          Just x -> snd <$> parseADL x -- the P_Context of the user's sourceFile
           Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     
-    -- systemP_Ctx contains the metamodel of sessions, which is needed to generate protoypes.
-     systemP_Ctx:: Guarded P_Context <- parseSystemContext opts
+     systemP_Ctx:: Guarded P_Context <- parseSystemContext
 
      let fAmpModel :: MetaFSpec
          fAmpModel = MetaFSpec
@@ -113,7 +114,7 @@ createMulti opts@Options{..} =
          userGFSpec :: Guarded FSpec
          userGFSpec = 
             pCtx2Fspec opts $ 
-              if useSystemContext
+              if useSystemContext opts
               then mergeContexts <$> userPlus
                                  <*> (grind opts sysCModel <$> pCtx2Fspec opts userPlus) -- grinds the session information out of the user's script
               else userP_Ctx
@@ -140,14 +141,16 @@ createMulti opts@Options{..} =
             else return $ pure ()
      return (res >> result)
   where
-    useSystemContext :: Bool
+    useSystemContext :: Options -> Bool
     useSystemContext = genPrototype
-    writeMetaFile :: MetaFSpec -> Guarded FSpec -> IO (Guarded ())
-    writeMetaFile metaModel userSpec = 
+    writeMetaFile :: (HasOptions env , HasVerbosity env, HasHandles env) => MetaFSpec -> Guarded FSpec -> RIO env (Guarded ())
+    writeMetaFile metaModel userSpec = do
+       env <- ask
+       let opts@Options{..} = getOptions env
        case makeMetaFile opts metaModel <$> userSpec of
         Checked (filePath,metaContents) ws -> 
                   do verboseLn $ "Generating meta file in path "++dirOutput
-                     writeFile (dirOutput </> filePath) metaContents      
+                     liftIO $ writeFile (dirOutput </> filePath) metaContents      
                      verboseLn $ "\"" ++ filePath ++ "\" written"
                      return $ Checked () ws
         Errors err -> return (Errors err)
