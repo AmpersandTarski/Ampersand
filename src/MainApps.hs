@@ -4,7 +4,8 @@ module MainApps(
   , ampersand
   , preProcessor
   , mainTest
-  , regressionTest 
+  , regressionTest
+  , defEnv 
 ) where
 
 import           Ampersand
