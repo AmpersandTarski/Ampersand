@@ -114,9 +114,8 @@ defaultWriterVariables Options{..} fSpec
 --         The IO() creates the actual output
 writepandoc :: FSpec -> Pandoc -> RIO App ()
 writepandoc fSpec thePandoc = do
-  env <- ask
-  let opts@Options{..} = getOptions env
-  verboseLn ("Generating "++fSpecFormatString opts ++" to : "++outputFile opts)
+  opts@Options{..} <- view optionsL
+  sayWhenLoudLn ("Generating "++fSpecFormatString opts ++" to : "++outputFile opts)
   liftIO $ writepandoc' opts fSpec thePandoc
  where
     fSpecFormatString :: Options -> String 
@@ -188,7 +187,7 @@ writepandoc' opts@Options{..} fSpec thePandoc = liftIO . runIOorExplode $ do
                       , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath
-                    --  , writerVerbose=verboseP
+                    --  , writerVerbose=optVerbosity
                       }
       where 
         template :: Maybe T.Text

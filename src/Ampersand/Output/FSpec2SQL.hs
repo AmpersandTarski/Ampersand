@@ -19,9 +19,8 @@ import           System.FilePath
 
 generateDatabaseFile :: MultiFSpecs -> RIO App ()
 generateDatabaseFile multi = 
-   do env <- ask
-      let opts@Options{..} = getOptions env
-      verboseLn $ "  Generating "++file
+   do opts@Options{..} <- view optionsL
+      sayWhenLoudLn $ "  Generating "++file
       liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile opts))
       liftIO $ writeFile (fullFile opts) content
   where 
