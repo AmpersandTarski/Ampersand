@@ -10,9 +10,9 @@ CONTEXT PrototypeFramework IN ENGLISH
 
     INTERFACE "Edit interface" FOR Administrator : I[PF_Interface] BOX
         [ "Interface"           : I
-        , "Is public"           : isPublic      cRud -- do not allow editing, access control of interfaces is not dynamic (yet)
+        , "Is public"           : isPublic      cRUd -- do not allow editing, access control of interfaces is not dynamic (yet)
         , "Is API"              : isAPI         cRud -- do not allow editing this property, because non-APIs require a design time generated UI
-        , "For roles"           : pf_ifcRoles   cRud -- do not allow editing, access control of interfaces is not dynamic (yet)
+        , "For roles"           : pf_ifcRoles   cRUd -- do not allow editing, access control of interfaces is not dynamic (yet)
         ]
 
 ENDCONTEXT
