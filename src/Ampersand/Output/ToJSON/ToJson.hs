@@ -15,8 +15,7 @@ import Ampersand.Output.ToJSON.Roles
 
 generateJSONfiles :: MultiFSpecs -> RIO App ()
 generateJSONfiles multi = do
- env <- ask
- let opts@Options{..} = getOptions env
+ opts@Options{..} <- view optionsL
  sequence_ $
   if genRapPopulationOnly
   then [ writeJSONFile "metaPopulation" 

@@ -1,58 +1,53 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.Prelude
   ( module Prelude
   , module RIO
-  , putStr, putStrLn
-  , verbose, verboseLn
+  , say, sayLn
+  , sayWhenLoud, sayWhenLoudLn
   , writeFile
   , readUTF8File
   , zipWith
   , openTempFile
-  , HasHandles(..)
+  , HasHandle(..)
   , HasVerbosity(..), Verbosity (..)
   )where
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import RIO
 import System.IO (openTempFile,hPutStr,hPutStrLn, stderr)
 import qualified RIO.Text as T
--- import Debug.Trace
--- import Prelude hiding ( 
---                    getContents
---                  , putStr
---                  , putStrLn
---                  , readFile
---                  , writeFile
---                       )
 
-class HasHandles env where
-  getHandle :: env -> Handle
-instance HasHandles Handle where
-  getHandle = id  
+class HasHandle env where
+  handleL :: Lens' env Handle
+instance HasHandle Handle where
+  handleL = id  
 
-data Verbosity = Loud | Silent deriving Eq
+data Verbosity = Loud | Silent deriving (Eq, Data)
 class HasVerbosity env where
- getVerbosity :: env -> Verbosity  
+  verbosityL :: Lens' env Verbosity  
+
 -- Functions to be upgraded later on:
-putStrLn :: HasHandles env => String -> RIO env ()
-putStrLn msg = do
-  env <- ask
-  liftIO $ hPutStrLn (getHandle env) msg
-putStr :: HasHandles env => String -> RIO env ()
-putStr msg = do 
-  env <- ask
-  liftIO $ hPutStr (getHandle env) msg
-verbose :: (HasHandles env, HasVerbosity env) => String -> RIO env ()
-verbose msg = do
-  env <- ask
-  case getVerbosity env of
-    Loud   -> putStr msg
+sayLn :: HasHandle env => String -> RIO env ()
+sayLn msg = do
+  h <- view handleL
+  liftIO $ hPutStrLn h msg
+say :: HasHandle env => String -> RIO env ()
+say msg = do 
+  h <- view handleL
+  liftIO $ hPutStr h msg
+sayWhenLoud :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
+sayWhenLoud msg = do
+  v <- view verbosityL
+  case v of
+    Loud   -> say msg
     Silent -> return ()
-verboseLn :: (HasHandles env, HasVerbosity env) => String -> RIO env ()
-verboseLn msg = do
-  env <- ask
-  case getVerbosity env of
+sayWhenLoudLn :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
+sayWhenLoudLn msg = do
+  v <- view verbosityL
+  case v of
     Loud   -> do
-        hSetBuffering (getHandle env) NoBuffering
-        mapM_ putStrLn (lines msg)
+        h <- view handleL
+        hSetBuffering h NoBuffering
+        mapM_ sayLn (lines msg)
     Silent -> return ()
 
 -- Functions to be replaced later on:

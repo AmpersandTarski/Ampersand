@@ -9,5 +9,5 @@ import Ampersand.Misc.Options
         , showFormat
         , usageInfo'
         , writeConfigFile
-        , HasOptions(..),HasHandles(..)
+        , HasOptions(..),HasHandle(..)
         )

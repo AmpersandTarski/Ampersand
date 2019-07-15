@@ -39,23 +39,20 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: (HasOptions env, HasHandles env) => FSpec -> T.Text -> Expression ->  RIO env [(String,String)]
+evaluateExpSQL :: (HasOptions env, HasHandle env) => FSpec -> T.Text -> Expression ->  RIO env [(String,String)]
 evaluateExpSQL fSpec dbNm expr = do
-    env <- ask 
-    let violationsExpr = conjNF (getOptions env) expr
+    opts <- view optionsL
+    let violationsExpr = conjNF opts expr
         violationsQuery = prettySQLQuery 26 fSpec violationsExpr
-    -- verboseLn ("evaluateExpSQL fSpec "++showA expr)
-    -- verboseLn (intercalate "\n" . showPrf showA . cfProof opts) expr
-    -- verboseLn "End of proof"
     performQuery dbNm violationsQuery
 
-performQuery :: (HasOptions env, HasHandles env) =>
+performQuery :: (HasOptions env, HasHandle env) =>
                 T.Text -> SqlQuery ->  RIO env [(String,String)]
 performQuery dbNm queryStr = do
-    env <- ask
-    queryResult <- T.unpack <$> (executePHPStr . showPHP) (php $ getOptions env)
+    opts <- view optionsL
+    queryResult <- T.unpack <$> (executePHPStr . showPHP) (php opts)
     if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-    then do mapM_ putStrLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
+    then do mapM_ sayLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
     else case reads queryResult of
            [(pairs,"")] -> return pairs
@@ -83,13 +80,13 @@ performQuery dbNm queryStr = do
       ]
 
 -- call the command-line php with phpStr as input
-executePHPStr :: (HasHandles env) => T.Text -> RIO env T.Text
+executePHPStr :: (HasHandle env) => T.Text -> RIO env T.Text
 executePHPStr phpStr = do
     tempdir <- liftIO getTemporaryDirectory 
                  `catch`
                      (\e -> do 
                           let err = show (e :: IOException)
-                          putStrLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
+                          sayLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
                           return "."
                      )
     let phpPath = tempdir </> "tmpPhpQueryOfAmpersand" <.> "php"
@@ -168,14 +165,13 @@ connectToTheDatabasePHP =
     , ""
     ]
 
-createTempDatabase :: (HasOptions env, HasHandles env, HasVerbosity env) =>
+createTempDatabase :: (HasOptions env, HasHandle env, HasVerbosity env) =>
                       FSpec ->  RIO env Bool
 createTempDatabase fSpec = do
-    env <- ask
-    let opts = getOptions env
+    opts <- view optionsL
     result <- executePHPStr .
               showPHP $ phpStr opts
-    verboseLn $ 
+    sayWhenLoudLn $ 
          if T.null result 
           then "Temp database created succesfully."
           else "Temp database creation failed! :\n"

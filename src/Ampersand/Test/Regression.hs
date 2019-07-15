@@ -26,28 +26,28 @@ process :: Int -> DirData -> RIO env Int
 process indnt (DirData path dirContent) =
   case dirContent of
     DirError err     -> runRIO stdout $ do
-        putStrLn $ "I've tried to look in " ++ path ++ "."
-        putStrLn   "    There was an error: "
-        putStrLn $ "       " ++ show err
+        sayLn $ "I've tried to look in " ++ path ++ "."
+        sayLn   "    There was an error: "
+        sayLn $ "       " ++ show err
         return 1
     DirList _ files -> runRIO stdout $ do
-        putStrLn $ path ++" : "
+        sayLn $ path ++" : "
         doTestSet indnt path files
  
 yaml :: String
 yaml = "testinfo.yaml"  -- the required name of the file that contains the test info for this directory.
-doTestSet :: HasHandles env => Int -> FilePath -> [FilePath] -> RIO env Int
+doTestSet :: HasHandle env => Int -> FilePath -> [FilePath] -> RIO env Int
 doTestSet indnt dir fs 
   | yaml `elem` fs = 
        do res <- parseYaml
           case res of 
-              Left err -> do putStrLni $ dir </> yaml ++" could not be parsed."
-                             putStrLni $ prettyPrintParseException err
+              Left err -> do sayLn $ indent ++ dir </> yaml ++" could not be parsed."
+                             sayLn $ indent ++ prettyPrintParseException err
                              return 1
-              Right ti -> do putStrLni $ "Command: "++command ti++if shouldSucceed ti then " (should succeed)." else " (should fail)."
+              Right ti -> do sayLn $ indent ++ "Command: "++command ti++if shouldSucceed ti then " (should succeed)." else " (should fail)."
                              liftIO $ runConduit $ runTests ti .| getResults
   | otherwise =
-       do putStrLni $ "Nothing to do. ("++yaml++" not present)"
+       do sayLn $ indent ++ "Nothing to do. ("++yaml++" not present)"
           return 0
 
   where
@@ -63,7 +63,7 @@ doTestSet indnt dir fs
         doATest = awaitForever dotheTest
           where 
              dotheTest file = 
-                do liftIO $ runRIO stdout $ putStri $ "Start testing of `"++file++"`: "
+                do liftIO $ runRIO stdout $ say $ indent<>"Start testing of `"<>file<>"`: "
                    res <- liftIO $ testAdlfile (indnt + 2) dir file ti
                    yield (if res then 0 else 1) 
     getResults :: ConduitT Int Void IO Int
@@ -73,9 +73,7 @@ doTestSet indnt dir fs
        loop i = 
          await >>= maybe (return i) 
                          (\x -> loop $! (i+x))
-    putStrLni str = putStrLn $ replicate indnt ' ' ++ str
-    putStri   str = putStr   $ replicate indnt ' ' ++ str
-    
+    indent = replicate indnt ' '
 
 -- This data structure is directy available in .yaml files. Be aware that modification will have consequences for the 
 -- yaml files in the test suite.
@@ -118,15 +116,14 @@ testAdlfile indnt path adl tinfo = runMyProc myProc
           (True  , ExitFailure _) -> failOutput (exit_code, out, err)
           (False , ExitSuccess  ) -> failOutput (exit_code, out, err)
           (False , ExitFailure _) -> passOutput
-     passOutput = do -- putStrLni out
-                     runRIO stdout $ putStrLn "***Pass***"
+     passOutput = do runRIO stdout $ sayLn "***Pass***"
                      return True 
      failOutput (exit_code, out, err) =
-                  do runRIO stdout $ putStrLn $ "\n*FAIL*. Exit code: "++show exit_code++". "
+                  do runRIO stdout $ sayLn $ "\n*FAIL*. Exit code: "++show exit_code++". "
                      case exit_code of
                          ExitSuccess -> return()
-                         _           -> do runRIO stdout $ putStrLni out
-                                           runRIO stderr $ putStrLni err
+                         _           -> do runRIO stdout $ sayLnI out
+                                           runRIO stderr $ sayLnI err
                      return False
 
-     putStrLni  = mapM_ (putStrLn . (replicate indnt ' ' ++)) . lines 
+     sayLnI  = mapM_ (sayLn . (replicate indnt ' ' ++)) . lines 
