@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module MainApps(
     IO
   , ampersand
@@ -10,6 +11,8 @@ module MainApps(
 
 import           Ampersand
 import           Ampersand.Input.PreProcessor
+import           Ampersand.Options.GlobalParser
+import           Ampersand.Runners
 import           Conduit
 import qualified Data.List.NonEmpty as NEL (toList)
 import qualified RIO.List as L
@@ -19,6 +22,8 @@ import           System.Directory (getDirectoryContents, doesFileExist, doesDire
 import           System.Environment    (getArgs, getProgName)
 import           System.FilePath ((</>))
 import           System.IO.Error (tryIOError)
+import           Ampersand.Misc.Commands
+import qualified System.Directory as D
 
 defEnv :: IO App
 defEnv = do
@@ -33,9 +38,35 @@ defEnv = do
           }
 
   
-
 ampersand :: IO ()
-ampersand = do
+ampersand =
+  if False --Temporary to switch between old and new behaviour
+  then ampersandNew
+  else ampersandOld
+
+ampersandNew :: IO ()
+ampersandNew = do
+  isTerminal <- hIsTerminalDevice stdout
+  currentDir <- D.getCurrentDirectory
+  eGlobalRun <- try $ commandLineHandler currentDir
+  case eGlobalRun of
+    Left (exitCode :: ExitCode) ->
+      throwIO exitCode
+    Right (globalMonoid,run) -> do
+      global <- globalOptsFromMonoid isTerminal globalMonoid
+      -- when (globalLogLevel global == LevelDebug) $ hPutStrLn stderr versionString'
+      withRunnerGlobal global $ run `catch` \e ->
+          -- This special handler stops "stack: " from being printed before the
+          -- exception
+          case fromException e of
+              Just ec -> exitWith ec
+              Nothing -> do
+                  logError $ fromString $ displayException e
+                  exitWith $ RunnerAborted $ lines $ displayException e
+
+
+ampersandOld :: IO ()
+ampersandOld = do
   env <- defEnv
   runRIO env ampersand'
 ampersand' :: RIO App ()

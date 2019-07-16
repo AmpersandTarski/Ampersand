@@ -2,6 +2,7 @@
 
 ## Unreleased changes
 
+* [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. --TODO: Needs documentation
 * [Issue #921](https://github.com/AmpersandTarski/Ampersand/issues/921) Third round of enhancements for RIO.
 * Removed depricated stuff: keywords "EDITS", "PROCESS" and "ENDPROCESS". EDITS did not have any effect at all since about 2015, (END)PROCESS has been the same as (END)PATTERN for a long time.
 

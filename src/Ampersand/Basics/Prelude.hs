@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.Prelude
   ( module Prelude
-  , module RIO
+  , module X
   , say, sayLn
   , sayWhenLoud, sayWhenLoudLn
   , writeFile
@@ -10,11 +10,19 @@ module Ampersand.Basics.Prelude
   , openTempFile
   , HasHandle(..)
   , HasVerbosity(..), Verbosity (..)
+  , FirstTrue (..)
+  , fromFirstTrue
+  , defaultFirstTrue
+  , FirstFalse (..)
+  , fromFirstFalse
+  , defaultFirstFalse
   )where
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
-import RIO
+import           RIO                  as X
 import System.IO (openTempFile,hPutStr,hPutStrLn, stderr)
 import qualified RIO.Text as T
+import           Data.Monoid          as X (First (..), Any (..), Sum (..), Endo (..))
+
 
 class HasHandle env where
   handleL :: Lens' env Handle
@@ -68,3 +76,42 @@ zipWith fun = go
     go [] _ = []
     go _ [] = []
     go (x':xs) (y:ys) = fun x' y : go xs ys
+
+
+-- Functions copied from stack
+-- | Like @First Bool@, but the default is @True@.
+newtype FirstTrue = FirstTrue { getFirstTrue :: Maybe Bool }
+  deriving (Show, Eq, Ord)
+instance Semigroup FirstTrue where
+  FirstTrue (Just x) <> _ = FirstTrue (Just x)
+  FirstTrue Nothing <> x = x
+instance Monoid FirstTrue where
+  mempty = FirstTrue Nothing
+  mappend = (<>)
+
+-- | Get the 'Bool', defaulting to 'True'
+fromFirstTrue :: FirstTrue -> Bool
+fromFirstTrue = fromMaybe True . getFirstTrue
+
+-- | Helper for filling in default values
+defaultFirstTrue :: (a -> FirstTrue) -> Bool
+defaultFirstTrue _ = True
+
+-- | Like @First Bool@, but the default is @False@.
+newtype FirstFalse = FirstFalse { getFirstFalse :: Maybe Bool }
+  deriving (Show, Eq, Ord)
+instance Semigroup FirstFalse where
+  FirstFalse (Just x) <> _ = FirstFalse (Just x)
+  FirstFalse Nothing <> x = x
+instance Monoid FirstFalse where
+  mempty = FirstFalse Nothing
+  mappend = (<>)
+
+-- | Get the 'Bool', defaulting to 'False'
+fromFirstFalse :: FirstFalse -> Bool
+fromFirstFalse = fromMaybe False . getFirstFalse
+
+-- | Helper for filling in default values
+defaultFirstFalse :: (a -> FirstFalse) -> Bool
+defaultFirstFalse _ = False
+

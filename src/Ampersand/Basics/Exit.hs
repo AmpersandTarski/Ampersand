@@ -34,6 +34,7 @@ data AmpersandExit
   | NoConfigurationFile [String]
   | SomeTestsFailed [String]
   | ReadFileError [String]
+  | RunnerAborted [String]
 
 instance Exception AmpersandExit
 
@@ -76,6 +77,9 @@ info x =
               -> (SE.ExitFailure 120 , msg)
     ReadFileError msg
               -> (SE.ExitFailure 130 , msg)
+    RunnerAborted msg
+              -> (SE.ExitFailure 140 , msg)
+    
   where
     showViolatedRule :: (String,[String]) -> [String]
     showViolatedRule (rule,pairs) = 
