@@ -26,7 +26,7 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           Data.Maybe (isJust, fromJust)
 import           System.Directory
-import           System.FilePath
+import           System.FilePath ((</>), (-<.>))
 import           Text.Pandoc
 import           Text.Pandoc.Builder
 

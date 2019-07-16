@@ -25,6 +25,7 @@ import System.Directory
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
 import System.FilePath
 import "yaml-config" Data.Yaml.Config as YC 
+import Ampersand.Misc.HasClasses
 
 -- | This data constructor is able to hold all kind of information that is useful to
 --   express what the user would like Ampersand to do.
@@ -112,6 +113,14 @@ class HasOptions env where
   optionsL :: Lens' env Options
 instance HasOptions Options where
   optionsL = id
+
+instance HasDaemonConfig Options where
+  daemonConfigL = lens daemonConfig (\x y -> x { daemonConfig = y })
+instance HasDirPrototype Options where
+  dirPrototypeL = lens dirPrototype (\x y -> x { dirPrototype = y })
+
+
+
 
 dirPrototypeVarName :: String
 dirPrototypeVarName = "CCdirPrototype"
@@ -680,6 +689,8 @@ instance HasHandle App where
 
 instance HasVerbosity App where
   verbosityL =  optionsL . verbosityL
+instance HasDirPrototype App where
+  dirPrototypeL = optionsL . dirPrototypeL
     -- lens (\env -> verbosity . getOptions $ env)
     --      (\env v -> env{options' = (options' env){verbosity= v}})
 -- instance HasVerbosity Options where

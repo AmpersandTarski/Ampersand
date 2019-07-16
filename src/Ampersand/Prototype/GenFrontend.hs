@@ -62,7 +62,7 @@ getTemplateDir Options{..} = dirPrototype </> "templates"
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
+doGenFrontend :: (HasOptions env, HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     Options{..} <- view optionsL
