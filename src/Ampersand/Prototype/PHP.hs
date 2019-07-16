@@ -119,16 +119,16 @@ showPHP :: [T.Text] -> T.Text
 showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
-tempDbName :: Options -> T.Text
-tempDbName Options{..} = "TempDB_"<>T.pack dbName
+tempDbName :: HasProtoOpts a => a -> T.Text
+tempDbName x = "TempDB_"<>T.pack (view dbNameL x)
 
-connectToMySqlServerPHP :: Options -> Maybe T.Text-> [T.Text]
-connectToMySqlServerPHP Options{..} mDbName =
+connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe T.Text-> [T.Text]
+connectToMySqlServerPHP x mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
-    , "$DB_host='"<>subst sqlHost <>"';"
-    , "$DB_user='"<>subst sqlLogin<>"';"
-    , "$DB_pass='"<>subst sqlPwd  <>"';"
+    , "$DB_host='"<>subst (view sqlHostL x) <>"';"
+    , "$DB_user='"<>subst (view sqlLoginL x)<>"';"
+    , "$DB_pass='"<>subst (view sqlPwdL x)  <>"';"
     , ""
     ]<>
     (case mDbName of

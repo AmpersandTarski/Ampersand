@@ -12,4 +12,5 @@ import Ampersand.Misc.Options
         , usageInfo'
         , writeConfigFile
         , HasOptions(..),HasHandle(..)
+        , HasProtoOpts(..)
         )

@@ -7,6 +7,7 @@ module Ampersand.Misc.Options
         ( Options(..)
         , App(..)
         , HasOptions(..),HasHandle(..)
+        , HasProtoOpts(..)
         , FSpecFormat(..)
         , getOptionsIO
         , showFormat
@@ -48,7 +49,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , allInterfaces :: Bool
                        , runAsDaemon :: Bool -- run Ampersand as a daemon. (for use with the vscode extension)
                        , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
-                       , dbName :: String
+               --        , dbName :: String
                        , namespace :: String
                        , testRule :: Maybe String
                --        , customCssFile :: Maybe FilePath
@@ -85,14 +86,14 @@ data Options = Options { environment :: EnvironmentOptions
                        , addSemanticMetamodel :: Bool -- When set, the user can use all artefacts defined in Formal Ampersand, without the need to specify them explicitly
                        , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , atlasWithoutExpressions :: Bool -- Temporary switch to leave out expressions in meatgrinder output.
-                       , sqlHost ::  String  -- do database queries to the specified host
-                       , sqlLogin :: String  -- pass login name to the database server
-                       , sqlPwd :: String  -- pass password on to the database server
+                   --    , sqlHost ::  String  -- do database queries to the specified host
+                   --    , sqlLogin :: String  -- pass login name to the database server
+                   --    , sqlPwd :: String  -- pass password on to the database server
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
-                       }
+                       , protoOpts :: ProtoOpts }
 instance HasVerbosity Options where
   verbosityL = lens verbosity (\x y -> x { verbosity = y })
 data EnvironmentOptions = EnvironmentOptions
@@ -108,12 +109,37 @@ data EnvironmentOptions = EnvironmentOptions
       , envPreVersion         :: Maybe String
       , envPostVersion        :: Maybe String  
       } deriving Show
+data ProtoOpts = ProtoOpts
+   { protOdbName :: String
+   , protOsqlHost ::  String  -- do database queries to the specified host
+   , protOsqlLogin :: String  -- pass login name to the database server
+   , protOsqlPwd :: String  -- pass password on to the database server
+   }
+defProtoOpts :: Maybe FilePath -> EnvironmentOptions -> ProtoOpts 
+defProtoOpts fName envOpts = ProtoOpts
+  { protOdbName = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
+  , protOsqlHost = "localhost"
+  , protOsqlLogin = "ampersand"
+  , protOsqlPwd = "ampersand"
+  }
+class HasProtoOpts env where
+   dbNameL   :: Lens' env String
+   sqlHostL  :: Lens' env String
+   sqlLoginL :: Lens' env String
+   sqlPwdL   :: Lens' env String
+instance HasProtoOpts ProtoOpts where
+   dbNameL   = lens protOsqlHost  (\x y -> x { protOdbName   = y })
+   sqlHostL  = lens protOsqlHost  (\x y -> x { protOsqlHost  = y })
+   sqlLoginL = lens protOsqlLogin (\x y -> x { protOsqlLogin = y })
+   sqlPwdL   = lens protOsqlPwd   (\x y -> x { protOsqlPwd   = y })
+instance HasProtoOpts Options where
+   dbNameL   = (lens protoOpts (\x y -> x {protoOpts = y})) . dbNameL
+   sqlHostL  = (lens protoOpts (\x y -> x {protoOpts = y})) . sqlHostL
+   sqlLoginL = (lens protoOpts (\x y -> x {protoOpts = y})) . sqlLoginL
+   sqlPwdL   = (lens protoOpts (\x y -> x {protoOpts = y})) . sqlPwdL
 
 class HasOptions env where
   optionsL :: Lens' env Options
-instance HasOptions Options where
-  optionsL = id
-
 instance HasDaemonConfig Options where
   daemonConfigL = lens daemonConfig (\x y -> x { daemonConfig = y })
 instance HasDirPrototype Options where
@@ -234,7 +260,7 @@ getOptions' envOpts =
                       , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
                       , runComposer      = True -- by default run Composer (php package manager) when deploying prototype for backward compatibility
-                      , dbName           = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
+                   --   , dbName           = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
                       , preVersion       = fromMaybe "" $ envPreVersion envOpts
                       , postVersion      = fromMaybe "" $ envPostVersion envOpts
@@ -280,13 +306,14 @@ getOptions' envOpts =
                       , addSemanticMetamodel = False
                       , genRapPopulationOnly = False
                       , atlasWithoutExpressions = False
-                      , sqlHost          = "localhost"
-                      , sqlLogin         = "ampersand"
-                      , sqlPwd           = "ampersand"
+                    --  , sqlHost          = "localhost"
+                    --  , sqlLogin         = "ampersand"
+                    --  , sqlPwd           = "ampersand"
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
+                      , protoOpts        = defProtoOpts fName envOpts
                       }
 writeConfigFile :: IO ()
 writeConfigFile = do
@@ -430,28 +457,30 @@ options = [ (Option ['v']   ["version"]
                "skip installing php dependencies (using Composer) for prototype framework."
             , Hidden)
           , (Option ['d']  ["dbName"]
-               (ReqArg (\nm opts -> opts{dbName = if nm == ""
-                                                         then dbName opts
-                                                         else map toLower nm}
+               (ReqArg (\nm opts -> opts{protoOpts = (if nm == ""
+                                                         then id
+                                                         else set dbNameL (map toLower nm)) (protoOpts opts)}
                        ) "NAME")
                ("database name (This overrules environment variable "++ dbNameVarName ++ ", defaults to filename) to which the prototype will connect for persistent storage.")
             , Hidden)
           , (Option []  ["sqlHost"]
-               (ReqArg (\nm opts -> opts{sqlHost = if nm == ""
-                                                          then sqlHost opts
-                                                          else nm}
+               (ReqArg (\nm opts -> opts{protoOpts = (if nm == ""
+                                                          then id 
+                                                          else set sqlHostL nm ) (protoOpts opts)}
                        ) "HOSTNAME")
                "set SQL host name (Defaults to `localhost`), to identify the host on which the persistent store resides"
             , Hidden)
           , (Option []  ["sqlLogin"]
-               (ReqArg (\nm opts -> opts{sqlLogin = if nm == ""
-                                                          then sqlLogin opts
-                                                          else nm}
+               (ReqArg (\nm opts -> opts{protoOpts = (if nm == ""
+                                                          then id 
+                                                          else set sqlLoginL nm ) (protoOpts opts)}
                        ) "USER")
                "set SQL user name (Defaults to `ampersand`), to let your application login to the database."
             , Hidden)
           , (Option []  ["sqlPwd"]
-               (ReqArg (\nm opts -> opts{sqlPwd = nm}
+               (ReqArg (\nm opts -> opts{protoOpts = (if nm == ""
+                                                          then id 
+                                                          else set sqlPwdL nm ) (protoOpts opts)}
                        ) "PASSWORD")
                "set SQL password (Defaults to `ampersand`), to let your application login to the database."
             , Hidden)
@@ -691,15 +720,9 @@ instance HasVerbosity App where
   verbosityL =  optionsL . verbosityL
 instance HasDirPrototype App where
   dirPrototypeL = optionsL . dirPrototypeL
-    -- lens (\env -> verbosity . getOptions $ env)
-    --      (\env v -> env{options' = (options' env){verbosity= v}})
--- instance HasVerbosity Options where
---   verbosityL = 
---      lens verbosity (\env v -> env{verbosity= v})
---     where aap :: Options -> Verbosity
---           aap = verbosity
---           noot :: Options -> Verbosity -> Options
---           noot = (\env v -> env{verbosity= v})
+
+
+
 instance HasOptions App where
   optionsL = lens options' (\env opts -> env{ options' = opts})
 instance HasLogFunc App where
