@@ -215,9 +215,9 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 -- | this function tells how a given relation is to be stored. If stored
 --   in a concept table, it returns that concept. It allways returns a boolean
 --   telling wether or not the relation is stored flipped.
-wayToStore :: Options -> Relation -> (Maybe A_Concept,Bool)
+wayToStore :: (HasSqlBinTables env) => env -> Relation -> (Maybe A_Concept,Bool)
 wayToStore opts dcl
-  | sqlBinTables opts = (Nothing, False)
+  | view sqlBinTablesL opts = (Nothing, False)
   | otherwise =
        case (isInj d, isUni d) of
             (True   , False  ) -> inConceptTableFlipped

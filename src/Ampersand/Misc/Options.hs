@@ -45,7 +45,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , runComposer :: Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
-                       , allInterfaces :: Bool
+                       , genInterfaces :: Bool -- if True, generate interfaces
                        , runAsDaemon :: Bool -- run Ampersand as a daemon. (for use with the vscode extension)
                        , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
                        , namespace :: String
@@ -175,6 +175,30 @@ instance HasZwolleVersion Options where
   zwolleVersionL = lens zwolleVersion (\x y -> x { zwolleVersion = y })
 instance HasZwolleVersion App where
   zwolleVersionL = optionsL . zwolleVersionL
+instance HasSqlBinTables Options where
+  sqlBinTablesL = lens sqlBinTables (\x y -> x { sqlBinTables = y })
+instance HasGenInterfaces Options where
+  genInterfacesL = lens genInterfaces (\x y -> x { genInterfaces = y })
+instance HasNamespace Options where
+  namespaceL = lens namespace (\x y -> x { namespace = y })
+instance HasGenMetaOptions Options where
+  genMetaFileL = lens genMetaFile (\x y -> x { genMetaFile = y })
+  genRapPopulationOnlyL = lens genRapPopulationOnly (\x y -> x { genRapPopulationOnly = y })
+  addSemanticMetamodelL = lens addSemanticMetamodel (\x y -> x { addSemanticMetamodel = y })
+instance HasGenMetaOptions App where
+  genMetaFileL = optionsL . genMetaFileL
+  genRapPopulationOnlyL = optionsL . genRapPopulationOnlyL
+  addSemanticMetamodelL = optionsL . addSemanticMetamodelL
+instance HasGenPrototype Options where
+  genPrototypeL = lens genPrototype (\x y -> x { genPrototype = y })
+instance HasGenPrototype App where
+  genPrototypeL = optionsL . genPrototypeL
+instance HasDirOutput Options where
+  dirOutputL = lens dirOutput (\x y -> x { dirOutput = y })
+instance HasDirOutput App where
+  dirOutputL = optionsL . dirOutputL
+instance HasDataAnalysis Options where
+  dataAnalysisL = lens dataAnalysis (\x y -> x { dataAnalysis = y })
 
 
 
@@ -299,7 +323,7 @@ getOptions' envOpts =
                       , validateSQL      = False
                       , genSampleConfigFile = False
                       , genPrototype     = False
-                      , allInterfaces    = False
+                      , genInterfaces    = False
                       , runAsDaemon      = False
                       , daemonConfig     = ".ampersand"
                       , namespace        = ""
@@ -511,7 +535,7 @@ options = [ (Option ['v']   ["version"]
                "generate binary tables only in SQL database, for testing purposes."
             , Hidden)
           , (Option ['x']     ["interfaces"]
-               (NoArg (\opts -> opts{allInterfaces  = True}))
+               (NoArg (\opts -> opts{genInterfaces  = True}))
                "generate interfaces, which currently does not work."
             , Hidden)
           , (Option []        ["daemon"]

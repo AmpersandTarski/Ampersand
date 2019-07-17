@@ -33,7 +33,7 @@ makeFSpec opts context
               , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objExpression (ifcObj ifc)
                                     , isIdent ctxrel && source ctxrel==ONE
                                       || ctxrel `notElem` map (objExpression.ifcObj) fSpecAllInterfaces
-                                    , allInterfaces opts]  -- generated interfaces
+                                    , view genInterfacesL opts]  -- generated interfaces
               , fDeriveProofs = deriveProofs opts context 
               , fRoleRuls    = L.nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
                                    | rule <- Set.elems $ allrules
@@ -234,8 +234,8 @@ makeFSpec opts context
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
                 | p <- uniqueNames [] (makeGeneratedSqlPlugs opts context calcProps)
                 ]
-     qlfname x = if null (namespace opts) then x else "ns"++namespace opts++x
-
+     qlfname x = if null ns then x else "ns"++ns++x
+       where ns = view namespaceL opts
      --TODO151210 -> Plug A is overbodig, want A zit al in plug r
 --CONTEXT Temp
 --PATTERN Temp
@@ -407,7 +407,7 @@ makeFSpec opts context
      ----------------------
      --END: making interfaces
      ----------------------
-     printingLanguage = fromMaybe (ctxlang context) (language opts)  -- The language for printing this specification is taken from the command line options (language opts). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
+     printingLanguage = fromMaybe (ctxlang context) (view languageL opts)  -- The language for printing this specification is taken from the command line options (language opts). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
 
 makeIfcControls :: Relations -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs

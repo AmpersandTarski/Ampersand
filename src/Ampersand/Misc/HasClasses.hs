@@ -39,7 +39,22 @@ class HasDirCustomizations a where
   dirCustomizationsL :: Lens' a [FilePath] -- the directory that is copied after generating the prototype
 class HasZwolleVersion a where
   zwolleVersionL :: Lens' a String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
-
+class HasSqlBinTables a where
+  sqlBinTablesL :: Lens' a Bool -- generate binary tables (no 'brede tabellen')
+class HasGenInterfaces a where
+  genInterfacesL :: Lens' a Bool -- 
+class HasNamespace a where
+  namespaceL :: Lens' a String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
+class HasGenMetaOptions a where
+  genMetaFileL :: Lens' a Bool
+  genRapPopulationOnlyL :: Lens' a Bool
+  addSemanticMetamodelL :: Lens' a Bool
+class HasGenPrototype a where
+  genPrototypeL :: Lens' a Bool -- 
+class HasDirOutput a where
+  dirOutputL :: Lens' a String -- the directory to generate the output in.
+class HasDataAnalysis a where
+  dataAnalysisL :: Lens' a Bool -- "export a data model as plain Ampersand script, for analysing Excel-data."
 
 
 

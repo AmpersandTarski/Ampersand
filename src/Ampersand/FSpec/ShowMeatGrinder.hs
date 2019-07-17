@@ -132,14 +132,14 @@ showPop pop =
       Comment{} -> L.intercalate "\n" . map ("-- " ++) . comment $ pop
 -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
-makeMetaFile :: Options -> MetaFSpec -> FSpec -> (FilePath,String)
-makeMetaFile Options{..} metaModel userFspec
+makeMetaFile :: (HasGenTime env) => env -> MetaFSpec -> FSpec -> (FilePath,String)
+makeMetaFile env metaModel userFspec
   = ("MetaPopulationFile.adl", content )
   where
     content = unlines $
         ([ "{- Do not edit manually. This code has been generated!!!"
         , "    Generated with "++ampersandVersionStr
-        , "    Generated at "++show genTime
+        , "    Generated at "++show (view genTimeL env)
         , " "
         , "The populations defined in this file are the populations from the user's"
         , "model named '"++name userFspec++"'."

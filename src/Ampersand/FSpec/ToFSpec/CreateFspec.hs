@@ -36,10 +36,13 @@ import           System.FilePath
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createMulti.
-createMulti :: (HasOptions env, HasHandle env, HasVerbosity env) => 
+createMulti :: (HasDirOutput env, HasGenPrototype env, HasRootFile env, HasGenMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
                RIO env (Guarded MultiFSpecs)
 createMulti =
-  do opts@Options{..} <- view optionsL
+  do opts <- view optionsL
+     genMetaFile <- view genMetaFileL
+     genRapPopulationOnly <- view genRapPopulationOnlyL
+     addSemanticMetamodel <- view addSemanticMetamodelL
      fAmpP_Ctx :: Guarded P_Context <-
         if genMetaFile ||
            genRapPopulationOnly ||
@@ -49,13 +52,14 @@ createMulti =
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
 
     -- userP_Ctx contains the user-specified context from the user's Ampersand source code
+     fileName <- view fileNameL
      userP_Ctx :: Guarded P_Context <- 
         case fileName of
           Just x -> snd <$> parseADL x -- the P_Context of the user's sourceFile
           Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     
      systemP_Ctx:: Guarded P_Context <- parseSystemContext
-
+     useSystemContext <- view genPrototypeL
      let fAmpModel :: MetaFSpec
          fAmpModel = MetaFSpec
             { metaModelFileName = "FormalAmpersand.adl"
@@ -112,7 +116,7 @@ createMulti =
          userGFSpec :: Guarded FSpec
          userGFSpec = 
             pCtx2Fspec opts $ 
-              if useSystemContext opts
+              if useSystemContext 
               then mergeContexts <$> userPlus
                                  <*> (grind sysCModel <$> pCtx2Fspec opts userPlus) -- grinds the session information out of the user's script
               else userP_Ctx
@@ -139,11 +143,10 @@ createMulti =
             else return $ pure ()
      return (res >> result)
   where
-    useSystemContext :: Options -> Bool
-    useSystemContext = genPrototype
-    writeMetaFile :: (HasOptions env , HasVerbosity env, HasHandle env) => MetaFSpec -> Guarded FSpec -> RIO env (Guarded ())
+    writeMetaFile :: (HasDirOutput env, HasOptions env , HasVerbosity env, HasHandle env) => MetaFSpec -> Guarded FSpec -> RIO env (Guarded ())
     writeMetaFile metaModel userSpec = do
-       opts@Options{..} <- view optionsL
+       opts <- view optionsL
+       dirOutput <- view dirOutputL
        case makeMetaFile opts metaModel <$> userSpec of
         Checked (filePath,metaContents) ws -> 
                   do sayWhenLoudLn $ "Generating meta file in path "++dirOutput
@@ -160,8 +163,9 @@ pCtx2Fspec opts c = makeFSpec opts <$> join (pCtx2aCtx opts <$> encloseInConstra
 --   Instead it invents relations from a given population, which typically comes from a spreadsheet.
 --   This is different from the normal behaviour, which checks whether the spreadsheets comply with the Ampersand-script.
 --   This function is called only with option 'dataAnalysis' on.
-encloseInConstraints :: Options -> Guarded P_Context -> Guarded P_Context
-encloseInConstraints opts (Checked pCtx warnings) | dataAnalysis opts = Checked enrichedContext warnings
+encloseInConstraints :: (HasDataAnalysis env) => env -> Guarded P_Context -> Guarded P_Context
+encloseInConstraints env (Checked pCtx warnings) 
+    | view dataAnalysisL env = Checked enrichedContext warnings
   where
   --The result of encloseInConstraints is a P_Context enriched with the relations in genericRelations
   --The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
