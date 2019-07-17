@@ -53,7 +53,7 @@ instance Show SheetCellsForTable where  --for debugging only
       , "popRowNrs   : "++show (popRowNrs x)
       , "colNrs      : "++show (colNrs x)
       ] ++ debugInfo x 
-toPops :: Options -> FilePath -> SheetCellsForTable -> [P_Population]
+toPops :: (HasExcellOutputOptions env) => env -> FilePath -> SheetCellsForTable -> [P_Population]
 toPops opts file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
@@ -153,7 +153,7 @@ toPops opts file x = map popForColumn (colNrs x)
          case mDelimiter of
            Nothing -> [xs]
            (Just delimiter) -> map trim $ T.split (== delimiter) xs
-       handleSpaces = if trimXLSXCells opts then trim else id     
+       handleSpaces = if view trimXLSXCellsL opts then trim else id     
     originOfCell :: (Int,Int) -- (row number,col number)
                  -> Origin
     originOfCell (r,c) 

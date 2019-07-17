@@ -16,19 +16,18 @@ import qualified RIO.Set as Set
 import           Text.Pandoc hiding (Meta)
 
 fSpec2Haskell :: Options -> FSpec -> String
-fSpec2Haskell opts@Options{..} fSpec
+fSpec2Haskell opts fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
-          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show genTime++"-}"
+          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (view genTimeL opts)++"-}"
           ++"\nmodule Main where\n"
           ++"\nimport Ampersand"
           ++"\nimport Text.Pandoc hiding (Meta)"
           ++"\n"
           ++"\nmain :: IO ()"
           ++"\nmain = do opts <- getOptions"
-          ++"\n          say (showHS opts \"\\n  \" fSpec_"++baseName++")\n"
-          ++"\nfSpec_"++baseName ++" :: FSpec"
-          ++"\nfSpec_"++baseName ++" =\n  "++showHS opts "\n  " fSpec
-
+          ++"\n          say (showHS opts \"\\n  \" fSpec_"++baseName opts++")\n"
+          ++"\nfSpec_"++baseName opts++" :: FSpec"
+          ++"\nfSpec_"++baseName opts++" =\n  "++showHS opts "\n  " fSpec
 wrap :: String->String->(String->a->String)->[a]->String
 wrap initStr indent f xs
  = initStr++

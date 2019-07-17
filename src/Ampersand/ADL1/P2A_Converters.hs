@@ -282,7 +282,7 @@ pCtx2aCtx opts
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
-    deflangCtxt = fromMaybe English $ ctxmLang `orElse` language opts
+    deflangCtxt = fromMaybe English $ ctxmLang `orElse` (view languageL opts)
     deffrmtCtxt = fromMaybe ReST pandocf
     
     allGens = p_gens ++ concatMap pt_gns p_patterns
@@ -608,7 +608,7 @@ pCtx2aCtx opts
                 all (`elem` "cCrRuUdD") userCrudString  
                          -> warnings pc $ mostLiberalCruds org userCrudString 
              | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrudString
-      where (defC, defR, defU, defD) = defaultCrud opts
+      where (defC, defR, defU, defD) = view defaultCrudL opts
             mostLiberalCruds :: Origin -> String -> Guarded Cruds
             mostLiberalCruds o str
              = pure Cruds { crudOrig = o

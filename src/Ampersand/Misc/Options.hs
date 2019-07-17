@@ -8,6 +8,7 @@ module Ampersand.Misc.Options
         , App(..)
         , HasOptions(..),HasHandle(..)
         , HasProtoOpts(..)
+        , HasEnvironment(..)
         , FSpecFormat(..)
         , getOptionsIO
         , showFormat
@@ -41,18 +42,14 @@ data Options = Options { environment :: EnvironmentOptions
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
-                       , dirSource :: FilePath -- the directory of the script that is being compiled
                        , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
-                       , forceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , runComposer :: Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
                        , allInterfaces :: Bool
                        , runAsDaemon :: Bool -- run Ampersand as a daemon. (for use with the vscode extension)
                        , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
-               --        , dbName :: String
                        , namespace :: String
                        , testRule :: Maybe String
-               --        , customCssFile :: Maybe FilePath
                        , genFSpec :: Bool   -- if True, generate a functional design
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
@@ -77,7 +74,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , dirExec :: String --the base for relative paths to input files
                        , progrName :: String --The name of the adl executable
                        , fileName :: Maybe FilePath --the file with the Ampersand context
-                       , baseName :: String
                        , genTime :: LocalTime
                        , export2adl :: Bool
                        , dataAnalysis :: Bool
@@ -86,9 +82,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , addSemanticMetamodel :: Bool -- When set, the user can use all artefacts defined in Formal Ampersand, without the need to specify them explicitly
                        , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , atlasWithoutExpressions :: Bool -- Temporary switch to leave out expressions in meatgrinder output.
-                   --    , sqlHost ::  String  -- do database queries to the specified host
-                   --    , sqlLogin :: String  -- pass login name to the database server
-                   --    , sqlPwd :: String  -- pass password on to the database server
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
@@ -114,6 +107,7 @@ data ProtoOpts = ProtoOpts
    , protOsqlHost ::  String  -- do database queries to the specified host
    , protOsqlLogin :: String  -- pass login name to the database server
    , protOsqlPwd :: String  -- pass password on to the database server
+   , protOforceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
    }
 defProtoOpts :: Maybe FilePath -> EnvironmentOptions -> ProtoOpts 
 defProtoOpts fName envOpts = ProtoOpts
@@ -121,29 +115,67 @@ defProtoOpts fName envOpts = ProtoOpts
   , protOsqlHost = "localhost"
   , protOsqlLogin = "ampersand"
   , protOsqlPwd = "ampersand"
+  , protOforceReinstallFramework = False
   }
+  
 class HasProtoOpts env where
    dbNameL   :: Lens' env String
    sqlHostL  :: Lens' env String
    sqlLoginL :: Lens' env String
    sqlPwdL   :: Lens' env String
+   forceReinstallFrameworkL :: Lens' env Bool
 instance HasProtoOpts ProtoOpts where
    dbNameL   = lens protOsqlHost  (\x y -> x { protOdbName   = y })
    sqlHostL  = lens protOsqlHost  (\x y -> x { protOsqlHost  = y })
    sqlLoginL = lens protOsqlLogin (\x y -> x { protOsqlLogin = y })
    sqlPwdL   = lens protOsqlPwd   (\x y -> x { protOsqlPwd   = y })
+   forceReinstallFrameworkL
+             = lens protOforceReinstallFramework (\x y -> x { protOforceReinstallFramework   = y })
 instance HasProtoOpts Options where
    dbNameL   = (lens protoOpts (\x y -> x {protoOpts = y})) . dbNameL
    sqlHostL  = (lens protoOpts (\x y -> x {protoOpts = y})) . sqlHostL
    sqlLoginL = (lens protoOpts (\x y -> x {protoOpts = y})) . sqlLoginL
    sqlPwdL   = (lens protoOpts (\x y -> x {protoOpts = y})) . sqlPwdL
-
+   forceReinstallFrameworkL =
+               (lens protoOpts (\x y -> x {protoOpts = y})) . forceReinstallFrameworkL
 class HasOptions env where
   optionsL :: Lens' env Options
 instance HasDaemonConfig Options where
   daemonConfigL = lens daemonConfig (\x y -> x { daemonConfig = y })
 instance HasDirPrototype Options where
   dirPrototypeL = lens dirPrototype (\x y -> x { dirPrototype = y })
+
+class HasEnvironment a where
+  environmentL :: Lens' a EnvironmentOptions
+instance HasEnvironment Options where
+  environmentL = lens environment (\x y -> x { environment = y })
+
+instance HasExcellOutputOptions Options where
+  trimXLSXCellsL = lens trimXLSXCells (\x y -> x { trimXLSXCells = y })
+instance HasGenTime Options where
+  genTimeL = environmentL . genTimeL
+instance HasGenTime App where
+  genTimeL = optionsL . genTimeL
+instance HasGenTime EnvironmentOptions where
+  genTimeL = lens envLocalTime (\x y -> x { envLocalTime = y })
+instance HasRootFile Options where
+  fileNameL = lens fileName (\x y -> x { fileName = y })
+instance HasOutputLanguage Options where
+  languageL = lens language (\x y -> x { language = y })
+instance HasDefaultCrud Options where
+  defaultCrudL = lens defaultCrud (\x y -> x { defaultCrud = y })
+instance HasRunComposer Options where
+  runComposerL = lens runComposer (\x y -> x { runComposer = y })
+instance HasRunComposer App where
+  runComposerL = optionsL . runComposerL
+instance HasDirCustomizations Options where
+  dirCustomizationsL = lens dirCustomizations (\x y -> x { dirCustomizations = y })
+instance HasDirCustomizations App where
+  dirCustomizationsL = optionsL . dirCustomizationsL
+instance HasZwolleVersion Options where
+  zwolleVersionL = lens zwolleVersion (\x y -> x { zwolleVersion = y })
+instance HasZwolleVersion App where
+  zwolleVersionL = optionsL . zwolleVersionL
 
 
 
@@ -255,12 +287,9 @@ getOptions' envOpts =
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfile       = fatal "No monadic options available."
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto"
-                      , dirSource        = takeDirectory $ fromMaybe "/" fName
                       , zwolleVersion    = "v1.2.0"
-                      , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
                       , runComposer      = True -- by default run Composer (php package manager) when deploying prototype for backward compatibility
-                   --   , dbName           = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
                       , preVersion       = fromMaybe "" $ envPreVersion envOpts
                       , postVersion      = fromMaybe "" $ envPostVersion envOpts
@@ -276,7 +305,6 @@ getOptions' envOpts =
                       , daemonConfig     = ".ampersand"
                       , namespace        = ""
                       , testRule         = Nothing
-              --        , customCssFile    = Nothing
                       , genFSpec         = False
                       , diag             = False
                       , fspecFormat      = fatal ("Unknown fspec format. Currently supported formats are "++allFSpecFormats++".")
@@ -298,7 +326,6 @@ getOptions' envOpts =
                       , language         = Nothing
                       , progrName        = envProgName envOpts
                       , fileName         = fName
-                      , baseName         = takeBaseName $ fromMaybe "unknown" fName
                       , export2adl       = False
                       , dataAnalysis     = False
                       , test             = False
@@ -306,9 +333,6 @@ getOptions' envOpts =
                       , addSemanticMetamodel = False
                       , genRapPopulationOnly = False
                       , atlasWithoutExpressions = False
-                    --  , sqlHost          = "localhost"
-                    --  , sqlLogin         = "ampersand"
-                    --  , sqlPwd           = "ampersand"
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
@@ -444,7 +468,7 @@ options = [ (Option ['v']   ["version"]
                ("tag, branch or SHA of the prototype framework on Github. (What purpose does this serve?)")
             , Hidden)
           , (Option []      ["force-reinstall-framework"]
-               (NoArg (\opts -> opts{forceReinstallFramework = True}))
+               (NoArg (\opts -> opts{protoOpts = set forceReinstallFrameworkL True (protoOpts opts)}))
                "re-install the prototype framework. This discards any previously installed version."
             , Hidden)
           , (Option []     ["customizations"]
@@ -720,9 +744,14 @@ instance HasVerbosity App where
   verbosityL =  optionsL . verbosityL
 instance HasDirPrototype App where
   dirPrototypeL = optionsL . dirPrototypeL
-
-
-
+instance HasRootFile App where
+  fileNameL = optionsL . fileNameL
+instance HasProtoOpts App where
+  dbNameL = optionsL . dbNameL
+  sqlHostL = optionsL . sqlHostL
+  sqlLoginL = optionsL . sqlLoginL
+  sqlPwdL = optionsL . sqlPwdL
+  forceReinstallFrameworkL = optionsL . forceReinstallFrameworkL
 instance HasOptions App where
   optionsL = lens options' (\env opts -> env{ options' = opts})
 instance HasLogFunc App where

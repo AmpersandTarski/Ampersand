@@ -4,13 +4,3 @@ module Ampersand.Misc
    ) where
 import Ampersand.Misc.HasClasses
 import Ampersand.Misc.Options
-        ( Options(..)
-        , App(..)
-        , FSpecFormat(..)
-        , getOptionsIO
-        , showFormat
-        , usageInfo'
-        , writeConfigFile
-        , HasOptions(..),HasHandle(..)
-        , HasProtoOpts(..)
-        )

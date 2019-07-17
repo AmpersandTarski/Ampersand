@@ -25,18 +25,15 @@ getGenericsDir :: HasDirPrototype a => a -> String
 getGenericsDir x = 
   view dirPrototypeL x </> "generics" 
 
-writePrototypeAppFile :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
+writePrototypeAppFile :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                          String -> String -> RIO env ()
 writePrototypeAppFile relFilePath content = do
+  env <- ask
   sayWhenLoudLn $ "  Generating "<>relFilePath 
-  opts <- view optionsL
-  let filePath = getAppDir opts </> relFilePath
+  let filePath = getAppDir env </> relFilePath
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
   liftIO $ writeFile filePath content
      
-getAppDir :: HasDirPrototype a => a -> String
-getAppDir x =
-  view dirPrototypeL x </> "public" </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent

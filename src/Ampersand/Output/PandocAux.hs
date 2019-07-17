@@ -122,7 +122,7 @@ writepandoc fSpec thePandoc = do
     fSpecFormatString = map toLower . drop 1 . show . fspecFormat
 
 outputFile :: Options -> FilePath
-outputFile Options{..} = dirOutput </> baseName -<.> ext fspecFormat 
+outputFile opts = dirOutput opts </> baseName opts -<.> ext (fspecFormat opts) 
        
 ext :: FSpecFormat -> String
 ext format =
