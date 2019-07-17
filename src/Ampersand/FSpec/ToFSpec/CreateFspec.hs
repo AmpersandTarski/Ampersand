@@ -114,7 +114,7 @@ createMulti =
             pCtx2Fspec opts $ 
               if useSystemContext opts
               then mergeContexts <$> userPlus
-                                 <*> (grind opts sysCModel <$> pCtx2Fspec opts userPlus) -- grinds the session information out of the user's script
+                                 <*> (grind sysCModel <$> pCtx2Fspec opts userPlus) -- grinds the session information out of the user's script
               else userP_Ctx
            where 
             userPlus :: Guarded P_Context
@@ -126,7 +126,7 @@ createMulti =
                   Errors err -> Errors err  
                   Checked usrFSpec _
                            -> let grinded :: P_Context
-                                  grinded = grind opts fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                                  grinded = grind fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
                                   metaPopPCtx :: Guarded P_Context
                                   metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
                                   metaPopFSpec :: Guarded FSpec

@@ -175,16 +175,7 @@ generateAmpersandOutput opts@Options{..} multi = do
    violationsOfInvariants
      = [(r,vs) |(r,vs) <- allViolations fSpec
                , not (isSignal r)
-               , not (elemOfTemporarilyBlocked r)
        ]
-     where
-       elemOfTemporarilyBlocked rul =
-         if atlasWithoutExpressions 
-         then name rul `elem` 
-                 [ "TOT formalExpression[Rule*Expression]"
-                 , "TOT objExpression[BoxItem*Expression]"
-                 ]
-         else False
 
    reportInvViolations :: (HasVerbosity env, HasHandle env) => [(Rule,AAtomPairs)] -> RIO env ()
    reportInvViolations []    = sayWhenLoudLn $ "No invariant violations found for the initial population"

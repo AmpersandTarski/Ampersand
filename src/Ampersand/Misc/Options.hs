@@ -81,7 +81,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
                        , addSemanticMetamodel :: Bool -- When set, the user can use all artefacts defined in Formal Ampersand, without the need to specify them explicitly
                        , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
-                       , atlasWithoutExpressions :: Bool -- Temporary switch to leave out expressions in meatgrinder output.
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
@@ -332,7 +331,6 @@ getOptions' envOpts =
                       , genMetaFile      = False
                       , addSemanticMetamodel = False
                       , genRapPopulationOnly = False
-                      , atlasWithoutExpressions = False
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
@@ -664,10 +662,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["gen-as-rap-model"]
                (NoArg (\opts -> opts{genRapPopulationOnly = True}))
                "Generate populations for use in RAP3."
-            , Hidden)
-          , (Option []        ["atlas-without-expressions"]
-               (NoArg (\opts -> opts{atlasWithoutExpressions = True}))
-               "Temporary switch to create Atlas without expressions, for use in RAP3"
             , Hidden)
           , (Option []        ["crud-defaults"]
                (ReqArg (\crudString opts -> let c = 'c' `notElem` crudString
