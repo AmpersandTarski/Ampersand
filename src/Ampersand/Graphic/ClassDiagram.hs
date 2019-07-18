@@ -3,10 +3,10 @@ module Ampersand.Graphic.ClassDiagram
           Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..) , MinValue(..), MaxValue(..)
            ) where
-import Data.List
+import qualified RIO.List as L
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
-     ( A_Concept, Declaration, A_Gen
+import Ampersand.ADL1
+     ( A_Concept, Relation, AClassify
      )
 
 data ClassDiag = OOclassdiagram {cdName :: String
@@ -45,13 +45,13 @@ data Association    = OOAssoc  { assSrc ::     String           -- ^ source: the
                                , assTgt ::     String           -- ^ target: the name of the target class
                                , assrhm ::     Multiplicities   -- ^ right hand side multiplicities
                                , assrhr ::     String           -- ^ right hand side role
-                               , assmdcl ::    Maybe Declaration -- ^ the declarations that caused this association , if any.
+                               , assmdcl ::    Maybe Relation -- ^ the relations that caused this association , if any.
                                } deriving Show
 data Aggregation    = OOAggr   { aggDel :: Deleting             --
                                , aggChild ::  A_Concept         --
                                , aggParent :: A_Concept         --
                                } deriving (Show, Eq)
-data Generalization = OOGener  { genAgen :: A_Gen               --
+data Generalization = OOGener  { genAgen :: AClassify               --
                                } deriving (Show)
 
 data Deleting       = Open | Close                      --
@@ -70,12 +70,12 @@ data Method         = OOMethodC      String             -- name of this method, 
                                      String             -- result: a type
 
 instance Show Method where
-  showsPrec _ (OOMethodC nm cs)  = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"):handle")
-  showsPrec _ (OOMethodR nm as)  = showString (nm++"(handle):["++intercalate "," [ n | OOAttr n _ _<-as]++"]")
-  showsPrec _ (OOMethodS nm ks)  = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-ks]++"):handle")
-  showsPrec _ (OOMethodD nm)     = showString (nm++"(handle)")
-  showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++intercalate "," [ n | OOAttr n _ _<-cs]++")")
-  showsPrec _ (OOMethod nm cs r) = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"): "++r)
+  show (OOMethodC nm cs)  = nm++"("++L.intercalate "," [ n | OOAttr n _ _<-cs]++"):handle"
+  show (OOMethodR nm as)  = nm++"(handle):["++L.intercalate "," [ n | OOAttr n _ _<-as]++"]"
+  show (OOMethodS nm ks)  = nm++"("++L.intercalate "," [ n | OOAttr n _ _<-ks]++"):handle"
+  show (OOMethodD nm)     = nm++"(handle)"
+  show (OOMethodU nm cs)  = nm++"(handle,"++L.intercalate "," [ n | OOAttr n _ _<-cs]++")"
+  show (OOMethod nm cs r) = nm++"("++L.intercalate "," [ n | OOAttr n _ _<-cs]++"): "++r
 
 --
 --   testCD

@@ -3,7 +3,7 @@
 
 META "authors" "Stef Joosten"
 
-PROCESS Login
+PATTERN Login
 
 RELATION accLogin[Account*Loginnaam] [UNI,INJ] PRAGMA "" " heeft als loginnaam "
 MEANING "Elk account heeft een unieke loginnaam."
@@ -65,22 +65,22 @@ VIOLATION (TXT "{EX} InsPair;sessionLoginnaam;SESSION;", SRC I, TXT ";Loginnaam;
 RULE "username password combination": sessionLoginnaam~;sessionPassword |- accLogin~;accPassword
 MEANING "Elke loginnaam/wachtwoord combinatie dient een persoon te identificeren, van wie een loginnaam/wachtwoord combinatie in het systeem is geregistreerd."
 MESSAGE "Ongeldige combinatie van gebruikernaam en password!"
-ENDPROCESS
+ENDPATTERN
 
 VIEW SESSION : SESSION(sessionLoginnaam)
 
-INTERFACE "Login" (sessionLoginnaam, sessionPassword) : '_SESSION' - ingelogd;V
+INTERFACE "Login" (sessionLoginnaam, sessionPassword) : "_SESSION" - ingelogd;V
 BOX [ "loginnaam" : sessionLoginnaam
     , "Wachtwoord" : sessionPassword
     ]
 
 
-INTERFACE "Logout" (sessionLoginnaam) : '_SESSION'/\ingelogd;ingelogd~
+INTERFACE "Logout" (sessionLoginnaam) : "_SESSION"/\ingelogd;ingelogd~
 BOX [ "Logout:" : sessionLoginnaam
     ]
 
 
-INTERFACE "Internals" FOR Beheerder: '_SESSION'[SESSION]
+INTERFACE "Internals" FOR Beheerder: "_SESSION"[SESSION]
 BOX [ --"Actieve sessies" : V[SESSION*SESSION]
       --BOX [ "Sessie id" : I[SESSION]
       --    , "loginnaam" : ingelogd;accLogin
@@ -101,7 +101,7 @@ BOX [ loginnaam: accLogin
 -- a) een interface voor het beheren van je eigen account in de MENU bar.
 INTERFACE "Mijn account"
     (accPassword, sessionPassword, accLogin):
-    '_SESSION';ingelogd
+    "_SESSION";ingelogd
 BOX [ "Login naam"  : accLogin
     , "Wachtwoord"  : accPassword
     , "Rol(len)"    : accRol
@@ -113,7 +113,7 @@ BOX [ "Login naam"  : accLogin
 -- b) een interface voor het beheren van je account, niet in de MENU bar.
 INTERFACE "Mijn Persoonsgegevens" -- Zelfde, maar dan als 'gewone' INTERFACE.
     (accPassword, sessionPassword, accLogin):
-    I[Account] /\ ingelogd~;'_SESSION';ingelogd
+    I[Account] /\ ingelogd~;"_SESSION";ingelogd
 BOX [ "Login naam"  : accLogin
     , "Wachtwoord"  : accPassword
     , "Rol(len)"    : accRol
@@ -126,7 +126,7 @@ BOX [ "Login naam"  : accLogin
 --    Het eigen account mag niet gewijzigd worden, omdat zulks de sessie-integriteit zou kunnen verstoren.
 INTERFACE "Beheerde Accounts"
     (accLogin, accPassword, accRol) FOR Beheerder:
-    '_SESSION';ingelogd;(accRol;'SystemAdmin';V[Role*Account]-I)
+    "_SESSION";ingelogd;(accRol;'SystemAdmin';V[Role*Account]-I)
 BOX <SCOLS>
     [ "Login naam" : accLogin
     , "Wachtwoord" : accPassword

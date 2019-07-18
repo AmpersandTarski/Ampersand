@@ -1,24 +1,26 @@
 {-# OPTIONS_GHC -Wall #-}
-import Distribution.Simple
-import Distribution.Simple.LocalBuildInfo
-import Distribution.Simple.Setup
-import Distribution.PackageDescription
-import System.Process
-import System.Exit
-import Control.Exception
-import Data.List
-import Data.Either
-import Data.Char
-import Data.Time.Clock
+module Main 
+where
+import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive.Zip from package zip-archive. This reduces the amount of packages. (We now use two for zipping/unzipping)
+import           Control.Exception
+import qualified Data.ByteString.Lazy.Char8 as BLC
+import           RIO.Char
+import           Data.Either
+import qualified RIO.List as L
+import           Data.Time.Clock
 import qualified Data.Time.Format as DTF
-import Data.Time.LocalTime
-import System.Directory
-import System.FilePath
-import System.IO
---import System.Locale as SL
-import qualified Data.ByteString.Lazy.Char8 as BS
-import qualified Codec.Compression.GZip as GZip
-
+import           Data.Time.LocalTime
+import           Distribution.Simple
+import           Distribution.Simple.LocalBuildInfo
+import           Distribution.Simple.Setup
+import           Distribution.PackageDescription
+import           Distribution.Pretty (prettyShow)
+import           System.Directory
+import           System.Environment (getEnvironment)
+import           System.Exit
+import           System.FilePath
+import           System.IO(withFile,IOMode(ReadMode),hGetContents)
+import           System.Process(readProcessWithExitCode)
 
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
@@ -30,7 +32,7 @@ main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook
 
 generateBuildInfoHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
 generateBuildInfoHook pd  lbi uh bf =
- do { let cabalVersionStr = intercalate "." (map show . versionBranch . pkgVersion . package $ pd)
+ do { let cabalVersionStr = prettyShow . pkgVersion . package $ pd
 
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime
@@ -49,11 +51,17 @@ buildInfoModuleName = "Ampersand.Basics.BuildInfo_Generated"
 
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion gitInfo time = unlines
-  [ "module "++buildInfoModuleName++"(cabalVersionStr, gitInfoStr, buildTimeStr) where"
+  [ "module "++buildInfoModuleName++"("
+  -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""
-  -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
+  , "      cabalVersionStr"
+  , "    , gitInfoStr"
+  , "    , buildTimeStr"
+  , "    ) where"
+  , "import Ampersand.Basics.Prelude"
+  , ""
   , "{-"++"# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
   , "cabalVersionStr :: String"
   , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
@@ -69,40 +77,54 @@ buildInfoModule cabalVersion gitInfo time = unlines
   ]
 
 getGitInfoStr :: IO String
-getGitInfoStr =
- do { eSHA <- readProcessEither "git" ["rev-parse", "--short", "HEAD"] ""
-    ; eBranch <- readProcessEither "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
-    ; (exitCode, _, _) <- readProcessWithExitCode "git" ["diff", "--quiet"] ""
-    ; let isDirty = exitCode /= ExitSuccess -- exit code signals whether branch is dirty
-    ; case (eSHA, eBranch) of
-        (Right sha, Right branch) ->
-         return $ strip branch ++ ":" ++ strip sha ++ (if isDirty then "*" else "")
-        _ ->
-         do { mapM_ print $ lefts [eSHA, eBranch] -- errors during git execution
-            ; warnNoCommitInfo
-            }
-    } `catch` \err ->  -- git failed to execute
-         do { print (err :: IOException)
-            ; warnNoCommitInfo
-            }
- where strip str = reverse . dropWhile isSpace . reverse $ str
+getGitInfoStr = getInfoStr `catch` warnGracefully
+  where 
+   getInfoStr = do
+     eSHA <- readProcessEither "git" ["rev-parse", "--short", "HEAD"] ""
+     eBranch <- readProcessEither "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
+     (exitCode, _, _) <- readProcessWithExitCode "git" ["diff", "--quiet"] ""
+     let isDirty = exitCode /= ExitSuccess -- exit code signals whether branch is dirty
+     case (eSHA, eBranch) of
+       (Right sha, Right branch) ->
+           return $ gitInfoStr sha branch isDirty
+       _ -> do 
+           -- ci/cd will create some custom environment variables.
+           -- This is required in case of usage of cabal 2.4 or greater.
+           -- (See https://github.com/haskell/cabal/issues/5934 for 
+           -- the discussion)
+           env <- getEnvironment
+           case ( lookup "GIT_SHA" env
+                , lookup "GIT_Branch" env
+                ) of
+             (Just sha, Just branch) ->
+               return $ gitInfoStr branch sha False
+             _ -> do
+               mapM_ print $ lefts [eSHA, eBranch] -- errors during git execution
+               warnNoCommitInfo
+           
+   warnGracefully err = do
+     print (err :: IOException)
+     warnNoCommitInfo
+   gitInfoStr sha branch isDirty =
+      strip branch ++ ":" ++ strip sha ++ (if isDirty then "*" else "")   
+   strip str = reverse . dropWhile isSpace . reverse $ str
 
-       readProcessEither :: String -> [String] -> String -> IO (Either String String)
-       readProcessEither cmd args stdinStr =
-        do { (exitCode,stdoutStr,stderrStr) <- readProcessWithExitCode cmd args stdinStr
-           ; case exitCode of
-               ExitSuccess   -> return $ Right stdoutStr
-               ExitFailure _ -> return $ Left stderrStr
-           }
+   readProcessEither :: String -> [String] -> String -> IO (Either String String)
+   readProcessEither cmd args stdinStr = do
+     (exitCode,stdoutStr,stderrStr) <- readProcessWithExitCode cmd args stdinStr
+     case exitCode of
+       ExitSuccess   -> return $ Right stdoutStr
+       ExitFailure _ -> return $ Left stderrStr
 
 warnNoCommitInfo :: IO String
-warnNoCommitInfo =
- do { putStrLn "\n\n\nWARNING: Execution of 'git' command failed."
-    ; putStrLn $ "BuildInfo_Generated.hs will not contain revision information, and therefore\nneither will fatal error messages.\n"++
-                 "Please check your installation\n"
-    ; return "no git info"
-    }
-
+warnNoCommitInfo = do
+  putStrLn ""
+  putStrLn ""
+  putStrLn "WARNING: Execution of 'git' command failed."
+  putStrLn "BuildInfo_Generated.hs will not contain revision information, and"
+  putStrLn "   therefore neither will fatal error messages."
+  putStrLn "   Please check your installation."
+  return "no git info"
 
 {- For each file in the directory ampersand/static, we generate a StaticFile value,
    which contains the information necessary for Ampersand to create the file at run-time.
@@ -153,10 +175,10 @@ getPreviousStaticFileModuleContents sfModulePath =
 -- Collect all files required to be inside the ampersand.exe 
 readAllStaticFiles :: IO String
 readAllStaticFiles =
-  do { zwolleFrontEndFiles  <- readStaticFiles ZwolleFrontEnd   "static/zwolle" "."  -- files that define the Zwolle Frontend
-     ; pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
+  do { pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
      ; formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand" "."  --meta information about Ampersand
-     ; return $ mkStaticFileModule $ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles
+     ; systemContextFiles   <- readStaticFiles SystemContext    "AmpersandData/SystemContext" "."  --Special system context for Ampersand
+     ; return $ mkStaticFileModule $ pandocTemplatesFiles ++ formalAmpersandFiles ++ systemContextFiles
      }
 
 readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [String]
@@ -169,32 +191,37 @@ readStaticFiles fkind base fileOrDirPth =
            }
        else
         do { timeStamp <- getModificationTime path
-           ; fileContents <- BS.readFile path
+           ; fileContents <- BLC.readFile path
            ; return [ "SF "++show fkind++" "++show fileOrDirPth++" "++utcToEpochTime timeStamp ++
-                             " {-"++show timeStamp++" -} (BS.unpack$ GZip.decompress "++show (GZip.compress fileContents)++")"
+                             " {-"++show timeStamp++" -} (BLC.unpack$ GZip.decompress "++show (GZip.compress fileContents)++")"
                     ]
            }
      }
   where utcToEpochTime :: UTCTime -> String
         utcToEpochTime utcTime = DTF.formatTime DTF.defaultTimeLocale "%s" utcTime
 
-data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand deriving (Show, Eq)
+data FileKind = PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)
 
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
   unlines staticFileModuleHeader ++
-  "  [ " ++ intercalate "\n  , " sfDeclStrs ++ "\n" ++
+  "  [ " ++ L.intercalate "\n  , " sfDeclStrs ++ "\n" ++
   "  ]\n"
 
 staticFileModuleHeader :: [String]
 staticFileModuleHeader =
   [ "{-# LANGUAGE OverloadedStrings #-}"
-  , "module "++staticFileModuleName++" where"
-  , "import qualified Data.ByteString.Lazy.Char8 as BS"
+  , "module "++staticFileModuleName
+  , "   ( StaticFile(..),FileKind(..)"
+  , "   , allStaticFiles, getStaticFileContent"
+  , "   )"
+  , "where"
+  , "import Ampersand.Basics"
+  , "import qualified Data.ByteString.Lazy.Char8 as BLC"
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"
   , ""
-  , "data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand deriving (Show, Eq)"
+  , "data FileKind = PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)"
   , "data StaticFile = SF { fileKind      :: FileKind"
   , "                     , filePath      :: FilePath -- relative path, including extension"
   , "                     , timeStamp     :: Integer  -- unix epoch time"

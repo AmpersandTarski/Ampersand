@@ -95,20 +95,20 @@ ENDPATTERN
 
 PATTERN "Attributes for univalent relations"
 
-RULE "fill srcAtt for univalent relations" : (I/\prop;'UNI';prop~);source;conceptAttribute |- srcAtt
+RULE "fill srcAtt for univalent relations" : (I/\prop;"UNI";prop~);source;conceptAttribute |- srcAtt
 MEANING "The concept-table of the source of a univalent relation is the source attribute of that relation."
 VIOLATION ( TXT "{EX} InsPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
-RULE "fill tgtAtt for univalent relations" : (I/\prop;'UNI';prop~);srcAtt;table |- tgtAtt;table
+RULE "fill tgtAtt for univalent relations" : (I/\prop;"UNI";prop~);srcAtt;table |- tgtAtt;table
 MEANING "The target attribute of a univalent relation is created in the same table as the source attribute."
 VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;_NEW"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", SRC target
           , TXT ";table;SqlAttribute;_NEW;SQLPlug;", TGT I
           )
-RULE "clean srcAtt for univalent relations" : (I/\prop;'UNI';prop~);srcAtt |- source;conceptAttribute
+RULE "clean srcAtt for univalent relations" : (I/\prop;"UNI";prop~);srcAtt |- source;conceptAttribute
 MEANING "The source attribute of a univalent relation is the concept-table of its source concept."
 VIOLATION ( TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
-RULE "clean tgtAtt for univalent relations" : (I/\prop;'UNI';prop~);tgtAtt;table |- srcAtt;table
+RULE "clean tgtAtt for univalent relations" : (I/\prop;"UNI";prop~);tgtAtt;table |- srcAtt;table
 MEANING "The target attribute of a univalent relation is removed from the table in which its source attribute resides."
 VIOLATION ( TXT "{EX} DelAtom;SQLPlug;", TGT I
           , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";SQLPlug;", TGT I
@@ -126,20 +126,20 @@ ENDPATTERN
 
 
 PATTERN "Attributes for injective relations"
-RULE "fill tgtAtt for injective relations" : ((I/\prop;'INJ';prop~)-prop;'UNI';prop~);target;conceptAttribute |- tgtAtt
+RULE "fill tgtAtt for injective relations" : ((I/\prop;"INJ";prop~)-prop;"UNI";prop~);target;conceptAttribute |- tgtAtt
 MEANING "The concept-table of the target of a univalent relation is the target attribute of that relation."
 VIOLATION ( TXT "{EX} InsPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
-RULE "fill srcAtt for injective relations" : ((I/\prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt;table |- srcAtt;table
+RULE "fill srcAtt for injective relations" : ((I/\prop;"INJ";prop~)-prop;"UNI";prop~);tgtAtt;table |- srcAtt;table
 MEANING "The target attribute of a univalent relation is created in the same table as the source attribute."
 VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";srcAtt;Relation;", SRC I, TXT ";SqlAttribute;_NEW"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", SRC source
           , TXT ";table;SqlAttribute;_NEW;SQLPlug;", TGT I
           )
-RULE "clean tgtAtt for injective relations" : ((I/\prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt |- target;conceptAttribute
+RULE "clean tgtAtt for injective relations" : ((I/\prop;"INJ";prop~)-prop;"UNI";prop~);tgtAtt |- target;conceptAttribute
 MEANING "The target attribute of a univalent relation is the concept-table of its target concept."
 VIOLATION ( TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
-RULE "clean srcAtt for injective relations" : ((I/\prop;'INJ';prop~)-prop;'UNI';prop~);srcAtt;table |- tgtAtt;table
+RULE "clean srcAtt for injective relations" : ((I/\prop;"INJ";prop~)-prop;"UNI";prop~);srcAtt;table |- tgtAtt;table
 MEANING "The target attribute of a univalent relation is removed from the table in which its source attribute resides."
 VIOLATION ( TXT "{EX} DelAtom;SQLPlug;", TGT I
           , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";SQLPlug;", TGT I
@@ -158,21 +158,21 @@ ENDPATTERN
 
 PATTERN "Attributes of n-to-m relations"
 RULE "fill table for n-to-m relations (source)" :
-     ((I-prop;'INJ';prop~)-prop;'UNI';prop~);source |- srcAtt;concept
+     ((I-prop;"INJ";prop~)-prop;"UNI";prop~);source |- srcAtt;concept
 MEANING "The concept of the source attribute of an n-to-m relation is the source concept of that relation."
 VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";srcAtt;Relation;", SRC I, TXT ";SqlAttribute;_NEW"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", TGT I
           )
 RULE "fill table for n-to-m relations (target)" :
-      ((I-prop;'INJ';prop~)-prop;'UNI';prop~);target |- tgtAtt;concept
+      ((I-prop;"INJ";prop~)-prop;"UNI";prop~);target |- tgtAtt;concept
 MEANING "The concept of the target attribute of an n-to-m relation is the source concept of that relation."
 VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;_NEW"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", TGT I
           )
 RULE "new BinSQL" :
-     srcAtt~;((I[Relation]-prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt |- table;I[BinSQL];table~
+     srcAtt~;((I[Relation]-prop;"INJ";prop~)-prop;"UNI";prop~);tgtAtt |- table;I[BinSQL];table~
 MEANING "Every relation has an SQLPlug in which to store its population."
 VIOLATION ( TXT "{EX} NewStruct;BinSQL"
           , TXT ";table;SqlAttribute;", SRC I, TXT ";BinSQL;_NEW"
@@ -184,7 +184,7 @@ ROLE ExecEngine MAINTAINS
     "new BinSQL"
 
 RULE "clear table for n-to-m relations (source)" :
-     ((I-prop;'INJ';prop~)-prop;'UNI';prop~);srcAtt;concept |- source
+     ((I-prop;"INJ";prop~)-prop;"UNI";prop~);srcAtt;concept |- source
 MEANING "The source concept of an n-to-m relation is the concept of the source attribute of that relation."
 VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC srcAtt, TXT ";Concept;", SRC srcAtt;concept
           , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";SQLPlug;", SRC srcAtt;table
@@ -192,7 +192,7 @@ VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC srcAtt, TXT ";Concept;
           , TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", SRC srcAtt
           )
 RULE "clear table for n-to-m relations (target)" :
-      ((I-prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt;concept |- target
+      ((I-prop;"INJ";prop~)-prop;"UNI";prop~);tgtAtt;concept |- target
 MEANING "The target concept of an n-to-m relation is the concept of the target attribute of that relation."
 VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC tgtAtt, TXT ";Concept;", SRC tgtAtt;concept
           , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";SQLPlug;", SRC tgtAtt;table

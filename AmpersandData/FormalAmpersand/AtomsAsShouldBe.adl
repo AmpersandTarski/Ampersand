@@ -1,7 +1,7 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Atoms.xlsx"
 
-PROCESS Atoms
+PATTERN Atoms
     RELATION name[Concept*Identifier] [UNI,TOT]
     RELATION name[Relation*Identifier] [UNI,TOT]
     RELATION source[Relation*Concept] [UNI,TOT]
@@ -15,9 +15,9 @@ PROCESS Atoms
     RELATION in[Pair*Relation] [UNI,TOT]
     RELATION lAtom[Pair*Atom] [UNI,TOT]
     RELATION rAtom[Pair*Atom] [UNI,TOT]
-ENDPROCESS
+ENDPATTERN
 
-PROCESS "Compute sources, targets, and populations"
+PATTERN "Compute sources, targets, and populations"
     RELATION sources[Relation*Concept] -- meant for: sources = source;isaStar~
     RELATION targets[Relation*Concept] -- meant for: targets = target;isaStar~
 
@@ -39,9 +39,9 @@ PROCESS "Compute sources, targets, and populations"
     VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
     RULE delPop : pop |- lAtom~;in;source;isaStar \/ rAtom~;in;target;isaStar
     VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-ENDPROCESS
+ENDPATTERN
 
-PROCESS "Compute Closures"
+PATTERN "Compute Closures"
     RELATION isa[Concept*Concept] [IRF,ASY]
     MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
     RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
@@ -59,9 +59,9 @@ PROCESS "Compute Closures"
     VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
     RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-ENDPROCESS
+ENDPATTERN
 
-INTERFACE Overview : '_SESSION'[SESSION]
+INTERFACE Overview : "_SESSION"[SESSION]
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]

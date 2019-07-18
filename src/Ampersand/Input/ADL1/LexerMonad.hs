@@ -13,11 +13,10 @@ module Ampersand.Input.ADL1.LexerMonad
     , runLexerMonad
     ) where
 
-import Ampersand.Input.ADL1.LexerMessage
+import Ampersand.Basics
 import Ampersand.Input.ADL1.FilePos
+import Ampersand.Input.ADL1.LexerMessage
 import Ampersand.Misc
-
-import Control.Monad
 
 type Bracket = (FilePos, Char)
 
@@ -59,7 +58,9 @@ instance Functor LexerMonad where
 
 instance Applicative LexerMonad where
     pure = returnLM
-    (<*>) = ap
+    m1 <*> m2 = do x1 <- m1
+                   x2 <- m2
+                   return (x1 x2)
 
 -- | Runs the lexer monad
 runLexerMonad :: [Options]    -- ^ The command line options

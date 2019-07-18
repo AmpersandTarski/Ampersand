@@ -3,17 +3,17 @@ module Ampersand.Graphic.ClassDiag2Dot (
 
 ) 
 where
-import Data.List
-import Ampersand.Basics
-import Ampersand.Classes
-import Ampersand.ADL1  hiding (Association,Box)
-import Ampersand.Misc
-import Data.String
-import Data.GraphViz.Types.Canonical hiding (attrs)
-import Data.GraphViz.Attributes.Complete as GVcomp
-import Data.GraphViz.Attributes as GVatt
-import Data.GraphViz.Attributes.HTML as Html
-import Ampersand.Graphic.ClassDiagram
+import           Ampersand.ADL1  hiding (Box)
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Graphic.ClassDiagram
+import           Ampersand.Misc
+import           Data.GraphViz.Attributes as GVatt
+import           Data.GraphViz.Attributes.Complete as GVcomp
+import           Data.GraphViz.Attributes.HTML as Html
+import           Data.GraphViz.Types.Canonical hiding (attrs)
+import qualified RIO.List as L
+import qualified RIO.Set as Set
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
 classdiagram2dot :: Options -> ClassDiag -> DotGraph String
@@ -31,7 +31,9 @@ classdiagram2dot opts cd
                                                    , MinLen 4
                                        ]           ]
                         , subGraphs = []
-                        , nodeStmts = allNodes (classes cd) (nodes cd >- nodes (classes cd))
+                        , nodeStmts = allNodes (classes cd) [n | n<- nodes cd
+                                                            , n `notElem` nodes (classes cd)
+                                                            ]
                         , edgeStmts = map association2edge (assocs cd)  ++
                                       map aggregation2edge (aggrs cd)  ++
                                       concatMap generalization2edges (geners cd)
@@ -107,9 +109,9 @@ classdiagram2dot opts cd
 --                    [r |r<-rels, isUni r,      isInj r, isSur r]++[flp r |r<-rels,      isUni r , isInj r, not (isSur r)]
 ---- assRels contains all relations that do not occur as attributes in classes
 --       assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
---       attrs rs   = [ OOAttr ((name.head.relsMentionedIn) r) (name (target r)) (not(isTot r))
+--       attrs rs   = [ OOAttr ((name.head.bindedRelationsIn) r) (name (target r)) (not(isTot r))
 --                    | r<-rs, not (isPropty r)]
---       isPropty r = null([Sym,Asy]>-properties r)
+--       isPropty r = null([Sym,Asy]Set.\\properties r)
 
 -------------------------------
 --        ASSOCIATIONS:      --
@@ -154,20 +156,26 @@ classdiagram2dot opts cd
 -------------------------------
        generalization2edges :: Generalization -> [DotEdge String]
        generalization2edges ooGen = sub2edges (genAgen ooGen)
+-- SJ 2017-09-22. Drawing generalization arrows from right to left seems to give better pictures.
+-- This is probably because it is more in line with the totality constraint, which governs the drawing
+-- direction of associations. For this purpose we draw a backward facing arrow from generic to specific.
         where
           sub2edges gen
-           = [DotEdge { fromNode = name spec
-                      , toNode   = name gener
+           = [DotEdge { fromNode = name gener
+                      , toNode   = name spec
                       , edgeAttributes
-                                 = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
+                                 = [ Dir Back
+                                   , ArrowTail (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
                                    , ArrowSize  2.0
                                    ] ++
                                    ( if blackWhite opts
-                                     then [Style [SItem Dashed []]]
+                                     then [GVcomp.Style [SItem Dashed []]]
                                      else [GVcomp.Color [WC (X11Color Red) Nothing]]
                                    )
                       }
-             | (spec,gener)<-splits gen]
+             | (spec,gener)<-splits gen
+             , spec /= gener -- required, until issue #896 is fixed.
+             ] 
           splits gen = case gen of
                                Isa{} -> [(genspc gen, gengen gen)]
                                IsE{} -> [(genspc gen, x ) | x<-genrhs gen]
@@ -178,7 +186,7 @@ class CdNode a where
  nodes :: a->[String]
 
 instance CdNode ClassDiag where
- nodes cd = nub (concat (  map nodes (classes cd)
+ nodes cd = L.nub (concat (  map nodes (classes cd)
                          ++map nodes (assocs  cd)
                          ++map nodes (aggrs   cd)
                          ++map nodes (geners  cd)
@@ -195,5 +203,5 @@ instance CdNode Aggregation where
  nodes (OOAggr _ s t) = map name [s,t]
 
 instance CdNode Generalization where
- nodes g = map name ((concs.genAgen) g)
+ nodes = map name . Set.elems . concs . genAgen
 

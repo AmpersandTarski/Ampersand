@@ -8,10 +8,10 @@ PATTERN "ARM20Test5"
 
 critBF   :: Criterium -> Bedrijfsfunctie
 
-SPEC Verplichting ISA Criterium
+CLASSIFY Verplichting ISA Criterium
 oblTAV :: Verplichting * Bedrijfsfunctie [UNI] 
 
-SPEC Verwachting ISA Criterium
+CLASSIFY Verwachting ISA Criterium
 expTAV :: Verwachting * Bedrijfsfunctie [UNI]
 
 RULE "NieuwConcept": I[VerplichteVerwachting] = I[Verplichting] /\ I[Verwachting]

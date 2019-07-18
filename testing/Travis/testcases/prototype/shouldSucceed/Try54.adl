@@ -1,0 +1,12 @@
+CONTEXT Try54
+
+PATTERN Twovalued
+RULE twovalued : I[Position] = "valid" \/ "invalid"
+VIOLATION (SRC I, TXT " is not a Position. Please pick 'valid' or 'invalid'.")
+ENDPATTERN
+
+POPULATION Position CONTAINS [ "valid", "invalid" ]
+
+INTERFACE Twovalued : "_SESSION"
+BOX [ probeer : V[SESSION*Position] ]
+ENDCONTEXT

@@ -1,128 +1,90 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
          , writePrototypeAppFile
-         , copyDirRecursively, copyDeepFile, removeAllDirectoryFiles, getProperDirectoryContents
+         , copyDirRecursively, removeAllDirectoryFiles, getProperDirectoryContents
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
-         , indentBlock,addToLast
-         , indentBlockBetween,quote
-         , showValPHP,phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
+         , indentBlock
+         , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
          , installComposerLibs
          ) where
  
-import Prelude hiding (putStrLn, readFile, writeFile)
-import Data.Monoid
-import Data.List
-import qualified Data.Text as Text
-import System.Directory
-import System.FilePath
-import Ampersand.Basics
-import Ampersand.Misc
-import qualified System.Exit as SE (ExitCode(..))
-import System.Process
-import Ampersand.Core.AbstractSyntaxTree
-     ( showValPHP
-     )
+import           Ampersand.Basics
+import           Ampersand.Misc
+import qualified RIO.List as L
+import qualified RIO.Text as T
+import           System.Directory
+import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))
+import           System.FilePath
+import           System.Process
+
 
 getGenericsDir :: Options -> String
-getGenericsDir opts = 
-  dirPrototype opts </> "generics" 
+getGenericsDir Options{..} = 
+  dirPrototype </> "generics" 
 
-writePrototypeAppFile :: Options -> String -> String -> IO ()
-writePrototypeAppFile opts relFilePath content =
- do { verboseLn opts ("  Generating "<>relFilePath)
-    ; let filePath = getAppDir opts </> relFilePath
-    ; createDirectoryIfMissing True (takeDirectory filePath)
-    ; writeFile filePath content
-    }
-   
+writePrototypeAppFile :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
+                         String -> String -> RIO env ()
+writePrototypeAppFile relFilePath content = do
+  sayWhenLoudLn $ "  Generating "<>relFilePath 
+  opts <- view optionsL
+  let filePath = getAppDir opts </> relFilePath
+  liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
+  liftIO $ writeFile filePath content
+     
 getAppDir :: Options -> String
-getAppDir opts =
-  dirPrototype opts </> "app"
+getAppDir Options{..} =
+  dirPrototype </> "public" </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
-copyDirRecursively :: FilePath -> FilePath -> Options -> IO ()
-copyDirRecursively srcBase tgtBase opts = copy ""
-  where copy fileOrDirPth = 
-         do { let srcPath = srcBase </> fileOrDirPth
-                  tgtPath = tgtBase </> fileOrDirPth
-            ; isDir <- doesDirectoryExist srcPath
-            ; if isDir then 
-               do { createDirectoryIfMissing True tgtPath
-                  ; verboseLn opts $ " Copying dir... " ++ srcPath
-                  ; fOrDs <- getProperDirectoryContents srcPath
-                  ; mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
-                  }
-              else
-               do { verboseLn opts $ "  file... " ++ fileOrDirPth
-                  ; copyFile srcPath tgtPath -- directory will exist, so no need for copyDeepFile
-                  }
-            }
-            
--- Copy file while creating all subdirectories on the target path (if non-existent)
-copyDeepFile :: FilePath -> FilePath -> Options -> IO ()
-copyDeepFile srcPath tgtPath opts =
- do { verboseLn opts $ " Copying file... " ++ srcPath ++ " -> " ++ tgtPath
-    ; createDirectoryIfMissing True (takeDirectory tgtPath)
-    ; copyFile srcPath tgtPath
-    }
+copyDirRecursively :: (HasVerbosity  env, HasHandle env) =>
+                      FilePath -> FilePath -> RIO env ()
+copyDirRecursively srcBase tgtBase = copy ""
+  where copy fileOrDirPth = do
+          let srcPath = srcBase </> fileOrDirPth
+              tgtPath = tgtBase </> fileOrDirPth
+          isDir <- liftIO $ doesDirectoryExist srcPath
+          if isDir then do
+              liftIO $ createDirectoryIfMissing True tgtPath
+              sayWhenLoudLn $ " Copying dir... " ++ srcPath
+              fOrDs <- getProperDirectoryContents srcPath
+              mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
+          else do
+              sayWhenLoudLn $ "  file... " ++ fileOrDirPth
+              liftIO $ copyFile srcPath tgtPath
+             
 
 -- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
-removeAllDirectoryFiles :: FilePath -> IO ()
-removeAllDirectoryFiles dirPath =
- do { dirContents <- getProperDirectoryContents dirPath
-    ; mapM_ removeDirectoryFile dirContents 
-    }
+removeAllDirectoryFiles :: HasHandle env =>
+                           FilePath -> RIO env ()
+removeAllDirectoryFiles dirPath = do
+    dirContents <- getProperDirectoryContents dirPath
+    mapM_ removeDirectoryFile dirContents 
   where removeDirectoryFile path = 
          do { let absPath = dirPath </> path
-            ; isDir <- doesDirectoryExist absPath
+            ; isDir <- liftIO $ doesDirectoryExist absPath
             ; if isDir then
-                putStrLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
+                sayLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
               else
-                removeFile absPath
+                liftIO $ removeFile absPath
             }
      
-getProperDirectoryContents :: FilePath -> IO [String]
+getProperDirectoryContents :: FilePath -> RIO env [String]
 getProperDirectoryContents pth = 
     filter (`notElem` [".","..",".svn"]) 
-       <$> getDirectoryContents pth
-
-
-quote :: Text.Text->Text.Text
-quote = Text.pack . quote' . Text.unpack
-  where
-    quote' [] = []
-    quote' ('`':s) = '`':s  -- do nothing if already quoted
-    quote' s = "`"<>s<>"`"
---   quote s = "`"<>quo s<>"`"
---    where quo ('`':s')  = "\\`" <> quo s'
---          quo ('\\':s') = "\\\\" <> quo s'
---          quo (c:s')    = c: quo s'
---          quo []       = []
--- See http://stackoverflow.com/questions/11321491/when-to-use-single-quotes-double-quotes-and-backticks
+       <$> (liftIO $ getDirectoryContents pth)
 
 commentBlock :: [String]->[String]
 commentBlock ls = ["/*"<>replicate lnth '*'<>"*\\"]
                      <> ["* "<>strReplace "*/" "**" line<>replicate (lnth - length line) ' '<>" *" | line <- ls]
                      <> ["\\*"<>replicate lnth '*'<>"*/"]
    where
-     lnth = foldl max 0 (map length ls)
+     lnth = L.foldl max 0 (map length ls)
 indentBlock :: Int -> [String] -> [String]
 indentBlock i = map (replicate i ' ' <>)
-
--- | will put the block after the first string, and put the second after the block
--- | If the block is just 1 line, indentBlockBetween will return just 1 line as well
-indentBlockBetween :: Text.Text -- ^ precedes the block
-                   -> Text.Text -- ^ comes at the end of the block
-                   -> [Text.Text] -- ^ the block itself, (will be indented)
-                   -> Text.Text -- ^ result
-indentBlockBetween pre post [] = pre<>post
-indentBlockBetween pre post [s] = pre<>s<>post
-indentBlockBetween pre post block
- = Text.intercalate (phpIndent (Text.length pre)) ((pre<>head block):(init rest<>[last rest<>post]))
- where  rest = tail block
 
 strReplace :: String -> String -> String -> String
 strReplace _ _ "" = ""
@@ -133,17 +95,17 @@ strReplace src dst inp
         n = length src
         process "" = ""
         process st@(c:cs)
-          | src `isPrefixOf` st = dst <> process (drop n st)
+          | src `L.isPrefixOf` st = dst <> process (drop n st)
           | otherwise           = c:process cs
 
-phpIndent :: Int -> Text.Text
+phpIndent :: Int -> T.Text
 phpIndent i
- | i < 0     = Text.pack " " --space instead of \n
- | otherwise = Text.pack $ '\n':replicate i ' '
+ | i < 0     = T.pack " " --space instead of \n
+ | otherwise = T.pack $ '\n':replicate i ' '
 
 
-addSlashes :: Text.Text -> Text.Text
-addSlashes = Text.pack . addSlashes' . Text.unpack
+addSlashes :: T.Text -> T.Text
+addSlashes = T.pack . addSlashes' . T.unpack
   where
     addSlashes' ('\'': cs) = "\\'"<>addSlashes' cs
     addSlashes' ('"': cs) = "\\\""<>addSlashes' cs
@@ -151,13 +113,9 @@ addSlashes = Text.pack . addSlashes' . Text.unpack
     addSlashes' (c:cs) = c:addSlashes' cs
     addSlashes' "" = ""
 
-addToLast :: [a] -> [[a]] -> [[a]]
-addToLast _ [] = fatal 109 "addToLast: empty list"
-addToLast s as = init as<>[last as<>s]
-
-showPhpStr :: Text.Text -> Text.Text
-showPhpStr str = q<>Text.pack (escapePhpStr (Text.unpack str))<>q
-  where q = Text.pack "'"
+showPhpStr :: T.Text -> T.Text
+showPhpStr str = q<>T.pack (escapePhpStr (T.unpack str))<>q
+  where q = T.pack "'"
 
 -- NOTE: we assume a single quote php string, so $ and " are not escaped
 escapePhpStr :: String -> String
@@ -175,22 +133,24 @@ showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
 
 
-installComposerLibs :: Options -> IO()
-installComposerLibs opts =
-  do curPath <- getCurrentDirectory
-     verboseLn opts $ "current directory: "++curPath
-     verbose opts "  Trying to download and install Composer libraries..."
-     (exit_code, stdout', stderr') <- readCreateProcessWithExitCode myProc ""
-     case exit_code of
-       SE.ExitSuccess   -> do verboseLn opts $
-                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                              verboseLn opts stdout'
-       SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
+installComposerLibs :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
+                       RIO env ()
+installComposerLibs = do
+    opts <- view optionsL 
+    curPath <- liftIO $ getCurrentDirectory
+    sayWhenLoudLn $ "current directory: "++curPath
+    sayWhenLoud "  Trying to download and install Composer libraries..."
+    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc opts)""
+    case exit_code of
+      SE.ExitSuccess   -> do sayWhenLoudLn $
+                              " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
+                             sayWhenLoudLn stdout'
+      SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where
-     myProc :: CreateProcess
-     myProc = CreateProcess 
-       { cmdspec = ShellCommand $ "composer update --prefer-dist --lock --profile --working-dir="<>composerTargetPath
+     myProc :: Options -> CreateProcess
+     myProc opts = CreateProcess 
+       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<>composerTargetPath opts
        , cwd = Nothing
        , env = Nothing
        , std_in = Inherit
@@ -204,12 +164,16 @@ installComposerLibs opts =
        , new_session = False
        , child_group = Nothing
        , child_user = Nothing
+       , use_process_jobs = False
        }
-     composerTargetPath = dirPrototype opts
-     failOutput (exit_code, stdout', stderr') =
+     composerTargetPath = dirPrototype 
+     failOutput :: (HasOptions env) =>
+                   (ExitCode, String, String) -> RIO env ()
+     failOutput (exit_code, stdout', stderr') = do
+        opts <- view optionsL 
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
-            , "composerTargetPath: "++composerTargetPath
+            , "composerTargetPath: "++composerTargetPath opts
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
             (if null stdout' then [] else "stdout:" : lines stdout') ++

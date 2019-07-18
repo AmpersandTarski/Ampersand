@@ -7,7 +7,8 @@ Ampersand
 Rieks Joosten
 rieks.joosten@tno.nl
 
-5
+6
+Ampersand is a tool for generating prototypes from relation algebra rules
 This file is for navigation in Ampersand-3.8.0 source code (as of December 2016)
 It supports folding of
 - Haskell-type comments `{- ... -}`

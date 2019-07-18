@@ -1,6 +1,7 @@
 CONTEXT AST IN ENGLISH 
 
 PATTERN Concepts
+    VIEW Concept: Concept(name)
     RELATION name[Concept*ConceptName] [UNI,TOT,SUR]
       ROLE ExecEngine MAINTAINS "del unused ConceptName"
       RULE "del unused ConceptName" : I[ConceptName] |- name~;name
@@ -15,7 +16,6 @@ PATTERN Concepts
 
     REPRESENT ConceptName,RelationName TYPE ALPHANUMERIC
 ENDPATTERN
-VIEW Concept: Concept(name[Concept*ConceptName])
 
 --    RULE "Identifiability of concepts": name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
 
@@ -36,15 +36,15 @@ PATTERN Specialization
 --PURPOSE RULE specialization
 --{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
 --If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
----}
+--+}
 --RELATION instanceOf[Atom*Concept] [TOT] 
 --RULE specialization : instanceOf;genspc~;gengen |- instanceOf
 --MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
 ENDPATTERN
 
-PROCESS "Compute Closures"
-    RELATION isa[Concept*Concept] [IRF,ASY]
+PATTERN "Compute Closures"
+    RELATION isa[Concept*Concept] [ASY]
     MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
     RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
     MEANING "s isaStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  as well."
@@ -64,9 +64,9 @@ PROCESS "Compute Closures"
     RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-ENDPROCESS
+ENDPATTERN
 
-PROCESS "Reflexive isa closures"
+PATTERN "Reflexive isa closures"
     RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
     RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
@@ -94,6 +94,6 @@ PROCESS "Reflexive isa closures"
     RULE "Compute isaRfxStar by Del" : isaRfxStar[Concept*Concept] |- isaRfxPlus[Concept*Concept]\/I
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
-ENDPROCESS
+ENDPATTERN
 
 ENDCONTEXT

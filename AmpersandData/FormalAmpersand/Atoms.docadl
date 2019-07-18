@@ -6,13 +6,13 @@ INCLUDE "Atoms.adl"
 --     reference, maar omgekeerd geldt dat niet. Ik heb een 2c-bijdrage gedaan in twee van de 
 --     hiernavolgende beschrijvingen.
 
-PURPOSE PROCESS "Atoms"
+PURPOSE PATTERN "Atoms"
 {+Here is a problem: Since an information system cannot store tomatoes, it must work with representations of tomatoes.
 In fact, representations are the only things an information system can work with.
 In order to unleash the available logical power of relational algebra to its maximum, 
 Ampersand is restricted to {\em representable} relation algebras.
 In this section, we describe such representations in terms of references to things that exist (atoms) and relations between such references.
--}
++}
 
 PURPOSE CONCEPT Atom
 {+People who design information systems must discuss ``things''.
@@ -27,7 +27,7 @@ An atom is a reference to
 \item some thing that (the information system 'knows' to) exist in the real world and 
 \item a representation (perception) of that thing in the information system that the atom belongs to.
 \end{enumerate}
--}
++}
 CONCEPT Atom "An atom represents a real-world thing in an information system context."
 
 PURPOSE CONCEPT Concept
@@ -41,7 +41,7 @@ For instance, we use the concept ``Car'' to denote the set of cars in a context.
 Similarly, we may use the concept ``Number'' to denote things such as 1, 2 or 101.
 Words such as ``Joy'' or ``Peace'' will not be used as a concept, as long as they do not represent a set of things.
 (Ask yourself ``Which joys are there?'' or ``Which peaces are there?'' when you doubt whether joy and peace are things to collect in a set.)
--}
++}
 CONCEPT Concept "A concept is a name to characterize a set of similar things."
 
 PURPOSE CONCEPT Relation
@@ -49,7 +49,7 @@ PURPOSE CONCEPT Relation
 In order to define a domain language, which business stakeholders can agree on, Ampersand uses relations as the basic building block of that language.
 Relations are equally useful as the basic element of a formal language, which computers can understand.
 For now, relations can be treated as a set of pairs.
--}
++}
 CONCEPT Relation "A relation is a set of pairs."
 
 PURPOSE CONCEPT Pair
@@ -58,7 +58,7 @@ In order to populate relations, atoms are assembled in pairs.
 A relation may be regarded as a set of pairs of atoms.
 In an information system, the population of relations can change because of edit actions by users in user interfaces.
 This means that pairs are inserted into and deleted from relations as time goes by.
--}
++}
 CONCEPT Pair "A pair is an element of a relation, which has a left atom and a right atom."
 
 PURPOSE RELATION repr[Atom*Representation]
@@ -83,7 +83,7 @@ and we might even realize that this atom refers to something in the real world c
 --To do so, every perception must not only be referrable (named), but also distinguishable from all other such perceptions.
 In the current version of Ampersand, every atom is represented by a finite list of UTF-8 characters.
 In future versions, other types of representation will become possible.
--}
++}
 
 PURPOSE RELATION name[Relation*Identifier]
 {+Each relation has a name, provided by the Ampersand-programmer.
@@ -91,45 +91,45 @@ This name has no meaning in the language.
 Therefore, the Ampersand-programmer can invent a name that can serve as a reminder of the meaning or purpose of that relation.
 For example, a relation that links a bank's customers to account numbers might be called ``customerAccount'' for this very reason.
 Ampersand has the convention that relation names start with a lowercase letter.
--}
++}
 PURPOSE RELATION source[Relation*Concept]
 {+Every relation has a source concept. Let us call it $A$.
 Each atom in the left hand side of a pair in that relation, is said to be of type $A$.
--}
++}
 PURPOSE RELATION target[Relation*Concept]
 {+Every relation has a target concept. Let us call it $A$.
 Each atom in the right hand side of a pair in that relation, is said to be of type $A$.
--}
++}
 
 PURPOSE RELATION in[Pair*Relation]
 {+The pair that is stored in a relation, is linked to it by means of in.
--}
++}
 PURPOSE RELATION lAtom[Pair*Atom]
 {+The atom on the left hand side of a pair is linked to that pair via the relation lAtom.
--}
++}
 PURPOSE RELATION rAtom[Pair*Atom]
 {+The atom on the right hand side of a pair is linked to that pair via the relation rAtom.
--}
++}
 
 PURPOSE RELATION pop
 {+In order to talk about (perceptions of) real world entities that share (perceived) similar properties, or in order to specify rules, it must be possible to classify Atoms.
 We use the term 'Concept' to refer to a class of Atoms.
 We say that 'an Atom is in the population of some Concept' or alternatively 'an Atom is an element of some Concept' iff the Atom belongs to (or: is an instance of) that class.
--}
++}
 
 PURPOSE RULE "Identifiability of concepts"
 {+In order to identify and distinguish concepts, they have a name.
 Throughout the context, this name refers to that particular concept, so there cannot be two distinct concepts with the same name within a context.
--}
++}
 PURPOSE RULE "TOT in"
 {+To ensure that pairs only exist in relations, Ampersand requires the totality of in.
 This rule is automated.
 When a relation ceases to exist, the application deletes all pairs in that relation.
--}
++}
 PURPOSE RULE "SUR lAtom and rAtom"
 {+To ensure that atoms only exist in pairs, Ampersand automates the surjectivity of lAtom and rAtom.
 When an atom no longer resides in lAtom or rAtom, the application deletes that atom.
--}
++}
 
 PURPOSE RULE "equality on Atoms"
 {+
@@ -139,14 +139,14 @@ By the way, this definition of equality enables static type checking.
 The type system can guarantee that two atoms are not compared for equality unless they are in the same population.
 Under that condition, equality on atoms may be implemented on runtime by comparing representations only.
 Needless to say that this property must be proven in Ampersand's type system.
--}
++}
 PURPOSE RELATION isa[Concept*Concept]
 {+Specialization is required for the purpose of code re-use.
 Ampersand defines specialization so that type checking can be performed statically.
--}
++}
 PURPOSE RELATION isaPlus[Concept*Concept]
 {+The relation $\id{isaPlus}$ is defined as the transitive closure of $\id{isa}$.
--}
++}
 
 RELATION eq[Atom*Atom]
 RULE "equality on Atoms" : eq = repr;repr~ /\ pop;(isa\/isa~)*;pop~
@@ -156,11 +156,12 @@ MEANING "Two atoms are equal if their representations are equal and they share t
 
 PURPOSE CONCEPT Typology
 {+Merriam-Webster defines a typology as ``a system used for putting things into groups according to how they are similar''.
--}
++}
 CONCEPT Typology "a hierarchy of Concepts"
 {-
 PURPOSE RULE "Integrity of Atoms and populations"
 {+It must be ensured that the representations of ((different) perceptions of) (different) real world entities can be properly distinguished. Any pair of Atoms in the same Concept are distinct (per definition). Thus, we need a rule that expresses when two Atoms that are in different Concepts represent the same (perception of) a real world entity.
++}
 -}
 
 ENDCONTEXT

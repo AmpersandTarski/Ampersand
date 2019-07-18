@@ -1,10 +1,19 @@
-module Ampersand.Basics (module X) where
-import Ampersand.Basics.Auxiliaries as X
-import Ampersand.Basics.Collection as X
-import Ampersand.Basics.Exit as X
-import Ampersand.Basics.Languages as X
-import Ampersand.Basics.PandocExtended as X
-import Ampersand.Basics.String as X
-import Ampersand.Basics.Unique as X
-import Ampersand.Basics.UTF8 as X
-import Ampersand.Basics.Version as X
+module Ampersand.Basics 
+   ( module Ampersand.Basics.Auxiliaries
+   , module Ampersand.Basics.Exit
+   , module Ampersand.Basics.Languages
+   , module Ampersand.Basics.PandocExtended
+   , module Ampersand.Basics.Prelude
+   , module Ampersand.Basics.String
+   , module Ampersand.Basics.Unique
+   , module Ampersand.Basics.Version
+   )
+where
+import Ampersand.Basics.Auxiliaries
+import Ampersand.Basics.Exit
+import Ampersand.Basics.Languages
+import Ampersand.Basics.PandocExtended
+import Ampersand.Basics.Prelude
+import Ampersand.Basics.String
+import Ampersand.Basics.Unique
+import Ampersand.Basics.Version

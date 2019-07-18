@@ -71,7 +71,7 @@ orderOf :: Order -> Product
 
 -- Rules
 
-PROCESS Bestellen
+PATTERN Bestellen
 
 orderAccepted :: Order * Vendor [UNI] -- an order may not be accepted by multiple vendors
 --  = [ ("Order_1", "Vendor_1") ]
@@ -92,6 +92,6 @@ VIOLATION (TGT I, TXT " has not accepted the order by ", SRC orderedBy; clientNa
 ROLE Vendor MAINTAINS allAccepted
 
 
-ENDPROCESS
+ENDPATTERN
 
 ENDCONTEXT

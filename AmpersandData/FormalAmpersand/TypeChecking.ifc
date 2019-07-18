@@ -3,7 +3,7 @@ INCLUDE "TypeChecking.adl"
 INCLUDE "Views.adl"
 INCLUDE "Terms.xlsx"
 
-INTERFACE Contexts (valid,relations) : '_SESSION'
+INTERFACE Contexts (valid,relations) : "_SESSION"
 TABS[ "" : V[SESSION*Context]
       ROWS [ context        : I
            , "valid rules"  : valid~
@@ -11,7 +11,7 @@ TABS[ "" : V[SESSION*Context]
            ]
     ]
 
-INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) : '_SESSION'
+INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) : "_SESSION"
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I
@@ -37,7 +37,7 @@ TABS[ relations : V[SESSION*Relation]
            ]
     ]
 
-INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
+INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]

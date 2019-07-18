@@ -1,14 +1,18 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
-import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Data.List(nub,partition)
-import Data.Maybe(isJust)
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import qualified RIO.List as L
+import           Data.Maybe(isJust,fromMaybe)
+import qualified RIO.Set as Set
 
-chpDiagnosis :: FSpec -> (Blocks,[Picture])
-chpDiagnosis fSpec
- = (  xDefBlck fSpec Diagnosis
+chpDiagnosis :: Options -> FSpec -> (Blocks,[Picture])
+chpDiagnosis opts@Options{..} fSpec
+ | noDiagnosis = mempty
+ | otherwise
+ = (  xDefBlck opts fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
             <> (emph.singleQuoted.str.name) fSpec 
@@ -45,7 +49,7 @@ chpDiagnosis fSpec
                           ,EN " does not define any roles. ")
               )
     | otherwise =
-        case filter isSignal ruls of
+        case filter isSignal . Set.elems $ ruls of
           []   -> para (   (emph.str.upCap.name) fSpec
                         <> (str.l) (NL " kent geen procesregels. "
                                    ,EN " does not define any process rules. ")
@@ -53,7 +57,7 @@ chpDiagnosis fSpec
           sigs ->  para (   (emph.str.upCap.name) fSpec
                          <> (str.l) (NL " kent regels aan rollen toe. "
                                     ,EN " assigns rules to roles. ")
-                         <> (str.l) (NL "De volgende tabel toont welke regels door een bepaalde rol kunnen worden gehandhaafd."
+                         <> (str.l) (NL "De volgende tabel toont welke regels door een bepaalde rol worden bewaakt."
                                     ,EN "The following table shows the rules that are being maintained by a given role.")
                         )
                 <> table -- No caption:
@@ -74,22 +78,17 @@ chpDiagnosis fSpec
                   
      where
                   
-      ruls = filter inScopeRule . filter isSignal . vrules $ fSpec                  
+      ruls = Set.filter isSignal . vrules $ fSpec                  
       f :: Role -> Rule -> Blocks
       f rol rul | (rol,rul) `elem` dead = (plain.str) [timesSymbol] 
                 | otherwise                      = mempty
-          where timesSymbol = toEnum 215      
-      mayedit :: Role -> Declaration -> Bool
-      mayedit role' decl = decl `elem` (snd . unzip) (filter (\x -> role' == fst x) (fRoleRels fSpec))
+          where timesSymbol = '\x215'
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
-       = [ (role',rul)
-         | (role',rul)<-fRoleRuls fSpec
-         , (not.or) (map (mayedit role') (relsUsedIn rul))
-         ]
+       = [ ]
 
   roleomissions :: Blocks
   roleomissions
-   = if (not . any inScopePat . vpatterns) fSpec
+   = if null (vpatterns fSpec)
      then mempty
      else (if (null.fRoleRuls) fSpec && (not.null.vrules) fSpec
            then plain (   (emph.str.upCap.name) fSpec
@@ -97,13 +96,6 @@ chpDiagnosis fSpec
                                   ,EN " does not assign rules to roles. ")
                        <> (str.l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
                                   ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process.")
-                      )
-           else mempty
-          )<>
-          (if null (fRoleRels fSpec) && (not.null.fRoleRuls) fSpec ||(not.null.fRoleRels) fSpec
-           then plain (   (emph.str.upCap.name) fSpec
-                       <> (str.l) (NL " specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
-                                  ,EN " does not specify which roles may change the contents of which relations. ")
                       )
            else mempty
           )
@@ -132,11 +124,11 @@ chpDiagnosis fSpec
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
-         ccs = concs [ d | d<-vrels fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
+         ccs = Set.elems . concs . vrels $ fSpec
   unusedConceptDefs :: Blocks
   unusedConceptDefs
-   = case [cd | cd <-cDefsInScope fSpec, name cd `notElem` map name (concs fSpec)] of
-      []  -> if (null.cDefsInScope) fSpec
+   = case [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (Set.elems $ concs fSpec)] of
+      []  -> if (null.conceptDefs) fSpec
              then mempty
              else para.str.l $
                      (NL "Alle concepten, die in dit document zijn voorzien van een definitie, worden gebruikt in relaties."
@@ -196,17 +188,15 @@ chpDiagnosis fSpec
                                     ,EN " is not documented.")
                         )
           )
-     where bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Declaration]
-           bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) $ decls
-           purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  $ decls
-           meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) $ decls
-           decls = vrels fSpec  -- A restriction on only themes that the user wants the document for is not supported, 
-                                   -- because it is possible that declarations from other themes are required in the
-                                   -- generated document. 
-           showDclMath = math . showDcl False
+     where bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Relation]
+           bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) . Set.elems $ decls
+           purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  . Set.elems $ decls
+           meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) . Set.elems $ decls
+           decls = vrels fSpec
+           showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
-  hasMeaning :: Meaning a => a -> Bool
+  hasMeaning :: HasMeaning a => a -> Bool
   hasMeaning = isJust . meaning (fsLang fSpec)
 
   relsNotUsed :: Blocks
@@ -214,7 +204,7 @@ chpDiagnosis fSpec
   (relsNotUsed,pics)
    = (  
         case notUsed of
-          []  -> if (null.relsMentionedIn.vrules) fSpec
+          []  -> if (null.bindedRelationsIn.vrules) fSpec
                    then mempty
                    else (para .str.l)
                             (NL "Alle relaties in dit document worden in één of meer regels gebruikt."
@@ -230,18 +220,18 @@ chpDiagnosis fSpec
                                   ,EN " are not used in any rule. ")
                       ) 
      <>( case pictsWithUnusedRels of
-          [pict] -> para (    xRef pict 
+          [pict] -> para (    hyperLinkTo pict 
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          )
-                 <> xDefBlck fSpec pict
+                 <> xDefBlck opts fSpec pict
           picts  -> mconcat
-                       [ para (   xRef pict
+                       [ para (   hyperLinkTo pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
                               )
-                       <> xDefBlck fSpec pict
+                       <> xDefBlck opts fSpec pict
                        | (pict,pat)<-zip picts pats
                        ]
        )
@@ -249,20 +239,17 @@ chpDiagnosis fSpec
      )
      where notUsed :: [Inlines]
            notUsed = [ showMath (EDcD d)
-                     | d@Sgn{} <- nub (relsInThemes fSpec) -- only signal relations that are used or defined in the selected themes
+                     | d <- Set.elems (vrels fSpec) -- only relations that are used or defined in the selected themes
                      , decusr d
-                     , d `notElem` (relsMentionedIn . vrules) fSpec
+                     , d `notElem` (bindedRelationsIn . vrules) fSpec
                      ]
            pats  = [ pat | pat<-vpatterns fSpec
-                         , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
-                         , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
+                         , (not.null) (relsDefdIn pat Set.\\ bindedRelationsIn pat) ]
            pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
 
   missingRules :: Blocks
   missingRules
-   = case if null (themes fSpec)
-          then vrules fSpec
-          else concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec] of
+   = case Set.elems $ vrules fSpec of
       []   -> mempty
       ruls ->
          if all hasMeaning ruls && all hasPurpose ruls
@@ -288,12 +275,12 @@ chpDiagnosis fSpec
 
   ruleRelationRefTable :: Blocks
   ruleRelationRefTable =
-       (para.str.l) (NL $ "Onderstaande tabel bevat per thema (dwz. proces of patroon) tellingen van het aantal relaties en regels, " ++
+       (para.str.l) (NL $ "Onderstaande tabel bevat per thema (dwz. patroon) tellingen van het aantal relaties en regels, " ++
                           "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " ++
                           "gedeclareerd worden, worden ook meerdere keren geteld."
-                    ,EN $ "The table below shows for each theme (i.e. process or pattern) the number of relations and rules, followed " ++
-                          " by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
-                          " times."
+                    ,EN $ "The table below shows for each theme (i.e. pattern) the number of relations and rules, followed " ++
+                          "by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
+                          "times."
                     )
     <> table -- No caption:
              mempty
@@ -311,26 +298,25 @@ chpDiagnosis fSpec
              )
              -- Content rows
              (   map mkTableRowPat (vpatterns fSpec)
-              ++ [mempty] -- empty row
-              ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (filter decusr $ vrels fSpec) (vrules fSpec)]
+              ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (Set.filter decusr $ vrels fSpec) (vrules fSpec)]
              )
       
     where mkTableRow :: String  -- The name of the pattern / fSpec 
-                     -> [Declaration] --The user-defined relations of the pattern / fSpec
-                     -> [Rule]  -- The user-defined rules of the pattern / fSpec
+                     -> Relations --The user-defined relations of the pattern / fSpec
+                     -> Rules  -- The user-defined rules of the pattern / fSpec
                      -> [Blocks]
           mkTableRowPat p = mkTableRow (name p) (relsDefdIn p) (udefrules p)
           mkTableRow nm rels ruls =
             map (plain.str) [ nm
-                            , (show.length) rels 
-                            , (show.length) (filter hasRef rels)
-                            , showPercentage (length rels) (length.filter hasRef $ rels)
-                            , (show.length) ruls
-                            , (show.length) (filter hasRef ruls)
-                            , showPercentage (length ruls) (length.filter hasRef $ ruls)
+                            , (show . Set.size) rels 
+                            , (show . Set.size) (Set.filter hasRef rels)
+                            , showPercentage (Set.size rels) (Set.size . Set.filter hasRef $ rels)
+                            , (show . Set.size) ruls
+                            , (show . Set.size) (Set.filter hasRef ruls)
+                            , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
-          hasRef x = maybe False (any  ((/=[]).explRefIds)) (purposeOf fSpec (fsLang fSpec) x)
+          hasRef x = (any  ((/=[]).explRefIds)) (purposesDefinedIn fSpec (fsLang fSpec) x)
 
           showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%"
 
@@ -356,15 +342,14 @@ chpDiagnosis fSpec
                   )
                   -- Rows:
                   [  [ (plain.str.name) rol]
-                   ++[ (plain.str.r_env) rul | multProcs]
+                   ++[ (plain.str.fromMaybe "--".rrpat) rul | multProcs]
                    ++[ (plain.str.name) rul
-                     , (plain.str.r_env) rul
+                     , (plain.str.fromMaybe "--".rrpat) rul
                      ]
                   | (rol,rul)<-fRoleRuls fSpec]
           
-     where multProcs = length procsInScope>1
-           procsInScope = filter inScopePat (vpatterns fSpec)
-
+     where multProcs = length (vpatterns fSpec)>1
+           
   wipReport :: Blocks
   wipReport
    =   case popwork of
@@ -402,23 +387,23 @@ chpDiagnosis fSpec
 -- the tables containing the actual work in progress population
      mconcat
      [    para (  str (l (NL "Afspraak ", EN "Agreement "))
-               <> xRef (XRefSharedLangRule r)
+               <> hyperLinkTo (XRefSharedLangRule r)
                <> " ( " <> quoterule r <> " )"
                <> (str.l) (NL " luidt: ", EN " says: ")
                )
-       <> fromList (meaning2Blocks (fsLang fSpec) r)
+       <> printMeaning (fsLang fSpec) r
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
                           ,EN "This rule contains work (for ")
-                <>commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                <>commaPandocOr (fsLang fSpec) (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                 <>")"
-                <> if length ps == 1
-                   then   (str.l) (NL ", te weten ", EN " by ")
-                       <> oneviol r (head ps)
-                       <> "."
-                   else   (str.l) (NL $ ". De volgende tabel laat de "++(if length ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
-                                  ,EN $ "The following table shows the "++(if length ps>10 then "first ten " else "")++"items that require attention.")
+                <> case Set.toList ps of
+                     [v] ->   (str.l) (NL ", te weten ", EN " by ")
+                           <> oneviol r v
+                           <> "."
+                     _ -> (str.l) (NL $ ". De volgende tabel laat de "++(if Set.size ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
+                                  ,EN $ "The following table shows the "++(if Set.size ps>10 then "first ten " else "")++"items that require attention.")
                )
-       <> if length ps <= 1
+       <> if Set.size ps <= 1
           then mempty -- iff there is a single violation, it is already shown in the previous paragraph
           else violtable r ps 
      | (r,ps)<- popwork ]
@@ -435,15 +420,15 @@ chpDiagnosis fSpec
          else (singleQuoted.str.name) r
       oneviol :: Rule -> AAtomPair -> Inlines
       oneviol r p
-       = if source r==target r && apLeft p==apRight p
-         then singleQuoted (  (str.name.source) r 
+       = if isEndo (formalExpression r) && apLeft p==apRight p
+         then singleQuoted (  (str.name.source.formalExpression) r 
                             <>(str.showValADL.apLeft) p
                            )
-         else    "("  <> (str.name.source) r <> (str.showValADL.apLeft) p 
-              <> ", " <> (str.name.target) r <> (str.showValADL.apRight) p
+         else    "("  <> (str.name.source.formalExpression) r <> (str.showValADL.apLeft) p 
+              <> ", " <> (str.name.target.formalExpression) r <> (str.showValADL.apRight) p
               <> ")"
-      popwork :: [(Rule,[AAtomPair])]
-      popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, inScopeRule r]
+      popwork :: [(Rule,AAtomPairs)]
+      popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r]
 
   violationReport :: Blocks
   violationReport =
@@ -463,8 +448,8 @@ chpDiagnosis fSpec
      <> bulletList (map showViolatedRule invariantViolations)
      <> bulletList (map showViolatedRule processViolations)
     where
-         (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
-         showViolatedRule :: (Rule,[AAtomPair]) -> Blocks
+         (processViolations,invariantViolations) = L.partition (isSignal.fst) (allViolations fSpec)
+         showViolatedRule :: (Rule,AAtomPairs) -> Blocks
          showViolatedRule (r,ps)
              =    (para.emph)
                       (  (str.l) (NL "Regel ", EN "Rule ")
@@ -479,25 +464,25 @@ chpDiagnosis fSpec
                <> table -- Caption
                         (if isSignal r
                          then   (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
-                             <> commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                             <> commaPandocOr (fsLang fSpec) (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                          else   (str.l) (NL "Overtredingen van invariant ",EN "Violations of invariant ")
                               <>(str.name) r
                         )  
                         -- Alignment:
                         (replicate 2 (AlignLeft,1/2))
                         -- Headers:
-                        [(para.strong.text.name.source.rrexp) r
-                        ,(para.strong.text.name.target.rrexp) r
+                        [(para.strong.text.name.source.formalExpression) r
+                        ,(para.strong.text.name.target.formalExpression) r
                         ]
                         -- Rows:
                         [ [(para.text.showValADL.apLeft) p
                           ,(para.text.showValADL.apRight) p
                           ]
-                        | p<- ps]
+                        | p<- Set.elems ps]
 
 
 
-  violtable :: Rule -> [AAtomPair] -> Blocks
+  violtable :: Rule -> AAtomPairs -> Blocks
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
         then table -- No caption:
@@ -505,27 +490,18 @@ chpDiagnosis fSpec
                    -- Alignment:
                    [(AlignLeft,1.0)]
                    -- Header:
-                   [(plain.str.name.source) r]
+                   [(plain.str.name.source.formalExpression) r]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p]
-                   | p <-take 10 ps --max 10 rows
+                   | p <-take 10 . Set.elems $ ps --max 10 rows
                    ]
         else table -- No caption:
                    mempty
                    -- Alignment:
                    (replicate 2 (AlignLeft,1/2))
                    -- Header:
-                   [(plain.str.name.source) r , (plain.str.name.target) r ]
+                   [(plain.str.name.source.formalExpression) r , (plain.str.name.target.formalExpression) r ]
                    -- Data rows:
                    [ [(plain.str.showValADL.apLeft) p,(plain.str.showValADL.apRight) p]
-                   | p <-take 10 ps --max 10 rows
+                   | p <-take 10 . Set.elems $ ps --max 10 rows
                    ]
-
-  inScopePat :: Pattern -> Bool
-  inScopePat x = null (themes fSpec) || name x `elem` themes fSpec  -- restrict if this is partial documentation.
-
-  inScopeRule :: Rule -> Bool
-  inScopeRule r =
-        null (themes fSpec) ||
-        (r `elem` concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec])
-

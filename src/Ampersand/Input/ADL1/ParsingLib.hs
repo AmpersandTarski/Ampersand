@@ -1,9 +1,8 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
 module Ampersand.Input.ADL1.ParsingLib(
-    AmpParser, pIsThere, optList,
+    AmpParser, pIsThere, optList, optSet,
     -- Operators
-    --TODO: Maybe we shouldn't export these here, but import in the parser directly
-    (DF.<$>), (P.<|>), (P.<?>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
+    (<?>), (<??>),
     -- Combinators
     sepBy, sepBy1, many, many1, opt, try, choice, pMaybe,
     -- Positions
@@ -11,7 +10,7 @@ module Ampersand.Input.ADL1.ParsingLib(
     -- Basic parsers
     pConid, pString, pAmpersandMarkup, pVarid, pCrudString,
     -- special parsers
-    pAtomInExpression, pAtomValInPopulation, Value(..),
+    pAtomValInPopulation, Value(..),
     -- Special symbols
     pComma, pParens, pBraces, pBrackets, pChevrons,
     -- Keywords
@@ -22,21 +21,16 @@ module Ampersand.Input.ADL1.ParsingLib(
     pZero, pOne
 ) where
 
-import Control.Monad.Identity (Identity)
-import Ampersand.Input.ADL1.FilePos (Origin(..))
-import Ampersand.Input.ADL1.LexerToken
-import Ampersand.Input.ADL1.Lexer (lexer)
-import qualified Control.Applicative as CA
-import qualified Data.Functor as DF
-import qualified Text.Parsec.Prim as P
-import Text.Parsec as P hiding(satisfy)
-import Text.Parsec.Pos (newPos)
-import Data.Time.Calendar
-import Data.Time.Clock
-import Ampersand.Basics (fatal)
-import Data.Maybe
-import Data.Char(toLower)
-import Prelude hiding ((<$))
+import           Ampersand.Basics hiding (many,try)
+import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
+import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
+import           RIO.Char(toLower)
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Set as Set
+import           Data.Time.Calendar
+import           Data.Time.Clock
+import           Text.Parsec as P hiding(satisfy,sepBy1,(<|>))
+import           Text.Parsec.Pos (newPos)
 
 -- | The Ampersand parser type
 type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.
@@ -45,16 +39,8 @@ type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser f
 -- Useful functions
 -----------------------------------------------------------
 
-infixl 4 <$
-
--- | Applies the given parser and returns the given constructor
-(<$) :: a           -- ^ The value to return
-     -> AmpParser b -- ^ The parser to apply
-     -> AmpParser a -- ^ The result
-a <$ p = do { _ <- p; return a }
-
 (<??>) :: AmpParser a -> AmpParser (a -> a) -> AmpParser a
-p <??> q = (\x f -> f x) CA.<$> p CA.<*> (q `opt` id)
+p <??> q = (\x f -> f x) <$> p <*> (q `opt` id)
 
 -- | Tries to apply the given parser and returns a parser with a boolean indicating whether it succeeded
 pIsThere :: AmpParser a     -- ^ The parser to run
@@ -66,16 +52,24 @@ optList :: AmpParser [a]
         -> AmpParser [a]
 optList p = p `opt` []
 
+-- | Optionally applies a Set parser, returning an empty Set if it doesn't succeed
+optSet ::  AmpParser (Set.Set a)
+        -> AmpParser (Set.Set a)
+optSet p = p `opt` Set.empty
+
 -- | Tries to apply the given parser and encapsulates the result in Maybe
 pMaybe :: AmpParser a           -- ^ The parser to apply
        -> AmpParser (Maybe a)   -- ^ The result
-pMaybe p = Just CA.<$> p <|> P.parserReturn Nothing
+pMaybe p = Just <$> p <|> P.parserReturn Nothing
 
 -- | Tries to apply the given parser and returns the second argument if it doesn't succeed
 opt ::  AmpParser a  -- ^ The parser to try
     -> a             -- ^ The item to return if the parser doesn't succeed
     -> AmpParser a   -- ^ The resulting parser
 a `opt` b = P.option b a
+
+sepBy1 :: AmpParser a -> AmpParser b -> AmpParser (NEL.NonEmpty a)
+sepBy1 p sep = liftM2 (NEL.:|) p (many (sep >> p))
 
 -----------------------------------------------------------
 -- Keywords & operators
@@ -147,22 +141,6 @@ pCrudString = check (\lx -> case lx of
                          then test xs ys
                          else test xs (y:ys)
 
---- Atom ::= "'" Any* "'"
-pAtomInExpression :: AmpParser Value
-pAtomInExpression = check (\lx -> case lx of
-                                   LexSingleton s -> Just (VSingleton s (mval s))
-                                   _              -> Nothing
-                          ) <?> "Singleton value"
-   where
-    mval s =
-      case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
-        Left _  -> Nothing
-        Right (toks,_)
-           -> case runParser pAtomValInPopulation
-                               (FilePos ("Reparse `"++s++"` ") 0 0) -- Todo: Fix buggy position
-                                "" toks of
-                Left _ -> Nothing
-                Right a -> Just a
 
 data Value = VRealString String
            | VSingleton String (Maybe Value)
@@ -171,14 +149,21 @@ data Value = VRealString String
            | VBoolean Bool
            | VDateTime UTCTime
            | VDate Day
-pAtomValInPopulation :: AmpParser Value
-pAtomValInPopulation =
+pAtomValInPopulation :: Bool -> AmpParser Value
+-- An atomvalue can be lots of things. However, since it can be used in 
+-- as a term (singleton expression), an ambiguity might occur if we allow
+-- negative numbers. The minus sign could be confused with a complement operator. 
+-- For this reason, we introduced a possibility to constrain the value. 
+-- constrained values have the constraint that a negative number is'n allowed. 
+-- the user can lift the constraints by embeding the value in curly brackets. In 
+-- such a case, the user could use a negative number as a singleton expression. 
+pAtomValInPopulation constrainsApply =
               VBoolean True  <$ pKey "TRUE"
           <|> VBoolean False <$ pKey "FALSE"
-          <|> VRealString DF.<$> pString
-          <|> VDateTime DF.<$> pUTCTime
-          <|> VDate DF.<$> pDay
-          <|> fromNumeric DF.<$> pNumeric
+          <|> VRealString <$> pString
+          <|> VDateTime <$> pUTCTime
+          <|> VDate <$> pDay
+          <|> fromNumeric <$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
    where fromNumeric :: Either Int Double -> Value
          fromNumeric num = case num of
              Left i -> VInt i
@@ -201,7 +186,7 @@ pNumber :: Int -> AmpParser String
 pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
 
 pNumeric :: AmpParser (Either Int Double)
-pNumeric = (f DF.<$> pIsNeg CA.<*> pUnsignedNumeric) <?> "numerical value"
+pNumeric = (f <$> pIsNeg <*> pUnsignedNumeric) <?> "numerical value"
   where
      f :: Bool -> Either Int Double -> Either Int Double
      f isNeg b =
@@ -211,7 +196,7 @@ pNumeric = (f DF.<$> pIsNeg CA.<*> pUnsignedNumeric) <?> "numerical value"
 
 pIsNeg :: AmpParser Bool
 pIsNeg = fromMaybe False
-            DF.<$> pMaybe ( True  <$ pOperator "-" <|>
+               <$> pMaybe ( True  <$ pOperator "-" <|>
                             False <$ pOperator "+"
                           )
 pUnsignedNumeric :: AmpParser (Either Int Double)
@@ -240,16 +225,16 @@ pComma :: AmpParser String
 pComma  = pSpec ','
 
 pParens :: AmpParser a -> AmpParser a
-pParens parser = pSpec '(' CA.*> parser CA.<* pSpec ')'
+pParens parser = pSpec '(' *> parser <* pSpec ')'
 
 pBraces :: AmpParser a -> AmpParser a
-pBraces parser = pSpec '{' CA.*> parser CA.<* pSpec '}'
+pBraces parser = pSpec '{' *> parser <* pSpec '}'
 
 pBrackets :: AmpParser a -> AmpParser a
-pBrackets parser = pSpec '[' CA.*> parser CA.<* pSpec ']'
+pBrackets parser = pSpec '[' *> parser <* pSpec ']'
 
 pChevrons :: AmpParser a -> AmpParser a
-pChevrons parser = pSpec '<' CA.*> parser CA.<* pSpec '>'
+pChevrons parser = pSpec '<' *> parser <* pSpec '>'
 
 -----------------------------------------------------------
 -- Token positioning

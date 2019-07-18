@@ -1,24 +1,14 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
 module Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
 
---import Data.List
---import Data.Char(toUpper)
---import System.FilePath ((</>),takeExtension)
---import Control.Monad --(filterM, forM_, foldM,when)
---import Control.Exception.Base
---import System.IO.Error (tryIOError)
---import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
---import Control.Monad.Trans.Class (lift)
---import Data.Conduit
---import Ampersand.Test.RunAmpersand (ampersand)
---import Ampersand.Input.ADL1.CtxError
 
+import Ampersand.Basics
 --endswith :: String -> String -> Bool
 --endswith a b = drop (length a - length b) a == b
 
 
 
-getTestScripts :: IO [FilePath]
+getTestScripts :: RIO env [FilePath]
 getTestScripts =
 --        fs <- getFiles ".adl" "ArchitectureAndDesign"
 --        ss <- getFiles ".adl" $ ".." </> "ampersand-models" </> "Tests" </> "ShouldSucceed"
@@ -28,11 +18,12 @@ getTestScripts =
 
 
 --data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
---                | DirError IOError               
+--                | DirError IOException               
 --data DirData = DirData FilePath DirContent       -- path and content of a directory
 
-testAmpersandScripts :: IO ()
-testAmpersandScripts = putStrLn "Testscripts of this kind are not available."
+testAmpersandScripts :: HasHandle env => RIO env ()
+testAmpersandScripts = do
+    sayLn "Testscripts of this kind are not available."
 {-
 testAmpersandScripts' :: IO ()
 testAmpersandScripts'
@@ -72,23 +63,23 @@ walk path = do
             
 -- Consume directories
 myVisitor :: Sink DirData IO ()
-myVisitor = addCleanup (\_ -> putStrLn "Finished.") $ loop 1
+myVisitor = addCleanup (\_ -> sayLn "Finished.") $ loop 1
   where
     loop :: Int -> ConduitM DirData a IO ()
     loop n = do
-        lift $ putStr $ ">> " ++ show n ++ ". "
+        lift $ say $ ">> " ++ show n ++ ". "
         mr <- await
         case mr of
             Nothing     -> return ()
             Just r      -> lift (process r) >> loop (n + 1)
     process :: DirData -> IO ()
     process (DirData path (DirError err)) = do
-        putStrLn $ "I've tried to look in " ++ path ++ "."
-        putStrLn $ "    There was an error: "
-        putStrLn $ "       " ++ show err
+        sayLn $ "I've tried to look in " ++ path ++ "."
+        sayLn $ "    There was an error: "
+        sayLn $ "       " ++ show err
 
     process (DirData path (DirList dirs files)) = do
-        putStrLn $ path ++ ". ("++ show (length dirs) ++ " directorie(s) and " ++ show (length files) ++ " relevant file(s):"
+        sayLn $ path ++ ". ("++ show (length dirs) ++ " directorie(s) and " ++ show (length files) ++ " relevant file(s):"
         forM_ files (runATest path) 
      
 runATest :: FilePath -> FilePath -> IO()
@@ -97,15 +88,15 @@ runATest path file =
    where 
      showError :: SomeException -> IO()
      showError err
-       = do putStrLn "***** ERROR: Fatal error was thrown: *****"
-            putStrLn $ (path </> file)
-            putStrLn $ show err
-            putStrLn "******************************************"
+       = do sayLn "***** ERROR: Fatal error was thrown: *****"
+            sayLn $ (path </> file)
+            sayLn $ show err
+            sayLn "******************************************"
         
 runATest' :: FilePath -> FilePath -> IO()
 runATest' path file = do
        [errs] <- ampersand [path </> file]
-       putStrLn 
+       sayLn 
          ( file ++": "++
            case (shouldFail,errs) of
                   (False, []) -> "OK.  => Pass"
@@ -113,6 +104,6 @@ runATest' path file = do
                   (True , []) -> "Ok.  => NOT PASSED"
                   (True , _ ) -> "Fail => Pass"
          )
-       unless shouldFail $ mapM_ putStrLn (map showErr (take 1 errs))  --for now, only show the first error
+       unless shouldFail $ mapM_ sayLn (map show (take 1 errs))  --for now, only show the first error
     where shouldFail = "SHOULDFAIL" `isInfixOf` map toUpper (path </> file)
 -} 

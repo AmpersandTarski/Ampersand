@@ -6,12 +6,10 @@ module Ampersand.Input.ADL1.FilePos (
 ) where
 
 import Ampersand.Basics
-import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
-import Data.Data
 import Codec.Xlsx.Types
-import qualified Data.Text as T
+import qualified RIO.Text as T
 
 -- | The line number
 type Line = Int
@@ -55,9 +53,10 @@ instance Hashable FilePos where
 
 data Origin = OriginUnknown
             | Origin String 
+            | PropertyRule String Origin -- Constructor is used to hold the origin of a propertyrule.
             | FileLoc FilePos SymbolName 
             | XLSXLoc FilePath String (Int,Int) 
-            | DBLoc String
+            | MeatGrinder -- Constructor is used to specify stuff that originates from meatgrinder
     deriving (Eq, Ord, Typeable, Generic, Data)
 
 instance Unique Origin where
@@ -65,30 +64,39 @@ instance Unique Origin where
 instance Hashable Origin
 
 instance Show FilePos where
-  show (FilePos fn l c) = "line " ++ show l ++ ":" ++ show c ++ ", file " ++ fn
+  show (FilePos fn l c) = fn ++ ":" ++ show l ++ ":" ++ show c
 
 instance Show Origin where
+  -- The vscode extension expects errors and warnings
+  -- to be in a standardized format. The show function
+  -- complies to that. Iff for whatever reason 
+  -- this function is changed, please verify 
+  -- the proper working of the ampersand-language-extension
   show (FileLoc pos _) = show pos
   show (XLSXLoc filePath sheet (row,col)) 
-                       = show filePath++":"++
-                         "\n   Sheet: "++sheet++", "++T.unpack (int2col col)++show row
-  show (DBLoc str)     = "Database location: "++str
+                       = filePath++":"++
+                         "\n   Sheet: "++sheet++", Cell: "++T.unpack (int2col col)++show row++". "
+  show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
   show (Origin str)    = str
   show OriginUnknown   = "Unknown origin"
+  show MeatGrinder     = "MeatGrinder"
 
 class Traced a where
   origin :: a -> Origin
   filenm :: a -> String
   linenr :: a -> Int
-  colnr :: a -> Int
+  colnr  :: a -> Int
   filenm x = case origin x of
                FileLoc (FilePos nm _ _) _ -> nm
+               XLSXLoc filePath _ _       -> filePath
                _ -> ""
   linenr x = case origin x of
                FileLoc (FilePos _ l _) _ -> l
+               XLSXLoc _        _     (row,_  ) -> row
                _ -> 0
   colnr x  = case origin x of
                FileLoc (FilePos _ _ c) _ -> c
+               XLSXLoc _        _     (_  ,col) -> col
                _ -> 0
 
 instance Traced Origin where

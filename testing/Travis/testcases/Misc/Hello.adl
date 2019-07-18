@@ -15,7 +15,7 @@ PATTERN Hello
 
 ENDPATTERN
 
-INTERFACE Overview  : '_SESSION'[SESSION]
+INTERFACE Overview  : "_SESSION"[SESSION]
   BOX [ identifiers : V[SESSION*Identifier]
       , things      : V[SESSION*Thing]
       ]
@@ -23,13 +23,13 @@ INTERFACE Overview  : '_SESSION'[SESSION]
 INTERFACE Id : I[Identifier]
   BOX [ id         : I[Identifier]
       , identifies : identifies
-      , back       : V[Identifier*SESSION];'_SESSION'[SESSION]
+      , back       : V[Identifier*SESSION];"_SESSION"[SESSION]
       ]
 
 INTERFACE Th : I[Thing]
   BOX [ id                 : I[Thing]
       , "is identified by" : identifies~
-      , back               : I[Thing]#'_SESSION'[SESSION]
+      , back               : I[Thing]#"_SESSION"[SESSION]
       ]
 
 POPULATION identifies[Identifier*Thing] CONTAINS

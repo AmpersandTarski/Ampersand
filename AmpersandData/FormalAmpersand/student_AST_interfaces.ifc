@@ -24,12 +24,12 @@ BOX ["loaded into Atlas" : V[ONE*Context]
 INTERFACE "Diagnosis" FOR Student: I[ONE]
 BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- THIS IS A THIRD CHOICE expression!!
 --SECOND CHOICE: V[ONE*Concept];-(cptdf;cptdf~) <= results in SQL with empty atoms => see test2 below in comments
---FIRST CHOICE: -(V[ONE*Blob];cptdf~) <= results in:fatal error 583 (module RelBinGenSQL, Prototype v2.2.0.2100M (lib: Ampersand v2.2.0.578:579M)) A_Concept ONE may not be represented in SQL
-    , "relations without MEANING": V[ONE*Relation];(-(decmean;decmean~) /\ I) -- -(V[ONE*Blob];decmean~)
+--FIRST CHOICE: -(V[ONE*Blob];cptdf~) <= results in:fatal (module RelBinGenSQL, Prototype v2.2.0.2100M (lib: Ampersand v2.2.0.578:579M)) A_Concept ONE may not be represented in SQL
+    , "relations without MEANING": V[ONE*Relation];(-(decMean;decMean~) /\ I) -- -(V[ONE*Blob];decMean~)
     , "RULEs without MEANING": V[ONE*Rule];(-(meaning;meaning~) /\ I) -- -(V[ONE*Blob];meaning~)
     , "populated relations": V[ONE*Pair];decpopu~
     , "unpopulated relations": V[ONE*Relation];(-(decpopu;decpopu~) /\ I) -- -(V[ONE*Pair];decpopu~)
---INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;relsInPlug;reldcl)
+--INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(formalExpression;relsInPlug;reldcl)
     ]
 
 INTERFACE "Syntax error" FOR Student: I[ParseError]
@@ -48,7 +48,7 @@ BOX [ "error" : I
     ]
 
 {-
-PROCESS Test
+PATTERN Test
 ROLE Student MAINTAINS test1
 ,test2
 ,test3
@@ -58,13 +58,13 @@ RULE test1: -(cptdf;cptdf~)
 RULE test2: cptdf;cptdf~
 RULE test3: cptdf
 RULE test4: -(-(cptdf;cptdf~) /\ I)
-ENDPROCESS
+ENDPATTERN
 -}
 {-
 CONTEXT Test
 PATTERN "Test"
-  SPEC "Medewerker" ISA "Persoon"
-  SPEC "Klant" ISA "Persoon"
+  CLASSIFY "Medewerker" ISA "Persoon"
+  CLASSIFY "Klant" ISA "Persoon"
   helptzichzelf :: Medewerker * Klant
   dummy :: A * B
 ENDPATTERN
@@ -156,7 +156,7 @@ BOX ["PURPOSEs" :ptxps
     ,"diagram" : ptpic
     ]
 INTERFACE "ISA-relation" FOR Student: I[Isa]
-BOX ["SPEC" : genspc
+BOX ["CLASSIFY" : genspc
     ,"ISA" : gengen
     ,"in PATTERN" : ptgns~
     ]
@@ -170,28 +170,28 @@ BOX ["PURPOSEs" :cptpurpose
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
 --    ,"comparable atoms":order;order~;cptos BOX ["atom":atomvalue, "of concept":cptos~]
     ,"used in relations": (decsgn;(src \/ tgt))~
-    ,"used in RULEs": (relsgn;(src \/ tgt))~;(rrexp;relsInPlug)~;(I[Rule] /\ -I[PropertyRule])
+    ,"used in RULEs": (relsgn;(src \/ tgt))~;(formalExpression;relsInPlug)~;(I[Rule] /\ -I[PropertyRule])
     ,"diagram" : cptpic
     ]
 INTERFACE "Atom"(cptos) FOR Student: I[Atom];atomvalue~
 BOX ["in POPULATION of": cptos~]
 INTERFACE Relation(decpopu,left,right) FOR Student: I[Relation]
 BOX ["PURPOSEs" :purpose
-    ,"MEANING" :decmean
+    ,"MEANING" :decMean
     ,"example of basic sentence" :decexample
     ,"name" :decnm
     ,"type" :decsgn BOX ["source":src , "target":tgt]
     ,"properties" :propertyRule;declaredthrough
     ,"from PATTERN" :ptdcs~
     ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
-    ,"used in RULEs": (rrexp;relsInPlug;reldcl)~;(I[Rule] /\ -I[PropertyRule])
+    ,"used in RULEs": (formalExpression;relsInPlug;reldcl)~;(I[Rule] /\ -I[PropertyRule])
     ]
 INTERFACE "RULE" FOR Student: I[Rule]
 BOX ["PURPOSEs" :purpose
     ,"MEANING" :meaning
     ,"name" :rrnm
-    ,"assertion" :rrexp
-    ,"uses":rrexp;relsInPlug BOX ["relation":reldcl, "with properties": reldcl;propertyRule;declaredthrough, "source":relsgn;src, "target":relsgn;tgt]
+    ,"assertion" :formalExpression
+    ,"uses":formalExpression;relsInPlug BOX ["relation":reldcl, "with properties": reldcl;propertyRule;declaredthrough, "source":relsgn;src, "target":relsgn;tgt]
     ,"in PATTERN":ptrls~
     ,"diagram" : rrpic
     ]

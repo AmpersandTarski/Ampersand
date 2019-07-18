@@ -1,0 +1,15 @@
+CONTEXT Issue280 IN ENGLISH
+
+ RELATION p[A*B] [UNI,TOT]
+ RELATION q[A*C] [UNI]
+ RELATION r[B*C] [UNI]
+ RELATION s[A*C] [UNI]
+ RELATION t[B*C] [UNI]
+
+ RULE "Issue280":
+    (q;V /\ p;(I-r;r~)) \/ (p /\ q;-I;r~)
+ \/
+    (s;V /\ p;(I-t;t~)) \/ (p /\ s;-I;t~)
+ |- -V
+
+ ENDCONTEXT

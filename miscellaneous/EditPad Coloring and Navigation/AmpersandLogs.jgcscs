@@ -9,118 +9,40 @@ rieks.joosten@tno.nl
 TRUE
 
 
-1
-Comments
+3
+Ampersand is a tool for generating prototypes from relation algebra rules
+
+This file contains syntax coloring for exec engine log rules produced by such prototypes.
 3
 Please enter some text here that
 can be displayed as an example in
 the preferences when configuring colors.
 0
 TRUE
-7
-ExecEngine started
-
-^.*ExecEngine run started.*$
+2
+ExecEngine started - includes rule fixese
+Colored by default color of subscheme
+^.*ExecEngine started(.*\r?\n)*?.*ExecEngine finished.*$
 FALSE
 FALSE
-27
+0
 0
 
 
-0
+3
 FALSE
 FALSE
 TRUE
-FALSE
-
-
-
-
-FALSE
-
-ExecEngine run
-
-^.*ExecEngine run #.*$
-FALSE
-FALSE
-35
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-ExecEngine fixing violations
-
-^.*ExecEngine fixing.*violations for rule
-FALSE
-FALSE
-29
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Rule names
-
-(?<=rule\s)'.*'(?=\s\[)
-FALSE
-FALSE
-26
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Triailer for execEngine fixing a rule
-
-(?<=rule '.*'\s)\[\]\s\[\]
-FALSE
-FALSE
-29
-0
-
-
-0
-FALSE
-FALSE
 TRUE
-FALSE
 
 
 
 
 FALSE
 
-Fixing violation
+Function registration
 
-^.*Fixing violation.*$
+^.*ExecEngine function.*registered.*$
 FALSE
 FALSE
 31
@@ -138,12 +60,22 @@ FALSE
 
 FALSE
 
-ExecEngine run completed
-
-^.*ExecEngine run completed.*$
-FALSE
-FALSE
+0
+4
+ExecEngine Execution
+0
 37
+FALSE
+0
+
+
+2
+Emphasize fixing stuff
+
+^.*ExecEngine started(?=.*ExecEngine fixing)
+FALSE
+TRUE
+33
 0
 
 
@@ -158,5 +90,147 @@ FALSE
 
 FALSE
 
+Individual run
+Colored by default color of subscheme
+^.*Run #(.*\r?\n)*?.*Run finished.*$
+FALSE
+FALSE
 0
 0
+
+
+4
+FALSE
+FALSE
+FALSE
+TRUE
+
+
+
+
+FALSE
+
+Single run - try to fix rules
+0
+37
+FALSE
+0
+
+
+2
+emphasize fixing stuff
+
+^.*Run #(?=.*ExecEngine fixing)
+FALSE
+TRUE
+35
+0
+
+
+0
+FALSE
+FALSE
+TRUE
+FALSE
+
+
+
+
+FALSE
+
+Single rule
+Colored by default color of subscheme
+^.*ExecEngine fixing(.*\r?\n)*?.*ExecEngine fixed.*$
+FALSE
+FALSE
+0
+0
+
+
+5
+FALSE
+FALSE
+FALSE
+TRUE
+
+
+
+
+FALSE
+
+Single rule - fixing violations
+0
+36
+FALSE
+0
+
+
+2
+Rule name
+
+(?<=violations for rule ).*?(?=\s\[\])
+FALSE
+FALSE
+26
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Single violation
+Colored by default color of subscheme
+^.*\{\+\+\+(.*\r?\n)*?.*[^\+]\+\+\+\}.*$
+FALSE
+FALSE
+0
+0
+
+
+6
+FALSE
+FALSE
+FALSE
+TRUE
+
+
+
+
+FALSE
+
+Actually fix violation
+0
+16
+FALSE
+11
+
+
+1
+{+++ - +++}
+
+^.*(\{\+\+\+|[^\+]\+\+\+\}).*$
+FALSE
+FALSE
+32
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+

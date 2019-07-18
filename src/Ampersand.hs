@@ -1,10 +1,23 @@
-module Ampersand (module X) where
-import Ampersand.ADL1 as X
-import Ampersand.Basics as X
-import Ampersand.Classes as X
-import Ampersand.Components as X
-import Ampersand.FSpec as X
-import Ampersand.Input as X
-import Ampersand.Misc as X
-import Ampersand.Output as X
-import Ampersand.Test as X
+module Ampersand 
+  ( module Ampersand.ADL1
+  , module Ampersand.Basics
+  , module Ampersand.Classes
+  , module Ampersand.Components
+  , module Ampersand.Daemon.Daemon
+  , module Ampersand.FSpec
+  , module Ampersand.Input
+  , module Ampersand.Misc
+  , module Ampersand.Output
+  , module Ampersand.Test
+  ) 
+where
+import Ampersand.ADL1
+import Ampersand.Basics hiding (Identity)
+import Ampersand.Classes
+import Ampersand.Components
+import Ampersand.Daemon.Daemon
+import Ampersand.FSpec
+import Ampersand.Input
+import Ampersand.Misc
+import Ampersand.Output
+import Ampersand.Test

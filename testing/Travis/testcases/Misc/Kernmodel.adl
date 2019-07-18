@@ -84,9 +84,9 @@ PURPOSE INTERFACE Bestuursorgaan
              ]
       ]
 
-   PROCESS ToevoegenMandaat {- Stef Joosten, 19 April 2013 -}
+   PATTERN ToevoegenMandaat {- Stef Joosten, 19 April 2013 -}
    ROLE Bestuurder MAINTAINS "Artikel 10:2 Awb"
-   ENDPROCESS
+   ENDPATTERN
    
    PATTERN Mandaten
    CONCEPT Mandaat "Een mandaat is de bevoegdheid om in naam van een bestuursorgaan besluiten te nemen." "Artikel 10:1 Awb"
@@ -405,7 +405,7 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
 In artikel 10:4 staat dat ingeval er bij wettelijk voorschrift in de mandaatverlening is voorzien, er geen instemming nodig is. Blijkbaar kan er bij sommige mandaten dit wettelijk voorschrift bestaan.
 +}
 
-   --- SPEC MandaatVerleningVoorzien ISA Mandaat
+   --- CLASSIFY MandaatVerleningVoorzien ISA Mandaat
    -- Concept MandaatVerleningVoorzien en relatie isA toegevoegd door Henk Boer, 9 mei 2013; werkt nog niet..
    RELATION isa_nietwettelijkmandaat [Mandaat * Mandaat] [SYM, ASY]
    PURPOSE RELATION isa_nietwettelijkmandaat LATEX REF "Artikel 10:4 lid 2 Awb" {+ Niet wettelijk in mandaatbevoegdheid voorzien +}
@@ -510,9 +510,9 @@ ENDPATTERN
 
    PURPOSE PATTERN ToevoegenBestuursorganen
    {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
-   PROCESS ToevoegenBestuursorganen
+   PATTERN ToevoegenBestuursorganen
    ROLE BO MAINTAINS "Artikel 10:2 Awb"
-   ENDPROCESS
+   ENDPATTERN
    --
    PURPOSE INTERFACE Bestuursorganen
    {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}

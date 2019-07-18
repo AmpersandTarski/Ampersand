@@ -1,7 +1,7 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Atoms.xlsx"
 
-INTERFACE Overview : '_SESSION'[SESSION]
+INTERFACE Overview : "_SESSION"[SESSION]
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]
@@ -56,7 +56,7 @@ ROWS [ name    : name
      , target  : target
      ]
 
-PROCESS Atoms
+PATTERN Atoms
 RELATION repr[Atom*Representation] [UNI]
 MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
 REPRESENT Representation TYPE ALPHANUMERIC
@@ -137,6 +137,6 @@ VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 RULE delPop : pop |- lAtom~;in;source;isaStar \/ rAtom~;in;target;isaStar
 VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
-ENDPROCESS
+ENDPATTERN
 
 ENDCONTEXT

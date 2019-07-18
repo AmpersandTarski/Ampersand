@@ -16,10 +16,15 @@ $if(keywords)$
   <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
 $endif$
   <title>$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$</title>
-  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
 $if(quotes)$
-  <style type="text/css">q { quotes: "“" "”" "‘" "’"; }</style>
+      q { quotes: "“" "”" "‘" "’"; }
 $endif$
+  </style>
 $if(highlighting-css)$
   <style type="text/css">
 $highlighting-css$
@@ -79,7 +84,7 @@ $endif$
 $endif$
 $if(toc)$
 <div class="slide" id="$idprefix$TOC">
-$toc$
+$table-of-contents$
 </div>
 $endif$
 $body$

@@ -1,11 +1,11 @@
 ﻿CONTEXT Try43 IN ENGLISH
 
-PROCESS "Try43"
+PATTERN "Try43"
 z :: A * B
 t :: A * A
 m :: A * A
 b :: A * A
-ENDPROCESS
+ENDPATTERN
 
 INTERFACE "Try43"  : V[ONE*B]
 BOX

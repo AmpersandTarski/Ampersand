@@ -5,11 +5,15 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <title>$pagetitle$</title>
-$if(quotes)$
   <style type="text/css">
-    q { quotes: "“" "”" "‘" "’"; }
-  </style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+$if(quotes)$
+      q { quotes: "“" "”" "‘" "’"; }
 $endif$
+  </style>
 $if(highlighting-css)$
   <style type="text/css">
 $highlighting-css$
@@ -33,13 +37,13 @@ $else$
 $endif$
 $endfor$
 $if(subtitle)$
-  <h1 class="subtitle">$subtitle$</h1>
+  <p class="subtitle">$subtitle$</p>
 $endif$
 $for(author)$
-  <h2 class="author">$author$</h2>
+  <p class="author">$author$</p>
 $endfor$
 $for(creator)$
-  <h2 class="$creator.role$">$creator.text$</h2>
+  <p class="$creator.role$">$creator.text$</p>
 $endfor$
 $if(publisher)$
   <p class="publisher">$publisher$</p>
