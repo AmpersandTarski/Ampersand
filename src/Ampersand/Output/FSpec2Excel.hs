@@ -10,23 +10,26 @@ import Ampersand.FSpec.FPA
 import Ampersand.Basics
 import qualified RIO.List as L
 
--- TODO: Get rid of package SpreadsheetML. Use http://hackage.haskell.org/package/xlsx (Reason: SpreadsheetML doesn.t have a writer. xlsx package does.
+-- TODO: Get rid of package SpreadsheetML. 
+--   Use http://hackage.haskell.org/package/xlsx (Reason: SpreadsheetML doesn.t have a writer. xlsx package does.
 
 -- NOTE: this code was refactored to support the new FPA module, but has not been tested yet.
 
 fspec2FPA_Excel :: Options ->FSpec -> String
-fspec2FPA_Excel Options{..} fSpec = showSpreadsheet $
+fspec2FPA_Excel opts@Options{..} fSpec = showSpreadsheet $
    Workbook
-      { workbookDocumentProperties = Just
-          DocumentProperties { documentPropertiesTitle = Just $ "FunctiePuntAnalyse van "++baseName
-                             , documentPropertiesSubject = Nothing
-                             , documentPropertiesKeywords  = Nothing
-                             , documentPropertiesDescription = Just $ "Dit document is gegenereerd dmv. "++ampersandVersionStr++"."
-                             , documentPropertiesRevision = Nothing
-                             , documentPropertiesAppName = Just "Ampersand"
-                             , documentPropertiesCreated = Just $ show genTime
-                             }
-      , workbookWorksheets = [pimpWs wsResume,pimpWs wsDatasets,pimpWs wsFunctions]
+      { workbookDocumentProperties = 
+          Just DocumentProperties
+            { documentPropertiesTitle       = Just $ "FunctiePuntAnalyse van "++baseName opts
+            , documentPropertiesSubject     = Nothing
+            , documentPropertiesKeywords    = Nothing
+            , documentPropertiesDescription = 
+                 Just $ "Dit document is gegenereerd dmv. "++ampersandVersionStr++"."
+            , documentPropertiesRevision    = Nothing
+            , documentPropertiesAppName     = Just "Ampersand"
+            , documentPropertiesCreated     = Just $ show genTime
+            }
+      , workbookWorksheets = map pimpWs [wsResume, wsDatasets, wsFunctions]
       }
   where
     -- shorthand for easy localizing    
@@ -36,60 +39,61 @@ fspec2FPA_Excel Options{..} fSpec = showSpreadsheet $
     (_,totaalFPgegevensverzamelingen) = dataModelFPA fpa
     (_,totaalFPgebruikerstransacties) = userTransactionFPA fpa
     lang = fsLang fSpec
-    wsResume =
-      Worksheet { worksheetName =
-                            Name $ l (NL "Overzicht", EN "Resume")
-                , worksheetTable = Just $ emptyTable
-                    { tableRows =
-                          [ mkRow [string $ l (NL "Gedetailleerde functiepunentelling (volgens NESMA 2.2) van het systeem "
-                                              ,EN "Detailed function point count (according to NESMA 2.1) of the application ")
-                                             ++ baseName
-                                  ]
-                          , emptyRow
-                          , mkRow [string totalen]
-                          , mkRow [string gegevensverzamelingen,(number.fromIntegral) totaalFPgegevensverzamelingen]
-                          , mkRow [string gebruikerstransacties,(number.fromIntegral) totaalFPgebruikerstransacties]
-                          , mkRow [string grandTotaal,(number.fromIntegral) (totaalFPgegevensverzamelingen + totaalFPgebruikerstransacties)]
-                          , emptyRow
-                          , mkRow [string $ l
-                                    (NL "Voor deze telling is aangenomen dat:"
-                                    ,EN "For this function point count it is assumed that:")
-                                  ]
-                          , mkRow [string $ l
-                                    (NL "- het een nieuw informatiesyteem betreft."
-                                    ,EN "- the application is built from scratch.")
-                                  ]
-                          , mkRow [string $ l
-                                    (NL "- alle informatie wordt intern opgeslagen"
-                                    ,EN "- all persistent information will be stored internally")
-                                  ]
-                          ]
-                    }
-                }
-    wsDatasets =
-      Worksheet { worksheetName = Name gegevensverzamelingen
-                , worksheetTable = Just $ emptyTable
-                    { tableRows =
-                          [ mkRow [string gegevensverzamelingen, (number.fromIntegral.length.plugInfos) fSpec]
-                          ] ++
-                          (map mkRow . mapMaybe showDetailsOfPlug . plugInfos $ fSpec)
-                       ++ map mkRow [replicate 3 emptyCell ++ [string totaal, (number.fromIntegral) totaalFPgegevensverzamelingen]]
-                    }
-                }
-    wsFunctions =
-      Worksheet { worksheetName  = Name gebruikerstransacties
-                , worksheetTable = Just $ emptyTable
-                    { tableRows =
-                          [ mkRow [string gebruikerstransacties, (number.fromIntegral.length.interfaceS) fSpec]
-                          ]
-                          ++ map (mkRow.showDetailsOfFunction) (interfaceS fSpec)
-                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, number . fromIntegral . sum . map (fpVal . fpaInterface) . interfaceS $ fSpec]]
-                          ++ map mkRow [[string "Gegenereerde interfaces" , number . fromIntegral . length . interfaceG $ fSpec]]
-                          ++ map (mkRow.showDetailsOfFunction) (interfaceG fSpec)
-                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, number . fromIntegral . sum . map (fpVal . fpaInterface) . interfaceG $ fSpec]]
-                          ++ map mkRow [replicate 5 emptyCell ++ [string grandTotaal, (number.fromIntegral) totaalFPgebruikerstransacties ]]
-                    }
-                }
+    wsResume = Worksheet 
+      { worksheetName = Name $ l (NL "Overzicht", EN "Resume")
+      , worksheetTable = Just $ emptyTable
+          { tableRows =
+              [ mkRow [string $ l (NL "Gedetailleerde functiepunentelling (volgens NESMA 2.2) van het systeem "
+                                  ,EN "Detailed function point count (according to NESMA 2.1) of the application ")
+                                 ++ baseName opts
+                      ]
+              , emptyRow
+              , mkRow [string totalen]
+              , mkRow [string gegevensverzamelingen,(number.fromIntegral) totaalFPgegevensverzamelingen]
+              , mkRow [string gebruikerstransacties,(number.fromIntegral) totaalFPgebruikerstransacties]
+              , mkRow [string grandTotaal,(number.fromIntegral) (totaalFPgegevensverzamelingen + totaalFPgebruikerstransacties)]
+              , emptyRow
+              , mkRow [string $ l
+                        (NL "Voor deze telling is aangenomen dat:"
+                        ,EN "For this function point count it is assumed that:")
+                      ]
+              , mkRow [string $ l
+                        (NL "- het een nieuw informatiesyteem betreft."
+                        ,EN "- the application is built from scratch.")
+                      ]
+              , mkRow [string $ l
+                        (NL "- alle informatie wordt intern opgeslagen"
+                        ,EN "- all persistent information will be stored internally")
+                      ]
+              ]
+          }
+      }
+    wsDatasets = Worksheet
+      { worksheetName = Name gegevensverzamelingen
+      , worksheetTable = Just $ emptyTable
+          { tableRows =
+                [ mkRow [string gegevensverzamelingen, (number.fromIntegral.length.plugInfos) fSpec]
+                ] ++
+                (map mkRow . mapMaybe showDetailsOfPlug . plugInfos $ fSpec)
+             ++ map mkRow [replicate 3 emptyCell ++ [string totaal, (number.fromIntegral) totaalFPgegevensverzamelingen]]
+          }
+      }
+    wsFunctions = Worksheet
+      { worksheetName  = Name gebruikerstransacties
+      , worksheetTable = Just $ emptyTable
+          { tableRows = 
+                [ mkRow [string gebruikerstransacties
+                        , (number.fromIntegral.length.interfaceS) fSpec
+                        ]
+                ]
+                ++ map (mkRow.showDetailsOfFunction) (interfaceS fSpec)
+                ++ map mkRow [replicate 4 emptyCell ++ [string totaal, number . fromIntegral . sum . map (fpVal . fpaInterface) . interfaceS $ fSpec]]
+                ++ map mkRow [[string "Gegenereerde interfaces" , number . fromIntegral . length . interfaceG $ fSpec]]
+                ++ map (mkRow.showDetailsOfFunction) (interfaceG fSpec)
+                ++ map mkRow [replicate 4 emptyCell ++ [string totaal, number . fromIntegral . sum . map (fpVal . fpaInterface) . interfaceG $ fSpec]]
+                ++ map mkRow [replicate 5 emptyCell ++ [string grandTotaal, (number.fromIntegral) totaalFPgebruikerstransacties ]]
+          }
+      }
     gegevensverzamelingen :: String
     gegevensverzamelingen = l
        (NL "Gegevensverzamelingen"
