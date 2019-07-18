@@ -52,7 +52,7 @@ import Text.Pandoc.CrossRef
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
 fSpec2Pandoc :: Options -> FSpec -> (Pandoc, [Picture])
-fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
+fSpec2Pandoc opts fSpec = (thePandoc,thePictures)
   where
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
@@ -77,6 +77,8 @@ fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
             <> cref True     --required for pandoc-crossref to do its work properly
             <> chapters True -- Numbering with subnumbers per chapter
 
+    diagnosisOnly = view diagnosisOnlyL opts
+    genTime = view genTimeL opts
     thePandoc = wrap .
         setTitle
            (case metaValues "title" fSpec of

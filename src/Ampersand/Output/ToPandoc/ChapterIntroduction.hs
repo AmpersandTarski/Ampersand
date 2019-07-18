@@ -6,11 +6,12 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.Time.Format
 
 chpIntroduction :: Options -> FSpec -> Blocks
-chpIntroduction opts@Options{..} fSpec =
+chpIntroduction opts fSpec =
       xDefBlck opts fSpec Intro
    <> fromList purposesOfContext  -- the motivation(s) of this context
    <> readingGuide                -- tells what can be expected in this document.
   where
+    genTime = view genTimeL opts
     readingGuide
       = case fsLang fSpec of
           Dutch

@@ -13,12 +13,12 @@ import Ampersand.Output.ToJSON.Interfaces
 import Ampersand.Output.ToJSON.Views
 import Ampersand.Output.ToJSON.Roles
 
-generateJSONfiles :: (HasVerbosity env, HasHandle env, HasGenMetaOptions env, HasOptions env) => MultiFSpecs -> RIO env ()
+generateJSONfiles :: (HasVerbosity env, HasHandle env, HasCommands env, HasOptions env) => MultiFSpecs -> RIO env ()
 generateJSONfiles multi = do
  env <- view optionsL
- genRapPopulationOnly <- view genRapPopulationOnlyL
+ genRapPopulation <- view genRapPopulationL
  sequence_ $
-  if genRapPopulationOnly
+  if genRapPopulation
   then [ writeJSONFile "metaPopulation" 
                                 (fromAmpersand env multi (multi,True) :: Populations)
        ]

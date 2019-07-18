@@ -17,7 +17,7 @@ import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
 
-generateDatabaseFile :: MultiFSpecs -> RIO App ()
+generateDatabaseFile :: (HasVerbosity env, HasHandle env, HasOptions env) => MultiFSpecs -> RIO env ()
 generateDatabaseFile multi = 
    do opts <- view optionsL
       sayWhenLoudLn $ "  Generating "++file

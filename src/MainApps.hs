@@ -38,9 +38,12 @@ ampersand :: IO ()
 ampersand = do
   env <- defEnv
   runRIO env ampersand'
-ampersand' :: RIO App ()
+
+ampersand' :: () -- (HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env, HasCommands env) 
+  => RIO App ()
 ampersand' = do
-    opts'@Options{..} <- view optionsL
+    opts' <- view optionsL
+    fileName <- view fileNameL
     sequence_ . map snd . filter fst $ actionsWithoutScript opts'-- There are commands that do not need a single filename to be speciied
     case fileName of
       Just _ -> do -- An Ampersand script is provided that can be processed
@@ -72,16 +75,15 @@ ampersand' = do
 
  where
    actionsWithoutScript :: Options -> [(Bool, RIO App ())]
-   actionsWithoutScript opts@Options{..} = 
-      [ ( test                     , sayLn $ "Executable: " ++ show dirExec )
-      , ( showVersion  || verbosity == Loud , sayLn $ versionText opts)
-      , ( genSampleConfigFile      , liftIO writeConfigFile)
-      , ( showHelp                 , sayLn $ usageInfo' opts)
-      , ( runAsDaemon              , runDaemon)
+   actionsWithoutScript opts = 
+      [ ( (view showVersionL opts)   || view verbosityL opts == Loud , sayLn $ versionText opts)
+      , ( (view genSampleConfigFileL opts)      , liftIO writeConfigFile)
+      , ( (view showHelpL opts)                 , sayLn $ usageInfo' opts)
+      , ( (view runAsDaemonL opts)              , runDaemon)
       ]
    
    versionText :: Options -> String
-   versionText opts = preVersion opts ++ ampersandVersionStr ++ postVersion opts
+   versionText opts = view preVersionL opts ++ ampersandVersionStr ++ view postVersionL opts
 
 preProcessor :: IO()
 preProcessor = 

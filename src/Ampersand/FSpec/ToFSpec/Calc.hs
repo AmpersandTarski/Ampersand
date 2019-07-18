@@ -11,7 +11,7 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
-import           Ampersand.Misc (Options(..))
+import           Ampersand.Misc (Options)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set

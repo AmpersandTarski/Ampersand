@@ -36,16 +36,16 @@ import           System.FilePath
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createMulti.
-createMulti :: (HasDirOutput env, HasGenPrototype env, HasRootFile env, HasGenMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
+createMulti :: (HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
                RIO env (Guarded MultiFSpecs)
 createMulti =
   do opts <- view optionsL
      genMetaFile <- view genMetaFileL
-     genRapPopulationOnly <- view genRapPopulationOnlyL
+     genRapPopulation <- view genRapPopulationL
      addSemanticMetamodel <- view addSemanticMetamodelL
      fAmpP_Ctx :: Guarded P_Context <-
         if genMetaFile ||
-           genRapPopulationOnly ||
+           genRapPopulation ||
            addSemanticMetamodel
         then parseMeta  -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
@@ -125,7 +125,7 @@ createMulti =
             userPlus = addSemanticModel (model sysCModel) <$> userP_Ctx
          result :: Guarded MultiFSpecs
          result = 
-           if genRapPopulationOnly
+           if genRapPopulation
            then case userGFSpec of 
                   Errors err -> Errors err  
                   Checked usrFSpec _
@@ -163,7 +163,7 @@ pCtx2Fspec opts c = makeFSpec opts <$> join (pCtx2aCtx opts <$> encloseInConstra
 --   Instead it invents relations from a given population, which typically comes from a spreadsheet.
 --   This is different from the normal behaviour, which checks whether the spreadsheets comply with the Ampersand-script.
 --   This function is called only with option 'dataAnalysis' on.
-encloseInConstraints :: (HasDataAnalysis env) => env -> Guarded P_Context -> Guarded P_Context
+encloseInConstraints :: (HasCommands env) => env -> Guarded P_Context -> Guarded P_Context
 encloseInConstraints env (Checked pCtx warnings) 
     | view dataAnalysisL env = Checked enrichedContext warnings
   where

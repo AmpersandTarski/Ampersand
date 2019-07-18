@@ -4,7 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.Options
-        ( Options(..)
+        ( Options-- (..)
         , App(..)
         , HasOptions(..),HasHandle(..)
         , HasProtoOpts(..)
@@ -58,8 +58,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
                        , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
                        , dirOutput :: String -- the directory to generate the output in.
-                       , outputfile :: String -- the file to generate the output in.
-                       , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
+                       , outputfileAdl :: String -- the file to generate the output in.
+                       , outputfileDataAnalisys :: String -- the file to generate the output in.
                        , blackWhite :: Bool   -- only use black/white in graphics
                        , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.
                        , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document.
@@ -80,7 +80,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , test :: Bool
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
                        , addSemanticMetamodel :: Bool -- When set, the user can use all artefacts defined in Formal Ampersand, without the need to specify them explicitly
-                       , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
+                       , genRapPopulation :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
@@ -183,43 +183,81 @@ instance HasGenInterfaces Options where
   genInterfacesL = lens genInterfaces (\x y -> x { genInterfaces = y })
 instance HasNamespace Options where
   namespaceL = lens namespace (\x y -> x { namespace = y })
-instance HasGenMetaOptions Options where
+instance HasMetaOptions Options where
   genMetaFileL = lens genMetaFile (\x y -> x { genMetaFile = y })
-  genRapPopulationOnlyL = lens genRapPopulationOnly (\x y -> x { genRapPopulationOnly = y })
   addSemanticMetamodelL = lens addSemanticMetamodel (\x y -> x { addSemanticMetamodel = y })
-instance HasGenMetaOptions App where
-  genMetaFileL = optionsL . genMetaFileL
-  genRapPopulationOnlyL = optionsL . genRapPopulationOnlyL
-  addSemanticMetamodelL = optionsL . addSemanticMetamodelL
-instance HasGenPrototype Options where
+instance HasCommands Options where
+  genRapPopulationL = lens genRapPopulation (\x y -> x { genRapPopulation = y })
   genPrototypeL = lens genPrototype (\x y -> x { genPrototype = y })
-instance HasGenPrototype App where
+  dataAnalysisL = lens dataAnalysis (\x y -> x { dataAnalysis = y })
+  genUMLL = lens genUML (\x y -> x { genUML = y })
+  genHaskellL = lens haskell (\x y -> x { haskell = y })
+  sqlDumpL = lens sqlDump (\x y -> x { sqlDump = y })
+  export2adlL = lens export2adl (\x y -> x { export2adl = y })
+  genFPAExcelL = lens genFPAExcel (\x y -> x { genFPAExcel = y })
+  genPOPExcelL = lens genPOPExcel (\x y -> x { genPOPExcel = y })
+  proofsL = lens proofs (\x y -> x { proofs = y })
+  validateSQLL = lens validateSQL (\x y -> x { validateSQL = y })
+  showVersionL = lens showVersion (\x y -> x { showVersion = y })
+  genSampleConfigFileL = lens genSampleConfigFile (\x y -> x { genSampleConfigFile = y })
+  showHelpL = lens showHelp (\x y -> x { showHelp = y })
+  runAsDaemonL = lens runAsDaemon (\x y -> x { runAsDaemon = y })
+
+
+instance HasCommands App where
+  genRapPopulationL = optionsL . genRapPopulationL
   genPrototypeL = optionsL . genPrototypeL
+  dataAnalysisL = optionsL . dataAnalysisL
+  genUMLL = optionsL . genUMLL
+  genHaskellL = optionsL . genHaskellL
+  sqlDumpL = optionsL . sqlDumpL
+  export2adlL = optionsL . export2adlL
+  genFPAExcelL = optionsL . genFPAExcelL
+  genPOPExcelL = optionsL . genPOPExcelL
+  proofsL = optionsL . proofsL
+  validateSQLL = optionsL . validateSQLL
+  showVersionL = optionsL . showVersionL
+  genSampleConfigFileL = optionsL . genSampleConfigFileL
+  showHelpL = optionsL . showHelpL
+  runAsDaemonL = optionsL . runAsDaemonL
+instance HasMetaOptions App where
+  genMetaFileL = optionsL . genMetaFileL
+  addSemanticMetamodelL = optionsL . addSemanticMetamodelL
 instance HasDirOutput Options where
   dirOutputL = lens dirOutput (\x y -> x { dirOutput = y })
 instance HasDirOutput App where
   dirOutputL = optionsL . dirOutputL
-instance HasDataAnalysis Options where
-  dataAnalysisL = lens dataAnalysis (\x y -> x { dataAnalysis = y })
 instance HasGenFuncSpec Options where
   genFSpecL = lens genFSpec (\x y -> x { genFSpec = y })
   diagnosisOnlyL = lens diagnosisOnly (\x y -> x { diagnosisOnly = y })
   fspecFormatL = lens fspecFormat (\x y -> x { fspecFormat = y })
   noDiagnosisL = lens noDiagnosis (\x y -> x { noDiagnosis = y })
   genLegalRefsL = lens genLegalRefs (\x y -> x { genLegalRefs = y })
+  noGraphicsL = lens noGraphics (\x y -> x { noGraphics = y })
 instance HasGenFuncSpec App where
   genFSpecL = optionsL . genFSpecL
   diagnosisOnlyL = optionsL . diagnosisOnlyL
   fspecFormatL = optionsL . fspecFormatL
   noDiagnosisL = optionsL . noDiagnosisL
   genLegalRefsL = optionsL . genLegalRefsL
+  noGraphicsL = optionsL . noGraphicsL
 instance HasBlackWhite Options where
   blackWhiteL = lens blackWhite (\x y -> x { blackWhite = y })
 instance HasBlackWhite App where
   blackWhiteL = optionsL . blackWhiteL
-
-
-
+instance HasOutputFile Options where
+  outputfileAdlL = lens outputfileAdl (\x y -> x { outputfileAdl = y })
+  outputfileDataAnalisysL = lens outputfileDataAnalisys (\x y -> x { outputfileDataAnalisys = y })
+instance HasOutputFile App where
+  outputfileAdlL = optionsL . outputfileAdlL
+  outputfileDataAnalisysL = optionsL . outputfileDataAnalisysL
+instance HasAllowInvariantViolations Options where
+  allowInvariantViolationsL = lens allowInvariantViolations (\x y -> x { allowInvariantViolations = y })
+instance HasAllowInvariantViolations App where
+  allowInvariantViolationsL = optionsL . allowInvariantViolationsL
+instance HasVersion Options where
+  preVersionL = lens preVersion (\x y -> x { preVersion = y })
+  postVersionL = lens postVersion (\x y -> x { postVersion = y })
 
 dirPrototypeVarName :: String
 dirPrototypeVarName = "CCdirPrototype"
@@ -326,7 +364,8 @@ getOptions' envOpts =
                Options {environment      = envOpts
                       , genTime          = envLocalTime envOpts
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
-                      , outputfile       = fatal "No monadic options available."
+                      , outputfileAdl       = "Export.adl"
+                      , outputfileDataAnalisys  = "DataModel.adl"
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto"
                       , zwolleVersion    = "v1.2.0"
                       , dirCustomizations = ["customizations"]
@@ -353,7 +392,6 @@ getOptions' envOpts =
                       , proofs           = False
                       , haskell          = False
                       , sqlDump          = False
-                      , crowfoot         = False
                       , blackWhite       = False
                       , doubleEdges      = True
                       , noDiagnosis      = False
@@ -372,7 +410,7 @@ getOptions' envOpts =
                       , test             = False
                       , genMetaFile      = False
                       , addSemanticMetamodel = False
-                      , genRapPopulationOnly = False
+                      , genRapPopulation = False
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
@@ -544,12 +582,12 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option ['e']     ["export"]
                (OptArg (\mbnm opts -> opts{export2adl = True
-                                          ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
+                                          ,outputfileAdl = fromMaybe (outputfileAdl opts) mbnm}) "file")
                "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
             , Public)
             , (Option ['D']        ["dataAnalysis"]
             (OptArg (\mbnm opts -> opts{dataAnalysis = True
-                                                ,outputfile = fromMaybe "DataModel.adl" mbnm}) "file")
+                                       ,outputfileDataAnalisys = fromMaybe (outputfileDataAnalisys opts) mbnm}) "file")
             "export a data model as plain Ampersand script, for analysing Excel-data."
          , Public)
        , (Option ['o']     ["outputDir"]
@@ -612,10 +650,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["sqldump"]
                (NoArg (\opts -> opts{sqlDump = True}))
                "generate a dump of SQL queries (for debugging)."
-            , Hidden)
-          , (Option []        ["crowfoot"]
-               (NoArg (\opts -> opts{crowfoot = True}))
-               "generate crowfoot notation in graphics, to please crowfoot addicts."
             , Hidden)
           , (Option []        ["blackWhite"]
                (NoArg (\opts -> opts{blackWhite = True}))
@@ -682,7 +716,7 @@ options = [ (Option ['v']   ["version"]
                 "use in your model. These artefacts do not have to be declared explicitly in your own model.")
             , Hidden)
           , (Option []        ["gen-as-rap-model"]
-               (NoArg (\opts -> opts{genRapPopulationOnly = True}))
+               (NoArg (\opts -> opts{genRapPopulation = True}))
                "Generate populations for use in RAP3."
             , Hidden)
           , (Option []        ["crud-defaults"]

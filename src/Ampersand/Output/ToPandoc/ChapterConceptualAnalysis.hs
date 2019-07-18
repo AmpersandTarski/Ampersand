@@ -8,7 +8,7 @@ import qualified RIO.List as L
 import qualified RIO.Set as Set
 
 chpConceptualAnalysis :: Options -> Int -> FSpec -> (Blocks,[Picture])
-chpConceptualAnalysis opts@Options{..} lev fSpec = (
+chpConceptualAnalysis opts lev fSpec = (
       --  *** Header ***
    xDefBlck opts fSpec ConceptualAnalysis
    <> --  *** Intro  ***

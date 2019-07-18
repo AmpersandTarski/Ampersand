@@ -45,29 +45,42 @@ class HasGenInterfaces a where
   genInterfacesL :: Lens' a Bool -- 
 class HasNamespace a where
   namespaceL :: Lens' a String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
-class HasGenMetaOptions a where
+class HasMetaOptions a where
   genMetaFileL :: Lens' a Bool
-  genRapPopulationOnlyL :: Lens' a Bool
   addSemanticMetamodelL :: Lens' a Bool
-class HasGenPrototype a where
-  genPrototypeL :: Lens' a Bool -- 
 class HasDirOutput a where
   dirOutputL :: Lens' a String -- the directory to generate the output in.
-class HasDataAnalysis a where
-  dataAnalysisL :: Lens' a Bool -- "export a data model as plain Ampersand script, for analysing Excel-data."
 class HasGenFuncSpec a where
   genFSpecL :: Lens' a Bool   -- if True, generate a functional design
   diagnosisOnlyL :: Lens' a Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
   fspecFormatL :: Lens' a FSpecFormat -- the format of the generated (pandoc) document(s)
   noDiagnosisL :: Lens' a Bool -- omit the diagnosis chapter from the functional design document.
   genLegalRefsL :: Lens' a Bool   -- Generate a table of legal references in Natural Language chapter
+  noGraphicsL :: Lens' a Bool -- Omit generation of graphics during generation of functional design document.
 class HasBlackWhite a where
   blackWhiteL :: Lens' a Bool    -- only use black/white in graphics
-
-
-
-
-
+class HasCommands a where
+  genUMLL :: Lens' a Bool -- Generate a UML 2.0 data model
+  genHaskellL :: Lens' a Bool -- if True, generate the F-structure as a Haskell source file
+  sqlDumpL :: Lens' a Bool -- if True, generate a dump of SQL statements (for debugging)
+  export2adlL :: Lens' a Bool 
+  genFPAExcelL :: Lens' a Bool 
+  genPOPExcelL :: Lens' a Bool 
+  proofsL :: Lens' a Bool 
+  validateSQLL :: Lens' a Bool 
+  genPrototypeL :: Lens' a Bool 
+  genRapPopulationL :: Lens' a Bool 
+  dataAnalysisL :: Lens' a Bool -- "export a data model as plain Ampersand script, for analysing Excel-data."
+  showVersionL :: Lens' a Bool
+  genSampleConfigFileL :: Lens' a Bool
+  showHelpL :: Lens' a Bool
+  runAsDaemonL :: Lens' a Bool
+class HasCommands a => HasOutputFile a where
+  outputfileAdlL :: Lens' a FilePath
+  outputfileDataAnalisysL :: Lens' a FilePath
+class HasVersion a where
+  preVersionL :: Lens' a String 
+  postVersionL :: Lens' a String 
 data FSpecFormat = 
          FPandoc
        | Fasciidoc
