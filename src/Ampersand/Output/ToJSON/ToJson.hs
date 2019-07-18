@@ -13,23 +13,24 @@ import Ampersand.Output.ToJSON.Interfaces
 import Ampersand.Output.ToJSON.Views
 import Ampersand.Output.ToJSON.Roles
 
-generateJSONfiles :: MultiFSpecs -> RIO App ()
+generateJSONfiles :: (HasVerbosity env, HasHandle env, HasGenMetaOptions env, HasOptions env) => MultiFSpecs -> RIO env ()
 generateJSONfiles multi = do
- opts@Options{..} <- view optionsL
+ env <- view optionsL
+ genRapPopulationOnly <- view genRapPopulationOnlyL
  sequence_ $
   if genRapPopulationOnly
   then [ writeJSONFile "metaPopulation" 
-                                (fromAmpersand opts multi (multi,True) :: Populations)
+                                (fromAmpersand env multi (multi,True) :: Populations)
        ]
-  else [ writeJSONFile "settings"   (fromAmpersand opts multi multi :: Settings)
-       , writeJSONFile "relations"  (fromAmpersand opts multi multi :: Relationz)
-       , writeJSONFile "rules"      (fromAmpersand opts multi multi :: Rulez)
-       , writeJSONFile "concepts"   (fromAmpersand opts multi multi :: Concepts)
-       , writeJSONFile "conjuncts"  (fromAmpersand opts multi multi :: Conjuncts)
-       , writeJSONFile "interfaces" (fromAmpersand opts multi multi :: Interfaces)
-       , writeJSONFile "views"      (fromAmpersand opts multi multi :: Views)
-       , writeJSONFile "roles"      (fromAmpersand opts multi multi :: Roles)
-       , writeJSONFile "populations"(fromAmpersand opts multi (multi,False) :: Populations)
+  else [ writeJSONFile "settings"   (fromAmpersand env multi multi :: Settings)
+       , writeJSONFile "relations"  (fromAmpersand env multi multi :: Relationz)
+       , writeJSONFile "rules"      (fromAmpersand env multi multi :: Rulez)
+       , writeJSONFile "concepts"   (fromAmpersand env multi multi :: Concepts)
+       , writeJSONFile "conjuncts"  (fromAmpersand env multi multi :: Conjuncts)
+       , writeJSONFile "interfaces" (fromAmpersand env multi multi :: Interfaces)
+       , writeJSONFile "views"      (fromAmpersand env multi multi :: Views)
+       , writeJSONFile "roles"      (fromAmpersand env multi multi :: Roles)
+       , writeJSONFile "populations"(fromAmpersand env multi (multi,False) :: Populations)
        ]
 
 

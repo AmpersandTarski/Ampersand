@@ -55,9 +55,34 @@ class HasDirOutput a where
   dirOutputL :: Lens' a String -- the directory to generate the output in.
 class HasDataAnalysis a where
   dataAnalysisL :: Lens' a Bool -- "export a data model as plain Ampersand script, for analysing Excel-data."
+class HasGenFuncSpec a where
+  diagnosisOnlyL :: Lens' a Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
+  fspecFormatL :: Lens' a FSpecFormat -- the format of the generated (pandoc) document(s)
 
 
 
+
+
+data FSpecFormat = 
+         FPandoc
+       | Fasciidoc
+       | Fcontext
+       | Fdocbook
+       | Fdocx 
+       | Fhtml
+       | Fman
+       | Fmarkdown
+       | Fmediawiki
+       | Fopendocument
+       | Forg
+       | Fpdf
+       | Fplain
+       | Frst
+       | Frtf
+       | Flatex
+       | Ftexinfo
+       | Ftextile
+       deriving (Show, Eq, Enum, Bounded)
 
 
 

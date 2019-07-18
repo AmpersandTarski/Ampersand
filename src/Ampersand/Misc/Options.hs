@@ -141,6 +141,8 @@ class HasOptions env where
   optionsL :: Lens' env Options
 instance HasDaemonConfig Options where
   daemonConfigL = lens daemonConfig (\x y -> x { daemonConfig = y })
+instance HasDaemonConfig App where
+  daemonConfigL = optionsL . daemonConfigL
 instance HasDirPrototype Options where
   dirPrototypeL = lens dirPrototype (\x y -> x { dirPrototype = y })
 
@@ -199,6 +201,12 @@ instance HasDirOutput App where
   dirOutputL = optionsL . dirOutputL
 instance HasDataAnalysis Options where
   dataAnalysisL = lens dataAnalysis (\x y -> x { dataAnalysis = y })
+instance HasGenFuncSpec Options where
+  diagnosisOnlyL = lens diagnosisOnly (\x y -> x { diagnosisOnly = y })
+  fspecFormatL = lens fspecFormat (\x y -> x { fspecFormat = y })
+instance HasGenFuncSpec App where
+  diagnosisOnlyL = optionsL . diagnosisOnlyL
+  fspecFormatL = optionsL . fspecFormatL
 
 
 
@@ -417,26 +425,6 @@ canBeYamlSwitch str =
    takeWhile (/= '=') str `notElem` ["version","help","config","sampleConfigFile"]  
 data DisplayMode = Public | Hidden deriving Eq
 
-data FSpecFormat = 
-         FPandoc
-       | Fasciidoc
-       | Fcontext
-       | Fdocbook
-       | Fdocx 
-       | Fhtml
-       | Fman
-       | Fmarkdown
-       | Fmediawiki
-       | Fopendocument
-       | Forg
-       | Fpdf
-       | Fplain
-       | Frst
-       | Frtf
-       | Flatex
-       | Ftexinfo
-       | Ftextile
-       deriving (Show, Eq, Enum, Bounded)
 allFSpecFormats :: String   --TODO: Should be: allFSpecFormats :: [FSpecFormat]
 allFSpecFormats = 
      "[" ++

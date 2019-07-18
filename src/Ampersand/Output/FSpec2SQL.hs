@@ -19,7 +19,7 @@ import           System.FilePath
 
 generateDatabaseFile :: MultiFSpecs -> RIO App ()
 generateDatabaseFile multi = 
-   do opts@Options{..} <- view optionsL
+   do opts <- view optionsL
       sayWhenLoudLn $ "  Generating "++file
       liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile opts))
       liftIO $ writeFile (fullFile opts) content
@@ -43,7 +43,7 @@ generateDBstructQueries fSpec withComment
     <> additionalDatabaseSettings 
 
 dumpSQLqueries :: Options -> MultiFSpecs -> T.Text
-dumpSQLqueries opts@Options{..} multi
+dumpSQLqueries opts multi
    = T.intercalate "\n" $ 
          header (T.pack ampersandVersionStr)
        <>header "Database structure queries"

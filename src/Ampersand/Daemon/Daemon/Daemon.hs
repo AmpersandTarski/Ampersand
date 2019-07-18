@@ -32,7 +32,7 @@ instance Show DaemonState where
    = "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
 
 startAmpersandDaemon 
-     :: (HasOptions env, HasVerbosity env, HasHandle env) =>
+     :: (HasDaemonConfig env, HasOptions env, HasVerbosity env, HasHandle env) =>
         RIO env DaemonState
 startAmpersandDaemon = do
     init <- initialState
@@ -40,12 +40,12 @@ startAmpersandDaemon = do
         Left msg -> exitWith . NoConfigurationFile $ msg
         Right s -> pure s  
 
-initialState :: (HasOptions env, HasVerbosity env, HasHandle env) =>
+initialState :: (HasDaemonConfig env, HasOptions env, HasVerbosity env, HasHandle env) =>
                 RIO env (Either [String] DaemonState)
 initialState = do
-    opts <- view optionsL
+    daemonConfig <- view daemonConfigL 
     curDir <- liftIO $ getCurrentDirectory
-    dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig opts
+    dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig
     exists <- liftIO $ doesFileExist dotAmpersand
     if exists 
     then do
