@@ -13,7 +13,7 @@ import Ampersand.Output.ToJSON.Interfaces
 import Ampersand.Output.ToJSON.Views
 import Ampersand.Output.ToJSON.Roles
 
-generateJSONfiles :: (HasVerbosity env, HasHandle env, HasCommands env, HasOptions env) => MultiFSpecs -> RIO env ()
+generateJSONfiles :: (HasDirPrototype env, HasVerbosity env, HasHandle env, HasCommands env, HasOptions env) => MultiFSpecs -> RIO env ()
 generateJSONfiles multi = do
  env <- view optionsL
  genRapPopulation <- view genRapPopulationL

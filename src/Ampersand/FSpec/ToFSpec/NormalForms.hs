@@ -12,7 +12,6 @@ import           Ampersand.Classes.Relational
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input (parseRule)
-import           Ampersand.Misc
 import           Data.Hashable
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
@@ -1455,7 +1454,7 @@ nfPr shw eq dnf expr
    else (expr,steps,equ):nfPr shw eq dnf (simplify res)
  where (res,steps,equ) = normStep shw eq False expr
 
-conjNF, disjNF :: Options -> Expression -> Expression
+conjNF, disjNF :: env -> Expression -> Expression
 (conjNF, disjNF) = (pr False, pr True)
  where pr dnf _ expr
         = let proof = if dnf then dfProof else cfProof
@@ -1490,14 +1489,14 @@ isEIsc :: Expression -> Bool
 isEIsc EIsc{}  = True
 isEIsc _       = False
 
-conjuncts :: Options -> Rule -> NEL.NonEmpty Expression
+conjuncts :: env -> Rule -> NEL.NonEmpty Expression
 conjuncts opts r = exprIsc2list
                --  . (\e -> trace ("conjNF of that expression: "++show e) e)
                  . conjNF opts
                --  . (\e -> trace ("FormalExpression: "++show e) e)
                  . formalExpression $ r
 
-allShifts :: Options -> DnfClause -> [DnfClause]
+allShifts :: env -> DnfClause -> [DnfClause]
 allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
  where
@@ -1642,7 +1641,7 @@ allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (
   isEDcI _ = False
 
 
-makeAllConjs :: Options -> Rules -> [Conjunct]
+makeAllConjs :: env -> Rules -> [Conjunct]
 makeAllConjs opts allRls =
    [ Cjct { rc_id = "conj_"++show (i :: Int)
           , rc_orgRules   = rs 
