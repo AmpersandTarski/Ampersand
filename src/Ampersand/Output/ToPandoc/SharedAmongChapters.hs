@@ -50,9 +50,9 @@ import           Text.Pandoc hiding (trace,Verbosity,getVerbosity)
 import           Text.Pandoc.Builder
 
 -- | Define the order of the chapters in the document.
-chaptersInDoc :: Options -> [Chapter]
-chaptersInDoc opts 
-     | view diagnosisOnlyL opts = [ Diagnosis]
+chaptersInDoc :: (HasGenFuncSpec env) => env -> [Chapter]
+chaptersInDoc env 
+     | view diagnosisOnlyL env = [ Diagnosis]
      | otherwise          = [ Intro
                             , SharedLang
                             , Diagnosis
@@ -74,7 +74,7 @@ data XRefSection
 class Typeable a => Xreferenceble a where
   xSafeLabel :: a -> String -- The full string that is used as ID for referencing
   hyperLinkTo :: a -> Inlines
-  xDefBlck :: Options -> FSpec -> a -> Blocks
+  xDefBlck :: (HasDirOutput env, HasGenFuncSpec env) => env -> FSpec -> a -> Blocks
   xDefBlck _ _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
   xDefInln :: FSpec -> a -> Inlines
   xDefInln _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
@@ -88,9 +88,9 @@ instance Xreferenceble Chapter where
 instance Xreferenceble Picture where
   xSafeLabel a = show Fig++caption a
   hyperLinkTo = citeGen
-  xDefBlck opts _ a = para $ imageWith (xSafeLabel a, [], []) src (xSafeLabel a)(text (caption a))
+  xDefBlck env _ a = para $ imageWith (xSafeLabel a, [], []) src (xSafeLabel a)(text (caption a))
    where
-    src  = imagePath opts $ a
+    src  = imagePath env $ a
 instance Xreferenceble XRefSection where
   xSafeLabel a = 
        (show . xrefPrefix . refStuff $ a)
@@ -430,9 +430,10 @@ orderingByTheme fSpec
              Just pat -> x `elem` allElemsOf pat
 
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
-dpRule' :: Options -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
+dpRule' :: (HasGenFuncSpec env) => 
+    env -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
           -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
-dpRule' opts fSpec = dpR
+dpRule' env fSpec = dpR
  where
    l lstr = text $ localize (fsLang fSpec) lstr
    dpR [] n seenConcs seenRelations = ([], n, seenConcs, seenRelations)
@@ -447,8 +448,8 @@ dpRule' opts fSpec = dpR
        where
         theBlocks :: Blocks
         theBlocks =
-            purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-         <> purposes2Blocks opts [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
+            purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
+         <> purposes2Blocks env [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
          <> case (Set.elems . Set.map EDcD $ nds, fsLang fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
@@ -517,8 +518,8 @@ printPurposes = mconcat . map (printMarkup . explMarkup)
 printMarkup :: Markup -> Blocks
 printMarkup = fromList . amPandoc
 
-purposes2Blocks :: Options -> [Purpose] -> Blocks
-purposes2Blocks opts ps
+purposes2Blocks :: (HasGenFuncSpec env) => env -> [Purpose] -> Blocks
+purposes2Blocks env ps
  = case ps of
       [] -> mempty
             -- by putting the ref after the first inline of the definition, it aligns nicely with the definition
@@ -527,7 +528,7 @@ purposes2Blocks opts ps
              Just p  -> fromList $ amPandoc p
        where   -- The reference information, if available for this purpose, is put
         ref :: Purpose -> [Inline]
-        ref purp = if view fspecFormatL opts `elem` [Fpdf, Flatex] && (not.null.explRefIds) purp
+        ref purp = if view fspecFormatL env `elem` [Fpdf, Flatex] && (not.null.explRefIds) purp
                    then [RawInline (Text.Pandoc.Builder.Format "latex")
                             (texOnlyMarginNote (L.intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
                    else []

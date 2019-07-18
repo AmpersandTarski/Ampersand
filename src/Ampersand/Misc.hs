@@ -3,4 +3,4 @@ module Ampersand.Misc
    , module Ampersand.Misc.Options
    ) where
 import Ampersand.Misc.HasClasses
-import Ampersand.Misc.Options -- hiding (Options)
+import Ampersand.Misc.Options

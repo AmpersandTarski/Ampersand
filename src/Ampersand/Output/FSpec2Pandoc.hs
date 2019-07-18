@@ -51,8 +51,9 @@ import Text.Pandoc.CrossRef
 --Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
-fSpec2Pandoc :: Options -> FSpec -> (Pandoc, [Picture])
-fSpec2Pandoc opts fSpec = (thePandoc,thePictures)
+fSpec2Pandoc :: (HasDirOutput env, HasGenTime env, HasGenFuncSpec env) 
+   => env -> FSpec -> (Pandoc, [Picture])
+fSpec2Pandoc env fSpec = (thePandoc,thePictures)
   where
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
@@ -77,8 +78,8 @@ fSpec2Pandoc opts fSpec = (thePandoc,thePictures)
             <> cref True     --required for pandoc-crossref to do its work properly
             <> chapters True -- Numbering with subnumbers per chapter
 
-    diagnosisOnly = view diagnosisOnlyL opts
-    genTime = view genTimeL opts
+    diagnosisOnly = view diagnosisOnlyL env
+    genTime = view genTimeL env
     thePandoc = wrap .
         setTitle
            (case metaValues "title" fSpec of
@@ -107,12 +108,12 @@ fSpec2Pandoc opts fSpec = (thePandoc,thePictures)
     thePictures = concat picturesByChapter
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (blocksByChapter, picturesByChapter) = L.unzip . map fspec2Blocks . chaptersInDoc $ opts
+    (blocksByChapter, picturesByChapter) = L.unzip . map fspec2Blocks . chaptersInDoc $ env
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
-    fspec2Blocks Intro                 = (chpIntroduction       opts    fSpec, [])
-    fspec2Blocks SharedLang            = (chpNatLangReqs        opts  0 fSpec, [])
-    fspec2Blocks Diagnosis             = chpDiagnosis           opts    fSpec
-    fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis  opts  0 fSpec
-    fspec2Blocks DataAnalysis          = chpDataAnalysis        opts    fSpec
+    fspec2Blocks Intro                 = (chpIntroduction       env    fSpec, [])
+    fspec2Blocks SharedLang            = (chpNatLangReqs        env  0 fSpec, [])
+    fspec2Blocks Diagnosis             = chpDiagnosis           env    fSpec
+    fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis  env  0 fSpec
+    fspec2Blocks DataAnalysis          = chpDataAnalysis        env    fSpec
 

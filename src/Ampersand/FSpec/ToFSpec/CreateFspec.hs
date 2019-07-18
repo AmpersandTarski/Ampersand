@@ -36,10 +36,10 @@ import           System.FilePath
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createMulti.
-createMulti :: (HasExcellOutputOptions env, HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
+createMulti :: (HasGenTime env, HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
                RIO env (Guarded MultiFSpecs)
 createMulti =
-  do opts <- view optionsL
+  do env <- ask
      genMetaFile <- view genMetaFileL
      genRapPopulation <- view genRapPopulationL
      addSemanticMetamodel <- view addSemanticMetamodelL
@@ -64,7 +64,7 @@ createMulti =
          fAmpModel = MetaFSpec
             { metaModelFileName = "FormalAmpersand.adl"
             , model             = 
-                case pCtx2Fspec opts fAmpP_Ctx of
+                case pCtx2Fspec env fAmpP_Ctx of
                   Checked f _ -> f
                   Errors errs -> fatal . unlines $
                       "The FormalAmpersand ADL scripts are not type correct:"
@@ -75,7 +75,7 @@ createMulti =
          sysCModel = MetaFSpec
             { metaModelFileName = "SystemContext.adl"
             , model             = 
-                case pCtx2Fspec opts systemP_Ctx of
+                case pCtx2Fspec env systemP_Ctx of
                   Checked f _ -> f
                   Errors errs -> fatal . unlines $
                       "The SystemContext ADL scripts are not type correct:"
@@ -115,10 +115,10 @@ createMulti =
             uni xs ys = L.nub (xs ++ ys)
          userGFSpec :: Guarded FSpec
          userGFSpec = 
-            pCtx2Fspec opts $ 
+            pCtx2Fspec env $ 
               if useSystemContext 
               then mergeContexts <$> userPlus
-                                 <*> (grind sysCModel <$> pCtx2Fspec opts userPlus) -- grinds the session information out of the user's script
+                                 <*> (grind sysCModel <$> pCtx2Fspec env userPlus) -- grinds the session information out of the user's script
               else userP_Ctx
            where 
             userPlus :: Guarded P_Context
@@ -134,8 +134,8 @@ createMulti =
                                   metaPopPCtx :: Guarded P_Context
                                   metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
                                   metaPopFSpec :: Guarded FSpec
-                                  metaPopFSpec = pCtx2Fspec opts metaPopPCtx
-                              in MultiFSpecs <$> (pCtx2Fspec opts $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
+                                  metaPopFSpec = pCtx2Fspec env metaPopPCtx
+                              in MultiFSpecs <$> (pCtx2Fspec env $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
                                              <*> (Just <$> metaPopFSpec)
            else MultiFSpecs <$> userGFSpec <*> pure Nothing
      res <- if genMetaFile
@@ -143,11 +143,11 @@ createMulti =
             else return $ pure ()
      return (res >> result)
   where
-    writeMetaFile :: (HasDirOutput env, HasOptions env , HasVerbosity env, HasHandle env) => MetaFSpec -> Guarded FSpec -> RIO env (Guarded ())
+    writeMetaFile :: (HasGenTime env, HasDirOutput env, HasVerbosity env, HasHandle env) => MetaFSpec -> Guarded FSpec -> RIO env (Guarded ())
     writeMetaFile metaModel userSpec = do
-       opts <- view optionsL
+       env <- ask
        dirOutput <- view dirOutputL
-       case makeMetaFile opts metaModel <$> userSpec of
+       case makeMetaFile env metaModel <$> userSpec of
         Checked (filePath,metaContents) ws -> 
                   do sayWhenLoudLn $ "Generating meta file in path "++dirOutput
                      liftIO $ writeFile (dirOutput </> filePath) metaContents      
@@ -155,8 +155,9 @@ createMulti =
                      return $ Checked () ws
         Errors err -> return (Errors err)
 
-pCtx2Fspec :: Options -> Guarded P_Context -> Guarded FSpec
-pCtx2Fspec opts c = makeFSpec opts <$> join (pCtx2aCtx opts <$> encloseInConstraints opts c)
+pCtx2Fspec :: (HasCommands env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) 
+   => env -> Guarded P_Context -> Guarded FSpec
+pCtx2Fspec env c = makeFSpec env <$> join (pCtx2aCtx env <$> encloseInConstraints env c)
 
 -- | To analyse spreadsheets means to enrich the context with the relations that are defined in the spreadsheet.
 --   The function encloseInConstraints does not populate existing relations.

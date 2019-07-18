@@ -12,7 +12,8 @@ import qualified Data.List.NonEmpty as NEL
 import           Data.List.Split(splitOn)
 import qualified RIO.Set as Set
 
-chpNatLangReqs :: Options -> Int -> FSpec -> Blocks
+chpNatLangReqs :: (HasDirOutput env, HasGenFuncSpec env) 
+   => env -> Int -> FSpec -> Blocks
 chpNatLangReqs env lev fSpec =
       --  *** Header ***
    xDefBlck env fSpec SharedLang

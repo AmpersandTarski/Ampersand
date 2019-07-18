@@ -4,8 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.Options
-        ( Options-- (..)
-        , App(..)
+        ( App(..)
         , HasOptions(..),HasHandle(..)
         , HasProtoOpts(..)
         , HasEnvironment(..)
@@ -72,7 +71,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , genPOPExcel :: Bool   -- Generate an .xmlx file containing the populations 
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
-                       , progrName :: String --The name of the adl executable
+                    --   , progrName :: String --The name of the adl executable
                        , fileName :: Maybe FilePath --the file with the Ampersand context
                        , genTime :: LocalTime
                        , export2adl :: Bool
@@ -92,7 +91,7 @@ data EnvironmentOptions = EnvironmentOptions
       { envArgs               :: [String]
       , envArgsCommandLine    :: [String]
       , envArgsFromConfigFile :: [String]
-      , envProgName           :: String
+      , envProgName           :: String --The name of the adl executable
       , envExePath            :: FilePath
       , envLocalTime          :: LocalTime
       , envDirOutput          :: Maybe FilePath
@@ -150,6 +149,8 @@ class HasEnvironment a where
   environmentL :: Lens' a EnvironmentOptions
 instance HasEnvironment Options where
   environmentL = lens environment (\x y -> x { environment = y })
+instance HasEnvironment App where
+  environmentL = optionsL . environmentL
 
 instance HasExcellOutputOptions Options where
   trimXLSXCellsL = lens trimXLSXCells (\x y -> x { trimXLSXCells = y })
@@ -165,8 +166,12 @@ instance HasRootFile Options where
   fileNameL = lens fileName (\x y -> x { fileName = y })
 instance HasOutputLanguage Options where
   languageL = lens language (\x y -> x { language = y })
+instance HasOutputLanguage App where
+  languageL = optionsL . languageL
 instance HasDefaultCrud Options where
   defaultCrudL = lens defaultCrud (\x y -> x { defaultCrud = y })
+instance HasDefaultCrud App where
+  defaultCrudL = optionsL . defaultCrudL
 instance HasRunComposer Options where
   runComposerL = lens runComposer (\x y -> x { runComposer = y })
 instance HasRunComposer App where
@@ -181,10 +186,16 @@ instance HasZwolleVersion App where
   zwolleVersionL = optionsL . zwolleVersionL
 instance HasSqlBinTables Options where
   sqlBinTablesL = lens sqlBinTables (\x y -> x { sqlBinTables = y })
+instance HasSqlBinTables App where
+  sqlBinTablesL = optionsL . sqlBinTablesL
 instance HasGenInterfaces Options where
   genInterfacesL = lens genInterfaces (\x y -> x { genInterfaces = y })
+instance HasGenInterfaces App where
+  genInterfacesL = optionsL . genInterfacesL
 instance HasNamespace Options where
   namespaceL = lens namespace (\x y -> x { namespace = y })
+instance HasNamespace App where
+  namespaceL = optionsL . namespaceL
 instance HasMetaOptions Options where
   genMetaFileL = lens genMetaFile (\x y -> x { genMetaFile = y })
   addSemanticMetamodelL = lens addSemanticMetamodel (\x y -> x { addSemanticMetamodel = y })
@@ -260,6 +271,9 @@ instance HasAllowInvariantViolations App where
 instance HasVersion Options where
   preVersionL = lens preVersion (\x y -> x { preVersion = y })
   postVersionL = lens postVersion (\x y -> x { postVersion = y })
+instance HasVersion App where
+  preVersionL = optionsL . preVersionL
+  postVersionL = optionsL . postVersionL
 
 dirPrototypeVarName :: String
 dirPrototypeVarName = "CCdirPrototype"
@@ -405,7 +419,7 @@ getOptions' envOpts =
                       , genFPAExcel      = False
                       , genPOPExcel      = False
                       , language         = Nothing
-                      , progrName        = envProgName envOpts
+                   --   , progrName        = envProgName envOpts
                       , fileName         = fName
                       , export2adl       = False
                       , dataAnalysis     = False
@@ -745,11 +759,11 @@ options = [ (Option ['v']   ["version"]
             , Hidden)
           ]
 
-usageInfo' :: Options -> String
+usageInfo' :: (HasVerbosity env, HasEnvironment env) => env -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.
-usageInfo' opts = 
-  infoHeader (progrName opts) ++"\n"++
-    (concat . L.sort . map publishOption) [od | (od,x) <- options, verbosity opts == Loud || x == Public] 
+usageInfo' opts =
+  infoHeader (envProgName (view environmentL opts)) ++"\n"++
+    (concat . L.sort . map publishOption) [od | (od,x) <- options, view verbosityL opts == Loud || x == Public] 
 
 infoHeader :: String -> String
 infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"

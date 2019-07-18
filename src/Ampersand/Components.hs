@@ -31,9 +31,9 @@ import           Text.Pandoc.Builder
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
-generateAmpersandOutput :: (HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
-       => Options -> MultiFSpecs -> RIO env ()
-generateAmpersandOutput _ multi = do
+generateAmpersandOutput :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
+       => MultiFSpecs -> RIO env ()
+generateAmpersandOutput multi = do
     env <- ask 
     dataAnalysis <- view dataAnalysisL
     dirOutput <- view dirOutputL
@@ -43,7 +43,7 @@ generateAmpersandOutput _ multi = do
     liftIO $ createDirectoryIfMissing True dirOutput
     sequence_ . map snd . filter fst $ conditionalActions env
   where 
-   conditionalActions :: (HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
+   conditionalActions :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
            => env -> [(Bool, RIO env ())]
    conditionalActions env = 
       [ ( view genUMLL env            , doGenUML              )
@@ -93,21 +93,21 @@ generateAmpersandOutput _ multi = do
           theDoc = fDeriveProofs fSpec
           --theDoc = plain (text "Aap")  -- use for testing...
 
-   doGenHaskell :: (HasDirOutput env, HasOptions env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
+   doGenHaskell :: (HasGenTime env, HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
    doGenHaskell = do
-       opts <- view optionsL
+       env <- ask
        outputFile <- outputFile' <$> ask
        sayLn $ "Generating Haskell source code for " ++ name fSpec ++ "..."
-       writeFileUtf8 outputFile (T.pack $ fSpec2Haskell opts fSpec)
+       writeFileUtf8 outputFile (T.pack $ fSpec2Haskell env fSpec)
        sayWhenLoudLn ("Haskell written into " ++ outputFile ++ ".")
     where outputFile' env = view dirOutputL env </> baseName env -<.> ".hs"
 
-   doGenSQLdump :: (HasDirOutput env, HasOptions env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
+   doGenSQLdump :: (HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
    doGenSQLdump = do
-       opts <- view optionsL
+       env <- ask
        outputFile <- outputFile' <$> ask
        sayLn $ "Generating SQL queries dumpfile for " ++ name fSpec ++ "..."
-       writeFileUtf8 outputFile (dumpSQLqueries opts multi)
+       writeFileUtf8 outputFile (dumpSQLqueries env multi)
        sayWhenLoudLn ("SQL queries dumpfile written into " ++ outputFile ++ ".")
     where outputFile' env = view dirOutputL env </> baseName env ++ "_dump" -<.> ".sql"
    
@@ -123,16 +123,16 @@ generateAmpersandOutput _ multi = do
    -- the returned FSpec contains the details about the Pictures, so they
    -- can be referenced while rendering the FSpec.
    -- This function generates a pandoc document, possibly with pictures from an fSpec.
-   doGenDocument :: (HasRootFile env, HasDirOutput env, HasVerbosity env, HasHandle env, HasGenFuncSpec env, HasOptions env) 
+   doGenDocument :: (HasGenTime env, HasBlackWhite env, HasRootFile env, HasDirOutput env, HasVerbosity env, HasHandle env, HasGenFuncSpec env) 
       => RIO env ()
    doGenDocument = do
-       opts <- view optionsL
+       env <- ask
        fspecFormat <- view fspecFormatL
-       genGraphics <- not <$> view noGraphicsL
        sayLn $ "Generating functional design document for " ++ name fSpec ++ "..."
-       let (thePandoc,thePictures) = fSpec2Pandoc opts fSpec
+       let (thePandoc,thePictures) = fSpec2Pandoc env fSpec
        -- First we need to output the pictures, because they should be present 
        -- before the actual document is written
+       genGraphics <- not <$> view noGraphicsL
        when (genGraphics && fspecFormat /=FPandoc) $
          mapM_ writePicture (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
        writepandoc fSpec thePandoc
@@ -155,13 +155,13 @@ generateAmpersandOutput _ multi = do
        sayWhenLoudLn ("Generated file: " ++ outputFile)
      where outputFile' env = view dirOutputL env </> baseName env ++ "_generated_pop" -<.> ".xlsx"
 
-   doValidateSQLTest :: (HasOptions env, HasVerbosity env, HasHandle env) => RIO env ()
+   doValidateSQLTest :: (HasProtoOpts env, HasVerbosity env, HasHandle env) => RIO env ()
    doValidateSQLTest = do
        sayLn "Validating SQL expressions..."
        errMsg <- validateRulesSQL fSpec
        unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
 
-   doGenProto :: (HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasOptions env, HasRootFile env, HasVerbosity env, HasHandle env) 
+   doGenProto :: (HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasOptions env, HasRootFile env, HasVerbosity env, HasHandle env) 
        => RIO env ()
    doGenProto = do
      dirPrototype <- view dirPrototypeL
@@ -176,7 +176,7 @@ generateAmpersandOutput _ multi = do
         sayWhenLoudLn $ "Prototype files have been written to " ++ dirPrototype
      else exitWith NoPrototypeBecauseOfRuleViolations
 
-   doGenRapPopulation :: (HasOptions env, HasCommands env, HasVerbosity env, HasHandle env, HasAllowInvariantViolations env, HasDirPrototype env) 
+   doGenRapPopulation :: (HasEnvironment env, HasProtoOpts env, HasCommands env, HasVerbosity env, HasHandle env, HasAllowInvariantViolations env, HasDirPrototype env) 
         => RIO env ()
    doGenRapPopulation = do
      dirPrototype <- view dirPrototypeL

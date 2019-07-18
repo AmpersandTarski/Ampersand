@@ -42,9 +42,9 @@ ampersand = do
 ampersand' :: () -- (HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env, HasCommands env) 
   => RIO App ()
 ampersand' = do
-    opts' <- view optionsL
+    env <- ask
     fileName <- view fileNameL
-    sequence_ . map snd . filter fst $ actionsWithoutScript opts'-- There are commands that do not need a single filename to be speciied
+    sequence_ . map snd . filter fst $ actionsWithoutScript env-- There are commands that do not need a single filename to be speciied
     case fileName of
       Just _ -> do -- An Ampersand script is provided that can be processed
             sayLn "Processing your model..."
@@ -55,7 +55,7 @@ ampersand' = do
                . fmap show . NEL.toList $ err
               Checked multi ws -> do
                  mapM_  sayLn . concatMap (lines . show) $ ws
-                 generateAmpersandOutput opts' multi
+                 generateAmpersandOutput multi
                  sayLn "Finished processing your model"
                  sayLn . ("Your script has no errors " ++) $
                     case ws of
@@ -64,7 +64,7 @@ ampersand' = do
                       _   -> ", but "++show (length ws)++" warnings were found"
            
       Nothing -> -- No Ampersand script is provided 
-         if or (map fst $ actionsWithoutScript opts')
+         if or (map fst $ actionsWithoutScript env)
          then sayWhenLoudLn "No further actions, because no ampersand script is provided"
          else liftIO $ do 
             args     <- getArgs
@@ -74,16 +74,17 @@ ampersand' = do
                  , "   " <> progName <> (concat $ fmap (" " <>) args) ]
 
  where
-   actionsWithoutScript :: Options -> [(Bool, RIO App ())]
-   actionsWithoutScript opts = 
-      [ ( (view showVersionL opts)   || view verbosityL opts == Loud , sayLn $ versionText opts)
-      , ( (view genSampleConfigFileL opts)      , liftIO writeConfigFile)
-      , ( (view showHelpL opts)                 , sayLn $ usageInfo' opts)
-      , ( (view runAsDaemonL opts)              , runDaemon)
+   actionsWithoutScript :: (HasVersion env, HasEnvironment env, HasVerbosity env, HasCommands env) 
+      => env -> [(Bool, RIO App ())]
+   actionsWithoutScript env = 
+      [ ( (view showVersionL env)   || view verbosityL env == Loud , sayLn $ versionText env)
+      , ( (view genSampleConfigFileL env)      , liftIO writeConfigFile)
+      , ( (view showHelpL env)                 , sayLn $ usageInfo' env)
+      , ( (view runAsDaemonL env)              , runDaemon)
       ]
    
-   versionText :: Options -> String
-   versionText opts = view preVersionL opts ++ ampersandVersionStr ++ view postVersionL opts
+   versionText :: (HasVersion env) => env -> String
+   versionText env = view preVersionL env ++ ampersandVersionStr ++ view postVersionL env
 
 preProcessor :: IO()
 preProcessor = 

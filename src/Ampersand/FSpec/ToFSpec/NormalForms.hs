@@ -1490,21 +1490,21 @@ isEIsc EIsc{}  = True
 isEIsc _       = False
 
 conjuncts :: env -> Rule -> NEL.NonEmpty Expression
-conjuncts opts r = exprIsc2list
+conjuncts env r = exprIsc2list
                --  . (\e -> trace ("conjNF of that expression: "++show e) e)
-                 . conjNF opts
+                 . conjNF env
                --  . (\e -> trace ("FormalExpression: "++show e) e)
                  . formalExpression $ r
 
 allShifts :: env -> DnfClause -> [DnfClause]
-allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
+allShifts env conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
  where
  {-
   diagnostic
    = intercalate "\n  "
-       [ "shiftL: [ "++intercalate "\n          , " [showHS opts "\n            " e | e<-shiftL conjunct    ]++"\n          ]"
-       , "shiftR: [ "++intercalate "\n          , " [showHS opts "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
+       [ "shiftL: [ "++intercalate "\n          , " [showHS env "\n            " e | e<-shiftL conjunct    ]++"\n          ]"
+       , "shiftR: [ "++intercalate "\n          , " [showHS env "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
        ] -}
   shiftL :: DnfClause -> [DnfClause]
   shiftL dc =
@@ -1603,10 +1603,10 @@ allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (
   normDNF dc = 
     Dnf { antcs = case antcs dc of
                    []   -> []
-                   h:tl -> NEL.toList . exprIsc2list . conjNF opts $ foldr1 (./\.) (h NEL.:| tl)
+                   h:tl -> NEL.toList . exprIsc2list . conjNF env $ foldr1 (./\.) (h NEL.:| tl)
         , conss = case conss dc of
                    []   -> []
-                   h:tl -> NEL.toList . exprUni2list . disjNF opts $ foldr1 (.\/.) (h NEL.:| tl)
+                   h:tl -> NEL.toList . exprUni2list . disjNF env $ foldr1 (.\/.) (h NEL.:| tl)
         }
 
   pnEq :: DnfClause -> Bool
@@ -1642,18 +1642,18 @@ allShifts opts conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (
 
 
 makeAllConjs :: env -> Rules -> [Conjunct]
-makeAllConjs opts allRls =
+makeAllConjs env allRls =
    [ Cjct { rc_id = "conj_"++show (i :: Int)
           , rc_orgRules   = rs 
           , rc_conjunct   = expr
-          , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
+          , rc_dnfClauses = allShifts env (expr2dnfClause expr)
           }
    | (i , (expr, rs)) <- zip [0..]  conjExprs
    ]
    where
       conjExprs :: [(Expression, NEL.NonEmpty Rule)]
       conjExprs = converseNE . map conjTupel . Set.toList $ allRls
-      conjTupel rule = (rule , conjuncts opts rule)
+      conjTupel rule = (rule , conjuncts env rule)
       expr2dnfClause :: Expression -> DnfClause
       expr2dnfClause = split (Dnf [] []) . NEL.toList . exprUni2list
        where

@@ -35,8 +35,8 @@ import           System.Directory
 writeJSONFile :: (ToJSON a, HasDirPrototype env, HasHandle env, HasVerbosity env) => 
                  FilePath -> a -> RIO env ()
 writeJSONFile fName x = do
-    opts <- ask
-    let fullFile = getGenericsDir opts </> file
+    env <- ask
+    let fullFile = getGenericsDir env </> file
     sayWhenLoudLn ("  Generating "++file) 
     liftIO $ createDirectoryIfMissing True (takeDirectory fullFile)
     liftIO $ BL.writeFile fullFile (encodePretty x)

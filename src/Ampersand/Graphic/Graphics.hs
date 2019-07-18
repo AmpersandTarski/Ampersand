@@ -192,13 +192,13 @@ conceptualStructure fSpec pr =
                   }
         _  -> fatal "No conceptual graph defined for this type."
 
-writePicture :: (HasGenFuncSpec env, HasOptions env, HasVerbosity env, HasHandle env) =>
+writePicture :: (HasDirOutput env, HasBlackWhite env, HasGenFuncSpec env, HasVerbosity env, HasHandle env) =>
                 Picture -> RIO env ()
 writePicture pict = do
     genFSpec <- view genFSpecL
-    opts <- view optionsL
+    env <- ask
     sequence_ (
-      [liftIO $ createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
+      [liftIO $ createDirectoryIfMissing True  (takeDirectory (imagePath env pict)) ]++
    --   [dumpShow ]++
       [writeDot Canon  | genFSpec ]++  --Pretty-printed Dot output with no layout performed.
       [writeDot DotOutput | genFSpec] ++ --Reproduces the input along with layout information.
@@ -207,19 +207,19 @@ writePicture pict = do
       [writePdf Eps    | genFSpec ] -- .eps file that is postprocessed to a .pdf file 
            )
    where
-     writeDot :: (HasOptions env, HasVerbosity env, HasHandle env) =>
+     writeDot :: (HasDirOutput env, HasGenFuncSpec env, HasBlackWhite env, HasVerbosity env, HasHandle env) =>
                  GraphvizOutput -> RIO env ()
      writeDot = writeDotPostProcess Nothing
-     writeDotPostProcess :: (HasOptions env, HasVerbosity env, HasHandle env) =>
+     writeDotPostProcess :: (HasDirOutput env, HasGenFuncSpec env, HasBlackWhite env, HasVerbosity env, HasHandle env) =>
                  Maybe (FilePath -> RIO env ()) --Optional postprocessor
               -> GraphvizOutput
               -> RIO env ()
      writeDotPostProcess postProcess gvOutput  =
-         do opts <- view optionsL
+         do env <- ask
             sayWhenLoudLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
-            let dotSource = mkDotGraph opts pict
+            let dotSource = mkDotGraph env pict
             path <- liftIO $ (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
-                       (dropExtension . imagePath opts) pict
+                       (dropExtension . imagePath env) pict
             sayWhenLoudLn $ path++" written."
             case postProcess of
               Nothing -> return ()
@@ -236,7 +236,7 @@ writePicture pict = do
                                  "\n  Did you install MikTex? Can the command epstopdf be found?"++
                                  "\n  Your error message is:\n " ++ show (e :: IOException))
                    
-     writePdf :: (HasOptions env,HasVerbosity env, HasHandle env) 
+     writePdf :: (HasBlackWhite env, HasGenFuncSpec env, HasDirOutput env, HasVerbosity env, HasHandle env) 
           => GraphvizOutput -> RIO env ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
        `catch` (\ e -> sayWhenLoudLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
@@ -250,7 +250,8 @@ mkDotGraph env pict =
     ConceptualDg x -> conceptual2Dot x
 
 class ReferableFromPandoc a where
-  imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
+  imagePath :: (HasGenFuncSpec env, HasDirOutput env) =>
+     env -> a -> FilePath   -- ^ the full file path to the image file
 
 instance ReferableFromPandoc Picture where
   imagePath env p =

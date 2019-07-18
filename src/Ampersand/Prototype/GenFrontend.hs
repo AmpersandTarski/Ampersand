@@ -175,9 +175,9 @@ buildInterface fSpec allIfcs ifc = do
   where    
     buildObject :: (HasDirPrototype env, HasOptions env) => BoxItem -> RIO env FEObject2
     buildObject (BxExpr object') = do
-      opts <- view optionsL
+      env <- ask
       let object = substituteReferenceObjectDef fSpec object'
-      let iExp = conjNF opts $ objExpression object
+      let iExp = conjNF env $ objExpression object
       (aOrB, iExp') <-
         case objmsub object of
           Nothing -> do
@@ -427,15 +427,15 @@ data Template = Template (StringTemplate String) String
 -- TODO: better abstraction for specific template and fallback to default
 doesTemplateExist :: (HasDirPrototype env) => String -> RIO env Bool
 doesTemplateExist templatePath = do
-  opts <- ask
-  let absPath = getTemplateDir opts </> templatePath
+  env <- ask
+  let absPath = getTemplateDir env </> templatePath
   liftIO $ doesFileExist absPath
 
 readTemplate :: (HasDirPrototype env) =>
                 FilePath -> RIO env Template
 readTemplate templatePath = do
-  opts <- ask
-  let absPath = getTemplateDir opts </> templatePath
+  env <- ask
+  let absPath = getTemplateDir env </> templatePath
   res <- readUTF8File absPath
   case res of
     Left err   -> exitWith $ ReadFileError $ "Error while reading template.\n" : err

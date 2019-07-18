@@ -17,16 +17,16 @@ import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
 
-generateDatabaseFile :: (HasVerbosity env, HasHandle env, HasOptions env) => MultiFSpecs -> RIO env ()
+generateDatabaseFile :: (HasDirPrototype env, HasVerbosity env, HasHandle env) => MultiFSpecs -> RIO env ()
 generateDatabaseFile multi = 
-   do opts <- view optionsL
+   do env <- ask
       sayWhenLoudLn $ "  Generating "++file
-      liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile opts))
-      liftIO $ writeFile (fullFile opts) content
+      liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile env))
+      liftIO $ writeFile (fullFile env) content
   where 
    content = T.unpack (databaseStructureSql multi)
    file = "database" <.> "sql"
-   fullFile opts = getGenericsDir opts </> file
+   fullFile env = getGenericsDir env </> file
 
 databaseStructureSql :: MultiFSpecs -> T.Text
 databaseStructureSql multi
@@ -42,8 +42,8 @@ generateDBstructQueries fSpec withComment
   =    concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
     <> additionalDatabaseSettings 
 
-dumpSQLqueries :: Options -> MultiFSpecs -> T.Text
-dumpSQLqueries opts multi
+dumpSQLqueries :: env -> MultiFSpecs -> T.Text
+dumpSQLqueries env multi
    = T.intercalate "\n" $ 
          header (T.pack ampersandVersionStr)
        <>header "Database structure queries"
@@ -87,7 +87,7 @@ dumpSQLqueries opts multi
           ,"Rules for this conjunct:"]
         <>map showRule (NEL.toList $ rc_orgRules conj)
         <>["*/"
-          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF opts . notCpl . rc_conjunct $ conj) <> ";"
+          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rc_conjunct $ conj) <> ";"
           ,""]
         where
           showRule r 

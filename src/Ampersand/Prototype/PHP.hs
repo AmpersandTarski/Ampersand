@@ -39,18 +39,18 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: (HasOptions env, HasHandle env) => FSpec -> T.Text -> Expression ->  RIO env [(String,String)]
+evaluateExpSQL :: (HasProtoOpts env, HasHandle env) => FSpec -> T.Text -> Expression ->  RIO env [(String,String)]
 evaluateExpSQL fSpec dbNm expr = do
-    opts <- view optionsL
-    let violationsExpr = conjNF opts expr
+    env <- ask
+    let violationsExpr = conjNF env expr
         violationsQuery = prettySQLQuery 26 fSpec violationsExpr
     performQuery dbNm violationsQuery
 
-performQuery :: (HasOptions env, HasHandle env) =>
+performQuery :: (HasProtoOpts env, HasHandle env) =>
                 T.Text -> SqlQuery ->  RIO env [(String,String)]
 performQuery dbNm queryStr = do
-    opts <- view optionsL
-    queryResult <- T.unpack <$> (executePHPStr . showPHP) (php opts)
+    env <- ask
+    queryResult <- T.unpack <$> (executePHPStr . showPHP) (php env)
     if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
     then do mapM_ sayLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
@@ -59,9 +59,9 @@ performQuery dbNm queryStr = do
            _            -> fatal ("Parse error on php result: \n"<>(unlines . map ("     " ++) . lines $ queryResult))
      
    where 
-    php :: Options -> [T.Text]
-    php opts =
-      connectToMySqlServerPHP opts (Just dbNm) <>
+    php :: HasProtoOpts env => env -> [T.Text]
+    php env =
+      connectToMySqlServerPHP env (Just dbNm) <>
       [ "$sql="<>queryAsPHP queryStr<>";"
       , "$result=mysqli_query($DB_link,$sql);"
       , "if(!$result)"
@@ -165,12 +165,12 @@ connectToTheDatabasePHP =
     , ""
     ]
 
-createTempDatabase :: (HasOptions env, HasHandle env, HasVerbosity env) =>
+createTempDatabase :: (HasProtoOpts env, HasHandle env, HasVerbosity env) =>
                       FSpec ->  RIO env Bool
 createTempDatabase fSpec = do
-    opts <- view optionsL
+    env <- ask
     result <- executePHPStr .
-              showPHP $ phpStr opts
+              showPHP $ phpStr env
     sayWhenLoudLn $ 
          if T.null result 
           then "Temp database created succesfully."
@@ -178,7 +178,7 @@ createTempDatabase fSpec = do
              <>"The result:\n"
              <>T.unpack result
              <>"The statements:\n"
-             <>lineNumbers (phpStr opts)
+             <>lineNumbers (phpStr env)
     return (T.null result)
  where 
   lineNumbers :: [T.Text] -> String
@@ -186,9 +186,9 @@ createTempDatabase fSpec = do
     where
       withNumber :: (Int,String) -> String
       withNumber (n,t) = "/*"<>take (5-length(show n)) "00000"<>show n<>"*/ "<>t
-  phpStr :: Options -> [T.Text]
-  phpStr opts = 
-    (connectToMySqlServerPHP opts Nothing) <>
+  phpStr :: (HasProtoOpts env) => env -> [T.Text]
+  phpStr env = 
+    (connectToMySqlServerPHP env Nothing) <>
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
     , ""
     , "    /* file_per_table is required for long columns */"
@@ -209,7 +209,7 @@ createTempDatabase fSpec = do
     , "       if(!$result)"
     , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
     , ""
-    , "$DB_name='"<>tempDbName opts <>"';"
+    , "$DB_name='"<>tempDbName env <>"';"
     , "// Drop the database if it exists"
     , "$sql="<>queryAsPHP dropDB<>";"
     , "mysqli_query($DB_link,$sql);"
@@ -245,10 +245,10 @@ createTempDatabase fSpec = do
     where
       dropDB :: SqlQuery 
       dropDB = SqlQuerySimple $
-           "DROP DATABASE "<>(singleQuote $ tempDbName opts)
+           "DROP DATABASE "<>(singleQuote $ tempDbName env)
       createDB :: SqlQuery
       createDB = SqlQuerySimple $
-           "CREATE DATABASE "<>(singleQuote $ tempDbName opts)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
+           "CREATE DATABASE "<>(singleQuote $ tempDbName env)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []
