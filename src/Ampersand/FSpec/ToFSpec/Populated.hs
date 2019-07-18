@@ -10,7 +10,7 @@ where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
-import qualified Data.Map as Map
+import qualified RIO.Map as Map
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import qualified RIO.Set as Set
 import qualified RIO.List as L

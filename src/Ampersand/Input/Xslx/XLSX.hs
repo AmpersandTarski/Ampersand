@@ -12,7 +12,7 @@ import           Control.Lens -- ((^?),ix)
 import qualified RIO.List as L
 import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
-import qualified Data.Map as M 
+import qualified RIO.Map as Map
 import qualified RIO.Text as T
 import           Data.Tuple
 
@@ -168,7 +168,7 @@ theSheetCellsForTable (sheetName,ws)
   =  catMaybes [theMapping i | i <- [0..length tableStarters - 1]]
   where
     tableStarters :: [(Int,Int)]
-    tableStarters = filter isStartOfTable $ M.keys (ws  ^. wsCells)  
+    tableStarters = filter isStartOfTable $ Map.keys (ws  ^. wsCells)  
       where isStartOfTable :: (Int,Int) -> Bool
             isStartOfTable (rowNr,colNr)
               | colNr /= 1 = False
@@ -211,10 +211,10 @@ theSheetCellsForTable (sheetName,ws)
        conceptNameRowNr  = firstHeaderRowNr+1
        nrOfHeaderRows = 2
        maxRowOfWorksheet :: Int
-       maxRowOfWorksheet = case L.maximumMaybe (map fst (M.keys (ws  ^. wsCells))) of
+       maxRowOfWorksheet = case L.maximumMaybe (map fst (Map.keys (ws  ^. wsCells))) of
                              Nothing -> fatal "Maximum of an empty list is undefined!"
                              Just m -> m
-       maxColOfWorksheet = case L.maximumMaybe (map snd (M.keys (ws  ^. wsCells))) of
+       maxColOfWorksheet = case L.maximumMaybe (map snd (Map.keys (ws  ^. wsCells))) of
                              Nothing -> fatal "Maximum of an empty list is undefined!"
                              Just m -> m
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows

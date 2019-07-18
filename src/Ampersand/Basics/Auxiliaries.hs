@@ -12,7 +12,8 @@ module Ampersand.Basics.Auxiliaries
 import           Ampersand.Basics.Prelude
 import           RIO.List(foldl,intersect,nub,union)
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Map as Map 
+import qualified RIO.Map as Map 
+import qualified RIO.Map.Partial as PARTIAL --TODO: Get rid of partial functions.
 import qualified RIO.Set as Set 
 
 -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
@@ -47,14 +48,14 @@ transClosureMap' xs
   = foldl f xs (Map.keys xs `intersect` nub (concat (Map.elems xs)))
     where
      f :: Ord a => Map.Map a [a] -> a -> Map.Map a [a]   -- The type is given for documentation purposes only
-     f q x = Map.unionWith union q (Map.fromListWith union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
+     f q x = Map.unionWith union q (Map.fromListWith union [(a, q PARTIAL.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
 -- |  Warshall's transitive closure algorithm
 transClosureMap :: Ord a => Map.Map a (Set.Set a) -> Map.Map a (Set.Set a)
 transClosureMap xs
   = foldl f xs (Map.keysSet xs `Set.intersection` mconcat (Map.elems xs))
     where
      f :: Ord a => Map.Map a (Set.Set a) -> a -> Map.Map a (Set.Set a)
-     f q x = Map.unionWith Set.union q (Map.fromListWith Set.union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
+     f q x = Map.unionWith Set.union q (Map.fromListWith Set.union [(a, q PARTIAL.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
 
 -- Convert list of a's with associated b's to a list of b's with associated a's.
 -- Each b in the result is unique, and so is each a per b, eg.: 

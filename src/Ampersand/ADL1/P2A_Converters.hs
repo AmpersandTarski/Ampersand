@@ -24,7 +24,7 @@ import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Map as Map
+import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
