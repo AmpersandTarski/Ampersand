@@ -41,12 +41,10 @@ import           Text.Pandoc.PDF (makePDF)
 import qualified Text.Pandoc.UTF8 as UTF8
 
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: Options -> FSpec -> [(String , String)]
-defaultWriterVariables Options{..} fSpec
-  = [ ("title", (case (fsLang fSpec, diagnosisOnly) of
-                        (Dutch  , False) -> if test
-                                            then "Afspraken van "
-                                            else "Functioneel Ontwerp van "
+defaultWriterVariables :: (HasGenFuncSpec env) => env -> FSpec -> [(String , String)]
+defaultWriterVariables env fSpec
+  = [ ("title", (case (fsLang fSpec, view diagnosisOnlyL env) of
+                        (Dutch  , False) -> "Functioneel Ontwerp van "
                         (English, False) -> "Functional Design of "
                         (Dutch  ,  True) -> "Diagnose van "
                         (English,  True) -> "Diagnosis of "
@@ -61,7 +59,7 @@ defaultWriterVariables Options{..} fSpec
                        English -> "english")
     , ("documentclass","report")
     ] ++
-    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not diagnosisOnly]++
+    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not (view diagnosisOnlyL env)]++
     [ ("header-includes", unlines
          [ "% ============Ampersand specific Begin================="
          , "% First a couple of LaTeX packages are included:"
@@ -106,23 +104,22 @@ defaultWriterVariables Options{..} fSpec
          , ""
          , "% ============Ampersand specific End==================="
          ])
-    | fspecFormat `elem` [Fpdf,Flatex]
+    | (view fspecFormatL env) `elem` [Fpdf,Flatex]
     ]
 
 --DESCR -> functions to write the pandoc
---         String = the name of the outputfile
---         The IO() creates the actual output
-writepandoc :: FSpec -> Pandoc -> RIO App ()
+writepandoc :: (HasDirOutput env, HasRootFile env, HasGenFuncSpec env, HasHandle env, HasVerbosity env) => 
+      FSpec -> Pandoc -> RIO env ()
 writepandoc fSpec thePandoc = do
-  opts@Options{..} <- view optionsL
-  sayWhenLoudLn ("Generating "++fSpecFormatString opts ++" to : "++outputFile opts)
-  liftIO $ writepandoc' opts fSpec thePandoc
+  env <- ask
+  sayWhenLoudLn ("Generating "++fSpecFormatString env ++" to : "++outputFile env)
+  liftIO $ writepandoc' env fSpec thePandoc
  where
-    fSpecFormatString :: Options -> String 
-    fSpecFormatString = map toLower . drop 1 . show . fspecFormat
+    fSpecFormatString :: (HasGenFuncSpec env) => env -> String 
+    fSpecFormatString = map toLower . drop 1 . show . view fspecFormatL
 
-outputFile :: Options -> FilePath
-outputFile Options{..} = dirOutput </> baseName -<.> ext fspecFormat 
+outputFile :: (HasGenFuncSpec env, HasRootFile env, HasDirOutput env) => env -> FilePath
+outputFile env = view dirOutputL env </> baseName env -<.> ext (view fspecFormatL env) 
        
 ext :: FSpecFormat -> String
 ext format =
@@ -146,31 +143,31 @@ ext format =
         Ftexinfo      -> ".texinfo"
         Ftextile      -> ".textile"
                    
-writepandoc' :: Options -> FSpec -> Pandoc -> IO ()
-writepandoc' opts@Options{..} fSpec thePandoc = liftIO . runIOorExplode $ do
+writepandoc' :: (HasGenFuncSpec env, HasRootFile env, HasDirOutput env) => env -> FSpec -> Pandoc -> IO ()
+writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
   case writer of 
      ByteStringWriter f -> do 
        res <- f writerOptions thePandoc -- >>= handleError
        let content :: LByteString
            content = res
-       BL.writeFile (outputFile opts) content
-     TextWriter f -> case fspecFormat of
+       BL.writeFile (outputFile env) content
+     TextWriter f -> case view fspecFormatL env of
         Fpdf -> do
            res <- makePDF "pdflatex" [] f writerOptions thePandoc -- >>= handleError)
            case res of
-             Right pdf -> writeFnBinary (outputFile opts) pdf
+             Right pdf -> writeFnBinary (outputFile env) pdf
              Left err' -> liftIO . throwIO . PandocPDFError .
                                T.unpack . decodeUtf8With lenientDecode . BL.toStrict $ err'
         _     -> liftIO $ do
                 output <- runIO (f writerOptions thePandoc) >>= handleError
-                writeFileUtf8 (outputFile opts) (output)
+                writeFileUtf8 (outputFile env) (output)
  where   
     writer :: PandocMonad m => Writer m
     writer = case lookup writerName writers of
                 Nothing -> fatal $ "Undefined Pandoc writer: "++writerName
                 Just w -> w
     writerName =
-      case fspecFormat of
+      case view fspecFormatL env of
        Fpdf    -> "latex"
        Flatex  -> "latex"
        FPandoc -> "native"
@@ -183,7 +180,7 @@ writepandoc' opts@Options{..} fSpec thePandoc = liftIO . runIOorExplode $ do
                       { writerTableOfContents=True
                       , writerNumberSections=True
                       , writerTemplate=T.unpack <$> template
-                      , writerVariables=defaultWriterVariables opts fSpec
+                      , writerVariables=defaultWriterVariables env fSpec
                       , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath

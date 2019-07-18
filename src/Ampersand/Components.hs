@@ -24,37 +24,40 @@ import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import           Data.Maybe (isJust, fromJust)
 import           System.Directory
-import           System.FilePath
+import           System.FilePath ((</>), (-<.>))
 import           Text.Pandoc
 import           Text.Pandoc.Builder
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
-generateAmpersandOutput :: Options -> MultiFSpecs -> RIO App ()
-generateAmpersandOutput opts@Options{..} multi = do
+generateAmpersandOutput :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
+       => MultiFSpecs -> RIO env ()
+generateAmpersandOutput multi = do
+    env <- ask 
+    dataAnalysis <- view dataAnalysisL
+    dirOutput <- view dirOutputL
     sayWhenLoudLn "Checking for rule violations..."
     if dataAnalysis then sayWhenLoudLn "Not checking for rule violations because of data analysis." else reportInvViolations violationsOfInvariants
     reportSignals (initialConjunctSignals fSpec)
     liftIO $ createDirectoryIfMissing True dirOutput
-    sequence_ . map snd . filter fst $ conditionalActions
+    sequence_ . map snd . filter fst $ conditionalActions env
   where 
-   conditionalActions :: [(Bool, RIO App ())]
-   conditionalActions = 
-      [ ( genUML                , doGenUML              )
-      , ( haskell               , doGenHaskell          )
-      , ( sqlDump               , doGenSQLdump          )
-      , ( export2adl            , doGenADL              )
-      , ( dataAnalysis          , doGenADL              )
-      , ( genFSpec              , doGenDocument         )
-      , ( genFPAExcel           , doGenFPAExcel         )
-      , ( genPOPExcel           , doGenPopsXLSX         )
-      , ( proofs                , doGenProofs           )
-      , ( validateSQL           , doValidateSQLTest     )
-      , ( genPrototype          , doGenProto            )
-      , ( genRapPopulationOnly  , doGenRapPopulation    )
-      , ( isJust testRule       , ruleTest . fromJust $ testRule)
+   conditionalActions :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
+           => env -> [(Bool, RIO env ())]
+   conditionalActions env = 
+      [ ( view genUMLL env            , doGenUML              )
+      , ( view genHaskellL env        , doGenHaskell          )
+      , ( view sqlDumpL env           , doGenSQLdump          )
+      , ( view export2adlL env        , doGenADL              )
+      , ( view dataAnalysisL env      , doGenADL              )
+      , ( view genFSpecL env          , doGenDocument         )
+      , ( view genFPAExcelL env       , doGenFPAExcel         )
+      , ( view genPOPExcelL env       , doGenPopsXLSX         )
+      , ( view proofsL env            , doGenProofs           )
+      , ( view validateSQLL env       , doValidateSQLTest     )
+      , ( view genPrototypeL env      , doGenProto            )
+      , ( view genRapPopulationL env  , doGenRapPopulation    )
       ]
    fSpec = userFSpec multi
 
@@ -64,126 +67,139 @@ generateAmpersandOutput opts@Options{..} multi = do
    --    Expect to find a file "MetaModel.adl" in your working directory upon successful termination.
    -- 2. To perform a round-trip test, use an Ampersand-script foo.adl and run and run "Ampersand --export foo.adl".
    --    Expect to find a file "Export.adl" in your working directory which should be semantically equivalent to foo.adl.
-   doGenADL :: RIO App ()
+   doGenADL :: (HasOutputFile env, HasDirOutput env, HasVerbosity env, HasHandle env) => RIO env ()
    doGenADL = do
+       env <- ask
        sayWhenLoudLn $ "Generating Ampersand script (ADL) for "  ++ name fSpec ++ "..."
-       liftIO $ writeFile outputFile (showA ctx) 
-       sayWhenLoudLn $ ".adl-file written to " ++ outputFile ++ "."
-    where outputFile = dirOutput </> outputfile
+       liftIO $ writeFile (outputFile' env) (showA ctx) 
+       sayWhenLoudLn $ ".adl-file written to " ++ outputFile' env++ "."
+    where outputFile' env = view dirOutputL env </> view outputfileL env
+             where outputfileL 
+                     | view export2adlL env = outputfileAdlL
+                     | view dataAnalysisL env = outputfileDataAnalisysL
+                     | otherwise = fatal "outputfile not defined for this command."
           ctx = originalContext fSpec
  
-   doGenProofs :: RIO App ()
+   doGenProofs :: (HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
    doGenProofs = do 
-       sayLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "..."
+       env <- ask
+       sayLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile env ++ "..."
        content <- liftIO $ (runIO (writeHtml5String def thePandoc)) >>= handleError
-       writeFileUtf8 outputFile content
+       writeFileUtf8 (outputFile env) content
        sayWhenLoudLn "Proof written."
-    where outputFile = dirOutput </> "proofs_of_"++baseName -<.> ".html"
+    where outputFile env = view dirOutputL env </> "proofs_of_"++baseName env -<.> ".html"
           thePandoc = setTitle title (doc theDoc)
           title  = text $ "Proofs for "++name fSpec
           theDoc = fDeriveProofs fSpec
           --theDoc = plain (text "Aap")  -- use for testing...
 
-   doGenHaskell :: RIO App ()
+   doGenHaskell :: (HasGenTime env, HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
    doGenHaskell = do
+       env <- ask
+       outputFile <- outputFile' <$> ask
        sayLn $ "Generating Haskell source code for " ++ name fSpec ++ "..."
-       writeFileUtf8 outputFile (T.pack $ fSpec2Haskell opts fSpec)
+       writeFileUtf8 outputFile (T.pack $ fSpec2Haskell env fSpec)
        sayWhenLoudLn ("Haskell written into " ++ outputFile ++ ".")
-    where outputFile = dirOutput </> baseName -<.> ".hs"
+    where outputFile' env = view dirOutputL env </> baseName env -<.> ".hs"
 
-   doGenSQLdump :: RIO App ()
+   doGenSQLdump :: (HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
    doGenSQLdump = do
+       env <- ask
+       outputFile <- outputFile' <$> ask
        sayLn $ "Generating SQL queries dumpfile for " ++ name fSpec ++ "..."
-       writeFileUtf8 outputFile (dumpSQLqueries opts multi)
+       writeFileUtf8 outputFile (dumpSQLqueries env multi)
        sayWhenLoudLn ("SQL queries dumpfile written into " ++ outputFile ++ ".")
-    where outputFile = dirOutput </> baseName ++ "_dump" -<.> ".sql"
+    where outputFile' env = view dirOutputL env </> baseName env ++ "_dump" -<.> ".sql"
    
-   doGenUML :: RIO App ()
+   doGenUML :: (HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
    doGenUML = do
+       outputFile <- outputFile' <$> ask
        sayLn "Generating UML..."
        liftIO . writeFile outputFile $ generateUML fSpec
        sayWhenLoudLn ("Generated file: " ++ outputFile ++ ".")
-      where outputFile = dirOutput </> baseName -<.> ".xmi"
+      where outputFile' env = view dirOutputL env </> baseName env -<.> ".xmi"
 
    -- This function will generate all Pictures for a given FSpec.
    -- the returned FSpec contains the details about the Pictures, so they
    -- can be referenced while rendering the FSpec.
    -- This function generates a pandoc document, possibly with pictures from an fSpec.
-   doGenDocument :: RIO App ()
+   doGenDocument :: (HasGenTime env, HasBlackWhite env, HasRootFile env, HasDirOutput env, HasVerbosity env, HasHandle env, HasGenFuncSpec env) 
+      => RIO env ()
    doGenDocument = do
+       env <- ask
+       fspecFormat <- view fspecFormatL
        sayLn $ "Generating functional design document for " ++ name fSpec ++ "..."
+       let (thePandoc,thePictures) = fSpec2Pandoc env fSpec
        -- First we need to output the pictures, because they should be present 
        -- before the actual document is written
-       when (not(noGraphics) && fspecFormat /=FPandoc) $
+       genGraphics <- not <$> view noGraphicsL
+       when (genGraphics && fspecFormat /=FPandoc) $
          mapM_ writePicture (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
        writepandoc fSpec thePandoc
-     where (thePandoc,thePictures) = fSpec2Pandoc opts fSpec
         
 
    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
-   doGenFPAExcel :: RIO App ()
+   doGenFPAExcel :: (HasHandle env) => RIO env ()
    doGenFPAExcel =
      sayLn "Sorry, FPA analisys is discontinued. It needs maintenance." -- See https://github.com/AmpersandTarski/Ampersand/issues/621
      --  ; writeFile outputFile $ fspec2FPA_Excel fSpec
     
 --      where outputFile = dirOutput </> "FPA_"++baseName -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
-   doGenPopsXLSX :: RIO App ()
+   doGenPopsXLSX :: (HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
    doGenPopsXLSX = do
+       outputFile <- outputFile' <$> ask
        sayLn "Generating .xlsx file containing the population..."
        ct <- liftIO $ runIO getPOSIXTime >>= handleError
        BL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
        sayWhenLoudLn ("Generated file: " ++ outputFile)
-     where outputFile = dirOutput </> baseName ++ "_generated_pop" -<.> ".xlsx"
+     where outputFile' env = view dirOutputL env </> baseName env ++ "_generated_pop" -<.> ".xlsx"
 
-   doValidateSQLTest :: RIO App ()
+   doValidateSQLTest :: (HasProtoOpts env, HasVerbosity env, HasHandle env) => RIO env ()
    doValidateSQLTest = do
        sayLn "Validating SQL expressions..."
        errMsg <- validateRulesSQL fSpec
        unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
 
-   doGenProto :: RIO App ()
-   doGenProto =
+   doGenProto :: (HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasOptions env, HasRootFile env, HasVerbosity env, HasHandle env) 
+       => RIO env ()
+   doGenProto = do
+     dirPrototype <- view dirPrototypeL
+     allowInvariantViolations <- view allowInvariantViolationsL
      if null violationsOfInvariants || allowInvariantViolations
-     then sequence_ $
-          [ sayLn "Generating prototype..."
-          , liftIO $ createDirectoryIfMissing True dirPrototype
-          , doGenFrontend fSpec
-          , generateDatabaseFile multi
-          , generateJSONfiles multi
-          , sayWhenLoudLn $ "Prototype files have been written to " ++ dirPrototype
-          ]
-     else do exitWith NoPrototypeBecauseOfRuleViolations
+     then do
+        sayLn "Generating prototype..."
+        liftIO $ createDirectoryIfMissing True dirPrototype
+        doGenFrontend fSpec
+        generateDatabaseFile multi
+        generateJSONfiles multi
+        sayWhenLoudLn $ "Prototype files have been written to " ++ dirPrototype
+     else exitWith NoPrototypeBecauseOfRuleViolations
 
-   doGenRapPopulation :: RIO App ()
-   doGenRapPopulation =
+   doGenRapPopulation :: (HasEnvironment env, HasProtoOpts env, HasCommands env, HasVerbosity env, HasHandle env, HasAllowInvariantViolations env, HasDirPrototype env) 
+        => RIO env ()
+   doGenRapPopulation = do
+     dirPrototype <- view dirPrototypeL
+     allowInvariantViolations <- view allowInvariantViolationsL
      if null violationsOfInvariants || allowInvariantViolations
-     then sequence_ $
-          [ sayLn "Generating RAP population..."
-          , liftIO $ createDirectoryIfMissing True dirPrototype
-          , generateJSONfiles multi
-          , sayWhenLoudLn $ "RAP population file has been written to " ++ dirPrototype
-          ]
+     then do
+        sayLn "Generating RAP population..."
+        liftIO $ createDirectoryIfMissing True dirPrototype
+        generateJSONfiles multi
+        sayWhenLoudLn $ "RAP population file has been written to " ++ dirPrototype
      else do exitWith NoPrototypeBecauseOfRuleViolations
 
    violationsOfInvariants :: [(Rule,AAtomPairs)]
    violationsOfInvariants
      = [(r,vs) |(r,vs) <- allViolations fSpec
                , not (isSignal r)
-               , not (elemOfTemporarilyBlocked r)
        ]
-     where
-       elemOfTemporarilyBlocked rul =
-         if atlasWithoutExpressions 
-         then name rul `elem` 
-                 [ "TOT formalExpression[Rule*Expression]"
-                 , "TOT objExpression[BoxItem*Expression]"
-                 ]
-         else False
 
-   reportInvViolations :: [(Rule,AAtomPairs)] -> RIO App ()
+   reportInvViolations :: (HasAllowInvariantViolations env, HasVerbosity env, HasHandle env) => [(Rule,AAtomPairs)] -> RIO env ()
    reportInvViolations []    = sayWhenLoudLn $ "No invariant violations found for the initial population"
-   reportInvViolations viols =
+   reportInvViolations viols = do
+     allowInvariantViolations <- view allowInvariantViolationsL
+     verbosity <- view verbosityL
      if allowInvariantViolations && verbosity == Silent
      then
        -- TODO: this is a nice use case for outputting warnings
@@ -201,7 +217,8 @@ generateAmpersandOutput opts@Options{..} multi = do
    -- showpr :: AAtomPair -> String
    -- showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
    reportSignals []        = sayWhenLoudLn "No signals for the initial population" 
-   reportSignals conjViols = 
+   reportSignals conjViols = do
+     verbosity <- view verbosityL
      if verbosity == Loud
      then
        sayWhenLoudLn $ "Signals for initial population:\n" ++ L.intercalate "\n"
@@ -212,18 +229,4 @@ generateAmpersandOutput opts@Options{..} multi = do
          ]
      else
        sayLn "There are signals for the initial population. Use --verbose to output the violations"
-   ruleTest :: String -> RIO App ()
-   ruleTest ruleName =
-    case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of
-      [] -> sayLn $ "\nRule test error: rule "++show ruleName++" not found."
-      (rule:_) -> do 
-            sayLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
-            sayLn $ showContents rule
-            let rExpr = formalExpression rule
-                ruleComplement = rule { formalExpression = notCpl (EBrk rExpr) }
-            sayLn $ "\nViolations of "++show ruleName++" (contents of "++showA (formalExpression ruleComplement)++"):"
-            sayLn $ showContents ruleComplement
-    where showContents rule = "[" ++ L.intercalate ", " pairs ++ "]"
-            where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 
-                          | (r,vs) <- allViolations fSpec, r == rule, v <- Set.elems vs]
    

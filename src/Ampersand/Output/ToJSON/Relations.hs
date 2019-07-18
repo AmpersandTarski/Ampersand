@@ -43,9 +43,9 @@ instance ToJSON RelTableInfo where
 instance ToJSON TableCol where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Relationz where
- fromAmpersand opts@Options{..} multi _ = Relationz (map (fromAmpersand opts multi) (Set.elems $ vrels (userFSpec multi)))
+ fromAmpersand env multi _ = Relationz (map (fromAmpersand env multi) (Set.elems $ vrels (userFSpec multi)))
 instance JSON Relation RelationJson where
- fromAmpersand opts@Options{..} multi dcl = RelationJson 
+ fromAmpersand env multi dcl = RelationJson 
          { relJSONname       = name dcl
          , relJSONsignature  = name dcl ++ (show . sign) dcl
          , relJSONsrcConceptId  = idWithoutType . source $ dcl 
@@ -56,17 +56,17 @@ instance JSON Relation RelationJson where
          , relJSONsur      = isSur bindedExp
          , relJSONprop     = isProp bindedExp
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
-         , relJSONmysqlTable = fromAmpersand opts multi dcl
+         , relJSONmysqlTable = fromAmpersand env multi dcl
          }
       where bindedExp = EDcD dcl
             fSpec = userFSpec multi
          
 instance JSON Relation RelTableInfo where
- fromAmpersand opts@Options{..} multi dcl = RelTableInfo
+ fromAmpersand env multi dcl = RelTableInfo
   { rtiJSONname    = name plug
   , rtiJSONtableOf = srcOrtgt
-  , rtiJSONsrcCol  = fromAmpersand opts multi . rsSrcAtt $ relstore
-  , rtiJSONtgtCol  = fromAmpersand opts multi . rsTrgAtt $ relstore
+  , rtiJSONsrcCol  = fromAmpersand env multi . rsSrcAtt $ relstore
+  , rtiJSONtgtCol  = fromAmpersand env multi . rsTrgAtt $ relstore
   }
    where fSpec = userFSpec multi
          (plug,relstore) = getRelationTableInfo fSpec dcl

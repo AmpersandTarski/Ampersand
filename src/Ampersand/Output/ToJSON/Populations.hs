@@ -37,9 +37,9 @@ instance ToJSON PairsOfRelation where
 instance ToJSON JPair where
   toJSON = amp2Jason
 instance JSON (MultiFSpecs,Bool) Populations where
- fromAmpersand opts@Options{..} _ (multi,doMeta) = Populations
-   { epJSONatoms = map (fromAmpersand opts multi) (zip (Set.elems $ allConcepts theFSpec) (L.repeat doMeta))
-   , epJSONlinks = map (fromAmpersand opts multi) (zip (Set.elems $ vrels       theFSpec) (L.repeat doMeta))
+ fromAmpersand env _ (multi,doMeta) = Populations
+   { epJSONatoms = map (fromAmpersand env multi) (zip (Set.elems $ allConcepts theFSpec) (L.repeat doMeta))
+   , epJSONlinks = map (fromAmpersand env multi) (zip (Set.elems $ vrels       theFSpec) (L.repeat doMeta))
    }
   where 
    theFSpec 
@@ -58,9 +58,9 @@ instance JSON (A_Concept,Bool) AtomValuesOfConcept where
      where ftl = fatal "There is no grinded fSpec."
 
 instance JSON (Relation,Bool) PairsOfRelation where
- fromAmpersand opts@Options{..} multi (dcl,doMeta) = PairsOfRelation
+ fromAmpersand env multi (dcl,doMeta) = PairsOfRelation
    { porJSONrelation = T.pack . showRel $ dcl
-   , porJSONlinks = map (fromAmpersand opts multi) . Set.elems . pairsInExpr theFSpec $ EDcD dcl
+   , porJSONlinks = map (fromAmpersand env multi) . Set.elems . pairsInExpr theFSpec $ EDcD dcl
    }
   where 
    theFSpec 

@@ -19,7 +19,8 @@ import           Ampersand.Basics hiding (toList)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified RIO.List    as L
-import qualified Data.Map    as Map
+import qualified RIO.Map    as Map
+import qualified RIO.Map.Partial as PARTIAL --TODO: Get rid of partial functions
 import qualified RIO.Set    as Set
 
 -- optimisations possible for the EqualitySystem(s):
@@ -232,7 +233,7 @@ addEquality' ~(ES nms imap) set1 set2
 translateWith :: (Ord a, SetLike x) => EqualitySystem a -> x a -> (EqualitySystem a, IntSet.IntSet)
 translateWith ~(ES nomenclature imap) inSet
  = ( ES newNomenclature imap
-   , IntSet.fromList$ map (newNomenclature Map.!) (toList inSet)
+   , IntSet.fromList$ map (newNomenclature PARTIAL.!) (toList inSet)
    )
  where
   newNomenclature

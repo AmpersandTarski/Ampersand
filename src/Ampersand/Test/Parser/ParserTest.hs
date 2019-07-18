@@ -13,7 +13,7 @@ import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
 
 -- Tries to parse all the given files
-parseScripts :: (HasOptions env, HasHandle env, HasVerbosity env) => 
+parseScripts :: (HasExcellOutputOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
                 [FilePath] ->  RIO env Bool
 parseScripts paths =
   case paths of

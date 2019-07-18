@@ -21,14 +21,14 @@ data Settings = Settings
 instance ToJSON Settings where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Settings where
- fromAmpersand Options{..} multi _ = Settings 
+ fromAmpersand env multi _ = Settings 
   { sngJSONglobal_contextName = T.unpack (fsName fSpec)
-  , sngJSONmysql_dbHost       = sqlHost
-  , sngJSONmysql_dbName       = dbName
-  , sngJSONmysql_dbUser       = sqlLogin
-  , sngJSONmysql_dbPass       = sqlPwd
+  , sngJSONmysql_dbHost       = view sqlHostL env
+  , sngJSONmysql_dbName       = view dbNameL env
+  , sngJSONmysql_dbUser       = view sqlLoginL env
+  , sngJSONmysql_dbPass       = view sqlPwdL env
   , sngJSONcompiler_version   = ampersandVersionStr
-  , sngJSONcompiler_env       = show environment
+  , sngJSONcompiler_env       = show $ view environmentL env
   , sngJSONcompiler_modelHash = show . hash $ fSpec
   } 
    where fSpec = userFSpec multi

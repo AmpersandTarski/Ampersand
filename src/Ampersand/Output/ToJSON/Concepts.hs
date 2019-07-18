@@ -54,10 +54,10 @@ instance ToJSON Segment where
 instance ToJSON TableCols where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Concepts where
- fromAmpersand opts@Options{..} multi _ = Concepts (map (fromAmpersand opts multi) (Set.elems $ concs fSpec))
+ fromAmpersand env multi _ = Concepts (map (fromAmpersand env multi) (Set.elems $ concs fSpec))
    where fSpec = userFSpec multi
 instance JSON A_Concept Concept where
- fromAmpersand opts@Options{..} multi cpt = Concept
+ fromAmpersand env multi cpt = Concept
   { cptJSONid                = idWithoutType cpt
   , cptJSONlabel             = name cpt
   , cptJSONtype              = show . cptTType fSpec $ cpt
@@ -68,7 +68,7 @@ instance JSON A_Concept Concept where
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
-  , cptJSONconceptTable      = fromAmpersand opts multi cpt
+  , cptJSONconceptTable      = fromAmpersand env multi cpt
   , cptJSONlargestConcept    = idWithoutType . largestConcept fSpec $ cpt
   } 
   where
@@ -93,11 +93,11 @@ instance JSON A_Concept TableCols where
       []      -> fatal ("Concept `"++name cpt++"` not found in a table.")
       _       -> fatal ("Concept `"++name cpt++"` found in multiple tables.")
 instance JSON ViewDef View where
- fromAmpersand opts@Options{..} multi vd = View
+ fromAmpersand env multi vd = View
   { vwJSONlabel        = name vd
   , vwJSONisDefault    = vdIsDefault vd
   , vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd
-  , vwJSONsegments     = fmap (fromAmpersand opts multi) . vdats $ vd
+  , vwJSONsegments     = fmap (fromAmpersand env multi) . vdats $ vd
   }
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where

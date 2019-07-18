@@ -74,7 +74,7 @@ import           Data.Function      (on)
 import           Data.Hashable      (Hashable(..),hashWithSalt)
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Map as Map
+import qualified RIO.Map as Map
 import           Data.Maybe         (fromMaybe)
 import qualified RIO.Set as Set
 import qualified RIO.Text as T

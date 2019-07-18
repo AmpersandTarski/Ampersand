@@ -21,22 +21,19 @@ import           System.FilePath
 import           System.Process
 
 
-getGenericsDir :: Options -> String
-getGenericsDir Options{..} = 
-  dirPrototype </> "generics" 
+getGenericsDir :: HasDirPrototype a => a -> String
+getGenericsDir x = 
+  view dirPrototypeL x </> "generics" 
 
-writePrototypeAppFile :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
+writePrototypeAppFile :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                          String -> String -> RIO env ()
 writePrototypeAppFile relFilePath content = do
+  env <- ask
   sayWhenLoudLn $ "  Generating "<>relFilePath 
-  opts <- view optionsL
-  let filePath = getAppDir opts </> relFilePath
+  let filePath = getAppDir env </> relFilePath
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
   liftIO $ writeFile filePath content
      
-getAppDir :: Options -> String
-getAppDir Options{..} =
-  dirPrototype </> "public" </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
@@ -133,14 +130,14 @@ showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
 
 
-installComposerLibs :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
+installComposerLibs :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                        RIO env ()
 installComposerLibs = do
-    opts <- view optionsL 
+    dirPrototype <- view dirPrototypeL 
     curPath <- liftIO $ getCurrentDirectory
     sayWhenLoudLn $ "current directory: "++curPath
     sayWhenLoud "  Trying to download and install Composer libraries..."
-    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc opts)""
+    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc dirPrototype)""
     case exit_code of
       SE.ExitSuccess   -> do sayWhenLoudLn $
                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
@@ -148,9 +145,9 @@ installComposerLibs = do
       SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where
-     myProc :: Options -> CreateProcess
-     myProc opts = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<>composerTargetPath opts
+     myProc :: FilePath -> CreateProcess
+     myProc composerTargetPath = CreateProcess 
+       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<> composerTargetPath
        , cwd = Nothing
        , env = Nothing
        , std_in = Inherit
@@ -166,14 +163,13 @@ installComposerLibs = do
        , child_user = Nothing
        , use_process_jobs = False
        }
-     composerTargetPath = dirPrototype 
-     failOutput :: (HasOptions env) =>
+     failOutput :: (HasDirPrototype env) =>
                    (ExitCode, String, String) -> RIO env ()
      failOutput (exit_code, stdout', stderr') = do
-        opts <- view optionsL 
+        composerTargetPath <- view dirPrototypeL 
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
-            , "composerTargetPath: "++composerTargetPath opts
+            , "composerTargetPath: "++composerTargetPath
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
             (if null stdout' then [] else "stdout:" : lines stdout') ++

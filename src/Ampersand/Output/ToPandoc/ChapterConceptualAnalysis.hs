@@ -7,10 +7,11 @@ import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 
-chpConceptualAnalysis :: Options -> Int -> FSpec -> (Blocks,[Picture])
-chpConceptualAnalysis opts@Options{..} lev fSpec = (
+chpConceptualAnalysis :: (HasDirOutput env, HasGenFuncSpec env) 
+   => env -> Int -> FSpec -> (Blocks,[Picture])
+chpConceptualAnalysis env lev fSpec = (
       --  *** Header ***
-   xDefBlck opts fSpec ConceptualAnalysis
+   xDefBlck env fSpec ConceptualAnalysis
    <> --  *** Intro  ***
    caIntro
    <> --  *** For all patterns, a section containing the conceptual analysis for that pattern  ***
@@ -38,7 +39,7 @@ chpConceptualAnalysis opts@Options{..} lev fSpec = (
                     <> "This chapter allows an independent professional with sufficient background to check whether the agreements made "
                     <> "correspond to the formal rules and definitions. "
                     )
-     )<> purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
+     )<> purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
 
   caBlocks = 
          mconcat (map caSection (vpatterns fSpec))
@@ -66,17 +67,17 @@ chpConceptualAnalysis opts@Options{..} lev fSpec = (
   caSection :: Pattern -> Blocks
   caSection pat
    =    -- new section to explain this pattern
-        xDefBlck opts fSpec (XRefConceptualAnalysisPattern pat)
+        xDefBlck env fSpec (XRefConceptualAnalysisPattern pat)
         -- The section starts with the reason why this pattern exists
-     <> purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) pat)
+     <> purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) pat)
         -- followed by a conceptual model for this pattern
      <> ( case fsLang fSpec of
                Dutch   -> -- announce the conceptual diagram
                           para (hyperLinkTo (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
                           -- draw the conceptual diagram
-                          <>(xDefBlck opts fSpec . pictOfPat) pat
+                          <>(xDefBlck env fSpec . pictOfPat) pat
                English -> para (hyperLinkTo (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
-                          <>(xDefBlck opts fSpec . pictOfPat) pat
+                          <>(xDefBlck env fSpec . pictOfPat) pat
         ) <>
     (
         -- now provide the text of this pattern.
@@ -92,7 +93,7 @@ chpConceptualAnalysis opts@Options{..} lev fSpec = (
     )
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d
-        = let purp =  purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) d)
+        = let purp =  purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) d)
           in ((xDefInln fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMathWithSign d))
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 ( case ( isNull purp, fsLang fSpec) of
@@ -113,7 +114,7 @@ chpConceptualAnalysis opts@Options{..} lev fSpec = (
   adj = propFullName (fsLang fSpec) 
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
-        = let purp = purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) r)
+        = let purp = purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) r)
           in ( mempty
              , [  -- First the reason why the rule exists, if any..
                   purp
@@ -145,6 +146,6 @@ chpConceptualAnalysis opts@Options{..} lev fSpec = (
                         <> str (l (NL " geeft een conceptueel diagram van deze regel."
                                   ,EN " shows a conceptual diagram of this rule."))
                        )
-               <> xDefBlck opts fSpec (pictOfRule r)
+               <> xDefBlck env fSpec (pictOfRule r)
                ]
              )

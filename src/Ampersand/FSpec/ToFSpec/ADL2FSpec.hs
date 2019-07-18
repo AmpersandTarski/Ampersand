@@ -21,8 +21,9 @@ import qualified RIO.Text as T
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
-makeFSpec :: Options -> A_Context -> FSpec
-makeFSpec opts context
+makeFSpec :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env) =>
+    env -> A_Context -> FSpec
+makeFSpec env context
  =      FSpec { fsName       = T.pack (name context)
               , originalContext = context 
               , fspos        = ctxpos context
@@ -33,8 +34,8 @@ makeFSpec opts context
               , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objExpression (ifcObj ifc)
                                     , isIdent ctxrel && source ctxrel==ONE
                                       || ctxrel `notElem` map (objExpression.ifcObj) fSpecAllInterfaces
-                                    , allInterfaces opts]  -- generated interfaces
-              , fDeriveProofs = deriveProofs opts context 
+                                    , view genInterfacesL env]  -- generated interfaces
+              , fDeriveProofs = deriveProofs env context 
               , fRoleRuls    = L.nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
                                    | rule <- Set.elems $ allrules
                                    , role' <- maintainersOf rule
@@ -147,7 +148,7 @@ makeFSpec opts context
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap ptups (patterns context)       
-     allConjs = makeAllConjs opts allrules
+     allConjs = makeAllConjs env allrules
      fSpecAllConjsPerRule :: [(Rule, NEL.NonEmpty Conjunct)]
      fSpecAllConjsPerRule = converseNE [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, Set.elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
@@ -158,7 +159,7 @@ makeFSpec opts context
                where 
                  smaller :: A_Concept -> [A_Concept]
                  smaller cpt = L.nub $ cpt : smallerConcepts (gens context) cpt
-     allQuads = quadsOfRules opts allrules 
+     allQuads = quadsOfRules env allrules 
      
      allrules = Set.map setIsSignal (allRules context)
         where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
@@ -188,7 +189,7 @@ makeFSpec opts context
 --                     . filter (not . isSignal . qRule)
 --                     $ allQuads -- all quads for invariant rules
 --                 , dnf<- concatMap rc_dnfClauses . qConjuncts $ q
---                 , let antc = conjNF opts (foldr (./\.) (EDcV (sign (NEL.head (antcs dnf)))) (antcs dnf))
+--                 , let antc = conjNF env (foldr (./\.) (EDcV (sign (NEL.head (antcs dnf)))) (antcs dnf))
 --                 , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
 --                 , cons<- case conss dnf of
 --                            []   -> []
@@ -232,10 +233,10 @@ makeFSpec opts context
      --------------
      allplugs = genPlugs             -- all generated plugs
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
-                | p <- uniqueNames [] (makeGeneratedSqlPlugs opts context calcProps)
+                | p <- uniqueNames [] (makeGeneratedSqlPlugs env context calcProps)
                 ]
-     qlfname x = if null (namespace opts) then x else "ns"++namespace opts++x
-
+     qlfname x = if null ns then x else "ns"++ns++x
+       where ns = view namespaceL env
      --TODO151210 -> Plug A is overbodig, want A zit al in plug r
 --CONTEXT Temp
 --PATTERN Temp
@@ -407,7 +408,7 @@ makeFSpec opts context
      ----------------------
      --END: making interfaces
      ----------------------
-     printingLanguage = fromMaybe (ctxlang context) (language opts)  -- The language for printing this specification is taken from the command line options (language opts). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
+     printingLanguage = fromMaybe (ctxlang context) (view languageL env)  -- The language for printing this specification is taken from the command line options (language env). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
 
 makeIfcControls :: Relations -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs

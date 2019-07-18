@@ -46,15 +46,15 @@ instance ToJSON JsonPairView where
 instance ToJSON JsonPairViewSegment where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Rulez where
- fromAmpersand opts multi _ = Rulez
-   { rulJSONinvariants = map (fromAmpersand opts multi) . Set.elems $ invariants fSpec
-   , rulJSONsignals    = map (fromAmpersand opts multi) . Set.elems $ signals fSpec
+ fromAmpersand env multi _ = Rulez
+   { rulJSONinvariants = map (fromAmpersand env multi) . Set.elems $ invariants fSpec
+   , rulJSONsignals    = map (fromAmpersand env multi) . Set.elems $ signals fSpec
    }
   where
    fSpec = userFSpec multi
     
 instance JSON Rule JsonRule where
- fromAmpersand opts multi rule = JsonRule
+ fromAmpersand env multi rule = JsonRule
   { rulJSONname        = rrnm         rule
   , rulJSONruleAdl     = showA.formalExpression $ rule
   , rulJSONorigin      = show.rrfps     $ rule
@@ -63,7 +63,7 @@ instance JSON Rule JsonRule where
   , rulJSONsrcConceptId = idWithoutType . source . formalExpression $ rule
   , rulJSONtgtConceptId = idWithoutType . target . formalExpression $ rule
   , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (fmap NEL.toList . lookup rule $ allConjsPerRule fSpec)
-  , rulJSONpairView    = fmap (fromAmpersand opts multi) (rrviol rule)
+  , rulJSONpairView    = fmap (fromAmpersand env multi) (rrviol rule)
   } 
    where 
     fSpec = userFSpec multi
@@ -72,7 +72,7 @@ instance JSON Rule JsonRule where
                               [] -> ""
                               h:_ -> aMarkup2String h
 instance JSON (PairView Expression) JsonPairView where
- fromAmpersand opts multi pv = JsonPairView $ map (fromAmpersand opts multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
+ fromAmpersand env multi pv = JsonPairView $ map (fromAmpersand env multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
  fromAmpersand _ multi (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr
