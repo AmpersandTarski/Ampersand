@@ -21,9 +21,8 @@ runFile file = switchFileName file $ do
      Errors err    -> return $ NEL.toList err
      --TODO: Do something with the fSpec
      Checked _ _   -> return []
-switchFileName :: FilePath -> RIO App a -> RIO App a
+switchFileName :: (HasRootFile env) => FilePath -> RIO env a -> RIO env a
 switchFileName file inner = do
-  app <- ask
-  opts <- view optionsL
-  let app' = app { options' = opts{ fileName = Just file } }
-  runRIO app' inner
+  env <- ask
+  let env' = set fileNameL (Just file) env
+  runRIO env' inner

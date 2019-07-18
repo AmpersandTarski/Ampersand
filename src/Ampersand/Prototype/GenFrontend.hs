@@ -82,7 +82,6 @@ doGenFrontend fSpec = do
 copyTemplates :: (HasRootFile env, HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                  RIO env ()
 copyTemplates = do
-  --Options{..} <- view optionsL
   env <- ask
   let tempDir = dirSource env </> "templates"
       toDir = getTemplateDir env
@@ -463,7 +462,6 @@ renderTemplate (Template template absPath) setAttrs =
 downloadPrototypeFramework :: (HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env, HasHandle env, HasVerbosity env) =>
                              RIO env Bool
 downloadPrototypeFramework = ( do 
-    --Options{..} <- view optionsL
     destination <- view dirPrototypeL
     x <- extractionIsAllowed destination
     zwolleVersion <- view zwolleVersionL

@@ -15,12 +15,13 @@ import qualified RIO.List as L
 
 -- NOTE: this code was refactored to support the new FPA module, but has not been tested yet.
 
-fspec2FPA_Excel :: Options ->FSpec -> String
-fspec2FPA_Excel opts@Options{..} fSpec = showSpreadsheet $
+fspec2FPA_Excel :: (HasGenTime env, HasRootFile env) 
+       => env -> FSpec -> String
+fspec2FPA_Excel env fSpec = showSpreadsheet $
    Workbook
       { workbookDocumentProperties = 
           Just DocumentProperties
-            { documentPropertiesTitle       = Just $ "FunctiePuntAnalyse van "++baseName opts
+            { documentPropertiesTitle       = Just $ "FunctiePuntAnalyse van "++baseName env
             , documentPropertiesSubject     = Nothing
             , documentPropertiesKeywords    = Nothing
             , documentPropertiesDescription = 
@@ -32,6 +33,7 @@ fspec2FPA_Excel opts@Options{..} fSpec = showSpreadsheet $
       , workbookWorksheets = map pimpWs [wsResume, wsDatasets, wsFunctions]
       }
   where
+    genTime = view genTimeL env
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
     l = localize lang
@@ -45,7 +47,7 @@ fspec2FPA_Excel opts@Options{..} fSpec = showSpreadsheet $
           { tableRows =
               [ mkRow [string $ l (NL "Gedetailleerde functiepunentelling (volgens NESMA 2.2) van het systeem "
                                   ,EN "Detailed function point count (according to NESMA 2.1) of the application ")
-                                 ++ baseName opts
+                                 ++ baseName env
                       ]
               , emptyRow
               , mkRow [string totalen]
