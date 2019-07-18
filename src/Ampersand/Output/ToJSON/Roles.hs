@@ -13,7 +13,6 @@ data RoleJson = RoleJson
   { roleJSONid         :: String
   , roleJSONname       :: String
   , roleJSONmaintains  :: [String] 
-  , roleJSONinterfaces :: [String] 
   } deriving (Generic, Show)
 instance ToJSON RoleJson where
   toJSON = amp2Jason
@@ -27,7 +26,6 @@ instance JSON (Role,Int) RoleJson where
   { roleJSONid         = idWithoutType role'
   , roleJSONname       = name role'
   , roleJSONmaintains  = map name . Set.elems . fMaintains fSpec $ role'
-  , roleJSONinterfaces = map idWithoutType . roleInterfaces fSpec $ role'
   }
    where fSpec = userFSpec multi
 
