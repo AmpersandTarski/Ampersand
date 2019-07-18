@@ -13,7 +13,7 @@ import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
 
-parseProject :: (HasOptions env, HasVerbosity env, HasHandle env) => 
+parseProject :: (HasExcellOutputOptions env, HasOptions env, HasVerbosity env, HasHandle env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
 parseProject rootAdl = do
     (pc,gPctx) <- parseADL rootAdl 

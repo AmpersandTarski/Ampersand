@@ -26,12 +26,13 @@ attributesOfConcept fSpec c
          where expr = attExpr att 
               --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
-makeGeneratedSqlPlugs :: Options -> A_Context 
+makeGeneratedSqlPlugs :: (HasSqlBinTables env) 
+       => env -> A_Context 
               -> (Relation -> Relation) -- Function to add calculated properties to a relation
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
+makeGeneratedSqlPlugs env context calcProps = conceptTables ++ linkTables
   where 
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
@@ -208,18 +209,18 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                                Just x  -> x `elem` tyCpts typ
                            ]
     conceptTableOf :: Relation -> Maybe A_Concept
-    conceptTableOf  = fst . wayToStore opts
+    conceptTableOf  = fst . wayToStore env
     isStoredFlipped :: Relation -> Bool
-    isStoredFlipped = snd . wayToStore opts
+    isStoredFlipped = snd . wayToStore env
 
 -- | this function tells how a given relation is to be stored. If stored
 --   in a concept table, it returns that concept. It allways returns a boolean
 --   telling wether or not the relation is stored flipped.
 wayToStore :: (HasSqlBinTables env) => env -> Relation -> (Maybe A_Concept,Bool)
-wayToStore opts dcl
-  | view sqlBinTablesL opts = (Nothing, False)
-  | otherwise =
-       case (isInj d, isUni d) of
+wayToStore env dcl = 
+   if view sqlBinTablesL env 
+   then (Nothing, False)
+   else case (isInj d, isUni d) of
             (True   , False  ) -> inConceptTableFlipped
             (_      , True   ) -> inConceptTablePlain
             (False  , False  ) -> inLinkTable --Will become a link-table

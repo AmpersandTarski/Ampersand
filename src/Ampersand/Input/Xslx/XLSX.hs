@@ -16,10 +16,10 @@ import qualified RIO.Map as Map
 import qualified RIO.Text as T
 import           Data.Tuple
 
-parseXlsxFile :: HasOptions env => Maybe FileKind
-              -> FilePath -> RIO env (Guarded [P_Population])
+parseXlsxFile :: (HasExcellOutputOptions env) => 
+    Maybe FileKind -> FilePath -> RIO env (Guarded [P_Population])
 parseXlsxFile mFk file =
-  do opts <- view optionsL
+  do env <- ask
      bytestr <- 
         case mFk of
           Just fileKind 
@@ -28,12 +28,13 @@ parseXlsxFile mFk file =
                       Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++file++"`.")
           Nothing
              -> liftIO $ BL.readFile file
-     return . xlsx2pContext opts . toXlsx $ bytestr
+     return . xlsx2pContext env . toXlsx $ bytestr
  where
-  xlsx2pContext :: Options -> Xlsx -> Guarded [P_Population]
-  xlsx2pContext opts xlsx = Checked pop []
+  xlsx2pContext :: (HasExcellOutputOptions env ) 
+      => env -> Xlsx -> Guarded [P_Population]
+  xlsx2pContext env xlsx = Checked pop []
     where 
-      pop = concatMap (toPops opts file)
+      pop = concatMap (toPops env file)
           . concatMap theSheetCellsForTable 
           $ (xlsx ^. xlSheets)
 
@@ -54,7 +55,7 @@ instance Show SheetCellsForTable where  --for debugging only
       , "colNrs      : "++show (colNrs x)
       ] ++ debugInfo x 
 toPops :: (HasExcellOutputOptions env) => env -> FilePath -> SheetCellsForTable -> [P_Population]
-toPops opts file x = map popForColumn (colNrs x)
+toPops env file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
     popForColumn i =
@@ -153,7 +154,7 @@ toPops opts file x = map popForColumn (colNrs x)
          case mDelimiter of
            Nothing -> [xs]
            (Just delimiter) -> map trim $ T.split (== delimiter) xs
-       handleSpaces = if view trimXLSXCellsL opts then trim else id     
+       handleSpaces = if view trimXLSXCellsL env then trim else id     
     originOfCell :: (Int,Int) -- (row number,col number)
                  -> Origin
     originOfCell (r,c) 

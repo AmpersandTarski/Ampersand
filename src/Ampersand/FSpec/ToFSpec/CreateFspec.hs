@@ -36,7 +36,7 @@ import           System.FilePath
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createMulti.
-createMulti :: (HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
+createMulti :: (HasExcellOutputOptions env, HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
                RIO env (Guarded MultiFSpecs)
 createMulti =
   do opts <- view optionsL

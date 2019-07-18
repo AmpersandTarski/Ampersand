@@ -153,6 +153,8 @@ instance HasEnvironment Options where
 
 instance HasExcellOutputOptions Options where
   trimXLSXCellsL = lens trimXLSXCells (\x y -> x { trimXLSXCells = y })
+instance HasExcellOutputOptions App where
+  trimXLSXCellsL = optionsL . trimXLSXCellsL
 instance HasGenTime Options where
   genTimeL = environmentL . genTimeL
 instance HasGenTime App where
