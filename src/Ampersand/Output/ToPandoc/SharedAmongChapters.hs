@@ -52,7 +52,7 @@ import           Text.Pandoc.Builder
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]
 chaptersInDoc opts 
-     | diagnosisOnly opts = [ Diagnosis]
+     | view diagnosisOnlyL opts = [ Diagnosis]
      | otherwise          = [ Intro
                             , SharedLang
                             , Diagnosis
@@ -432,7 +432,7 @@ orderingByTheme fSpec
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
 dpRule' :: Options -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
           -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
-dpRule' opts@Options{..} fSpec = dpR
+dpRule' opts fSpec = dpR
  where
    l lstr = text $ localize (fsLang fSpec) lstr
    dpR [] n seenConcs seenRelations = ([], n, seenConcs, seenRelations)
@@ -527,7 +527,7 @@ purposes2Blocks opts ps
              Just p  -> fromList $ amPandoc p
        where   -- The reference information, if available for this purpose, is put
         ref :: Purpose -> [Inline]
-        ref purp = if fspecFormat opts `elem` [Fpdf, Flatex] && (not.null.explRefIds) purp
+        ref purp = if view fspecFormatL opts `elem` [Fpdf, Flatex] && (not.null.explRefIds) purp
                    then [RawInline (Text.Pandoc.Builder.Format "latex")
                             (texOnlyMarginNote (L.intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
                    else []

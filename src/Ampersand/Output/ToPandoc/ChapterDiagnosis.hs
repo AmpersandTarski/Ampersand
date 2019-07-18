@@ -9,8 +9,8 @@ import           Data.Maybe(isJust,fromMaybe)
 import qualified RIO.Set as Set
 
 chpDiagnosis :: Options -> FSpec -> (Blocks,[Picture])
-chpDiagnosis opts@Options{..} fSpec
- | noDiagnosis = mempty
+chpDiagnosis opts fSpec
+ | view noDiagnosisL opts = mempty
  | otherwise
  = (  xDefBlck opts fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "

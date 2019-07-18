@@ -192,10 +192,11 @@ conceptualStructure fSpec pr =
                   }
         _  -> fatal "No conceptual graph defined for this type."
 
-writePicture :: (HasOptions env, HasVerbosity env, HasHandle env) =>
+writePicture :: (HasGenFuncSpec env, HasOptions env, HasVerbosity env, HasHandle env) =>
                 Picture -> RIO env ()
 writePicture pict = do
-    opts@Options{..} <- view optionsL
+    genFSpec <- view genFSpecL
+    opts <- view optionsL
     sequence_ (
       [liftIO $ createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
    --   [dumpShow ]++
@@ -216,7 +217,7 @@ writePicture pict = do
      writeDotPostProcess postProcess gvOutput  =
          do opts <- view optionsL
             sayWhenLoudLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
-            dotSource <- mkDotGraphIO pict
+            let dotSource = mkDotGraph opts pict
             path <- liftIO $ (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
                        (dropExtension . imagePath opts) pict
             sayWhenLoudLn $ path++" written."
@@ -235,30 +236,30 @@ writePicture pict = do
                                  "\n  Did you install MikTex? Can the command epstopdf be found?"++
                                  "\n  Your error message is:\n " ++ show (e :: IOException))
                    
-     writePdf :: (HasOptions env,HasVerbosity env, HasHandle env) => GraphvizOutput
-              -> RIO env ()
+     writePdf :: (HasOptions env,HasVerbosity env, HasHandle env) 
+          => GraphvizOutput -> RIO env ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
        `catch` (\ e -> sayWhenLoudLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
                                   "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
-mkDotGraphIO :: HasOptions env => Picture -> RIO env (DotGraph String)
-mkDotGraphIO pict = do
-  opts <- view optionsL
+mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph String
+mkDotGraph env pict =
   case dotContent pict of
-    ClassDiagram x -> pure $ classdiagram2dot opts x
-    ConceptualDg x -> pure $ conceptual2DotIO opts x
+    ClassDiagram x -> classdiagram2dot env x
+    ConceptualDg x -> conceptual2Dot x
 
 class ReferableFromPandoc a where
   imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
 
 instance ReferableFromPandoc Picture where
-  imagePath Options{..} p =
+  imagePath env p =
     prefix </> filename <.> extention
     where 
       filename = escapeNonAlphaNum . pictureID . pType $ p
+      dirOutput = view dirOutputL env
       (prefix,extention) =
-         case fspecFormat of
+         case view fspecFormatL env of
            Fpdf   -> (dirOutput ,"png")   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
            Fdocx  -> (dirOutput ,"svg")   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
            Fhtml  -> (""        ,"png")
@@ -269,8 +270,8 @@ data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to
                                    , csIdgs :: [(A_Concept, A_Concept)]  -- ^ list of Isa relations
                                    }
 
-conceptual2DotIO :: Options -> ConceptualStructure -> DotGraph String
-conceptual2DotIO Options{..} cs@(CStruct _ rels idgs) = 
+conceptual2Dot :: ConceptualStructure -> DotGraph String
+conceptual2Dot cs@(CStruct _ rels idgs) = 
       DotGraph { strictGraph = False
                , directedGraph = True
                , graphID = Nothing

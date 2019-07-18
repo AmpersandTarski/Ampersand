@@ -18,7 +18,7 @@ import qualified RIO.Set as Set
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
 --         the class diagram and multiplicity rules are printed
 chpDataAnalysis :: Options -> FSpec -> (Blocks,[Picture])
-chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
+chpDataAnalysis opts fSpec = (theBlocks, thePictures)
  where
    -- shorthand for easy localizing    
   l :: LocalizedStr -> String

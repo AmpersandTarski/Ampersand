@@ -56,8 +56,13 @@ class HasDirOutput a where
 class HasDataAnalysis a where
   dataAnalysisL :: Lens' a Bool -- "export a data model as plain Ampersand script, for analysing Excel-data."
 class HasGenFuncSpec a where
+  genFSpecL :: Lens' a Bool   -- if True, generate a functional design
   diagnosisOnlyL :: Lens' a Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
   fspecFormatL :: Lens' a FSpecFormat -- the format of the generated (pandoc) document(s)
+  noDiagnosisL :: Lens' a Bool -- omit the diagnosis chapter from the functional design document.
+  genLegalRefsL :: Lens' a Bool   -- Generate a table of legal references in Natural Language chapter
+class HasBlackWhite a where
+  blackWhiteL :: Lens' a Bool    -- only use black/white in graphics
 
 
 

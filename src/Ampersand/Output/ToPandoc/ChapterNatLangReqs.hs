@@ -13,9 +13,9 @@ import           Data.List.Split(splitOn)
 import qualified RIO.Set as Set
 
 chpNatLangReqs :: Options -> Int -> FSpec -> Blocks
-chpNatLangReqs opts@Options{..} lev fSpec =
+chpNatLangReqs env lev fSpec =
       --  *** Header ***
-   xDefBlck opts fSpec SharedLang
+   xDefBlck env fSpec SharedLang
    <> --  *** Intro  ***
     case fsLang fSpec of
         Dutch   -> para
@@ -43,6 +43,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
   l = localize (fsLang fSpec)
+  genLegalRefs = view genLegalRefsL env
   legalRefs :: Blocks
   legalRefs =  header (lev+2) sectionTitle
             <> table caption'
@@ -69,7 +70,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
         null (rulesOfTheme tc) = mempty
     | otherwise =
              --  *** Header of the theme: ***
-            xDefBlck opts fSpec (XRefSharedLangTheme (patOfTheme tc))
+            xDefBlck env fSpec (XRefSharedLangTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
                  Nothing  -> 
@@ -80,7 +81,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                  Just pat -> 
                    case purposesDefinedIn fSpec (fsLang fSpec) pat of
                      []    -> printIntro    (cptsOfTheme tc)
-                     purps -> purposes2Blocks opts purps
+                     purps -> purposes2Blocks env purps
              )
           <> (mconcat . map printConcept . cptsOfTheme ) tc
           <> (mconcat . map printRel     . dclsOfTheme ) tc
@@ -154,6 +155,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
         where
+         fspecFormat = view fspecFormatL env
          nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
          printCDef :: ConceptDef -- the definition to print
                 -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
@@ -219,7 +221,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
           samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul =
-         xDefBlck opts fSpec (XRefSharedLangRule rul)
+         xDefBlck env fSpec (XRefSharedLangRule rul)
       <> (printPurposes . cRulPurps . theLoad) nRul
       -- <> definitionList 
       --       [(   str (l (NL "Afspraak ", EN "Agreement "))

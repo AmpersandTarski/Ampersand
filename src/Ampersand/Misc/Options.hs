@@ -202,11 +202,21 @@ instance HasDirOutput App where
 instance HasDataAnalysis Options where
   dataAnalysisL = lens dataAnalysis (\x y -> x { dataAnalysis = y })
 instance HasGenFuncSpec Options where
+  genFSpecL = lens genFSpec (\x y -> x { genFSpec = y })
   diagnosisOnlyL = lens diagnosisOnly (\x y -> x { diagnosisOnly = y })
   fspecFormatL = lens fspecFormat (\x y -> x { fspecFormat = y })
+  noDiagnosisL = lens noDiagnosis (\x y -> x { noDiagnosis = y })
+  genLegalRefsL = lens genLegalRefs (\x y -> x { genLegalRefs = y })
 instance HasGenFuncSpec App where
+  genFSpecL = optionsL . genFSpecL
   diagnosisOnlyL = optionsL . diagnosisOnlyL
   fspecFormatL = optionsL . fspecFormatL
+  noDiagnosisL = optionsL . noDiagnosisL
+  genLegalRefsL = optionsL . genLegalRefsL
+instance HasBlackWhite Options where
+  blackWhiteL = lens blackWhite (\x y -> x { blackWhite = y })
+instance HasBlackWhite App where
+  blackWhiteL = optionsL . blackWhiteL
 
 
 
