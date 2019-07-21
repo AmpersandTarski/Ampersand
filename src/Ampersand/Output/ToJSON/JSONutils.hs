@@ -32,12 +32,12 @@ import           GHC.Generics
 import           System.FilePath
 import           System.Directory
 
-writeJSONFile :: (ToJSON a, HasOptions env, HasHandles env, HasVerbosity env) => 
+writeJSONFile :: (ToJSON a, HasDirPrototype env, HasHandle env, HasVerbosity env) => 
                  FilePath -> a -> RIO env ()
 writeJSONFile fName x = do
     env <- ask
-    let fullFile = getGenericsDir (getOptions env) </> file
-    verboseLn ("  Generating "++file) 
+    let fullFile = getGenericsDir env </> file
+    sayWhenLoudLn ("  Generating "++file) 
     liftIO $ createDirectoryIfMissing True (takeDirectory fullFile)
     liftIO $ BL.writeFile fullFile (encodePretty x)
   where file = fName <.> "json"
@@ -46,7 +46,8 @@ writeJSONFile fName x = do
 -- We use aeson to generate .json in a simple and efficient way.
 -- For details, see http://hackage.haskell.org/package/aeson/docs/Data-Aeson.html#t:ToJSON
 class (GToJSON Zero (Rep b), Generic b) => JSON a b | b -> a where
-  fromAmpersand :: Options -> FSpec -> a -> b
+  fromAmpersand :: (HasEnvironment env, HasProtoOpts env) 
+       => env -> MultiFSpecs -> a -> b
   amp2Jason :: b -> Value
   amp2Jason = genericToJSON ampersandDefault
 

@@ -8,11 +8,12 @@ import qualified RIO.List as L
 import           Data.Maybe(isJust,fromMaybe)
 import qualified RIO.Set as Set
 
-chpDiagnosis :: Options -> FSpec -> (Blocks,[Picture])
-chpDiagnosis opts@Options{..} fSpec
- | noDiagnosis = mempty
+chpDiagnosis :: (HasDirOutput env, HasGenFuncSpec env) 
+   => env -> FSpec -> (Blocks,[Picture])
+chpDiagnosis env fSpec
+ | view noDiagnosisL env = mempty
  | otherwise
- = (  xDefBlck opts fSpec Diagnosis
+ = (  xDefBlck env fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
             <> (emph.singleQuoted.str.name) fSpec 
@@ -224,14 +225,14 @@ chpDiagnosis opts@Options{..} fSpec
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          )
-                 <> xDefBlck opts fSpec pict
+                 <> xDefBlck env fSpec pict
           picts  -> mconcat
                        [ para (   hyperLinkTo pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
                               )
-                       <> xDefBlck opts fSpec pict
+                       <> xDefBlck env fSpec pict
                        | (pict,pat)<-zip picts pats
                        ]
        )

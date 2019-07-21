@@ -14,7 +14,6 @@ data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
   { ifcJSONid                 :: String
   , ifcJSONlabel              :: String
-  , ifcJSONinterfaceRoles     :: [String]
   , ifcJSONboxClass           :: Maybe String
   , ifcJSONifcObject          :: JSONObjectDef
   , ifcJSONisAPI              :: Bool
@@ -68,14 +67,14 @@ instance ToJSON JSONexpr where
   toJSON = amp2Jason
   
 instance JSON FSpec Interfaces where
- fromAmpersand opts fSpec _ = Interfaces (map (fromAmpersand opts fSpec) (interfaceS fSpec ++ interfaceG fSpec))
+ fromAmpersand env fSpec _ = Interfaces (map (fromAmpersand env fSpec) (interfaceS fSpec ++ interfaceG fSpec))
 
 instance JSON SubInterface JSONSubInterface where
- fromAmpersand opts@Options{..} fSpec si = 
+ fromAmpersand env fSpec si = 
    case si of 
      Box{} -> JSONSubInterface
        { subJSONboxClass           = siMClass si
-       , subJSONifcObjects         = Just . map (fromAmpersand opts fSpec) . siObjs $ si
+       , subJSONifcObjects         = Just . map (fromAmpersand env fSpec) . siObjs $ si
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinkTo        = Nothing
        }
@@ -86,12 +85,11 @@ instance JSON SubInterface JSONSubInterface where
        , subJSONrefIsLinkTo        = Just . siIsLink $ si
        }
 instance JSON Interface JSONInterface where
- fromAmpersand opts fSpec interface = JSONInterface
+ fromAmpersand env fSpec interface = JSONInterface
   { ifcJSONid                 = escapeIdentifier . ifcname $ interface
   , ifcJSONlabel              = ifcname interface
-  , ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
   , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
-  , ifcJSONifcObject          = fromAmpersand opts fSpec (BxExpr $ ifcObj interface)
+  , ifcJSONifcObject          = fromAmpersand env fSpec (BxExpr $ ifcObj interface)
   , ifcJSONisAPI              = ifcIsAPI interface
   }
 
@@ -104,7 +102,7 @@ instance JSON Cruds JSONCruds where
   }
   
 instance JSON ObjectDef JSONexpr where
- fromAmpersand opts fSpec object =
+ fromAmpersand env fSpec object =
     JSONexpr
         { exprJSONsrcConceptId = idWithoutType srcConcept
         , exprJSONtgtConceptId = idWithoutType tgtConcept
@@ -115,7 +113,7 @@ instance JSON ObjectDef JSONexpr where
         }
       where
         query = broadQueryWithPlaceholder fSpec object{objExpression=normalizedInterfaceExp}
-        normalizedInterfaceExp = conjNF opts $ objExpression object
+        normalizedInterfaceExp = conjNF env $ objExpression object
         (srcConcept, tgtConcept) =
           case getExpressionRelation normalizedInterfaceExp of
             Just (src, _ , tgt, _) ->
@@ -123,7 +121,7 @@ instance JSON ObjectDef JSONexpr where
             Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
 instance JSON BoxItem JSONObjectDef where
- fromAmpersand opts fSpec obj =
+ fromAmpersand env fSpec obj =
    case obj of 
      BxExpr object' -> JSONObjectDef
       { ifcobjJSONtype               = "ObjExpression"
@@ -133,16 +131,16 @@ instance JSON BoxItem JSONObjectDef where
       , ifcobjJSONNormalizationSteps = Just $ showPrf showA.cfProof.objExpression $ object 
       , ifcobjJSONrelation           = fmap (showRel . fst) mEditableDecl
       , ifcobjJSONrelationIsFlipped  = fmap            snd  mEditableDecl
-      , ifcobjJSONcrud               = Just $ fromAmpersand opts fSpec (objcrud object)
-      , ifcobjJSONexpr               = Just $ fromAmpersand opts fSpec object
-      , ifcobjJSONsubinterfaces      = fmap  (fromAmpersand opts fSpec) (objmsub object)
+      , ifcobjJSONcrud               = Just $ fromAmpersand env fSpec (objcrud object)
+      , ifcobjJSONexpr               = Just $ fromAmpersand env fSpec object
+      , ifcobjJSONsubinterfaces      = fmap  (fromAmpersand env fSpec) (objmsub object)
       , ifcobjJSONtxt                = Nothing
       }
       where
         viewToUse = case objmView object of
                     Just nm -> Just $ lookupView fSpec nm
                     Nothing -> getDefaultViewForConcept fSpec tgtConcept
-        normalizedInterfaceExp = conjNF opts $ objExpression object
+        normalizedInterfaceExp = conjNF env $ objExpression object
         (tgtConcept, mEditableDecl) =
           case getExpressionRelation normalizedInterfaceExp of
             Just (_ , decl, tgt, isFlipped') ->

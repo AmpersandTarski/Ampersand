@@ -29,7 +29,7 @@ ghc-options:
       - -optP-Wno-nonportable-include-path  # Workaround, See issue #937
 #      - -Wincomplete-record-updates
 #      - -Wincomplete-uni-patterns
-#      - -Wredundant-constraints
+      - -Wredundant-constraints
 default-extensions: 
       - NoImplicitPrelude
 dependencies:

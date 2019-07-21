@@ -1,7 +1,9 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-
+* Allow interface roles to be editable. Accessible interfaces for a given role are now queries from database instead of generated json files (requires update of prototype framework)
+* Update to prototype framework v1.3.0
+* [Issue #921](https://github.com/AmpersandTarski/Ampersand/issues/921) Third round of enhancements for RIO.
 * Removed depricated stuff: keywords "EDITS", "PROCESS" and "ENDPROCESS". EDITS did not have any effect at all since about 2015, (END)PROCESS has been the same as (END)PATTERN for a long time.
 
 ## v3.17.2 (5 july 2019)

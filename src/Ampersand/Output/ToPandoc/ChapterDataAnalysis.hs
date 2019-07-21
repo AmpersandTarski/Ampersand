@@ -17,8 +17,9 @@ import qualified RIO.Set as Set
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
 --         the class diagram and multiplicity rules are printed
-chpDataAnalysis :: Options -> FSpec -> (Blocks,[Picture])
-chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
+chpDataAnalysis :: (HasDirOutput env, HasGenFuncSpec env) 
+   => env -> FSpec -> (Blocks,[Picture])
+chpDataAnalysis env fSpec = (theBlocks, thePictures)
  where
    -- shorthand for easy localizing    
   l :: LocalizedStr -> String
@@ -26,7 +27,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
   sectionLevel = 2
  
   theBlocks
-    =  xDefBlck opts fSpec DataAnalysis  -- The header
+    =  xDefBlck env fSpec DataAnalysis  -- The header
     <> (case fsLang fSpec of
              Dutch   -> para ( "Dit hoofdstuk bevat het resultaat van de gegevensanalyse. "
                             <> "De opbouw is als volgt:"
@@ -57,7 +58,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                                <> ("This is shown in " <> hyperLinkTo classificationPicture <> "."
                                   )
                     )
-            <> xDefBlck opts fSpec classificationPicture
+            <> xDefBlck env fSpec classificationPicture
            )
        )    
     <> daRulesSection
@@ -84,7 +85,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                            <> ( text "This model is shown by " <> hyperLinkTo logicalDataModelPicture <> text "."
                               )
               )
-       <> xDefBlck opts fSpec logicalDataModelPicture
+       <> xDefBlck env fSpec logicalDataModelPicture
        <> let nrOfClasses = length (classes oocd)
           in case fsLang fSpec of
                Dutch   -> para (case nrOfClasses of
@@ -173,7 +174,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                   ((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl)
         <> case clcpt cl of
              Nothing -> mempty
-             Just cpt -> purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) cpt)
+             Just cpt -> purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) cpt)
         <> (para . text . l) ( NL ("Deze gegevensverzameling heeft "++show n++" elementen en bevat de volgende attributen: ")
                              , EN ("This entity type has "++show n++" elements and contains the following attributes: ")
                              )
@@ -286,7 +287,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                          <> ( "This model is shown by " <> hyperLinkTo technicalDataModelPicture <> "."
                             )
             )
-    <> xDefBlck opts fSpec technicalDataModelPicture
+    <> xDefBlck env fSpec technicalDataModelPicture
     <> para (let nrOfTables = length (filter isTable (plugInfos fSpec))
              in
              case fsLang fSpec of

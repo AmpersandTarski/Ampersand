@@ -17,17 +17,16 @@ import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
 
-generateDatabaseFile :: FSpec -> RIO App ()
+generateDatabaseFile :: (HasDirPrototype env, HasVerbosity env, HasHandle env) => MultiFSpecs -> RIO env ()
 generateDatabaseFile fSpec = 
    do env <- ask
-      let opts@Options{..} = getOptions env
-      verboseLn $ "  Generating "++file
-      liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile opts))
-      liftIO $ writeFile (fullFile opts) content
+      sayWhenLoudLn $ "  Generating "++file
+      liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile env))
+      liftIO $ writeFile (fullFile env) content
   where 
    content = T.unpack (databaseStructureSql fSpec)
    file = "database" <.> "sql"
-   fullFile opts = getGenericsDir opts </> file
+   fullFile env = getGenericsDir env </> file
 
 databaseStructureSql :: FSpec -> T.Text
 databaseStructureSql fSpec
@@ -41,8 +40,8 @@ generateDBstructQueries fSpec withComment
   =    concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
     <> additionalDatabaseSettings 
 
-dumpSQLqueries :: Options -> FSpec -> T.Text
-dumpSQLqueries opts@Options{..} fSpec
+dumpSQLqueries :: env -> FSpec -> T.Text
+dumpSQLqueries env fSpec
    = T.intercalate "\n" $ 
          header (T.pack ampersandVersionStr)
        <>header "Database structure queries"
@@ -85,7 +84,7 @@ dumpSQLqueries opts@Options{..} fSpec
           ,"Rules for this conjunct:"]
         <>map showRule (NEL.toList $ rc_orgRules conj)
         <>["*/"
-          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF opts . notCpl . rc_conjunct $ conj) <> ";"
+          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rc_conjunct $ conj) <> ";"
           ,""]
         where
           showRule r 

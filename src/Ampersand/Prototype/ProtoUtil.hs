@@ -21,26 +21,23 @@ import           System.FilePath
 import           System.Process
 
 
-getGenericsDir :: Options -> String
-getGenericsDir Options{..} = 
-  dirPrototype </> "generics" 
+getGenericsDir :: HasDirPrototype a => a -> String
+getGenericsDir x = 
+  view dirPrototypeL x </> "generics" 
 
-writePrototypeAppFile :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+writePrototypeAppFile :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                          String -> String -> RIO env ()
 writePrototypeAppFile relFilePath content = do
-  verboseLn $ "  Generating "<>relFilePath 
   env <- ask
-  let filePath = getAppDir (getOptions env) </> relFilePath
+  sayWhenLoudLn $ "  Generating "<>relFilePath 
+  let filePath = getAppDir env </> relFilePath
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
   liftIO $ writeFile filePath content
      
-getAppDir :: Options -> String
-getAppDir Options{..} =
-  dirPrototype </> "public" </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
-copyDirRecursively :: (HasVerbosity  env, HasHandles env) =>
+copyDirRecursively :: (HasVerbosity  env, HasHandle env) =>
                       FilePath -> FilePath -> RIO env ()
 copyDirRecursively srcBase tgtBase = copy ""
   where copy fileOrDirPth = do
@@ -49,16 +46,16 @@ copyDirRecursively srcBase tgtBase = copy ""
           isDir <- liftIO $ doesDirectoryExist srcPath
           if isDir then do
               liftIO $ createDirectoryIfMissing True tgtPath
-              verboseLn $ " Copying dir... " ++ srcPath
+              sayWhenLoudLn $ " Copying dir... " ++ srcPath
               fOrDs <- getProperDirectoryContents srcPath
               mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
           else do
-              verboseLn $ "  file... " ++ fileOrDirPth
+              sayWhenLoudLn $ "  file... " ++ fileOrDirPth
               liftIO $ copyFile srcPath tgtPath
              
 
 -- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
-removeAllDirectoryFiles :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+removeAllDirectoryFiles :: HasHandle env =>
                            FilePath -> RIO env ()
 removeAllDirectoryFiles dirPath = do
     dirContents <- getProperDirectoryContents dirPath
@@ -67,7 +64,7 @@ removeAllDirectoryFiles dirPath = do
          do { let absPath = dirPath </> path
             ; isDir <- liftIO $ doesDirectoryExist absPath
             ; if isDir then
-                putStrLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
+                sayLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
               else
                 liftIO $ removeFile absPath
             }
@@ -133,24 +130,24 @@ showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
 
 
-installComposerLibs :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+installComposerLibs :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                        RIO env ()
 installComposerLibs = do
-    env <- ask
+    dirPrototype <- view dirPrototypeL 
     curPath <- liftIO $ getCurrentDirectory
-    verboseLn $ "current directory: "++curPath
-    verbose "  Trying to download and install Composer libraries..."
-    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc $ getOptions env)""
+    sayWhenLoudLn $ "current directory: "++curPath
+    sayWhenLoud "  Trying to download and install Composer libraries..."
+    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc dirPrototype)""
     case exit_code of
-      SE.ExitSuccess   -> do verboseLn $
+      SE.ExitSuccess   -> do sayWhenLoudLn $
                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                             verboseLn stdout'
+                             sayWhenLoudLn stdout'
       SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where
-     myProc :: Options -> CreateProcess
-     myProc opts = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<>composerTargetPath opts
+     myProc :: FilePath -> CreateProcess
+     myProc composerTargetPath = CreateProcess 
+       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<> composerTargetPath
        , cwd = Nothing
        , env = Nothing
        , std_in = Inherit
@@ -166,14 +163,13 @@ installComposerLibs = do
        , child_user = Nothing
        , use_process_jobs = False
        }
-     composerTargetPath = dirPrototype 
-     failOutput :: (HasOptions env) =>
+     failOutput :: (HasDirPrototype env) =>
                    (ExitCode, String, String) -> RIO env ()
      failOutput (exit_code, stdout', stderr') = do
-        env <- ask
+        composerTargetPath <- view dirPrototypeL 
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
-            , "composerTargetPath: "++composerTargetPath (getOptions env)
+            , "composerTargetPath: "++composerTargetPath
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
             (if null stdout' then [] else "stdout:" : lines stdout') ++

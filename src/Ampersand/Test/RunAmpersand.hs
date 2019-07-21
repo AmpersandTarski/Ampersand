@@ -7,12 +7,12 @@ import           Ampersand.FSpec.ToFSpec.CreateFspec(createMulti)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
+import           MainApps(defEnv)
 
 ampersand :: [FilePath] -> IO [[CtxError]]
 ampersand files = do
-     opts <- getOptionsIO
-     let app = App opts stdout
-     sequence $ fmap (runRIO app . runFile) files
+     env <- defEnv
+     sequence $ fmap (runRIO env . runFile) files
 
 runFile :: FilePath -> RIO App [CtxError]
 runFile file = switchFileName file $ do
@@ -21,9 +21,8 @@ runFile file = switchFileName file $ do
      Errors err    -> return $ NEL.toList err
      --TODO: Do something with the fSpec
      Checked _ _   -> return []
-switchFileName :: FilePath -> RIO App a -> RIO App a
+switchFileName :: (HasRootFile env) => FilePath -> RIO env a -> RIO env a
 switchFileName file inner = do
-  app <- ask
-  let opts = getOptions app
-      app' = app { options' = opts{ fileName = Just file } }
-  runRIO app' inner
+  env <- ask
+  let env' = set fileNameL (Just file) env
+  runRIO env' inner

@@ -13,20 +13,18 @@ data RoleJson = RoleJson
   { roleJSONid         :: String
   , roleJSONname       :: String
   , roleJSONmaintains  :: [String] 
-  , roleJSONinterfaces :: [String] 
   } deriving (Generic, Show)
 instance ToJSON RoleJson where
   toJSON = amp2Jason
 instance ToJSON Roles where
   toJSON = amp2Jason
 instance JSON FSpec Roles where
- fromAmpersand opts@Options{..} fSpec _ = Roles . map (fromAmpersand opts fSpec) . fRoles $ fSpec
+ fromAmpersand env fSpec _ = Roles . map (fromAmpersand env fSpec) . fRoles $ fSpec
 instance JSON (Role,Int) RoleJson where
  fromAmpersand _ fSpec (role',_) = RoleJson
   { roleJSONid         = idWithoutType role'
   , roleJSONname       = name role'
-  , roleJSONmaintains  = map name . Set.elems .fMaintains     fSpec $ role'
-  , roleJSONinterfaces = map idWithoutType . roleInterfaces fSpec $ role'
+  , roleJSONmaintains  = map name . Set.elems . fMaintains fSpec $ role'
   }
 
 

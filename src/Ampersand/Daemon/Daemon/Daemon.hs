@@ -32,19 +32,20 @@ instance Show DaemonState where
    = "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
 
 startAmpersandDaemon 
-     :: RIO App DaemonState
+     :: (HasCommands env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env, HasExcellOutputOptions env, HasDaemonConfig env, HasOptions env, HasVerbosity env, HasHandle env) =>
+        RIO env DaemonState
 startAmpersandDaemon = do
     init <- initialState
     case init of
         Left msg -> exitWith . NoConfigurationFile $ msg
         Right s -> pure s  
 
-initialState :: RIO App (Either [String] DaemonState)
+initialState :: (HasCommands env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env, HasExcellOutputOptions env, HasDaemonConfig env, HasOptions env, HasVerbosity env, HasHandle env) =>
+                RIO env (Either [String] DaemonState)
 initialState = do
-    env <- ask
-    let opts = getOptions env
+    daemonConfig <- view daemonConfigL 
     curDir <- liftIO $ getCurrentDirectory
-    dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig opts
+    dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig
     exists <- liftIO $ doesFileExist dotAmpersand
     if exists 
     then do

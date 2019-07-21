@@ -3,24 +3,23 @@ module Ampersand.Input.Xslx.XLSX
   (parseXlsxFile)
 where
 import           Ampersand.ADL1
-import           Ampersand.Basics hiding ((^.))
+import           Ampersand.Basics hiding (view, (^.))
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
 import           Codec.Xlsx
-import           Control.Lens
+import           Control.Lens -- ((^?),ix)
 import qualified RIO.List as L
 import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
-import qualified Data.Map as M 
+import qualified RIO.Map as Map
 import qualified RIO.Text as T
 import           Data.Tuple
 
-parseXlsxFile :: HasOptions env => Maybe FileKind
-              -> FilePath -> RIO env (Guarded [P_Population])
+parseXlsxFile :: (HasExcellOutputOptions env) => 
+    Maybe FileKind -> FilePath -> RIO env (Guarded [P_Population])
 parseXlsxFile mFk file =
   do env <- ask
-     let opts = getOptions env
      bytestr <- 
         case mFk of
           Just fileKind 
@@ -29,12 +28,13 @@ parseXlsxFile mFk file =
                       Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++file++"`.")
           Nothing
              -> liftIO $ BL.readFile file
-     return . xlsx2pContext opts . toXlsx $ bytestr
+     return . xlsx2pContext env . toXlsx $ bytestr
  where
-  xlsx2pContext :: Options -> Xlsx -> Guarded [P_Population]
-  xlsx2pContext opts xlsx = Checked pop []
+  xlsx2pContext :: (HasExcellOutputOptions env ) 
+      => env -> Xlsx -> Guarded [P_Population]
+  xlsx2pContext env xlsx = Checked pop []
     where 
-      pop = concatMap (toPops opts file)
+      pop = concatMap (toPops env file)
           . concatMap theSheetCellsForTable 
           $ (xlsx ^. xlSheets)
 
@@ -54,8 +54,8 @@ instance Show SheetCellsForTable where  --for debugging only
       , "popRowNrs   : "++show (popRowNrs x)
       , "colNrs      : "++show (colNrs x)
       ] ++ debugInfo x 
-toPops :: Options -> FilePath -> SheetCellsForTable -> [P_Population]
-toPops opts file x = map popForColumn (colNrs x)
+toPops :: (HasExcellOutputOptions env) => env -> FilePath -> SheetCellsForTable -> [P_Population]
+toPops env file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
     popForColumn i =
@@ -154,7 +154,7 @@ toPops opts file x = map popForColumn (colNrs x)
          case mDelimiter of
            Nothing -> [xs]
            (Just delimiter) -> map trim $ T.split (== delimiter) xs
-       handleSpaces = if trimXLSXCells opts then trim else id     
+       handleSpaces = if view trimXLSXCellsL env then trim else id     
     originOfCell :: (Int,Int) -- (row number,col number)
                  -> Origin
     originOfCell (r,c) 
@@ -169,7 +169,7 @@ theSheetCellsForTable (sheetName,ws)
   =  catMaybes [theMapping i | i <- [0..length tableStarters - 1]]
   where
     tableStarters :: [(Int,Int)]
-    tableStarters = filter isStartOfTable $ M.keys (ws  ^. wsCells)  
+    tableStarters = filter isStartOfTable $ Map.keys (ws  ^. wsCells)  
       where isStartOfTable :: (Int,Int) -> Bool
             isStartOfTable (rowNr,colNr)
               | colNr /= 1 = False
@@ -212,10 +212,10 @@ theSheetCellsForTable (sheetName,ws)
        conceptNameRowNr  = firstHeaderRowNr+1
        nrOfHeaderRows = 2
        maxRowOfWorksheet :: Int
-       maxRowOfWorksheet = case L.maximumMaybe (map fst (M.keys (ws  ^. wsCells))) of
+       maxRowOfWorksheet = case L.maximumMaybe (map fst (Map.keys (ws  ^. wsCells))) of
                              Nothing -> fatal "Maximum of an empty list is undefined!"
                              Just m -> m
-       maxColOfWorksheet = case L.maximumMaybe (map snd (M.keys (ws  ^. wsCells))) of
+       maxColOfWorksheet = case L.maximumMaybe (map snd (Map.keys (ws  ^. wsCells))) of
                              Nothing -> fatal "Maximum of an empty list is undefined!"
                              Just m -> m
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows

@@ -14,7 +14,7 @@ import           Ampersand.Basics
 import           Ampersand.Daemon.Daemon.Util
 import           Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
 import           Control.Monad.Extra(partitionM,concatMapM,ifM,firstJustM)
-import qualified Data.Map as Map
+import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import           Data.Time.Clock
 import qualified RIO.List as L
@@ -59,12 +59,12 @@ listContentsInside test dir = do
 --   starting from when 'waitFiles' was initially called.
 --
 --   Returns a message about why you are continuing (usually a file name).
-waitFiles :: (HasHandles env, HasVerbosity env) => 
+waitFiles :: (HasHandle env, HasVerbosity env) => 
              Waiter -> RIO env ([FilePath] -> RIO env [String])
 waitFiles waiter = do
     base <- liftIO getCurrentTime
     return $ \files -> do -- handle (\(e :: IOException) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
-        verboseLn $ "%WAITING: " ++ unwords files
+        sayWhenLoudLn $ "%WAITING: " ++ unwords files
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
         -- will pick up new files, as creating a new file changes the containing directory's modtime.
         files' <- liftIO $ fmap concat $ forM files $ \file ->
@@ -80,12 +80,12 @@ waitFiles waiter = do
                     liftIO $ sequence_ $ Map.elems del
                     new <- forM (Set.toList $ dirs `Set.difference` Map.keysSet keep) $ \dir -> do
                         can <- liftIO $ watchDir manager (fromString dir) (const True) $ \event -> do
-                            runRIO env $ verboseLn $ "%NOTIFY: " ++ show event
+                            runRIO env $ sayWhenLoudLn $ "%NOTIFY: " ++ show event
                             void $ tryPutMVar kick ()
                         return (dir, can)
                     let mp2 :: Map FilePath StopListening
                         mp2 = keep `Map.union` Map.fromList new
-                    runRIO env $ verboseLn $ "%WAITING: " ++ unwords (Map.keys mp2)
+                    runRIO env $ sayWhenLoudLn $ "%WAITING: " ++ unwords (Map.keys mp2)
                     return mp2
                 void $ tryTakeMVar kick
         new <- liftIO $ mapM getModTime files'
@@ -93,7 +93,7 @@ waitFiles waiter = do
             [] -> recheck files' new
             xs -> return xs
     where
-        recheck :: (HasHandles env, HasVerbosity env) => 
+        recheck :: (HasHandle env, HasVerbosity env) => 
                    [FilePath] -> [Maybe UTCTime] -> RIO env [FilePath]
         recheck files old = do
             liftIO $ sleep 0.1
@@ -101,7 +101,7 @@ waitFiles waiter = do
                 WaiterPoll t -> liftIO $ sleep $ max 0 $ t - 0.1 -- subtract the initial 0.1 sleep from above
                 WaiterNotify _ kick _ -> do
                     takeMVar kick
-                    verboseLn "%WAITING: Notify signaled"
+                    sayWhenLoudLn "%WAITING: Notify signaled"
             new <- liftIO $ mapM getModTime files
             case [x | (x,t1,t2) <- L.zip3 files old new, t1 /= t2] of
                 [] -> recheck files new
@@ -111,7 +111,7 @@ waitFiles waiter = do
                         -- if someone is deleting a needed file, give them some space to put the file back
                         -- typically caused by VIM
                         -- but try not to
-                        verboseLn $ "%WAITING: Waiting max of 1s due to file removal, " ++ unwords disappeared
+                        sayWhenLoudLn $ "%WAITING: Waiting max of 1s due to file removal, " ++ unwords disappeared
                         -- at most 20 iterations, but stop as soon as the file returns
                         void $ flip firstJustM (replicate 20 ()) $ \_ -> do
                             liftIO $ sleep 0.05

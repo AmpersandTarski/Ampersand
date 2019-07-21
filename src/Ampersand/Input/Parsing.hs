@@ -31,7 +31,7 @@ import           System.FilePath
 import           Text.Parsec.Prim (runP)
 
 -- | Parse an Ampersand file and all transitive includes
-parseADL :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseADL :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
             FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
          -> RIO env ([ParseCandidate], Guarded P_Context)     -- ^ The resulting context
 parseADL fp = do 
@@ -69,11 +69,11 @@ parseSystemContext = parseThing ParseCandidate
        , pcDefineds  = Set.empty
        }
 
-parseThing :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseThing :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
               ParseCandidate -> RIO env (Guarded P_Context)
 parseThing pc = snd <$> parseThing' pc 
 
-parseThing' :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseThing' :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
                ParseCandidate -> RIO env ([ParseCandidate], Guarded P_Context) 
 parseThing' pc = do
   results <- parseADLs [] [pc]
@@ -88,7 +88,7 @@ parseThing' pc = do
                           h:tl -> foldr mergeContexts h tl
 
 -- | Parses several ADL files
-parseADLs :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseADLs :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
              [ParseCandidate]         -- ^ The list of files that have already been parsed
           -> [ParseCandidate]         -- ^ A list of files that still are to be parsed.
           -> RIO env (Guarded [(ParseCandidate, P_Context)]) -- ^ The resulting contexts and the ParseCandidate that is the source for that P_Context
@@ -98,7 +98,7 @@ parseADLs parsedFilePaths fpIncludes =
     x:xs -> if x `elem` parsedFilePaths
             then parseADLs parsedFilePaths xs
             else whenCheckedM (parseSingleADL x) parseTheRest
-        where parseTheRest :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+        where parseTheRest :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
                               (P_Context, [ParseCandidate]) 
                            -> RIO env (Guarded [(ParseCandidate, P_Context)])
               parseTheRest (ctx, includes) = 
@@ -117,12 +117,12 @@ instance Eq ParseCandidate where
 
 
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
-parseSingleADL :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseSingleADL :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
     ParseCandidate -> RIO env (Guarded (P_Context, [ParseCandidate]))
 parseSingleADL pc
  = do case pcFileKind pc of
         Just _ -> {- reading a file that is included into ampersand.exe -} return ()
-        Nothing -> verboseLn $ "Reading file " ++ filePath 
+        Nothing -> sayWhenLoudLn $ "Reading file " ++ filePath 
       exists <- liftIO $ doesFileExist filePath
       if isJust (pcFileKind pc) || exists
       then parseSingleADL'
@@ -130,7 +130,7 @@ parseSingleADL pc
                                                         , "   File does not exist." ]
     where
      filePath = pcCanonical pc
-     parseSingleADL' :: (HasVerbosity env,HasHandles env,HasOptions env) => RIO env (Guarded (P_Context, [ParseCandidate]))
+     parseSingleADL' :: (HasExcellOutputOptions env) => RIO env (Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
          | extension == ".xlsx" =
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
@@ -245,9 +245,7 @@ runParser :: AmpParser a -- ^ The parser to run
           -> String      -- ^ String to parse
           -> Guarded a   -- ^ The result
 runParser parser filename input =
-  -- lexer :: [Options] -> String -> [Char] -> Either LexerError ([Token], [LexerWarning])
-  --TODO: Give options to the lexer
-  let lexed = lexer [] filename input
+  let lexed = lexer filename input
   in case lexed of
     Left err -> Errors . pure $ lexerError2CtxError err
     Right (tokens, lexerWarnings) 

@@ -53,8 +53,6 @@ This is considered editable iff the composition rel;relRef yields an editable re
 
 -}
 
-getTemplateDir :: Options -> String
-getTemplateDir Options{..} = dirPrototype </> "templates"
         
 -- For useful info on the template language, see
 -- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
@@ -62,12 +60,12 @@ getTemplateDir Options{..} = dirPrototype </> "templates"
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+doGenFrontend :: (HasProtoOpts env, HasZwolleVersion env, HasOptions env, HasDirCustomizations env,HasRootFile env, HasRunComposer env, HasGenTime env, HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
-    env <- ask
-    let Options{..} = getOptions env
-    verboseLn "Generating frontend..."
+    genTime <- view genTimeL
+    runComposer <- view runComposerL
+    sayWhenLoudLn "Generating frontend..."
     isCleanInstall <- downloadPrototypeFramework
     copyTemplates
     feInterfaces <- buildInterfaces fSpec
@@ -77,41 +75,40 @@ doGenFrontend fSpec = do
     writePrototypeAppFile ".timestamp" (show . hash . show $ genTime) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     copyCustomizations 
     when (isCleanInstall && runComposer) $ do
-      putStrLn "Installing dependencies..." -- don't use verboseLn here, because installing dependencies takes some time and we want the user to see this
+      sayLn "Installing dependencies..." -- don't use sayWhenLoudLn here, because installing dependencies takes some time and we want the user to see this
       installComposerLibs
-    verboseLn "Frontend generated"
+    sayWhenLoudLn "Frontend generated"
   
-copyTemplates :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+copyTemplates :: (HasRootFile env, HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                  RIO env ()
 copyTemplates = do
   env <- ask
-  let Options{..} = getOptions env
-      tempDir = dirSource </> "templates"
-      toDir = dirPrototype </> "templates"
+  let tempDir = dirSource env </> "templates"
+      toDir = getTemplateDir env
   tempDirExists <- liftIO $ doesDirectoryExist tempDir
   if tempDirExists then do
-         verboseLn $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
+         sayWhenLoudLn $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
          copyDirRecursively tempDir toDir -- recursively copy all templates
   else
-         verboseLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
+         sayWhenLoudLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
 
-copyCustomizations :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+copyCustomizations :: (HasDirPrototype env, HasRootFile env,HasDirCustomizations env,HasVerbosity  env, HasHandle env) =>
                       RIO env ()
 copyCustomizations = do
   env <- ask
-  let Options{..} = getOptions env
-      custDirs = map (dirSource </>) dirCustomizations
-      protoDir = dirPrototype
-  mapM_ (copyDir protoDir) custDirs
+  dirCustomizations <- view dirCustomizationsL
+  dirPrototype <- view dirPrototypeL
+  let custDirs = map (dirSource env</>) dirCustomizations
+  mapM_ (copyDir dirPrototype) custDirs
     where
-      copyDir :: (HasVerbosity  env, HasHandles env) =>
+      copyDir :: (HasVerbosity  env, HasHandle env) =>
                  FilePath -> FilePath -> RIO env()
       copyDir targetDir sourceDir = do
         sourceDirExists <- liftIO $ doesDirectoryExist sourceDir
         if sourceDirExists then
-          do verboseLn $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
+          do sayWhenLoudLn $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
              copyDirRecursively sourceDir targetDir -- recursively copy all customizations
-        else verboseLn $ "No customizations (there is no directory " ++ sourceDir ++ ")"
+        else sayWhenLoudLn $ "No customizations (there is no directory " ++ sourceDir ++ ")"
 
 ------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
@@ -151,7 +148,7 @@ data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the abso
                               , ifcSubObjs :: [FEObject2] 
                               } deriving (Show, Data,Typeable)
 
-buildInterfaces :: (HasOptions env) => FSpec -> RIO env [FEInterface]
+buildInterfaces :: (HasDirPrototype env, HasOptions env) => FSpec -> RIO env [FEInterface]
 buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) topLevelUserInterfaces
   where
     allIfcs :: [Interface]
@@ -160,7 +157,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) topLevelUserInterfac
     topLevelUserInterfaces :: [Interface]
     topLevelUserInterfaces = filter (not . ifcIsAPI) allIfcs
 
-buildInterface :: (HasOptions env) => FSpec -> [Interface] -> Interface -> RIO env FEInterface
+buildInterface :: (HasDirPrototype env, HasOptions env) => FSpec -> [Interface] -> Interface -> RIO env FEInterface
 buildInterface fSpec allIfcs ifc = do
   obj <- buildObject (BxExpr $ ifcObj ifc)
   return 
@@ -176,11 +173,11 @@ buildInterface fSpec allIfcs ifc = do
     --       (name comes from interface, but is equal to object name)
  
   where    
-    buildObject :: (HasOptions env) => BoxItem -> RIO env FEObject2
+    buildObject :: (HasDirPrototype env, HasOptions env) => BoxItem -> RIO env FEObject2
     buildObject (BxExpr object') = do
       env <- ask
       let object = substituteReferenceObjectDef fSpec object'
-      let iExp = conjNF (getOptions env) $ objExpression object
+      let iExp = conjNF env $ objExpression object
       (aOrB, iExp') <-
         case objmsub object of
           Nothing -> do
@@ -254,29 +251,28 @@ buildInterface fSpec allIfcs ifc = do
 
 ------ Generate RouteProvider.js
 
-genRouteProvider :: (HasOptions env, HasVerbosity  env, HasHandles env) =>
+genRouteProvider :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
                     FSpec -> [FEInterface] -> RIO env ()
 genRouteProvider fSpec ifcs = do
-  --verboseLn . show $ map name (interfaceS fSpec)
-  env <- ask
+  verbosity <- view verbosityL
   template <- readTemplate "routeProvider.config.js"
   let contents = renderTemplate template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" ampersandVersionStr
                  . setAttribute "ifcs"                ifcs
-                 . setAttribute "verbose"             (verboseP $ getOptions env)
+                 . setAttribute "verbose"             verbosity
   writePrototypeAppFile "routeProvider.config.js" contents 
       
 ------ Generate view html code
 
-genViewInterfaces :: (HasOptions env, HasVerbosity  env, HasHandles env) => 
+genViewInterfaces :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) => 
                      FSpec -> [FEInterface] -> RIO env ()
 genViewInterfaces fSpec = mapM_ (genViewInterface fSpec)
 
-genViewInterface :: (HasOptions env, HasVerbosity  env, HasHandles env) => 
+genViewInterface :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) => 
                     FSpec -> FEInterface -> RIO env ()
 genViewInterface fSpec interf = do
-  env <- ask
+  verbosity <- view verbosityL
   lns <- genViewObject fSpec 0 (_ifcObj interf)
   template <- readTemplate "interface.html"
   let contents = renderTemplate template $
@@ -294,7 +290,7 @@ genViewInterface fSpec interf = do
                   . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                   . setAttribute "crudD"               (objCrudD (_ifcObj interf))
                   . setAttribute "contents"            (L.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
-                  . setAttribute "verbose"             (verboseP $ getOptions env)
+                  . setAttribute "verbose"             (verbosity)
   let filename = "ifc" ++ ifcName interf ++ ".view.html" 
   writePrototypeAppFile filename contents 
   
@@ -305,12 +301,12 @@ data SubObjectAttr2 = SubObjAttr{ subObjName :: String
                                 , subObjExprIsUni :: Bool
                                 } deriving (Show, Data, Typeable)
  
-genViewObject :: (HasOptions env) =>
+genViewObject :: (HasDirPrototype env, HasVerbosity env) =>
                  FSpec -> Int -> FEObject2 -> RIO env [String]
 genViewObject fSpec depth obj =
   case obj of 
     FEObjE{} -> do
-      env <- ask
+      verbosity <- view verbosityL
       let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
           atomicAndBoxAttrs = setAttribute "exprIsUni"  (exprIsUni obj)
                             . setAttribute "exprIsTot"  (exprIsTot obj)
@@ -323,17 +319,17 @@ genViewObject fSpec depth obj =
                             . setAttribute "crudR"      (objCrudR obj)
                             . setAttribute "crudU"      (objCrudU obj)
                             . setAttribute "crudD"      (objCrudD obj)
-                            . setAttribute "verbose"    (verboseP $ getOptions env)
+                            . setAttribute "verbose"    (verbosity)
       case atomicOrBox obj of
             FEAtomic{} -> do
               {-
-                  verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
+                  sayWhenLoudLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
                                                 " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                                 (if isEditable then "" else "not ") ++ "editable"
               -}
               -- For now, we choose specific template based on target concept. This will probably be too weak. 
               -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
-              -- putStrLn $ nm ++ ":" ++ show mPrimTemplate
+              -- sayLn $ nm ++ ":" ++ show mPrimTemplate
               conceptTemplate <- getTemplateForObject
               let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
               template <- readTemplate templateFilename
@@ -361,7 +357,7 @@ genViewObject fSpec depth obj =
   where 
     indentation :: [String] -> [String]
     indentation = map ( (replicate (if depth == 0 then 4 else 16) ' ') ++)
-    genView_SubObject :: (HasOptions env) =>
+    genView_SubObject :: (HasDirPrototype env, HasVerbosity env) =>
                          FEObject2 -> RIO env SubObjectAttr2
     genView_SubObject subObj =
       case subObj of
@@ -378,13 +374,13 @@ genViewObject fSpec depth obj =
                               , subObjContents = objTxt subObj
                               , subObjExprIsUni = True
                               }
-    getTemplateForObject :: (HasOptions env) =>
+    getTemplateForObject :: (HasDirPrototype env) =>
                             RIO env FilePath
     getTemplateForObject 
        | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
                    = return $ "View-PROPERTY"++".html"
        | otherwise = getTemplateForConcept (objTarget obj)
-    getTemplateForConcept :: (HasOptions env) =>
+    getTemplateForConcept :: (HasDirPrototype env) =>
                              A_Concept -> RIO env FilePath
     getTemplateForConcept cpt = do 
          exists <- doesTemplateExist cptfn
@@ -396,15 +392,14 @@ genViewObject fSpec depth obj =
 
 
 ------ Generate controller JavaScript code
-genControllerInterfaces :: (HasOptions env, HasVerbosity env, HasHandles env) => FSpec -> [FEInterface] -> RIO env ()
+genControllerInterfaces :: (HasDirPrototype env, HasVerbosity env, HasHandle env) => FSpec -> [FEInterface] -> RIO env ()
 genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 
-genControllerInterface :: (HasOptions env, HasVerbosity env, HasHandles env) => FSpec -> FEInterface -> RIO env ()
+genControllerInterface :: (HasDirPrototype env, HasVerbosity env, HasHandle env) => FSpec -> FEInterface -> RIO env ()
 genControllerInterface fSpec interf = do
-    -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     let controlerTemplateName = "interface.controller.js"
     template <- readTemplate controlerTemplateName
-    env <- ask
+    verbosity <- view verbosityL
     let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -420,7 +415,7 @@ genControllerInterface fSpec interf = do
                      . setAttribute "crudR"                    (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"                    (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
-                     . setAttribute "verbose"                  (verboseP $ getOptions env)
+                     . setAttribute "verbose"                  (verbosity)
                      . setAttribute "usedTemplate"             controlerTemplateName
     let filename = "ifc" ++ ifcName interf ++ ".controller.js"
     writePrototypeAppFile filename contents 
@@ -430,17 +425,17 @@ genControllerInterface fSpec interf = do
 data Template = Template (StringTemplate String) String
 
 -- TODO: better abstraction for specific template and fallback to default
-doesTemplateExist :: (HasOptions env) => String -> RIO env Bool
+doesTemplateExist :: (HasDirPrototype env) => String -> RIO env Bool
 doesTemplateExist templatePath = do
   env <- ask
-  let absPath = getTemplateDir (getOptions env) </> templatePath
+  let absPath = getTemplateDir env </> templatePath
   liftIO $ doesFileExist absPath
 
-readTemplate :: (HasOptions env) =>
+readTemplate :: (HasDirPrototype env) =>
                 FilePath -> RIO env Template
 readTemplate templatePath = do
   env <- ask
-  let absPath = getTemplateDir (getOptions env) </> templatePath
+  let absPath = getTemplateDir env </> templatePath
   res <- readUTF8File absPath
   case res of
     Left err   -> exitWith $ ReadFileError $ "Error while reading template.\n" : err
@@ -464,19 +459,18 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 
-downloadPrototypeFramework :: (HasOptions env, HasHandles env, HasVerbosity env) =>
+downloadPrototypeFramework :: (HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env, HasHandle env, HasVerbosity env) =>
                              RIO env Bool
 downloadPrototypeFramework = ( do 
-    env <- ask
-    let Options{..} = getOptions env
-        destination = dirPrototype
+    destination <- view dirPrototypeL
     x <- extractionIsAllowed destination
+    zwolleVersion <- view zwolleVersionL
     if x
     then do
-      verboseLn "Emptying folder to deploy prototype framework"
+      sayWhenLoudLn "Emptying folder to deploy prototype framework"
       liftIO $ removeDirectoryRecursive destination
       let url = "https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion++".zip"
-      verboseLn "Start downloading prototype framework."
+      sayWhenLoudLn "Start downloading prototype framework."
       response <- (parseRequest url >>= httpBS) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
@@ -487,9 +481,10 @@ downloadPrototypeFramework = ( do
                   . toArchive 
                   . BL.fromStrict 
                   . getResponseBody $ response
-      verboseLn "Start extraction of prototype framework."
+      sayWhenLoudLn "Start extraction of prototype framework."
+      verbosity <- view verbosityL
       let zipoptions = 
-              [OptVerbose | verboseP]
+               [OptVerbose | verbosity == Loud]
             ++ [OptDestination destination]
       ((liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
@@ -525,7 +520,7 @@ downloadPrototypeFramework = ( do
               _:[] -> Nothing
               _:tl -> Just entry{eRelativePath = joinPath tl}
 
-    extractionIsAllowed :: (HasOptions env, HasHandles env, HasVerbosity env) =>
+    extractionIsAllowed :: (HasProtoOpts env, HasHandle env, HasVerbosity env) =>
                            FilePath ->  RIO env Bool
     extractionIsAllowed destination = do
       pathExist <- liftIO $ doesPathExist destination
@@ -538,32 +533,32 @@ downloadPrototypeFramework = ( do
             if null dirContents
             then return True
             else do
-              env <- ask
-              if forceReinstallFramework (getOptions env)
+              forceReinstallFramework <- view forceReinstallFrameworkL
+              if forceReinstallFramework
               then do
-                putStrLn "Deleting all files to deploy prototype framework in"
-                putStrLn ("  " ++ destination)
-                putStrLn "Are you sure? y/n"
+                sayLn "Deleting all files to deploy prototype framework in"
+                sayLn ("  " ++ destination)
+                sayLn "Are you sure? y/n"
                 proceed <- promptUserYesNo
                 return proceed
               else do
-                (verboseLn $
+                (sayWhenLoudLn $
                          "(Re)deploying prototype framework not allowed, because\n"
                       ++ "  "++destination++" isn't empty. You could use the switch --force-reinstall-framework")
                 return False
           else do 
-             verboseLn $
+             sayWhenLoudLn $
                        "(Re)deploying prototype framework not allowed, because\n"
                     ++ "  "++destination++" isn't a directory."
              return False
       else return True
 
-promptUserYesNo :: (HasHandles env) => RIO env Bool
+promptUserYesNo :: (HasHandle env) => RIO env Bool
 promptUserYesNo = do
     char <- liftIO $ getChar -- TODO: refactor that the first character is directly processed
     case toUpper char of
       'Y' -> return True
       'N' -> return False
-      _ -> do when (char /= '\n') $ putStrLn "Please specify y/n" -- Remove 'when' part if first char it directly processed
+      _ -> do when (char /= '\n') $ sayLn "Please specify y/n" -- Remove 'when' part if first char it directly processed
               x <- promptUserYesNo
               return x

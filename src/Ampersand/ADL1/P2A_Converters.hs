@@ -24,7 +24,7 @@ import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import qualified Data.Map as Map
+import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
@@ -43,9 +43,9 @@ getAsConcept o v = case typeOrConcept v of
 userList :: [Type] -> [A_Concept]
 userList = lefts . fmap typeOrConcept
 
-mustBeConceptBecauseMath :: (?loc :: CallStack) => Type -> A_Concept
+mustBeConceptBecauseMath :: Type -> A_Concept
 mustBeConceptBecauseMath tp
- = let fatalV :: (?loc :: CallStack) => a
+ = let fatalV :: a
        fatalV = fatal "A concept turned out to be a built-in type."
    in case getAsConcept fatalV tp of
         Checked v _ -> v
@@ -219,8 +219,9 @@ onlyUserConcepts = fmap userList
 --    A "Guarded" will be added on the outside, in order to catch both type errors and disambiguation errors.
 --    Using the Applicative operations <$> and <*> causes these errors to be in parallel
 -- 3. Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
-pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx opts
+pCtx2aCtx :: (HasDefaultCrud env, HasOutputLanguage env)
+   => env -> P_Context -> Guarded A_Context
+pCtx2aCtx env
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
       , ctx_lang   = ctxmLang
@@ -282,7 +283,7 @@ pCtx2aCtx opts
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
-    deflangCtxt = fromMaybe English $ ctxmLang `orElse` language opts
+    deflangCtxt = fromMaybe English $ ctxmLang `orElse` (view languageL env)
     deffrmtCtxt = fromMaybe ReST pandocf
     
     allGens = p_gens ++ concatMap pt_gns p_patterns
@@ -608,7 +609,7 @@ pCtx2aCtx opts
                 all (`elem` "cCrRuUdD") userCrudString  
                          -> warnings pc $ mostLiberalCruds org userCrudString 
              | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrudString
-      where (defC, defR, defU, defD) = defaultCrud opts
+      where (defC, defR, defU, defD) = view defaultCrudL env
             mostLiberalCruds :: Origin -> String -> Guarded Cruds
             mostLiberalCruds o str
              = pure Cruds { crudOrig = o
@@ -802,11 +803,11 @@ pCtx2aCtx opts
                    }
     pRul2aRul :: ContextInfo -> Maybe String -- name of pattern the rule is defined in (if any)
               -> P_Rule TermPrim -> Guarded Rule
-    pRul2aRul ci env = typeCheckRul ci env . disambiguate (termPrimDisAmb (declDisambMap ci))
+    pRul2aRul ci mPat = typeCheckRul ci mPat . disambiguate (termPrimDisAmb (declDisambMap ci))
     typeCheckRul :: ContextInfo -> 
                  Maybe String -- name of pattern the rule is defined in (if any)
               -> P_Rule (TermPrim, DisambPrim) -> Guarded Rule
-    typeCheckRul ci env P_Ru { pos = orig
+    typeCheckRul ci mPat P_Ru { pos = orig
                              , rr_nm = nm
                              , rr_exp = expr
                              , rr_mean = meanings
@@ -822,21 +823,21 @@ pCtx2aCtx opts
                     , rrmsg  = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
                     , rrviol = vls
                     , rrdcl = Nothing
-                    , rrpat = env
+                    , rrpat = mPat
                     , r_usr = UserDefined
                     , isSignal = not . null . filter (\x -> nm `elem` arRules x) $ allRoleRules 
                     }
     pIdentity2aIdentity ::
          ContextInfo -> Maybe String -- name of pattern the rule is defined in (if any)
       -> P_IdentDef -> Guarded IdentityDef
-    pIdentity2aIdentity ci env pidt
+    pIdentity2aIdentity ci mPat pidt
      = case disambiguate (termPrimDisAmb (declDisambMap ci)) pidt of
            P_Id { ix_lbl = lbl
                 , ix_ats = isegs
                 } -> (\isegs' -> Id { idPos = orig
                                     , idLbl = lbl
                                     , idCpt = conc
-                                    , idPat = env
+                                    , idPat = mPat
                                     , identityAts = isegs'
                                     }) <$> traverse pIdentSegment2IdentSegment isegs
      where conc = pCpt2aCpt (ix_cpt pidt)

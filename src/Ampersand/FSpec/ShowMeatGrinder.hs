@@ -148,7 +148,7 @@ makeMetaFile opts@Options{..} metaModel userFspec
     content = unlines $
         ([ "{- Do not edit manually. This code has been generated!!!"
         , "    Generated with "++ampersandVersionStr
-        , "    Generated at "++show genTime
+        , "    Generated at "++show (view genTimeL env)
         , " "
         , "The populations defined in this file are the populations from the user's"
         , "model named '"++name userFspec++"'."
@@ -185,7 +185,7 @@ makeMetaFile opts@Options{..} metaModel userFspec
                                     )
         
     popsOfRelation :: Relation -> Set.Set Pop
-    popsOfRelation = grindedPops opts metaModel userFspec
+    popsOfRelation = grindedPops metaModel userFspec
     pAtomsOfConcept :: A_Concept -> Set.Set PopAtom
     pAtomsOfConcept cpt = getPopsSet Src `Set.union` getPopsSet Tgt
       where getPopsSet :: SrcOrTgt -> Set.Set PopAtom

@@ -12,6 +12,9 @@ cabal.sandbox.config
 
 stack.yaml.lock
 
+# Disable testresults 
+/testing/Travis/testcases/**/*.proto
+
 # Temporarily disable ampersand.cabal (See issue #931)
 /ampersand.cabal
 /stack.yaml.lock

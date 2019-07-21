@@ -27,7 +27,6 @@ import           Ampersand.Input.ADL1.FilePos(updatePos)
 import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Input.ADL1.LexerMonad
 import           Ampersand.Input.ADL1.LexerToken
-import           Ampersand.Misc
 import           RIO.Char hiding(isSymbol)
 import qualified RIO.List as L
 import qualified RIO.Char.Partial as Partial (chr)
@@ -98,13 +97,11 @@ operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
 symbols :: String -- ^ The list of symbol characters / [Char]
 symbols = "()[],{}<>"
 
---TODO: Options should be one item, not a list
 -- | Runs the lexer
-lexer :: [Options]  -- ^ The command line options
-      -> FilePath   -- ^ The file name, used for error messages
+lexer :: FilePath   -- ^ The file name, used for error messages
       -> String     -- ^ The content of the file
       -> Either LexerError ([Token], [LexerWarning]) -- ^ Either an error or a list of tokens and warnings
-lexer opt file input = runLexerMonad opt file (mainLexer (initPos file) input)
+lexer file input = runLexerMonad file (mainLexer (initPos file) input)
 
 -----------------------------------------------------------
 -- Help functions

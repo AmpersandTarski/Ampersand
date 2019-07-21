@@ -21,16 +21,17 @@ instance ToJSON View where
 instance ToJSON Views where
   toJSON = amp2Jason
 instance JSON FSpec Views where
- fromAmpersand opts fSpec _ = Views . map (fromAmpersand opts fSpec) 
-                               . vviews $ fSpec
+ fromAmpersand env fSpec _ = Views
+                           . map (fromAmpersand env fSpec) 
+                           . vviews $ fSpec
 
     
 instance JSON ViewDef View where
- fromAmpersand opts fSpec vd = View
+ fromAmpersand env fSpec vd = View
   { vwJSONlabel      = name vd
   , vwJSONconceptId  = idWithoutType . vdcpt $ vd
   , vwJSONisDefault  = vdIsDefault vd
-  , vwJSONsegments   = fmap (fromAmpersand opts fSpec) . vdats $ vd
+  , vwJSONsegments   = fmap (fromAmpersand env fSpec) . vdats $ vd
   } 
 
 

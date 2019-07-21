@@ -31,9 +31,10 @@ import qualified RIO.Set as Set
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createMulti.
-createMulti :: RIO App (Guarded FSpecKinds)
-createMulti = do
-    env <- ask
+createMulti :: (HasGenTime env, HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
+               RIO env (Guarded MultiFSpecs)
+createMulti =
+  do env <- ask
     let opts@Options{..} = getOptions env
     grindInfoMap <- let fun :: MetaModel -> RIO App (MetaModel, GrindInfo)
                         fun m = do 
@@ -44,6 +45,7 @@ createMulti = do
          return (Map.fromList m)
 
     rawUserP_Ctx:: Guarded P_Context <- 
+       fileName <- view fileNameL
        case fileName of
          Just x -> do
              pctx <- snd <$> parseADL x -- the P_Context of the user's sourceFile
@@ -73,15 +75,18 @@ createMulti = do
                mergedP = addSemanticModel gInfo <$> mergeContexts userP <$> grindedP
            join $ pCtx2Fspec opts <$> mergedP
            
+pCtx2Fspec :: (HasCommands env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) 
+   => env -> Guarded P_Context -> Guarded FSpec
+pCtx2Fspec env c = makeFSpec env <$> join (pCtx2aCtx env <$> encloseInConstraints env c)
 
 -- | To analyse spreadsheets means to enrich the context with the relations that are defined in the spreadsheet.
 --   The function encloseInConstraints does not populate existing relations.
 --   Instead it invents relations from a given population, which typically comes from a spreadsheet.
 --   This is different from the normal behaviour, which checks whether the spreadsheets comply with the Ampersand-script.
 --   This function is called only with option 'dataAnalysis' on.
-encloseInConstraints :: Options -> P_Context -> P_Context
-encloseInConstraints opts pCtx =
-   if dataAnalysis opts then enrichedContext else pCtx
+encloseInConstraints :: (HasCommands env) => env -> Guarded P_Context -> Guarded P_Context
+encloseInConstraints env (Checked pCtx warnings) 
+    | view dataAnalysisL env = Checked enrichedContext warnings
   where
   --The result of encloseInConstraints is a P_Context enriched with the relations in genericRelations
   --The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
@@ -91,9 +96,13 @@ encloseInConstraints opts pCtx =
            , ctx_pops   = genericPopulations
            }
     declaredRelations ::  [P_Relation]   -- relations declared in the user's script
-    declaredRelations = L.nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
     popRelations ::       [P_Relation]   -- relations that are "annotated" by the user in Excel-sheets.
                                          -- popRelations are derived from P_Populations only.
+    genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
+    genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
+    declaredRelations = L.nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
+    -- | To derive relations from populations, we derive the signature from the population's signature directly.
+    --   Multiplicity properties are added to constrain the population without introducing violations.
     popRelations 
      = [ computeProps rel
        | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx++[pop |pat<-ctx_pats pCtx, pop<-pt_pop pat]

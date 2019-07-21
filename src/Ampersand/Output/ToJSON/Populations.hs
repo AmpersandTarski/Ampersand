@@ -36,9 +36,9 @@ instance ToJSON PairsOfRelation where
 instance ToJSON JPair where
   toJSON = amp2Jason
 instance JSON FSpec Populations where
- fromAmpersand opts _ fSpec = Populations
-   { epJSONatoms = map (fromAmpersand opts fSpec) (Set.elems $ allConcepts fSpec)
-   , epJSONlinks = map (fromAmpersand opts fSpec) (Set.elems $ vrels       fSpec) 
+ fromAmpersand env _ (multi,doMeta) = Populations
+   { epJSONatoms = map (fromAmpersand env multi) (zip (Set.elems $ allConcepts theFSpec) (L.repeat doMeta))
+   , epJSONlinks = map (fromAmpersand env multi) (zip (Set.elems $ vrels       theFSpec) (L.repeat doMeta))
    }
 instance JSON A_Concept AtomValuesOfConcept where
  fromAmpersand _ fSpec cpt = AtomValuesOfConcept
@@ -47,9 +47,9 @@ instance JSON A_Concept AtomValuesOfConcept where
    }
 
 instance JSON Relation PairsOfRelation where
- fromAmpersand opts@Options{..} fSpec dcl = PairsOfRelation
+ fromAmpersand env fSpec dcl = PairsOfRelation
    { porJSONrelation = T.pack . showRel $ dcl
-   , porJSONlinks = map (fromAmpersand opts fSpec) . Set.elems . pairsInExpr fSpec $ EDcD dcl
+   , porJSONlinks = map (fromAmpersand env fSpec) . Set.elems . pairsInExpr theFSpec $ EDcD dcl
    }
 
 instance JSON AAtomPair JPair where

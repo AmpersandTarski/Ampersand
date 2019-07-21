@@ -11,7 +11,6 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
-import           Ampersand.Misc (Options(..))
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
@@ -31,15 +30,15 @@ testConfluence context
        bulletList [ showProof (para.str.showA) prf | (_,prf)<-tcs ]
      | (expr,tcs)<-tcss]
 
-deriveProofs :: Options -> A_Context -> Blocks
-deriveProofs opts context
+deriveProofs :: env -> A_Context -> Blocks
+deriveProofs env context
  = testConfluence context<>
    para (linebreak<>"--------------"<>linebreak)<>
    para ("Rules and their conjuncts for "<>(str.name) context)<>
    bulletList [ para ("rule r:   "<>str (name r)<>linebreak<>
                       "formalExpression r:  "<>str (showA (formalExpression r))<>linebreak<>
-                      "conjNF:   "<>str (showA (conjNF opts (formalExpression r)))<>linebreak<>
-                      interText linebreak [ "     conj: "<>str (showA conj) | conj<-NEL.toList $ conjuncts opts r ]
+                      "conjNF:   "<>str (showA (conjNF env (formalExpression r)))<>linebreak<>
+                      interText linebreak [ "     conj: "<>str (showA conj) | conj<-NEL.toList $ conjuncts env r ]
                      )
               | r<-Set.elems $ allRules context]
    
@@ -74,9 +73,9 @@ showPrf _  []                   = []
 
 
 
-quadsOfRules :: Options -> Rules -> [Quad]
-quadsOfRules opts rules 
-  = makeAllQuads (converseNE [ (conj, rc_orgRules conj) | conj <- makeAllConjs opts rules ])
+quadsOfRules :: env -> Rules -> [Quad]
+quadsOfRules env rules 
+  = makeAllQuads (converseNE [ (conj, rc_orgRules conj) | conj <- makeAllConjs env rules ])
 
         -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
         -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
