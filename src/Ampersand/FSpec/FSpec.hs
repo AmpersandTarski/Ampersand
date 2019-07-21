@@ -12,7 +12,6 @@ module Ampersand.FSpec.FSpec
           ( MultiFSpecs(..)
           , FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Quad(..)
-          , FSid(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
           , RelStore(..)
@@ -29,6 +28,7 @@ module Ampersand.FSpec.FSpec
           , Language(..)
           , showSQL
           , substituteReferenceObjectDef
+          , violationsOfInvariants
           ) where
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -190,14 +190,8 @@ instance ConceptStructure FSpec where
  - ..."
 -}
 
-data FSid = FS_id String     -- Identifiers in Ampersand contain strings that do not contain any spaces.
-        --  | NoName           -- some identified objects have no name...
 instance Named FSpec where
   name = T.unpack . fsName
-
-instance Named FSid where
-  name (FS_id nm) = nm
-
 
 data Quad = Quad { qDcl ::       Relation   -- The relation that, when affected, triggers a restore action.
                  , qRule ::      Rule          -- The rule from which qConjuncts is derived.
@@ -372,3 +366,9 @@ substituteReferenceObjectDef fSpec originalObjectDef =
         case [ ifc | ifc <- (interfaceS fSpec ++ interfaceG fSpec), name ifc == nm ] of
           [ifc] -> ifc
           _     -> fatal "Interface lookup returned zero or more than one result"
+
+violationsOfInvariants :: FSpec -> [(Rule,AAtomPairs)]
+violationsOfInvariants fSpec 
+  = [(r,vs) |(r,vs) <- allViolations fSpec
+            , not (isSignal r)
+    ]

@@ -36,37 +36,33 @@ instance ToJSON PairsOfRelation where
   toJSON = amp2Jason
 instance ToJSON JPair where
   toJSON = amp2Jason
-instance JSON (MultiFSpecs,Bool) Populations where
- fromAmpersand env _ (multi,doMeta) = Populations
-   { epJSONatoms = map (fromAmpersand env multi) (zip (Set.elems $ allConcepts theFSpec) (L.repeat doMeta))
-   , epJSONlinks = map (fromAmpersand env multi) (zip (Set.elems $ vrels       theFSpec) (L.repeat doMeta))
+instance JSON FSpec Populations where
+ fromAmpersand env _ fSpec = Populations
+   { epJSONatoms = map (fromAmpersand env fSpec) (Set.elems $ allConcepts fSpec)
+   , epJSONlinks = map (fromAmpersand env fSpec) (Set.elems $ vrels       fSpec)
    }
-  where 
-   theFSpec 
-    | doMeta    = fromMaybe ftl (metaFSpec multi)
-    | otherwise = userFSpec multi
-     where ftl = fatal "There is no grinded fSpec."
-instance JSON (A_Concept,Bool) AtomValuesOfConcept where
- fromAmpersand _ multi (cpt,doMeta) = AtomValuesOfConcept
-   { avcJSONconcept = T.pack (idWithoutType cpt)
-   , avcJSONatoms   = map (T.pack . showValADL) (Set.elems $ atomsBySmallestConcept theFSpec cpt)
-   }
-  where 
-   theFSpec 
-    | doMeta    = fromMaybe ftl (metaFSpec multi)
-    | otherwise = userFSpec multi
-     where ftl = fatal "There is no grinded fSpec."
 
-instance JSON (Relation,Bool) PairsOfRelation where
- fromAmpersand env multi (dcl,doMeta) = PairsOfRelation
-   { porJSONrelation = T.pack . showRel $ dcl
-   , porJSONlinks = map (fromAmpersand env multi) . Set.elems . pairsInExpr theFSpec $ EDcD dcl
+-- instance JSON (MultiFSpecs,Bool) Populations where
+--  fromAmpersand env _ (multi,doMeta) = Populations
+--    { epJSONatoms = map (fromAmpersand env multi) (zip (Set.elems $ allConcepts theFSpec) (L.repeat doMeta))
+--    , epJSONlinks = map (fromAmpersand env multi) (zip (Set.elems $ vrels       theFSpec) (L.repeat doMeta))
+--    }
+--   where 
+--    theFSpec 
+--     | doMeta    = fromMaybe ftl (metaFSpec multi)
+--     | otherwise = userFSpec multi
+--      where ftl = fatal "There is no grinded fSpec."
+instance JSON A_Concept AtomValuesOfConcept where
+ fromAmpersand _ fSpec cpt = AtomValuesOfConcept
+   { avcJSONconcept = T.pack (idWithoutType cpt)
+   , avcJSONatoms   = map (T.pack . showValADL) (Set.elems $ atomsBySmallestConcept fSpec cpt)
    }
-  where 
-   theFSpec 
-    | doMeta    = fromMaybe ftl (metaFSpec multi)
-    | otherwise = userFSpec multi
-     where ftl = fatal "There is no grinded fSpec."
+
+instance JSON Relation PairsOfRelation where
+ fromAmpersand env fSpec dcl = PairsOfRelation
+   { porJSONrelation = T.pack . showRel $ dcl
+   , porJSONlinks = map (fromAmpersand env fSpec) . Set.elems . pairsInExpr fSpec $ EDcD dcl
+   }
 instance JSON AAtomPair JPair where
   fromAmpersand _ _ p = JPair
     { prJSONsrc = T.pack . showValADL . apLeft $ p 

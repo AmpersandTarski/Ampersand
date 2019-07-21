@@ -3,7 +3,7 @@ module Ampersand.Test.RunAmpersand
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.FSpec.ToFSpec.CreateFspec(createMulti)
+import           Ampersand.FSpec.ToFSpec.CreateFspec(createFSpec)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
@@ -16,7 +16,7 @@ ampersand files = do
 
 runFile :: FilePath -> RIO App [CtxError]
 runFile file = switchFileName file $ do
-   gFSpec <- createMulti
+   gFSpec <- createFSpec
    case gFSpec of
      Errors err    -> return $ NEL.toList err
      --TODO: Do something with the fSpec

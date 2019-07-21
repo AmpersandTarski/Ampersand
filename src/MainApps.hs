@@ -46,9 +46,10 @@ ampersand =
 
 ampersandNew :: IO ()
 ampersandNew = do
+  progName <- getProgName
   isTerminal <- hIsTerminalDevice stdout
   currentDir <- D.getCurrentDirectory
-  eGlobalRun <- try $ commandLineHandler currentDir
+  eGlobalRun <- try $ commandLineHandler currentDir progName
   case eGlobalRun of
     Left (exitCode :: ExitCode) ->
       throwIO exitCode
@@ -79,14 +80,14 @@ ampersand' = do
     case fileName of
       Just _ -> do -- An Ampersand script is provided that can be processed
             sayLn "Processing your model..."
-            gMulti <- createMulti
-            case gMulti of
+            gFSpec <- createFSpec
+            case gFSpec of
               Errors err    -> 
                  exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
                . fmap show . NEL.toList $ err
-              Checked multi ws -> do
+              Checked fSpec ws -> do
                  mapM_  sayLn . concatMap (lines . show) $ ws
-                 generateAmpersandOutput multi
+                 generateAmpersandOutput fSpec
                  sayLn "Finished processing your model"
                  sayLn . ("Your script has no errors " ++) $
                     case ws of

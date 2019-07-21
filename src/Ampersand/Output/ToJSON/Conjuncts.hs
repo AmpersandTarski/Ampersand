@@ -20,14 +20,12 @@ instance ToJSON JSONConjunct where
   toJSON = amp2Jason
 instance ToJSON Conjuncts where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Conjuncts where
- fromAmpersand env multi _ = Conjuncts . map (fromAmpersand env multi) . allConjuncts . userFSpec $ multi
+instance JSON FSpec Conjuncts where
+ fromAmpersand env fSpec _ = Conjuncts . map (fromAmpersand env fSpec) . allConjuncts $ fSpec
 instance JSON Conjunct JSONConjunct where
- fromAmpersand env multi conj = JSONConjunct
+ fromAmpersand env fSpec conj = JSONConjunct
   { cnjJSONid                  = rc_id conj
   , cnjJSONsignalRuleNames     = map name . filter        isSignal  . NEL.toList . rc_orgRules $ conj
   , cnjJSONinvariantRuleNames  = map name . filter (not . isSignal) . NEL.toList . rc_orgRules $ conj
   , cnjJSONviolationsSQL       = sqlQuery fSpec . conjNF env . notCpl . rc_conjunct $ conj
   }
-   where 
-    fSpec = userFSpec multi

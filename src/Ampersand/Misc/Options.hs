@@ -84,7 +84,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
-                       , protoOpts :: ProtoOpts }
+                  --     , protoOpts :: ProtoOpts
+                       }
 instance HasVerbosity Options where
   verbosityL = lens verbosity (\x y -> x { verbosity = y })
 data EnvironmentOptions = EnvironmentOptions
@@ -100,21 +101,6 @@ data EnvironmentOptions = EnvironmentOptions
       , envPreVersion         :: Maybe String
       , envPostVersion        :: Maybe String  
       } deriving Show
-data ProtoOpts = ProtoOpts
-   { protOdbName :: String
-   , protOsqlHost ::  String  -- do database queries to the specified host
-   , protOsqlLogin :: String  -- pass login name to the database server
-   , protOsqlPwd :: String  -- pass password on to the database server
-   , protOforceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
-   }
-defProtoOpts :: Maybe FilePath -> EnvironmentOptions -> ProtoOpts 
-defProtoOpts fName envOpts = ProtoOpts
-  { protOdbName = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
-  , protOsqlHost = "localhost"
-  , protOsqlLogin = "ampersand"
-  , protOsqlPwd = "ampersand"
-  , protOforceReinstallFramework = False
-  }
   
 class HasProtoOpts env where
    dbNameL   :: Lens' env String
@@ -122,20 +108,6 @@ class HasProtoOpts env where
    sqlLoginL :: Lens' env String
    sqlPwdL   :: Lens' env String
    forceReinstallFrameworkL :: Lens' env Bool
-instance HasProtoOpts ProtoOpts where
-   dbNameL   = lens protOsqlHost  (\x y -> x { protOdbName   = y })
-   sqlHostL  = lens protOsqlHost  (\x y -> x { protOsqlHost  = y })
-   sqlLoginL = lens protOsqlLogin (\x y -> x { protOsqlLogin = y })
-   sqlPwdL   = lens protOsqlPwd   (\x y -> x { protOsqlPwd   = y })
-   forceReinstallFrameworkL
-             = lens protOforceReinstallFramework (\x y -> x { protOforceReinstallFramework   = y })
-instance HasProtoOpts Options where
-   dbNameL   = (lens protoOpts (\x y -> x {protoOpts = y})) . dbNameL
-   sqlHostL  = (lens protoOpts (\x y -> x {protoOpts = y})) . sqlHostL
-   sqlLoginL = (lens protoOpts (\x y -> x {protoOpts = y})) . sqlLoginL
-   sqlPwdL   = (lens protoOpts (\x y -> x {protoOpts = y})) . sqlPwdL
-   forceReinstallFrameworkL =
-               (lens protoOpts (\x y -> x {protoOpts = y})) . forceReinstallFrameworkL
 class HasOptions env where
   optionsL :: Lens' env Options
 instance HasDaemonConfig Options where
@@ -431,7 +403,7 @@ getOptions' envOpts =
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
-                      , protoOpts        = defProtoOpts fName envOpts
+                  --    , protoOpts        = defProtoOpts fName envOpts
                       }
 writeConfigFile :: IO ()
 writeConfigFile = do
@@ -541,10 +513,6 @@ options = [ (Option ['v']   ["version"]
                        ) "VERSION")
                ("tag, branch or SHA of the prototype framework on Github. (What purpose does this serve?)")
             , Hidden)
-          , (Option []      ["force-reinstall-framework"]
-               (NoArg (\opts -> opts{protoOpts = set forceReinstallFrameworkL True (protoOpts opts)}))
-               "re-install the prototype framework. This discards any previously installed version."
-            , Hidden)
           , (Option []     ["customizations"]
                (ReqArg (\names opts -> opts {dirCustomizations = splitOn ";" names}
                        ) "DIRECTORY")
@@ -553,34 +521,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []      ["skip-composer"]
                (NoArg (\opts -> opts{runComposer = False}))
                "skip installing php dependencies (using Composer) for prototype framework."
-            , Hidden)
-          , (Option ['d']  ["dbName"]
-               (ReqArg (\nm opts -> opts{protoOpts = (if nm == ""
-                                                         then id
-                                                         else set dbNameL (map toLower nm)) (protoOpts opts)}
-                       ) "NAME")
-               ("database name (This overrules environment variable "++ dbNameVarName ++ ", defaults to filename) to which the prototype will connect for persistent storage.")
-            , Hidden)
-          , (Option []  ["sqlHost"]
-               (ReqArg (\nm opts -> opts{protoOpts = (if nm == ""
-                                                          then id 
-                                                          else set sqlHostL nm ) (protoOpts opts)}
-                       ) "HOSTNAME")
-               "set SQL host name (Defaults to `localhost`), to identify the host on which the persistent store resides"
-            , Hidden)
-          , (Option []  ["sqlLogin"]
-               (ReqArg (\nm opts -> opts{protoOpts = (if nm == ""
-                                                          then id 
-                                                          else set sqlLoginL nm ) (protoOpts opts)}
-                       ) "USER")
-               "set SQL user name (Defaults to `ampersand`), to let your application login to the database."
-            , Hidden)
-          , (Option []  ["sqlPwd"]
-               (ReqArg (\nm opts -> opts{protoOpts = (if nm == ""
-                                                          then id 
-                                                          else set sqlPwdL nm ) (protoOpts opts)}
-                       ) "PASSWORD")
-               "set SQL password (Defaults to `ampersand`), to let your application login to the database."
             , Hidden)
           , (Option []        ["sql-bin-tables"]
                (NoArg (\opts -> opts{sqlBinTables = True}))
@@ -812,12 +752,6 @@ instance HasDirPrototype App where
   dirPrototypeL = optionsL . dirPrototypeL
 instance HasRootFile App where
   fileNameL = optionsL . fileNameL
-instance HasProtoOpts App where
-  dbNameL = optionsL . dbNameL
-  sqlHostL = optionsL . sqlHostL
-  sqlLoginL = optionsL . sqlLoginL
-  sqlPwdL = optionsL . sqlPwdL
-  forceReinstallFrameworkL = optionsL . forceReinstallFrameworkL
 instance HasOptions App where
   optionsL = lens options' (\env opts -> env{ options' = opts})
 instance HasLogFunc App where

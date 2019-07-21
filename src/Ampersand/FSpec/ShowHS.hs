@@ -320,12 +320,6 @@ instance ShowHS P_RoleRule where
 instance ShowHS (Role,Rule) where
  showHS _ _ (rol,rul)
   = "("++show rol++", "++showHSName rul++")"
-instance ShowHSName FSid where
- showHSName (FS_id nm ) = haskellIdentifier nm
-
-instance ShowHS FSid where
- showHS _ _ (FS_id nm)
-   = "(FS_id " ++ show nm ++ ")"
 
 instance ShowHSName Pattern where
  showHSName pat = haskellIdentifier ("pat_"++name pat)

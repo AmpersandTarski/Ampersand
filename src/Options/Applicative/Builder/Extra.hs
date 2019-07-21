@@ -51,8 +51,8 @@ boolFlags :: Bool                 -- ^ Default value
           -> String               -- ^ Help suffix
           -> Mod FlagFields Bool
           -> Parser Bool
-boolFlags defaultValue name helpSuffix =
-  enableDisableFlags defaultValue True False name $ concat
+boolFlags defaultValue name' helpSuffix =
+  enableDisableFlags defaultValue True False name' $ concat
     [ helpSuffix
     , " (default: "
     , if defaultValue then "enabled" else "disabled"
@@ -68,22 +68,22 @@ boolFlagsNoDefault = enableDisableFlagsNoDefault True False
 
 -- | Flag with no default of True or False
 firstBoolFlagsNoDefault :: String -> String -> Mod FlagFields (Maybe Bool) -> Parser (First Bool)
-firstBoolFlagsNoDefault name helpSuffix mod' =
+firstBoolFlagsNoDefault name' helpSuffix mod' =
   First <$>
   enableDisableFlags Nothing (Just True) (Just False)
-  name helpSuffix mod'
+  name' helpSuffix mod'
 
 -- | Flag with a Semigroup instance and a default of True
 firstBoolFlagsTrue :: String -> String -> Mod FlagFields FirstTrue -> Parser FirstTrue
-firstBoolFlagsTrue name helpSuffix =
+firstBoolFlagsTrue name' helpSuffix =
   enableDisableFlags mempty (FirstTrue (Just True)) (FirstTrue (Just False))
-  name $ helpSuffix ++ " (default: enabled)"
+  name' $ helpSuffix ++ " (default: enabled)"
 
 -- | Flag with a Semigroup instance and a default of False
 firstBoolFlagsFalse :: String -> String -> Mod FlagFields FirstFalse -> Parser FirstFalse
-firstBoolFlagsFalse name helpSuffix =
+firstBoolFlagsFalse name' helpSuffix =
   enableDisableFlags mempty (FirstFalse (Just True)) (FirstFalse (Just False))
-  name $ helpSuffix ++ " (default: disabled)"
+  name' $ helpSuffix ++ " (default: disabled)"
 
 -- | Enable/disable flags for any type.
 enableDisableFlags :: a                 -- ^ Default value
@@ -93,8 +93,8 @@ enableDisableFlags :: a                 -- ^ Default value
                    -> String            -- ^ Help suffix
                    -> Mod FlagFields a
                    -> Parser a
-enableDisableFlags defaultValue enabledValue disabledValue name helpSuffix mods =
-  enableDisableFlagsNoDefault enabledValue disabledValue name helpSuffix mods <|>
+enableDisableFlags defaultValue enabledValue disabledValue name' helpSuffix mods =
+  enableDisableFlagsNoDefault enabledValue disabledValue name' helpSuffix mods <|>
   pure defaultValue
 
 -- | Enable/disable flags for any type, without a default (to allow chaining with '<|>')
@@ -104,25 +104,25 @@ enableDisableFlagsNoDefault :: a                 -- ^ Enabled value
                             -> String            -- ^ Help suffix
                             -> Mod FlagFields a
                             -> Parser a
-enableDisableFlagsNoDefault enabledValue disabledValue name helpSuffix mods =
+enableDisableFlagsNoDefault enabledValue disabledValue name' helpSuffix mods =
   last <$> some
       ((flag'
            enabledValue
            (hidden <>
             internal <>
-            long name <>
+            long name' <>
             help helpSuffix <>
             mods) <|>
        flag'
            disabledValue
            (hidden <>
             internal <>
-            long ("no-" ++ name) <>
+            long ("no-" ++ name') <>
             help helpSuffix <>
             mods)) <|>
        flag'
            disabledValue
-           (long ("[no-]" ++ name) <>
+           (long ("[no-]" ++ name') <>
             help ("Enable/disable " ++ helpSuffix) <>
             mods))
   where

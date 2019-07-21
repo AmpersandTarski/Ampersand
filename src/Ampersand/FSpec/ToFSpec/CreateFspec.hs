@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
-  ( createMulti
+  ( createFSpec
   , pCtx2Fspec
   )
 
@@ -35,10 +35,10 @@ import           System.FilePath
 --   This metamodel is populated with the result of grinding userP_Ctx, being populationPctx.
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
---   which is the result of createMulti.
-createMulti :: (HasGenTime env, HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
-               RIO env (Guarded MultiFSpecs)
-createMulti =
+--   which is the result of createFSpec.
+createFSpec :: (HasGenTime env, HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
+               RIO env (Guarded FSpec)
+createFSpec =
   do env <- ask
      genMetaFile <- view genMetaFileL
      genRapPopulation <- view genRapPopulationL
@@ -123,21 +123,21 @@ createMulti =
            where 
             userPlus :: Guarded P_Context
             userPlus = addSemanticModel (model sysCModel) <$> userP_Ctx
-         result :: Guarded MultiFSpecs
-         result = 
-           if genRapPopulation
-           then case userGFSpec of 
-                  Errors err -> Errors err  
-                  Checked usrFSpec _
-                           -> let grinded :: P_Context
-                                  grinded = grind fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
-                                  metaPopPCtx :: Guarded P_Context
-                                  metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
-                                  metaPopFSpec :: Guarded FSpec
-                                  metaPopFSpec = pCtx2Fspec env metaPopPCtx
-                              in MultiFSpecs <$> (pCtx2Fspec env $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
-                                             <*> (Just <$> metaPopFSpec)
-           else MultiFSpecs <$> userGFSpec <*> pure Nothing
+         result :: Guarded FSpec
+         result = userGFSpec
+         --   if genRapPopulation
+         --   then case userGFSpec of 
+         --          Errors err -> Errors err  
+         --          Checked usrFSpec _
+         --                   -> let grinded :: P_Context
+         --                          grinded = grind fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+         --                          metaPopPCtx :: Guarded P_Context
+         --                          metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
+         --                          metaPopFSpec :: Guarded FSpec
+         --                          metaPopFSpec = pCtx2Fspec env metaPopPCtx
+         --                      in MultiFSpecs <$> (pCtx2Fspec env $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
+         --                                     <*> (Just <$> metaPopFSpec)
+         --   else MultiFSpecs <$> userGFSpec <*> pure Nothing
      res <- if genMetaFile
             then writeMetaFile fAmpModel userGFSpec
             else return $ pure ()

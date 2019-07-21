@@ -14,28 +14,29 @@ import           Ampersand.Misc.Config
 import           Ampersand.Options.GlobalParser
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Writer
-import           Generics.Deriving.Monoid (memptydefault, mappenddefault)
+--import           Generics.Deriving.Monoid (memptydefault, mappenddefault)
 import           Options.Applicative
 import           Options.Applicative.Builder.Internal
-import           Options.Applicative.Help (errorHelp, stringChunk, vcatChunks)
+--import           Options.Applicative.Help (errorHelp, stringChunk, vcatChunks)
 import           Options.Applicative.Types
-import qualified RIO.List as L
-import qualified System.Directory as D
-import           System.Environment (getProgName, getArgs, withArgs)
-import           System.FilePath (isValid, pathSeparator, takeDirectory)
+--import qualified RIO.List as L
+--import qualified System.Directory as D
+import           System.Environment ({-getProgName,-} getArgs, withArgs)
+--import           System.FilePath (isValid, pathSeparator, takeDirectory)
 
 
 -- A lot of inspiration in this file comes from https://github.com/commercialhaskell/stack/
 
 -- Vertically combine only the error component of the first argument with the
 -- error component of the second.
-vcatErrorHelp :: ParserHelp -> ParserHelp -> ParserHelp
-vcatErrorHelp h1 h2 = h2 { helpError = vcatChunks [helpError h2, helpError h1] }
+--vcatErrorHelp :: ParserHelp -> ParserHelp -> ParserHelp
+--vcatErrorHelp h1 h2 = h2 { helpError = vcatChunks [helpError h2, helpError h1] }
 
 commandLineHandler
   :: FilePath
+  -> String
   -> IO (GlobalOptsMonoid, RIO Runner ())
-commandLineHandler currentDir = complicatedOptions
+commandLineHandler currentDir progName = complicatedOptions
   (Just ampersandVersionWithoutBuildTimeStr)
   "ampersand - The Ampersand generator"
   ""

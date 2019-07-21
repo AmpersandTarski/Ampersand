@@ -66,16 +66,15 @@ instance ToJSON JSONCruds where
 instance ToJSON JSONexpr where
   toJSON = amp2Jason
   
-instance JSON MultiFSpecs Interfaces where
- fromAmpersand env multi _ = Interfaces (map (fromAmpersand env multi) (interfaceS fSpec ++ interfaceG fSpec))
-   where fSpec = userFSpec multi
+instance JSON FSpec Interfaces where
+ fromAmpersand env fSpec _ = Interfaces (map (fromAmpersand env fSpec) (interfaceS fSpec ++ interfaceG fSpec))
 
 instance JSON SubInterface JSONSubInterface where
- fromAmpersand env multi si = 
+ fromAmpersand env fSpec si = 
    case si of 
      Box{} -> JSONSubInterface
        { subJSONboxClass           = siMClass si
-       , subJSONifcObjects         = Just . map (fromAmpersand env multi) . siObjs $ si
+       , subJSONifcObjects         = Just . map (fromAmpersand env fSpec) . siObjs $ si
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinkTo        = Nothing
        }
@@ -86,11 +85,11 @@ instance JSON SubInterface JSONSubInterface where
        , subJSONrefIsLinkTo        = Just . siIsLink $ si
        }
 instance JSON Interface JSONInterface where
- fromAmpersand env multi interface = JSONInterface
+ fromAmpersand env fSpec interface = JSONInterface
   { ifcJSONid                 = escapeIdentifier . ifcname $ interface
   , ifcJSONlabel              = ifcname interface
   , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
-  , ifcJSONifcObject          = fromAmpersand env multi (BxExpr $ ifcObj interface)
+  , ifcJSONifcObject          = fromAmpersand env fSpec (BxExpr $ ifcObj interface)
   , ifcJSONisAPI              = ifcIsAPI interface
   }
 
@@ -103,7 +102,7 @@ instance JSON Cruds JSONCruds where
   }
   
 instance JSON ObjectDef JSONexpr where
- fromAmpersand env multi object =
+ fromAmpersand env fSpec object =
     JSONexpr
         { exprJSONsrcConceptId = idWithoutType srcConcept
         , exprJSONtgtConceptId = idWithoutType tgtConcept
@@ -113,7 +112,6 @@ instance JSON ObjectDef JSONexpr where
         , exprJSONquery        = query
         }
       where
-        fSpec = userFSpec multi
         query = broadQueryWithPlaceholder fSpec object{objExpression=normalizedInterfaceExp}
         normalizedInterfaceExp = conjNF env $ objExpression object
         (srcConcept, tgtConcept) =
@@ -123,7 +121,7 @@ instance JSON ObjectDef JSONexpr where
             Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
 instance JSON BoxItem JSONObjectDef where
- fromAmpersand env multi obj =
+ fromAmpersand env fSpec obj =
    case obj of 
      BxExpr object' -> JSONObjectDef
       { ifcobjJSONtype               = "ObjExpression"
@@ -133,13 +131,12 @@ instance JSON BoxItem JSONObjectDef where
       , ifcobjJSONNormalizationSteps = Just $ showPrf showA.cfProof.objExpression $ object 
       , ifcobjJSONrelation           = fmap (showRel . fst) mEditableDecl
       , ifcobjJSONrelationIsFlipped  = fmap            snd  mEditableDecl
-      , ifcobjJSONcrud               = Just $ fromAmpersand env multi (objcrud object)
-      , ifcobjJSONexpr               = Just $ fromAmpersand env multi object
-      , ifcobjJSONsubinterfaces      = fmap  (fromAmpersand env multi) (objmsub object)
+      , ifcobjJSONcrud               = Just $ fromAmpersand env fSpec (objcrud object)
+      , ifcobjJSONexpr               = Just $ fromAmpersand env fSpec object
+      , ifcobjJSONsubinterfaces      = fmap  (fromAmpersand env fSpec) (objmsub object)
       , ifcobjJSONtxt                = Nothing
       }
       where
-        fSpec = userFSpec multi
         viewToUse = case objmView object of
                     Just nm -> Just $ lookupView fSpec nm
                     Nothing -> getDefaultViewForConcept fSpec tgtConcept

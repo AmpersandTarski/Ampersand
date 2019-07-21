@@ -197,15 +197,12 @@ writePicture :: (HasDirOutput env, HasBlackWhite env, HasGenFuncSpec env, HasVer
 writePicture pict = do
     genFSpec <- view genFSpecL
     env <- ask
-    sequence_ (
-      [liftIO $ createDirectoryIfMissing True  (takeDirectory (imagePath env pict)) ]++
-   --   [dumpShow ]++
-      [writeDot Canon  | genFSpec ]++  --Pretty-printed Dot output with no layout performed.
-      [writeDot DotOutput | genFSpec] ++ --Reproduces the input along with layout information.
-      [writeDot Png    | genFSpec ] ++  --handy format to include in github comments/issues
-      [writeDot Svg    | genFSpec ] ++ -- format that is used when docx docs are being generated.
-      [writePdf Eps    | genFSpec ] -- .eps file that is postprocessed to a .pdf file 
-           )
+    liftIO $ createDirectoryIfMissing True  (takeDirectory (imagePath env pict))
+    when genFSpec $ writeDot Canon  --Pretty-printed Dot output with no layout performed.
+    when genFSpec $ writeDot DotOutput --Reproduces the input along with layout information.
+    when genFSpec $ writeDot Png    --handy format to include in github comments/issues
+    when genFSpec $ writeDot Svg    -- format that is used when docx docs are being generated.
+    when genFSpec $ writePdf Eps    -- .eps file that is postprocessed to a .pdf file 
    where
      writeDot :: (HasDirOutput env, HasGenFuncSpec env, HasBlackWhite env, HasVerbosity env, HasHandle env) =>
                  GraphvizOutput -> RIO env ()
