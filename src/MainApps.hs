@@ -48,14 +48,14 @@ ampersand' = do
     case fileName of
       Just _ -> do -- An Ampersand script is provided that can be processed
             sayLn "Processing your model..."
-            gMulti <- createMulti
+            gMulti <- createFspec []
             case gMulti of
               Errors err    -> 
                  exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
                . fmap show . NEL.toList $ err
-              Checked multi ws -> do
+              Checked fSpec ws -> do
                  mapM_  sayLn . concatMap (lines . show) $ ws
-                 generateAmpersandOutput multi
+                 generateAmpersandOutput fSpec
                  sayLn "Finished processing your model"
                  sayLn . ("Your script has no errors " ++) $
                     case ws of

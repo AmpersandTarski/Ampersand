@@ -25,7 +25,7 @@ import qualified RIO.List as L
 import qualified RIO.Set as Set
 
 data MetaModel = FormalAmpersand | FADocumented | SystemContext
-       deriving (Eq, Ord, Enum, Bounded)
+       deriving (Eq, Ord, Enum, Bounded, Show)
 instance Named MetaModel where
   name FormalAmpersand = "Formal Ampersand"
   name FADocumented    = "Formal Ampersand (documented)"
@@ -35,14 +35,14 @@ data GrindInfo = GrindInfo
     { metaModel    :: MetaModel
     , pModel       :: P_Context
     , fModel       :: FSpec
-    , transformers :: Options -> FSpec -> [Transformer]
+    , transformers :: FSpec -> [Transformer]
     }
 
 -- | The 'grind' function creates a P_Context that contains the population for every
 --   relation in the metamodel. The population is defined by the given FSpec,
 --   which usually is the FSpec of the user. 
-grind :: Options -> GrindInfo -> FSpec -> P_Context
-grind opts grindInfo userFspec =
+grind :: GrindInfo -> FSpec -> P_Context
+grind grindInfo userFspec =
   PCtx{ ctx_nm     = "Grinded_"++name userFspec
       , ctx_pos    = []
       , ctx_lang   = Nothing
@@ -64,7 +64,7 @@ grind opts grindInfo userFspec =
   where
     metaPops2 :: Set.Set Pop
     metaPops2 = Set.fromList 
-              . concatMap (Set.toList . grindedPops opts grindInfo userFspec)
+              . concatMap (Set.toList . grindedPops grindInfo userFspec)
               . Set.toList . instances . fModel $ grindInfo
     populationFromPop :: Pop -> Maybe P_Population
     populationFromPop pop =
@@ -141,8 +141,8 @@ showPop pop =
       Comment{} -> L.intercalate "\n" . map ("-- " ++) . comment $ pop
 -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
-makeMetaFile :: Options -> GrindInfo -> FSpec -> (FilePath,String)
-makeMetaFile opts@Options{..} metaModel userFspec
+makeMetaFile :: (HasGenTime env) => env -> GrindInfo -> FSpec -> (FilePath,String)
+makeMetaFile env metaModel userFspec
   = ("MetaPopulationFile.adl", content )
   where
     content = unlines $
@@ -201,9 +201,9 @@ makeMetaFile opts@Options{..} metaModel userFspec
                                                    ) 
                          . instances . fModel $ metaModel
 
-grindedPops :: Options -> GrindInfo -> FSpec -> Relation -> Set.Set Pop
-grindedPops opts@Options{..} grindInfo userFspec rel = 
-  case filter (isForRel rel) ((transformers grindInfo) opts userFspec) of
+grindedPops :: GrindInfo -> FSpec -> Relation -> Set.Set Pop
+grindedPops grindInfo userFspec rel = 
+  case filter (isForRel rel) ((transformers grindInfo) userFspec) of
     []  -> fatal . unlines $ 
               ["Every relation in "++name (metaModel grindInfo)++" must have a transformer in Transformers.hs"
               ,"   Violations:"
@@ -214,7 +214,7 @@ grindedPops opts@Options{..} grindInfo userFspec rel =
                     . Set.filter hasNoTransformer 
                     . instances . fModel $ grindInfo
               hasNoTransformer :: Relation -> Bool
-              hasNoTransformer d = null (filter (isForRel d) ((transformers grindInfo) opts userFspec))
+              hasNoTransformer d = null (filter (isForRel d) ((transformers grindInfo) userFspec))
               showRelOrigin :: Relation -> String
               showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
     ts  -> Set.fromList . map transformer2Pop $ ts 

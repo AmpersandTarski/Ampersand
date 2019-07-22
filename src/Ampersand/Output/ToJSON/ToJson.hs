@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToJSON.ToJson
   (generateJSONfiles
-  ,generateJSONfilesRap)
+  )
 where
 import Ampersand.Output.ToJSON.JSONutils
 import Ampersand.Output.ToJSON.Settings
@@ -15,7 +15,7 @@ import Ampersand.Output.ToJSON.Views
 import Ampersand.Output.ToJSON.Roles
 
 generateJSONfiles :: (HasProtoOpts env, HasEnvironment env, HasDirPrototype env, HasVerbosity env, HasHandle env, HasCommands env)
-    => MultiFSpecs -> RIO env ()
+    => FSpec -> RIO env ()
 generateJSONfiles fSpec = do
  env <- ask
  genRapPopulation <- view genRapPopulationL

@@ -69,7 +69,7 @@ instance JSON Rule JsonRule where
                               [] -> ""
                               h:_ -> aMarkup2String h
 instance JSON (PairView Expression) JsonPairView where
- fromAmpersand env multi pv = JsonPairView $ map (fromAmpersand env multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
+ fromAmpersand env fSpec pv = JsonPairView $ map (fromAmpersand env fSpec) (zip [0..] (NEL.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
  fromAmpersand _ fSpec (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr

@@ -31,7 +31,7 @@ import           System.FilePath
 import           Text.Parsec.Prim (runP)
 
 -- | Parse an Ampersand file and all transitive includes
-parseADL :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
+parseADL :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
             FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
          -> RIO env ([ParseCandidate], Guarded P_Context)     -- ^ The resulting context
 parseADL fp = do 
@@ -44,7 +44,7 @@ parseADL fp = do
        , pcCanonical = canonical
        , pcDefineds  = Set.empty
        }
-parseFormalAmpersand :: RIO App (Guarded P_Context)
+parseFormalAmpersand :: (HasHandle env, HasVerbosity env, HasExcellOutputOptions env) => RIO env (Guarded P_Context)
 parseFormalAmpersand = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Formal Ampersand specification"
@@ -52,7 +52,7 @@ parseFormalAmpersand = parseThing ParseCandidate
        , pcCanonical = "AST.adl"
        , pcDefineds  = Set.empty
        }
-parseFormalAmpersandDocumented :: RIO App (Guarded P_Context)
+parseFormalAmpersandDocumented :: (HasHandle env, HasVerbosity env, HasExcellOutputOptions env) => RIO env (Guarded P_Context)
 parseFormalAmpersandDocumented = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Formal Ampersand specification + documentation"
@@ -60,7 +60,7 @@ parseFormalAmpersandDocumented = parseThing ParseCandidate
        , pcCanonical = "AST.adl"  --TODO: Must be replaced by documented formal ampersand script
        , pcDefineds  = Set.empty
        }
-parseSystemContext :: RIO App (Guarded P_Context)
+parseSystemContext :: (HasHandle env, HasVerbosity env, HasExcellOutputOptions env) => RIO env (Guarded P_Context)
 parseSystemContext = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Ampersand specific system context"
@@ -69,11 +69,11 @@ parseSystemContext = parseThing ParseCandidate
        , pcDefineds  = Set.empty
        }
 
-parseThing :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
+parseThing :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
               ParseCandidate -> RIO env (Guarded P_Context)
 parseThing pc = snd <$> parseThing' pc 
 
-parseThing' :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
+parseThing' :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
                ParseCandidate -> RIO env ([ParseCandidate], Guarded P_Context) 
 parseThing' pc = do
   results <- parseADLs [] [pc]
@@ -88,7 +88,7 @@ parseThing' pc = do
                           h:tl -> foldr mergeContexts h tl
 
 -- | Parses several ADL files
-parseADLs :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
+parseADLs :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
              [ParseCandidate]         -- ^ The list of files that have already been parsed
           -> [ParseCandidate]         -- ^ A list of files that still are to be parsed.
           -> RIO env (Guarded [(ParseCandidate, P_Context)]) -- ^ The resulting contexts and the ParseCandidate that is the source for that P_Context
@@ -98,7 +98,7 @@ parseADLs parsedFilePaths fpIncludes =
     x:xs -> if x `elem` parsedFilePaths
             then parseADLs parsedFilePaths xs
             else whenCheckedM (parseSingleADL x) parseTheRest
-        where parseTheRest :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
+        where parseTheRest :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
                               (P_Context, [ParseCandidate]) 
                            -> RIO env (Guarded [(ParseCandidate, P_Context)])
               parseTheRest (ctx, includes) = 

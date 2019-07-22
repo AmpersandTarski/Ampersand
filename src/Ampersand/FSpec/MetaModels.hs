@@ -22,22 +22,24 @@ import           Ampersand.Misc
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 
-parser :: MetaModel -> RIO App (Guarded P_Context)
+parser :: (HasHandle env, HasVerbosity env, HasExcellOutputOptions env) => MetaModel -> RIO env (Guarded P_Context)
 parser FormalAmpersand = parseFormalAmpersand
 parser SystemContext   = parseSystemContext 
 parser FADocumented    = parseFormalAmpersandDocumented
 
-pCtx2Fspec :: Options -> P_Context -> Guarded FSpec
-pCtx2Fspec opts c = makeFSpec opts <$> pCtx2aCtx opts c
+pCtx2Fspec :: (HasSqlBinTables env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) => env -> P_Context -> Guarded FSpec
+pCtx2Fspec env c = makeFSpec env <$> pCtx2aCtx env c
 
 
-mkGrindInfo :: Options -> MetaModel -> RIO App GrindInfo
-mkGrindInfo opts metamodel = do
+mkGrindInfo :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasHandle env, HasVerbosity env, HasExcellOutputOptions env) => MetaModel -> RIO env GrindInfo
+mkGrindInfo metamodel = do
+    env <- ask 
     c <- parser metamodel
-    return $ build c
+    return $ build env c 
   where
-    build :: Guarded P_Context -> GrindInfo
-    build pCtx = GrindInfo
+    build :: (HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) =>
+        env -> Guarded P_Context -> GrindInfo
+    build env pCtx = GrindInfo
             { metaModel    = metamodel
             , pModel       = case pCtx of
                   Errors errs -> fatal . unlines $
@@ -48,7 +50,7 @@ mkGrindInfo opts metamodel = do
                           ("The ADL scripts of "++name metamodel++" are not free of warnings:")
                         : (L.intersperse (replicate 30 '=') . fmap show $ ws)
             , fModel       = 
-                case join $ pCtx2Fspec opts <$> pCtx of
+                case join $ pCtx2Fspec env <$> pCtx of
                   Errors errs -> fatal . unlines $
                           ("The ADL scripts of "++name metamodel++" cannot be parsed:")
                         : (L.intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)

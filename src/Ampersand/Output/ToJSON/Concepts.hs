@@ -91,11 +91,11 @@ instance JSON A_Concept TableCols where
       []      -> fatal ("Concept `"++name cpt++"` not found in a table.")
       _       -> fatal ("Concept `"++name cpt++"` found in multiple tables.")
 instance JSON ViewDef View where
- fromAmpersand env multi vd = View
+ fromAmpersand env fSpec vd = View
   { vwJSONlabel        = name vd
   , vwJSONisDefault    = vdIsDefault vd
   , vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd
-  , vwJSONsegments     = fmap (fromAmpersand env multi) . vdats $ vd
+  , vwJSONsegments     = fmap (fromAmpersand env fSpec) . vdats $ vd
   }
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where

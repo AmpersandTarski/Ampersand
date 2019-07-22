@@ -28,37 +28,37 @@ import           System.Directory
 import           System.FilePath ((</>), (-<.>))
 import           Text.Pandoc
 import           Text.Pandoc.Builder
-
+import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
-       => MultiFSpecs -> RIO env ()
-generateAmpersandOutput multi = do
+       => FSpec -> RIO env ()
+generateAmpersandOutput fSpec = do
     env <- ask 
     dataAnalysis <- view dataAnalysisL
     dirOutput <- view dirOutputL
     sayWhenLoudLn "Checking for rule violations..."
-    if dataAnalysis then sayWhenLoudLn "Not checking for rule violations because of data analysis." else reportInvViolations violationsOfInvariants
+    if dataAnalysis then sayWhenLoudLn "Not checking for rule violations because of data analysis." else reportInvViolations (violationsOfInvariants fSpec)
     reportSignals (initialConjunctSignals fSpec)
     liftIO $ createDirectoryIfMissing True dirOutput
     sequence_ . map snd . filter fst $ conditionalActions env
   where 
    conditionalActions :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
            => env -> [(Bool, RIO env ())]
-   conditionalActions env = 
-      [ ( view genUMLL env            , doGenUML              )
-      , ( view genHaskellL env        , doGenHaskell          )
-      , ( view sqlDumpL env           , doGenSQLdump          )
-      , ( view export2adlL env        , doGenADL              )
-      , ( view dataAnalysisL env      , doGenADL              )
-      , ( view genFSpecL env          , doGenDocument         )
-      , ( view genFPAExcelL env       , doGenFPAExcel         )
-      , ( view genPOPExcelL env       , doGenPopsXLSX         )
-      , ( view proofsL env            , doGenProofs           )
-      , ( view validateSQLL env       , doValidateSQLTest     )
-      , ( view genPrototypeL env      , doGenProto            )
-      , ( view genRapPopulationL env  , doGenRapPopulation    )
-      ]
+   conditionalActions env = []
+      -- [ ( view genUMLL env            , doGenUML              )
+      -- , ( view genHaskellL env        , doGenHaskell          )
+      -- , ( view sqlDumpL env           , doGenSQLdump          )
+      -- , ( view export2adlL env        , doGenADL              )
+      -- , ( view dataAnalysisL env      , doGenADL              )
+      -- , ( view genFSpecL env          , doGenDocument         )
+      -- , ( view genFPAExcelL env       , doGenFPAExcel         )
+      -- , ( view genPOPExcelL env       , doGenPopsXLSX         )
+      -- , ( view proofsL env            , doGenProofs           )
+      -- , ( view validateSQLL env       , doValidateSQLTest     )
+      -- , ( view genPrototypeL env      , doGenProto            )
+      -- , ( view genRapPopulationL env  , doGenRapPopulation    )
+      -- ]
      
    -- | For importing and analysing data, Ampersand allows you to annotate an Excel spreadsheet (.xlsx) and turn it into an Ampersand model.
    -- By default 'doGenADL' exports the model to Export.adl, ready to be picked up by the user and refined by adding rules.
@@ -106,7 +106,7 @@ generateAmpersandOutput multi = do
        env <- ask
        outputFile <- outputFile' <$> ask
        sayLn $ "Generating SQL queries dumpfile for " ++ name fSpec ++ "..."
-       writeFileUtf8 outputFile (dumpSQLqueries env multi)
+       writeFileUtf8 outputFile (dumpSQLqueries env fSpec)
        sayWhenLoudLn ("SQL queries dumpfile written into " ++ outputFile ++ ".")
     where outputFile' env = view dirOutputL env </> baseName env ++ "_dump" -<.> ".sql"
    
@@ -160,33 +160,48 @@ generateAmpersandOutput multi = do
        errMsg <- validateRulesSQL fSpec
        unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
 
-   doGenProto :: (HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasOptions env, HasRootFile env, HasVerbosity env, HasHandle env) 
-       => RIO env ()
-   doGenProto = do
-     dirPrototype <- view dirPrototypeL
-     allowInvariantViolations <- view allowInvariantViolationsL
-     if null violationsOfInvariants || allowInvariantViolations
-     then do
-        sayLn "Generating prototype..."
-        liftIO $ createDirectoryIfMissing True dirPrototype
-        doGenFrontend fSpec
-        generateDatabaseFile multi
-        generateJSONfiles multi
-        sayWhenLoudLn $ "Prototype files have been written to " ++ dirPrototype
-     else exitWith NoPrototypeBecauseOfRuleViolations
+  --  doGenProto :: (HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasOptions env, HasRootFile env, HasVerbosity env, HasHandle env) 
+  --      => RIO env ()
+  --  doGenProto = do
+  --    dirPrototype <- view dirPrototypeL
+  --    allowInvariantViolations <- view allowInvariantViolationsL
+  --    if null violationsOfInvariants || allowInvariantViolations
+  --    then do
+  --       sayLn "Generating prototype..."
+  --       liftIO $ createDirectoryIfMissing True dirPrototype
+  --       doGenFrontend fSpec
+  --       generateDatabaseFile fSpec
+  --       generateJSONfiles fSpec
+  --       sayWhenLoudLn $ "Prototype files have been written to " ++ dirPrototype
+  --    else exitWith NoPrototypeBecauseOfRuleViolations
 
-   doGenRapPopulation :: (HasEnvironment env, HasProtoOpts env, HasCommands env, HasVerbosity env, HasHandle env, HasAllowInvariantViolations env, HasDirPrototype env) 
-        => RIO env ()
-   doGenRapPopulation = do
-     dirPrototype <- view dirPrototypeL
-     allowInvariantViolations <- view allowInvariantViolationsL
-     if null violationsOfInvariants || allowInvariantViolations
-     then do
-        sayLn "Generating RAP population..."
-        liftIO $ createDirectoryIfMissing True dirPrototype
-        generateJSONfiles multi
-        sayWhenLoudLn $ "RAP population file has been written to " ++ dirPrototype
-     else do exitWith NoPrototypeBecauseOfRuleViolations
+  --  doGenRapPopulation :: (HasEnvironment env, HasProtoOpts env, HasCommands env, HasVerbosity env, HasHandle env, HasAllowInvariantViolations env, HasDirPrototype env) 
+  --       => Guarded (RIO env ())
+  --  doGenRapPopulation = do
+  --    dirPrototype <- view dirPrototypeL
+  --    allowInvariantViolations <- view allowInvariantViolationsL
+  --    let recipe :: [BuildStep]
+  --        recipe = []
+  --        aap :: RIO env (Guarded FSpec)
+  --        aap = createFspec recipe
+  --        wim :: RIO env (Guarded FSpec) -> (Guarded (Guarded FSpec))
+  --        wim x = undefined
+  --    gFSpec <- wim $ createFspec recipe
+  --    let noot :: Guarded FSpec
+  --        noot = gFSpec
+  --        mies :: Guarded (RIO env0 ())
+  --        mies = action <$> gFSpec
+  --    (action <$> gFSpec )
+  --    where
+  --       action :: FSpec -> RIO env ()
+  --       action fSpec = do 
+  --         if null (violationsOfInvariants fSpec) || allowInvariantViolations
+  --         then do
+  --             sayLn "Generating RAP population..."
+  --             liftIO $ createDirectoryIfMissing True dirPrototype
+  --             generateJSONfiles fSpec
+  --             sayWhenLoudLn $ "RAP population file has been written to " ++ dirPrototype
+  --         else do exitWith NoPrototypeBecauseOfRuleViolations
 
    violationsOfInvariants :: FSpec -> [(Rule,AAtomPairs)]
    violationsOfInvariants fSpec = 

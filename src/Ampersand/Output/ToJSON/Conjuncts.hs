@@ -21,7 +21,7 @@ instance ToJSON JSONConjunct where
 instance ToJSON Conjuncts where
   toJSON = amp2Jason
 instance JSON FSpec Conjuncts where
- fromAmpersand env multi _ = Conjuncts . map (fromAmpersand env multi) . allConjuncts . userFSpec $ multi
+ fromAmpersand env fSpec _ = Conjuncts . map (fromAmpersand env fSpec) . allConjuncts $ fSpec
 instance JSON Conjunct JSONConjunct where
  fromAmpersand env fSpec conj = JSONConjunct
   { cnjJSONid                  = rc_id conj

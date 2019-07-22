@@ -17,7 +17,7 @@ import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
 
-generateDatabaseFile :: (HasDirPrototype env, HasVerbosity env, HasHandle env) => MultiFSpecs -> RIO env ()
+generateDatabaseFile :: (HasDirPrototype env, HasVerbosity env, HasHandle env) => FSpec -> RIO env ()
 generateDatabaseFile fSpec = 
    do env <- ask
       sayWhenLoudLn $ "  Generating "++file

@@ -1,7 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
-  ( createMulti
+  ( BuildPrescription, BuildStep(..), BuildAction(..)
+  , createFspec
   )
 
 where
@@ -17,7 +18,7 @@ import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
-
+import           Data.Foldable (foldrM)
 -- | create an FSpec, based on the provided command-line options.
 --   Without the command-line switch "--meta-tables", 
 --   Ampersand compiles its script (userP_Ctx) straightforwardly in first order relation algebra.
@@ -31,62 +32,49 @@ import qualified RIO.Set as Set
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createMulti.
-createMulti :: (HasGenTime env, HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
-               RIO env (Guarded MultiFSpecs)
-createMulti =
-  do env <- ask
-    let opts@Options{..} = getOptions env
-    grindInfoMap <- let fun :: MetaModel -> RIO App (MetaModel, GrindInfo)
-                        fun m = do 
-                          gInfo <- mkGrindInfo opts m
-                          return (m , gInfo)
-       in do
-         m <- sequence $ fun <$> [minBound ..]
-         return (Map.fromList m)
-
-    rawUserP_Ctx:: Guarded P_Context <- 
+createFspec :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasCommands env, HasRootFile env, HasHandle env, HasVerbosity env) => 
+               BuildPrescription -> RIO env (Guarded FSpec)
+createFspec recipe = do 
+    env <- ask
+    -- grindInfoMap :: Map MetaModel GrindInfo
+    grindInfoMap <- do 
+        let fun m = (,) m <$> mkGrindInfo m
+        Map.fromList <$> (sequence $ fun <$> [minBound ..])
+    rawUserP_Ctx:: Guarded P_Context <- do
        fileName <- view fileNameL
        case fileName of
          Just x -> do
              pctx <- snd <$> parseADL x -- the P_Context of the user's sourceFile
-             return $ encloseInConstraints opts <$> pctx 
+             return $ (if view dataAnalysisL env then encloseInConstraints else id) <$> pctx 
          Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
-    let rawUserFSpec :: Guarded FSpec 
-        rawUserFSpec = join $ pCtx2Fspec opts <$> rawUserP_Ctx  
-    return . join $ build opts grindInfoMap <$> rawUserFSpec <*> rawUserP_Ctx
+    return . join $ cook env grindInfoMap recipe <$> rawUserP_Ctx
+
+cook :: (HasOutputLanguage env, HasNamespace env, HasGenInterfaces env, HasDefaultCrud env, HasSqlBinTables env) => env -> Map MetaModel GrindInfo -> BuildPrescription -> P_Context -> Guarded FSpec
+cook env grindInfoMap steps pCtx = join $ pCtx2Fspec env <$> foldrM doStep pCtx steps
       where 
-        build :: Options -> (Map MetaModel GrindInfo) -> FSpec -> P_Context -> Guarded FSpecKinds
-        build opts theMap userFspec userPContext = 
-          (\rp x -> FSpecKinds
-               { plainFSpec    = userFspec
-               , rapPopulation = rp
-               , plainProto    = x
-               }
-          ) <$> grindAndAdd opts (gInfo FormalAmpersand) userPContext
-            <*> grindAndAdd opts (gInfo SystemContext  ) userPContext
-          where gInfo :: MetaModel -> GrindInfo
-                gInfo mm = fromMaybe (fatal $ "The map doesn't contain grindinfo for "++name mm)
-                                     (theMap Map.!? mm) 
-        grindAndAdd :: Options -> GrindInfo -> P_Context -> Guarded FSpec
-        grindAndAdd opts gInfo userP = do
-           let grindedP :: Guarded P_Context
-               grindedP = grind opts gInfo <$> pCtx2Fspec opts userP
-               mergedP :: Guarded P_Context
-               mergedP = addSemanticModel gInfo <$> mergeContexts userP <$> grindedP
-           join $ pCtx2Fspec opts <$> mergedP
+        doStep :: BuildStep -> P_Context -> Guarded P_Context
+        doStep (BuildStep metaModel action) pCtx'= 
+          case action of
+            AddSemanticModel -> pure $ addSemanticModel gInfo pCtx'
+            GrindOnly        -> grind gInfo <$> pCtx2Fspec env pCtx'
+            GrindAndMerge    -> mergeContexts pCtx' <$> grind gInfo <$> pCtx2Fspec env pCtx'
+          where gInfo :: GrindInfo
+                gInfo = case Map.lookup metaModel grindInfoMap of
+                          Just x -> x
+                          Nothing -> fatal $ "metaModel `"++show metaModel++"`was not found!"
            
-pCtx2Fspec :: (HasCommands env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) 
-   => env -> Guarded P_Context -> Guarded FSpec
-pCtx2Fspec env c = makeFSpec env <$> join (pCtx2aCtx env <$> encloseInConstraints env c)
+--TODO: fix the call to encloseInConstraints by using the right Command
+--pCtx2Fspec :: (HasCommands env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) 
+--   => env -> Guarded P_Context -> Guarded FSpec
+--pCtx2Fspec env c = makeFSpec env <$> join (pCtx2aCtx env <$> encloseInConstraints env c)
 
 -- | To analyse spreadsheets means to enrich the context with the relations that are defined in the spreadsheet.
 --   The function encloseInConstraints does not populate existing relations.
 --   Instead it invents relations from a given population, which typically comes from a spreadsheet.
 --   This is different from the normal behaviour, which checks whether the spreadsheets comply with the Ampersand-script.
 --   This function is called only with option 'dataAnalysis' on.
-encloseInConstraints :: (HasCommands env) => env -> Guarded P_Context -> Guarded P_Context
-encloseInConstraints env (Checked pCtx warnings) 
-    | view dataAnalysisL env = Checked enrichedContext warnings
+encloseInConstraints :: P_Context -> P_Context
+encloseInConstraints pCtx = enrichedContext
   where
   --The result of encloseInConstraints is a P_Context enriched with the relations in genericRelations
   --The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
@@ -98,8 +86,6 @@ encloseInConstraints env (Checked pCtx warnings)
     declaredRelations ::  [P_Relation]   -- relations declared in the user's script
     popRelations ::       [P_Relation]   -- relations that are "annotated" by the user in Excel-sheets.
                                          -- popRelations are derived from P_Populations only.
-    genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
-    genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
     declaredRelations = L.nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
     -- | To derive relations from populations, we derive the signature from the population's signature directly.
     --   Multiplicity properties are added to constrain the population without introducing violations.
@@ -241,3 +227,13 @@ encloseInConstraints env (Checked pCtx warnings)
 --    specializations cpt = nub $ cpt: [ specific gen | gen<-ctx_gs pCtx, cpt `elem` generics gen ]
 --    generalizations :: P_Concept -> [P_Concept]
 --    generalizations cpt = nub $ cpt: [ g | gen<-ctx_gs pCtx, g<-NEL.toList (generics gen), cpt==specific gen ]
+
+type BuildPrescription = [BuildStep]
+data BuildStep = BuildStep
+  { bsMetamodel :: MetaModel
+  , bsAction :: BuildAction
+  }
+data BuildAction = 
+    AddSemanticModel
+  | GrindOnly
+  | GrindAndMerge  
