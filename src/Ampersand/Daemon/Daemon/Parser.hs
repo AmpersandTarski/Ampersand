@@ -7,19 +7,18 @@ module Ampersand.Daemon.Daemon.Parser (
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Daemon.Daemon.Types
-import           Ampersand.FSpec.ToFSpec.CreateFspec
 import           Ampersand.Input.Parsing
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
-
-parseProject :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasCommands env, HasExcellOutputOptions env, HasOptions env, HasVerbosity env, HasHandle env) => 
+import           Ampersand.FSpec.MetaModels
+parseProject :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasVerbosity env, HasHandle env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
 parseProject rootAdl = do
     (pc,gPctx) <- parseADL rootAdl 
     env <- ask
     let loadedFiles = map pcCanonical pc
-        gActx = pCtx2Fspec env gPctx
+        gActx = pCtx2Fspec env <$> gPctx
     return ( case gActx of
               Checked _ ws -> map warning2Load $ ws
               Errors  es   -> NEL.toList . fmap error2Load $ es

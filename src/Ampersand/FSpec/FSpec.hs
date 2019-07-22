@@ -9,7 +9,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Ampersand.FSpec.FSpec
-          ( MultiFSpecs(..)
+          ( FSpecKinds(..)
           , FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Quad(..)
           , PlugSQL(..),plugAttributes
@@ -42,9 +42,12 @@ import qualified RIO.Text as T
 import qualified RIO.List as L
 import           Text.Pandoc.Builder (Blocks)
 
-data MultiFSpecs = MultiFSpecs
-                   { userFSpec :: FSpec        -- ^ The FSpec based on the user's script, potentionally extended with metadata.
-                   , metaFSpec :: Maybe FSpec  -- ^ The FormalAmpersand metamodel, populated with the items from the user's script 
+data FSpecKinds = FSpecKinds
+                   { plainFSpec    :: FSpec       -- ^ The FSpec based on the user's script only.
+                   , rapPopulation :: FSpec       -- ^ The FSpec that contains the grinded (with Formal Ampersand) population
+                   , plainProto    :: FSpec       -- ^ FSpec that contains the systemContext stuff, for building a prototype
+                 --  , atlasProto    :: FSpec       -- ^ FSpec that contains the formalAmpersand model with systemContext stuff added, for building a prototype
+                 --  , docuFSpec     :: FSpec       -- ^ FSpec that contains the documentation ???
                    }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showA)  

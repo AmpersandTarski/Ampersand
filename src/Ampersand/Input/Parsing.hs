@@ -5,7 +5,8 @@
 -- This might include that RAP is included in the returned FSpec.
 module Ampersand.Input.Parsing (
       parseADL
-    , parseMeta
+    , parseFormalAmpersand
+    , parseFormalAmpersandDocumented
     , parseSystemContext
     , parseRule
     , runParser
@@ -30,27 +31,49 @@ import           System.FilePath
 import           Text.Parsec.Prim (runP)
 
 -- | Parse an Ampersand file and all transitive includes
-parseADL :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
+parseADL :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
             FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
          -> RIO env ([ParseCandidate], Guarded P_Context)     -- ^ The resulting context
 parseADL fp = do 
     curDir <- liftIO getCurrentDirectory
     canonical <- liftIO $ canonicalizePath fp
-    parseThing' (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
+    parseThing' ParseCandidate
+       { pcBasePath  = Just curDir
+       , pcOrigin    = Nothing
+       , pcFileKind  = Nothing
+       , pcCanonical = canonical
+       , pcDefineds  = Set.empty
+       }
+parseFormalAmpersand :: (HasHandle env, HasVerbosity env, HasExcellOutputOptions env) => RIO env (Guarded P_Context)
+parseFormalAmpersand = parseThing ParseCandidate
+       { pcBasePath  = Nothing
+       , pcOrigin    = Just $ Origin "Formal Ampersand specification"
+       , pcFileKind  = Just FormalAmpersand
+       , pcCanonical = "AST.adl"
+       , pcDefineds  = Set.empty
+       }
+parseFormalAmpersandDocumented :: (HasHandle env, HasVerbosity env, HasExcellOutputOptions env) => RIO env (Guarded P_Context)
+parseFormalAmpersandDocumented = parseThing ParseCandidate
+       { pcBasePath  = Nothing
+       , pcOrigin    = Just $ Origin "Formal Ampersand specification + documentation"
+       , pcFileKind  = Just FormalAmpersand
+       , pcCanonical = "AST.adl"  --TODO: Must be replaced by documented formal ampersand script
+       , pcDefineds  = Set.empty
+       }
+parseSystemContext :: (HasHandle env, HasVerbosity env, HasExcellOutputOptions env) => RIO env (Guarded P_Context)
+parseSystemContext = parseThing ParseCandidate
+       { pcBasePath  = Nothing
+       , pcOrigin    = Just $ Origin "Ampersand specific system context"
+       , pcFileKind  = Just SystemContext
+       , pcCanonical = "SystemContext.adl"
+       , pcDefineds  = Set.empty
+       }
 
-parseMeta :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
-             RIO env (Guarded P_Context)
-parseMeta = parseThing (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
-
-parseSystemContext :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
-                      RIO env (Guarded P_Context)
-parseSystemContext = parseThing (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
-
-parseThing :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
+parseThing :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
               ParseCandidate -> RIO env (Guarded P_Context)
 parseThing pc = snd <$> parseThing' pc 
 
-parseThing' :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
+parseThing' :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
                ParseCandidate -> RIO env ([ParseCandidate], Guarded P_Context) 
 parseThing' pc = do
   results <- parseADLs [] [pc]
@@ -65,7 +88,7 @@ parseThing' pc = do
                           h:tl -> foldr mergeContexts h tl
 
 -- | Parses several ADL files
-parseADLs :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
+parseADLs :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
              [ParseCandidate]         -- ^ The list of files that have already been parsed
           -> [ParseCandidate]         -- ^ A list of files that still are to be parsed.
           -> RIO env (Guarded [(ParseCandidate, P_Context)]) -- ^ The resulting contexts and the ParseCandidate that is the source for that P_Context
@@ -75,15 +98,16 @@ parseADLs parsedFilePaths fpIncludes =
     x:xs -> if x `elem` parsedFilePaths
             then parseADLs parsedFilePaths xs
             else whenCheckedM (parseSingleADL x) parseTheRest
-        where parseTheRest :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env,HasOptions env) =>
-                              (P_Context, [ParseCandidate]) -> RIO env (Guarded [(ParseCandidate, P_Context)])
-              parseTheRest (ctx, includes) = whenCheckedM (parseADLs (x:parsedFilePaths) (includes++xs)) $
-                                                  return . pure . (:) (x,ctx) 
+        where parseTheRest :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
+                              (P_Context, [ParseCandidate]) 
+                           -> RIO env (Guarded [(ParseCandidate, P_Context)])
+              parseTheRest (ctx, includes) = 
+                  whenCheckedM (parseADLs (parsedFilePaths++[x]) (includes++xs)) 
+                                          (\rst -> pure . pure $ (x,ctx):rst)        --return . pure . (:) (x,ctx) 
 
 data ParseCandidate = ParseCandidate 
        { pcBasePath :: Maybe FilePath -- The absolute path to prepend in case of relative filePaths 
        , pcOrigin   :: Maybe Origin
-       , pcFilePath :: FilePath -- The absolute or relative filename as found in the INCLUDE statement
        , pcFileKind :: Maybe FileKind -- In case the file is included into ampersand.exe, its FileKind.
        , pcCanonical :: FilePath -- The canonicalized path of the candicate
        , pcDefineds :: Set.Set PreProcDefine
@@ -96,10 +120,9 @@ instance Eq ParseCandidate where
 parseSingleADL :: (HasExcellOutputOptions env, HasVerbosity env,HasHandle env) =>
     ParseCandidate -> RIO env (Guarded (P_Context, [ParseCandidate]))
 parseSingleADL pc
- = do sayWhenLoudLn $ "Reading file " ++ filePath 
-                    ++ (case pcFileKind pc of
-                         Just _ -> " (from within ampersand.exe)"
-                         Nothing -> mempty)
+ = do case pcFileKind pc of
+        Just _ -> {- reading a file that is included into ampersand.exe -} return ()
+        Nothing -> sayWhenLoudLn $ "Reading file " ++ filePath 
       exists <- liftIO $ doesFileExist filePath
       if isJust (pcFileKind pc) || exists
       then parseSingleADL'
@@ -146,7 +169,6 @@ parseSingleADL pc
                       defineds  = processFlags (pcDefineds pc) defs
                   return $ Checked ParseCandidate { pcBasePath  = Just filePath
                                         , pcOrigin    = Just org
-                                        , pcFilePath  = str
                                         , pcFileKind  = pcFileKind pc
                                         , pcCanonical = canonical
                                         , pcDefineds  = defineds

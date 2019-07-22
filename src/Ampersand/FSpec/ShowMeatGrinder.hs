@@ -8,7 +8,9 @@
 module Ampersand.FSpec.ShowMeatGrinder
   ( makeMetaFile
   , grind 
-  , MetaFSpec(..)
+  , addSemanticModel
+  , GrindInfo(..)
+  , MetaModel(..)
   )
 where
 
@@ -22,28 +24,38 @@ import           Ampersand.Misc
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 
-data MetaFSpec = MetaFSpec
-    { metaModelFileName :: String
-    , model             :: FSpec
-    , transformers      :: FSpec -> [Transformer]
+data MetaModel = FormalAmpersand | FADocumented | SystemContext
+       deriving (Eq, Ord, Enum, Bounded, Show)
+instance Named MetaModel where
+  name FormalAmpersand = "Formal Ampersand"
+  name FADocumented    = "Formal Ampersand (documented)"
+  name SystemContext   = "System context"
+
+data GrindInfo = GrindInfo
+    { metaModel    :: MetaModel
+    , pModel       :: P_Context
+    , fModel       :: FSpec
+    , transformers :: FSpec -> [Transformer]
     }
--- ^ Create a P_Context that contains meta-information from 
---   an FSpec.
-grind :: MetaFSpec -> FSpec -> P_Context
-grind metaModel userFspec =
+
+-- | The 'grind' function creates a P_Context that contains the population for every
+--   relation in the metamodel. The population is defined by the given FSpec,
+--   which usually is the FSpec of the user. 
+grind :: GrindInfo -> FSpec -> P_Context
+grind grindInfo userFspec =
   PCtx{ ctx_nm     = "Grinded_"++name userFspec
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = map aRelation2pRelation . Set.toList . instances . model $ metaModel
+      , ctx_ds     = map aRelation2pRelation . Set.toList . instances . fModel $ grindInfo
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
       , ctx_reprs  = []
       , ctx_vs     = []
-      , ctx_gs     = map aClassify2pClassify . Set.toList . instances . model $ metaModel
+      , ctx_gs     = map aClassify2pClassify . Set.toList . instances . fModel $ grindInfo
       , ctx_ifcs   = []
       , ctx_ps     = []
       , ctx_pops   = mapMaybe populationFromPop . Set.toList $ metaPops2
@@ -52,8 +64,8 @@ grind metaModel userFspec =
   where
     metaPops2 :: Set.Set Pop
     metaPops2 = Set.fromList 
-              . concatMap (Set.toList . grindedPops metaModel userFspec)
-              . Set.toList . instances . model $ metaModel
+              . concatMap (Set.toList . grindedPops grindInfo userFspec)
+              . Set.toList . instances . fModel $ grindInfo
     populationFromPop :: Pop -> Maybe P_Population
     populationFromPop pop =
       case pop of 
@@ -85,39 +97,36 @@ grind metaModel userFspec =
                     PopAlphaNumeric str -> ScriptString orig str
                     PopInt i            -> ScriptInt orig i
            
-
-
-
-      --    case string2AValue . unwords . words . show . popPairs $ pop of
-      --       Checked x _ 
-      --         -> case checkAtomValues (popRelation pop) x of
-      --              Checked _ _ -> x
-      --              Errors errs -> fatal . unlines $
-      --                 [ "ERROR in tupels that are generated in the meatgrinder for relation"
-      --                 , "  "++showRel (popRelation pop)
-      --                 ] ++ (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
-
-      --       Errors errs 
-      --         -> fatal . unlines $
-      --                 [ "ERROR in tupels that are generated in the meatgrinder for relation"
-      --                 , "  "++showRel (popRelation pop)
-      --                 ] ++ (intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
-      -- checkAtomValues :: Relation -> [PAtomPair] -> Guarded AAtomPairs
-      -- checkAtomValues rel pps = Set.fromList <$> (sequence $ map fun pps)
-      --       where
-      --         fun pp = mkAtomPair 
-      --           <$> pAtomValue2aAtomValue (source rel) (ppLeft  pp)
-      --           <*> pAtomValue2aAtomValue (target rel) (ppRight pp)
-            
-      --         pAtomValue2aAtomValue :: A_Concept -> PAtomValue -> Guarded AAtomValue
-      --         pAtomValue2aAtomValue cpt pav =
-      --           case unsafePAtomVal2AtomValue typ (Just cpt) pav of
-      --             Left msg -> Errors . pure $ mkIncompatibleAtomValueError pav msg
-      --             Right av -> pure av
-      --           where typ = cptTType formalAmpersand cpt
-            
-      -- string2AValue :: String -> Guarded [PAtomPair]
-      -- string2AValue = runParser pContent "Somewhere in formalAmpersand files"
+-- | When the semantic model of a metamodel is added to the user's model, we add
+--   the relations as wel as the generalisations to it, so they are available to the user
+--   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
+addSemanticModel :: GrindInfo -> P_Context -> P_Context
+addSemanticModel gInfo pCtx = 
+   PCtx    
+        { ctx_nm     = ctx_nm     pCtx
+        , ctx_pos    = ctx_pos    pCtx
+        , ctx_lang   = ctx_lang   pCtx
+        , ctx_markup = ctx_markup pCtx
+        , ctx_pats   = ctx_pats   pCtx `uni` ctx_pats   pCtxOfMetaModel
+        , ctx_rs     = ctx_rs     pCtx `uni` ctx_rs     pCtxOfMetaModel
+        , ctx_ds     = ctx_ds     pCtx `uni` ctx_ds     pCtxOfMetaModel
+        , ctx_cs     = ctx_cs     pCtx `uni` ctx_cs     pCtxOfMetaModel
+        , ctx_ks     = ctx_ks     pCtx `uni` ctx_ks     pCtxOfMetaModel
+        , ctx_rrules = ctx_rrules pCtx `uni` ctx_rrules pCtxOfMetaModel
+        , ctx_reprs  = ctx_reprs  pCtx `uni` ctx_reprs  pCtxOfMetaModel
+        , ctx_vs     = ctx_vs     pCtx `uni` ctx_vs     pCtxOfMetaModel
+        , ctx_gs     = ctx_gs     pCtx `uni` ctx_gs     pCtxOfMetaModel
+        , ctx_ifcs   = ctx_ifcs   pCtx `uni` (if True -- DISABLED. See issue #979
+                                              then [] 
+                                              else ctx_ifcs   pCtxOfMetaModel)
+        , ctx_ps     = ctx_ps     pCtx 
+        , ctx_pops   = ctx_pops   pCtx `uni` ctx_pops   pCtxOfMetaModel
+        , ctx_metas  = ctx_metas  pCtx
+        }
+           where
+            pCtxOfMetaModel = pModel gInfo
+            uni :: Eq a => [a] -> [a] -> [a]
+            uni xs ys = L.nub (xs ++ ys)
  
 data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
                , popRelation :: Relation
@@ -132,7 +141,7 @@ showPop pop =
       Comment{} -> L.intercalate "\n" . map ("-- " ++) . comment $ pop
 -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
-makeMetaFile :: (HasGenTime env) => env -> MetaFSpec -> FSpec -> (FilePath,String)
+makeMetaFile :: (HasGenTime env) => env -> GrindInfo -> FSpec -> (FilePath,String)
 makeMetaFile env metaModel userFspec
   = ("MetaPopulationFile.adl", content )
   where
@@ -161,11 +170,11 @@ makeMetaFile env metaModel userFspec
        . map (lines . showPop )
        . concatMap (Set.toList . popsOfRelation)
        . L.sortOn showRel
-       . Set.toList . instances . model $ metaModel
+       . Set.toList . instances . fModel $ metaModel
     listOfConcepts :: [String]
     listOfConcepts = map ("-- "++) .
                      L.intercalate [""] . 
-                     map showCpt . L.sortOn name . Set.toList . instances . model $ metaModel
+                     map showCpt . L.sortOn name . Set.toList . instances . fModel $ metaModel
        where
         showCpt :: A_Concept -> [String]
         showCpt cpt = [name cpt] ++ ( map ("  "++)
@@ -190,59 +199,55 @@ makeMetaFile env metaModel userFspec
                                                              Src -> source rel == cpt
                                                              Tgt -> target rel == cpt
                                                    ) 
-                         . instances . model $ metaModel
+                         . instances . fModel $ metaModel
 
-grindedPops :: MetaFSpec -> FSpec -> Relation -> Set.Set Pop
-grindedPops metaModel userFspec rel = 
-  case filter (isForRel rel) ((transformers metaModel) userFspec) of
+grindedPops :: GrindInfo -> FSpec -> Relation -> Set.Set Pop
+grindedPops grindInfo userFspec rel = 
+  case filter (isForRel rel) ((transformers grindInfo) userFspec) of
     []  -> fatal . unlines $ 
-              ["Every relation in "++metaModelFileName metaModel++" must have a transformer in Transformers.hs"
+              ["Every relation in "++name (metaModel grindInfo)++" must have a transformer in Transformers.hs"
               ,"   Violations:"
               ] ++ map ("      "++) viols
             where 
               viols = map showRelOrigin 
                     . Set.toList
                     . Set.filter hasNoTransformer 
-                    . instances . model $ metaModel
+                    . instances . fModel $ grindInfo
               hasNoTransformer :: Relation -> Bool
-              hasNoTransformer d = null (filter (isForRel d) ((transformers metaModel) userFspec))
+              hasNoTransformer d = null (filter (isForRel d) ((transformers grindInfo) userFspec))
               showRelOrigin :: Relation -> String
               showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
     ts  -> Set.fromList . map transformer2Pop $ ts 
   where
-    --metaModelFileName :: String
-    --metaModelFileName = "formalAmpersand.adl"
-    --transformers :: FSpec -> [Transformer]
-    --transformers = transformersFormalAmpersand
     transformer2Pop :: Transformer -> Pop
     transformer2Pop (Transformer relName src tgt popPairs) 
       | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ popPairs) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
-                 , "   match the TType of the concept as specified in "++metaModelFileName metaModel++"."
+                 , "   match the TType of the concept as specified in "++name (metaModel grindInfo)++"."
                  , "   The population of the relation `"++ relName ++"["++ src ++" * "++ tgt ++"]` "
-                 , "   violates this rule for concept `"++ src ++"`. In "++metaModelFileName metaModel++" "
-                 , "   the TType of this concept is "++(show . cptTType (model metaModel) $ source rel)++"."
+                 , "   violates this rule for concept `"++ src ++"`. In "++name (metaModel grindInfo)++" "
+                 , "   the TType of this concept is "++(show . cptTType (fModel grindInfo) $ source rel)++"."
                  ]
       | not ( all (ttypeOf (target rel)) (map snd . Set.toList $ popPairs) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
-                 , "   match the TType of the concept as specified in "++metaModelFileName metaModel++"."
+                 , "   match the TType of the concept as specified in "++name (metaModel grindInfo)++"."
                  , "   The population of the relation `"++ relName ++"["++ src ++" * "++ tgt ++"]` "
-                 , "   violates this rule for concept `"++ tgt ++"`. In "++metaModelFileName metaModel++" "
-                 , "   the TType of this concept is "++(show . cptTType (model metaModel) $ target rel)++"." 
+                 , "   violates this rule for concept `"++ tgt ++"`. In "++name (metaModel grindInfo)++" "
+                 , "   the TType of this concept is "++(show . cptTType (fModel grindInfo) $ target rel)++"." 
                  ]
       | otherwise = Pop { popRelation = rel
                         , popPairs    = popPairs
                         }
       where ttypeOf :: A_Concept -> (PopAtom -> Bool)
             ttypeOf cpt =
-              case (cptTType (model metaModel)) cpt of
+              case (cptTType (fModel grindInfo)) cpt of
                 Object          -> isDirtyId
                 Alphanumeric    -> isTextual
                 BigAlphanumeric -> isTextual
                 HugeAlphanumeric -> isTextual
-                tt              -> fatal $ "No test available yet. "++show tt++" encountered for the first time in "++metaModelFileName metaModel++""
+                tt              -> fatal $ "No test available yet. "++show tt++" encountered for the first time in "++name (metaModel grindInfo)++""
             isDirtyId pa = case pa of
                             DirtyId{}         -> True
                             _                 -> False

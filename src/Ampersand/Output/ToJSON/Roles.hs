@@ -20,7 +20,6 @@ instance ToJSON Roles where
   toJSON = amp2Jason
 instance JSON FSpec Roles where
  fromAmpersand env fSpec _ = Roles . map (fromAmpersand env fSpec) . fRoles $ fSpec
-
 instance JSON (Role,Int) RoleJson where
  fromAmpersand _ fSpec (role',_) = RoleJson
   { roleJSONid         = idWithoutType role'

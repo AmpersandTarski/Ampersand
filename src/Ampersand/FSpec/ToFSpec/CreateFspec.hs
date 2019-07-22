@@ -1,28 +1,24 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
-  ( createFSpec
-  , pCtx2Fspec
+  ( BuildPrescription, BuildStep(..), BuildAction(..)
+  , createFspec
   )
 
 where
 import           Ampersand.ADL1
-import           Ampersand.ADL1.P2A_Converters
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Core.A2P_Converters
 import           Ampersand.Core.ShowPStruct  -- Just for debugging purposes
 import           Ampersand.FSpec.FSpec
-import           Ampersand.FSpec.ShowMeatGrinder
-import           Ampersand.FSpec.ToFSpec.ADL2FSpec
-import           Ampersand.FSpec.Transformers 
+import           Ampersand.FSpec.MetaModels
 import           Ampersand.Input
 import           Ampersand.Misc
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
+import qualified RIO.Map as Map
 import qualified RIO.Set as Set
-import           System.FilePath
-
+import           Data.Foldable (foldrM)
 -- | create an FSpec, based on the provided command-line options.
 --   Without the command-line switch "--meta-tables", 
 --   Ampersand compiles its script (userP_Ctx) straightforwardly in first order relation algebra.
@@ -36,137 +32,49 @@ import           System.FilePath
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createFSpec.
-createFSpec :: (HasGenTime env, HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasCommands env, HasDirOutput env, HasRootFile env, HasMetaOptions env, HasOptions env, HasHandle env, HasVerbosity env) => 
-               RIO env (Guarded FSpec)
-createFSpec =
-  do env <- ask
-     genMetaFile <- view genMetaFileL
-     genRapPopulation <- view genRapPopulationL
-     addSemanticMetamodel <- view addSemanticMetamodelL
-     fAmpP_Ctx :: Guarded P_Context <-
-        if genMetaFile ||
-           genRapPopulation ||
-           addSemanticMetamodel
-        then parseMeta  -- the P_Context of the formalAmpersand metamodel
-        else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
-               $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
+createFspec :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasCommands env, HasRootFile env, HasHandle env, HasVerbosity env) => 
+               BuildPrescription -> RIO env (Guarded FSpec)
+createFspec recipe = do 
+    env <- ask
+    -- grindInfoMap :: Map MetaModel GrindInfo
+    grindInfoMap <- do 
+        let fun m = (,) m <$> mkGrindInfo m
+        Map.fromList <$> (sequence $ fun <$> [minBound ..])
+    rawUserP_Ctx:: Guarded P_Context <- do
+       fileName <- view fileNameL
+       case fileName of
+         Just x -> do
+             pctx <- snd <$> parseADL x -- the P_Context of the user's sourceFile
+             return $ (if view dataAnalysisL env then encloseInConstraints else id) <$> pctx 
+         Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
+    return . join $ cook env grindInfoMap recipe <$> rawUserP_Ctx
 
-    -- userP_Ctx contains the user-specified context from the user's Ampersand source code
-     fileName <- view fileNameL
-     userP_Ctx :: Guarded P_Context <- 
-        case fileName of
-          Just x -> snd <$> parseADL x -- the P_Context of the user's sourceFile
-          Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
-    
-     systemP_Ctx:: Guarded P_Context <- parseSystemContext
-     useSystemContext <- view genPrototypeL
-     let fAmpModel :: MetaFSpec
-         fAmpModel = MetaFSpec
-            { metaModelFileName = "FormalAmpersand.adl"
-            , model             = 
-                case pCtx2Fspec env fAmpP_Ctx of
-                  Checked f _ -> f
-                  Errors errs -> fatal . unlines $
-                      "The FormalAmpersand ADL scripts are not type correct:"
-                    : (L.intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
-            , transformers  = transformersFormalAmpersand
-            }
-         sysCModel :: MetaFSpec
-         sysCModel = MetaFSpec
-            { metaModelFileName = "SystemContext.adl"
-            , model             = 
-                case pCtx2Fspec env systemP_Ctx of
-                  Checked f _ -> f
-                  Errors errs -> fatal . unlines $
-                      "The SystemContext ADL scripts are not type correct:"
-                    : (L.intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
-            , transformers  = transformersSystemContext
-            }
-         userP_CtxPlus :: Guarded P_Context
-         userP_CtxPlus =
-              if addSemanticMetamodel 
-              then addSemanticModel (model fAmpModel) <$> userP_Ctx
-              else userP_Ctx
-         
-         -- | When the semantic model of a metamodel is added to the user's model, we add
-         --   the relations as wel as the generalisations to it, so they are available to the user
-         --   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
-         addSemanticModel :: FSpec -> P_Context -> P_Context
-         addSemanticModel metamodel pCtx =
-            pCtx { ctx_pos    = ctx_pos    pCtx
-                 , ctx_lang   = ctx_lang   pCtx
-                 , ctx_markup = ctx_markup pCtx
-                 , ctx_pats   = ctx_pats   pCtx `uni` map aPattern2pPattern     (Set.toList . instances $ metamodel)
-                 , ctx_rs     = ctx_rs     pCtx `uni` map aRule2pRule           (Set.toList . instances $ metamodel)
-                 , ctx_ds     = ctx_ds     pCtx `uni` map aRelation2pRelation   (Set.toList . instances $ metamodel)
-                 , ctx_cs     = ctx_cs     pCtx `uni` map id                    (Set.toList . instances $ metamodel)
-                 , ctx_ks     = ctx_ks     pCtx `uni` map aIdentityDef2pIdentityDef (Set.toList . instances $ metamodel)
-                 , ctx_rrules = ctx_rrules pCtx `uni` map aRoleRule2pRoleRule   (Set.toList . instances $ metamodel)
-                 , ctx_reprs  = ctx_reprs  pCtx `uni` (reprList . fcontextInfo $ metamodel)
-                 , ctx_vs     = ctx_vs     pCtx `uni` map aViewDef2pViewDef     (Set.toList . instances $ metamodel)
-                 , ctx_gs     = ctx_gs     pCtx `uni` map aClassify2pClassify   (Set.toList . instances $ metamodel)
-                 , ctx_ifcs   = ctx_ifcs   pCtx `uni` map aInterface2pInterface (Set.toList . instances $ metamodel)
-                 , ctx_ps     = ctx_ps     pCtx 
-                 , ctx_pops   = ctx_pops   pCtx `uni` map aPopulation2pPopulation (Set.toList . instances $ metamodel)
-                 , ctx_metas  = ctx_metas  pCtx
-                 }
-           where
-            uni :: Eq a => [a] -> [a] -> [a]
-            uni xs ys = L.nub (xs ++ ys)
-         userGFSpec :: Guarded FSpec
-         userGFSpec = 
-            pCtx2Fspec env $ 
-              if useSystemContext 
-              then mergeContexts <$> userPlus
-                                 <*> (grind sysCModel <$> pCtx2Fspec env userPlus) -- grinds the session information out of the user's script
-              else userP_Ctx
-           where 
-            userPlus :: Guarded P_Context
-            userPlus = addSemanticModel (model sysCModel) <$> userP_Ctx
-         result :: Guarded FSpec
-         result = userGFSpec
-         --   if genRapPopulation
-         --   then case userGFSpec of 
-         --          Errors err -> Errors err  
-         --          Checked usrFSpec _
-         --                   -> let grinded :: P_Context
-         --                          grinded = grind fAmpModel usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
-         --                          metaPopPCtx :: Guarded P_Context
-         --                          metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
-         --                          metaPopFSpec :: Guarded FSpec
-         --                          metaPopFSpec = pCtx2Fspec env metaPopPCtx
-         --                      in MultiFSpecs <$> (pCtx2Fspec env $ mergeContexts <$> userP_CtxPlus <*> pure grinded)
-         --                                     <*> (Just <$> metaPopFSpec)
-         --   else MultiFSpecs <$> userGFSpec <*> pure Nothing
-     res <- if genMetaFile
-            then writeMetaFile fAmpModel userGFSpec
-            else return $ pure ()
-     return (res >> result)
-  where
-    writeMetaFile :: (HasGenTime env, HasDirOutput env, HasVerbosity env, HasHandle env) => MetaFSpec -> Guarded FSpec -> RIO env (Guarded ())
-    writeMetaFile metaModel userSpec = do
-       env <- ask
-       dirOutput <- view dirOutputL
-       case makeMetaFile env metaModel <$> userSpec of
-        Checked (filePath,metaContents) ws -> 
-                  do sayWhenLoudLn $ "Generating meta file in path "++dirOutput
-                     liftIO $ writeFile (dirOutput </> filePath) metaContents      
-                     sayWhenLoudLn $ "\"" ++ filePath ++ "\" written"
-                     return $ Checked () ws
-        Errors err -> return (Errors err)
-
-pCtx2Fspec :: (HasCommands env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) 
-   => env -> Guarded P_Context -> Guarded FSpec
-pCtx2Fspec env c = makeFSpec env <$> join (pCtx2aCtx env <$> encloseInConstraints env c)
+cook :: (HasOutputLanguage env, HasNamespace env, HasGenInterfaces env, HasDefaultCrud env, HasSqlBinTables env) => env -> Map MetaModel GrindInfo -> BuildPrescription -> P_Context -> Guarded FSpec
+cook env grindInfoMap steps pCtx = join $ pCtx2Fspec env <$> foldrM doStep pCtx steps
+      where 
+        doStep :: BuildStep -> P_Context -> Guarded P_Context
+        doStep (BuildStep metaModel action) pCtx'= 
+          case action of
+            AddSemanticModel -> pure $ addSemanticModel gInfo pCtx'
+            GrindOnly        -> grind gInfo <$> pCtx2Fspec env pCtx'
+            GrindAndMerge    -> mergeContexts pCtx' <$> grind gInfo <$> pCtx2Fspec env pCtx'
+          where gInfo :: GrindInfo
+                gInfo = case Map.lookup metaModel grindInfoMap of
+                          Just x -> x
+                          Nothing -> fatal $ "metaModel `"++show metaModel++"`was not found!"
+           
+--TODO: fix the call to encloseInConstraints by using the right Command
+--pCtx2Fspec :: (HasCommands env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) 
+--   => env -> Guarded P_Context -> Guarded FSpec
+--pCtx2Fspec env c = makeFSpec env <$> join (pCtx2aCtx env <$> encloseInConstraints env c)
 
 -- | To analyse spreadsheets means to enrich the context with the relations that are defined in the spreadsheet.
 --   The function encloseInConstraints does not populate existing relations.
 --   Instead it invents relations from a given population, which typically comes from a spreadsheet.
 --   This is different from the normal behaviour, which checks whether the spreadsheets comply with the Ampersand-script.
 --   This function is called only with option 'dataAnalysis' on.
-encloseInConstraints :: (HasCommands env) => env -> Guarded P_Context -> Guarded P_Context
-encloseInConstraints env (Checked pCtx warnings) 
-    | view dataAnalysisL env = Checked enrichedContext warnings
+encloseInConstraints :: P_Context -> P_Context
+encloseInConstraints pCtx = enrichedContext
   where
   --The result of encloseInConstraints is a P_Context enriched with the relations in genericRelations
   --The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
@@ -178,8 +86,6 @@ encloseInConstraints env (Checked pCtx warnings)
     declaredRelations ::  [P_Relation]   -- relations declared in the user's script
     popRelations ::       [P_Relation]   -- relations that are "annotated" by the user in Excel-sheets.
                                          -- popRelations are derived from P_Populations only.
-    genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
-    genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
     declaredRelations = L.nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
     -- | To derive relations from populations, we derive the signature from the population's signature directly.
     --   Multiplicity properties are added to constrain the population without introducing violations.
@@ -194,7 +100,7 @@ encloseInConstraints env (Checked pCtx warnings)
                      , dec_Mean   = mempty
                      , pos        = origin pop
                      }]
-       , signature rel `notElem` map signature declaredRelations
+       , signatur rel `notElem` map signatur declaredRelations
        ]
        where
           computeProps :: P_Relation -> P_Relation
@@ -223,6 +129,10 @@ encloseInConstraints env (Checked pCtx warnings)
                cartesianProduct :: -- Should be implemented as Set.cartesianProduct, but isn't. See https://github.com/commercialhaskell/rio/issues/177
                                    (Ord a, Ord b) => Set a -> Set b -> Set (a, b)
                cartesianProduct xs ys = Set.fromList $ liftA2 (,) (toList xs) (toList ys)
+    genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
+    genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
+   -- | To derive relations from populations, we derive the signature from the population's signature directly.
+   --   Multiplicity properties are added to constrain the population without introducing violations.
     (genericRelations, genericPopulations)
      = recur [] popRelations pops invGen
        where
@@ -288,8 +198,8 @@ encloseInConstraints env (Checked pCtx warnings)
              | cl<-eqCl fst [ (g,specific gen) | gen<-ctx_gs pCtx, g<-NEL.toList (generics gen)]
              , g<-[fst (NEL.head cl)], spcs<-[[snd c | c<-NEL.toList cl, snd c/=g]], not (null spcs)
              ]
-    signature :: P_Relation -> (String, P_Sign)
-    signature rel =(name rel, dec_sign rel)
+    signatur :: P_Relation -> (String, P_Sign)
+    signatur rel =(name rel, dec_sign rel)
     concepts = L.nub $
             [ PCpt (name pop) | pop@P_CptPopu{}<-ctx_pops pCtx] ++
             [ PCpt src' | P_RelPopu{p_src = src}<-ctx_pops pCtx, Just src'<-[src]] ++
@@ -312,9 +222,18 @@ encloseInConstraints env (Checked pCtx warnings)
        [ rpop{p_popps=concat (fmap p_popps cl)}
        | cl<-eqCl (\pop->(name pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NEL.head cl]
        ]
-encloseInConstraints _ gCtx = gCtx
 
 --    specializations :: P_Concept -> [P_Concept]
 --    specializations cpt = nub $ cpt: [ specific gen | gen<-ctx_gs pCtx, cpt `elem` generics gen ]
 --    generalizations :: P_Concept -> [P_Concept]
 --    generalizations cpt = nub $ cpt: [ g | gen<-ctx_gs pCtx, g<-NEL.toList (generics gen), cpt==specific gen ]
+
+type BuildPrescription = [BuildStep]
+data BuildStep = BuildStep
+  { bsMetamodel :: MetaModel
+  , bsAction :: BuildAction
+  }
+data BuildAction = 
+    AddSemanticModel
+  | GrindOnly
+  | GrindAndMerge  

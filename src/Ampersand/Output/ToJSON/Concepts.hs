@@ -55,6 +55,7 @@ instance ToJSON TableCols where
   toJSON = amp2Jason
 instance JSON FSpec Concepts where
  fromAmpersand env fSpec _ = Concepts (map (fromAmpersand env fSpec) (Set.elems $ concs fSpec))
+
 instance JSON A_Concept Concept where
  fromAmpersand env fSpec cpt = Concept
   { cptJSONid                = idWithoutType cpt
@@ -114,4 +115,5 @@ instance JSON ViewSegment Segment where
                        ViewText str -> Just str
                        _            -> Nothing
   }
+
     

@@ -80,7 +80,7 @@ ampersand' = do
     case fileName of
       Just _ -> do -- An Ampersand script is provided that can be processed
             sayLn "Processing your model..."
-            gFSpec <- createFSpec
+            gFSpec <- createFspec []
             case gFSpec of
               Errors err    -> 
                  exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 

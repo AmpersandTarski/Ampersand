@@ -28,7 +28,7 @@ import           System.FilePath ((</>), (-<.>))
 import           Text.Pandoc
 import           Text.Pandoc.Builder
 --import           Ampersand.Commands.Proto
-
+import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
@@ -45,21 +45,21 @@ generateAmpersandOutput fSpec = do
   where 
    conditionalActions :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
            => env -> [(Bool, RIO env ())]
-   conditionalActions env = 
-      [ ( view genUMLL env            , doGenUML              )
-      , ( view genHaskellL env        , doGenHaskell          )
-      , ( view sqlDumpL env           , doGenSQLdump          )
-      , ( view export2adlL env        , doGenADL              )
-      , ( view dataAnalysisL env      , doGenADL              )
-      , ( view genFSpecL env          , doGenDocument         )
-      , ( view genFPAExcelL env       , doGenFPAExcel         )
-      , ( view genPOPExcelL env       , doGenPopsXLSX         )
-      , ( view proofsL env            , doGenProofs           )
-      , ( view validateSQLL env       , doValidateSQLTest     )
---      , ( view genPrototypeL env      , doGenProto            )
-      , ( view genRapPopulationL env  , doGenRapPopulation    )
-      ]
-   
+   conditionalActions env = []
+      -- [ ( view genUMLL env            , doGenUML              )
+      -- , ( view genHaskellL env        , doGenHaskell          )
+      -- , ( view sqlDumpL env           , doGenSQLdump          )
+      -- , ( view export2adlL env        , doGenADL              )
+      -- , ( view dataAnalysisL env      , doGenADL              )
+      -- , ( view genFSpecL env          , doGenDocument         )
+      -- , ( view genFPAExcelL env       , doGenFPAExcel         )
+      -- , ( view genPOPExcelL env       , doGenPopsXLSX         )
+      -- , ( view proofsL env            , doGenProofs           )
+      -- , ( view validateSQLL env       , doValidateSQLTest     )
+      -- , ( view genPrototypeL env      , doGenProto            )
+      -- , ( view genRapPopulationL env  , doGenRapPopulation    )
+      -- ]
+
    -- | For importing and analysing data, Ampersand allows you to annotate an Excel spreadsheet (.xlsx) and turn it into an Ampersand model.
    -- By default 'doGenADL' exports the model to Export.adl, ready to be picked up by the user and refined by adding rules.
    -- 1. To analyze data in a spreadsheet, prepare your spreadsheet, foo.xlsx,  and run "Ampersand --dataAnalysis foo.xlsx".
@@ -160,20 +160,39 @@ generateAmpersandOutput fSpec = do
        errMsg <- validateRulesSQL fSpec
        unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
 
-   doGenRapPopulation :: (HasEnvironment env, HasProtoOpts env, HasCommands env, HasVerbosity env, HasHandle env, HasAllowInvariantViolations env, HasDirPrototype env) 
-        => RIO env ()
-   doGenRapPopulation = do
-     dirPrototype <- view dirPrototypeL
-     allowInvariantViolations <- view allowInvariantViolationsL
-     if null (violationsOfInvariants fSpec) || allowInvariantViolations
-     then do
-        sayLn "Generating RAP population..."
-        liftIO $ createDirectoryIfMissing True dirPrototype
-        generateJSONfiles fSpec
-        sayWhenLoudLn $ "RAP population file has been written to " ++ dirPrototype
-     else do exitWith NoPrototypeBecauseOfRuleViolations
+  --  doGenRapPopulation :: (HasEnvironment env, HasProtoOpts env, HasCommands env, HasVerbosity env, HasHandle env, HasAllowInvariantViolations env, HasDirPrototype env) 
+  --       => Guarded (RIO env ())
+  --  doGenRapPopulation = do
+  --    dirPrototype <- view dirPrototypeL
+  --    allowInvariantViolations <- view allowInvariantViolationsL
+  --    let recipe :: [BuildStep]
+  --        recipe = []
+  --        aap :: RIO env (Guarded FSpec)
+  --        aap = createFspec recipe
+  --        wim :: RIO env (Guarded FSpec) -> (Guarded (Guarded FSpec))
+  --        wim x = undefined
+  --    gFSpec <- wim $ createFspec recipe
+  --    let noot :: Guarded FSpec
+  --        noot = gFSpec
+  --        mies :: Guarded (RIO env0 ())
+  --        mies = action <$> gFSpec
+  --    (action <$> gFSpec )
+  --    where
+  --       action :: FSpec -> RIO env ()
+  --       action fSpec = do 
+  --         if null (violationsOfInvariants fSpec) || allowInvariantViolations
+  --         then do
+  --             sayLn "Generating RAP population..."
+  --             liftIO $ createDirectoryIfMissing True dirPrototype
+  --             generateJSONfiles fSpec
+  --             sayWhenLoudLn $ "RAP population file has been written to " ++ dirPrototype
+  --         else do exitWith NoPrototypeBecauseOfRuleViolations
 
-
+   violationsOfInvariants :: FSpec -> [(Rule,AAtomPairs)]
+   violationsOfInvariants fSpec = 
+     [(r,vs) |(r,vs) <- allViolations fSpec
+             , not (isSignal r)
+       ]
 
    reportInvViolations :: (HasAllowInvariantViolations env, HasVerbosity env, HasHandle env) => [(Rule,AAtomPairs)] -> RIO env ()
    reportInvViolations []    = sayWhenLoudLn $ "No invariant violations found for the initial population"

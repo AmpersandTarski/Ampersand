@@ -10,7 +10,6 @@ import           Ampersand.Basics
 import           Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import qualified RIO.List as L
 
 data Populations = Populations
    { epJSONatoms :: [AtomValuesOfConcept]
@@ -63,6 +62,7 @@ instance JSON Relation PairsOfRelation where
    { porJSONrelation = T.pack . showRel $ dcl
    , porJSONlinks = map (fromAmpersand env fSpec) . Set.elems . pairsInExpr fSpec $ EDcD dcl
    }
+
 instance JSON AAtomPair JPair where
   fromAmpersand _ _ p = JPair
     { prJSONsrc = T.pack . showValADL . apLeft $ p 
