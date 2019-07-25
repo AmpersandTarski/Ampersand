@@ -10,8 +10,14 @@ module Ampersand.Misc.Commands
         )
 where
 import           Ampersand.Basics
+import           Ampersand.Commands.Proto
 import           Ampersand.Misc.Config
+import           Ampersand.Misc.HasClasses
+import qualified Ampersand.Misc.Options as Deprecated (HasProtoOpts)
+import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Options.GlobalParser
+import           Ampersand.FSpec.ToFSpec.CreateFspec
+import           Ampersand.Options.ProtoParser
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Writer
 --import           Generics.Deriving.Monoid (memptydefault, mappenddefault)
@@ -19,11 +25,12 @@ import           Options.Applicative
 import           Options.Applicative.Builder.Internal
 --import           Options.Applicative.Help (errorHelp, stringChunk, vcatChunks)
 import           Options.Applicative.Types
---import qualified RIO.List as L
+import qualified RIO.List as L
+import qualified Data.List.NonEmpty as NEL
+import           RIO.Process (HasProcessContext (..))
 --import qualified System.Directory as D
 import           System.Environment ({-getProgName,-} getArgs, withArgs)
 --import           System.FilePath (isValid, pathSeparator, takeDirectory)
-
 
 -- A lot of inspiration in this file comes from https://github.com/commercialhaskell/stack/
 
@@ -36,8 +43,8 @@ commandLineHandler
   :: FilePath
   -> String
   -> IO (GlobalOptsMonoid, RIO Runner ())
-commandLineHandler currentDir progName = complicatedOptions
-  (Just ampersandVersionWithoutBuildTimeStr)
+commandLineHandler currentDir _progName = complicatedOptions
+  ampersandVersionWithoutBuildTimeStr
   "ampersand - The Ampersand generator"
   ""
   "ampersand's documentation is available at https://ampersandtarski.gitbook.io/documentation/"
@@ -49,7 +56,7 @@ commandLineHandler currentDir progName = complicatedOptions
            ParserFailure ParserHelp
         -> [String] 
         -> IO (GlobalOptsMonoid, (RIO Runner (), t))
-    failureCallback f args = parseResultHandler f
+    failureCallback f _ = parseResultHandler f
 
     parseResultHandler :: ParserFailure ParserHelp -> IO a
     parseResultHandler f = handleParseResult (Failure f)
@@ -58,11 +65,24 @@ commandLineHandler currentDir progName = complicatedOptions
                       (RIO Runner ())
                       (Writer (Mod CommandFields (RIO Runner (), GlobalOptsMonoid)))
                       ()
-    addCommands = undefined -- do
---      addCommand' "proto"
---                  "Generate a prototype from your specification. "
---                  (protoCmd TODO)
---                  undefined
+    addCommands = do
+      addCommand'' "proto"
+                  "Generate a prototype from your specification."
+                  protoCmd
+                  (protoOptsParser Proto "DEFAULTDATABASENAME")
+      where
+        -- addCommand hiding global options
+        addCommand'' :: String -> String -> (a -> RIO Runner ()) -> Parser a
+                    -> AddCommand
+        addCommand'' cmd title constr =
+            addCommand cmd title globalFooter constr (\_ gom -> gom) globalOpts
+
+--        addSubCommands' :: String -> String -> AddCommand
+--                        -> AddCommand
+--        addSubCommands' cmd title =
+--            addSubCommands cmd title globalFooter globalOpts
+
+
 
     globalOpts :: Parser GlobalOptsMonoid
     globalOpts =
@@ -73,19 +93,16 @@ commandLineHandler currentDir progName = complicatedOptions
     globalFooter = "Run 'ampersand --help' for global options that apply to all subcommands."
 
 
-type AmpersandCommands =
-      ExceptT
-          (RIO Runner ())
-          (Writer (Mod CommandFields (RIO Runner (), GlobalOptsMonoid)))
-          ()
 
+type AddCommand =
+    ExceptT (RIO Runner ()) (Writer (Mod CommandFields (RIO Runner (), GlobalOptsMonoid))) ()
 
 
 
 -- | Generate and execute a complicated options parser.
 complicatedOptions
   :: Monoid a
-  => Maybe String
+  => String
   -- ^ version string
   -> String
   -- ^ header
@@ -111,10 +128,7 @@ complicatedOptions stringVersion h pd footerStr commonParser mOnFailure commandP
      return (mappend c a,b)
   where parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND|FILE" commonParser commandParser) desc
         desc = fullDesc <> header h <> progDesc pd <> footer footerStr
-        versionOptions =
-          case stringVersion of
-      --      Nothing -> versionOption (versionString )
-            Just s -> versionOption s
+        versionOptions = versionOption stringVersion
         versionOption s =
           infoOption
             s
@@ -133,27 +147,27 @@ addCommand :: String   -- ^ command string
 addCommand cmd title footerStr constr extendCommon =
   addCommand' cmd title footerStr (\a c -> (constr a,extendCommon a c))
 
--- | Add a command that takes sub-commands to the options dispatcher.
-addSubCommands
-  :: Monoid c
-  => String
-  -- ^ command string
-  -> String
-  -- ^ title of command
-  -> String
-  -- ^ footer of command help
-  -> Parser c
-  -- ^ common parser
-  -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
-  -- ^ sub-commands (use 'addCommand')
-  -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
-addSubCommands cmd title footerStr commonParser commandParser =
-  addCommand' cmd
-              title
-              footerStr
-              (\(c1,(a,c2)) c3 -> (a,mconcat [c3, c2, c1]))
-              commonParser
-              (complicatedParser "COMMAND" commonParser commandParser)
+-- -- | Add a command that takes sub-commands to the options dispatcher.
+-- addSubCommands
+--   :: Monoid c
+--   => String
+--   -- ^ command string
+--   -> String
+--   -- ^ title of command
+--   -> String
+--   -- ^ footer of command help
+--   -> Parser c
+--   -- ^ common parser
+--   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
+--   -- ^ sub-commands (use 'addCommand')
+--   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
+-- addSubCommands cmd title footerStr commonParser commandParser =
+--   addCommand' cmd
+--               title
+--               footerStr
+--               (\(c1,(a,c2)) c3 -> (a,mconcat [c3, c2, c1]))
+--               commonParser
+--               (complicatedParser "COMMAND" commonParser commandParser)
 
 -- | Add a command to the options dispatcher.
 addCommand' :: String   -- ^ command string
@@ -205,3 +219,65 @@ helpOption =
     help "Show this help text"
 
 
+-- | Create a prototype based on the current script.
+protoCmd :: ProtoOpts -> RIO Runner ()
+protoCmd protoOpts = 
+    extendWith protoOpts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec proto
+
+doOrDie :: HasLogFunc env => Guarded a -> (a -> RIO env b) -> RIO env b
+doOrDie gA act = 
+  case gA of
+    Checked a ws -> do
+      showWarnings ws
+      act a
+    Errors err -> exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
+           . fmap show . NEL.toList $ err
+  where
+    showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
+
+extendWith :: a -> RIO (ExtendedRunner a) () -> RIO Runner ()
+extendWith opts inner = do
+   env <- ask
+   runRIO (ExtendedRunner env opts) inner
+
+instance (HasOutputLanguage a) => HasOutputLanguage (ExtendedRunner a) where
+  languageL = cmdOptsL . languageL
+instance (HasNamespace a) => HasNamespace (ExtendedRunner a) where
+  namespaceL = cmdOptsL . namespaceL
+instance (HasSqlBinTables a) => HasSqlBinTables (ExtendedRunner a) where
+  sqlBinTablesL = cmdOptsL . sqlBinTablesL
+instance (HasGenInterfaces a) => HasGenInterfaces (ExtendedRunner a) where
+  genInterfacesL = cmdOptsL . genInterfacesL
+instance (HasDefaultCrud a) => HasDefaultCrud (ExtendedRunner a) where
+  defaultCrudL = cmdOptsL . defaultCrudL
+instance (HasExcellOutputOptions a) => HasExcellOutputOptions (ExtendedRunner a) where
+  trimXLSXCellsL = cmdOptsL . trimXLSXCellsL
+--instance (HasCommands a) => HasCommands (ExtendedRunner a) where
+instance (HasRootFile a) => HasRootFile (ExtendedRunner a) where
+  fileNameL = cmdOptsL . fileNameL
+--instance Deprecated.HasEnvironment (ExtendedRunner a) where
+
+instance HasGenTime (ExtendedRunner a) where
+instance (HasRunComposer a) => HasRunComposer (ExtendedRunner a) where
+instance (HasDirCustomizations a) => HasDirCustomizations (ExtendedRunner a) where
+instance (HasZwolleVersion a) => HasZwolleVersion (ExtendedRunner a) where
+instance (HasAllowInvariantViolations a) => HasAllowInvariantViolations (ExtendedRunner a) where
+instance (HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
+instance (Deprecated.HasProtoOpts a) => Deprecated.HasProtoOpts (ExtendedRunner a) where
+instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
+instance HasLogFunc (ExtendedRunner a) where
+instance HasRunner (ExtendedRunner a) where
+  runnerL = lens eRunner  (\x y -> x { eRunner  = y })
+
+instance HasProcessContext (ExtendedRunner a) where
+  processContextL = runnerL . processContextL
+
+data ExtendedRunner a = ExtendedRunner
+   { eRunner :: !Runner
+   , eCmdOpts :: a
+   } deriving Show
+cmdOptsL :: Lens' (ExtendedRunner a) a
+cmdOptsL = lens eCmdOpts (\x y -> x { eCmdOpts = y })

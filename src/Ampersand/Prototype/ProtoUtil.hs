@@ -25,7 +25,7 @@ getGenericsDir :: HasDirPrototype a => a -> String
 getGenericsDir x = 
   view dirPrototypeL x </> "generics" 
 
-writePrototypeAppFile :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
+writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
                          String -> String -> RIO env ()
 writePrototypeAppFile relFilePath content = do
   env <- ask
@@ -37,7 +37,7 @@ writePrototypeAppFile relFilePath content = do
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
-copyDirRecursively :: (HasVerbosity  env, HasHandle env) =>
+copyDirRecursively :: (HasLogFunc env) =>
                       FilePath -> FilePath -> RIO env ()
 copyDirRecursively srcBase tgtBase = copy ""
   where copy fileOrDirPth = do
@@ -55,7 +55,7 @@ copyDirRecursively srcBase tgtBase = copy ""
              
 
 -- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
-removeAllDirectoryFiles :: HasHandle env =>
+removeAllDirectoryFiles :: HasLogFunc env =>
                            FilePath -> RIO env ()
 removeAllDirectoryFiles dirPath = do
     dirContents <- getProperDirectoryContents dirPath
@@ -130,13 +130,13 @@ showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
 
 
-installComposerLibs :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
+installComposerLibs :: (HasDirPrototype env, HasLogFunc env) =>
                        RIO env ()
 installComposerLibs = do
     dirPrototype <- view dirPrototypeL 
     curPath <- liftIO $ getCurrentDirectory
     sayWhenLoudLn $ "current directory: "++curPath
-    sayWhenLoud "  Trying to download and install Composer libraries..."
+    sayWhenLoudLn "  Trying to download and install Composer libraries..."
     (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc dirPrototype)""
     case exit_code of
       SE.ExitSuccess   -> do sayWhenLoudLn $

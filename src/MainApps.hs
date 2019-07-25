@@ -14,15 +14,12 @@ import           Ampersand.Input.PreProcessor
 import           Ampersand.Options.GlobalParser
 import           Ampersand.Runners
 import           Conduit
-import qualified Data.List.NonEmpty as NEL (toList)
-import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist, makeAbsolute)
 import           System.Environment    (getArgs, getProgName)
 import           System.FilePath ((</>))
 import           System.IO.Error (tryIOError)
-import           Ampersand.Misc.Commands
 import qualified System.Directory as D
 
 defEnv :: IO App
@@ -34,18 +31,11 @@ defEnv = do
     return App
           { appLogFunc = logFunc
           , options' = opts 
-          , appHandle = stdout
           }
 
   
 ampersand :: IO ()
-ampersand =
-  if False --Temporary to switch between old and new behaviour
-  then ampersandNew
-  else ampersandOld
-
-ampersandNew :: IO ()
-ampersandNew = do
+ampersand = do
   progName <- getProgName
   isTerminal <- hIsTerminalDevice stdout
   currentDir <- D.getCurrentDirectory
@@ -66,63 +56,64 @@ ampersandNew = do
                   exitWith $ RunnerAborted $ lines $ displayException e
 
 
-ampersandOld :: IO ()
-ampersandOld = do
-  env <- defEnv
-  runRIO env ampersand'
+-- ampersandOld :: IO ()
+-- ampersandOld = do
+--   env <- defEnv
+--   runRIO env ampersand'
 
-ampersand' :: () -- (HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env, HasCommands env) 
-  => RIO App ()
-ampersand' = do
-    env <- ask
-    fileName <- view fileNameL
-    sequence_ . map snd . filter fst $ actionsWithoutScript env-- There are commands that do not need a single filename to be speciied
-    case fileName of
-      Just _ -> do -- An Ampersand script is provided that can be processed
-            sayLn "Processing your model..."
-            gFSpec <- createFspec []
-            case gFSpec of
-              Errors err    -> 
-                 exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
-               . fmap show . NEL.toList $ err
-              Checked fSpec ws -> do
-                 mapM_  sayLn . concatMap (lines . show) $ ws
-                 generateAmpersandOutput fSpec
-                 sayLn "Finished processing your model"
-                 sayLn . ("Your script has no errors " ++) $
-                    case ws of
-                      []  -> "and no warnings"
-                      [_] -> ", but one warning was found"
-                      _   -> ", but "++show (length ws)++" warnings were found"
+-- ampersand' :: () -- (HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasGenFuncSpec env, HasRootFile env, HasLogFunc env, HasCommands env) 
+--   => RIO App ()
+-- ampersand' = do
+--     env <- ask
+--     fileName <- view fileNameL
+-- --    sequence_ . map snd . filter fst $ actionsWithoutScript env-- There are commands that do not need a single filename to be speciied
+--     case fileName of
+--       Just _ -> do -- An Ampersand script is provided that can be processed
+--             sayLn "Processing your model..."
+--             gFSpec <- createFspec []
+--             case gFSpec of
+--               Errors err    -> 
+--                  exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
+--                . fmap show . NEL.toList $ err
+--               Checked _fSpec ws -> do
+--                  mapM_  sayLn . concatMap (lines . show) $ ws
+--               --   generateAmpersandOutput fSpec
+--                  sayLn "THIS IS THE OLD STUFF. Nothing happend."
+--                  sayLn "Finished processing your model"
+--                  sayLn . ("Your script has no errors " ++) $
+--                     case ws of
+--                       []  -> "and no warnings"
+--                       [_] -> ", but one warning was found"
+--                       _   -> ", but "++show (length ws)++" warnings were found"
            
-      Nothing -> -- No Ampersand script is provided 
-         if or (map fst $ actionsWithoutScript env)
-         then sayWhenLoudLn "No further actions, because no ampersand script is provided"
-         else liftIO $ do 
-            args     <- getArgs
-            progName <- getProgName
-            exitWith . NoAmpersandScript $
-                 [ "No ampersand script provided. Use --help for usage information"
-                 , "   " <> progName <> (concat $ fmap (" " <>) args) ]
+--       Nothing -> -- No Ampersand script is provided 
+--          if or (map fst $ actionsWithoutScript env)
+--          then sayWhenLoudLn "No further actions, because no ampersand script is provided"
+--          else liftIO $ do 
+--             args     <- getArgs
+--             progName <- getProgName
+--             exitWith . NoAmpersandScript $
+--                  [ "No ampersand script provided. Use --help for usage information"
+--                  , "   " <> progName <> (concat $ fmap (" " <>) args) ]
 
- where
-   actionsWithoutScript :: (HasVersion env, HasEnvironment env, HasVerbosity env, HasCommands env) 
-      => env -> [(Bool, RIO App ())]
-   actionsWithoutScript env = 
-      [ ( (view showVersionL env)   || view verbosityL env == Loud , sayLn $ versionText env)
-      , ( (view genSampleConfigFileL env)      , liftIO writeConfigFile)
-      , ( (view showHelpL env)                 , sayLn $ usageInfo' env)
-      , ( (view runAsDaemonL env)              , runDaemon)
-      ]
+--  where
+-- --   actionsWithoutScript :: (HasVersion env, HasEnvironment env, HasLogFunc env, HasCommands env) 
+-- --      => env -> [(Bool, RIO App ())]
+-- --   actionsWithoutScript env = 
+-- --      [ ( (view showVersionL env)   || view verbosityL env == Loud , sayLn $ versionText env)
+-- --      , ( (view genSampleConfigFileL env)      , liftIO writeConfigFile)
+-- --      , ( (view showHelpL env)                 , sayLn $ usageInfo' env)
+-- --      , ( (view runAsDaemonL env)              , runDaemon)
+-- --      ]
    
-   versionText :: (HasVersion env) => env -> String
-   versionText env = view preVersionL env ++ ampersandVersionStr ++ view postVersionL env
+--    versionText :: (HasVersion env) => env -> String
+--    versionText env = view preVersionL env ++ ampersandVersionStr ++ view postVersionL env
 
 preProcessor :: IO()
 preProcessor = 
-   runRIO stdout preProcessor' 
+   runSimpleApp preProcessor' 
 
-preProcessor' :: (HasHandle env) => RIO env ()
+preProcessor' :: (HasLogFunc env) => RIO env ()
 preProcessor' =
   do
     args <- liftIO getArgs;
@@ -134,7 +125,7 @@ preProcessor' =
              case result of
                Left err   -> exitWith $ ReadFileError $ "Error while reading input file.\n" : err
                Right cont -> return cont
-        say $ either show id (preProcess' filename (Set.fromList defs) (T.unpack content)) ++ "\n"
+        sayLn $ either show id (preProcess' filename (Set.fromList defs) (T.unpack content))
 
 mainTest :: IO ()
 mainTest = do
@@ -148,7 +139,7 @@ mainTest' = do
     testAmpersandScripts
     tests funcs
   where 
-      tests :: (HasHandle env) => [([String], RIO env Bool)] -> RIO env ()
+      tests :: (HasLogFunc env) => [([String], RIO env Bool)] -> RIO env ()
       tests [] = pure ()
       tests ((msg,tst):xs) = do
           mapM_ sayLn msg
@@ -223,7 +214,7 @@ regressionTest' = do
         loop :: Int -> ConduitT DirData Int (RIO App) ()
         loop n = awaitForever $
             (\dird -> do 
-                lift $ say $ ">> " ++ show n ++ ". "
+                lift $ sayLn $ ">> " ++ show n ++ ". "
                 x <- lift $ process 4 dird     
                 yield x
                 loop (n + 1)

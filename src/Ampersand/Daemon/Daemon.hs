@@ -89,9 +89,9 @@ runDaemon = mainWithTerminal termSize termOutput
                 Nothing -> TermSize 80 8 WrapHard
                 Just t -> TermSize (Term.width t) (Term.height t) WrapSoft
 
-        termOutput :: (HasHandle env) => [String] -> RIO env ()
+        termOutput :: (HasLogFunc env) => [String] -> RIO env ()
         termOutput xs = do
-            say $ concatMap ('\n':) xs
+            sayLn $ concatMap ('\n':) xs
             hFlush stdout -- must flush, since we don't finish with a newline
 
 
@@ -99,7 +99,7 @@ data Continue = Continue
 
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
-runAmpersand :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasHandle env, HasVerbosity env, HasDaemonConfig env ) 
+runAmpersand :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasLogFunc env, HasDaemonConfig env ) 
    => env -> Waiter -> IO TermSize -> ([String] -> RIO env ()) -> RIO env Continue
 runAmpersand app waiter termSize termOutput = do
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()
@@ -128,7 +128,7 @@ runAmpersand app waiter termSize termOutput = do
     project <- takeFileName <$> (liftIO $ getCurrentDirectory)
 
     -- fire, given a waiter, the messages/loaded
-    let fire :: (HasHandle env, HasVerbosity env) =>
+    let fire :: (HasLogFunc env) =>
                 ([FilePath] -> RIO env [String]) -> DaemonState -> RIO env Continue
         fire nextWait' ad = do
             currTime <- liftIO $ getShortTime

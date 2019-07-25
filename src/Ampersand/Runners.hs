@@ -14,9 +14,10 @@ module Ampersand.Runners
 --     withBuildConfig
 --    , withEnvConfig
 --    , withDefaultEnvConfig
---    , withConfig
+        withConfig
 --    , withGlobalProject
-      withRunnerGlobal
+      , withRunnerGlobal
+      , logLevel
 --    , ShouldReexec (..)
     ) where
 
@@ -37,6 +38,7 @@ import           Ampersand.Misc.Config
 --import           Stack.Types.Version (stackMinorVersion, stackVersion, minorVersion)
 import           System.Console.ANSI (hSupportsANSIWithoutEmulation)
 import           System.Console.Terminal.Size (size, width)
+import qualified Ampersand.Misc.Options as Deprecated (getEnvironmentOptions)
 
 -- -- | Ensure that no project settings are used when running 'withConfig'.
 -- withGlobalProject :: RIO Runner a -> RIO Runner a
@@ -77,27 +79,19 @@ import           System.Console.Terminal.Size (size, width)
 -- -- | If the settings justify it, should we reexec inside Docker or Nix?
 -- data ShouldReexec = YesReexec | NoReexec
 
--- -- | Load the configuration. Convenience function used
--- -- throughout this module.
--- withConfig
---   :: ShouldReexec
---   -> RIO Config a
---   -> RIO Runner a
--- withConfig shouldReexec inner =
---     loadConfig $ \config -> do
---       -- If we have been relaunched in a Docker container, perform in-container initialization
---       -- (switch UID, etc.).  We do this after first loading the configuration since it must
---       -- happen ASAP but needs a configuration.
---       view (globalOptsL.to globalDockerEntrypoint) >>=
---         traverse_ (Docker.entrypoint config)
---       runRIO config $ do
---         -- Catching all exceptions here, since we don't want this
---         -- check to ever cause Stack to stop working
---         shouldUpgradeCheck `catchAny` \e ->
---           logError ("Error when running shouldUpgradeCheck: " <> displayShow e)
---         case shouldReexec of
---           YesReexec -> reexec inner
---           NoReexec -> inner
+-- | Load the configuration. Convenience function used
+-- throughout this module.
+withConfig
+  :: RIO Config a
+  -> RIO Runner a
+withConfig inner =
+    loadConfig $ \config -> do
+      runRIO config $ do
+  --      -- Catching all exceptions here, since we don't want this
+  --      -- check to ever cause Stack to stop working
+  --      shouldUpgradeCheck `catchAny` \e ->
+  --        logError ("Error when running shouldUpgradeCheck: " <> displayShow e)
+        inner
 
 -- -- | Perform a Docker or Nix reexec, if warranted. Otherwise run the
 -- -- inner action.
@@ -145,6 +139,7 @@ withRunnerGlobal go inner = do
                                    pure (globalTermWidth go)
   menv <- mkDefaultProcessContext
   logOptions0 <- logOptionsHandle stderr False
+  envOpts <- Deprecated.getEnvironmentOptions
   let logOptions
         = setLogUseColor useColor
         $ setLogUseTime (globalTimeInLog go)
@@ -158,6 +153,7 @@ withRunnerGlobal go inner = do
     , runnerLogFunc = logFunc
     , runnerTermWidth = termWidth
     , runnerProcessContext = menv
+    , tmpRunnerEnvOptions = envOpts
     } inner
   where minTerminalWidth = 40
         maxTerminalWidth = 200
@@ -196,3 +192,6 @@ withRunnerGlobal go inner = do
 --           logWarn ""
 --         _ -> pure ()
 --       logUpgradeCheck now
+
+logLevel :: Runner -> LogLevel
+logLevel = globalLogLevel . runnerGlobalOpts

@@ -69,13 +69,12 @@ class HasCommands a where
   proofsL :: Lens' a Bool 
   validateSQLL :: Lens' a Bool 
   genPrototypeL :: Lens' a Bool 
-  genRapPopulationL :: Lens' a Bool 
   dataAnalysisL :: Lens' a Bool -- "export a data model as plain Ampersand script, for analysing Excel-data."
   showVersionL :: Lens' a Bool
   genSampleConfigFileL :: Lens' a Bool
   showHelpL :: Lens' a Bool
   runAsDaemonL :: Lens' a Bool
-class HasCommands a => HasOutputFile a where
+class HasOutputFile a where
   outputfileAdlL :: Lens' a FilePath
   outputfileDataAnalisysL :: Lens' a FilePath
 class HasVersion a where

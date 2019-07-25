@@ -11,7 +11,7 @@ protoOptsParser :: ProtoCommand -> String -> Parser ProtoOpts
 protoOptsParser Proto defDBName = 
     ProtoOpts <$> dbName <*> host <*> login 
               <*> password <*> forceReinstall <*> outputLanguage
-              <*> rootFile 
+              <*> rootFile <*> sqlBinTables
   where
     dbName = strOption
         ( long "dbName"
@@ -43,4 +43,7 @@ protoOptsParser Proto defDBName =
         <> help ("Re-install the prototype framework. This discards any previously "<>
                 "installed version.")
         )
-
+    sqlBinTables = switch
+        ( long "sql-bin-tables"
+        <> help "Generate binary tables instead of broad tables in SQL database, for testing purposes." 
+        )

@@ -9,27 +9,30 @@ module Ampersand.Commands.Proto
     (proto
     ,ProtoOpts(..)
     ,ProtoCommand(..)
-    ,AmpersandProtoExceptionException(..)
+--    ,AmpersandProtoExceptionException(..)
     ) where
 
 import           Ampersand.Basics
-import           Data.List ((\\),intercalate)
-import qualified Data.Map.Strict as Map
+--import qualified RIO.List as L ((\\),intercalate)
+--import qualified Data.Map.Strict as Map
+--import qualified RIO.Char as C
+--import           RIO.FilePath
 --import           Path.IO (ignoringAbsence, removeDirRecur)
 --import           Stack.Constants.Config (rootDistDirFromDir, workDirFromDir)
 --import           Stack.Types.Config
 --import           Stack.Types.SourceMap
 import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Misc
+import           Ampersand.Misc.Config
 import           Ampersand.FSpec
 import           System.Directory
 import           Ampersand.Output.FSpec2SQL
-
+import           Ampersand.Output.ToJSON.ToJson 
 -- | Builds a prototype of the current project.
 --
-proto :: (HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasOptions env, HasRootFile env, HasVerbosity env, HasHandle env) 
-       => ProtoOpts -> FSpec -> RIO env ()
-proto opts fSpec = do
+proto :: (Show env, HasRunner env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env) 
+       => FSpec -> RIO env ()
+proto fSpec = do
     dirPrototype <- view dirPrototypeL
     allowInvariantViolations <- view allowInvariantViolationsL
     if null (violationsOfInvariants fSpec) || allowInvariantViolations
@@ -38,24 +41,27 @@ proto opts fSpec = do
        liftIO $ createDirectoryIfMissing True dirPrototype
        doGenFrontend fSpec
        generateDatabaseFile fSpec
-       generateJSONfiles fSpec
+       generateJSONfiles False fSpec
        sayWhenLoudLn $ "Prototype files have been written to " ++ dirPrototype
     else exitWith NoPrototypeBecauseOfRuleViolations
 
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
-   { protOdbName :: String
+   { protOdbName :: !String
    -- ^ Name of the database that is generated as part of the prototype
-   , protOsqlHost ::  String  
+   , protOsqlHost ::  !String
    -- ^ do database queries to the specified host
-   , protOsqlLogin :: String
+   , protOsqlLogin :: !String
    -- ^ pass login name to the database server
-   , protOsqlPwd :: String
+   , protOsqlPwd :: !String
    -- ^ pass password on to the database server
-   , protOforceReinstallFramework :: Bool
+   , protOforceReinstallFramework :: !Bool
    -- ^ when true, an existing prototype directory will be destroyed and re-installed
-   }
+   , protOOutputLangugage :: !(Maybe Lang)
+   , protORootFile :: !FilePath
+   , protOsqlBinTables :: !Bool
+   } deriving Show
 instance HasProtoOpts ProtoOpts where
    dbNameL   = lens protOsqlHost  (\x y -> x { protOdbName   = y })
    sqlHostL  = lens protOsqlHost  (\x y -> x { protOsqlHost  = y })
@@ -63,21 +69,24 @@ instance HasProtoOpts ProtoOpts where
    sqlPwdL   = lens protOsqlPwd   (\x y -> x { protOsqlPwd   = y })
    forceReinstallFrameworkL
              = lens protOforceReinstallFramework (\x y -> x { protOforceReinstallFramework   = y })
-
-defProtoOpts :: Maybe FilePath -> ProtoOpts 
-defProtoOpts fName = ProtoOpts
-  { protOdbName = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
-  , protOsqlHost = "localhost"
-  , protOsqlLogin = "ampersand"
-  , protOsqlPwd = "ampersand"
-  , protOforceReinstallFramework = False
-  }
+instance HasOutputLanguage ProtoOpts where
+  languageL = lens protOOutputLangugage (\x y -> x { protOOutputLangugage = y })
+instance HasSqlBinTables ProtoOpts where
+instance HasGenInterfaces ProtoOpts where
+instance HasDefaultCrud ProtoOpts where
+instance HasExcellOutputOptions ProtoOpts where
+instance HasRootFile ProtoOpts where
+instance HasNamespace ProtoOpts where
+instance HasRunComposer ProtoOpts where
+instance HasDirCustomizations ProtoOpts where
+instance HasZwolleVersion ProtoOpts where
+instance HasAllowInvariantViolations ProtoOpts where
+instance HasDirPrototype ProtoOpts where
 
 
 -- | Proto commands
 data ProtoCommand
     = Proto
-    | Purge
 
 
 

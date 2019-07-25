@@ -5,13 +5,13 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.Options
         ( App(..)
-        , HasOptions(..),HasHandle(..)
+        , HasOptions(..)
         , HasProtoOpts(..)
-        , HasEnvironment(..)
+        , HasEnvironment(..),EnvironmentOptions, getEnvironmentOptions
         , FSpecFormat(..)
         , getOptionsIO
         , showFormat
-        , usageInfo'
+--        , usageInfo'
         , writeConfigFile
         )
 where
@@ -86,8 +86,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
                   --     , protoOpts :: ProtoOpts
                        }
-instance HasVerbosity Options where
-  verbosityL = lens verbosity (\x y -> x { verbosity = y })
 data EnvironmentOptions = EnvironmentOptions
       { envArgs               :: [String]
       , envArgsCommandLine    :: [String]
@@ -172,7 +170,6 @@ instance HasMetaOptions Options where
   genMetaFileL = lens genMetaFile (\x y -> x { genMetaFile = y })
   addSemanticMetamodelL = lens addSemanticMetamodel (\x y -> x { addSemanticMetamodel = y })
 instance HasCommands Options where
-  genRapPopulationL = lens genRapPopulation (\x y -> x { genRapPopulation = y })
   genPrototypeL = lens genPrototype (\x y -> x { genPrototype = y })
   dataAnalysisL = lens dataAnalysis (\x y -> x { dataAnalysis = y })
   genUMLL = lens genUML (\x y -> x { genUML = y })
@@ -190,7 +187,6 @@ instance HasCommands Options where
 
 
 instance HasCommands App where
-  genRapPopulationL = optionsL . genRapPopulationL
   genPrototypeL = optionsL . genPrototypeL
   dataAnalysisL = optionsL . dataAnalysisL
   genUMLL = optionsL . genUMLL
@@ -303,7 +299,7 @@ getEnvironmentOptions =
          Just fName -> readConfigFile fName
         where 
            readConfigFile yaml = do
-              runRIO stdout $ sayLn $ "Reading config file: "++yaml
+              runSimpleApp $ sayLn $ "Reading config file: "++yaml
               config <- load yaml
               case keys config L.\\ ["switches"] of
                 []  -> do let switches :: [String] = YC.lookupDefault "switches" [] config
@@ -408,7 +404,7 @@ getOptions' envOpts =
 writeConfigFile :: IO ()
 writeConfigFile = do
     writeFile sampleConfigFileName (unlines sampleConfigFile)
-    runRIO stdout $ sayLn (sampleConfigFileName++" written.")
+    runSimpleApp $ sayLn (sampleConfigFileName++" written.")
     
 sampleConfigFileName :: FilePath
 sampleConfigFileName = "sampleconfig.yaml"
@@ -522,10 +518,10 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{runComposer = False}))
                "skip installing php dependencies (using Composer) for prototype framework."
             , Hidden)
-          , (Option []        ["sql-bin-tables"]
-               (NoArg (\opts -> opts{sqlBinTables = True}))
-               "generate binary tables only in SQL database, for testing purposes."
-            , Hidden)
+  --        , (Option []        ["sql-bin-tables"]
+  --             (NoArg (\opts -> opts{sqlBinTables = True}))
+  --             "generate binary tables only in SQL database, for testing purposes."
+  --          , Hidden)
           , (Option ['x']     ["interfaces"]
                (NoArg (\opts -> opts{genInterfaces  = True}))
                "generate interfaces, which currently does not work."
@@ -647,16 +643,16 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{genPOPExcel = True}))
                "Generate an .xmlx file containing the populations of your script."
             , Hidden)
-          , (Option []        ["language"]
-               (ReqArg (\l opts-> opts{language = case map toUpper l of
-                                                       "NL"  -> Just Dutch
-                                                       "UK"  -> Just English
-                                                       "US"  -> Just English
-                                                       "EN"  -> Just English
-                                                       _     -> Nothing}
-                       ) "LANG")
-               "Pick 'NL' for Dutch or 'EN' for English, as the language to be used in your output. Without this option, output is written in the language of your context."
-            , Public)
+      --    , (Option []        ["language"]
+      --         (ReqArg (\l opts-> opts{language = case map toUpper l of
+      --                                                 "NL"  -> Just Dutch
+      --                                                 "UK"  -> Just English
+      --                                                 "US"  -> Just English
+      --                                                 "EN"  -> Just English
+      --                                                 _     -> Nothing}
+      --                 ) "LANG")
+      --         "Pick 'NL' for Dutch or 'EN' for English, as the language to be used in your output. Without this option, output is written in the language of your context."
+      --      , Public)
           , (Option []        ["test"]
                (NoArg (\opts -> opts{test = True}))
                "Used for test purposes only."
@@ -699,55 +695,50 @@ options = [ (Option ['v']   ["version"]
             , Hidden)
           ]
 
-usageInfo' :: (HasVerbosity env, HasEnvironment env) => env -> String
+--usageInfo' :: (HasLogFunc env, HasEnvironment env) => env -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.
-usageInfo' opts =
-  infoHeader (envProgName (view environmentL opts)) ++"\n"++
-    (concat . L.sort . map publishOption) [od | (od,x) <- options, view verbosityL opts == Loud || x == Public] 
+--usageInfo' opts =
+--  infoHeader (envProgName (view environmentL opts)) ++"\n"++
+--    (concat . L.sort . map publishOption) [od | (od,x) <- options, view verbosityL opts == Loud || x == Public] 
 
-infoHeader :: String -> String
-infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
+--infoHeader :: String -> String
+--infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
 
 
-publishOption:: OptDescr a -> String
-publishOption (Option shorts longs args expl) 
-  = unlines (
-    ( "  "++L.intercalate ", " ["--"++l | l <-longs] 
-      ++case args of
-         NoArg _      -> "" 
-         ReqArg _ str -> "="++str
-         OptArg _ str -> "[="++str++"]"
-      ++case L.intercalate ", " [ "-"++[c] | c <- shorts] of
-          []  -> []
-          xs  -> " ("++xs++")"
-    ): 
-     map (replicate 10 ' '++) (lines (limit 65 expl)))
-  where
-   limit :: Int -> String -> String
-   limit i = L.intercalate "\n" . map (singleLine i . words) . lines
-   singleLine :: Int -> [String] -> String 
-   singleLine i wrds = 
-     case fillUpto i "" wrds of
-       (str, []) -> str
-       (str, rest) -> str ++ "\n"++ singleLine i rest
-   fillUpto :: Int -> String -> [String] -> (String, [String])
-   fillUpto i "" (w:ws) = fillUpto i w ws
-   fillUpto _ str [] = (str, [])
-   fillUpto i str (w:ws) = let nstr = str++" "++w
-                           in if length nstr > i 
-                           then (str, w:ws)
-                           else fillUpto i nstr ws 
+-- publishOption:: OptDescr a -> String
+-- publishOption (Option shorts longs args expl) 
+--   = unlines (
+--     ( "  "++L.intercalate ", " ["--"++l | l <-longs] 
+--       ++case args of
+--          NoArg _      -> "" 
+--          ReqArg _ str -> "="++str
+--          OptArg _ str -> "[="++str++"]"
+--       ++case L.intercalate ", " [ "-"++[c] | c <- shorts] of
+--           []  -> []
+--           xs  -> " ("++xs++")"
+--     ): 
+--      map (replicate 10 ' '++) (lines (limit 65 expl)))
+--   where
+--    limit :: Int -> String -> String
+--    limit i = L.intercalate "\n" . map (singleLine i . words) . lines
+--    singleLine :: Int -> [String] -> String 
+--    singleLine i wrds = 
+--      case fillUpto i "" wrds of
+--        (str, []) -> str
+--        (str, rest) -> str ++ "\n"++ singleLine i rest
+--    fillUpto :: Int -> String -> [String] -> (String, [String])
+--    fillUpto i "" (w:ws) = fillUpto i w ws
+--    fillUpto _ str [] = (str, [])
+--    fillUpto i str (w:ws) = let nstr = str++" "++w
+--                            in if length nstr > i 
+--                            then (str, w:ws)
+--                            else fillUpto i nstr ws 
 
 data App = App
   { options' :: !Options
-  , appHandle :: !Handle
   , appLogFunc :: !LogFunc
   }
-instance HasHandle App where
-  handleL = lens appHandle (\env h -> env { appHandle = h })
 
-instance HasVerbosity App where
-  verbosityL =  optionsL . verbosityL
 instance HasDirPrototype App where
   dirPrototypeL = optionsL . dirPrototypeL
 instance HasRootFile App where

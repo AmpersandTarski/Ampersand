@@ -28,7 +28,7 @@ instance JSON FSpec Settings where
   , sngJSONmysql_dbUser       = view sqlLoginL env
   , sngJSONmysql_dbPass       = view sqlPwdL env
   , sngJSONcompiler_version   = ampersandVersionStr
-  , sngJSONcompiler_env       = show $ view environmentL env
+  , sngJSONcompiler_env       = show env 
   , sngJSONcompiler_modelHash = show . hash $ fSpec
   } 
 

@@ -31,7 +31,7 @@ import           Text.Pandoc.Builder
 import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
-generateAmpersandOutput :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
+generateAmpersandOutput :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasGenFuncSpec env, HasRootFile env, HasLogFunc env) 
        => FSpec -> RIO env ()
 generateAmpersandOutput fSpec = do
     env <- ask 
@@ -43,7 +43,7 @@ generateAmpersandOutput fSpec = do
     liftIO $ createDirectoryIfMissing True dirOutput
     sequence_ . map snd . filter fst $ conditionalActions env
   where 
-   conditionalActions :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasOptions env, HasGenFuncSpec env, HasRootFile env, HasVerbosity env, HasHandle env) 
+   conditionalActions :: (HasBlackWhite env, HasEnvironment env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasGenFuncSpec env, HasRootFile env, HasLogFunc env) 
            => env -> [(Bool, RIO env ())]
    conditionalActions env = []
       -- [ ( view genUMLL env            , doGenUML              )
@@ -66,7 +66,7 @@ generateAmpersandOutput fSpec = do
    --    Expect to find a file "MetaModel.adl" in your working directory upon successful termination.
    -- 2. To perform a round-trip test, use an Ampersand-script foo.adl and run and run "Ampersand --export foo.adl".
    --    Expect to find a file "Export.adl" in your working directory which should be semantically equivalent to foo.adl.
-   doGenADL :: (HasOutputFile env, HasDirOutput env, HasVerbosity env, HasHandle env) => RIO env ()
+   doGenADL :: (HasOutputFile env, HasDirOutput env, HasLogFunc env) => RIO env ()
    doGenADL = do
        env <- ask
        sayWhenLoudLn $ "Generating Ampersand script (ADL) for "  ++ name fSpec ++ "..."
@@ -79,7 +79,7 @@ generateAmpersandOutput fSpec = do
                      | otherwise = fatal "outputfile not defined for this command."
           ctx = originalContext fSpec
  
-   doGenProofs :: (HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
+   doGenProofs :: (HasDirOutput env, HasRootFile env, HasLogFunc env) => RIO env ()
    doGenProofs = do 
        env <- ask
        sayLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile env ++ "..."
@@ -92,7 +92,7 @@ generateAmpersandOutput fSpec = do
           theDoc = fDeriveProofs fSpec
           --theDoc = plain (text "Aap")  -- use for testing...
 
-   doGenHaskell :: (HasGenTime env, HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
+   doGenHaskell :: (HasGenTime env, HasDirOutput env, HasRootFile env, HasLogFunc env) => RIO env ()
    doGenHaskell = do
        env <- ask
        outputFile <- outputFile' <$> ask
@@ -101,7 +101,7 @@ generateAmpersandOutput fSpec = do
        sayWhenLoudLn ("Haskell written into " ++ outputFile ++ ".")
     where outputFile' env = view dirOutputL env </> baseName env -<.> ".hs"
 
-   doGenSQLdump :: (HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
+   doGenSQLdump :: (HasDirOutput env, HasRootFile env, HasLogFunc env) => RIO env ()
    doGenSQLdump = do
        env <- ask
        outputFile <- outputFile' <$> ask
@@ -110,7 +110,7 @@ generateAmpersandOutput fSpec = do
        sayWhenLoudLn ("SQL queries dumpfile written into " ++ outputFile ++ ".")
     where outputFile' env = view dirOutputL env </> baseName env ++ "_dump" -<.> ".sql"
    
-   doGenUML :: (HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
+   doGenUML :: (HasDirOutput env, HasRootFile env, HasLogFunc env) => RIO env ()
    doGenUML = do
        outputFile <- outputFile' <$> ask
        sayLn "Generating UML..."
@@ -122,7 +122,7 @@ generateAmpersandOutput fSpec = do
    -- the returned FSpec contains the details about the Pictures, so they
    -- can be referenced while rendering the FSpec.
    -- This function generates a pandoc document, possibly with pictures from an fSpec.
-   doGenDocument :: (HasGenTime env, HasBlackWhite env, HasRootFile env, HasDirOutput env, HasVerbosity env, HasHandle env, HasGenFuncSpec env) 
+   doGenDocument :: (HasGenTime env, HasBlackWhite env, HasRootFile env, HasDirOutput env, HasLogFunc env, HasGenFuncSpec env) 
       => RIO env ()
    doGenDocument = do
        env <- ask
@@ -138,14 +138,14 @@ generateAmpersandOutput fSpec = do
         
 
    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
-   doGenFPAExcel :: (HasHandle env) => RIO env ()
+   doGenFPAExcel :: (HasLogFunc env) => RIO env ()
    doGenFPAExcel =
      sayLn "Sorry, FPA analisys is discontinued. It needs maintenance." -- See https://github.com/AmpersandTarski/Ampersand/issues/621
      --  ; writeFile outputFile $ fspec2FPA_Excel fSpec
     
 --      where outputFile = dirOutput </> "FPA_"++baseName -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
-   doGenPopsXLSX :: (HasDirOutput env, HasRootFile env, HasVerbosity env, HasHandle env) => RIO env ()
+   doGenPopsXLSX :: (HasDirOutput env, HasRootFile env, HasLogFunc env) => RIO env ()
    doGenPopsXLSX = do
        outputFile <- outputFile' <$> ask
        sayLn "Generating .xlsx file containing the population..."
@@ -154,13 +154,13 @@ generateAmpersandOutput fSpec = do
        sayWhenLoudLn ("Generated file: " ++ outputFile)
      where outputFile' env = view dirOutputL env </> baseName env ++ "_generated_pop" -<.> ".xlsx"
 
-   doValidateSQLTest :: (HasProtoOpts env, HasVerbosity env, HasHandle env) => RIO env ()
+   doValidateSQLTest :: (HasProtoOpts env, HasLogFunc env) => RIO env ()
    doValidateSQLTest = do
        sayLn "Validating SQL expressions..."
        errMsg <- validateRulesSQL fSpec
        unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
 
-  --  doGenRapPopulation :: (HasEnvironment env, HasProtoOpts env, HasCommands env, HasVerbosity env, HasHandle env, HasAllowInvariantViolations env, HasDirPrototype env) 
+  --  doGenRapPopulation :: (HasEnvironment env, HasProtoOpts env, HasCommands env, HasLogFunc env, HasAllowInvariantViolations env, HasDirPrototype env) 
   --       => Guarded (RIO env ())
   --  doGenRapPopulation = do
   --    dirPrototype <- view dirPrototypeL
@@ -194,7 +194,7 @@ generateAmpersandOutput fSpec = do
              , not (isSignal r)
        ]
 
-   reportInvViolations :: (HasAllowInvariantViolations env, HasVerbosity env, HasHandle env) => [(Rule,AAtomPairs)] -> RIO env ()
+   reportInvViolations :: (HasAllowInvariantViolations env, HasLogFunc env) => [(Rule,AAtomPairs)] -> RIO env ()
    reportInvViolations []    = sayWhenLoudLn $ "No invariant violations found for the initial population"
    reportInvViolations viols = do
      allowInvariantViolations <- view allowInvariantViolationsL

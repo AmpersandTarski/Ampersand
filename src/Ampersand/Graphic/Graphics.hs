@@ -192,7 +192,7 @@ conceptualStructure fSpec pr =
                   }
         _  -> fatal "No conceptual graph defined for this type."
 
-writePicture :: (HasDirOutput env, HasBlackWhite env, HasGenFuncSpec env, HasVerbosity env, HasHandle env) =>
+writePicture :: (HasDirOutput env, HasBlackWhite env, HasGenFuncSpec env, HasLogFunc env) =>
                 Picture -> RIO env ()
 writePicture pict = do
     genFSpec <- view genFSpecL
@@ -204,10 +204,10 @@ writePicture pict = do
     when genFSpec $ writeDot Svg    -- format that is used when docx docs are being generated.
     when genFSpec $ writePdf Eps    -- .eps file that is postprocessed to a .pdf file 
    where
-     writeDot :: (HasDirOutput env, HasGenFuncSpec env, HasBlackWhite env, HasVerbosity env, HasHandle env) =>
+     writeDot :: (HasDirOutput env, HasGenFuncSpec env, HasBlackWhite env, HasLogFunc env) =>
                  GraphvizOutput -> RIO env ()
      writeDot = writeDotPostProcess Nothing
-     writeDotPostProcess :: (HasDirOutput env, HasGenFuncSpec env, HasBlackWhite env, HasVerbosity env, HasHandle env) =>
+     writeDotPostProcess :: (HasDirOutput env, HasGenFuncSpec env, HasBlackWhite env, HasLogFunc env) =>
                  Maybe (FilePath -> RIO env ()) --Optional postprocessor
               -> GraphvizOutput
               -> RIO env ()
@@ -224,7 +224,7 @@ writePicture pict = do
        where  gvCommand = dotProgName pict
      -- The GraphVizOutput Pdf generates pixelised graphics on Linux
      -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
-     makePdf :: (HasVerbosity env, HasHandle env ) => 
+     makePdf :: (HasLogFunc env ) => 
                 FilePath -> RIO env ()
      makePdf path = do
          liftIO $ callCommand (ps2pdfCmd path)
@@ -233,7 +233,7 @@ writePicture pict = do
                                  "\n  Did you install MikTex? Can the command epstopdf be found?"++
                                  "\n  Your error message is:\n " ++ show (e :: IOException))
                    
-     writePdf :: (HasBlackWhite env, HasGenFuncSpec env, HasDirOutput env, HasVerbosity env, HasHandle env) 
+     writePdf :: (HasBlackWhite env, HasGenFuncSpec env, HasDirOutput env, HasLogFunc env) 
           => GraphvizOutput -> RIO env ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
        `catch` (\ e -> sayWhenLoudLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21

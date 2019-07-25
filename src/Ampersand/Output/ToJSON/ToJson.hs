@@ -14,11 +14,10 @@ import Ampersand.Output.ToJSON.Interfaces
 import Ampersand.Output.ToJSON.Views
 import Ampersand.Output.ToJSON.Roles
 
-generateJSONfiles :: (HasProtoOpts env, HasEnvironment env, HasDirPrototype env, HasVerbosity env, HasHandle env, HasCommands env)
-    => FSpec -> RIO env ()
-generateJSONfiles fSpec = do
+generateJSONfiles :: (Show env, HasProtoOpts env, HasDirPrototype env, HasLogFunc env)
+    => Bool -> FSpec -> RIO env ()
+generateJSONfiles genRapPopulation fSpec = do
  env <- ask
- genRapPopulation <- view genRapPopulationL
  sequence_ $
   if genRapPopulation
   then [ writeJSONFile "metaPopulation" 

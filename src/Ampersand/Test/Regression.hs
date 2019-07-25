@@ -25,18 +25,18 @@ data DirData = DirData FilePath DirContent       -- path and content of a direct
 process :: Int -> DirData -> RIO env Int 
 process indnt (DirData path dirContent) =
   case dirContent of
-    DirError err     -> runRIO stdout $ do
+    DirError err     -> runSimpleApp $ do
         sayLn $ "I've tried to look in " ++ path ++ "."
         sayLn   "    There was an error: "
         sayLn $ "       " ++ show err
         return 1
-    DirList _ files -> runRIO stdout $ do
+    DirList _ files -> runSimpleApp $ do
         sayLn $ path ++" : "
         doTestSet indnt path files
  
 yaml :: String
 yaml = "testinfo.yaml"  -- the required name of the file that contains the test info for this directory.
-doTestSet :: HasHandle env => Int -> FilePath -> [FilePath] -> RIO env Int
+doTestSet :: HasLogFunc env => Int -> FilePath -> [FilePath] -> RIO env Int
 doTestSet indnt dir fs 
   | yaml `elem` fs = 
        do res <- parseYaml
@@ -63,7 +63,7 @@ doTestSet indnt dir fs
         doATest = awaitForever dotheTest
           where 
              dotheTest file = 
-                do liftIO $ runRIO stdout $ say $ indent<>"Start testing of `"<>file<>"`: "
+                do liftIO $ runSimpleApp $ sayLn $ indent<>"Start testing of `"<>file<>"`: "
                    res <- liftIO $ testAdlfile (indnt + 2) dir file ti
                    yield (if res then 0 else 1) 
     getResults :: ConduitT Int Void IO Int
@@ -116,14 +116,14 @@ testAdlfile indnt path adl tinfo = runMyProc myProc
           (True  , ExitFailure _) -> failOutput (exit_code, out, err)
           (False , ExitSuccess  ) -> failOutput (exit_code, out, err)
           (False , ExitFailure _) -> passOutput
-     passOutput = do runRIO stdout $ sayLn "***Pass***"
+     passOutput = do runSimpleApp $ sayLn "***Pass***"
                      return True 
      failOutput (exit_code, out, err) =
-                  do runRIO stdout $ sayLn $ "\n*FAIL*. Exit code: "++show exit_code++". "
+                  do runSimpleApp $ sayLn $ "\n*FAIL*. Exit code: "++show exit_code++". "
                      case exit_code of
                          ExitSuccess -> return()
-                         _           -> do runRIO stdout $ sayLnI out
-                                           runRIO stderr $ sayLnI err
+                         _           -> do runSimpleApp $ sayLnI out
+                                           runSimpleApp $ sayLnI err
                      return False
 
      sayLnI  = mapM_ (sayLn . (replicate indnt ' ' ++)) . lines 

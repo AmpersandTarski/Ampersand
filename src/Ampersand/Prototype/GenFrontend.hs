@@ -10,6 +10,8 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
+import           Ampersand.Runners (logLevel)
+import           Ampersand.Misc.Config
 import           Codec.Archive.Zip
 import qualified RIO.ByteString.Lazy  as BL
 import           RIO.Char
@@ -60,7 +62,7 @@ This is considered editable iff the composition rel;relRef yields an editable re
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasProtoOpts env, HasZwolleVersion env, HasOptions env, HasDirCustomizations env,HasRootFile env, HasRunComposer env, HasGenTime env, HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
+doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirCustomizations env,HasRootFile env, HasRunComposer env, HasGenTime env, HasDirPrototype env, HasLogFunc env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     genTime <- view genTimeL
@@ -79,7 +81,7 @@ doGenFrontend fSpec = do
       installComposerLibs
     sayWhenLoudLn "Frontend generated"
   
-copyTemplates :: (HasRootFile env, HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
+copyTemplates :: (HasRootFile env, HasDirPrototype env, HasLogFunc env) =>
                  RIO env ()
 copyTemplates = do
   env <- ask
@@ -92,7 +94,7 @@ copyTemplates = do
   else
          sayWhenLoudLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
 
-copyCustomizations :: (HasDirPrototype env, HasRootFile env,HasDirCustomizations env,HasVerbosity  env, HasHandle env) =>
+copyCustomizations :: (HasDirPrototype env, HasRootFile env,HasDirCustomizations env,HasLogFunc env) =>
                       RIO env ()
 copyCustomizations = do
   env <- ask
@@ -101,7 +103,7 @@ copyCustomizations = do
   let custDirs = map (dirSource env</>) dirCustomizations
   mapM_ (copyDir dirPrototype) custDirs
     where
-      copyDir :: (HasVerbosity  env, HasHandle env) =>
+      copyDir :: (HasLogFunc env) =>
                  FilePath -> FilePath -> RIO env()
       copyDir targetDir sourceDir = do
         sourceDirExists <- liftIO $ doesDirectoryExist sourceDir
@@ -148,7 +150,7 @@ data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the abso
                               , ifcSubObjs :: [FEObject2] 
                               } deriving (Show, Data,Typeable)
 
-buildInterfaces :: (HasDirPrototype env, HasOptions env) => FSpec -> RIO env [FEInterface]
+buildInterfaces :: (HasDirPrototype env) => FSpec -> RIO env [FEInterface]
 buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) topLevelUserInterfaces
   where
     allIfcs :: [Interface]
@@ -157,7 +159,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) topLevelUserInterfac
     topLevelUserInterfaces :: [Interface]
     topLevelUserInterfaces = filter (not . ifcIsAPI) allIfcs
 
-buildInterface :: (HasDirPrototype env, HasOptions env) => FSpec -> [Interface] -> Interface -> RIO env FEInterface
+buildInterface :: (HasDirPrototype env) => FSpec -> [Interface] -> Interface -> RIO env FEInterface
 buildInterface fSpec allIfcs ifc = do
   obj <- buildObject (BxExpr $ ifcObj ifc)
   return 
@@ -173,7 +175,7 @@ buildInterface fSpec allIfcs ifc = do
     --       (name comes from interface, but is equal to object name)
  
   where    
-    buildObject :: (HasDirPrototype env, HasOptions env) => BoxItem -> RIO env FEObject2
+    buildObject :: (HasDirPrototype env) => BoxItem -> RIO env FEObject2
     buildObject (BxExpr object') = do
       env <- ask
       let object = substituteReferenceObjectDef fSpec object'
@@ -251,28 +253,31 @@ buildInterface fSpec allIfcs ifc = do
 
 ------ Generate RouteProvider.js
 
-genRouteProvider :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) =>
+genRouteProvider :: (HasRunner env, HasDirPrototype env, HasLogFunc env) =>
                     FSpec -> [FEInterface] -> RIO env ()
 genRouteProvider fSpec ifcs = do
-  verbosity <- view verbosityL
+  runner <- view runnerL
+  let loglevel' = logLevel runner
   template <- readTemplate "routeProvider.config.js"
   let contents = renderTemplate template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" ampersandVersionStr
                  . setAttribute "ifcs"                ifcs
-                 . setAttribute "verbose"             verbosity
+                 . setAttribute "verbose"             (loglevel' == LevelDebug)
+                 . setAttribute "loglevel"            (show loglevel')
   writePrototypeAppFile "routeProvider.config.js" contents 
       
 ------ Generate view html code
 
-genViewInterfaces :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) => 
+genViewInterfaces :: (HasRunner env, HasDirPrototype env, HasLogFunc env) => 
                      FSpec -> [FEInterface] -> RIO env ()
 genViewInterfaces fSpec = mapM_ (genViewInterface fSpec)
 
-genViewInterface :: (HasDirPrototype env, HasVerbosity  env, HasHandle env) => 
+genViewInterface :: (HasRunner env, HasDirPrototype env, HasLogFunc env) => 
                     FSpec -> FEInterface -> RIO env ()
 genViewInterface fSpec interf = do
-  verbosity <- view verbosityL
+  runner <- view runnerL
+  let loglevel' = logLevel runner
   lns <- genViewObject fSpec 0 (_ifcObj interf)
   template <- readTemplate "interface.html"
   let contents = renderTemplate template $
@@ -290,7 +295,8 @@ genViewInterface fSpec interf = do
                   . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                   . setAttribute "crudD"               (objCrudD (_ifcObj interf))
                   . setAttribute "contents"            (L.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
-                  . setAttribute "verbose"             (verbosity)
+                  . setAttribute "verbose"             (loglevel' == LevelDebug)
+                  . setAttribute "loglevel"            (show loglevel')
   let filename = "ifc" ++ ifcName interf ++ ".view.html" 
   writePrototypeAppFile filename contents 
   
@@ -301,12 +307,13 @@ data SubObjectAttr2 = SubObjAttr{ subObjName :: String
                                 , subObjExprIsUni :: Bool
                                 } deriving (Show, Data, Typeable)
  
-genViewObject :: (HasDirPrototype env, HasVerbosity env) =>
+genViewObject :: (HasRunner env, HasDirPrototype env, HasLogFunc env) =>
                  FSpec -> Int -> FEObject2 -> RIO env [String]
 genViewObject fSpec depth obj =
   case obj of 
     FEObjE{} -> do
-      verbosity <- view verbosityL
+      runner <- view runnerL
+      let loglevel' = logLevel runner
       let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
           atomicAndBoxAttrs = setAttribute "exprIsUni"  (exprIsUni obj)
                             . setAttribute "exprIsTot"  (exprIsTot obj)
@@ -319,7 +326,8 @@ genViewObject fSpec depth obj =
                             . setAttribute "crudR"      (objCrudR obj)
                             . setAttribute "crudU"      (objCrudU obj)
                             . setAttribute "crudD"      (objCrudD obj)
-                            . setAttribute "verbose"    (verbosity)
+                            . setAttribute "verbose"    (loglevel' == LevelDebug)
+                            . setAttribute "loglevel"   (show loglevel')
       case atomicOrBox obj of
             FEAtomic{} -> do
               {-
@@ -357,7 +365,7 @@ genViewObject fSpec depth obj =
   where 
     indentation :: [String] -> [String]
     indentation = map ( (replicate (if depth == 0 then 4 else 16) ' ') ++)
-    genView_SubObject :: (HasDirPrototype env, HasVerbosity env) =>
+    genView_SubObject :: (HasRunner env, HasDirPrototype env, HasLogFunc env) =>
                          FEObject2 -> RIO env SubObjectAttr2
     genView_SubObject subObj =
       case subObj of
@@ -392,14 +400,15 @@ genViewObject fSpec depth obj =
 
 
 ------ Generate controller JavaScript code
-genControllerInterfaces :: (HasDirPrototype env, HasVerbosity env, HasHandle env) => FSpec -> [FEInterface] -> RIO env ()
+genControllerInterfaces :: (HasRunner env, HasDirPrototype env, HasLogFunc env) => FSpec -> [FEInterface] -> RIO env ()
 genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 
-genControllerInterface :: (HasDirPrototype env, HasVerbosity env, HasHandle env) => FSpec -> FEInterface -> RIO env ()
+genControllerInterface :: (HasRunner env, HasDirPrototype env, HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
 genControllerInterface fSpec interf = do
     let controlerTemplateName = "interface.controller.js"
     template <- readTemplate controlerTemplateName
-    verbosity <- view verbosityL
+    runner <- view runnerL
+    let loglevel' = logLevel runner
     let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -415,7 +424,8 @@ genControllerInterface fSpec interf = do
                      . setAttribute "crudR"                    (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"                    (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
-                     . setAttribute "verbose"                  (verbosity)
+                     . setAttribute "verbose"                  (loglevel' == LevelDebug)
+                     . setAttribute "loglevel"                 (show loglevel')
                      . setAttribute "usedTemplate"             controlerTemplateName
     let filename = "ifc" ++ ifcName interf ++ ".controller.js"
     writePrototypeAppFile filename contents 
@@ -459,7 +469,7 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 
-downloadPrototypeFramework :: (HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env, HasHandle env, HasVerbosity env) =>
+downloadPrototypeFramework :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env, HasLogFunc env) =>
                              RIO env Bool
 downloadPrototypeFramework = ( do 
     destination <- view dirPrototypeL
@@ -482,9 +492,10 @@ downloadPrototypeFramework = ( do
                   . BL.fromStrict 
                   . getResponseBody $ response
       sayWhenLoudLn "Start extraction of prototype framework."
-      verbosity <- view verbosityL
+      runner <- view runnerL
+      let loglevel' = logLevel runner
       let zipoptions = 
-               [OptVerbose | verbosity == Loud]
+               [OptVerbose | logLevel runner == LevelDebug]
             ++ [OptDestination destination]
       ((liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
@@ -520,7 +531,7 @@ downloadPrototypeFramework = ( do
               _:[] -> Nothing
               _:tl -> Just entry{eRelativePath = joinPath tl}
 
-    extractionIsAllowed :: (HasProtoOpts env, HasHandle env, HasVerbosity env) =>
+    extractionIsAllowed :: (HasProtoOpts env, HasLogFunc env) =>
                            FilePath ->  RIO env Bool
     extractionIsAllowed destination = do
       pathExist <- liftIO $ doesPathExist destination
@@ -553,7 +564,7 @@ downloadPrototypeFramework = ( do
              return False
       else return True
 
-promptUserYesNo :: (HasHandle env) => RIO env Bool
+promptUserYesNo :: (HasLogFunc env) => RIO env Bool
 promptUserYesNo = do
     char <- liftIO $ getChar -- TODO: refactor that the first character is directly processed
     case toUpper char of

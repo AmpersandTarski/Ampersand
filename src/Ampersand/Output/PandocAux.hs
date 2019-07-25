@@ -108,7 +108,7 @@ defaultWriterVariables env fSpec
     ]
 
 --DESCR -> functions to write the pandoc
-writepandoc :: (HasDirOutput env, HasRootFile env, HasGenFuncSpec env, HasHandle env, HasVerbosity env) => 
+writepandoc :: (HasDirOutput env, HasRootFile env, HasGenFuncSpec env, HasLogFunc env) => 
       FSpec -> Pandoc -> RIO env ()
 writepandoc fSpec thePandoc = do
   env <- ask

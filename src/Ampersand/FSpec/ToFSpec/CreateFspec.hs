@@ -3,6 +3,7 @@
 module Ampersand.FSpec.ToFSpec.CreateFspec
   ( BuildPrescription, BuildStep(..), BuildAction(..)
   , createFspec
+  , createFspecDataAnalisys
   )
 
 where
@@ -32,9 +33,12 @@ import           Data.Foldable (foldrM)
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createFSpec.
-createFspec :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasCommands env, HasRootFile env, HasHandle env, HasVerbosity env) => 
-               BuildPrescription -> RIO env (Guarded FSpec)
-createFspec recipe = do 
+createFspec             recipe = createFspec' id                    recipe
+createFspecDataAnalisys recipe = createFspec' encloseInConstraints  recipe
+
+createFspec' :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasRootFile env, HasLogFunc env) => 
+               (P_Context -> P_Context) -> BuildPrescription -> RIO env (Guarded FSpec)
+createFspec' mutator recipe = do 
     env <- ask
     -- grindInfoMap :: Map MetaModel GrindInfo
     grindInfoMap <- do 
@@ -45,7 +49,7 @@ createFspec recipe = do
        case fileName of
          Just x -> do
              pctx <- snd <$> parseADL x -- the P_Context of the user's sourceFile
-             return $ (if view dataAnalysisL env then encloseInConstraints else id) <$> pctx 
+             return $ mutator <$> pctx 
          Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     return . join $ cook env grindInfoMap recipe <$> rawUserP_Ctx
 
@@ -64,7 +68,7 @@ cook env grindInfoMap steps pCtx = join $ pCtx2Fspec env <$> foldrM doStep pCtx 
                           Nothing -> fatal $ "metaModel `"++show metaModel++"`was not found!"
            
 --TODO: fix the call to encloseInConstraints by using the right Command
---pCtx2Fspec :: (HasCommands env, HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) 
+--pCtx2Fspec :: (HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) 
 --   => env -> Guarded P_Context -> Guarded FSpec
 --pCtx2Fspec env c = makeFSpec env <$> join (pCtx2aCtx env <$> encloseInConstraints env c)
 
