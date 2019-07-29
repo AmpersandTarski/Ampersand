@@ -21,7 +21,7 @@ import qualified RIO.Text as T
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
-makeFSpec :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env) =>
+makeFSpec :: (HasOutputLanguage env, HasFSpecGenOpts env) =>
     env -> A_Context -> FSpec
 makeFSpec env context
  =      FSpec { fsName       = T.pack (name context)

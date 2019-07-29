@@ -4,15 +4,15 @@ module Ampersand.Output.ToPandoc.ChapterIntroduction
 where
 import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.Time.Format
+import RIO.Time(UTCTime)
 
-chpIntroduction :: (HasGenTime env, HasDirOutput env, HasGenFuncSpec env) 
-   => env -> FSpec -> Blocks
-chpIntroduction env fSpec =
+chpIntroduction :: (HasDirOutput env, HasGenFuncSpec env) 
+   => env -> UTCTime -> FSpec -> Blocks
+chpIntroduction env now fSpec =
       xDefBlck env fSpec Intro
    <> fromList purposesOfContext  -- the motivation(s) of this context
    <> readingGuide                -- tells what can be expected in this document.
   where
-    genTime = view genTimeL env
     readingGuide
       = case fsLang fSpec of
           Dutch
@@ -114,7 +114,7 @@ chpIntroduction env fSpec =
                          )
                else mempty
 
-    date = formatTime (lclForLang (fsLang fSpec)) "%-d-%-m-%Y" genTime
-    time = formatTime (lclForLang (fsLang fSpec)) "%H:%M:%S" genTime
+    date = formatTime (lclForLang (fsLang fSpec)) "%-d-%-m-%Y" now
+    time = formatTime (lclForLang (fsLang fSpec)) "%H:%M:%S" now
 
     purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec (fsLang fSpec) fSpec]

@@ -13,8 +13,8 @@ hideMods hide = if hide then internal <> hidden else idm
 
 -- Common parsers:
 
-outputLanguage :: Parser (Maybe Lang)
-outputLanguage = 
+outputLanguageP :: Parser (Maybe Lang)
+outputLanguageP = 
    f <$> strOption
         ( long "language"
         <> metavar "OUTPUTLANGUAGE"
@@ -32,7 +32,22 @@ outputLanguage =
               "EN"  -> Just English
               _     -> Nothing
 
-rootFile :: Parser FilePath
-rootFile = strArgument 
+rootFileP :: Parser FilePath
+rootFileP = strArgument 
           (metavar "AMPERSAND_SCRIPT" 
           <> help "The root file of your Ampersand model.")
+
+trimXLSXCellsP :: Parser Bool
+trimXLSXCellsP = switch
+        ( long "do-not-trim-cellvalues"
+        <> help ("Do not ignore leading and trailing spaces in .xlsx files "<>
+                 "that are INCLUDED in the script.")
+        )
+outputFileP :: String -> Parser FilePath
+outputFileP deflt = strOption
+        ( long "to"
+        <> metavar "OUTPUTFILE"
+        <> value deflt
+        <> showDefault
+        <> help ("Name of the file where the output is written to." )
+        )

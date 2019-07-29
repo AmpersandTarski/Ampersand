@@ -18,7 +18,7 @@ module Ampersand.Basics.Prelude
   )where
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import           RIO                  as X
-import System.IO (openTempFile,hPutStr,hPutStrLn, stderr)
+import System.IO (openTempFile, stderr)
 import qualified RIO.Text as T
 import           Data.Monoid          as X (First (..), Any (..), Sum (..), Endo (..))
 

@@ -26,7 +26,7 @@ attributesOfConcept fSpec c
          where expr = attExpr att 
               --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
-makeGeneratedSqlPlugs :: (HasSqlBinTables env) 
+makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) 
        => env -> A_Context 
               -> (Relation -> Relation) -- Function to add calculated properties to a relation
               -> [PlugSQL]
@@ -216,7 +216,7 @@ makeGeneratedSqlPlugs env context calcProps = conceptTables ++ linkTables
 -- | this function tells how a given relation is to be stored. If stored
 --   in a concept table, it returns that concept. It allways returns a boolean
 --   telling wether or not the relation is stored flipped.
-wayToStore :: (HasSqlBinTables env) => env -> Relation -> (Maybe A_Concept,Bool)
+wayToStore :: (HasFSpecGenOpts env) => env -> Relation -> (Maybe A_Concept,Bool)
 wayToStore env dcl = 
    if view sqlBinTablesL env 
    then (Nothing, False)

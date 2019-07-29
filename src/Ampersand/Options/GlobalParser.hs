@@ -40,7 +40,7 @@ instance Monoid GlobalOptsMonoid where
 
 -- | Parser for global command-line options.
 globalOptsParser :: FilePath -> Maybe LogLevel -> Parser GlobalOptsMonoid
-globalOptsParser currentDir defLogLevel =
+globalOptsParser _currentDir defLogLevel =
     let build loglevel timeInLog terminal termWidth yaml = 
           GlobalOptsMonoid
           { globalMonoidLogLevel     = loglevel

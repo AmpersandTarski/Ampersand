@@ -38,7 +38,7 @@ validateRulesSQL fSpec = do
                       getAllIdExps fSpec ++
                       getAllViewExps fSpec
         sayWhenLoudLn $ "Number of expressions to be validated: "++show (length allExps)
-        results <- mapM (validateExp fSpec) allExps
+        results <- mapM (validateExp fSpec) $ zip allExps [1..]
         case [ ve | (ve, False) <- results] of
            [] -> do
                sayWhenLoudLn $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
@@ -88,11 +88,15 @@ showVExp :: (Expression, String) -> String
 showVExp (expr, orig) = "Origin: "++orig++", expression: "++showA expr
 
 -- validate a single expression and report the results
-validateExp :: (HasProtoOpts env, HasLogFunc env) => FSpec -> ValidationExp ->  RIO env (ValidationExp, Bool)
-validateExp fSpec vExp =
+validateExp :: (HasProtoOpts env, HasLogFunc env) 
+         => FSpec 
+         -> (ValidationExp -- The expression to be validated
+            , Int) -- The index of the expression (for showing progress) 
+         -> RIO env (ValidationExp, Bool)
+validateExp fSpec (vExp, i) =
     case vExp of
         (EDcD{}, _) -> do -- skip all simple relations
-            say "."
+            sayLn $ replicate i '.'
             return (vExp, True)
         (expr, orig) -> do
             env <- ask
@@ -100,7 +104,7 @@ validateExp fSpec vExp =
             let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
             if L.sort violationsSQL == L.sort violationsAmp
             then do
-                say "."
+                sayLn $ replicate i '.'
                 return (vExp, True)
             else do
                 sayLn ""

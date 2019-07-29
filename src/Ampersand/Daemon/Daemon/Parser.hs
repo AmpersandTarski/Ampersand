@@ -12,7 +12,7 @@ import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
 import           Ampersand.FSpec.MetaModels
-parseProject :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasLogFunc env) => 
+parseProject :: (HasParseOptions env, HasOutputLanguage env, HasFSpecGenOpts env, HasDefaultCrud env, HasLogFunc env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
 parseProject rootAdl = do
     (pc,gPctx) <- parseADL rootAdl 

@@ -14,6 +14,7 @@ import           Ampersand.Daemon.Daemon.Types
 import           Ampersand.Daemon.Daemon.Util
 import           Ampersand.Daemon.Wait
 import           Ampersand.Misc
+import           Ampersand.Misc.Commands
 import           Data.Ord
 import           Data.Tuple.Extra(both)
 import qualified RIO.List as L
@@ -23,6 +24,7 @@ import           System.Directory(getCurrentDirectory,setCurrentDirectory)
 import           System.Environment
 import           System.FilePath
 import           System.Info
+import           Ampersand.Misc.Config
 
 -- | When to colour terminal output.
 data ColorMode
@@ -37,8 +39,9 @@ data TermSize = TermSize
     ,termWrap :: WordWrap
     }
 
+
 -- | Like 'main', but run with a fake terminal for testing
-mainWithTerminal :: IO TermSize -> ([String] -> RIO App ()) -> RIO App ()
+mainWithTerminal :: IO TermSize -> ([String] -> RIO (ExtendedRunner DaemonOpts) ()) -> RIO (ExtendedRunner DaemonOpts) ()
 mainWithTerminal termSize termOutput = goForever
   where goForever = work `catch` errorHandler
         work = forever $ withWindowIcon $ do
@@ -75,12 +78,12 @@ mainWithTerminal termSize termOutput = goForever
                     runRIO env $ do 
                        runAmpersand env waiter termSize' (termOutput . restyle)
 
-        errorHandler :: AmpersandExit -> RIO App ()
+        errorHandler :: AmpersandExit -> RIO (ExtendedRunner DaemonOpts) ()
         errorHandler (err :: AmpersandExit) = do 
               sayLn (show err)
               goForever
 
-runDaemon :: RIO App ()
+runDaemon :: RIO (ExtendedRunner DaemonOpts) ()
 runDaemon = mainWithTerminal termSize termOutput
     where
         termSize = do
@@ -99,7 +102,7 @@ data Continue = Continue
 
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
-runAmpersand :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasLogFunc env, HasDaemonConfig env ) 
+runAmpersand :: (HasDaemonOpts env, HasOutputLanguage env, HasDefaultCrud env, HasLogFunc env ) 
    => env -> Waiter -> IO TermSize -> ([String] -> RIO env ()) -> RIO env Continue
 runAmpersand app waiter termSize termOutput = do
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()

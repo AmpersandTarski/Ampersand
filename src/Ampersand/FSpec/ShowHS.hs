@@ -13,13 +13,14 @@ import           Data.Hashable
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
+import           RIO.Time (UTCTime)
 import           Text.Pandoc hiding (Meta)
 
-fSpec2Haskell :: (HasRootFile env, HasGenTime env) =>
-       env -> FSpec -> String
-fSpec2Haskell env fSpec
+fSpec2Haskell :: (HasRootFile env) =>
+       env -> UTCTime -> FSpec -> String
+fSpec2Haskell env now fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
-          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (view genTimeL env)++"-}"
+          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show now++"-}"
           ++"\nmodule Main where\n"
           ++"\nimport Ampersand"
           ++"\nimport Text.Pandoc hiding (Meta)"
@@ -41,7 +42,7 @@ class ShowHSName a where
  showHSName :: a -> String
 
 class ShowHS a where
- showHS :: (HasRootFile env, HasGenTime env) => env -> String -> a -> String
+ showHS :: (HasRootFile env) => env -> String -> a -> String
 
 instance ShowHSName a => ShowHSName [a] where
  showHSName xs = "["++L.intercalate "," (map showHSName xs)++"]"

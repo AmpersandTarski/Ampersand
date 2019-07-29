@@ -7,13 +7,14 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.Commands
         ( commandLineHandler
+        , ExtendedRunner
+        , DaemonOpts
         )
 where
 import           Ampersand.Basics
 import           Ampersand.Commands.Proto
 import           Ampersand.Misc.Config
 import           Ampersand.Misc.HasClasses
-import qualified Ampersand.Misc.Options as Deprecated (HasProtoOpts)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Options.GlobalParser
 import           Ampersand.FSpec.ToFSpec.CreateFspec
@@ -70,6 +71,10 @@ commandLineHandler currentDir _progName = complicatedOptions
                   "Generate a prototype from your specification."
                   protoCmd
                   (protoOptsParser Proto "DEFAULTDATABASENAME")
+      addCommand'' "daemon"
+                  "Use ampersand to check your model while you modify it."
+                  daemonCmd
+                  (fatal "TODO: Implement daemonOptsParser" )
       where
         -- addCommand hiding global options
         addCommand'' :: String -> String -> (a -> RIO Runner ()) -> Parser a
@@ -218,7 +223,12 @@ helpOption =
     long "help" <>
     help "Show this help text"
 
-
+daemonCmd :: DaemonOpts -> RIO Runner ()
+daemonCmd opts = 
+    extendWith opts $ do
+       let aap :: RIO (ExtendedRunner DaemonOpts) ()
+           aap = undefined --  runDaemon
+       aap 
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd protoOpts = 
@@ -245,29 +255,30 @@ extendWith opts inner = do
 
 instance (HasOutputLanguage a) => HasOutputLanguage (ExtendedRunner a) where
   languageL = cmdOptsL . languageL
-instance (HasNamespace a) => HasNamespace (ExtendedRunner a) where
-  namespaceL = cmdOptsL . namespaceL
-instance (HasSqlBinTables a) => HasSqlBinTables (ExtendedRunner a) where
-  sqlBinTablesL = cmdOptsL . sqlBinTablesL
-instance (HasGenInterfaces a) => HasGenInterfaces (ExtendedRunner a) where
-  genInterfacesL = cmdOptsL . genInterfacesL
+instance (HasFSpecGenOpts a) => HasFSpecGenOpts (ExtendedRunner a) where
+  fSpecGenOptsL = cmdOptsL . fSpecGenOptsL
 instance (HasDefaultCrud a) => HasDefaultCrud (ExtendedRunner a) where
   defaultCrudL = cmdOptsL . defaultCrudL
-instance (HasExcellOutputOptions a) => HasExcellOutputOptions (ExtendedRunner a) where
+instance (HasParseOptions a) => HasParseOptions (ExtendedRunner a) where
   trimXLSXCellsL = cmdOptsL . trimXLSXCellsL
---instance (HasCommands a) => HasCommands (ExtendedRunner a) where
 instance (HasRootFile a) => HasRootFile (ExtendedRunner a) where
   fileNameL = cmdOptsL . fileNameL
---instance Deprecated.HasEnvironment (ExtendedRunner a) where
-
-instance HasGenTime (ExtendedRunner a) where
+instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where 
+  daemonOptsL = cmdOptsL . daemonOptsL
 instance (HasRunComposer a) => HasRunComposer (ExtendedRunner a) where
+  runComposerL = cmdOptsL . runComposerL
 instance (HasDirCustomizations a) => HasDirCustomizations (ExtendedRunner a) where
+  dirCustomizationsL = cmdOptsL . dirCustomizationsL
 instance (HasZwolleVersion a) => HasZwolleVersion (ExtendedRunner a) where
+  zwolleVersionL = cmdOptsL . zwolleVersionL
 instance (HasAllowInvariantViolations a) => HasAllowInvariantViolations (ExtendedRunner a) where
+  allowInvariantViolationsL = cmdOptsL . allowInvariantViolationsL
 instance (HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
-instance (Deprecated.HasProtoOpts a) => Deprecated.HasProtoOpts (ExtendedRunner a) where
+  dirPrototypeL = cmdOptsL . dirPrototypeL
+instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where
+  protoOptsL = cmdOptsL . protoOptsL
 instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
+--  zwolleVersionL = cmdOptsL . zwolleVersionL
 instance HasLogFunc (ExtendedRunner a) where
 instance HasRunner (ExtendedRunner a) where
   runnerL = lens eRunner  (\x y -> x { eRunner  = y })
@@ -281,3 +292,4 @@ data ExtendedRunner a = ExtendedRunner
    } deriving Show
 cmdOptsL :: Lens' (ExtendedRunner a) a
 cmdOptsL = lens eCmdOpts (\x y -> x { eCmdOpts = y })
+

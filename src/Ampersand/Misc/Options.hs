@@ -46,7 +46,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , runComposer :: Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
                        , genInterfaces :: Bool -- if True, generate interfaces
                        , runAsDaemon :: Bool -- run Ampersand as a daemon. (for use with the vscode extension)
-                       , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
+                    --   , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
                        , namespace :: String
                        , testRule :: Maybe String
                        , genFSpec :: Bool   -- if True, generate a functional design
@@ -100,18 +100,8 @@ data EnvironmentOptions = EnvironmentOptions
       , envPostVersion        :: Maybe String  
       } deriving Show
   
-class HasProtoOpts env where
-   dbNameL   :: Lens' env String
-   sqlHostL  :: Lens' env String
-   sqlLoginL :: Lens' env String
-   sqlPwdL   :: Lens' env String
-   forceReinstallFrameworkL :: Lens' env Bool
 class HasOptions env where
   optionsL :: Lens' env Options
-instance HasDaemonConfig Options where
-  daemonConfigL = lens daemonConfig (\x y -> x { daemonConfig = y })
-instance HasDaemonConfig App where
-  daemonConfigL = optionsL . daemonConfigL
 instance HasDirPrototype Options where
   dirPrototypeL = lens dirPrototype (\x y -> x { dirPrototype = y })
 
@@ -122,26 +112,20 @@ instance HasEnvironment Options where
 instance HasEnvironment App where
   environmentL = optionsL . environmentL
 
-instance HasExcellOutputOptions Options where
+instance HasParseOptions Options where
   trimXLSXCellsL = lens trimXLSXCells (\x y -> x { trimXLSXCells = y })
-instance HasExcellOutputOptions App where
+instance HasParseOptions App where
   trimXLSXCellsL = optionsL . trimXLSXCellsL
-instance HasGenTime Options where
-  genTimeL = environmentL . genTimeL
-instance HasGenTime App where
-  genTimeL = optionsL . genTimeL
-instance HasGenTime EnvironmentOptions where
-  genTimeL = lens envLocalTime (\x y -> x { envLocalTime = y })
 instance HasRootFile Options where
   fileNameL = lens fileName (\x y -> x { fileName = y })
 instance HasOutputLanguage Options where
   languageL = lens language (\x y -> x { language = y })
 instance HasOutputLanguage App where
   languageL = optionsL . languageL
-instance HasDefaultCrud Options where
-  defaultCrudL = lens defaultCrud (\x y -> x { defaultCrud = y })
-instance HasDefaultCrud App where
-  defaultCrudL = optionsL . defaultCrudL
+--instance HasDefaultCrud Options where
+--  defaultCrudL = lens defaultCrud (\x y -> x { defaultCrud = y })
+--instance HasDefaultCrud App where
+--  defaultCrudL = optionsL . defaultCrudL
 instance HasRunComposer Options where
   runComposerL = lens runComposer (\x y -> x { runComposer = y })
 instance HasRunComposer App where
@@ -154,18 +138,6 @@ instance HasZwolleVersion Options where
   zwolleVersionL = lens zwolleVersion (\x y -> x { zwolleVersion = y })
 instance HasZwolleVersion App where
   zwolleVersionL = optionsL . zwolleVersionL
-instance HasSqlBinTables Options where
-  sqlBinTablesL = lens sqlBinTables (\x y -> x { sqlBinTables = y })
-instance HasSqlBinTables App where
-  sqlBinTablesL = optionsL . sqlBinTablesL
-instance HasGenInterfaces Options where
-  genInterfacesL = lens genInterfaces (\x y -> x { genInterfaces = y })
-instance HasGenInterfaces App where
-  genInterfacesL = optionsL . genInterfacesL
-instance HasNamespace Options where
-  namespaceL = lens namespace (\x y -> x { namespace = y })
-instance HasNamespace App where
-  namespaceL = optionsL . namespaceL
 instance HasMetaOptions Options where
   genMetaFileL = lens genMetaFile (\x y -> x { genMetaFile = y })
   addSemanticMetamodelL = lens addSemanticMetamodel (\x y -> x { addSemanticMetamodel = y })
@@ -366,7 +338,7 @@ getOptions' envOpts =
                       , genPrototype     = False
                       , genInterfaces    = False
                       , runAsDaemon      = False
-                      , daemonConfig     = ".ampersand"
+                    --  , daemonConfig     = ".ampersand"
                       , namespace        = ""
                       , testRule         = Nothing
                       , genFSpec         = False
@@ -522,16 +494,16 @@ options = [ (Option ['v']   ["version"]
   --             (NoArg (\opts -> opts{sqlBinTables = True}))
   --             "generate binary tables only in SQL database, for testing purposes."
   --          , Hidden)
-          , (Option ['x']     ["interfaces"]
-               (NoArg (\opts -> opts{genInterfaces  = True}))
-               "generate interfaces, which currently does not work."
-            , Hidden)
-          , (Option []        ["daemon"]
-               (OptArg (\fn opts -> opts{runAsDaemon = True
-                                        ,daemonConfig = fromMaybe (daemonConfig opts) fn
-                                        })"configfile")
-               "Run ampersand as daemon, for use by the vscode ampersand-language-extention. An optional parameter may be specified to tell what config file is used. This defaults to `.ampersand`."
-            , Public)
+--          , (Option ['x']     ["interfaces"]
+--               (NoArg (\opts -> opts{genInterfaces  = True}))
+--               "generate interfaces, which currently does not work."
+--            , Hidden)
+          -- , (Option []        ["daemon"]
+          --      (OptArg (\fn opts -> opts{runAsDaemon = True
+          --                               ,daemonConfig = fromMaybe (daemonConfig opts) fn
+          --                               })"configfile")
+          --      "Run ampersand as daemon, for use by the vscode ampersand-language-extention. An optional parameter may be specified to tell what config file is used. This defaults to `.ampersand`."
+          --   , Public)
           , (Option ['e']     ["export"]
                (OptArg (\mbnm opts -> opts{export2adl = True
                                           ,outputfileAdl = fromMaybe (outputfileAdl opts) mbnm}) "file")
@@ -547,11 +519,11 @@ options = [ (Option ['v']   ["version"]
                        ) "DIR")
                ("output directory (This overrules environment variable "++ dirOutputVarName ++ ").")
             , Public)
-          , (Option []      ["namespace"]
-               (ReqArg (\nm opts -> opts{namespace = nm}
-                       ) "NAMESPACE")
-               "prefix database identifiers with this namespace, to isolate namespaces within the same database."
-            , Hidden)
+--          , (Option []      ["namespace"]
+--               (ReqArg (\nm opts -> opts{namespace = nm}
+--                       ) "NAMESPACE")
+--               "prefix database identifiers with this namespace, to isolate namespaces within the same database."
+--            , Hidden)
           , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> opts
                                 { genFSpec=True
@@ -689,10 +661,10 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{oldNormalizer = False}))
                "Use the new normalizer at your own risk." -- :-)
             , Hidden)
-          , (Option []        ["do-not-trim-cellvalues"]
-               (NoArg (\opts -> opts{trimXLSXCells = False}))
-               "Do not ignore leading and trailing spaces in .xlsx files that are INCLUDED in the script." -- :-)
-            , Hidden)
+--          , (Option []        ["do-not-trim-cellvalues"]
+--               (NoArg (\opts -> opts{trimXLSXCells = False}))
+--               "Do not ignore leading and trailing spaces in .xlsx files that are INCLUDED in the script." -- :-)
+--            , Hidden)
           ]
 
 --usageInfo' :: (HasLogFunc env, HasEnvironment env) => env -> String

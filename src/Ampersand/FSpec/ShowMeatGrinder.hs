@@ -20,10 +20,9 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
-import           Ampersand.Misc
 import qualified RIO.List as L
 import qualified RIO.Set as Set
-
+import           RIO.Time (UTCTime)
 data MetaModel = FormalAmpersand | FADocumented | SystemContext
        deriving (Eq, Ord, Enum, Bounded, Show)
 instance Named MetaModel where
@@ -141,14 +140,14 @@ showPop pop =
       Comment{} -> L.intercalate "\n" . map ("-- " ++) . comment $ pop
 -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
-makeMetaFile :: (HasGenTime env) => env -> GrindInfo -> FSpec -> (FilePath,String)
-makeMetaFile env metaModel userFspec
+makeMetaFile :: UTCTime -> GrindInfo -> FSpec -> (FilePath,String)
+makeMetaFile now metaModel userFspec
   = ("MetaPopulationFile.adl", content )
   where
     content = unlines $
         ([ "{- Do not edit manually. This code has been generated!!!"
         , "    Generated with "++ampersandVersionStr
-        , "    Generated at "++show (view genTimeL env)
+        , "    Generated at "++show now
         , " "
         , "The populations defined in this file are the populations from the user's"
         , "model named '"++name userFspec++"'."

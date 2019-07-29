@@ -61,7 +61,7 @@ ampersand = do
 --   env <- defEnv
 --   runRIO env ampersand'
 
--- ampersand' :: () -- (HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasGenFuncSpec env, HasRootFile env, HasLogFunc env, HasCommands env) 
+-- ampersand' :: () -- (HasCurrentTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasGenFuncSpec env, HasRootFile env, HasLogFunc env, HasCommands env) 
 --   => RIO App ()
 -- ampersand' = do
 --     env <- ask

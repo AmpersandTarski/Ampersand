@@ -27,10 +27,10 @@ import           Ampersand.Misc.Config
 import           Ampersand.FSpec
 import           System.Directory
 import           Ampersand.Output.FSpec2SQL
-import           Ampersand.Output.ToJSON.ToJson 
+import           Ampersand.Output.ToJSON.ToJson
 -- | Builds a prototype of the current project.
 --
-proto :: (Show env, HasRunner env, HasGenTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env) 
+proto :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env) 
        => FSpec -> RIO env ()
 proto fSpec = do
     dirPrototype <- view dirPrototypeL
@@ -46,42 +46,6 @@ proto fSpec = do
     else exitWith NoPrototypeBecauseOfRuleViolations
 
 
--- | Options for @ampersand proto@.
-data ProtoOpts = ProtoOpts
-   { protOdbName :: !String
-   -- ^ Name of the database that is generated as part of the prototype
-   , protOsqlHost ::  !String
-   -- ^ do database queries to the specified host
-   , protOsqlLogin :: !String
-   -- ^ pass login name to the database server
-   , protOsqlPwd :: !String
-   -- ^ pass password on to the database server
-   , protOforceReinstallFramework :: !Bool
-   -- ^ when true, an existing prototype directory will be destroyed and re-installed
-   , protOOutputLangugage :: !(Maybe Lang)
-   , protORootFile :: !FilePath
-   , protOsqlBinTables :: !Bool
-   } deriving Show
-instance HasProtoOpts ProtoOpts where
-   dbNameL   = lens protOsqlHost  (\x y -> x { protOdbName   = y })
-   sqlHostL  = lens protOsqlHost  (\x y -> x { protOsqlHost  = y })
-   sqlLoginL = lens protOsqlLogin (\x y -> x { protOsqlLogin = y })
-   sqlPwdL   = lens protOsqlPwd   (\x y -> x { protOsqlPwd   = y })
-   forceReinstallFrameworkL
-             = lens protOforceReinstallFramework (\x y -> x { protOforceReinstallFramework   = y })
-instance HasOutputLanguage ProtoOpts where
-  languageL = lens protOOutputLangugage (\x y -> x { protOOutputLangugage = y })
-instance HasSqlBinTables ProtoOpts where
-instance HasGenInterfaces ProtoOpts where
-instance HasDefaultCrud ProtoOpts where
-instance HasExcellOutputOptions ProtoOpts where
-instance HasRootFile ProtoOpts where
-instance HasNamespace ProtoOpts where
-instance HasRunComposer ProtoOpts where
-instance HasDirCustomizations ProtoOpts where
-instance HasZwolleVersion ProtoOpts where
-instance HasAllowInvariantViolations ProtoOpts where
-instance HasDirPrototype ProtoOpts where
 
 
 -- | Proto commands

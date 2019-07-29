@@ -18,6 +18,7 @@ import           RIO.Char
 import           Data.Hashable (hash)
 import qualified RIO.List as L
 import qualified RIO.Text as T
+import           RIO.Time (getCurrentTime)
 import           Network.HTTP.Simple
 import           System.Directory
 import           System.FilePath
@@ -62,10 +63,10 @@ This is considered editable iff the composition rel;relRef yields an editable re
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirCustomizations env,HasRootFile env, HasRunComposer env, HasGenTime env, HasDirPrototype env, HasLogFunc env) =>
+doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirCustomizations env,HasRootFile env, HasRunComposer env, HasDirPrototype env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
-    genTime <- view genTimeL
+    now <- getCurrentTime
     runComposer <- view runComposerL
     sayWhenLoudLn "Generating frontend..."
     isCleanInstall <- downloadPrototypeFramework
@@ -74,7 +75,7 @@ doGenFrontend fSpec = do
     genViewInterfaces fSpec feInterfaces
     genControllerInterfaces fSpec feInterfaces
     genRouteProvider fSpec feInterfaces
-    writePrototypeAppFile ".timestamp" (show . hash . show $ genTime) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
+    writePrototypeAppFile ".timestamp" (show . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     copyCustomizations 
     when (isCleanInstall && runComposer) $ do
       sayLn "Installing dependencies..." -- don't use sayWhenLoudLn here, because installing dependencies takes some time and we want the user to see this
@@ -253,7 +254,7 @@ buildInterface fSpec allIfcs ifc = do
 
 ------ Generate RouteProvider.js
 
-genRouteProvider :: (HasRunner env, HasDirPrototype env, HasLogFunc env) =>
+genRouteProvider :: (HasRunner env, HasDirPrototype env) =>
                     FSpec -> [FEInterface] -> RIO env ()
 genRouteProvider fSpec ifcs = do
   runner <- view runnerL
@@ -269,11 +270,11 @@ genRouteProvider fSpec ifcs = do
       
 ------ Generate view html code
 
-genViewInterfaces :: (HasRunner env, HasDirPrototype env, HasLogFunc env) => 
+genViewInterfaces :: (HasRunner env, HasDirPrototype env) => 
                      FSpec -> [FEInterface] -> RIO env ()
 genViewInterfaces fSpec = mapM_ (genViewInterface fSpec)
 
-genViewInterface :: (HasRunner env, HasDirPrototype env, HasLogFunc env) => 
+genViewInterface :: (HasRunner env, HasDirPrototype env) => 
                     FSpec -> FEInterface -> RIO env ()
 genViewInterface fSpec interf = do
   runner <- view runnerL
@@ -307,7 +308,7 @@ data SubObjectAttr2 = SubObjAttr{ subObjName :: String
                                 , subObjExprIsUni :: Bool
                                 } deriving (Show, Data, Typeable)
  
-genViewObject :: (HasRunner env, HasDirPrototype env, HasLogFunc env) =>
+genViewObject :: (HasRunner env, HasDirPrototype env) =>
                  FSpec -> Int -> FEObject2 -> RIO env [String]
 genViewObject fSpec depth obj =
   case obj of 
@@ -365,7 +366,7 @@ genViewObject fSpec depth obj =
   where 
     indentation :: [String] -> [String]
     indentation = map ( (replicate (if depth == 0 then 4 else 16) ' ') ++)
-    genView_SubObject :: (HasRunner env, HasDirPrototype env, HasLogFunc env) =>
+    genView_SubObject :: (HasRunner env, HasDirPrototype env) =>
                          FEObject2 -> RIO env SubObjectAttr2
     genView_SubObject subObj =
       case subObj of
@@ -400,10 +401,10 @@ genViewObject fSpec depth obj =
 
 
 ------ Generate controller JavaScript code
-genControllerInterfaces :: (HasRunner env, HasDirPrototype env, HasLogFunc env) => FSpec -> [FEInterface] -> RIO env ()
+genControllerInterfaces :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
 genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 
-genControllerInterface :: (HasRunner env, HasDirPrototype env, HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
+genControllerInterface :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genControllerInterface fSpec interf = do
     let controlerTemplateName = "interface.controller.js"
     template <- readTemplate controlerTemplateName
@@ -469,7 +470,7 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 
-downloadPrototypeFramework :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env, HasLogFunc env) =>
+downloadPrototypeFramework :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
                              RIO env Bool
 downloadPrototypeFramework = ( do 
     destination <- view dirPrototypeL
@@ -493,7 +494,6 @@ downloadPrototypeFramework = ( do
                   . getResponseBody $ response
       sayWhenLoudLn "Start extraction of prototype framework."
       runner <- view runnerL
-      let loglevel' = logLevel runner
       let zipoptions = 
                [OptVerbose | logLevel runner == LevelDebug]
             ++ [OptDestination destination]

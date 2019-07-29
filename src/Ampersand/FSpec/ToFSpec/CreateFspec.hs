@@ -33,10 +33,12 @@ import           Data.Foldable (foldrM)
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createFSpec.
+createFspec, createFspecDataAnalisys :: (HasOutputLanguage env, HasFSpecGenOpts env, HasDefaultCrud env, HasParseOptions env, HasRootFile env, HasLogFunc env) => 
+               BuildPrescription -> RIO env (Guarded FSpec)
 createFspec             recipe = createFspec' id                    recipe
 createFspecDataAnalisys recipe = createFspec' encloseInConstraints  recipe
 
-createFspec' :: (HasOutputLanguage env, HasNamespace env, HasSqlBinTables env, HasGenInterfaces env, HasDefaultCrud env, HasExcellOutputOptions env, HasRootFile env, HasLogFunc env) => 
+createFspec' :: (HasOutputLanguage env, HasFSpecGenOpts env, HasDefaultCrud env, HasParseOptions env, HasRootFile env, HasLogFunc env) => 
                (P_Context -> P_Context) -> BuildPrescription -> RIO env (Guarded FSpec)
 createFspec' mutator recipe = do 
     env <- ask
@@ -53,7 +55,7 @@ createFspec' mutator recipe = do
          Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
     return . join $ cook env grindInfoMap recipe <$> rawUserP_Ctx
 
-cook :: (HasOutputLanguage env, HasNamespace env, HasGenInterfaces env, HasDefaultCrud env, HasSqlBinTables env) => env -> Map MetaModel GrindInfo -> BuildPrescription -> P_Context -> Guarded FSpec
+cook :: (HasOutputLanguage env, HasDefaultCrud env, HasFSpecGenOpts env) => env -> Map MetaModel GrindInfo -> BuildPrescription -> P_Context -> Guarded FSpec
 cook env grindInfoMap steps pCtx = join $ pCtx2Fspec env <$> foldrM doStep pCtx steps
       where 
         doStep :: BuildStep -> P_Context -> Guarded P_Context
@@ -68,7 +70,7 @@ cook env grindInfoMap steps pCtx = join $ pCtx2Fspec env <$> foldrM doStep pCtx 
                           Nothing -> fatal $ "metaModel `"++show metaModel++"`was not found!"
            
 --TODO: fix the call to encloseInConstraints by using the right Command
---pCtx2Fspec :: (HasDefaultCrud env, HasGenInterfaces env, HasSqlBinTables env, HasNamespace env, HasOutputLanguage env) 
+--pCtx2Fspec :: 
 --   => env -> Guarded P_Context -> Guarded FSpec
 --pCtx2Fspec env c = makeFSpec env <$> join (pCtx2aCtx env <$> encloseInConstraints env c)
 

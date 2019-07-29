@@ -105,7 +105,7 @@ library:
       - Ampersand.Classes.ConceptStructure
       - Ampersand.Classes.Relational
       - Ampersand.Classes.ViewPoint
-      - Ampersand.Components
+#      - Ampersand.Components
       - Ampersand.Core.A2P_Converters
       - Ampersand.Core.AbstractSyntaxTree
       - Ampersand.Core.ParseTree
@@ -153,7 +153,6 @@ library:
       - Ampersand.Options.LogLevelParser
       - Ampersand.Options.Utils
       - Ampersand.Output
-      - Ampersand.Output.FSpec2Excel
       - Ampersand.Output.FSpec2Pandoc
       - Ampersand.Output.FSpec2SQL
       - Ampersand.Output.PandocAux

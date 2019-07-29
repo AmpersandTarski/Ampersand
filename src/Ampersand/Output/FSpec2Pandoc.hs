@@ -6,7 +6,7 @@ import Ampersand.Output.ToPandoc
 import Data.Time.Format                                       (formatTime)
 import qualified RIO.List as L
 import Text.Pandoc.CrossRef
-
+import RIO.Time(UTCTime)
 --DESCR ->
 --The functional design document starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
@@ -51,9 +51,9 @@ import Text.Pandoc.CrossRef
 --Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
-fSpec2Pandoc :: (HasDirOutput env, HasGenTime env, HasGenFuncSpec env) 
-   => env -> FSpec -> (Pandoc, [Picture])
-fSpec2Pandoc env fSpec = (thePandoc,thePictures)
+fSpec2Pandoc :: (HasDirOutput env, HasGenFuncSpec env) 
+   => env -> UTCTime -> FSpec -> (Pandoc, [Picture])
+fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
   where
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
@@ -79,7 +79,6 @@ fSpec2Pandoc env fSpec = (thePandoc,thePictures)
             <> chapters True -- Numbering with subnumbers per chapter
 
     diagnosisOnly = view diagnosisOnlyL env
-    genTime = view genTimeL env
     thePandoc = wrap .
         setTitle
            (case metaValues "title" fSpec of
@@ -102,7 +101,7 @@ fSpec2Pandoc env fSpec = (thePandoc,thePictures)
              xs -> fmap text $ L.nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
 
         )
-      . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime)))
+      . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" now))
       . doc . mconcat $ blocksByChapter
     
     thePictures = concat picturesByChapter
@@ -111,7 +110,7 @@ fSpec2Pandoc env fSpec = (thePandoc,thePictures)
     (blocksByChapter, picturesByChapter) = L.unzip . map fspec2Blocks . chaptersInDoc $ env
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
-    fspec2Blocks Intro                 = (chpIntroduction       env    fSpec, [])
+    fspec2Blocks Intro                 = (chpIntroduction       env now fSpec, [])
     fspec2Blocks SharedLang            = (chpNatLangReqs        env  0 fSpec, [])
     fspec2Blocks Diagnosis             = chpDiagnosis           env    fSpec
     fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis  env  0 fSpec

@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Ampersand.Misc.Config
   ( 
   -- * Main configuration types and classes
@@ -20,7 +21,7 @@ import           Ampersand.Misc.Options(HasEnvironment(..),EnvironmentOptions) -
 
 -- | Load the configuration, using current directory, environment variables,
 -- and defaults as necessary.
-loadConfig :: HasRunner env => (Config -> RIO env a) -> RIO env a
+loadConfig :: () => (Config -> RIO env a) -> RIO env a
 loadConfig inner = do
 --    mstackYaml <- view $ globalOptsL.to globalStackYaml
 --    configArgs <- view $ globalOptsL.to globalConfigMonoid
@@ -29,10 +30,10 @@ loadConfig inner = do
 --    userConfigPath <- getDefaultUserConfigPath stackRoot
 --    extraConfigs0 <- getExtraConfigs userConfigPath >>=
 --        mapM (\file -> loadConfigYaml (parseConfigMonoid (parent file)) file)
-    let extraConfigs = []
+--    let extraConfigs = []
     let configDummy = fatal "TODO: work with config."
-    let --withConfig :: RIO env a
-        withConfig = inner configDummy
+--    let --withConfig :: RIO env a
+--        withConfig = inner configDummy
 --          configFromConfigMonoid
 --            stackRoot
 --            userConfigPath
@@ -64,9 +65,11 @@ instance HasLogFunc Runner where
   logFuncL = lens runnerLogFunc (\x y -> x { runnerLogFunc = y })
 instance HasRunner Runner where
   runnerL = id
+  {-# INLINE runnerL #-}
 instance HasProcessContext Runner where
   processContextL = lens runnerProcessContext (\x y -> x { runnerProcessContext = y })
 instance HasEnvironment Runner where
+  environmentL = lens tmpRunnerEnvOptions (\x y -> x { tmpRunnerEnvOptions = y })
 -- | Parsed global command-line options.
 data GlobalOpts = GlobalOpts
     { globalLogLevel     :: !LogLevel -- ^ Log level
@@ -96,8 +99,8 @@ data Config =
 
 -- An uninterpreted representation of configuration options.
 -- Configurations may be "cascaded" using mappend (left-biased).
-data ConfigMonoid =
-  ConfigMonoid
-    {configMonoidWorkDir :: !(First FilePath)
-    -- ^ See: 'configWorkDir'.
-    }
+--data ConfigMonoid =
+--  ConfigMonoid
+--    {configMonoidWorkDir :: !(First FilePath)
+--    -- ^ See: 'configWorkDir'.
+--    }
