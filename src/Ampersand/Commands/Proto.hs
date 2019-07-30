@@ -9,18 +9,11 @@ module Ampersand.Commands.Proto
     (proto
     ,ProtoOpts(..)
     ,ProtoCommand(..)
+    ,HasProtoOpts(..)
 --    ,AmpersandProtoExceptionException(..)
     ) where
 
 import           Ampersand.Basics
---import qualified RIO.List as L ((\\),intercalate)
---import qualified Data.Map.Strict as Map
---import qualified RIO.Char as C
---import           RIO.FilePath
---import           Path.IO (ignoringAbsence, removeDirRecur)
---import           Stack.Constants.Config (rootDistDirFromDir, workDirFromDir)
---import           Stack.Types.Config
---import           Stack.Types.SourceMap
 import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Misc
 import           Ampersand.Misc.Config

@@ -158,7 +158,6 @@ instance HasFSpecGenOpts DaemonOpts where
   fSpecGenOptsL = lens x2fSpecGenOpts (\x y -> x { x2fSpecGenOpts = y })
 instance HasParserOptions DaemonOpts where
   trimXLSXCellsL = lens x2trimXLSXCells (\x y -> x { x2trimXLSXCells = y })
-instance HasDefaultCrud DaemonOpts where
 
 class (HasParserOptions a, HasFSpecGenOpts a) => HasDaemonOpts a where
   daemonOptsL :: Lens' a DaemonOpts
@@ -185,7 +184,6 @@ class HasFSpecGenOpts a where
   genInterfacesL = fSpecGenOptsL . (lens xgenInterfaces (\x y -> x { xgenInterfaces = y }))
   namespaceL :: Lens' a String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   namespaceL = fSpecGenOptsL . (lens xnamespace (\x y -> x { xnamespace = y }))
-class HasFSpecGenOpts a => HasDefaultCrud a where
   defaultCrudL :: Lens' a (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
 
@@ -193,11 +191,11 @@ class HasFSpecGenOpts a => HasDefaultCrud a where
                 
 instance HasProtoOpts ProtoOpts where
    protoOptsL = id
+   {-# INLINE protoOptsL #-}
 instance HasOutputLanguage ProtoOpts where
   languageL = lens xoutputLangugage (\x y -> x { xoutputLangugage = y })
 instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
-instance HasDefaultCrud ProtoOpts where
 instance HasParserOptions ProtoOpts where
   trimXLSXCellsL = lens x1trimXLSXCells (\x y -> x { x1trimXLSXCells = y })
 instance HasRootFile ProtoOpts where

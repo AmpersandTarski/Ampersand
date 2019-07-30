@@ -219,7 +219,7 @@ onlyUserConcepts = fmap userList
 --    A "Guarded" will be added on the outside, in order to catch both type errors and disambiguation errors.
 --    Using the Applicative operations <$> and <*> causes these errors to be in parallel
 -- 3. Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
-pCtx2aCtx :: (HasDefaultCrud env, HasOutputLanguage env)
+pCtx2aCtx :: (HasFSpecGenOpts env, HasOutputLanguage env)
    => env -> P_Context -> Guarded A_Context
 pCtx2aCtx env
  PCtx { ctx_nm     = n1
