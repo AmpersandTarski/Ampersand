@@ -16,7 +16,7 @@ module Ampersand.Commands.Proto
 import           Ampersand.Basics
 import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Misc
-import           Ampersand.Misc.Config
+import           Ampersand.Types.Config
 import           Ampersand.FSpec
 import           System.Directory
 import           Ampersand.Output.FSpec2SQL

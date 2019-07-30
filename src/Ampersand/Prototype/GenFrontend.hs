@@ -11,7 +11,7 @@ import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Runners (logLevel)
-import           Ampersand.Misc.Config
+import           Ampersand.Types.Config
 import           Codec.Archive.Zip
 import qualified RIO.ByteString.Lazy  as BL
 import           RIO.Char

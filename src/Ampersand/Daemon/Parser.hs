@@ -1,12 +1,12 @@
 {-# LANGUAGE TupleSections #-}
 -- | Reads a project and parses it
-module Ampersand.Daemon.Daemon.Parser (
+module Ampersand.Daemon.Parser (
     parseProject
 ) where
 
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Daemon.Daemon.Types
+import           Ampersand.Daemon.Types
 import           Ampersand.Input.Parsing
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc

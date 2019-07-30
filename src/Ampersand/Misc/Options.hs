@@ -122,10 +122,6 @@ instance HasOutputLanguage Options where
   languageL = lens language (\x y -> x { language = y })
 instance HasOutputLanguage App where
   languageL = optionsL . languageL
---instance HasDefaultCrud Options where
---  defaultCrudL = lens defaultCrud (\x y -> x { defaultCrud = y })
---instance HasDefaultCrud App where
---  defaultCrudL = optionsL . defaultCrudL
 instance HasRunComposer Options where
   skipComposerL = lens runComposer (\x y -> x { runComposer = y })
 instance HasRunComposer App where

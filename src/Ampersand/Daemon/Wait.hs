@@ -11,7 +11,7 @@ module Ampersand.Daemon.Wait(
 ) where
 
 import           Ampersand.Basics
-import           Ampersand.Daemon.Daemon.Util
+import           Ampersand.Daemon.Util
 import           Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
 import           Control.Monad.Extra(partitionM,concatMapM,ifM,firstJustM)
 import qualified RIO.Map as Map

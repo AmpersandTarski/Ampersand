@@ -6,7 +6,7 @@ module Ampersand.Options.GlobalParser
 where
 
 import           Ampersand.Basics
-import           Ampersand.Misc.Config
+import           Ampersand.Types.Config
 import           Ampersand.Options.LogLevelParser
 import           Ampersand.Options.Utils
 --import           Control.Monad.Trans.Except

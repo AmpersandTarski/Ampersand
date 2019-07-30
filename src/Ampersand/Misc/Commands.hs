@@ -13,13 +13,13 @@ module Ampersand.Misc.Commands
 where
 import           Ampersand.Basics
 import           Ampersand.Commands.Proto
---import           Ampersand.Daemon.Daemon ()
-import           Ampersand.Misc.Config
+import           Ampersand.Commands.Daemon
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Options.GlobalParser
 import           Ampersand.FSpec.ToFSpec.CreateFspec
 import           Ampersand.Options.ProtoParser
+import           Ampersand.Types.Config
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Writer
 --import           Generics.Deriving.Monoid (memptydefault, mappenddefault)
@@ -29,8 +29,6 @@ import           Options.Applicative.Builder.Internal
 import           Options.Applicative.Types
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import           RIO.Process (HasProcessContext (..))
---import qualified System.Directory as D
 import           System.Environment ({-getProgName,-} getArgs, withArgs)
 --import           System.FilePath (isValid, pathSeparator, takeDirectory)
 
@@ -227,9 +225,8 @@ helpOption =
 daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd opts = 
     extendWith opts $ do
-       let aap :: RIO (ExtendedRunner DaemonOpts) ()
-           aap = undefined --  runDaemon
-       aap -- runDaemon 
+       
+       runDaemon 
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd protoOpts = 
@@ -249,49 +246,49 @@ doOrDie gA act =
   where
     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
 
-extendWith :: a -> RIO (ExtendedRunner a) () -> RIO Runner ()
-extendWith opts inner = do
-   env <- ask
-   runRIO (ExtendedRunner env opts) inner
+-- extendWith :: a -> RIO (ExtendedRunner a) () -> RIO Runner ()
+-- extendWith opts inner = do
+--    env <- ask
+--    runRIO (ExtendedRunner env opts) inner
 
-instance (HasOutputLanguage a) => HasOutputLanguage (ExtendedRunner a) where
-  languageL = cmdOptsL . languageL
-instance (HasFSpecGenOpts a) => HasFSpecGenOpts (ExtendedRunner a) where
-  fSpecGenOptsL = cmdOptsL . fSpecGenOptsL
-instance (HasParserOptions a) => HasParserOptions (ExtendedRunner a) where
-  trimXLSXCellsL = cmdOptsL . trimXLSXCellsL
-instance (HasRootFile a) => HasRootFile (ExtendedRunner a) where
-  fileNameL = cmdOptsL . fileNameL
-instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where 
-  daemonOptsL = cmdOptsL . daemonOptsL
-instance (HasRunComposer a) => HasRunComposer (ExtendedRunner a) where
-  skipComposerL = cmdOptsL . skipComposerL
-instance (HasDirCustomizations a) => HasDirCustomizations (ExtendedRunner a) where
-  dirCustomizationsL = cmdOptsL . dirCustomizationsL
-instance (HasZwolleVersion a) => HasZwolleVersion (ExtendedRunner a) where
-  zwolleVersionL = cmdOptsL . zwolleVersionL
-instance (HasAllowInvariantViolations a) => HasAllowInvariantViolations (ExtendedRunner a) where
-  allowInvariantViolationsL = cmdOptsL . allowInvariantViolationsL
-instance (HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
-  dirPrototypeL = cmdOptsL . dirPrototypeL
-instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where
-  protoOptsL = cmdOptsL . protoOptsL
-instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
-  outputfileAdlL = cmdOptsL . outputfileAdlL
-  outputfileDataAnalisysL = cmdOptsL . outputfileDataAnalisysL
+-- instance (HasOutputLanguage a) => HasOutputLanguage (ExtendedRunner a) where
+--   languageL = cmdOptsL . languageL
+-- instance (HasFSpecGenOpts a) => HasFSpecGenOpts (ExtendedRunner a) where
+--   fSpecGenOptsL = cmdOptsL . fSpecGenOptsL
+-- instance (HasParserOptions a) => HasParserOptions (ExtendedRunner a) where
+--   trimXLSXCellsL = cmdOptsL . trimXLSXCellsL
+-- instance (HasRootFile a) => HasRootFile (ExtendedRunner a) where
+--   fileNameL = cmdOptsL . fileNameL
+-- instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where 
+--   daemonOptsL = cmdOptsL . daemonOptsL
+-- instance (HasRunComposer a) => HasRunComposer (ExtendedRunner a) where
+--   skipComposerL = cmdOptsL . skipComposerL
+-- instance (HasDirCustomizations a) => HasDirCustomizations (ExtendedRunner a) where
+--   dirCustomizationsL = cmdOptsL . dirCustomizationsL
+-- instance (HasZwolleVersion a) => HasZwolleVersion (ExtendedRunner a) where
+--   zwolleVersionL = cmdOptsL . zwolleVersionL
+-- instance (HasAllowInvariantViolations a) => HasAllowInvariantViolations (ExtendedRunner a) where
+--   allowInvariantViolationsL = cmdOptsL . allowInvariantViolationsL
+-- instance (HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
+--   dirPrototypeL = cmdOptsL . dirPrototypeL
+-- instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where
+--   protoOptsL = cmdOptsL . protoOptsL
+-- instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
+--   outputfileAdlL = cmdOptsL . outputfileAdlL
+--   outputfileDataAnalisysL = cmdOptsL . outputfileDataAnalisysL
 
-instance HasRunner (ExtendedRunner a) where
-  runnerL = lens eRunner  (\x y -> x { eRunner  = y })
-instance HasLogFunc (ExtendedRunner a) where
-  logFuncL = runnerL . logFuncL
-instance HasProcessContext (ExtendedRunner a) where
-  processContextL = runnerL . processContextL
+-- instance HasRunner (ExtendedRunner a) where
+--   runnerL = lens eRunner  (\x y -> x { eRunner  = y })
+-- instance HasLogFunc (ExtendedRunner a) where
+--   logFuncL = runnerL . logFuncL
+-- instance HasProcessContext (ExtendedRunner a) where
+--   processContextL = runnerL . processContextL
 
-data ExtendedRunner a = ExtendedRunner
-   { eRunner :: !Runner
-   , eCmdOpts :: a
-   } deriving Show
-cmdOptsL :: Lens' (ExtendedRunner a) a
-cmdOptsL = lens eCmdOpts (\x y -> x { eCmdOpts = y })
+-- data ExtendedRunner a = ExtendedRunner
+--    { eRunner :: !Runner
+--    , eCmdOpts :: a
+--    } deriving Show
+-- cmdOptsL :: Lens' (ExtendedRunner a) a
+-- cmdOptsL = lens eCmdOpts (\x y -> x { eCmdOpts = y })
 
--- instance HasProtoOpts a => Has
+-- -- instance HasProtoOpts a => Has

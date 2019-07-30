@@ -25,7 +25,7 @@ import           Ampersand.Basics
 import           RIO.Process (mkDefaultProcessContext)
 --import           RIO.Time (addUTCTime, getCurrentTime)
 --import           Stack.Build.Target(NeedTargets(..))
-import           Ampersand.Misc.Config
+import           Ampersand.Types.Config
 --import           Stack.Constants
 --import           Stack.DefaultColorWhen (defaultColorWhen)
 --import qualified Stack.Docker as Docker
