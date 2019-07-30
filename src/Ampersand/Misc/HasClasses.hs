@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Misc.HasClasses
 
 where
@@ -25,9 +26,9 @@ class HasRootFile a where
 class HasOutputLanguage a where
   languageL :: Lens' a (Maybe Lang)  -- The language in which the user wants the documentation to be printed.
 class HasRunComposer a where
-  runComposerL :: Lens' a Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
+  skipComposerL :: Lens' a Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
 class HasDirCustomizations a where
-  dirCustomizationsL :: Lens' a [FilePath] -- the directory that is copied after generating the prototype
+  dirCustomizationsL :: Lens' a [FilePath] -- the directories that are copied after generating the prototype
 class HasZwolleVersion a where
   zwolleVersionL :: Lens' a String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
 class HasMetaOptions a where
@@ -110,6 +111,11 @@ data ProtoOpts = ProtoOpts
    , xoutputLangugage :: !(Maybe Lang)
    , x1trimXLSXCells :: ! Bool
    , x1fSpecGenOpts :: !FSpecGenOpts
+   , xskipComposer :: !Bool
+   , xdirPrototype :: !FilePath
+   , xdirCustomizations :: ![FilePath]
+   , xzwolleVersion :: !String
+   , xallowInvariantViolations :: !Bool
   } deriving Show
 
 class HasProtoOpts env where
@@ -119,12 +125,12 @@ class HasProtoOpts env where
    sqlLoginL :: Lens' env String
    sqlPwdL   :: Lens' env String
    forceReinstallFrameworkL :: Lens' env Bool
-   dbNameL   = protoOptsL . lens xdbName  (\x y -> x { xdbName   = y })
-   sqlHostL  = protoOptsL . lens xsqlHost  (\x y -> x { xsqlHost  = y })
+   dbNameL   = protoOptsL . lens xdbName (\x y -> x { xdbName = y })
+   sqlHostL  = protoOptsL . lens xsqlHost (\x y -> x { xsqlHost = y })
    sqlLoginL = protoOptsL . lens xsqlLogin (\x y -> x { xsqlLogin = y })
-   sqlPwdL   = protoOptsL . lens xsqlPwd   (\x y -> x { xsqlPwd   = y })
+   sqlPwdL   = protoOptsL . lens xsqlPwd (\x y -> x { xsqlPwd = y })
    forceReinstallFrameworkL
-             = protoOptsL . lens xforceReinstallFramework (\x y -> x { xforceReinstallFramework   = y })
+             = protoOptsL . lens xforceReinstallFramework (\x y -> x { xforceReinstallFramework = y })
 --   sqlBinTablesL = lens xsqlBinTables   (\x y -> x { xsqlBinTables   = y })
 
 --instance 
@@ -150,15 +156,15 @@ instance HasOutputLanguage DaemonOpts where
   languageL = lens xOutputLangugage (\x y -> x { xOutputLangugage = y })
 instance HasFSpecGenOpts DaemonOpts where
   fSpecGenOptsL = lens x2fSpecGenOpts (\x y -> x { x2fSpecGenOpts = y })
-instance HasParseOptions DaemonOpts where
+instance HasParserOptions DaemonOpts where
   trimXLSXCellsL = lens x2trimXLSXCells (\x y -> x { x2trimXLSXCells = y })
 instance HasDefaultCrud DaemonOpts where
---instance HasParseOptions DaemonOpts where
-class (HasParseOptions a, HasFSpecGenOpts a) => HasDaemonOpts a where
+
+class (HasParserOptions a, HasFSpecGenOpts a) => HasDaemonOpts a where
   daemonOptsL :: Lens' a DaemonOpts
   daemonConfigL :: Lens' a FilePath
   daemonConfigL = daemonOptsL . (lens xdaemonConfig (\x y -> x { xdaemonConfig = y }))
-class HasParseOptions a where
+class HasParserOptions a where
   trimXLSXCellsL :: Lens' a Bool
 
 data FSpecGenOpts = FSpecGenOpts
@@ -182,7 +188,6 @@ class HasFSpecGenOpts a where
 class HasFSpecGenOpts a => HasDefaultCrud a where
   defaultCrudL :: Lens' a (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
-instance HasDefaultCrud FSpecGenOpts
 
  
                 
@@ -191,13 +196,20 @@ instance HasProtoOpts ProtoOpts where
 instance HasOutputLanguage ProtoOpts where
   languageL = lens xoutputLangugage (\x y -> x { xoutputLangugage = y })
 instance HasFSpecGenOpts ProtoOpts where
--- fSpecGenOptsL
+  fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
 instance HasDefaultCrud ProtoOpts where
-instance HasParseOptions ProtoOpts where
+instance HasParserOptions ProtoOpts where
+  trimXLSXCellsL = lens x1trimXLSXCells (\x y -> x { x1trimXLSXCells = y })
 instance HasRootFile ProtoOpts where
+  fileNameL = protoOptsL . fileNameL
 instance HasRunComposer ProtoOpts where
+  skipComposerL = lens xskipComposer (\x y -> x { xskipComposer = y })
 instance HasDirCustomizations ProtoOpts where
+  dirCustomizationsL = lens xdirCustomizations (\x y -> x { xdirCustomizations = y })
 instance HasZwolleVersion ProtoOpts where
+  zwolleVersionL = lens xzwolleVersion (\x y -> x { xzwolleVersion = y })
 instance HasAllowInvariantViolations ProtoOpts where
+  allowInvariantViolationsL = lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
 instance HasDirPrototype ProtoOpts where
+  dirPrototypeL = lens xdirPrototype (\x y -> x { xdirPrototype = y })
 

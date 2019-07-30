@@ -24,7 +24,6 @@ import           System.Directory(getCurrentDirectory,setCurrentDirectory)
 import           System.Environment
 import           System.FilePath
 import           System.Info
-import           Ampersand.Misc.Config
 
 -- | When to colour terminal output.
 data ColorMode

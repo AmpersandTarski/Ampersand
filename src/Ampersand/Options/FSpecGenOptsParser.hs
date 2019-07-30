@@ -39,14 +39,17 @@ fSpecGenOptsParser =
 
   where
     defaultCrudP :: Parser (Bool,Bool,Bool,Bool)
-    defaultCrudP = argument 
-        ( maybeReader $ \crudString -> do
+    defaultCrudP = option aap noot 
+      where
+        aap :: ReadM (Bool, Bool, Bool, Bool)
+        aap = ( maybeReader $ \crudString -> do
             let c = 'c' `notElem` crudString
                 r = 'r' `notElem` crudString
                 u = 'u' `notElem` crudString
                 d = 'd' `notElem` crudString
             return (c,r,u,d)
-        )
-        (long "crud-defaults")
+            )
+        noot :: Mod OptionFields (Bool, Bool, Bool, Bool) 
+        noot = (long "crud-defaults")
         
     

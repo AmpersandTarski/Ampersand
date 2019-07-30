@@ -67,7 +67,7 @@ doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirC
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     now <- getCurrentTime
-    runComposer <- view runComposerL
+    skipComposer <- view skipComposerL
     sayWhenLoudLn "Generating frontend..."
     isCleanInstall <- downloadPrototypeFramework
     copyTemplates
@@ -77,7 +77,7 @@ doGenFrontend fSpec = do
     genRouteProvider fSpec feInterfaces
     writePrototypeAppFile ".timestamp" (show . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     copyCustomizations 
-    when (isCleanInstall && runComposer) $ do
+    when (isCleanInstall && not skipComposer) $ do
       sayLn "Installing dependencies..." -- don't use sayWhenLoudLn here, because installing dependencies takes some time and we want the user to see this
       installComposerLibs
     sayWhenLoudLn "Frontend generated"

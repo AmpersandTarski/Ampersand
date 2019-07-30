@@ -16,7 +16,7 @@ import qualified RIO.Map as Map
 import qualified RIO.Text as T
 import           Data.Tuple
 
-parseXlsxFile :: (HasParseOptions env) => 
+parseXlsxFile :: (HasParserOptions env) => 
     Maybe FileKind -> FilePath -> RIO env (Guarded [P_Population])
 parseXlsxFile mFk file =
   do env <- ask
@@ -30,7 +30,7 @@ parseXlsxFile mFk file =
              -> liftIO $ BL.readFile file
      return . xlsx2pContext env . toXlsx $ bytestr
  where
-  xlsx2pContext :: (HasParseOptions env) 
+  xlsx2pContext :: (HasParserOptions env) 
       => env -> Xlsx -> Guarded [P_Population]
   xlsx2pContext env xlsx = Checked pop []
     where 
@@ -54,7 +54,7 @@ instance Show SheetCellsForTable where  --for debugging only
       , "popRowNrs   : "++show (popRowNrs x)
       , "colNrs      : "++show (colNrs x)
       ] ++ debugInfo x 
-toPops :: (HasParseOptions env) => env -> FilePath -> SheetCellsForTable -> [P_Population]
+toPops :: (HasParserOptions env) => env -> FilePath -> SheetCellsForTable -> [P_Population]
 toPops env file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population

@@ -22,22 +22,22 @@ import           Ampersand.Misc
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 
-parser :: (HasLogFunc env, HasParseOptions env) => MetaModel -> RIO env (Guarded P_Context)
+parser :: (HasLogFunc env, HasParserOptions env) => MetaModel -> RIO env (Guarded P_Context)
 parser FormalAmpersand = parseFormalAmpersand
 parser SystemContext   = parseSystemContext 
 parser FADocumented    = parseFormalAmpersandDocumented
 
-pCtx2Fspec :: (HasDefaultCrud env, HasFSpecGenOpts env, HasOutputLanguage env) => env -> P_Context -> Guarded FSpec
+pCtx2Fspec :: (HasDefaultCrud env, HasOutputLanguage env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = makeFSpec env <$> pCtx2aCtx env c
 
 
-mkGrindInfo :: (HasOutputLanguage env, HasFSpecGenOpts env, HasDefaultCrud env, HasLogFunc env, HasParseOptions env) => MetaModel -> RIO env GrindInfo
+mkGrindInfo :: (HasOutputLanguage env, HasDefaultCrud env, HasLogFunc env, HasParserOptions env) => MetaModel -> RIO env GrindInfo
 mkGrindInfo metamodel = do
     env <- ask 
     c <- parser metamodel
     return $ build env c 
   where
-    build :: (HasDefaultCrud env, HasFSpecGenOpts env, HasOutputLanguage env) =>
+    build :: (HasDefaultCrud env, HasOutputLanguage env) =>
         env -> Guarded P_Context -> GrindInfo
     build env pCtx = GrindInfo
             { metaModel    = metamodel

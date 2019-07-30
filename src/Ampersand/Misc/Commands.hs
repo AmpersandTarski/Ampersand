@@ -13,6 +13,7 @@ module Ampersand.Misc.Commands
 where
 import           Ampersand.Basics
 import           Ampersand.Commands.Proto
+--import           Ampersand.Daemon.Daemon ()
 import           Ampersand.Misc.Config
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Input.ADL1.CtxError
@@ -228,7 +229,7 @@ daemonCmd opts =
     extendWith opts $ do
        let aap :: RIO (ExtendedRunner DaemonOpts) ()
            aap = undefined --  runDaemon
-       aap 
+       aap -- runDaemon 
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd protoOpts = 
@@ -259,14 +260,14 @@ instance (HasFSpecGenOpts a) => HasFSpecGenOpts (ExtendedRunner a) where
   fSpecGenOptsL = cmdOptsL . fSpecGenOptsL
 instance (HasDefaultCrud a) => HasDefaultCrud (ExtendedRunner a) where
   defaultCrudL = cmdOptsL . defaultCrudL
-instance (HasParseOptions a) => HasParseOptions (ExtendedRunner a) where
+instance (HasParserOptions a) => HasParserOptions (ExtendedRunner a) where
   trimXLSXCellsL = cmdOptsL . trimXLSXCellsL
 instance (HasRootFile a) => HasRootFile (ExtendedRunner a) where
   fileNameL = cmdOptsL . fileNameL
 instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where 
   daemonOptsL = cmdOptsL . daemonOptsL
 instance (HasRunComposer a) => HasRunComposer (ExtendedRunner a) where
-  runComposerL = cmdOptsL . runComposerL
+  skipComposerL = cmdOptsL . skipComposerL
 instance (HasDirCustomizations a) => HasDirCustomizations (ExtendedRunner a) where
   dirCustomizationsL = cmdOptsL . dirCustomizationsL
 instance (HasZwolleVersion a) => HasZwolleVersion (ExtendedRunner a) where
@@ -278,11 +279,13 @@ instance (HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
 instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where
   protoOptsL = cmdOptsL . protoOptsL
 instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
---  zwolleVersionL = cmdOptsL . zwolleVersionL
-instance HasLogFunc (ExtendedRunner a) where
+  outputfileAdlL = cmdOptsL . outputfileAdlL
+  outputfileDataAnalisysL = cmdOptsL . outputfileDataAnalisysL
+
 instance HasRunner (ExtendedRunner a) where
   runnerL = lens eRunner  (\x y -> x { eRunner  = y })
-
+instance HasLogFunc (ExtendedRunner a) where
+  logFuncL = runnerL . logFuncL
 instance HasProcessContext (ExtendedRunner a) where
   processContextL = runnerL . processContextL
 
@@ -293,3 +296,4 @@ data ExtendedRunner a = ExtendedRunner
 cmdOptsL :: Lens' (ExtendedRunner a) a
 cmdOptsL = lens eCmdOpts (\x y -> x { eCmdOpts = y })
 
+-- instance HasProtoOpts a => Has

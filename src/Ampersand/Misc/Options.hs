@@ -112,9 +112,9 @@ instance HasEnvironment Options where
 instance HasEnvironment App where
   environmentL = optionsL . environmentL
 
-instance HasParseOptions Options where
+instance HasParserOptions Options where
   trimXLSXCellsL = lens trimXLSXCells (\x y -> x { trimXLSXCells = y })
-instance HasParseOptions App where
+instance HasParserOptions App where
   trimXLSXCellsL = optionsL . trimXLSXCellsL
 instance HasRootFile Options where
   fileNameL = lens fileName (\x y -> x { fileName = y })
@@ -127,9 +127,9 @@ instance HasOutputLanguage App where
 --instance HasDefaultCrud App where
 --  defaultCrudL = optionsL . defaultCrudL
 instance HasRunComposer Options where
-  runComposerL = lens runComposer (\x y -> x { runComposer = y })
+  skipComposerL = lens runComposer (\x y -> x { runComposer = y })
 instance HasRunComposer App where
-  runComposerL = optionsL . runComposerL
+  skipComposerL = optionsL . skipComposerL
 instance HasDirCustomizations Options where
   dirCustomizationsL = lens dirCustomizations (\x y -> x { dirCustomizations = y })
 instance HasDirCustomizations App where
@@ -462,10 +462,10 @@ options = [ (Option ['v']   ["version"]
                        ) "config.yaml")
                "config file (*.yaml) that contains the command line options of ampersand."
             , Public)
-          , (Option []      ["ignore-invariant-violations"]
-               (NoArg (\opts -> opts{allowInvariantViolations = True}))
-               "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
-            , Hidden)
+--          , (Option []      ["ignore-invariant-violations"]
+--               (NoArg (\opts -> opts{allowInvariantViolations = True}))
+--               "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
+--            , Hidden)
           , (Option []      ["validate"]
                (NoArg (\opts -> opts{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL, for testing expression semantics. This requires command line php with MySQL support."
@@ -486,10 +486,10 @@ options = [ (Option ['v']   ["version"]
                        ) "DIRECTORY")
                "copy a directory into the generated prototype, overriding the default directory called 'customizations'."
             , Hidden)
-          , (Option []      ["skip-composer"]
-               (NoArg (\opts -> opts{runComposer = False}))
-               "skip installing php dependencies (using Composer) for prototype framework."
-            , Hidden)
+--          , (Option []      ["skip-composer"]
+--               (NoArg (\opts -> opts{runComposer = False}))
+--               "skip installing php dependencies (using Composer) for prototype framework."
+--            , Hidden)
   --        , (Option []        ["sql-bin-tables"]
   --             (NoArg (\opts -> opts{sqlBinTables = True}))
   --             "generate binary tables only in SQL database, for testing purposes."
