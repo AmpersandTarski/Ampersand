@@ -18,7 +18,7 @@ chpNatLangReqs env lev fSpec =
       --  *** Header ***
    xDefBlck env fSpec SharedLang
    <> --  *** Intro  ***
-    case fsLang fSpec of
+    case outputLang' of
         Dutch   -> para
                      (  "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
                      <> (singleQuoted.str.name) fSpec
@@ -36,14 +36,15 @@ chpNatLangReqs env lev fSpec =
                      <> "All definitions and agreements have been numbered for the sake of traceability. "
                      )
    <> --  *** Requirements ***
-   (mconcat . map printOneTheme . orderingByTheme) fSpec
+   (mconcat . map printOneTheme . orderingByTheme env) fSpec
    <> --  *** Legal Refs ***
      if genLegalRefs then legalRefs else mempty
 
   where
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
-  l = localize (fsLang fSpec)
+  l = localize outputLang'
+  outputLang' = outputLang env fSpec
   genLegalRefs = view genLegalRefsL env
   legalRefs :: Blocks
   legalRefs =  header (lev+2) sectionTitle
@@ -54,11 +55,11 @@ chpNatLangReqs env lev fSpec =
                      | art <-(L.sort . L.nub . concatMap getArticlesOfLaw.getRefs) fSpec  ]
 
          where (sectionTitle, lawHeader, articleHeader, caption') =
-                 case fsLang fSpec of
+                 case outputLang' of
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
                getRefs ::FSpec ->  [LawRef]
-               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesDefinedIn fSpec (fsLang fSpec)
+               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesDefinedIn fSpec outputLang'
 
 
   -- | printOneTheme tells the story in natural language of a single theme.
@@ -80,7 +81,7 @@ chpNatLangReqs env lev fSpec =
                      ,EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
                      )
                  Just pat -> 
-                   case purposesDefinedIn fSpec (fsLang fSpec) pat of
+                   case purposesDefinedIn fSpec outputLang' pat of
                      []    -> printIntro    (cptsOfTheme tc)
                      purps -> purposes2Blocks env purps
              )
@@ -113,7 +114,7 @@ chpNatLangReqs env lev fSpec =
                    _ 
                      -> para(   (str.l) (NL "Nu volgen definities van de begrippen "
                                         ,EN "At this point, the definitions of ")
-                             <> commaPandocAnd (fsLang fSpec) (map showCpt (sortWith theNr nCpts)) 
+                             <> commaPandocAnd outputLang' (map showCpt (sortWith theNr nCpts)) 
                              <> (str.l) (NL "."
                                         ,EN " are given.")
                              )
@@ -130,7 +131,7 @@ chpNatLangReqs env lev fSpec =
                    multipleDefineds
                        -> para(  (str.l) (NL "De begrippen "
                                          ,EN "Concepts ")
-                              <> commaPandocAnd (fsLang fSpec) (map showCpt multipleDefineds) 
+                              <> commaPandocAnd outputLang' (map showCpt multipleDefineds) 
                               <> (str.l) (NL " hebben meerdere definities."
                                          ,EN " are multiple defined.")
                               )
@@ -193,14 +194,14 @@ chpNatLangReqs env lev fSpec =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
             [(   (str.l) (NL "Afspraak ", EN "Agreement ")
-              <> ": " <> (xDefInln fSpec (XRefSharedLangRelation dcl))
-             , -- (xDefInln fSpec (XRefSharedLangRelation dcl) 
+              <> ": " <> (xDefInln env fSpec (XRefSharedLangRelation dcl))
+             , -- (xDefInln env fSpec (XRefSharedLangRelation dcl) 
               mempty --  [xDefBlck fSpec (XRefSharedLangRelation dcl)]
-              <>[printMeaning (fsLang fSpec) dcl]
+              <>[printMeaning outputLang' dcl]
               <>(case Set.elems $ properties dcl of
                     []  -> mempty
                     ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
-                                   <> (commaPandocAnd (fsLang fSpec) (map (str . propFullName (fsLang fSpec)) ps)<>"."
+                                   <> (commaPandocAnd outputLang' (map (str . propFullName outputLang') ps)<>"."
                                       )
                                   )
                            ]

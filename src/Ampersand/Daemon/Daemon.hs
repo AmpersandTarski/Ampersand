@@ -18,6 +18,7 @@ import qualified RIO.List as L
 import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
+import           Ampersand.Types.Config
 
 messages :: DaemonState -> [Load]
 messages = filter isMessage . loads
@@ -31,7 +32,7 @@ instance Show DaemonState where
   show x
    = "DaemonState: #loads = "++(show .length . loads $ x)++" #loadResults = "++(show .length . loadResults $ x)
 
-startAmpersandDaemon :: (HasDaemonOpts env, HasOutputLanguage env, HasLogFunc env) =>
+startAmpersandDaemon :: (HasDaemonOpts env, HasRunner env) =>
         RIO env DaemonState
 startAmpersandDaemon = do
     init <- initialState
@@ -39,7 +40,7 @@ startAmpersandDaemon = do
         Left msg -> exitWith . NoConfigurationFile $ msg
         Right s -> pure s  
 
-initialState :: (HasDaemonOpts env, HasOutputLanguage env, HasLogFunc env) =>
+initialState :: (HasDaemonOpts env, HasRunner env) =>
                 RIO env (Either [String] DaemonState)
 initialState = do
     daemonConfig <- view daemonConfigL 

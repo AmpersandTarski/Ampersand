@@ -27,5 +27,5 @@ ampersand files = return [[]]
 -- switchFileName :: (HasRootFile env) => FilePath -> RIO env a -> RIO env a
 -- switchFileName file inner = do
 --   env <- ask
---   let env' = set fileNameL (Just file) env
+--   let env' = set rootFileL (Just file) env
 --   runRIO env' inner

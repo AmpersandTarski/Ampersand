@@ -33,12 +33,12 @@ import           Data.Foldable (foldrM)
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createFSpec.
-createFspec, createFspecDataAnalisys :: (HasOutputLanguage env, HasFSpecGenOpts env, HasParserOptions env, HasRootFile env, HasLogFunc env) => 
+createFspec, createFspecDataAnalisys :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) => 
                BuildPrescription -> RIO env (Guarded FSpec)
 createFspec             recipe = createFspec' id                    recipe
 createFspecDataAnalisys recipe = createFspec' encloseInConstraints  recipe
 
-createFspec' :: (HasOutputLanguage env, HasFSpecGenOpts env, HasParserOptions env, HasRootFile env, HasLogFunc env) => 
+createFspec' :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) => 
                (P_Context -> P_Context) -> BuildPrescription -> RIO env (Guarded FSpec)
 createFspec' mutator recipe = do 
     env <- ask
@@ -47,15 +47,12 @@ createFspec' mutator recipe = do
         let fun m = (,) m <$> mkGrindInfo m
         Map.fromList <$> (sequence $ fun <$> [minBound ..])
     rawUserP_Ctx:: Guarded P_Context <- do
-       fileName <- view fileNameL
-       case fileName of
-         Just x -> do
-             pctx <- snd <$> parseADL x -- the P_Context of the user's sourceFile
-             return $ mutator <$> pctx 
-         Nothing -> exitWith . WrongArgumentsGiven $ ["Please supply the name of an ampersand file"]
+       rootFile <- view rootFileL
+       pctx <- snd <$> parseADL rootFile -- the P_Context of the user's sourceFile
+       return $ mutator <$> pctx 
     return . join $ cook env grindInfoMap recipe <$> rawUserP_Ctx
 
-cook :: (HasFSpecGenOpts env, HasOutputLanguage env) => env -> Map MetaModel GrindInfo -> BuildPrescription -> P_Context -> Guarded FSpec
+cook :: (HasFSpecGenOpts env) => env -> Map MetaModel GrindInfo -> BuildPrescription -> P_Context -> Guarded FSpec
 cook env grindInfoMap steps pCtx = join $ pCtx2Fspec env <$> foldrM doStep pCtx steps
       where 
         doStep :: BuildStep -> P_Context -> Guarded P_Context

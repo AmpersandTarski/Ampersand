@@ -64,8 +64,8 @@ instance JSON Rule JsonRule where
   , rulJSONpairView    = fmap (fromAmpersand env fSpec) (rrviol rule)
   } 
    where 
-    showMeaning = maybe "" aMarkup2String (fmap ameaMrk . meaning (fsLang fSpec) $ rule)
-    showMessage = case filter (\x -> amLang x == fsLang fSpec) (rrmsg rule) of
+    showMeaning = maybe "" aMarkup2String (fmap ameaMrk . meaning (defOutputLang fSpec) $ rule)
+    showMessage = case filter (\x -> amLang x == defOutputLang fSpec) (rrmsg rule) of
                               [] -> ""
                               h:_ -> aMarkup2String h
 instance JSON (PairView Expression) JsonPairView where

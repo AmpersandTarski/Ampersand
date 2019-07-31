@@ -61,13 +61,13 @@ ampersand = do
 --   env <- defEnv
 --   runRIO env ampersand'
 
--- ampersand' :: () -- (HasCurrentTime env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasGenFuncSpec env, HasRootFile env, HasLogFunc env, HasCommands env) 
+-- ampersand' :: () 
 --   => RIO App ()
 -- ampersand' = do
 --     env <- ask
---     fileName <- view fileNameL
+--     rootFile <- view rootFileL
 -- --    sequence_ . map snd . filter fst $ actionsWithoutScript env-- There are commands that do not need a single filename to be speciied
---     case fileName of
+--     case rootFile of
 --       Just _ -> do -- An Ampersand script is provided that can be processed
 --             sayLn "Processing your model..."
 --             gFSpec <- createFspec []

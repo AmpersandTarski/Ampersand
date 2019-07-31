@@ -13,8 +13,9 @@ chpIntroduction env now fSpec =
    <> fromList purposesOfContext  -- the motivation(s) of this context
    <> readingGuide                -- tells what can be expected in this document.
   where
+    outputLang' = outputLang env fSpec
     readingGuide
-      = case fsLang fSpec of
+      = case outputLang' of
           Dutch
             -> para ( text "Dit document"
                    <> (note.para.text) ("Dit document is gegenereerd op "++date++" om "++time++", dmv. "++ampersandVersionStr++".")
@@ -114,7 +115,7 @@ chpIntroduction env now fSpec =
                          )
                else mempty
 
-    date = formatTime (lclForLang (fsLang fSpec)) "%-d-%-m-%Y" now
-    time = formatTime (lclForLang (fsLang fSpec)) "%H:%M:%S" now
+    date = formatTime (lclForLang outputLang') "%-d-%-m-%Y" now
+    time = formatTime (lclForLang outputLang') "%H:%M:%S" now
 
-    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec (fsLang fSpec) fSpec]
+    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec outputLang' fSpec]

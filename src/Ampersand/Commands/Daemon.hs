@@ -101,7 +101,7 @@ data Continue = Continue
 
 -- If we return successfully, we restart the whole process
 -- Use Continue not () so that inadvertant exits don't restart
-runAmpersand :: (HasDaemonOpts env, HasOutputLanguage env, HasLogFunc env ) 
+runAmpersand :: (HasRunner env, HasDaemonOpts env) 
    => env -> Waiter -> IO TermSize -> ([String] -> RIO env ()) -> RIO env Continue
 runAmpersand app waiter termSize termOutput = do
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()

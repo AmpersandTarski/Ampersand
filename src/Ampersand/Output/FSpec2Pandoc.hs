@@ -57,8 +57,8 @@ fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
   where
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
-    l = localize (fsLang fSpec)
-    
+    l = localize outputLang'
+    outputLang' = outputLang env fSpec
     wrap :: Pandoc -> Pandoc
     wrap (Pandoc meta blocks) = 
       Pandoc meta $ runCrossRef m' Nothing crossRefBlocks blocks 
@@ -101,7 +101,7 @@ fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
              xs -> fmap text $ L.nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
 
         )
-      . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" now))
+      . setDate (text (formatTime (lclForLang outputLang') "%-d %B %Y" now))
       . doc . mconcat $ blocksByChapter
     
     thePictures = concat picturesByChapter

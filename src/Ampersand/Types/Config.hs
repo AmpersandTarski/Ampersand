@@ -118,10 +118,10 @@ extendWith opts inner = do
 --extendWith opts inner = do
 --   left <- ask
 --   runRIO (Extended left opts) inner 
-data Extended a b = Extended
-   { eLeft :: a
-   , eRight :: b
-   }
+--data Extended a b = Extended
+--   { eLeft :: a
+--   , eRight :: b
+--   }
 data ExtendedRunner a = ExtendedRunner
    { eRunner :: !Runner
    , eCmdOpts :: a
@@ -133,7 +133,7 @@ instance (HasOutputLanguage a) => HasOutputLanguage (ExtendedRunner a) where
 instance (HasFSpecGenOpts a) => HasFSpecGenOpts (ExtendedRunner a) where
   fSpecGenOptsL = cmdOptsL . fSpecGenOptsL
 instance (HasRootFile a) => HasRootFile (ExtendedRunner a) where
-  fileNameL = cmdOptsL . fileNameL
+  rootFileL = cmdOptsL . rootFileL
 instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where 
   daemonOptsL = cmdOptsL . daemonOptsL
 instance (HasRunComposer a) => HasRunComposer (ExtendedRunner a) where

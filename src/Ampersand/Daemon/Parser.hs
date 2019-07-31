@@ -15,10 +15,9 @@ import qualified Data.List.NonEmpty as NEL
 import           Ampersand.FSpec.MetaModels
 import           Ampersand.Types.Config
 
-parseProject :: (HasRunner env, HasFSpecGenOpts env, HasOutputLanguage env, HasLogFunc env) => 
+parseProject :: (HasRunner env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
 parseProject rootAdl = do
-    env <- ask
     let fSpecGenOpts = FSpecGenOpts
             { xrootFile = rootAdl
             , xsqlBinTables = False
@@ -37,6 +36,8 @@ parseProject rootAdl = do
                 Errors  es   -> NEL.toList . fmap error2Load $ es
             , loadedFiles
             )
+extendWith' :: (MonadReader s m, HasRunner s, MonadIO m) =>
+                     FSpecGenOpts -> RIO (ExtendedRunner FSpecGenOpts) b -> m b
 extendWith' ext inner = do
     env <- view runnerL
     runRIO env $ extendWith ext $ inner

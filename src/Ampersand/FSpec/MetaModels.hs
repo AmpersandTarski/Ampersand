@@ -27,17 +27,17 @@ parser FormalAmpersand = parseFormalAmpersand
 parser SystemContext   = parseSystemContext 
 parser FADocumented    = parseFormalAmpersandDocumented
 
-pCtx2Fspec :: (HasFSpecGenOpts env, HasOutputLanguage env) => env -> P_Context -> Guarded FSpec
+pCtx2Fspec :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = makeFSpec env <$> pCtx2aCtx env c
 
 
-mkGrindInfo :: (HasOutputLanguage env, HasFSpecGenOpts env, HasLogFunc env) => MetaModel -> RIO env GrindInfo
+mkGrindInfo :: (HasFSpecGenOpts env, HasLogFunc env) => MetaModel -> RIO env GrindInfo
 mkGrindInfo metamodel = do
     env <- ask 
     c <- parser metamodel
     return $ build env c 
   where
-    build :: (HasFSpecGenOpts env, HasOutputLanguage env) =>
+    build :: (HasFSpecGenOpts env) =>
         env -> Guarded P_Context -> GrindInfo
     build env pCtx = GrindInfo
             { metaModel    = metamodel

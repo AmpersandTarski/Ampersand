@@ -19,10 +19,11 @@ chpConceptualAnalysis env lev fSpec = (
   where
   -- shorthand for easy localizing
   l :: LocalizedStr -> String
-  l = localize (fsLang fSpec)
+  l = localize outputLang'
+  outputLang' = outputLang env fSpec
   caIntro :: Blocks
   caIntro
-   = (case fsLang fSpec of
+   = (case outputLang' of
         Dutch   -> para
                     (  "Dit hoofdstuk beschrijft een formele taal, waarin functionele eisen ten behoeve van "
                     <> (singleQuoted.str.name) fSpec
@@ -39,11 +40,11 @@ chpConceptualAnalysis env lev fSpec = (
                     <> "This chapter allows an independent professional with sufficient background to check whether the agreements made "
                     <> "correspond to the formal rules and definitions. "
                     )
-     )<> purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
+     )<> purposes2Blocks env (purposesDefinedIn fSpec outputLang' fSpec) -- This explains the purpose of this context.
 
   caBlocks = 
          mconcat (map caSection (vpatterns fSpec))
-      <>(case fsLang fSpec of
+      <>(case outputLang' of
            Dutch   -> para "De definities van concepten zijn te vinden in de index."
                    <> header (lev+3) "Gedeclareerde relaties"
                    <> para "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en betekenis."
@@ -59,19 +60,19 @@ chpConceptualAnalysis env lev fSpec = (
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
   pictOfPat ::  Pattern ->  Picture
-  pictOfPat  = makePicture fSpec . PTCDPattern
+  pictOfPat  = makePicture env fSpec . PTCDPattern
   pictOfRule :: Rule -> Picture
-  pictOfRule = makePicture fSpec . PTCDRule
+  pictOfRule = makePicture env fSpec . PTCDRule
   pictOfConcept :: A_Concept -> Picture
-  pictOfConcept = makePicture fSpec . PTCDConcept
+  pictOfConcept = makePicture env fSpec . PTCDConcept
   caSection :: Pattern -> Blocks
   caSection pat
    =    -- new section to explain this pattern
         xDefBlck env fSpec (XRefConceptualAnalysisPattern pat)
         -- The section starts with the reason why this pattern exists
-     <> purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) pat)
+     <> purposes2Blocks env (purposesDefinedIn fSpec outputLang' pat)
         -- followed by a conceptual model for this pattern
-     <> ( case fsLang fSpec of
+     <> ( case outputLang' of
                Dutch   -> -- announce the conceptual diagram
                           para (hyperLinkTo (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
                           -- draw the conceptual diagram
@@ -83,7 +84,7 @@ chpConceptualAnalysis env lev fSpec = (
         -- now provide the text of this pattern.
        case map caRule . Set.elems $ invariants fSpec `Set.intersection` udefrules pat of
          []     -> mempty
-         blocks -> (case fsLang fSpec of
+         blocks -> (case outputLang' of
                       Dutch   -> header (lev+3) "Regels"
                               <> plain "Deze paragraaf geeft een opsomming van de regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
                       English -> header (lev+3) "Rules"
@@ -93,17 +94,17 @@ chpConceptualAnalysis env lev fSpec = (
     )
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d
-        = let purp =  purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) d)
-          in ((xDefInln fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMathWithSign d))
+        = let purp =  purposes2Blocks env (purposesDefinedIn fSpec outputLang' d)
+          in ((xDefInln env fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMathWithSign d))
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
-                ( case ( isNull purp, fsLang fSpec) of
+                ( case ( isNull purp, outputLang') of
                    (True , Dutch)   -> plain ("De volgende " <> str(nladjs d) <> " is gedefinieerd ")
                    (True , English) -> plain ("The following " <> str(ukadjs d) <> " has been defined ")
                    (False, Dutch)   -> purp <> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " gedefinieerd ")
                    (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the relation of the relation with its properties and its intended meaning
-               <> printMeaning (fsLang fSpec) d
+               <> printMeaning outputLang' d
               ])
   ukadjs d  = if Uni `elem` (properties d) && Tot `elem` (properties d)
               then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
@@ -111,10 +112,10 @@ chpConceptualAnalysis env lev fSpec = (
   nladjs d = if Uni `elem` (properties d) && Tot `elem` (properties d)
              then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])++" functie"
              else commaNL "en" (map adj . Set.elems $ properties d)++" relatie"
-  adj = propFullName (fsLang fSpec) 
+  adj = propFullName outputLang' 
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
-        = let purp = purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) r)
+        = let purp = purposes2Blocks env (purposesDefinedIn fSpec outputLang' r)
           in ( mempty
              , [  -- First the reason why the rule exists, if any..
                   purp
@@ -128,7 +129,7 @@ chpConceptualAnalysis env lev fSpec = (
                        <> (hyperLinkTo . XRefSharedLangRule) r
                        <> str (l (NL " : ", EN " exists: "))
                    )
-               <> printMeaning (fsLang fSpec) r
+               <> printMeaning outputLang' r
                   -- then the formal rule
                <> plain
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
@@ -140,7 +141,7 @@ chpConceptualAnalysis env lev fSpec = (
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
                    )
-               <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisRule r) (showMath r) 
+               <> pandocEquationWithLabel env fSpec (XRefConceptualAnalysisRule r) (showMath r) 
                -- followed by a conceptual model for this rule
                <> para (   hyperLinkTo (pictOfRule r)
                         <> str (l (NL " geeft een conceptueel diagram van deze regel."

@@ -72,7 +72,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                     --   , progrName :: String --The name of the adl executable
-                       , fileName :: Maybe FilePath --the file with the Ampersand context
+                       , rootFile :: Maybe FilePath --the file with the Ampersand context
                        , genTime :: LocalTime
                        , export2adl :: Bool
                        , dataAnalysis :: Bool
@@ -112,8 +112,8 @@ instance HasEnvironment Options where
 instance HasEnvironment App where
   environmentL = optionsL . environmentL
 
-instance HasRootFile Options where
-  fileNameL = lens fileName (\x y -> x { fileName = y })
+--instance HasRootFile Options where
+--  rootFileL = lens rootFile (\x y -> x { rootFile = y })
 instance HasOutputLanguage Options where
   languageL = lens language (\x y -> x { language = y })
 instance HasOutputLanguage App where
@@ -130,9 +130,27 @@ instance HasZwolleVersion Options where
   zwolleVersionL = lens zwolleVersion (\x y -> x { zwolleVersion = y })
 instance HasZwolleVersion App where
   zwolleVersionL = optionsL . zwolleVersionL
+class HasMetaOptions a where
+  genMetaFileL :: Lens' a Bool
+  addSemanticMetamodelL :: Lens' a Bool
 instance HasMetaOptions Options where
   genMetaFileL = lens genMetaFile (\x y -> x { genMetaFile = y })
   addSemanticMetamodelL = lens addSemanticMetamodel (\x y -> x { addSemanticMetamodel = y })
+class HasCommands a where
+  genUMLL :: Lens' a Bool -- Generate a UML 2.0 data model
+  genHaskellL :: Lens' a Bool -- if True, generate the F-structure as a Haskell source file
+  sqlDumpL :: Lens' a Bool -- if True, generate a dump of SQL statements (for debugging)
+  export2adlL :: Lens' a Bool 
+  genFPAExcelL :: Lens' a Bool 
+  genPOPExcelL :: Lens' a Bool 
+  proofsL :: Lens' a Bool 
+  validateSQLL :: Lens' a Bool 
+  genPrototypeL :: Lens' a Bool 
+  dataAnalysisL :: Lens' a Bool -- "export a data model as plain Ampersand script, for analysing Excel-data."
+  showVersionL :: Lens' a Bool
+  genSampleConfigFileL :: Lens' a Bool
+  showHelpL :: Lens' a Bool
+  runAsDaemonL :: Lens' a Bool
 instance HasCommands Options where
   genPrototypeL = lens genPrototype (\x y -> x { genPrototype = y })
   dataAnalysisL = lens dataAnalysis (\x y -> x { dataAnalysis = y })
@@ -352,7 +370,7 @@ getOptions' envOpts =
                       , genPOPExcel      = False
                       , language         = Nothing
                    --   , progrName        = envProgName envOpts
-                      , fileName         = fName
+                      , rootFile         = fName
                       , export2adl       = False
                       , dataAnalysis     = False
                       , test             = False
@@ -705,8 +723,8 @@ data App = App
 
 instance HasDirPrototype App where
   dirPrototypeL = optionsL . dirPrototypeL
-instance HasRootFile App where
-  fileNameL = optionsL . fileNameL
+--instance HasRootFile App where
+--  rootFileL = optionsL . rootFileL
 instance HasOptions App where
   optionsL = lens options' (\env opts -> env{ options' = opts})
 instance HasLogFunc App where

@@ -177,7 +177,6 @@ instance ShowHS FSpec where
   = L.intercalate (indent ++"     ")
         [ "FSpec{ fsName        = " ++ show (name fSpec)
         , wrap ", fspos         = " indentA (showHS env) (fspos fSpec)
-        ,      ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
         , wrap ", plugInfos     = " indentA (\_->showHS env (indentA++"  ")) (plugInfos  fSpec)
         ,      ", interfaceS    = interfaceS'"
         ,      ", interfaceG    = interfaceG'"

@@ -21,13 +21,12 @@ import qualified RIO.Text as T
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
-makeFSpec :: (HasOutputLanguage env, HasFSpecGenOpts env) =>
+makeFSpec :: (HasFSpecGenOpts env) =>
     env -> A_Context -> FSpec
 makeFSpec env context
  =      FSpec { fsName       = T.pack (name context)
               , originalContext = context 
               , fspos        = ctxpos context
-              , fsLang       = printingLanguage
               , plugInfos    = allplugs
               , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
               , roleInterfaces = fSpecRoleInterfaces
@@ -391,8 +390,8 @@ makeFSpec env context
         | ifcc<-step4a
         , let c   = source(objExpression (ifcObj ifcc))
               nm'::Int->String
-              nm' 0  = plural printingLanguage (name c)
-              nm' i  = plural printingLanguage (name c) ++ show i
+              nm' 0  = plural (ctxlang context) (name c)
+              nm' i  = plural (ctxlang context) (name c) ++ show i
               nm = case [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)] of
                      []  -> fatal "impossible"
                      h:_ -> h
@@ -408,7 +407,6 @@ makeFSpec env context
      ----------------------
      --END: making interfaces
      ----------------------
-     printingLanguage = fromMaybe (ctxlang context) (view languageL env)  -- The language for printing this specification is taken from the command line options (language env). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
 
 makeIfcControls :: Relations -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs

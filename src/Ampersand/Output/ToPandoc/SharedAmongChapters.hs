@@ -76,15 +76,15 @@ class Typeable a => Xreferenceble a where
   hyperLinkTo :: a -> Inlines
   xDefBlck :: (HasDirOutput env, HasGenFuncSpec env) => env -> FSpec -> a -> Blocks
   xDefBlck _ _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
-  xDefInln :: FSpec -> a -> Inlines
-  xDefInln _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
+  xDefInln :: (HasOutputLanguage env) => env -> FSpec -> a -> Inlines
+  xDefInln _ _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
   {-# MINIMAL xSafeLabel, hyperLinkTo, (xDefBlck | xDefInln) #-}
 
 instance Xreferenceble Chapter where
   xSafeLabel a = show Sec++show a
   hyperLinkTo = citeGen
-  xDefBlck _ fSpec a = headerWith (xSafeLabel a,[],[]) 1 (chptTitle (fsLang fSpec) a)
-  
+  xDefBlck env fSpec a = headerWith (xSafeLabel a,[],[]) 1 (chptTitle (outputLang env fSpec) a)
+
 instance Xreferenceble Picture where
   xSafeLabel a = show Fig++caption a
   hyperLinkTo = citeGen
@@ -101,11 +101,11 @@ instance Xreferenceble XRefSection where
     where 
       x = refStuff a
   hyperLinkTo = codeGen
-  xDefBlck _ fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget fSpec a)
-  xDefInln fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (hyperTarget fSpec a)
+  xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget env fSpec a)
+  xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (hyperTarget env fSpec a)
 
-hyperTarget :: FSpec -> XRefSection -> Either Blocks Inlines 
-hyperTarget fSpec a =
+hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> XRefSection -> Either Blocks Inlines 
+hyperTarget env fSpec a =
     case a of
       XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff $ a)
       XRefSharedLangTheme mPat   -> Left . hdr $ 
@@ -127,7 +127,7 @@ hyperTarget fSpec a =
                                                         --       ("", ["adl"],[("caption",name r)]) 
                                                         --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
 
-                                                          <>printMeaning (fsLang fSpec) r
+                                                          <>printMeaning (outputLang env fSpec) r
                                                         )
       XRefConceptualAnalysisRelation _d 
             -> Right $ spanWith (xSafeLabel a,[],[]) 
@@ -149,7 +149,7 @@ hyperTarget fSpec a =
     hdr = headerWith (xSafeLabel a, [], []) 2
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
-    l = localize (fsLang fSpec)
+    l = localize (outputLang env fSpec)
 citeGen :: Xreferenceble a => a -> Inlines
 citeGen l = 
   cite [Citation { citationId = xSafeLabel l
@@ -185,9 +185,9 @@ instance Show CrossrefType where
             Sec -> "sec:"
             Tbl -> "tbl:"
             Fig -> "fig:"
-pandocEquationWithLabel :: FSpec -> XRefSection -> Inlines -> Blocks
-pandocEquationWithLabel fSpec xref x = 
-  para (strong (xDefInln fSpec xref) <> x)
+pandocEquationWithLabel :: (HasOutputLanguage env) => env -> FSpec -> XRefSection -> Inlines -> Blocks
+pandocEquationWithLabel env fSpec xref x = 
+  para (strong (xDefInln env fSpec xref) <> x)
 
 data RefStuff = 
   RefStuff { typeOfSection    :: String
@@ -326,8 +326,8 @@ data Counters
 
 -- orderingByTheme organizes the content of a specification in patterns according to a define-before-use policy.
 -- It must ensure that all rules, relations and concepts from the context are included in the specification.
-orderingByTheme :: FSpec -> [ThemeContent]
-orderingByTheme fSpec
+orderingByTheme :: (HasOutputLanguage env) => env -> FSpec -> [ThemeContent]
+orderingByTheme env fSpec
  = f ( Counter 1 1 1 --the initial numbers of the countes
      , (sortWith origin . filter rulMustBeShown . Set.elems . fallRules)  fSpec
      , (sortWith origin . filter relMustBeShown . Set.elems . relsDefdIn) fSpec 
@@ -368,13 +368,13 @@ orderingByTheme fSpec
   rul2rulCont :: Rule -> RuleCont
   rul2rulCont rul
     = CRul { cRul      = rul
-           , cRulPurps = purposesDefinedIn fSpec (fsLang fSpec) rul
+           , cRulPurps = purposesDefinedIn fSpec (outputLang env fSpec) rul
            , cRulMeanings = meanings rul
            }
   dcl2dclCont :: Relation -> DeclCont
   dcl2dclCont dcl
     = CDcl { cDcl      = dcl
-           , cDclPurps = purposesDefinedIn fSpec (fsLang fSpec) dcl
+           , cDclPurps = purposesDefinedIn fSpec (outputLang env fSpec) dcl
            , cDclMeanings = meanings dcl
            , cDclPairs = pairsInExpr fSpec (EDcD dcl)
            }
@@ -383,7 +383,7 @@ orderingByTheme fSpec
   cpt2cptCont cpt
     = CCpt { cCpt      = cpt
            , cCptDefs  = sortWith origin $ concDefs fSpec cpt
-           , cCptPurps = purposesDefinedIn fSpec (fsLang fSpec) cpt
+           , cCptPurps = purposesDefinedIn fSpec (outputLang env fSpec) cpt
            }
 
 
@@ -435,7 +435,7 @@ dpRule' :: (HasGenFuncSpec env) =>
           -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
 dpRule' env fSpec = dpR
  where
-   l lstr = text $ localize (fsLang fSpec) lstr
+   l lstr = text $ localize (outputLang env fSpec) lstr
    dpR [] n seenConcs seenRelations = ([], n, seenConcs, seenRelations)
    dpR (r:rs) n seenConcs seenRelations
      = ( ( l (NL "Regel: ",EN "Rule: ") <> (text.latexEscShw.name) r
@@ -448,9 +448,9 @@ dpRule' env fSpec = dpR
        where
         theBlocks :: Blocks
         theBlocks =
-            purposes2Blocks env (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-         <> purposes2Blocks env [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
-         <> case (Set.elems . Set.map EDcD $ nds, fsLang fSpec) of
+            purposes2Blocks env (purposesDefinedIn fSpec (outputLang env fSpec) r) -- Als eerste de uitleg van de betreffende regel..
+         <> purposes2Blocks env [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (outputLang env fSpec) d]  -- Dan de uitleg van de betreffende relaties
+         <> case (Set.elems . Set.map EDcD $ nds, outputLang env fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
              ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
@@ -490,7 +490,7 @@ dpRule' env fSpec = dpR
                           , EN "Activities that are defined by this rule are finished when: ")
                    else l (NL "De regel luidt: ", EN "This means: ")
                   )
-         <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisExpression r) (showMath r)
+         <> pandocEquationWithLabel env fSpec (XRefConceptualAnalysisExpression r) (showMath r)
          <> (if length nds<=1
              then mempty
              else plain (  l (NL "Dit komt overeen met ", EN "This corresponds to ")
@@ -570,9 +570,9 @@ lclForLang lang = DTF.defaultTimeLocale { DTF.months =
 plainText :: String -> Blocks
 plainText = plain . text
 
-violation2Inlines :: FSpec -> PairView Expression -> Inlines
-violation2Inlines fSpec _ = (text.l) (NL "<meldingstekst moet hier nog worden gegenereerd>"
+violation2Inlines :: (HasOutputLanguage env) => env -> FSpec -> PairView Expression -> Inlines
+violation2Inlines env fSpec _ = (text.l) (NL "<meldingstekst moet hier nog worden gegenereerd>"
                                         ,EN "<violation message should be printed here>"
                                         )
   where
-    l = localize (fsLang fSpec)
+    l = localize (outputLang env fSpec)

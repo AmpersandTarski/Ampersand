@@ -20,6 +20,7 @@ module Ampersand.Output.PandocAux
       , commaPandocAnd
       , commaPandocOr
       , Inlines
+      , outputLang
       )
 where
 import           Ampersand.ADL1
@@ -43,18 +44,18 @@ import qualified Text.Pandoc.UTF8 as UTF8
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: (HasGenFuncSpec env) => env -> FSpec -> [(String , String)]
 defaultWriterVariables env fSpec
-  = [ ("title", (case (fsLang fSpec, view diagnosisOnlyL env) of
+  = [ ("title", (case (outputLang, view diagnosisOnlyL env) of
                         (Dutch  , False) -> "Functioneel Ontwerp van "
                         (English, False) -> "Functional Design of "
                         (Dutch  ,  True) -> "Diagnose van "
                         (English,  True) -> "Diagnosis of "
                 )++name fSpec)
     , ("fontsize", "12pt")   --can be overridden by geometry package (see below)
-    , ("lang"    , case fsLang fSpec of
+    , ("lang"    , case outputLang of
                        Dutch   -> "nl-NL"
                        English -> "en-US")
     , ("papersize", "a4")
-    , ("babel-lang", case fsLang fSpec of
+    , ("babel-lang", case outputLang of
                        Dutch   -> "dutch"
                        English -> "english")
     , ("documentclass","report")
@@ -106,6 +107,9 @@ defaultWriterVariables env fSpec
          ])
     | (view fspecFormatL env) `elem` [Fpdf,Flatex]
     ]
+  where
+   outputLang :: Lang
+   outputLang = fromMaybe (defOutputLang fSpec) $ view languageL env  
 
 --DESCR -> functions to write the pandoc
 writepandoc :: (HasDirOutput env, HasRootFile env, HasGenFuncSpec env, HasLogFunc env) => 
@@ -540,3 +544,6 @@ commaNLPandoc  _  [a]  = a
 commaNLPandoc s (a:as) = a <> ", " <> commaNLPandoc s as
 commaNLPandoc  _  []   = mempty
    
+outputLang :: (HasOutputLanguage env) => env -> FSpec -> Lang
+outputLang env fSpec = fromMaybe (defOutputLang fSpec) $ view languageL env
+

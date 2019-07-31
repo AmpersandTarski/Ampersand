@@ -12,14 +12,15 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.Graphic.ClassDiag2Dot
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Misc
-import           RIO.Char
+import           Ampersand.Output.PandocAux (outputLang)
 import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete
+import           RIO.Char
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
 import           Data.String(fromString)
-import           System.Directory
+import           System.Directory(createDirectoryIfMissing)
 import           System.FilePath hiding (addExtension)
 import           System.Process (callCommand)
 
@@ -40,15 +41,15 @@ data Picture = Pict { pType :: PictureReq             -- ^ the type of the pictu
                     , caption :: String               -- ^ a human readable name of this picture
                     }
 
-makePicture :: FSpec -> PictureReq -> Picture
-makePicture fSpec pr =
+makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureReq -> Picture
+makePicture env fSpec pr =
   case pr of
    PTClassDiagram      -> Pict { pType = pr
                                , scale = scale'
                                , dotContent = ClassDiagram $ clAnalysis fSpec
                                , dotProgName = Dot
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Classification of " ++ name fSpec
                                       Dutch   -> "Classificatie van " ++ name fSpec
                                }
@@ -57,7 +58,7 @@ makePicture fSpec pr =
                                , dotContent = ClassDiagram $ cdAnalysis fSpec
                                , dotProgName = Dot
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Logical data model of " ++ name fSpec
                                       Dutch   -> "Logisch gegevensmodel van " ++ name fSpec
                                }
@@ -66,7 +67,7 @@ makePicture fSpec pr =
                                , dotContent = ClassDiagram $ tdAnalysis fSpec
                                , dotProgName = Dot
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Technical data model of " ++ name fSpec
                                       Dutch   -> "Technisch gegevensmodel van " ++ name fSpec
                                }
@@ -75,7 +76,7 @@ makePicture fSpec pr =
                                , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Concept diagram of the rules about " ++ name cpt
                                       Dutch   -> "Conceptueel diagram van de regels rond " ++ name cpt
                                }
@@ -84,7 +85,7 @@ makePicture fSpec pr =
                                , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Concept diagram of relations in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van relaties in " ++ name pat
                                }
@@ -93,7 +94,7 @@ makePicture fSpec pr =
                                , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Concept diagram of the rules in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van de regels in " ++ name pat
                                }
@@ -102,11 +103,13 @@ makePicture fSpec pr =
                                , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Concept diagram of rule " ++ name rul
                                       Dutch   -> "Conceptueel diagram van regel " ++ name rul
                                }
  where
+   outputLang' :: Lang
+   outputLang' = outputLang env fSpec
    scale' =
       case pr of
             PTClassDiagram -> "1.0"

@@ -26,6 +26,7 @@ module Ampersand.FSpec.FSpec
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
+          , defOutputLang
           , showSQL
           , substituteReferenceObjectDef
           , violationsOfInvariants
@@ -52,7 +53,7 @@ data FSpecKinds = FSpecKinds
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showA)  
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
-                   , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
+                  -- , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (derived)
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
@@ -375,3 +376,5 @@ violationsOfInvariants fSpec
   = [(r,vs) |(r,vs) <- allViolations fSpec
             , not (isSignal r)
     ]
+defOutputLang :: FSpec -> Lang
+defOutputLang = ctxlang . originalContext

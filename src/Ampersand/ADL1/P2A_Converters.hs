@@ -219,7 +219,7 @@ onlyUserConcepts = fmap userList
 --    A "Guarded" will be added on the outside, in order to catch both type errors and disambiguation errors.
 --    Using the Applicative operations <$> and <*> causes these errors to be in parallel
 -- 3. Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
-pCtx2aCtx :: (HasFSpecGenOpts env, HasOutputLanguage env)
+pCtx2aCtx :: (HasFSpecGenOpts env)
    => env -> P_Context -> Guarded A_Context
 pCtx2aCtx env
  PCtx { ctx_nm     = n1
@@ -283,7 +283,7 @@ pCtx2aCtx env
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
-    deflangCtxt = fromMaybe English $ ctxmLang `orElse` (view languageL env)
+    deflangCtxt = fromMaybe English ctxmLang
     deffrmtCtxt = fromMaybe ReST pandocf
     
     allGens = p_gens ++ concatMap pt_gns p_patterns
@@ -1152,12 +1152,6 @@ getConcept :: HasSignature a => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
 
-
--- | Left-biased choice on maybes
-orElse :: Maybe a -> Maybe a -> Maybe a
-x `orElse` y = case x of
-                 Just _  -> x
-                 Nothing -> y
 
 -- | getCycles returns a list of cycles in the edges list (each edge is a pair of a from-vertex
 --   and a list of to-vertices)
