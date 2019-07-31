@@ -21,7 +21,6 @@ protoOptsParser Proto defDBName =
             , xsqlPwd = password
             , xforceReinstallFramework = forceReinstall
             , xoutputLangugage = outputLanguage
-            , x1trimXLSXCells = trimXLSXCells
             , x1fSpecGenOpts = fSpecGenOpts
             , xskipComposer = skipComposer
             , xdirPrototype = dirPrototype
@@ -60,7 +59,6 @@ protoOptsParser Proto defDBName =
                 "installed version.")
         )
   <*> outputLanguageP
-  <*> trimXLSXCellsP
   <*> fSpecGenOptsParser
   <*> switch
         ( long "skip-composer"

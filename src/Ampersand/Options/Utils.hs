@@ -18,6 +18,7 @@ outputLanguageP =
    f <$> strOption
         ( long "language"
         <> metavar "OUTPUTLANGUAGE"
+        <> value "language of the context of the model"
         <> help ("Pick 'NL' for Dutch or 'EN' for English, as the "<>
                  "language to be used in your output. Without this "<>
                  "option, output is written in the language of your "<>
@@ -30,19 +31,8 @@ outputLanguageP =
               "UK"  -> Just English
               "US"  -> Just English
               "EN"  -> Just English
-              _     -> Nothing
+              _     -> Nothing  
 
-rootFileP :: Parser FilePath
-rootFileP = strArgument 
-          (metavar "AMPERSAND_SCRIPT" 
-          <> help "The root file of your Ampersand model.")
-
-trimXLSXCellsP :: Parser Bool
-trimXLSXCellsP = switch
-        ( long "do-not-trim-cellvalues"
-        <> help ("Do not ignore leading and trailing spaces in .xlsx files "<>
-                 "that are INCLUDED in the script.")
-        )
 outputFileP :: String -> Parser FilePath
 outputFileP deflt = strOption
         ( long "to"

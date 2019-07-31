@@ -114,7 +114,14 @@ extendWith :: a -> RIO (ExtendedRunner a) b -> RIO Runner b
 extendWith opts inner = do
    env <- ask
    runRIO (ExtendedRunner env opts) inner
-
+--extendWith :: (HasRunner a,HasLogFunc a) => b -> RIO (Extended a b) c -> RIO a c
+--extendWith opts inner = do
+--   left <- ask
+--   runRIO (Extended left opts) inner 
+data Extended a b = Extended
+   { eLeft :: a
+   , eRight :: b
+   }
 data ExtendedRunner a = ExtendedRunner
    { eRunner :: !Runner
    , eCmdOpts :: a
@@ -125,8 +132,6 @@ instance (HasOutputLanguage a) => HasOutputLanguage (ExtendedRunner a) where
   languageL = cmdOptsL . languageL
 instance (HasFSpecGenOpts a) => HasFSpecGenOpts (ExtendedRunner a) where
   fSpecGenOptsL = cmdOptsL . fSpecGenOptsL
-instance (HasParserOptions a) => HasParserOptions (ExtendedRunner a) where
-  trimXLSXCellsL = cmdOptsL . trimXLSXCellsL
 instance (HasRootFile a) => HasRootFile (ExtendedRunner a) where
   fileNameL = cmdOptsL . fileNameL
 instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where 

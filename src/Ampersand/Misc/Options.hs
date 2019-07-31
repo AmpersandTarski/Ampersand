@@ -112,10 +112,6 @@ instance HasEnvironment Options where
 instance HasEnvironment App where
   environmentL = optionsL . environmentL
 
-instance HasParserOptions Options where
-  trimXLSXCellsL = lens trimXLSXCells (\x y -> x { trimXLSXCells = y })
-instance HasParserOptions App where
-  trimXLSXCellsL = optionsL . trimXLSXCellsL
 instance HasRootFile Options where
   fileNameL = lens fileName (\x y -> x { fileName = y })
 instance HasOutputLanguage Options where

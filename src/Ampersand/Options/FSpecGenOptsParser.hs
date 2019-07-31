@@ -1,55 +1,78 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-module Ampersand.Options.FSpecGenOptsParser where
+module Ampersand.Options.FSpecGenOptsParser 
+   (fSpecGenOptsParser)
+where
 
 import           Options.Applicative
 import           Ampersand.Misc.HasClasses (FSpecGenOpts (..))
 import           Ampersand.Basics
-import           Ampersand.Options.Utils
 
 -- | Command-line parser for the proto command.
-fSpecGenOptsParser :: Parser FSpecGenOpts
-fSpecGenOptsParser = 
-   ( \rootFile sqlBinTables genInterfaces namespace defaultCrud
-     -> FSpecGenOpts
-            { xrootFile = rootFile
-            , xsqlBinTables = sqlBinTables
-            , xgenInterfaces = genInterfaces
-            , xnamespace = namespace
-            , xdefaultCrud = defaultCrud
-            }
-   ) 
-  <$> rootFileP
-  <*> switch
+fSpecGenOptsParser :: 
+     Bool -- When for the daemon command, the rootfile will eventually come from
+          -- the daemon config file. 
+  -> Parser FSpecGenOpts
+fSpecGenOptsParser isForDaemon =
+      ( \rootFile sqlBinTables genInterfaces namespace defaultCrud trimXLSXCells
+        -> FSpecGenOpts
+                { xrootFile = rootFile
+                , xsqlBinTables = sqlBinTables
+                , xgenInterfaces = genInterfaces
+                , xnamespace = namespace
+                , xdefaultCrud = defaultCrud
+                , xtrimXLSXCells = trimXLSXCells
+                }
+      ) <$> (if isForDaemon 
+              then pure $ fatal "The rootfile should have come from the daemon config file."
+              else rootFileP )
+        <*> sqlBinTablesP
+        <*> genInterfacesP
+        <*> namespaceP
+        <*> crudP
+        <*> trimXLSXCellsP
+
+rootFileP :: Parser FilePath
+rootFileP = strArgument 
+          (metavar "AMPERSAND_SCRIPT" 
+          <> help "The root file of your Ampersand model.")
+sqlBinTablesP :: Parser Bool
+sqlBinTablesP = switch
         ( long "sql-bin-tables"
         <> help ("Generate binary tables instead of broad tables in SQL "
                <>"database, for testing purposes." )
         )
-  <*> switch
+genInterfacesP :: Parser Bool
+genInterfacesP = switch
         ( long "interfaces"
         <> help "Generate interfaces, which currently does not work."
         )
-  <*> strOption
+
+namespaceP :: Parser String
+namespaceP = strOption
         ( long "namespace"
         <> metavar "NAMESPACE"
+        <> value ""
         <> help ("Prefix database identifiers with this namespace, to "
                <>"isolate namespaces within the same database." )
         )
-  <*> defaultCrudP
-
-
+  
+crudP :: Parser (Bool,Bool,Bool,Bool)
+crudP = toCruds <$> strOption 
+          (long "crud-defaults"
+          <> value "CRUD"
+          )
   where
-    defaultCrudP :: Parser (Bool,Bool,Bool,Bool)
-    defaultCrudP = option aap noot 
-      where
-        aap :: ReadM (Bool, Bool, Bool, Bool)
-        aap = ( maybeReader $ \crudString -> do
-            let c = 'c' `notElem` crudString
-                r = 'r' `notElem` crudString
-                u = 'u' `notElem` crudString
-                d = 'd' `notElem` crudString
-            return (c,r,u,d)
-            )
-        noot :: Mod OptionFields (Bool, Bool, Bool, Bool) 
-        noot = (long "crud-defaults")
-        
-    
+    toCruds :: String -> (Bool,Bool,Bool,Bool)
+    toCruds crudString = 
+      ( 'c' `notElem` crudString
+      , 'r' `notElem` crudString
+      , 'u' `notElem` crudString
+      , 'd' `notElem` crudString
+      )
+
+trimXLSXCellsP :: Parser Bool
+trimXLSXCellsP = switch
+        ( long "do-not-trim-cellvalues"
+        <> help ("Do not ignore leading and trailing spaces in .xlsx files "<>
+                 "that are INCLUDED in the script.")
+        )

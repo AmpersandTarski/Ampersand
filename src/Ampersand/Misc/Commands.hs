@@ -14,11 +14,12 @@ where
 import           Ampersand.Basics
 import           Ampersand.Commands.Proto
 import           Ampersand.Commands.Daemon
-import           Ampersand.Misc.HasClasses
-import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Options.GlobalParser
 import           Ampersand.FSpec.ToFSpec.CreateFspec
+import           Ampersand.Input.ADL1.CtxError
+import           Ampersand.Misc.HasClasses
+import           Ampersand.Options.GlobalParser
 import           Ampersand.Options.ProtoParser
+import           Ampersand.Options.DaemonParser
 import           Ampersand.Types.Config
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Writer
@@ -73,7 +74,7 @@ commandLineHandler currentDir _progName = complicatedOptions
       addCommand'' "daemon"
                   "Use ampersand to check your model while you modify it."
                   daemonCmd
-                  (fatal "TODO: Implement daemonOptsParser" )
+                  daemonOptsParser
       where
         -- addCommand hiding global options
         addCommand'' :: String -> String -> (a -> RIO Runner ()) -> Parser a

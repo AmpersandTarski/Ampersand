@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Misc.HasClasses
 
 where
@@ -109,7 +108,6 @@ data ProtoOpts = ProtoOpts
    , xforceReinstallFramework :: !Bool
    -- ^ when true, an existing prototype directory will be destroyed and re-installed
    , xoutputLangugage :: !(Maybe Lang)
-   , x1trimXLSXCells :: ! Bool
    , x1fSpecGenOpts :: !FSpecGenOpts
    , xskipComposer :: !Bool
    , xdirPrototype :: !FilePath
@@ -137,10 +135,9 @@ class HasProtoOpts env where
 -- | Options for @ampersand daemon@.
 data DaemonOpts = DaemonOpts
   { xOutputLangugage :: !(Maybe Lang)
-  , x2fSpecGenOpts :: !FSpecGenOpts
   , xdaemonConfig :: !FilePath
+  , x2fSpecGenOpts :: !FSpecGenOpts
    -- ^ The path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
-  , x2trimXLSXCells :: ! Bool
   }
 --          , (Option []        ["daemon"]
 --               (OptArg (\fn opts -> opts{runAsDaemon = True
@@ -154,17 +151,13 @@ instance HasDaemonOpts DaemonOpts where
   {-# INLINE daemonOptsL #-}
 instance HasOutputLanguage DaemonOpts where
   languageL = lens xOutputLangugage (\x y -> x { xOutputLangugage = y })
-instance HasFSpecGenOpts DaemonOpts where
-  fSpecGenOptsL = lens x2fSpecGenOpts (\x y -> x { x2fSpecGenOpts = y })
-instance HasParserOptions DaemonOpts where
-  trimXLSXCellsL = lens x2trimXLSXCells (\x y -> x { x2trimXLSXCells = y })
+--instance HasFSpecGenOpts DaemonOpts where
+--  fSpecGenOptsL = lens x2fSpecGenOpts (\x y -> x { x2fSpecGenOpts = y })
 
-class (HasParserOptions a, HasFSpecGenOpts a) => HasDaemonOpts a where
+class HasDaemonOpts a where
   daemonOptsL :: Lens' a DaemonOpts
   daemonConfigL :: Lens' a FilePath
   daemonConfigL = daemonOptsL . (lens xdaemonConfig (\x y -> x { xdaemonConfig = y }))
-class HasParserOptions a where
-  trimXLSXCellsL :: Lens' a Bool
 
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !FilePath  --relative path
@@ -172,6 +165,8 @@ data FSpecGenOpts = FSpecGenOpts
   , xgenInterfaces :: !Bool -- 
   , xnamespace :: !String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
+  , xtrimXLSXCells :: !Bool
+  -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
   } deriving Show
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
@@ -186,6 +181,8 @@ class HasFSpecGenOpts a where
   namespaceL = fSpecGenOptsL . (lens xnamespace (\x y -> x { xnamespace = y }))
   defaultCrudL :: Lens' a (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
+  trimXLSXCellsL :: Lens' a Bool
+  trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x { xtrimXLSXCells = y })
 
  
                 
@@ -196,8 +193,6 @@ instance HasOutputLanguage ProtoOpts where
   languageL = lens xoutputLangugage (\x y -> x { xoutputLangugage = y })
 instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
-instance HasParserOptions ProtoOpts where
-  trimXLSXCellsL = lens x1trimXLSXCells (\x y -> x { x1trimXLSXCells = y })
 instance HasRootFile ProtoOpts where
   fileNameL = protoOptsL . fileNameL
 instance HasRunComposer ProtoOpts where
