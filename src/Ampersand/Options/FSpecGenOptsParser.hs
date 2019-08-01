@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 module Ampersand.Options.FSpecGenOptsParser 
-   (fSpecGenOptsParser)
+   (fSpecGenOptsParser, defFSpecGenOpts)
 where
 
 import           Options.Applicative
@@ -30,7 +30,15 @@ fSpecGenOptsParser isForDaemon =
         <*> namespaceP
         <*> crudP
         <*> trimXLSXCellsP
-
+defFSpecGenOpts :: FilePath -> FSpecGenOpts
+defFSpecGenOpts rootAdl = FSpecGenOpts
+     { xrootFile = rootAdl
+     , xsqlBinTables = False
+     , xgenInterfaces = False
+     , xnamespace = ""
+     , xdefaultCrud = (True,True,True,True)
+     , xtrimXLSXCells = True
+     } 
 rootFileP :: Parser FilePath
 rootFileP = strArgument 
           (metavar "AMPERSAND_SCRIPT" 

@@ -10,23 +10,15 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Daemon.Types
 import           Ampersand.Input.Parsing
 import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
 import           Ampersand.FSpec.MetaModels
 import           Ampersand.Types.Config
-
+import           Ampersand.Options.FSpecGenOptsParser
 parseProject :: (HasRunner env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
 parseProject rootAdl = do
-    let fSpecGenOpts = FSpecGenOpts
-            { xrootFile = rootAdl
-            , xsqlBinTables = False
-            , xgenInterfaces = False
-            , xnamespace = ""
-            , xdefaultCrud = (True,True,True,True)
-            , xtrimXLSXCells = True
-            } 
-    extendWith' fSpecGenOpts $ do 
+    let fSpecGenOpts = defFSpecGenOpts rootAdl 
+    extendWith fSpecGenOpts $ do 
         (pc,gPctx) <- parseADL rootAdl 
         env2 <- ask
         let loadedFiles = map pcCanonical pc
@@ -36,11 +28,6 @@ parseProject rootAdl = do
                 Errors  es   -> NEL.toList . fmap error2Load $ es
             , loadedFiles
             )
-extendWith' :: (MonadReader s m, HasRunner s, MonadIO m) =>
-                     FSpecGenOpts -> RIO (ExtendedRunner FSpecGenOpts) b -> m b
-extendWith' ext inner = do
-    env <- view runnerL
-    runRIO env $ extendWith ext $ inner
 
 warning2Load :: Warning -> Load
 warning2Load warn = Message

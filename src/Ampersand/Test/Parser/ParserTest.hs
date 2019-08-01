@@ -9,9 +9,9 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
-import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
-
+import           Ampersand.Types.Config
+import           Ampersand.Options.FSpecGenOptsParser
 -- Tries to parse all the given files
 parseScripts :: (HasRunner env) => 
                 [FilePath] ->  RIO env Bool
@@ -19,7 +19,8 @@ parseScripts paths =
   case paths of
     [] -> return True
     (f:fs) -> do
-        parsed <- snd <$> parseADL f
+        let fSpecGenOpts = defFSpecGenOpts f
+        parsed <- snd <$> extendWith fSpecGenOpts (parseADL f)
         case parsed of
             Checked _ ws -> do
                 sayLn ("Parsed: " ++ f)

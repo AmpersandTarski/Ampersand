@@ -8,7 +8,7 @@ module Ampersand.Types.Config
     HasRunner(..)
   , Runner(..)
   -- ** Extensions of Runner with command-specific options
-  , extendWith 
+  , extendWith
   , ExtendedRunner
   , GlobalOpts(..)
   -- ** Config & HasConfig
@@ -109,19 +109,18 @@ data Config =
 --    -- ^ See: 'configWorkDir'.
 --    }
 
-
-extendWith :: a -> RIO (ExtendedRunner a) b -> RIO Runner b
-extendWith opts inner = do
-   env <- ask
-   runRIO (ExtendedRunner env opts) inner
---extendWith :: (HasRunner a,HasLogFunc a) => b -> RIO (Extended a b) c -> RIO a c
+extendWith :: (MonadReader s m, HasRunner s, MonadIO m) =>
+                     a -> RIO (ExtendedRunner a) b -> m b
+extendWith ext inner = do
+    env1 <- view runnerL
+    runRIO env1 $ do -- extendWith ext $ inner
+      env2 <- ask
+      runRIO (ExtendedRunner env2 ext) inner
+--extendWith :: a -> RIO (ExtendedRunner a) b -> RIO Runner b
 --extendWith opts inner = do
---   left <- ask
---   runRIO (Extended left opts) inner 
---data Extended a b = Extended
---   { eLeft :: a
---   , eRight :: b
---   }
+--   env <- ask
+--   runRIO (ExtendedRunner env opts) inner
+
 data ExtendedRunner a = ExtendedRunner
    { eRunner :: !Runner
    , eCmdOpts :: a

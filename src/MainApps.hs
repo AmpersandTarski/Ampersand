@@ -13,6 +13,7 @@ import           Ampersand
 import           Ampersand.Input.PreProcessor
 import           Ampersand.Options.GlobalParser
 import           Ampersand.Runners
+import           Ampersand.Types.Config
 import           Conduit
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -21,14 +22,13 @@ import           System.Environment    (getArgs, getProgName)
 import           System.FilePath ((</>))
 import           System.IO.Error (tryIOError)
 import qualified System.Directory as D
-
-defEnv :: IO App
+defEnv :: IO Runner
 defEnv = do
   logOptions' <- logOptionsHandle stderr False
   let logOptions = setLogUseTime True $ setLogUseLoc True logOptions'
   withLogFunc logOptions $ \logFunc -> do
     opts <- getOptionsIO
-    return App
+    return Runner
           { appLogFunc = logFunc
           , options' = opts 
           }
@@ -132,7 +132,7 @@ mainTest = do
    env <- defEnv
    runRIO env mainTest'
 
-mainTest' :: RIO App ()
+mainTest' :: RIO env ()
 mainTest' = do 
     sayLn "Starting Quickcheck tests."
     funcs <- testFunctions
@@ -148,7 +148,7 @@ mainTest' = do
           else exitWith (SomeTestsFailed ["*** Some tests failed***"])
                
 
-      testFunctions :: RIO App [([String], RIO App Bool)]
+      testFunctions :: RIO env [([String], RIO env Bool)]
       testFunctions = do
           scr <- getTestScripts
           (parserCheckResult, msg) <- parserQuickChecks
@@ -168,7 +168,7 @@ regressionTest = do
    runRIO env regressionTest'
 
 
-regressionTest' :: RIO App ()
+regressionTest' :: RIO env ()
 regressionTest' = do 
     sayLn $ "Starting regression test."
     baseDir <- liftIO . makeAbsolute $ "." </> "testing"
@@ -208,10 +208,10 @@ regressionTest' = do
                 isHidden _       = False
                 
     -- Convert a DirData into an Int that contains the number of failed tests
-    myVisitor :: ConduitT DirData Int (RIO App) ()
+    myVisitor :: ConduitT DirData Int (RIO env) ()
     myVisitor = loop 1
       where
-        loop :: Int -> ConduitT DirData Int (RIO App) ()
+        loop :: Int -> ConduitT DirData Int (RIO env) ()
         loop n = awaitForever $
             (\dird -> do 
                 lift $ sayLn $ ">> " ++ show n ++ ". "
