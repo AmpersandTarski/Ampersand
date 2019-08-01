@@ -96,9 +96,13 @@ zwolleVersionP :: Parser String
 zwolleVersionP = strOption
         ( long "prototype-framework-version"
         <> metavar "VERSION"
-        <> value "1.3.1"
+        <> value "v1.3.1"
         <> showDefault
-        <> help "Tag, branch or SHA of the prototype framework on Github." )
+        <> help ( "Tag, branch or SHA of the prototype framework on Github. "
+                <>"Normally you shouldn't need to use anohter version "
+                <>"than the default. Only a developer of the framework "
+                <>"can make good use of it. ")
+        )
 allowInvariantViolationsP :: Parser Bool
 allowInvariantViolationsP = not <$> switch
         ( long "ignore-invariant-violations"
