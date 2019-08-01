@@ -6,7 +6,6 @@ module MainApps(
   , preProcessor
   , mainTest
   , regressionTest
-  , defEnv 
 ) where
 
 import           Ampersand
@@ -22,24 +21,22 @@ import           System.Environment    (getArgs, getProgName)
 import           System.FilePath ((</>))
 import           System.IO.Error (tryIOError)
 import qualified System.Directory as D
-defEnv :: IO Runner
-defEnv = do
-  logOptions' <- logOptionsHandle stderr False
-  let logOptions = setLogUseTime True $ setLogUseLoc True logOptions'
-  withLogFunc logOptions $ \logFunc -> do
-    opts <- getOptionsIO
-    return Runner
-          { appLogFunc = logFunc
-          , options' = opts 
-          }
-
   
 ampersand :: IO ()
 ampersand = do
   progName <- getProgName
-  isTerminal <- hIsTerminalDevice stdout
+  args <- getArgs
+  work <- ampersandOptionsHandler progName args
+  ampersandWorker work
+
+ampersandOptionsHandler :: String -> [String] -> IO (Either ExitCode (GlobalOptsMonoid, RIO Runner ()))
+ampersandOptionsHandler progName args = do
   currentDir <- D.getCurrentDirectory
-  eGlobalRun <- try $ commandLineHandler currentDir progName
+  try $ commandLineHandler currentDir progName args
+
+ampersandWorker :: Either ExitCode (GlobalOptsMonoid, RIO Runner ()) -> IO ()
+ampersandWorker eGlobalRun = do
+  isTerminal <- hIsTerminalDevice stdout
   case eGlobalRun of
     Left (exitCode :: ExitCode) ->
       throwIO exitCode
@@ -54,6 +51,7 @@ ampersand = do
               Nothing -> do
                   logError $ fromString $ displayException e
                   exitWith $ RunnerAborted $ lines $ displayException e
+
 
 
 -- ampersandOld :: IO ()
@@ -129,10 +127,14 @@ preProcessor' =
 
 mainTest :: IO ()
 mainTest = do
-   env <- defEnv
-   runRIO env mainTest'
+  progName <- getProgName
+  let args = ["test", "--help"]
+  work <- ampersandOptionsHandler progName args
+  ampersandWorker work
+--   env <- defEnv
+--   runRIO env mainTest'
 
-mainTest' :: RIO env ()
+mainTest' :: (HasRunner env) => RIO env ()
 mainTest' = do 
     sayLn "Starting Quickcheck tests."
     funcs <- testFunctions
@@ -148,7 +150,7 @@ mainTest' = do
           else exitWith (SomeTestsFailed ["*** Some tests failed***"])
                
 
-      testFunctions :: RIO env [([String], RIO env Bool)]
+      testFunctions :: (HasRunner env) => RIO env [([String], RIO env Bool)]
       testFunctions = do
           scr <- getTestScripts
           (parserCheckResult, msg) <- parserQuickChecks
@@ -164,11 +166,15 @@ mainTest' = do
 
 regressionTest :: IO ()
 regressionTest = do
-   env <- defEnv
-   runRIO env regressionTest'
+  progName <- getProgName
+  let args = ["test", "--help"]
+  work <- ampersandOptionsHandler progName args
+  ampersandWorker work
+--   env <- defEnv
+--   runRIO env regressionTest'
 
 
-regressionTest' :: RIO env ()
+regressionTest' :: (HasRunner env) => RIO env ()
 regressionTest' = do 
     sayLn $ "Starting regression test."
     baseDir <- liftIO . makeAbsolute $ "." </> "testing"
@@ -208,10 +214,10 @@ regressionTest' = do
                 isHidden _       = False
                 
     -- Convert a DirData into an Int that contains the number of failed tests
-    myVisitor :: ConduitT DirData Int (RIO env) ()
+    myVisitor :: (HasLogFunc env) => ConduitT DirData Int (RIO env) ()
     myVisitor = loop 1
       where
-        loop :: Int -> ConduitT DirData Int (RIO env) ()
+        loop :: (HasLogFunc env) => Int -> ConduitT DirData Int (RIO env) ()
         loop n = awaitForever $
             (\dird -> do 
                 lift $ sayLn $ ">> " ++ show n ++ ". "

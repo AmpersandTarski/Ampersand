@@ -7,7 +7,7 @@ import           Ampersand.FSpec.ToFSpec.CreateFspec(createFspec)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
-import           MainApps(defEnv)
+import           MainApps -- (defEnv)
 
 ampersand :: [FilePath] -> IO [[CtxError]]
 ampersand files = return [[]]

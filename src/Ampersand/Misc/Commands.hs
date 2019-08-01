@@ -30,7 +30,7 @@ import           Options.Applicative.Builder.Internal
 import           Options.Applicative.Types
 import qualified RIO.List as L
 import qualified Data.List.NonEmpty as NEL
-import           System.Environment ({-getProgName,-} getArgs, withArgs)
+import           System.Environment ({-getProgName,-} withArgs)
 --import           System.FilePath (isValid, pathSeparator, takeDirectory)
 
 -- A lot of inspiration in this file comes from https://github.com/commercialhaskell/stack/
@@ -42,13 +42,15 @@ import           System.Environment ({-getProgName,-} getArgs, withArgs)
 
 commandLineHandler
   :: FilePath
-  -> String
+  -> String -- the name of the program
+  -> [String] -- the (command-line) arguments
   -> IO (GlobalOptsMonoid, RIO Runner ())
-commandLineHandler currentDir _progName = complicatedOptions
+commandLineHandler currentDir _progName args = complicatedOptions
   ampersandVersionWithoutBuildTimeStr
   "ampersand - The Ampersand generator"
   ""
   "ampersand's documentation is available at https://ampersandtarski.gitbook.io/documentation/"
+  args
   (globalOpts)
   (Just failureCallback)
   addCommands
@@ -115,6 +117,8 @@ complicatedOptions
   -- ^ program description (displayed between usage and options listing in the help output)
   -> String
   -- ^ footer
+  -> [String]
+  -- ^ command-line arguments (unparsed)
   -> Parser a
   -- ^ common settings
   -> Maybe (ParserFailure ParserHelp -> [String] -> IO (a,(b,a)))
@@ -123,9 +127,8 @@ complicatedOptions
   -> ExceptT b (Writer (Mod CommandFields (b,a))) ()
   -- ^ commands (use 'addCommand')
   -> IO (a,b)
-complicatedOptions stringVersion h pd footerStr commonParser mOnFailure commandParser =
-  do args <- getArgs
-     (a,(b,c)) <- case execParserPure (prefs noBacktrack) parser args of
+complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure commandParser =
+  do (a,(b,c)) <- case execParserPure (prefs noBacktrack) parser args of
        Failure _ | null args -> withArgs ["--help"] (execParser parser)
        -- call onFailure handler if it's present and parsing options failed
        Failure f | Just onFailure <- mOnFailure -> onFailure f args

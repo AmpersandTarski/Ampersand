@@ -9,8 +9,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Ampersand.FSpec.FSpec
-          ( FSpecKinds(..)
-          , FSpec(..), concDefs, Atom(..), A_Pair(..)
+          ( FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Quad(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
@@ -43,17 +42,9 @@ import qualified RIO.Text as T
 import qualified RIO.List as L
 import           Text.Pandoc.Builder (Blocks)
 
-data FSpecKinds = FSpecKinds
-                   { plainFSpec    :: FSpec       -- ^ The FSpec based on the user's script only.
-                   , rapPopulation :: FSpec       -- ^ The FSpec that contains the grinded (with Formal Ampersand) population
-                   , plainProto    :: FSpec       -- ^ FSpec that contains the systemContext stuff, for building a prototype
-                 --  , atlasProto    :: FSpec       -- ^ FSpec that contains the formalAmpersand model with systemContext stuff added, for building a prototype
-                 --  , docuFSpec     :: FSpec       -- ^ FSpec that contains the documentation ???
-                   }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showA)  
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
-                  -- , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (derived)
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
