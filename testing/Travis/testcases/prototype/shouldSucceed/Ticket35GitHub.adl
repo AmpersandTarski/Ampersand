@@ -1,4 +1,4 @@
-﻿CONTEXT Ticket35GitHub IN ENGLISH
+CONTEXT Ticket35GitHub IN ENGLISH
 
 normtextNH :: NormText * NormHierarchy
 normID :: Norm * NormID
