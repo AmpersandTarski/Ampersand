@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.17.3 (2 august 2019)
+
 * Allow interface roles to be editable. Accessible interfaces for a given role are now queries from database instead of generated json files (requires update of prototype framework)
 * Update to prototype framework v1.3.0
 * [Issue #921](https://github.com/AmpersandTarski/Ampersand/issues/921) Third round of enhancements for RIO.
