@@ -1,6 +1,6 @@
 CONTEXT FraakTest1 IN ENGLISH
 
-PROCESS HandleBookings
+PATTERN HandleBookings
 
 	status :: Booking * Status [UNI] PRAGMA "A " " can have a certain status".	
 
@@ -10,6 +10,6 @@ PROCESS HandleBookings
 		MESSAGE "All bookings must be accepted, cancelled or rejected"
 		VIOLATION (SRC I)
 	
-ENDPROCESS
+ENDPATTERN
 
 ENDCONTEXT

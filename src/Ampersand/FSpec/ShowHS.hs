@@ -25,7 +25,7 @@ fSpec2Haskell opts@Options{..} fSpec
           ++"\n"
           ++"\nmain :: IO ()"
           ++"\nmain = do opts <- getOptions"
-          ++"\n          putStr (showHS opts \"\\n  \" fSpec_"++baseName++")\n"
+          ++"\n          say (showHS opts \"\\n  \" fSpec_"++baseName++")\n"
           ++"\nfSpec_"++baseName ++" :: FSpec"
           ++"\nfSpec_"++baseName ++" =\n  "++showHS opts "\n  " fSpec
 
@@ -180,11 +180,6 @@ instance ShowHS FSpec where
         , wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
         ,      ", interfaceS    = interfaceS'"
         ,      ", interfaceG    = interfaceG'"
-        ,      ", fRoleRels     = " ++
-               case fRoleRels fSpec of
-                 []        -> "[]"
-                 [(r,rel)] -> "[ ("++show r++", "++showHS opts "" rel++") ]"
-                 _         -> "[ "++L.intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
         ,      ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
         , wrap ", fRoles        = " indentA (showHS opts)    [rol | (rol,_) <- fRoles fSpec]
         , wrap ", vrules        = " indentA (const showHSName) (Set.elems $ vrules fSpec)
@@ -312,9 +307,6 @@ instance ShowHS PlugInfo where
  showHS _ _ (InternalPlug p)
   = "InternalPlug "++showHSName p
 
-instance ShowHS A_RoleRelation where
- showHS opts ind rr
-  = "RR "++show (rrRoles rr)++" "++showHS opts (ind++"    ") (rrRels rr)++" "++showHS opts (ind++"    ") (rrPos rr)
 instance ShowHS Role where
  showHS _ ind r = ind++
                   (case r of

@@ -90,7 +90,7 @@ REPRESENT ShowADL TYPE BIGALPHANUMERIC
 VIEW Expression : Expression(showADL)
 
 {- I can't get the following to work...  Grrr!
-PROCESS "Type graph"
+PATTERN "Type graph"
     RELATION elem[TypeTerm*Node] [UNI]
 
     ROLE ExecEngine MAINTAINS elemFill, elemNew
@@ -100,6 +100,6 @@ PROCESS "Type graph"
               )
     RULE elemFill : (subStar/\subStar~);elem |- elem
     VIOLATION (TXT "{EX} InsPair;elem;TypeTerm;", SRC I, TXT ";Node;", TGT I)
-ENDPROCESS -}
+ENDPATTERN -}
 
 ENDCONTEXT

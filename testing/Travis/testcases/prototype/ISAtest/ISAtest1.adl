@@ -1,6 +1,6 @@
 CONTEXT ISAtest1 IN DUTCH
 
-PROCESS ISAtest1
+PATTERN ISAtest1
 
 --[Criteria]--
 bfNaam :: Bedrijfsfunctie * Naam [UNI]
@@ -28,7 +28,7 @@ RULE "Gewetensvragen2": I[Gewetensvraag] |- I[Criterium] /\ critBF;critTAV~
 
 RULE "Verbod op niet-gekarakteriseerde criteria": I[Criterium] |- I[Verplichting] \/ I[Verwachting]
 
-ENDPROCESS
+ENDPATTERN
 ------------------------------------------------------------
 INTERFACE "Overzicht" FOR Developer, ExecEngine : I[ONE]
 BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]

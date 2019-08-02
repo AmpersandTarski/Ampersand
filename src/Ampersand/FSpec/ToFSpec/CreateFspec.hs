@@ -36,11 +36,10 @@ import           System.FilePath
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createMulti.
-createMulti :: (HasOptions env, HasHandles env, HasVerbosity env) => 
+createMulti :: (HasOptions env, HasHandle env, HasVerbosity env) => 
                RIO env (Guarded MultiFSpecs)
 createMulti =
-  do env <- ask
-     let opts@Options{..} = getOptions env
+  do opts@Options{..} <- view optionsL
      fAmpP_Ctx :: Guarded P_Context <-
         if genMetaFile ||
            genRapPopulationOnly ||
@@ -99,7 +98,6 @@ createMulti =
                  , ctx_cs     = ctx_cs     pCtx `uni` map id                    (Set.toList . instances $ metamodel)
                  , ctx_ks     = ctx_ks     pCtx `uni` map aIdentityDef2pIdentityDef (Set.toList . instances $ metamodel)
                  , ctx_rrules = ctx_rrules pCtx `uni` map aRoleRule2pRoleRule   (Set.toList . instances $ metamodel)
-                 , ctx_rrels  = ctx_rrels  pCtx
                  , ctx_reprs  = ctx_reprs  pCtx `uni` (reprList . fcontextInfo $ metamodel)
                  , ctx_vs     = ctx_vs     pCtx `uni` map aViewDef2pViewDef     (Set.toList . instances $ metamodel)
                  , ctx_gs     = ctx_gs     pCtx `uni` map aClassify2pClassify   (Set.toList . instances $ metamodel)
@@ -143,15 +141,14 @@ createMulti =
   where
     useSystemContext :: Options -> Bool
     useSystemContext = genPrototype
-    writeMetaFile :: (HasOptions env , HasVerbosity env, HasHandles env) => MetaFSpec -> Guarded FSpec -> RIO env (Guarded ())
+    writeMetaFile :: (HasOptions env , HasVerbosity env, HasHandle env) => MetaFSpec -> Guarded FSpec -> RIO env (Guarded ())
     writeMetaFile metaModel userSpec = do
-       env <- ask
-       let opts@Options{..} = getOptions env
+       opts@Options{..} <- view optionsL
        case makeMetaFile opts metaModel <$> userSpec of
         Checked (filePath,metaContents) ws -> 
-                  do verboseLn $ "Generating meta file in path "++dirOutput
+                  do sayWhenLoudLn $ "Generating meta file in path "++dirOutput
                      liftIO $ writeFile (dirOutput </> filePath) metaContents      
-                     verboseLn $ "\"" ++ filePath ++ "\" written"
+                     sayWhenLoudLn $ "\"" ++ filePath ++ "\" written"
                      return $ Checked () ws
         Errors err -> return (Errors err)
 

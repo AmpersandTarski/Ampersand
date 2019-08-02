@@ -4,7 +4,8 @@ module MainApps(
   , ampersand
   , preProcessor
   , mainTest
-  , regressionTest 
+  , regressionTest
+  , defEnv 
 ) where
 
 import           Ampersand
@@ -21,8 +22,15 @@ import           System.IO.Error (tryIOError)
 
 defEnv :: IO App
 defEnv = do
-  opts <- getOptionsIO
-  return (App opts stdout)
+  logOptions' <- logOptionsHandle stderr False
+  let logOptions = setLogUseTime True $ setLogUseLoc True logOptions'
+  withLogFunc logOptions $ \logFunc -> do
+    opts <- getOptionsIO
+    return App
+          { appLogFunc = logFunc
+          , options' = opts 
+          , appHandle = stdout
+          }
 
   
 
@@ -32,22 +40,21 @@ ampersand = do
   runRIO env ampersand'
 ampersand' :: RIO App ()
 ampersand' = do
-    app <- ask
-    let opts'@Options{..} = getOptions app
+    opts'@Options{..} <- view optionsL
     sequence_ . map snd . filter fst $ actionsWithoutScript opts'-- There are commands that do not need a single filename to be speciied
     case fileName of
       Just _ -> do -- An Ampersand script is provided that can be processed
-            putStrLn "Processing your model..."
+            sayLn "Processing your model..."
             gMulti <- createMulti
             case gMulti of
               Errors err    -> 
                  exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
                . fmap show . NEL.toList $ err
               Checked multi ws -> do
-                 mapM_  putStrLn . concatMap (lines . show) $ ws
+                 mapM_  sayLn . concatMap (lines . show) $ ws
                  generateAmpersandOutput opts' multi
-                 putStrLn "Finished processing your model"
-                 putStrLn . ("Your script has no errors " ++) $
+                 sayLn "Finished processing your model"
+                 sayLn . ("Your script has no errors " ++) $
                     case ws of
                       []  -> "and no warnings"
                       [_] -> ", but one warning was found"
@@ -55,7 +62,7 @@ ampersand' = do
            
       Nothing -> -- No Ampersand script is provided 
          if or (map fst $ actionsWithoutScript opts')
-         then verboseLn "No further actions, because no ampersand script is provided"
+         then sayWhenLoudLn "No further actions, because no ampersand script is provided"
          else liftIO $ do 
             args     <- getArgs
             progName <- getProgName
@@ -66,10 +73,10 @@ ampersand' = do
  where
    actionsWithoutScript :: Options -> [(Bool, RIO App ())]
    actionsWithoutScript opts@Options{..} = 
-      [ ( test                     , putStrLn $ "Executable: " ++ show dirExec )
-      , ( showVersion  || verboseP , putStrLn $ versionText opts)
+      [ ( test                     , sayLn $ "Executable: " ++ show dirExec )
+      , ( showVersion  || verbosity == Loud , sayLn $ versionText opts)
       , ( genSampleConfigFile      , liftIO writeConfigFile)
-      , ( showHelp                 , putStrLn $ usageInfo' opts)
+      , ( showHelp                 , sayLn $ usageInfo' opts)
       , ( runAsDaemon              , runDaemon)
       ]
    
@@ -80,7 +87,7 @@ preProcessor :: IO()
 preProcessor = 
    runRIO stdout preProcessor' 
 
-preProcessor' :: (HasHandles env) => RIO env ()
+preProcessor' :: (HasHandle env) => RIO env ()
 preProcessor' =
   do
     args <- liftIO getArgs;
@@ -92,7 +99,7 @@ preProcessor' =
              case result of
                Left err   -> exitWith $ ReadFileError $ "Error while reading input file.\n" : err
                Right cont -> return cont
-        putStr $ either show id (preProcess' filename (Set.fromList defs) (T.unpack content)) ++ "\n"
+        say $ either show id (preProcess' filename (Set.fromList defs) (T.unpack content)) ++ "\n"
 
 mainTest :: IO ()
 mainTest = do
@@ -101,15 +108,15 @@ mainTest = do
 
 mainTest' :: RIO App ()
 mainTest' = do 
-    putStrLn "Starting Quickcheck tests."
+    sayLn "Starting Quickcheck tests."
     funcs <- testFunctions
     testAmpersandScripts
     tests funcs
   where 
-      tests :: (HasHandles env) => [([String], RIO env Bool)] -> RIO env ()
+      tests :: (HasHandle env) => [([String], RIO env Bool)] -> RIO env ()
       tests [] = pure ()
       tests ((msg,tst):xs) = do
-          mapM_ putStrLn msg
+          mapM_ sayLn msg
           success <- tst
           if success then tests xs
           else exitWith (SomeTestsFailed ["*** Some tests failed***"])
@@ -137,11 +144,11 @@ regressionTest = do
 
 regressionTest' :: RIO App ()
 regressionTest' = do 
-    putStrLn $ "Starting regression test."
+    sayLn $ "Starting regression test."
     baseDir <- liftIO . makeAbsolute $ "." </> "testing"
     totalfails <- runConduit $ walk baseDir .| myVisitor .| sumarize
     if totalfails == 0
-    then putStrLn $ "Regression test of all scripts succeeded."
+    then sayLn $ "Regression test of all scripts succeeded."
     else exitWith (SomeTestsFailed ["Regression test failed! ("++show totalfails++" tests failed.)"])
   where   
 
@@ -181,7 +188,7 @@ regressionTest' = do
         loop :: Int -> ConduitT DirData Int (RIO App) ()
         loop n = awaitForever $
             (\dird -> do 
-                lift $ putStr $ ">> " ++ show n ++ ". "
+                lift $ say $ ">> " ++ show n ++ ". "
                 x <- lift $ process 4 dird     
                 yield x
                 loop (n + 1)

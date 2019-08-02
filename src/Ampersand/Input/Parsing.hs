@@ -30,7 +30,7 @@ import           System.FilePath
 import           Text.Parsec.Prim (runP)
 
 -- | Parse an Ampersand file and all transitive includes
-parseADL :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseADL :: (HasVerbosity env,HasHandle env,HasOptions env) =>
             FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
          -> RIO env ([ParseCandidate], Guarded P_Context)     -- ^ The resulting context
 parseADL fp = do 
@@ -38,19 +38,19 @@ parseADL fp = do
     canonical <- liftIO $ canonicalizePath fp
     parseThing' (ParseCandidate (Just curDir) Nothing fp Nothing canonical Set.empty)
 
-parseMeta :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseMeta :: (HasVerbosity env,HasHandle env,HasOptions env) =>
              RIO env (Guarded P_Context)
 parseMeta = parseThing (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl" Set.empty)
 
-parseSystemContext :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseSystemContext :: (HasVerbosity env,HasHandle env,HasOptions env) =>
                       RIO env (Guarded P_Context)
 parseSystemContext = parseThing (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl" Set.empty)
 
-parseThing :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseThing :: (HasVerbosity env,HasHandle env,HasOptions env) =>
               ParseCandidate -> RIO env (Guarded P_Context)
 parseThing pc = snd <$> parseThing' pc 
 
-parseThing' :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseThing' :: (HasVerbosity env,HasHandle env,HasOptions env) =>
                ParseCandidate -> RIO env ([ParseCandidate], Guarded P_Context) 
 parseThing' pc = do
   results <- parseADLs [] [pc]
@@ -65,7 +65,7 @@ parseThing' pc = do
                           h:tl -> foldr mergeContexts h tl
 
 -- | Parses several ADL files
-parseADLs :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseADLs :: (HasVerbosity env,HasHandle env,HasOptions env) =>
              [ParseCandidate]         -- ^ The list of files that have already been parsed
           -> [ParseCandidate]         -- ^ A list of files that still are to be parsed.
           -> RIO env (Guarded [(ParseCandidate, P_Context)]) -- ^ The resulting contexts and the ParseCandidate that is the source for that P_Context
@@ -75,7 +75,7 @@ parseADLs parsedFilePaths fpIncludes =
     x:xs -> if x `elem` parsedFilePaths
             then parseADLs parsedFilePaths xs
             else whenCheckedM (parseSingleADL x) parseTheRest
-        where parseTheRest :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+        where parseTheRest :: (HasVerbosity env,HasHandle env,HasOptions env) =>
                               (P_Context, [ParseCandidate]) -> RIO env (Guarded [(ParseCandidate, P_Context)])
               parseTheRest (ctx, includes) = whenCheckedM (parseADLs (x:parsedFilePaths) (includes++xs)) $
                                                   return . pure . (:) (x,ctx) 
@@ -93,10 +93,10 @@ instance Eq ParseCandidate where
 
 
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
-parseSingleADL :: (HasVerbosity env,HasHandles env,HasOptions env) =>
+parseSingleADL :: (HasVerbosity env,HasHandle env,HasOptions env) =>
     ParseCandidate -> RIO env (Guarded (P_Context, [ParseCandidate]))
 parseSingleADL pc
- = do verboseLn $ "Reading file " ++ filePath 
+ = do sayWhenLoudLn $ "Reading file " ++ filePath 
                     ++ (case pcFileKind pc of
                          Just _ -> " (from within ampersand.exe)"
                          Nothing -> mempty)
@@ -107,7 +107,7 @@ parseSingleADL pc
                                                         , "   File does not exist." ]
     where
      filePath = pcCanonical pc
-     parseSingleADL' :: (HasVerbosity env,HasHandles env,HasOptions env) => RIO env (Guarded (P_Context, [ParseCandidate]))
+     parseSingleADL' :: HasOptions env => RIO env (Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
          | extension == ".xlsx" =
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
@@ -196,7 +196,6 @@ mkContextOfPopsOnly pops =
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
-      , ctx_rrels  = []
       , ctx_reprs  = []
       , ctx_vs     = []
       , ctx_gs     = []

@@ -48,7 +48,7 @@ BOX [ "error" : I
     ]
 
 {-
-PROCESS Test
+PATTERN Test
 ROLE Student MAINTAINS test1
 ,test2
 ,test3
@@ -58,7 +58,7 @@ RULE test1: -(cptdf;cptdf~)
 RULE test2: cptdf;cptdf~
 RULE test3: cptdf
 RULE test4: -(-(cptdf;cptdf~) /\ I)
-ENDPROCESS
+ENDPATTERN
 -}
 {-
 CONTEXT Test

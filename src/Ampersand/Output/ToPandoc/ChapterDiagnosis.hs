@@ -57,7 +57,7 @@ chpDiagnosis opts@Options{..} fSpec
           sigs ->  para (   (emph.str.upCap.name) fSpec
                          <> (str.l) (NL " kent regels aan rollen toe. "
                                     ,EN " assigns rules to roles. ")
-                         <> (str.l) (NL "De volgende tabel toont welke regels door een bepaalde rol kunnen worden gehandhaafd."
+                         <> (str.l) (NL "De volgende tabel toont welke regels door een bepaalde rol worden bewaakt."
                                     ,EN "The following table shows the rules that are being maintained by a given role.")
                         )
                 <> table -- No caption:
@@ -83,13 +83,8 @@ chpDiagnosis opts@Options{..} fSpec
       f rol rul | (rol,rul) `elem` dead = (plain.str) [timesSymbol] 
                 | otherwise                      = mempty
           where timesSymbol = '\x215'
-      mayedit :: Role -> Relation -> Bool
-      mayedit role' decl = decl `elem` (snd . L.unzip) (filter (\x -> role' == fst x) (fRoleRels fSpec))
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
-       = [ (role',rul)
-         | (role',rul)<-fRoleRuls fSpec
-         , (not.or) (map (mayedit role') (Set.elems $ bindedRelationsIn rul))
-         ]
+       = [ ]
 
   roleomissions :: Blocks
   roleomissions
@@ -101,13 +96,6 @@ chpDiagnosis opts@Options{..} fSpec
                                   ,EN " does not assign rules to roles. ")
                        <> (str.l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
                                   ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process.")
-                      )
-           else mempty
-          )<>
-          (if null (fRoleRels fSpec) && (not.null.fRoleRuls) fSpec ||(not.null.fRoleRels) fSpec
-           then plain (   (emph.str.upCap.name) fSpec
-                       <> (str.l) (NL " specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
-                                  ,EN " does not specify which roles may change the contents of which relations. ")
                       )
            else mempty
           )

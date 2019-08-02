@@ -13,13 +13,13 @@ import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import qualified Data.List.NonEmpty as NEL
 
-parseProject :: (HasOptions env, HasVerbosity env, HasHandles env) => 
+parseProject :: (HasOptions env, HasVerbosity env, HasHandle env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
 parseProject rootAdl = do
-    env <- ask
     (pc,gPctx) <- parseADL rootAdl 
+    opts <- view optionsL
     let loadedFiles = map pcCanonical pc
-    let gActx = pCtx2Fspec (getOptions env) gPctx
+        gActx = pCtx2Fspec opts gPctx
     return ( case gActx of
               Checked _ ws -> map warning2Load $ ws
               Errors  es   -> NEL.toList . fmap error2Load $ es

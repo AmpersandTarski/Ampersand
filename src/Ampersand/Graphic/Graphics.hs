@@ -192,11 +192,10 @@ conceptualStructure fSpec pr =
                   }
         _  -> fatal "No conceptual graph defined for this type."
 
-writePicture :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+writePicture :: (HasOptions env, HasVerbosity env, HasHandle env) =>
                 Picture -> RIO env ()
 writePicture pict = do
-    env <- ask
-    let opts@Options{..} = getOptions env
+    opts@Options{..} <- view optionsL
     sequence_ (
       [liftIO $ createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
    --   [dumpShow ]++
@@ -207,46 +206,45 @@ writePicture pict = do
       [writePdf Eps    | genFSpec ] -- .eps file that is postprocessed to a .pdf file 
            )
    where
-     writeDot :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+     writeDot :: (HasOptions env, HasVerbosity env, HasHandle env) =>
                  GraphvizOutput -> RIO env ()
      writeDot = writeDotPostProcess Nothing
-     writeDotPostProcess :: (HasOptions env, HasVerbosity env, HasHandles env) =>
+     writeDotPostProcess :: (HasOptions env, HasVerbosity env, HasHandle env) =>
                  Maybe (FilePath -> RIO env ()) --Optional postprocessor
               -> GraphvizOutput
               -> RIO env ()
      writeDotPostProcess postProcess gvOutput  =
-         do verboseLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
+         do opts <- view optionsL
+            sayWhenLoudLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
             dotSource <- mkDotGraphIO pict
-            env <- ask
             path <- liftIO $ (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
-                       (dropExtension . imagePath (getOptions env)) pict
-            verboseLn $ path++" written."
+                       (dropExtension . imagePath opts) pict
+            sayWhenLoudLn $ path++" written."
             case postProcess of
               Nothing -> return ()
               Just x -> x path
        where  gvCommand = dotProgName pict
      -- The GraphVizOutput Pdf generates pixelised graphics on Linux
      -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
-     makePdf :: (HasVerbosity env, HasHandles env ) => 
+     makePdf :: (HasVerbosity env, HasHandle env ) => 
                 FilePath -> RIO env ()
      makePdf path = do
          liftIO $ callCommand (ps2pdfCmd path)
-         verboseLn $ replaceExtension path ".pdf" ++ " written."
-       `catch` \ e -> verboseLn ("Could not invoke PostScript->PDF conversion."++
+         sayWhenLoudLn $ replaceExtension path ".pdf" ++ " written."
+       `catch` \ e -> sayWhenLoudLn ("Could not invoke PostScript->PDF conversion."++
                                  "\n  Did you install MikTex? Can the command epstopdf be found?"++
                                  "\n  Your error message is:\n " ++ show (e :: IOException))
                    
-     writePdf :: (HasOptions env,HasVerbosity env, HasHandles env) => GraphvizOutput
+     writePdf :: (HasOptions env,HasVerbosity env, HasHandle env) => GraphvizOutput
               -> RIO env ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
-       `catch` (\ e -> verboseLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+       `catch` (\ e -> sayWhenLoudLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
                                   "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 mkDotGraphIO :: HasOptions env => Picture -> RIO env (DotGraph String)
 mkDotGraphIO pict = do
-  env <- ask
-  let opts = getOptions env
+  opts <- view optionsL
   case dotContent pict of
     ClassDiagram x -> pure $ classdiagram2dot opts x
     ConceptualDg x -> pure $ conceptual2DotIO opts x

@@ -43,9 +43,9 @@ getAsConcept o v = case typeOrConcept v of
 userList :: [Type] -> [A_Concept]
 userList = lefts . fmap typeOrConcept
 
-mustBeConceptBecauseMath :: (?loc :: CallStack) => Type -> A_Concept
+mustBeConceptBecauseMath :: Type -> A_Concept
 mustBeConceptBecauseMath tp
- = let fatalV :: (?loc :: CallStack) => a
+ = let fatalV :: a
        fatalV = fatal "A concept turned out to be a built-in type."
    in case getAsConcept fatalV tp of
         Checked v _ -> v
@@ -231,7 +231,6 @@ pCtx2aCtx opts
       , ctx_cs     = p_conceptdefs
       , ctx_ks     = p_identdefs
       , ctx_rrules = p_roleRules
-      , ctx_rrels  = p_roleRelations
       , ctx_reprs  = p_representations
       , ctx_vs     = p_viewdefs
       , ctx_gs     = p_gens
@@ -253,7 +252,6 @@ pCtx2aCtx opts
       uniqueNames interfaces
       purposes    <- traverse (pPurp2aPurp contextInfo) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
-      allRoleRelations <- traverse (pRoleRelation2aRoleRelation contextInfo) (p_roleRelations ++ concatMap pt_RRels p_patterns)
       relations <- traverse (pDecl2aDecl Nothing deflangCtxt deffrmtCtxt) p_relations
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2
@@ -266,7 +264,6 @@ pCtx2aCtx opts
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
                      , ctxrrules = allRoleRules
-                     , ctxRRels = allRoleRelations
                      , ctxreprs = representationOf contextInfo
                      , ctxvs = viewdefs
                      , ctxgs = map pClassify2aClassify p_gens
@@ -775,13 +772,6 @@ pCtx2aCtx opts
          ttype :: A_Concept -> TType
          ttype = representationOf declMap
 
-    pRoleRelation2aRoleRelation :: ContextInfo -> P_RoleRelation -> Guarded A_RoleRelation
-    pRoleRelation2aRoleRelation ci prr
-     = (\ ds' 
-        -> RR { rrRoles = rr_Roles prr
-              , rrRels  = ds'
-              , rrPos   = origin prr
-              }) <$> traverse (namedRel2Decl (declDisambMap ci)) (rr_Rels prr)
     pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
     pRoleRule2aRoleRule prr
      = A_RoleRule { arRoles = mRoles prr

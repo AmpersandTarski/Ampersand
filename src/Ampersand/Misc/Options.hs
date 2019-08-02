@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.Options
         ( Options(..)
         , App(..)
-        , HasOptions(..),HasHandles(..)
+        , HasOptions(..),HasHandle(..)
         , FSpecFormat(..)
         , getOptionsIO
         , showFormat
@@ -31,7 +33,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , preVersion :: String
                        , postVersion :: String  --built in to aid DOS scripting... 8-(( Bummer.
                        , showHelp :: Bool
-                       , verboseP :: Bool
+                       , verbosity :: Verbosity
                        , allowInvariantViolations :: Bool
                        , validateSQL :: Bool
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
@@ -89,9 +91,9 @@ data Options = Options { environment :: EnvironmentOptions
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
-                    --   , verbose :: String -> IO()
-                    --   , verboseLn :: String -> IO()
                        }
+instance HasVerbosity Options where
+  verbosityL = lens verbosity (\x y -> x { verbosity = y })
 data EnvironmentOptions = EnvironmentOptions
       { envArgs               :: [String]
       , envArgsCommandLine    :: [String]
@@ -107,9 +109,9 @@ data EnvironmentOptions = EnvironmentOptions
       } deriving Show
 
 class HasOptions env where
-  getOptions :: env -> Options
+  optionsL :: Lens' env Options
 instance HasOptions Options where
-  getOptions = id
+  optionsL = id
 
 dirPrototypeVarName :: String
 dirPrototypeVarName = "CCdirPrototype"
@@ -167,7 +169,7 @@ getEnvironmentOptions =
          Just fName -> readConfigFile fName
         where 
            readConfigFile yaml = do
-              runRIO stdout $ putStrLn $ "Reading config file: "++yaml
+              runRIO stdout $ sayLn $ "Reading config file: "++yaml
               config <- load yaml
               case keys config L.\\ ["switches"] of
                 []  -> do let switches :: [String] = YC.lookupDefault "switches" [] config
@@ -219,7 +221,7 @@ getOptions' envOpts =
                       , outputfile       = fatal "No monadic options available."
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto"
                       , dirSource        = takeDirectory $ fromMaybe "/" fName
-                      , zwolleVersion    = "v1.2.0"
+                      , zwolleVersion    = "v1.3.1"
                       , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
                       , runComposer      = True -- by default run Composer (php package manager) when deploying prototype for backward compatibility
@@ -229,7 +231,7 @@ getOptions' envOpts =
                       , postVersion      = fromMaybe "" $ envPostVersion envOpts
                       , showVersion      = False
                       , showHelp         = False
-                      , verboseP         = False
+                      , verbosity         = Silent
                       , allowInvariantViolations = False
                       , validateSQL      = False
                       , genSampleConfigFile = False
@@ -276,13 +278,11 @@ getOptions' envOpts =
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
-                --      , verbose          = \_ -> return()
-                --      , verboseLn        = \_ -> return()
                       }
 writeConfigFile :: IO ()
 writeConfigFile = do
     writeFile sampleConfigFileName (unlines sampleConfigFile)
-    runRIO stdout $ putStrLn (sampleConfigFileName++" written.")
+    runRIO stdout $ sayLn (sampleConfigFileName++" written.")
     
 sampleConfigFileName :: FilePath
 sampleConfigFileName = "sampleconfig.yaml"
@@ -376,13 +376,7 @@ options = [ (Option ['v']   ["version"]
                "get (this) usage information. Add --verbose for more advanced options."
             , Public)
           , (Option ['V']   ["verbose"]
-               (NoArg (\opts -> opts{ verboseP  = True
-                                --    , verbose   = putStr 
-                                --    , verboseLn = \x-> do
-                                        -- Since verbose is for debugging purposes in general, we want no buffering, because it is confusing while debugging.
-                                --        hSetBuffering stdout NoBuffering
-                                --        mapM_ putStrLn (lines x)
-                                    }))
+               (NoArg (\opts -> opts{ verbosity  = Loud}))
                "verbose output, to report which files Ampersand writes."
             , Public)
           , (Option []   ["sampleConfigFile"]
@@ -641,7 +635,7 @@ usageInfo' :: Options -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.
 usageInfo' opts = 
   infoHeader (progrName opts) ++"\n"++
-    (concat . L.sort . map publishOption) [od | (od,x) <- options, verboseP opts || x == Public] 
+    (concat . L.sort . map publishOption) [od | (od,x) <- options, verbosity opts == Loud || x == Public] 
 
 infoHeader :: String -> String
 infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
@@ -679,12 +673,24 @@ publishOption (Option shorts longs args expl)
 data App = App
   { options' :: !Options
   , appHandle :: !Handle
+  , appLogFunc :: !LogFunc
   }
-instance HasHandles App where
-  getHandle = appHandle
+instance HasHandle App where
+  handleL = lens appHandle (\env h -> env { appHandle = h })
 
 instance HasVerbosity App where
-  getVerbosity app = 
-    if verboseP (getOptions app) then Loud else Silent
+  verbosityL =  optionsL . verbosityL
+    -- lens (\env -> verbosity . getOptions $ env)
+    --      (\env v -> env{options' = (options' env){verbosity= v}})
+-- instance HasVerbosity Options where
+--   verbosityL = 
+--      lens verbosity (\env v -> env{verbosity= v})
+--     where aap :: Options -> Verbosity
+--           aap = verbosity
+--           noot :: Options -> Verbosity -> Options
+--           noot = (\env v -> env{verbosity= v})
 instance HasOptions App where
-  getOptions = options'
+  optionsL = lens options' (\env opts -> env{ options' = opts})
+instance HasLogFunc App where
+  logFuncL = lens appLogFunc (\x y -> x { appLogFunc = y })
+
