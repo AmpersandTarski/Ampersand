@@ -56,14 +56,14 @@ sqlLoginP = strOption
         <> metavar "USER"
         <> value "ampersand"
         <> showDefault
-        <> help "Name of the database user. (Defaults to `ampersand`)" )
+        <> help "Name of the database user." )
 sqlPwdP :: Parser String
 sqlPwdP = strOption
         ( long "sqlPwd"
         <> metavar "PASSWORD"
         <> value "ampersand"
         <> showDefault
-        <> help "Password for the database user. (Defaults to `ampersand`)" )
+        <> help "Password for the database user." )
 forceReinstallP :: Parser Bool
 forceReinstallP = switch
         ( long "force-reinstall-framework"

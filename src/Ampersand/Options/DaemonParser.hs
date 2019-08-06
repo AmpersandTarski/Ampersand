@@ -18,7 +18,7 @@ daemonOptsParser =
             }) 
   <$> outputLanguageP
   <*> strOption
-        ( long "config"
+        ( long "daemonconfig"
         <> metavar "CONFIGFILE"
         <> value (".ampersand")
         <> showDefault

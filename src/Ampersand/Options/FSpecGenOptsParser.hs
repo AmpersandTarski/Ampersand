@@ -61,6 +61,7 @@ namespaceP = strOption
         ( long "namespace"
         <> metavar "NAMESPACE"
         <> value ""
+        <> showDefault
         <> help ("Prefix database identifiers with this namespace, to "
                <>"isolate namespaces within the same database." )
         )
@@ -69,6 +70,10 @@ crudP :: Parser (Bool,Bool,Bool,Bool)
 crudP = toCruds <$> strOption 
           (long "crud-defaults"
           <> value "CRUD"
+          <> showDefault
+          <> metavar "CRUD"
+          <> help ("Temporary switch to learn about the semantics of crud in "
+               <>"interface expressions." )
           )
   where
     toCruds :: String -> (Bool,Bool,Bool,Bool)
