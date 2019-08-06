@@ -50,15 +50,8 @@ import           Text.Pandoc hiding (trace,Verbosity,getVerbosity)
 import           Text.Pandoc.Builder
 
 -- | Define the order of the chapters in the document.
-chaptersInDoc :: (HasGenFuncSpec env) => env -> [Chapter]
-chaptersInDoc env 
-     | view diagnosisOnlyL env = [ Diagnosis]
-     | otherwise          = [ Intro
-                            , SharedLang
-                            , Diagnosis
-                            , ConceptualAnalysis
-                            , DataAnalysis
-                            ]
+chaptersInDoc :: (HasDocumentOpts env) => env -> [Chapter]
+chaptersInDoc env = view chaptersL env
 
 data XRefSection
              = XRefSharedLangRelation Relation
@@ -74,7 +67,7 @@ data XRefSection
 class Typeable a => Xreferenceble a where
   xSafeLabel :: a -> String -- The full string that is used as ID for referencing
   hyperLinkTo :: a -> Inlines
-  xDefBlck :: (HasDirOutput env, HasGenFuncSpec env) => env -> FSpec -> a -> Blocks
+  xDefBlck :: (HasDirOutput env, HasDocumentOpts env) => env -> FSpec -> a -> Blocks
   xDefBlck _ _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
   xDefInln :: (HasOutputLanguage env) => env -> FSpec -> a -> Inlines
   xDefInln _ _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
@@ -430,7 +423,7 @@ orderingByTheme env fSpec
              Just pat -> x `elem` allElemsOf pat
 
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
-dpRule' :: (HasGenFuncSpec env) => 
+dpRule' :: (HasDocumentOpts env) => 
     env -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
           -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
 dpRule' env fSpec = dpR
@@ -518,7 +511,7 @@ printPurposes = mconcat . map (printMarkup . explMarkup)
 printMarkup :: Markup -> Blocks
 printMarkup = fromList . amPandoc
 
-purposes2Blocks :: (HasGenFuncSpec env) => env -> [Purpose] -> Blocks
+purposes2Blocks :: (HasDocumentOpts env) => env -> [Purpose] -> Blocks
 purposes2Blocks env ps
  = case ps of
       [] -> mempty

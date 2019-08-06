@@ -8,10 +8,10 @@ import qualified RIO.List as L
 import           Data.Maybe(isJust,fromMaybe)
 import qualified RIO.Set as Set
 
-chpDiagnosis :: (HasDirOutput env, HasGenFuncSpec env) 
+chpDiagnosis :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> FSpec -> (Blocks,[Picture])
 chpDiagnosis env fSpec
- | view noDiagnosisL env = mempty
+ | Diagnosis `notElem` view chaptersL env = mempty
  | otherwise
  = (  xDefBlck env fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "

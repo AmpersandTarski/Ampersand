@@ -29,6 +29,7 @@ data GlobalOptsMonoid = GlobalOptsMonoid
     , globalMonoidTerminal     :: !(First Bool) -- ^ We're in a terminal?
     , globalMonoidTermWidth    :: !(First Int) -- ^ Terminal width override
     , globalMonoidAmpersandYaml :: !(First FilePath) -- ^ Override project ampersand.yaml
+    , globalMonoidOutputDir    :: !(First FilePath) -- ^ Override project output directory
     } deriving Generic
 
 instance Semigroup GlobalOptsMonoid where
@@ -41,13 +42,14 @@ instance Monoid GlobalOptsMonoid where
 -- | Parser for global command-line options.
 globalOptsParser :: FilePath -> Maybe LogLevel -> Parser GlobalOptsMonoid
 globalOptsParser _currentDir defLogLevel =
-    let build loglevel timeInLog terminal termWidth yaml = 
+    let build loglevel timeInLog terminal termWidth yaml outputDir = 
           GlobalOptsMonoid
           { globalMonoidLogLevel     = loglevel
           , globalMonoidTimeInLog    = timeInLog
           , globalMonoidTerminal     = terminal
           , globalMonoidTermWidth    = termWidth
           , globalMonoidAmpersandYaml = yaml
+          , globalMonoidOutputDir    = outputDir
           }
 
     in build <$>
@@ -72,14 +74,20 @@ globalOptsParser _currentDir defLogLevel =
              completer (fileExtCompleter [".yaml"]) <>
              help ("Override project ampersand.yaml file " <>
                    "(overrides any AMPERSAND_YAML environment variable)") <>
-             hide)) 
+             hide)) <*>
+    optionalFirst
+        (strOption
+            (long "outputDir" <>
+            metavar "DIR" <>
+            help "Specify the directory where your output will be written to" <>
+            hide))
   where
     hide = hideMods hide0
     hide0 = False
 
 -- | Create GlobalOpts from GlobalOptsMonoid.
-globalOptsFromMonoid :: MonadIO m => Bool -> GlobalOptsMonoid -> m GlobalOpts
-globalOptsFromMonoid defaultTerminal GlobalOptsMonoid{..} = do
+globalOptsFromMonoid :: MonadIO m => Bool -> FilePath -> GlobalOptsMonoid -> m GlobalOpts
+globalOptsFromMonoid defaultTerminal defaultOutputDir GlobalOptsMonoid{..} = do
 --  resolver <- for (getFirst globalMonoidResolver) $ \ur -> do
 --    root <-
 --      case globalMonoidResolverRoot of
@@ -95,6 +103,6 @@ globalOptsFromMonoid defaultTerminal GlobalOptsMonoid{..} = do
     , globalTimeInLog = fromFirstTrue globalMonoidTimeInLog
     , globalTerminal = fromFirst defaultTerminal globalMonoidTerminal
     , globalTermWidth = getFirst globalMonoidTermWidth
-    }
+    , globalOutputDir = fromFirst defaultOutputDir globalMonoidOutputDir}
     where defaultLogLevel = LevelInfo
 

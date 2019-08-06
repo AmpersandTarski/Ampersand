@@ -213,10 +213,10 @@ theSheetCellsForTable (sheetName,ws)
        nrOfHeaderRows = 2
        maxRowOfWorksheet :: Int
        maxRowOfWorksheet = case L.maximumMaybe (map fst (Map.keys (ws  ^. wsCells))) of
-                             Nothing -> fatal "Maximum of an empty list is undefined!"
+                             Nothing -> fatal "Maximum of an empty list is not defined!"
                              Just m -> m
        maxColOfWorksheet = case L.maximumMaybe (map snd (Map.keys (ws  ^. wsCells))) of
-                             Nothing -> fatal "Maximum of an empty list is undefined!"
+                             Nothing -> fatal "Maximum of an empty list is not defined!"
                              Just m -> m
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
        lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1]) `L.genericIndex` (indexInTableStarters+1))-1

@@ -4,15 +4,15 @@ module Ampersand.Options.ProtoParser
 where
 
 import           Options.Applicative
-import           Ampersand.Commands.Proto (ProtoCommand(..), ProtoOpts (..))
+import           Ampersand.Commands.Proto (ProtoOpts (..))
 import           Ampersand.Basics
 import           Ampersand.Options.Utils
 import           Ampersand.Options.FSpecGenOptsParser
 import           Data.List.Split (splitWhen)
 
 -- | Command-line parser for the proto command.
-protoOptsParser :: ProtoCommand -> String -> Parser ProtoOpts
-protoOptsParser Proto defDBName = 
+protoOptsParser :: String -> Parser ProtoOpts
+protoOptsParser defDBName = 
    ( \dbName sqlHost sqlLogin sqlPwd forceReinstall 
         outputLanguage fSpecGenOpts 
         skipComposer dirPrototype dirCustomizations 
@@ -22,7 +22,7 @@ protoOptsParser Proto defDBName =
             , xsqlLogin = sqlLogin
             , xsqlPwd = sqlPwd
             , xforceReinstallFramework = forceReinstall
-            , xoutputLangugage = outputLanguage
+            , x1OutputLanguage = outputLanguage
             , x1fSpecGenOpts = fSpecGenOpts
             , xskipComposer = skipComposer
             , xdirPrototype = dirPrototype 

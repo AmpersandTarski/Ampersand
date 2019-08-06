@@ -52,7 +52,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , genFSpec :: Bool   -- if True, generate a functional design
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
-                       , genEcaDoc :: Bool   -- if True, generate ECA rules in the functional design
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
                        , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
@@ -60,13 +59,11 @@ data Options = Options { environment :: EnvironmentOptions
                        , outputfileAdl :: String -- the file to generate the output in.
                        , outputfileDataAnalisys :: String -- the file to generate the output in.
                        , blackWhite :: Bool   -- only use black/white in graphics
-                       , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.
                        , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document.
                        , noGraphics :: Bool  -- Omit generation of graphics during generation of functional design document.
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , genUML :: Bool   -- Generate a UML 2.0 data model
-                       , genFPAChap :: Bool   -- Generate Function Point Analysis chapter
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
                        , genPOPExcel :: Bool   -- Generate an .xmlx file containing the populations 
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
@@ -82,7 +79,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , genRapPopulation :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
-                       , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
                   --     , protoOpts :: ProtoOpts
                        }
@@ -190,20 +186,6 @@ instance HasDirOutput Options where
   dirOutputL = lens dirOutput (\x y -> x { dirOutput = y })
 instance HasDirOutput App where
   dirOutputL = optionsL . dirOutputL
-instance HasGenFuncSpec Options where
-  genFSpecL = lens genFSpec (\x y -> x { genFSpec = y })
-  diagnosisOnlyL = lens diagnosisOnly (\x y -> x { diagnosisOnly = y })
-  fspecFormatL = lens fspecFormat (\x y -> x { fspecFormat = y })
-  noDiagnosisL = lens noDiagnosis (\x y -> x { noDiagnosis = y })
-  genLegalRefsL = lens genLegalRefs (\x y -> x { genLegalRefs = y })
-  noGraphicsL = lens noGraphics (\x y -> x { noGraphics = y })
-instance HasGenFuncSpec App where
-  genFSpecL = optionsL . genFSpecL
-  diagnosisOnlyL = optionsL . diagnosisOnlyL
-  fspecFormatL = optionsL . fspecFormatL
-  noDiagnosisL = optionsL . noDiagnosisL
-  genLegalRefsL = optionsL . genLegalRefsL
-  noGraphicsL = optionsL . noGraphicsL
 instance HasBlackWhite Options where
   blackWhiteL = lens blackWhite (\x y -> x { blackWhite = y })
 instance HasBlackWhite App where
@@ -354,18 +336,15 @@ getOptions' envOpts =
                       , genFSpec         = False
                       , diag             = False
                       , fspecFormat      = fatal ("Unknown fspec format. Currently supported formats are "++allFSpecFormats++".")
-                      , genEcaDoc        = False
                       , proofs           = False
                       , haskell          = False
                       , sqlDump          = False
                       , blackWhite       = False
-                      , doubleEdges      = True
                       , noDiagnosis      = False
                       , noGraphics       = False
                       , diagnosisOnly    = False
                       , genLegalRefs     = False
                       , genUML           = False
-                      , genFPAChap       = False
                       , genFPAExcel      = False
                       , genPOPExcel      = False
                       , language         = Nothing
@@ -379,7 +358,6 @@ getOptions' envOpts =
                       , genRapPopulation = False
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
-                      , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
                   --    , protoOpts        = defProtoOpts fName envOpts
                       }
@@ -569,10 +547,6 @@ options = [ (Option ['v']   ["version"]
      --          (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
      --          "Custom.css file to customize the style of the prototype."
      --       , Public)
-          , (Option []        ["ECA"]
-               (NoArg (\opts -> opts{genEcaDoc = True}))
-               "generate documentation with ECA rules, for future purposes."
-            , Hidden)
           , (Option []        ["proofs"]
                (NoArg (\opts -> opts{proofs = True}))
                "generate derivations, for testing the generation of rules."
@@ -588,10 +562,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["blackWhite"]
                (NoArg (\opts -> opts{blackWhite = True}))
                "avoid coloring conventions to facilitate readable pictures in black and white."
-            , Hidden)
-          , (Option []        ["altGraphics"]
-               (NoArg (\opts -> opts{doubleEdges = not (doubleEdges opts)}))
-               "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
             , Hidden)
           , (Option []        ["noGraphics"]
                (NoArg (\opts -> opts{noGraphics = True}))
@@ -612,10 +582,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["uml"]
                (NoArg (\opts -> opts{genUML = True}))
                "Generate a data model in UML 2.0 style."
-            , Hidden)
-          , (Option []        ["fpa"]
-               (NoArg (\opts -> opts{genFPAChap = True}))
-               "Generate Function Point Analysis chapter."
             , Hidden)
           , (Option []        ["fpa-excel"]
                (NoArg (\opts -> opts{genFPAExcel = True}))
@@ -662,14 +628,6 @@ options = [ (Option ['v']   ["version"]
                        ) "CRUD"
                )
                "Temporary switch to learn about the semantics of crud in interface expressions."
-            , Hidden)
-          , (Option []        ["oldNormalizer"]
-               (NoArg (\opts -> opts{oldNormalizer = True}))
-               "Use the old normalizer at your own risk."
-            , Hidden)
-          , (Option []        ["newNormalizer"]
-               (NoArg (\opts -> opts{oldNormalizer = False}))
-               "Use the new normalizer at your own risk." -- :-)
             , Hidden)
 --          , (Option []        ["do-not-trim-cellvalues"]
 --               (NoArg (\opts -> opts{trimXLSXCells = False}))

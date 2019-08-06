@@ -51,7 +51,7 @@ import RIO.Time(UTCTime)
 --Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
-fSpec2Pandoc :: (HasDirOutput env, HasGenFuncSpec env) 
+fSpec2Pandoc :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> UTCTime -> FSpec -> (Pandoc, [Picture])
 fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
   where
@@ -78,7 +78,7 @@ fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
             <> cref True     --required for pandoc-crossref to do its work properly
             <> chapters True -- Numbering with subnumbers per chapter
 
-    diagnosisOnly = view diagnosisOnlyL env
+    diagnosisOnly = view chaptersL env == [Diagnosis]
     thePandoc = wrap .
         setTitle
            (case metaValues "title" fSpec of

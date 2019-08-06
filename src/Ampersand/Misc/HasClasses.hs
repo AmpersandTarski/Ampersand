@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Misc.HasClasses
 
 where
@@ -20,11 +21,12 @@ class HasFSpecGenOpts a where
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
   {-# INLINE fSpecGenOptsL #-}
+instance HasFSpecGenOpts DocOpts where
+  fSpecGenOptsL = lens x3fSpecGenOpts (\x y -> x { x3fSpecGenOpts = y })
 instance HasFSpecGenOpts DaemonOpts where
   fSpecGenOptsL = lens x2fSpecGenOpts (\x y -> x { x2fSpecGenOpts = y })
 instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
-
 
 class HasDirPrototype a where
   dirPrototypeL :: Lens' a FilePath
@@ -51,14 +53,26 @@ class HasRootFile a where
 instance HasRootFile ProtoOpts where
   rootFileL = fSpecGenOptsL . rootFileL
 instance HasRootFile FSpecGenOpts where
-  rootFileL = lens xrootFile (\x y -> x { xrootFile = y })
+  rootFileL = --Note: This instance definition is different, because
+              --      we need a construction that in case of the deamon
+              --      command, the root wil actually be read from a
+              --      config file.  
+     lens (\x -> fromMaybe
+                    (fatal "The rootfile must be set before it is read!")
+                    (xrootFile x)
+          )
+          (\x y -> x { xrootFile = Just y })
+instance HasRootFile DocOpts where
+  rootFileL = fSpecGenOptsL . rootFileL
 
 class HasOutputLanguage a where
   languageL :: Lens' a (Maybe Lang)  -- The language in which the user wants the documentation to be printed.
-instance HasOutputLanguage DaemonOpts where
-  languageL = lens xOutputLangugage (\x y -> x { xOutputLangugage = y })
 instance HasOutputLanguage ProtoOpts where
-  languageL = lens xoutputLangugage (\x y -> x { xoutputLangugage = y })
+  languageL = lens x1OutputLanguage (\x y -> x { x1OutputLanguage = y })
+instance HasOutputLanguage DaemonOpts where
+  languageL = lens x2OutputLanguage (\x y -> x { x2OutputLanguage = y })
+instance HasOutputLanguage DocOpts where
+  languageL = lens x3OutputLanguage (\x y -> x { x3OutputLanguage = y })
 
 class HasRunComposer a where
   skipComposerL :: Lens' a Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
@@ -79,16 +93,24 @@ instance HasZwolleVersion ProtoOpts where
 class HasDirOutput a where
   dirOutputL :: Lens' a String -- the directory to generate the output in.
 
-class HasOutputLanguage a => HasGenFuncSpec a where
-  genFSpecL :: Lens' a Bool   -- if True, generate a functional design
-  diagnosisOnlyL :: Lens' a Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
+class HasOutputLanguage a => HasDocumentOpts a where
+  documentOptsL :: Lens' a DocOpts
+  chaptersL :: Lens' a [Chapter]
+  chaptersL = documentOptsL . lens xchapters (\x y -> x { xchapters = y })
   fspecFormatL :: Lens' a FSpecFormat -- the format of the generated (pandoc) document(s)
-  noDiagnosisL :: Lens' a Bool -- omit the diagnosis chapter from the functional design document.
+  fspecFormatL = documentOptsL . lens xfspecFormat (\x y -> x { xfspecFormat = y })
   genLegalRefsL :: Lens' a Bool   -- Generate a table of legal references in Natural Language chapter
-  noGraphicsL :: Lens' a Bool -- Omit generation of graphics during generation of functional design document.
+  genLegalRefsL = documentOptsL . lens xgenLegalRefs (\x y -> x { xgenLegalRefs = y })
+  genGraphicsL :: Lens' a Bool -- Generate graphics during generation of functional design document.
+  genGraphicsL = documentOptsL . lens xgenGraphics (\x y -> x { xgenGraphics = y })
+
+instance HasDocumentOpts DocOpts where
+  documentOptsL = id
 
 class HasBlackWhite a where
   blackWhiteL :: Lens' a Bool    -- only use black/white in graphics
+instance HasBlackWhite DocOpts where
+  blackWhiteL = lens xblackWhite (\x y -> x { xblackWhite = y }) 
 
 class HasOutputFile a where
   outputfileAdlL :: Lens' a FilePath
@@ -116,12 +138,12 @@ instance HasProtoOpts ProtoOpts where
 
 -- | Options for @ampersand daemon@.
 data DaemonOpts = DaemonOpts
-  { xOutputLangugage :: !(Maybe Lang)
+  { x2OutputLanguage :: !(Maybe Lang)
   , xdaemonConfig :: !FilePath
   , x2fSpecGenOpts :: !FSpecGenOpts
    -- ^ The path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
   }
-class (HasFSpecGenOpts a, HasOutputLanguage a) => HasDaemonOpts a where
+class (HasFSpecGenOpts a) => HasDaemonOpts a where
   daemonOptsL :: Lens' a DaemonOpts
   daemonConfigL :: Lens' a FilePath
   daemonConfigL = daemonOptsL . (lens xdaemonConfig (\x y -> x { xdaemonConfig = y }))
@@ -131,7 +153,7 @@ instance HasDaemonOpts DaemonOpts where
 
 
 data FSpecGenOpts = FSpecGenOpts
-  { xrootFile :: !FilePath  --relative path
+  { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.
   , xsqlBinTables :: !Bool
   , xgenInterfaces :: !Bool -- 
   , xnamespace :: !String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
@@ -182,7 +204,7 @@ data ProtoOpts = ProtoOpts
    -- ^ pass password on to the database server
    , xforceReinstallFramework :: !Bool
    -- ^ when true, an existing prototype directory will be destroyed and re-installed
-   , xoutputLangugage :: !(Maybe Lang)
+   , x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts
    , xskipComposer :: !Bool
    , xdirPrototype :: !FilePath
@@ -190,3 +212,40 @@ data ProtoOpts = ProtoOpts
    , xzwolleVersion :: !String
    , xallowInvariantViolations :: !Bool
   } deriving Show
+
+-- | Options for @ampersand documentation@.
+data DocOpts = DocOpts
+   { xblackWhite :: !Bool
+   -- ^ avoid coloring conventions to facilitate readable pictures in black and white.
+   , xchapters :: ![Chapter]
+   -- ^ a list containing all chapters that are required to be in the generated documentation
+   , xgenGraphics :: !Bool
+   -- ^ enable/disable generation of graphics while generating documentation
+   , xfspecFormat :: !FSpecFormat
+   -- ^ the format of the documentation 
+   , x3fSpecGenOpts :: !FSpecGenOpts
+   -- ^ Options required to build the fSpec
+   , x3OutputLanguage :: !(Maybe Lang)
+   -- ^ Language of the output document
+   , xgenLegalRefs :: !Bool
+   -- ^ enable/disable generation of legal references in the documentation
+   }
+
+data Chapter = Intro
+             | SharedLang
+             | Diagnosis
+             | ConceptualAnalysis
+             | DataAnalysis
+             deriving (Eq, Show, Enum, Bounded) 
+
+data OptionException 
+    = PosAndNegChaptersSpecified [Chapter][Chapter] 
+instance Exception OptionException
+instance Show OptionException where
+   show (PosAndNegChaptersSpecified ps ns) =
+       "It is unclear what chapters you want in your document."
+     <>"You want: "<> show ps
+     <>"You don't want: "<> show ns
+     <>"What about the other chapters? " 
+     <>"Pleas don't mix `--no-<chapter>` with `--<chapter>`."
+     

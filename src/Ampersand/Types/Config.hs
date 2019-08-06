@@ -80,8 +80,12 @@ data GlobalOpts = GlobalOpts
     , globalTimeInLog    :: !Bool -- ^ Whether to include timings in logs.
     , globalTerminal     :: !Bool -- ^ We're in a terminal?
     , globalTermWidth    :: !(Maybe Int) -- ^ Terminal width override
+    , globalOutputDir    :: !FilePath -- ^ Relative path where output should be written to
     } deriving (Show)
-
+instance HasDirOutput GlobalOpts where
+  dirOutputL = lens globalOutputDir (\x y -> x { globalOutputDir = y })
+instance HasDirOutput Runner where
+  dirOutputL = lens runnerGlobalOpts (\x y -> x { runnerGlobalOpts = y }) . dirOutputL
 data ColorWhen = ColorNever | ColorAlways | ColorAuto
     deriving (Eq, Show, Generic)
 
@@ -133,6 +137,8 @@ instance (HasFSpecGenOpts a) => HasFSpecGenOpts (ExtendedRunner a) where
   fSpecGenOptsL = cmdOptsL . fSpecGenOptsL
 instance (HasRootFile a) => HasRootFile (ExtendedRunner a) where
   rootFileL = cmdOptsL . rootFileL
+instance (HasDocumentOpts a) => HasDocumentOpts (ExtendedRunner a) where
+  documentOptsL = cmdOptsL . documentOptsL
 instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where 
   daemonOptsL = cmdOptsL . daemonOptsL
 instance (HasRunComposer a) => HasRunComposer (ExtendedRunner a) where
@@ -157,6 +163,8 @@ instance HasLogFunc (ExtendedRunner a) where
   logFuncL = runnerL . logFuncL
 instance HasProcessContext (ExtendedRunner a) where
   processContextL = runnerL . processContextL
-
-
+instance HasDirOutput (ExtendedRunner a) where
+  dirOutputL = runnerL . dirOutputL
+instance HasBlackWhite a => HasBlackWhite (ExtendedRunner a) where
+  blackWhiteL = cmdOptsL . blackWhiteL
 -- instance HasProtoOpts a => Has

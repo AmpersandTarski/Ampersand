@@ -12,7 +12,7 @@ import           Ampersand.Options.FSpecGenOptsParser
 daemonOptsParser :: Parser DaemonOpts
 daemonOptsParser = 
    ( \outputLanguage daemonConfig fSpecGenOpts -> DaemonOpts
-            { xOutputLangugage = outputLanguage
+            { x2OutputLanguage = outputLanguage
             , xdaemonConfig = daemonConfig
             , x2fSpecGenOpts = fSpecGenOpts
             }) 

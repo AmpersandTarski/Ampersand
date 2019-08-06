@@ -6,7 +6,7 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.Time.Format
 import RIO.Time(UTCTime)
 
-chpIntroduction :: (HasDirOutput env, HasGenFuncSpec env) 
+chpIntroduction :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> UTCTime -> FSpec -> Blocks
 chpIntroduction env now fSpec =
       xDefBlck env fSpec Intro

@@ -7,7 +7,7 @@ import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 
-chpConceptualAnalysis :: (HasDirOutput env, HasGenFuncSpec env) 
+chpConceptualAnalysis :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> Int -> FSpec -> (Blocks,[Picture])
 chpConceptualAnalysis env lev fSpec = (
       --  *** Header ***

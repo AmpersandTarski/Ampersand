@@ -14,12 +14,14 @@ where
 import           Ampersand.Basics
 import           Ampersand.Commands.Proto
 import           Ampersand.Commands.Daemon
+import           Ampersand.Commands.Documentation
 import           Ampersand.FSpec.ToFSpec.CreateFspec
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Options.GlobalParser
 import           Ampersand.Options.ProtoParser
 import           Ampersand.Options.DaemonParser
+import           Ampersand.Options.DocOptsParser
 import           Ampersand.Types.Config
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Writer
@@ -27,10 +29,14 @@ import           Control.Monad.Trans.Writer
 import           Options.Applicative
 import           Options.Applicative.Builder.Internal
 --import           Options.Applicative.Help (errorHelp, stringChunk, vcatChunks)
+--import           Options.Applicative.Help hiding (fullDesc)
 import           Options.Applicative.Types
+--import           Options.Applicative.Common
 import qualified RIO.List as L
+import           RIO.Char 
 import qualified Data.List.NonEmpty as NEL
 import           System.Environment ({-getProgName,-} withArgs)
+
 --import           System.FilePath (isValid, pathSeparator, takeDirectory)
 
 -- A lot of inspiration in this file comes from https://github.com/commercialhaskell/stack/
@@ -69,20 +75,25 @@ commandLineHandler currentDir _progName args = complicatedOptions
                       (Writer (Mod CommandFields (RIO Runner (), GlobalOptsMonoid)))
                       ()
     addCommands = do
-      addCommand'' "proto"
-                  "Generate a prototype from your specification."
-                  protoCmd
-                  (protoOptsParser Proto "DEFAULTDATABASENAME")
-      addCommand'' "daemon"
+      addCommand'' Daemon
                   "Use ampersand to check your model while you modify it."
                   daemonCmd
                   daemonOptsParser
+      addCommand'' Documentation
+                  ( "Generate a functional design document, to kick-start your "
+                  <>"functional specification.")
+                  documentationCmd
+                  docOptsParser
+      addCommand'' Proto
+                  "Generate a prototype from your specification."
+                  protoCmd
+                  (protoOptsParser "DEFAULTDATABASENAME")
       where
         -- addCommand hiding global options
-        addCommand'' :: String -> String -> (a -> RIO Runner ()) -> Parser a
+        addCommand'' :: Command -> String -> (a -> RIO Runner ()) -> Parser a
                     -> AddCommand
         addCommand'' cmd title constr =
-            addCommand cmd title globalFooter constr (\_ gom -> gom) globalOpts
+            addCommand (map toLower . show $ cmd) title globalFooter constr (\_ gom -> gom) globalOpts
 
 --        addSubCommands' :: String -> String -> AddCommand
 --                        -> AddCommand
@@ -127,14 +138,26 @@ complicatedOptions
   -> ExceptT b (Writer (Mod CommandFields (b,a))) ()
   -- ^ commands (use 'addCommand')
   -> IO (a,b)
-complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure commandParser =
-  do (a,(b,c)) <- case execParserPure (prefs noBacktrack) parser args of
+complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure commandParser = do
+     runSimpleApp $ do
+          logInfo $ displayShow helpDoc'
+     (a,(b,c)) <- case execParserPure (prefs noBacktrack) parser args of
        Failure _ | null args -> withArgs ["--help"] (execParser parser)
        -- call onFailure handler if it's present and parsing options failed
        Failure f | Just onFailure <- mOnFailure -> onFailure f args
        parseResult -> handleParseResult parseResult
      return (mappend c a,b)
-  where parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND|FILE" commonParser commandParser) desc
+  where helpDoc' :: Text
+        helpDoc' = ""
+        --          fromMaybe (fatal "help could not be generated")
+        --        . unChunk
+        --        . vsepChunks
+        --        . mapParser myDescriptionFunction
+        --        $ infoParser parser
+        --myDescriptionFunction :: OptHelpInfo -> Option x -> Chunk Doc
+        --myDescriptionFunction info' opt = dullyellow <$>
+        --        paragraph (show opt) -- optHelp opt -- "Een of andere optie."
+        parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND" commonParser commandParser) desc
         desc = fullDesc <> header h <> progDesc pd <> footer footerStr
         versionOptions = versionOption stringVersion
         versionOption s =
@@ -228,9 +251,15 @@ helpOption =
 
 daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd daemonOpts = 
-    extendWith daemonOpts 
-       
+    extendWith daemonOpts        
        runDaemon 
+documentationCmd :: DocOpts -> RIO Runner ()
+documentationCmd docOpts =
+    extendWith docOpts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec doGenDocument
+
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd protoOpts = 
@@ -251,3 +280,15 @@ doOrDie gA act =
     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
 
 
+data Command = 
+        Daemon
+      | Dataanalysis
+      | Devoutput
+      | Documentation
+      | Fpa
+      | Init
+      | Population
+      | Proto 
+      | PPrint
+      | Uml
+      | Validate deriving Show

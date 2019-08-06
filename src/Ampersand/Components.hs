@@ -33,7 +33,7 @@ import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
--- generateAmpersandOutput :: (HasBlackWhite env, HasEnvironment env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasGenFuncSpec env, HasRootFile env, HasLogFunc env) 
+-- generateAmpersandOutput :: (HasBlackWhite env, HasEnvironment env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasDocumentOpts env, HasRootFile env, HasLogFunc env) 
 --        => FSpec -> RIO env ()
 -- generateAmpersandOutput fSpec = do
 --     env <- ask 
@@ -45,7 +45,7 @@ import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --     liftIO $ createDirectoryIfMissing True dirOutput
 --     sequence_ . map snd . filter fst $ conditionalActions env
 --   where 
---    conditionalActions :: (HasBlackWhite env, HasEnvironment env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasGenFuncSpec env, HasRootFile env, HasLogFunc env) 
+--    conditionalActions :: (HasBlackWhite env, HasEnvironment env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env,HasOutputFile env, HasDirOutput env, HasDocumentOpts env, HasRootFile env, HasLogFunc env) 
 --            => env -> [(Bool, RIO env ())]
 --    conditionalActions env = []
 --       -- [ ( view genUMLL env            , doGenUML              )
@@ -53,7 +53,7 @@ import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --       -- , ( view sqlDumpL env           , doGenSQLdump          )
 --       -- , ( view export2adlL env        , doGenADL              )
 --       -- , ( view dataAnalysisL env      , doGenADL              )
---       -- , ( view genFSpecL env          , doGenDocument         )
+--       -- , ( view documentOptsL env          , doGenDocument         )
 --       -- , ( view genFPAExcelL env       , doGenFPAExcel         )
 --       -- , ( view genPOPExcelL env       , doGenPopsXLSX         )
 --       -- , ( view proofsL env            , doGenProofs           )
@@ -121,24 +121,6 @@ import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --        sayWhenLoudLn ("Generated file: " ++ outputFile ++ ".")
 --       where outputFile' env = view dirOutputL env </> baseName env -<.> ".xmi"
 
---    -- This function will generate all Pictures for a given FSpec.
---    -- the returned FSpec contains the details about the Pictures, so they
---    -- can be referenced while rendering the FSpec.
---    -- This function generates a pandoc document, possibly with pictures from an fSpec.
---    doGenDocument :: (HasBlackWhite env, HasRootFile env, HasDirOutput env, HasLogFunc env, HasGenFuncSpec env) 
---       => RIO env ()
---    doGenDocument = do
---        env <- ask
---        fspecFormat <- view fspecFormatL
---        sayLn $ "Generating functional design document for " ++ name fSpec ++ "..."
---        let (thePandoc,thePictures) = fSpec2Pandoc env fSpec
---        -- First we need to output the pictures, because they should be present 
---        -- before the actual document is written
---        genGraphics <- not <$> view noGraphicsL
---        when (genGraphics && fspecFormat /=FPandoc) $
---          mapM_ writePicture (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
---        writepandoc fSpec thePandoc
-        
 
 --    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
 --    doGenFPAExcel :: (HasLogFunc env) => RIO env ()

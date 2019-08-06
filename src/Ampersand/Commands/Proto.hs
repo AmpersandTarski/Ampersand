@@ -8,7 +8,6 @@
 module Ampersand.Commands.Proto
     (proto
     ,ProtoOpts(..)
-    ,ProtoCommand(..)
     ,HasProtoOpts(..)
 --    ,AmpersandProtoExceptionException(..)
     ) where
@@ -39,11 +38,6 @@ proto fSpec = do
     else exitWith NoPrototypeBecauseOfRuleViolations
 
 
-
-
--- | Proto commands
-data ProtoCommand
-    = Proto
 
 
 

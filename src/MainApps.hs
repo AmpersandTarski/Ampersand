@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module MainApps(
     IO
   , ampersand
@@ -32,16 +33,18 @@ ampersand = do
 ampersandOptionsHandler :: String -> [String] -> IO (Either ExitCode (GlobalOptsMonoid, RIO Runner ()))
 ampersandOptionsHandler progName args = do
   currentDir <- D.getCurrentDirectory
+  runSimpleApp $ logInfo . display $ "args: "<>(T.pack $ show args)
   try $ commandLineHandler currentDir progName args
 
 ampersandWorker :: Either ExitCode (GlobalOptsMonoid, RIO Runner ()) -> IO ()
 ampersandWorker eGlobalRun = do
+  let defaultOuptutDir = "."
   isTerminal <- hIsTerminalDevice stdout
   case eGlobalRun of
     Left (exitCode :: ExitCode) ->
       throwIO exitCode
     Right (globalMonoid,run) -> do
-      global <- globalOptsFromMonoid isTerminal globalMonoid
+      global <- globalOptsFromMonoid isTerminal defaultOuptutDir globalMonoid
       -- when (globalLogLevel global == LevelDebug) $ hPutStrLn stderr versionString'
       withRunnerGlobal global $ run `catch` \e ->
           -- This special handler stops "stack: " from being printed before the

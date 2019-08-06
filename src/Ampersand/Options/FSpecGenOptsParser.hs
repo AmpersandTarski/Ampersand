@@ -23,8 +23,8 @@ fSpecGenOptsParser isForDaemon =
                 , xtrimXLSXCells = trimXLSXCells
                 }
       ) <$> (if isForDaemon 
-              then pure $ fatal "The rootfile should have come from the daemon config file."
-              else rootFileP )
+              then pure Nothing -- The rootfile should come from the daemon config file.
+              else Just <$> rootFileP )
         <*> sqlBinTablesP
         <*> genInterfacesP
         <*> namespaceP
@@ -32,7 +32,7 @@ fSpecGenOptsParser isForDaemon =
         <*> trimXLSXCellsP
 defFSpecGenOpts :: FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl = FSpecGenOpts
-     { xrootFile = rootAdl
+     { xrootFile = Just rootAdl
      , xsqlBinTables = False
      , xgenInterfaces = False
      , xnamespace = ""

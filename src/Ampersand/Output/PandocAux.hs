@@ -42,13 +42,13 @@ import           Text.Pandoc.PDF (makePDF)
 import qualified Text.Pandoc.UTF8 as UTF8
 
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: (HasGenFuncSpec env) => env -> FSpec -> [(String , String)]
+defaultWriterVariables :: (HasDocumentOpts env) => env -> FSpec -> [(String , String)]
 defaultWriterVariables env fSpec
-  = [ ("title", (case (outputLang', view diagnosisOnlyL env) of
-                        (Dutch  , False) -> "Functioneel Ontwerp van "
-                        (English, False) -> "Functional Design of "
-                        (Dutch  ,  True) -> "Diagnose van "
-                        (English,  True) -> "Diagnosis of "
+  = [ ("title", (case (outputLang', view chaptersL env) of
+                        (Dutch  , [Diagnosis]) -> "Diagnose van "
+                        (English, [Diagnosis]) -> "Diagnosis of "
+                        (Dutch  , _          ) -> "Functioneel Ontwerp van "
+                        (English, _          ) -> "Functional Design of "
                 )++name fSpec)
     , ("fontsize", "12pt")   --can be overridden by geometry package (see below)
     , ("lang"    , case outputLang' of
@@ -60,7 +60,7 @@ defaultWriterVariables env fSpec
                        English -> "english")
     , ("documentclass","report")
     ] ++
-    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not (view diagnosisOnlyL env)]++
+    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == (view chaptersL env)]++
     [ ("header-includes", unlines
          [ "% ============Ampersand specific Begin================="
          , "% First a couple of LaTeX packages are included:"
@@ -109,20 +109,20 @@ defaultWriterVariables env fSpec
     ]
   where
    outputLang' :: Lang
-   outputLang' = fromMaybe (defOutputLang fSpec) $ view languageL env  
+   outputLang' = outputLang env fSpec
 
 --DESCR -> functions to write the pandoc
-writepandoc :: (HasDirOutput env, HasRootFile env, HasGenFuncSpec env, HasLogFunc env) => 
+writepandoc :: (HasDirOutput env, HasRootFile env, HasDocumentOpts env, HasLogFunc env) => 
       FSpec -> Pandoc -> RIO env ()
 writepandoc fSpec thePandoc = do
   env <- ask
   sayWhenLoudLn ("Generating "++fSpecFormatString env ++" to : "++outputFile env)
   liftIO $ writepandoc' env fSpec thePandoc
  where
-    fSpecFormatString :: (HasGenFuncSpec env) => env -> String 
+    fSpecFormatString :: (HasDocumentOpts env) => env -> String 
     fSpecFormatString = map toLower . drop 1 . show . view fspecFormatL
 
-outputFile :: (HasGenFuncSpec env, HasRootFile env, HasDirOutput env) => env -> FilePath
+outputFile :: (HasDocumentOpts env, HasRootFile env, HasDirOutput env) => env -> FilePath
 outputFile env = view dirOutputL env </> baseName env -<.> ext (view fspecFormatL env) 
        
 ext :: FSpecFormat -> String
@@ -147,7 +147,7 @@ ext format =
         Ftexinfo      -> ".texinfo"
         Ftextile      -> ".textile"
                    
-writepandoc' :: (HasGenFuncSpec env, HasRootFile env, HasDirOutput env) => env -> FSpec -> Pandoc -> IO ()
+writepandoc' :: (HasDocumentOpts env, HasRootFile env, HasDirOutput env) => env -> FSpec -> Pandoc -> IO ()
 writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
   case writer of 
      ByteStringWriter f -> do 
@@ -168,7 +168,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
  where   
     writer :: PandocMonad m => Writer m
     writer = case lookup writerName writers of
-                Nothing -> fatal $ "Undefined Pandoc writer: "++writerName
+                Nothing -> fatal $ "There is no such Pandoc writer: "++writerName
                 Just w -> w
     writerName =
       case view fspecFormatL env of
@@ -230,12 +230,6 @@ count    lang    n      x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
 
-data Chapter = Intro
-             | SharedLang
-             | Diagnosis
-             | ConceptualAnalysis
-             | DataAnalysis
-             deriving (Eq, Show)
 
 
 chptTitle :: Lang -> Chapter -> Inlines
