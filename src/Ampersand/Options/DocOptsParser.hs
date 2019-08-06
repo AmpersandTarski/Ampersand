@@ -48,8 +48,20 @@ chaptersP =
        case both (fmap fst) . L.partition isTrue . filter (isJust . snd) $ x of
          ([],[]) -> [minBound..]
          (xs,[]) -> xs -- Only explicit requested chapters
-         ([],ys) -> [minBound..] L.\\ ys -- All chapters exept ys
-         (xs,ys) -> throwM $ PosAndNegChaptersSpecified xs ys
+         ([],ys) -> case [minBound..] L.\\ ys of
+                      [] -> exitWith $ PosAndNegChaptersSpecified
+                        [ "Are you kidding? do you realy want an empty document?"]
+                      cs -> cs -- All chapters exept ys
+         (xs,ys) -> let otherChapters = ([minBound..] L.\\ xs) L.\\ ys
+                    in if null otherChapters
+                       then xs
+                       else exitWith $ PosAndNegChaptersSpecified 
+                        [ "It is unclear what chapters you want in your document."
+                        , "  You want: "<> (L.intercalate ", " . map show $ xs)
+                        , "  You don't want: "<> (L.intercalate ", " . map show $ ys)
+                        , "  What about the other chapters: " <> (L.intercalate ", " . map show $ otherChapters)<>" ?"
+                        , "  Please don't mix `--no-<chapter>` with `--<chapter>`."
+                        ]
    ) <$> chapterParser Intro
      <*> chapterParser SharedLang
      <*> chapterParser Diagnosis
@@ -100,7 +112,7 @@ fSpecFormatP = toFormat <$> strOption
 
 genGraphicsP :: Parser Bool
 genGraphicsP = boolFlags True "graphics"
-        ( "generate graphics before generating the document."
+        ( "generation of graphics before generating the document."
         ) mempty
 
 blackWhiteP :: Parser Bool
@@ -112,7 +124,7 @@ blackWhiteP = switch
 
 genLegalRefsP :: Parser Bool
 genLegalRefsP = boolFlags True "legal-refs"
-        ( "generate a table of legal references in Natural Language chapter of the output document."
+        ( "generation of a table of legal references in Natural Language chapter of the output document."
         ) mempty
 
 

@@ -4,6 +4,7 @@ module Ampersand.Options.FSpecGenOptsParser
 where
 
 import           Options.Applicative
+import           Options.Applicative.Builder.Extra
 import           Ampersand.Misc.HasClasses (FSpecGenOpts (..))
 import           Ampersand.Basics
 
@@ -79,8 +80,7 @@ crudP = toCruds <$> strOption
       )
 
 trimXLSXCellsP :: Parser Bool
-trimXLSXCellsP = switch
-        ( long "do-not-trim-cellvalues"
-        <> help ("Do not ignore leading and trailing spaces in .xlsx files "<>
+trimXLSXCellsP = boolFlags True "trim-cellvalues"
+        ( "ignoring the leading and trailing spaces in .xlsx files "<>
                  "that are INCLUDED in the script.")
-        )
+         mempty

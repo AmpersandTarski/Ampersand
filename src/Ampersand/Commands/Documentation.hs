@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Commands.Documentation
     (doGenDocument)
 where
@@ -20,6 +21,7 @@ doGenDocument fSpec = do
     fspecFormat <- view fspecFormatL
     now <- getCurrentTime
     sayLn $ "Generating functional design document for " ++ name fSpec ++ "..."
+    logDebug $ "Requested chapters: "<>displayShow (view chaptersL env) 
     let (thePandoc,thePictures) = fSpec2Pandoc env now fSpec
     -- First we need to output the pictures, because they should be present 
     -- before the actual document is written

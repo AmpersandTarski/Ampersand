@@ -33,7 +33,7 @@ ampersand = do
 ampersandOptionsHandler :: String -> [String] -> IO (Either ExitCode (GlobalOptsMonoid, RIO Runner ()))
 ampersandOptionsHandler progName args = do
   currentDir <- D.getCurrentDirectory
-  runSimpleApp $ logInfo . display $ "args: "<>(T.pack $ show args)
+  runSimpleApp $ logDebug . display $ "args: "<>(T.pack $ show args)
   try $ commandLineHandler currentDir progName args
 
 ampersandWorker :: Either ExitCode (GlobalOptsMonoid, RIO Runner ()) -> IO ()

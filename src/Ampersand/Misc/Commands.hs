@@ -28,10 +28,9 @@ import           Control.Monad.Trans.Writer
 --import           Generics.Deriving.Monoid (memptydefault, mappenddefault)
 import           Options.Applicative
 import           Options.Applicative.Builder.Internal
---import           Options.Applicative.Help (errorHelp, stringChunk, vcatChunks)
---import           Options.Applicative.Help hiding (fullDesc)
+import           Options.Applicative.Help hiding (fullDesc)
 import           Options.Applicative.Types
---import           Options.Applicative.Common
+import           Options.Applicative.Common
 import qualified RIO.List as L
 import           RIO.Char 
 import qualified Data.List.NonEmpty as NEL
@@ -140,23 +139,23 @@ complicatedOptions
   -> IO (a,b)
 complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure commandParser = do
      runSimpleApp $ do
-          logInfo $ displayShow helpDoc'
+          logDebug $ displayShow helpDoc'
      (a,(b,c)) <- case execParserPure (prefs noBacktrack) parser args of
        Failure _ | null args -> withArgs ["--help"] (execParser parser)
        -- call onFailure handler if it's present and parsing options failed
        Failure f | Just onFailure <- mOnFailure -> onFailure f args
        parseResult -> handleParseResult parseResult
      return (mappend c a,b)
-  where helpDoc' :: Text
-        helpDoc' = ""
-        --          fromMaybe (fatal "help could not be generated")
-        --        . unChunk
-        --        . vsepChunks
-        --        . mapParser myDescriptionFunction
-        --        $ infoParser parser
-        --myDescriptionFunction :: OptHelpInfo -> Option x -> Chunk Doc
-        --myDescriptionFunction info' opt = dullyellow <$>
-        --        paragraph (show opt) -- optHelp opt -- "Een of andere optie."
+  where helpDoc' :: Doc
+        helpDoc' = 
+                  fromMaybe (fatal "help could not be generated")
+                . unChunk
+                . vsepChunks
+                . mapParser myDescriptionFunction
+                $ infoParser parser
+        myDescriptionFunction :: OptHelpInfo -> Option x -> Chunk Doc
+        myDescriptionFunction _info' opt = dullyellow <$>
+                paragraph (show opt) -- optHelp opt -- "Een of andere optie."
         parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND" commonParser commandParser) desc
         desc = fullDesc <> header h <> progDesc pd <> footer footerStr
         versionOptions = versionOption stringVersion

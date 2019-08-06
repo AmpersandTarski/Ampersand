@@ -238,14 +238,3 @@ data Chapter = Intro
              | DataAnalysis
              deriving (Eq, Show, Enum, Bounded) 
 
-data OptionException 
-    = PosAndNegChaptersSpecified [Chapter][Chapter] 
-instance Exception OptionException
-instance Show OptionException where
-   show (PosAndNegChaptersSpecified ps ns) =
-       "It is unclear what chapters you want in your document."
-     <>"You want: "<> show ps
-     <>"You don't want: "<> show ns
-     <>"What about the other chapters? " 
-     <>"Pleas don't mix `--no-<chapter>` with `--<chapter>`."
-     
