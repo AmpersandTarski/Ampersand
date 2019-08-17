@@ -154,8 +154,7 @@ instance (HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
 instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where
   protoOptsL = cmdOptsL . protoOptsL
 instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
-  outputfileAdlL = cmdOptsL . outputfileAdlL
-  outputfileDataAnalisysL = cmdOptsL . outputfileDataAnalisysL
+  outputfileL = cmdOptsL . outputfileL
 
 instance HasRunner (ExtendedRunner a) where
   runnerL = lens eRunner  (\x y -> x { eRunner  = y })

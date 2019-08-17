@@ -77,7 +77,7 @@ import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --     where outputFile' env = view dirOutputL env </> view outputfileL env
 --              where outputfileL 
 --                      | view export2adlL env = outputfileAdlL
---                      | view dataAnalysisL env = outputfileDataAnalisysL
+--                      | view dataAnalysisL env = outputfileDataAnalysisL
 --                      | otherwise = fatal "outputfile not defined for this command."
 --           ctx = originalContext fSpec
  
@@ -125,7 +125,7 @@ import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
 --    doGenFPAExcel :: (HasLogFunc env) => RIO env ()
 --    doGenFPAExcel =
---      sayLn "Sorry, FPA analisys is discontinued. It needs maintenance." -- See https://github.com/AmpersandTarski/Ampersand/issues/621
+--      sayLn "Sorry, FPA analysis is discontinued. It needs maintenance." -- See https://github.com/AmpersandTarski/Ampersand/issues/621
 --      --  ; writeFile outputFile $ fspec2FPA_Excel fSpec
     
 -- --      where outputFile = dirOutput </> "FPA_"++baseName -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.

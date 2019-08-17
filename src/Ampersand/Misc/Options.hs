@@ -57,7 +57,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
                        , dirOutput :: String -- the directory to generate the output in.
                        , outputfileAdl :: String -- the file to generate the output in.
-                       , outputfileDataAnalisys :: String -- the file to generate the output in.
+                       , outputfileDataAnalysis :: String -- the file to generate the output in.
                        , blackWhite :: Bool   -- only use black/white in graphics
                        , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document.
                        , noGraphics :: Bool  -- Omit generation of graphics during generation of functional design document.
@@ -190,12 +190,12 @@ instance HasBlackWhite Options where
   blackWhiteL = lens blackWhite (\x y -> x { blackWhite = y })
 instance HasBlackWhite App where
   blackWhiteL = optionsL . blackWhiteL
-instance HasOutputFile Options where
-  outputfileAdlL = lens outputfileAdl (\x y -> x { outputfileAdl = y })
-  outputfileDataAnalisysL = lens outputfileDataAnalisys (\x y -> x { outputfileDataAnalisys = y })
-instance HasOutputFile App where
-  outputfileAdlL = optionsL . outputfileAdlL
-  outputfileDataAnalisysL = optionsL . outputfileDataAnalisysL
+--instance HasOutputFile Options where
+--  outputfileAdlL = lens outputfileAdl (\x y -> x { outputfileAdl = y })
+--  outputfileDataAnalysisL = lens outputfileDataAnalysis (\x y -> x { outputfileDataAnalysis = y })
+--instance HasOutputFile App where
+--  outputfileAdlL = optionsL . outputfileAdlL
+--  outputfileDataAnalysisL = optionsL . outputfileDataAnalysisL
 instance HasAllowInvariantViolations Options where
   allowInvariantViolationsL = lens allowInvariantViolations (\x y -> x { allowInvariantViolations = y })
 instance HasAllowInvariantViolations App where
@@ -313,7 +313,7 @@ getOptions' envOpts =
                       , genTime          = envLocalTime envOpts
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfileAdl       = "Export.adl"
-                      , outputfileDataAnalisys  = "DataModel.adl"
+                      , outputfileDataAnalysis  = "DataModel.adl"
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto"
                       , zwolleVersion    = "v1.3.1"
                       , dirCustomizations = ["customizations"]
@@ -499,7 +499,7 @@ options = [ (Option ['v']   ["version"]
             , Public)
             , (Option ['D']        ["dataAnalysis"]
             (OptArg (\mbnm opts -> opts{dataAnalysis = True
-                                       ,outputfileDataAnalisys = fromMaybe (outputfileDataAnalisys opts) mbnm}) "file")
+                                       ,outputfileDataAnalysis = fromMaybe (outputfileDataAnalysis opts) mbnm}) "file")
             "export a data model as plain Ampersand script, for analysing Excel-data."
          , Public)
        , (Option ['o']     ["outputDir"]

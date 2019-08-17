@@ -21,6 +21,8 @@ class HasFSpecGenOpts a where
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
   {-# INLINE fSpecGenOptsL #-}
+instance HasFSpecGenOpts InputOutputOpts where
+  fSpecGenOptsL = lens x4fSpecGenOpts (\x y -> x { x4fSpecGenOpts = y })
 instance HasFSpecGenOpts DocOpts where
   fSpecGenOptsL = lens x3fSpecGenOpts (\x y -> x { x3fSpecGenOpts = y })
 instance HasFSpecGenOpts DaemonOpts where
@@ -63,6 +65,8 @@ instance HasRootFile FSpecGenOpts where
           )
           (\x y -> x { xrootFile = Just y })
 instance HasRootFile DocOpts where
+  rootFileL = fSpecGenOptsL . rootFileL
+instance HasRootFile InputOutputOpts where
   rootFileL = fSpecGenOptsL . rootFileL
 
 class HasOutputLanguage a where
@@ -113,8 +117,10 @@ instance HasBlackWhite DocOpts where
   blackWhiteL = lens xblackWhite (\x y -> x { xblackWhite = y }) 
 
 class HasOutputFile a where
-  outputfileAdlL :: Lens' a FilePath
-  outputfileDataAnalisysL :: Lens' a FilePath
+  outputfileL :: Lens' a FilePath
+instance HasOutputFile InputOutputOpts where
+  outputfileL = lens xoutputFile (\x y -> x { xoutputFile = y })
+
 class HasVersion a where
   preVersionL :: Lens' a String 
   postVersionL :: Lens' a String 
@@ -187,9 +193,10 @@ data FSpecFormat =
 data ExportOpts = ExportOpts
    { xexport2adl :: !FilePath  --relative path
    }
--- | Options for @ampersand dataAnalisys@.
-data DataAnalisysOpts = DataAnalisysOpts
-   { xdataAnalysis :: !FilePath  --relative path
+-- | Options for @ampersand dataAnalysis@.
+data InputOutputOpts = InputOutputOpts
+   { x4fSpecGenOpts :: !FSpecGenOpts
+   , xoutputFile :: !FilePath --relative path 
    }
 
 -- | Options for @ampersand proto@.
@@ -230,7 +237,6 @@ data DocOpts = DocOpts
    , xgenLegalRefs :: !Bool
    -- ^ enable/disable generation of legal references in the documentation
    }
-
 data Chapter = Intro
              | SharedLang
              | Diagnosis

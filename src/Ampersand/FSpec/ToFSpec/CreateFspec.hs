@@ -3,7 +3,7 @@
 module Ampersand.FSpec.ToFSpec.CreateFspec
   ( BuildPrescription, BuildStep(..), BuildAction(..)
   , createFspec
-  , createFspecDataAnalisys
+  , createFspecDataAnalysis
   )
 
 where
@@ -33,10 +33,10 @@ import           Data.Foldable (foldrM)
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createFSpec.
-createFspec, createFspecDataAnalisys :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) => 
+createFspec, createFspecDataAnalysis :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) => 
                BuildPrescription -> RIO env (Guarded FSpec)
 createFspec             recipe = createFspec' id                    recipe
-createFspecDataAnalisys recipe = createFspec' encloseInConstraints  recipe
+createFspecDataAnalysis recipe = createFspec' encloseInConstraints  recipe
 
 createFspec' :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) => 
                (P_Context -> P_Context) -> BuildPrescription -> RIO env (Guarded FSpec)

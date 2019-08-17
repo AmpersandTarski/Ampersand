@@ -15,12 +15,14 @@ import           Ampersand.Basics
 import           Ampersand.Commands.Proto
 import           Ampersand.Commands.Daemon
 import           Ampersand.Commands.Documentation
+import           Ampersand.Commands.ExportAsADL
 import           Ampersand.FSpec.ToFSpec.CreateFspec
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Options.GlobalParser
 import           Ampersand.Options.ProtoParser
 import           Ampersand.Options.DaemonParser
+import           Ampersand.Options.InputOutputOpts
 import           Ampersand.Options.DocOptsParser
 import           Ampersand.Types.Config
 import           Control.Monad.Trans.Except
@@ -87,6 +89,11 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   "Generate a prototype from your specification."
                   protoCmd
                   (protoOptsParser "DEFAULTDATABASENAME")
+      addCommand'' Dataanalysis
+                  ( "Export a data model as plain Ampersand script, for "
+                  <>"analysing Excel-data.")
+                  dataAnalysisCmd
+                  (outputFileOptsParser "MetaModel.adl")
       where
         -- addCommand hiding global options
         addCommand'' :: Command -> String -> (a -> RIO Runner ()) -> Parser a
@@ -266,6 +273,13 @@ protoCmd protoOpts =
         let recipe = []
         mFSpec <- createFspec recipe
         doOrDie mFSpec proto
+
+dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
+dataAnalysisCmd opts = 
+    extendWith opts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec dataAnalysis
 
 doOrDie :: HasLogFunc env => Guarded a -> (a -> RIO env b) -> RIO env b
 doOrDie gA act = 

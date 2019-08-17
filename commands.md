@@ -53,11 +53,11 @@ even more complex than it already was.
   * ***--proto[=DIRECTORY]*** `proto ----output-directory=DIRECTORY`
           generate a functional prototype, so you can experiment with the
           information system specified in your script.
-
-* TODO: The following options still have to be impemented as commands:
   * ***--dataAnalysis[=file]*** `dataanalysis`
           export a data model as plain Ampersand script, for analysing
           Excel-data.
+
+* TODO: The following options still have to be impemented as commands:
   * ***--export[=file]*** `pprint`
           export as plain Ampersand script, for round-trip testing of the
           Ampersand compiler.

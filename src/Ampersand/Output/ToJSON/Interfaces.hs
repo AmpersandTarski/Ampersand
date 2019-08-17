@@ -25,7 +25,7 @@ data JSONObjectDef =
     , ifcobjJSONid                 :: String
     , ifcobjJSONlabel              :: String
     , ifcobjJSONviewId             :: Maybe String
-    , ifcobjJSONNormalizationSteps :: Maybe [String] -- Not used in frontend. Just informative for analisys
+    , ifcobjJSONNormalizationSteps :: Maybe [String] -- Not used in frontend. Just informative for analysis
     , ifcobjJSONrelation           :: Maybe String
     , ifcobjJSONrelationIsFlipped  :: Maybe Bool
     , ifcobjJSONcrud               :: Maybe JSONCruds
