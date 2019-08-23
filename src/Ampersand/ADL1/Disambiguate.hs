@@ -61,12 +61,12 @@ class Traversable d => Disambiguatable d where
                 (TermPrim -> (TermPrim, DisambPrim)) -- disambiguation function
                 -> d TermPrim -- object to be disambiguated
                 -> d (TermPrim, DisambPrim) -- disambiguated object
-  disambiguate termPrimDisAmb x = fixpoint disambiguationStep (Change (fmap termPrimDisAmb x) False)
+  disambiguate termPrimDisAmb x = fixpoint disambiguationStep (Change (fmap termPrimDisAmb x))
     where
      fixpoint :: (a -> Change a) -- function for computing a fixpoint
               -> Change a -> a
-     fixpoint _ (Change a True)  = a
-     fixpoint f (Change a False) = fixpoint f (f a)
+     fixpoint _ (Stable a)  = a
+     fixpoint f (Change a) = fixpoint f (f a)
 
   disambiguationStep :: d (TermPrim, DisambPrim) -> Change (d (TermPrim, DisambPrim))
   disambiguationStep thing = traverse performUpdate withInfo
@@ -263,7 +263,7 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
    orWhenEmptyS a b = if Set.null a then b else a
    determineBySize _   [a] = impure (t,Known a)
    determineBySize err lst = fmap ((,) t) (err lst)
-   impure x = Change x False
+   impure x = Change x
 
 orWhenEmpty :: [a] -> [a] -> [a]
 orWhenEmpty a b = if null a then b else a
@@ -274,9 +274,15 @@ pCpt2aCpt pc
         PCpt{} -> makeConcept (p_cptnm pc)
         P_Singleton -> ONE
 
-data Change a = Change a Bool
+data Change a
+  = Stable a
+  | Change a
 instance Functor Change where
- fmap f (Change a b) = Change (f a) b
+  fmap f (Change a) = Change (f a)
+  fmap f (Stable a) = Stable (f a)
 instance Applicative Change where
- (<*>) (Change f b) (Change a b2) = Change (f a) (b && b2)
- pure a = Change a True
+  (<*>) (Stable f) (Stable a) = Stable (f a)
+  (<*>) (Change f) (Stable a) = Change (f a)
+  (<*>) (Change f) (Change a) = Change (f a)
+  (<*>) (Stable f) (Change a) = Change (f a)
+  pure a = Stable a
