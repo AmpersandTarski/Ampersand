@@ -14,7 +14,6 @@ data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
   { ifcJSONid                 :: String
   , ifcJSONlabel              :: String
-  , ifcJSONinterfaceRoles     :: [String]
   , ifcJSONboxClass           :: Maybe String
   , ifcJSONifcObject          :: JSONObjectDef
   , ifcJSONisAPI              :: Bool
@@ -90,7 +89,6 @@ instance JSON Interface JSONInterface where
  fromAmpersand opts@Options{..} multi interface = JSONInterface
   { ifcJSONid                 = escapeIdentifier . ifcname $ interface
   , ifcJSONlabel              = ifcname interface
-  , ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
   , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
   , ifcJSONifcObject          = fromAmpersand opts multi (BxExpr $ ifcObj interface)
   , ifcJSONisAPI              = ifcIsAPI interface

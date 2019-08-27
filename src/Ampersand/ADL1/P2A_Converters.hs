@@ -168,7 +168,7 @@ warnCaseProblems ctx =
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 findRels :: DeclMap -> String -> Map.Map SignOrd Expression
-findRels declMap x = Map.findWithDefault Map.empty x declMap  -- get all relations with the same name as x
+findRels declMap relname = Map.findWithDefault Map.empty relname declMap  -- get all relations with the same name as x
 extractDecl :: P_NamedRel -> Expression -> Guarded Relation
 extractDecl _ (EDcD r) = return r
 extractDecl _ e = fatal $ "Expecting a declared relation, instead I found: "++show e -- to fix: return an error via a (still to be made) function in CtxError
@@ -728,18 +728,19 @@ pCtx2aCtx opts
         []          -> Nothing
         disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
     
-
+    -- | Every TermPrim in the P-structure gets a single type in the A-structure.
+    --   termPrimDisAmb looks it up in the DeclMap
     termPrimDisAmb :: DeclMap -> TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb declMap x
      = (x, case x of
-           PI _        -> Ident
-           Pid _ conspt-> Known (EDcI (pCpt2aCpt conspt))
-           Patm _ s Nothing -> Mp1 s
+           PI _                   -> Ident
+           Pid _ conspt           -> Known (EDcI (pCpt2aCpt conspt))
+           Patm _ s Nothing       -> Mp1 s
            Patm _ s (Just conspt) -> Known (EMp1 s (pCpt2aCpt conspt))
-           PVee _      -> Vee
-           Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt a) (pCpt2aCpt b)))
-           PNamedR nr -> Rel $ disambNamedRel nr
-        )
+           PVee _                 -> Vee
+           Pfull _ a b            -> Known (EDcV (Sign (pCpt2aCpt a) (pCpt2aCpt b)))
+           PNamedR namedrel       -> Rel $ disambNamedRel namedrel
+       )
       where
         disambNamedRel (PNamedRel _ r Nothing)  = Map.elems $ findRels declMap r
         disambNamedRel (PNamedRel _ r (Just s)) = findRelsTyped declMap r $ pSign2aSign s

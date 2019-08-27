@@ -58,6 +58,7 @@ chaptersInDoc opts
                             , Diagnosis
                             , ConceptualAnalysis
                             , DataAnalysis
+                            , ArchiAnalysis
                             ]
 
 data XRefSection

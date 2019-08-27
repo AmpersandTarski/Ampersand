@@ -63,8 +63,8 @@ grind opts@Options{..} metaModel userFspec =
                        , p_tgt  = Nothing
                        , pos    = orig
                        , p_nmdr = PNamedRel 
-                            { pos    = orig
-                            , p_nrnm = name rel
+                            { pos      = orig
+                            , p_nrnm   = name rel
                             , p_mbSign = Just . aSign2pSign . sign $ rel
                             }
                        , p_popps = map convertPair . Set.toList . popPairs $ pop

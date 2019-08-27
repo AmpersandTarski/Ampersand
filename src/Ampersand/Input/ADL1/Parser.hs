@@ -48,7 +48,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
             , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
-            , ctx_pops   = [p | CPop p<-ces] ++ concat [p | CRel (_,p)<-ces]  -- The populations defined in this contextplug, from POPULATION statements as well as from Relation declarations.
+            , ctx_pops   = [p | CPop p<-ces] ++ [p | CRel (_,p)<-ces]  -- The populations defined in this contextplug, from POPULATION statements as well as from Relation declarations.
             , ctx_metas  = [meta | CMeta meta <-ces]
             }
        , [s | CIncl s<-ces] -- the INCLUDE filenames
@@ -76,7 +76,7 @@ data ContextElement = CMeta Meta
                     | CPat P_Pattern
                     | CRul (P_Rule TermPrim)
                     | CCfy [PClassify]
-                    | CRel (P_Relation, [P_Population])
+                    | CRel (P_Relation, P_Population)
                     | CCon (String -> ConceptDef)
                     | CRep Representation
                     | Cm P_RoleRule
@@ -137,7 +137,7 @@ pPatternDef
              , pt_ids = [k | Pk k<-pes]
              , pt_vds = [v | Pv v<-pes]
              , pt_xps = [e | Pe e<-pes]
-             , pt_pop = [p | Pp p<-pes]++concat [p | Pd (_,p)<-pes]
+             , pt_pop = [p | Pp p<-pes]++ [p | Pd (_,p)<-pes]
              , pt_end = end
              }
 
@@ -158,7 +158,7 @@ pPatElem = Pr <$> pRuleDef          <|>
 
 data PatElem = Pr (P_Rule TermPrim)
              | Py [PClassify]
-             | Pd (P_Relation, [P_Population])
+             | Pd (P_Relation, P_Population)
              | Pm P_RoleRule
              | Pc (String -> ConceptDef)
              | Prep Representation
@@ -223,7 +223,7 @@ pRuleDef =  P_Ru <$> currPos
                                 <|> PairViewText <$> posOf (pKey "TXT") <*> pString
 
 --- RelationDef ::= (RelationNew | RelationOld) Props? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
-pRelationDef :: AmpParser (P_Relation, [P_Population])
+pRelationDef :: AmpParser (P_Relation, P_Population)
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
                        <*> optSet pProps
@@ -232,13 +232,12 @@ pRelationDef = reorder <$> currPos
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
             where reorder pos' (nm,sign,fun) prop pragma meanings prs =
-                    (P_Sgn nm sign props pragma meanings pos', map pair2pop prs)
+                    ( P_Sgn nm sign props pragma meanings pos'
+                    , P_RelPopu Nothing Nothing pos' relRef prs)
                     where 
                       props = prop `Set.union` fun
-                      pair2pop :: PAtomPair -> P_Population
-                      pair2pop a = P_RelPopu Nothing Nothing (origin a) rel [a]
-                      rel :: P_NamedRel   -- the named relation
-                      rel = PNamedRel pos' nm (Just sign)
+                      relRef :: P_NamedRel   -- the named relation
+                      relRef = PNamedRel pos' nm (Just sign)
 
 --- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (String,P_Sign,Props)

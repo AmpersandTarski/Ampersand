@@ -178,14 +178,14 @@ instance Show TType where
     Object            ->   "OBJECT"
     TypeOfOne         ->   "TYPEOFONE"
 data P_Relation =
-      P_Sgn { dec_nm :: String    -- ^ the name of the relation
-            , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
-            , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+      P_Sgn { dec_nm :: String        -- ^ the name of the relation
+            , dec_sign :: P_Sign      -- ^ the type. Parser must guarantee it is not empty.
+            , dec_prps :: Props       -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
             , dec_pragma :: [String]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                                       -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a relation, possibly more than one for different languages.
-            , pos :: Origin    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
-            } deriving (Show) --For QuickCheck error messages only!
+            , pos :: Origin           -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
+            } deriving (Show)         --For QuickCheck error messages only!
 
 -- | Equality on P_Relation
 --   Normally, equality on relations means equality of both name (dec_nm) and signature (dec_sign).
@@ -345,14 +345,13 @@ data TermPrim
    | PNamedR P_NamedRel
    deriving (Show) --For QuickCheck error messages only!
 
+-- | A P_NamedRel is used to refer to one Relation. (i.e. It identifies a relation)
+--   In Ampersand source code, it is allowed to leave out the signature (i.e. source and target)
+--   as long as the name (without signature) refers to one relation only. For this reason, the signature is optional (Maybe).
+--   At all times, a P_NamedRel must be a reliable reference to a relation, which is invariably true for every correct (i.e. type error free) script.
+--   In the Haskell code we ensure that every P_NamedRel behind the type checker is typed (i.e. the p_mbSign is Just somesignature).
 data P_NamedRel = PNamedRel { pos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
-   deriving Show
-
-instance Eq P_NamedRel where
-     nr==nr'
-      = case (p_mbSign nr, p_mbSign nr') of
-             (Just sgn, Just sgn')  -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
-             _                      -> False
+   deriving (Show, Eq, Ord)
 
 {- For whenever it may turn out to be useful
 instance Eq TermPrim where
@@ -444,7 +443,7 @@ instance Traced TermPrim where
 --   PVee _      -> "V"
 --   Pfull _ _ _ -> "V"
 --   PNamedR r   -> name r
---
+
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o
 
@@ -543,7 +542,7 @@ newtype PMeaning = PMeaning P_Markup
 newtype PMessage = PMessage P_Markup
          deriving Show
 data P_Markup =
-    P_Markup  { mLang   ::   Maybe Lang
+    P_Markup  { mLang   :: Maybe Lang
               , mFormat :: Maybe PandocFormat
               , mString :: String
               } deriving Show -- for debugging only
@@ -552,7 +551,7 @@ data P_Population
   = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
               , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
               , pos     :: Origin       -- the origin
-              , p_nmdr  :: P_NamedRel   -- the named relation
+              , p_nmdr  :: P_NamedRel   -- the named relation that corresponds with the table which the pairs (p_popps) are stored.
               , p_popps :: [PAtomPair]  -- the contents
               }
   | P_CptPopu { pos     :: Origin  -- the origin
@@ -563,11 +562,11 @@ data P_Population
 
 instance Ord P_Population where
   compare p1 p2 = case (p1,p2) of -- P_Population cannot be compaired using 'pos', because Origin of grinded population (meat grinder) is the same for all
-    ( P_RelPopu{} , P_RelPopu{} ) -> compare (p_popps p1) (p_popps p2)
+    ( P_RelPopu{} , P_RelPopu{} ) -> if p_nmdr p1==p_nmdr p2 then compare (p_popps p1) (p_popps p2) else compare (p_nmdr p1) (p_nmdr p2)
     ( P_CptPopu{} , P_CptPopu{} ) -> compare (p_popas p1) (p_popas p2)
     ( P_RelPopu{} , _           ) -> LT
     ( _           , P_RelPopu{} ) -> GT
-   
+
 instance Eq P_Population where --Required for merge of P_Contexts  -- see also the comment at `Eq P_Concept`
  p1 == p2 = compare p1 p2 == EQ
  

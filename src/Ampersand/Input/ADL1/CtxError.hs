@@ -241,7 +241,7 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
                        ,"  You may have intended one of these:"
                        ]++
                        ["  "++showA e|e<-exprs]
-        Known _ -> fatal "We have a known expression, so it is allready disambiguated."
+        Known _ -> fatal "We have a known expression, so it is already disambiguated."
         _ -> "Cannot disambiguate: "++showP o++"\n  Please add a signature to it"
 
 uniqueNames :: (Named a, Traced a) =>

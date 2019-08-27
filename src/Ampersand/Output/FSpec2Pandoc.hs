@@ -113,4 +113,5 @@ fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
     fspec2Blocks Diagnosis             = chpDiagnosis           opts    fSpec
     fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis  opts  0 fSpec
     fspec2Blocks DataAnalysis          = chpDataAnalysis        opts    fSpec
+    fspec2Blocks ArchiAnalysis         = chpArchiAnalysis       opts    fSpec
 

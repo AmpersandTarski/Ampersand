@@ -6,7 +6,7 @@ module Ampersand.Test.Parser.ParserTest (
 import           Ampersand.ADL1.PrettyPrinters(prettyPrint)
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
+import           Ampersand.Input.ADL1.CtxError (Guarded(..),CtxError(..),whenChecked)
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
 import           Ampersand.Misc

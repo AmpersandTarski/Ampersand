@@ -234,6 +234,7 @@ data Chapter = Intro
              | Diagnosis
              | ConceptualAnalysis
              | DataAnalysis
+             | ArchiAnalysis
              deriving (Eq, Show)
 
 
@@ -245,6 +246,7 @@ chptTitle lang cpt =
     Diagnosis             -> text.l $ (NL "Diagnose", EN "Diagnosis")
     ConceptualAnalysis    -> text.l $ (NL "Conceptuele Analyse", EN "Conceptual Analysis")
     DataAnalysis          -> text.l $ (NL "Gegevensstructuur", EN "Data structure")
+    ArchiAnalysis         -> text.l $ (NL "Archimate Analyse", EN "Archimate Analysis")
  where 
      -- shorthand for easy localizing    
     l :: LocalizedStr -> String

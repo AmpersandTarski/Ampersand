@@ -217,8 +217,9 @@ writePicture pict = do
          do opts <- view optionsL
             sayWhenLoudLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
             dotSource <- mkDotGraphIO pict
-            path <- liftIO $ (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
-                       (dropExtension . imagePath opts) pict
+            path <- liftIO $
+                     ( addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
+                       dropExtension (imagePath opts pict)++if gvOutput==DotOutput then "WithCoordinates" else "" )
             sayWhenLoudLn $ path++" written."
             case postProcess of
               Nothing -> return ()
@@ -235,8 +236,8 @@ writePicture pict = do
                                  "\n  Did you install MikTex? Can the command epstopdf be found?"++
                                  "\n  Your error message is:\n " ++ show (e :: IOException))
                    
-     writePdf :: (HasOptions env,HasVerbosity env, HasHandle env) => GraphvizOutput
-              -> RIO env ()
+     writePdf :: (HasOptions env,HasVerbosity env, HasHandle env) =>
+                  GraphvizOutput -> RIO env ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
        `catch` (\ e -> sayWhenLoudLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
                                   "\n  Your error message is:\n " ++ show (e :: IOException)))

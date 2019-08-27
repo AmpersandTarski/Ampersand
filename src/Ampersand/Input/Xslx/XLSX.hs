@@ -70,7 +70,7 @@ toPops opts file x = map popForColumn (colNrs x)
       else  P_RelPopu { pos = popOrigin
                       , p_src = src
                       , p_tgt = trg
-                      , p_nmdr = PNamedRel popOrigin relName Nothing -- The P-to-A converter must assign the type.
+                      , p_nmdr = PNamedRel popOrigin relationName Nothing -- The P-to-A converter must assign the type.
                       , p_popps = thePairs
                       }
      where                             
@@ -107,9 +107,9 @@ toPops opts file x = map popForColumn (colNrs x)
                                                 (conceptNameWithOptionalDelimiter . trim $ t)
                                      in (Just nm, mDel)
                 _ -> (Nothing, Nothing)
-       relName :: String
+       relationName :: String
        isFlipped' :: Bool
-       (relName,isFlipped') 
+       (relationName,isFlipped') 
           = case value (relNamesRow,targetCol) of
                 Just (CellText t) -> 
                     case T.unpack . T.reverse . trim $ t of

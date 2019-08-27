@@ -113,11 +113,11 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
   conceptTables = 
     table (text.l $ (NL "Logische gegevensverzamelingen"
                     ,EN "Logical entity types"))
-         [(AlignLeft,1/8),(AlignLeft,4/8),(AlignLeft,1/8),(AlignLeft,1/8),(AlignLeft,1/8)]
+         [(AlignLeft,2/8),(AlignLeft,4/8),(AlignLeft,1/8),(AlignLeft,1/8)]
          [ (plain.text.l) (NL "Concept"       , EN "Concept")
          , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
          , (plain.text.l) (NL "Aantal"        , EN "Count") 
-         , (plain.text.l) (NL "Vullingsgraad" , EN "Filling degree") 
+         , (plain.text.l) (NL "Vullingsgraad" , EN "Filling degree") -- informally: #atomsInAttributes/(#keys * #attributes)
          ] 
          [ [ (plain.text.name) c
            ,   meaningOf c
@@ -127,9 +127,9 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                $ c
                )
            , (plain . text . show . Set.size . atomsInCptIncludingSmaller fSpec) c
-           , (plain . text . show) (percent (sum [ Set.size pairs
-                                                 | attr<-attributesOfConcept fSpec c, pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
-                                                 ]) (Set.size (atomsInCptIncludingSmaller fSpec c)*length (attributesOfConcept fSpec c)))
+           , (plain . text) (percent (sum [ Set.size pairs
+                                          | attr<-attributesOfConcept fSpec c, pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
+                                          ]) (Set.size (atomsInCptIncludingSmaller fSpec c)*length (attributesOfConcept fSpec c)))
            ]
          | c <- L.sortBy (compare `on` name) 
               . filter isKey 
@@ -164,8 +164,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
   percent num denom
    = if denom==0
      then show num
-     else show num++"("++show ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)++"%)"
-  
+     else show num++" ("++show ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)++"%)"
 
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =

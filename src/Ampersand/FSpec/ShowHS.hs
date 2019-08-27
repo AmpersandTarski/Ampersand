@@ -357,14 +357,14 @@ instance ShowHS PPurpose where
 instance ShowHS PRef2Obj where
  showHS _ _ peObj
   = case peObj of
-         PRef2ConceptDef str                    -> "PRef2ConceptDef " ++show str
+         PRef2ConceptDef str                 -> "PRef2ConceptDef " ++show str
          PRef2Relation (PNamedRel _ nm mSgn) -> "PRef2Relation "++show nm++maybe "" show mSgn
-         PRef2Rule str                          -> "PRef2Rule "       ++show str
-         PRef2IdentityDef str                   -> "PRef2IdentityDef "++show str
-         PRef2ViewDef str                       -> "PRef2ViewDef "    ++show str
-         PRef2Pattern str                       -> "PRef2Pattern "    ++show str
-         PRef2Interface str                     -> "PRef2Interface "  ++show str
-         PRef2Context str                       -> "PRef2Context "    ++show str
+         PRef2Rule str                       -> "PRef2Rule "       ++show str
+         PRef2IdentityDef str                -> "PRef2IdentityDef "++show str
+         PRef2ViewDef str                    -> "PRef2ViewDef "    ++show str
+         PRef2Pattern str                    -> "PRef2Pattern "    ++show str
+         PRef2Interface str                  -> "PRef2Interface "  ++show str
+         PRef2Context str                    -> "PRef2Context "    ++show str
 
 instance ShowHS Purpose where
  showHS opts _ expla =

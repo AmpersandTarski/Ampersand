@@ -16,22 +16,19 @@ chpIntroduction opts@Options{..} fSpec =
           Dutch
             -> para ( text "Dit document"
                    <> (note.para.text) ("Dit document is gegenereerd op "++date++" om "++time++", dmv. "++ampersandVersionStr++".")
-                   <> text " definieert de functionaliteit van een informatiesysteem genaamd "
+                   <> text " analyseert de functionaliteit van een informatiesysteem genaamd "
                    <> (singleQuoted.text.name) fSpec
                    <> text ". "
-                   <> text "Het definieert de database en de business-services van " <> (text.name) fSpec <> text " door middel van bedrijfsregels"
-                   <> (note.para.text) "Het ontwerpen met bedrijfsregels is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "
-                   <> text ". "
-                   <> if SharedLang `elem` chaptersInDoc opts
-                      then text "Deze afspraken staan opgesomd in "
-                        <> hyperLinkTo SharedLang
-                        <> text ", geordend op thema. "
-                      else text "Deze afspraken zijn niet opgenomen in dit document."
-                    )
+            <> if SharedLang `elem` chaptersInDoc opts
+               then text "Voor de lezer zonder kennis van informatiesystemen c.q. Ampersand staan relaties en regels opgesomd in "
+                 <> hyperLinkTo SharedLang
+                 <> text ", geordend op thema. "
+               else mempty
+             )
             <> if Diagnosis `elem` chaptersInDoc opts
                then para (   text "De diagnose in " 
                           <> hyperLinkTo Diagnosis
-                          <> text " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
+                          <> text " is bedoeld voor de auteurs zelf om gebreken uit hun Ampersand model op te sporen. "
                          )
                else mempty
             <> if ConceptualAnalysis `elem` chaptersInDoc opts
