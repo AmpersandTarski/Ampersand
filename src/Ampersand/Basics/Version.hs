@@ -7,7 +7,7 @@ module Ampersand.Basics.Version
        ) where
 import Ampersand.Basics.BuildInfo_Generated
 import Ampersand.Basics.Exit
-import Ampersand.Basics.Prelude
+import Ampersand.Basics.Prelude hiding (exitWith)
 import GHC.Stack
 maxLen :: Int
 maxLen = 1500000 -- This trick is to make sure the process is terminated after the error.
