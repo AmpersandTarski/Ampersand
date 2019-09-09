@@ -12,7 +12,7 @@ module Ampersand.Basics.Prelude
   , HasVerbosity(..), Verbosity (..)
   )where
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
-import RIO
+import RIO hiding (zipWith)
 import System.IO (openTempFile,hPutStr,hPutStrLn, stderr)
 import qualified RIO.Text as T
 

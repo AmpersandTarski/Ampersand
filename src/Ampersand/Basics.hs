@@ -13,7 +13,7 @@ import Ampersand.Basics.Auxiliaries
 import Ampersand.Basics.Exit
 import Ampersand.Basics.Languages
 import Ampersand.Basics.PandocExtended
-import Ampersand.Basics.Prelude
+import Ampersand.Basics.Prelude hiding (exitWith)
 import Ampersand.Basics.String
 import Ampersand.Basics.Unique
 import Ampersand.Basics.Version
