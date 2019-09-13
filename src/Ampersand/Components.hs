@@ -19,9 +19,8 @@ import           Ampersand.Output
 import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import qualified RIO.ByteString.Lazy as BL
-import           Data.Function (on)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+--import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           Data.Maybe (isJust, fromJust)
@@ -34,9 +33,11 @@ import           Text.Pandoc.Builder
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: Options -> MultiFSpecs -> RIO App ()
 generateAmpersandOutput opts@Options{..} multi = do
-    sayWhenLoudLn "Checking for rule violations..."
-    if dataAnalysis then sayWhenLoudLn "Not checking for rule violations because of data analysis." else reportInvViolations violationsOfInvariants
-    reportSignals (initialConjunctSignals fSpec)
+    if dataAnalysis
+      then sayWhenLoudLn "Not checking for rule violations because of data analysis."
+      else if allowInvariantViolations
+      then sayWhenLoudLn "Not checking for rule violations because option ignore-invariant-violations."
+      else sayWhenLoudLn "Checking for rule violations..." >> reportInvViolations violationsOfInvariants
     liftIO $ createDirectoryIfMissing True dirOutput
     sequence_ . map snd . filter fst $ conditionalActions
   where 
@@ -189,29 +190,16 @@ generateAmpersandOutput opts@Options{..} multi = do
        -- TODO: this is a nice use case for outputting warnings
        sayLn "There are invariant violations that are ignored. Use --verbose to output the violations"
      else
-       let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
-       in  sayLn $ 
-                  L.intercalate "\n"
-                      [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
-                      | rps@((r,_):_) <- L.groupBy (on (==) fst) $ L.sort ruleNamesAndViolStrings
-                      ]
+       sayLn $
+       L.intercalate "\n"
+        ([ "Violations of rule "++show r++":\n"++showpairs atompairs
+         | (r,atompairs) <- viols, not (isSignal r) ] ++
+         [ "Signals for initial population: of rule "++show r++":\n"++showpairs atompairs
+         | (r,atompairs) <- viols, isSignal r, verbosity /= Silent ]
+        )
    
-   showprs :: AAtomPairs -> String
-   showprs aprs = "["++L.intercalate ", " (Set.elems $ Set.map showA aprs)++"]"
-   -- showpr :: AAtomPair -> String
-   -- showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
-   reportSignals []        = sayWhenLoudLn "No signals for the initial population" 
-   reportSignals conjViols = 
-     if verbosity == Loud
-     then
-       sayWhenLoudLn $ "Signals for initial population:\n" ++ L.intercalate "\n"
-         [   "Rule(s): "++(show . map name . NEL.toList . rc_orgRules) conj
-         ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
-         ++"\n  Violations : " ++ showprs viols
-         | (conj, viols) <- conjViols
-         ]
-     else
-       sayLn "There are signals for the initial population. Use --verbose to output the violations"
+   showpairs :: AAtomPairs -> String
+   showpairs atompairs = "    [ "++ (L.intercalate "\n    , " . Set.elems . Set.map showA) atompairs++"\n    ]"
    ruleTest :: String -> RIO App ()
    ruleTest ruleName =
     case [ rule | rule <- Set.elems $ grules fSpec `Set.union` vrules fSpec, name rule == ruleName ] of

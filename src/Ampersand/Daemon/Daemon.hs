@@ -14,7 +14,7 @@ import           Ampersand.Daemon.Daemon.Types
 import           Ampersand.Daemon.Daemon.Util
 import           Ampersand.Daemon.Wait
 import           Ampersand.Misc
-import           Data.Ord
+-- import           Data.Ord -- is redundant
 import           Data.Tuple.Extra(both)
 import qualified RIO.List as L
 import           System.Console.ANSI (hSupportsANSI,setTitle)
