@@ -1,7 +1,7 @@
 # For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-14.1
+resolver: lts-14.5
 # resolver: nightly-2018-11-24 # temporarily no LTS. Same as pandoc-crossref.
 allow-newer: false
 # Local packages, usually specified by relative directory name
@@ -10,8 +10,6 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: 
-# - fgl-5.7.0.1
-# - graphviz-2999.20.0.3
 - pandoc-crossref-0.3.4.0
 - roman-numerals-0.5.1.5
 - simple-sql-parser-0.4.4
