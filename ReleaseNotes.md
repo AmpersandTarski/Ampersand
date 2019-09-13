@@ -1,5 +1,9 @@
 # Release notes of Ampersand
 
+## v3.17.4 (13 september 2019)
+
+* Upgrade to [LTS Haskell 14.5 (ghc-8.6.5)](https://www.stackage.org/lts-14.5)
+
 ## v3.17.3 (2 august 2019)
 
 * Allow interface roles to be editable. Accessible interfaces for a given role are now queries from database instead of generated json files (requires update of prototype framework)
