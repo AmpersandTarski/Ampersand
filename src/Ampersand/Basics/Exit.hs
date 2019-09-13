@@ -5,7 +5,7 @@ module Ampersand.Basics.Exit
          ) where
 
 import           Control.Exception hiding (catch)
-import           Ampersand.Basics.Prelude hiding (exitWith)
+import           Ampersand.Basics.Prelude
 import qualified RIO.List as L
 import qualified System.Exit as SE
 import           System.IO.Unsafe(unsafePerformIO)

@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.Prelude
-  ( module Prelude
-  , module RIO
+  ( module RIO
   , say, sayLn
   , sayWhenLoud, sayWhenLoudLn
   , writeFile
@@ -10,9 +9,10 @@ module Ampersand.Basics.Prelude
   , openTempFile
   , HasHandle(..)
   , HasVerbosity(..), Verbosity (..)
+  , reads, getChar
   )where
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
-import RIO hiding (zipWith)
+import RIO hiding (zipWith,exitWith)
 import System.IO (openTempFile,hPutStr,hPutStrLn, stderr)
 import qualified RIO.Text as T
 
