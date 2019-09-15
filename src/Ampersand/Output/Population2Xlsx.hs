@@ -7,11 +7,11 @@ import           Ampersand.Basics
 import           Ampersand.ADL1(AAtomValue(..),HasSignature(..),aavstr)
 import           Ampersand.FSpec
 import           Codec.Xlsx
-import qualified RIO.ByteString.Lazy as BL
-import qualified Data.List.NonEmpty as NEL
-import qualified RIO.Text as T
-import           Data.Time.Calendar
 import           Data.Time.Clock.POSIX
+import           Data.Time.Calendar
+import qualified Data.List.NonEmpty as NEL
+import qualified RIO.ByteString.Lazy as BL
+import qualified RIO.Text as T
 import qualified RIO.List as L
 
 fSpec2PopulationXlsx :: POSIXTime -> FSpec -> BL.ByteString 

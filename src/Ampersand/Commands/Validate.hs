@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | Generate a prototype from a project.
-module Ampersand.Commands.Proto
+module Ampersand.Commands.Validate
     (proto
     ,ProtoOpts(..)
     ,HasProtoOpts(..)

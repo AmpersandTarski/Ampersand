@@ -94,33 +94,7 @@ import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --           theDoc = fDeriveProofs fSpec
 --           --theDoc = plain (text "Aap")  -- use for testing...
 
---    doGenHaskell :: (HasDirOutput env, HasRootFile env, HasLogFunc env) => RIO env ()
---    doGenHaskell = do
---        env <- ask
---        now <- getCurrentTime
---        outputFile <- outputFile' <$> ask
---        sayLn $ "Generating Haskell source code for " ++ name fSpec ++ "..."
---        writeFileUtf8 outputFile (T.pack $ fSpec2Haskell env now fSpec)
---        sayWhenLoudLn ("Haskell written into " ++ outputFile ++ ".")
---     where outputFile' env = view dirOutputL env </> baseName env -<.> ".hs"
-
---    doGenSQLdump :: (HasDirOutput env, HasRootFile env, HasLogFunc env) => RIO env ()
---    doGenSQLdump = do
---        env <- ask
---        outputFile <- outputFile' <$> ask
---        sayLn $ "Generating SQL queries dumpfile for " ++ name fSpec ++ "..."
---        writeFileUtf8 outputFile (dumpSQLqueries env fSpec)
---        sayWhenLoudLn ("SQL queries dumpfile written into " ++ outputFile ++ ".")
---     where outputFile' env = view dirOutputL env </> baseName env ++ "_dump" -<.> ".sql"
    
---    doGenUML :: (HasDirOutput env, HasRootFile env, HasLogFunc env) => RIO env ()
---    doGenUML = do
---        outputFile <- outputFile' <$> ask
---        sayLn "Generating UML..."
---        liftIO . writeFile outputFile $ generateUML fSpec
---        sayWhenLoudLn ("Generated file: " ++ outputFile ++ ".")
---       where outputFile' env = view dirOutputL env </> baseName env -<.> ".xmi"
-
 
 --    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
 --    doGenFPAExcel :: (HasLogFunc env) => RIO env ()

@@ -13,7 +13,7 @@ outputFileOptsParser :: FilePath -> Parser InputOutputOpts
 outputFileOptsParser defOutputFile = 
      ( \fSpecGenOpts outputfile -> InputOutputOpts
        { x4fSpecGenOpts = fSpecGenOpts
-       , xoutputFile = outputfile
+       , x4outputFile = outputfile
        }
      ) <$> fSpecGenOptsParser False
        <*> outputfileP defOutputFile

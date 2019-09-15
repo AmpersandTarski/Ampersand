@@ -119,7 +119,7 @@ instance HasBlackWhite DocOpts where
 class HasOutputFile a where
   outputfileL :: Lens' a FilePath
 instance HasOutputFile InputOutputOpts where
-  outputfileL = lens xoutputFile (\x y -> x { xoutputFile = y })
+  outputfileL = lens x4outputFile (\x y -> x { x4outputFile = y })
 
 class HasVersion a where
   preVersionL :: Lens' a String 
@@ -141,6 +141,16 @@ class HasProtoOpts env where
 instance HasProtoOpts ProtoOpts where
    protoOptsL = id
    {-# INLINE protoOptsL #-}
+class HasDevoutputOpts env where
+   devoutputOptsL :: Lens' env DevOutputOpts
+class HasInitOpts env where
+   initOptsL :: Lens' env InitOpts
+class HasProofOpts env where
+   proofOptsL :: Lens' env ProofOpts
+class HasPopulationOpts env where
+   populationOptsL :: Lens' env PopulationOpts
+class HasValidateOpts env where
+   validateOptsL :: Lens' env ValidateOpts
 
 -- | Options for @ampersand daemon@.
 data DaemonOpts = DaemonOpts
@@ -196,7 +206,7 @@ data ExportOpts = ExportOpts
 -- | Options for @ampersand dataAnalysis@.
 data InputOutputOpts = InputOutputOpts
    { x4fSpecGenOpts :: !FSpecGenOpts
-   , xoutputFile :: !FilePath --relative path 
+   , x4outputFile :: !FilePath --relative path 
    }
 
 -- | Options for @ampersand proto@.
@@ -237,6 +247,21 @@ data DocOpts = DocOpts
    , xgenLegalRefs :: !Bool
    -- ^ enable/disable generation of legal references in the documentation
    }
+-- | Options for @ampersand population@
+data PopulationOpts = PopulationOpts
+-- | Options for @ampersand proofs@
+data ProofOpts = ProofOpts
+-- | Options for @ampersand init@
+data InitOpts = InitOpts
+-- | Options for @ampersand uml@
+data UmlOpts = UmlOpts
+-- | Options for @ampersand validate@
+data ValidateOpts = ValidateOpts
+-- | Options for @ampersand devoutput@
+data DevOutputOpts = DevOutputOpts
+   { x5outputFile :: !FilePath --relative path  
+   }
+
 data Chapter = Intro
              | SharedLang
              | Diagnosis

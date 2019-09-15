@@ -15,7 +15,13 @@ import           Ampersand.Basics
 import           Ampersand.Commands.Proto
 import           Ampersand.Commands.Daemon
 import           Ampersand.Commands.Documentation
+import           Ampersand.Commands.Devoutput
 import           Ampersand.Commands.ExportAsADL
+import           Ampersand.Commands.Init
+import           Ampersand.Commands.Population
+import           Ampersand.Commands.Proof
+import           Ampersand.Commands.Uml
+import           Ampersand.Commands.Validate
 import           Ampersand.FSpec.ToFSpec.CreateFspec
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
@@ -280,6 +286,48 @@ dataAnalysisCmd opts =
         let recipe = []
         mFSpec <- createFspec recipe
         doOrDie mFSpec dataAnalysis
+
+populationCmd :: PopulationOpts -> RIO Runner ()
+populationCmd opts = 
+    extendWith opts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec population
+
+proofCmd :: ProofOpts -> RIO Runner ()
+proofCmd opts = 
+    extendWith opts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec proof
+
+initCmd :: InitOpts -> RIO Runner ()
+initCmd opts = 
+    extendWith opts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec init
+
+umlCmd :: UmlOpts -> RIO Runner ()
+umlCmd opts = 
+    extendWith opts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec uml
+
+validateCmd :: ValidateOpts -> RIO Runner ()
+validateCmd opts = 
+    extendWith opts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec validate
+
+devoutputCmd :: DevOutputOpts -> RIO Runner ()
+devoutputCmd opts = 
+    extendWith opts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec devoutput
 
 doOrDie :: HasLogFunc env => Guarded a -> (a -> RIO env b) -> RIO env b
 doOrDie gA act = 
