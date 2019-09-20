@@ -26,13 +26,15 @@ RUN stack install
 # show the results of the build stage
 RUN ls -al /root/.local/bin
 
-FROM ubuntu
+FROM ubuntu AS configstage
 
 VOLUME ["/scripts"]
 
+WORKDIR /scripts
+
 COPY --from=buildstage /root/.local/bin/ampersand /bin/
 
-WORKDIR /scripts
+RUN apt update && apt install graphviz -y && apt install texlive-font-utils -y
 
 ENTRYPOINT ["/bin/ampersand"]
 
