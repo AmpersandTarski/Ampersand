@@ -21,6 +21,17 @@ class HasFSpecGenOpts a where
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
   {-# INLINE fSpecGenOptsL #-}
+
+instance HasFSpecGenOpts DevOutputOpts where
+  fSpecGenOptsL = lens x8fSpecGenOpts (\x y -> x { x8fSpecGenOpts = y })
+instance HasFSpecGenOpts ValidateOpts where
+  fSpecGenOptsL = protoOptsL . fSpecGenOptsL
+instance HasFSpecGenOpts UmlOpts where
+  fSpecGenOptsL = lens x7fSpecGenOpts (\x y -> x { x7fSpecGenOpts = y })
+instance HasFSpecGenOpts ProofOpts where
+  fSpecGenOptsL = lens x6fSpecGenOpts (\x y -> x { x6fSpecGenOpts = y })
+instance HasFSpecGenOpts PopulationOpts where
+  fSpecGenOptsL = lens x5fSpecGenOpts (\x y -> x { x5fSpecGenOpts = y })
 instance HasFSpecGenOpts InputOutputOpts where
   fSpecGenOptsL = lens x4fSpecGenOpts (\x y -> x { x4fSpecGenOpts = y })
 instance HasFSpecGenOpts DocOpts where
@@ -29,7 +40,6 @@ instance HasFSpecGenOpts DaemonOpts where
   fSpecGenOptsL = lens x2fSpecGenOpts (\x y -> x { x2fSpecGenOpts = y })
 instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
-
 class HasDirPrototype a where
   dirPrototypeL :: Lens' a FilePath
   getTemplateDir :: a -> String
@@ -68,7 +78,16 @@ instance HasRootFile DocOpts where
   rootFileL = fSpecGenOptsL . rootFileL
 instance HasRootFile InputOutputOpts where
   rootFileL = fSpecGenOptsL . rootFileL
-
+instance HasRootFile PopulationOpts where
+  rootFileL = fSpecGenOptsL . rootFileL
+instance HasRootFile ProofOpts where
+  rootFileL = fSpecGenOptsL . rootFileL
+instance HasRootFile UmlOpts where
+  rootFileL = fSpecGenOptsL . rootFileL
+instance HasRootFile ValidateOpts where
+  rootFileL = fSpecGenOptsL . rootFileL
+instance HasRootFile DevOutputOpts where
+  rootFileL = fSpecGenOptsL . rootFileL
 class HasOutputLanguage a where
   languageL :: Lens' a (Maybe Lang)  -- The language in which the user wants the documentation to be printed.
 instance HasOutputLanguage ProtoOpts where
@@ -77,6 +96,8 @@ instance HasOutputLanguage DaemonOpts where
   languageL = lens x2OutputLanguage (\x y -> x { x2OutputLanguage = y })
 instance HasOutputLanguage DocOpts where
   languageL = lens x3OutputLanguage (\x y -> x { x3OutputLanguage = y })
+instance HasOutputLanguage UmlOpts where
+  languageL = lens x4OutputLanguage (\x y -> x { x4OutputLanguage = y })
 
 class HasRunComposer a where
   skipComposerL :: Lens' a Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
@@ -141,6 +162,8 @@ class HasProtoOpts env where
 instance HasProtoOpts ProtoOpts where
    protoOptsL = id
    {-# INLINE protoOptsL #-}
+instance HasProtoOpts ValidateOpts where
+   protoOptsL = lens protoOpts (\x y -> x { protoOpts = y }) 
 class HasDevoutputOpts env where
    devoutputOptsL :: Lens' env DevOutputOpts
 class HasInitOpts env where
@@ -249,17 +272,36 @@ data DocOpts = DocOpts
    }
 -- | Options for @ampersand population@
 data PopulationOpts = PopulationOpts
+   { x5fSpecGenOpts :: !FSpecGenOpts
+   -- ^ Options required to build the fSpec
+   }
 -- | Options for @ampersand proofs@
 data ProofOpts = ProofOpts
+   { x6fSpecGenOpts :: !FSpecGenOpts
+   -- ^ Options required to build the fSpec
+   }
 -- | Options for @ampersand init@
 data InitOpts = InitOpts
+   deriving Show
 -- | Options for @ampersand uml@
 data UmlOpts = UmlOpts
+   { x7fSpecGenOpts :: !FSpecGenOpts
+   -- ^ Options required to build the fSpec
+   , x4OutputLanguage :: !(Maybe Lang)
+   -- ^ Language of the output document
+   }
 -- | Options for @ampersand validate@
 data ValidateOpts = ValidateOpts
+   { protoOpts :: !ProtoOpts
+   -- ^ Options required to build the fSpec
+   --, x5OutputLanguage :: !(Maybe Lang)
+   -- ^ Language of the output document
+   }
 -- | Options for @ampersand devoutput@
 data DevOutputOpts = DevOutputOpts
-   { x5outputFile :: !FilePath --relative path  
+   { x8fSpecGenOpts :: !FSpecGenOpts
+   -- ^ Options required to build the fSpec
+   , x5outputFile :: !FilePath --relative path  
    }
 
 data Chapter = Intro

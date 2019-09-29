@@ -301,12 +301,9 @@ proofCmd opts =
         mFSpec <- createFspec recipe
         doOrDie mFSpec proof
 
-initCmd :: InitOpts -> RIO Runner ()
-initCmd opts = 
-    extendWith opts $ do
-        let recipe = []
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec init
+--initCmd :: InitOpts -> RIO Runner ()
+--initCmd opts = 
+--    extendWith opts init
 
 umlCmd :: UmlOpts -> RIO Runner ()
 umlCmd opts = 

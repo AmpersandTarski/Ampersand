@@ -1,0 +1,293 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+        ( commandLineHandler
+where
+import           Ampersand.Commands.Documentation
+import           Ampersand.Commands.Population
+import           Ampersand.FSpec.ToFSpec.CreateFspec
+import           Ampersand.Options.ProtoParser
+import           Ampersand.Types.Config
+import           Options.Applicative
+import           Options.Applicative.Common
+import           System.Environment ({-getProgName,-} withArgs)
+-- A lot of inspiration in this file comes from https://github.com/commercialhaskell/stack/
+--vcatErrorHelp :: ParserHelp -> ParserHelp -> ParserHelp
+  :: FilePath
+commandLineHandler currentDir _progName args = complicatedOptions
+  "ampersand's documentation is available at https://ampersandtarski.gitbook.io/documentation/"
+  addCommands
+
+        -> [String] 
+    parseResultHandler :: ParserFailure ParserHelp -> IO a
+                      (RIO Runner ())
+import           RIO.Char                  "Use ampersand to check your model while you modify it."
+      addCommand'' Documentation
+--import           System.FilePath (isValid, pathSeparator, takeDirectory)
+
+
+-- Vertically combine only the error component of the first argument with the
+-- error component of the second.
+--vcatErrorHelp :: ParserHelp -> ParserHelp -> ParserHelp
+--vcatErrorHelp h1 h2 = h2 { helpError = vcatChunks [helpError h2, helpError h1] }
+
+--                        -> AddCommand
+  -> String -- the name of the program
+  -> [String] -- the (command-line) arguments
+--import           Generics.Deriving.Monoid (memptydefault, mappenddefault)
+
+      --  extraHelpOption hide progName (Docker.dockerCmdName ++ "*") Docker.dockerHelpOptName <*>
+        globalOptsParser currentDir Nothing
+
+
+complicatedOptions
+  -> String
+    failureCallback ::  -- ^ footer
+import           RIO.Char  -> Maybe (ParserFailure ParserHelp -> [String] -> IO (a,(b,a)))
+  -- default
+complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure commandParser = do
+          logDebug $ displayShow helpDoc'
+--import           System.FilePath (isValid, pathSeparator, takeDirectory)
+
+
+-- A lot of inspiration in this file comes from https://github.com/commercialhaskell/stack/
+
+  addCommand' cmd title footerStr (\a c -> (constr a,extendCommon a c))
+-- Vertically combine only the error component of the first argument with the
+
+-- error component of the second.
+
+--vcatErrorHelp :: ParserHelp -> ParserHelp -> ParserHelp
+
+--vcatErrorHelp h1 h2 = h2 { helpError = vcatChunks [helpError h2, helpError h1] }
+
+-- -- | Add a command that takes sub-commands to the options dispatcher.
+--   :: Monoid c
+--   -- ^ command string
+--   -- ^ footer of command help
+  -> String -- the name of the program
+
+  -> [String] -- the (command-line) arguments
+
+--   addCommand' cmd
+--               title
+--               (complicatedParser "COMMAND" commonParser commandParser)
+addCommand' :: String   -- ^ command string
+
+
+
+
+complicatedParser
+  => String
+  -- ^ common settings
+
+    failureCallback ::   (,) <$>
+   commonParser <*>
+        -> [String]-- | Subparser with @--help@ argument. Borrowed with slight modification
+-- from Options.Applicative.Extra.
+    rdr = CmdReader groupName cmds (fmap add_helper . subs)
+      { infoParser = infoParser pinfo <**> helpOption }
+helpOption :: Parser (a -> a)
+
+daemonCmd :: DaemonOpts -> RIO Runner ()
+documentationCmd docOpts =
+
+        doOrDie mFSpec doGenDocument
+
+protoCmd protoOpts = 
+
+        doOrDie mFSpec proto
+
+    extendWith opts $ do
+
+
+
+        let recipe = []
+
+
+    extendWith opts $ do
+
+
+
+        let recipe = []
+       -- call onFailure handler if it's present and parsing options failed
+validateCmd opts = 
+        mFSpec <- createFspec recipe
+devoutputCmd opts = 
+        -- addCommand hiding global options
+
+doOrDie :: HasLogFunc env => Guarded a -> (a -> RIO env b) -> RIO env b
+  case gA of
+    Errors err -> exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
+
+
+        Daemon
+--        addSubCommands' :: String -> String -> AddCommand
+
+--                        -> AddCommand
+
+--        addSubCommands' cmd title =
+
+--            addSubCommands cmd title globalFooter globalOpts
+
+
+           -> (a -> b) -- ^ constructor to wrap up command in common data type
+
+           -> (a -> c -> c) -- ^ extend common settings from local settings
+
+
+      --  extraHelpOption hide progName (Docker.dockerCmdName ++ "*") Docker.dockerHelpOptName <*>
+
+      --  extraHelpOption hide progName (Nix.nixCmdName ++ "*") Nix.nixHelpOptName <*>
+
+-- addSubCommands
+
+--   :: Monoid c
+
+--   -- ^ command string
+
+--   -> String
+
+
+--   -> Parser c
+
+--   -- ^ common parser
+-- | Generate and execute a complicated options parser.
+
+--   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
+
+
+
+  -- ^ version string
+
+--               footerStr
+
+  -- ^ header
+
+--               commonParser
+
+  -- ^ program description (displayed between usage and options listing in the help output)
+
+-- | Add a command to the options dispatcher.
+
+  -- ^ footer
+
+            -> String   -- ^ title of command
+
+  -- ^ command-line arguments (unparsed)
+
+            -> (a -> c -> (b,c)) -- ^ constructor to wrap up command in common data type
+
+  -- ^ common settings
+
+            -> Parser a -- ^ command parser
+
+  -- ^ optional handler for parser failure; 'handleParseResult' is called by
+
+  -- default
+
+  -- ^ common settings
+
+  -- ^ commands (use 'addCommand')
+
+-- | Subparser with @--help@ argument. Borrowed with slight modification
+
+
+
+    extendWith daemonOpts
+
+    extendWith opts $umlCmd opts =validateCmd opts =devoutputCmd opts =doOrDie gA act =    Errors err -> exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=')    showWarnings ws = mapM_ logWarn (fmap displayShow ws)data Command =      | Proto       -- call onFailure handler if it's present and parsing options failed
+
+        helpDoc' =                paragraph (show opt) -- optHelp opt -- "Een of andere optie."
+
+-- | Add a command to the options dispatcher.
+
+addCommand :: String   -- ^ command string
+
+           -> String   -- ^ title of command
+
+           -> String   -- ^ footer of command help
+
+           -> (a -> b) -- ^ constructor to wrap up command in common data type
+
+           -> (a -> c -> c) -- ^ extend common settings from local settings
+
+           -> Parser c -- ^ common parser
+
+           -> Parser a -- ^ command parser
+
+-- -- | Add a command that takes sub-commands to the options dispatcher.
+
+-- addSubCommands
+
+--   :: Monoid c
+
+--   => String
+
+--   -- ^ command string
+
+--   -> String
+
+--   -- ^ title of command
+
+--   -> String
+
+--   -- ^ footer of command help
+
+--   -> Parser c
+
+--   -- ^ common parser
+
+--   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
+
+--   -- ^ sub-commands (use 'addCommand')
+
+--   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
+
+-- addSubCommands cmd title footerStr commonParser commandParser =
+
+--   addCommand' cmd
+
+--               title
+
+--               footerStr
+
+--               (\(c1,(a,c2)) c3 -> (a,mconcat [c3, c2, c1]))
+
+--               commonParser
+
+--               (complicatedParser "COMMAND" commonParser commandParser)
+
+-- | Add a command to the options dispatcher.
+
+addCommand' :: String   -- ^ command string
+
+            -> String   -- ^ title of command
+
+            -> String   -- ^ footer of command help
+
+            -> (a -> c -> (b,c)) -- ^ constructor to wrap up command in common data type
+
+            -> Parser c -- ^ common parser
+
+            -> Parser a -- ^ command parser
+
+-- | Generate a complicated options parser.
+
+  -- ^ metavar for the sub-command
+
+  -- ^ common settings
+
+  -- ^ commands (use 'addCommand')
+
+-- | Subparser with @--help@ argument. Borrowed with slight modification
+
+-- from Options.Applicative.Extra.
+
+-- | Non-hidden help option.
+
+daemonCmd daemonOpts =
+    extendWith daemonOpts
+       runDaemon-- | Create a prototype based on the current script.
+
+protoCmd protoOpts =dataAnalysisCmd opts =populationCmd opts =proofCmd opts =initCmd opts =
+    extendWith opts $umlCmd opts =validateCmd opts =devoutputCmd opts =doOrDie gA act =    Errors err -> exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=')    showWarnings ws = mapM_ logWarn (fmap displayShow ws)data Command =      | Proto

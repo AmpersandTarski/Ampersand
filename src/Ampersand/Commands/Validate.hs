@@ -6,34 +6,24 @@
 
 -- | Generate a prototype from a project.
 module Ampersand.Commands.Validate
-    (proto
-    ,ProtoOpts(..)
-    ,HasProtoOpts(..)
+    (validate
+    ,ValidateOpts(..)
+    ,HasValidateOpts(..)
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Prototype.GenFrontend (doGenFrontend)
 import           Ampersand.Misc
-import           Ampersand.Types.Config
 import           Ampersand.FSpec
-import           System.Directory
-import           Ampersand.Output.FSpec2SQL
-import           Ampersand.Output.ToJSON.ToJson
+import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
+
 -- | Builds a prototype of the current project.
 --
-proto :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env) 
+validate :: (HasProtoOpts env, HasLogFunc env)
        => FSpec -> RIO env ()
-proto fSpec = do
-    dirPrototype <- view dirPrototypeL
-    allowInvariantViolations <- view allowInvariantViolationsL
-    if null (violationsOfInvariants fSpec) || allowInvariantViolations
-    then do
-       sayLn "Generating prototype..."
-       liftIO $ createDirectoryIfMissing True dirPrototype
-       doGenFrontend fSpec
-       generateDatabaseFile fSpec
-       generateJSONfiles False fSpec
-       sayWhenLoudLn $ "Prototype files have been written to " ++ dirPrototype
-    else exitWith NoPrototypeBecauseOfRuleViolations
+validate fSpec = do
+    sayLn "Validating SQL expressions..."
+    errMsg <- validateRulesSQL fSpec
+    unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
+
 
 

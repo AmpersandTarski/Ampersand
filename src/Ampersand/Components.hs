@@ -113,12 +113,6 @@ import           Ampersand.Input.ADL1.CtxError(Guarded(..))
 --        sayWhenLoudLn ("Generated file: " ++ outputFile)
 --      where outputFile' env = view dirOutputL env </> baseName env ++ "_generated_pop" -<.> ".xlsx"
 
---    doValidateSQLTest :: (HasProtoOpts env, HasLogFunc env) => RIO env ()
---    doValidateSQLTest = do
---        sayLn "Validating SQL expressions..."
---        errMsg <- validateRulesSQL fSpec
---        unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
-
 --   --  doGenRapPopulation :: (HasEnvironment env, HasProtoOpts env, HasCommands env, HasLogFunc env, HasAllowInvariantViolations env, HasDirPrototype env) 
 --   --       => Guarded (RIO env ())
 --   --  doGenRapPopulation = do

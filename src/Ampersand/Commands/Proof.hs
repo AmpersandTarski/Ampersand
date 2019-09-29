@@ -6,7 +6,7 @@
 
 -- | Generate a proofs output document from a project.
 module Ampersand.Commands.Proof
-    (proofs
+    (proof
     ,ProtoOpts(..)
     ,HasProtoOpts(..)
     ) where
@@ -20,9 +20,9 @@ import           Text.Pandoc.Builder
 
 -- | Generate a proofs output document from a project.
 --
-proofs :: (HasDirOutput env, HasRootFile env, HasLogFunc env) 
+proof :: (HasDirOutput env, HasRootFile env, HasLogFunc env) 
        => FSpec -> RIO env ()
-proofs fSpec = do 
+proof fSpec = do 
     env <- ask
     sayLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile env ++ "..."
     content <- liftIO $ (runIO (writeHtml5String def thePandoc)) >>= handleError
