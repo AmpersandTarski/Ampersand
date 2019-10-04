@@ -6,7 +6,7 @@
 
 -- | Clean a project.
 module Ampersand.Commands.ExportAsADL
-    (dataAnalysis
+    (exportAsAdl
     ) where
 
 import           Ampersand.Basics
@@ -20,8 +20,8 @@ import           System.FilePath
 --    Expect to find a file "MetaModel.adl" in your working directory upon successful termination.
 -- 2. To perform a round-trip test, use an Ampersand-script foo.adl and run and run "Ampersand --export foo.adl".
 --    Expect to find a file "Export.adl" in your working directory which should be semantically equivalent to foo.adl.
-dataAnalysis :: (HasOutputFile env, HasDirOutput env, HasLogFunc env) => FSpec -> RIO env ()
-dataAnalysis fSpec = do
+exportAsAdl :: (HasOutputFile env, HasDirOutput env, HasLogFunc env) => FSpec -> RIO env ()
+exportAsAdl fSpec = do
     env <- ask
     sayWhenLoudLn $ "Generating data analysis script (ADL) for "  ++ name fSpec ++ "..."
     liftIO $ writeFile (outputFile' env) (showA ctx) 

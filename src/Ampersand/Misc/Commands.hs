@@ -25,11 +25,16 @@ import           Ampersand.Commands.Validate
 import           Ampersand.FSpec.ToFSpec.CreateFspec
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Options.GlobalParser
-import           Ampersand.Options.ProtoParser
 import           Ampersand.Options.DaemonParser
-import           Ampersand.Options.InputOutputOpts
+import           Ampersand.Options.DevoutputOptsParser
 import           Ampersand.Options.DocOptsParser
+import           Ampersand.Options.GlobalParser
+import           Ampersand.Options.InputOutputOpts
+import           Ampersand.Options.PopulationOptsParser
+import           Ampersand.Options.ProofOptsParser
+import           Ampersand.Options.ProtoOptsParser
+import           Ampersand.Options.UmlOptsParser
+import           Ampersand.Options.ValidateOptsParser
 import           Ampersand.Types.Config
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Writer
@@ -86,21 +91,55 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   "Use ampersand to check your model while you modify it."
                   daemonCmd
                   daemonOptsParser
-      addCommand'' Documentation
-                  ( "Generate a functional design document, to kick-start your "
-                  <>"functional specification.")
-                  documentationCmd
-                  docOptsParser
-      addCommand'' Proto
-                  "Generate a prototype from your specification."
-                  protoCmd
-                  (protoOptsParser "DEFAULTDATABASENAME")
       addCommand'' Dataanalysis
                   ( "Export a data model as plain Ampersand script, for "
                   <>"analysing Excel-data.")
                   dataAnalysisCmd
                   (outputFileOptsParser "MetaModel.adl")
-      where
+      addCommand'' Devoutput
+                  "Generate some diagnostic files, intended for developers of ampersand."
+                  devoutputCmd
+                  (devoutputOptsParser ".")
+      addCommand'' Documentation
+                  ( "Generate a functional design document, to kick-start your "
+                  <>"functional specification.")
+                  documentationCmd
+                  docOptsParser
+--      addCommand'' Fpa
+--                  ""
+--                  fpaCmd
+--                  fpaOptsParser
+--      addCommand'' Init
+--                  ""
+--                  initCmd
+--                  initOptsParser
+      addCommand'' Population
+                  ""
+                  populationCmd
+                  populationOptsParser
+      addCommand'' Proofs
+                  "Generate a report containing proofs."
+                  proofCmd
+                  (proofOptsParser )
+      addCommand'' Proto
+                  "Generate a prototype from your specification."
+                  protoCmd
+                  (protoOptsParser "DEFAULTDATABASENAME")
+      addCommand'' PPrint
+                  "Generate a single .adl file of your script (prettyprinted)"
+                  pprintCmd
+                  (outputFileOptsParser "export.adl")
+      addCommand'' Uml
+                  "Generate a data model in UML 2.0 style."
+                  umlCmd
+                  umlOptsParser
+      addCommand'' Validate
+                  ("Compare results of rule evaluation in Haskell and SQL, for" <>
+                   "testing expression semantics. This requires command line php with"<>
+                   "MySQL support.")
+                  validateCmd
+                  (validateOptsParser "DEFAULTDATABASENAME")
+     where
         -- addCommand hiding global options
         addCommand'' :: Command -> String -> (a -> RIO Runner ()) -> Parser a
                     -> AddCommand
@@ -284,8 +323,14 @@ dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
 dataAnalysisCmd opts = 
     extendWith opts $ do
         let recipe = []
+        mFSpec <- createFspecDataAnalysis recipe
+        doOrDie mFSpec exportAsAdl
+pprintCmd :: InputOutputOpts -> RIO Runner ()
+pprintCmd opts = 
+    extendWith opts $ do
+        let recipe = []
         mFSpec <- createFspec recipe
-        doOrDie mFSpec dataAnalysis
+        doOrDie mFSpec exportAsAdl
 
 populationCmd :: PopulationOpts -> RIO Runner ()
 populationCmd opts = 
@@ -346,6 +391,7 @@ data Command =
       | Fpa
       | Init
       | Population
+      | Proofs
       | Proto 
       | PPrint
       | Uml

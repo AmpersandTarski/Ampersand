@@ -226,7 +226,7 @@ data FSpecFormat =
 data ExportOpts = ExportOpts
    { xexport2adl :: !FilePath  --relative path
    }
--- | Options for @ampersand dataAnalysis@.
+-- | Options for @ampersand dataAnalysis@ and @ampersand export@.
 data InputOutputOpts = InputOutputOpts
    { x4fSpecGenOpts :: !FSpecGenOpts
    , x4outputFile :: !FilePath --relative path 

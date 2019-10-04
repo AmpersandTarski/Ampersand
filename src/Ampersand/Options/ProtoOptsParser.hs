@@ -1,5 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-module Ampersand.Options.ProtoParser 
+module Ampersand.Options.ProtoOptsParser 
    (protoOptsParser)
 where
 
