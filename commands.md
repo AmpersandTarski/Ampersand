@@ -38,7 +38,7 @@ even more complex than it already was.
           Show contents and violations of specified rule, for testing a
           single rule in your Ampersand-script.
 
-* Changed into commands (in `yellow` the new command is given)
+* Changed into commands (in `this style` the new command is given)
   * ***--daemon[=configfile]*** `daemon --daemonconfig=CONFIGFILE`
           Run ampersand as daemon, for use by the vscode
           ampersand-language-extention. An optional parameter may be
@@ -57,7 +57,6 @@ even more complex than it already was.
           export a data model as plain Ampersand script, for analysing
           Excel-data.
 
-* TODO: The following options still have to be impemented as commands:
   * ***--export[=file]*** `pprint`
           export as plain Ampersand script, for round-trip testing of the
           Ampersand compiler.
@@ -65,10 +64,6 @@ even more complex than it already was.
           Generate an .xmlx file containing the populations of your script.
   * ***--proofs*** `proofs`
           generate derivations, for testing the generation of rules.
-  * ***--sampleConfigFile*** `init`
-          write a sample configuration file (sampleconfig.yaml), to avoid
-          retyping (and remembering) the command line options for
-          ampersand.
   * ***--uml*** `uml`
           Generate a data model in UML 2.0 style.
   * ***--validate*** `validate`
@@ -78,8 +73,13 @@ even more complex than it already was.
   * ***--haskell*** `devoutput`
           generate internal data structure, written in Haskell (for
           debugging).
-  * ***--sqldump*** devoutput
+  * ***--sqldump*** `devoutput`
           generate a dump of SQL queries (for debugging).
+* TODO: The following options still have to be impemented as commands:
+  * ***--sampleConfigFile*** `init`
+          write a sample configuration file (sampleconfig.yaml), to avoid
+          retyping (and remembering) the command line options for
+          ampersand.
 
 
 
@@ -156,6 +156,7 @@ even more complex than it already was.
 ## TODO: configuration file
 
 The config.yaml file will be replaced by ampersand.yaml file. The generation of a sample file also wil have to be rewritten. The way this is done wil be as a monoid. This causes that you can override every option that you set in your yaml file by means of the command line, in a generic way.
+
 * ***--config=config.yaml***
           config file (*.yaml) that contains the command line options of
           ampersand.
@@ -163,6 +164,7 @@ The config.yaml file will be replaced by ampersand.yaml file. The generation of 
 ## TODO: working with meta-models
 
 We now have `recipes` to deal with metamodels such as Formal Ampersand and SystemContext. These recipes will be used based on the chose command. There might be a need to modify those recipes by the user. This still has to be seen. In any case, the following options will be removed:
+
 * ***--add-semantic-metamodel, --meta-tables***
           All relations, views, idents etc. from formal-ampersand will be
           available for use in your model. These artefacts do not have to
@@ -173,3 +175,10 @@ We now have `recipes` to deal with metamodels such as Formal Ampersand and Syste
           Generate an .adl file that contains the relations of
           formal-ampersand, populated with the the meta-population of your
           own .adl model, in case you want a metamodel.
+
+## TODO: Get the test files working again
+
+The regression tests, as done with travis-ci, are grouped in directories. Each directory
+that contains a file named `testinfo.yaml` will be taken into account. All _*.adl_ files in that directory
+will be tested according to the specification in testinfo.yaml.
+The specification file now has to be rewritten. Also the handling of these files have to be rewritten.
