@@ -34,6 +34,7 @@ import           Ampersand.Options.PopulationOptsParser
 import           Ampersand.Options.ProofOptsParser
 import           Ampersand.Options.ProtoOptsParser
 import           Ampersand.Options.UmlOptsParser
+import           Ampersand.Options.TestOptsParser
 import           Ampersand.Options.ValidateOptsParser
 import           Ampersand.Types.Config
 import           Control.Monad.Trans.Except
@@ -139,6 +140,11 @@ commandLineHandler currentDir _progName args = complicatedOptions
                    "MySQL support.")
                   validateCmd
                   (validateOptsParser "DEFAULTDATABASENAME")
+      addCommand'' Test
+                  ("Run testsuites in a given directory. This is ment to do regression testing" <>
+                   " during automatic build (e.g. Travis-ci)")
+                  testCmd
+                  (testOptsParser ".")
      where
         -- addCommand hiding global options
         addCommand'' :: Command -> String -> (a -> RIO Runner ()) -> Parser a
@@ -318,7 +324,12 @@ protoCmd protoOpts =
         let recipe = []
         mFSpec <- createFspec recipe
         doOrDie mFSpec proto
-
+testCmd :: TestOpts -> RIO Runner ()
+testCmd testOpts =
+    extendWith testOpts $ aap
+    where
+      aap :: RIO (ExtendedRunner TestOpts) ()
+      aap = undefined
 dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
 dataAnalysisCmd opts = 
     extendWith opts $ do
@@ -394,5 +405,6 @@ data Command =
       | Proofs
       | Proto 
       | PPrint
+      | Test
       | Uml
       | Validate deriving Show

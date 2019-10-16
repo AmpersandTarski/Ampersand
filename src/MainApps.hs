@@ -128,17 +128,17 @@ preProcessor' =
                Right cont -> return cont
         sayLn $ either show id (preProcess' filename (Set.fromList defs) (T.unpack content))
 
-mainTest :: IO ()
-mainTest = do
+mainTest' :: IO ()
+mainTest' = do
   progName <- getProgName
-  let args = ["test", "--help"]
+  let args = ["test"]
   work <- ampersandOptionsHandler progName args
   ampersandWorker work
 --   env <- defEnv
 --   runRIO env mainTest'
 
-mainTest' :: (HasRunner env) => RIO env ()
-mainTest' = do 
+mainTest :: (HasRunner env) => RIO env ()
+mainTest = do 
     sayLn "Starting Quickcheck tests."
     funcs <- testFunctions
     testAmpersandScripts
@@ -167,18 +167,18 @@ mainTest' = do
                    )
                  ]
 
-regressionTest :: IO ()
-regressionTest = do
+regressionTest' :: IO ()
+regressionTest' = do
   progName <- getProgName
-  let args = ["test", "--help"]
+  let args = ["test"]
   work <- ampersandOptionsHandler progName args
   ampersandWorker work
 --   env <- defEnv
 --   runRIO env regressionTest'
 
 
-regressionTest' :: (HasRunner env) => RIO env ()
-regressionTest' = do 
+regressionTest :: (HasRunner env) => RIO env ()
+regressionTest = do 
     sayLn $ "Starting regression test."
     baseDir <- liftIO . makeAbsolute $ "." </> "testing"
     totalfails <- runConduit $ walk baseDir .| myVisitor .| sumarize

@@ -303,7 +303,9 @@ data DevOutputOpts = DevOutputOpts
    -- ^ Options required to build the fSpec
    , x5outputFile :: !FilePath --relative path  
    }
-
+data TestOpts = TestOpts
+   { rootTestDir :: !FilePath --relative path to directory containing test scripts
+   }
 data Chapter = Intro
              | SharedLang
              | Diagnosis
