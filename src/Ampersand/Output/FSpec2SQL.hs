@@ -26,7 +26,7 @@ generateDatabaseFile fSpec =
   where 
    content = T.unpack (databaseStructureSql fSpec)
    file = "database" <.> "sql"
-   fullFile env = getGenericsDir env </> file
+   fullFile env = getGenericsDir fSpec env </> file
 
 databaseStructureSql :: FSpec -> T.Text
 databaseStructureSql fSpec

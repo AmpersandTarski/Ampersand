@@ -41,13 +41,21 @@ instance HasFSpecGenOpts DaemonOpts where
 instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
 class HasDirPrototype a where
-  dirPrototypeL :: Lens' a FilePath
-  getTemplateDir :: a -> String
-  getTemplateDir x = 
-    view dirPrototypeL x </> "templates"
-  getAppDir :: a -> String
-  getAppDir x =
-    view dirPrototypeL x </> "public" </> "app" </> "project"
+  dirPrototypeL :: Lens' a (Maybe FilePath)
+  getTemplateDir :: Named b => b -> a -> String
+  getTemplateDir fSpec x = 
+    getDirPrototype fSpec x </> "templates"
+  getAppDir :: Named b => b -> a -> String
+  getAppDir fSpec x =
+    getDirPrototype fSpec x </> "public" </> "app" </> "project"
+  getGenericsDir :: Named b => b -> a -> String
+  getGenericsDir fSpec x = 
+    getDirPrototype fSpec x </> "generics" 
+  getDirPrototype :: Named b => b -> a -> FilePath
+  getDirPrototype fSpec x =
+    (case view dirPrototypeL x of
+       Nothing -> name fSpec
+       Just nm -> nm )
 instance HasDirPrototype ProtoOpts where
   dirPrototypeL = lens xdirPrototype (\x y -> x { xdirPrototype = y })
 
@@ -148,7 +156,7 @@ class HasVersion a where
 
 class HasProtoOpts env where
    protoOptsL :: Lens' env ProtoOpts
-   dbNameL   :: Lens' env String
+   dbNameL   :: Lens' env (Maybe String)
    sqlHostL  :: Lens' env String
    sqlLoginL :: Lens' env String
    sqlPwdL   :: Lens' env String
@@ -234,7 +242,7 @@ data InputOutputOpts = InputOutputOpts
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
-   { xdbName :: !String
+   { xdbName :: !(Maybe String)
    -- ^ Name of the database that is generated as part of the prototype
    , xsqlHost ::  !String
    -- ^ do database queries to the specified host
@@ -247,7 +255,7 @@ data ProtoOpts = ProtoOpts
    , x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts
    , xskipComposer :: !Bool
-   , xdirPrototype :: !FilePath
+   , xdirPrototype :: !(Maybe FilePath)
    , xdirCustomizations :: ![FilePath]
    , xzwolleVersion :: !String
    , xallowInvariantViolations :: !Bool

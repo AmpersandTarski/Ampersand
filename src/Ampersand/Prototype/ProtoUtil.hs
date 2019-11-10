@@ -12,6 +12,7 @@ module Ampersand.Prototype.ProtoUtil
          ) where
  
 import           Ampersand.Basics
+import           Ampersand.FSpec.FSpec (FSpec)
 import           Ampersand.Misc
 import qualified RIO.List as L
 import qualified RIO.Text as T
@@ -21,16 +22,14 @@ import           System.FilePath
 import           System.Process
 
 
-getGenericsDir :: HasDirPrototype a => a -> String
-getGenericsDir x = 
-  view dirPrototypeL x </> "generics" 
+
 
 writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
-                         String -> String -> RIO env ()
-writePrototypeAppFile relFilePath content = do
+                         FSpec -> String -> String -> RIO env ()
+writePrototypeAppFile fSpec relFilePath content = do
   env <- ask
   sayWhenLoudLn $ "  Generating "<>relFilePath 
-  let filePath = getAppDir env </> relFilePath
+  let filePath = getAppDir fSpec env </> relFilePath
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
   liftIO $ writeFile filePath content
      
@@ -130,14 +129,13 @@ showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
 
 
-installComposerLibs :: (HasDirPrototype env, HasLogFunc env) =>
-                       RIO env ()
-installComposerLibs = do
-    dirPrototype <- view dirPrototypeL 
+installComposerLibs :: (HasLogFunc env) => 
+                       FilePath -> RIO env ()
+installComposerLibs installTarget = do
     curPath <- liftIO $ getCurrentDirectory
     sayWhenLoudLn $ "current directory: "++curPath
     sayWhenLoudLn "  Trying to download and install Composer libraries..."
-    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc dirPrototype)""
+    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode myProc ""
     case exit_code of
       SE.ExitSuccess   -> do sayWhenLoudLn $
                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
@@ -145,9 +143,9 @@ installComposerLibs = do
       SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where
-     myProc :: FilePath -> CreateProcess
-     myProc composerTargetPath = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<> composerTargetPath
+     myProc :: CreateProcess
+     myProc = CreateProcess 
+       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<> installTarget
        , cwd = Nothing
        , env = Nothing
        , std_in = Inherit
@@ -163,13 +161,11 @@ installComposerLibs = do
        , child_user = Nothing
        , use_process_jobs = False
        }
-     failOutput :: (HasDirPrototype env) =>
-                   (ExitCode, String, String) -> RIO env ()
+     failOutput :: (ExitCode, String, String) -> RIO env ()
      failOutput (exit_code, stdout', stderr') = do
-        composerTargetPath <- view dirPrototypeL 
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
-            , "composerTargetPath: "++composerTargetPath
+            , "composerTargetPath: "++installTarget
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
             (if null stdout' then [] else "stdout:" : lines stdout') ++

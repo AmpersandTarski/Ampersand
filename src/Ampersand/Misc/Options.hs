@@ -40,7 +40,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , validateSQL :: Bool
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
-                       , dirPrototype :: String  -- the directory to generate the prototype in.
+                       , dirPrototype :: Maybe FilePath  -- the directory to generate the prototype in.
                        , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , runComposer :: Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
@@ -314,7 +314,7 @@ getOptions' envOpts =
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfileAdl       = "Export.adl"
                       , outputfileDataAnalysis  = "DataModel.adl"
-                      , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto"
+                      , dirPrototype     = Just (fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto")
                       , zwolleVersion    = "v1.3.1"
                       , dirCustomizations = ["customizations"]
                       , runComposer      = True -- by default run Composer (php package manager) when deploying prototype for backward compatibility
@@ -459,7 +459,7 @@ options = [ (Option ['v']   ["version"]
                "Compare results of rule evaluation in Haskell and SQL, for testing expression semantics. This requires command line php with MySQL support."
             , Hidden)
           , (Option ['p']     ["proto"]
-               (OptArg (\nm opts -> opts {dirPrototype = fromMaybe (dirPrototype opts) nm
+               (OptArg (\nm opts -> opts {dirPrototype = nm
                                          ,genPrototype = True}
                        ) "DIRECTORY")
                ("generate a functional prototype, so you can experiment with the information system specified in your script. This overrules environment variable "++ dirPrototypeVarName ++ ").")

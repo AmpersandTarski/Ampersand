@@ -11,8 +11,8 @@ import           Ampersand.Options.FSpecGenOptsParser
 import           Data.List.Split (splitWhen)
 
 -- | Command-line parser for the proto command.
-protoOptsParser :: String -> Parser ProtoOpts
-protoOptsParser defDBName = 
+protoOptsParser :: Parser ProtoOpts
+protoOptsParser = 
    ( \dbName sqlHost sqlLogin sqlPwd forceReinstall 
         outputLanguage fSpecGenOpts 
         skipComposer dirPrototype dirCustomizations 
@@ -30,19 +30,17 @@ protoOptsParser defDBName =
             , xzwolleVersion = zwolleVersion
             , xallowInvariantViolations = allowInvariantViolations
             }) 
-  <$> dbNameP defDBName<*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
+  <$> optional dbNameP <*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
-  <*> skipComposerP <*> dirPrototypeP defDBName <*> dirCustomizationsP
+  <*> skipComposerP <*> optional dirPrototypeP <*> dirCustomizationsP
   <*> zwolleVersionP <*> allowInvariantViolationsP
 
-dbNameP :: String -> Parser String
-dbNameP defDBName= strOption
+dbNameP :: Parser String
+dbNameP = strOption
         ( long "dbName"
         <> short 'd'
         <> metavar "DATABASENAME"
-        <> value defDBName
-        <> showDefault
-        <> help "Name of the schema of the database that is generated as part of the prototype." )
+        <> help "Name of the schema of the database that is generated as part of the prototype. (defaults to name of your context)" )
 sqlHostP :: Parser String
 sqlHostP =  strOption
         ( long "sqlHost"
@@ -76,13 +74,11 @@ skipComposerP = switch
         <> help ("Skip installing php dependencies (using Composer) "
                 <>"for prototype framework.")
         )
-dirPrototypeP :: String -> Parser String
-dirPrototypeP defDBName = strOption
+dirPrototypeP :: Parser String
+dirPrototypeP = strOption
         ( long "output-directory"
         <> metavar "DIRECTORY"
-        <> value (defDBName<>".proto")
-        <> showDefault
-        <> help ("Specify the directory where the prototype will be generated.")
+        <> help ("Specify the directory where the prototype will be generated. (defaults to ??)") --TODO: Fill in the ?? part.
         )
 dirCustomizationsP :: Parser [String]
 dirCustomizationsP = (splitWhen (== ';') <$> strOption

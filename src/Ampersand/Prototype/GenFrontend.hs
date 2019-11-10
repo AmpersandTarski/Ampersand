@@ -69,25 +69,27 @@ doGenFrontend fSpec = do
     now <- getCurrentTime
     skipComposer <- view skipComposerL
     sayWhenLoudLn "Generating frontend..."
-    isCleanInstall <- downloadPrototypeFramework
-    copyTemplates
+    isCleanInstall <- downloadPrototypeFramework fSpec
+    copyTemplates fSpec
     feInterfaces <- buildInterfaces fSpec
     genViewInterfaces fSpec feInterfaces
     genControllerInterfaces fSpec feInterfaces
     genRouteProvider fSpec feInterfaces
-    writePrototypeAppFile ".timestamp" (show . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
-    copyCustomizations 
+    writePrototypeAppFile fSpec ".timestamp" (show . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
+    copyCustomizations fSpec 
     when (isCleanInstall && not skipComposer) $ do
       sayLn "Installing dependencies..." -- don't use sayWhenLoudLn here, because installing dependencies takes some time and we want the user to see this
-      installComposerLibs
+      env <- ask 
+      let dirPrototype = getDirPrototype fSpec env
+      installComposerLibs dirPrototype
     sayWhenLoudLn "Frontend generated"
   
 copyTemplates :: (HasRootFile env, HasDirPrototype env, HasLogFunc env) =>
-                 RIO env ()
-copyTemplates = do
+                 FSpec -> RIO env ()
+copyTemplates fSpec = do
   env <- ask
   let tempDir = dirSource env </> "templates"
-      toDir = getTemplateDir env
+      toDir = getTemplateDir fSpec env
   tempDirExists <- liftIO $ doesDirectoryExist tempDir
   if tempDirExists then do
          sayWhenLoudLn $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
@@ -96,11 +98,11 @@ copyTemplates = do
          sayWhenLoudLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
 
 copyCustomizations :: (HasDirPrototype env, HasRootFile env,HasDirCustomizations env,HasLogFunc env) =>
-                      RIO env ()
-copyCustomizations = do
+                      FSpec -> RIO env ()
+copyCustomizations fSpec = do
   env <- ask
   dirCustomizations <- view dirCustomizationsL
-  dirPrototype <- view dirPrototypeL
+  let dirPrototype = getDirPrototype fSpec env
   let custDirs = map (dirSource env</>) dirCustomizations
   mapM_ (copyDir dirPrototype) custDirs
     where
@@ -196,7 +198,7 @@ buildInterface fSpec allIfcs ifc = do
                        -- no view, or no view with an html template, so we fall back to target-concept template
                        -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
                       let templatePath = "Atomic-" ++ (idWithoutType tgt) ++ ".html"
-                      hasSpecificTemplate <- doesTemplateExist templatePath
+                      hasSpecificTemplate <- doesTemplateExist fSpec templatePath
                       return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
             return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
                    , iExp)
@@ -259,14 +261,14 @@ genRouteProvider :: (HasRunner env, HasDirPrototype env) =>
 genRouteProvider fSpec ifcs = do
   runner <- view runnerL
   let loglevel' = logLevel runner
-  template <- readTemplate "routeProvider.config.js"
+  template <- readTemplate fSpec "routeProvider.config.js"
   let contents = renderTemplate template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" ampersandVersionStr
                  . setAttribute "ifcs"                ifcs
                  . setAttribute "verbose"             (loglevel' == LevelDebug)
                  . setAttribute "loglevel"            (show loglevel')
-  writePrototypeAppFile "routeProvider.config.js" contents 
+  writePrototypeAppFile fSpec "routeProvider.config.js" contents 
       
 ------ Generate view html code
 
@@ -280,7 +282,7 @@ genViewInterface fSpec interf = do
   runner <- view runnerL
   let loglevel' = logLevel runner
   lns <- genViewObject fSpec 0 (_ifcObj interf)
-  template <- readTemplate "interface.html"
+  template <- readTemplate fSpec "interface.html"
   let contents = renderTemplate template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                   . setAttribute "isTopLevel"          ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -299,7 +301,7 @@ genViewInterface fSpec interf = do
                   . setAttribute "verbose"             (loglevel' == LevelDebug)
                   . setAttribute "loglevel"            (show loglevel')
   let filename = "ifc" ++ ifcName interf ++ ".view.html" 
-  writePrototypeAppFile filename contents 
+  writePrototypeAppFile fSpec filename contents 
   
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr2 = SubObjAttr{ subObjName :: String
@@ -341,7 +343,7 @@ genViewObject fSpec depth obj =
               -- sayLn $ nm ++ ":" ++ show mPrimTemplate
               conceptTemplate <- getTemplateForObject
               let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
-              template <- readTemplate templateFilename
+              template <- readTemplate fSpec templateFilename
                         
               return . indentation
                      . lines 
@@ -354,7 +356,7 @@ genViewObject fSpec depth obj =
               subObjAttrs <- mapM genView_SubObject subObjs
                         
               let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" ++ cl ++ ".html") mClass
-              parentTemplate <- readTemplate clssStr
+              parentTemplate <- readTemplate fSpec clssStr
                 
               return . indentation
                      . lines 
@@ -392,7 +394,7 @@ genViewObject fSpec depth obj =
     getTemplateForConcept :: (HasDirPrototype env) =>
                              A_Concept -> RIO env FilePath
     getTemplateForConcept cpt = do 
-         exists <- doesTemplateExist cptfn
+         exists <- doesTemplateExist fSpec cptfn
          return $ if exists
                   then cptfn
                   else "Atomic-"++show ttp++".html" 
@@ -407,7 +409,7 @@ genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 genControllerInterface :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genControllerInterface fSpec interf = do
     let controlerTemplateName = "interface.controller.js"
-    template <- readTemplate controlerTemplateName
+    template <- readTemplate fSpec controlerTemplateName
     runner <- view runnerL
     let loglevel' = logLevel runner
     let contents = renderTemplate template $
@@ -429,24 +431,24 @@ genControllerInterface fSpec interf = do
                      . setAttribute "loglevel"                 (show loglevel')
                      . setAttribute "usedTemplate"             controlerTemplateName
     let filename = "ifc" ++ ifcName interf ++ ".controller.js"
-    writePrototypeAppFile filename contents 
+    writePrototypeAppFile fSpec filename contents 
 
 ------ Utility functions
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate String) String
 
 -- TODO: better abstraction for specific template and fallback to default
-doesTemplateExist :: (HasDirPrototype env) => String -> RIO env Bool
-doesTemplateExist templatePath = do
+doesTemplateExist :: (HasDirPrototype env) => FSpec -> FilePath -> RIO env Bool
+doesTemplateExist fSpec templatePath = do
   env <- ask
-  let absPath = getTemplateDir env </> templatePath
+  let absPath = getTemplateDir fSpec env </> templatePath
   liftIO $ doesFileExist absPath
 
 readTemplate :: (HasDirPrototype env) =>
-                FilePath -> RIO env Template
-readTemplate templatePath = do
+                FSpec -> FilePath -> RIO env Template
+readTemplate fSpec templatePath = do
   env <- ask
-  let absPath = getTemplateDir env </> templatePath
+  let absPath = getTemplateDir fSpec env </> templatePath
   res <- readUTF8File absPath
   case res of
     Left err   -> exitWith $ ReadFileError $ "Error while reading template.\n" : err
@@ -471,15 +473,16 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 downloadPrototypeFramework :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
-                             RIO env Bool
-downloadPrototypeFramework = ( do 
-    destination <- view dirPrototypeL
-    x <- extractionIsAllowed destination
+                             FSpec -> RIO env Bool
+downloadPrototypeFramework fSpec = ( do 
+    env <- ask
+    let dirPrototype = getDirPrototype fSpec env
+    x <- extractionIsAllowed dirPrototype
     zwolleVersion <- view zwolleVersionL
     if x
     then do
       sayWhenLoudLn "Emptying folder to deploy prototype framework"
-      liftIO $ removeDirectoryRecursive destination
+      liftIO $ removeDirectoryRecursive dirPrototype
       let url = "https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion++".zip"
       sayWhenLoudLn "Start downloading prototype framework."
       response <- (parseRequest url >>= httpBS) `catch` \err ->  
@@ -496,14 +499,14 @@ downloadPrototypeFramework = ( do
       runner <- view runnerL
       let zipoptions = 
                [OptVerbose | logLevel runner == LevelDebug]
-            ++ [OptDestination destination]
+            ++ [OptDestination dirPrototype]
       ((liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
                               , "  Failed to extract the archive found at "<>url
                               , show (err :: SomeException)
                               ])
-      let dest = destination </> ".frameworkSHA"  
+      let dest = dirPrototype </> ".frameworkSHA"  
       ((liftIO . writeFile dest . show . zComment $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"

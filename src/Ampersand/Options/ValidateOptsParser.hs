@@ -9,11 +9,11 @@ import           Ampersand.Basics
 import           Ampersand.Options.ProtoOptsParser
 
 -- | Command-line parser for ProofOpts.
-validateOptsParser :: String -> Parser ValidateOpts
-validateOptsParser out = 
+validateOptsParser :: Parser ValidateOpts
+validateOptsParser= 
      ( \fSpecGenOpts -> ValidateOpts
        { protoOpts = fSpecGenOpts
        }
-     ) <$> protoOptsParser out
+     ) <$> protoOptsParser
 
 

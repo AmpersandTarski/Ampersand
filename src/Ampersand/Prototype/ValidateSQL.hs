@@ -100,7 +100,7 @@ validateExp fSpec (vExp, i) =
             return (vExp, True)
         (expr, orig) -> do
             env <- ask
-            violationsSQL <- evaluateExpSQL fSpec (tempDbName env) expr
+            violationsSQL <- evaluateExpSQL fSpec (tempDbName fSpec env) expr
             let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
             if L.sort violationsSQL == L.sort violationsAmp
             then do

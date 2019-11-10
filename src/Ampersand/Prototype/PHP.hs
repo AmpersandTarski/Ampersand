@@ -119,8 +119,10 @@ showPHP :: [T.Text] -> T.Text
 showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
-tempDbName :: HasProtoOpts a => a -> T.Text
-tempDbName x = "TempDB_"<>T.pack (view dbNameL x)
+tempDbName :: HasProtoOpts a => FSpec -> a -> T.Text
+tempDbName fSpec x = "TempDB_"<>case T.pack <$> view dbNameL x of
+                                  Nothing -> T.pack (name fSpec)
+                                  Just nm -> nm
 
 connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe T.Text-> [T.Text]
 connectToMySqlServerPHP x mDbName =
@@ -209,7 +211,7 @@ createTempDatabase fSpec = do
     , "       if(!$result)"
     , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
     , ""
-    , "$DB_name='"<>tempDbName env <>"';"
+    , "$DB_name='"<>tempDbName fSpec env <>"';"
     , "// Drop the database if it exists"
     , "$sql="<>queryAsPHP dropDB<>";"
     , "mysqli_query($DB_link,$sql);"
@@ -245,10 +247,10 @@ createTempDatabase fSpec = do
     where
       dropDB :: SqlQuery 
       dropDB = SqlQuerySimple $
-           "DROP DATABASE "<>(singleQuote $ tempDbName env)
+           "DROP DATABASE "<>(singleQuote $ tempDbName fSpec env)
       createDB :: SqlQuery
       createDB = SqlQuerySimple $
-           "CREATE DATABASE "<>(singleQuote $ tempDbName env)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
+           "CREATE DATABASE "<>(singleQuote $ tempDbName fSpec env)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []

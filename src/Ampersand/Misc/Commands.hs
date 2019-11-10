@@ -125,7 +125,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
       addCommand'' Proto
                   "Generate a prototype from your specification."
                   protoCmd
-                  (protoOptsParser "DEFAULTDATABASENAME")
+                  protoOptsParser
       addCommand'' PPrint
                   "Generate a single .adl file of your script (prettyprinted)"
                   pprintCmd
@@ -139,7 +139,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
                    "testing expression semantics. This requires command line php with"<>
                    "MySQL support.")
                   validateCmd
-                  (validateOptsParser "DEFAULTDATABASENAME")
+                  validateOptsParser
       addCommand'' Test
                   ("Run testsuites in a given directory. This is ment to do regression testing" <>
                    " during automatic build (e.g. Travis-ci)")

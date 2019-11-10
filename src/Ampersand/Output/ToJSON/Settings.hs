@@ -24,7 +24,9 @@ instance JSON FSpec Settings where
  fromAmpersand env fSpec _ = Settings 
   { sngJSONglobal_contextName = T.unpack (fsName fSpec)
   , sngJSONmysql_dbHost       = view sqlHostL env
-  , sngJSONmysql_dbName       = view dbNameL env
+  , sngJSONmysql_dbName       = case view dbNameL env of
+                                  Nothing -> name fSpec
+                                  Just nm -> nm
   , sngJSONmysql_dbUser       = view sqlLoginL env
   , sngJSONmysql_dbPass       = view sqlPwdL env
   , sngJSONcompiler_version   = ampersandVersionStr

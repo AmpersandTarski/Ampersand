@@ -24,7 +24,8 @@ import           Ampersand.Output.ToJSON.ToJson
 proto :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env) 
        => FSpec -> RIO env ()
 proto fSpec = do
-    dirPrototype <- view dirPrototypeL
+    env <- ask
+    let dirPrototype = getDirPrototype fSpec env
     allowInvariantViolations <- view allowInvariantViolationsL
     if null (violationsOfInvariants fSpec) || allowInvariantViolations
     then do
