@@ -14,6 +14,7 @@ import           Ampersand.Options.Utils
 import           Generics.Deriving.Monoid (memptydefault, mappenddefault)
 import           Options.Applicative
 import           Options.Applicative.Builder.Extra
+import           Data.Monoid          (First (..)) -- , Any (..), Sum (..), Endo (..))
 --import           Options.Applicative.Builder.Internal
 --import           Options.Applicative.Help (errorHelp, stringChunk, vcatChunks)
 --import           Options.Applicative.Types

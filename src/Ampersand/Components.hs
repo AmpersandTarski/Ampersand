@@ -18,9 +18,8 @@ import           Ampersand.Misc
 import           Ampersand.Output
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import qualified RIO.ByteString.Lazy as BL
-import           Data.Function (on)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+--import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           RIO.Time (getCurrentTime)

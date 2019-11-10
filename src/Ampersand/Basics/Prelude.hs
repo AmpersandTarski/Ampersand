@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.Prelude
-  ( module Prelude
-  , module X
+  ( module RIO
+--  , module Data.Monoid
   , say', sayLn
   , sayWhenLoudLn
   , writeFile
@@ -11,16 +11,16 @@ module Ampersand.Basics.Prelude
   , Verbosity (..)
   , FirstTrue (..)
   , fromFirstTrue
+  , reads, getChar
   , defaultFirstTrue
   , FirstFalse (..)
   , fromFirstFalse
   , defaultFirstFalse
   )where
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
-import           RIO                  as X
+import RIO hiding (zipWith,exitWith)
 import System.IO (openTempFile, stderr)
 import qualified RIO.Text as T
-import           Data.Monoid          as X (First (..), Any (..), Sum (..), Endo (..))
 
 
 
