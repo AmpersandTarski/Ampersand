@@ -44,13 +44,17 @@ doTestSet indnt dir fs
               Left err -> do sayLn $ indent ++ dir </> yaml ++" could not be parsed."
                              sayLn $ indent ++ prettyPrintParseException err
                              return 1
-              Right ti -> do sayLn $ indent ++ "Command: "++command ti++if shouldSucceed ti then " (should succeed)." else " (should fail)."
+              Right ti -> do sayLn $ indent ++ "Instructions: "
+                             mapM_ sayInstruction (testCmds ti)
+                             -- ++command ti++if shouldSucceed ti then " (should succeed)." else " (should fail)."
                              liftIO $ runConduit $ runTests ti .| getResults
   | otherwise =
        do sayLn $ indent ++ "Nothing to do. ("++yaml++" not present)"
           return 0
 
   where
+    sayInstruction :: HasLogFunc env => TestInstruction -> RIO env ()
+    sayInstruction x = sayLn $ indent ++ "  Command: "++command x++if shouldSucceed x then " (should succeed)." else " (should fail)."
     parseYaml ::  RIO env (Either ParseException TestInfo) 
     parseYaml = liftIO $ decodeFileEither $ dir </> yaml
     runTests :: TestInfo -> ConduitM () Int IO () 
@@ -62,10 +66,11 @@ doTestSet indnt dir fs
         doATest :: ConduitT FilePath Int IO ()
         doATest = awaitForever dotheTest
           where 
-             dotheTest file = 
-                do liftIO $ runSimpleApp $ sayLn $ indent<>"Start testing of `"<>file<>"`: "
-                   res <- liftIO $ testAdlfile (indnt + 2) dir file ti
-                   yield (if res then 0 else 1) 
+            dotheTest :: FilePath -> ConduitT FilePath Int IO ()
+            dotheTest file = do 
+              liftIO $ runSimpleApp $ sayLn $ indent<>"Start testing of `"<>file<>"`: "
+              res <- mapM (liftIO . testAdlfile (indnt + 2) dir file) (testCmds ti)
+              yield (length . filter not $ res) -- return the number of failed testcommands
     getResults :: ConduitT Int Void IO Int
     getResults = loop 0 
      where
@@ -78,15 +83,18 @@ doTestSet indnt dir fs
 -- This data structure is directy available in .yaml files. Be aware that modification will have consequences for the 
 -- yaml files in the test suite.
 data TestInfo = TestInfo 
-   { command  :: String
-   , shouldSucceed :: Bool 
+   { testCmds :: [TestInstruction]
    }deriving Generic
 instance FromJSON TestInfo
-
+data TestInstruction = TestInstruction 
+   { command :: String
+   , shouldSucceed :: Bool
+   } deriving Generic
+instance FromJSON TestInstruction
 testAdlfile :: Int       -- Number of spaces to indent (for output during testing)
              -> FilePath -- the filepath of the directory where the test should be done
              -> FilePath -- the script that is undergoing the test
-             -> TestInfo --The testinfo, so it is known how to test the script
+             -> TestInstruction --The instruction to test, so it is known how to test the script
              -> IO Bool  -- Indicator telling if the test passed or not
 testAdlfile indnt path adl tinfo = runMyProc myProc
    where

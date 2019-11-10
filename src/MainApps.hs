@@ -17,11 +17,10 @@ import           Ampersand.Types.Config
 import           Conduit
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import           System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist, makeAbsolute)
+import           System.Directory
 import           System.Environment    (getArgs, getProgName)
 import           System.FilePath ((</>))
 import           System.IO.Error (tryIOError)
-import qualified System.Directory as D
   
 ampersand :: IO ()
 ampersand = do
@@ -32,7 +31,7 @@ ampersand = do
 
 ampersandOptionsHandler :: String -> [String] -> IO (Either ExitCode (GlobalOptsMonoid, RIO Runner ()))
 ampersandOptionsHandler progName args = do
-  currentDir <- D.getCurrentDirectory
+  currentDir <- getCurrentDirectory
   runSimpleApp $ logDebug . display $ "args: "<>(T.pack $ show args)
   try $ commandLineHandler currentDir progName args
 
@@ -128,8 +127,8 @@ preProcessor' =
                Right cont -> return cont
         sayLn $ either show id (preProcess' filename (Set.fromList defs) (T.unpack content))
 
-mainTest' :: IO ()
-mainTest' = do
+mainTest :: IO ()
+mainTest = do
   progName <- getProgName
   let args = ["test"]
   work <- ampersandOptionsHandler progName args
@@ -137,8 +136,8 @@ mainTest' = do
 --   env <- defEnv
 --   runRIO env mainTest'
 
-mainTest :: (HasRunner env) => RIO env ()
-mainTest = do 
+mainTest' :: (HasRunner env) => RIO env ()
+mainTest' = do 
     sayLn "Starting Quickcheck tests."
     funcs <- testFunctions
     testAmpersandScripts
