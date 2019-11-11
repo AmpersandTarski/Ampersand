@@ -166,8 +166,8 @@ mainTest' = do
                    )
                  ]
 
-regressionTest' :: IO ()
-regressionTest' = do
+regressionTest :: IO ()
+regressionTest = do
   progName <- getProgName
   let args = ["test"]
   work <- ampersandOptionsHandler progName args
@@ -176,8 +176,8 @@ regressionTest' = do
 --   runRIO env regressionTest'
 
 
-regressionTest :: (HasRunner env) => RIO env ()
-regressionTest = do 
+regressionTest' :: (HasRunner env) => RIO env ()
+regressionTest' = do 
     sayLn $ "Starting regression test."
     baseDir <- liftIO . makeAbsolute $ "." </> "testing"
     totalfails <- runConduit $ walk baseDir .| myVisitor .| sumarize
