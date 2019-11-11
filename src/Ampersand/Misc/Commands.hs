@@ -329,7 +329,10 @@ testCmd testOpts =
     extendWith testOpts $ aap
     where
       aap :: RIO (ExtendedRunner TestOpts) ()
-      aap = undefined
+      aap = do
+        env <- ask
+        sayLn "`test` command is not implemented yet."
+        sayLn $ "  env: "<>show env
 dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
 dataAnalysisCmd opts = 
     extendWith opts $ do

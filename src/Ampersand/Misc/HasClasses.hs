@@ -277,17 +277,17 @@ data DocOpts = DocOpts
    -- ^ Language of the output document
    , xgenLegalRefs :: !Bool
    -- ^ enable/disable generation of legal references in the documentation
-   }
+   } deriving Show
 -- | Options for @ampersand population@
 data PopulationOpts = PopulationOpts
    { x5fSpecGenOpts :: !FSpecGenOpts
    -- ^ Options required to build the fSpec
-   }
+   } deriving Show
 -- | Options for @ampersand proofs@
 data ProofOpts = ProofOpts
    { x6fSpecGenOpts :: !FSpecGenOpts
    -- ^ Options required to build the fSpec
-   }
+   } deriving Show
 -- | Options for @ampersand init@
 data InitOpts = InitOpts
    deriving Show
@@ -297,23 +297,23 @@ data UmlOpts = UmlOpts
    -- ^ Options required to build the fSpec
    , x4OutputLanguage :: !(Maybe Lang)
    -- ^ Language of the output document
-   }
+   } deriving Show
 -- | Options for @ampersand validate@
 data ValidateOpts = ValidateOpts
    { protoOpts :: !ProtoOpts
    -- ^ Options required to build the fSpec
    --, x5OutputLanguage :: !(Maybe Lang)
    -- ^ Language of the output document
-   }
+   } deriving Show
 -- | Options for @ampersand devoutput@
 data DevOutputOpts = DevOutputOpts
    { x8fSpecGenOpts :: !FSpecGenOpts
    -- ^ Options required to build the fSpec
    , x5outputFile :: !FilePath --relative path  
-   }
+   } deriving Show
 data TestOpts = TestOpts
    { rootTestDir :: !FilePath --relative path to directory containing test scripts
-   }
+   } deriving Show
 data Chapter = Intro
              | SharedLang
              | Diagnosis

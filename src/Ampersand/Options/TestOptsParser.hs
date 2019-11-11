@@ -6,7 +6,6 @@ where
 import           Ampersand.Basics
 import           Ampersand.Misc.HasClasses (TestOpts (..))
 import           Options.Applicative
-import           Ampersand.Options.FSpecGenOptsParser
 
 -- | Command-line parser for DevOutputOpts.
 testOptsParser :: FilePath -> Parser TestOpts

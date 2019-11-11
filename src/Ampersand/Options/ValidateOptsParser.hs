@@ -5,7 +5,6 @@ where
 
 import           Options.Applicative
 import           Ampersand.Misc.HasClasses (ValidateOpts (..))
-import           Ampersand.Basics
 import           Ampersand.Options.ProtoOptsParser
 
 -- | Command-line parser for ProofOpts.
