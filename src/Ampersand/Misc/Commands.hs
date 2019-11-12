@@ -20,6 +20,7 @@ import           Ampersand.Commands.ExportAsADL
 import           Ampersand.Commands.Init
 import           Ampersand.Commands.Population
 import           Ampersand.Commands.Proof
+import           Ampersand.Commands.Test
 import           Ampersand.Commands.Uml
 import           Ampersand.Commands.Validate
 import           Ampersand.FSpec.ToFSpec.CreateFspec
@@ -326,13 +327,7 @@ protoCmd protoOpts =
         doOrDie mFSpec proto
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
-    extendWith testOpts $ aap
-    where
-      aap :: RIO (ExtendedRunner TestOpts) ()
-      aap = do
-        env <- ask
-        sayLn "`test` command is not implemented yet."
-        sayLn $ "  env: "<>show env
+    extendWith testOpts test
 dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
 dataAnalysisCmd opts = 
     extendWith opts $ do

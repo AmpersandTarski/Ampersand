@@ -182,6 +182,11 @@ class HasPopulationOpts env where
    populationOptsL :: Lens' env PopulationOpts
 class HasValidateOpts env where
    validateOptsL :: Lens' env ValidateOpts
+class HasTestOpts env where
+   testOptsL :: Lens' env TestOpts
+instance HasTestOpts TestOpts where
+   testOptsL = id
+   {-# INLINE testOptsL #-}
 
 -- | Options for @ampersand daemon@.
 data DaemonOpts = DaemonOpts

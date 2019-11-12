@@ -2,7 +2,7 @@
 module Ampersand.Test.Regression 
   ( DirContent(..)
   , DirData(..)
-  , process
+  , doRegressionTest
   )
 where 
 import Ampersand.Basics
@@ -17,13 +17,12 @@ import Data.Yaml
 data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
                 | DirError IOException               
 data DirData = DirData FilePath DirContent       -- path and content of a directory
---data DirInfo = DirInfo FilePath [FilePath] TestInfo       -- list of testscripts and information on how to test them
 
 
 -- | process does the tests for a specific DirData. Currently, 
 --   only the amount of failed tests is returned. 
-process :: Int -> DirData -> RIO env Int 
-process indnt (DirData path dirContent) =
+doRegressionTest :: Int -> DirData -> RIO env Int 
+doRegressionTest indnt (DirData path dirContent) =
   case dirContent of
     DirError err     -> runSimpleApp $ do
         sayLn $ "I've tried to look in " ++ path ++ "."
@@ -32,12 +31,12 @@ process indnt (DirData path dirContent) =
         return 1
     DirList _ files -> runSimpleApp $ do
         sayLn $ path ++" : "
-        doTestSet indnt path files
+        doSingleTestSet indnt path files
  
 yaml :: String
 yaml = "testinfo.yaml"  -- the required name of the file that contains the test info for this directory.
-doTestSet :: HasLogFunc env => Int -> FilePath -> [FilePath] -> RIO env Int
-doTestSet indnt dir fs 
+doSingleTestSet :: HasLogFunc env => Int -> FilePath -> [FilePath] -> RIO env Int
+doSingleTestSet indnt dir fs 
   | yaml `elem` fs = 
        do res <- parseYaml
           case res of 

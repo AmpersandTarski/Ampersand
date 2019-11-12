@@ -6,7 +6,6 @@ module MainApps(
   , ampersand
   , preProcessor
   , mainTest
-  , regressionTest
 ) where
 
 import           Ampersand
@@ -14,13 +13,10 @@ import           Ampersand.Input.PreProcessor
 import           Ampersand.Options.GlobalParser
 import           Ampersand.Runners
 import           Ampersand.Types.Config
-import           Conduit
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           System.Directory
 import           System.Environment    (getArgs, getProgName)
-import           System.FilePath ((</>))
-import           System.IO.Error (tryIOError)
   
 ampersand :: IO ()
 ampersand = do
@@ -130,111 +126,9 @@ preProcessor' =
 mainTest :: IO ()
 mainTest = do
   progName <- getProgName
-  let args = ["test"]
+  let args = ["test", "testing"]
   work <- ampersandOptionsHandler progName args
   ampersandWorker work
 --   env <- defEnv
 --   runRIO env mainTest'
-
-mainTest' :: (HasRunner env) => RIO env ()
-mainTest' = do 
-    sayLn "Starting Quickcheck tests."
-    funcs <- testFunctions
-    testAmpersandScripts
-    tests funcs
-  where 
-      tests :: (HasLogFunc env) => [([String], RIO env Bool)] -> RIO env ()
-      tests [] = pure ()
-      tests ((msg,tst):xs) = do
-          mapM_ sayLn msg
-          success <- tst
-          if success then tests xs
-          else exitWith (SomeTestsFailed ["*** Some tests failed***"])
-               
-
-      testFunctions :: (HasRunner env) => RIO env [([String], RIO env Bool)]
-      testFunctions = do
-          scr <- getTestScripts
-          (parserCheckResult, msg) <- parserQuickChecks
-          return [ (["Parsing " ++ show (length scr) ++ " scripts."], parseScripts scr)
-                 , ( if parserCheckResult  
-                     then ["Parser & prettyprinter test PASSED."]
-                     else (  ["QuickCheck found errors in the roundtrip in parsing/prettyprinting for the following case:"]
-                           ++map ("\n   "++) (lines msg)
-                          )
-                   , return parserCheckResult
-                   )
-                 ]
-
-regressionTest :: IO ()
-regressionTest = do
-  progName <- getProgName
-  let args = ["test"]
-  work <- ampersandOptionsHandler progName args
-  ampersandWorker work
---   env <- defEnv
---   runRIO env regressionTest'
-
-
-regressionTest' :: (HasRunner env) => RIO env ()
-regressionTest' = do 
-    sayLn $ "Starting regression test."
-    baseDir <- liftIO . makeAbsolute $ "." </> "testing"
-    totalfails <- runConduit $ walk baseDir .| myVisitor .| sumarize
-    if totalfails == 0
-    then sayLn $ "Regression test of all scripts succeeded."
-    else exitWith (SomeTestsFailed ["Regression test failed! ("++show totalfails++" tests failed.)"])
-  where   
-
-    -- Produces directory data
-    walk :: FilePath -> ConduitT () DirData (RIO env) ()
-    walk path = do 
-        result <- liftIO $ tryIOError (liftIO listdir)
-        case result of
-          Right dl
-              -> case dl of 
-                   DirList subdirs _
-                    -> do
-                        yield (DirData path dl)
-                        forM_ subdirs (walk . (path </>))
-                   DirError err 
-                    -> yield (DirData path (DirError err))
-          Left err
-              -> yield (DirData path (DirError err))
-
-      where
-        listdir = do
-            entries <- getDirectoryContents path >>= filterHidden
-            subdirs <- filterM isDir entries
-            files <- filterM isFile entries
-            return $ DirList subdirs files
-            where 
-                isFile entry = doesFileExist (path </> entry)
-                isDir entry = doesDirectoryExist (path </> entry)
-                filterHidden paths = return $ filter (not.isHidden) paths
-                isHidden ('.':_) = True
-                isHidden _       = False
-                
-    -- Convert a DirData into an Int that contains the number of failed tests
-    myVisitor :: (HasLogFunc env) => ConduitT DirData Int (RIO env) ()
-    myVisitor = loop 1
-      where
-        loop :: (HasLogFunc env) => Int -> ConduitT DirData Int (RIO env) ()
-        loop n = awaitForever $
-            (\dird -> do 
-                lift $ sayLn $ ">> " ++ show n ++ ". "
-                x <- lift $ process 4 dird     
-                yield x
-                loop (n + 1)
-            ) 
-                    
-
-    sumarize :: ConduitT Int Void (RIO env) Int
-    sumarize = loop 0 
-      where
-        loop :: Int -> ConduitT Int Void (RIO env) Int
-        loop i = 
-          await >>= maybe (return i) 
-                          (\x -> loop $! (i+x))
-
 
