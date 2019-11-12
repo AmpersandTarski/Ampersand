@@ -230,14 +230,6 @@ executables:
         buildable: false
 
 tests:
-  regression-test:
-    main: Main.hs
-    source-dirs: app/RegressionTest
-    ghc-options: 
-      - -threaded
-    dependencies: 
-      ampersand
-
   ampersand-test:
     main: Main.hs
     source-dirs: app/Test
