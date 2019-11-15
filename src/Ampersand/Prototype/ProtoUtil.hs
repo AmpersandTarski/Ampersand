@@ -38,7 +38,13 @@ writePrototypeAppFile fSpec relFilePath content = do
 -- NOTE: tgtBase specifies the copied directory target, not its parent
 copyDirRecursively :: (HasLogFunc env) =>
                       FilePath -> FilePath -> RIO env ()
-copyDirRecursively srcBase tgtBase = copy ""
+copyDirRecursively srcBase tgtBase 
+  | srcBase == tgtBase = mapM_ sayLn
+        [ "Are you kidding me? I got the instruction to copy "
+        , "     "<>srcBase
+        , "  to itself!"
+        ]
+  | otherwise = copy ""
   where copy fileOrDirPth = do
           let srcPath = srcBase </> fileOrDirPth
               tgtPath = tgtBase </> fileOrDirPth
