@@ -44,16 +44,29 @@ copyDirRecursively srcBase tgtBase
         , "     "<>srcBase
         , "  to itself!"
         ]
-  | otherwise = copy ""
-  where copy fileOrDirPth = do
+  | otherwise = do
+        srcBaseA <- liftIO $ makeAbsolute srcBase 
+        tgtBaseA <- liftIO $ makeAbsolute tgtBase 
+        mapM_ sayWhenLoudLn 
+          [ "Recursively copying " 
+          , "     " <> srcBaseA 
+          , "  to " <> tgtBaseA
+          ]
+        copy ("." </> tgtBase) ""
+  where copy shouldSkip fileOrDirPth = do
           let srcPath = srcBase </> fileOrDirPth
               tgtPath = tgtBase </> fileOrDirPth
           isDir <- liftIO $ doesDirectoryExist srcPath
-          if isDir then do
-              liftIO $ createDirectoryIfMissing True tgtPath
-              sayWhenLoudLn $ " Copying dir... " ++ srcPath
-              fOrDs <- getProperDirectoryContents srcPath
-              mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
+          if isDir then 
+            if srcPath == shouldSkip
+              then do
+                sayWhenLoudLn $ "Skipping "<>srcPath<>" because it is the target directory of the recursive copy action."
+              else do  
+                sayWhenLoudLn $ " Copying dir... " ++ srcPath
+                sayWhenLoudLn $ "      to dir... " ++ tgtPath
+                fOrDs <- getProperDirectoryContents srcPath
+                liftIO $ createDirectoryIfMissing True tgtPath
+                mapM_ (\fOrD -> copy shouldSkip $ fileOrDirPth </> fOrD) fOrDs
           else do
               sayWhenLoudLn $ "  file... " ++ fileOrDirPth
               liftIO $ copyFile srcPath tgtPath
