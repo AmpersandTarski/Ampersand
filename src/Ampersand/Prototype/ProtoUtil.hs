@@ -39,7 +39,7 @@ writePrototypeAppFile fSpec relFilePath content = do
 copyDirRecursively :: (HasLogFunc env) =>
                       FilePath -> FilePath -> RIO env ()
 copyDirRecursively srcBase tgtBase 
-  | srcBase == tgtBase = mapM_ sayLn
+  | srcBase == tgtBase = mapM_ sayWhenLoudLn
         [ "Are you kidding me? I got the instruction to copy "
         , "     "<>srcBase
         , "  to itself!"
