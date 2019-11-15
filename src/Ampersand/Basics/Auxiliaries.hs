@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Basics.Auxiliaries 
         ( eqClass,eqClassNE,
           eqCl,eqClNE,
@@ -74,17 +75,17 @@ liftFst f (a,c) = (f a, c)
 liftSnd :: (a -> b) -> (c, a) -> (c, b)
 liftSnd f (c,a) = (c, f a)
 
-commaEng :: String -> [String] -> String
-commaEng str [a,b,c] = a++", "++b++", "++str++" "++c
-commaEng str [a,b]   = a++" "++str++" "++b
+commaEng :: (Semigroup str, IsString str) => str -> [str] -> str
+commaEng str [a,b,c] = a<>", "<>b<>", "<>str<>" "<>c
+commaEng str [a,b]   = a<>" "<>str<>" "<>b
 commaEng _   [a]     = a
-commaEng str (a:as)  = a++", "++commaEng str as
+commaEng str (a:as)  = a<>", "<>commaEng str as
 commaEng _   []      = ""
 
-commaNL :: String -> [String] -> String
-commaNL str [a,b]  = a++" "++str++" "++b
+commaNL :: (Semigroup str, IsString str) => str -> [str] -> str
+commaNL str [a,b]  = a<>" "<>str<>" "<>b
 commaNL  _  [a]    = a
-commaNL str (a:as) = a++", "++commaNL str as
+commaNL str (a:as) = a<>", "<>commaNL str as
 commaNL  _  []     = ""
 
 class Flippable a where
