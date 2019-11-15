@@ -1,2 +1,3 @@
-command : ampersand --proto --verbose
-shouldSucceed : false
+testCmds:
+  - command: ampersand proto --verbose --sqlLogin ="root" --sqlPwd=""
+    shouldSucceed: no

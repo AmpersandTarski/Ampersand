@@ -1,2 +1,1 @@
-command : ampersand --verbose
-shouldSucceed : yes
+--meta-tables

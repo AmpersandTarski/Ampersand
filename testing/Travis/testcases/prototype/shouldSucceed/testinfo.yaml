@@ -1,2 +1,5 @@
-command : ampersand --proto --verbose --validate --sqlLogin="root" --sqlPwd="" 
-shouldSucceed :  yes
+testCmds:
+  - command: ampersand validate --verbose --sqlLogin ="root" --sqlPwd=""
+    shouldSucceed: yes
+  - command: ampersand proto --verbose --sqlLogin ="root" --sqlPwd=""
+    shouldSucceed: yes

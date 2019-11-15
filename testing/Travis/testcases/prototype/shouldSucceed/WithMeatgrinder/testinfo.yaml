@@ -1,2 +1,4 @@
-command : ampersand --proto --verbose --validate --sqlLogin="root" --sqlPwd="" --meta-tables 
-shouldSucceed :  yes
+testCmds:
+# FIXME: The intention of this testcase is to test the meatgrinder. 
+  - command: ampersand something-with-meatgrinder proto --verbose --sqlLogin ="root" --sqlPwd=""
+    shouldSucceed: yes
