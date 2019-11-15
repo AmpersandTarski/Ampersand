@@ -34,7 +34,8 @@ proto fSpec = do
        doGenFrontend fSpec
        generateDatabaseFile fSpec
        generateJSONfiles False fSpec
-       sayWhenLoudLn $ "Prototype files have been written to " ++ dirPrototype
+       dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
+       sayWhenLoudLn $ "Prototype files have been written to " <> dirPrototypeA
     else exitWith NoPrototypeBecauseOfRuleViolations
 
 
