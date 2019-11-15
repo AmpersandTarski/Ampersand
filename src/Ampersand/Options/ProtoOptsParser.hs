@@ -100,7 +100,7 @@ zwolleVersionP = strOption
                 <>"can make good use of it. ")
         )
 allowInvariantViolationsP :: Parser Bool
-allowInvariantViolationsP = not <$> switch
+allowInvariantViolationsP = switch
         ( long "ignore-invariant-violations"
         <> help ("Allow to build a prototype, even if there are invariants "
                <>"that are being violated. (See "
