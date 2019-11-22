@@ -15,79 +15,61 @@ import           Ampersand.Misc
 import           Ampersand.Types.Config
 import           Ampersand.Test.Parser.QuickChecks
 import           Ampersand.Test.Regression
-import           Conduit
-import           System.Directory
-import           System.FilePath
-import           System.IO.Error (tryIOError)
-
 
 test :: (HasTestOpts env, HasRunner env) => RIO env ()
 test = do
   parserRoundtripTest
   regressionTest
 
-regressionTest :: (HasTestOpts env, HasRunner env) => RIO env ()
-regressionTest = do 
-    testOpts <- view testOptsL
-    sayLn $ "Starting regression test."
-    baseDir <- liftIO . makeAbsolute $ rootTestDir $ testOpts
-    totalfails <- runConduit $ walk baseDir .| myVisitor .| sumarize
-    if totalfails == 0
-    then sayLn $ "Regression test of all scripts succeeded."
-    else exitWith (SomeTestsFailed ["Regression test failed! ("++show totalfails++" tests failed.)"])
-  where   
+-- regressionTestOLD :: (HasTestOpts env, HasRunner env) => RIO env ()
+-- regressionTestOLD = do 
+--     testOpts <- view testOptsL
+--     sayLn $ "Starting regression test."
+--     baseDir <- liftIO . makeAbsolute $ rootTestDir $ testOpts
+--     totalfails <- runConduit $ walk 1 baseDir .| doTestsInDir .| sumarize
+--     if totalfails == 0
+--     then sayLn $ "Regression test of all scripts succeeded."
+--     else exitWith (SomeTestsFailed ["Regression test failed! ("++show totalfails++" tests failed.)"])
+--   where   
 
-    -- Produces directory data
-    walk :: FilePath -> ConduitT () DirData (RIO env) ()
-    walk path = do 
-        result <- liftIO $ tryIOError (liftIO listdir)
-        case result of
-          Right dl
-              -> case dl of 
-                   DirList subdirs _
-                    -> do
-                        yield (DirData path dl)
-                        forM_ subdirs (walk . (path </>))
-                   DirError err 
-                    -> yield (DirData path (DirError err))
-          Left err
-              -> yield (DirData path (DirError err))
+--     -- Produces directory data. Recursively walks over the
+--     -- directory tree and yields one Dirdata at a time.
+--     walk :: Int -> FilePath -> ConduitT () DirData (RIO env) ()
+--     walk nr path = do 
+--         result <- liftIO $ tryIOError (liftIO listdir)
+--         case result of
+--           Right dl
+--               -> case dl of 
+--                    DirList subdirs _
+--                     -> do
+--                         yield (DirData path dl)
+--                         forM_ subdirs (walk . (path </>))
+--                    DirError err 
+--                     -> yield (DirData path (DirError err))
+--           Left err
+--               -> yield (DirData path (DirError err))
 
-      where
-        listdir = do
-            entries <- getDirectoryContents path >>= filterHidden
-            subdirs <- filterM isDir entries
-            files <- filterM isFile entries
-            return $ DirList subdirs files
-            where 
-                isFile entry = doesFileExist (path </> entry)
-                isDir entry = doesDirectoryExist (path </> entry)
-                filterHidden paths = return $ filter (not.isHidden) paths
-                isHidden ('.':_) = True
-                isHidden _       = False
                 
-    -- Convert a DirData into an Int that contains the number of failed tests
-    myVisitor :: (HasLogFunc env) => ConduitT DirData Int (RIO env) ()
-    myVisitor = loop 1
-      where
-        loop :: (HasLogFunc env) => Int -> ConduitT DirData Int (RIO env) ()
-        loop n = awaitForever $
-            (\dird -> do 
-                lift $ sayLn $ ">> " ++ show n ++ ". "
-                x <- lift $ doRegressionTest 4 dird     
-                yield x
-                loop (n + 1)
-            ) 
-                    
+--     -- Processes a DirData, runs the tests in that directory and 
+--     -- returns the number of failed tests as an Int.
+--     doTestsInDir :: (HasLogFunc env) => ConduitT DirData Int (RIO env) ()
+--     doTestsInDir = loop 1
+--       where
+--         loop :: (HasLogFunc env) => Int -> ConduitT DirData Int (RIO env) ()
+--         loop testSet = awaitForever $
+--             (\dird -> do 
+--                 lift $ sayLn $ ">> " ++ show testSet ++ ". "
+--                 doSingleDirTests testSet dird     
+--                 loop (testSet + 1)
+--             ) 
 
-    sumarize :: ConduitT Int Void (RIO env) Int
-    sumarize = loop 0 
-      where
-        loop :: Int -> ConduitT Int Void (RIO env) Int
-        loop i = 
-          await >>= maybe (return i) 
-                          (\x -> loop $! (i+x))
-
+--     sumarize :: ConduitT Int Void (RIO env) Int
+--     sumarize = loop 0 
+--       where
+--         loop :: Int -> ConduitT Int Void (RIO env) Int
+--         loop i = 
+--           await >>= maybe (return i) 
+--                           (\x -> loop $! (i+x))
 
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do 

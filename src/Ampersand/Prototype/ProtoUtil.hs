@@ -181,14 +181,14 @@ installComposerLibs installTarget = do
        , use_process_jobs = False
        }
      failOutput :: (ExitCode, String, String) -> RIO env ()
-     failOutput (exit_code, stdout', stderr') = do
+     failOutput (exit_code, out, err) = do
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
             , "composerTargetPath: "++installTarget
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
-            (if null stdout' then [] else "stdout:" : lines stdout') ++
-            (if null stderr' then [] else "stderr:" : lines stderr') ++
+            (if null out then [] else "stdout:" : lines out) ++
+            (if null err then [] else "stderr:" : lines err) ++
             [ "Possible solutions to fix your prototype:"
             , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
             , "  2) Make sure you have an active internet connection."
