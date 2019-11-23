@@ -8,9 +8,7 @@ import           Ampersand.Basics
 import           Ampersand.Misc
 import           Ampersand.Types.Config
 import           Conduit
-import qualified Data.Conduit.List as CL
 import           Data.Yaml
-import           RIO.Char
 import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
@@ -93,8 +91,7 @@ doTestsInDir :: (HasLogFunc env) => ConduitT DirData TestResults (RIO env) ()
 doTestsInDir = awaitForever once 
    where
     once x = do
-      lift $ logInfo $ ">> " <> displayShow (traversalNr x) <> ". "
-      lift $ logInfo $ " Handling " <> (display . T.pack $ path x) <> ". "
+      lift $ logInfo $ ">> " <> displayShow (traversalNr x) <> ": "<> (display . T.pack $ path x) <> ". "
       let candidates = filter isCandidate (filesOf . dirContent $ x)
             where
               isCandidate :: FilePath -> Bool
@@ -104,37 +101,79 @@ doTestsInDir = awaitForever once
         res <- lift parseYaml
         case res of 
           Left err -> do 
-            lift . sayLn $ indent <> path x </> yaml <>" could not be parsed."
-            lift . sayLn $ indent <> prettyPrintParseException err
+            lift . logError $ indent <> (display . T.pack $ path x </> yaml) <>" could not be parsed."
+            lift . logError $ indent <> (display . T.pack . prettyPrintParseException $ err)
             yield TestResults
                     { successes = 0
-                    , failures  = length candidates
+                    , failures  = 1 -- the yaml file could not be parsed
                     }
           Right ti -> do 
-            lift . sayLn $ indent <> "Instructions: "
+            lift . logDebug $ indent <> "Instructions: "
             lift $ mapM_ sayInstruction (testCmds ti)
-            yield TestResults
-                    { successes = 0
-                    , failures  = length candidates
-                    }
+            result <- lift . runConduit $
+                         doAll candidates (testCmds ti)
+                      .| doTestCase 
+                      .| sumarizeTestCases
+            yield result
+--            doAll candidates (testCmds ti) .| doTestCase .| sumarizeTestCases
                          -- <>command ti<>if shouldSucceed ti then " (should succeed)." else " (should fail)."
                          --   runConduit $ runTests ti .| getResults
       else do
-        lift . logInfo $ indent<>"Nothing to do. ("<>display (T.pack yaml)<>" not present)"
+        lift . logDebug $ indent<>"Nothing to do. ("<>display (T.pack yaml)<>" not present)"
         yield TestResults
                  { successes = 0
                  , failures  = 0
                  }
       where
+        doAll :: [FilePath] -> [TestInstruction] -> ConduitT () TestCase (RIO env) ()
+        doAll cs tis = yieldMany $
+              foo [\nr -> TestCase (traversalNr x,nr) f ti | f <- cs, ti <- tis] 1
+          where foo :: [Int -> TestCase] -> Int -> [TestCase] 
+                foo [] _ = []
+                foo (f:fs) i = f i : foo fs (i+1) 
+        doTestCase :: (HasLogFunc env) => ConduitT TestCase TestResults (RIO env) ()
+        doTestCase = awaitForever doOne
+           where doOne :: (HasLogFunc env) => TestCase -> ConduitT a TestResults (RIO env) ()
+                 doOne tc = do
+                         let (a,b) = testNr tc
+                             instr = instruction tc
+                         lift . logDebug $ " >> "<>display a<>"."<>display b<>": Now starting."
+                         lift . logDebug $ "Runing "<>display (command instr)
+                                        <>" on "<>display (T.pack $ testFile tc)
+                                        <>" should "
+                                        <>(case shouldSucceed instr of
+                                            True -> "succeed."
+                                            False -> "fail."
+                                          )
+                         res <- lift $ testAdlfile 4 (path x) (testFile tc) instr
+                         if res == shouldSucceed instr
+                           then do
+                              lift . logInfo $ " >> "<>display a<>"."<>display b<>":"<>" *** Pass ***"
+                              yield TestResults {successes = 1, failures  = 0}
+                           else do
+                              lift . logInfo $ " >> "<>display a<>"."<>display b<>":"<>" *** Fail ***"
+                              yield TestResults {successes = 0, failures  = 1}
+
+        sumarizeTestCases :: (HasLogFunc env) => ConduitT TestResults Void (RIO env) TestResults
+        sumarizeTestCases = loop (TestResults 0 0)
+          where
+            loop :: (HasLogFunc env) => TestResults -> ConduitT TestResults Void (RIO env) TestResults
+            loop sofar = await >>= maybe (return sofar)
+                                         (\result -> loop $! (add sofar result)) 
         parseYaml ::  RIO env (Either ParseException TestInfo) 
         parseYaml = liftIO $ decodeFileEither $ path x </> yaml
     sayInstruction :: HasLogFunc env => TestInstruction -> RIO env ()
-    sayInstruction x = sayLn $ indent <> "  Command: "<>command x<>if shouldSucceed x then " (should succeed)." else " (should fail)."
+    sayInstruction x = logDebug $ indent <> "  Command: "<>(display $ command x)<>if shouldSucceed x then " (should succeed)." else " (should fail)."
     indent :: IsString a => a
     indent = "    "
+
+data TestCase = TestCase { testNr :: (Int,Int)
+                         , testFile :: FilePath
+                         , instruction :: TestInstruction
+                         }
 sumarize :: (HasLogFunc env) => ConduitT TestResults Void (RIO env) ()
 sumarize = do
-   lift . sayLn $ "Starting regression test."
+   lift . logInfo $ "Starting regression test."
    loop (TestResults 0 0)
   where
    loop :: (HasLogFunc env) => TestResults -> ConduitT TestResults Void (RIO env) ()
@@ -154,13 +193,13 @@ sumarize = do
 --   (DirData path dirContent)
 --   case dirContent of
 --     DirError err     -> do
---         lift . sayLn $ "ERROR:"
---         lift . sayLn $ "I've tried to look in " <> path <> "."
---         lift . sayLn $ "    There was an error: "
---         lift . sayLn $ "       " <> show err
+--         lift . logInfo $ "ERROR:"
+--         lift . logInfo $ "I've tried to look in " <> path <> "."
+--         lift . logInfo $ "    There was an error: "
+--         lift . logInfo $ "       " <> show err
 --         yield 1
 --     DirList{} -> do
---         lift . sayLn $ path <>" : "
+--         lift . logInfo $ path <>" : "
 --         yield 0 -- doSingleTestSet path files
 
 
@@ -168,59 +207,6 @@ sumarize = do
 --doSingleTest = undefined
 yaml :: FilePath
 yaml = "testinfo.yaml"  -- the required name of the file that contains the test info for this directory.
-doSingleTestSet :: HasLogFunc env => FilePath -> [FilePath] -> RIO env Int
-doSingleTestSet dir fs 
-  | yaml `elem` fs = 
-       do res <- parseYaml
-          case res of 
-              Left err -> do sayLn $ indent <> dir </> yaml <>" could not be parsed."
-                             sayLn $ indent <> prettyPrintParseException err
-                             return 1
-              Right ti -> do sayLn $ indent <> "Instructions: "
-                             mapM_ sayInstruction (testCmds ti)
-                             -- <>command ti<>if shouldSucceed ti then " (should succeed)." else " (should fail)."
-                             runConduit $ runTests ti .| getResults
-  | otherwise =
-       do sayLn $ indent <> "Nothing to do. ("<>yaml<>" not present)"
-          return 0
-
-  where
-    indnt = 4
-    sayInstruction :: HasLogFunc env => TestInstruction -> RIO env ()
-    sayInstruction x = sayLn $ indent <> "  Command: "<>command x<>if shouldSucceed x then " (should succeed)." else " (should fail)."
-    parseYaml ::  RIO env (Either ParseException TestInfo) 
-    parseYaml = liftIO $ decodeFileEither $ dir </> yaml
-    runTests :: TestInfo -> ConduitM () Int (RIO env) ()
-    runTests ti = testsSource .| doATest
-      where 
-        isRelevant f = map toUpper (takeExtension f) `elem` [".ADL"]
-        testsSource :: ConduitT () FilePath (RIO env) ()
-        testsSource = CL.sourceList $ filter isRelevant fs
-        doATest :: ConduitT FilePath Int (RIO env) ()
-        doATest = awaitForever dotheTest
-          where 
-            aap :: (HasLogFunc env) => FilePath -> TestInstruction -> RIO env Bool
-            aap = testAdlfile (indnt + 2) dir 
-            dotheTest :: FilePath -> ConduitT FilePath Int (RIO env) ()
-            dotheTest file = do 
-              noot
-              res' <- mapM mies (testCmds ti) -- res' <- mapM (liftIO . testAdlfile (indnt + 2) dir file) (testCmds ti)
-              let res = [True, False]
-              yield (length . filter not $ res) -- return the number of failed testcommands
-             where
-               noot :: ConduitT FilePath Int (RIO env) ()
-               noot = liftIO $ runSimpleApp $ sayLn $ indent<>"Start testing of `"<>file<>"`: "
-               mies :: TestInstruction -> ConduitT FilePath Int (RIO env) ()
-               mies x = undefined
-    getResults :: ConduitT Int Void (RIO env) Int
-    getResults = loop 0 
-     where
-       loop :: Int -> ConduitT Int Void (RIO env) Int
-       loop i = 
-         await >>= maybe (return i) 
-                         (\x -> loop $! (i+x))
-    indent = replicate indnt ' '
-
 -- This data structure is directy available in .yaml files. Be aware that modification will have consequences for the 
 -- yaml files in the test suite.
 data TestInfo = TestInfo 
@@ -228,7 +214,7 @@ data TestInfo = TestInfo
    }deriving Generic
 instance FromJSON TestInfo
 data TestInstruction = TestInstruction 
-   { command :: String
+   { command :: T.Text
    , shouldSucceed :: Bool
    } deriving Generic
 instance FromJSON TestInstruction
@@ -238,18 +224,18 @@ testAdlfile :: (HasLogFunc env) =>
              -> FilePath -- the script that is undergoing the test
              -> TestInstruction --The instruction to test, so it is known how to test the script
              -> RIO env Bool  -- Indicator telling if the test passed or not
-testAdlfile indnt path adl tinfo = do
+testAdlfile indnt dir adl tinfo = do
   (exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
   case (shouldSucceed tinfo, exit_code) of
     (True  , ExitSuccess  ) -> passOutput
-    (True  , ExitFailure _) -> failOutput (exit_code, out, err)
-    (False , ExitSuccess  ) -> failOutput (exit_code, out, err)
+    (True  , ExitFailure _) -> failOutput (exit_code, display . T.pack $ out, display . T.pack $ err)
+    (False , ExitSuccess  ) -> failOutput (exit_code, display . T.pack $ out, display . T.pack $ err)
     (False , ExitFailure _) -> passOutput
 
    where
      myProc :: CreateProcess
-     myProc = CreateProcess { cmdspec = ShellCommand (command tinfo <>" "<>adl)
-                            , cwd = Just path
+     myProc = CreateProcess { cmdspec = ShellCommand (T.unpack (command tinfo) <>" "<>adl)
+                            , cwd = Just dir
                             , env = Nothing
                             , std_in = Inherit
                             , std_out = Inherit
@@ -264,17 +250,14 @@ testAdlfile indnt path adl tinfo = do
                             , child_user = Nothing
                             , use_process_jobs = False
                             }
-     passOutput :: (HasLogFunc env) => RIO env Bool
-     passOutput = do sayLn "***Pass***"
-                     return True 
-     failOutput :: (HasLogFunc env) => (ExitCode, String, String) -> RIO env Bool
+     passOutput :: RIO env Bool
+     passOutput = pure True 
+     failOutput :: (HasLogFunc env) => (ExitCode, Utf8Builder, Utf8Builder) -> RIO env Bool
      failOutput (exit_code, out, err) = do
-          sayLn $ "\n*FAIL*. Exit code: "<>show exit_code<>". "
+          logError $ "*FAIL*. Exit code: "<>(display $ tshow exit_code)<>". "
           case exit_code of
-             ExitSuccess -> return True
-             _           -> do sayLnI out
-                               sayLnI err
-                               return False
+             ExitSuccess -> pure True
+             _           -> do logWarn . (display (T.pack $ replicate indnt ' ') <>) $ out
+                               logError . (display (T.pack $ replicate indnt ' ') <>) $ err
+                               pure False
 
-     sayLnI :: (HasLogFunc env) => String -> RIO env ()
-     sayLnI  = mapM_ (sayLn . (replicate indnt ' ' <>)) . lines 
