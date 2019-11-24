@@ -257,7 +257,7 @@ testAdlfile indnt dir adl tinfo = do
           logError $ "*FAIL*. Exit code: "<>(display $ tshow exit_code)<>". "
           case exit_code of
              ExitSuccess -> pure True
-             _           -> do logWarn . (display (T.pack $ replicate indnt ' ') <>) $ out
-                               logError . (display (T.pack $ replicate indnt ' ') <>) $ err
+             _           -> --do logWarn . (display (T.pack $ replicate indnt ' ') <>) $ out
+                            --   logError . (display (T.pack $ replicate indnt ' ') <>) $ err
                                pure False
 
