@@ -188,23 +188,6 @@ sumarize = do
 
 
 
--- doSingleDirTests :: (HasLogFunc env) => ConduitT DirData Int (RIO env) ()
--- doSingleDirTests = do 
---   (DirData path dirContent)
---   case dirContent of
---     DirError err     -> do
---         lift . logInfo $ "ERROR:"
---         lift . logInfo $ "I've tried to look in " <> path <> "."
---         lift . logInfo $ "    There was an error: "
---         lift . logInfo $ "       " <> show err
---         yield 1
---     DirList{} -> do
---         lift . logInfo $ path <>" : "
---         yield 0 -- doSingleTestSet path files
-
-
---doSingleTest :: ConduitT 
---doSingleTest = undefined
 yaml :: FilePath
 yaml = "testinfo.yaml"  -- the required name of the file that contains the test info for this directory.
 -- This data structure is directy available in .yaml files. Be aware that modification will have consequences for the 
@@ -225,7 +208,9 @@ testAdlfile :: (HasLogFunc env) =>
              -> TestInstruction --The instruction to test, so it is known how to test the script
              -> RIO env Bool  -- Indicator telling if the test passed or not
 testAdlfile indnt dir adl tinfo = do
+  logInfo $ "  Start: "<> (display . T.pack $ adl)
   (exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
+  logInfo $ "  Ready: "<> (display . T.pack $ adl) <>" ("<>displayShow exit_code<>")"
   case (shouldSucceed tinfo, exit_code) of
     (True  , ExitSuccess  ) -> passOutput
     (True  , ExitFailure _) -> failOutput (exit_code, display . T.pack $ out, display . T.pack $ err)
@@ -256,8 +241,8 @@ testAdlfile indnt dir adl tinfo = do
      failOutput (exit_code, out, err) = do
           logError $ "*FAIL*. Exit code: "<>(display $ tshow exit_code)<>". "
           case exit_code of
-             ExitSuccess -> pure True
+             ExitSuccess -> pure False
              _           -> --do logWarn . (display (T.pack $ replicate indnt ' ') <>) $ out
                             --   logError . (display (T.pack $ replicate indnt ' ') <>) $ err
-                               pure False
+                               pure True
 
