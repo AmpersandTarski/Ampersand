@@ -17,7 +17,7 @@ import qualified RIO.List as L
 import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
-import           System.Process
+import           System.Process(cwd,shell,readCreateProcess)
 
 
 createTablePHP :: TableSpec -> [T.Text]

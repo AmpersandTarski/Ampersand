@@ -19,7 +19,8 @@ import qualified RIO.Text as T
 import           System.Directory
 import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))
 import           System.FilePath
-import           System.Process
+import           System.Process(CreateProcess(..),readCreateProcessWithExitCode
+                               ,CmdSpec(..),StdStream(..))
 
 
 

@@ -13,7 +13,8 @@ import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           System.IO.Error (tryIOError)
-import           System.Process
+import           System.Process(CreateProcess(..),readCreateProcessWithExitCode
+                               ,CmdSpec(ShellCommand),StdStream(Inherit))
 
 data DirList = 
         DirList 
