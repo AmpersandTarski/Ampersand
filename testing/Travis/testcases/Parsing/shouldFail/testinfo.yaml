@@ -1,3 +1,3 @@
 testCmds:
   - command: ampersand pprint --verbose
-    shouldSucceed: no
+    shouldSucceed: False

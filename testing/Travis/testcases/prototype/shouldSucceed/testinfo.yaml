@@ -1,5 +1,5 @@
 testCmds:
 #  - command: ampersand validate --verbose --sqlLogin ="root" --sqlPwd=""
-#    shouldSucceed: yes
+#    shouldSucceed: True
   - command: ampersand proto --verbose --sqlLogin ="root" --sqlPwd=""
-    shouldSucceed: yes
+    shouldSucceed: True
