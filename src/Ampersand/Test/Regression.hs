@@ -137,21 +137,22 @@ doTestsInDir = awaitForever once
                  doOne tc = do
                          let (a,b) = testNr tc
                              instr = instruction tc
-                         lift . logDebug $ " >> "<>display a<>"."<>display b<>": Now starting."
-                         lift . logDebug $ "Runing "<>display (command instr)
+                             indnt = " >> "<>display a<>"."<>display b<>": "
+                         lift . logDebug $ indnt <> "Now starting."
+                         lift . logDebug $ indnt <> "Runing "<>display (command instr)
                                         <>" on "<>display (T.pack $ testFile tc)
                                         <>" should "
                                         <>(case shouldSucceed instr of
                                             True -> "succeed."
                                             False -> "fail."
                                           )
-                         res <- lift $ testAdlfile (path x) (testFile tc) instr
+                         res <- lift $ testAdlfile indnt (path x) (testFile tc) instr
                          if res == shouldSucceed instr
                            then do
-                              lift . logInfo $ " >> "<>display a<>"."<>display b<>":"<>" *** Pass ***"
+                              lift . logInfo $ indnt <>" *** Pass ***"
                               yield TestResults {successes = 1, failures  = 0}
                            else do
-                              lift . logInfo $ " >> "<>display a<>"."<>display b<>":"<>" *** Fail ***"
+                              lift . logInfo $ indnt <>" *** Fail ***"
                               yield TestResults {successes = 0, failures  = 1}
 
         sumarizeTestCases :: (HasLogFunc env) => ConduitT TestResults Void (RIO env) TestResults
@@ -202,14 +203,15 @@ data TestInstruction = TestInstruction
    } deriving Generic
 instance FromJSON TestInstruction
 testAdlfile :: (HasLogFunc env) =>
-                FilePath -- the filepath of the directory where the test should be done
+                Utf8Builder -- prefix to use in all output
+             -> FilePath -- the filepath of the directory where the test should be done
              -> FilePath -- the script that is undergoing the test
              -> TestInstruction --The instruction to test, so it is known how to test the script
              -> RIO env Bool  -- Indicator telling if the test passed or not
-testAdlfile dir adl tinfo = do
-  logInfo $ "  Start: "<> (display . T.pack $ adl)
+testAdlfile indent dir adl tinfo = do
+  logInfo $ indent <> " Start: "<> (display . T.pack $ adl)
   (exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
-  logInfo $ "  Ready: "<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
+  logInfo $ indent <> " Ready: "<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
   case (shouldSucceed tinfo, exit_code) of
     (True  , ExitSuccess  ) -> passOutput
     (True  , ExitFailure _) -> failOutput (exit_code, out, err)
