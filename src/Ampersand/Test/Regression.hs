@@ -13,7 +13,7 @@ import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           System.IO.Error (tryIOError)
-import           System.Process(CreateProcess(..),readCreateProcessWithExitCode
+import           System.Process(shell, CreateProcess(..),readCreateProcessWithExitCode
                                ,CmdSpec(ShellCommand),StdStream(Inherit))
 
 data DirList = 
@@ -220,22 +220,24 @@ testAdlfile indnt dir adl tinfo = do
 
    where
      myProc :: CreateProcess
-     myProc = CreateProcess { cmdspec = ShellCommand (T.unpack (command tinfo) <>" "<>adl)
-                            , cwd = Just dir
-                            , env = Nothing
-                            , std_in = Inherit
-                            , std_out = Inherit
-                            , std_err = Inherit
-                            , close_fds = False
-                            , create_group = False
-                            , delegate_ctlc = True
-                            , detach_console = False
-                            , create_new_console = False
-                            , new_session = False
-                            , child_group = Nothing
-                            , child_user = Nothing
-                            , use_process_jobs = False
-                            }
+     myProc = shell $ (T.unpack (command tinfo) <>" "<>adl)
+    --  myProc = CreateProcess { cmdspec = ShellCommand (T.unpack (command tinfo) <>" "<>adl)
+    --                         , cwd = Just dir
+    --                         , env = Nothing
+    --                         , std_in = Inherit
+    --                         , std_out = Inherit
+    --                         , std_err = Inherit
+    --                         , close_fds = False
+    --                         , create_group = False
+    --                         , delegate_ctlc = True
+    --                         , detach_console = False
+    --                         , create_new_console = False
+    --                         , new_session = False
+    --                         , child_group = Nothing
+    --                         , child_user = Nothing
+    --                         , use_process_jobs = False
+    --                         }
+      
      passOutput :: RIO env Bool
      passOutput = pure True 
      failOutput :: (HasLogFunc env) => (ExitCode, Utf8Builder, Utf8Builder) -> RIO env Bool
