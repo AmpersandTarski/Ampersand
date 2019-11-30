@@ -137,22 +137,10 @@ doTestsInDir = awaitForever once
                  doOne tc = do
                          let instr = instruction tc
                              indnt = ">> "<>(display . fst . testNr $ tc)<>"."<>(display . snd . testNr $ tc)<>": "
-                         lift . logDebug $ indnt <> "Now starting."
-                         lift . logDebug $ indnt <> "Runing "<>display (command instr)
-                                        <>" on "<>display (T.pack $ testFile tc)
-                                        <>" should "
-                                        <>(case shouldSucceed instr of
-                                            True -> "succeed."
-                                            False -> "fail."
-                                          )
                          res <- lift $ testAdlfile indnt (path x) (testFile tc) instr
-                         if res == shouldSucceed instr
-                           then do
-                              lift . logInfo $ indnt <>" *** Pass ***"
-                              yield TestResults {successes = 1, failures  = 0}
-                           else do
-                              lift . logInfo $ indnt <>" *** Fail ***"
-                              yield TestResults {successes = 0, failures  = 1}
+                         if res
+                           then yield TestResults {successes = 1, failures  = 0}
+                           else yield TestResults {successes = 0, failures  = 1}
 
         sumarizeTestCases :: (HasLogFunc env) => ConduitT TestResults Void (RIO env) TestResults
         sumarizeTestCases = loop $ TestResults {successes = 0, failures  = 0}
@@ -208,7 +196,7 @@ testAdlfile :: (HasLogFunc env) =>
              -> TestInstruction --The instruction to test, so it is known how to test the script
              -> RIO env Bool  -- Indicator telling if the test passed or not
 testAdlfile indent dir adl tinfo = do
-  logInfo $ indent <> " Start: "<> (display . T.pack $ adl)
+  logInfo $ indent <> "Start: "<> (display . T.pack $ adl)
   (exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
   let (message,restActions) =
         case (shouldSucceed tinfo, exit_code) of
