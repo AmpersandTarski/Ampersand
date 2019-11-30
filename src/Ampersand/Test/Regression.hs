@@ -135,9 +135,8 @@ doTestsInDir = awaitForever once
         doTestCase = awaitForever doOne
            where doOne :: (HasLogFunc env) => TestCase -> ConduitT a TestResults (RIO env) ()
                  doOne tc = do
-                         let (a,b) = testNr tc
-                             instr = instruction tc
-                             indnt = " >> "<>display a<>"."<>display b<>": "
+                         let instr = instruction tc
+                             indnt = ">> "<>(display . fst . testNr $ tc)<>"."<>(display . snd . testNr $ tc)<>": "
                          lift . logDebug $ indnt <> "Now starting."
                          lift . logDebug $ indnt <> "Runing "<>display (command instr)
                                         <>" on "<>display (T.pack $ testFile tc)
@@ -156,7 +155,7 @@ doTestsInDir = awaitForever once
                               yield TestResults {successes = 0, failures  = 1}
 
         sumarizeTestCases :: (HasLogFunc env) => ConduitT TestResults Void (RIO env) TestResults
-        sumarizeTestCases = loop (TestResults 0 0)
+        sumarizeTestCases = loop $ TestResults {successes = 0, failures  = 0}
           where
             loop :: (HasLogFunc env) => TestResults -> ConduitT TestResults Void (RIO env) TestResults
             loop sofar = await >>= maybe (return sofar)
@@ -211,25 +210,24 @@ testAdlfile :: (HasLogFunc env) =>
 testAdlfile indent dir adl tinfo = do
   logInfo $ indent <> " Start: "<> (display . T.pack $ adl)
   (exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
-  logInfo $ indent <> " Ready: "<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
-  case (shouldSucceed tinfo, exit_code) of
-    (True  , ExitSuccess  ) -> passOutput
-    (True  , ExitFailure _) -> failOutput (exit_code, out, err)
-    (False , ExitSuccess  ) -> failOutput (exit_code, out, err)
-    (False , ExitFailure _) -> passOutput
-
+  let (message,restActions) =
+        case (shouldSucceed tinfo, exit_code) of
+          (True  , ExitSuccess  ) -> ("Pass. " , pure True)
+          (True  , ExitFailure _) -> ("***FAIL*** ",failOutput (exit_code, out, err))
+          (False , ExitSuccess  ) -> ("***FAIL*** ",failOutput (exit_code, out, err))
+          (False , ExitFailure _) -> ("Pass. " , pure True)
+  logInfo $ indent<>message<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
+  restActions
    where
      myProc :: CreateProcess
      myProc = (shell $ (T.unpack (command tinfo) <>" "<>adl)) {cwd = Just dir}
       
      linesOf :: String -> [Utf8Builder]
      linesOf = map (display . T.pack ) . lines
-     passOutput :: RIO env Bool
-     passOutput = pure True 
      failOutput :: (HasLogFunc env) => (ExitCode, String, String) -> RIO env Bool
      failOutput (exit_code, out, err) = do
-          logError $ "***FAIL***. Actual: "<>(display $ tshow exit_code)
-          logError $ "            Expected: "<>(if shouldSucceed tinfo then "ShouldSucceed" else "ShouldFail")
+          logError $ indent <>" Actual: "<>(display $ tshow exit_code)
+          logError $ indent <>" Expected: "<>(if shouldSucceed tinfo then "ShouldSucceed" else "ShouldFail")
           case exit_code of
              ExitSuccess -> pure False
              _           -> do mapM_ (logWarn  . indnt) . linesOf $ out
