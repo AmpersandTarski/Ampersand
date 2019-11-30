@@ -91,7 +91,7 @@ doTestsInDir :: (HasLogFunc env) => ConduitT DirData TestResults (RIO env) ()
 doTestsInDir = awaitForever once 
    where
     once x = do
-      lift $ logInfo $ ">> " <> displayShow (traversalNr x) <> ": "<> (display . T.pack $ path x) <> ". "
+      lift $ logInfo $ ">> " <> displayShow (traversalNr x) <> ": "<> (display . T.pack $ path x)
       let candidates = filter isCandidate (filesOf . dirContent $ x)
             where
               isCandidate :: FilePath -> Bool

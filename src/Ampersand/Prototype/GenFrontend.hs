@@ -550,23 +550,20 @@ downloadPrototypeFramework fSpec = ( do
               forceReinstallFramework <- view forceReinstallFrameworkL
               if forceReinstallFramework
               then do
-                sayLn "Deleting all files to deploy prototype framework in"
-                sayLn ("  " ++ destination)
-                sayLn "Are you sure? y/n"
-                proceed <- promptUserYesNo
-                return proceed
-              else do
-                (sayWhenLoudLn $
-                         "(Re)deploying prototype framework not allowed, because\n"
-                      ++ "  "++destination++" isn't empty. You could use the switch --force-reinstall-framework")
-                return False
-          else do 
-             sayWhenLoudLn $
-                       "(Re)deploying prototype framework not allowed, because\n"
-                    ++ "  "++destination++" isn't a directory."
-             return False
+            --    logWarn $ "This will delete all files in" <> displayShow destination
+            --    logWarn $ "Are you sure? y/n"
+            --    proceed <- promptUserYesNo
+                return True -- proceed
+              else redeployNotAllowed
+          else redeployNotAllowed
       else return True
+      where redeployNotAllowed = do
+                logError $ "(Re)deploying prototype framework not allowed, because "<>
+                           "  "<>displayShow destination<>" isn't empty."
+                logInfo  $ "You could use the switch --force-reinstall-framework"
+                return False
 
+            
 promptUserYesNo :: (HasLogFunc env) => RIO env Bool
 promptUserYesNo = do
     char <- liftIO $ getChar -- TODO: refactor that the first character is directly processed

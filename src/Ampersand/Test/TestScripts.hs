@@ -67,7 +67,7 @@ myVisitor = addCleanup (\_ -> sayLn "Finished.") $ loop 1
   where
     loop :: Int -> ConduitM DirData a IO ()
     loop n = do
-        lift $ say $ ">> " ++ show n ++ ". "
+        lift $ say $ ">> " ++ show n
         mr <- await
         case mr of
             Nothing     -> return ()
