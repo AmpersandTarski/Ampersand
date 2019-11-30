@@ -227,11 +227,11 @@ testAdlfile dir adl tinfo = do
      failOutput :: (HasLogFunc env) => (ExitCode, String, String) -> RIO env Bool
      failOutput (exit_code, out, err) = do
           logError $ "***FAIL***. Actual: "<>(display $ tshow exit_code)
-          logError $ "            Expected: "(if shouldSucceed x then "ShouldSucceed" else "ShouldFail")
+          logError $ "            Expected: "<>(if shouldSucceed tinfo then "ShouldSucceed" else "ShouldFail")
           case exit_code of
              ExitSuccess -> pure False
              _           -> do mapM_ (logWarn  . indnt) . linesOf $ out
                                mapM_ (logError . indnt) . linesOf $ err
                                pure True
       where indnt :: Utf8Builder -> Utf8Builder
-            indnt = "    " <>
+            indnt = ("    " <>)
