@@ -218,23 +218,7 @@ testAdlfile dir adl tinfo = do
 
    where
      myProc :: CreateProcess
-     myProc = shell $ (T.unpack (command tinfo) <>" "<>adl)
-    --  myProc = CreateProcess { cmdspec = ShellCommand (T.unpack (command tinfo) <>" "<>adl)
-    --                         , cwd = Just dir
-    --                         , env = Nothing
-    --                         , std_in = Inherit
-    --                         , std_out = Inherit
-    --                         , std_err = Inherit
-    --                         , close_fds = False
-    --                         , create_group = False
-    --                         , delegate_ctlc = True
-    --                         , detach_console = False
-    --                         , create_new_console = False
-    --                         , new_session = False
-    --                         , child_group = Nothing
-    --                         , child_user = Nothing
-    --                         , use_process_jobs = False
-    --                         }
+     myProc = (shell $ (T.unpack (command tinfo) <>" "<>adl)) {cwd = Just dir}
       
      passOutput :: RIO env Bool
      passOutput = pure True 
