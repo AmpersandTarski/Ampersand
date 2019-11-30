@@ -13,8 +13,7 @@ import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           System.IO.Error (tryIOError)
-import           System.Process(shell, CreateProcess(..),readCreateProcessWithExitCode
-                               ,CmdSpec(ShellCommand),StdStream(Inherit))
+import           System.Process(shell, CreateProcess(..),readCreateProcessWithExitCode)
 
 data DirList = 
         DirList 
@@ -146,7 +145,7 @@ doTestsInDir = awaitForever once
                                             True -> "succeed."
                                             False -> "fail."
                                           )
-                         res <- lift $ testAdlfile 4 (path x) (testFile tc) instr
+                         res <- lift $ testAdlfile (path x) (testFile tc) instr
                          if res == shouldSucceed instr
                            then do
                               lift . logInfo $ " >> "<>display a<>"."<>display b<>":"<>" *** Pass ***"
@@ -203,12 +202,11 @@ data TestInstruction = TestInstruction
    } deriving Generic
 instance FromJSON TestInstruction
 testAdlfile :: (HasLogFunc env) =>
-                Int      -- Number of spaces to indent (for output during testing)
-             -> FilePath -- the filepath of the directory where the test should be done
+                FilePath -- the filepath of the directory where the test should be done
              -> FilePath -- the script that is undergoing the test
              -> TestInstruction --The instruction to test, so it is known how to test the script
              -> RIO env Bool  -- Indicator telling if the test passed or not
-testAdlfile indnt dir adl tinfo = do
+testAdlfile dir adl tinfo = do
   logInfo $ "  Start: "<> (display . T.pack $ adl)
   (exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
   logInfo $ "  Ready: "<> (display . T.pack $ adl) <>" ("<>displayShow exit_code<>")"
@@ -245,7 +243,8 @@ testAdlfile indnt dir adl tinfo = do
           logError $ "*FAIL*. Exit code: "<>(display $ tshow exit_code)<>". "
           case exit_code of
              ExitSuccess -> pure False
-             _           -> --do logWarn . (display (T.pack $ replicate indnt ' ') <>) $ out
-                            --   logError . (display (T.pack $ replicate indnt ' ') <>) $ err
+             _           -> do logWarn . indnt $ out
+                               logError . indnt $ err
                                pure True
-
+      where indnt :: Utf8Builder -> Utf8Builder
+            indnt = (display (T.pack . replicate 4 $ ' ') <>)
