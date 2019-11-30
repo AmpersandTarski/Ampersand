@@ -209,26 +209,28 @@ testAdlfile :: (HasLogFunc env) =>
 testAdlfile dir adl tinfo = do
   logInfo $ "  Start: "<> (display . T.pack $ adl)
   (exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
-  logInfo $ "  Ready: "<> (display . T.pack $ adl) <>" ("<>displayShow exit_code<>")"
+  logInfo $ "  Ready: "<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
   case (shouldSucceed tinfo, exit_code) of
     (True  , ExitSuccess  ) -> passOutput
-    (True  , ExitFailure _) -> failOutput (exit_code, display . T.pack $ out, display . T.pack $ err)
-    (False , ExitSuccess  ) -> failOutput (exit_code, display . T.pack $ out, display . T.pack $ err)
+    (True  , ExitFailure _) -> failOutput (exit_code, out, err)
+    (False , ExitSuccess  ) -> failOutput (exit_code, out, err)
     (False , ExitFailure _) -> passOutput
 
    where
      myProc :: CreateProcess
      myProc = (shell $ (T.unpack (command tinfo) <>" "<>adl)) {cwd = Just dir}
       
+     linesOf :: String -> [Utf8Builder]
+     linesOf = map (display . T.pack ) . lines
      passOutput :: RIO env Bool
      passOutput = pure True 
-     failOutput :: (HasLogFunc env) => (ExitCode, Utf8Builder, Utf8Builder) -> RIO env Bool
+     failOutput :: (HasLogFunc env) => (ExitCode, String, String) -> RIO env Bool
      failOutput (exit_code, out, err) = do
           logError $ "*FAIL*. Exit code: "<>(display $ tshow exit_code)<>". "
           case exit_code of
              ExitSuccess -> pure False
-             _           -> do logWarn . indnt $ out
-                               logError . indnt $ err
+             _           -> do mapM_ (logWarn  . indnt) . linesOf $ out
+                               mapM_ (logError . indnt) . linesOf $ err
                                pure True
       where indnt :: Utf8Builder -> Utf8Builder
             indnt = (display (T.pack . replicate 4 $ ' ') <>)
