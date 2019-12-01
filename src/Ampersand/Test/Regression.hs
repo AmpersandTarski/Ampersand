@@ -110,10 +110,7 @@ doTestsInDir = awaitForever once
           Right ti -> do 
             lift . logDebug $ indent <> "Instructions: "
             lift $ mapM_ sayInstruction (testCmds ti)
-            result <- lift . runConduit $
-                         doAll candidates (testCmds ti)
-                      .| doTestCase 
-                      .| sumarizeTestCases
+            result <- lift . doFilesWithCommand candidates $ ti
             yield result
 --            doAll candidates (testCmds ti) .| doTestCase .| sumarizeTestCases
                          -- <>command ti<>if shouldSucceed ti then " (should succeed)." else " (should fail)."
@@ -125,29 +122,30 @@ doTestsInDir = awaitForever once
                  , failures  = 0
                  }
       where
-        doAll :: [FilePath] -> [TestInstruction] -> ConduitT () TestCase (RIO env) ()
-        doAll cs tis = yieldMany $
-              foo [\nr -> TestCase (traversalNr x,nr) f ti | f <- cs, ti <- tis] 1
-          where foo :: [Int -> TestCase] -> Int -> [TestCase] 
-                foo [] _ = []
-                foo (f:fs) i = f i : foo fs (i+1) 
-        doTestCase :: (HasLogFunc env) => ConduitT TestCase TestResults (RIO env) ()
-        doTestCase = awaitForever doOne
-           where doOne :: (HasLogFunc env) => TestCase -> ConduitT a TestResults (RIO env) ()
-                 doOne tc = do
-                         let instr = instruction tc
-                             indnt = ">> "<>(display . fst . testNr $ tc)<>"."<>(display . snd . testNr $ tc)<>": "
-                         res <- lift $ testAdlfile indnt (path x) (testFile tc) instr
-                         if res
-                           then yield TestResults {successes = 1, failures  = 0}
-                           else yield TestResults {successes = 0, failures  = 1}
-
-        sumarizeTestCases :: (HasLogFunc env) => ConduitT TestResults Void (RIO env) TestResults
-        sumarizeTestCases = loop $ TestResults {successes = 0, failures  = 0}
+        doFilesWithCommand :: (HasLogFunc env) => [FilePath] -> TestInfo -> RIO env TestResults
+        doFilesWithCommand candidates ti = runConduit $
+                doAll candidates (testCmds ti)
+             .| mapMC runTestcase
+             .| sumarizeTestCases
           where
-            loop :: (HasLogFunc env) => TestResults -> ConduitT TestResults Void (RIO env) TestResults
-            loop sofar = await >>= maybe (return sofar)
-                                         (\result -> loop $! (add sofar result)) 
+            doAll :: [FilePath] -> [TestInstruction] -> ConduitT () TestCase (RIO env) ()
+            doAll cs tis = yieldMany $ (zipWith testCase cs tis) <*> [1..]
+                where testCase f ti' nr = TestCase (traversalNr x,nr) f ti'
+            runTestcase :: (HasLogFunc env) => TestCase -> RIO env TestResults
+            runTestcase tc = do
+                    let instr = instruction tc
+                        indnt = ">> "<>(display . fst . testNr $ tc)<>"."<>(display . snd . testNr $ tc)<>": "
+                    res <- testAdlfile indnt (path x) (testFile tc) instr
+                    return $ if res
+                      then TestResults {successes = 1, failures  = 0}
+                      else TestResults {successes = 0, failures  = 1}
+
+            sumarizeTestCases :: (HasLogFunc env) => ConduitT TestResults Void (RIO env) TestResults
+            sumarizeTestCases = loop $ TestResults {successes = 0, failures  = 0}
+              where
+                loop :: (HasLogFunc env) => TestResults -> ConduitT TestResults Void (RIO env) TestResults
+                loop sofar = await >>= maybe (return sofar)
+                                            (\result -> loop $! (add sofar result)) 
         parseYaml ::  RIO env (Either ParseException TestInfo) 
         parseYaml = liftIO $ decodeFileEither $ path x </> yaml
     sayInstruction :: HasLogFunc env => TestInstruction -> RIO env ()
