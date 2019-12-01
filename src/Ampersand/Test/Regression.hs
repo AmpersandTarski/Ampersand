@@ -129,8 +129,11 @@ doTestsInDir = awaitForever once
              .| sumarizeTestCases
           where
             doAll :: [FilePath] -> [TestInstruction] -> ConduitT () TestCase (RIO env) ()
-            doAll cs tis = yieldMany $ (zipWith testCase cs tis) <*> [1..]
-                where testCase f ti' nr = TestCase (traversalNr x,nr) f ti'
+            doAll cs tis = yieldMany $ 
+              foo [\nr -> TestCase (traversalNr x,nr) f ti' | f <- cs, ti' <- tis] 1
+                where foo :: [Int -> TestCase] -> Int -> [TestCase] 
+                      foo [] _ = []
+                      foo (f:fs) i = f i : foo fs (i+1) 
             runTestcase :: (HasLogFunc env) => TestCase -> RIO env TestResults
             runTestcase tc = do
                     let instr = instruction tc
