@@ -1,1 +1,3 @@
---meta-tables
+testCmds:
+  - command: echo "Still todo. This should test --meta-tables"
+    shouldSucceed: True
