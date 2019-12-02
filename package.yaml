@@ -67,6 +67,7 @@ dependencies:
       - text == 1.2.*
       - time == 1.8.*
       - transformers
+      - typed-process == 0.2.*
       - wl-pprint == 1.2.* 
       - xlsx == 0.7.*
       - yaml == 0.11.*
