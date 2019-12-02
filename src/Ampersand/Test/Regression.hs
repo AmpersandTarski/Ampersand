@@ -9,11 +9,12 @@ import           Ampersand.Misc
 import           Ampersand.Types.Config
 import           Conduit
 import           Data.Yaml
+import           RIO.Process (readProcess)
+import           System.Process.Typed (shell)
 import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           System.IO.Error (tryIOError)
-import           System.Process(shell, CreateProcess(..),readCreateProcessWithExitCode)
 
 data DirList = 
         DirList 
@@ -200,7 +201,8 @@ testAdlfile indent dir adl tinfo = do
   logInfo $ indent <> "Start: "<> (display . T.pack $ adl)
   --let (exit_code, out, err) = (if shouldSucceed tinfo then ExitSuccess else ExitFailure 666
   --                            , "dummy output: "<>dir, "dummy errormsg: "<>adl)
-  (exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
+  --(exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
+  (exit_code,out,err) <- readProcess $ shell $ T.unpack (command tinfo) <>" "<>adl
   let (message,restActions) =
         case (shouldSucceed tinfo, exit_code) of
           (True  , ExitSuccess  ) -> ("Pass. " , pure True)
@@ -210,20 +212,23 @@ testAdlfile indent dir adl tinfo = do
   logInfo $ indent<>message<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
   restActions
    where
-     myProc :: CreateProcess
+     --myProc :: CreateProcess
      --myProc = (shell $ (T.unpack (command tinfo) <>" "<>adl)) {cwd = Just dir}
-     myProc = (shell $ "echo" <>" "<>show adl) {cwd = Just dir}
-     
-     linesOf :: String -> [Utf8Builder]
-     linesOf = map (display . T.pack ) . lines
-     failOutput :: (HasLogFunc env) => (ExitCode, String, String) -> RIO env Bool
+     --myProc = (shell $ "echo" <>" "<>show adl) {cwd = Just dir}
+     --aap :: RIO env (ExitCode)
+     --aap =  withProcess "date" $ \process -> do
+     --      exitCode <- waitExitCode (process :: Process () () ())
+     --      return exitCode
+     --linesOf :: Utf8Builder -> [Utf8Builder]
+     --linesOf = 
+     failOutput :: (HasLogFunc env,Show a) => (ExitCode, a, a) -> RIO env Bool
      failOutput (exit_code, out, err) = do
           logError $ indent <>" Actual: "<>(display $ tshow exit_code)
           logError $ indent <>" Expected: "<>(if shouldSucceed tinfo then "ShouldSucceed" else "ShouldFail")
           case exit_code of
              ExitSuccess -> pure False
-             _           -> do mapM_ (logWarn  . indnt) . linesOf $ out
-                               mapM_ (logError . indnt) . linesOf $ err
+             _           -> do (logWarn  . indnt) . displayShow $ out
+                               (logError . indnt) . displayShow $ err
                                pure True
       where indnt :: Utf8Builder -> Utf8Builder
             indnt = ("    " <>)
