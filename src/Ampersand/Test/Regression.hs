@@ -198,8 +198,9 @@ testAdlfile :: (HasLogFunc env) =>
              -> RIO env Bool  -- Indicator telling if the test passed or not
 testAdlfile indent dir adl tinfo = do
   logInfo $ indent <> "Start: "<> (display . T.pack $ adl)
-  let (exit_code, out, err) = (if shouldSucceed tinfo then ExitSuccess else ExitFailure 666
-                              , "dummy output: "<>dir, "dummy errormsg: "<>adl) -- <- liftIO $ readCreateProcessWithExitCode myProc ""
+  --let (exit_code, out, err) = (if shouldSucceed tinfo then ExitSuccess else ExitFailure 666
+  --                            , "dummy output: "<>dir, "dummy errormsg: "<>adl)
+  (exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
   let (message,restActions) =
         case (shouldSucceed tinfo, exit_code) of
           (True  , ExitSuccess  ) -> ("Pass. " , pure True)
@@ -210,8 +211,9 @@ testAdlfile indent dir adl tinfo = do
   restActions
    where
      myProc :: CreateProcess
-     myProc = (shell $ (T.unpack (command tinfo) <>" "<>adl)) {cwd = Just dir}
-      
+     --myProc = (shell $ (T.unpack (command tinfo) <>" "<>adl)) {cwd = Just dir}
+     myProc = (shell $ "echo" <>" "<>show adl)) {cwd = Just dir}
+     
      linesOf :: String -> [Utf8Builder]
      linesOf = map (display . T.pack ) . lines
      failOutput :: (HasLogFunc env) => (ExitCode, String, String) -> RIO env Bool
