@@ -212,7 +212,7 @@ testAdlfile indent dir adl tinfo = do
    where
      myProc :: CreateProcess
      --myProc = (shell $ (T.unpack (command tinfo) <>" "<>adl)) {cwd = Just dir}
-     myProc = (shell $ "echo" <>" "<>show adl)) {cwd = Just dir}
+     myProc = (shell $ "echo" <>" "<>show adl) {cwd = Just dir}
      
      linesOf :: String -> [Utf8Builder]
      linesOf = map (display . T.pack ) . lines
