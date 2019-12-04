@@ -16,12 +16,12 @@ module Ampersand.Basics.Prelude
   , FirstFalse (..)
   , fromFirstFalse
   , defaultFirstFalse
+  , decodeUtf8
   )where
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import RIO hiding (zipWith,exitWith)
 import System.IO (openTempFile, stderr)
 import qualified RIO.Text as T
-
 
 
 data Verbosity = Loud | Silent deriving (Eq, Data, Show)
@@ -103,3 +103,5 @@ fromFirstFalse = fromMaybe False . getFirstFalse
 defaultFirstFalse :: (a -> FirstFalse) -> Bool
 defaultFirstFalse _ = False
 
+decodeUtf8 :: ByteString -> Text
+decodeUtf8 = decodeUtf8With lenientDecode

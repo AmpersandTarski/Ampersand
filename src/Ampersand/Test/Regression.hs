@@ -9,8 +9,9 @@ import           Ampersand.Misc
 import           Ampersand.Types.Config
 import           Conduit
 import           Data.Yaml
-import           RIO.Process (readProcess)
+import           RIO.Process
 import           System.Process.Typed (shell)
+import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
@@ -88,7 +89,7 @@ numberIt = loop 1
             yield (f nr)
             loop (nr + 1)
              
-doTestsInDir :: (HasLogFunc env) => ConduitT DirData TestResults (RIO env) ()
+doTestsInDir :: (HasProcessContext env, HasLogFunc env) => ConduitT DirData TestResults (RIO env) ()
 doTestsInDir = awaitForever once 
    where
     once x = do
@@ -123,7 +124,7 @@ doTestsInDir = awaitForever once
                  , failures  = 0
                  }
       where
-        doFilesWithCommand :: (HasLogFunc env) => [FilePath] -> TestInfo -> RIO env TestResults
+        doFilesWithCommand :: (HasProcessContext env, HasLogFunc env) => [FilePath] -> TestInfo -> RIO env TestResults
         doFilesWithCommand candidates ti = runConduit $
                 doAll candidates (testCmds ti)
              .| mapMC runTestcase
@@ -135,7 +136,7 @@ doTestsInDir = awaitForever once
                 where foo :: [Int -> TestCase] -> Int -> [TestCase] 
                       foo [] _ = []
                       foo (f:fs) i = f i : foo fs (i+1) 
-            runTestcase :: (HasLogFunc env) => TestCase -> RIO env TestResults
+            runTestcase :: (HasProcessContext env, HasLogFunc env) => TestCase -> RIO env TestResults
             runTestcase tc = do
                     let instr = instruction tc
                         indnt = ">> "<>(display . fst . testNr $ tc)<>"."<>(display . snd . testNr $ tc)<>": "
@@ -191,7 +192,7 @@ data TestInstruction = TestInstruction
    , shouldSucceed :: Bool
    } deriving Generic
 instance FromJSON TestInstruction
-testAdlfile :: (HasLogFunc env) =>
+testAdlfile :: (HasProcessContext env, HasLogFunc env) =>
                 Utf8Builder -- prefix to use in all output
              -> FilePath -- the filepath of the directory where the test should be done
              -> FilePath -- the script that is undergoing the test
@@ -202,7 +203,9 @@ testAdlfile indent dir adl tinfo = do
   --let (exit_code, out, err) = (if shouldSucceed tinfo then ExitSuccess else ExitFailure 666
   --                            , "dummy output: "<>dir, "dummy errormsg: "<>adl)
   --(exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
-  (exit_code,out,err) <- readProcess $ shell $ T.unpack (command tinfo) <>" "<>adl
+  (exit_code,out,err) <- withWorkingDir dir $
+           readProcess $ shell $ T.unpack (command tinfo) <>" "<>adl
+  
   let (message,restActions) =
         case (shouldSucceed tinfo, exit_code) of
           (True  , ExitSuccess  ) -> ("Pass. " , pure True)
@@ -221,14 +224,16 @@ testAdlfile indent dir adl tinfo = do
      --      return exitCode
      --linesOf :: Utf8Builder -> [Utf8Builder]
      --linesOf = 
-     failOutput :: (HasLogFunc env,Show a) => (ExitCode, a, a) -> RIO env Bool
+     failOutput :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env Bool
      failOutput (exit_code, out, err) = do
           logError $ indent <>" Actual: "<>(display $ tshow exit_code)
           logError $ indent <>" Expected: "<>(if shouldSucceed tinfo then "ShouldSucceed" else "ShouldFail")
           case exit_code of
              ExitSuccess -> pure False
-             _           -> do (logWarn  . indnt) . displayShow $ out
-                               (logError . indnt) . displayShow $ err
+             _           -> do mapM_ (logWarn  . indnt) . toUtf8Builders $ out
+                               mapM_ (logError . indnt) . toUtf8Builders $ err
                                pure True
       where indnt :: Utf8Builder -> Utf8Builder
             indnt = ("    " <>)
+            toUtf8Builders :: BL.ByteString -> [Utf8Builder]
+            toUtf8Builders = map display . T.lines . decodeUtf8With lenientDecode . BL.toStrict
