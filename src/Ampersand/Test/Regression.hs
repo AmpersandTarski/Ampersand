@@ -200,16 +200,15 @@ testAdlfile :: (HasProcessContext env, HasLogFunc env) =>
              -> RIO env Bool  -- Indicator telling if the test passed or not
 testAdlfile indent dir adl tinfo = do
   logInfo $ indent <> "Start: "<> (display . T.pack $ adl)
-  --let (exit_code, out, err) = (if shouldSucceed tinfo then ExitSuccess else ExitFailure 666
-  --                            , "dummy output: "<>dir, "dummy errormsg: "<>adl)
-  --(exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
   logWarn $ indent <> "  Diagnosics: dir = "<> display (T.pack dir)
   curDir1 <- view workingDirL
   logWarn $ indent <> "  Diagnosics: current dir = "<> (displayShow curDir1)
   (exit_code,out,err) <- withWorkingDir dir
     $ do  curDir2 <- view workingDirL
           logWarn $ indent <> "  Diagnosics: current dir child process = "<> (displayShow curDir2)
-          readProcess $ shell $ T.unpack (command tinfo) <>" "<>adl
+          case words . T.unpack . command $ tinfo of
+            [] -> fatal "No command given!" 
+            h:tl -> proc h (tl<>[adl]) readProcess 
         
   let testPassed = case (shouldSucceed tinfo, exit_code) of
         (True  , ExitSuccess  ) -> True
