@@ -50,7 +50,7 @@ even more complex than it already was.
           Markdown, Mediawiki, Opendocument, Org, Pandoc, Pdf, Plain, Rst,
           Rtf, Texinfo, Textile]), to kick-start your functional
           specification.
-  * ***--proto[=DIRECTORY]*** `proto ----output-directory=DIRECTORY`
+  * ***--proto[=DIRECTORY]*** `proto --output-directory=DIRECTORY`
           generate a functional prototype, so you can experiment with the
           information system specified in your script.
   * ***--dataAnalysis[=file]*** `dataanalysis`
@@ -61,7 +61,7 @@ even more complex than it already was.
           export as plain Ampersand script, for round-trip testing of the
           Ampersand compiler.
   * ***--pop-xlsx*** `population`
-          Generate an .xmlx file containing the populations of your script.
+          Generate an .xlsx file containing the populations of your script.
   * ***--proofs*** `proofs`
           generate derivations, for testing the generation of rules.
   * ***--uml*** `uml`
