@@ -229,10 +229,10 @@ testAdlfile indent dir adl tinfo = do
           logError $ indent <>" Actual: "<>(display $ tshow exit_code)
           logError $ indent <>" Expected: "<>(if shouldSucceed tinfo then "ShouldSucceed" else "ShouldFail")
           case exit_code of
-             ExitSuccess -> pure False
+             ExitSuccess -> mempty
              _           -> do mapM_ (logWarn  . indnt) . toUtf8Builders $ out
                                mapM_ (logError . indnt) . toUtf8Builders $ err
-                               pure True
+          pure False
       where indnt :: Utf8Builder -> Utf8Builder
             indnt = ("    " <>)
             toUtf8Builders :: BL.ByteString -> [Utf8Builder]
