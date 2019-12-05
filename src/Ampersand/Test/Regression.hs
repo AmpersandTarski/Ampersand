@@ -206,11 +206,11 @@ testAdlfile indent dir adl tinfo = do
   logWarn $ indent <> "  Diagnosics: dir = "<> display (T.pack dir)
   curDir1 <- view workingDirL
   logWarn $ indent <> "  Diagnosics: current dir = "<> (displayShow curDir1)
-  (exit_code,out,err) <- withWorkingDir dir $ do
-          curDir2 <- view workingDirL
+  (exit_code,out,err) <- withWorkingDir dir
+    $ do  curDir2 <- view workingDirL
           logWarn $ indent <> "  Diagnosics: current dir child process = "<> (displayShow curDir2)
-          -- readProcess $ shell $ T.unpack (command tinfo) <>" "<>adl
-          readProcess $ shell $ "pwd"
+          readProcess $ shell $ T.unpack (command tinfo) <>" "<>adl
+        
   let testPassed = case (shouldSucceed tinfo, exit_code) of
         (True  , ExitSuccess  ) -> True
         (True  , ExitFailure _) -> False
