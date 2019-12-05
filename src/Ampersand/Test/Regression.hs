@@ -204,8 +204,13 @@ testAdlfile indent dir adl tinfo = do
   --                            , "dummy output: "<>dir, "dummy errormsg: "<>adl)
   --(exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
   logWarn $ indent <> "  Diagnosics: dir = "<> display (T.pack dir)
-  (exit_code,out,err) <- withWorkingDir dir $
-           readProcess $ shell $ T.unpack (command tinfo) <>" "<>adl
+  curDir1 <- view workingDirL
+  logWarn $ indent <> "  Diagnosics: current dir = "<> (displayShow curDir1)
+  (exit_code,out,err) <- withWorkingDir dir $ do
+          curDir2 <- view workingDirL
+          logWarn $ indent <> "  Diagnosics: current dir child process = "<> (displayShow curDir2)
+          -- readProcess $ shell $ T.unpack (command tinfo) <>" "<>adl
+          readProcess $ shell $ "pwd"
   let testPassed = case (shouldSucceed tinfo, exit_code) of
         (True  , ExitSuccess  ) -> True
         (True  , ExitFailure _) -> False
