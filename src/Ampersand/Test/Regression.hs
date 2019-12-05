@@ -203,37 +203,30 @@ testAdlfile indent dir adl tinfo = do
   --let (exit_code, out, err) = (if shouldSucceed tinfo then ExitSuccess else ExitFailure 666
   --                            , "dummy output: "<>dir, "dummy errormsg: "<>adl)
   --(exit_code, out, err) <- liftIO $ readCreateProcessWithExitCode myProc ""
+  logWarn $ indent <> "  Diagnosics: dir = "<> display (T.pack dir)
   (exit_code,out,err) <- withWorkingDir dir $
            readProcess $ shell $ T.unpack (command tinfo) <>" "<>adl
-  
-  let (message,restActions) =
-        case (shouldSucceed tinfo, exit_code) of
-          (True  , ExitSuccess  ) -> ("Pass. " , pure True)
-          (True  , ExitFailure _) -> ("***FAIL*** ",failOutput (exit_code, out, err))
-          (False , ExitSuccess  ) -> ("***FAIL*** ",failOutput (exit_code, out, err))
-          (False , ExitFailure _) -> ("Pass. " , pure True)
-  logInfo $ indent<>message<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
-  restActions
+  let testPassed = case (shouldSucceed tinfo, exit_code) of
+        (True  , ExitSuccess  ) -> True
+        (True  , ExitFailure _) -> False
+        (False , ExitSuccess  ) -> False
+        (False , ExitFailure _) -> True
+  (if testPassed then passHandler else failHandler)(exit_code, out, err)
+  return testPassed
    where
-     --myProc :: CreateProcess
-     --myProc = (shell $ (T.unpack (command tinfo) <>" "<>adl)) {cwd = Just dir}
-     --myProc = (shell $ "echo" <>" "<>show adl) {cwd = Just dir}
-     --aap :: RIO env (ExitCode)
-     --aap =  withProcess "date" $ \process -> do
-     --      exitCode <- waitExitCode (process :: Process () () ())
-     --      return exitCode
-     --linesOf :: Utf8Builder -> [Utf8Builder]
-     --linesOf = 
-     failOutput :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env Bool
-     failOutput (exit_code, out, err) = do
+     passHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
+     passHandler (exit_code, out, err) = do
+          logInfo $ indent<>"Pass. "<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
+          mapM_ (logDebug . indnt) . toUtf8Builders $ out
+          mapM_ (logDebug . indnt) . toUtf8Builders $ err
+     failHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
+     failHandler (exit_code, out, err) = do
+          logInfo $ "***FAIL*** "<>indent<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
           logError $ indent <>" Actual: "<>(display $ tshow exit_code)
           logError $ indent <>" Expected: "<>(if shouldSucceed tinfo then "ShouldSucceed" else "ShouldFail")
-          case exit_code of
-             ExitSuccess -> mempty
-             _           -> do mapM_ (logWarn  . indnt) . toUtf8Builders $ out
-                               mapM_ (logError . indnt) . toUtf8Builders $ err
-          pure False
-      where indnt :: Utf8Builder -> Utf8Builder
-            indnt = ("    " <>)
-            toUtf8Builders :: BL.ByteString -> [Utf8Builder]
-            toUtf8Builders = map display . T.lines . decodeUtf8With lenientDecode . BL.toStrict
+          mapM_ (logWarn  . indnt) . toUtf8Builders $ out
+          mapM_ (logError . indnt) . toUtf8Builders $ err
+     indnt :: Utf8Builder -> Utf8Builder
+     indnt = ("    " <>)
+     toUtf8Builders :: BL.ByteString -> [Utf8Builder]
+     toUtf8Builders = map display . T.lines . decodeUtf8With lenientDecode . BL.toStrict
