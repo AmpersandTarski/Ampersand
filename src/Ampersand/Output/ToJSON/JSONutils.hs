@@ -33,10 +33,10 @@ import           System.FilePath
 import           System.Directory
 
 writeJSONFile :: (ToJSON a, HasDirPrototype env, HasLogFunc env) => 
-                 FSpec -> FilePath -> a -> RIO env ()
-writeJSONFile fSpec fName x = do
+                 FilePath -> a -> RIO env ()
+writeJSONFile fName x = do
     env <- ask
-    let fullFile = getGenericsDir fSpec env </> file
+    let fullFile = getGenericsDir env </> file
     sayWhenLoudLn ("  Generating "++file) 
     liftIO $ createDirectoryIfMissing True (takeDirectory fullFile)
     liftIO $ BL.writeFile fullFile (encodePretty x)

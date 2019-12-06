@@ -40,21 +40,21 @@ instance HasFSpecGenOpts DaemonOpts where
   fSpecGenOptsL = lens x2fSpecGenOpts (\x y -> x { x2fSpecGenOpts = y })
 instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
-class HasDirPrototype a where
+class (HasRootFile a) => HasDirPrototype a where
   dirPrototypeL :: Lens' a (Maybe FilePath)
-  getTemplateDir :: Named b => b -> a -> String
-  getTemplateDir fSpec x = 
-    getDirPrototype fSpec x </> "templates"
-  getAppDir :: Named b => b -> a -> String
-  getAppDir fSpec x =
-    getDirPrototype fSpec x </> "public" </> "app" </> "project"
-  getGenericsDir :: Named b => b -> a -> String
-  getGenericsDir fSpec x = 
-    getDirPrototype fSpec x </> "generics" 
-  getDirPrototype :: Named b => b -> a -> FilePath
-  getDirPrototype fSpec x =
+  getTemplateDir :: a -> String
+  getTemplateDir x = 
+    getDirPrototype x </> "templates"
+  getAppDir :: a -> String
+  getAppDir x =
+    getDirPrototype x </> "public" </> "app" </> "project"
+  getGenericsDir :: a -> String
+  getGenericsDir x = 
+    getDirPrototype x </> "generics" 
+  getDirPrototype :: a -> FilePath
+  getDirPrototype x =
     (case view dirPrototypeL x of
-       Nothing -> name fSpec
+       Nothing -> fromMaybe "" (view (rootFileL) x) <> ".proto"
        Just nm -> nm )
 instance HasDirPrototype ProtoOpts where
   dirPrototypeL = lens xdirPrototype (\x y -> x { xdirPrototype = y })
@@ -65,23 +65,29 @@ instance HasAllowInvariantViolations ProtoOpts where
   allowInvariantViolationsL = lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
 
 class HasRootFile a where
-  rootFileL :: Lens' a FilePath
+  rootFileL :: Lens' a (Maybe FilePath)
   baseName :: a -> String
-  baseName = takeBaseName . view rootFileL
+  baseName  = fromMaybe (fatal "Cannot determine the basename of the script that is being compiled")
+            . fmap takeBaseName
+            . view rootFileL
   dirSource :: a -> FilePath -- the directory of the script that is being compiled
-  dirSource = takeDirectory . view rootFileL
+  dirSource = fromMaybe (fatal "Cannot determine the directory of the script that is being compiled")
+            . fmap takeDirectory 
+            . view rootFileL
 instance HasRootFile ProtoOpts where
   rootFileL = fSpecGenOptsL . rootFileL
 instance HasRootFile FSpecGenOpts where
-  rootFileL = --Note: This instance definition is different, because
+  rootFileL = lens xrootFile (\x y -> x { xrootFile = y })
+              --Note: This instance definition is different, because
               --      we need a construction that in case of the deamon
               --      command, the root wil actually be read from a
               --      config file.  
-     lens (\x -> fromMaybe
-                    (fatal "The rootfile must be set before it is read!")
-                    (xrootFile x)
-          )
-          (\x y -> x { xrootFile = Just y })
+  --   lens (\x -> fromMaybe
+  --                  (fatal "The rootfile must be set before it is read!")
+  --                  (xrootFile x)
+  --        )
+  --        (\x y -> x { xrootFile = Just y })
+
 instance HasRootFile DocOpts where
   rootFileL = fSpecGenOptsL . rootFileL
 instance HasRootFile InputOutputOpts where

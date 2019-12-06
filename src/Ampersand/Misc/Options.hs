@@ -100,7 +100,8 @@ class HasOptions env where
   optionsL :: Lens' env Options
 instance HasDirPrototype Options where
   dirPrototypeL = lens dirPrototype (\x y -> x { dirPrototype = y })
-
+instance HasRootFile Options where
+  rootFileL = lens rootFile (\x y -> x { rootFile = y })
 class HasEnvironment a where
   environmentL :: Lens' a EnvironmentOptions
 instance HasEnvironment Options where
@@ -679,8 +680,6 @@ data App = App
   , appLogFunc :: !LogFunc
   }
 
-instance HasDirPrototype App where
-  dirPrototypeL = optionsL . dirPrototypeL
 --instance HasRootFile App where
 --  rootFileL = optionsL . rootFileL
 instance HasOptions App where

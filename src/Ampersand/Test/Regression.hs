@@ -10,7 +10,6 @@ import           Ampersand.Types.Config
 import           Conduit
 import           Data.Yaml
 import           RIO.Process
-import           System.Process.Typed (shell)
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.Text as T
 import           System.Directory
@@ -219,10 +218,8 @@ testAdlfile indent dir adl tinfo = do
   return testPassed
    where
      passHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
-     passHandler (exit_code, out, err) = do
+     passHandler (exit_code, _, _) = do
           logInfo $ indent<>"Pass. "<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
-          mapM_ (logDebug . indnt) . toUtf8Builders $ out
-          mapM_ (logDebug . indnt) . toUtf8Builders $ err
      failHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
      failHandler (exit_code, out, err) = do
           logInfo $ "***FAIL*** "<>indent<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"

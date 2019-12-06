@@ -21,11 +21,11 @@ import           Ampersand.Output.FSpec2SQL
 import           Ampersand.Output.ToJSON.ToJson
 -- | Builds a prototype of the current project.
 --
-proto :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env) 
+proto :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env) 
        => FSpec -> RIO env ()
 proto fSpec = do
     env <- ask
-    let dirPrototype = getDirPrototype fSpec env
+    let dirPrototype = getDirPrototype env
     allowInvariantViolations <- view allowInvariantViolationsL
     if null (violationsOfInvariants fSpec) || allowInvariantViolations
     then do

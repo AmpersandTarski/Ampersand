@@ -47,7 +47,7 @@ createFspec' mutator recipe = do
         let fun m = (,) m <$> mkGrindInfo m
         Map.fromList <$> (sequence $ fun <$> [minBound ..])
     rawUserP_Ctx:: Guarded P_Context <- do
-       rootFile <- view rootFileL
+       rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
        pctx <- snd <$> parseADL rootFile -- the P_Context of the user's sourceFile
        return $ mutator <$> pctx 
     return . join $ cook env grindInfoMap recipe <$> rawUserP_Ctx

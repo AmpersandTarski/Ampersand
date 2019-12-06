@@ -63,33 +63,33 @@ This is considered editable iff the composition rel;relRef yields an editable re
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirCustomizations env,HasRootFile env, HasRunComposer env, HasDirPrototype env) =>
+doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirCustomizations env,HasRunComposer env, HasDirPrototype env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     now <- getCurrentTime
     skipComposer <- view skipComposerL
     sayWhenLoudLn "Generating frontend..."
-    isCleanInstall <- downloadPrototypeFramework fSpec
-    copyTemplates fSpec
+    isCleanInstall <- downloadPrototypeFramework
+    copyTemplates
     feInterfaces <- buildInterfaces fSpec
     genViewInterfaces fSpec feInterfaces
     genControllerInterfaces fSpec feInterfaces
     genRouteProvider fSpec feInterfaces
-    writePrototypeAppFile fSpec ".timestamp" (show . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
-    copyCustomizations fSpec 
+    writePrototypeAppFile ".timestamp" (show . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
+    copyCustomizations
     when (isCleanInstall && not skipComposer) $ do
       sayLn "Installing dependencies..." -- don't use sayWhenLoudLn here, because installing dependencies takes some time and we want the user to see this
       env <- ask 
-      let dirPrototype = getDirPrototype fSpec env
+      let dirPrototype = getDirPrototype env
       installComposerLibs dirPrototype
     sayWhenLoudLn "Frontend generated"
   
-copyTemplates :: (HasRootFile env, HasDirPrototype env, HasLogFunc env) =>
-                 FSpec -> RIO env ()
-copyTemplates fSpec = do
+copyTemplates :: (HasDirPrototype env, HasLogFunc env) =>
+                 RIO env ()
+copyTemplates = do
   env <- ask
   let tempDir = dirSource env </> "templates"
-      toDir = getTemplateDir fSpec env
+      toDir = getTemplateDir env
   tempDirExists <- liftIO $ doesDirectoryExist tempDir
   if tempDirExists then do
          sayWhenLoudLn $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
@@ -97,12 +97,12 @@ copyTemplates fSpec = do
   else
          sayWhenLoudLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
 
-copyCustomizations :: (HasDirPrototype env, HasRootFile env,HasDirCustomizations env,HasLogFunc env) =>
-                      FSpec -> RIO env ()
-copyCustomizations fSpec = do
+copyCustomizations :: (HasDirPrototype env, HasDirCustomizations env,HasLogFunc env) =>
+                      RIO env ()
+copyCustomizations = do
   env <- ask
   dirCustomizations <- view dirCustomizationsL
-  let dirPrototype = getDirPrototype fSpec env
+  let dirPrototype = getDirPrototype env
   let custDirs = map (dirSource env</>) dirCustomizations
   mapM_ (copyDir dirPrototype) custDirs
     where
@@ -198,7 +198,7 @@ buildInterface fSpec allIfcs ifc = do
                        -- no view, or no view with an html template, so we fall back to target-concept template
                        -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
                       let templatePath = "Atomic-" ++ (idWithoutType tgt) ++ ".html"
-                      hasSpecificTemplate <- doesTemplateExist fSpec templatePath
+                      hasSpecificTemplate <- doesTemplateExist templatePath
                       return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
             return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
                    , iExp)
@@ -261,14 +261,14 @@ genRouteProvider :: (HasRunner env, HasDirPrototype env) =>
 genRouteProvider fSpec ifcs = do
   runner <- view runnerL
   let loglevel' = logLevel runner
-  template <- readTemplate fSpec "routeProvider.config.js"
+  template <- readTemplate "routeProvider.config.js"
   let contents = renderTemplate template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" ampersandVersionStr
                  . setAttribute "ifcs"                ifcs
                  . setAttribute "verbose"             (loglevel' == LevelDebug)
                  . setAttribute "loglevel"            (show loglevel')
-  writePrototypeAppFile fSpec "routeProvider.config.js" contents 
+  writePrototypeAppFile "routeProvider.config.js" contents 
       
 ------ Generate view html code
 
@@ -282,7 +282,7 @@ genViewInterface fSpec interf = do
   runner <- view runnerL
   let loglevel' = logLevel runner
   lns <- genViewObject fSpec 0 (_ifcObj interf)
-  template <- readTemplate fSpec "interface.html"
+  template <- readTemplate "interface.html"
   let contents = renderTemplate template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                   . setAttribute "isTopLevel"          ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -301,7 +301,7 @@ genViewInterface fSpec interf = do
                   . setAttribute "verbose"             (loglevel' == LevelDebug)
                   . setAttribute "loglevel"            (show loglevel')
   let filename = "ifc" ++ ifcName interf ++ ".view.html" 
-  writePrototypeAppFile fSpec filename contents 
+  writePrototypeAppFile filename contents 
   
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr2 = SubObjAttr{ subObjName :: String
@@ -343,7 +343,7 @@ genViewObject fSpec depth obj =
               -- sayLn $ nm ++ ":" ++ show mPrimTemplate
               conceptTemplate <- getTemplateForObject
               let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
-              template <- readTemplate fSpec templateFilename
+              template <- readTemplate templateFilename
                         
               return . indentation
                      . lines 
@@ -356,7 +356,7 @@ genViewObject fSpec depth obj =
               subObjAttrs <- mapM genView_SubObject subObjs
                         
               let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" ++ cl ++ ".html") mClass
-              parentTemplate <- readTemplate fSpec clssStr
+              parentTemplate <- readTemplate clssStr
                 
               return . indentation
                      . lines 
@@ -394,7 +394,7 @@ genViewObject fSpec depth obj =
     getTemplateForConcept :: (HasDirPrototype env) =>
                              A_Concept -> RIO env FilePath
     getTemplateForConcept cpt = do 
-         exists <- doesTemplateExist fSpec cptfn
+         exists <- doesTemplateExist cptfn
          return $ if exists
                   then cptfn
                   else "Atomic-"++show ttp++".html" 
@@ -409,7 +409,7 @@ genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
 genControllerInterface :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genControllerInterface fSpec interf = do
     let controlerTemplateName = "interface.controller.js"
-    template <- readTemplate fSpec controlerTemplateName
+    template <- readTemplate controlerTemplateName
     runner <- view runnerL
     let loglevel' = logLevel runner
     let contents = renderTemplate template $
@@ -431,24 +431,24 @@ genControllerInterface fSpec interf = do
                      . setAttribute "loglevel"                 (show loglevel')
                      . setAttribute "usedTemplate"             controlerTemplateName
     let filename = "ifc" ++ ifcName interf ++ ".controller.js"
-    writePrototypeAppFile fSpec filename contents 
+    writePrototypeAppFile filename contents 
 
 ------ Utility functions
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate String) String
 
 -- TODO: better abstraction for specific template and fallback to default
-doesTemplateExist :: (HasDirPrototype env) => FSpec -> FilePath -> RIO env Bool
-doesTemplateExist fSpec templatePath = do
+doesTemplateExist :: (HasDirPrototype env) => FilePath -> RIO env Bool
+doesTemplateExist templatePath = do
   env <- ask
-  let absPath = getTemplateDir fSpec env </> templatePath
+  let absPath = getTemplateDir env </> templatePath
   liftIO $ doesFileExist absPath
 
 readTemplate :: (HasDirPrototype env) =>
-                FSpec -> FilePath -> RIO env Template
-readTemplate fSpec templatePath = do
+                FilePath -> RIO env Template
+readTemplate templatePath = do
   env <- ask
-  let absPath = getTemplateDir fSpec env </> templatePath
+  let absPath = getTemplateDir env </> templatePath
   res <- readUTF8File absPath
   case res of
     Left err   -> exitWith $ ReadFileError $ "Error while reading template.\n" : err
@@ -473,10 +473,10 @@ renderTemplate (Template template absPath) setAttrs =
 
 
 downloadPrototypeFramework :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
-                             FSpec -> RIO env Bool
-downloadPrototypeFramework fSpec = ( do 
+                             RIO env Bool
+downloadPrototypeFramework = ( do 
     env <- ask
-    let dirPrototype = getDirPrototype fSpec env
+    let dirPrototype = getDirPrototype env
     x <- extractionIsAllowed dirPrototype
     zwolleVersion <- view zwolleVersionL
     if x

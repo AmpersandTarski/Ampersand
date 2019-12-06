@@ -20,18 +20,18 @@ generateJSONfiles genRapPopulation fSpec = do
  env <- ask
  sequence_ $
   if genRapPopulation
-  then [ writeJSONFile fSpec "metaPopulation" 
+  then [ writeJSONFile "metaPopulation" 
                                     (fromAmpersand env fSpec fSpec :: Populations)
        ]
-  else [ writeJSONFile fSpec "settings"   (fromAmpersand env fSpec fSpec :: Settings)
-       , writeJSONFile fSpec "relations"  (fromAmpersand env fSpec fSpec :: Relationz)
-       , writeJSONFile fSpec "rules"      (fromAmpersand env fSpec fSpec :: Rulez)
-       , writeJSONFile fSpec "concepts"   (fromAmpersand env fSpec fSpec :: Concepts)
-       , writeJSONFile fSpec "conjuncts"  (fromAmpersand env fSpec fSpec :: Conjuncts)
-       , writeJSONFile fSpec "interfaces" (fromAmpersand env fSpec fSpec :: Interfaces)
-       , writeJSONFile fSpec "views"      (fromAmpersand env fSpec fSpec :: Views)
-       , writeJSONFile fSpec "roles"      (fromAmpersand env fSpec fSpec :: Roles)
-       , writeJSONFile fSpec "populations"(fromAmpersand env fSpec fSpec :: Populations)
+  else [ writeJSONFile "settings"   (fromAmpersand env fSpec fSpec :: Settings)
+       , writeJSONFile "relations"  (fromAmpersand env fSpec fSpec :: Relationz)
+       , writeJSONFile "rules"      (fromAmpersand env fSpec fSpec :: Rulez)
+       , writeJSONFile "concepts"   (fromAmpersand env fSpec fSpec :: Concepts)
+       , writeJSONFile "conjuncts"  (fromAmpersand env fSpec fSpec :: Conjuncts)
+       , writeJSONFile "interfaces" (fromAmpersand env fSpec fSpec :: Interfaces)
+       , writeJSONFile "views"      (fromAmpersand env fSpec fSpec :: Views)
+       , writeJSONFile "roles"      (fromAmpersand env fSpec fSpec :: Roles)
+       , writeJSONFile "populations"(fromAmpersand env fSpec fSpec :: Populations)
        ]
 
 

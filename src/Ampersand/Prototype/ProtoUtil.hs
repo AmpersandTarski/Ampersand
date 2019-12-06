@@ -12,7 +12,6 @@ module Ampersand.Prototype.ProtoUtil
          ) where
  
 import           Ampersand.Basics
-import           Ampersand.FSpec.FSpec (FSpec)
 import           Ampersand.Misc
 import qualified RIO.List as L
 import qualified RIO.Text as T
@@ -26,11 +25,11 @@ import           System.Process(CreateProcess(..),readCreateProcessWithExitCode
 
 
 writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
-                         FSpec -> String -> String -> RIO env ()
-writePrototypeAppFile fSpec relFilePath content = do
+                         String -> String -> RIO env ()
+writePrototypeAppFile relFilePath content = do
   env <- ask
   sayWhenLoudLn $ "  Generating "<>relFilePath 
-  let filePath = getAppDir fSpec env </> relFilePath
+  let filePath = getAppDir env </> relFilePath
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
   liftIO $ writeFile filePath content
      
