@@ -49,7 +49,6 @@ import           Options.Applicative.Common
 import qualified RIO.List as L
 import           RIO.Char 
 import qualified RIO.NonEmpty as NE
-import qualified RIO.NonEmpty.Partial as PARTIAL
 import           System.Environment ({-getProgName,-} withArgs)
 
 --import           System.FilePath (isValid, pathSeparator, takeDirectory)

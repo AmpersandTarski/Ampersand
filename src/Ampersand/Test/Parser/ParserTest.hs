@@ -10,7 +10,6 @@ import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
 import qualified RIO.NonEmpty as NE
-import qualified RIO.NonEmpty.Partial as PARTIAL
 import           Ampersand.Types.Config
 import           Ampersand.Options.FSpecGenOptsParser
 -- Tries to parse all the given files

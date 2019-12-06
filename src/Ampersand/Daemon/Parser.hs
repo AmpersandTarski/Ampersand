@@ -11,7 +11,6 @@ import           Ampersand.Daemon.Types
 import           Ampersand.Input.Parsing
 import           Ampersand.Input.ADL1.CtxError
 import qualified RIO.NonEmpty as NE
-import qualified RIO.NonEmpty.Partial as PARTIAL
 import           Ampersand.FSpec.MetaModels
 import           Ampersand.Types.Config
 import           Ampersand.Options.FSpecGenOptsParser
