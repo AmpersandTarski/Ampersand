@@ -113,9 +113,6 @@ doTestsInDir = awaitForever once
             lift $ mapM_ sayInstruction (testCmds ti)
             result <- lift . doFilesWithCommand candidates $ ti
             yield result
---            doAll candidates (testCmds ti) .| doTestCase .| sumarizeTestCases
-                         -- <>command ti<>if shouldSucceed ti then " (should succeed)." else " (should fail)."
-                         --   runConduit $ runTests ti .| getResults
       else do
         lift . logDebug $ indent<>"Nothing to do. ("<>display (T.pack yaml)<>" not present)"
         yield TestResults
@@ -153,7 +150,7 @@ doTestsInDir = awaitForever once
         parseYaml ::  RIO env (Either ParseException TestInfo) 
         parseYaml = liftIO $ decodeFileEither $ path x </> yaml
     sayInstruction :: HasLogFunc env => TestInstruction -> RIO env ()
-    sayInstruction x = logDebug $ indent <> "  Command: "<>(display $ command x)<>if shouldSucceed x then " (should succeed)." else " (should fail)."
+    sayInstruction x = logDebug $ indent <> "  Command: "<>(display $ command x)<>if exitcode x == 0 then " (should succeed)." else " (should fail with exitcode "<>display (exitcode x)<>")."
     indent :: IsString a => a
     indent = "    "
 
@@ -188,7 +185,7 @@ data TestInfo = TestInfo
 instance FromJSON TestInfo
 data TestInstruction = TestInstruction 
    { command :: T.Text
-   , shouldSucceed :: Bool
+   , exitcode :: Int
    } deriving Generic
 instance FromJSON TestInstruction
 testAdlfile :: (HasProcessContext env, HasLogFunc env) =>
@@ -205,11 +202,9 @@ testAdlfile indent dir adl tinfo = do
         h:tl -> do
            proc h (tl<>[adl]) readProcess 
         
-  let testPassed = case (shouldSucceed tinfo, exit_code) of
-        (True  , ExitSuccess  ) -> True
-        (True  , ExitFailure _) -> False
-        (False , ExitSuccess  ) -> False
-        (False , ExitFailure _) -> True
+  let testPassed = case exit_code of
+        (ExitSuccess  ) -> exitcode tinfo == 0
+        (ExitFailure x) -> exitcode tinfo == x
   (if testPassed then passHandler else failHandler)(exit_code, out, err)
   return testPassed
    where
@@ -220,7 +215,7 @@ testAdlfile indent dir adl tinfo = do
      failHandler (exit_code, out, err) = do
           logError $ "***FAIL*** "<>indent<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
           logInfo $ indent <>" Actual: "<>(display $ tshow exit_code)
-          logInfo $ indent <>" Expected: "<>(if shouldSucceed tinfo then "ShouldSucceed" else "ShouldFail")
+          logInfo $ indent <>" Expected: "<>(if exitcode tinfo == 0 then "ShouldSucceed" else "ShouldFail")
           mapM_ (logWarn  . indnt) . toUtf8Builders $ out
           mapM_ (logError . indnt) . toUtf8Builders $ err
      indnt :: Utf8Builder -> Utf8Builder
