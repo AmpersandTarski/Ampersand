@@ -8,27 +8,7 @@ module Ampersand.Components
 --   , generateAmpersandOutput
   )
 where
-import           Ampersand.Basics
-import           Ampersand.Core.ShowAStruct
-import           Ampersand.Core.AbstractSyntaxTree
-import           Ampersand.FSpec
-import           Ampersand.FSpec.GenerateUML
-import           Ampersand.Graphic.Graphics (writePicture)
-import           Ampersand.Misc
-import           Ampersand.Output
-import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import qualified RIO.ByteString.Lazy as BL
-import qualified RIO.List as L
---import qualified Data.List.NonEmpty as NEL
-import qualified RIO.Set as Set
-import qualified RIO.Text as T
-import           RIO.Time (getCurrentTime)
-import           System.Directory
-import           System.FilePath ((</>), (-<.>))
-import           Text.Pandoc hiding (getCurrentTime)
-import           Text.Pandoc.Builder
---import           Ampersand.Commands.Proto
-import           Ampersand.Input.ADL1.CtxError(Guarded(..))
+
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
