@@ -1,4 +1,4 @@
-﻿CONTEXT Test IN DUTCH
+CONTEXT Test IN DUTCH
 -- We're testing that:
 -- IDENTs work for functional relations
 -- IDENTs work with univalent relations
