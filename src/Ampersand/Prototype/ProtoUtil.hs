@@ -36,6 +36,8 @@ writePrototypeAppFile relFilePath content = do
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
+-- NOTE: directories with extention .proto are excluded. This would compromise regression tests, 
+--       where foo.adl.proto is used to output the prototype of foo.adl
 copyDirRecursively :: (HasLogFunc env) =>
                       FilePath -> FilePath -> RIO env ()
 copyDirRecursively srcBase tgtBase 
@@ -61,12 +63,16 @@ copyDirRecursively srcBase tgtBase
             if srcPath == shouldSkip
               then do
                 sayWhenLoudLn $ "Skipping "<>srcPath<>" because it is the target directory of the recursive copy action."
-              else do  
-                sayWhenLoudLn $ " Copying dir... " ++ srcPath
-                sayWhenLoudLn $ "      to dir... " ++ tgtPath
-                fOrDs <- getProperDirectoryContents srcPath
-                liftIO $ createDirectoryIfMissing True tgtPath
-                mapM_ (\fOrD -> copy shouldSkip $ fileOrDirPth </> fOrD) fOrDs
+              else 
+                if takeExtension srcPath == ".proto" 
+                  then do  
+                    sayWhenLoudLn $ "Skipping "<>srcPath<>" because its extention is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
+                  else do
+                    sayWhenLoudLn $ " Copying dir... " ++ srcPath
+                    sayWhenLoudLn $ "      to dir... " ++ tgtPath
+                    fOrDs <- getProperDirectoryContents srcPath
+                    liftIO $ createDirectoryIfMissing True tgtPath
+                    mapM_ (\fOrD -> copy shouldSkip $ fileOrDirPth </> fOrD) fOrDs
           else do
               sayWhenLoudLn $ "  file... " ++ fileOrDirPth
               liftIO $ copyFile srcPath tgtPath
