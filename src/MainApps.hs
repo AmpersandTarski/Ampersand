@@ -48,7 +48,7 @@ ampersandWorker eGlobalRun = do
               Just ec -> exitWith ec
               Nothing -> do
                   logError $ fromString $ displayException e
-                  exitWith $ RunnerAborted $ lines $ displayException e
+                  throwIO e -- exitWith $ RunnerAborted $ lines $ displayException e
 
 
 
