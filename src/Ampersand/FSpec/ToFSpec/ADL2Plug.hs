@@ -11,12 +11,12 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import           Ampersand.Misc
 import           RIO.Char
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import qualified Data.List.NonEmpty as NEL
 
 attributesOfConcept :: FSpec -> A_Concept -> [SqlAttribute]
 attributesOfConcept fSpec c
- = [  att | att<-NEL.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
+ = [  att | att<-NE.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
    where
      inKernel :: SqlAttribute -> Bool
      inKernel att = isUni expr 

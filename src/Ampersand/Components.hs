@@ -153,7 +153,7 @@ where
 --      if verbosity == Loud
 --      then
 --        sayWhenLoudLn $ "Signals for initial population:\n" ++ L.intercalate "\n"
---          [   "Rule(s): "++(show . map name . NEL.toList . rc_orgRules) conj
+--          [   "Rule(s): "++(show . map name . NE.toList . rc_orgRules) conj
 --          ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
 --          ++"\n  Violations : " ++ showprs viols
 --          | (conj, viols) <- conjViols

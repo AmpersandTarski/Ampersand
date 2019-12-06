@@ -16,7 +16,7 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 
@@ -538,7 +538,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList
         [(dirtyId conj, dirtyId rul)
         | conj::Conjunct <- instanceList fSpec
-        , rul <- NEL.toList $ rc_orgRules conj
+        , rul <- NE.toList $ rc_orgRules conj
         ]
       )
      ,("outQ"                  , "Quad"                  , "Act"     

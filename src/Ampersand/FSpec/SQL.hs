@@ -14,7 +14,7 @@ import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.FSpecAux
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           Language.SQL.SimpleSQL.Pretty
@@ -256,7 +256,7 @@ nonSpecialSelectExpr fSpec expr=
                   atmValue (EMp1 a _) = a
                   atmValue _          = fatal "atm error"
                   mp1Terms, nonMp1Terms :: [Expression]
-                  (mp1Terms,nonMp1Terms) = NEL.partition isMp1 (exprIsc2list expr)
+                  (mp1Terms,nonMp1Terms) = NE.partition isMp1 (exprIsc2list expr)
                   posMp1Terms, negMp1Terms :: [Expression]
                   (posMp1Terms,negMp1Terms) = partition isPos mp1Terms
                   f :: Maybe PSingleton   -- Optional the singleton value that might be found as the only possible value 
@@ -459,8 +459,8 @@ nonSpecialSelectExpr fSpec expr=
                                  
     ECps{}  ->
        let es   = exprCps2list expr
-           hes  = NEL.head es
-           tles = NEL.tail es in
+           hes  = NE.head es
+           tles = NE.tail es in
        case tles of
           []-> traceComment ["case: ECps{}"] $ selectExpr fSpec hes -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
 {-  We can treat the ECps expressions as poles-and-fences, with at least two fences.
@@ -494,7 +494,7 @@ nonSpecialSelectExpr fSpec expr=
                     lastNr = firstNr + length es - 1
                     fenceExpr :: Int -> Expression 
                     fenceExpr i = fromMaybe (fatal "i out of bound!")
-                                . lookup i . zip [firstNr .. lastNr] . NEL.toList $ es
+                                . lookup i . zip [firstNr .. lastNr] . NE.toList $ es
                     fences :: [Maybe TableRef]
                     fences = map fenceTable [firstNr..lastNr]
                     fenceTable :: Int -> Maybe TableRef
@@ -1070,7 +1070,7 @@ sqlConceptPlug fSpec c
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c | c==ONE = QName "ONE"
                       | otherwise
-             = case [name f |f<-NEL.toList $ plugAttributes (sqlConceptPlug fSpec c)
+             = case [name f |f<-NE.toList $ plugAttributes (sqlConceptPlug fSpec c)
                     , c'<-Set.elems $ concs f,c==c'] of
                 [] -> fatal ("A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\"")
                 h:_ -> QName h

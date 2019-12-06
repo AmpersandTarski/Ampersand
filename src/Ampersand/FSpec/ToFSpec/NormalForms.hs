@@ -13,7 +13,7 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input (parseRule)
 import           Data.Hashable
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Set.Partial as SetPartial 
 import qualified RIO.Text as T
@@ -384,15 +384,15 @@ dSteps drs x = dStps x
   matchableRules
    = [ (template, rewriteTerms )     -- each tuple may represent multiple rules.
      | cl<-eqCl lTerm (concatMap f drs)  -- divide into classes to save a little on the number of matches.
-     , let template = lTerm (NEL.head cl)   -- This is the template against which to match full expressions.
+     , let template = lTerm (NE.head cl)   -- This is the template against which to match full expressions.
      , let rewriteTerms = stepTerms template cl
      , not (null rewriteTerms)
      ]
      where f (DEquiR l r) = [DInclR l r, DInclR r l]
            f inclusion = [inclusion]
-           stepTerms :: RTerm -> NEL.NonEmpty DerivRule -> [RTerm]
+           stepTerms :: RTerm -> NE.NonEmpty DerivRule -> [RTerm]
            stepTerms template cl  -- Only select rules with bindings within the template. Otherwise, we would have to "invent" bindings.
-            = [term' | rule<-NEL.toList cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template ]
+            = [term' | rule<-NE.toList cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template ]
 
 {-
      showMatchableRules :: [(RTerm,[RTerm])] -> String
@@ -1231,9 +1231,9 @@ Until the new normalizer works, we will have to work with this one. So I have in
                                                                     (f,steps',equ'') = nM posCpl r []
   nM posCpl x@(EIsc (l,r)) rs
 -- Absorb equals:    r/\r  -->  r
-      | or [length cl>1 |cl<-NEL.toList absorbClasses]
-           = ( foldr1 (./\.) (fmap NEL.head absorbClasses)
-             , [shw e++" /\\ "++shw e++" = "++shw e | cl<-NEL.toList absorbClasses, length cl>1, let e=NEL.head cl]
+      | or [length cl>1 |cl<-NE.toList absorbClasses]
+           = ( foldr1 (./\.) (fmap NE.head absorbClasses)
+             , [shw e++" /\\ "++shw e++" = "++shw e | cl<-NE.toList absorbClasses, length cl>1, let e=NE.head cl]
              , "<=>"
              )
 -- Absorb True:    r/\V  --> r
@@ -1251,22 +1251,22 @@ Until the new normalizer works, we will have to work with this one. So I have in
       | not eq && or [length cl>1 |cl<-absorbAsy]
            = ( foldr1 (./\.) ( let absorbAsy1 = case absorbAsy of
                                                   [] -> fatal "impossible" -- because of above or-clause
-                                                  h:tl -> h NEL.:| tl
-                                   fun cl = let e = NEL.head cl in
+                                                  h:tl -> h NE.:| tl
+                                   fun cl = let e = NE.head cl in
                                             if length cl>1 then EDcI (source e) else e in
                                fmap fun absorbAsy1) 
-             , [shw e++" /\\ "++shw (flp e)++" |- I, because"++shw e++" is antisymmetric" | cl<-absorbAsy, let e=NEL.head cl]
+             , [shw e++" /\\ "++shw (flp e)++" |- I, because"++shw e++" is antisymmetric" | cl<-absorbAsy, let e=NE.head cl]
              , "==>"
              )
 -- Absorb if r is antisymmetric and reflexive:    r/\r~ = I
       | or [length cl>1 |cl<-absorbAsyRfx]
            = ( foldr1 (./\.) ( let absorbAsyRfx1 = case absorbAsyRfx of
                                                   [] -> fatal "impossible" -- because of above or-clause
-                                                  h:tl -> h NEL.:| tl
-                                   fun cl = let e = NEL.head cl in
+                                                  h:tl -> h NE.:| tl
+                                   fun cl = let e = NE.head cl in
                                             if length cl>1 then EDcI (source e) else e in
                                fmap fun absorbAsyRfx1)
-             , [shw e++" /\\ "++shw (flp e)++" = I, because"++shw e++" is antisymmetric and reflexive" | cl<-absorbAsyRfx, let e=NEL.head cl]
+             , [shw e++" /\\ "++shw (flp e)++" = I, because"++shw e++" is antisymmetric and reflexive" | cl<-absorbAsyRfx, let e=NE.head cl]
              , "<=>"
              )
 -- Absorb:    (x\\/y)/\\y  =  y
@@ -1291,7 +1291,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
              )
 -- Avoid complements: x/\\-y = x-y
       | (not.null) negList && (not.null) posList
-           = let posList' = head posList NEL.:| tail posList in
+           = let posList' = head posList NE.:| tail posList in
              ( L.foldl (.-.) (foldr1 (./\.) posList') (map notCpl negList)
              , [ "Avoid complements, using law x/\\-y = x-y" ]
              , "<=>"
@@ -1299,41 +1299,41 @@ Until the new normalizer works, we will have to work with this one. So I have in
       | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
       where (t,steps, equ')  = nM posCpl l []
             (f,steps',equ'') = nM posCpl r (l:rs)
-            absorbClasses :: NEL.NonEmpty (NEL.NonEmpty Expression)
-            absorbClasses = case eqClass (==) (NEL.toList $ exprIsc2list l<>exprIsc2list r) of
+            absorbClasses :: NE.NonEmpty (NE.NonEmpty Expression)
+            absorbClasses = case eqClass (==) (NE.toList $ exprIsc2list l<>exprIsc2list r) of
                                []   -> fatal "Impossible"
-                               h:tl -> h NEL.:| tl 
-            incons = NEL.filter (\conjunct -> conjunct ==notCpl l) $ exprIsc2list r
-            absor0  = [disjunct | disjunct<-NEL.toList $ exprUni2list l
-                                , f'<-NEL.toList . appendLeft rs $ exprIsc2list r
+                               h:tl -> h NE.:| tl 
+            incons = NE.filter (\conjunct -> conjunct ==notCpl l) $ exprIsc2list r
+            absor0  = [disjunct | disjunct<-NE.toList $ exprUni2list l
+                                , f'<-NE.toList . appendLeft rs $ exprIsc2list r
                                 , disjunct==f']
-            absor0' = [disjunct | disjunct<-NEL.toList $ exprUni2list r
-                                , f'<-NEL.toList . appendLeft rs $ exprIsc2list l
+            absor0' = [disjunct | disjunct<-NE.toList $ exprUni2list r
+                                , f'<-NE.toList . appendLeft rs $ exprIsc2list l
                                 , disjunct==f']
-            absor1  = [(disjunct, NEL.filter (disjunct /=) (exprUni2list l)) 
-                      | disjunct<-NEL.toList $ exprUni2list l
-                      , ECpl f'<-NEL.toList . appendLeft rs $ exprIsc2list r
+            absor1  = [(disjunct, NE.filter (disjunct /=) (exprUni2list l)) 
+                      | disjunct<-NE.toList $ exprUni2list l
+                      , ECpl f'<-NE.toList . appendLeft rs $ exprIsc2list r
                       , disjunct==f'
                       ]++
-                      [(disjunct, NEL.filter (disjunct /=) (exprUni2list l)) 
-                      | disjunct@(ECpl t')<-NEL.toList $ exprUni2list l
-                      , f'<-NEL.toList . appendLeft rs $ exprIsc2list r
+                      [(disjunct, NE.filter (disjunct /=) (exprUni2list l)) 
+                      | disjunct@(ECpl t')<-NE.toList $ exprUni2list l
+                      , f'<-NE.toList . appendLeft rs $ exprIsc2list r
                       , t'==f']
-            absor1' = [(disjunct, NEL.filter (disjunct /=) (exprUni2list r)) 
-                      | disjunct<-NEL.toList $ exprUni2list r
-                      , ECpl f'<-NEL.toList . appendLeft rs $ exprIsc2list l
+            absor1' = [(disjunct, NE.filter (disjunct /=) (exprUni2list r)) 
+                      | disjunct<-NE.toList $ exprUni2list r
+                      , ECpl f'<-NE.toList . appendLeft rs $ exprIsc2list l
                       , disjunct==f'
                       ]++
-                      [(disjunct, NEL.filter (disjunct /=) (exprUni2list r))
-                      | disjunct@(ECpl t')<-NEL.toList $ exprUni2list r
-                      , f'<-NEL.toList . appendLeft rs $ exprIsc2list l
+                      [(disjunct, NE.filter (disjunct /=) (exprUni2list r))
+                      | disjunct@(ECpl t')<-NE.toList $ exprUni2list r
+                      , f'<-NE.toList . appendLeft rs $ exprIsc2list l
                       , t'==f']
-            absorbAsy :: [NEL.NonEmpty Expression]
-            absorbAsy = eqClass same (NEL.toList eList) where e `same` e' = isAsy e && isAsy e' && e == flp e'
-            absorbAsyRfx :: [NEL.NonEmpty Expression]
-            absorbAsyRfx = eqClass same (NEL.toList eList) where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
-            (negList,posList) = NEL.partition isNeg (exprIsc2list l<>exprIsc2list r)
-            eList :: NEL.NonEmpty Expression
+            absorbAsy :: [NE.NonEmpty Expression]
+            absorbAsy = eqClass same (NE.toList eList) where e `same` e' = isAsy e && isAsy e' && e == flp e'
+            absorbAsyRfx :: [NE.NonEmpty Expression]
+            absorbAsyRfx = eqClass same (NE.toList eList) where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
+            (negList,posList) = NE.partition isNeg (exprIsc2list l<>exprIsc2list r)
+            eList :: NE.NonEmpty Expression
             eList  = appendLeft rs $ exprIsc2list l<>exprIsc2list r
   nM posCpl (EUni (ECpl x,r@(ELrs (z,y)))) _          = if sign x==sign z -- necessary to guarantee that sign expr is equal to sign of the result
                                                         then (notCpl (x .:. y) .\/. z, ["remove left residual (/)"],"<=>")
@@ -1359,9 +1359,9 @@ Until the new normalizer works, we will have to work with this one. So I have in
 -- Absorb equals:    r\/r  -->  r
       | t/=l || f/=r
            = (t .\/. f, steps++steps', fEqu [equ',equ''])
-      | or [length cl>1 |cl<-NEL.toList absorbClasses]   -- yields False if absorbClasses is empty
-           = ( foldr1 (.\/.) (fmap NEL.head absorbClasses)  -- cl cannot be empty, because it is made by eqClass
-             , [shw e++" \\/ "++shw e++" = "++shw e | cl<-NEL.toList absorbClasses, length cl>1, let e=NEL.head cl]
+      | or [length cl>1 |cl<-NE.toList absorbClasses]   -- yields False if absorbClasses is empty
+           = ( foldr1 (.\/.) (fmap NE.head absorbClasses)  -- cl cannot be empty, because it is made by eqClass
+             , [shw e++" \\/ "++shw e++" = "++shw e | cl<-NE.toList absorbClasses, length cl>1, let e=NE.head cl]
              , "<=>"
              )
 -- Tautologies:
@@ -1393,41 +1393,41 @@ Until the new normalizer works, we will have to work with this one. So I have in
       where (t,steps, equ')  = nM posCpl l []
             (f,steps',equ'') = nM posCpl r (l:rs)
          -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
-            absorbClasses :: NEL.NonEmpty (NEL.NonEmpty Expression)
-            absorbClasses = case eqClass (==) (NEL.toList $ exprUni2list l<>exprUni2list r) of
+            absorbClasses :: NE.NonEmpty (NE.NonEmpty Expression)
+            absorbClasses = case eqClass (==) (NE.toList $ exprUni2list l<>exprUni2list r) of
                               [] -> fatal "Impossible"
-                              h:tl -> h NEL.:| tl
+                              h:tl -> h NE.:| tl
          -- tautologies occur if -r\/r, so we are looking for pairs, (x,l) such that x== -l
-            tauts = [t' |disjunct<-NEL.toList $ exprUni2list r,disjunct==notCpl l, ECpl t'<-[disjunct,l]]
+            tauts = [t' |disjunct<-NE.toList $ exprUni2list r,disjunct==notCpl l, ECpl t'<-[disjunct,l]]
             absor0 :: [Expression]
             absor0  = [t' 
-                      | t'<-NEL.toList $ exprIsc2list l
-                      , f'<-NEL.toList . appendLeft rs $ exprUni2list r
+                      | t'<-NE.toList $ exprIsc2list l
+                      , f'<-NE.toList . appendLeft rs $ exprUni2list r
                       , t'==f']
             absor0' :: [Expression]
             absor0' = [t' 
-                      | t'<-NEL.toList $ exprIsc2list r
-                      , f'<-NEL.toList . appendLeft rs $ exprUni2list l
+                      | t'<-NE.toList $ exprIsc2list r
+                      , f'<-NE.toList . appendLeft rs $ exprUni2list l
                       , t'==f']
             absor1 ::[(Expression, [Expression])]
-            absor1  = [(t', NEL.filter (t' /=) (exprIsc2list l)) 
-                      | t'<-NEL.toList $ exprIsc2list l
-                      , ECpl f'<-NEL.toList . appendLeft rs $ exprUni2list r
+            absor1  = [(t', NE.filter (t' /=) (exprIsc2list l)) 
+                      | t'<-NE.toList $ exprIsc2list l
+                      , ECpl f'<-NE.toList . appendLeft rs $ exprUni2list r
                       , t'==f'
                       ]++
-                      [(e, filter (e /=) (NEL.toList $ exprIsc2list l)) 
-                      | e@(ECpl t')<-NEL.toList $ exprIsc2list l
-                      , f'<-NEL.toList . appendLeft rs $ exprUni2list r
+                      [(e, filter (e /=) (NE.toList $ exprIsc2list l)) 
+                      | e@(ECpl t')<-NE.toList $ exprIsc2list l
+                      , f'<-NE.toList . appendLeft rs $ exprUni2list r
                       , t'==f']
             absor1':: [(Expression, [Expression])]
-            absor1' = [(t', filter (t' /=) (NEL.toList $ exprIsc2list r)) 
-                      | t'<-NEL.toList $ exprIsc2list r
-                      , ECpl f'<-NEL.toList . appendLeft rs $ exprUni2list l
+            absor1' = [(t', filter (t' /=) (NE.toList $ exprIsc2list r)) 
+                      | t'<-NE.toList $ exprIsc2list r
+                      , ECpl f'<-NE.toList . appendLeft rs $ exprUni2list l
                       , t'==f'
                       ]++
-                      [(e, filter (e /=) (NEL.toList $ exprIsc2list r)) 
-                      | e@(ECpl t')<-NEL.toList $ exprIsc2list r
-                      , f'<-NEL.toList . appendLeft rs $ exprUni2list l
+                      [(e, filter (e /=) (NE.toList $ exprIsc2list r)) 
+                      | e@(ECpl t')<-NE.toList $ exprIsc2list r
+                      , f'<-NE.toList . appendLeft rs $ exprUni2list l
                       , t'==f']
 -- Issue #72: The following rule may not be used, because multiplicities are not yet proven but must be enforced. So the normalizer may not assume them.
 --  nM _ (EFlp e) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
@@ -1489,7 +1489,7 @@ isEIsc :: Expression -> Bool
 isEIsc EIsc{}  = True
 isEIsc _       = False
 
-conjuncts :: env -> Rule -> NEL.NonEmpty Expression
+conjuncts :: env -> Rule -> NE.NonEmpty Expression
 conjuncts env r = exprIsc2list
                --  . (\e -> trace ("conjNF of that expression: "++show e) e)
                  . conjNF env
@@ -1497,7 +1497,7 @@ conjuncts env r = exprIsc2list
                  . formalExpression $ r
 
 allShifts :: env -> DnfClause -> [DnfClause]
-allShifts env conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
+allShifts env conjunct =  map NE.head.eqClass (==).filter pnEq.map normDNF $ (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
  where
  {-
@@ -1603,10 +1603,10 @@ allShifts env conjunct =  map NEL.head.eqClass (==).filter pnEq.map normDNF $ (s
   normDNF dc = 
     Dnf { antcs = case antcs dc of
                    []   -> []
-                   h:tl -> NEL.toList . exprIsc2list . conjNF env $ foldr1 (./\.) (h NEL.:| tl)
+                   h:tl -> NE.toList . exprIsc2list . conjNF env $ foldr1 (./\.) (h NE.:| tl)
         , conss = case conss dc of
                    []   -> []
-                   h:tl -> NEL.toList . exprUni2list . disjNF env $ foldr1 (.\/.) (h NEL.:| tl)
+                   h:tl -> NE.toList . exprUni2list . disjNF env $ foldr1 (.\/.) (h NE.:| tl)
         }
 
   pnEq :: DnfClause -> Bool
@@ -1651,25 +1651,25 @@ makeAllConjs env allRls =
    | (i , (expr, rs)) <- zip [0..]  conjExprs
    ]
    where
-      conjExprs :: [(Expression, NEL.NonEmpty Rule)]
+      conjExprs :: [(Expression, NE.NonEmpty Rule)]
       conjExprs = converseNE . map conjTupel . Set.toList $ allRls
       conjTupel rule = (rule , conjuncts env rule)
       expr2dnfClause :: Expression -> DnfClause
-      expr2dnfClause = split (Dnf [] []) . NEL.toList . exprUni2list
+      expr2dnfClause = split (Dnf [] []) . NE.toList . exprUni2list
        where
          split :: DnfClause -> [Expression] -> DnfClause
          split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest
          split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
          split dc              []             = dc
 
-appendLeft :: [a] -> NEL.NonEmpty a -> NEL.NonEmpty a
+appendLeft :: [a] -> NE.NonEmpty a -> NE.NonEmpty a
 appendLeft lst ne = 
   case reverse lst of
     [] -> ne
-    x:xs -> appendLeft xs $ x NEL.<| ne
+    x:xs -> appendLeft xs $ x NE.<| ne
 
-foldr1 :: (Expression -> Expression -> Expression) -> NEL.NonEmpty Expression -> Expression
-foldr1 fun ne = foldr fun (NEL.head ne) (NEL.tail ne)
+foldr1 :: (Expression -> Expression -> Expression) -> NE.NonEmpty Expression -> Expression
+foldr1 fun ne = foldr fun (NE.head ne) (NE.tail ne)
 
 -- TODO: Get rid of head', tail', init' and last' in this module. These are introduced here 
 --  whith the introduction to RIO. However, in this module there is too much useage of these functions

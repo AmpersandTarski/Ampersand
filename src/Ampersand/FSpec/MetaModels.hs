@@ -20,7 +20,7 @@ import           Ampersand.FSpec.Transformers
 import           Ampersand.Input
 import           Ampersand.Misc
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 
 parser :: (HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> RIO env (Guarded P_Context)
 parser FormalAmpersand = parseFormalAmpersand
@@ -44,7 +44,7 @@ mkGrindInfo metamodel = do
             , pModel       = case pCtx of
                   Errors errs -> fatal . unlines $
                           ("The ADL scripts of "++name metamodel++" cannot be parsed:")
-                        : (L.intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
+                        : (L.intersperse (replicate 30 '=') . fmap show . NE.toList $ errs)
                   Checked x [] -> x
                   Checked _ ws -> fatal . unlines $
                           ("The ADL scripts of "++name metamodel++" are not free of warnings:")
@@ -53,7 +53,7 @@ mkGrindInfo metamodel = do
                 case join $ pCtx2Fspec env <$> pCtx of
                   Errors errs -> fatal . unlines $
                           ("The ADL scripts of "++name metamodel++" cannot be parsed:")
-                        : (L.intersperse (replicate 30 '=') . fmap show . NEL.toList $ errs)
+                        : (L.intersperse (replicate 30 '=') . fmap show . NE.toList $ errs)
                   Checked x [] -> x
                   Checked _ ws -> fatal . unlines $
                           ("The ADL scripts of "++name metamodel++" are not free of warnings:")

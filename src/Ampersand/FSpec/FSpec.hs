@@ -36,7 +36,7 @@ import           Ampersand.Classes
 import           Ampersand.FSpec.Crud
 import           Data.Function (on)
 import           Data.Hashable
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T 
 import qualified RIO.List as L
@@ -71,7 +71,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , lookupView :: String -> ViewDef          -- ^ Lookup view by id in fSpec.
                    , vgens ::        [AClassify]                  -- ^ All gens that apply in the entire FSpec
                    , allConjuncts :: [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
-                   , allConjsPerRule :: [(Rule,NEL.NonEmpty Conjunct)]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
+                   , allConjsPerRule :: [(Rule,NE.NonEmpty Conjunct)]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
                    , allConjsPerDecl :: [(Relation, [Conjunct])]   -- ^ Maps each relation to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
@@ -190,7 +190,7 @@ instance Named FSpec where
 
 data Quad = Quad { qDcl ::       Relation   -- The relation that, when affected, triggers a restore action.
                  , qRule ::      Rule          -- The rule from which qConjuncts is derived.
-                 , qConjuncts :: NEL.NonEmpty Conjunct    -- The conjuncts, with clauses included
+                 , qConjuncts :: NE.NonEmpty Conjunct    -- The conjuncts, with clauses included
                  } deriving Show
 
 instance Ord Quad where
@@ -254,16 +254,16 @@ instance Unique PlugSQL where
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
-plugAttributes :: PlugSQL-> NEL.NonEmpty SqlAttribute
+plugAttributes :: PlugSQL-> NE.NonEmpty SqlAttribute
 plugAttributes plug = case plug of
     TblSQL{}    -> case attributes plug of
-                     [] -> fatal "attributes should contain at least one element" -- FIXME: change type of attributes to  attributes :: NEL.NonEmpty SqlAttribute
-                     h:tl -> h NEL.:| tl
+                     [] -> fatal "attributes should contain at least one element" -- FIXME: change type of attributes to  attributes :: NE.NonEmpty SqlAttribute
+                     h:tl -> h NE.:| tl
     BinSQL{}    -> let store = case dLkpTbl plug of
                          [x] -> x
                          _   -> fatal $ "Relation lookup table of a binary table should contain exactly one element:\n" ++
                                             show (dLkpTbl plug)
-                   in rsSrcAtt store NEL.:| [rsTrgAtt store]
+                   in rsSrcAtt store NE.:| [rsTrgAtt store]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated

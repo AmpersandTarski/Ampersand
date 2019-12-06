@@ -55,7 +55,7 @@ import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.FilePos()
 import           Ampersand.Input.ADL1.LexerMessage
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import           Data.Typeable
 import           GHC.Exts (groupWith)
 import           Text.Parsec
@@ -107,7 +107,7 @@ instance Traced CtxError where
 lexerError2CtxError :: LexerError -> CtxError
 lexerError2CtxError err = LE err
 
-errors :: Guarded t -> Maybe (NEL.NonEmpty CtxError)
+errors :: Guarded t -> Maybe (NE.NonEmpty CtxError)
 errors (Checked _ _) = Nothing
 errors (Errors lst) = Just lst
 
@@ -117,7 +117,7 @@ unexpectedType o x =
                      Nothing   -> "The Generic Built-in type was unexpeced. "
                      Just ttyp -> "Unexpected built-in type: "<>show ttyp
                    )<>"\n  expecting a concept.")
-           NEL.:| []
+           NE.:| []
           )
 
 mkErrorReadingINCLUDE :: Maybe Origin -> [String] -> Guarded a
@@ -149,7 +149,7 @@ mkMultipleTypesInTypologyError tripls
              , "of them have the same TYPE:"
              ]++
              [ "  - REPRESENT "++name c++" TYPE "++show t++" at "++showFullOrig orig | (c,t,origs) <- tripls, orig <- origs]
-mkCyclesInGensError :: NEL.NonEmpty [AClassify] -> Guarded a
+mkCyclesInGensError :: NE.NonEmpty [AClassify] -> Guarded a
 mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
  where 
   mkErr :: [AClassify] -> CtxError
@@ -163,16 +163,16 @@ mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
              ]++
              [ "  - "++showA gn++" at "++showFullOrig (origin gn) | gn <- gs]
 
-mkMultipleRootsError :: [A_Concept] -> NEL.NonEmpty AClassify -> Guarded a
+mkMultipleRootsError :: [A_Concept] -> NE.NonEmpty AClassify -> Guarded a
 mkMultipleRootsError roots gs
  = Errors . pure $ CTXE o msg
     where 
-      o = origin (NEL.head gs)
+      o = origin (NE.head gs)
       msg = L.intercalate "\n" $
              [ "A typology must have at most one root concept."
              , "The following CLASSIFY statements define a typology with multiple root concepts: "
              ] ++
-             [ "  - "++showA x++" at "++showFullOrig (origin x) | x<-NEL.toList gs]++
+             [ "  - "++showA x++" at "++showFullOrig (origin x) | x<-NE.toList gs]++
              [ "Parhaps you could add the following statements:"]++
              [ "  CLASSIFY "++name cpt++" ISA "++show rootName    | cpt<-roots]
           
@@ -192,9 +192,9 @@ class GetOneGuarded a b | b -> a where
   getOneExactly o _ = 
     case errors (hasNone o :: Guarded a) of
       Nothing -> fatal "No error message!"
-      Just (CTXE o' s NEL.:| _) -> Errors . pure $ CTXE o' $ "Found too many:\n  "++s
-      Just (PE _      NEL.:| _) -> fatal "Didn't expect a PE constructor here"
-      Just (LE _      NEL.:| _) -> fatal "Didn't expect a LE constructor here"
+      Just (CTXE o' s NE.:| _) -> Errors . pure $ CTXE o' $ "Found too many:\n  "++s
+      Just (PE _      NE.:| _) -> fatal "Didn't expect a PE constructor here"
+      Just (LE _      NE.:| _) -> fatal "Didn't expect a LE constructor here"
       
   hasNone :: b  -- the object where the problem is arising
              -> Guarded a
@@ -250,7 +250,7 @@ uniqueNames = uniqueBy name
 uniqueBy :: (Traced a, Show b, Ord b) => (a -> b) -> [a] -> Guarded ()
 uniqueBy fun a = case (filter moreThanOne . groupWith fun) a of
                   []   -> pure ()
-                  x:xs -> Errors $ (messageFor x) NEL.:| (fmap messageFor xs)
+                  x:xs -> Errors $ (messageFor x) NE.:| (fmap messageFor xs)
     where
      moreThanOne (_:_:_) = True
      moreThanOne  _      = False
@@ -306,11 +306,11 @@ mkIncompatibleAtomValueError pav msg = CTXE (origin pav) (case msg of
                                                             "" -> fatal "Error message must not be empty."
                                                             _  -> msg)
 
-mkInterfaceRefCycleError :: NEL.NonEmpty Interface -> CtxError
+mkInterfaceRefCycleError :: NE.NonEmpty Interface -> CtxError
 mkInterfaceRefCycleError cyclicIfcs =
-  CTXE (origin (NEL.head cyclicIfcs)) $
+  CTXE (origin (NE.head cyclicIfcs)) $
              "Interfaces form a reference cycle:\n" ++
-             (unlines . NEL.toList $ fmap showIfc cyclicIfcs)
+             (unlines . NE.toList $ fmap showIfc cyclicIfcs)
     where
       showIfc :: Interface -> String
       showIfc i = "- " ++ show (name i) ++ " at position " ++ show (origin i)
@@ -323,13 +323,13 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
         ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
   
-mkMultipleDefaultError :: NEL.NonEmpty ViewDef -> CtxError
+mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
 mkMultipleDefaultError vds =
-  CTXE (origin . NEL.head $ vds) $ 
+  CTXE (origin . NE.head $ vds) $ 
       "Multiple default views for concept " <> show (name cpt) <> ":" <>
         (concatMap (\vd -> "\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")") $ vds)
      where
-       cpt = case nubOrd . NEL.toList . fmap vdcpt $ vds of
+       cpt = case nubOrd . NE.toList . fmap vdcpt $ vds of
              [] -> fatal "There should be at least one concept found in a nonempty list of viewdefs."
              [c] -> c 
              _  -> fatal "Different concepts are not acceptable in calling mkMultipleDefaultError"
@@ -486,7 +486,7 @@ addWarnings ws ga =
     Errors a      -> Errors a
    
 data Guarded a = 
-   Errors (NEL.NonEmpty CtxError) 
+   Errors (NE.NonEmpty CtxError) 
  | Checked a [Warning]
 --   deriving Show
 

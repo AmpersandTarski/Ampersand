@@ -23,7 +23,7 @@ import           Data.Foldable (toList)
 import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -64,7 +64,7 @@ checkPurposes ctx = let topLevelPurposes = ctxps ctx
                     in  case danglingPurposes of
                       []   -> pure () 
                       x:xs -> Errors $ 
-                                    mkDanglingPurposeError x NEL.:|
+                                    mkDanglingPurposeError x NE.:|
                                 map mkDanglingPurposeError xs
 
 -- Return True if the ExplObj in this Purpose does not exist.
@@ -86,11 +86,11 @@ checkInterfaceCycles :: A_Context -> Guarded ()
 checkInterfaceCycles ctx = 
    case interfaceCycles of
      []   -> return ()
-     x:xs -> Errors $ fmap mkInterfaceRefCycleError (x NEL.:| xs)
-  where interfaceCycles :: [NEL.NonEmpty Interface]
+     x:xs -> Errors $ fmap mkInterfaceRefCycleError (x NE.:| xs)
+  where interfaceCycles :: [NE.NonEmpty Interface]
         interfaceCycles = map ( fmap lookupInterface
                               . fromMaybe (fatal "Empty list of interfacenames is unexpected here.")
-                              . NEL.nonEmpty
+                              . NE.nonEmpty
                               ) 
                         . getCycles $ refsPerInterface
         refsPerInterface :: [(String, [String])]
@@ -113,21 +113,21 @@ checkMultipleDefaultViews :: A_Context -> Guarded ()
 checkMultipleDefaultViews ctx = 
    case conceptsWithMultipleViews of
      []   -> return ()
-     x:xs -> Errors $ fmap mkMultipleDefaultError (x NEL.:| xs)
+     x:xs -> Errors $ fmap mkMultipleDefaultError (x NE.:| xs)
   where
     conceptsWithMultipleViews = 
-                filter (\x -> NEL.length x > 1)
+                filter (\x -> NE.length x > 1)
               . eqClass ((==) `on` vdcpt) 
               . filter vdIsDefault $ ctxvs ctx
 checkDanglingRulesInRuleRoles :: A_Context -> Guarded ()
 checkDanglingRulesInRuleRoles ctx = 
    case [mkDanglingRefError "Rule" nm (arPos rr)  
         | rr <- ctxrrules ctx
-        , nm <- NEL.toList $ arRules rr
+        , nm <- NE.toList $ arRules rr
         , nm `notElem` map name (Set.elems $ allRules ctx)
         ] of
      [] -> return ()
-     x:xs -> Errors (x NEL.:| xs)
+     x:xs -> Errors (x NE.:| xs)
 checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
 checkOtherAtomsInSessionConcept ctx = 
    case [mkOtherAtomInSessionError atom
@@ -147,7 +147,7 @@ checkOtherAtomsInSessionConcept ctx =
         ]
         of
     [] -> return ()
-    x:xs -> Errors (x NEL.:| xs)
+    x:xs -> Errors (x NE.:| xs)
   where _isPermittedSessionValue :: AAtomValue -> Bool
         _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
         _isPermittedSessionValue _                 = False
@@ -326,7 +326,7 @@ pCtx2aCtx env
               reprTrios :: [(A_Concept,TType,Origin)]
               reprTrios = L.nub $ concatMap toReprs reprs
                 where toReprs :: Representation -> [(A_Concept,TType,Origin)]
-                      toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- NEL.toList $ reprcpts r]
+                      toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- NE.toList $ reprcpts r]
               conceptsOfGroups :: [A_Concept]
               conceptsOfGroups = L.nub (concat groups)
               conceptsOfReprs :: [A_Concept]
@@ -375,7 +375,7 @@ pCtx2aCtx env
                []  -> -- there must be at least one cycle in the CLASSIFY statements.
                       case L.nub cycles of
                         []  -> fatal "No cycles found!"
-                        x:xs -> mkCyclesInGensError (x NEL.:| xs)
+                        x:xs -> mkCyclesInGensError (x NE.:| xs)
                         where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
                                 where
                                   f :: AClassify -> [AClassify]
@@ -392,7 +392,7 @@ pCtx2aCtx env
                rs -> mkMultipleRootsError rs $
                        case filter isInvolved gns of
                          []  -> fatal "No involved gens"
-                         x:xs -> x NEL.:| xs
+                         x:xs -> x NE.:| xs
              where 
                isSpecific :: A_Concept -> Bool
                isSpecific cpt = cpt `elem` map genspc (filter (not . isTrivial) gns)
@@ -412,7 +412,7 @@ pCtx2aCtx env
     -- the genLattice is the resulting optimized structure
     genRules :: [(Set.Set Type, Set.Set Type)]
     genRules = [ ( Set.fromList [ pConcToType . specific $ x]
-                 , Set.fromList . NEL.toList . NEL.map pConcToType . generics $ x
+                 , Set.fromList . NE.toList . NE.map pConcToType . generics $ x
                  )
                | x <- allGens
                ]
@@ -420,7 +420,7 @@ pCtx2aCtx env
     completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
                | x <- p_representations++concatMap pt_Reprs p_patterns
-               , cpt <- NEL.toList $ reprcpts x
+               , cpt <- NE.toList $ reprcpts x
                ] ++
                [ ( Set.singleton RepresentSeparator
                  , Set.fromList [ BuiltIn Alphanumeric
@@ -446,13 +446,13 @@ pCtx2aCtx env
 
     pClassify2aClassify :: PClassify -> AClassify
     pClassify2aClassify pg = 
-          case NEL.tail (generics pg) of
+          case NE.tail (generics pg) of
             [] -> Isa{ genpos = origin pg
-                     , gengen = pCpt2aCpt . NEL.head $ generics pg
+                     , gengen = pCpt2aCpt . NE.head $ generics pg
                      , genspc = pCpt2aCpt $ specific pg
                      }
             _  -> IsE{ genpos = origin pg
-                     , genrhs = NEL.toList . NEL.map pCpt2aCpt $ generics pg
+                     , genrhs = NE.toList . NE.map pCpt2aCpt $ generics pg
                      , genspc = pCpt2aCpt $ specific pg
                      }
 

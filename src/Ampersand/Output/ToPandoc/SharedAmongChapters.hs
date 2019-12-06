@@ -40,12 +40,12 @@ import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc
 import           Ampersand.Output.PandocAux
-import qualified Data.List.NonEmpty as NEL
-import qualified RIO.Set as Set
 import qualified Data.Time.Format as DTF
 import           Data.Typeable (typeOf)
 import           GHC.Exts(sortWith)
 import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
 import           Text.Pandoc hiding (trace,Verbosity,getVerbosity)
 import           Text.Pandoc.Builder
 
@@ -529,11 +529,11 @@ concatMarkup :: [Markup] -> Maybe Markup
 concatMarkup es
  = case eqCl amLang es of
     []   -> Nothing
-    [cl] -> Just Markup { amLang   = amLang (NEL.head cl)
+    [cl] -> Just Markup { amLang   = amLang (NE.head cl)
                         , amPandoc = concatMap amPandoc es
                         }
     cls  -> fatal ("don't call concatMarkup with different languages and formats\n   "++
-                   L.intercalate "\n   " (map (show . amLang . NEL.head) cls)
+                   L.intercalate "\n   " (map (show . amLang . NE.head) cls)
                   )
 
 -- Insert an inline after the first inline in the list of blocks, if possible.

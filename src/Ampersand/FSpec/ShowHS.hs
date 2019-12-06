@@ -11,7 +11,7 @@ import           Ampersand.Misc
 import           RIO.Char                  (isAlphaNum)
 import           Data.Hashable
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import           RIO.Time (UTCTime)
 import           Text.Pandoc hiding (Meta)
@@ -50,8 +50,8 @@ instance ShowHSName a => ShowHSName [a] where
 instance ShowHS a => ShowHS [a] where
  showHS env indent = wrap "" (indent++" ") (showHS env)
 
-instance ShowHS a => ShowHS (NEL.NonEmpty a) where
- showHS env indent = wrap "" (indent++" ") (showHS env) . NEL.toList
+instance ShowHS a => ShowHS (NE.NonEmpty a) where
+ showHS env indent = wrap "" (indent++" ") (showHS env) . NE.toList
 
 instance ShowHSName a => ShowHSName (Maybe a) where
  showHSName Nothing  = "Nothing"
@@ -76,7 +76,7 @@ instance ShowHS PlugSQL where
        TblSQL{} -> L.intercalate indent
                    ["let " ++ L.intercalate (indent++"    ")
                                           [showHSName f++indent++"     = "++showHS env (indent++"       ") f 
-                                          | f<-NEL.toList $ plugAttributes plug] ++indent++"in"
+                                          | f<-NE.toList $ plugAttributes plug] ++indent++"in"
                    ,"TblSQL { sqlname    = " ++ (show.name) plug
                    ,"       , attributes = ["++L.intercalate ", " (map showHSName (attributes plug))++"]"
                    ,"       , cLkpTbl    = [ "++L.intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
@@ -88,7 +88,7 @@ instance ShowHS PlugSQL where
        BinSQL{} -> L.intercalate indent
                    ["let " ++ L.intercalate (indent++"    ")
                                           [showHSName f++indent++"     = "++showHS env (indent++"       ") f 
-                                          | f<-NEL.toList $ plugAttributes plug] ++indent++"in"
+                                          | f<-NE.toList $ plugAttributes plug] ++indent++"in"
                    ,"BinSQL { sqlname = " ++ (show.name) plug
                    ,"       , cLkpTbl = [ "++L.intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++L.intercalate (indent++"                      , ") 
@@ -142,7 +142,7 @@ instance ShowHS Quad where
    = L.intercalate indent
             [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
             , "    , qRule    = " ++ showHSName (qRule q)
-            , wrap "    , qConjuncts = " newindent (const showHSName) (NEL.toList $ qConjuncts q)
+            , wrap "    , qConjuncts = " newindent (const showHSName) (NE.toList $ qConjuncts q)
             , "    }"
             ]
     where
@@ -162,7 +162,7 @@ instance ShowHS Conjunct where
  showHS env indent x
    = L.intercalate (indent ++"    ")
        [   "Cjct{ rc_id         = " ++ show (rc_id x)
-       ,       ", rc_orgRules   = " ++ "[ "++L.intercalate ", " (NEL.toList . fmap showHSName $ rc_orgRules x)++"]"
+       ,       ", rc_orgRules   = " ++ "[ "++L.intercalate ", " (NE.toList . fmap showHSName $ rc_orgRules x)++"]"
        ,       ", rc_conjunct   = " ++ showHS env indentA (rc_conjunct x)
        , wrap  ", rc_dnfClauses = " indentA (\_->showHS env (indentA++"  ")) (rc_dnfClauses x)
        ,       "}"
@@ -397,7 +397,7 @@ instance ShowHS Markup where
      ]
 
 instance ShowHS (PairView Expression) where
-  showHS env indent (PairView pvs) = "PairView "++showHS env indent (NEL.toList pvs)
+  showHS env indent (PairView pvs) = "PairView "++showHS env indent (NE.toList pvs)
 
 instance ShowHS (PairViewSegment Expression) where
   showHS _     _ (PairViewText _ txt) = "PairViewText "++show txt
@@ -433,7 +433,7 @@ instance ShowHSName IdentityDef where
 instance ShowHS IdentityDef where
  showHS env indent identity
   = "Id ("++showHS env "" (idPos identity)++") "++show (idLbl identity)++" ("++showHSName (idCpt identity)++")"
-    ++indent++"  [ "++L.intercalate (indent++"  , ") (NEL.toList . fmap (showHS env indent) $ identityAts identity)++indent++"  ]"
+    ++indent++"  [ "++L.intercalate (indent++"  , ") (NE.toList . fmap (showHS env indent) $ identityAts identity)++indent++"  ]"
 
 instance ShowHS IdentitySegment where
  showHS env indent (IdentityExp objDef) = "IdentityExp ("++ showHS env indent objDef ++ ")"

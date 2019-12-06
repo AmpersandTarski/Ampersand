@@ -37,7 +37,7 @@ module Ampersand.Core.ParseTree (
 import           Ampersand.Basics hiding (foldr, sequence, concatMap)
 import           Ampersand.Input.ADL1.FilePos
 import           Data.Foldable hiding (concat)
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
@@ -85,8 +85,8 @@ data MetaObj = ContextMeta deriving (Eq,Ord,Show) -- for now, we just have meta 
 data P_RoleRule
    = Maintain
      { pos :: Origin      -- ^ position in the Ampersand script
-     , mRoles :: NEL.NonEmpty Role    -- ^ names of a role
-     , mRules :: NEL.NonEmpty String  -- ^ names of a Rule
+     , mRoles :: NE.NonEmpty Role    -- ^ names of a role
+     , mRules :: NE.NonEmpty String  -- ^ names of a Rule
      } deriving (Eq,Ord, Show) -- deriving (Show) is just for debugging
 
 data Role = Role String
@@ -146,7 +146,7 @@ instance Named ConceptDef where
 
 data Representation
   = Repr { pos  :: Origin
-         , reprcpts  :: NEL.NonEmpty String  -- ^ the concepts
+         , reprcpts  :: NE.NonEmpty String  -- ^ the concepts
          , reprdom :: TType     -- the type of the concept the atom is in
          } deriving (Ord,Eq,Show)
 instance Traced Representation where
@@ -471,10 +471,10 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
-data PairView a = PairView { ppv_segs :: NEL.NonEmpty (PairViewSegment a) } deriving (Show, Typeable, Eq, Generic)
+data PairView a = PairView { ppv_segs :: NE.NonEmpty (PairViewSegment a) } deriving (Show, Typeable, Eq, Generic)
 instance Hashable a => Hashable (PairView a)
 instance Traced a => Traced (PairView a) where
-  origin = origin . NEL.head . ppv_segs
+  origin = origin . NE.head . ppv_segs
 data PairViewSegment a =
     PairViewText{ pos :: Origin
                 , pvsStr :: String
@@ -629,7 +629,7 @@ data P_IdentDf a = -- so this is the parametric data-structure
          P_Id { pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
               , ix_lbl :: String         -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
               , ix_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
-              , ix_ats :: NEL.NonEmpty (P_IdentSegmnt a) -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
+              , ix_ats :: NE.NonEmpty (P_IdentSegmnt a) -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
               } deriving (Show)
 instance Named (P_IdentDf a) where
  name = ix_lbl
@@ -776,7 +776,7 @@ instance Flippable P_Sign where
 data PClassify =  PClassify
   { pos      :: Origin
   , specific :: P_Concept                    -- ^ Left hand side concept expression
-  , generics :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
+  , generics :: NE.NonEmpty P_Concept       -- ^ Right hand side concept expression
   } deriving (Show, Eq, Ord)
 
 instance Traced PClassify where

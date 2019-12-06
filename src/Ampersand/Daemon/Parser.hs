@@ -10,7 +10,8 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Daemon.Types
 import           Ampersand.Input.Parsing
 import           Ampersand.Input.ADL1.CtxError
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 import           Ampersand.FSpec.MetaModels
 import           Ampersand.Types.Config
 import           Ampersand.Options.FSpecGenOptsParser
@@ -25,7 +26,7 @@ parseProject rootAdl = do
             gActx = pCtx2Fspec env2 <$> gPctx
         return ( case gActx of
                 Checked _ ws -> map warning2Load $ ws
-                Errors  es   -> NEL.toList . fmap error2Load $ es
+                Errors  es   -> NE.toList . fmap error2Load $ es
             , loadedFiles
             )
 

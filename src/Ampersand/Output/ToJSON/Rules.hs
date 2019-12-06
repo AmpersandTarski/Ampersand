@@ -7,7 +7,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.Output.ToJSON.JSONutils 
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 data Rulez = Rulez
@@ -60,7 +60,7 @@ instance JSON Rule JsonRule where
   , rulJSONmessage     = showMessage
   , rulJSONsrcConceptId = idWithoutType . source . formalExpression $ rule
   , rulJSONtgtConceptId = idWithoutType . target . formalExpression $ rule
-  , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (fmap NEL.toList . lookup rule $ allConjsPerRule fSpec)
+  , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (fmap NE.toList . lookup rule $ allConjsPerRule fSpec)
   , rulJSONpairView    = fmap (fromAmpersand env fSpec) (rrviol rule)
   } 
    where 
@@ -69,7 +69,7 @@ instance JSON Rule JsonRule where
                               [] -> ""
                               h:_ -> aMarkup2String h
 instance JSON (PairView Expression) JsonPairView where
- fromAmpersand env fSpec pv = JsonPairView $ map (fromAmpersand env fSpec) (zip [0..] (NEL.toList . ppv_segs $ pv))
+ fromAmpersand env fSpec pv = JsonPairView $ map (fromAmpersand env fSpec) (zip [0..] (NE.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
  fromAmpersand _ fSpec (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr

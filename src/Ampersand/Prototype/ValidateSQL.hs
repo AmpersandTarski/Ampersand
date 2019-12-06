@@ -8,7 +8,7 @@ import           Ampersand.FSpec
 import           Ampersand.Misc
 import           Ampersand.Prototype.PHP
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
@@ -68,13 +68,13 @@ getAllRuleExps fSpec = map getRuleExp . Set.elems $ vrules fSpec `Set.union` gru
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps . Set.elems $ vrules fSpec `Set.union` grules fSpec
  where getPairViewExps r@Ru{rrviol = Just (PairView pvsegs)} =
-         [ (expr, "violation view for rule "++show (name r)) | PairViewExp _ _ expr <- NEL.toList pvsegs ]
+         [ (expr, "violation view for rule "++show (name r)) | PairViewExp _ _ expr <- NE.toList pvsegs ]
        getPairViewExps _    = []
 
 getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
  where getIdExps identity = [ (objExpression objDef, "identity "++show (name identity))
-                            | IdentityExp objDef <- NEL.toList $ identityAts identity ]
+                            | IdentityExp objDef <- NE.toList $ identityAts identity ]
 
 getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec

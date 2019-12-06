@@ -70,7 +70,7 @@ ampersandWorker eGlobalRun = do
 --             case gFSpec of
 --               Errors err    -> 
 --                  exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
---                . fmap show . NEL.toList $ err
+--                . fmap show . NE.toList $ err
 --               Checked _fSpec ws -> do
 --                  mapM_  sayLn . concatMap (lines . show) $ ws
 --               --   generateAmpersandOutput fSpec

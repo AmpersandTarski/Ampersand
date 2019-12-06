@@ -11,7 +11,7 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.TableSpec
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import qualified RIO.List as L
 import           System.Directory
@@ -83,7 +83,7 @@ dumpSQLqueries env fSpec
           ,"Conjunct expression:"
           ,"  " <> (T.pack . showA . rc_conjunct $ conj)
           ,"Rules for this conjunct:"]
-        <>map showRule (NEL.toList $ rc_orgRules conj)
+        <>map showRule (NE.toList $ rc_orgRules conj)
         <>["*/"
           ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rc_conjunct $ conj) <> ";"
           ,""]

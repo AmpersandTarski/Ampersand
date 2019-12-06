@@ -6,7 +6,8 @@ import           Ampersand.Basics
 import           Ampersand.FSpec.ToFSpec.CreateFspec(createFspec)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 import           MainApps ()-- (defEnv)
 
 ampersand :: [FilePath] -> IO [[CtxError]]
@@ -21,7 +22,7 @@ ampersand files = return [[]]
 --    let recipe = []
 --    gFSpec <- createFspec recipe
 --    case gFSpec of
---      Errors err    -> return $ NEL.toList err
+--      Errors err    -> return $ NE.toList err
 --      --TODO: Do something with the fSpec
 --      Checked _ _   -> return []
 -- switchFileName :: (HasRootFile env) => FilePath -> RIO env a -> RIO env a

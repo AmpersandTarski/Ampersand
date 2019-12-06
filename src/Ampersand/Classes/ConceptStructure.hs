@@ -4,7 +4,7 @@ module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ordering(..))
 import           Ampersand.Classes.ViewPoint
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 class ConceptStructure a where
@@ -45,7 +45,7 @@ instance ConceptStructure a => ConceptStructure (Maybe a) where
 instance ConceptStructure a => ConceptStructure [a] where
   concs         = Set.unions . map concs
   expressionsIn = Set.unions . map expressionsIn
-instance ConceptStructure a => ConceptStructure (NEL.NonEmpty a) where
+instance ConceptStructure a => ConceptStructure (NE.NonEmpty a) where
   concs         = Set.unions . fmap concs
   expressionsIn = Set.unions . fmap expressionsIn
 instance (Eq a ,ConceptStructure a) => ConceptStructure (Set.Set a) where
@@ -168,8 +168,8 @@ instance ConceptStructure Rule where
                    ]
 
 instance ConceptStructure (PairView Expression) where
-  concs         (PairView ps) = concs         . NEL.toList $ ps
-  expressionsIn (PairView ps) = expressionsIn . NEL.toList $ ps
+  concs         (PairView ps) = concs         . NE.toList $ ps
+  expressionsIn (PairView ps) = expressionsIn . NE.toList $ ps
 
 instance ConceptStructure Population where
   concs pop@ARelPopu{} = concs (popdcl pop)

@@ -8,7 +8,7 @@ import           Ampersand.Classes
 import           Ampersand.FSpec
 import           Ampersand.FSpec.ToFSpec.ADL2Plug
 import           Ampersand.Graphic.ClassDiagram
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 -- | This function makes the classification diagram.
@@ -62,7 +62,7 @@ cdAnalysis fSpec =
          Just exprs ->
            OOClass { clName = name root
                    , clcpt  = Just root
-                   , clAtts = NEL.toList $ fmap ooAttr exprs
+                   , clAtts = NE.toList $ fmap ooAttr exprs
                    , clMths = []
                    }
    cptIsShown :: A_Concept -> Bool
@@ -70,15 +70,15 @@ cdAnalysis fSpec =
      where 
       isInScope _ = True 
       hasClass = isJust . classOf
-   classOf :: A_Concept -> Maybe (NEL.NonEmpty Expression)
+   classOf :: A_Concept -> Maybe (NE.NonEmpty Expression)
    classOf cpt = 
      case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
         []   -> Nothing
         [es] -> Just es
         _    -> fatal "Only one list of expressions is expected here"
      where
-      isOfCpt :: NEL.NonEmpty Expression -> Bool
-      isOfCpt es = source (NEL.head es) == cpt
+      isOfCpt :: NE.NonEmpty Expression -> Bool
+      isOfCpt es = source (NE.head es) == cpt
       attribs = fmap (flipWhenNeeded . EDcD) attribDcls
       flipWhenNeeded x = if isInj x && (not.isUni) x then flp x else x
    ooAttr :: Expression -> CdAttribute
@@ -146,7 +146,7 @@ tdAnalysis fSpec =
                               let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
                               in  map (ooAttr kernelAtts) kernelAtts
                                 ++map (ooAttr kernelAtts . rsTrgAtt) (dLkpTbl table) 
-                            BinSQL{}      -> NEL.toList $
+                            BinSQL{}      -> NE.toList $
                               fmap mkOOattr (plugAttributes table)
                                 where mkOOattr a =
                                         OOAttr { attNm       = attName a
@@ -182,7 +182,7 @@ tdAnalysis fSpec =
        relsOf t =
          case t of
            TblSQL{} -> map (mkRel t) . mapMaybe relOf . attributes $ t
-           BinSQL{} -> NEL.toList $ fmap mkOOAssoc (plugAttributes t)
+           BinSQL{} -> NE.toList $ fmap mkOOAssoc (plugAttributes t)
                         where mkOOAssoc a =
                                 OOAssoc { assSrc = sqlname t
                                         , assSrcPort = attName a

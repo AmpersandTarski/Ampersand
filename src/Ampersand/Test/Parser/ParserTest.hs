@@ -9,7 +9,8 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 import           Ampersand.Types.Config
 import           Ampersand.Options.FSpecGenOptsParser
 -- Tries to parse all the given files
@@ -28,7 +29,7 @@ parseScripts paths =
                 parseScripts fs
             Errors  e -> do 
                 sayLn ("Cannot parse: " ++ f)
-                showErrors (NEL.toList e)
+                showErrors (NE.toList e)
                 return False
 
 showErrors :: (HasLogFunc env) => [CtxError] ->  RIO env ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )

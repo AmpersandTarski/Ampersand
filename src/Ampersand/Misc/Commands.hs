@@ -48,7 +48,8 @@ import           Options.Applicative.Types
 import           Options.Applicative.Common
 import qualified RIO.List as L
 import           RIO.Char 
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 import           System.Environment ({-getProgName,-} withArgs)
 
 --import           System.FilePath (isValid, pathSeparator, takeDirectory)
@@ -387,7 +388,7 @@ doOrDie gA act =
       showWarnings ws
       act a
     Errors err -> exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
-           . fmap show . NEL.toList $ err
+           . fmap show . NE.toList $ err
   where
     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
 

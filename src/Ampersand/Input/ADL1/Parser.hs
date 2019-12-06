@@ -14,7 +14,8 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.List as L
 import qualified RIO.Set as Set
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 
 --- Populations ::= Population+
 -- | Parses a list of populations
@@ -176,13 +177,13 @@ pClassify = fun <$> currPos
                       <|> (isa <$ pKey "ISA" <*> pConceptRef)
                     )
                where
-                 fun :: Origin -> NEL.NonEmpty P_Concept -> (Bool, [P_Concept]) -> [PClassify]
-                 fun p lhs (isISA ,rhs) = NEL.toList $ fmap f lhs
+                 fun :: Origin -> NE.NonEmpty P_Concept -> (Bool, [P_Concept]) -> [PClassify]
+                 fun p lhs (isISA ,rhs) = NE.toList $ fmap f lhs
                    where 
                      f s = PClassify 
                              { pos      = p
                              , specific = s
-                             , generics = if isISA then s NEL.:| rhs else NEL.fromList rhs
+                             , generics = if isISA then s NE.:| rhs else PARTIAL.fromList rhs
                              }
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
@@ -414,11 +415,11 @@ pInterface = lbl <$> currPos
                  <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                  <*> pMaybe (pChevrons pConid)  -- The view that should be used for this object
                  <*> pSubInterface
-    where lbl :: Origin -> Bool -> String ->  a -> Maybe (NEL.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
+    where lbl :: Origin -> Bool -> String ->  a -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
           lbl p isAPI nm _params roles ctx mCrud mView sub
              = P_Ifc { ifc_IsAPI  = isAPI
                      , ifc_Name   = nm
-                     , ifc_Roles  = fromMaybe [] . fmap NEL.toList $ roles
+                     , ifc_Roles  = fromMaybe [] . fmap NE.toList $ roles
                      , ifc_Obj    = P_BxExpr { obj_nm   = nm
                                           , pos      = p
                                           , obj_ctx  = ctx
@@ -498,9 +499,9 @@ pPurpose = rebuild <$> currPos
                    <*> pMaybe (pKey "REF" *> pString `sepBy1` pSemi)
                    <*> pAmpersandMarkup
      where
-       rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NEL.NonEmpty String) -> String -> PPurpose
+       rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NE.NonEmpty String) -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
-           = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") (fromMaybe [] . fmap NEL.toList $ refs))
+           = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") (fromMaybe [] . fmap NE.toList $ refs))
               -- TODO: This separation should not happen in the parser
               where splitOn :: Eq a => [a] -> [a] -> [[a]]
                     splitOn [] s = [s]

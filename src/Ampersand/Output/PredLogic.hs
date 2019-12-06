@@ -9,7 +9,8 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Output.PandocAux (latexEscShw,texOnlyId)
 import           RIO.Char
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.List as L
@@ -81,7 +82,7 @@ showLatex x
           = if null vs then "" else
             q++" "++L.intercalate "; " [L.intercalate ", " var++"\\coloncolon\\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++":\n"
             where
-             vss = [(NEL.toList $ fmap fst varCl,show(snd (NEL.head varCl))) |varCl<-eqCl snd vs]
+             vss = [(NE.toList $ fmap fst varCl,show(snd (NE.head varCl))) |varCl<-eqCl snd vs]
          chop :: String -> [[String]]
          chop = map chops . lins
           where
@@ -127,7 +128,7 @@ showRtf = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, no
          = if null vs then "" else
            q++L.intercalate "; " [L.intercalate ", " var++" "++unicodeSym 28 '∷' '?'++" "++dType | (var,dType)<-vss]++":\\par\n"
            where
-            vss = [(NEL.toList $ fmap fst varCl,show(snd (NEL.head varCl))) |varCl<-eqCl snd vs]
+            vss = [(NE.toList $ fmap fst varCl,show(snd (NE.head varCl))) |varCl<-eqCl snd vs]
         breakP = ""
         spaceP = " "
 
@@ -187,7 +188,7 @@ natLangOps l
                                     ++L.intercalate ", " ['$':v'++"$" | v'<-vs'] | (vs',dType)<-vss]
                               | otherwise   -> "Als "++langVars "Er is" vs++", "
                     where
-                     vss = [(NEL.toList $ fmap fst vs',show(snd (NEL.head vs'))) |vs'<-eqCl snd vs]
+                     vss = [(NE.toList $ fmap fst vs',show(snd (NE.head vs'))) |vs'<-eqCl snd vs]
 
 -- predLshow exists for the purpose of translating a predicate logic expression to natural language.
 -- It uses a vector of operators (mostly strings) in order to produce text. This vector can be produced by, for example, natLangOps.
@@ -287,8 +288,8 @@ assemble expr
    f :: [Var] -> Expression -> (Var,Var) -> PredLogic
    f exclVars (EEqu (l,r)) (a,b)  = Equiv (f exclVars l (a,b)) (f exclVars r (a,b))
    f exclVars (EInc (l,r)) (a,b)  = Implies (f exclVars l (a,b)) (f exclVars r (a,b))
-   f exclVars e@EIsc{}     (a,b)  = Conj [f exclVars e' (a,b) | e'<-NEL.toList $ exprIsc2list e]
-   f exclVars e@EUni{}     (a,b)  = Disj [f exclVars e' (a,b) | e'<-NEL.toList $ exprUni2list e]
+   f exclVars e@EIsc{}     (a,b)  = Conj [f exclVars e' (a,b) | e'<-NE.toList $ exprIsc2list e]
+   f exclVars e@EUni{}     (a,b)  = Disj [f exclVars e' (a,b) | e'<-NE.toList $ exprUni2list e]
    f exclVars (EDif (l,r)) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
    f exclVars (ELrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
                                     where [c]   = mkVar exclVars [target l]
@@ -338,7 +339,7 @@ assemble expr
      | otherwise               = Exists ivs (Conj (frels a b))
      where
       es :: [Expression]
-      es   = NEL.filter (not . isEpsilon) $ exprCps2list e
+      es   = NE.filter (not . isEpsilon) $ exprCps2list e
      -- Step 1: split in fragments at those points where an exists-quantifier is needed.
      --         Each fragment represents a subexpression with variables
      --         at the outside only. Fragments will be reconstructed in a conjunct.
@@ -389,7 +390,7 @@ assemble expr
                                   where alls = [f (exclVars++ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
 -}
      where
-      es   = NEL.filter (not . isEpsilon) $ exprRad2list e -- The definition of exprRad2list guarantees that length es>=2
+      es   = NE.filter (not . isEpsilon) $ exprRad2list e -- The definition of exprRad2list guarantees that length es>=2
       res  = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
       conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                 -- So conr is not empty.

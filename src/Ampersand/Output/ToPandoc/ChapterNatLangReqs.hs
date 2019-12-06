@@ -8,7 +8,7 @@ module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           RIO.Char hiding (Space)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import           Data.List.Split(splitOn)
 import qualified RIO.Set as Set
 
@@ -275,16 +275,16 @@ toLawRef:: String -> Maybe LawRef
 toLawRef s = case s of
               [] -> Nothing
               _  -> (Just . LawRef) s
-wordsOf :: LawRef -> NEL.NonEmpty String
+wordsOf :: LawRef -> NE.NonEmpty String
 wordsOf ref = case words . lawRef $ ref of
                 [] -> fatal $ "string in LaWRef must not be empty."
-                h:tl -> h NEL.:| tl
+                h:tl -> h NE.:| tl
 -- the article is everything but the law (and we also drop any trailing commas)
 getArticlesOfLaw :: LawRef -> [ArticleOfLaw]
-getArticlesOfLaw ref = map buildLA . splitOn ", " . unwords .NEL.init .wordsOf $ ref
+getArticlesOfLaw ref = map buildLA . splitOn ", " . unwords .NE.init .wordsOf $ ref
                              
    where
-     buildLA art = ArticleOfLaw ((NEL.last . wordsOf) ref) (scanRef art)
+     buildLA art = ArticleOfLaw ((NE.last . wordsOf) ref) (scanRef art)
        where
     -- group string in number and text sequences, so "Art 12" appears after "Art 2" when sorting (unlike in normal lexicographic string sort)
          scanRef :: String -> [Either String Int]

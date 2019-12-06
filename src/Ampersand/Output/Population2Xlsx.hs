@@ -9,7 +9,7 @@ import           Ampersand.FSpec
 import           Codec.Xlsx
 import           Data.Time.Clock.POSIX
 import           Data.Time.Calendar
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.Text as T
 import qualified RIO.List as L
@@ -42,7 +42,7 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
            BinSQL{} -> Just $ headers ++ content
          where
            headers :: [[Cell]]
-           headers = L.transpose (zipWith (curry f) (True : L.repeat False) (NEL.toList $ plugAttributes plug)) 
+           headers = L.transpose (zipWith (curry f) (True : L.repeat False) (NE.toList $ plugAttributes plug)) 
              where f :: (Bool,SqlAttribute) -> [Cell]
                    f (isFirstField,att) = map toCell 
                          [ if isFirstField  -- In case of the first field of the table, we put the fieldname inbetween brackets,

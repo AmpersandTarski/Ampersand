@@ -7,7 +7,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import           Ampersand.Output.ToJSON.JSONutils 
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 
 data Conjuncts = Conjuncts [JSONConjunct] deriving (Generic, Show)
 data JSONConjunct = JSONConjunct
@@ -25,7 +25,7 @@ instance JSON FSpec Conjuncts where
 instance JSON Conjunct JSONConjunct where
  fromAmpersand env fSpec conj = JSONConjunct
   { cnjJSONid                  = rc_id conj
-  , cnjJSONsignalRuleNames     = map name . filter        isSignal  . NEL.toList . rc_orgRules $ conj
-  , cnjJSONinvariantRuleNames  = map name . filter (not . isSignal) . NEL.toList . rc_orgRules $ conj
+  , cnjJSONsignalRuleNames     = map name . filter        isSignal  . NE.toList . rc_orgRules $ conj
+  , cnjJSONinvariantRuleNames  = map name . filter (not . isSignal) . NE.toList . rc_orgRules $ conj
   , cnjJSONviolationsSQL       = sqlQuery fSpec . conjNF env . notCpl . rc_conjunct $ conj
   }

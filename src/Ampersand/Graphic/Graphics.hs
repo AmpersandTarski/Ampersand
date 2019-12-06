@@ -17,7 +17,7 @@ import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete
 import           RIO.Char
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import           Data.String(fromString)
 import           System.Directory(createDirectoryIfMissing)
@@ -159,11 +159,11 @@ conceptualStructure fSpec pr =
                         ]
               idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
               gs   = fsisa fSpec
-              cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NEL.toList cl] -- up to two more general concepts
+              cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NE.toList cl] -- up to two more general concepts
               cpts' = concs pat `Set.union` concs rels
               rels = Set.fromList . filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ pat
           in
-          CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NEL.toList cl] -- up to two more general concepts
+          CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NE.toList cl] -- up to two more general concepts
                   , csRels = Set.elems $ rels  `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }

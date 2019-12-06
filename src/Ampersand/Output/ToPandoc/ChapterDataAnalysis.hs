@@ -11,7 +11,7 @@ import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           RIO.Char
 import           Data.Function (on)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 ------------------------------------------------------------
@@ -330,8 +330,8 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                        )
                      <> showAttributes (plugAttributes bin)
 
-      showAttributes :: NEL.NonEmpty SqlAttribute -> Blocks
-      showAttributes = bulletList . NEL.toList . fmap showAttribute
+      showAttributes :: NE.NonEmpty SqlAttribute -> Blocks
+      showAttributes = bulletList . NE.toList . fmap showAttribute
         where
           showAttribute att =
                 para (  (strong.text.attName) att

@@ -12,7 +12,8 @@ module Ampersand.Basics.Auxiliaries
 
 import           Ampersand.Basics.Prelude
 import           RIO.List(foldl,intersect,nub,union)
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Map as Map 
 import qualified RIO.Map.Partial as PARTIAL --TODO: Get rid of partial functions.
 import qualified RIO.Set as Set 
@@ -23,24 +24,24 @@ import qualified RIO.Set as Set
 --
 -- Example> eqClass (==) "Mississippi" = ["M","iiii","ssss","pp"]
 --
-eqClass :: (a -> a -> Bool) -> [a] -> [NEL.NonEmpty a]
+eqClass :: (a -> a -> Bool) -> [a] -> [NE.NonEmpty a]
 eqClass _ [] = []
-eqClass f (x:xs) = (x NEL.:| [e |e<-xs, f x e]) : eqClass f [e |e<-xs, not (f x e)]
+eqClass f (x:xs) = (x NE.:| [e |e<-xs, f x e]) : eqClass f [e |e<-xs, not (f x e)]
 
 -- | eqCl is used for gathering things that are equal wrt some criterion f.
 --   For instance, if you want to have persons with the same name:
 --    'eqCl name persons' produces a list,in which each element is a list of persons with the same name.
 -- Example> eqCl (=='s') "Mississippi" = "ssss"
 
-eqCl :: Ord b => (a -> b) -> [a] -> [NEL.NonEmpty a]
+eqCl :: Ord b => (a -> b) -> [a] -> [NE.NonEmpty a]
 eqCl _ [] = []
-eqCl f lst = Map.elems (Map.fromListWith (<>) [(f e,e NEL.:| []) | e <- lst])
+eqCl f lst = Map.elems (Map.fromListWith (<>) [(f e,e NE.:| []) | e <- lst])
 
 -- NonEmpty variants of eqClass and eqCl
-eqClassNE :: (a -> a -> Bool) -> NEL.NonEmpty a -> NEL.NonEmpty (NEL.NonEmpty a)
-eqClassNE f = NEL.fromList . eqClass f . NEL.toList
-eqClNE :: Ord b => (a -> b) -> NEL.NonEmpty a -> NEL.NonEmpty (NEL.NonEmpty a)
-eqClNE f = NEL.fromList . eqCl f . NEL.toList
+eqClassNE :: (a -> a -> Bool) -> NE.NonEmpty a -> NE.NonEmpty (NE.NonEmpty a)
+eqClassNE f = PARTIAL.fromList . eqClass f . NE.toList
+eqClNE :: Ord b => (a -> b) -> NE.NonEmpty a -> NE.NonEmpty (NE.NonEmpty a)
+eqClNE f = PARTIAL.fromList . eqCl f . NE.toList
 
 
 -- |  Warshall's transitive closure algorithm
@@ -65,8 +66,8 @@ converse :: forall a b . (Ord a, Ord b) => [(a, [b])] -> [(b, [a])]
 converse aBss = let asPerB :: Map.Map b (Set.Set a)
                     asPerB = foldl (.) id [ Map.insertWith Set.union b (Set.singleton a)  | (a,bs) <- aBss, b <- bs ] Map.empty
                 in Map.toList $ fmap Set.toList asPerB -- first convert each Set to a list, and then the whole Map to a list of tuples
-converseNE :: (Ord a,Ord b) => [(a, NEL.NonEmpty b)] -> [(b, NEL.NonEmpty a)]
-converseNE = (fmap $ liftSnd NEL.fromList) . converse . (fmap $ liftSnd NEL.toList)
+converseNE :: (Ord a,Ord b) => [(a, NE.NonEmpty b)] -> [(b, NE.NonEmpty a)]
+converseNE = (fmap $ liftSnd PARTIAL.fromList) . converse . (fmap $ liftSnd NE.toList)
 converseSet :: (Ord a,Ord b) => [(a, Set b)] -> [(b, Set a)]
 converseSet = (fmap $ liftSnd Set.fromList) . converse . (fmap $ liftSnd Set.toList)
 liftFst :: (a -> b) -> (a, c) -> (b, c)

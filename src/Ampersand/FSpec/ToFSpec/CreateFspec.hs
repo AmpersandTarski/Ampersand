@@ -16,8 +16,8 @@ import           Ampersand.FSpec.MetaModels
 import           Ampersand.Input
 import           Ampersand.Misc
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
 import qualified RIO.Map as Map
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import           Data.Foldable (foldrM)
 -- | create an FSpec, based on the provided command-line options.
@@ -144,30 +144,30 @@ encloseInConstraints pCtx = enrichedContext
          = if g `elem` seen then fatal ("Concept "++name g++" has caused a cycle error.") else
            recur (g:seen) (genericRels++remainder) (genericPops++remainPop) invGens
            where
-            sameNameTargetRels :: [NEL.NonEmpty P_Relation]
+            sameNameTargetRels :: [NE.NonEmpty P_Relation]
             sameNameTargetRels = eqCl (\r->(name r,targt r)) unseenrels
             genericRels ::    [P_Relation]
             remainingRels :: [[P_Relation]]
             (genericRels, remainingRels)
              = L.unzip
-               [ ( headrel{ dec_sign = P_Sign g (targt (NEL.head sRel))
+               [ ( headrel{ dec_sign = P_Sign g (targt (NE.head sRel))
                           , dec_prps = let test prop = prop `elem` foldr Set.intersection Set.empty (fmap dec_prps sRel)
                                        in Set.fromList ([Uni |test Uni]++[Tot |test Tot]++[Inj |test Inj]++[Sur |test Sur])
                           }  -- the generic relation that summarizes sRel
             --   , [ rel| rel<-sRel, sourc rel `elem` specs ]                    -- the specific (and therefore obsolete) relations
-                 , [ rel| rel<-NEL.toList sRel, sourc rel `notElem` specs ]                 -- the remaining relations
+                 , [ rel| rel<-NE.toList sRel, sourc rel `notElem` specs ]                 -- the remaining relations
                  )
                | sRel<-sameNameTargetRels
-               , specs `Set.isSubsetOf` (Set.fromList . NEL.toList $ (fmap sourc sRel))
-               , headrel<-[NEL.head sRel]
+               , specs `Set.isSubsetOf` (Set.fromList . NE.toList $ (fmap sourc sRel))
+               , headrel<-[NE.head sRel]
                ]
             remainder :: [P_Relation]
             remainder
-             = concat (remainingRels++fmap NEL.toList
+             = concat (remainingRels++fmap NE.toList
                        [ sRel | sRel<-sameNameTargetRels
-                       , not (specs `Set.isSubsetOf` (Set.fromList . NEL.toList $ fmap sourc sRel))]
+                       , not (specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap sourc sRel))]
                       )
-            sameNameTargetPops :: [NEL.NonEmpty P_Population]
+            sameNameTargetPops :: [NE.NonEmpty P_Population]
             sameNameTargetPops = eqCl (\r->(name r,tgtPop r)) unseenpops
             genericPops ::    [P_Population]
             remainingPops :: [[P_Population]]
@@ -175,17 +175,17 @@ encloseInConstraints pCtx = enrichedContext
              = L.unzip
                [ ( headPop{p_src=Just (name g)}                   -- the generic relation that summarizes sRel
             --   , [ pop| pop<-sPop, srcPop pop `elem` specs ]    -- the specific (and therefore obsolete) populations
-                 , [ pop| pop<-NEL.toList sPop, srcPop pop `notElem` specs ] -- the remaining relations
+                 , [ pop| pop<-NE.toList sPop, srcPop pop `notElem` specs ] -- the remaining relations
                  )
                | sPop<-sameNameTargetPops
-               , specs `Set.isSubsetOf` (Set.fromList . NEL.toList $ fmap srcPop sPop)
-               , headPop@P_RelPopu{}<-[NEL.head sPop] -- Restrict to @P_RelPopu{} because field name p_src is being used
+               , specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap srcPop sPop)
+               , headPop@P_RelPopu{}<-[NE.head sPop] -- Restrict to @P_RelPopu{} because field name p_src is being used
                ]
             remainPop :: [P_Population]
             remainPop
-             = concat (remainingPops++fmap NEL.toList
+             = concat (remainingPops++fmap NE.toList
                        [ sPop | sPop<-sameNameTargetPops
-                       , not (specs `Set.isSubsetOf` (Set.fromList . NEL.toList $ fmap srcPop sPop))]
+                       , not (specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap srcPop sPop))]
                       )
         recur _ rels popus [] = (rels,popus)
         srcPop, tgtPop :: P_Population -> P_Concept -- get the source concept of a P_Population.
@@ -197,9 +197,9 @@ encloseInConstraints pCtx = enrichedContext
     sourc = pSrc . dec_sign
     targt = pTgt . dec_sign
     invGen :: [(P_Concept,Set.Set P_Concept)]  -- each pair contains a concept with all of its specializations
-    invGen = [ (fst (NEL.head cl), Set.fromList spcs)
-             | cl<-eqCl fst [ (g,specific gen) | gen<-ctx_gs pCtx, g<-NEL.toList (generics gen)]
-             , g<-[fst (NEL.head cl)], spcs<-[[snd c | c<-NEL.toList cl, snd c/=g]], not (null spcs)
+    invGen = [ (fst (NE.head cl), Set.fromList spcs)
+             | cl<-eqCl fst [ (g,specific gen) | gen<-ctx_gs pCtx, g<-NE.toList (generics gen)]
+             , g<-[fst (NE.head cl)], spcs<-[[snd c | c<-NE.toList cl, snd c/=g]], not (null spcs)
              ]
     signatur :: P_Relation -> (String, P_Sign)
     signatur rel =(name rel, dec_sign rel)
@@ -208,7 +208,7 @@ encloseInConstraints pCtx = enrichedContext
             [ PCpt src' | P_RelPopu{p_src = src}<-ctx_pops pCtx, Just src'<-[src]] ++
             [ PCpt tgt' | P_RelPopu{p_tgt = tgt}<-ctx_pops pCtx, Just tgt'<-[tgt]] ++
             map sourc declaredRelations++ map targt declaredRelations++
-            concat [specific gen: NEL.toList (generics gen)| gen<-ctx_gs pCtx]
+            concat [specific gen: NE.toList (generics gen)| gen<-ctx_gs pCtx]
     pops = computeConceptPopulations (ctx_pops pCtx++[p |pat<-ctx_pats pCtx, p<-pt_pop pat])   -- All populations defined in this context, from POPULATION statements as well as from Relation declarations.
     computeConceptPopulations :: [P_Population] -> [P_Population]
     computeConceptPopulations pps -- I feel this computation should be done in P2A_Converters.hs, so every A_structure has compliant populations.
@@ -223,13 +223,13 @@ encloseInConstraints pCtx = enrichedContext
        | c<-concepts
        ] ++
        [ rpop{p_popps=concat (fmap p_popps cl)}
-       | cl<-eqCl (\pop->(name pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NEL.head cl]
+       | cl<-eqCl (\pop->(name pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NE.head cl]
        ]
 
 --    specializations :: P_Concept -> [P_Concept]
 --    specializations cpt = nub $ cpt: [ specific gen | gen<-ctx_gs pCtx, cpt `elem` generics gen ]
 --    generalizations :: P_Concept -> [P_Concept]
---    generalizations cpt = nub $ cpt: [ g | gen<-ctx_gs pCtx, g<-NEL.toList (generics gen), cpt==specific gen ]
+--    generalizations cpt = nub $ cpt: [ g | gen<-ctx_gs pCtx, g<-NE.toList (generics gen), cpt==specific gen ]
 
 type BuildPrescription = [BuildStep]
 data BuildStep = BuildStep
