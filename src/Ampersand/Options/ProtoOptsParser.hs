@@ -84,9 +84,10 @@ dirCustomizationsP :: Parser [String]
 dirCustomizationsP = (splitWhen (== ';') <$> strOption
         ( long "customizations"
         <> metavar "DIRECTORY"
-        <> value ""
-        <> help ("Copy a directory into the generated prototype, "
-               <>"overriding the default directory called 'customizations'." )
+        <> value "customizations"
+        <> showDefault
+        <> help ("Copy one or more directories into the generated prototype. "
+                )
         ))
 zwolleVersionP :: Parser String
 zwolleVersionP = strOption
