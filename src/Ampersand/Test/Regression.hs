@@ -213,9 +213,12 @@ testAdlfile indent dir adl tinfo = do
           logInfo $ indent<>"Pass. "<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
      failHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
      failHandler (exit_code, out, err) = do
-          logError $ "***FAIL*** "<>indent<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
-          logInfo $ indent <>" Actual: "<>(display $ tshow exit_code)
-          logInfo $ indent <>" Expected: "<>(if exitcode tinfo == 0 then "ShouldSucceed" else "Should fail with exitcode "<>display (exitcode tinfo))
+          logError $ "***FAIL*** "<>indent<> (display . T.pack $ adl)<>" " 
+                     <>"(Expected: "<>(if exitcode tinfo == 0 
+                                         then "ExitSuccess" 
+                                         else "ExitFailure "<>display (exitcode tinfo)
+                                       )
+                     <>", Actual: "<>(display $ tshow exit_code)<>")"
           mapM_ (logWarn  . indnt) . toUtf8Builders $ out
           mapM_ (logError . indnt) . toUtf8Builders $ err
      indnt :: Utf8Builder -> Utf8Builder
