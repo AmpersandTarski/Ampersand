@@ -215,7 +215,7 @@ testAdlfile indent dir adl tinfo = do
      failHandler (exit_code, out, err) = do
           logError $ "***FAIL*** "<>indent<> (display . T.pack $ adl) <>" (Returned "<>displayShow exit_code<>")"
           logInfo $ indent <>" Actual: "<>(display $ tshow exit_code)
-          logInfo $ indent <>" Expected: "<>(if exitcode tinfo == 0 then "ShouldSucceed" else "ShouldFail")
+          logInfo $ indent <>" Expected: "<>(if exitcode tinfo == 0 then "ShouldSucceed" else "Should fail with exitcode "<>display (exitcode tinfo))
           mapM_ (logWarn  . indnt) . toUtf8Builders $ out
           mapM_ (logError . indnt) . toUtf8Builders $ err
      indnt :: Utf8Builder -> Utf8Builder
