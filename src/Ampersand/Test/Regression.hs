@@ -195,7 +195,7 @@ testAdlfile :: (HasProcessContext env, HasLogFunc env) =>
              -> TestInstruction --The instruction to test, so it is known how to test the script
              -> RIO env Bool  -- Indicator telling if the test passed or not
 testAdlfile indent dir adl tinfo = do
-  logInfo $ indent <> "Start: "<> (display . T.pack $ adl)
+  logInfo $ indent <> "Start: "<>(display . command $ tinfo)<>" "<> (display . T.pack $ adl)
   (exit_code,out,err) <- withWorkingDir dir $
       case words . T.unpack . command $ tinfo of
         [] -> fatal "No command given!" 
@@ -209,7 +209,7 @@ testAdlfile indent dir adl tinfo = do
   return testPassed
    where
      passHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
-     passHandler (exit_code, _, _) = do
+     passHandler (_, _, _) = do
           logInfo $ indent<>"Passed."
      failHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
      failHandler (exit_code, out, err) = do
