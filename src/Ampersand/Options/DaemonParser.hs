@@ -2,7 +2,6 @@
 module Ampersand.Options.DaemonParser where
 
 import           Options.Applicative
---import           Ampersand.Commands.Proto (ProtoCommand(..), ProtoOpts (..))
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Basics
 import           Ampersand.Options.Utils

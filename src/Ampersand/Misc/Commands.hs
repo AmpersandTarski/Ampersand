@@ -29,6 +29,7 @@ import           Ampersand.Misc.HasClasses
 import           Ampersand.Options.DaemonParser
 import           Ampersand.Options.DevoutputOptsParser
 import           Ampersand.Options.DocOptsParser
+import           Ampersand.Options.FSpecGenOptsParser
 import           Ampersand.Options.GlobalParser
 import           Ampersand.Options.InputOutputOpts
 import           Ampersand.Options.PopulationOptsParser
@@ -42,13 +43,14 @@ import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Writer
 --import           Generics.Deriving.Monoid (memptydefault, mappenddefault)
 import           Options.Applicative
-import           Options.Applicative.Builder.Internal
+import           Options.Applicative.Builder.Internal hiding (name)
 import           Options.Applicative.Help hiding (fullDesc)
 import           Options.Applicative.Types
 import           Options.Applicative.Common
 import qualified RIO.List as L
 import           RIO.Char 
 import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
 import           System.Environment ({-getProgName,-} withArgs)
 
 --import           System.FilePath (isValid, pathSeparator, takeDirectory)
@@ -89,8 +91,12 @@ commandLineHandler currentDir _progName args = complicatedOptions
                       (Writer (Mod CommandFields (RIO Runner (), GlobalOptsMonoid)))
                       ()
     addCommands = do
+      addCommand'' Check
+                  "Use ampersand to check your model only once."
+                  checkCmd
+                  (fSpecGenOptsParser False)
       addCommand'' Daemon
-                  "Use ampersand to check your model while you modify it."
+                  "Use ampersand to continuously check your model while you modify it."
                   daemonCmd
                   daemonOptsParser
       addCommand'' Dataanalysis
@@ -340,7 +346,14 @@ pprintCmd opts =
         let recipe = []
         mFSpec <- createFspec recipe
         doOrDie mFSpec exportAsAdl
-
+checkCmd :: FSpecGenOpts -> RIO Runner ()
+checkCmd opts =
+    extendWith opts $ do
+        let recipe = []
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec doNothing
+   where doNothing fSpec = do
+            logInfo $ "This script of "<>(display . T.pack . name $ fSpec)<>" contains no type errors."     
 populationCmd :: PopulationOpts -> RIO Runner ()
 populationCmd opts = 
     extendWith opts $ do
@@ -393,7 +406,8 @@ doOrDie gA act =
 
 
 data Command = 
-        Daemon
+        Check
+      | Daemon
       | Dataanalysis
       | Devoutput
       | Documentation

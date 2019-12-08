@@ -39,6 +39,10 @@ even more complex than it already was.
           single rule in your Ampersand-script.
 
 * Changed into commands (in `this style` the new command is given)
+  * With no specific output requested, you could run ampersand in the past as well.
+          With the introduction of the commands, a command has become mandatory.
+          For this reason, we introduced the command `check`, which will
+          assess the given script.
   * ***--daemon[=configfile]*** `daemon --daemonconfig=CONFIGFILE`
           Run ampersand as daemon, for use by the vscode
           ampersand-language-extention. An optional parameter may be
@@ -80,8 +84,6 @@ even more complex than it already was.
           write a sample configuration file (sampleconfig.yaml), to avoid
           retyping (and remembering) the command line options for
           ampersand.
-
-
 
 * Changed in some way
 
@@ -150,7 +152,7 @@ even more complex than it already was.
   * ***--sqlPwd=PASSWORD***
           set SQL password (Defaults to `ampersand`), to let your
           application login to the database.
-  * ***--version (-v)***
+  * ***--version (-V)***
           show version and exit.
   
 ## TODO: configuration file
