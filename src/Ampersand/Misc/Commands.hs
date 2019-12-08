@@ -127,7 +127,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   "Generate a prototype from your specification."
                   protoCmd
                   protoOptsParser
-      addCommand'' PPrint
+      addCommand'' Print
                   "Generate a single .adl file of your script (prettyprinted)"
                   pprintCmd
                   (outputFileOptsParser "export.adl")
@@ -402,7 +402,7 @@ data Command =
       | Population
       | Proofs
       | Proto 
-      | PPrint
+      | Print
       | Test
       | Uml
       | Validate deriving Show

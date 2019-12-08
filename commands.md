@@ -57,8 +57,8 @@ even more complex than it already was.
           export a data model as plain Ampersand script, for analysing
           Excel-data.
 
-  * ***--export[=file]*** `pprint`
-          export as plain Ampersand script, for round-trip testing of the
+  * ***--export[=file]*** `print`
+          export as prettyprinted plain Ampersand script, for round-trip testing of the
           Ampersand compiler.
   * ***--pop-xlsx*** `population`
           Generate an .xlsx file containing the populations of your script.
