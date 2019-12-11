@@ -41,14 +41,12 @@ createFspec :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) =>
                BuildRecipe -> RIO env (Guarded FSpec)
 createFspec recipe = do 
     env <- ask
-    grindInfoMap :: Map MetaModel GrindInfo <- do
-        let fun m = (,) m <$> mkGrindInfo m
-        Map.fromList <$> (sequence $ fun <$> [minBound ..])
-    rawUserP_Ctx:: Guarded P_Context <- do
-       rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
-       snd <$> parseADL rootFile -- the P_Context of the user's sourceFile
-    let cooked :: Guarded P_Context
-        cooked = cook env rawUserP_Ctx grindInfoMap recipe
+    cooked <- cook env
+                      <$> do rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
+                             snd <$> parseADL rootFile -- the P_Context of the user's sourceFile
+                      <*> do let fun m = (,) m <$> mkGrindInfo m
+                             Map.fromList <$> (sequence $ fun <$> [minBound ..])
+                      <*> pure recipe
     return . join $ pCtx2Fspec env <$> cooked
     
 -- | A recipe to build an FSpec defines the way that FSpec should be constructed.
