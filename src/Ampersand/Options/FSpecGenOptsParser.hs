@@ -97,14 +97,14 @@ trimXLSXCellsP = boolFlags True "trim-cellvalues"
                  "that are INCLUDED in the script.")
          mempty
 metaModelsP :: Parser [MetaModel]
-metaModelsP = some metaModelP
+metaModelsP = L.nub <$> many metaModelP -- (zero or more)
   where
     metaModelP :: Parser MetaModel
     metaModelP = toMetaModel <$> strOption
          (  long "addMetaModel"
          <> metavar "METAMODEL"
          <> completeWith (map show allMetaModels)
-         <> help "The format in which the output is written."
+         <> help "add a metamodel to your model."
          )
       where 
          allMetaModels :: [MetaModel]
