@@ -1,9 +1,11 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
-  ( BuildPrescription, BuildStep(..), BuildAction(..)
-  , createFspec
-  , createFspecDataAnalysis
+  ( BuildRecipe(..)
+  , BuildStep(..)
+  , StartContext(..)
+  , MetaModel(..)
+  , createFspec 
   )
 
 where
@@ -13,6 +15,7 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Core.ShowPStruct  -- Just for debugging purposes
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.MetaModels
+import           Ampersand.FSpec.ShowMeatGrinder
 import           Ampersand.Input
 import           Ampersand.Misc
 import qualified RIO.List as L
@@ -33,43 +36,67 @@ import           Data.Foldable (foldrM)
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createFSpec.
-createFspec, createFspecDataAnalysis :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) => 
-               BuildPrescription -> RIO env (Guarded FSpec)
-createFspec             recipe = createFspec' id                    recipe
-createFspecDataAnalysis recipe = createFspec' encloseInConstraints  recipe
 
-createFspec' :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) => 
-               (P_Context -> P_Context) -> BuildPrescription -> RIO env (Guarded FSpec)
-createFspec' mutator recipe = do 
+createFspec :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) => 
+               BuildRecipe -> RIO env (Guarded FSpec)
+createFspec recipe = do 
     env <- ask
-    -- grindInfoMap :: Map MetaModel GrindInfo
-    grindInfoMap <- do 
+    grindInfoMap :: Map MetaModel GrindInfo <- do
         let fun m = (,) m <$> mkGrindInfo m
         Map.fromList <$> (sequence $ fun <$> [minBound ..])
     rawUserP_Ctx:: Guarded P_Context <- do
        rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
-       pctx <- snd <$> parseADL rootFile -- the P_Context of the user's sourceFile
-       return $ mutator <$> pctx 
-    return . join $ cook env grindInfoMap recipe <$> rawUserP_Ctx
+       snd <$> parseADL rootFile -- the P_Context of the user's sourceFile
+    let cooked :: Guarded P_Context
+        cooked = cook env rawUserP_Ctx grindInfoMap recipe
+    return . join $ pCtx2Fspec env <$> cooked
+    
+-- | A recipe to build an FSpec defines the way that FSpec should be constructed.
+--   It consists of a initial P_Context and list of follow-up steps.
+data BuildRecipe = BuildRecipe StartContext [BuildStep]
+-- | The initial context to use in a recipe. It is either the user's script or
+--   the script from a given MetaModel. 
+data StartContext = UserScript | MetaScript MetaModel
+-- | A buildstep describes a conversion to a given context.  
+data BuildStep = 
+    Grind MetaModel       -- ^ Grind the given P_Context using the given MetaModel. The resulting P_Context
+                          --   contains all relations from the Metamodel. Those relations are populated using the 
+                          --   original P_Context. 
+  | MergeWith BuildRecipe -- ^ Merge the given P_Context with the P_Context that is the result of 
+                          --   applying the BuildRecipe.
+  | EncloseInConstraints  -- ^ Apply the encloseInConstraints function to the given P_Context.
 
-cook :: (HasFSpecGenOpts env) => env -> Map MetaModel GrindInfo -> BuildPrescription -> P_Context -> Guarded FSpec
-cook env grindInfoMap steps pCtx = join $ pCtx2Fspec env <$> foldrM doStep pCtx steps
-      where 
-        doStep :: BuildStep -> P_Context -> Guarded P_Context
-        doStep (BuildStep metaModel action) pCtx'= 
-          case action of
-            AddSemanticModel -> pure $ addSemanticModel gInfo pCtx'
-            GrindOnly        -> grind gInfo <$> pCtx2Fspec env pCtx'
-            GrindAndMerge    -> mergeContexts pCtx' <$> grind gInfo <$> pCtx2Fspec env pCtx'
-          where gInfo :: GrindInfo
-                gInfo = case Map.lookup metaModel grindInfoMap of
-                          Just x -> x
-                          Nothing -> fatal $ "metaModel `"++show metaModel++"`was not found!"
-           
---TODO: fix the call to encloseInConstraints by using the right Command
---pCtx2Fspec :: 
---   => env -> Guarded P_Context -> Guarded FSpec
---pCtx2Fspec env c = makeFSpec env <$> join (pCtx2aCtx env <$> encloseInConstraints env c)
+-- | This functions does the work in the kitchen: use the recipe to return a
+--   P_Context from which the FSpec can be built. 
+--   Note that we do not want this function to run in the RIO monad, for we want it to
+--   be pure. Information that would otherwise have to be read as a side effect is now 
+--   given as parameter, like the original user's P_Context, and a map that can be used
+--   to obtain GrindInfo for metamodels. 
+cook :: (HasFSpecGenOpts env) => 
+         env -- The environment
+      -> Guarded P_Context  -- The original user's P_Context, Guarded because it might have errors 
+      -> Map MetaModel GrindInfo -- a map containing all GrindInfo that could be required
+      -> BuildRecipe -> Guarded P_Context 
+cook env user grindInfoMap (BuildRecipe start steps) = 
+    join $ continueWith steps <$> case start of
+                    UserScript -> user
+                    MetaScript mm -> pure . pModel $ gInfo mm
+  where 
+  continueWith :: [BuildStep] -> P_Context -> Guarded P_Context
+  continueWith steps pCtx = foldrM nextStep pCtx steps
+    where
+      nextStep :: BuildStep -> P_Context -> Guarded P_Context
+      nextStep step ctx = 
+        case step of 
+          EncloseInConstraints -> pure $ encloseInConstraints ctx 
+          Grind mm -> grind (gInfo mm) <$> (pCtx2Fspec env ctx)
+          MergeWith recipe -> mergeContexts ctx <$> cook env user grindInfoMap recipe
+
+  gInfo :: MetaModel -> GrindInfo
+  gInfo mm = case Map.lookup mm grindInfoMap of
+            Just x -> x
+            Nothing -> fatal $ "metaModel `"++show mm++"`was not found!"
+
 
 -- | To analyse spreadsheets means to enrich the context with the relations that are defined in the spreadsheet.
 --   The function encloseInConstraints does not populate existing relations.
@@ -231,12 +258,3 @@ encloseInConstraints pCtx = enrichedContext
 --    generalizations :: P_Concept -> [P_Concept]
 --    generalizations cpt = nub $ cpt: [ g | gen<-ctx_gs pCtx, g<-NE.toList (generics gen), cpt==specific gen ]
 
-type BuildPrescription = [BuildStep]
-data BuildStep = BuildStep
-  { bsMetamodel :: MetaModel
-  , bsAction :: BuildAction
-  }
-data BuildAction = 
-    AddSemanticModel
-  | GrindOnly
-  | GrindAndMerge  

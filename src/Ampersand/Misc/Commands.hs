@@ -320,7 +320,7 @@ daemonCmd daemonOpts =
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts =
     extendWith docOpts $ do
-        let recipe = []
+        let recipe = BuildRecipe UserScript []
         mFSpec <- createFspec recipe
         doOrDie mFSpec doGenDocument
 
@@ -328,7 +328,7 @@ documentationCmd docOpts =
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd protoOpts = 
     extendWith protoOpts $ do
-        let recipe = []
+        let recipe = BuildRecipe UserScript [MergeWith (BuildRecipe UserScript [Grind SystemContext])]
         mFSpec <- createFspec recipe
         doOrDie mFSpec proto
 testCmd :: TestOpts -> RIO Runner ()
@@ -337,19 +337,19 @@ testCmd testOpts =
 dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
 dataAnalysisCmd opts = 
     extendWith opts $ do
-        let recipe = []
-        mFSpec <- createFspecDataAnalysis recipe
+        let recipe = BuildRecipe UserScript [EncloseInConstraints]
+        mFSpec <- createFspec recipe
         doOrDie mFSpec exportAsAdl
 pprintCmd :: InputOutputOpts -> RIO Runner ()
 pprintCmd opts = 
     extendWith opts $ do
-        let recipe = []
+        let recipe = BuildRecipe UserScript []
         mFSpec <- createFspec recipe
         doOrDie mFSpec exportAsAdl
 checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd opts =
     extendWith opts $ do
-        let recipe = []
+        let recipe = BuildRecipe UserScript []
         mFSpec <- createFspec recipe
         doOrDie mFSpec doNothing
    where doNothing fSpec = do
@@ -357,14 +357,14 @@ checkCmd opts =
 populationCmd :: PopulationOpts -> RIO Runner ()
 populationCmd opts = 
     extendWith opts $ do
-        let recipe = []
+        let recipe = BuildRecipe UserScript []
         mFSpec <- createFspec recipe
         doOrDie mFSpec population
 
 proofCmd :: ProofOpts -> RIO Runner ()
 proofCmd opts = 
     extendWith opts $ do
-        let recipe = []
+        let recipe = BuildRecipe UserScript []
         mFSpec <- createFspec recipe
         doOrDie mFSpec proof
 
@@ -375,21 +375,21 @@ proofCmd opts =
 umlCmd :: UmlOpts -> RIO Runner ()
 umlCmd opts = 
     extendWith opts $ do
-        let recipe = []
+        let recipe = BuildRecipe UserScript []
         mFSpec <- createFspec recipe
         doOrDie mFSpec uml
 
 validateCmd :: ValidateOpts -> RIO Runner ()
 validateCmd opts = 
     extendWith opts $ do
-        let recipe = []
+        let recipe = BuildRecipe UserScript [MergeWith (BuildRecipe UserScript [Grind SystemContext])]
         mFSpec <- createFspec recipe
         doOrDie mFSpec validate
 
 devoutputCmd :: DevOutputOpts -> RIO Runner ()
 devoutputCmd opts = 
     extendWith opts $ do
-        let recipe = []
+        let recipe = BuildRecipe UserScript []
         mFSpec <- createFspec recipe
         doOrDie mFSpec devoutput
 

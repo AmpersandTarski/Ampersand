@@ -18,5 +18,3 @@ import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.Motivations
        (HasMeaning(..), Motivated(..))
 import Ampersand.FSpec.ToFSpec.CreateFspec
-       (BuildPrescription, BuildStep(..), BuildAction(..)
-       , createFspec)
