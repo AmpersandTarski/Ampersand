@@ -205,7 +205,7 @@ complicatedOptions
 complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure commandParser = do
      runSimpleApp $ do
           logDebug $ displayShow helpDoc'
-     (a,(b,c)) <- case execParserPure (prefs noBacktrack) parser args of
+     (a,(b,c)) <- case execParserPure myPreferences parser args of
        Failure _ | null args -> withArgs ["--help"] (execParser parser)
        -- call onFailure handler if it's present and parsing options failed
        Failure f | Just onFailure <- mOnFailure -> onFailure f args
@@ -218,6 +218,10 @@ complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure com
                 . vsepChunks
                 . mapParser myDescriptionFunction
                 $ infoParser parser
+        myPreferences :: ParserPrefs
+        myPreferences = prefs $ showHelpOnEmpty
+                             <>  noBacktrack
+                             <>  disambiguate 
         myDescriptionFunction :: OptHelpInfo -> Option x -> Chunk Doc
         myDescriptionFunction _info' opt = dullyellow <$>
                 paragraph (show opt) -- optHelp opt -- "Een of andere optie."

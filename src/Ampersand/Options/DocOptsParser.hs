@@ -77,7 +77,7 @@ chaptersP =
                 (show chp) (" printing of chapter "<>show chp<>".") mods
        where 
          mods = case chp of
-           _ -> help $ "Chapter "<>show chp<>" is about ..."
+           _ -> help $ "Do or do not include chapter "<>show chp<>" in the generated document."
           
 
 fSpecFormatP :: Parser FSpecFormat
