@@ -78,12 +78,12 @@ cook :: (HasFSpecGenOpts env) =>
       -> Map MetaModel GrindInfo -- a map containing all GrindInfo that could be required
       -> BuildRecipe -> Guarded P_Context 
 cook env user grindInfoMap (BuildRecipe start steps) = 
-    join $ continueWith steps <$> case start of
+    join $ doSteps <$> case start of
                     UserScript -> user
                     MetaScript mm -> pure . pModel $ gInfo mm
   where 
-  continueWith :: [BuildStep] -> P_Context -> Guarded P_Context
-  continueWith steps pCtx = foldrM nextStep pCtx steps
+  doSteps :: P_Context -> Guarded P_Context
+  doSteps pCtx = foldrM nextStep pCtx steps
     where
       nextStep :: BuildStep -> P_Context -> Guarded P_Context
       nextStep step ctx = 
