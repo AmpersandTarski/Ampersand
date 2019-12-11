@@ -62,6 +62,7 @@ data BuildStep =
                           --   original P_Context. 
   | MergeWith BuildRecipe -- ^ Merge the given P_Context with the P_Context that is the result of 
                           --   applying the BuildRecipe.
+  | NoConversion          -- ^ the ID step. The P_Context that goes out is equal to the one that goes in. 
   | EncloseInConstraints  -- ^ Apply the encloseInConstraints function to the given P_Context.
 
 -- | This functions does the work in the kitchen: use the recipe to return a
@@ -89,7 +90,8 @@ cook env user grindInfoMap (BuildRecipe start steps) =
           EncloseInConstraints -> pure $ encloseInConstraints ctx 
           Grind mm -> grind (gInfo mm) <$> (pCtx2Fspec env ctx)
           MergeWith recipe -> mergeContexts ctx <$> cook env user grindInfoMap recipe
-
+          NoConversion -> pure ctx
+          
   gInfo :: MetaModel -> GrindInfo
   gInfo mm = case Map.lookup mm grindInfoMap of
             Just x -> x

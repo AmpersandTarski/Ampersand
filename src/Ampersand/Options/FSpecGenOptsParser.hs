@@ -3,10 +3,13 @@ module Ampersand.Options.FSpecGenOptsParser
    (fSpecGenOptsParser, defFSpecGenOpts)
 where
 
-import           Options.Applicative
-import           Options.Applicative.Builder.Extra
 import           Ampersand.Misc.HasClasses (FSpecGenOpts (..))
 import           Ampersand.Basics
+import           Ampersand.FSpec.ShowMeatGrinder (MetaModel(..))
+import           Options.Applicative
+import           Options.Applicative.Builder.Extra
+import           RIO.Char (toLower)
+import qualified RIO.List as L
 
 -- | Command-line parser for the proto command.
 fSpecGenOptsParser :: 
@@ -14,7 +17,8 @@ fSpecGenOptsParser ::
           -- the daemon config file. 
   -> Parser FSpecGenOpts
 fSpecGenOptsParser isForDaemon =
-      ( \rootFile sqlBinTables genInterfaces namespace defaultCrud trimXLSXCells
+      ( \rootFile sqlBinTables genInterfaces namespace 
+         defaultCrud trimXLSXCells metaModels
         -> FSpecGenOpts
                 { xrootFile = rootFile
                 , xsqlBinTables = sqlBinTables
@@ -22,6 +26,7 @@ fSpecGenOptsParser isForDaemon =
                 , xnamespace = namespace
                 , xdefaultCrud = defaultCrud
                 , xtrimXLSXCells = trimXLSXCells
+                , xmetaModelsToAdd = metaModels
                 }
       ) <$> (if isForDaemon 
               then pure Nothing -- The rootfile should come from the daemon config file.
@@ -31,6 +36,7 @@ fSpecGenOptsParser isForDaemon =
         <*> namespaceP
         <*> crudP
         <*> trimXLSXCellsP
+        <*> metaModelsP
 defFSpecGenOpts :: FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl = FSpecGenOpts
      { xrootFile = Just rootAdl
@@ -39,6 +45,7 @@ defFSpecGenOpts rootAdl = FSpecGenOpts
      , xnamespace = ""
      , xdefaultCrud = (True,True,True,True)
      , xtrimXLSXCells = True
+     , xmetaModelsToAdd = []
      } 
 rootFileP :: Parser FilePath
 rootFileP = strArgument 
@@ -89,3 +96,32 @@ trimXLSXCellsP = boolFlags True "trim-cellvalues"
         ( "ignoring the leading and trailing spaces in .xlsx files "<>
                  "that are INCLUDED in the script.")
          mempty
+metaModelsP :: Parser [MetaModel]
+metaModelsP = some metaModelP
+  where
+    metaModelP :: Parser MetaModel
+    metaModelP = toMetaModel <$> strOption
+         (  long "addMetaModel"
+         <> metavar "METAMODEL"
+         <> completeWith (map show allMetaModels)
+         <> help "The format in which the output is written."
+         )
+      where 
+         allMetaModels :: [MetaModel]
+         allMetaModels = [minBound .. maxBound]
+         toMetaModel :: String -> MetaModel
+         toMetaModel s = case filter matches allMetaModels of
+            -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
+            --        See https://hackage.haskell.org/package/optparse-applicative
+                   [] -> fatal $ unlines
+                        ["No matching metamodels found. Possible metamodels are:"
+                        , "  "<>L.intercalate ", " (map show allMetaModels)
+                        ]
+                   [f] -> f
+                   xs -> fatal $ unlines 
+                        [ "Ambiguous metamodel specified. Possible matches are:"
+                        , "  "<>L.intercalate ", " (map show xs)
+                        ]
+            where
+              matches :: MetaModel -> Bool
+              matches x = map toLower s `L.isPrefixOf` (map toLower $ show x)

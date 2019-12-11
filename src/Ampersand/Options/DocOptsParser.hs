@@ -10,8 +10,8 @@ import           Ampersand.Misc.HasClasses
 import           Ampersand.Options.FSpecGenOptsParser
 import           Ampersand.Options.Utils
 import           Options.Applicative.Builder.Extra
-import qualified RIO.List as L
 import           RIO.Char (toLower)
+import qualified RIO.List as L
 
 
 -- | Command-line parser for the proto command.

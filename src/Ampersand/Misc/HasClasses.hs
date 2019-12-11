@@ -4,7 +4,7 @@ module Ampersand.Misc.HasClasses
 where
 import Ampersand.Basics
 import RIO.FilePath
---import System.FilePath
+import Ampersand.FSpec.ShowMeatGrinder (MetaModel)
 
 class HasFSpecGenOpts a where
   fSpecGenOptsL :: Lens' a FSpecGenOpts
@@ -18,6 +18,8 @@ class HasFSpecGenOpts a where
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
   trimXLSXCellsL :: Lens' a Bool
   trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x { xtrimXLSXCells = y })
+  xmetaModelsToAddL :: Lens' a [MetaModel]
+  xmetaModelsToAddL = fSpecGenOptsL . lens xmetaModelsToAdd (\x y -> x { xmetaModelsToAdd = y })
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
   {-# INLINE fSpecGenOptsL #-}
@@ -217,6 +219,7 @@ data FSpecGenOpts = FSpecGenOpts
   , xnamespace :: !String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
+  , xmetaModelsToAdd :: ![MetaModel] -- The metamodels that should be added to the FSpec
   -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
   } deriving Show
 

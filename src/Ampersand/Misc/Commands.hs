@@ -324,7 +324,8 @@ daemonCmd daemonOpts =
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts =
     extendWith docOpts $ do
-        let recipe = BuildRecipe UserScript []
+        env <- ask
+        let recipe = BuildRecipe UserScript [optionalMetaModels env]
         mFSpec <- createFspec recipe
         doOrDie mFSpec doGenDocument
 
@@ -347,13 +348,15 @@ dataAnalysisCmd opts =
 pprintCmd :: InputOutputOpts -> RIO Runner ()
 pprintCmd opts = 
     extendWith opts $ do
-        let recipe = BuildRecipe UserScript []
+        env <- ask
+        let recipe = BuildRecipe UserScript [optionalMetaModels env]
         mFSpec <- createFspec recipe
         doOrDie mFSpec exportAsAdl
 checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd opts =
     extendWith opts $ do
-        let recipe = BuildRecipe UserScript []
+        env <- ask
+        let recipe = BuildRecipe UserScript [optionalMetaModels env]
         mFSpec <- createFspec recipe
         doOrDie mFSpec doNothing
    where doNothing fSpec = do
@@ -361,14 +364,16 @@ checkCmd opts =
 populationCmd :: PopulationOpts -> RIO Runner ()
 populationCmd opts = 
     extendWith opts $ do
-        let recipe = BuildRecipe UserScript []
+        env <- ask
+        let recipe = BuildRecipe UserScript [optionalMetaModels env]
         mFSpec <- createFspec recipe
         doOrDie mFSpec population
 
 proofCmd :: ProofOpts -> RIO Runner ()
 proofCmd opts = 
     extendWith opts $ do
-        let recipe = BuildRecipe UserScript []
+        env <- ask
+        let recipe = BuildRecipe UserScript [optionalMetaModels env]
         mFSpec <- createFspec recipe
         doOrDie mFSpec proof
 
@@ -379,7 +384,8 @@ proofCmd opts =
 umlCmd :: UmlOpts -> RIO Runner ()
 umlCmd opts = 
     extendWith opts $ do
-        let recipe = BuildRecipe UserScript []
+        env <- ask
+        let recipe = BuildRecipe UserScript [optionalMetaModels env]
         mFSpec <- createFspec recipe
         doOrDie mFSpec uml
 
@@ -393,7 +399,8 @@ validateCmd opts =
 devoutputCmd :: DevOutputOpts -> RIO Runner ()
 devoutputCmd opts = 
     extendWith opts $ do
-        let recipe = BuildRecipe UserScript []
+        env <- ask
+        let recipe = BuildRecipe UserScript [optionalMetaModels env]
         mFSpec <- createFspec recipe
         doOrDie mFSpec devoutput
 
@@ -424,3 +431,11 @@ data Command =
       | Test
       | Uml
       | Validate deriving Show
+
+-- This function takes care of the metamodels that could be requested by the user
+-- as a command line option. 
+optionalMetaModels :: (HasFSpecGenOpts a) => a -> BuildStep
+optionalMetaModels env = go models
+   where models = view xmetaModelsToAddL env 
+         go [] = NoConversion
+         go (m:ms) = MergeWith $ BuildRecipe (MetaScript m) [go ms]
