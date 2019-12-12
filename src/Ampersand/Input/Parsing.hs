@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
@@ -121,8 +122,9 @@ parseSingleADL :: (HasFSpecGenOpts env, HasLogFunc env) =>
     ParseCandidate -> RIO env (Guarded (P_Context, [ParseCandidate]))
 parseSingleADL pc
  = do case pcFileKind pc of
-        Just _ -> {- reading a file that is included into ampersand.exe -} return ()
-        Nothing -> sayWhenLoudLn $ "Reading file " ++ filePath 
+        Just _ -> {- reading a file that is included into ampersand.exe -} 
+                   logDebug $ "Reading internal file " <> display (T.pack filePath) 
+        Nothing -> logInfo $ "Reading file " <> display (T.pack filePath) 
       exists <- liftIO $ doesFileExist filePath
       if isJust (pcFileKind pc) || exists
       then parseSingleADL'
