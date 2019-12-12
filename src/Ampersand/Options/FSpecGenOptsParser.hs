@@ -116,6 +116,7 @@ metaModelsP = L.nub <$> many metaModelP -- (zero or more)
                    [] -> fatal $ unlines
                         ["No matching metamodels found. Possible metamodels are:"
                         , "  "<>L.intercalate ", " (map show allMetaModels)
+                        , "  You specified: `"<>s<>"`"
                         ]
                    [f] -> f
                    xs -> fatal $ unlines 
