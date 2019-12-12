@@ -98,6 +98,13 @@ even more complex than it already was.
   * ***--help*** Now gives information about the level where it is called:
     * `ampersand --help` gives help about the commands and global options.
     * `ampersand <command> --help` gives information about the command-specific options.
+  * We used to have the possibility to fiddle around with the formal ampersand metamodel. This
+    has been generalized, and we now have another metamodel as well, called SystemContext. The
+    latter is used during the generation of prototypes. This is still an experimental feature.
+    * ***--add-semantic-metamodel, --meta-tables*** Changed to `--addMetaModel=FormalAmpersand`.
+          All relations, views, idents etc. from the specified metamodel will be
+          available for use in your model. These artefacts do not have to
+          be declared explicitly in your own model.
 
 * Unchanged (but now only available for relevant commands)
   * ***--outputDir=DIR***
@@ -167,10 +174,6 @@ The config.yaml file will be replaced by ampersand.yaml file. The generation of 
 
 We now have `recipes` to deal with metamodels such as Formal Ampersand and SystemContext. These recipes will be used based on the chose command. There might be a need to modify those recipes by the user. This still has to be seen. In any case, the following options will be removed:
 
-* ***--add-semantic-metamodel, --meta-tables***
-          All relations, views, idents etc. from formal-ampersand will be
-          available for use in your model. These artefacts do not have to
-          be declared explicitly in your own model.
 * ***--gen-as-rap-model***
           Generate populations for use in RAP3.
 * ***--meta-file***
