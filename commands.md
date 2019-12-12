@@ -181,9 +181,3 @@ We now have `recipes` to deal with metamodels such as Formal Ampersand and Syste
           formal-ampersand, populated with the the meta-population of your
           own .adl model, in case you want a metamodel.
 
-## TODO: Get the test files working again
-
-The regression tests, as done with travis-ci, are grouped in directories. Each directory
-that contains a file named `testinfo.yaml` will be taken into account. All _*.adl_ files in that directory
-will be tested according to the specification in testinfo.yaml.
-The specification file now has to be rewritten. Also the handling of these files have to be rewritten.
