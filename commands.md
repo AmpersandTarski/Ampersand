@@ -27,7 +27,7 @@ even more complex than it already was.
   * ***--fpa***
           Generate Function Point Analysis chapter.
   * ***--fpa-excel*** `fpa`
-          Generate an Excel workbook (FPA_<filename>.xml).
+          Generate an Excel workbook (FPA_\<filename\>.xml).
   * ***--oldNormalizer***
           Use the old normalizer at your own risk.
   * ***--newNormalizer***
@@ -143,7 +143,7 @@ even more complex than it already was.
   * ***--ignore-invariant-violations***
           Allow to build a prototype, even if there are invariants that are
           being violated. (See
-          https://github.com/AmpersandTarski/Ampersand/issues/728)
+          <https://github.com/AmpersandTarski/Ampersand/issues/728)>
   * ***--prototype-framework-version=VERSION***
           tag, branch or SHA of the prototype framework on Github. (What
           purpose does this serve?)
@@ -180,4 +180,3 @@ We now have `recipes` to deal with metamodels such as Formal Ampersand and Syste
           Generate an .adl file that contains the relations of
           formal-ampersand, populated with the the meta-population of your
           own .adl model, in case you want a metamodel.
-
