@@ -6,7 +6,7 @@ FROM haskell:8.6.5 AS buildstage
 # Don't worry about the correct version of ghc. It is specified in stack.yaml
 # RUN stack setup
 
-COPY AmpersandData app src testing ampersand.cabal package.yaml Setup.hs stack.yaml /code/
+COPY AmpersandData app src testing package.yaml Setup.hs stack.yaml /code/
 
 WORKDIR /code
 
