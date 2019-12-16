@@ -6,11 +6,8 @@ FROM haskell:8.6.5 AS buildstage
 # Don't worry about the correct version of ghc. It is specified in stack.yaml
 # RUN stack setup
 
-COPY AmpersandData /code/AmpersandData
-COPY app /code/app
-COPY src /code/src
-COPY testing /code/testing
-COPY package.yaml Setup.hs stack.yaml /code/
+# See .dockerignore for files/folders that are not copied
+COPY . /code
 
 WORKDIR /code
 
