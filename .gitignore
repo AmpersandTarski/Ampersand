@@ -10,8 +10,6 @@ cabal.sandbox.config
 /dist-newstyle
 .idea
 
-stack.yaml.lock
-
 # Disable testresults 
 /testing/Travis/testcases/**/*.proto
 
