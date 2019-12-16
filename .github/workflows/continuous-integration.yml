@@ -1,8 +1,8 @@
 name: Continuous Integration
 on:
   push:
-    branches:
-      - github-ci-test
+    branches: # TODO: remove this part to trigger build on all branches
+      - github-ci
 
 env:
   DOCKER_AMPERSAND_IMAGE: docker.pkg.github.com/ampersandtarski/ampersand/ampersand
