@@ -20,10 +20,6 @@ RUN ls -al /root/.local/bin
 # Create a light-weight image that has the Ampersand compiler available
 FROM ubuntu
 
-VOLUME ["/scripts"]
-
 COPY --from=buildstage /root/.local/bin/ampersand /bin/
-
-WORKDIR /scripts
 
 ENTRYPOINT ["/bin/ampersand"]
