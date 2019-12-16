@@ -22,7 +22,7 @@ jobs:
     - name: Branch name # extract branche name from GITHUB_REF
       run: echo running on branch ${GITHUB_REF##*/}
     - run: docker pull ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} || true
-    - run: docker build --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} .
+    - run: docker build --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} —-target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} .
     - run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
   
   # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
