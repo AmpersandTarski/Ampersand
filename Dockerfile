@@ -1,15 +1,18 @@
-FROM haskell:8.6.5 AS buildstage
 # The purpose of this docker file is to produce a latest Ampersand-compiler in the form of a docker image.
-# The Haskell version number must be consistent with ./stack.yaml to ensure successful compilation.
+FROM haskell:8.6.5 AS buildstage
 
-# set up Haskell stack; downloads approx 177MB
-# Don't worry about the correct version of ghc. It is specified in stack.yaml
-# RUN stack setup
+RUN mkdir /code
+WORKDIR /code
 
+# Start with a layer to build dependencies that can be cached
+# Only updates to these files must trigger this layer
+# https://medium.com/permutive/optimized-docker-builds-for-haskell-76a9808eb10b
+COPY stack.yaml package.yaml stack.yaml.lock /code/
+RUN stack build --dependencies-only
+
+# Copy the rest of the application
 # See .dockerignore for files/folders that are not copied
 COPY . /code
-
-WORKDIR /code
 
 # Build Ampersand compiler and install in /root/.local/bin
 RUN stack install
