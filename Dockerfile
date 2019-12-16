@@ -11,13 +11,13 @@ COPY . /code
 
 WORKDIR /code
 
-# installs Ampersand executables in /root/.local/bin
+# Build Ampersand compiler and install in /root/.local/bin
 RUN stack install
 
-# show the results of the build stage
+# Show the results of the build stage
 RUN ls -al /root/.local/bin
 
-# Purpose: a light-weight container can copy ampersand executables from /root/.local/bin, ignoring the build-stuff such as source code and setup-work
+# Create a light-weight image that has the Ampersand compiler available
 FROM ubuntu
 
 VOLUME ["/scripts"]
