@@ -2,7 +2,7 @@
 
 ## Unreleased changes
 * Refactor Docker image for Ampersand compiler
-* Add continuous integration via Github Actions
+* Add continuous integration via Github Actions. With cache.
 
 ## v3.17.4 (13 september 2019)
 
