@@ -18,9 +18,9 @@ jobs:
     # Because steps run in their own process, changes to environment variables are not preserved between steps
     steps:
     - uses: actions/checkout@master # this action checks-out the repository
-    - run: docker login docker.pkg.github.com -u ${{GITHUB_ACTOR}} -p ${{secrets.GITHUB_TOKEN}}
-    - run: docker build . --tag ${{DOCKER_AMPERSAND_IMAGE}}:${{GITHUB_REF}}
-    - run: docker push ${{DOCKER_AMPERSAND_IMAGE}}:${{BRANCH}}
+    - run: docker login docker.pkg.github.com -u ${GITHUB_ACTOR} -p ${{secrets.GITHUB_TOKEN}}
+    - run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF}
+    - run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF}
   
   # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
   test:
