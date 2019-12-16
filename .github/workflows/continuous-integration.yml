@@ -1,0 +1,30 @@
+name: Continuous Integration
+on:
+  push:
+    branches:
+      - github-ci-test
+
+env:
+  DOCKER_AMPERSAND_IMAGE: docker.pkg.github.com/ampersandtarski/ampersand/ampersand
+
+jobs:
+  build:
+    name: Build and push docker image
+    runs-on: ubuntu-latest
+    # env:
+    
+    # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables
+    # See: https://github.com/actions for default Github actions
+    # Because steps run in their own process, changes to environment variables are not preserved between steps
+    steps:
+    - uses: actions/checkout@master # this action checks-out the repository
+    - run: docker login docker.pkg.github.com -u ${{GITHUB_ACTOR}} -p ${{secrets.GITHUB_TOKEN}}
+    - run: docker build . --tag ${{DOCKER_AMPERSAND_IMAGE}}:${{GITHUB_REF}}
+    - run: docker push ${{DOCKER_AMPERSAND_IMAGE}}:${{BRANCH}}
+  
+  # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
+  test:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
