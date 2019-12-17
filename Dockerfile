@@ -14,6 +14,10 @@ RUN stack build --dependencies-only
 # See .dockerignore for files/folders that are not copied
 COPY . /code
 
+# These ARGs are available as ENVs in next RUN and are needed for compiling the Ampersand compiler to have the right versioning info
+ARG GIT_SHA
+ARG GIT_Branch
+
 # Build Ampersand compiler and install in /root/.local/bin
 RUN stack install
 
