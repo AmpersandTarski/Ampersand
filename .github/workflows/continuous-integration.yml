@@ -1,7 +1,7 @@
 name: Continuous Integration
 on:
   push:
-    branches: # TODO: remove this part to trigger build on all branches
+    branches: # empty list to only trigger on branches (i.e. not tags, ..)
       - github-ci
 
 env:
@@ -12,7 +12,8 @@ jobs:
     name: Build and push docker image
     runs-on: ubuntu-latest
     env:
-      IMAGE_BRANCH_TAG: DOCKER_AMPERSAND_IMAGE:${GITHUB_REF##*/}
+      IMAGE_BRANCH_TAG: ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
+      IMAGE_DEV_BUILD_TAG: ${DOCKER_AMPERSAND_IMAGE}:dev-build
     
     # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables
     # Because steps run in their own process, changes to environment variables are not preserved between steps
@@ -22,11 +23,11 @@ jobs:
     - run: docker login docker.pkg.github.com -u ${GITHUB_ACTOR} -p ${{secrets.GITHUB_TOKEN}}
     - name: Branch name # extract branche name from GITHUB_REF
       run: echo running on branch ${GITHUB_REF##*/}
-    - run: docker pull ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} || true
-    - run: docker history ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} || true
-    - run: docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
-    - run: docker history ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
-    - run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
+    - run: docker pull ${IMAGE_BRANCH_TAG} || true
+    - run: docker pull ${IMAGE_DEV_BUILD_TAG} || true
+    # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
+    - run: docker build . --cache-from ${IMAGE_BRANCH_TAG} --cache-from {$IMAGE_DEV_BUILD_TAG} --target buildstage --tag ${IMAGE_BRANCH_TAG}
+    - run: docker push ${IMAGE_BRANCH_TAG}
   
   # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
   test:
