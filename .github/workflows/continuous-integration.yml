@@ -33,7 +33,13 @@ jobs:
         docker pull ${IMAGE_DEV_BUILD_TAG} || true
     
     - name: Build
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+        # These envs are needed when compiling the Ampersand compiler to have the right versioning info
+        GIT_SHA: ${{ github.sha }}
+        GIT_Branch: ${{ github.ref }}
       run: |
+        echo "$GITHUB_CONTEXT"
         # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
         docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --cache-from ${IMAGE_DEV_BUILD_TAG} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
     
