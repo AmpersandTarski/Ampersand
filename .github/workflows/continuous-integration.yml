@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: Build and push docker image
+    name: Build
     runs-on: ubuntu-latest
     # env:
     
@@ -42,12 +42,14 @@ jobs:
   
   # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
   test:
+    name: Test
     needs: [build]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
 
   release:
+    name: Release
     if: github.ref == 'refs/heads/master'
     needs: [build, test]
     runs-on: ubuntu-latest
