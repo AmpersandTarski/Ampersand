@@ -6,14 +6,14 @@ on:
 
 env:
   DOCKER_AMPERSAND_IMAGE: docker.pkg.github.com/ampersandtarski/ampersand/ampersand
+  IMAGE_DEV_BUILD_TAG: docker.pkg.github.com/ampersandtarski/ampersand/ampersand:dev-build
+  # IMAGE_BRANCH_TAG: ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} # Does not work because bash expression is not allowed here
 
 jobs:
   build:
     name: Build and push docker image
     runs-on: ubuntu-latest
-    env:
-      # IMAGE_BRANCH_TAG: ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} # Does not work because bash expression is not allowed here
-      IMAGE_DEV_BUILD_TAG: ${{env.DOCKER_AMPERSAND_IMAGE}}:dev-build
+    # env:
     
     # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables
     # Because steps run in their own process, changes to environment variables are not preserved between steps
