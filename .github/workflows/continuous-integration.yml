@@ -11,19 +11,21 @@ jobs:
   build:
     name: Build and push docker image
     runs-on: ubuntu-latest
-    # env:
+    env:
+      IMAGE_BRANCH_TAG: DOCKER_AMPERSAND_IMAGE:${GITHUB_REF##*/}
     
     # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables
-    # See: https://github.com/actions for default Github actions
     # Because steps run in their own process, changes to environment variables are not preserved between steps
     steps:
-    - uses: actions/checkout@master # this action checks-out the repository
+    - uses: actions/checkout@master # this action checks-out the repository. see: https://github.com/actions for default Github actions
     - run: docker version
     - run: docker login docker.pkg.github.com -u ${GITHUB_ACTOR} -p ${{secrets.GITHUB_TOKEN}}
     - name: Branch name # extract branche name from GITHUB_REF
       run: echo running on branch ${GITHUB_REF##*/}
     - run: docker pull ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} || true
+    - run: docker history ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} || true
     - run: docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
+    - run: docker history ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
     - run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
   
   # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
