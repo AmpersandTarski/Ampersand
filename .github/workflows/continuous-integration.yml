@@ -12,8 +12,8 @@ jobs:
     name: Build and push docker image
     runs-on: ubuntu-latest
     env:
-      IMAGE_BRANCH_TAG: ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
-      IMAGE_DEV_BUILD_TAG: ${DOCKER_AMPERSAND_IMAGE}:dev-build
+      # IMAGE_BRANCH_TAG: ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} # Does not work because bash expression is not allowed here
+      IMAGE_DEV_BUILD_TAG: ${{env.DOCKER_AMPERSAND_IMAGE}}:dev-build
     
     # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables
     # Because steps run in their own process, changes to environment variables are not preserved between steps
@@ -29,16 +29,16 @@ jobs:
     
     - name: Pull images to use as cache
       run: |
-        docker pull ${IMAGE_BRANCH_TAG} || true
+        docker pull ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} || true
         docker pull ${IMAGE_DEV_BUILD_TAG} || true
     
     - name: Build
       run: |
         # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
-        docker build . --cache-from ${IMAGE_BRANCH_TAG} --cache-from ${IMAGE_DEV_BUILD_TAG} --target buildstage --tag ${IMAGE_BRANCH_TAG}
+        docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --cache-from ${IMAGE_DEV_BUILD_TAG} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
     
     - name: Push
-      run: docker push ${IMAGE_BRANCH_TAG}
+      run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
   
   # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
   test:
