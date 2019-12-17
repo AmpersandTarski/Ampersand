@@ -26,7 +26,7 @@ jobs:
     - run: docker pull ${IMAGE_BRANCH_TAG} || true
     - run: docker pull ${IMAGE_DEV_BUILD_TAG} || true
     # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
-    - run: docker build . --cache-from ${IMAGE_BRANCH_TAG} --cache-from {$IMAGE_DEV_BUILD_TAG} --target buildstage --tag ${IMAGE_BRANCH_TAG}
+    - run: docker build . --cache-from ${IMAGE_BRANCH_TAG} --cache-from ${IMAGE_DEV_BUILD_TAG} --target buildstage --tag ${IMAGE_BRANCH_TAG}
     - run: docker push ${IMAGE_BRANCH_TAG}
   
   # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
