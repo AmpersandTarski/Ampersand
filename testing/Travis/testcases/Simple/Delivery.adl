@@ -192,7 +192,7 @@ BOX [ "Client"  : orderedBy
 
 -- Rules
 
-PROCESS Bestellen
+PATTERN Bestellen
 
 orderAccepted :: Order * Vendor [UNI] -- an order may not be accepted by multiple vendors
 --  = [ ("Order_1", "Vendor_1") ]
@@ -230,7 +230,7 @@ ROLE Vendor MAINTAINS allAccepted
 
 ROLE Client MAINTAINS allReceived
 
-ENDPROCESS
+ENDPATTERN
 
 
 ENDCONTEXT

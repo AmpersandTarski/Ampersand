@@ -2,13 +2,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Test.Parser.ArbitraryTree () where
 
-import Test.QuickCheck hiding (listOf1)
-import RIO.Char
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
+import           Ampersand.Input.ADL1.Lexer (keywords)
+import           RIO.Char
 import qualified RIO.List as L
-import Ampersand.Core.ParseTree
-import Ampersand.Input.ADL1.Lexer (keywords)
-import Ampersand.Basics
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import           Test.QuickCheck hiding (listOf1)
 
 -- Useful functions to build on the quick check functions
 
@@ -103,7 +103,6 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- concepts
        <*> listOf arbitrary -- identities
        <*> listOf arbitrary -- role rules
-       <*> listOf arbitrary -- role relations
        <*> listOf arbitrary -- representation
        <*> listOf arbitrary -- views
        <*> listOf arbitrary -- gen definitions
@@ -118,14 +117,11 @@ instance Arbitrary Meta where
 instance Arbitrary MetaObj where
     arbitrary = return ContextMeta
 
-instance Arbitrary P_RoleRelation where
-    arbitrary = P_RR <$> arbitrary <*> arbitrary <*> arbitrary
-
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
 
-listOf1 :: Gen a -> Gen (NEL.NonEmpty a)
-listOf1 p = (NEL.:|) <$> p <*> listOf p
+listOf1 :: Gen a -> Gen (NE.NonEmpty a)
+listOf1 p = (NE.:|) <$> p <*> listOf p
 
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary <*> listOf1 upperId <*> arbitrary
@@ -142,7 +138,7 @@ instance Arbitrary Role where
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> arbitrary <*> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Relation where
     arbitrary = P_Sgn <$> lowerId         -- name
@@ -270,11 +266,11 @@ instance Arbitrary P_Interface where
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
 
-instance Arbitrary a => Arbitrary (NEL.NonEmpty a) where
+instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
     arbitrary = do 
          h <- arbitrary
          t <- arbitrary 
-         return $ h NEL.:| t
+         return $ h NE.:| t
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
                      <*> arbitrary
@@ -283,7 +279,7 @@ instance Arbitrary P_IdentSegment where
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
     arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                    <*> arbitrary <*> arbitrary <*> listOf1 arbitrary
+                    <*> arbitrary <*> arbitrary <*> listOf arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeStr

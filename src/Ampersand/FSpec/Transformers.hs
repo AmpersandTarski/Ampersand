@@ -16,8 +16,7 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
-import           Ampersand.Misc
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 
@@ -58,11 +57,10 @@ toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transfo
 toTransformer (a,b,c,d) = Transformer a b c d
 
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
-transformersFormalAmpersand :: Options -> FSpec -> [Transformer]
-transformersFormalAmpersand Options{..} fSpec = map toTransformer [
+transformersFormalAmpersand :: FSpec -> [Transformer]
+transformersFormalAmpersand fSpec = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList $
+      , Set.fromList $
         [(dirtyId ctx, dirtyId conj ) 
         | ctx::A_Context <- instanceList fSpec
         , conj::Conjunct <- instanceList fSpec
@@ -90,8 +88,7 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
         ]
       )
      ,("arg"                   , "UnaryTerm"             , "Expression"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList $
+      , Set.fromList $
         [(dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [arg expr]
@@ -107,8 +104,7 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
       , Set.empty  --TODO
       )
      ,("bind"                  , "BindedRelation"        , "Relation"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList $
+      , Set.fromList $
         [(dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [bindedRel expr]
@@ -125,8 +121,7 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
         ]
       )
      ,("conjunct"              , "Conjunct"              , "Expression"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList $
+      , Set.fromList $
         [(dirtyId conj, dirtyId (rc_conjunct conj))
         | conj::Conjunct <- instanceList fSpec
         ]
@@ -238,16 +233,14 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
       , Set.empty  --TODO
       )
      ,("first"                 , "BinaryTerm"            , "Expression"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList $
+      , Set.fromList $
         [(dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [first expr]
         ]
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList $
+      , Set.fromList $
         [(dirtyId rul, dirtyId (formalExpression rul))
         | rul::Rule <- instanceList fSpec
         ]
@@ -314,8 +307,7 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
       , Set.empty  --TODO
       )
      ,("ifcControls"           , "Interface"             , "Conjunct"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList $
+      , Set.fromList $
         [(dirtyId ifc, dirtyId conj) 
         | ifc::Interface <- instanceList fSpec
         , conj <- ifcControls ifc
@@ -508,8 +500,7 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
         ]
       )
      ,("objExpression"         , "ObjectDef"             , "Expression"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId obj, dirtyId (objExpression obj))
         | obj::ObjectDef <- instanceList fSpec
         ]
@@ -524,16 +515,14 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
         ]
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId expr, PopAlphaNumeric . show $ op) 
         | expr::Expression <- instanceList fSpec
         , Just op <- [binOp expr]
         ]
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId expr, PopAlphaNumeric . show $ op) 
         | expr::Expression <- instanceList fSpec
         , Just op <- [unaryOp expr]
@@ -546,11 +535,10 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
         ]
       )
      ,("originatesFrom"        , "Conjunct"              , "Rule"    
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId conj, dirtyId rul)
         | conj::Conjunct <- instanceList fSpec
-        , rul <- NEL.toList $ rc_orgRules conj
+        , rul <- NE.toList $ rc_orgRules conj
         ]
       )
      ,("outQ"                  , "Quad"                  , "Act"     
@@ -640,15 +628,13 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
       , Set.empty  --TODO
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId rul, dirtyId (formalExpression rul))
         | rul::Rule <- instanceList fSpec
         ]
       )
      ,("second"                , "BinaryTerm"            , "Expression"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [second expr]
@@ -673,15 +659,13 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
       , Set.empty  --TODO
       )
      ,("showADL"               , "Expression"            , "ShowADL" 
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId expr, PopAlphaNumeric (showA expr)) 
         | expr::Expression <- instanceList fSpec
         ]
       )
      ,("sign"                  , "Expression"            , "Signature"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId expr, dirtyId (sign expr)) 
         | expr::Expression <- instanceList fSpec
         ]
@@ -693,8 +677,7 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
         ]
       )
      ,("singleton"             , "Singleton"             , "AtomValue"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [singleton expr]
@@ -772,32 +755,28 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
         ]
       )
      ,("usedIn"                , "Relation"              , "Expression"
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId rel, dirtyId expr)
         | expr::Expression <- instanceList fSpec
         , rel::Relation <- Set.elems $ bindedRelationsIn expr
         ]
       )
      ,("userCpt"               , "Epsilon"                     , "Concept" 
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just (x::A_Concept) <- [userCpt expr]
         ]
       )
      ,("userSrc"               , "V"                     , "Concept" 
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [userSrc expr]
         ]
       )
      ,("userTrg"               , "V"                     , "Concept" 
-      , if atlasWithoutExpressions then Set.empty else
-        Set.fromList
+      , Set.fromList
         [(dirtyId expr, dirtyId x)
         | expr::Expression <- instanceList fSpec
         , Just x <- [userTrg expr]
@@ -833,8 +812,8 @@ transformersFormalAmpersand Options{..} fSpec = map toTransformer [
 
  
 -- | The list of all transformers, one for each and every relation in SystemContext.
-transformersSystemContext :: Options -> FSpec -> [Transformer]
-transformersSystemContext _ fSpec = map toTransformer [
+transformersSystemContext :: FSpec -> [Transformer]
+transformersSystemContext fSpec = map toTransformer [
       ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
       , Set.empty
       )

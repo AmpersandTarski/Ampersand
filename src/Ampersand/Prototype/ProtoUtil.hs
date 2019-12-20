@@ -3,7 +3,7 @@
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
          , writePrototypeAppFile
-         , copyDirRecursively, copyDeepFile, removeAllDirectoryFiles, getProperDirectoryContents
+         , copyDirRecursively, removeAllDirectoryFiles, getProperDirectoryContents
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock
@@ -14,76 +14,89 @@ module Ampersand.Prototype.ProtoUtil
 import           Ampersand.Basics
 import           Ampersand.Misc
 import qualified RIO.List as L
-import qualified Data.Text as Text
+import qualified RIO.Text as T
 import           System.Directory
 import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))
 import           System.FilePath
-import           System.Process
+import           System.Process(CreateProcess(..),readCreateProcessWithExitCode
+                               ,CmdSpec(..),StdStream(..))
 
 
-getGenericsDir :: Options -> String
-getGenericsDir Options{..} = 
-  dirPrototype </> "generics" 
 
-writePrototypeAppFile :: Options -> String -> String -> IO ()
-writePrototypeAppFile opts@Options{..} relFilePath content =
- do { verboseLn $ "  Generating "<>relFilePath 
-    ; let filePath = getAppDir opts </> relFilePath
-    ; createDirectoryIfMissing True (takeDirectory filePath)
-    ; writeFile filePath content
-    }
-   
-getAppDir :: Options -> String
-getAppDir Options{..} =
-  dirPrototype </> "public" </> "app" </> "project"
+
+writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
+                         String -> String -> RIO env ()
+writePrototypeAppFile relFilePath content = do
+  env <- ask
+  sayWhenLoudLn $ "  Generating "<>relFilePath 
+  let filePath = getAppDir env </> relFilePath
+  liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
+  liftIO $ writeFile filePath content
+     
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
-copyDirRecursively :: FilePath -> FilePath -> Options -> IO ()
-copyDirRecursively srcBase tgtBase Options{..} = copy ""
-  where copy fileOrDirPth = 
-         do { let srcPath = srcBase </> fileOrDirPth
-                  tgtPath = tgtBase </> fileOrDirPth
-            ; isDir <- doesDirectoryExist srcPath
-            ; if isDir then 
-               do { createDirectoryIfMissing True tgtPath
-                  ; verboseLn $ " Copying dir... " ++ srcPath
-                  ; fOrDs <- getProperDirectoryContents srcPath
-                  ; mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
-                  }
-              else
-               do { verboseLn $ "  file... " ++ fileOrDirPth
-                  ; copyFile srcPath tgtPath -- directory will exist, so no need for copyDeepFile
-                  }
-            }
-            
--- Copy file while creating all subdirectories on the target path (if non-existent)
-copyDeepFile :: FilePath -> FilePath -> Options -> IO ()
-copyDeepFile srcPath tgtPath Options{..} =
- do { verboseLn $ " Copying file... " ++ srcPath ++ " -> " ++ tgtPath
-    ; createDirectoryIfMissing True (takeDirectory tgtPath)
-    ; copyFile srcPath tgtPath
-    }
+-- NOTE: directories with extention .proto are excluded. This would compromise regression tests, 
+--       where foo.adl.proto is used to output the prototype of foo.adl
+copyDirRecursively :: (HasLogFunc env) =>
+                      FilePath -> FilePath -> RIO env ()
+copyDirRecursively srcBase tgtBase 
+  | srcBase == tgtBase = mapM_ sayWhenLoudLn
+        [ "Are you kidding me? I got the instruction to copy "
+        , "     "<>srcBase
+        , "  to itself!"
+        ]
+  | otherwise = do
+        srcBaseA <- liftIO $ makeAbsolute srcBase 
+        tgtBaseA <- liftIO $ makeAbsolute tgtBase 
+        mapM_ sayWhenLoudLn 
+          [ "Recursively copying " 
+          , "     " <> srcBaseA 
+          , "  to " <> tgtBaseA
+          ]
+        copy ("." </> tgtBase) ""
+  where copy shouldSkip fileOrDirPth = do
+          let srcPath = srcBase </> fileOrDirPth
+              tgtPath = tgtBase </> fileOrDirPth
+          isDir <- liftIO $ doesDirectoryExist srcPath
+          if isDir then 
+            if srcPath == shouldSkip
+              then do
+                sayWhenLoudLn $ "Skipping "<>srcPath<>" because it is the target directory of the recursive copy action."
+              else 
+                if takeExtension srcPath == ".proto" 
+                  then do  
+                    sayWhenLoudLn $ "Skipping "<>srcPath<>" because its extention is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
+                  else do
+                    sayWhenLoudLn $ " Copying dir... " ++ srcPath
+                    sayWhenLoudLn $ "      to dir... " ++ tgtPath
+                    fOrDs <- getProperDirectoryContents srcPath
+                    liftIO $ createDirectoryIfMissing True tgtPath
+                    mapM_ (\fOrD -> copy shouldSkip $ fileOrDirPth </> fOrD) fOrDs
+          else do
+              sayWhenLoudLn $ "  file... " ++ fileOrDirPth
+              liftIO $ copyFile srcPath tgtPath
+             
 
 -- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
-removeAllDirectoryFiles :: FilePath -> IO ()
-removeAllDirectoryFiles dirPath =
- do { dirContents <- getProperDirectoryContents dirPath
-    ; mapM_ removeDirectoryFile dirContents 
-    }
+removeAllDirectoryFiles :: HasLogFunc env =>
+                           FilePath -> RIO env ()
+removeAllDirectoryFiles dirPath = do
+    dirContents <- getProperDirectoryContents dirPath
+    mapM_ removeDirectoryFile dirContents 
   where removeDirectoryFile path = 
          do { let absPath = dirPath </> path
-            ; isDir <- doesDirectoryExist absPath
+            ; isDir <- liftIO $ doesDirectoryExist absPath
             ; if isDir then
-                putStrLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
+                sayLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
               else
-                removeFile absPath
+                liftIO $ removeFile absPath
             }
      
-getProperDirectoryContents :: FilePath -> IO [String]
+getProperDirectoryContents :: FilePath -> RIO env [String]
 getProperDirectoryContents pth = 
     filter (`notElem` [".","..",".svn"]) 
-       <$> getDirectoryContents pth
+       <$> (liftIO $ getDirectoryContents pth)
 
 commentBlock :: [String]->[String]
 commentBlock ls = ["/*"<>replicate lnth '*'<>"*\\"]
@@ -106,14 +119,14 @@ strReplace src dst inp
           | src `L.isPrefixOf` st = dst <> process (drop n st)
           | otherwise           = c:process cs
 
-phpIndent :: Int -> Text.Text
+phpIndent :: Int -> T.Text
 phpIndent i
- | i < 0     = Text.pack " " --space instead of \n
- | otherwise = Text.pack $ '\n':replicate i ' '
+ | i < 0     = T.pack " " --space instead of \n
+ | otherwise = T.pack $ '\n':replicate i ' '
 
 
-addSlashes :: Text.Text -> Text.Text
-addSlashes = Text.pack . addSlashes' . Text.unpack
+addSlashes :: T.Text -> T.Text
+addSlashes = T.pack . addSlashes' . T.unpack
   where
     addSlashes' ('\'': cs) = "\\'"<>addSlashes' cs
     addSlashes' ('"': cs) = "\\\""<>addSlashes' cs
@@ -121,9 +134,9 @@ addSlashes = Text.pack . addSlashes' . Text.unpack
     addSlashes' (c:cs) = c:addSlashes' cs
     addSlashes' "" = ""
 
-showPhpStr :: Text.Text -> Text.Text
-showPhpStr str = q<>Text.pack (escapePhpStr (Text.unpack str))<>q
-  where q = Text.pack "'"
+showPhpStr :: T.Text -> T.Text
+showPhpStr str = q<>T.pack (escapePhpStr (T.unpack str))<>q
+  where q = T.pack "'"
 
 -- NOTE: we assume a single quote php string, so $ and " are not escaped
 escapePhpStr :: String -> String
@@ -141,22 +154,23 @@ showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
 
 
-installComposerLibs :: Options -> IO()
-installComposerLibs Options{..} =
-  do curPath <- getCurrentDirectory
-     verboseLn $ "current directory: "++curPath
-     verbose "  Trying to download and install Composer libraries..."
-     (exit_code, stdout', stderr') <- readCreateProcessWithExitCode myProc ""
-     case exit_code of
-       SE.ExitSuccess   -> do verboseLn $
-                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                              verboseLn stdout'
-       SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
+installComposerLibs :: (HasLogFunc env) => 
+                       FilePath -> RIO env ()
+installComposerLibs installTarget = do
+    curPath <- liftIO $ getCurrentDirectory
+    sayWhenLoudLn $ "current directory: "++curPath
+    sayWhenLoudLn "  Trying to download and install Composer libraries..."
+    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode myProc ""
+    case exit_code of
+      SE.ExitSuccess   -> do sayWhenLoudLn $
+                              " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
+                             sayWhenLoudLn stdout'
+      SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where
      myProc :: CreateProcess
      myProc = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<>composerTargetPath
+       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<> installTarget
        , cwd = Nothing
        , env = Nothing
        , std_in = Inherit
@@ -172,15 +186,15 @@ installComposerLibs Options{..} =
        , child_user = Nothing
        , use_process_jobs = False
        }
-     composerTargetPath = dirPrototype 
-     failOutput (exit_code, stdout', stderr') =
+     failOutput :: (ExitCode, String, String) -> RIO env ()
+     failOutput (exit_code, out, err) = do
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
-            , "composerTargetPath: "++composerTargetPath
+            , "composerTargetPath: "++installTarget
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
-            (if null stdout' then [] else "stdout:" : lines stdout') ++
-            (if null stderr' then [] else "stderr:" : lines stderr') ++
+            (if null out then [] else "stdout:" : lines out) ++
+            (if null err then [] else "stderr:" : lines err) ++
             [ "Possible solutions to fix your prototype:"
             , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
             , "  2) Make sure you have an active internet connection."

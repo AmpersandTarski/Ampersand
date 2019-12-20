@@ -12,14 +12,15 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.Graphic.ClassDiag2Dot
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Misc
-import           RIO.Char
+import           Ampersand.Output.PandocAux (outputLang)
 import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete
+import           RIO.Char
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import           Data.String(fromString)
-import           System.Directory
+import           System.Directory(createDirectoryIfMissing)
 import           System.FilePath hiding (addExtension)
 import           System.Process (callCommand)
 
@@ -40,15 +41,15 @@ data Picture = Pict { pType :: PictureReq             -- ^ the type of the pictu
                     , caption :: String               -- ^ a human readable name of this picture
                     }
 
-makePicture :: FSpec -> PictureReq -> Picture
-makePicture fSpec pr =
+makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureReq -> Picture
+makePicture env fSpec pr =
   case pr of
    PTClassDiagram      -> Pict { pType = pr
                                , scale = scale'
                                , dotContent = ClassDiagram $ clAnalysis fSpec
                                , dotProgName = Dot
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Classification of " ++ name fSpec
                                       Dutch   -> "Classificatie van " ++ name fSpec
                                }
@@ -57,7 +58,7 @@ makePicture fSpec pr =
                                , dotContent = ClassDiagram $ cdAnalysis fSpec
                                , dotProgName = Dot
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Logical data model of " ++ name fSpec
                                       Dutch   -> "Logisch gegevensmodel van " ++ name fSpec
                                }
@@ -66,7 +67,7 @@ makePicture fSpec pr =
                                , dotContent = ClassDiagram $ tdAnalysis fSpec
                                , dotProgName = Dot
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Technical data model of " ++ name fSpec
                                       Dutch   -> "Technisch gegevensmodel van " ++ name fSpec
                                }
@@ -75,7 +76,7 @@ makePicture fSpec pr =
                                , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Concept diagram of the rules about " ++ name cpt
                                       Dutch   -> "Conceptueel diagram van de regels rond " ++ name cpt
                                }
@@ -84,7 +85,7 @@ makePicture fSpec pr =
                                , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Concept diagram of relations in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van relaties in " ++ name pat
                                }
@@ -93,7 +94,7 @@ makePicture fSpec pr =
                                , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Concept diagram of the rules in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van de regels in " ++ name pat
                                }
@@ -102,11 +103,13 @@ makePicture fSpec pr =
                                , dotContent = ConceptualDg $ conceptualStructure fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
-                                   case fsLang fSpec of
+                                   case outputLang' of
                                       English -> "Concept diagram of rule " ++ name rul
                                       Dutch   -> "Conceptueel diagram van regel " ++ name rul
                                }
  where
+   outputLang' :: Lang
+   outputLang' = outputLang env fSpec
    scale' =
       case pr of
             PTClassDiagram -> "1.0"
@@ -156,11 +159,11 @@ conceptualStructure fSpec pr =
                         ]
               idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
               gs   = fsisa fSpec
-              cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NEL.toList cl] -- up to two more general concepts
+              cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NE.toList cl] -- up to two more general concepts
               cpts' = concs pat `Set.union` concs rels
               rels = Set.fromList . filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ pat
           in
-          CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NEL.toList cl] -- up to two more general concepts
+          CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NE.toList cl] -- up to two more general concepts
                   , csRels = Set.elems $ rels  `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
@@ -192,66 +195,71 @@ conceptualStructure fSpec pr =
                   }
         _  -> fatal "No conceptual graph defined for this type."
 
-writePicture :: Options -> Picture -> IO()
-writePicture opts@Options{..} pict
-    = sequence_ (
-      [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
-   --   [dumpShow ]++
-      [writeDot Canon  | genFSpec ]++  --Pretty-printed Dot output with no layout performed.
-      [writeDot DotOutput | genFSpec] ++ --Reproduces the input along with layout information.
-      [writeDot Png    | genFSpec ] ++  --handy format to include in github comments/issues
-      [writeDot Svg    | genFSpec ] ++ -- format that is used when docx docs are being generated.
-      [writePdf Eps    | genFSpec ] -- .eps file that is postprocessed to a .pdf file 
-           )
+writePicture :: (HasDirOutput env, HasBlackWhite env, HasDocumentOpts env, HasLogFunc env) =>
+                Picture -> RIO env ()
+writePicture pict = do
+    env <- ask
+    liftIO $ createDirectoryIfMissing True  (takeDirectory (imagePath env pict))
+  --  writeDot Canon  --Pretty-printed Dot output with no layout performed.
+  --  writeDot DotOutput --Reproduces the input along with layout information.
+    writeDot Png    --handy format to include in github comments/issues
+    writeDot Svg    -- format that is used when docx docs are being generated.
+    writePdf Eps    -- .eps file that is postprocessed to a .pdf file 
    where
-     writeDot :: GraphvizOutput -> IO ()
+     writeDot :: (HasDirOutput env, HasDocumentOpts env, HasBlackWhite env, HasLogFunc env) =>
+                 GraphvizOutput -> RIO env ()
      writeDot = writeDotPostProcess Nothing
-     writeDotPostProcess :: Maybe (FilePath -> IO ()) --Optional postprocessor
+     writeDotPostProcess :: (HasDirOutput env, HasDocumentOpts env, HasBlackWhite env, HasLogFunc env) =>
+                 Maybe (FilePath -> RIO env ()) --Optional postprocessor
               -> GraphvizOutput
-              -> IO ()
+              -> RIO env ()
      writeDotPostProcess postProcess gvOutput  =
-         do verboseLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
-            dotSource <- mkDotGraphIO opts pict
-            path <- (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
-                       (dropExtension . imagePath opts) pict
-            verboseLn $ path++" written."
+         do env <- ask
+            sayWhenLoudLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
+            let dotSource = mkDotGraph env pict
+            path <- liftIO $ (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
+                       (dropExtension . imagePath env) pict
+            sayWhenLoudLn $ path++" written."
             case postProcess of
               Nothing -> return ()
               Just x -> x path
        where  gvCommand = dotProgName pict
      -- The GraphVizOutput Pdf generates pixelised graphics on Linux
      -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
-     makePdf :: FilePath -> IO ()
+     makePdf :: (HasLogFunc env ) => 
+                FilePath -> RIO env ()
      makePdf path = do
-         callCommand (ps2pdfCmd path)
-         verboseLn $ replaceExtension path ".pdf" ++ " written."
-       `catch` \ e -> verboseLn ("Could not invoke PostScript->PDF conversion."++
+         liftIO $ callCommand (ps2pdfCmd path)
+         sayWhenLoudLn $ replaceExtension path ".pdf" ++ " written."
+       `catch` \ e -> sayWhenLoudLn ("Could not invoke PostScript->PDF conversion."++
                                  "\n  Did you install MikTex? Can the command epstopdf be found?"++
                                  "\n  Your error message is:\n " ++ show (e :: IOException))
                    
-     writePdf :: GraphvizOutput
-              -> IO ()
+     writePdf :: (HasBlackWhite env, HasDocumentOpts env, HasDirOutput env, HasLogFunc env) 
+          => GraphvizOutput -> RIO env ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
-       `catch` (\ e -> verboseLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+       `catch` (\ e -> sayWhenLoudLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
                                   "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
-mkDotGraphIO :: Options -> Picture -> IO (DotGraph String)
-mkDotGraphIO opts@Options{..} pict = 
+mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph String
+mkDotGraph env pict =
   case dotContent pict of
-    ClassDiagram x -> pure $ classdiagram2dot opts x
-    ConceptualDg x -> pure $ conceptual2DotIO opts x
+    ClassDiagram x -> classdiagram2dot env x
+    ConceptualDg x -> conceptual2Dot x
 
 class ReferableFromPandoc a where
-  imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
+  imagePath :: (HasDocumentOpts env, HasDirOutput env) =>
+     env -> a -> FilePath   -- ^ the full file path to the image file
 
 instance ReferableFromPandoc Picture where
-  imagePath Options{..} p =
+  imagePath env p =
     prefix </> filename <.> extention
     where 
       filename = escapeNonAlphaNum . pictureID . pType $ p
+      dirOutput = view dirOutputL env
       (prefix,extention) =
-         case fspecFormat of
+         case view fspecFormatL env of
            Fpdf   -> (dirOutput ,"png")   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
            Fdocx  -> (dirOutput ,"svg")   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
            Fhtml  -> (""        ,"png")
@@ -262,8 +270,8 @@ data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to
                                    , csIdgs :: [(A_Concept, A_Concept)]  -- ^ list of Isa relations
                                    }
 
-conceptual2DotIO :: Options -> ConceptualStructure -> DotGraph String
-conceptual2DotIO Options{..} cs@(CStruct _ rels idgs) = 
+conceptual2Dot :: ConceptualStructure -> DotGraph String
+conceptual2Dot cs@(CStruct _ rels idgs) = 
       DotGraph { strictGraph = False
                , directedGraph = True
                , graphID = Nothing

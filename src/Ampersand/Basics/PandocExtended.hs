@@ -12,7 +12,7 @@ import           Ampersand.Basics.Prelude
 import           Ampersand.Basics.Unique
 import           Ampersand.Basics.Version
 --import           Data.Data
-import qualified Data.Text as Text
+import qualified RIO.Text as T
 import           Text.Pandoc hiding (Meta)
 
 data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord, Enum, Bounded)
@@ -33,13 +33,13 @@ aMarkup2String = blocks2String . amPandoc
     blocks2String ec
       = case runPure $ writeMarkdown def (Pandoc nullMeta ec) of
               Left pandocError -> fatal $ "Pandoc error: "++show pandocError
-              Right txt -> Text.unpack txt
+              Right txt -> T.unpack txt
 
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
 -- | defaultPandocReader should be used on user-defined strings.
 string2Blocks :: PandocFormat -> String -> [Block]
 string2Blocks defaultformat str
- = case runPure $ theParser (Text.pack (removeCRs str)) of
+ = case runPure $ theParser (T.pack (removeCRs str)) of
     Left err ->  fatal ("Proper error handling of Pandoc is still TODO."
                         ++"\n  This particular error is cause by some "++show defaultformat++" in your script:"
                         ++"\n"++show err)

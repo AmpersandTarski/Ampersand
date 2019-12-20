@@ -1,0 +1,197 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+-- | Utilities for running stack commands.
+--
+-- Instead of using Has-style classes below, the type signatures use
+-- concrete environments to try and avoid accidentally rerunning
+-- configuration parsing. For example, we want @withConfig $
+-- withConfig $ ...@ to fail.
+module Ampersand.Runners
+      (
+--     withBuildConfig
+--    , withEnvConfig
+--    , withDefaultEnvConfig
+        withConfig
+--    , withGlobalProject
+      , withRunnerGlobal
+      , logLevel
+--    , ShouldReexec (..)
+    ) where
+
+import           Ampersand.Basics
+import           RIO.Process (mkDefaultProcessContext)
+--import           RIO.Time (addUTCTime, getCurrentTime)
+--import           Stack.Build.Target(NeedTargets(..))
+import           Ampersand.Types.Config
+--import           Stack.Constants
+--import           Stack.DefaultColorWhen (defaultColorWhen)
+--import qualified Stack.Docker as Docker
+--import qualified Stack.Nix as Nix
+--import           Stack.Setup
+--import           Stack.Storage.User (upgradeChecksSince, logUpgradeCheck)
+--import           Stack.Types.Config
+--import           Stack.Types.Docker (dockerEnable)
+--import           Stack.Types.Nix (nixEnable)
+--import           Stack.Types.Version (stackMinorVersion, stackVersion, minorVersion)
+import           System.Console.ANSI (hSupportsANSIWithoutEmulation)
+import           System.Console.Terminal.Size (size, width)
+import qualified Ampersand.Misc.Options as Deprecated (getEnvironmentOptions)
+
+-- -- | Ensure that no project settings are used when running 'withConfig'.
+-- withGlobalProject :: RIO Runner a -> RIO Runner a
+-- withGlobalProject inner = do
+--   oldSYL <- view stackYamlLocL
+--   case oldSYL of
+--     SYLDefault -> local (set stackYamlLocL SYLGlobalProject) inner
+--     _ -> throwString "Cannot use this command with options which override the stack.yaml location"
+
+-- -- | Helper for 'withEnvConfig' which passes in some default arguments:
+-- --
+-- -- * No targets are requested
+-- --
+-- -- * Default command line build options are assumed
+-- withDefaultEnvConfig
+--     :: RIO EnvConfig a
+--     -> RIO Config a
+-- withDefaultEnvConfig = withEnvConfig AllowNoTargets defaultBuildOptsCLI
+
+-- -- | Upgrade a 'Config' environment to an 'EnvConfig' environment by
+-- -- performing further parsing of project-specific configuration (like
+-- -- 'withBuildConfig') and then setting up a build environment
+-- -- toolchain. This is intended to be run inside a call to
+-- -- 'withConfig'.
+-- withEnvConfig
+--     :: NeedTargets
+--     -> BuildOptsCLI
+--     -> RIO EnvConfig a
+--     -- ^ Action that uses the build config.  If Docker is enabled for builds,
+--     -- this will be run in a Docker container.
+--     -> RIO Config a
+-- withEnvConfig needTargets boptsCLI inner =
+--   withBuildConfig $ do
+--     envConfig <- setupEnv needTargets boptsCLI Nothing
+--     logDebug "Starting to execute command inside EnvConfig"
+--     runRIO envConfig inner
+
+-- -- | If the settings justify it, should we reexec inside Docker or Nix?
+-- data ShouldReexec = YesReexec | NoReexec
+
+-- | Load the configuration. Convenience function used
+-- throughout this module.
+withConfig
+  :: RIO Config a
+  -> RIO Runner a
+withConfig inner =
+    loadConfig $ \config -> do
+      runRIO config $ do
+  --      -- Catching all exceptions here, since we don't want this
+  --      -- check to ever cause Stack to stop working
+  --      shouldUpgradeCheck `catchAny` \e ->
+  --        logError ("Error when running shouldUpgradeCheck: " <> displayShow e)
+        inner
+
+-- -- | Perform a Docker or Nix reexec, if warranted. Otherwise run the
+-- -- inner action.
+-- reexec :: RIO Config a -> RIO Config a
+-- reexec inner = do
+--   nixEnable' <- asks $ nixEnable . configNix
+--   dockerEnable' <- asks $ dockerEnable . configDocker
+--   case (nixEnable', dockerEnable') of
+--     (True, True) -> throwString "Cannot use both Docker and Nix at the same time"
+--     (False, False) -> inner
+
+--     -- Want to use Nix
+--     (True, False) -> do
+--       whenM getInContainer $ throwString "Cannot use Nix from within a Docker container"
+--       inShell <- getInNixShell
+--       if inShell
+--         then do
+--           isReexec <- view reExecL
+--           if isReexec
+--             then inner
+--             else throwString "In Nix shell but reExecL is False"
+--         else Nix.runShellAndExit
+
+--     -- Want to use Docker
+--     (False, True) -> do
+--       whenM getInNixShell $ throwString "Cannot use Docker from within a Nix shell"
+--       inContainer <- getInContainer
+--       if inContainer
+--         then do
+--           isReexec <- view reExecL
+--           if isReexec
+--             then inner
+--             else throwIO Docker.OnlyOnHostException
+--         else Docker.runContainerAndExit
+
+-- | Use the 'GlobalOpts' to create a 'Runner' and run the provided
+-- action.
+withRunnerGlobal :: GlobalOpts -> RIO Runner a -> IO a
+withRunnerGlobal go inner = do
+  useColor <- fromMaybe True <$>
+                          hSupportsANSIWithoutEmulation stderr
+  let defaultTerminalWidth = 100
+  termWidth <- clipWidth <$> maybe (fromMaybe defaultTerminalWidth
+                                    <$> fmap (fmap width) size)
+                                   pure (globalTermWidth go)
+  menv <- mkDefaultProcessContext
+  logOptions0 <- logOptionsHandle stderr False
+  envOpts <- Deprecated.getEnvironmentOptions
+  let logOptions
+        = setLogUseColor useColor
+        $ setLogUseTime (globalTimeInLog go)
+        $ setLogMinLevel (globalLogLevel go)
+        $ setLogVerboseFormat (globalLogLevel go <= LevelDebug)
+        $ setLogTerminal (globalTerminal go)
+          logOptions0
+  withLogFunc logOptions $ \logFunc -> runRIO Runner
+    { runnerGlobalOpts = go
+    , runnerUseColor = useColor
+    , runnerLogFunc = logFunc
+    , runnerTermWidth = termWidth
+    , runnerProcessContext = menv
+    , tmpRunnerEnvOptions = envOpts
+    } inner
+  where minTerminalWidth = 40
+        maxTerminalWidth = 200
+        clipWidth w
+          | w < minTerminalWidth = minTerminalWidth
+          | w > maxTerminalWidth = maxTerminalWidth
+          | otherwise = w
+
+-- -- | Check if we should recommend upgrading Stack and, if so, recommend it.
+-- shouldUpgradeCheck :: RIO Config ()
+-- shouldUpgradeCheck = do
+--   config <- ask
+--   when (configRecommendUpgrade config) $ do
+--     now <- getCurrentTime
+--     let yesterday = addUTCTime (-24 * 60 * 60) now
+--     checks <- upgradeChecksSince yesterday
+--     when (checks == 0) $ do
+--       mversion <- getLatestHackageVersion NoRequireHackageIndex "stack" UsePreferredVersions
+--       case mversion of
+--         -- Compare the minor version so we avoid patch-level, Hackage-only releases.
+--         -- See: https://github.com/commercialhaskell/stack/pull/4729#pullrequestreview-227176315
+--         Just (PackageIdentifierRevision _ version _) | minorVersion version > stackMinorVersion -> do
+--           logWarn "<<<<<<<<<<<<<<<<<<"
+--           logWarn $
+--             "You are currently using Stack version " <>
+--             fromString (versionString stackVersion) <>
+--             ", but version " <>
+--             fromString (versionString version) <>
+--             " is available"
+--           logWarn "You can try to upgrade by running 'stack upgrade'"
+--           logWarn $
+--             "Tired of seeing this? Add 'recommend-stack-upgrade: false' to " <>
+--             fromString (toFilePath (configUserConfigPath config))
+--           logWarn ">>>>>>>>>>>>>>>>>>"
+--           logWarn ""
+--           logWarn ""
+--         _ -> pure ()
+--       logUpgradeCheck now
+
+logLevel :: Runner -> LogLevel
+logLevel = globalLogLevel . runnerGlobalOpts

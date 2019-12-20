@@ -21,9 +21,10 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           RIO.Char
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
-import qualified Data.Text as T
+import qualified RIO.Text as T
 
 aCtx2pCtx :: A_Context -> P_Context
 aCtx2pCtx ctx = 
@@ -37,7 +38,6 @@ aCtx2pCtx ctx =
       , ctx_cs     = ctxcds ctx
       , ctx_ks     = map aIdentityDef2pIdentityDef . ctxks $ ctx
       , ctx_rrules = map aRoleRule2pRoleRule  .ctxrrules $ ctx
-      , ctx_rrels  = map aRoleRelation2pRoleRelation . ctxRRels $ ctx
       , ctx_reprs  = reprList (ctxInfo ctx)
       , ctx_vs     = map aViewDef2pViewDef . ctxvs $ ctx
       , ctx_gs     = map aClassify2pClassify . ctxgs $ ctx
@@ -55,7 +55,6 @@ aPattern2pPattern pat =
        , pt_gns   = map aClassify2pClassify . ptgns $ pat
        , pt_dcs   = map aRelation2pRelation . Set.elems . ptdcs $ pat
        , pt_RRuls = [] --TODO: should this be empty? There is nothing in the A-structure
-       , pt_RRels = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_cds   = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_Reprs = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_ids   = map aIdentityDef2pIdentityDef . ptids $ pat
@@ -104,13 +103,6 @@ aRoleRule2pRoleRule rr =
           , mRules = arRules rr
           }
 
-aRoleRelation2pRoleRelation :: A_RoleRelation -> P_RoleRelation
-aRoleRelation2pRoleRelation rr =
- P_RR { pos      = rrPos rr
-      , rr_Roles = rrRoles rr
-      , rr_Rels  = fmap aRelation2pNamedRel (rrRels rr)
-      }
-
 aViewDef2pViewDef :: ViewDef -> P_ViewDef
 aViewDef2pViewDef vDef =
  P_Vd { pos          = vdpos vDef
@@ -127,12 +119,12 @@ aClassify2pClassify gen =
   Isa{} -> PClassify 
                 { pos       = genpos gen
                 , specific  = aConcept2pConcept (genspc gen) 
-                , generics  = aConcept2pConcept (gengen gen) NEL.:| []
+                , generics  = aConcept2pConcept (gengen gen) NE.:| []
                 }
   IsE{} -> PClassify 
                 { pos      = genpos gen
                 , specific = aConcept2pConcept (genspc gen) 
-                , generics = NEL.fromList . map aConcept2pConcept . genrhs $ gen
+                , generics = PARTIAL.fromList . map aConcept2pConcept . genrhs $ gen
                 }
 
 aInterface2pInterface :: Interface -> P_Interface
@@ -250,7 +242,7 @@ aMarkup2pMarkup markup =
 
 aPairView2pPairView :: PairView Expression -> PairView (Term TermPrim)
 aPairView2pPairView pv =
- PairView { ppv_segs = NEL.map aPairViewSegment2pPairViewSegment (ppv_segs pv)
+ PairView { ppv_segs = NE.map aPairViewSegment2pPairViewSegment (ppv_segs pv)
           }
 
 aViewSegment2pP_ViewSegment :: ViewSegment -> P_ViewSegment TermPrim

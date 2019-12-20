@@ -4,7 +4,6 @@ module Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
    , Meta(..)
    , MetaObj(..)
-   , P_RoleRelation(..)
    , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
@@ -38,7 +37,7 @@ module Ampersand.Core.ParseTree (
 import           Ampersand.Basics hiding (foldr, sequence, concatMap)
 import           Ampersand.Input.ADL1.FilePos
 import           Data.Foldable hiding (concat)
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import           Data.Time.Calendar
 import           Data.Time.Clock
@@ -57,7 +56,6 @@ data P_Context
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
-         , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
          , ctx_reprs ::  [Representation]
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctx_gs ::     [PClassify]          -- ^ The gen definitions defined in this context, outside the scope of patterns
@@ -83,21 +81,12 @@ instance Traced Meta where
   origin = pos
 data MetaObj = ContextMeta deriving (Eq,Ord,Show) -- for now, we just have meta data for the entire context
 
--- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
-data P_RoleRelation
-   = P_RR { pos :: Origin      -- ^ position in the Ampersand script
-          , rr_Roles :: NEL.NonEmpty Role      -- ^ list of roles
-          , rr_Rels :: NEL.NonEmpty P_NamedRel -- ^ list of named relations
-          } deriving (Show)       -- deriving Show is just for debugging
-instance Traced P_RoleRelation where
- origin = pos
-
  -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
    = Maintain
      { pos :: Origin      -- ^ position in the Ampersand script
-     , mRoles :: NEL.NonEmpty Role    -- ^ names of a role
-     , mRules :: NEL.NonEmpty String  -- ^ names of a Rule
+     , mRoles :: NE.NonEmpty Role    -- ^ names of a role
+     , mRules :: NE.NonEmpty String  -- ^ names of a Rule
      } deriving (Eq,Ord, Show) -- deriving (Show) is just for debugging
 
 data Role = Role String
@@ -120,7 +109,6 @@ data P_Pattern
            , pt_gns ::   [PClassify]       -- ^ The generalizations defined in this pattern
            , pt_dcs ::   [P_Relation]      -- ^ The relations that are declared in this pattern
            , pt_RRuls :: [P_RoleRule]      -- ^ The assignment of roles to rules.
-           , pt_RRels :: [P_RoleRelation]  -- ^ The assignment of roles to Relations.
            , pt_cds ::   [ConceptDef]      -- ^ The concept definitions defined in this pattern
            , pt_Reprs :: [Representation]  -- ^ The type into which concepts is represented
            , pt_ids ::   [P_IdentDef]      -- ^ The identity definitions defined in this pattern
@@ -158,7 +146,7 @@ instance Named ConceptDef where
 
 data Representation
   = Repr { pos  :: Origin
-         , reprcpts  :: NEL.NonEmpty String  -- ^ the concepts
+         , reprcpts  :: NE.NonEmpty String  -- ^ the concepts
          , reprdom :: TType     -- the type of the concept the atom is in
          } deriving (Ord,Eq,Show)
 instance Traced Representation where
@@ -489,10 +477,10 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
-data PairView a = PairView { ppv_segs :: NEL.NonEmpty (PairViewSegment a) } deriving (Show, Typeable, Eq, Generic)
+data PairView a = PairView { ppv_segs :: NE.NonEmpty (PairViewSegment a) } deriving (Show, Typeable, Eq, Generic)
 instance Hashable a => Hashable (PairView a)
 instance Traced a => Traced (PairView a) where
-  origin = origin . NEL.head . ppv_segs
+  origin = origin . NE.head . ppv_segs
 data PairViewSegment a =
     PairViewText{ pos :: Origin
                 , pvsStr :: String
@@ -647,7 +635,7 @@ data P_IdentDf a = -- so this is the parametric data-structure
          P_Id { pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
               , ix_lbl :: String         -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
               , ix_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
-              , ix_ats :: NEL.NonEmpty (P_IdentSegmnt a) -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
+              , ix_ats :: NE.NonEmpty (P_IdentSegmnt a) -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
               } deriving (Show)
 instance Named (P_IdentDf a) where
  name = ix_lbl
@@ -679,7 +667,7 @@ data P_ViewD a =
               , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept
               , vd_html :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
-              , vd_ats :: NEL.NonEmpty (P_ViewSegment a)   -- ^ the constituent segments of this view.
+              , vd_ats :: [(P_ViewSegment a)] -- ^ the constituent segments of this view.
               } deriving (Show)
 instance Ord (P_ViewD a) where
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
@@ -794,7 +782,7 @@ instance Flippable P_Sign where
 data PClassify =  PClassify
   { pos      :: Origin
   , specific :: P_Concept                    -- ^ Left hand side concept expression
-  , generics :: NEL.NonEmpty P_Concept       -- ^ Right hand side concept expression
+  , generics :: NE.NonEmpty P_Concept       -- ^ Right hand side concept expression
   } deriving (Show, Eq, Ord)
 
 instance Traced PClassify where
@@ -850,7 +838,6 @@ mergeContexts ctx1 ctx2 =
       , ctx_cs     = nubSortConcatMap ctx_cs contexts
       , ctx_ks     = nubSortConcatMap ctx_ks contexts
       , ctx_rrules = nubSortConcatMap ctx_rrules contexts
-      , ctx_rrels  =        concatMap ctx_rrels contexts
       , ctx_reprs  = nubSortConcatMap ctx_reprs contexts
       , ctx_vs     = nubSortConcatMap ctx_vs contexts
       , ctx_gs     = nubSortConcatMap ctx_gs contexts

@@ -1,7 +1,7 @@
 CONTEXT ServicesEnBerichten IN DUTCH
 -----------------------------------------------------------
-PROCESS "Services en berichten"
-PURPOSE PROCESS "Services en berichten" REF "Artikel 6 Wbp"
+PATTERN "Services en berichten"
+PURPOSE PATTERN "Services en berichten" REF "Artikel 6 Wbp"
 {+PERSOONSGEGEVENs worden in overeenstemming met de wet en op behoorlijke en zorgvuldige wijze verwerkt (artikel 6 Wbp). Dit pattern bevat de eisen (requirements) voor geautomatiseerde gegevensverwerking teneinde aan dit artikel invulling te geven.+}
 
 --[Definetime]--
@@ -205,6 +205,6 @@ typeOf :: SvcInstantie -> Service
 typeOf :: Bericht -> BerichtSoort
 typeOf :: RuntimeDoel -> Doel
 
-ENDPROCESS
+ENDPATTERN
 -----------------------------------------------------------
 ENDCONTEXT

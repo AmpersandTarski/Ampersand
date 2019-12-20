@@ -19,10 +19,10 @@ import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
 import           Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import           Ampersand.Prototype.ProtoUtil
-import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
 import           Data.String (IsString(fromString))
-import qualified Data.Text as Text
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
 
 data TableSpec
   = TableSpec { tsCmnt :: [String]  -- Without leading "// "
@@ -31,14 +31,14 @@ data TableSpec
               , tsKey  ::  String
               }
 data AttributeSpec
-  = AttributeSpec { fsname :: Text.Text
+  = AttributeSpec { fsname :: T.Text
                   , fstype :: TType
                   , fsIsPrimKey :: Bool
                   , fsDbNull :: Bool
                   }
 
-getTableName :: TableSpec -> Text.Text
-getTableName = Text.pack . tsName
+getTableName :: TableSpec -> T.Text
+getTableName = T.pack . tsName
 
 
 plug2TableSpec :: PlugSQL -> TableSpec
@@ -51,14 +51,14 @@ plug2TableSpec plug
                    ]<> concat
                    [ [showA (attExpr x)
                      ]
-                   | x <- NEL.toList $ plugAttributes plug
+                   | x <- NE.toList $ plugAttributes plug
                    ]
      , tsName = name plug
-     , tsflds = NEL.toList . fmap fld2AttributeSpec $ plugAttributes plug
-     , tsKey  = case (plug, (NEL.head . plugAttributes) plug) of
+     , tsflds = NE.toList . fmap fld2AttributeSpec $ plugAttributes plug
+     , tsKey  = case (plug, (NE.head . plugAttributes) plug) of
                  (BinSQL{}, _)   -> if all (suitableAsKey . attType) (plugAttributes plug)
                                     then "PRIMARY KEY (" 
-                                            <> L.intercalate ", " (NEL.toList $ fmap (show . attName) (plugAttributes plug))
+                                            <> L.intercalate ", " (NE.toList $ fmap (show . attName) (plugAttributes plug))
                                             <> ")"
                                     else ""
                  (TblSQL{}, primFld) ->
@@ -71,7 +71,7 @@ plug2TableSpec plug
 createTableSql :: Bool -> TableSpec -> SqlQuery
 createTableSql withComment tSpec
   | withComment = SqlQueryPretty $
-      ( map Text.pack . commentBlockSQL . tsCmnt $ tSpec
+      ( map T.pack . commentBlockSQL . tsCmnt $ tSpec
       ) <>
       [header] <>
       wrap cols <>
@@ -79,49 +79,49 @@ createTableSql withComment tSpec
       wrap endings 
   | otherwise = SqlQueryPlain $
       header <>
-      " " <> Text.intercalate " " cols <>
+      " " <> T.intercalate " " cols <>
       " " <> fromMaybe mempty mKey <>
-      " " <> Text.unwords endings
+      " " <> T.unwords endings
   where
-    header :: Text.Text
-    header = "CREATE TABLE "<>(doubleQuote . Text.pack . tsName $ tSpec)
-    cols :: [Text.Text]
-    cols = [ Text.pack [pref] <> " " <> addColumn att 
+    header :: T.Text
+    header = "CREATE TABLE "<>(doubleQuote . T.pack . tsName $ tSpec)
+    cols :: [T.Text]
+    cols = [ T.pack [pref] <> " " <> addColumn att 
            | (pref, att) <- zip ('(' : L.repeat ',') (tsflds tSpec)]
-    mKey :: Maybe Text.Text
+    mKey :: Maybe T.Text
     mKey =
       case tsKey tSpec of
         "" -> Nothing
-        x  -> Just . Text.pack $ ", "<> x
-    endings :: [Text.Text]
+        x  -> Just . T.pack $ ", "<> x
+    endings :: [T.Text]
     endings =   
       [ ", " <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
       [ ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN" ]<>
       [ ", ROW_FORMAT = DYNAMIC"]
-    wrap :: [Text.Text] -> [Text.Text]
-    wrap = map (\col -> Text.replicate indnt " " <> col)
+    wrap :: [T.Text] -> [T.Text]
+    wrap = map (\col -> T.replicate indnt " " <> col)
     indnt = 5
-    addColumn :: AttributeSpec -> Text.Text
+    addColumn :: AttributeSpec -> T.Text
     addColumn att 
        =    doubleQuote (fsname att) <> " " 
-         <> (Text.pack . showSQL . fstype) att 
+         <> (T.pack . showSQL . fstype) att 
          <> (if fsIsPrimKey att then " UNIQUE" else "")
          <> (if fsDbNull att then " DEFAULT NULL" else " NOT NULL")
          <> " /* "
-         <> (Text.pack . show . fstype) att
+         <> (T.pack . show . fstype) att
          <> " */"
          
 showColumsSql :: TableSpec -> SqlQuery
 showColumsSql tSpec = SqlQuerySimple $
-       "SHOW COLUMNS FROM "<>(doubleQuote . Text.pack . tsName $ tSpec)
+       "SHOW COLUMNS FROM "<>(doubleQuote . T.pack . tsName $ tSpec)
 
 dropTableSql :: TableSpec -> SqlQuery
 dropTableSql tSpec = SqlQuerySimple $
-       "DROP TABLE "<>(doubleQuote . Text.pack . tsName $ tSpec)
+       "DROP TABLE "<>(doubleQuote . T.pack . tsName $ tSpec)
 
 fld2AttributeSpec ::SqlAttribute -> AttributeSpec
 fld2AttributeSpec att 
-  = AttributeSpec { fsname = Text.pack (name att)
+  = AttributeSpec { fsname = T.pack (name att)
                   , fstype = attType att
                   , fsIsPrimKey = isPrimaryKey att
                   , fsDbNull = attDBNull att 
@@ -129,41 +129,41 @@ fld2AttributeSpec att
 
 insertQuery :: SomeValue val =>
        Bool          -- prettyprinted?
-    -> Text.Text     -- The name of the table
-    -> NEL.NonEmpty Text.Text   -- The names of the attributes
+    -> T.Text     -- The name of the table
+    -> NE.NonEmpty T.Text   -- The names of the attributes
     -> [[Maybe val]] -- The rows to insert
     -> SqlQuery
 insertQuery withComments tableName attNames tblRecords
   | withComments = SqlQueryPretty $
      [ "INSERT INTO "<>doubleQuote tableName
-     , "   ("<>Text.intercalate ", " (NEL.toList $ fmap doubleQuote attNames) <>")"
+     , "   ("<>T.intercalate ", " (NE.toList $ fmap doubleQuote attNames) <>")"
      , "VALUES " 
      ]
-   <> (Text.lines . ("   "<>) .Text.intercalate "\n , " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+   <> (T.lines . ("   "<>) .T.intercalate "\n , " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
    <> [""]
   | otherwise = SqlQueryPlain $
         "INSERT INTO "<>doubleQuote tableName
-     <> " ("<>Text.intercalate ", " (NEL.toList $ fmap  doubleQuote attNames) <>")"
+     <> " ("<>T.intercalate ", " (NE.toList $ fmap  doubleQuote attNames) <>")"
      <> " VALUES "
-     <> (Text.intercalate ", " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+     <> (T.intercalate ", " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
   where
-    valuechain :: SomeValue val => [Maybe val] -> Text.Text
-    valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> repr val | att<-record]
+    valuechain :: SomeValue val => [Maybe val] -> T.Text
+    valuechain record = T.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> repr val | att<-record]
 
 class SomeValue a where
-  repr :: a -> Text.Text
+  repr :: a -> T.Text
 instance SomeValue AAtomValue where
-  repr = Text.pack . showValSQL
+  repr = T.pack . showValSQL
 instance SomeValue String where
-  repr = Text.pack
+  repr = T.pack
 
 tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec = 
  createTableSql withComment tSpec :
- [SqlQuerySimple . Text.pack $ 
+ [SqlQuerySimple . T.pack $ 
     ( "CREATE INDEX "<> show (tsName tSpec<>"_"<>show i)
     <>" ON "<>show (tsName tSpec) <> " ("
-    <> (show . Text.unpack . fsname $ fld)<>")"
+    <> (show . T.unpack . fsname $ fld)<>")"
     )
  | (i,fld) <- zip [0..(maxIndexes - 1)]
             . filter (suitableAsKey . fstype)
@@ -182,11 +182,11 @@ singleQuote = enclose '`'
 enclose :: (Data.String.IsString m, Monoid m) => Char -> m -> m
 enclose c s = fromString [c] <> s <> fromString [c]
 
-queryAsPHP :: SqlQuery -> Text.Text
+queryAsPHP :: SqlQuery -> T.Text
 queryAsPHP = showPhpStr . queryAsSQL
-queryAsSQL :: SqlQuery -> Text.Text
+queryAsSQL :: SqlQuery -> T.Text
 queryAsSQL sql = 
   case sql of 
     SqlQuerySimple x  -> x
     SqlQueryPlain  x  -> x
-    SqlQueryPretty xs -> Text.unlines xs
+    SqlQueryPretty xs -> T.unlines xs

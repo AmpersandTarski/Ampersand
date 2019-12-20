@@ -18,7 +18,7 @@ Criterium, Gewetensvraag, Verplichting, and Verwachting.
 The new type checker features CLASSIFY statements, which solves the situation as the author intended.
 -}
 ------------------------------------------------------------
-PROCESS ARM20Test7
+PATTERN ARM20Test7
 
 CLASSIFY Verplichting ISA Criterium -- had ook 'Businessrule' kunnen zijn
 CLASSIFY Verwachting ISA Criterium -- had ook 'Businessrule' kunnen zijn
@@ -35,7 +35,7 @@ RULE "Impacts" : I[Verplichting] |- oblImpact;oblImpact~
 expBelang :: Verwachting * Belang
 RULE "Belangen": I[Verwachting] |- expBelang;expBelang~
 
-ENDPROCESS
+ENDPATTERN
 ------------------------------------------------------------
 INTERFACE Gewetensvraag FOR BFeigenaar : I[Gewetensvraag]
 BOX[ Criterium : criterium

@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand check --addMetaModel=FormalAmpersand --verbose
+    exitcode: 0

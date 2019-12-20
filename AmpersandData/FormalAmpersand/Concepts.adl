@@ -43,7 +43,7 @@ PATTERN Specialization
 
 ENDPATTERN
 
-PROCESS "Compute Closures"
+PATTERN "Compute Closures"
     RELATION isa[Concept*Concept] [ASY]
     MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
     RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
@@ -64,9 +64,9 @@ PROCESS "Compute Closures"
     RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-ENDPROCESS
+ENDPATTERN
 
-PROCESS "Reflexive isa closures"
+PATTERN "Reflexive isa closures"
     RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
     RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
@@ -94,6 +94,6 @@ PROCESS "Reflexive isa closures"
     RULE "Compute isaRfxStar by Del" : isaRfxStar[Concept*Concept] |- isaRfxPlus[Concept*Concept]\/I
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
-ENDPROCESS
+ENDPATTERN
 
 ENDCONTEXT

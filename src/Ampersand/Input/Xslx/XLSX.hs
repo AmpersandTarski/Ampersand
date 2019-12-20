@@ -3,37 +3,38 @@ module Ampersand.Input.Xslx.XLSX
   (parseXlsxFile)
 where
 import           Ampersand.ADL1
-import           Ampersand.Basics hiding ((^.))
+import           Ampersand.Basics hiding (view, (^.))
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc
 import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
 import           Codec.Xlsx
-import           Control.Lens
+import           Control.Lens -- ((^?),ix)
 import qualified RIO.List as L
-import qualified Data.ByteString.Lazy as BL
+import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
-import qualified Data.Map as M 
-import qualified Data.Text as T
+import qualified RIO.Map as Map
+import qualified RIO.Text as T
 import           Data.Tuple
 
-parseXlsxFile :: Options 
-              -> Maybe FileKind
-              -> FilePath -> IO (Guarded [P_Population])
-parseXlsxFile opts mFk file =
-  do bytestr <- 
+parseXlsxFile :: (HasFSpecGenOpts env) => 
+    Maybe FileKind -> FilePath -> RIO env (Guarded [P_Population])
+parseXlsxFile mFk file =
+  do env <- ask
+     bytestr <- 
         case mFk of
           Just fileKind 
              -> case getStaticFileContent fileKind file of
                       Just cont -> return $ fromString cont
                       Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++file++"`.")
           Nothing
-             -> BL.readFile file
-     return . xlsx2pContext . toXlsx $ bytestr
+             -> liftIO $ BL.readFile file
+     return . xlsx2pContext env . toXlsx $ bytestr
  where
-  xlsx2pContext :: Xlsx -> Guarded [P_Population]
-  xlsx2pContext xlsx = Checked pop []
+  xlsx2pContext :: (HasFSpecGenOpts env) 
+      => env -> Xlsx -> Guarded [P_Population]
+  xlsx2pContext env xlsx = Checked pop []
     where 
-      pop = concatMap (toPops opts file)
+      pop = concatMap (toPops env file)
           . concatMap theSheetCellsForTable 
           $ (xlsx ^. xlSheets)
 
@@ -53,8 +54,8 @@ instance Show SheetCellsForTable where  --for debugging only
       , "popRowNrs   : "++show (popRowNrs x)
       , "colNrs      : "++show (colNrs x)
       ] ++ debugInfo x 
-toPops :: Options -> FilePath -> SheetCellsForTable -> [P_Population]
-toPops opts file x = map popForColumn (colNrs x)
+toPops :: (HasFSpecGenOpts env) => env -> FilePath -> SheetCellsForTable -> [P_Population]
+toPops env file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
     popForColumn i =
@@ -153,7 +154,7 @@ toPops opts file x = map popForColumn (colNrs x)
          case mDelimiter of
            Nothing -> [xs]
            (Just delimiter) -> map trim $ T.split (== delimiter) xs
-       handleSpaces = if trimXLSXCells opts then trim else id     
+       handleSpaces = if view trimXLSXCellsL env then trim else id     
     originOfCell :: (Int,Int) -- (row number,col number)
                  -> Origin
     originOfCell (r,c) 
@@ -168,22 +169,22 @@ theSheetCellsForTable (sheetName,ws)
   =  catMaybes [theMapping i | i <- [0..length tableStarters - 1]]
   where
     tableStarters :: [(Int,Int)]
-    tableStarters = filter isStartOfTable $ M.keys (ws  ^. wsCells)  
+    tableStarters = filter isStartOfTable $ Map.keys (ws  ^. wsCells)  
       where isStartOfTable :: (Int,Int) -> Bool
             isStartOfTable (rowNr,colNr)
               | colNr /= 1 = False
-              | rowNr == 1 = isBracketed (rowNr,colNr) 
-              | otherwise  =           isBracketed  (rowNr     ,colNr)  
-                             && (not . isBracketed) (rowNr - 1, colNr)             
+              | rowNr == 1 = isBracketed' (rowNr,colNr) 
+              | otherwise  =           isBracketed'  (rowNr     ,colNr)  
+                             && (not . isBracketed') (rowNr - 1, colNr)             
               
     value :: (Int,Int) -> Maybe CellValue
     value k = (ws  ^. wsCells) ^? ix k . cellValue . _Just
-    isBracketed :: (Int,Int) -> Bool
-    isBracketed k = 
+    isBracketed' :: (Int,Int) -> Bool
+    isBracketed' k = 
        case value k of
-         Just (CellText t) -> (not . T.null ) trimmed && T.head trimmed == '[' && T.last trimmed == ']'
-               where trimmed = trim t
-         _                 -> False      
+         Just (CellText t) -> isBracketed t
+         _                 -> False 
+        
     theMapping :: Int -> Maybe SheetCellsForTable
     theMapping indexInTableStarters 
      | length okHeaderRows /= nrOfHeaderRows = Nothing  -- Because there are not enough header rows
@@ -211,11 +212,11 @@ theSheetCellsForTable (sheetName,ws)
        conceptNameRowNr  = firstHeaderRowNr+1
        nrOfHeaderRows = 2
        maxRowOfWorksheet :: Int
-       maxRowOfWorksheet = case L.maximumMaybe (map fst (M.keys (ws  ^. wsCells))) of
-                             Nothing -> fatal "Maximum of an empty list is undefined!"
+       maxRowOfWorksheet = case L.maximumMaybe (map fst (Map.keys (ws  ^. wsCells))) of
+                             Nothing -> fatal "Maximum of an empty list is not defined!"
                              Just m -> m
-       maxColOfWorksheet = case L.maximumMaybe (map snd (M.keys (ws  ^. wsCells))) of
-                             Nothing -> fatal "Maximum of an empty list is undefined!"
+       maxColOfWorksheet = case L.maximumMaybe (map snd (Map.keys (ws  ^. wsCells))) of
+                             Nothing -> fatal "Maximum of an empty list is not defined!"
                              Just m -> m
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
        lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1]) `L.genericIndex` (indexInTableStarters+1))-1
@@ -256,16 +257,17 @@ conceptNameWithOptionalDelimiter :: T.Text -> Maybe ( String     {- Conceptname 
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
 conceptNameWithOptionalDelimiter t
-  | T.null t = Nothing
-  | T.head t == '[' && T.last t == ']'
-             = let mid = (T.reverse . T.tail . T.reverse . T.tail) t
-                   (nm,d) = (T.init mid, T.last mid)
-               in if isDelimiter d && isConceptName nm
-                  then Just (T.unpack nm , Just d)
-                  else Nothing
-  | otherwise = if isConceptName t
-                then Just (T.unpack t, Nothing)
-                else Nothing
+  | isBracketed t   = 
+       let mid = T.dropEnd 1 . T.drop 1 $ t
+       in case T.uncons . T.reverse $ mid of 
+            Nothing -> Nothing 
+            Just (d,revInit) -> 
+                       let nm = T.reverse revInit
+                       in if isDelimiter d && isConceptName (T.reverse nm)
+                          then Just (T.unpack nm , Just d)
+                          else Nothing
+  | isConceptName t = Just (T.unpack t, Nothing)
+  | otherwise       = Nothing
            
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation
@@ -282,3 +284,10 @@ trim = T.reverse . trim' . T.reverse . trim'
     trim' t = case uncons t of
                Just (' ',t') -> trim' t'
                _  -> t 
+isBracketed :: T.Text -> Bool
+isBracketed t =
+    case T.uncons (trim t) of
+      Just ('[',tl) -> case T.uncons (T.reverse tl) of
+                         Just (']',_) -> True
+                         _ -> False
+      _ -> False

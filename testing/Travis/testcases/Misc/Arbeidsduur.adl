@@ -177,7 +177,7 @@ VIOLATION (TXT "Deze beslissing dient genomen te worden door", SRC arbeidsrelati
 ENDPATTERN
 
 --[Proces: Verzoek behandelen]-----------------------------
-PROCESS "Verzoek behandelen"
+PATTERN "Verzoek behandelen"
 
 ROLE Werkgever MAINTAINS "Beslissen over verzoek"
 PURPOSE RULE "Beslissen over verzoek" REF "Artikel 2 lid 10"
@@ -203,11 +203,11 @@ MEANING "Wanneer de arbeidsduur uit de beslissing afwijkt van de arbeidsduur uit
 MESSAGE "Artikel 2 lid 7 Wet aanpassing arbeidsduur eist dat als de besloten arbeidsduur afwijkt van hetgeen is verzocht, dit met (schriftelijke) redenen omkleed moet zijn."
 VIOLATION (TXT "Beslissing van ", SRC door, TXT ", op ", SRC op, TXT " vereist een opgave van de reden(en).")
 
-ENDPROCESS
+ENDPATTERN
 
 --[Proces: Rekenen met datums]-----------------------------
-PROCESS "Rekenen met datums"
-PURPOSE PROCESS "Rekenen met datums"
+PATTERN "Rekenen met datums"
+PURPOSE PATTERN "Rekenen met datums"
 {+De wet spreekt over tijdsverschillen van minstens vier maanden, of minstens een jaar. Dat vereist het kunnen rekenen met tijden. Omdat Ampersand dat nog niet goed kan, is een proces gedefinieerd dat deze berekeningen uitvoert. Dit proces is hier verder niet gedocumenteerd.+}
 
 PURPOSE RULE "Vandaag is 1 (enkele) dag" 
@@ -244,11 +244,11 @@ VIOLATION (TXT "{EX} datimeEQL;datumEQV;Datum;", SRC I, TXT ";", TGT I
           ,TXT "{EX} datimeGT;datumGD;Datum;", SRC I, TXT ";", TGT I
           )
 
-ENDPROCESS
+ENDPATTERN
 
 --[Proces: geautomatiseerde procesondersteuning]-----------
-PROCESS "Geautomatiseerde procesondersteuning"
-PURPOSE PROCESS "Geautomatiseerde procesondersteuning"
+PATTERN "Geautomatiseerde procesondersteuning"
+PURPOSE PATTERN "Geautomatiseerde procesondersteuning"
 {+Menselijke procesuitvoerders moeten zoveel mogelijk worden ontlast van handelingen die ook geautomatiseerd kunnen worden uitgevoerd. Geautomatiseerde procesondersteuning zorgt ervoor dat informatie die reeds aanwezig is dan wel afleidbaar is uit bestaande informatie, daar waar nodig automatisch wordt ingevuld. Ook zorgt het ervoor dat handelingen automatisch uitgevoerd worden voor zover dit afleidbaar is. Dit hoofdstuk documenteert de afspraken op basis waarvan automatische handelingen worden uitgevoerd.+}
 
 nieuwVerzoek :: Arbeidsrelatie * Verzoek [UNI]
@@ -374,7 +374,7 @@ VIOLATION (TXT "{EX} InsPair;arbeidsduur;Arbeidsrelatie;", SRC I, TXT ";Arbeidsd
 PURPOSE RULE "Effectueren van beslissingen (geautomatiseerd)"
 {+Als door (of namens) de werkgever is besloten omtrent de aanpassing van een arbeidsrelatie, dan moet de arbeidsduur in de betreffende arbeidsrelatie worden aangepast. Dat kan automatisch worden uitgevoerd.+}
 
-ENDPROCESS
+ENDPATTERN
 
 --[Interfaces]---------------------------------------------
 --VIEW verzoek : Verzoek(TXT "verzoek over het aanpassen van ", arbeidsrelatie)

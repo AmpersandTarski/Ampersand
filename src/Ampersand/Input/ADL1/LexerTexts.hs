@@ -15,8 +15,7 @@ module Ampersand.Input.ADL1.LexerTexts
     , lexerUtfChar
     ) where
 
-import Ampersand.Basics
---import Data.IORef
+import Ampersand.Basics hiding (Arrow)
 import Data.Maybe (fromMaybe)
 import System.IO.Unsafe(unsafePerformIO)
 

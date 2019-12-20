@@ -14,7 +14,8 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.List as L
 import qualified RIO.Set as Set
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 
 --- Populations ::= Population+
 -- | Parses a list of populations
@@ -44,7 +45,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_gs     = concat [ys | CCfy ys<-ces]       -- The Classify definitions defined in this context, outside the scope of patterns
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
             , ctx_rrules = [x | Cm x <-ces]        -- The MAINTAINS statements in the context
-            , ctx_rrels  = [x | Cl x <-ces]        -- The EDITS statements in the context
             , ctx_reprs  = [r | CRep r<-ces]
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
@@ -66,7 +66,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       CRep     <$> pRepresentation <|>
                       Cm       <$> pRoleRule     <|>
                       Cm       <$> pServiceRule  <|>
-                      Cl       <$> pRoleRelation <|>
                       CIndx    <$> pIndex        <|>
                       CView    <$> pViewDef      <|>
                       Cifc     <$> pInterface    <|>
@@ -82,7 +81,6 @@ data ContextElement = CMeta Meta
                     | CCon (String -> ConceptDef)
                     | CRep Representation
                     | Cm P_RoleRule
-                    | Cl P_RoleRelation
                     | CIndx P_IdentDef
                     | CView P_ViewDef
                     | Cifc P_Interface
@@ -117,18 +115,15 @@ pMeta :: AmpParser Meta
 pMeta = Meta <$> currPos <* pKey "META" <*> pMetaObj <*> pString <*> pString
  where pMetaObj = return ContextMeta -- for the context meta we don't need a keyword
 
---- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN' | 'PROCESS' ConceptName PatElem* 'ENDPROCESS'
+--- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN' 
 pPatternDef  :: AmpParser P_Pattern
-pPatternDef =  pPatternDef' ("PATTERN","ENDPATTERN")
-           <|> pPatternDef' ("PROCESS","ENDPROCESS")
-pPatternDef' :: (String,String) ->  AmpParser P_Pattern
-pPatternDef' (beginKeyword,endKeyword)
+pPatternDef
      = rebuild <$> currPos
-               <*  pKey beginKeyword
+               <*  pKey "PATTERN"
                <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
                <*> many pPatElem
                <*> currPos
-               <*  pKey endKeyword
+               <*  pKey "ENDPATTERN"
   where
     rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
     rebuild pos' nm pes end
@@ -138,7 +133,6 @@ pPatternDef' (beginKeyword,endKeyword)
              , pt_gns = concat [ys | Py ys<-pes]
              , pt_dcs = [d | Pd (d,_)<-pes]
              , pt_RRuls = [rr | Pm rr<-pes]
-             , pt_RRels = [rr | Pl rr<-pes]
              , pt_cds = [c nm | Pc c<-pes]
              , pt_Reprs = [x | Prep x<-pes]
              , pt_ids = [k | Pk k<-pes]
@@ -148,17 +142,14 @@ pPatternDef' (beginKeyword,endKeyword)
              , pt_end = end
              }
 
--- PatElem used by PATTERN and PROCESS
+-- PatElem used by PATTERN
 --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Purpose | Population
 pPatElem :: AmpParser PatElem
 pPatElem = Pr <$> pRuleDef          <|>
            Py <$> pClassify         <|>
            Pd <$> pRelationDef      <|>
-                   -- the syntax of pRoleRule and pRoleRelation shows an ambiguity
-                   -- Syntax review can be considered
            Pm <$> pRoleRule         <|>
            Pm <$> pServiceRule      <|>
-           Pl <$> pRoleRelation     <|>
            Pc <$> pConceptDef       <|>
            Prep <$> pRepresentation <|>
            Pk <$> pIndex            <|>
@@ -170,7 +161,6 @@ data PatElem = Pr (P_Rule TermPrim)
              | Py [PClassify]
              | Pd (P_Relation, [P_Population])
              | Pm P_RoleRule
-             | Pl P_RoleRelation
              | Pc (String -> ConceptDef)
              | Prep Representation
              | Pk P_IdentDef
@@ -187,13 +177,13 @@ pClassify = fun <$> currPos
                       <|> (isa <$ pKey "ISA" <*> pConceptRef)
                     )
                where
-                 fun :: Origin -> NEL.NonEmpty P_Concept -> (Bool, [P_Concept]) -> [PClassify]
-                 fun p lhs (isISA ,rhs) = NEL.toList $ fmap f lhs
+                 fun :: Origin -> NE.NonEmpty P_Concept -> (Bool, [P_Concept]) -> [PClassify]
+                 fun p lhs (isISA ,rhs) = NE.toList $ fmap f lhs
                    where 
                      f s = PClassify 
                              { pos      = p
                              , specific = s
-                             , generics = if isISA then s NEL.:| rhs else NEL.fromList rhs
+                             , generics = if isISA then s NE.:| rhs else PARTIAL.fromList rhs
                              }
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
@@ -375,7 +365,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> pBraces (pViewSegment False `sepBy1` pComma)
+                      <*> (pBraces (pViewSegment False `sepBy` pComma) `opt` [])
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos' nm cpt isDef ats html =
@@ -411,7 +401,7 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> pConceptOneRef
                       <*> return True
                       <*> return Nothing
-                      <*> pParens (pViewSegment True `sepBy1` pComma)
+                      <*> pParens (pViewSegment True `sepBy` pComma)
 
 
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
@@ -425,11 +415,11 @@ pInterface = lbl <$> currPos
                  <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                  <*> pMaybe (pChevrons pConid)  -- The view that should be used for this object
                  <*> pSubInterface
-    where lbl :: Origin -> Bool -> String ->  a -> Maybe (NEL.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
+    where lbl :: Origin -> Bool -> String ->  a -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
           lbl p isAPI nm _params roles ctx mCrud mView sub
              = P_Ifc { ifc_IsAPI  = isAPI
                      , ifc_Name   = nm
-                     , ifc_Roles  = fromMaybe [] . fmap NEL.toList $ roles
+                     , ifc_Roles  = fromMaybe [] . fmap NE.toList $ roles
                      , ifc_Obj    = P_BxExpr { obj_nm   = nm
                                           , pos      = p
                                           , obj_ctx  = ctx
@@ -509,16 +499,16 @@ pPurpose = rebuild <$> currPos
                    <*> pMaybe (pKey "REF" *> pString `sepBy1` pSemi)
                    <*> pAmpersandMarkup
      where
-       rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NEL.NonEmpty String) -> String -> PPurpose
+       rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NE.NonEmpty String) -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
-           = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") (fromMaybe [] . fmap NEL.toList $ refs))
+           = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") (fromMaybe [] . fmap NE.toList $ refs))
               -- TODO: This separation should not happen in the parser
               where splitOn :: Eq a => [a] -> [a] -> [[a]]
                     splitOn [] s = [s]
                     splitOn s t  = case L.findIndex (L.isPrefixOf s) (L.tails t) of
                                      Nothing -> [t]
                                      Just i  -> take i t : splitOn s (drop (i+length s) t)
-       --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' NamedRel | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
+       --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' NamedRel | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
        pRef2Obj :: AmpParser PRef2Obj
        pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
                   PRef2Relation    <$ pKey "RELATION"  <*> pNamedRel    <|>
@@ -526,7 +516,6 @@ pPurpose = rebuild <$> currPos
                   PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid       <|>
                   PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>
                   PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid       <|>
-                  PRef2Pattern     <$ pKey "PROCESS"   <*> pADLid       <|>
                   PRef2Interface   <$ pInterfaceKey    <*> pADLid       <|>
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
@@ -542,14 +531,6 @@ pPopulation :: AmpParser P_Population -- ^ The population parser
 pPopulation = pKey "POPULATION" *> (
                   P_RelPopu Nothing Nothing <$> currPos <*> pNamedRel <* pKey "CONTAINS" <*> pContent <|>
                   P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
-
---- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList
-pRoleRelation :: AmpParser P_RoleRelation
-pRoleRelation = try (P_RR <$> currPos
-                          <*  pKey "ROLE"
-                          <*> pRole False `sepBy1` pComma
-                          <*  pKey "EDITS")
-                    <*> pNamedRel `sepBy1` pComma
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 --TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.

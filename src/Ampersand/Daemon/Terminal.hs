@@ -2,7 +2,7 @@
 
 -- | Cross-platform operations for manipulating terminal console windows.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Daemon.Terminal(
+module Ampersand.Daemon.Terminal(
     terminalTopmost,
     withWindowIcon, WindowIcon(..), setWindowIcon
     ) where
@@ -73,15 +73,15 @@ setWindowIcon _ = return ()
 
 
 -- | Run an operation in which you call setWindowIcon
-withWindowIcon :: IO a -> IO a
+withWindowIcon :: RIO env a -> RIO env a
 #if defined(mingw32_HOST_OS)
 withWindowIcon act = do
-    wnd <- getConsoleWindow
-    icoBig <- sendMessage wnd wM_GETICON iCON_BIG 0
-    icoSmall <- sendMessage wnd wM_GETICON iCON_SMALL 0
+    wnd <- liftIO $ getConsoleWindow
+    icoBig <- liftIO $ sendMessage wnd wM_GETICON iCON_BIG 0
+    icoSmall <- liftIO $ sendMessage wnd wM_GETICON iCON_SMALL 0
     act `finally` do
-        _ <- sendMessage wnd wM_SETICON iCON_BIG icoBig
-        _ <- sendMessage wnd wM_SETICON iCON_SMALL icoSmall
+        _ <- liftIO $ sendMessage wnd wM_SETICON iCON_BIG icoBig
+        _ <- liftIO $ sendMessage wnd wM_SETICON iCON_SMALL icoSmall
         return ()
 #else
 withWindowIcon act = act

@@ -1,2 +1,4 @@
-command : ampersand --proto --verbose --validate --sqlLogin="root" --sqlPwd="" --meta-tables 
-shouldSucceed :  yes
+testCmds:
+# The intention of this testcase is to test the meatgrinder. 
+  - command: ampersand proto --verbose --sqlLogin ="root" --sqlPwd="" --addMetaModel=FormalAmpersand
+    exitcode: 0

@@ -9,26 +9,30 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
-import           Ampersand.Misc
-import qualified Data.List.NonEmpty as NEL
-
+import qualified RIO.NonEmpty as NE
+import           Ampersand.Types.Config
+import           Ampersand.Options.FSpecGenOptsParser
 -- Tries to parse all the given files
-parseScripts :: Options -> [FilePath] -> IO Bool
-parseScripts _ [] = return True
-parseScripts opts (f:fs) =
-     do parsed <- snd <$> parseADL opts f
+parseScripts :: (HasRunner env) => 
+                [FilePath] ->  RIO env Bool
+parseScripts paths =
+  case paths of
+    [] -> return True
+    (f:fs) -> do
+        let fSpecGenOpts = defFSpecGenOpts f
+        parsed <- snd <$> extendWith fSpecGenOpts (parseADL f)
         case parsed of
             Checked _ ws -> do
-                putStrLn ("Parsed: " ++ f)
-                mapM_  putStrLn . concatMap (lines . show) $ ws
-                parseScripts opts fs
+                sayLn ("Parsed: " ++ f)
+                mapM_  sayLn . concatMap (lines . show) $ ws
+                parseScripts fs
             Errors  e -> do 
-                putStrLn ("Cannot parse: " ++ f)
-                showErrors (NEL.toList e)
+                sayLn ("Cannot parse: " ++ f)
+                showErrors (NE.toList e)
                 return False
 
-showErrors :: [CtxError] -> IO ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
-showErrors = mapM_ $ mapM_ putStrLn . lines . show
+showErrors :: (HasLogFunc env) => [CtxError] ->  RIO env ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
+showErrors = mapM_ $ mapM_ sayLn . lines . show
 
 parse :: FilePath -> String -> Guarded P_Context
 parse file txt = whenChecked (runParser pContext file txt) (pure . fst)

@@ -1,7 +1,7 @@
 
 -- | Utility functions
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Daemon.Util(
+module Ampersand.Daemon.Util(
     takeRemainder,
     allGoodMessage,
     getModTime,
@@ -14,7 +14,7 @@ import Data.Time.Format
 import Data.Time.LocalTime
 import System.Console.ANSI
 import System.Directory
-import System.IO.Error
+import System.IO.Error(isDoesNotExistError)
 
 -- | The message to show when no errors have been reported
 allGoodMessage :: String

@@ -8,7 +8,6 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.Concepts 
 import           Ampersand.Output.ToJSON.JSONutils 
-import qualified Data.List.NonEmpty as NEL
 
 data Views = Views [View] deriving (Generic, Show)
 data View = View
@@ -21,18 +20,17 @@ instance ToJSON View where
   toJSON = amp2Jason
 instance ToJSON Views where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Views where
- fromAmpersand opts@Options{..} multi _ = Views . map (fromAmpersand opts multi) 
-                               . vviews $ fSpec
-   where 
-    fSpec = userFSpec multi
+instance JSON FSpec Views where
+ fromAmpersand env fSpec _ = Views
+                           . map (fromAmpersand env fSpec) 
+                           . vviews $ fSpec
     
 instance JSON ViewDef View where
- fromAmpersand opts@Options{..} multi vd = View
+ fromAmpersand env fSpec vd = View
   { vwJSONlabel      = name vd
   , vwJSONconceptId  = idWithoutType . vdcpt $ vd
   , vwJSONisDefault  = vdIsDefault vd
-  , vwJSONsegments   = NEL.toList . fmap (fromAmpersand opts multi) . vdats $ vd
+  , vwJSONsegments   = fmap (fromAmpersand env fSpec) . vdats $ vd
   } 
 
 

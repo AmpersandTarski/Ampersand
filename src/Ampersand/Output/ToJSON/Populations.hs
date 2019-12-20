@@ -9,24 +9,23 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.Set as Set
-import qualified Data.Text as Text
-import qualified RIO.List as L
+import qualified RIO.Text as T
 
 data Populations = Populations
    { epJSONatoms :: [AtomValuesOfConcept]
    , epJSONlinks :: [PairsOfRelation]
    } deriving (Generic, Show)
 data AtomValuesOfConcept = AtomValuesOfConcept
-   { avcJSONconcept :: Text.Text
-   , avcJSONatoms :: [Text.Text]
+   { avcJSONconcept :: T.Text
+   , avcJSONatoms :: [T.Text]
    } deriving (Generic, Show)
 data PairsOfRelation = PairsOfRelation
-   { porJSONrelation :: Text.Text
+   { porJSONrelation :: T.Text
    , porJSONlinks :: [JPair]
    } deriving (Generic, Show)
 data JPair = JPair
-   { prJSONsrc :: Text.Text
-   , prJSONtgt :: Text.Text
+   { prJSONsrc :: T.Text
+   , prJSONtgt :: T.Text
    } deriving (Generic, Show)
 instance ToJSON Populations where
   toJSON = amp2Jason
@@ -36,40 +35,37 @@ instance ToJSON PairsOfRelation where
   toJSON = amp2Jason
 instance ToJSON JPair where
   toJSON = amp2Jason
-instance JSON (MultiFSpecs,Bool) Populations where
- fromAmpersand opts@Options{..} _ (multi,doMeta) = Populations
-   { epJSONatoms = map (fromAmpersand opts multi) (zip (Set.elems $ allConcepts theFSpec) (L.repeat doMeta))
-   , epJSONlinks = map (fromAmpersand opts multi) (zip (Set.elems $ vrels       theFSpec) (L.repeat doMeta))
+instance JSON FSpec Populations where
+ fromAmpersand env _ fSpec = Populations
+   { epJSONatoms = map (fromAmpersand env fSpec) (Set.elems $ allConcepts fSpec)
+   , epJSONlinks = map (fromAmpersand env fSpec) (Set.elems $ vrels       fSpec)
    }
-  where 
-   theFSpec 
-    | doMeta    = fromMaybe ftl (metaFSpec multi)
-    | otherwise = userFSpec multi
-     where ftl = fatal "There is no grinded fSpec."
-instance JSON (A_Concept,Bool) AtomValuesOfConcept where
- fromAmpersand _ multi (cpt,doMeta) = AtomValuesOfConcept
-   { avcJSONconcept = Text.pack (idWithoutType cpt)
-   , avcJSONatoms   = map (Text.pack . showValADL) (Set.elems $ atomsBySmallestConcept theFSpec cpt)
-   }
-  where 
-   theFSpec 
-    | doMeta    = fromMaybe ftl (metaFSpec multi)
-    | otherwise = userFSpec multi
-     where ftl = fatal "There is no grinded fSpec."
 
-instance JSON (Relation,Bool) PairsOfRelation where
- fromAmpersand opts@Options{..} multi (dcl,doMeta) = PairsOfRelation
-   { porJSONrelation = Text.pack . showRel $ dcl
-   , porJSONlinks = map (fromAmpersand opts multi) . Set.elems . pairsInExpr theFSpec $ EDcD dcl
+-- instance JSON (MultiFSpecs,Bool) Populations where
+--  fromAmpersand env _ (multi,doMeta) = Populations
+--    { epJSONatoms = map (fromAmpersand env multi) (zip (Set.elems $ allConcepts theFSpec) (L.repeat doMeta))
+--    , epJSONlinks = map (fromAmpersand env multi) (zip (Set.elems $ vrels       theFSpec) (L.repeat doMeta))
+--    }
+--   where 
+--    theFSpec 
+--     | doMeta    = fromMaybe ftl (metaFSpec multi)
+--     | otherwise = userFSpec multi
+--      where ftl = fatal "There is no grinded fSpec."
+instance JSON A_Concept AtomValuesOfConcept where
+ fromAmpersand _ fSpec cpt = AtomValuesOfConcept
+   { avcJSONconcept = T.pack (idWithoutType cpt)
+   , avcJSONatoms   = map (T.pack . showValADL) (Set.elems $ atomsBySmallestConcept fSpec cpt)
    }
-  where 
-   theFSpec 
-    | doMeta    = fromMaybe ftl (metaFSpec multi)
-    | otherwise = userFSpec multi
-     where ftl = fatal "There is no grinded fSpec."
+
+instance JSON Relation PairsOfRelation where
+ fromAmpersand env fSpec dcl = PairsOfRelation
+   { porJSONrelation = T.pack . showRel $ dcl
+   , porJSONlinks = map (fromAmpersand env fSpec) . Set.elems . pairsInExpr fSpec $ EDcD dcl
+   }
+
 instance JSON AAtomPair JPair where
   fromAmpersand _ _ p = JPair
-    { prJSONsrc = Text.pack . showValADL . apLeft $ p 
-    , prJSONtgt = Text.pack . showValADL . apRight $ p
+    { prJSONsrc = T.pack . showValADL . apLeft $ p 
+    , prJSONtgt = T.pack . showValADL . apRight $ p
     }
 

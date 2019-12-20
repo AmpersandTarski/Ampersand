@@ -11,40 +11,40 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.TableSpec
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
-import qualified Data.List.NonEmpty as NEL
-import qualified Data.Text as Text
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
 import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
 
-generateDatabaseFile :: Options -> MultiFSpecs -> IO()
-generateDatabaseFile opts@Options{..} multi = 
-   do verboseLn $ "  Generating "++file
-      createDirectoryIfMissing True (takeDirectory fullFile)
-      writeFile fullFile content
+generateDatabaseFile :: (HasDirPrototype env, HasLogFunc env) => FSpec -> RIO env ()
+generateDatabaseFile fSpec = 
+   do env <- ask
+      sayWhenLoudLn $ "  Generating "++file
+      liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile env))
+      liftIO $ writeFile (fullFile env) content
   where 
-   content = Text.unpack (databaseStructureSql multi)
+   content = T.unpack (databaseStructureSql fSpec)
    file = "database" <.> "sql"
-   fullFile = getGenericsDir opts </> file
+   fullFile env = getGenericsDir env </> file
 
-databaseStructureSql :: MultiFSpecs -> Text.Text
-databaseStructureSql multi
-   = Text.intercalate "\n" $ 
-         header (Text.pack ampersandVersionStr)
+databaseStructureSql :: FSpec -> T.Text
+databaseStructureSql fSpec
+   = T.intercalate "\n" $ 
+         header (T.pack ampersandVersionStr)
        <>header "Database structure queries"
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
-   where
-     fSpec = userFSpec multi
+
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment 
   =    concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
     <> additionalDatabaseSettings 
 
-dumpSQLqueries :: Options -> MultiFSpecs -> Text.Text
-dumpSQLqueries opts@Options{..} multi
-   = Text.intercalate "\n" $ 
-         header (Text.pack ampersandVersionStr)
+dumpSQLqueries :: env -> FSpec -> T.Text
+dumpSQLqueries env fSpec
+   = T.intercalate "\n" $ 
+         header (T.pack ampersandVersionStr)
        <>header "Database structure queries"
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
        <>header "Violations of conjuncts"
@@ -56,62 +56,61 @@ dumpSQLqueries opts@Options{..} multi
    where
      y :: [Interface]
      y = interfaceS fSpec <> interfaceG fSpec
-     fSpec = userFSpec multi
-     showInterface :: Interface -> [Text.Text]
+     showInterface :: Interface -> [T.Text]
      showInterface ifc 
-        = header ("INTERFACE: "<>Text.pack (name ifc))
+        = header ("INTERFACE: "<>T.pack (name ifc))
         <>(map ("  " <>) . showObjDef . ifcObj) ifc
         where 
-          showObjDef :: ObjectDef -> [Text.Text]
+          showObjDef :: ObjectDef -> [T.Text]
           showObjDef obj
-            = (header . Text.pack . showA . objExpression) obj
+            = (header . T.pack . showA . objExpression) obj
             <>[queryAsSQL . prettySQLQueryWithPlaceholder 2 fSpec . objExpression $ obj]
             <>case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
-            <>header ("Broad query for the object at " <> (Text.pack . show . origin) obj)
-            <>[Text.pack . prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
-          showSubInterface :: SubInterface -> [Text.Text]
+            <>header ("Broad query for the object at " <> (T.pack . show . origin) obj)
+            <>[T.pack . prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
+          showSubInterface :: SubInterface -> [T.Text]
           showSubInterface sub = 
             case sub of 
               Box{} -> concatMap showObjDef [e | BxExpr e <- siObjs sub]
               InterfaceRef{} -> []
 
-     showConjunct :: Conjunct -> [Text.Text]
+     showConjunct :: Conjunct -> [T.Text]
      showConjunct conj 
-        = header (Text.pack$ rc_id conj)
+        = header (T.pack$ rc_id conj)
         <>["/*"
           ,"Conjunct expression:"
-          ,"  " <> (Text.pack . showA . rc_conjunct $ conj)
+          ,"  " <> (T.pack . showA . rc_conjunct $ conj)
           ,"Rules for this conjunct:"]
-        <>map showRule (NEL.toList $ rc_orgRules conj)
+        <>map showRule (NE.toList $ rc_orgRules conj)
         <>["*/"
-          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF opts . notCpl . rc_conjunct $ conj) <> ";"
+          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rc_conjunct $ conj) <> ";"
           ,""]
         where
           showRule r 
-            = Text.pack ("  - "<>name r<>": "<>showA r)
-     showDecl :: Relation -> [Text.Text]
+            = T.pack ("  - "<>name r<>": "<>showA r)
+     showDecl :: Relation -> [T.Text]
      showDecl decl 
-        = header (Text.pack$ showA decl)
+        = header (T.pack$ showA decl)
         <>[(queryAsSQL . prettySQLQuery 2 fSpec $ decl)<>";",""]
 
-header :: Text.Text -> [Text.Text]
+header :: T.Text -> [T.Text]
 header title = 
     [ "/*"
-    , Text.replicate width "*"
+    , T.replicate width "*"
     , "***"<>spaces firstspaces<>title<>spaces (width-6-firstspaces-l)<>"***"
-    , Text.replicate width "*"
+    , T.replicate width "*"
     , "*/"
     ]
   where 
     width = case L.maximumMaybe [80 , l + 8] of
               Nothing -> fatal "Impossible"
               Just x  -> x
-    l = Text.length title
-    spaces :: Int -> Text.Text
-    spaces i = Text.replicate i " "
+    l = T.length title
+    spaces :: Int -> T.Text
+    spaces i = T.replicate i " "
     firstspaces :: Int
     firstspaces = (width - 6 - l) `quot` 2 
-addSeparator :: Text.Text -> Text.Text
+addSeparator :: T.Text -> T.Text
 addSeparator t = t <> ";"

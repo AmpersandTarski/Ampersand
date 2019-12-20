@@ -3,9 +3,9 @@ CONTEXT InterfaceTest1 IN ENGLISH
   INTERFACE Identifier : I["Business actor"]
    BOX[ name : name~ ]
 
-PROCESS Business
+PATTERN Business
 name :: "Business actor" * Identifier [UNI]
-ENDPROCESS
+ENDPATTERN
 
 ENDCONTEXT
 

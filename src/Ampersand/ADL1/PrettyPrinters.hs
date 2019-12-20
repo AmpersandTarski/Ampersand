@@ -10,9 +10,9 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           RIO.Char (toUpper)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
-import           RIO.Text.Partial (replace)  --TODO: Get rid of replace, because it is partial
+import qualified RIO.Text.Partial as Partial(replace)  --TODO: Get rid of replace, because it is partial
 import qualified RIO.Set as Set
 import           Text.PrettyPrint.Leijen
 
@@ -74,8 +74,8 @@ commas = encloseSep empty empty comma
 
 listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
-listOf1 :: Pretty a => NEL.NonEmpty a -> Doc
-listOf1 = listOf . NEL.toList
+listOf1 :: Pretty a => NE.NonEmpty a -> Doc
+listOf1 = listOf . NE.toList
 separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
 
@@ -85,7 +85,7 @@ takeQuote :: String -> String
 takeQuote = replace' "\"" ""
 
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops metas) =
+    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
@@ -98,7 +98,6 @@ instance Pretty P_Context where
                <+\> perline cs
                <+\> perline ks
                <+\> perline rrules
-               <+\> perline rrels
                <+\> perline reprs
                <+\> perline vs
                <+\> perline gs
@@ -113,35 +112,29 @@ instance Pretty Meta where
 instance Pretty MetaObj where
     pretty ContextMeta = empty -- for the context meta we don't need a keyword
 
-instance Pretty P_RoleRelation where
-    pretty (P_RR _ roles rels) =
-        text "ROLE" <+> listOf1 roles <+> text "EDITS" <+> listOf1 rels
-
 instance Pretty P_RoleRule where
     pretty (Maintain _ roles rules) =
-        text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NEL.toList . fmap maybeQuote $ rules)
+        text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NE.toList . fmap maybeQuote $ rules)
 
 instance Pretty Role where
     pretty (Role nm) = maybeQuote nm
     pretty (Service nm) = maybeQuote nm
 
 instance Pretty P_Pattern where
-    pretty (P_Pat _ nm rls gns dcs rruls rrels reprs cds ids vds xps pop _) =
-          text keyword
+    pretty (P_Pat _ nm rls gns dcs rruls reprs cds ids vds xps pop _) =
+          text "PATTERN"
           <+>  quoteConcept nm
           <+\> perline rls
           <+\> perline gns
           <+\> perline dcs
           <+\> perline rruls
-          <+\> perline rrels
           <+\> perline reprs
           <+\> perline cds
           <+\> perline ids
           <+\> perline vds
           <+\> perline xps
           <+\> perline pop
-          <+>  text ("END"++keyword)
-        where keyword = if null rruls && null rrels then "PATTERN" else "PROCESS"
+          <+>  text "ENDPATTERN"
 
 instance Pretty P_Relation where
     pretty (P_Sgn nm sign prps pragma mean _) =
@@ -300,11 +293,11 @@ instance Pretty (P_IdentSegmnt TermPrim) where
 instance Pretty (P_ViewD TermPrim) where
     pretty (P_Vd _ lbl cpt True Nothing ats) = -- legacy syntax
         text "VIEW" <+> maybeQuote lbl   <+> text ":"
-                    <~> cpt <+> parens (listOf1 ats)
+                    <~> cpt <+> parens (listOf ats)
     pretty (P_Vd _ lbl cpt isDefault html ats) = -- new syntax
         text "VIEW" <+> maybeQuote lbl  <+> text ":"
                     <~> cpt <+> (if isDefault then text "DEFAULT" else empty)
-                    <+> braces (listOf1 ats) <~> html <+> text "ENDVIEW"
+                    <+> braces (listOf ats) <~> html <+> text "ENDVIEW"
 
 instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
@@ -360,9 +353,9 @@ instance Pretty PClassify where
       case p of
             PClassify _ spc gen -> 
                  text "CLASSIFY" <+> pretty spc <+> 
-                     (case (NEL.length gen, NEL.filter (spc /=) gen) of
+                     (case (NE.length gen, NE.filter (spc /=) gen) of
                         (2,[x]) -> text "ISA" <~> x
-                        _       -> text "IS"  <+> separate "/\\" (NEL.toList gen)
+                        _       -> text "IS"  <+> separate "/\\" (NE.toList gen)
                      )
 instance Pretty Lang where
     pretty x = text "IN" <+> (text . map toUpper . show $ x)
@@ -402,5 +395,5 @@ replace' :: String -> String -> String -> String
 replace' needle replacement haystack =
    case needle of 
      [] -> fatal "Empty needle."
-     _  -> T.unpack $ replace (T.pack needle) (T.pack replacement) (T.pack haystack)
+     _  -> T.unpack $ Partial.replace (T.pack needle) (T.pack replacement) (T.pack haystack)
 

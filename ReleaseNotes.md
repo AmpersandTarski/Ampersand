@@ -1,5 +1,30 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
+* [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. --TODO: Needs documentation
+
+## v3.17.4 (13 september 2019)
+
+* Upgrade to [LTS Haskell 14.5 (ghc-8.6.5)](https://www.stackage.org/lts-14.5)
+
+## v3.17.3 (2 august 2019)
+
+* Allow interface roles to be editable. Accessible interfaces for a given role are now queries from database instead of generated json files (requires update of prototype framework)
+* Update to prototype framework v1.3.0
+* [Issue #921](https://github.com/AmpersandTarski/Ampersand/issues/921) Third round of enhancements for RIO.
+* Removed depricated stuff: keywords "EDITS", "PROCESS" and "ENDPROCESS". EDITS did not have any effect at all since about 2015, (END)PROCESS has been the same as (END)PATTERN for a long time.
+
+## v3.17.2 (5 july 2019)
+
+* Again some major refactoring has been done to leverage the [RIO library](https://haskell.fpcomplete.com/library/rio).
+* [Issue #976](https://github.com/AmpersandTarski/Ampersand/issues/976) Lines in --deamon configuration file can be commented out by prepending such line with "#" or "--" (MUST be at beginning of line)
+* [Issue #971](https://github.com/AmpersandTarski/Ampersand/issues/971) The functionality of meatgrinding has been refactored. It is now far more composable. It is expected that in the near future this will lead to a set of different switches.
+
+## v3.17.1 (7 june 2019)
+
+* A lot of refactoring took place this release, embracing best practices from the RIO library. First phase. In the next couple of releases, we plan to gradually do more of this refactoring.
+
 ## v3.17.0 (10 may 2019)
 
 * [Issue #923](https://github.com/AmpersandTarski/Ampersand/issues/923) Lexer error message had disappeared. Now they show again.

@@ -10,7 +10,7 @@ module Ampersand.ADL1.Expression (
 where
 import           Ampersand.Basics
 import           Ampersand.Core.AbstractSyntaxTree
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 -- | subst is used to replace each occurrence of a relation
@@ -216,17 +216,17 @@ isFitForCrudD :: Expression -> Bool
 isFitForCrudD _ = True
 
 
-exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> NEL.NonEmpty Expression
+exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> NE.NonEmpty Expression
 exprIsc2list (EIsc (l,r)) = exprIsc2list l <> exprIsc2list r
-exprIsc2list r            = r NEL.:| []
+exprIsc2list r            = r NE.:| []
 exprUni2list (EUni (l,r)) = exprUni2list l <> exprUni2list r
-exprUni2list r            = r NEL.:| []
+exprUni2list r            = r NE.:| []
 exprCps2list (ECps (l,r)) = exprCps2list l <> exprCps2list r
-exprCps2list r            = r NEL.:| []
+exprCps2list r            = r NE.:| []
 exprRad2list (ERad (l,r)) = exprRad2list l <> exprRad2list r
-exprRad2list r            = r NEL.:| []
+exprRad2list r            = r NE.:| []
 exprPrd2list (EPrd (l,r)) = exprPrd2list l <> exprPrd2list r
-exprPrd2list r            = r NEL.:| []
+exprPrd2list r            = r NE.:| []
 
 insParentheses :: Expression -> Expression
 insParentheses = insPar 0
@@ -250,9 +250,13 @@ insParentheses = insPar 0
      insPar _  (EFlp e)     = EFlp (insPar 10 e)
      insPar _  (ECpl e)     = ECpl (insPar 10 e)
      insPar i  (EBrk e)     = insPar i e
-     insPar _  x            = x
-     foldr1 :: (Expression -> Expression -> Expression) -> NEL.NonEmpty Expression -> Expression
-     foldr1 fun nonempty = foldr fun (NEL.head nonempty) (NEL.tail nonempty)
+     insPar _ x@EDcD{}      = x  
+     insPar _ x@EDcI{}      = x  
+     insPar _ x@EEps{}      = x  
+     insPar _ x@EDcV{}      = x  
+     insPar _ x@EMp1{}      = x  
+     foldr1 :: (Expression -> Expression -> Expression) -> NE.NonEmpty Expression -> Expression
+     foldr1 fun nonempty = foldr fun (NE.last nonempty) (NE.init nonempty)
 {-
    insPar 0 (r/\s/\t/\x/\y |- p)
 =

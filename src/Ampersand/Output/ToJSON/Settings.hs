@@ -6,7 +6,7 @@ module Ampersand.Output.ToJSON.Settings
 where
 import           Ampersand.Output.ToJSON.JSONutils 
 import           Data.Hashable
-import qualified Data.Text as Text
+import qualified RIO.Text as T
 
 data Settings = Settings 
   { sngJSONglobal_contextName :: String
@@ -20,16 +20,18 @@ data Settings = Settings
   } deriving (Generic, Show)
 instance ToJSON Settings where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Settings where
- fromAmpersand Options{..} multi _ = Settings 
-  { sngJSONglobal_contextName = Text.unpack (fsName fSpec)
-  , sngJSONmysql_dbHost       = sqlHost
-  , sngJSONmysql_dbName       = dbName
-  , sngJSONmysql_dbUser       = sqlLogin
-  , sngJSONmysql_dbPass       = sqlPwd
+instance JSON FSpec Settings where
+ fromAmpersand env fSpec _ = Settings 
+  { sngJSONglobal_contextName = T.unpack (fsName fSpec)
+  , sngJSONmysql_dbHost       = view sqlHostL env
+  , sngJSONmysql_dbName       = case view dbNameL env of
+                                  Nothing -> name fSpec
+                                  Just nm -> nm
+  , sngJSONmysql_dbUser       = view sqlLoginL env
+  , sngJSONmysql_dbPass       = view sqlPwdL env
   , sngJSONcompiler_version   = ampersandVersionStr
-  , sngJSONcompiler_env       = show environment
+  , sngJSONcompiler_env       = show env 
   , sngJSONcompiler_modelHash = show . hash $ fSpec
   } 
-   where fSpec = userFSpec multi
+
          

@@ -9,10 +9,8 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Ampersand.FSpec.FSpec
-          ( MultiFSpecs(..)
-          , FSpec(..), concDefs, Atom(..), A_Pair(..)
+          ( FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Quad(..)
-          , FSid(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
           , RelStore(..)
@@ -27,8 +25,10 @@ module Ampersand.FSpec.FSpec
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
+          , defOutputLang
           , showSQL
           , substituteReferenceObjectDef
+          , violationsOfInvariants
           ) where
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -36,26 +36,20 @@ import           Ampersand.Classes
 import           Ampersand.FSpec.Crud
 import           Data.Function (on)
 import           Data.Hashable
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import           Data.Text (Text,unpack)
+import qualified RIO.Text as T 
 import qualified RIO.List as L
 import           Text.Pandoc.Builder (Blocks)
 
-data MultiFSpecs = MultiFSpecs
-                   { userFSpec :: FSpec        -- ^ The FSpec based on the user's script, potentionally extended with metadata.
-                   , metaFSpec :: Maybe FSpec  -- ^ The FormalAmpersand metamodel, populated with the items from the user's script 
-                   }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showA)  
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
-                   , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (derived)
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
-                   , fRoleRels ::    [(Role,Relation)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
                    , fMaintains ::   Role -> Rules
                    , fRoles ::       [(Role,Int)]             -- ^ All roles mentioned in this context, numbered.
@@ -77,7 +71,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , lookupView :: String -> ViewDef          -- ^ Lookup view by id in fSpec.
                    , vgens ::        [AClassify]                  -- ^ All gens that apply in the entire FSpec
                    , allConjuncts :: [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
-                   , allConjsPerRule :: [(Rule,NEL.NonEmpty Conjunct)]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
+                   , allConjsPerRule :: [(Rule,NE.NonEmpty Conjunct)]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
                    , allConjsPerDecl :: [(Relation, [Conjunct])]   -- ^ Maps each relation to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
@@ -191,18 +185,12 @@ instance ConceptStructure FSpec where
  - ..."
 -}
 
-data FSid = FS_id String     -- Identifiers in Ampersand contain strings that do not contain any spaces.
-        --  | NoName           -- some identified objects have no name...
 instance Named FSpec where
-  name = unpack . fsName
-
-instance Named FSid where
-  name (FS_id nm) = nm
-
+  name = T.unpack . fsName
 
 data Quad = Quad { qDcl ::       Relation   -- The relation that, when affected, triggers a restore action.
                  , qRule ::      Rule          -- The rule from which qConjuncts is derived.
-                 , qConjuncts :: NEL.NonEmpty Conjunct    -- The conjuncts, with clauses included
+                 , qConjuncts :: NE.NonEmpty Conjunct    -- The conjuncts, with clauses included
                  } deriving Show
 
 instance Ord Quad where
@@ -211,9 +199,12 @@ instance Eq Quad where q == q' = compare q q' == EQ
 
 --
 dnf2expr :: DnfClause -> Expression
-dnf2expr dnf
- = es .\/. foldr (.\/.) (NEL.head . conss $ dnf) (NEL.tail . conss $ dnf)
-    where es = notCpl (L.foldr (./\.) (NEL.head . antcs $ dnf) (NEL.tail . antcs $ dnf))
+dnf2expr dnf =
+  case (antcs dnf, conss dnf) of
+    ([],[]) -> fatal ("empty dnf clause in "++show dnf)
+    ([],hc:tlc ) -> foldr (.\/.) hc tlc
+    (ha:tla,[]) -> notCpl (foldr (./\.) ha tla)
+    (ha:tla,hc:tlc) -> notCpl (foldr (./\.) ha tla) .\/. foldr (.\/.) hc tlc
 data PlugInfo = InternalPlug PlugSQL
                 deriving (Show, Eq,Typeable)
 instance Named PlugInfo where
@@ -263,16 +254,16 @@ instance Unique PlugSQL where
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
-plugAttributes :: PlugSQL-> NEL.NonEmpty SqlAttribute
+plugAttributes :: PlugSQL-> NE.NonEmpty SqlAttribute
 plugAttributes plug = case plug of
     TblSQL{}    -> case attributes plug of
-                     [] -> fatal "attributes should contain at least one element" -- FIXME: change type of attributes to  attributes :: NEL.NonEmpty SqlAttribute
-                     h:tl -> h NEL.:| tl
+                     [] -> fatal "attributes should contain at least one element" -- FIXME: change type of attributes to  attributes :: NE.NonEmpty SqlAttribute
+                     h:tl -> h NE.:| tl
     BinSQL{}    -> let store = case dLkpTbl plug of
                          [x] -> x
                          _   -> fatal $ "Relation lookup table of a binary table should contain exactly one element:\n" ++
                                             show (dLkpTbl plug)
-                   in rsSrcAtt store NEL.:| [rsTrgAtt store]
+                   in rsSrcAtt store NE.:| [rsTrgAtt store]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
@@ -362,7 +353,7 @@ substituteReferenceObjectDef fSpec originalObjectDef =
       case objmsub originalObjectDef of
         Just InterfaceRef{ siIsLink=False
                           , siIfcId=interfaceId} 
-          -> let ifc = ifcObj (lookupInterface interfaceId)
+          -> let ifc = substituteReferenceObjectDef fSpec (ifcObj (lookupInterface interfaceId))
               in Just (objExpression originalObjectDef .:. objExpression ifc, objcrud ifc)
         _ -> Nothing
     lookupInterface :: String -> Interface
@@ -370,3 +361,11 @@ substituteReferenceObjectDef fSpec originalObjectDef =
         case [ ifc | ifc <- (interfaceS fSpec ++ interfaceG fSpec), name ifc == nm ] of
           [ifc] -> ifc
           _     -> fatal "Interface lookup returned zero or more than one result"
+
+violationsOfInvariants :: FSpec -> [(Rule,AAtomPairs)]
+violationsOfInvariants fSpec 
+  = [(r,vs) |(r,vs) <- allViolations fSpec
+            , not (isSignal r)
+    ]
+defOutputLang :: FSpec -> Lang
+defOutputLang = ctxlang . originalContext
