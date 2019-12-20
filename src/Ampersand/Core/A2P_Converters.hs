@@ -21,7 +21,8 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           RIO.Char
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
@@ -118,12 +119,12 @@ aClassify2pClassify gen =
   Isa{} -> PClassify 
                 { pos       = genpos gen
                 , specific  = aConcept2pConcept (genspc gen) 
-                , generics  = aConcept2pConcept (gengen gen) NEL.:| []
+                , generics  = aConcept2pConcept (gengen gen) NE.:| []
                 }
   IsE{} -> PClassify 
                 { pos      = genpos gen
                 , specific = aConcept2pConcept (genspc gen) 
-                , generics = NEL.fromList . map aConcept2pConcept . genrhs $ gen
+                , generics = PARTIAL.fromList . map aConcept2pConcept . genrhs $ gen
                 }
 
 aInterface2pInterface :: Interface -> P_Interface
@@ -241,7 +242,7 @@ aMarkup2pMarkup markup =
 
 aPairView2pPairView :: PairView Expression -> PairView (Term TermPrim)
 aPairView2pPairView pv =
- PairView { ppv_segs = NEL.map aPairViewSegment2pPairViewSegment (ppv_segs pv)
+ PairView { ppv_segs = NE.map aPairViewSegment2pPairViewSegment (ppv_segs pv)
           }
 
 aViewSegment2pP_ViewSegment :: ViewSegment -> P_ViewSegment TermPrim

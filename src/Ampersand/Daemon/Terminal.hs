@@ -2,7 +2,7 @@
 
 -- | Cross-platform operations for manipulating terminal console windows.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Daemon.Terminal(
+module Ampersand.Daemon.Terminal(
     terminalTopmost,
     withWindowIcon, WindowIcon(..), setWindowIcon
     ) where

@@ -11,10 +11,10 @@ module Ampersand.Daemon.Wait(
 ) where
 
 import           Ampersand.Basics
-import           Ampersand.Daemon.Daemon.Util
+import           Ampersand.Daemon.Util
 import           Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
 import           Control.Monad.Extra(partitionM,concatMapM,ifM,firstJustM)
-import qualified Data.Map as Map
+import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import           Data.Time.Clock
 import qualified RIO.List as L
@@ -59,7 +59,7 @@ listContentsInside test dir = do
 --   starting from when 'waitFiles' was initially called.
 --
 --   Returns a message about why you are continuing (usually a file name).
-waitFiles :: (HasHandle env, HasVerbosity env) => 
+waitFiles :: (HasLogFunc env) => 
              Waiter -> RIO env ([FilePath] -> RIO env [String])
 waitFiles waiter = do
     base <- liftIO getCurrentTime
@@ -93,7 +93,7 @@ waitFiles waiter = do
             [] -> recheck files' new
             xs -> return xs
     where
-        recheck :: (HasHandle env, HasVerbosity env) => 
+        recheck :: (HasLogFunc env) => 
                    [FilePath] -> [Maybe UTCTime] -> RIO env [FilePath]
         recheck files old = do
             liftIO $ sleep 0.1

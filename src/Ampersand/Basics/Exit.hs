@@ -13,7 +13,7 @@ import           System.IO.Unsafe(unsafePerformIO)
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a
 exitWith x = unsafePerformIO $ do
-  runRIO stderr (mapM_ sayLn message)
+  runSimpleApp (mapM_ sayLn message)
   SE.exitWith exitcode
  where (exitcode,message) = info x
 
@@ -34,6 +34,8 @@ data AmpersandExit
   | NoConfigurationFile [String]
   | SomeTestsFailed [String]
   | ReadFileError [String]
+  | RunnerAborted [String]
+  | PosAndNegChaptersSpecified [String]
 
 instance Exception AmpersandExit
 
@@ -76,6 +78,10 @@ info x =
               -> (SE.ExitFailure 120 , msg)
     ReadFileError msg
               -> (SE.ExitFailure 130 , msg)
+    RunnerAborted msg
+              -> (SE.ExitFailure 140 , msg)
+    PosAndNegChaptersSpecified msg 
+              -> (SE.ExitFailure 150 , msg)
   where
     showViolatedRule :: (String,[String]) -> [String]
     showViolatedRule (rule,pairs) = 

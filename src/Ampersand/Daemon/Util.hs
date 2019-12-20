@@ -1,7 +1,7 @@
 
 -- | Utility functions
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Daemon.Util(
+module Ampersand.Daemon.Util(
     takeRemainder,
     allGoodMessage,
     getModTime,

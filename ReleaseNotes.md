@@ -1,5 +1,9 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
+* [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. --TODO: Needs documentation
+
 ## v3.17.4 (13 september 2019)
 
 * Upgrade to [LTS Haskell 14.5 (ghc-8.6.5)](https://www.stackage.org/lts-14.5)
@@ -15,6 +19,7 @@
 
 * Again some major refactoring has been done to leverage the [RIO library](https://haskell.fpcomplete.com/library/rio).
 * [Issue #976](https://github.com/AmpersandTarski/Ampersand/issues/976) Lines in --deamon configuration file can be commented out by prepending such line with "#" or "--" (MUST be at beginning of line)
+* [Issue #971](https://github.com/AmpersandTarski/Ampersand/issues/971) The functionality of meatgrinding has been refactored. It is now far more composable. It is expected that in the near future this will lead to a set of different switches.
 
 ## v3.17.1 (7 june 2019)
 

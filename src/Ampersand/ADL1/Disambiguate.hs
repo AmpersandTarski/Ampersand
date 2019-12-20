@@ -11,7 +11,8 @@ module Ampersand.ADL1.Disambiguate
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.AbstractSyntaxTree
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import           Control.Arrow
 import           Text.PrettyPrint.Leijen (Pretty(..),text)
@@ -92,9 +93,9 @@ instance Disambiguatable P_IdentDf where
 --  disambInfo (P_Id o nm c (a:lst)) _     = (P_Id o nm c (a':lst'), Cnstr (bottomUpSourceTypes aRestr++bottomUpSourceTypes nxt) [])
 --       where (a', aRestr)            = disambInfo a (Cnstr [MustBe (pCpt2aCpt c)] [])
 --             (P_Id _ _ _ lst', nxt)  = disambInfo (P_Id o nm c lst) (Cnstr [MustBe (pCpt2aCpt c)] [])
-  disambInfo (P_Id o nm c atts) _     = (P_Id o nm c atts', Cnstr (concatMap bottomUpSourceTypes . NEL.toList $ restr') [])
+  disambInfo (P_Id o nm c atts) _     = (P_Id o nm c atts', Cnstr (concatMap bottomUpSourceTypes . NE.toList $ restr') [])
      where
-      (atts', restr') = NEL.unzip $
+      (atts', restr') = NE.unzip $
            fmap (\a -> disambInfo a (Cnstr [MustBe (pCpt2aCpt c)] [])) atts
 instance Disambiguatable P_IdentSegmnt where
   disambInfo (P_IdentExp v) x = (P_IdentExp v', rt)
@@ -110,7 +111,7 @@ instance Disambiguatable P_Rule where
           = disambInfo (PairViewTerm viol) rt
 instance Disambiguatable PairViewTerm where
   disambInfo (PairViewTerm (PairView lst)) x
-   = (PairViewTerm (PairView . NEL.fromList $ [pv' | pv <- NEL.toList lst, let (PairViewSegmentTerm pv',_) = disambInfo (PairViewSegmentTerm pv) x])
+   = (PairViewTerm (PairView . PARTIAL.fromList $ [pv' | pv <- NE.toList lst, let (PairViewSegmentTerm pv',_) = disambInfo (PairViewSegmentTerm pv) x])
      , noConstraints) -- unrelated
 instance Disambiguatable PairViewSegmentTerm where
   disambInfo (PairViewSegmentTerm (PairViewText orig s)) _ = (PairViewSegmentTerm (PairViewText orig s), noConstraints)

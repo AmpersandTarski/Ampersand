@@ -20,6 +20,7 @@ module Ampersand.Output.PandocAux
       , commaPandocAnd
       , commaPandocOr
       , Inlines
+      , outputLang
       )
 where
 import           Ampersand.ADL1
@@ -41,27 +42,25 @@ import           Text.Pandoc.PDF (makePDF)
 import qualified Text.Pandoc.UTF8 as UTF8
 
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: Options -> FSpec -> [(String , String)]
-defaultWriterVariables Options{..} fSpec
-  = [ ("title", (case (fsLang fSpec, diagnosisOnly) of
-                        (Dutch  , False) -> if test
-                                            then "Afspraken van "
-                                            else "Functioneel Ontwerp van "
-                        (English, False) -> "Functional Design of "
-                        (Dutch  ,  True) -> "Diagnose van "
-                        (English,  True) -> "Diagnosis of "
+defaultWriterVariables :: (HasDocumentOpts env) => env -> FSpec -> [(String , String)]
+defaultWriterVariables env fSpec
+  = [ ("title", (case (outputLang', view chaptersL env) of
+                        (Dutch  , [Diagnosis]) -> "Diagnose van "
+                        (English, [Diagnosis]) -> "Diagnosis of "
+                        (Dutch  , _          ) -> "Functioneel Ontwerp van "
+                        (English, _          ) -> "Functional Design of "
                 )++name fSpec)
     , ("fontsize", "12pt")   --can be overridden by geometry package (see below)
-    , ("lang"    , case fsLang fSpec of
+    , ("lang"    , case outputLang' of
                        Dutch   -> "nl-NL"
                        English -> "en-US")
     , ("papersize", "a4")
-    , ("babel-lang", case fsLang fSpec of
+    , ("babel-lang", case outputLang' of
                        Dutch   -> "dutch"
                        English -> "english")
     , ("documentclass","report")
     ] ++
-    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not diagnosisOnly]++
+    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == (view chaptersL env)]++
     [ ("header-includes", unlines
          [ "% ============Ampersand specific Begin================="
          , "% First a couple of LaTeX packages are included:"
@@ -106,23 +105,25 @@ defaultWriterVariables Options{..} fSpec
          , ""
          , "% ============Ampersand specific End==================="
          ])
-    | fspecFormat `elem` [Fpdf,Flatex]
+    | (view fspecFormatL env) `elem` [Fpdf,Flatex]
     ]
+  where
+   outputLang' :: Lang
+   outputLang' = outputLang env fSpec
 
 --DESCR -> functions to write the pandoc
---         String = the name of the outputfile
---         The IO() creates the actual output
-writepandoc :: FSpec -> Pandoc -> RIO App ()
+writepandoc :: (HasDirOutput env, HasRootFile env, HasDocumentOpts env, HasLogFunc env) => 
+      FSpec -> Pandoc -> RIO env ()
 writepandoc fSpec thePandoc = do
-  opts@Options{..} <- view optionsL
-  sayWhenLoudLn ("Generating "++fSpecFormatString opts ++" to : "++outputFile opts)
-  liftIO $ writepandoc' opts fSpec thePandoc
+  env <- ask
+  sayWhenLoudLn ("Generating "++fSpecFormatString env ++" to : "++outputFile env)
+  liftIO $ writepandoc' env fSpec thePandoc
  where
-    fSpecFormatString :: Options -> String 
-    fSpecFormatString = map toLower . drop 1 . show . fspecFormat
+    fSpecFormatString :: (HasDocumentOpts env) => env -> String 
+    fSpecFormatString = map toLower . drop 1 . show . view fspecFormatL
 
-outputFile :: Options -> FilePath
-outputFile Options{..} = dirOutput </> baseName -<.> ext fspecFormat 
+outputFile :: (HasDocumentOpts env, HasRootFile env, HasDirOutput env) => env -> FilePath
+outputFile env = view dirOutputL env </> baseName env -<.> ext (view fspecFormatL env) 
        
 ext :: FSpecFormat -> String
 ext format =
@@ -146,31 +147,31 @@ ext format =
         Ftexinfo      -> ".texinfo"
         Ftextile      -> ".textile"
                    
-writepandoc' :: Options -> FSpec -> Pandoc -> IO ()
-writepandoc' opts@Options{..} fSpec thePandoc = liftIO . runIOorExplode $ do
+writepandoc' :: (HasDocumentOpts env, HasRootFile env, HasDirOutput env) => env -> FSpec -> Pandoc -> IO ()
+writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
   case writer of 
      ByteStringWriter f -> do 
        res <- f writerOptions thePandoc -- >>= handleError
        let content :: LByteString
            content = res
-       BL.writeFile (outputFile opts) content
-     TextWriter f -> case fspecFormat of
+       BL.writeFile (outputFile env) content
+     TextWriter f -> case view fspecFormatL env of
         Fpdf -> do
            res <- makePDF "pdflatex" [] f writerOptions thePandoc -- >>= handleError)
            case res of
-             Right pdf -> writeFnBinary (outputFile opts) pdf
+             Right pdf -> writeFnBinary (outputFile env) pdf
              Left err' -> liftIO . throwIO . PandocPDFError .
                                T.unpack . decodeUtf8With lenientDecode . BL.toStrict $ err'
         _     -> liftIO $ do
                 output <- runIO (f writerOptions thePandoc) >>= handleError
-                writeFileUtf8 (outputFile opts) (output)
+                writeFileUtf8 (outputFile env) (output)
  where   
     writer :: PandocMonad m => Writer m
     writer = case lookup writerName writers of
-                Nothing -> fatal $ "Undefined Pandoc writer: "++writerName
+                Nothing -> fatal $ "There is no such Pandoc writer: "++writerName
                 Just w -> w
     writerName =
-      case fspecFormat of
+      case view fspecFormatL env of
        Fpdf    -> "latex"
        Flatex  -> "latex"
        FPandoc -> "native"
@@ -183,7 +184,7 @@ writepandoc' opts@Options{..} fSpec thePandoc = liftIO . runIOorExplode $ do
                       { writerTableOfContents=True
                       , writerNumberSections=True
                       , writerTemplate=T.unpack <$> template
-                      , writerVariables=defaultWriterVariables opts fSpec
+                      , writerVariables=defaultWriterVariables env fSpec
                       , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath
@@ -229,12 +230,6 @@ count    lang    n      x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
 
-data Chapter = Intro
-             | SharedLang
-             | Diagnosis
-             | ConceptualAnalysis
-             | DataAnalysis
-             deriving (Eq, Show)
 
 
 chptTitle :: Lang -> Chapter -> Inlines
@@ -543,3 +538,6 @@ commaNLPandoc  _  [a]  = a
 commaNLPandoc s (a:as) = a <> ", " <> commaNLPandoc s as
 commaNLPandoc  _  []   = mempty
    
+outputLang :: (HasOutputLanguage env) => env -> FSpec -> Lang
+outputLang env fSpec = fromMaybe (defOutputLang fSpec) $ view languageL env
+

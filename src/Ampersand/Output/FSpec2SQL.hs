@@ -11,39 +11,38 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc
 import           Ampersand.Prototype.TableSpec
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
 
-generateDatabaseFile :: MultiFSpecs -> RIO App ()
-generateDatabaseFile multi = 
-   do opts@Options{..} <- view optionsL
+generateDatabaseFile :: (HasDirPrototype env, HasLogFunc env) => FSpec -> RIO env ()
+generateDatabaseFile fSpec = 
+   do env <- ask
       sayWhenLoudLn $ "  Generating "++file
-      liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile opts))
-      liftIO $ writeFile (fullFile opts) content
+      liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile env))
+      liftIO $ writeFile (fullFile env) content
   where 
-   content = T.unpack (databaseStructureSql multi)
+   content = T.unpack (databaseStructureSql fSpec)
    file = "database" <.> "sql"
-   fullFile opts = getGenericsDir opts </> file
+   fullFile env = getGenericsDir env </> file
 
-databaseStructureSql :: MultiFSpecs -> T.Text
-databaseStructureSql multi
+databaseStructureSql :: FSpec -> T.Text
+databaseStructureSql fSpec
    = T.intercalate "\n" $ 
          header (T.pack ampersandVersionStr)
        <>header "Database structure queries"
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
-   where
-     fSpec = userFSpec multi
+
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment 
   =    concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
     <> additionalDatabaseSettings 
 
-dumpSQLqueries :: Options -> MultiFSpecs -> T.Text
-dumpSQLqueries opts@Options{..} multi
+dumpSQLqueries :: env -> FSpec -> T.Text
+dumpSQLqueries env fSpec
    = T.intercalate "\n" $ 
          header (T.pack ampersandVersionStr)
        <>header "Database structure queries"
@@ -57,7 +56,6 @@ dumpSQLqueries opts@Options{..} multi
    where
      y :: [Interface]
      y = interfaceS fSpec <> interfaceG fSpec
-     fSpec = userFSpec multi
      showInterface :: Interface -> [T.Text]
      showInterface ifc 
         = header ("INTERFACE: "<>T.pack (name ifc))
@@ -85,9 +83,9 @@ dumpSQLqueries opts@Options{..} multi
           ,"Conjunct expression:"
           ,"  " <> (T.pack . showA . rc_conjunct $ conj)
           ,"Rules for this conjunct:"]
-        <>map showRule (NEL.toList $ rc_orgRules conj)
+        <>map showRule (NE.toList $ rc_orgRules conj)
         <>["*/"
-          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF opts . notCpl . rc_conjunct $ conj) <> ";"
+          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF env . notCpl . rc_conjunct $ conj) <> ";"
           ,""]
         where
           showRule r 

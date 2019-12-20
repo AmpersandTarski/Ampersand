@@ -17,4 +17,4 @@ import Ampersand.FSpec.ToFSpec.NormalForms
        (conjNF, disjNF, cfProof, simplify)
 import Ampersand.FSpec.Motivations
        (HasMeaning(..), Motivated(..))
-import Ampersand.FSpec.ToFSpec.CreateFspec (createMulti)
+import Ampersand.FSpec.ToFSpec.CreateFspec

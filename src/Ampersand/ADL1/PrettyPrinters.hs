@@ -10,7 +10,7 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           RIO.Char (toUpper)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as Partial(replace)  --TODO: Get rid of replace, because it is partial
 import qualified RIO.Set as Set
@@ -74,8 +74,8 @@ commas = encloseSep empty empty comma
 
 listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
-listOf1 :: Pretty a => NEL.NonEmpty a -> Doc
-listOf1 = listOf . NEL.toList
+listOf1 :: Pretty a => NE.NonEmpty a -> Doc
+listOf1 = listOf . NE.toList
 separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
 
@@ -114,7 +114,7 @@ instance Pretty MetaObj where
 
 instance Pretty P_RoleRule where
     pretty (Maintain _ roles rules) =
-        text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NEL.toList . fmap maybeQuote $ rules)
+        text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NE.toList . fmap maybeQuote $ rules)
 
 instance Pretty Role where
     pretty (Role nm) = maybeQuote nm
@@ -353,9 +353,9 @@ instance Pretty PClassify where
       case p of
             PClassify _ spc gen -> 
                  text "CLASSIFY" <+> pretty spc <+> 
-                     (case (NEL.length gen, NEL.filter (spc /=) gen) of
+                     (case (NE.length gen, NE.filter (spc /=) gen) of
                         (2,[x]) -> text "ISA" <~> x
-                        _       -> text "IS"  <+> separate "/\\" (NEL.toList gen)
+                        _       -> text "IS"  <+> separate "/\\" (NE.toList gen)
                      )
 instance Pretty Lang where
     pretty x = text "IN" <+> (text . map toUpper . show $ x)

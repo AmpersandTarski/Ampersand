@@ -1,30 +1,33 @@
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE FlexibleInstances #-}
 -- | Reads a project and parses it
-module Ampersand.Daemon.Daemon.Parser (
+module Ampersand.Daemon.Parser (
     parseProject
 ) where
 
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Daemon.Daemon.Types
-import           Ampersand.FSpec.ToFSpec.CreateFspec
+import           Ampersand.Daemon.Types
 import           Ampersand.Input.Parsing
 import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Misc
-import qualified Data.List.NonEmpty as NEL
-
-parseProject :: (HasOptions env, HasVerbosity env, HasHandle env) => 
+import qualified RIO.NonEmpty as NE
+import           Ampersand.FSpec.MetaModels
+import           Ampersand.Types.Config
+import           Ampersand.Options.FSpecGenOptsParser
+parseProject :: (HasRunner env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
 parseProject rootAdl = do
-    (pc,gPctx) <- parseADL rootAdl 
-    opts <- view optionsL
-    let loadedFiles = map pcCanonical pc
-        gActx = pCtx2Fspec opts gPctx
-    return ( case gActx of
-              Checked _ ws -> map warning2Load $ ws
-              Errors  es   -> NEL.toList . fmap error2Load $ es
-           , loadedFiles
-           )
+    let fSpecGenOpts = defFSpecGenOpts rootAdl 
+    extendWith fSpecGenOpts $ do 
+        (pc,gPctx) <- parseADL rootAdl 
+        env2 <- ask
+        let loadedFiles = map pcCanonical pc
+            gActx = pCtx2Fspec env2 <$> gPctx
+        return ( case gActx of
+                Checked _ ws -> map warning2Load $ ws
+                Errors  es   -> NE.toList . fmap error2Load $ es
+            , loadedFiles
+            )
 
 warning2Load :: Warning -> Load
 warning2Load warn = Message

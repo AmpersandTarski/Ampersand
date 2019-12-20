@@ -4,13 +4,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.Options
-        ( Options(..)
-        , App(..)
-        , HasOptions(..),HasHandle(..)
+        ( App(..)
+        , HasOptions(..)
+        , HasProtoOpts(..)
+        , HasEnvironment(..),EnvironmentOptions, getEnvironmentOptions
         , FSpecFormat(..)
         , getOptionsIO
         , showFormat
-        , usageInfo'
+--        , usageInfo'
         , writeConfigFile
         )
 where
@@ -25,6 +26,7 @@ import System.Directory
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
 import System.FilePath
 import "yaml-config" Data.Yaml.Config as YC 
+import Ampersand.Misc.HasClasses
 
 -- | This data constructor is able to hold all kind of information that is useful to
 --   express what the user would like Ampersand to do.
@@ -38,67 +40,53 @@ data Options = Options { environment :: EnvironmentOptions
                        , validateSQL :: Bool
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
-                       , dirPrototype :: String  -- the directory to generate the prototype in.
-                       , dirSource :: FilePath -- the directory of the script that is being compiled
+                       , dirPrototype :: Maybe FilePath  -- the directory to generate the prototype in.
                        , zwolleVersion :: String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
-                       , forceReinstallFramework :: Bool -- when true, an existing prototype directory will be destroyed and re-installed
                        , dirCustomizations :: [FilePath] -- the directory that is copied after generating the prototype
                        , runComposer :: Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
-                       , allInterfaces :: Bool
+                       , genInterfaces :: Bool -- if True, generate interfaces
                        , runAsDaemon :: Bool -- run Ampersand as a daemon. (for use with the vscode extension)
-                       , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
-                       , dbName :: String
+                    --   , daemonConfig :: FilePath -- the path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
                        , namespace :: String
                        , testRule :: Maybe String
-               --        , customCssFile :: Maybe FilePath
                        , genFSpec :: Bool   -- if True, generate a functional design
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
-                       , genEcaDoc :: Bool   -- if True, generate ECA rules in the functional design
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
                        , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
                        , dirOutput :: String -- the directory to generate the output in.
-                       , outputfile :: String -- the file to generate the output in.
-                       , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
+                       , outputfileAdl :: String -- the file to generate the output in.
+                       , outputfileDataAnalysis :: String -- the file to generate the output in.
                        , blackWhite :: Bool   -- only use black/white in graphics
-                       , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.
                        , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document.
                        , noGraphics :: Bool  -- Omit generation of graphics during generation of functional design document.
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , genUML :: Bool   -- Generate a UML 2.0 data model
-                       , genFPAChap :: Bool   -- Generate Function Point Analysis chapter
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
                        , genPOPExcel :: Bool   -- Generate an .xmlx file containing the populations 
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
-                       , progrName :: String --The name of the adl executable
-                       , fileName :: Maybe FilePath --the file with the Ampersand context
-                       , baseName :: String
+                    --   , progrName :: String --The name of the adl executable
+                       , rootFile :: Maybe FilePath --the file with the Ampersand context
                        , genTime :: LocalTime
                        , export2adl :: Bool
                        , dataAnalysis :: Bool
                        , test :: Bool
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
                        , addSemanticMetamodel :: Bool -- When set, the user can use all artefacts defined in Formal Ampersand, without the need to specify them explicitly
-                       , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
-                       , atlasWithoutExpressions :: Bool -- Temporary switch to leave out expressions in meatgrinder output.
-                       , sqlHost ::  String  -- do database queries to the specified host
-                       , sqlLogin :: String  -- pass login name to the database server
-                       , sqlPwd :: String  -- pass password on to the database server
+                       , genRapPopulation :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
-                       , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
+                  --     , protoOpts :: ProtoOpts
                        }
-instance HasVerbosity Options where
-  verbosityL = lens verbosity (\x y -> x { verbosity = y })
 data EnvironmentOptions = EnvironmentOptions
       { envArgs               :: [String]
       , envArgsCommandLine    :: [String]
       , envArgsFromConfigFile :: [String]
-      , envProgName           :: String
+      , envProgName           :: String --The name of the adl executable
       , envExePath            :: FilePath
       , envLocalTime          :: LocalTime
       , envDirOutput          :: Maybe FilePath
@@ -107,11 +95,118 @@ data EnvironmentOptions = EnvironmentOptions
       , envPreVersion         :: Maybe String
       , envPostVersion        :: Maybe String  
       } deriving Show
-
+  
 class HasOptions env where
   optionsL :: Lens' env Options
-instance HasOptions Options where
-  optionsL = id
+instance HasDirPrototype Options where
+  dirPrototypeL = lens dirPrototype (\x y -> x { dirPrototype = y })
+instance HasRootFile Options where
+  rootFileL = lens rootFile (\x y -> x { rootFile = y })
+class HasEnvironment a where
+  environmentL :: Lens' a EnvironmentOptions
+instance HasEnvironment Options where
+  environmentL = lens environment (\x y -> x { environment = y })
+instance HasEnvironment App where
+  environmentL = optionsL . environmentL
+
+--instance HasRootFile Options where
+--  rootFileL = lens rootFile (\x y -> x { rootFile = y })
+instance HasOutputLanguage Options where
+  languageL = lens language (\x y -> x { language = y })
+instance HasOutputLanguage App where
+  languageL = optionsL . languageL
+instance HasRunComposer Options where
+  skipComposerL = lens runComposer (\x y -> x { runComposer = y })
+instance HasRunComposer App where
+  skipComposerL = optionsL . skipComposerL
+instance HasDirCustomizations Options where
+  dirCustomizationsL = lens dirCustomizations (\x y -> x { dirCustomizations = y })
+instance HasDirCustomizations App where
+  dirCustomizationsL = optionsL . dirCustomizationsL
+instance HasZwolleVersion Options where
+  zwolleVersionL = lens zwolleVersion (\x y -> x { zwolleVersion = y })
+instance HasZwolleVersion App where
+  zwolleVersionL = optionsL . zwolleVersionL
+class HasMetaOptions a where
+  genMetaFileL :: Lens' a Bool
+  addSemanticMetamodelL :: Lens' a Bool
+instance HasMetaOptions Options where
+  genMetaFileL = lens genMetaFile (\x y -> x { genMetaFile = y })
+  addSemanticMetamodelL = lens addSemanticMetamodel (\x y -> x { addSemanticMetamodel = y })
+class HasCommands a where
+  genUMLL :: Lens' a Bool -- Generate a UML 2.0 data model
+  genHaskellL :: Lens' a Bool -- if True, generate the F-structure as a Haskell source file
+  sqlDumpL :: Lens' a Bool -- if True, generate a dump of SQL statements (for debugging)
+  export2adlL :: Lens' a Bool 
+  genFPAExcelL :: Lens' a Bool 
+  genPOPExcelL :: Lens' a Bool 
+  proofsL :: Lens' a Bool 
+  validateSQLL :: Lens' a Bool 
+  genPrototypeL :: Lens' a Bool 
+  dataAnalysisL :: Lens' a Bool -- "export a data model as plain Ampersand script, for analysing Excel-data."
+  showVersionL :: Lens' a Bool
+  genSampleConfigFileL :: Lens' a Bool
+  showHelpL :: Lens' a Bool
+  runAsDaemonL :: Lens' a Bool
+instance HasCommands Options where
+  genPrototypeL = lens genPrototype (\x y -> x { genPrototype = y })
+  dataAnalysisL = lens dataAnalysis (\x y -> x { dataAnalysis = y })
+  genUMLL = lens genUML (\x y -> x { genUML = y })
+  genHaskellL = lens haskell (\x y -> x { haskell = y })
+  sqlDumpL = lens sqlDump (\x y -> x { sqlDump = y })
+  export2adlL = lens export2adl (\x y -> x { export2adl = y })
+  genFPAExcelL = lens genFPAExcel (\x y -> x { genFPAExcel = y })
+  genPOPExcelL = lens genPOPExcel (\x y -> x { genPOPExcel = y })
+  proofsL = lens proofs (\x y -> x { proofs = y })
+  validateSQLL = lens validateSQL (\x y -> x { validateSQL = y })
+  showVersionL = lens showVersion (\x y -> x { showVersion = y })
+  genSampleConfigFileL = lens genSampleConfigFile (\x y -> x { genSampleConfigFile = y })
+  showHelpL = lens showHelp (\x y -> x { showHelp = y })
+  runAsDaemonL = lens runAsDaemon (\x y -> x { runAsDaemon = y })
+
+
+instance HasCommands App where
+  genPrototypeL = optionsL . genPrototypeL
+  dataAnalysisL = optionsL . dataAnalysisL
+  genUMLL = optionsL . genUMLL
+  genHaskellL = optionsL . genHaskellL
+  sqlDumpL = optionsL . sqlDumpL
+  export2adlL = optionsL . export2adlL
+  genFPAExcelL = optionsL . genFPAExcelL
+  genPOPExcelL = optionsL . genPOPExcelL
+  proofsL = optionsL . proofsL
+  validateSQLL = optionsL . validateSQLL
+  showVersionL = optionsL . showVersionL
+  genSampleConfigFileL = optionsL . genSampleConfigFileL
+  showHelpL = optionsL . showHelpL
+  runAsDaemonL = optionsL . runAsDaemonL
+instance HasMetaOptions App where
+  genMetaFileL = optionsL . genMetaFileL
+  addSemanticMetamodelL = optionsL . addSemanticMetamodelL
+instance HasDirOutput Options where
+  dirOutputL = lens dirOutput (\x y -> x { dirOutput = y })
+instance HasDirOutput App where
+  dirOutputL = optionsL . dirOutputL
+instance HasBlackWhite Options where
+  blackWhiteL = lens blackWhite (\x y -> x { blackWhite = y })
+instance HasBlackWhite App where
+  blackWhiteL = optionsL . blackWhiteL
+--instance HasOutputFile Options where
+--  outputfileAdlL = lens outputfileAdl (\x y -> x { outputfileAdl = y })
+--  outputfileDataAnalysisL = lens outputfileDataAnalysis (\x y -> x { outputfileDataAnalysis = y })
+--instance HasOutputFile App where
+--  outputfileAdlL = optionsL . outputfileAdlL
+--  outputfileDataAnalysisL = optionsL . outputfileDataAnalysisL
+instance HasAllowInvariantViolations Options where
+  allowInvariantViolationsL = lens allowInvariantViolations (\x y -> x { allowInvariantViolations = y })
+instance HasAllowInvariantViolations App where
+  allowInvariantViolationsL = optionsL . allowInvariantViolationsL
+instance HasVersion Options where
+  preVersionL = lens preVersion (\x y -> x { preVersion = y })
+  postVersionL = lens postVersion (\x y -> x { postVersion = y })
+instance HasVersion App where
+  preVersionL = optionsL . preVersionL
+  postVersionL = optionsL . postVersionL
 
 dirPrototypeVarName :: String
 dirPrototypeVarName = "CCdirPrototype"
@@ -169,7 +264,7 @@ getEnvironmentOptions =
          Just fName -> readConfigFile fName
         where 
            readConfigFile yaml = do
-              runRIO stdout $ sayLn $ "Reading config file: "++yaml
+              runSimpleApp $ sayLn $ "Reading config file: "++yaml
               config <- load yaml
               case keys config L.\\ ["switches"] of
                 []  -> do let switches :: [String] = YC.lookupDefault "switches" [] config
@@ -218,14 +313,12 @@ getOptions' envOpts =
                Options {environment      = envOpts
                       , genTime          = envLocalTime envOpts
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
-                      , outputfile       = fatal "No monadic options available."
-                      , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto"
-                      , dirSource        = takeDirectory $ fromMaybe "/" fName
+                      , outputfileAdl       = "Export.adl"
+                      , outputfileDataAnalysis  = "DataModel.adl"
+                      , dirPrototype     = Just (fromMaybe "." (envDirPrototype envOpts) </> (takeBaseName (fromMaybe "" fName)) <.> ".proto")
                       , zwolleVersion    = "v1.3.1"
-                      , forceReinstallFramework = False
                       , dirCustomizations = ["customizations"]
                       , runComposer      = True -- by default run Composer (php package manager) when deploying prototype for backward compatibility
-                      , dbName           = fmap toLower . fromMaybe ("ampersand_" ++ takeBaseName (fromMaybe "prototype" fName)) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
                       , preVersion       = fromMaybe "" $ envPreVersion envOpts
                       , postVersion      = fromMaybe "" $ envPostVersion envOpts
@@ -236,53 +329,43 @@ getOptions' envOpts =
                       , validateSQL      = False
                       , genSampleConfigFile = False
                       , genPrototype     = False
-                      , allInterfaces    = False
+                      , genInterfaces    = False
                       , runAsDaemon      = False
-                      , daemonConfig     = ".ampersand"
+                    --  , daemonConfig     = ".ampersand"
                       , namespace        = ""
                       , testRule         = Nothing
-              --        , customCssFile    = Nothing
                       , genFSpec         = False
                       , diag             = False
                       , fspecFormat      = fatal ("Unknown fspec format. Currently supported formats are "++allFSpecFormats++".")
-                      , genEcaDoc        = False
                       , proofs           = False
                       , haskell          = False
                       , sqlDump          = False
-                      , crowfoot         = False
                       , blackWhite       = False
-                      , doubleEdges      = True
                       , noDiagnosis      = False
                       , noGraphics       = False
                       , diagnosisOnly    = False
                       , genLegalRefs     = False
                       , genUML           = False
-                      , genFPAChap       = False
                       , genFPAExcel      = False
                       , genPOPExcel      = False
                       , language         = Nothing
-                      , progrName        = envProgName envOpts
-                      , fileName         = fName
-                      , baseName         = takeBaseName $ fromMaybe "unknown" fName
+                   --   , progrName        = envProgName envOpts
+                      , rootFile         = fName
                       , export2adl       = False
                       , dataAnalysis     = False
                       , test             = False
                       , genMetaFile      = False
                       , addSemanticMetamodel = False
-                      , genRapPopulationOnly = False
-                      , atlasWithoutExpressions = False
-                      , sqlHost          = "localhost"
-                      , sqlLogin         = "ampersand"
-                      , sqlPwd           = "ampersand"
+                      , genRapPopulation = False
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
-                      , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
+                  --    , protoOpts        = defProtoOpts fName envOpts
                       }
 writeConfigFile :: IO ()
 writeConfigFile = do
     writeFile sampleConfigFileName (unlines sampleConfigFile)
-    runRIO stdout $ sayLn (sampleConfigFileName++" written.")
+    runSimpleApp $ sayLn (sampleConfigFileName++" written.")
     
 sampleConfigFileName :: FilePath
 sampleConfigFileName = "sampleconfig.yaml"
@@ -335,26 +418,6 @@ canBeYamlSwitch str =
    takeWhile (/= '=') str `notElem` ["version","help","config","sampleConfigFile"]  
 data DisplayMode = Public | Hidden deriving Eq
 
-data FSpecFormat = 
-         FPandoc
-       | Fasciidoc
-       | Fcontext
-       | Fdocbook
-       | Fdocx 
-       | Fhtml
-       | Fman
-       | Fmarkdown
-       | Fmediawiki
-       | Fopendocument
-       | Forg
-       | Fpdf
-       | Fplain
-       | Frst
-       | Frtf
-       | Flatex
-       | Ftexinfo
-       | Ftextile
-       deriving (Show, Eq, Enum, Bounded)
 allFSpecFormats :: String   --TODO: Should be: allFSpecFormats :: [FSpecFormat]
 allFSpecFormats = 
      "[" ++
@@ -388,16 +451,16 @@ options = [ (Option ['v']   ["version"]
                        ) "config.yaml")
                "config file (*.yaml) that contains the command line options of ampersand."
             , Public)
-          , (Option []      ["ignore-invariant-violations"]
-               (NoArg (\opts -> opts{allowInvariantViolations = True}))
-               "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
-            , Hidden)
+--          , (Option []      ["ignore-invariant-violations"]
+--               (NoArg (\opts -> opts{allowInvariantViolations = True}))
+--               "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
+--            , Hidden)
           , (Option []      ["validate"]
                (NoArg (\opts -> opts{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL, for testing expression semantics. This requires command line php with MySQL support."
             , Hidden)
           , (Option ['p']     ["proto"]
-               (OptArg (\nm opts -> opts {dirPrototype = fromMaybe (dirPrototype opts) nm
+               (OptArg (\nm opts -> opts {dirPrototype = nm
                                          ,genPrototype = True}
                        ) "DIRECTORY")
                ("generate a functional prototype, so you can experiment with the information system specified in your script. This overrules environment variable "++ dirPrototypeVarName ++ ").")
@@ -407,67 +470,37 @@ options = [ (Option ['v']   ["version"]
                        ) "VERSION")
                ("tag, branch or SHA of the prototype framework on Github. (What purpose does this serve?)")
             , Hidden)
-          , (Option []      ["force-reinstall-framework"]
-               (NoArg (\opts -> opts{forceReinstallFramework = True}))
-               "re-install the prototype framework. This discards any previously installed version."
-            , Hidden)
           , (Option []     ["customizations"]
                (ReqArg (\names opts -> opts {dirCustomizations = splitOn ";" names}
                        ) "DIRECTORY")
                "copy a directory into the generated prototype, overriding the default directory called 'customizations'."
             , Hidden)
-          , (Option []      ["skip-composer"]
-               (NoArg (\opts -> opts{runComposer = False}))
-               "skip installing php dependencies (using Composer) for prototype framework."
-            , Hidden)
-          , (Option ['d']  ["dbName"]
-               (ReqArg (\nm opts -> opts{dbName = if nm == ""
-                                                         then dbName opts
-                                                         else map toLower nm}
-                       ) "NAME")
-               ("database name (This overrules environment variable "++ dbNameVarName ++ ", defaults to filename) to which the prototype will connect for persistent storage.")
-            , Hidden)
-          , (Option []  ["sqlHost"]
-               (ReqArg (\nm opts -> opts{sqlHost = if nm == ""
-                                                          then sqlHost opts
-                                                          else nm}
-                       ) "HOSTNAME")
-               "set SQL host name (Defaults to `localhost`), to identify the host on which the persistent store resides"
-            , Hidden)
-          , (Option []  ["sqlLogin"]
-               (ReqArg (\nm opts -> opts{sqlLogin = if nm == ""
-                                                          then sqlLogin opts
-                                                          else nm}
-                       ) "USER")
-               "set SQL user name (Defaults to `ampersand`), to let your application login to the database."
-            , Hidden)
-          , (Option []  ["sqlPwd"]
-               (ReqArg (\nm opts -> opts{sqlPwd = nm}
-                       ) "PASSWORD")
-               "set SQL password (Defaults to `ampersand`), to let your application login to the database."
-            , Hidden)
-          , (Option []        ["sql-bin-tables"]
-               (NoArg (\opts -> opts{sqlBinTables = True}))
-               "generate binary tables only in SQL database, for testing purposes."
-            , Hidden)
-          , (Option ['x']     ["interfaces"]
-               (NoArg (\opts -> opts{allInterfaces  = True}))
-               "generate interfaces, which currently does not work."
-            , Hidden)
-          , (Option []        ["daemon"]
-               (OptArg (\fn opts -> opts{runAsDaemon = True
-                                        ,daemonConfig = fromMaybe (daemonConfig opts) fn
-                                        })"configfile")
-               "Run ampersand as daemon, for use by the vscode ampersand-language-extention. An optional parameter may be specified to tell what config file is used. This defaults to `.ampersand`."
-            , Public)
+--          , (Option []      ["skip-composer"]
+--               (NoArg (\opts -> opts{runComposer = False}))
+--               "skip installing php dependencies (using Composer) for prototype framework."
+--            , Hidden)
+  --        , (Option []        ["sql-bin-tables"]
+  --             (NoArg (\opts -> opts{sqlBinTables = True}))
+  --             "generate binary tables only in SQL database, for testing purposes."
+  --          , Hidden)
+--          , (Option ['x']     ["interfaces"]
+--               (NoArg (\opts -> opts{genInterfaces  = True}))
+--               "generate interfaces, which currently does not work."
+--            , Hidden)
+          -- , (Option []        ["daemon"]
+          --      (OptArg (\fn opts -> opts{runAsDaemon = True
+          --                               ,daemonConfig = fromMaybe (daemonConfig opts) fn
+          --                               })"configfile")
+          --      "Run ampersand as daemon, for use by the vscode ampersand-language-extention. An optional parameter may be specified to tell what config file is used. This defaults to `.ampersand`."
+          --   , Public)
           , (Option ['e']     ["export"]
                (OptArg (\mbnm opts -> opts{export2adl = True
-                                          ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
+                                          ,outputfileAdl = fromMaybe (outputfileAdl opts) mbnm}) "file")
                "export as plain Ampersand script, for round-trip testing of the Ampersand compiler."
             , Public)
             , (Option ['D']        ["dataAnalysis"]
             (OptArg (\mbnm opts -> opts{dataAnalysis = True
-                                                ,outputfile = fromMaybe "DataModel.adl" mbnm}) "file")
+                                       ,outputfileDataAnalysis = fromMaybe (outputfileDataAnalysis opts) mbnm}) "file")
             "export a data model as plain Ampersand script, for analysing Excel-data."
          , Public)
        , (Option ['o']     ["outputDir"]
@@ -475,11 +508,11 @@ options = [ (Option ['v']   ["version"]
                        ) "DIR")
                ("output directory (This overrules environment variable "++ dirOutputVarName ++ ").")
             , Public)
-          , (Option []      ["namespace"]
-               (ReqArg (\nm opts -> opts{namespace = nm}
-                       ) "NAMESPACE")
-               "prefix database identifiers with this namespace, to isolate namespaces within the same database."
-            , Hidden)
+--          , (Option []      ["namespace"]
+--               (ReqArg (\nm opts -> opts{namespace = nm}
+--                       ) "NAMESPACE")
+--               "prefix database identifiers with this namespace, to isolate namespaces within the same database."
+--            , Hidden)
           , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> opts
                                 { genFSpec=True
@@ -515,10 +548,6 @@ options = [ (Option ['v']   ["version"]
      --          (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
      --          "Custom.css file to customize the style of the prototype."
      --       , Public)
-          , (Option []        ["ECA"]
-               (NoArg (\opts -> opts{genEcaDoc = True}))
-               "generate documentation with ECA rules, for future purposes."
-            , Hidden)
           , (Option []        ["proofs"]
                (NoArg (\opts -> opts{proofs = True}))
                "generate derivations, for testing the generation of rules."
@@ -531,17 +560,9 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{sqlDump = True}))
                "generate a dump of SQL queries (for debugging)."
             , Hidden)
-          , (Option []        ["crowfoot"]
-               (NoArg (\opts -> opts{crowfoot = True}))
-               "generate crowfoot notation in graphics, to please crowfoot addicts."
-            , Hidden)
           , (Option []        ["blackWhite"]
                (NoArg (\opts -> opts{blackWhite = True}))
                "avoid coloring conventions to facilitate readable pictures in black and white."
-            , Hidden)
-          , (Option []        ["altGraphics"]
-               (NoArg (\opts -> opts{doubleEdges = not (doubleEdges opts)}))
-               "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
             , Hidden)
           , (Option []        ["noGraphics"]
                (NoArg (\opts -> opts{noGraphics = True}))
@@ -563,10 +584,6 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{genUML = True}))
                "Generate a data model in UML 2.0 style."
             , Hidden)
-          , (Option []        ["fpa"]
-               (NoArg (\opts -> opts{genFPAChap = True}))
-               "Generate Function Point Analysis chapter."
-            , Hidden)
           , (Option []        ["fpa-excel"]
                (NoArg (\opts -> opts{genFPAExcel = True}))
                "Generate an Excel workbook (FPA_<filename>.xml)."
@@ -575,16 +592,16 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{genPOPExcel = True}))
                "Generate an .xmlx file containing the populations of your script."
             , Hidden)
-          , (Option []        ["language"]
-               (ReqArg (\l opts-> opts{language = case map toUpper l of
-                                                       "NL"  -> Just Dutch
-                                                       "UK"  -> Just English
-                                                       "US"  -> Just English
-                                                       "EN"  -> Just English
-                                                       _     -> Nothing}
-                       ) "LANG")
-               "Pick 'NL' for Dutch or 'EN' for English, as the language to be used in your output. Without this option, output is written in the language of your context."
-            , Public)
+      --    , (Option []        ["language"]
+      --         (ReqArg (\l opts-> opts{language = case map toUpper l of
+      --                                                 "NL"  -> Just Dutch
+      --                                                 "UK"  -> Just English
+      --                                                 "US"  -> Just English
+      --                                                 "EN"  -> Just English
+      --                                                 _     -> Nothing}
+      --                 ) "LANG")
+      --         "Pick 'NL' for Dutch or 'EN' for English, as the language to be used in your output. Without this option, output is written in the language of your context."
+      --      , Public)
           , (Option []        ["test"]
                (NoArg (\opts -> opts{test = True}))
                "Used for test purposes only."
@@ -600,12 +617,8 @@ options = [ (Option ['v']   ["version"]
                 "use in your model. These artefacts do not have to be declared explicitly in your own model.")
             , Hidden)
           , (Option []        ["gen-as-rap-model"]
-               (NoArg (\opts -> opts{genRapPopulationOnly = True}))
+               (NoArg (\opts -> opts{genRapPopulation = True}))
                "Generate populations for use in RAP3."
-            , Hidden)
-          , (Option []        ["atlas-without-expressions"]
-               (NoArg (\opts -> opts{atlasWithoutExpressions = True}))
-               "Temporary switch to create Atlas without expressions, for use in RAP3"
             , Hidden)
           , (Option []        ["crud-defaults"]
                (ReqArg (\crudString opts -> let c = 'c' `notElem` crudString
@@ -617,78 +630,58 @@ options = [ (Option ['v']   ["version"]
                )
                "Temporary switch to learn about the semantics of crud in interface expressions."
             , Hidden)
-          , (Option []        ["oldNormalizer"]
-               (NoArg (\opts -> opts{oldNormalizer = True}))
-               "Use the old normalizer at your own risk."
-            , Hidden)
-          , (Option []        ["newNormalizer"]
-               (NoArg (\opts -> opts{oldNormalizer = False}))
-               "Use the new normalizer at your own risk." -- :-)
-            , Hidden)
-          , (Option []        ["do-not-trim-cellvalues"]
-               (NoArg (\opts -> opts{trimXLSXCells = False}))
-               "Do not ignore leading and trailing spaces in .xlsx files that are INCLUDED in the script." -- :-)
-            , Hidden)
+--          , (Option []        ["do-not-trim-cellvalues"]
+--               (NoArg (\opts -> opts{trimXLSXCells = False}))
+--               "Do not ignore leading and trailing spaces in .xlsx files that are INCLUDED in the script." -- :-)
+--            , Hidden)
           ]
 
-usageInfo' :: Options -> String
+--usageInfo' :: (HasLogFunc env, HasEnvironment env) => env -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.
-usageInfo' opts = 
-  infoHeader (progrName opts) ++"\n"++
-    (concat . L.sort . map publishOption) [od | (od,x) <- options, verbosity opts == Loud || x == Public] 
+--usageInfo' opts =
+--  infoHeader (envProgName (view environmentL opts)) ++"\n"++
+--    (concat . L.sort . map publishOption) [od | (od,x) <- options, view verbosityL opts == Loud || x == Public] 
 
-infoHeader :: String -> String
-infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
+--infoHeader :: String -> String
+--infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
 
 
-publishOption:: OptDescr a -> String
-publishOption (Option shorts longs args expl) 
-  = unlines (
-    ( "  "++L.intercalate ", " ["--"++l | l <-longs] 
-      ++case args of
-         NoArg _      -> "" 
-         ReqArg _ str -> "="++str
-         OptArg _ str -> "[="++str++"]"
-      ++case L.intercalate ", " [ "-"++[c] | c <- shorts] of
-          []  -> []
-          xs  -> " ("++xs++")"
-    ): 
-     map (replicate 10 ' '++) (lines (limit 65 expl)))
-  where
-   limit :: Int -> String -> String
-   limit i = L.intercalate "\n" . map (singleLine i . words) . lines
-   singleLine :: Int -> [String] -> String 
-   singleLine i wrds = 
-     case fillUpto i "" wrds of
-       (str, []) -> str
-       (str, rest) -> str ++ "\n"++ singleLine i rest
-   fillUpto :: Int -> String -> [String] -> (String, [String])
-   fillUpto i "" (w:ws) = fillUpto i w ws
-   fillUpto _ str [] = (str, [])
-   fillUpto i str (w:ws) = let nstr = str++" "++w
-                           in if length nstr > i 
-                           then (str, w:ws)
-                           else fillUpto i nstr ws 
+-- publishOption:: OptDescr a -> String
+-- publishOption (Option shorts longs args expl) 
+--   = unlines (
+--     ( "  "++L.intercalate ", " ["--"++l | l <-longs] 
+--       ++case args of
+--          NoArg _      -> "" 
+--          ReqArg _ str -> "="++str
+--          OptArg _ str -> "[="++str++"]"
+--       ++case L.intercalate ", " [ "-"++[c] | c <- shorts] of
+--           []  -> []
+--           xs  -> " ("++xs++")"
+--     ): 
+--      map (replicate 10 ' '++) (lines (limit 65 expl)))
+--   where
+--    limit :: Int -> String -> String
+--    limit i = L.intercalate "\n" . map (singleLine i . words) . lines
+--    singleLine :: Int -> [String] -> String 
+--    singleLine i wrds = 
+--      case fillUpto i "" wrds of
+--        (str, []) -> str
+--        (str, rest) -> str ++ "\n"++ singleLine i rest
+--    fillUpto :: Int -> String -> [String] -> (String, [String])
+--    fillUpto i "" (w:ws) = fillUpto i w ws
+--    fillUpto _ str [] = (str, [])
+--    fillUpto i str (w:ws) = let nstr = str++" "++w
+--                            in if length nstr > i 
+--                            then (str, w:ws)
+--                            else fillUpto i nstr ws 
 
 data App = App
   { options' :: !Options
-  , appHandle :: !Handle
   , appLogFunc :: !LogFunc
   }
-instance HasHandle App where
-  handleL = lens appHandle (\env h -> env { appHandle = h })
 
-instance HasVerbosity App where
-  verbosityL =  optionsL . verbosityL
-    -- lens (\env -> verbosity . getOptions $ env)
-    --      (\env v -> env{options' = (options' env){verbosity= v}})
--- instance HasVerbosity Options where
---   verbosityL = 
---      lens verbosity (\env v -> env{verbosity= v})
---     where aap :: Options -> Verbosity
---           aap = verbosity
---           noot :: Options -> Verbosity -> Options
---           noot = (\env v -> env{verbosity= v})
+--instance HasRootFile App where
+--  rootFileL = optionsL . rootFileL
 instance HasOptions App where
   optionsL = lens options' (\env opts -> env{ options' = opts})
 instance HasLogFunc App where

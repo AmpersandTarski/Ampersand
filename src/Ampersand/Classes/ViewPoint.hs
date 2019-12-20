@@ -5,7 +5,7 @@ import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ord(..),Identity)
 import           Ampersand.Classes.Relational  (HasProps(properties))
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
@@ -40,7 +40,7 @@ rulesFromIdentity identity
        foldr (./\.) h t 
         .|-. EDcI (idCpt identity)
  {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}
- where (h NEL.:| t) = fmap (\expr-> expr .:. flp expr) 
+ where (h NE.:| t) = fmap (\expr-> expr .:. flp expr) 
                     . fmap (objExpression . segment) 
                     . identityAts $ identity
        ruleName = "identity_" ++ name identity
@@ -86,8 +86,8 @@ instance Language A_Context where
       uniteRels :: Relations -> Relations
       uniteRels ds = Set.fromList .
         map fun . eqClass (==) $ Set.elems ds
-         where fun :: NEL.NonEmpty Relation -> Relation
-               fun rels = (NEL.head rels) {decprps = Set.unions . fmap decprps $ rels
+         where fun :: NE.NonEmpty Relation -> Relation
+               fun rels = (NE.head rels) {decprps = Set.unions . fmap decprps $ rels
                                           ,decprps_calc = Nothing -- Calculation is only done in ADL2Fspc.
                                           }
   udefrules    context = (Set.unions . map udefrules $ ctxpats context) `Set.union` ctxrs context

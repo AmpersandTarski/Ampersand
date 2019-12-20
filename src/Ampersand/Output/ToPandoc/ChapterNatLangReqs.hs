@@ -8,16 +8,17 @@ module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           RIO.Char hiding (Space)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import           Data.List.Split(splitOn)
 import qualified RIO.Set as Set
 
-chpNatLangReqs :: Options -> Int -> FSpec -> Blocks
-chpNatLangReqs opts@Options{..} lev fSpec =
+chpNatLangReqs :: (HasDirOutput env, HasDocumentOpts env) 
+   => env -> Int -> FSpec -> Blocks
+chpNatLangReqs env lev fSpec =
       --  *** Header ***
-   xDefBlck opts fSpec SharedLang
+   xDefBlck env fSpec SharedLang
    <> --  *** Intro  ***
-    case fsLang fSpec of
+    case outputLang' of
         Dutch   -> para
                      (  "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
                      <> (singleQuoted.str.name) fSpec
@@ -35,14 +36,16 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                      <> "All definitions and agreements have been numbered for the sake of traceability. "
                      )
    <> --  *** Requirements ***
-   (mconcat . map printOneTheme . orderingByTheme) fSpec
+   (mconcat . map printOneTheme . orderingByTheme env) fSpec
    <> --  *** Legal Refs ***
      if genLegalRefs then legalRefs else mempty
 
   where
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
-  l = localize (fsLang fSpec)
+  l = localize outputLang'
+  outputLang' = outputLang env fSpec
+  genLegalRefs = view genLegalRefsL env
   legalRefs :: Blocks
   legalRefs =  header (lev+2) sectionTitle
             <> table caption'
@@ -52,11 +55,11 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                      | art <-(L.sort . L.nub . concatMap getArticlesOfLaw.getRefs) fSpec  ]
 
          where (sectionTitle, lawHeader, articleHeader, caption') =
-                 case fsLang fSpec of
+                 case outputLang' of
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
                getRefs ::FSpec ->  [LawRef]
-               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesDefinedIn fSpec (fsLang fSpec)
+               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesDefinedIn fSpec outputLang'
 
 
   -- | printOneTheme tells the story in natural language of a single theme.
@@ -69,7 +72,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
         null (rulesOfTheme tc) = mempty
     | otherwise =
              --  *** Header of the theme: ***
-            xDefBlck opts fSpec (XRefSharedLangTheme (patOfTheme tc))
+            xDefBlck env fSpec (XRefSharedLangTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
                  Nothing  -> 
@@ -78,9 +81,9 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                      ,EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
                      )
                  Just pat -> 
-                   case purposesDefinedIn fSpec (fsLang fSpec) pat of
+                   case purposesDefinedIn fSpec outputLang' pat of
                      []    -> printIntro    (cptsOfTheme tc)
-                     purps -> purposes2Blocks opts purps
+                     purps -> purposes2Blocks env purps
              )
           <> (mconcat . map printConcept . cptsOfTheme ) tc
           <> (mconcat . map printRel     . dclsOfTheme ) tc
@@ -111,7 +114,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                    _ 
                      -> para(   (str.l) (NL "Nu volgen definities van de begrippen "
                                         ,EN "At this point, the definitions of ")
-                             <> commaPandocAnd (fsLang fSpec) (map showCpt (sortWith theNr nCpts)) 
+                             <> commaPandocAnd outputLang' (map showCpt (sortWith theNr nCpts)) 
                              <> (str.l) (NL "."
                                         ,EN " are given.")
                              )
@@ -128,7 +131,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                    multipleDefineds
                        -> para(  (str.l) (NL "De begrippen "
                                          ,EN "Concepts ")
-                              <> commaPandocAnd (fsLang fSpec) (map showCpt multipleDefineds) 
+                              <> commaPandocAnd outputLang' (map showCpt multipleDefineds) 
                               <> (str.l) (NL " hebben meerdere definities."
                                          ,EN " are multiple defined.")
                               )
@@ -154,6 +157,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
         where
+         fspecFormat = view fspecFormatL env
          nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
          printCDef :: ConceptDef -- the definition to print
                 -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
@@ -190,14 +194,14 @@ chpNatLangReqs opts@Options{..} lev fSpec =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
             [(   (str.l) (NL "Afspraak ", EN "Agreement ")
-              <> ": " <> (xDefInln fSpec (XRefSharedLangRelation dcl))
-             , -- (xDefInln fSpec (XRefSharedLangRelation dcl) 
+              <> ": " <> (xDefInln env fSpec (XRefSharedLangRelation dcl))
+             , -- (xDefInln env fSpec (XRefSharedLangRelation dcl) 
               mempty --  [xDefBlck fSpec (XRefSharedLangRelation dcl)]
-              <>[printMeaning (fsLang fSpec) dcl]
+              <>[printMeaning outputLang' dcl]
               <>(case Set.elems $ properties dcl of
                     []  -> mempty
                     ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
-                                   <> (commaPandocAnd (fsLang fSpec) (map (str . propFullName (fsLang fSpec)) ps)<>"."
+                                   <> (commaPandocAnd outputLang' (map (str . propFullName outputLang') ps)<>"."
                                       )
                                   )
                            ]
@@ -219,7 +223,7 @@ chpNatLangReqs opts@Options{..} lev fSpec =
           samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul =
-         xDefBlck opts fSpec (XRefSharedLangRule rul)
+         xDefBlck env fSpec (XRefSharedLangRule rul)
       <> (printPurposes . cRulPurps . theLoad) nRul
       -- <> definitionList 
       --       [(   str (l (NL "Afspraak ", EN "Agreement "))
@@ -271,16 +275,16 @@ toLawRef:: String -> Maybe LawRef
 toLawRef s = case s of
               [] -> Nothing
               _  -> (Just . LawRef) s
-wordsOf :: LawRef -> NEL.NonEmpty String
+wordsOf :: LawRef -> NE.NonEmpty String
 wordsOf ref = case words . lawRef $ ref of
                 [] -> fatal $ "string in LaWRef must not be empty."
-                h:tl -> h NEL.:| tl
+                h:tl -> h NE.:| tl
 -- the article is everything but the law (and we also drop any trailing commas)
 getArticlesOfLaw :: LawRef -> [ArticleOfLaw]
-getArticlesOfLaw ref = map buildLA . splitOn ", " . unwords .NEL.init .wordsOf $ ref
+getArticlesOfLaw ref = map buildLA . splitOn ", " . unwords .NE.init .wordsOf $ ref
                              
    where
-     buildLA art = ArticleOfLaw ((NEL.last . wordsOf) ref) (scanRef art)
+     buildLA art = ArticleOfLaw ((NE.last . wordsOf) ref) (scanRef art)
        where
     -- group string in number and text sequences, so "Art 12" appears after "Art 2" when sorting (unlike in normal lexicographic string sort)
          scanRef :: String -> [Either String Int]

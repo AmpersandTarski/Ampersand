@@ -2,13 +2,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Test.Parser.ArbitraryTree () where
 
-import Test.QuickCheck hiding (listOf1)
-import RIO.Char
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
+import           Ampersand.Input.ADL1.Lexer (keywords)
+import           RIO.Char
 import qualified RIO.List as L
-import Ampersand.Core.ParseTree
-import Ampersand.Input.ADL1.Lexer (keywords)
-import Ampersand.Basics
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
+import           Test.QuickCheck hiding (listOf1)
 
 -- Useful functions to build on the quick check functions
 
@@ -120,8 +120,8 @@ instance Arbitrary MetaObj where
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
 
-listOf1 :: Gen a -> Gen (NEL.NonEmpty a)
-listOf1 p = (NEL.:|) <$> p <*> listOf p
+listOf1 :: Gen a -> Gen (NE.NonEmpty a)
+listOf1 p = (NE.:|) <$> p <*> listOf p
 
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary <*> listOf1 upperId <*> arbitrary
@@ -266,11 +266,11 @@ instance Arbitrary P_Interface where
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
 
-instance Arbitrary a => Arbitrary (NEL.NonEmpty a) where
+instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
     arbitrary = do 
          h <- arbitrary
          t <- arbitrary 
-         return $ h NEL.:| t
+         return $ h NE.:| t
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
                      <*> arbitrary

@@ -1,7 +1,7 @@
 
 -- | Module for dealing with escape codes
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
-module Ampersand.Daemon.Daemon.Escape(
+module Ampersand.Daemon.Escape(
     WordWrap(..),
     Esc(..), unescape,
     stripInfixE, stripPrefixE, isPrefixOfE, spanE, trimStartE, unwordsE, unescapeE,

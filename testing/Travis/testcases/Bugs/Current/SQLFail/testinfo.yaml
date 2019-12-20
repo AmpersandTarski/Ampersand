@@ -1,2 +1,3 @@
-command : ampersand --proto --verbose --validate --sqlLogin="root" --sqlPwd=""
-shouldSucceed : no
+testCmds:
+  - command: ampersand validate --verbose --sqlLogin ="root" --sqlPwd=""
+    exitcode: 20

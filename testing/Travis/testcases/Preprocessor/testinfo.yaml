@@ -1,2 +1,3 @@
-command : ampersand --verbose
-shouldSucceed : yes
+testCmds:
+  - command: ampersand print --verbose
+    exitcode: 0
