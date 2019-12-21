@@ -45,16 +45,23 @@ createFspec recipe = do
                       <$> do rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
                              snd <$> parseADL rootFile -- the P_Context of the user's sourceFile
                       <*> do let fun m = (,) m <$> mkGrindInfo m
-                             Map.fromList <$> (sequence $ fun <$> [minBound ..])
+                             Map.fromList <$> (sequence $ fun <$> (Set.toList $ metaModelsIn recipe))
                       <*> pure recipe
     return . join $ pCtx2Fspec env <$> cooked
-    
+
+class MetaModelContainer a where
+  metaModelsIn :: a -> Set MetaModel
 -- | A recipe to build an FSpec defines the way that FSpec should be constructed.
 --   It consists of a initial P_Context and list of follow-up steps.
 data BuildRecipe = BuildRecipe StartContext [BuildStep]
+instance MetaModelContainer BuildRecipe where
+  metaModelsIn (BuildRecipe x y) = metaModelsIn x `Set.union` metaModelsIn y
 -- | The initial context to use in a recipe. It is either the user's script or
 --   the script from a given MetaModel. 
 data StartContext = UserScript | MetaScript MetaModel
+instance MetaModelContainer StartContext where
+  metaModelsIn UserScript = mempty
+  metaModelsIn (MetaScript m) = Set.singleton m
 -- | A buildstep describes a conversion to a given context.  
 data BuildStep = 
     Grind MetaModel       -- ^ Grind the given P_Context using the given MetaModel. The resulting P_Context
@@ -64,7 +71,13 @@ data BuildStep =
                           --   applying the BuildRecipe.
   | NoConversion          -- ^ the ID step. The P_Context that goes out is equal to the one that goes in. 
   | EncloseInConstraints  -- ^ Apply the encloseInConstraints function to the given P_Context.
-
+instance MetaModelContainer BuildStep where
+  metaModelsIn (Grind m) = Set.singleton m
+  metaModelsIn (MergeWith x) = metaModelsIn x
+  metaModelsIn NoConversion = mempty
+  metaModelsIn EncloseInConstraints = mempty 
+instance MetaModelContainer a => MetaModelContainer [a] where
+  metaModelsIn = Set.unions . fmap metaModelsIn
 -- | This functions does the work in the kitchen: use the recipe to return a
 --   P_Context from which the FSpec can be built. 
 --   Note that we do not want this function to run in the RIO monad, for we want it to
