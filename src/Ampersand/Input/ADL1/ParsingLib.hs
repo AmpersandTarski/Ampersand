@@ -27,8 +27,7 @@ import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText
 import           RIO.Char(toLower)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import           Data.Time.Calendar
-import           Data.Time.Clock
+import           RIO.Time
 import           Text.Parsec as P hiding(satisfy,sepBy1,(<|>))
 import           Text.Parsec.Pos (newPos)
 

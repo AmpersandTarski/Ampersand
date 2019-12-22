@@ -13,7 +13,7 @@ import           Data.Hashable
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import           RIO.Time (UTCTime)
+import           RIO.Time
 import           Text.Pandoc hiding (Meta)
 
 fSpec2Haskell :: (HasRootFile env) =>

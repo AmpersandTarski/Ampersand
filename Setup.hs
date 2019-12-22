@@ -7,9 +7,7 @@ import qualified Data.ByteString.Lazy.Char8 as BLC
 import           RIO.Char
 import           Data.Either
 import qualified RIO.List as L
-import           Data.Time.Clock
-import qualified Data.Time.Format as DTF
-import           Data.Time.LocalTime
+import           RIO.Time
 import           Distribution.Simple
 import           Distribution.Simple.LocalBuildInfo
 import           Distribution.Simple.Setup
@@ -36,7 +34,7 @@ generateBuildInfoHook pd  lbi uh bf =
 
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime
-    ; let buildTimeStr = DTF.formatTime DTF.defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
+    ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
     ; writeFile (pathFromModuleName buildInfoModuleName) $
         buildInfoModule cabalVersionStr gitInfoStr buildTimeStr
 
@@ -198,7 +196,7 @@ readStaticFiles fkind base fileOrDirPth =
            }
      }
   where utcToEpochTime :: UTCTime -> String
-        utcToEpochTime utcTime = DTF.formatTime DTF.defaultTimeLocale "%s" utcTime
+        utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
 
 data FileKind = PandocTemplates | FormalAmpersand | PrototypeContext deriving (Show, Eq)
 

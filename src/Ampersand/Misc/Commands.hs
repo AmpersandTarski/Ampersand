@@ -41,7 +41,6 @@ import           Ampersand.Options.ValidateOptsParser
 import           Ampersand.Types.Config
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Writer
---import           Generics.Deriving.Monoid (memptydefault, mappenddefault)
 import           Options.Applicative
 import           Options.Applicative.Builder.Internal hiding (name)
 import           Options.Applicative.Help hiding (fullDesc)

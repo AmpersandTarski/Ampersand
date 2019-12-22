@@ -79,11 +79,6 @@ listOf1 = listOf . NE.toList
 separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
 
---TODO: This replace shouldn't be necessary, I don't know why quotes are getting into the Prel
--- Example to test: AmpersandData\FormalAmpersand\AST.adl
-takeQuote :: String -> String
-takeQuote = replace' "\"" ""
-
 instance Pretty P_Context where
     pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas) =
                text "CONTEXT"
@@ -187,10 +182,8 @@ instance Pretty TermPrim where
         Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
         PNamedR rel -> pretty rel
 
---instance Pretty PSingleton where
---    pretty = text . show
 instance Pretty P_NamedRel where
-    pretty (PNamedRel _ str mpSign) = text (takeQuote str) <~> mpSign
+    pretty (PNamedRel _ str mpSign) = text str <~> mpSign
 
 instance Pretty (PairView TermPrim) where
     pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)

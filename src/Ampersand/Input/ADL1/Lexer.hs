@@ -31,8 +31,7 @@ import           RIO.Char hiding(isSymbol)
 import qualified RIO.List as L
 import qualified RIO.Char.Partial as Partial (chr)
 import qualified RIO.Set as Set
-import           Data.Time.Calendar
-import           Data.Time.Clock
+import           RIO.Time
 import           Numeric
 
 -- | Retrieves a list of keywords accepted by the ampersand language

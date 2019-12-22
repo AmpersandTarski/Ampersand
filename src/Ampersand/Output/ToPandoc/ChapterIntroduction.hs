@@ -1,10 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterIntroduction
+   (chpIntroduction)
 where
-import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Data.Time.Format
-import RIO.Time(UTCTime)
+import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import           RIO.Time
 
 chpIntroduction :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> UTCTime -> FSpec -> Blocks
