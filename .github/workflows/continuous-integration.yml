@@ -2,7 +2,9 @@ name: Continuous Integration
 on:
   push:
     branches: # empty list to only trigger on branches (i.e. not tags, ..)
-      - github-ci
+  pull_request:
+    branches:
+      - development
 
 env:
   DOCKER_AMPERSAND_IMAGE: docker.pkg.github.com/ampersandtarski/ampersand/ampersand
