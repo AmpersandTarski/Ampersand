@@ -134,18 +134,23 @@ parseSingleADL pc
                                                         , "   File does not exist." ]
     where
      filePath = pcCanonical pc
-     parseSingleADL' :: (HasFSpecGenOpts env) => RIO env (Guarded (P_Context, [ParseCandidate]))
+     parseSingleADL' :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
-         | extension == ".xlsx" =
+         | extension == ".xlsx" =  -- This feature enables the parsing of Excell files, that are prepared for Ampersand.
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
                 }
-         | genArchiAnal && extension == ".xml" =
+         | extension == ".xml" = -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
              do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
-                ; writeFile "ArchiMetaModel.adl" (showP ctxFromArchi)
-                ; verboseLn ("ArchiMetaModel.adl written")
-                ; verboseLn (filePath ++ " has been interpreted as an Archi-repository.")
-                ; return ((\archiContents -> (archiContents,[])) <$> Checked ctxFromArchi [])  -- Excel file cannot contain include files
+                ; logInfo (display (T.pack filePath) <> " has been interpreted as an Archi-repository.")
+                ; case ctxFromArchi of
+                    Checked ctx _ -> do
+                         writeFileUtf8 "ArchiMetaModel.adl" (T.pack $ showP ctx)
+                         logInfo ("ArchiMetaModel.adl written")
+                    Errors _ -> pure ()
+                ; return ((,) <$> ctxFromArchi
+                              <*> pure [] -- ArchiMate file cannot contain include files
+                         )
                 }
          | otherwise =
              do { mFileContents

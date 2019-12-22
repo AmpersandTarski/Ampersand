@@ -5,15 +5,17 @@ module Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
    -- That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
    -- In this way, `archi2PContext ` deals with the fact that Archimate produces a mix of model and metamodel.
 where
-   import Ampersand.Basics  -- for things such as fatal, eqClass
-   import Data.Char                                                    -- for things such as toLower
-   import qualified Data.Map.Strict as Map -- import qualified, to avoid name clashes with Prelude functions
-   import Data.Tree.NTree.TypeDefs
-   import Text.XML.HXT.Core hiding (utf8, fatal,trace)
-   import Ampersand.Core.ParseTree
-   import qualified RIO.List as L
-   import qualified Data.Set as Set
+   import           Ampersand.Basics
+   import           Ampersand.Core.ParseTree
+   import           Ampersand.Input.ADL1.CtxError
+   import           RIO.Char
    import qualified Data.List.NonEmpty as NEL
+   import qualified Data.Map.Strict as Map -- import qualified, to avoid name clashes with Prelude functions
+   import qualified Data.Set as Set
+   import           Data.Tree.NTree.TypeDefs
+   import qualified RIO.List as L
+   import qualified RIO.Text as T
+   import           Text.XML.HXT.Core hiding (utf8, fatal,trace)
 
    -- | Function `archi2PContext` is meant to grind the contents of an Archi-repository into declarations and population inside a fresh Ampersand P_Context.
    --   The process starts by parsing an XML-file by means of function `processStraight` into a data structure called `archiRepo`. This function uses arrow-logic from the HXT-module.
@@ -24,30 +26,30 @@ where
    --   The function `grindArchi` retrieves the population of meta-relations
    --   It produces the P_Populations and P_Declarations that represent the Archimate model.
    --   Finally, the function `mkArchiContext` produces a `P_Context` ready to be merged into the rest of Ampersand's population.
-   archi2PContext :: String -> IO P_Context
+   archi2PContext :: (HasLogFunc env) => String -> RIO env (Guarded P_Context)
    archi2PContext archiRepoFilename  -- e.g. "CA repository.xml"
     = do -- hSetEncoding stdout utf8
-         archiRepo <- runX (processStraight archiRepoFilename)
+         archiRepo <- liftIO $ runX (processStraight archiRepoFilename)
          let fst3 (x,_,_) = x
          let elemLookup atom = (Map.lookup atom . Map.fromList . typeMap) archiRepo
          let archiRepoWithProps = (grindArchi elemLookup.identifyProps []) archiRepo
          let relPops = (filter (not.null.p_popps) . sortRelPops . map fst3) archiRepoWithProps
          let cptPops = (filter (not.null.p_popas) . sortCptPops . map fst3) archiRepoWithProps
          let elemCount archiConcept = (Map.lookup archiConcept . Map.fromList . atomCount . atomMap) relPops
-         let countPop pop = let signature = ((\(Just sgn)->sgn).p_mbSign.p_nmdr) pop in
+         let countPop pop = let sig = ((\(Just sgn)->sgn).p_mbSign.p_nmdr) pop in
                             (show.length.p_popps) pop              ++"\t"++
                             (p_nrnm.p_nmdr) pop                    ++"\t"++
-                            (p_cptnm.pSrc) signature               ++"\t"++
+                            (p_cptnm.pSrc) sig                     ++"\t"++
                             (show.length.eqCl ppLeft.p_popps) pop  ++"\t"++
-                            (showMaybeInt.elemCount.pSrc) signature++"\t"++
-                            (p_cptnm.pTgt) signature               ++"\t"++
+                            (showMaybeInt.elemCount.pSrc) sig      ++"\t"++
+                            (p_cptnm.pTgt) sig                     ++"\t"++
                             (show.length.eqCl ppRight.p_popps) pop ++"\t"++
-                            (showMaybeInt.elemCount.pTgt) signature
-         writeFile "ArchiCount.txt"
+                            (showMaybeInt.elemCount.pTgt) sig
+         writeFileUtf8 "ArchiCount.txt" $ T.pack
           (   (L.intercalate "\n" . map countPop) relPops
            <> (concat . map showArchiElems . atomCount . atomMap ) (relPops++cptPops ) 
           )
-         putStrLn ("ArchiCount.txt written")
+         logInfo ("ArchiCount.txt written")
          return (mkArchiContext archiRepoWithProps)
 {- reminder:
 data P_Population
@@ -96,8 +98,8 @@ data PAtomPair
    samePop pop@P_CptPopu{} pop'@P_CptPopu{} = p_cnme pop == p_cnme pop'
    samePop _ _ = False
 
-   mkArchiContext :: [(P_Population,Maybe P_Relation,[PClassify])] -> P_Context
-   mkArchiContext pops =
+   mkArchiContext :: [(P_Population,Maybe P_Relation,[PClassify])] -> Guarded P_Context
+   mkArchiContext pops = pure
      PCtx{ ctx_nm     = "Archimate"
          , ctx_pos    = []
          , ctx_lang   = Just Dutch  -- fatal "No language because of Archi-import hack. Please report this as a bug"
@@ -108,7 +110,6 @@ data PAtomPair
          , ctx_cs     = []
          , ctx_ks     = []
          , ctx_rrules = []
-         , ctx_rrels  = []
          , ctx_reprs  = []
          , ctx_vs     = []
          , ctx_gs     = L.nub (concat archiGenss)

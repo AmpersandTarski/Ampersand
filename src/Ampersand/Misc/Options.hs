@@ -66,7 +66,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , genUML :: Bool   -- Generate a UML 2.0 data model
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
                        , genPOPExcel :: Bool   -- Generate an .xmlx file containing the populations 
-                       , genArchiAnal :: Bool   -- Analyze an Archimate model, using the Ampersand script to specify situation specific rules.
+                    --   , genArchiAnal :: Bool   -- Analyze an Archimate model, using the Ampersand script to specify situation specific rules.
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                     --   , progrName :: String --The name of the adl executable
@@ -349,7 +349,7 @@ getOptions' envOpts =
                       , genUML           = False
                       , genFPAExcel      = False
                       , genPOPExcel      = False
-                      , genArchiAnal     = True
+                   --   , genArchiAnal     = True
                       , language         = Nothing
                    --   , progrName        = envProgName envOpts
                       , rootFile         = fName
@@ -594,10 +594,10 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{genPOPExcel = True}))
                "Generate an .xmlx file containing the populations of your script."
             , Hidden)
-          , (Option []        ["Archimate"]
-               (NoArg (\opts -> opts{genArchiAnal = True}))
-               "Analyse an Archimate model, with situation specific rules in my Ampersand-script."
-            , Hidden)
+      --    , (Option []        ["Archimate"]
+      --         (NoArg (\opts -> opts{genArchiAnal = True}))
+      --         "Analyse an Archimate model, with situation specific rules in my Ampersand-script."
+      --      , Hidden)
       --    , (Option []        ["language"]
       --         (ReqArg (\l opts-> opts{language = case map toUpper l of
       --                                                 "NL"  -> Just Dutch
