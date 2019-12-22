@@ -24,7 +24,7 @@ import qualified RIO.NonEmpty as NE
 
 parser :: (HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> RIO env (Guarded P_Context)
 parser FormalAmpersand = parseFormalAmpersand
-parser SystemContext   = parseSystemContext 
+parser PrototypeContext   = parsePrototypeContext 
 parser FADocumented    = parseFormalAmpersandDocumented
 
 pCtx2Fspec :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded FSpec
@@ -61,7 +61,7 @@ mkGrindInfo metamodel = do
             , transformers = case metamodel of
                                 FormalAmpersand -> transformersFormalAmpersand
                                 FADocumented    -> transformersFormalAmpersand
-                                SystemContext   -> transformersSystemContext
+                                PrototypeContext   -> transformersPrototypeContext
             }
 
 

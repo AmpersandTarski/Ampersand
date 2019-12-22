@@ -17,7 +17,7 @@ extra-source-files:
       - LICENSE
       - ReleaseNotes.md
       - AmpersandData/FormalAmpersand/*
-      - AmpersandData/SystemContext/*
+      - AmpersandData/PrototypeContext/*
       - outputTemplates/*
       - testing/**/*
 

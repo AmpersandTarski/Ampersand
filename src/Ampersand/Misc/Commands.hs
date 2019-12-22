@@ -333,7 +333,7 @@ documentationCmd docOpts =
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd protoOpts = 
     extendWith protoOpts $ do
-        let recipe = BuildRecipe UserScript [MergeWith (BuildRecipe UserScript [Grind SystemContext])]
+        let recipe = BuildRecipe UserScript [MergeWith (BuildRecipe UserScript [Grind PrototypeContext])]
         mFSpec <- createFspec recipe
         doOrDie mFSpec proto
 testCmd :: TestOpts -> RIO Runner ()
@@ -392,7 +392,7 @@ umlCmd opts =
 validateCmd :: ValidateOpts -> RIO Runner ()
 validateCmd opts = 
     extendWith opts $ do
-        let recipe = BuildRecipe UserScript [MergeWith (BuildRecipe UserScript [Grind SystemContext])]
+        let recipe = BuildRecipe UserScript [MergeWith (BuildRecipe UserScript [Grind PrototypeContext])]
         mFSpec <- createFspec recipe
         doOrDie mFSpec validate
 

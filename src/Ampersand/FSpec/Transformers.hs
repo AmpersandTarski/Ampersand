@@ -4,7 +4,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.FSpec.Transformers 
   ( transformersFormalAmpersand
-  , transformersSystemContext
+  , transformersPrototypeContext
   , Transformer(..)
   , PopAtom(..)
   , instances
@@ -49,7 +49,7 @@ instance Show PopAtom where
 dirtyId :: Unique a => a -> PopAtom
 dirtyId = DirtyId . idWithType
 
--- Function for SystemContext transformers. These atoms don't need to have a type prefix
+-- Function for PrototypeContext transformers. These atoms don't need to have a type prefix
 dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
@@ -811,9 +811,9 @@ transformersFormalAmpersand fSpec = map toTransformer [
 
 
  
--- | The list of all transformers, one for each and every relation in SystemContext.
-transformersSystemContext :: FSpec -> [Transformer]
-transformersSystemContext fSpec = map toTransformer [
+-- | The list of all transformers, one for each and every relation in PrototypeContext.
+transformersPrototypeContext :: FSpec -> [Transformer]
+transformersPrototypeContext fSpec = map toTransformer [
       ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
       , Set.empty
       )
