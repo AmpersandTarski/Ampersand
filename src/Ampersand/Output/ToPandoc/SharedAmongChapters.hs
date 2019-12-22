@@ -9,7 +9,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Ampersand.Core.ShowAStruct
     , module Ampersand.FSpec
     , module Ampersand.Graphic.Graphics
-    , module Ampersand.Misc
+    , module Ampersand.Misc.HasClasses
     , module Ampersand.Output.PandocAux
     , module Ampersand.Classes
     , Chapter(..)
@@ -38,7 +38,7 @@ import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux
 import qualified Data.Time.Format as DTF
 import           Data.Typeable (typeOf)

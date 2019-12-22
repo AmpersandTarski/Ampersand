@@ -12,7 +12,7 @@ module Ampersand.Commands.Devoutput
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec
 import qualified RIO.Text as T
 import           RIO.Time (getCurrentTime)

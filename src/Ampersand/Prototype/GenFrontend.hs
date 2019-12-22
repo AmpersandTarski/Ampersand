@@ -8,7 +8,7 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Runners (logLevel)
 import           Ampersand.Types.Config

@@ -13,7 +13,7 @@ import           Ampersand.Daemon.Terminal
 import           Ampersand.Daemon.Types
 import           Ampersand.Daemon.Util
 import           Ampersand.Daemon.Wait
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Types.Config
 import           Data.Tuple.Extra(both)
 import qualified RIO.List as L

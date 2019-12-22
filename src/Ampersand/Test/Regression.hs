@@ -5,7 +5,7 @@ module Ampersand.Test.Regression
   )
 where 
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Types.Config
 import           Conduit
 import           Data.Yaml

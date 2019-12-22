@@ -7,7 +7,7 @@ import           Ampersand.ADL1  hiding (Box)
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.Graphic.ClassDiagram
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Data.GraphViz.Attributes as GVatt
 import           Data.GraphViz.Attributes.Complete as GVcomp
 import           Data.GraphViz.Attributes.HTML as Html

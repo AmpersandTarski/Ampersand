@@ -10,7 +10,7 @@ module Ampersand.Commands.ExportAsADL
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec
 import           Ampersand.Core.ShowAStruct
 import           System.FilePath

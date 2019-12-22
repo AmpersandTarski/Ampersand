@@ -8,7 +8,7 @@ import           Ampersand.Basics
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.TableSpec
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import qualified RIO.NonEmpty as NE

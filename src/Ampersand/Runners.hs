@@ -38,7 +38,6 @@ import           Ampersand.Types.Config
 --import           Stack.Types.Version (stackMinorVersion, stackVersion, minorVersion)
 import           System.Console.ANSI (hSupportsANSIWithoutEmulation)
 import           System.Console.Terminal.Size (size, width)
-import qualified Ampersand.Misc.Options as Deprecated (getEnvironmentOptions)
 
 -- -- | Ensure that no project settings are used when running 'withConfig'.
 -- withGlobalProject :: RIO Runner a -> RIO Runner a
@@ -139,7 +138,6 @@ withRunnerGlobal go inner = do
                                    pure (globalTermWidth go)
   menv <- mkDefaultProcessContext
   logOptions0 <- logOptionsHandle stderr False
-  envOpts <- Deprecated.getEnvironmentOptions
   let logOptions
         = setLogUseColor useColor
         $ setLogUseTime (globalTimeInLog go)
@@ -153,7 +151,6 @@ withRunnerGlobal go inner = do
     , runnerLogFunc = logFunc
     , runnerTermWidth = termWidth
     , runnerProcessContext = menv
-    , tmpRunnerEnvOptions = envOpts
     } inner
   where minTerminalWidth = 40
         maxTerminalWidth = 200

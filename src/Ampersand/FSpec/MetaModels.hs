@@ -18,7 +18,7 @@ import           Ampersand.FSpec.ShowMeatGrinder
 import           Ampersand.FSpec.ToFSpec.ADL2FSpec
 import           Ampersand.FSpec.Transformers 
 import           Ampersand.Input
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 

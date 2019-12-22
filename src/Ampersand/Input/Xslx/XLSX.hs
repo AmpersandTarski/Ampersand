@@ -5,7 +5,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (view, (^.))
 import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
 import           Codec.Xlsx
 import           Control.Lens -- ((^?),ix)

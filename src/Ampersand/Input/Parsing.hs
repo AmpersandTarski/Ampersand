@@ -22,7 +22,7 @@ import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.PreProcessor
 import           Ampersand.Input.Xslx.XLSX
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           RIO.Char(toLower)
 import qualified RIO.List as L
 import qualified RIO.Set as Set

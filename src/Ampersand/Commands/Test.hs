@@ -11,7 +11,7 @@ module Ampersand.Commands.Test
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Types.Config
 import           Ampersand.Test.Parser.QuickChecks
 import           Ampersand.Test.Regression
