@@ -18,7 +18,18 @@ extra-deps:
 - yaml-config-0.4.0
 
 # Override default flag values for local packages and extra-deps
-flags: {}
+flags:
+  pandoc:
+    trypandoc: false
+    embed_data_files: true
+    static: false
+  pandoc-citeproc:
+    bibutils: true
+    embed_data_files: true
+    unicode_collation: false
+    test_citeproc: false
+    debug: false
+
 
 # Make sure we can already use GHC 7.10.3: (See https://www.fpcomplete.com/blog/2015/12/stack-with-ghc-7-10-3)
 # compiler-check: newer-minor
