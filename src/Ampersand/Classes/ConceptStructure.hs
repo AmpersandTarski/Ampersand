@@ -153,8 +153,10 @@ instance ConceptStructure Pattern where
                      ]
 
 instance ConceptStructure Interface where
-  concs         = concs         . BxExpr . ifcObj
-  expressionsIn = expressionsIn . BxExpr . ifcObj
+  concs         = concs . expressionsIn 
+  expressionsIn ifc = Set.unions
+       [expressionsIn . BxExpr        . ifcObj $ ifc
+       ,expressionsIn . objExpression . ifcObj $ ifc]
 
 instance ConceptStructure Relation where
   concs         d = concs (sign d)
