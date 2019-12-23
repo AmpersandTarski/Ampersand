@@ -8,7 +8,7 @@ module Ampersand.Input.Parsing (
       parseADL
     , parseFormalAmpersand
     , parseFormalAmpersandDocumented
-    , parseSystemContext
+    , parsePrototypeContext
     , parseRule
     , runParser
     , ParseCandidate(..) -- exported for use with --daemon
@@ -22,8 +22,8 @@ import           Ampersand.Input.ADL1.Lexer
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.PreProcessor
 import           Ampersand.Input.Xslx.XLSX
-import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
-import           Ampersand.Misc
+import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,PrototypeContext))
+import           Ampersand.Misc.HasClasses
 import           RIO.Char(toLower)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
@@ -63,12 +63,12 @@ parseFormalAmpersandDocumented = parseThing ParseCandidate
        , pcCanonical = "AST.adl"  --TODO: Must be replaced by documented formal ampersand script
        , pcDefineds  = Set.empty
        }
-parseSystemContext :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
-parseSystemContext = parseThing ParseCandidate
+parsePrototypeContext :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
+parsePrototypeContext = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Ampersand specific system context"
-       , pcFileKind  = Just SystemContext
-       , pcCanonical = "SystemContext.adl"
+       , pcFileKind  = Just PrototypeContext
+       , pcCanonical = "PrototypeContext.adl"
        , pcDefineds  = Set.empty
        }
 

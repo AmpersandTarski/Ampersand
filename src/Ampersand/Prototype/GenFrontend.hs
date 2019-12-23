@@ -2,24 +2,23 @@
 {-# LANGUAGE DeriveDataTypeable,OverloadedStrings #-}
 module Ampersand.Prototype.GenFrontend (doGenFrontend) where
 
+import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes.Relational
-import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Runners (logLevel)
 import           Ampersand.Types.Config
 import           Codec.Archive.Zip
-import qualified RIO.ByteString.Lazy  as BL
-import           RIO.Char
 import           Data.Hashable (hash)
+import           Network.HTTP.Simple
+import qualified RIO.ByteString.Lazy  as BL
 import qualified RIO.List as L
 import qualified RIO.Text as T
-import           RIO.Time (getCurrentTime)
-import           Network.HTTP.Simple
+import           RIO.Time
 import           System.Directory
 import           System.FilePath
 import           Text.StringTemplate
@@ -564,12 +563,3 @@ downloadPrototypeFramework = ( do
                 return False
 
             
-promptUserYesNo :: (HasLogFunc env) => RIO env Bool
-promptUserYesNo = do
-    char <- liftIO $ getChar -- TODO: refactor that the first character is directly processed
-    case toUpper char of
-      'Y' -> return True
-      'N' -> return False
-      _ -> do when (char /= '\n') $ sayLn "Please specify y/n" -- Remove 'when' part if first char it directly processed
-              x <- promptUserYesNo
-              return x

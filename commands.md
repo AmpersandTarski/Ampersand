@@ -99,7 +99,7 @@ even more complex than it already was.
     * `ampersand --help` gives help about the commands and global options.
     * `ampersand <command> --help` gives information about the command-specific options.
   * We used to have the possibility to fiddle around with the formal ampersand metamodel. This
-    has been generalized, and we now have another metamodel as well, called SystemContext. The
+    has been generalized, and we now have another metamodel as well, called PrototypeContext. The
     latter is used during the generation of prototypes. This is still an experimental feature.
     * ***--add-semantic-metamodel, --meta-tables*** Changed to `--addMetaModel=FormalAmpersand`.
           All relations, views, idents etc. from the specified metamodel will be
@@ -172,7 +172,7 @@ The config.yaml file will be replaced by ampersand.yaml file. The generation of 
 
 ## TODO: working with meta-models
 
-We now have `recipes` to deal with metamodels such as Formal Ampersand and SystemContext. These recipes will be used based on the chose command. There might be a need to modify those recipes by the user. This still has to be seen. In any case, the following options will be removed:
+We now have `recipes` to deal with metamodels such as Formal Ampersand and PrototypeContext. These recipes will be used based on the chose command. There might be a need to modify those recipes by the user. This still has to be seen. In any case, the following options will be removed:
 
 * ***--gen-as-rap-model***
           Generate populations for use in RAP3.

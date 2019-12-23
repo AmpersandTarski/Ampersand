@@ -12,7 +12,7 @@ module Ampersand.Prototype.ProtoUtil
          ) where
  
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.Text as T
 import           System.Directory

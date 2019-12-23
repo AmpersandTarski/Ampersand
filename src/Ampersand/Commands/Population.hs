@@ -12,7 +12,7 @@ module Ampersand.Commands.Population
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec(FSpec(..))
 import           Ampersand.Output.Population2Xlsx (fSpec2PopulationXlsx)
 import           System.FilePath

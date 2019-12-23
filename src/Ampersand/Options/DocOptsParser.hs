@@ -4,7 +4,6 @@ module Ampersand.Options.DocOptsParser
 where
 
 import           Options.Applicative
-import           Ampersand.Misc.HasClasses (DocOpts (..))
 import           Ampersand.Basics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Options.FSpecGenOptsParser

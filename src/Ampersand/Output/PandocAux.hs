@@ -28,7 +28,7 @@ import           Ampersand.Basics
 import           Ampersand.Classes (isFunction)
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
 import           Conduit (liftIO, MonadIO)  
 import           RIO.Char hiding    (Space)

@@ -14,21 +14,22 @@ module Ampersand.FSpec.ShowMeatGrinder
   )
 where
 
+import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.A2P_Converters
-import           Ampersand.ADL1
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
 import qualified RIO.List as L
 import qualified RIO.Set as Set
-import           RIO.Time (UTCTime)
-data MetaModel = FormalAmpersand | FADocumented | SystemContext
+import           RIO.Time
+
+data MetaModel = FormalAmpersand | FADocumented | PrototypeContext
        deriving (Eq, Ord, Enum, Bounded, Show)
 instance Named MetaModel where
   name FormalAmpersand = "Formal Ampersand"
   name FADocumented    = "Formal Ampersand (documented)"
-  name SystemContext   = "System context"
+  name PrototypeContext   = "System context"
 
 data GrindInfo = GrindInfo
     { metaModel    :: MetaModel

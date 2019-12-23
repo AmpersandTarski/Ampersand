@@ -1,5 +1,5 @@
-CONTEXT SystemContext IN ENGLISH
-{-This file contains the heritage documentation of SystemContext.adl. 
+CONTEXT PrototypeContext IN ENGLISH
+{-This file contains the heritage documentation of PrototypeContext.adl. 
 This heritage documentation, however, still has several problems, e.g:
  - The default texts are not ENGLISH, even though this is specified in the CONTEXT statement.
  - The texts in Dutch say different things that the texts in English.

@@ -11,7 +11,7 @@ import           Ampersand.Graphic.ClassDiagram(ClassDiag)
 import           Ampersand.FSpec.FSpec
 import           Ampersand.Graphic.ClassDiag2Dot
 import           Ampersand.Graphic.Fspec2ClassDiagrams
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux (outputLang)
 import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete

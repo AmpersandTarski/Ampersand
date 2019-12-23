@@ -2,11 +2,10 @@
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
-import Ampersand.Output.ToPandoc
-import Data.Time.Format                                       (formatTime)
+import           Ampersand.Output.ToPandoc
 import qualified RIO.List as L
-import Text.Pandoc.CrossRef
-import RIO.Time(UTCTime)
+import           RIO.Time
+import           Text.Pandoc.CrossRef
 --DESCR ->
 --The functional design document starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.

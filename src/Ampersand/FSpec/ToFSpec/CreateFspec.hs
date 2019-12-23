@@ -17,7 +17,7 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.MetaModels
 import           Ampersand.FSpec.ShowMeatGrinder
 import           Ampersand.Input
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE

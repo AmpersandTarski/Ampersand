@@ -12,7 +12,7 @@ module Ampersand.Commands.Validate
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec
 import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 

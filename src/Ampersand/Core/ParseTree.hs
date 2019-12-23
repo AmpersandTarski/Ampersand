@@ -39,9 +39,7 @@ import           Ampersand.Input.ADL1.FilePos
 import           Data.Foldable hiding (concat)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import           Data.Time.Calendar
-import           Data.Time.Clock
-import           Data.Time.LocalTime() -- for instance Show UTCTime
+import           RIO.Time
 import           Data.Traversable
 import           GHC.Generics (Generic)
 

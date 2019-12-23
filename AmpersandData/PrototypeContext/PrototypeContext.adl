@@ -1,4 +1,4 @@
-CONTEXT PrototypeFramework IN ENGLISH
+CONTEXT PrototypeContxt IN ENGLISH
 
   INCLUDE "Interfaces.adl"
   INCLUDE "Interfaces.ifc"

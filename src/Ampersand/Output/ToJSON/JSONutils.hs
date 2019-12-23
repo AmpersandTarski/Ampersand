@@ -11,7 +11,7 @@ module Ampersand.Output.ToJSON.JSONutils
   , module Ampersand.FSpec.ToFSpec.Populated
   , module Ampersand.FSpec.FSpec
   , module Ampersand.FSpec.SQL
-  , module Ampersand.Misc
+  , module Ampersand.Misc.HasClasses
   )
 where
 import           Ampersand.Basics
@@ -21,7 +21,7 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.ToFSpec.Populated
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder) 
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import           Data.Aeson hiding (Options)
 import qualified Data.Aeson.Types as AT 

@@ -9,7 +9,7 @@ import           Ampersand.Classes
 import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           RIO.Char
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set

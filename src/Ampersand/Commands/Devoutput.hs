@@ -12,12 +12,12 @@ module Ampersand.Commands.Devoutput
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc
 import           Ampersand.FSpec
-import qualified RIO.Text as T
-import           RIO.Time (getCurrentTime)
-import           System.FilePath ((</>), (-<.>))
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.FSpec2SQL
+import qualified RIO.Text as T
+import           RIO.Time
+import           System.FilePath ((</>), (-<.>))
 -- | Dumps diagnostic output for development purposes
 --
 devoutput :: (HasDirOutput env, HasRootFile env, HasLogFunc env) 

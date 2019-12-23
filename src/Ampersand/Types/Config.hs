@@ -20,7 +20,6 @@ where
 import           Ampersand.Basics
 import           RIO.Process (ProcessContext, HasProcessContext (..))
 import           Data.Yaml as Yaml
-import qualified Ampersand.Misc.Options as Depricated (HasEnvironment(..),EnvironmentOptions) -- TODO: Replace by Config mechanism. This removes the dependency of the old Ampersand.Misc.Options structure.
 import           Ampersand.Misc.HasClasses
 
 -- | Load the configuration, using current directory, environment variables,
@@ -58,7 +57,7 @@ data Runner = Runner
   , runnerLogFunc    :: !LogFunc
   , runnerTermWidth  :: !Int
   , runnerProcessContext :: !ProcessContext
-  , tmpRunnerEnvOptions :: !Depricated.EnvironmentOptions} deriving Show
+  } deriving Show
 instance Show LogFunc where show _ = "<LogFunc>"
 instance Show ProcessContext where show _ = "<ProcessContext>"  
 
@@ -72,8 +71,6 @@ instance HasRunner Runner where
   {-# INLINE runnerL #-}
 instance HasProcessContext Runner where
   processContextL = lens runnerProcessContext (\x y -> x { runnerProcessContext = y })
-instance Depricated.HasEnvironment Runner where
-  environmentL = lens tmpRunnerEnvOptions (\x y -> x { tmpRunnerEnvOptions = y })
 -- | Parsed global command-line options.
 data GlobalOpts = GlobalOpts
     { globalLogLevel     :: !LogLevel -- ^ Log level

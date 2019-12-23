@@ -8,7 +8,7 @@ import           Ampersand.Output.FSpec2Pandoc
 import           Ampersand.Output.PandocAux
 import           Ampersand.Graphic.Graphics
 import           Ampersand.FSpec.FSpec
-import           RIO.Time (getCurrentTime)
+import           RIO.Time
 
 -- This function will generate all Pictures for a given FSpec.
 -- the returned FSpec contains the details about the Pictures, so they

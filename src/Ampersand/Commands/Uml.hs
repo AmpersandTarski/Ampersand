@@ -12,7 +12,7 @@ module Ampersand.Commands.Uml
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec
 import           Ampersand.FSpec.GenerateUML
 import           System.FilePath

@@ -5,7 +5,7 @@ import           Ampersand.Basics
 import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.PHP
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE

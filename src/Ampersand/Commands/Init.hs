@@ -12,7 +12,7 @@ module Ampersand.Commands.Init
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Types.Config
 -- | Generate a configuration file for a new project.
 --

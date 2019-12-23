@@ -12,7 +12,7 @@ module Ampersand.Commands.Proof
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec
 import           System.FilePath ((</>), (-<.>))
 import           Text.Pandoc (runIO,writeHtml5String,def,handleError)

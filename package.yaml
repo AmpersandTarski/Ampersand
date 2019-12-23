@@ -17,7 +17,7 @@ extra-source-files:
       - LICENSE
       - ReleaseNotes.md
       - AmpersandData/FormalAmpersand/*
-      - AmpersandData/SystemContext/*
+      - AmpersandData/PrototypeContext/*
       - outputTemplates/*
       - testing/**/*
 
@@ -148,9 +148,8 @@ library:
       - Ampersand.Input.Parsing
       - Ampersand.Input.PreProcessor
       - Ampersand.Input.Xslx.XLSX
-      - Ampersand.Misc
-      - Ampersand.Misc.Options
       - Ampersand.Misc.Commands
+      - Ampersand.Misc.HasClasses
       - Ampersand.Options.GlobalParser
       - Ampersand.Options.LogLevelParser
       - Ampersand.Options.Utils

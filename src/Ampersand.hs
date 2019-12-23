@@ -6,7 +6,7 @@ module Ampersand
   , module Ampersand.Daemon.Daemon
   , module Ampersand.FSpec
   , module Ampersand.Input
-  , module Ampersand.Misc
+  , module Ampersand.Misc.HasClasses
   , module Ampersand.Output
   , module Ampersand.Test
   ) 
@@ -15,9 +15,9 @@ import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity)
 import Ampersand.Classes
 import Ampersand.Misc.Commands
+import Ampersand.Misc.HasClasses
 import Ampersand.Daemon.Daemon
 import Ampersand.FSpec
 import Ampersand.Input
-import Ampersand.Misc
 import Ampersand.Output
 import Ampersand.Test

@@ -7,9 +7,7 @@ import qualified Data.ByteString.Lazy.Char8 as BLC
 import           RIO.Char
 import           Data.Either
 import qualified RIO.List as L
-import           Data.Time.Clock
-import qualified Data.Time.Format as DTF
-import           Data.Time.LocalTime
+import           RIO.Time
 import           Distribution.Simple
 import           Distribution.Simple.LocalBuildInfo
 import           Distribution.Simple.Setup
@@ -36,7 +34,7 @@ generateBuildInfoHook pd  lbi uh bf =
 
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime
-    ; let buildTimeStr = DTF.formatTime DTF.defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
+    ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
     ; writeFile (pathFromModuleName buildInfoModuleName) $
         buildInfoModule cabalVersionStr gitInfoStr buildTimeStr
 
@@ -177,7 +175,7 @@ readAllStaticFiles :: IO String
 readAllStaticFiles =
   do { pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
      ; formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand" "."  --meta information about Ampersand
-     ; systemContextFiles   <- readStaticFiles SystemContext    "AmpersandData/SystemContext" "."  --Special system context for Ampersand
+     ; systemContextFiles   <- readStaticFiles PrototypeContext    "AmpersandData/PrototypeContext" "."  --Special system context for Ampersand
      ; return $ mkStaticFileModule $ pandocTemplatesFiles ++ formalAmpersandFiles ++ systemContextFiles
      }
 
@@ -198,9 +196,9 @@ readStaticFiles fkind base fileOrDirPth =
            }
      }
   where utcToEpochTime :: UTCTime -> String
-        utcToEpochTime utcTime = DTF.formatTime DTF.defaultTimeLocale "%s" utcTime
+        utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
 
-data FileKind = PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)
+data FileKind = PandocTemplates | FormalAmpersand | PrototypeContext deriving (Show, Eq)
 
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
@@ -221,7 +219,7 @@ staticFileModuleHeader =
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"
   , ""
-  , "data FileKind = PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)"
+  , "data FileKind = PandocTemplates | FormalAmpersand | PrototypeContext deriving (Show, Eq)"
   , "data StaticFile = SF { fileKind      :: FileKind"
   , "                     , filePath      :: FilePath -- relative path, including extension"
   , "                     , timeStamp     :: Integer  -- unix epoch time"

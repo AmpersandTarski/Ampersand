@@ -9,7 +9,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Ampersand.Core.ShowAStruct
     , module Ampersand.FSpec
     , module Ampersand.Graphic.Graphics
-    , module Ampersand.Misc
+    , module Ampersand.Misc.HasClasses
     , module Ampersand.Output.PandocAux
     , module Ampersand.Classes
     , Chapter(..)
@@ -38,14 +38,14 @@ import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux
-import qualified Data.Time.Format as DTF
 import           Data.Typeable (typeOf)
 import           GHC.Exts(sortWith)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import           RIO.Time
 import           Text.Pandoc hiding (trace,Verbosity,getVerbosity)
 import           Text.Pandoc.Builder
 
@@ -549,8 +549,8 @@ isMissing mp =
     Nothing -> True
     Just p  -> (not . explUserdefd) p
 
-lclForLang :: Lang -> DTF.TimeLocale
-lclForLang lang = DTF.defaultTimeLocale { DTF.months =
+lclForLang :: Lang -> TimeLocale
+lclForLang lang = defaultTimeLocale { months =
          case lang of
            Dutch   -> [ ("januari","jan"),("februari","feb"),("maart","mrt"),("april","apr")
                       , ("mei","mei"),("juni","jun"),("juli","jul"),("augustus","aug")

@@ -10,7 +10,7 @@ import           Ampersand.Basics
 import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
 import qualified RIO.List as L
