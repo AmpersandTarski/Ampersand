@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand proto --sqlLogin ="root" --sqlPwd=""
+    exitcode: 40

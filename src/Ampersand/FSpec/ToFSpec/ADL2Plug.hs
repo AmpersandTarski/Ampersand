@@ -9,14 +9,14 @@ import           Ampersand.Classes
 import           Ampersand.ADL1
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           RIO.Char
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import qualified Data.List.NonEmpty as NEL
 
 attributesOfConcept :: FSpec -> A_Concept -> [SqlAttribute]
 attributesOfConcept fSpec c
- = [  att | att<-NEL.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
+ = [  att | att<-NE.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
    where
      inKernel :: SqlAttribute -> Bool
      inKernel att = isUni expr 
@@ -26,12 +26,13 @@ attributesOfConcept fSpec c
          where expr = attExpr att 
               --was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
-makeGeneratedSqlPlugs :: Options -> A_Context 
+makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) 
+       => env -> A_Context 
               -> (Relation -> Relation) -- Function to add calculated properties to a relation
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
+makeGeneratedSqlPlugs env context calcProps = conceptTables ++ linkTables
   where 
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
@@ -208,18 +209,18 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                                Just x  -> x `elem` tyCpts typ
                            ]
     conceptTableOf :: Relation -> Maybe A_Concept
-    conceptTableOf  = fst . wayToStore opts
+    conceptTableOf  = fst . wayToStore env
     isStoredFlipped :: Relation -> Bool
-    isStoredFlipped = snd . wayToStore opts
+    isStoredFlipped = snd . wayToStore env
 
 -- | this function tells how a given relation is to be stored. If stored
 --   in a concept table, it returns that concept. It allways returns a boolean
 --   telling wether or not the relation is stored flipped.
-wayToStore :: Options -> Relation -> (Maybe A_Concept,Bool)
-wayToStore opts dcl
-  | sqlBinTables opts = (Nothing, False)
-  | otherwise =
-       case (isInj d, isUni d) of
+wayToStore :: (HasFSpecGenOpts env) => env -> Relation -> (Maybe A_Concept,Bool)
+wayToStore env dcl = 
+   if view sqlBinTablesL env 
+   then (Nothing, False)
+   else case (isInj d, isUni d) of
             (True   , False  ) -> inConceptTableFlipped
             (_      , True   ) -> inConceptTablePlain
             (False  , False  ) -> inLinkTable --Will become a link-table

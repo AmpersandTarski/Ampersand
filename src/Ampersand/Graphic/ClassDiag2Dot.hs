@@ -7,7 +7,7 @@ import           Ampersand.ADL1  hiding (Box)
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.Graphic.ClassDiagram
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Data.GraphViz.Attributes as GVatt
 import           Data.GraphViz.Attributes.Complete as GVcomp
 import           Data.GraphViz.Attributes.HTML as Html
@@ -16,8 +16,8 @@ import qualified RIO.List as L
 import qualified RIO.Set as Set
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
-classdiagram2dot :: Options -> ClassDiag -> DotGraph String
-classdiagram2dot opts cd
+classdiagram2dot :: (HasBlackWhite env) => env -> ClassDiag -> DotGraph String
+classdiagram2dot env cd
  = DotGraph { strictGraph     = False
             , directedGraph   = True
             , graphID         = Nothing
@@ -168,7 +168,7 @@ classdiagram2dot opts cd
                                    , ArrowTail (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
                                    , ArrowSize  2.0
                                    ] ++
-                                   ( if blackWhite opts
+                                   ( if view blackWhiteL env
                                      then [GVcomp.Style [SItem Dashed []]]
                                      else [GVcomp.Color [WC (X11Color Red) Nothing]]
                                    )

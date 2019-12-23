@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.17.4
+version:        4.0.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of enterprise information systems.
@@ -7,7 +7,7 @@ description:    You can define your business processes by means of rules, writte
 homepage:       http://ampersandtarski.github.io/
 category:       Database Design
 stability:      alpha
-tested-with:    GHC == 8.6.3
+tested-with:    GHC == 8.6.5
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE
@@ -17,7 +17,7 @@ extra-source-files:
       - LICENSE
       - ReleaseNotes.md
       - AmpersandData/FormalAmpersand/*
-      - AmpersandData/SystemContext/*
+      - AmpersandData/PrototypeContext/*
       - outputTemplates/*
       - testing/**/*
 
@@ -45,12 +45,14 @@ dependencies:
       - extra >= 1.6.6
       - filepath == 1.4.*
       - fsnotify == 0.3.*
+      - generic-deriving
       - graphviz == 2999.20.*
       - hashable == 1.2.*
       - HStringTemplate == 0.8.*
       - http-conduit == 2.3.*
       - lens == 4.17.*
       - mtl == 2.2.*
+      - optparse-applicative == 0.14.*
       - pandoc == 2.7.*
       - pandoc-crossref == 0.3.4.0
       - pandoc-types == 1.17.*
@@ -64,6 +66,8 @@ dependencies:
       - terminal-size == 0.3.*
       - text == 1.2.*
       - time == 1.8.*
+      - transformers
+      - typed-process == 0.2.*
       - wl-pprint == 1.2.* 
       - xlsx == 0.7.*
       - yaml == 0.11.*
@@ -102,7 +106,7 @@ library:
       - Ampersand.Classes.ConceptStructure
       - Ampersand.Classes.Relational
       - Ampersand.Classes.ViewPoint
-      - Ampersand.Components
+#      - Ampersand.Components
       - Ampersand.Core.A2P_Converters
       - Ampersand.Core.AbstractSyntaxTree
       - Ampersand.Core.ParseTree
@@ -118,6 +122,7 @@ library:
       - Ampersand.FSpec.SQL
       - Ampersand.FSpec.ShowHS
       - Ampersand.FSpec.ShowMeatGrinder
+      - Ampersand.FSpec.MetaModels
       - Ampersand.FSpec.ToFSpec.ADL2FSpec
       - Ampersand.FSpec.ToFSpec.ADL2Plug
       - Ampersand.FSpec.ToFSpec.Calc
@@ -142,10 +147,12 @@ library:
       - Ampersand.Input.Parsing
       - Ampersand.Input.PreProcessor
       - Ampersand.Input.Xslx.XLSX
-      - Ampersand.Misc
-      - Ampersand.Misc.Options
+      - Ampersand.Misc.Commands
+      - Ampersand.Misc.HasClasses
+      - Ampersand.Options.GlobalParser
+      - Ampersand.Options.LogLevelParser
+      - Ampersand.Options.Utils
       - Ampersand.Output
-      - Ampersand.Output.FSpec2Excel
       - Ampersand.Output.FSpec2Pandoc
       - Ampersand.Output.FSpec2SQL
       - Ampersand.Output.PandocAux
@@ -175,6 +182,7 @@ library:
       - Ampersand.Prototype.ProtoUtil
       - Ampersand.Prototype.TableSpec
       - Ampersand.Prototype.ValidateSQL
+      - Ampersand.Runners
       - Ampersand.Test
       - Ampersand.Test.Parser.ArbitraryTree
       - Ampersand.Test.Parser.ParserTest
@@ -183,6 +191,7 @@ library:
 #      - Ampersand.Test.RunAmpersand
       - Ampersand.Test.TestScripts
       - MainApps
+      - Options.Applicative.Builder.Extra
   generated-exposed-modules:
       - Ampersand.Basics.BuildInfo_Generated
       - Ampersand.Prototype.StaticFiles_Generated
@@ -221,14 +230,6 @@ executables:
         buildable: false
 
 tests:
-  regression-test:
-    main: Main.hs
-    source-dirs: app/RegressionTest
-    ghc-options: 
-      - -threaded
-    dependencies: 
-      ampersand
-
   ampersand-test:
     main: Main.hs
     source-dirs: app/Test

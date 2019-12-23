@@ -1,0 +1,20 @@
+CONTEXT PrototypeContxt IN ENGLISH
+
+  INCLUDE "Interfaces.adl"
+  INCLUDE "Interfaces.ifc"
+
+  INCLUDE "Navbar.adl"
+  INCLUDE "Navbar.ifc"
+
+  INCLUDE "Roles.adl"
+
+  RELATION sessionAllowedRoles[SESSION*Role]
+  RELATION sessionActiveRoles[SESSION*Role]
+  
+  RULE "Active roles MUST be a subset of allowed roles": -- This rule is required for the access control mechanism.
+     sessionActiveRoles |- sessionAllowedRoles           -- It ensures that only allowed roles can be activated.
+  
+  REPRESENT DateTime TYPE DATETIME
+  RELATION lastAccess[SESSION*DateTime] [UNI]
+  
+ENDCONTEXT

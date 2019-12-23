@@ -6,12 +6,9 @@ module Ampersand.Input.ADL1.LexerToken
     , FilePos(..)
     ) where
 
-import Ampersand.Basics
-import Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
-import Data.Time.Calendar
-import Data.Time.Clock
-import Data.Time.LocalTime() -- for instance Show UTCTime
-import Text.Parsec()
+import           Ampersand.Basics
+import           Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
+import           RIO.Time
 
 -- | The Ampersand token
 data Token = Tok { tokLex :: Lexeme  -- ^ The lexeme

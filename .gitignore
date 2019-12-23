@@ -15,6 +15,7 @@ cabal.sandbox.config
 
 # Temporarily disable ampersand.cabal (See issue #931)
 /ampersand.cabal
+/stack.yaml.lock
 
 StaticFiles_Generated.hs
 BuildInfo_Generated.hs

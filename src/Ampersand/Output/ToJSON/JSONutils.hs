@@ -11,7 +11,7 @@ module Ampersand.Output.ToJSON.JSONutils
   , module Ampersand.FSpec.ToFSpec.Populated
   , module Ampersand.FSpec.FSpec
   , module Ampersand.FSpec.SQL
-  , module Ampersand.Misc
+  , module Ampersand.Misc.HasClasses
   )
 where
 import           Ampersand.Basics
@@ -21,7 +21,7 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.ToFSpec.Populated
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder) 
-import           Ampersand.Misc
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import           Data.Aeson hiding (Options)
 import qualified Data.Aeson.Types as AT 
@@ -32,11 +32,11 @@ import           GHC.Generics
 import           System.FilePath
 import           System.Directory
 
-writeJSONFile :: (ToJSON a, HasOptions env, HasHandle env, HasVerbosity env) => 
+writeJSONFile :: (ToJSON a, HasDirPrototype env, HasLogFunc env) => 
                  FilePath -> a -> RIO env ()
 writeJSONFile fName x = do
-    opts <- view optionsL 
-    let fullFile = getGenericsDir opts </> file
+    env <- ask
+    let fullFile = getGenericsDir env </> file
     sayWhenLoudLn ("  Generating "++file) 
     liftIO $ createDirectoryIfMissing True (takeDirectory fullFile)
     liftIO $ BL.writeFile fullFile (encodePretty x)
@@ -46,7 +46,8 @@ writeJSONFile fName x = do
 -- We use aeson to generate .json in a simple and efficient way.
 -- For details, see http://hackage.haskell.org/package/aeson/docs/Data-Aeson.html#t:ToJSON
 class (GToJSON Zero (Rep b), Generic b) => JSON a b | b -> a where
-  fromAmpersand :: Options -> MultiFSpecs -> a -> b
+  fromAmpersand :: (Show env, HasProtoOpts env) 
+       => env -> FSpec -> a -> b
   amp2Jason :: b -> Value
   amp2Jason = genericToJSON ampersandDefault
 

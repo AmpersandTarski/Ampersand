@@ -1,54 +1,50 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.Prelude
   ( module RIO
-  , say, sayLn
-  , sayWhenLoud, sayWhenLoudLn
+--  , module Data.Monoid
+  , say', sayLn
+  , sayWhenLoudLn
   , writeFile
   , readUTF8File
   , zipWith
   , openTempFile
-  , HasHandle(..)
-  , HasVerbosity(..), Verbosity (..)
+  , Verbosity (..)
+  , FirstTrue (..)
+  , fromFirstTrue
   , reads, getChar
+  , defaultFirstTrue
+  , FirstFalse (..)
+  , fromFirstFalse
+  , defaultFirstFalse
+  , decodeUtf8
   )where
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import RIO hiding (zipWith,exitWith)
-import System.IO (openTempFile,hPutStr,hPutStrLn, stderr)
+import System.IO (openTempFile, stderr)
 import qualified RIO.Text as T
 
-class HasHandle env where
-  handleL :: Lens' env Handle
-instance HasHandle Handle where
-  handleL = id  
 
-data Verbosity = Loud | Silent deriving (Eq, Data)
-class HasVerbosity env where
-  verbosityL :: Lens' env Verbosity  
+data Verbosity = Loud | Silent deriving (Eq, Data, Show)
 
 -- Functions to be upgraded later on:
-sayLn :: HasHandle env => String -> RIO env ()
+sayLn :: (HasLogFunc env) => String -> RIO env ()
 sayLn msg = do
-  h <- view handleL
-  liftIO $ hPutStrLn h msg
-say :: HasHandle env => String -> RIO env ()
-say msg = do 
-  h <- view handleL
-  liftIO $ hPutStr h msg
-sayWhenLoud :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
-sayWhenLoud msg = do
-  v <- view verbosityL
-  case v of
-    Loud   -> say msg
-    Silent -> return ()
-sayWhenLoudLn :: (HasHandle env, HasVerbosity env) => String -> RIO env ()
+  logInfo . display . T.pack $ msg
+--  h <- view handleL
+--  liftIO $ hPutStrLn h msg
+say' :: (HasLogFunc env) => String -> RIO env ()
+say' msg = do 
+  logInfo . display . T.pack $ msg
+sayWhenLoudLn :: (HasLogFunc env) => String -> RIO env ()
 sayWhenLoudLn msg = do
-  v <- view verbosityL
-  case v of
-    Loud   -> do
-        h <- view handleL
-        hSetBuffering h NoBuffering
-        mapM_ sayLn (lines msg)
-    Silent -> return ()
+  logDebug . display . T.pack $ msg
+--  v <- view verbosityL
+--  case v of
+--    Loud   -> do
+--        h <- view handleL
+--        hSetBuffering h NoBuffering
+--        mapM_ sayLn (lines msg)
+--    Silent -> return ()
 
 -- Functions to be replaced later on:
 writeFile :: FilePath -> String -> IO ()
@@ -68,3 +64,44 @@ zipWith fun = go
     go [] _ = []
     go _ [] = []
     go (x':xs) (y:ys) = fun x' y : go xs ys
+
+
+-- Functions copied from stack
+-- | Like @First Bool@, but the default is @True@.
+newtype FirstTrue = FirstTrue { getFirstTrue :: Maybe Bool }
+  deriving (Show, Eq, Ord)
+instance Semigroup FirstTrue where
+  FirstTrue (Just x) <> _ = FirstTrue (Just x)
+  FirstTrue Nothing <> x = x
+instance Monoid FirstTrue where
+  mempty = FirstTrue Nothing
+  mappend = (<>)
+
+-- | Get the 'Bool', defaulting to 'True'
+fromFirstTrue :: FirstTrue -> Bool
+fromFirstTrue = fromMaybe True . getFirstTrue
+
+-- | Helper for filling in default values
+defaultFirstTrue :: (a -> FirstTrue) -> Bool
+defaultFirstTrue _ = True
+
+-- | Like @First Bool@, but the default is @False@.
+newtype FirstFalse = FirstFalse { getFirstFalse :: Maybe Bool }
+  deriving (Show, Eq, Ord)
+instance Semigroup FirstFalse where
+  FirstFalse (Just x) <> _ = FirstFalse (Just x)
+  FirstFalse Nothing <> x = x
+instance Monoid FirstFalse where
+  mempty = FirstFalse Nothing
+  mappend = (<>)
+
+-- | Get the 'Bool', defaulting to 'False'
+fromFirstFalse :: FirstFalse -> Bool
+fromFirstFalse = fromMaybe False . getFirstFalse
+
+-- | Helper for filling in default values
+defaultFirstFalse :: (a -> FirstFalse) -> Bool
+defaultFirstFalse _ = False
+
+decodeUtf8 :: ByteString -> Text
+decodeUtf8 = decodeUtf8With lenientDecode

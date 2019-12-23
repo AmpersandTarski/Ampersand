@@ -10,7 +10,7 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.Lexer(keywords)
 import           RIO.Char (toUpper)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import qualified RIO.Text.Partial as Partial(replace)  --TODO: Get rid of replace, because it is partial
 import qualified RIO.Set as Set
@@ -74,15 +74,10 @@ commas = encloseSep empty empty comma
 
 listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
-listOf1 :: Pretty a => NEL.NonEmpty a -> Doc
-listOf1 = listOf . NEL.toList
+listOf1 :: Pretty a => NE.NonEmpty a -> Doc
+listOf1 = listOf . NE.toList
 separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
-
---TODO: This replace shouldn't be necessary, I don't know why quotes are getting into the Prel
--- Example to test: AmpersandData\FormalAmpersand\AST.adl
-takeQuote :: String -> String
-takeQuote = replace' "\"" ""
 
 instance Pretty P_Context where
     pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas) =
@@ -114,7 +109,7 @@ instance Pretty MetaObj where
 
 instance Pretty P_RoleRule where
     pretty (Maintain _ roles rules) =
-        text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NEL.toList . fmap maybeQuote $ rules)
+        text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NE.toList . fmap maybeQuote $ rules)
 
 instance Pretty Role where
     pretty (Role nm) = maybeQuote nm
@@ -187,10 +182,8 @@ instance Pretty TermPrim where
         Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
         PNamedR rel -> pretty rel
 
---instance Pretty PSingleton where
---    pretty = text . show
 instance Pretty P_NamedRel where
-    pretty (PNamedRel _ str mpSign) = text (takeQuote str) <~> mpSign
+    pretty (PNamedRel _ str mpSign) = text str <~> mpSign
 
 instance Pretty (PairView TermPrim) where
     pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
@@ -353,9 +346,9 @@ instance Pretty PClassify where
       case p of
             PClassify _ spc gen -> 
                  text "CLASSIFY" <+> pretty spc <+> 
-                     (case (NEL.length gen, NEL.filter (spc /=) gen) of
+                     (case (NE.length gen, NE.filter (spc /=) gen) of
                         (2,[x]) -> text "ISA" <~> x
-                        _       -> text "IS"  <+> separate "/\\" (NEL.toList gen)
+                        _       -> text "IS"  <+> separate "/\\" (NE.toList gen)
                      )
 instance Pretty Lang where
     pretty x = text "IN" <+> (text . map toUpper . show $ x)

@@ -7,7 +7,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.Output.ToJSON.JSONutils 
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 data Rulez = Rulez
@@ -45,16 +45,14 @@ instance ToJSON JsonPairView where
   toJSON = amp2Jason
 instance ToJSON JsonPairViewSegment where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Rulez where
- fromAmpersand opts multi _ = Rulez
-   { rulJSONinvariants = map (fromAmpersand opts multi) . Set.elems $ invariants fSpec
-   , rulJSONsignals    = map (fromAmpersand opts multi) . Set.elems $ signals fSpec
+instance JSON FSpec Rulez where
+ fromAmpersand env fSpec _ = Rulez
+   { rulJSONinvariants = map (fromAmpersand env fSpec) . Set.elems $ invariants fSpec
+   , rulJSONsignals    = map (fromAmpersand env fSpec) . Set.elems $ signals fSpec
    }
-  where
-   fSpec = userFSpec multi
     
 instance JSON Rule JsonRule where
- fromAmpersand opts multi rule = JsonRule
+ fromAmpersand env fSpec rule = JsonRule
   { rulJSONname        = rrnm         rule
   , rulJSONruleAdl     = showA.formalExpression $ rule
   , rulJSONorigin      = show.rrfps     $ rule
@@ -62,19 +60,18 @@ instance JSON Rule JsonRule where
   , rulJSONmessage     = showMessage
   , rulJSONsrcConceptId = idWithoutType . source . formalExpression $ rule
   , rulJSONtgtConceptId = idWithoutType . target . formalExpression $ rule
-  , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (fmap NEL.toList . lookup rule $ allConjsPerRule fSpec)
-  , rulJSONpairView    = fmap (fromAmpersand opts multi) (rrviol rule)
+  , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (fmap NE.toList . lookup rule $ allConjsPerRule fSpec)
+  , rulJSONpairView    = fmap (fromAmpersand env fSpec) (rrviol rule)
   } 
    where 
-    fSpec = userFSpec multi
-    showMeaning = maybe "" aMarkup2String (fmap ameaMrk . meaning (fsLang fSpec) $ rule)
-    showMessage = case filter (\x -> amLang x == fsLang fSpec) (rrmsg rule) of
+    showMeaning = maybe "" aMarkup2String (fmap ameaMrk . meaning (defOutputLang fSpec) $ rule)
+    showMessage = case filter (\x -> amLang x == defOutputLang fSpec) (rrmsg rule) of
                               [] -> ""
                               h:_ -> aMarkup2String h
 instance JSON (PairView Expression) JsonPairView where
- fromAmpersand opts multi pv = JsonPairView $ map (fromAmpersand opts multi) (zip [0..] (NEL.toList . ppv_segs $ pv))
+ fromAmpersand env fSpec pv = JsonPairView $ map (fromAmpersand env fSpec) (zip [0..] (NE.toList . ppv_segs $ pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
- fromAmpersand _ multi (nr,pvs) = JsonPairViewSegment
+ fromAmpersand _ fSpec (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr
   , pvsJSONsegType = case pvs of
                            PairViewText{} -> "Text"
@@ -95,8 +92,7 @@ instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
                            PairViewText{} -> Nothing
                            PairViewExp _ _ e         -> Just . isIdent $ e --show $ e
   } 
-  where
-    fSpec = userFSpec multi
+
     
  
   

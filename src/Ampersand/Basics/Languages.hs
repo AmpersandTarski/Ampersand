@@ -62,7 +62,7 @@ plural Dutch str =
 
 -- Utility types and functions for handling multiple-language strings
 
--- If you declare a local function:   l lstr = localize (fsLang fSpec) lstr
+-- If you declare a local function:   l lstr = localize (outputLang env fSpec) lstr
 -- you can use:  l (NL "Nederlandse tekst", EN "English text")
 -- to specify strings in multiple languages.
 

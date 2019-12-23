@@ -22,7 +22,7 @@ import Ampersand.Basics
 
 class  Named a => Motivated a where
   isForObject :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
-  purposesDefinedIn :: FSpec -> Lang -> a -> [Purpose]  -- ^ The purposes defined for a specific a, given Langugage.
+  purposesDefinedIn :: FSpec -> Lang -> a -> [Purpose]  -- ^ The purposes defined for a specific a, given Language.
   purposesDefinedIn fSpec l x
    = [e | e<-fSexpls fSpec
         , amLang (explMarkup e) == l  -- filter by language

@@ -3,6 +3,7 @@
 ## Unreleased changes
 * Refactor Docker image for Ampersand compiler
 * Add continuous integration via Github Actions. With cache.
+* [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. --TODO: Needs documentation
 
 ## v3.17.4 (13 september 2019)
 
@@ -19,6 +20,7 @@
 
 * Again some major refactoring has been done to leverage the [RIO library](https://haskell.fpcomplete.com/library/rio).
 * [Issue #976](https://github.com/AmpersandTarski/Ampersand/issues/976) Lines in --deamon configuration file can be commented out by prepending such line with "#" or "--" (MUST be at beginning of line)
+* [Issue #971](https://github.com/AmpersandTarski/Ampersand/issues/971) The functionality of meatgrinding has been refactored. It is now far more composable. It is expected that in the near future this will lead to a set of different switches.
 
 ## v3.17.1 (7 june 2019)
 
@@ -155,7 +157,7 @@
 
 It has taken some time since the last release. This release has some major work in it, and also a change of syntax of scripts. Unfortunately this is not downward compatible.
 
-* Introduction of SystemContext.adl, which will be required for new interface generation, which will become available in some future release
+* Introduction of PrototypeContext.adl, which will be required for new interface generation, which will become available in some future release
 * Upgraded to LTS-9.2
 * [Issue #713](https://github.com/AmpersandTarski/Ampersand/issues/713) New syntax for singleton expressions
 

@@ -8,11 +8,12 @@ import qualified RIO.List as L
 import           Data.Maybe(isJust,fromMaybe)
 import qualified RIO.Set as Set
 
-chpDiagnosis :: Options -> FSpec -> (Blocks,[Picture])
-chpDiagnosis opts@Options{..} fSpec
- | noDiagnosis = mempty
+chpDiagnosis :: (HasDirOutput env, HasDocumentOpts env) 
+   => env -> FSpec -> (Blocks,[Picture])
+chpDiagnosis env fSpec
+ | Diagnosis `notElem` view chaptersL env = mempty
  | otherwise
- = (  xDefBlck opts fSpec Diagnosis
+ = (  xDefBlck env fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
             <> (emph.singleQuoted.str.name) fSpec 
@@ -38,8 +39,8 @@ chpDiagnosis opts@Options{..} fSpec
   where
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
-  l = localize (fsLang fSpec)
-
+  l = localize outputLang'
+  outputLang' = outputLang env fSpec
   roleRuleTable :: Blocks
   roleRuleTable
     | null ruls = mempty
@@ -115,13 +116,13 @@ chpDiagnosis opts@Options{..} fSpec
                   )
       xs  -> para (   (str.l) (NL "De bestaansreden van de concepten: "
                               ,EN "Concepts ")
-                   <> commaPandocAnd (fsLang fSpec) (map (str.name) xs)
+                   <> commaPandocAnd outputLang' (map (str.name) xs)
                    <> (str.l) (NL " is niet gedocumenteerd."
                               ,EN " remain without a purpose.")
                   )
    where missing = [c | c <-ccs
                       , cd <- concDefs fSpec c
-                      , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
+                      , null (purposesDefinedIn fSpec outputLang' cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
          ccs = Set.elems . concs . vrels $ fSpec
@@ -139,7 +140,7 @@ chpDiagnosis opts@Options{..} fSpec
                               ,EN " is defined, but isn't used.")
                   )
       xs  -> para (   (str.l) (NL "De concepten: ", EN "Concepts ")
-                   <> commaPandocAnd (fsLang fSpec) (map (str . name) xs)
+                   <> commaPandocAnd outputLang' (map (str . name) xs)
                    <> (str.l) (NL " zijn gedefinieerd, maar worden niet gebruikt."
                               ,EN " are defined, but not used.")
                   )
@@ -157,7 +158,7 @@ chpDiagnosis opts@Options{..} fSpec
                                     ,EN " lacks both a purpose as well as a meaning.")
                         )
             ds  -> para (   (str.l) (NL "Van de relaties ",EN "The relations ")
-                          <> commaPandocAnd (fsLang fSpec) (map showDclMath ds) 
+                          <> commaPandocAnd outputLang' (map showDclMath ds) 
                           <>(str.l) (NL " ontbreken zowel de betekenis (meaning) als de reden van bestaan (purpose)."
                                     ,EN " all lack both a purpose and a meaning.")
                         )
@@ -170,7 +171,7 @@ chpDiagnosis opts@Options{..} fSpec
                                     ,EN " remains unexplained.")
                         )
             ds  -> para (   (str.l) (NL "Relaties ",EN "The purpose of relations ")
-                          <> commaPandocAnd (fsLang fSpec) (map showDclMath ds) 
+                          <> commaPandocAnd outputLang' (map showDclMath ds) 
                           <>(str.l) (NL " zijn niet voorzien van een reden van bestaan (purpose)."
                                     ,EN " is not documented.")
                         )
@@ -183,7 +184,7 @@ chpDiagnosis opts@Options{..} fSpec
                                     ,EN " is not documented.")
                         )
             ds  -> para (   (str.l) (NL "De betekenis van relaties ",EN "The meaning of relations ")
-                          <> commaPandocAnd (fsLang fSpec) (map showDclMath ds) 
+                          <> commaPandocAnd outputLang' (map showDclMath ds) 
                           <>(str.l) (NL " zijn niet gedocumenteerd."
                                     ,EN " is not documented.")
                         )
@@ -195,9 +196,9 @@ chpDiagnosis opts@Options{..} fSpec
            decls = vrels fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
-  hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
+  hasPurpose = not . null . purposesDefinedIn fSpec outputLang'
   hasMeaning :: HasMeaning a => a -> Bool
-  hasMeaning = isJust . meaning (fsLang fSpec)
+  hasMeaning = isJust . meaning outputLang'
 
   relsNotUsed :: Blocks
   pics :: [Picture]
@@ -215,7 +216,7 @@ chpDiagnosis opts@Options{..} fSpec
                                   ,EN " is not being used in any rule. ")
                       )
           rs  -> para (   (str.l) (NL "Relaties ", EN "Relations ")
-                       <> commaPandocAnd (fsLang fSpec) rs
+                       <> commaPandocAnd outputLang' rs
                        <> (str.l) (NL " worden niet gebruikt in regels. "
                                   ,EN " are not used in any rule. ")
                       ) 
@@ -224,14 +225,14 @@ chpDiagnosis opts@Options{..} fSpec
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          )
-                 <> xDefBlck opts fSpec pict
+                 <> xDefBlck env fSpec pict
           picts  -> mconcat
                        [ para (   hyperLinkTo pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
                               )
-                       <> xDefBlck opts fSpec pict
+                       <> xDefBlck env fSpec pict
                        | (pict,pat)<-zip picts pats
                        ]
        )
@@ -245,7 +246,7 @@ chpDiagnosis opts@Options{..} fSpec
                      ]
            pats  = [ pat | pat<-vpatterns fSpec
                          , (not.null) (relsDefdIn pat Set.\\ bindedRelationsIn pat) ]
-           pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
+           pictsWithUnusedRels = [makePicture env fSpec (PTDeclaredInPat pat) | pat<-pats ]
 
   missingRules :: Blocks
   missingRules
@@ -316,7 +317,7 @@ chpDiagnosis opts@Options{..} fSpec
                             , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
-          hasRef x = (any  ((/=[]).explRefIds)) (purposesDefinedIn fSpec (fsLang fSpec) x)
+          hasRef x = (any  ((/=[]).explRefIds)) (purposesDefinedIn fSpec outputLang' x)
 
           showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%"
 
@@ -391,10 +392,10 @@ chpDiagnosis opts@Options{..} fSpec
                <> " ( " <> quoterule r <> " )"
                <> (str.l) (NL " luidt: ", EN " says: ")
                )
-       <> printMeaning (fsLang fSpec) r
+       <> printMeaning outputLang' r
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
                           ,EN "This rule contains work (for ")
-                <>commaPandocOr (fsLang fSpec) (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                <>commaPandocOr outputLang' (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                 <>")"
                 <> case Set.toList ps of
                      [v] ->   (str.l) (NL ", te weten ", EN " by ")
@@ -410,9 +411,9 @@ chpDiagnosis opts@Options{..} fSpec
      where
 --      text r
 --       = if null expls
---         then explains2Blocks (autoMeaning (fsLang fSpec) r)
+--         then explains2Blocks (autoMeaning outputLang' r)
 --         else expls
---         where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (fsLang fSpec) || l==Nothing, Para block<-econt]
+--         where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just outputLang' || l==Nothing, Para block<-econt]
       quoterule r
        = if null (name r)
          then (str.l) (NL $ "op "++show (origin r)
@@ -464,7 +465,7 @@ chpDiagnosis opts@Options{..} fSpec
                <> table -- Caption
                         (if isSignal r
                          then   (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
-                             <> commaPandocOr (fsLang fSpec) (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                             <> commaPandocOr outputLang' (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                          else   (str.l) (NL "Overtredingen van invariant ",EN "Violations of invariant ")
                               <>(str.name) r
                         )  

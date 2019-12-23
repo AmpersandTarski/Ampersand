@@ -25,10 +25,9 @@ import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
 import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
 import           RIO.Char(toLower)
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import           Data.Time.Calendar
-import           Data.Time.Clock
+import           RIO.Time
 import           Text.Parsec as P hiding(satisfy,sepBy1,(<|>))
 import           Text.Parsec.Pos (newPos)
 
@@ -68,8 +67,8 @@ opt ::  AmpParser a  -- ^ The parser to try
     -> AmpParser a   -- ^ The resulting parser
 a `opt` b = P.option b a
 
-sepBy1 :: AmpParser a -> AmpParser b -> AmpParser (NEL.NonEmpty a)
-sepBy1 p sep = liftM2 (NEL.:|) p (many (sep >> p))
+sepBy1 :: AmpParser a -> AmpParser b -> AmpParser (NE.NonEmpty a)
+sepBy1 p sep = liftM2 (NE.:|) p (many (sep >> p))
 
 -----------------------------------------------------------
 -- Keywords & operators
