@@ -1,9 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.Prelude
   ( module RIO
---  , module Data.Monoid
   , say', sayLn
-  , sayWhenLoudLn
   , writeFile
   , readUTF8File
   , zipWith
@@ -35,21 +33,11 @@ sayLn msg = do
 say' :: (HasLogFunc env) => String -> RIO env ()
 say' msg = do 
   logInfo . display . T.pack $ msg
-sayWhenLoudLn :: (HasLogFunc env) => String -> RIO env ()
-sayWhenLoudLn msg = do
-  logDebug . display . T.pack $ msg
---  v <- view verbosityL
---  case v of
---    Loud   -> do
---        h <- view handleL
---        hSetBuffering h NoBuffering
---        mapM_ sayLn (lines msg)
---    Silent -> return ()
 
 -- Functions to be replaced later on:
 writeFile :: FilePath -> String -> IO ()
 writeFile fp x = writeFileUtf8 fp . T.pack $ x
-readUTF8File :: FilePath -> RIO env (Either [String] T.Text)
+readUTF8File :: FilePath -> RIO env (Either [String] Text)
 readUTF8File fp = (Right <$> readFileUtf8 fp) `catch` handler
   where 
      handler :: IOException -> RIO env (Either [String] a)

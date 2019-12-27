@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import           Ampersand.Basics
@@ -23,7 +24,7 @@ validateRulesSQL fSpec = do
        viols -> exitWith . ViolationsInDatabase . map stringify $ viols
     hSetBuffering stdout NoBuffering
 
-    sayWhenLoudLn "Initializing temporary database (this could take a while)"
+    logDebug "Initializing temporary database (this could take a while)"
     succes <- createTempDatabase fSpec
     if succes 
     then actualValidation 
@@ -37,11 +38,11 @@ validateRulesSQL fSpec = do
                       getAllPairViewExps fSpec ++
                       getAllIdExps fSpec ++
                       getAllViewExps fSpec
-        sayWhenLoudLn $ "Number of expressions to be validated: "++show (length allExps)
+        logDebug $ "Number of expressions to be validated: "<>displayShow (length allExps)
         results <- mapM (validateExp fSpec) $ zip allExps [1..]
         case [ ve | (ve, False) <- results] of
            [] -> do
-               sayWhenLoudLn $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+               logDebug $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
                return []
            ves -> return $ "Validation error. The following expressions failed validation:"
                          : map showVExp ves

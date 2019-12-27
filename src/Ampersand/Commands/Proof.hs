@@ -27,7 +27,7 @@ proof fSpec = do
     sayLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile env ++ "..."
     content <- liftIO $ (runIO (writeHtml5String def thePandoc)) >>= handleError
     writeFileUtf8 (outputFile env) content
-    sayWhenLoudLn "Proof written."
+    logDebug "Proof written."
   where 
       outputFile env = view dirOutputL env </> "proofs_of_"++baseName env -<.> ".html"
       thePandoc = setTitle title (doc theDoc)

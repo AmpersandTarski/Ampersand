@@ -84,7 +84,7 @@ ampersandWorker eGlobalRun = do
            
 --       Nothing -> -- No Ampersand script is provided 
 --          if or (map fst $ actionsWithoutScript env)
---          then sayWhenLoudLn "No further actions, because no ampersand script is provided"
+--          then logDebug "No further actions, because no ampersand script is provided"
 --          else liftIO $ do 
 --             args     <- getArgs
 --             progName <- getProgName

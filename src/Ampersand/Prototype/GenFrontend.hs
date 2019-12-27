@@ -67,21 +67,21 @@ doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirC
 doGenFrontend fSpec = do
     now <- getCurrentTime
     skipComposer <- view skipComposerL
-    sayWhenLoudLn "Generating frontend..."
+    logInfo "Generating frontend..."
     isCleanInstall <- downloadPrototypeFramework
     copyTemplates
     feInterfaces <- buildInterfaces fSpec
     genViewInterfaces fSpec feInterfaces
     genControllerInterfaces fSpec feInterfaces
     genRouteProvider fSpec feInterfaces
-    writePrototypeAppFile ".timestamp" (show . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
+    writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     copyCustomizations
     when (isCleanInstall && not skipComposer) $ do
-      sayLn "Installing dependencies..." -- don't use sayWhenLoudLn here, because installing dependencies takes some time and we want the user to see this
+      sayLn "Installing dependencies..." -- don't use logDebug here, because installing dependencies takes some time and we want the user to see this
       env <- ask 
       let dirPrototype = getDirPrototype env
       installComposerLibs dirPrototype
-    sayWhenLoudLn "Frontend generated"
+    logInfo "Frontend generated"
   
 copyTemplates :: (HasDirPrototype env, HasLogFunc env) =>
                  RIO env ()
@@ -91,10 +91,10 @@ copyTemplates = do
       toDir = getTemplateDir env
   tempDirExists <- liftIO $ doesDirectoryExist tempDir
   if tempDirExists then do
-         sayWhenLoudLn $ "Copying project specific templates from " ++ tempDir ++ " -> " ++ toDir
+         logDebug $ "Copying project specific templates from " <> display (T.pack tempDir) <> " -> " <> display (T.pack toDir)
          copyDirRecursively tempDir toDir -- recursively copy all templates
   else
-         sayWhenLoudLn ("No project specific templates (there is no directory " ++ tempDir ++ ")") 
+         logDebug $ "No project specific templates (there is no directory " <> display (T.pack tempDir) <> ")"
 
 copyCustomizations :: (HasDirPrototype env, HasDirCustomizations env,HasLogFunc env) =>
                       RIO env ()
@@ -110,9 +110,9 @@ copyCustomizations = do
       copyDir targetDir sourceDir = do
         sourceDirExists <- liftIO $ doesDirectoryExist sourceDir
         if sourceDirExists then
-          do sayWhenLoudLn $ "Copying customizations from " ++ sourceDir ++ " -> " ++ targetDir
+          do logDebug $ "Copying customizations from " <> display (T.pack sourceDir) <> " -> " <> display (T.pack targetDir)
              copyDirRecursively sourceDir targetDir -- recursively copy all customizations
-        else sayWhenLoudLn $ "No customizations (there is no directory " ++ sourceDir ++ ")"
+        else logDebug $ "No customizations (there is no directory " <> display (T.pack sourceDir) <> ")"
 
 ------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
@@ -196,7 +196,7 @@ buildInterface fSpec allIfcs ifc = do
                     _ -> do
                        -- no view, or no view with an html template, so we fall back to target-concept template
                        -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                      let templatePath = "Atomic-" ++ (idWithoutType tgt) ++ ".html"
+                      let templatePath = "Atomic-" <> (idWithoutType tgt) <> ".html"
                       hasSpecificTemplate <- doesTemplateExist templatePath
                       return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
             return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
@@ -211,8 +211,8 @@ buildInterface fSpec allIfcs ifc = do
                         , iExp)
               InterfaceRef{} -> 
                 case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                  []      -> fatal ("Referenced interface " ++ siIfcId si ++ " missing")
-                  (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
+                  []      -> fatal ("Referenced interface " <> siIfcId si <> " missing")
+                  (_:_:_) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
                   [i]     -> 
                         if siIsLink si
                         then do
@@ -261,13 +261,13 @@ genRouteProvider fSpec ifcs = do
   runner <- view runnerL
   let loglevel' = logLevel runner
   template <- readTemplate "routeProvider.config.js"
-  let contents = renderTemplate template $
+  let contents = T.pack . renderTemplate template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" ampersandVersionStr
                  . setAttribute "ifcs"                ifcs
                  . setAttribute "verbose"             (loglevel' == LevelDebug)
                  . setAttribute "loglevel"            (show loglevel')
-  writePrototypeAppFile "routeProvider.config.js" contents 
+  writePrototypeAppFile "routeProvider.config.js" contents
       
 ------ Generate view html code
 
@@ -282,7 +282,7 @@ genViewInterface fSpec interf = do
   let loglevel' = logLevel runner
   lns <- genViewObject fSpec 0 (_ifcObj interf)
   template <- readTemplate "interface.html"
-  let contents = renderTemplate template $
+  let contents = T.pack . renderTemplate template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                   . setAttribute "isTopLevel"          ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
                   . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
@@ -299,7 +299,7 @@ genViewInterface fSpec interf = do
                   . setAttribute "contents"            (L.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
                   . setAttribute "verbose"             (loglevel' == LevelDebug)
                   . setAttribute "loglevel"            (show loglevel')
-  let filename = "ifc" ++ ifcName interf ++ ".view.html" 
+  let filename = "ifc" <> ifcName interf <> ".view.html" 
   writePrototypeAppFile filename contents 
   
 -- Helper data structure to pass attribute values to HStringTemplate
@@ -333,7 +333,7 @@ genViewObject fSpec depth obj =
       case atomicOrBox obj of
             FEAtomic{} -> do
               {-
-                  sayWhenLoudLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
+                  logDebug (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
                                                 " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                                 (if isEditable then "" else "not ") ++ "editable"
               -}
@@ -411,7 +411,7 @@ genControllerInterface fSpec interf = do
     template <- readTemplate controlerTemplateName
     runner <- view runnerL
     let loglevel' = logLevel runner
-    let contents = renderTemplate template $
+    let contents = T.pack . renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
@@ -480,10 +480,10 @@ downloadPrototypeFramework = ( do
     zwolleVersion <- view zwolleVersionL
     if x
     then do
-      sayWhenLoudLn "Emptying folder to deploy prototype framework"
+      logDebug "Emptying folder to deploy prototype framework"
       liftIO $ removeDirectoryRecursive dirPrototype
       let url = "https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion++".zip"
-      sayWhenLoudLn "Start downloading prototype framework."
+      logDebug "Start downloading prototype framework."
       response <- (parseRequest url >>= httpBS) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
@@ -494,7 +494,7 @@ downloadPrototypeFramework = ( do
                   . toArchive 
                   . BL.fromStrict 
                   . getResponseBody $ response
-      sayWhenLoudLn "Start extraction of prototype framework."
+      logDebug "Start extraction of prototype framework."
       runner <- view runnerL
       let zipoptions = 
                [OptVerbose | logLevel runner == LevelDebug]

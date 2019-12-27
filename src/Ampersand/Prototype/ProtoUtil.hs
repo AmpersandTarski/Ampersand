@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
          , writePrototypeAppFile
@@ -25,13 +26,13 @@ import           System.Process(CreateProcess(..),readCreateProcessWithExitCode
 
 
 writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
-                         String -> String -> RIO env ()
+                         FilePath -> Text -> RIO env ()
 writePrototypeAppFile relFilePath content = do
   env <- ask
-  sayWhenLoudLn $ "  Generating "<>relFilePath 
+  logDebug $ "  Generating "<>display (T.pack relFilePath)
   let filePath = getAppDir env </> relFilePath
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
-  liftIO $ writeFile filePath content
+  writeFileUtf8 filePath content
      
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
@@ -41,18 +42,18 @@ writePrototypeAppFile relFilePath content = do
 copyDirRecursively :: (HasLogFunc env) =>
                       FilePath -> FilePath -> RIO env ()
 copyDirRecursively srcBase tgtBase 
-  | srcBase == tgtBase = mapM_ sayWhenLoudLn
+  | srcBase == tgtBase = mapM_ logError
         [ "Are you kidding me? I got the instruction to copy "
-        , "     "<>srcBase
+        , "     "<>display (T.pack srcBase)
         , "  to itself!"
         ]
   | otherwise = do
         srcBaseA <- liftIO $ makeAbsolute srcBase 
         tgtBaseA <- liftIO $ makeAbsolute tgtBase 
-        mapM_ sayWhenLoudLn 
+        mapM_ logDebug 
           [ "Recursively copying " 
-          , "     " <> srcBaseA 
-          , "  to " <> tgtBaseA
+          , "     " <> display (T.pack srcBaseA)
+          , "  to " <> display (T.pack tgtBaseA)
           ]
         copy ("." </> tgtBase) ""
   where copy shouldSkip fileOrDirPth = do
@@ -62,19 +63,19 @@ copyDirRecursively srcBase tgtBase
           if isDir then 
             if srcPath == shouldSkip
               then do
-                sayWhenLoudLn $ "Skipping "<>srcPath<>" because it is the target directory of the recursive copy action."
+                logDebug $ "Skipping "<>display (T.pack srcPath)<>" because it is the target directory of the recursive copy action."
               else 
                 if takeExtension srcPath == ".proto" 
                   then do  
-                    sayWhenLoudLn $ "Skipping "<>srcPath<>" because its extention is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
+                    logDebug $ "Skipping "<>display (T.pack srcPath)<>" because its extention is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
                   else do
-                    sayWhenLoudLn $ " Copying dir... " ++ srcPath
-                    sayWhenLoudLn $ "      to dir... " ++ tgtPath
+                    logDebug $ " Copying dir... " <> display (T.pack srcPath)
+                    logDebug $ "      to dir... " <> display (T.pack tgtPath)
                     fOrDs <- getProperDirectoryContents srcPath
                     liftIO $ createDirectoryIfMissing True tgtPath
                     mapM_ (\fOrD -> copy shouldSkip $ fileOrDirPth </> fOrD) fOrDs
           else do
-              sayWhenLoudLn $ "  file... " ++ fileOrDirPth
+              logDebug $ "  file... " <> display (T.pack fileOrDirPth)
               liftIO $ copyFile srcPath tgtPath
              
 
@@ -119,13 +120,13 @@ strReplace src dst inp
           | src `L.isPrefixOf` st = dst <> process (drop n st)
           | otherwise           = c:process cs
 
-phpIndent :: Int -> T.Text
+phpIndent :: Int -> Text
 phpIndent i
  | i < 0     = T.pack " " --space instead of \n
  | otherwise = T.pack $ '\n':replicate i ' '
 
 
-addSlashes :: T.Text -> T.Text
+addSlashes :: Text -> Text
 addSlashes = T.pack . addSlashes' . T.unpack
   where
     addSlashes' ('\'': cs) = "\\'"<>addSlashes' cs
@@ -134,7 +135,7 @@ addSlashes = T.pack . addSlashes' . T.unpack
     addSlashes' (c:cs) = c:addSlashes' cs
     addSlashes' "" = ""
 
-showPhpStr :: T.Text -> T.Text
+showPhpStr :: Text -> Text
 showPhpStr str = q<>T.pack (escapePhpStr (T.unpack str))<>q
   where q = T.pack "'"
 
@@ -158,13 +159,13 @@ installComposerLibs :: (HasLogFunc env) =>
                        FilePath -> RIO env ()
 installComposerLibs installTarget = do
     curPath <- liftIO $ getCurrentDirectory
-    sayWhenLoudLn $ "current directory: "++curPath
-    sayWhenLoudLn "  Trying to download and install Composer libraries..."
+    logDebug $ "current directory: "<>display (T.pack curPath)
+    logDebug "  Trying to download and install Composer libraries..."
     (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode myProc ""
     case exit_code of
-      SE.ExitSuccess   -> do sayWhenLoudLn $
+      SE.ExitSuccess   -> do logDebug $
                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                             sayWhenLoudLn stdout'
+                             logDebug $ display (T.pack stdout')
       SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where

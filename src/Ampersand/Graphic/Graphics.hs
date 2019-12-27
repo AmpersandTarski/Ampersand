@@ -1,5 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
@@ -19,6 +20,7 @@ import           RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           Data.String(fromString)
 import           System.Directory(createDirectoryIfMissing)
 import           System.FilePath hiding (addExtension)
@@ -215,11 +217,11 @@ writePicture pict = do
               -> RIO env ()
      writeDotPostProcess postProcess gvOutput  =
          do env <- ask
-            sayWhenLoudLn $ "Generating "++show gvOutput++" using "++show gvCommand++"."
+            logDebug $ "Generating "<>displayShow gvOutput<>" using "<>displayShow gvCommand<>"."
             let dotSource = mkDotGraph env pict
             path <- liftIO $ (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
                        (dropExtension . imagePath env) pict
-            sayWhenLoudLn $ path++" written."
+            logDebug $ display (T.pack path)<>" written."
             case postProcess of
               Nothing -> return ()
               Just x -> x path
@@ -230,17 +232,17 @@ writePicture pict = do
                 FilePath -> RIO env ()
      makePdf path = do
          liftIO $ callCommand (ps2pdfCmd path)
-         sayWhenLoudLn $ replaceExtension path ".pdf" ++ " written."
-       `catch` \ e -> sayWhenLoudLn ("Could not invoke PostScript->PDF conversion."++
-                                 "\n  Did you install MikTex? Can the command epstopdf be found?"++
-                                 "\n  Your error message is:\n " ++ show (e :: IOException))
+         logDebug $ display (T.pack $ replaceExtension path ".pdf") <> " written."
+       `catch` \ e -> logDebug ("Could not invoke PostScript->PDF conversion."<>
+                                 "\n  Did you install MikTex? Can the command epstopdf be found?"<>
+                                 "\n  Your error message is:\n " <> displayShow (e :: IOException))
                    
      writePdf :: (HasBlackWhite env, HasDocumentOpts env, HasDirOutput env, HasLogFunc env) 
           => GraphvizOutput -> RIO env ()
      writePdf x = (writeDotPostProcess (Just makePdf) x)
-       `catch` (\ e -> sayWhenLoudLn ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
-                                  "\n  Your error message is:\n " ++ show (e :: IOException)))
-     ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
+       `catch` (\ e -> logDebug ("Something went wrong while creating your Pdf."<>  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+                                  "\n  Your error message is:\n " <> displayShow (e :: IOException)))
+     ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph String
 mkDotGraph env pict =

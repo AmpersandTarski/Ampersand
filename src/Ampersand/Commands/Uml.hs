@@ -15,6 +15,7 @@ import           Ampersand.Basics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec
 import           Ampersand.FSpec.GenerateUML
+import qualified RIO.Text as T
 import           System.FilePath
 -- | Generate a UML output file from a project.
 --
@@ -25,7 +26,7 @@ uml fSpec = do
    outputFile <- outputFile' <$> ask
    sayLn "Generating UML..."
    liftIO . writeFile outputFile $ generateUML env fSpec
-   sayWhenLoudLn ("Generated file: " ++ outputFile ++ ".")
+   logDebug ("Generated file: " <> display (T.pack outputFile) <> ".")
    where outputFile' env = view dirOutputL env </> baseName env -<.> ".xmi"
 
 

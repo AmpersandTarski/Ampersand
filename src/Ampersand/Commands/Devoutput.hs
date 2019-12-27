@@ -32,9 +32,9 @@ doGenHaskell fSpec = do
     env <- ask
     now <- getCurrentTime
     outputFile <- outputFile' <$> ask
-    sayLn $ "Generating Haskell source code for " ++ name fSpec ++ "..."
+    logInfo $ "Generating Haskell source code for " <> display (T.pack $ name fSpec) <> "..."
     writeFileUtf8 outputFile (T.pack $ fSpec2Haskell env now fSpec)
-    sayWhenLoudLn ("Haskell written into " ++ outputFile ++ ".")
+    logDebug $ "Haskell written into " <> display (T.pack outputFile)
   where 
     outputFile' env = view dirOutputL env </> baseName env -<.> ".hs"
 
@@ -43,9 +43,9 @@ doGenSQLdump :: (HasDirOutput env, HasRootFile env, HasLogFunc env)
 doGenSQLdump fSpec = do
     env <- ask
     outputFile <- outputFile' <$> ask
-    sayLn $ "Generating SQL queries dumpfile for " ++ name fSpec ++ "..."
+    sayLn $ "Generating SQL queries dumpfile for " <> name fSpec <> "..."
     writeFileUtf8 outputFile (dumpSQLqueries env fSpec)
-    sayWhenLoudLn ("SQL queries dumpfile written into " ++ outputFile ++ ".")
+    logDebug $ "SQL queries dumpfile written into " <> display (T.pack outputFile)
   where 
-    outputFile' env = view dirOutputL env </> baseName env ++ "_dump" -<.> ".sql"
+    outputFile' env = view dirOutputL env </> baseName env <> "_dump" -<.> ".sql"
 
