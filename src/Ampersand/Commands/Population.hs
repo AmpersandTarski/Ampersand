@@ -27,7 +27,7 @@ population :: (HasDirOutput env, HasRootFile env ,HasLogFunc env)
        => FSpec -> RIO env ()
 population fSpec = do
         outputFile <- outputFile' <$> ask
-        sayLn "Generating .xlsx file containing the population..."
+        logInfo "Generating .xlsx file containing the population..."
         ct <- liftIO $ runIO getPOSIXTime >>= handleError
         BL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
         logDebug $ "Generated file: " <> display (T.pack outputFile)

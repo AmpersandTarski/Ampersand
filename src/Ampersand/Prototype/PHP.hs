@@ -52,7 +52,7 @@ performQuery dbNm queryStr = do
     env <- ask
     queryResult <- T.unpack <$> (executePHPStr . showPHP) (php env)
     if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-    then do mapM_ sayLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
+    then do mapM_ (logInfo . display) (T.lines ("\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
     else case reads queryResult of
            [(pairs,"")] -> return pairs
@@ -86,7 +86,7 @@ executePHPStr phpStr = do
                  `catch`
                      (\e -> do 
                           let err = show (e :: IOException)
-                          sayLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
+                          logWarn $ "Couldn't find temp directory. Using current directory : " <> displayShow err
                           return "."
                      )
     let phpPath = tempdir </> "tmpPhpQueryOfAmpersand" <.> "php"

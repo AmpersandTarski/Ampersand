@@ -30,7 +30,7 @@ proto fSpec = do
     allowInvariantViolations <- view allowInvariantViolationsL
     if null (violationsOfInvariants fSpec) || allowInvariantViolations
     then do
-       sayLn "Generating prototype..."
+       logInfo "Generating prototype..."
        liftIO $ createDirectoryIfMissing True dirPrototype
        doGenFrontend fSpec
        generateDatabaseFile fSpec

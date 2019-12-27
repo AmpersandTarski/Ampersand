@@ -43,7 +43,7 @@ doGenSQLdump :: (HasDirOutput env, HasRootFile env, HasLogFunc env)
 doGenSQLdump fSpec = do
     env <- ask
     outputFile <- outputFile' <$> ask
-    sayLn $ "Generating SQL queries dumpfile for " <> name fSpec <> "..."
+    logInfo $ "Generating SQL queries dumpfile for " <> display (T.pack $ name fSpec) <> "..."
     writeFileUtf8 outputFile (dumpSQLqueries env fSpec)
     logDebug $ "SQL queries dumpfile written into " <> display (T.pack outputFile)
   where 

@@ -77,7 +77,7 @@ doGenFrontend fSpec = do
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     copyCustomizations
     when (isCleanInstall && not skipComposer) $ do
-      sayLn "Installing dependencies..." -- don't use logDebug here, because installing dependencies takes some time and we want the user to see this
+      logInfo "Installing dependencies..." -- don't use logDebug here, because installing dependencies takes some time and we want the user to see this
       env <- ask 
       let dirPrototype = getDirPrototype env
       installComposerLibs dirPrototype
@@ -339,7 +339,7 @@ genViewObject fSpec depth obj =
               -}
               -- For now, we choose specific template based on target concept. This will probably be too weak. 
               -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
-              -- sayLn $ nm ++ ":" ++ show mPrimTemplate
+              -- logInfo $ nm ++ ":" ++ show mPrimTemplate
               conceptTemplate <- getTemplateForObject
               let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
               template <- readTemplate templateFilename

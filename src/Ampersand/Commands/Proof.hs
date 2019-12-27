@@ -14,6 +14,7 @@ module Ampersand.Commands.Proof
 import           Ampersand.Basics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec
+import qualified RIO.Text as T
 import           System.FilePath ((</>), (-<.>))
 import           Text.Pandoc (runIO,writeHtml5String,def,handleError)
 import           Text.Pandoc.Builder
@@ -24,14 +25,14 @@ proof :: (HasDirOutput env, HasRootFile env, HasLogFunc env)
        => FSpec -> RIO env ()
 proof fSpec = do 
     env <- ask
-    sayLn $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile env ++ "..."
+    logInfo $ "Generating Proof for " <> display( T.pack $ name fSpec) <> " into " <> display(T.pack $ outputFile env) <> "..."
     content <- liftIO $ (runIO (writeHtml5String def thePandoc)) >>= handleError
     writeFileUtf8 (outputFile env) content
     logDebug "Proof written."
   where 
-      outputFile env = view dirOutputL env </> "proofs_of_"++baseName env -<.> ".html"
+      outputFile env = view dirOutputL env </> "proofs_of_"<>baseName env -<.> ".html"
       thePandoc = setTitle title (doc theDoc)
-      title  = text $ "Proofs for "++name fSpec
+      title  = text $ "Proofs for "<>name fSpec
       theDoc = fDeriveProofs fSpec
       --theDoc = plain (text "Aap")  -- use for testing...
 

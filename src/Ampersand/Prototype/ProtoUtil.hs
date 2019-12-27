@@ -89,7 +89,7 @@ removeAllDirectoryFiles dirPath = do
          do { let absPath = dirPath </> path
             ; isDir <- liftIO $ doesDirectoryExist absPath
             ; if isDir then
-                sayLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
+                logInfo $ "WARNING: directory '"<>display (T.pack dirPath)<>"' contains a subdirectory '"<>display (T.pack path)<>"' which is not cleared."
               else
                 liftIO $ removeFile absPath
             }

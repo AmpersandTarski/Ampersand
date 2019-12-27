@@ -58,7 +58,7 @@ mainWithTerminal termSize termOutput = goForever
                 termSize' <- liftIO $ return $ do
                         term <- termSize
                         -- if we write to the final column of the window then it wraps automatically
-                        -- so sayLn width 'x' uses up two lines
+                        -- so logInfo width 'x' uses up two lines
                         return $ TermSize
                             (termWidth term - 1)
                             (termHeight term)
@@ -80,7 +80,7 @@ mainWithTerminal termSize termOutput = goForever
 
         errorHandler :: AmpersandExit -> RIO (ExtendedRunner DaemonOpts) ()
         errorHandler (err :: AmpersandExit) = do 
-              sayLn (show err)
+              logError (displayShow err)
               goForever
 
 runDaemon :: RIO (ExtendedRunner DaemonOpts) ()
@@ -94,7 +94,7 @@ runDaemon = mainWithTerminal termSize termOutput
 
         termOutput :: (HasLogFunc env) => [String] -> RIO env ()
         termOutput xs = do
-            sayLn $ concatMap ('\n':) xs
+            mapM_ logInfo $ map (display . T.pack . ('\n':)) xs
             hFlush stdout -- must flush, since we don't finish with a newline
 
 

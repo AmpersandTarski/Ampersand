@@ -65,18 +65,18 @@ ampersandWorker eGlobalRun = do
 -- --    sequence_ . map snd . filter fst $ actionsWithoutScript env-- There are commands that do not need a single filename to be speciied
 --     case rootFile of
 --       Just _ -> do -- An Ampersand script is provided that can be processed
---             sayLn "Processing your model..."
+--             logInfo "Processing your model..."
 --             gFSpec <- createFspec []
 --             case gFSpec of
 --               Errors err    -> 
 --                  exitWith . NoValidFSpec . L.intersperse  (replicate 30 '=') 
 --                . fmap show . NE.toList $ err
 --               Checked _fSpec ws -> do
---                  mapM_  sayLn . concatMap (lines . show) $ ws
+--                  mapM_  logInfo . concatMap (lines . show) $ ws
 --               --   generateAmpersandOutput fSpec
---                  sayLn "THIS IS THE OLD STUFF. Nothing happend."
---                  sayLn "Finished processing your model"
---                  sayLn . ("Your script has no errors " ++) $
+--                  logInfo "THIS IS THE OLD STUFF. Nothing happend."
+--                  logInfo "Finished processing your model"
+--                  logInfo . ("Your script has no errors " ++) $
 --                     case ws of
 --                       []  -> "and no warnings"
 --                       [_] -> ", but one warning was found"
@@ -96,9 +96,9 @@ ampersandWorker eGlobalRun = do
 -- --   actionsWithoutScript :: (HasVersion env, HasEnvironment env, HasLogFunc env, HasCommands env) 
 -- --      => env -> [(Bool, RIO App ())]
 -- --   actionsWithoutScript env = 
--- --      [ ( (view showVersionL env)   || view verbosityL env == Loud , sayLn $ versionText env)
+-- --      [ ( (view showVersionL env)   || view verbosityL env == Loud , logInfo $ versionText env)
 -- --      , ( (view genSampleConfigFileL env)      , liftIO writeConfigFile)
--- --      , ( (view showHelpL env)                 , sayLn $ usageInfo' env)
+-- --      , ( (view showHelpL env)                 , logInfo $ usageInfo' env)
 -- --      , ( (view runAsDaemonL env)              , runDaemon)
 -- --      ]
    
@@ -121,7 +121,7 @@ preProcessor' =
              case result of
                Left err   -> exitWith $ ReadFileError $ "Error while reading input file.\n" : err
                Right cont -> return cont
-        sayLn $ either show id (preProcess' filename (Set.fromList defs) (T.unpack content))
+        logInfo $ either displayShow (display . T.pack) (preProcess' filename (Set.fromList defs) (T.unpack content))
 
 mainTest :: IO ()
 mainTest = do

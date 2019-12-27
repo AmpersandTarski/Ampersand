@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.Prelude
   ( module RIO
-  , say', sayLn
   , writeFile
   , readUTF8File
   , zipWith
@@ -23,16 +22,6 @@ import qualified RIO.Text as T
 
 
 data Verbosity = Loud | Silent deriving (Eq, Data, Show)
-
--- Functions to be upgraded later on:
-sayLn :: (HasLogFunc env) => String -> RIO env ()
-sayLn msg = do
-  logInfo . display . T.pack $ msg
---  h <- view handleL
---  liftIO $ hPutStrLn h msg
-say' :: (HasLogFunc env) => String -> RIO env ()
-say' msg = do 
-  logInfo . display . T.pack $ msg
 
 -- Functions to be replaced later on:
 writeFile :: FilePath -> String -> IO ()
