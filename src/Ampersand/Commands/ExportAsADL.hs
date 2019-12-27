@@ -10,10 +10,12 @@ module Ampersand.Commands.ExportAsADL
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Misc.HasClasses
-import           Ampersand.FSpec
 import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec
+import           Ampersand.Misc.HasClasses
+import qualified RIO.Text as T
 import           System.FilePath
+
 -- | For importing and analysing data, Ampersand allows you to annotate an Excel spreadsheet (.xlsx) and turn it into an Ampersand model.
 -- By default 'doGenADL' exports the model to Export.adl, ready to be picked up by the user and refined by adding rules.
 -- 1. To analyze data in a spreadsheet, prepare your spreadsheet, foo.xlsx,  and run "Ampersand --dataAnalysis foo.xlsx".
@@ -23,9 +25,9 @@ import           System.FilePath
 exportAsAdl :: (HasOutputFile env, HasDirOutput env, HasLogFunc env) => FSpec -> RIO env ()
 exportAsAdl fSpec = do
     env <- ask
-    sayWhenLoudLn $ "Generating data analysis script (ADL) for "  ++ name fSpec ++ "..."
-    liftIO $ writeFile (outputFile' env) (showA ctx) 
-    sayWhenLoudLn $ ".adl-file written to " ++ outputFile' env++ "."
+    logDebug $ "Generating data analysis script (ADL) for " <> display (T.pack $ name fSpec) <> "..."
+    writeFileUtf8 (outputFile' env) (T.pack $ showA ctx) 
+    logInfo $ ".adl-file written to: " <> display (T.pack $ outputFile' env)
   where outputFile' env = view dirOutputL env </> view outputfileL env
         ctx = originalContext fSpec
 

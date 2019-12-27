@@ -19,6 +19,6 @@ import           Ampersand.Types.Config
 init :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasRootFile env) 
        => RIO env ()
 init = do
-    sayLn "Still has to be implemented..."
+    logInfo "Still has to be implemented..."
 
 

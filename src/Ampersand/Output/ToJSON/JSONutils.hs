@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FunctionalDependencies #-} 
+{-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToJSON.JSONutils 
   (writeJSONFile, JSON(..), ToJSON(..)
@@ -28,6 +29,7 @@ import qualified Data.Aeson.Types as AT
 import           Data.Aeson.Encode.Pretty
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.List as L
+import qualified RIO.Text as T
 import           GHC.Generics
 import           System.FilePath
 import           System.Directory
@@ -37,7 +39,7 @@ writeJSONFile :: (ToJSON a, HasDirPrototype env, HasLogFunc env) =>
 writeJSONFile fName x = do
     env <- ask
     let fullFile = getGenericsDir env </> file
-    sayWhenLoudLn ("  Generating "++file) 
+    logDebug $ "  Generating "<>display (T.pack file) 
     liftIO $ createDirectoryIfMissing True (takeDirectory fullFile)
     liftIO $ BL.writeFile fullFile (encodePretty x)
   where file = fName <.> "json"

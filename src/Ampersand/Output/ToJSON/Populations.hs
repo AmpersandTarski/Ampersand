@@ -16,16 +16,16 @@ data Populations = Populations
    , epJSONlinks :: [PairsOfRelation]
    } deriving (Generic, Show)
 data AtomValuesOfConcept = AtomValuesOfConcept
-   { avcJSONconcept :: T.Text
-   , avcJSONatoms :: [T.Text]
+   { avcJSONconcept :: Text
+   , avcJSONatoms :: [Text]
    } deriving (Generic, Show)
 data PairsOfRelation = PairsOfRelation
-   { porJSONrelation :: T.Text
+   { porJSONrelation :: Text
    , porJSONlinks :: [JPair]
    } deriving (Generic, Show)
 data JPair = JPair
-   { prJSONsrc :: T.Text
-   , prJSONtgt :: T.Text
+   { prJSONsrc :: Text
+   , prJSONtgt :: Text
    } deriving (Generic, Show)
 instance ToJSON Populations where
   toJSON = amp2Jason

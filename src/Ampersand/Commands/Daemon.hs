@@ -1,7 +1,8 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 -- | The application entry point
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
 module Ampersand.Commands.Daemon(runDaemon) where
@@ -17,6 +18,7 @@ import           Ampersand.Misc.HasClasses
 import           Ampersand.Types.Config
 import           Data.Tuple.Extra(both)
 import qualified RIO.List as L
+import qualified RIO.Text as T
 import           System.Console.ANSI (hSupportsANSI,setTitle)
 import qualified System.Console.Terminal.Size as Term
 import           System.Directory(getCurrentDirectory,setCurrentDirectory)
@@ -48,15 +50,15 @@ mainWithTerminal termSize termOutput = goForever
             hSetBuffering stdout LineBuffering
             hSetBuffering stderr NoBuffering
             curDir <- liftIO $ getCurrentDirectory
-            sayWhenLoudLn $ "%OS: " ++ os
-            sayWhenLoudLn $ "%ARCH: " ++ arch
-            sayWhenLoudLn $ "%VERSION: " ++ ampersandVersionWithoutBuildTimeStr
+            logDebug $ "%OS: " <> display (T.pack os)
+            logDebug $ "%ARCH: " <> display (T.pack arch)
+            logDebug $ "%VERSION: " <> display (T.pack ampersandVersionWithoutBuildTimeStr)
             env <- ask
             withCurrentDirectory curDir $ do
                 termSize' <- liftIO $ return $ do
                         term <- termSize
                         -- if we write to the final column of the window then it wraps automatically
-                        -- so sayLn width 'x' uses up two lines
+                        -- so logInfo width 'x' uses up two lines
                         return $ TermSize
                             (termWidth term - 1)
                             (termHeight term)
@@ -78,7 +80,7 @@ mainWithTerminal termSize termOutput = goForever
 
         errorHandler :: AmpersandExit -> RIO (ExtendedRunner DaemonOpts) ()
         errorHandler (err :: AmpersandExit) = do 
-              sayLn (show err)
+              logError (displayShow err)
               goForever
 
 runDaemon :: RIO (ExtendedRunner DaemonOpts) ()
@@ -92,7 +94,7 @@ runDaemon = mainWithTerminal termSize termOutput
 
         termOutput :: (HasLogFunc env) => [String] -> RIO env ()
         termOutput xs = do
-            sayLn $ concatMap ('\n':) xs
+            mapM_ logInfo $ map (display . T.pack . ('\n':)) xs
             hFlush stdout -- must flush, since we don't finish with a newline
 
 
@@ -135,8 +137,8 @@ runAmpersand app waiter termSize termOutput = do
             currTime <- liftIO $ getShortTime
             let no_title = False
             let loadedCount = length (loaded ad)
-            sayWhenLoudLn $ "%MESSAGES: " ++ (show . messages $ ad)
-            sayWhenLoudLn $ "%LOADED: " ++ (show . loaded $ ad)
+            logDebug $ "%MESSAGES: " <> (displayShow . messages $ ad)
+            logDebug $ "%LOADED: " <> (displayShow . loaded $ ad)
 
             let (countErrors, countWarnings) = both sum $ L.unzip
                     [if loadSeverity == Error then (1::Int,0::Int) else (0,1) | Message{..} <- messages ad, loadMessage /= []]
@@ -165,7 +167,7 @@ runAmpersand app waiter termSize termOutput = do
             when (null . loadResults $ ad) $ exitWith NoFilesToWatch
             
             reason <- nextWait' . L.nub $ loaded ad ++ (map loadFile . loads $ ad)
-            sayWhenLoudLn $ "%RELOADING: " ++ unwords reason
+            logDebug $ "%RELOADING: " <> display (T.pack $ unwords reason)
             return Continue
     runRIO app $ fire nextWait aDaemon
 

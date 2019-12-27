@@ -12,13 +12,14 @@ module Ampersand.Commands.Proto
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Prototype.GenFrontend (doGenFrontend)
-import           Ampersand.Misc.HasClasses
-import           Ampersand.Types.Config
 import           Ampersand.FSpec
-import           System.Directory
+import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.FSpec2SQL
 import           Ampersand.Output.ToJSON.ToJson
+import           Ampersand.Prototype.GenFrontend (doGenFrontend)
+import           Ampersand.Types.Config
+import qualified RIO.Text as T
+import           System.Directory
 -- | Builds a prototype of the current project.
 --
 proto :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env) 
@@ -29,13 +30,13 @@ proto fSpec = do
     allowInvariantViolations <- view allowInvariantViolationsL
     if null (violationsOfInvariants fSpec) || allowInvariantViolations
     then do
-       sayLn "Generating prototype..."
+       logInfo "Generating prototype..."
        liftIO $ createDirectoryIfMissing True dirPrototype
        doGenFrontend fSpec
        generateDatabaseFile fSpec
        generateJSONfiles False fSpec
        dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
-       sayWhenLoudLn $ "Prototype files have been written to " <> dirPrototypeA
+       logDebug $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
     else exitWith NoPrototypeBecauseOfRuleViolations
 
 

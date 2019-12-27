@@ -167,8 +167,8 @@ sumarize = do
    loop sofar = 
      await >>= maybe finalize (\x -> loop $! (add sofar x)) 
      where finalize = do
-             logInfo . display $ tshow (successes sofar) <>" regression tests succeeded." 
-             logError . display $ tshow (failures sofar) <>" regression tests failed."
+             logInfo $ displayShow (successes sofar) <>" regression tests succeeded." 
+             logError $ displayShow (failures sofar) <>" regression tests failed."
              if failures sofar == 0
              then logInfo $ "Regression test of all scripts succeeded."
              else exitWith (SomeTestsFailed ["Regression test failed!"])
@@ -184,7 +184,7 @@ data TestInfo = TestInfo
    }deriving Generic
 instance FromJSON TestInfo
 data TestInstruction = TestInstruction 
-   { command :: T.Text
+   { command :: Text
    , exitcode :: Int
    } deriving Generic
 instance FromJSON TestInstruction

@@ -17,6 +17,7 @@ import           Ampersand.FSpec(FSpec(..))
 import           Ampersand.Output.Population2Xlsx (fSpec2PopulationXlsx)
 import           System.FilePath
 import qualified RIO.ByteString.Lazy as BL
+import qualified RIO.Text as T
 import           Text.Pandoc.Class(runIO,getPOSIXTime) --TODO: Replace by RIO's getCurrentTime
 import           Text.Pandoc.Error(handleError)
 
@@ -26,10 +27,10 @@ population :: (HasDirOutput env, HasRootFile env ,HasLogFunc env)
        => FSpec -> RIO env ()
 population fSpec = do
         outputFile <- outputFile' <$> ask
-        sayLn "Generating .xlsx file containing the population..."
+        logInfo "Generating .xlsx file containing the population..."
         ct <- liftIO $ runIO getPOSIXTime >>= handleError
         BL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
-        sayWhenLoudLn ("Generated file: " <> outputFile)
+        logDebug $ "Generated file: " <> display (T.pack outputFile)
       where outputFile' env = view dirOutputL env </> baseName env <> "_generated_pop" -<.> ".xlsx"
 
 

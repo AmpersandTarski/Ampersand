@@ -31,13 +31,13 @@ data TableSpec
               , tsKey  ::  String
               }
 data AttributeSpec
-  = AttributeSpec { fsname :: T.Text
+  = AttributeSpec { fsname :: Text
                   , fstype :: TType
                   , fsIsPrimKey :: Bool
                   , fsDbNull :: Bool
                   }
 
-getTableName :: TableSpec -> T.Text
+getTableName :: TableSpec -> Text
 getTableName = T.pack . tsName
 
 
@@ -83,25 +83,25 @@ createTableSql withComment tSpec
       " " <> fromMaybe mempty mKey <>
       " " <> T.unwords endings
   where
-    header :: T.Text
+    header :: Text
     header = "CREATE TABLE "<>(doubleQuote . T.pack . tsName $ tSpec)
-    cols :: [T.Text]
+    cols :: [Text]
     cols = [ T.pack [pref] <> " " <> addColumn att 
            | (pref, att) <- zip ('(' : L.repeat ',') (tsflds tSpec)]
-    mKey :: Maybe T.Text
+    mKey :: Maybe Text
     mKey =
       case tsKey tSpec of
         "" -> Nothing
         x  -> Just . T.pack $ ", "<> x
-    endings :: [T.Text]
+    endings :: [Text]
     endings =   
       [ ", " <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
       [ ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN" ]<>
       [ ", ROW_FORMAT = DYNAMIC"]
-    wrap :: [T.Text] -> [T.Text]
+    wrap :: [Text] -> [Text]
     wrap = map (\col -> T.replicate indnt " " <> col)
     indnt = 5
-    addColumn :: AttributeSpec -> T.Text
+    addColumn :: AttributeSpec -> Text
     addColumn att 
        =    doubleQuote (fsname att) <> " " 
          <> (T.pack . showSQL . fstype) att 
@@ -129,8 +129,8 @@ fld2AttributeSpec att
 
 insertQuery :: SomeValue val =>
        Bool          -- prettyprinted?
-    -> T.Text     -- The name of the table
-    -> NE.NonEmpty T.Text   -- The names of the attributes
+    -> Text     -- The name of the table
+    -> NE.NonEmpty Text   -- The names of the attributes
     -> [[Maybe val]] -- The rows to insert
     -> SqlQuery
 insertQuery withComments tableName attNames tblRecords
@@ -147,11 +147,11 @@ insertQuery withComments tableName attNames tblRecords
      <> " VALUES "
      <> (T.intercalate ", " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
   where
-    valuechain :: SomeValue val => [Maybe val] -> T.Text
+    valuechain :: SomeValue val => [Maybe val] -> Text
     valuechain record = T.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> repr val | att<-record]
 
 class SomeValue a where
-  repr :: a -> T.Text
+  repr :: a -> Text
 instance SomeValue AAtomValue where
   repr = T.pack . showValSQL
 instance SomeValue String where
@@ -182,9 +182,9 @@ singleQuote = enclose '`'
 enclose :: (Data.String.IsString m, Monoid m) => Char -> m -> m
 enclose c s = fromString [c] <> s <> fromString [c]
 
-queryAsPHP :: SqlQuery -> T.Text
+queryAsPHP :: SqlQuery -> Text
 queryAsPHP = showPhpStr . queryAsSQL
-queryAsSQL :: SqlQuery -> T.Text
+queryAsSQL :: SqlQuery -> Text
 queryAsSQL sql = 
   case sql of 
     SqlQuerySimple x  -> x

@@ -15,7 +15,7 @@ import           Ampersand.Misc.HasClasses
 import           Ampersand.Types.Config
 import           Ampersand.Test.Parser.QuickChecks
 import           Ampersand.Test.Regression
-
+import qualified RIO.Text as T
 test :: (HasTestOpts env, HasRunner env) => RIO env ()
 test = do
   parserRoundtripTest
@@ -24,25 +24,26 @@ test = do
 
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do 
-    sayLn "Starting Quickcheck tests."
+    logInfo "Starting Quickcheck tests."
     funcs <- testFunctions
  --   testAmpersandScripts
     tests funcs
   where 
-      tests :: (HasLogFunc env) => [([String], RIO env Bool)] -> RIO env ()
+      tests :: (HasLogFunc env) => [([Text], RIO env Bool)] -> RIO env ()
       tests [] = pure ()
       tests ((msg,tst):xs) = do
-          mapM_ sayLn msg
+          mapM_ (logInfo .display) msg
           success <- tst
           if success then tests xs
           else exitWith (SomeTestsFailed ["*** Some tests failed***"])
-      testFunctions :: RIO env [([String], RIO env Bool)]
+      testFunctions :: RIO env [([Text], RIO env Bool)]
       testFunctions = do
           (parserCheckResult, msg) <- parserQuickChecks
           return [ ( if parserCheckResult  
                      then ["Parser & prettyprinter test PASSED."]
-                     else (  ["QuickCheck found errors in the roundtrip in parsing/prettyprinting for the following case:"]
-                           ++map ("\n   "++) (lines msg)
+                     else ( T.lines . T.intercalate "\n   " $
+                             ["QuickCheck found errors in the roundtrip in parsing/prettyprinting for the following case:"]
+                           ++T.lines (T.pack msg)
                           )
                    , return parserCheckResult
                    )
