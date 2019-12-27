@@ -506,7 +506,7 @@ downloadPrototypeFramework = ( do
                               , show (err :: SomeException)
                               ])
       let dest = dirPrototype </> ".frameworkSHA"  
-      ((liftIO . writeFile dest . show . zComment $ archive) `catch` \err ->  
+      ((writeFileUtf8 dest . tshow . zComment $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
                               , "Archive seems valid: "<>url

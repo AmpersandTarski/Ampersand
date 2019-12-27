@@ -26,7 +26,7 @@ exportAsAdl :: (HasOutputFile env, HasDirOutput env, HasLogFunc env) => FSpec ->
 exportAsAdl fSpec = do
     env <- ask
     logDebug $ "Generating data analysis script (ADL) for " <> display (T.pack $ name fSpec) <> "..."
-    liftIO $ writeFile (outputFile' env) (showA ctx) 
+    writeFileUtf8 (outputFile' env) (T.pack $ showA ctx) 
     logInfo $ ".adl-file written to: " <> display (T.pack $ outputFile' env)
   where outputFile' env = view dirOutputL env </> view outputfileL env
         ctx = originalContext fSpec

@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.Prelude
   ( module RIO
-  , writeFile
   , readUTF8File
   , zipWith
   , openTempFile
@@ -18,14 +17,11 @@ module Ampersand.Basics.Prelude
 import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import RIO hiding (zipWith,exitWith)
 import System.IO (openTempFile, stderr)
-import qualified RIO.Text as T
 
 
 data Verbosity = Loud | Silent deriving (Eq, Data, Show)
 
 -- Functions to be replaced later on:
-writeFile :: FilePath -> String -> IO ()
-writeFile fp x = writeFileUtf8 fp . T.pack $ x
 readUTF8File :: FilePath -> RIO env (Either [String] Text)
 readUTF8File fp = (Right <$> readFileUtf8 fp) `catch` handler
   where 

@@ -25,7 +25,7 @@ uml fSpec = do
    env <- ask
    outputFile <- outputFile' <$> ask
    logInfo "Generating UML..."
-   liftIO . writeFile outputFile $ generateUML env fSpec
+   writeFileUtf8 outputFile $ generateUML env fSpec
    logDebug ("Generated file: " <> display (T.pack outputFile) <> ".")
    where outputFile' env = view dirOutputL env </> baseName env -<.> ".xmi"
 

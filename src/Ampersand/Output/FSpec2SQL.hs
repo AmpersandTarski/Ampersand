@@ -22,9 +22,9 @@ generateDatabaseFile fSpec =
    do env <- ask
       logInfo $ "  Generating "<>display (T.pack file)
       liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile env))
-      liftIO $ writeFile (fullFile env) content
+      writeFileUtf8 (fullFile env) content
   where 
-   content = T.unpack (databaseStructureSql fSpec)
+   content = databaseStructureSql fSpec
    file = "database" <.> "sql"
    fullFile env = getGenericsDir env </> file
 
