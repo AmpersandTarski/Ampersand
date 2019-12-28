@@ -7,7 +7,7 @@ WORKDIR /opt/ampersand
 # Start with a layer to build dependencies that can be cached
 # Only updates to these files must trigger this layer
 # https://medium.com/permutive/optimized-docker-builds-for-haskell-76a9808eb10b
-COPY stack.yaml package.yaml stack.yaml.lock /opt/ampersand/
+COPY stack.yaml package.yaml /opt/ampersand/
 RUN stack build --dependencies-only
 
 # Copy the rest of the application
