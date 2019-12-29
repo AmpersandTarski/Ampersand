@@ -2,7 +2,8 @@
 
 ## Unreleased changes
 
-* [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. --TODO: Needs documentation
+* [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. Changes are documented in Commands.md
+* [Issue #1029](https://github.com/AmpersandTarski/Ampersand/issues/1029) Fixed detection of rules with same name.
 
 ## v3.17.4 (13 september 2019)
 
