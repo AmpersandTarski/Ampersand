@@ -296,7 +296,8 @@ data ViewSegmentPayLoad
 -- | data structure AClassify contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
 --   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
-data AClassify = Isa { genpos :: Origin
+data AClassify = 
+             Isa { genpos :: Origin
                  , genspc :: A_Concept      -- ^ specific concept
                  , gengen :: A_Concept      -- ^ generic concept
                  }

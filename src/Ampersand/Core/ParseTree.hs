@@ -79,7 +79,7 @@ instance Traced Meta where
   origin = pos
 data MetaObj = ContextMeta deriving (Eq,Ord,Show) -- for now, we just have meta data for the entire context
 
- -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
+-- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
    = Maintain
      { pos :: Origin      -- ^ position in the Ampersand script
@@ -217,13 +217,12 @@ mergeRels rs = map (foldr1 mergeRel) (eqCl signat rs) -- each equiv. class conta
     signat rel = (name rel, pSrc (dec_sign rel), pTgt (dec_sign rel))
     mergeRel :: P_Relation -> P_Relation -> P_Relation -- merges attributes, assuming both signatures are equal.
     mergeRel r0 r1
-     = P_Sgn { dec_nm     = name r0     -- ^ the name of the relation
-             , dec_sign   = dec_sign r0 -- ^ the type. Parser must guarantee it is not empty.
-             , dec_prps   = dec_prps r0 `Set.union` dec_prps r1    -- ^ the user defined multiplicity constraints (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+     = P_Sgn { dec_nm     = name r0
+             , dec_sign   = dec_sign r0
+             , dec_prps   = dec_prps r0 `Set.union` dec_prps r1
              , dec_pragma = if (null.concat.dec_pragma) r1 then dec_pragma r0 else  dec_pragma r1
-                                        -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-             , dec_Mean   = dec_Mean r0++dec_Mean r1  -- ^ the optional meaning of a relation, possibly more than one for different languages.
-             , pos        = if origin r1==OriginUnknown then origin r0 else origin r1    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
+             , dec_Mean   = dec_Mean r0++dec_Mean r1
+             , pos        = if origin r1==OriginUnknown then origin r0 else origin r1
              }
 
 data PAtomPair

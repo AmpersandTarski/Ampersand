@@ -174,8 +174,8 @@ encloseInConstraints pCtx = enrichedContext
                cartesianProduct xs ys = Set.fromList $ liftA2 (,) (toList xs) (toList ys)
     genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
     genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
-   -- | To derive relations from populations, we derive the signature from the population's signature directly.
-   --   Multiplicity properties are added to constrain the population without introducing violations.
+    -- | To derive relations from populations, we derive the signature from the population's signature directly.
+    --   Multiplicity properties are added to constrain the population without introducing violations.
     (genericRelations, genericPopulations)
      = recur [] popRelations pops invGen
        where
