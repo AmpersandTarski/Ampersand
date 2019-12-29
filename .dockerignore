@@ -1,2 +1,6 @@
-.stack-work
+.git/
+.github/
+.stack-work/
+ArchitectureAndDesign/
+miscellaneous/
 *.lock
