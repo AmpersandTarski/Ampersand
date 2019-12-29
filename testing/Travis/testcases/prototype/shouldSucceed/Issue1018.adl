@@ -1,0 +1,5 @@
+CONTEXT Issue1018
+
+INTERFACE "Test": V[Session*X] BOX [ "line": TXT "soemthing" ]
+
+ENDCONTEXT

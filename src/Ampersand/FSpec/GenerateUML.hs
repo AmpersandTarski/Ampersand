@@ -9,14 +9,15 @@ import           Control.Monad.State.Lazy  (State, gets, evalState, modify)  --T
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           Ampersand.Output.PandocAux
 import           Ampersand.Misc.HasClasses
 
 -- TODO: escape
 -- TODO: names of model, package, assoc (empty?), etc.
 
-generateUML :: (HasOutputLanguage env) => env -> FSpec -> String
-generateUML env = showUML . fSpec2UML env
+generateUML :: (HasOutputLanguage env) => env -> FSpec -> Text
+generateUML env = T.pack . showUML . fSpec2UML env
 
 showUML :: UML -> String
 showUML uml = unlines $ evalState uml $ UMLState 0 Map.empty [] []

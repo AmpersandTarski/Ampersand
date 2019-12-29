@@ -1,4 +1,7 @@
-{-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Test.Parser.ParserTest (
     parseReparse, parseScripts, showErrors
 ) where
@@ -9,9 +12,10 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
-import qualified RIO.NonEmpty as NE
-import           Ampersand.Types.Config
 import           Ampersand.Options.FSpecGenOptsParser
+import           Ampersand.Types.Config
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
 -- Tries to parse all the given files
 parseScripts :: (HasRunner env) => 
                 [FilePath] ->  RIO env Bool
@@ -23,16 +27,16 @@ parseScripts paths =
         parsed <- snd <$> extendWith fSpecGenOpts (parseADL f)
         case parsed of
             Checked _ ws -> do
-                sayLn ("Parsed: " ++ f)
-                mapM_  sayLn . concatMap (lines . show) $ ws
+                logInfo $ "Parsed: " <> display (T.pack f)
+                mapM_ logWarn (fmap displayShow ws)
                 parseScripts fs
             Errors  e -> do 
-                sayLn ("Cannot parse: " ++ f)
+                logError $ "Cannot parse: " <> display (T.pack f)
                 showErrors (NE.toList e)
                 return False
 
-showErrors :: (HasLogFunc env) => [CtxError] ->  RIO env ()  -- TODO: Use error logger to write the errors to. ( See http://hackage.haskell.org/package/rio-0.1.9.2/docs/RIO.html#g:8 )
-showErrors = mapM_ $ mapM_ sayLn . lines . show
+showErrors :: (HasLogFunc env) => [CtxError] ->  RIO env ()
+showErrors = sequence_ . fmap logError . map displayShow 
 
 parse :: FilePath -> String -> Guarded P_Context
 parse file txt = whenChecked (runParser pContext file txt) (pure . fst)

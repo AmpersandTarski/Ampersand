@@ -7,13 +7,14 @@ module Ampersand.Basics.Exit
 import           Control.Exception hiding (catch)
 import           Ampersand.Basics.Prelude
 import qualified RIO.List as L
+import qualified RIO.Text as T
 import qualified System.Exit as SE
 import           System.IO.Unsafe(unsafePerformIO)
 
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a
 exitWith x = unsafePerformIO $ do
-  runSimpleApp (mapM_ sayLn message)
+  runSimpleApp (mapM_ (logInfo . display . T.pack) message)
   SE.exitWith exitcode
  where (exitcode,message) = info x
 
