@@ -1,8 +1,16 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DuplicateRecordFields,OverloadedLabels  #-}
--- | This module does some string manipulation based on natural languages
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLabels  #-}
+-- | Utility types and functions for handling multiple-language strings
 module Ampersand.Basics.Languages
-         where
+    (Lang(..)
+    ,LocalizedStr
+    ,NLString(..)
+    ,ENString(..)
+    ,localize
+    ,plural
+    )
+where
               
 import Ampersand.Basics.Prelude
 import RIO.Char (toLower)
@@ -61,7 +69,6 @@ plural Dutch str =
                         , ("kind", "kinderen")
                         ]
 
--- Utility types and functions for handling multiple-language strings
 
 -- If you declare a local function:   l lstr = localize (outputLang env fSpec) lstr
 -- you can use:  l (NL "Nederlandse tekst", EN "English text")
@@ -79,6 +86,3 @@ type LocalizedStr = (NLString, ENString)
 localize :: Lang -> LocalizedStr -> String
 localize Dutch   (NL s, _) = s
 localize English (_, EN s) = s
-
-
-
