@@ -139,7 +139,7 @@ install:
            stack build `# build is the common task which is composable.` \
                 --test `# run the tests` \
                 --copy-bins `# install executables to the path` \
-                --haddock \ `# create haddock documentation, thus ensuring that haddock parse rules are enforsed.`
+                --haddock `# create haddock documentation, thus ensuring that haddock parse rules are enforsed.` \
                 --no-terminal `# fixes bug with sticky output on travis` \
                 $ARGS  `#` \
                 --flag ampersand:buildAll `# build all executables of ampersand`
