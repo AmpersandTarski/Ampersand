@@ -1,13 +1,22 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DuplicateRecordFields,OverloadedLabels  #-}
--- | This module does some string manipulation based on natural languages
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLabels  #-}
+-- | Utility types and functions for handling multiple-language strings
 module Ampersand.Basics.Languages
-         where
+    (Lang(..)
+    ,LocalizedStr
+    ,NLString(..)
+    ,ENString(..)
+    ,localize
+    ,plural
+    )
+where
               
 import Ampersand.Basics.Prelude
 import RIO.Char (toLower)
 import qualified RIO.List as L
 
+-- | An enumeration of supported natural languages.
 data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data, Enum, Bounded)
 
 -- | Returns the plural of a given word based on a specific language
@@ -60,20 +69,20 @@ plural Dutch str =
                         , ("kind", "kinderen")
                         ]
 
--- Utility types and functions for handling multiple-language strings
 
 -- If you declare a local function:   l lstr = localize (outputLang env fSpec) lstr
 -- you can use:  l (NL "Nederlandse tekst", EN "English text")
 -- to specify strings in multiple languages.
 
+-- | Dutch text
 newtype NLString = NL String
+-- | English text
 newtype ENString = EN String
 
+-- | Type of text containing all localized variations
 type LocalizedStr = (NLString, ENString)
 
+-- | Select the correct text based on the chosen language
 localize :: Lang -> LocalizedStr -> String
 localize Dutch   (NL s, _) = s
 localize English (_, EN s) = s
-
-
-

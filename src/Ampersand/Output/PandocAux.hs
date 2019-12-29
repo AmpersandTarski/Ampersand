@@ -6,20 +6,15 @@
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.PandocAux
       ( writepandoc
-      , Chapter(..), chptTitle
+      , chptTitle
       , count
-      , ShowMath(..),showMathWithSign
-      , latexEscShw, escapeNonAlphaNum
-      , texOnlyId
+      , showMath
+      , showMathWithSign
+      , latexEscShw
       , texOnlyMarginNote
       , newGlossaryEntry
-      , NLString(..)
-      , ENString(..)
-      , LocalizedStr
-      , localize
       , commaPandocAnd
       , commaPandocOr
-      , Inlines
       , outputLang
       )
 where
@@ -459,10 +454,6 @@ inMathText s = "\\text{"++latexEscShw s++"} "
 
 inMathCartesianProduct :: String
 inMathCartesianProduct = "\\times "
-
-texOnlyId :: String -> String
-texOnlyId s = "\\mbox{"++latexEscShw s++"} "
--- \\def\\id#1{\\mbox{\\em #1\\/}}"
 
 inMathCompose :: String
 inMathCompose = ";"
