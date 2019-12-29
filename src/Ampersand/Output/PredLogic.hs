@@ -7,7 +7,7 @@ import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
-import           Ampersand.Output.PandocAux (latexEscShw,texOnlyId)
+import           Ampersand.Output.PandocAux (latexEscShw)
 import           RIO.Char
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -156,7 +156,7 @@ natLangOps l
              Dutch   -> ("Voor elke", "Er is een",    implies, "is equivalent met", "of", "en",  "*", "+", "niet", rel, fun,  langVars , "\n  ", " ", apply, "is element van")
             where
                rel = apply
-               fun r x' = texOnlyId(name r)++"("++x'++")"
+               fun r x' = {- Todo: when using pandoc stuff: showMath -} (name r)++"("++x'++")"
                implies antc cons = case l of
                                      English  -> "If "++antc++", then "++cons
                                      Dutch    -> "Als "++antc++", dan "++cons
