@@ -470,12 +470,11 @@ mkNoBoxItemsWarning orig =
 mkCrudWarning :: P_Cruds -> [String] -> Warning
 mkCrudWarning (P_Cruds o _ ) msg = Warning o (unlines msg)
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
-mkCaseProblemWarning x y = Warning orig $ L.intercalate "\n    " 
+mkCaseProblemWarning x y = Warning OriginUnknown $ L.intercalate "\n    " 
       ["Ampersand is case sensitive. you might have meant that the following are equal:"
-      ,    show (typeOf x) ++"`"++name x++"` and `"++name y++"`."
+      ,    show (typeOf x) ++" `"++name x++"` and `"++name y++"`."
       ]
-    where orig :: Origin 
-          orig = OriginUnknown
+
 addWarning :: Warning -> Guarded a -> Guarded a
 addWarning _ (Errors a) = Errors a
 addWarning w (Checked a ws) = Checked a (ws <> [w])
