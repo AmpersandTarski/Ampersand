@@ -1,0 +1,60 @@
+name: Continuous Integration
+on:
+  push:
+    branches: # empty list to only trigger on branches (i.e. not tags, ..)
+  pull_request:
+    branches:
+      - development
+
+env:
+  DOCKER_AMPERSAND_IMAGE: docker.pkg.github.com/ampersandtarski/ampersand/ampersand
+  IMAGE_DEV_BUILD_TAG: docker.pkg.github.com/ampersandtarski/ampersand/ampersand:dev-build
+  # IMAGE_BRANCH_TAG: ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} # Does not work because bash expression is not allowed here
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    # env:
+    
+    # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables
+    # Because steps run in their own process, changes to environment variables are not preserved between steps
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@master # this step reuses a default Github action; see: https://github.com/actions
+    
+    - name: Prepare for docker
+      run: |
+        echo Running on branch ${GITHUB_REF##*/}
+        docker version
+        docker login docker.pkg.github.com -u ${GITHUB_ACTOR} -p ${{secrets.GITHUB_TOKEN}}
+    
+    - name: Pull images to use as cache
+      run: |
+        docker pull ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} || true
+        docker pull ${IMAGE_DEV_BUILD_TAG} || true
+    
+    - name: Build
+      run: |
+        # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
+        docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --cache-from ${IMAGE_DEV_BUILD_TAG} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
+    
+    - name: Push
+      run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
+  
+  # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
+  test:
+    name: Test
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+
+  release:
+    name: Release
+    if: github.ref == 'refs/heads/master'
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo This is only a test
+      
