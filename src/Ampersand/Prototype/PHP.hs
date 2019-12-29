@@ -20,7 +20,7 @@ import           System.FilePath
 import           System.Process(cwd,shell,readCreateProcess)
 
 
-createTablePHP :: TableSpec -> [T.Text]
+createTablePHP :: TableSpec -> [Text]
 createTablePHP tSpec =
   map (T.pack . ("// "<>)) (tsCmnt tSpec) <>
   [-- Drop table if it already exists
@@ -39,7 +39,7 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec -> T.Text -> Expression ->  RIO env [(String,String)]
+evaluateExpSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec -> Text -> Expression ->  RIO env [(String,String)]
 evaluateExpSQL fSpec dbNm expr = do
     env <- ask
     let violationsExpr = conjNF env expr
@@ -47,19 +47,19 @@ evaluateExpSQL fSpec dbNm expr = do
     performQuery dbNm violationsQuery
 
 performQuery :: (HasProtoOpts env, HasLogFunc env) =>
-                T.Text -> SqlQuery ->  RIO env [(String,String)]
+                Text -> SqlQuery ->  RIO env [(String,String)]
 performQuery dbNm queryStr = do
     env <- ask
     queryResult <- T.unpack <$> (executePHPStr . showPHP) (php env)
     if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-    then do mapM_ sayLn (lines (T.unpack $ "\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
+    then do mapM_ (logInfo . display) (T.lines ("\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
     else case reads queryResult of
            [(pairs,"")] -> return pairs
            _            -> fatal ("Parse error on php result: \n"<>(unlines . map ("     " ++) . lines $ queryResult))
      
    where 
-    php :: HasProtoOpts env => env -> [T.Text]
+    php :: HasProtoOpts env => env -> [Text]
     php env =
       connectToMySqlServerPHP env (Just dbNm) <>
       [ "$sql="<>queryAsPHP queryStr<>";"
@@ -80,13 +80,13 @@ performQuery dbNm queryStr = do
       ]
 
 -- call the command-line php with phpStr as input
-executePHPStr :: (HasLogFunc env) => T.Text -> RIO env T.Text
+executePHPStr :: (HasLogFunc env) => Text -> RIO env Text
 executePHPStr phpStr = do
     tempdir <- liftIO getTemporaryDirectory 
                  `catch`
                      (\e -> do 
                           let err = show (e :: IOException)
-                          sayLn ("Warning: Couldn't find temp directory. Using current directory : " <> err)
+                          logWarn $ "Couldn't find temp directory. Using current directory : " <> displayShow err
                           return "."
                      )
     let phpPath = tempdir </> "tmpPhpQueryOfAmpersand" <.> "php"
@@ -95,7 +95,7 @@ executePHPStr phpStr = do
     executePHP phpPath
     
 
-executePHP :: String ->  RIO env T.Text
+executePHP :: String ->  RIO env Text
 executePHP phpPath = do
     let cp = (shell command) 
                 { cwd = Just (takeDirectory phpPath)
@@ -115,16 +115,16 @@ executePHP phpPath = do
             
    
 
-showPHP :: [T.Text] -> T.Text
+showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
-tempDbName :: HasProtoOpts a => FSpec -> a -> T.Text
+tempDbName :: HasProtoOpts a => FSpec -> a -> Text
 tempDbName fSpec x = "TempDB_"<>case T.pack <$> view dbNameL x of
                                   Nothing -> T.pack (name fSpec)
                                   Just nm -> nm
 
-connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe T.Text-> [T.Text]
+connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe Text-> [Text]
 connectToMySqlServerPHP x mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
@@ -147,9 +147,9 @@ connectToMySqlServerPHP x mDbName =
          connectToTheDatabasePHP
     )
   where
-   subst :: String -> T.Text
+   subst :: String -> Text
    subst = addSlashes . T.pack
-connectToTheDatabasePHP :: [T.Text]
+connectToTheDatabasePHP :: [Text]
 connectToTheDatabasePHP =
     [ "// Connect to the database"
     , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
@@ -173,22 +173,25 @@ createTempDatabase fSpec = do
     env <- ask
     result <- executePHPStr .
               showPHP $ phpStr env
-    sayWhenLoudLn $ 
+    logInfo $ 
          if T.null result 
           then "Temp database created succesfully."
-          else "Temp database creation failed! :\n"
-             <>"The result:\n"
-             <>T.unpack result
-             <>"The statements:\n"
-             <>lineNumbers (phpStr env)
+          else display $ T.intercalate "\n" $
+                 [ "Temp database creation failed! :"
+                 , "The result:"
+                 , result
+                 , "The statements:"
+                 ] ++
+                 lineNumbers (phpStr env)
+                 
     return (T.null result)
  where 
-  lineNumbers :: [T.Text] -> String
-  lineNumbers = L.intercalate "  \n" . map withNumber . zip [1..] . map T.unpack
+  lineNumbers :: [Text] -> [Text]
+  lineNumbers = map withNumber . zip [1..]
     where
-      withNumber :: (Int,String) -> String
-      withNumber (n,t) = "/*"<>take (5-length(show n)) "00000"<>show n<>"*/ "<>t
-  phpStr :: (HasProtoOpts env) => env -> [T.Text]
+      withNumber :: (Int,Text) -> Text
+      withNumber (n,t) = "/*"<>T.take (5-length(show n)) "00000"<>tshow n<>"*/ "<>t
+  phpStr :: (HasProtoOpts env) => env -> [Text]
   phpStr env = 
     (connectToMySqlServerPHP env Nothing) <>
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"

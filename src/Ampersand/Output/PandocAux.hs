@@ -116,11 +116,11 @@ writepandoc :: (HasDirOutput env, HasRootFile env, HasDocumentOpts env, HasLogFu
       FSpec -> Pandoc -> RIO env ()
 writepandoc fSpec thePandoc = do
   env <- ask
-  sayWhenLoudLn ("Generating "++fSpecFormatString env ++" to : "++outputFile env)
+  logInfo $ "Generating "<>display (fSpecFormatString env) <>" to : "<>display (T.pack $ outputFile env)
   liftIO $ writepandoc' env fSpec thePandoc
  where
-    fSpecFormatString :: (HasDocumentOpts env) => env -> String 
-    fSpecFormatString = map toLower . drop 1 . show . view fspecFormatL
+    fSpecFormatString :: (HasDocumentOpts env) => env -> Text 
+    fSpecFormatString = T.toLower . T.drop 1 . tshow . view fspecFormatL
 
 outputFile :: (HasDocumentOpts env, HasRootFile env, HasDirOutput env) => env -> FilePath
 outputFile env = view dirOutputL env </> baseName env -<.> ext (view fspecFormatL env) 
@@ -191,13 +191,13 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
                     --  , writerVerbose=optVerbosity
                       }
       where 
-        template :: Maybe T.Text
+        template :: Maybe Text
         template  = substitute substMap <$> T.pack <$> getStaticFileContent PandocTemplates ("default."++writerName)
-        substitute :: [(T.Text,T.Text)] -> T.Text -> T.Text
+        substitute :: [(Text,Text)] -> Text -> Text
         substitute subs tmpl = foldr replaceAll tmpl subs
-        replaceAll :: (T.Text,T.Text) -> T.Text -> T.Text
+        replaceAll :: (Text,Text) -> Text -> Text
         replaceAll (needle,replacement) = Partial.replace needle replacement
-        substMap :: [(T.Text,T.Text)]
+        substMap :: [(Text,Text)]
         -- This substitusions are required so we can use the 
         -- templates from pandoc unchanged. Without this substitutions
         -- all kind of crazy errors occur with LaTeX, and possibly other

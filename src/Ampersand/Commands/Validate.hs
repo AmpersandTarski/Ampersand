@@ -21,7 +21,7 @@ import           Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 validate :: (HasProtoOpts env, HasLogFunc env)
        => FSpec -> RIO env ()
 validate fSpec = do
-    sayLn "Validating SQL expressions..."
+    logInfo "Validating SQL expressions..."
     errMsg <- validateRulesSQL fSpec
     unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
 

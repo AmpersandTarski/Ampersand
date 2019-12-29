@@ -149,7 +149,7 @@ toPops env file x = map popForColumn (colNrs x)
                                     [ "Error reading cell at:"
                                     , show orig
                                     , show e]
-       unDelimit :: Maybe Char -> T.Text -> [T.Text]
+       unDelimit :: Maybe Char -> Text -> [Text]
        unDelimit mDelimiter xs = 
          case mDelimiter of
            Nothing -> [xs]
@@ -164,7 +164,7 @@ toPops env file x = map popForColumn (colNrs x)
     value k = theCellMap x ^? ix k . cellValue . _Just
 
 
-theSheetCellsForTable :: (T.Text,Worksheet) -> [SheetCellsForTable]
+theSheetCellsForTable :: (Text,Worksheet) -> [SheetCellsForTable]
 theSheetCellsForTable (sheetName,ws) 
   =  catMaybes [theMapping i | i <- [0..length tableStarters - 1]]
   where
@@ -249,7 +249,7 @@ theSheetCellsForTable (sheetName,ws)
             Just (CellText t) -> (not . T.null . trim) t -- && (isLower . T.head . trim) t
             _ -> False
                
-conceptNameWithOptionalDelimiter :: T.Text -> Maybe ( String     {- Conceptname -} 
+conceptNameWithOptionalDelimiter :: Text -> Maybe ( String     {- Conceptname -} 
                                                     , Maybe Char {- Delimiter   -}
                                              )
 -- Cases:  1) "[" ++ Conceptname ++ delimiter ++ "]"
@@ -271,20 +271,20 @@ conceptNameWithOptionalDelimiter t
            
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation
-isConceptName :: T.Text -> Bool
+isConceptName :: Text -> Bool
 isConceptName t = case T.uncons t of
                     Nothing  -> False
                     (Just (h,_)) -> isUpper h
 
 -- | trim is used to remove leading and trailing spaces
-trim :: T.Text -> T.Text
+trim :: Text -> Text
 trim = T.reverse . trim' . T.reverse . trim'
   where 
-    trim' :: T.Text -> T.Text
+    trim' :: Text -> Text
     trim' t = case uncons t of
                Just (' ',t') -> trim' t'
                _  -> t 
-isBracketed :: T.Text -> Bool
+isBracketed :: Text -> Bool
 isBracketed t =
     case T.uncons (trim t) of
       Just ('[',tl) -> case T.uncons (T.reverse tl) of

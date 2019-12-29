@@ -1,7 +1,8 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-
+* Refactor Docker image for Ampersand compiler
+* Add continuous integration via Github Actions. With cache.
 * [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. --TODO: Needs documentation
 
 ## v3.17.4 (13 september 2019)

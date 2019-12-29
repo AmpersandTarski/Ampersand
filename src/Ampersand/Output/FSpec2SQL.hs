@@ -20,15 +20,15 @@ import           System.FilePath
 generateDatabaseFile :: (HasDirPrototype env, HasLogFunc env) => FSpec -> RIO env ()
 generateDatabaseFile fSpec = 
    do env <- ask
-      sayWhenLoudLn $ "  Generating "++file
+      logInfo $ "  Generating "<>display (T.pack file)
       liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile env))
-      liftIO $ writeFile (fullFile env) content
+      writeFileUtf8 (fullFile env) content
   where 
-   content = T.unpack (databaseStructureSql fSpec)
+   content = databaseStructureSql fSpec
    file = "database" <.> "sql"
    fullFile env = getGenericsDir env </> file
 
-databaseStructureSql :: FSpec -> T.Text
+databaseStructureSql :: FSpec -> Text
 databaseStructureSql fSpec
    = T.intercalate "\n" $ 
          header (T.pack ampersandVersionStr)
@@ -41,7 +41,7 @@ generateDBstructQueries fSpec withComment
   =    concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
     <> additionalDatabaseSettings 
 
-dumpSQLqueries :: env -> FSpec -> T.Text
+dumpSQLqueries :: env -> FSpec -> Text
 dumpSQLqueries env fSpec
    = T.intercalate "\n" $ 
          header (T.pack ampersandVersionStr)
@@ -56,12 +56,12 @@ dumpSQLqueries env fSpec
    where
      y :: [Interface]
      y = interfaceS fSpec <> interfaceG fSpec
-     showInterface :: Interface -> [T.Text]
+     showInterface :: Interface -> [Text]
      showInterface ifc 
         = header ("INTERFACE: "<>T.pack (name ifc))
         <>(map ("  " <>) . showObjDef . ifcObj) ifc
         where 
-          showObjDef :: ObjectDef -> [T.Text]
+          showObjDef :: ObjectDef -> [Text]
           showObjDef obj
             = (header . T.pack . showA . objExpression) obj
             <>[queryAsSQL . prettySQLQueryWithPlaceholder 2 fSpec . objExpression $ obj]
@@ -70,13 +70,13 @@ dumpSQLqueries env fSpec
                  Just sub -> showSubInterface sub
             <>header ("Broad query for the object at " <> (T.pack . show . origin) obj)
             <>[T.pack . prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
-          showSubInterface :: SubInterface -> [T.Text]
+          showSubInterface :: SubInterface -> [Text]
           showSubInterface sub = 
             case sub of 
               Box{} -> concatMap showObjDef [e | BxExpr e <- siObjs sub]
               InterfaceRef{} -> []
 
-     showConjunct :: Conjunct -> [T.Text]
+     showConjunct :: Conjunct -> [Text]
      showConjunct conj 
         = header (T.pack$ rc_id conj)
         <>["/*"
@@ -90,12 +90,12 @@ dumpSQLqueries env fSpec
         where
           showRule r 
             = T.pack ("  - "<>name r<>": "<>showA r)
-     showDecl :: Relation -> [T.Text]
+     showDecl :: Relation -> [Text]
      showDecl decl 
         = header (T.pack$ showA decl)
         <>[(queryAsSQL . prettySQLQuery 2 fSpec $ decl)<>";",""]
 
-header :: T.Text -> [T.Text]
+header :: Text -> [Text]
 header title = 
     [ "/*"
     , T.replicate width "*"
@@ -108,9 +108,9 @@ header title =
               Nothing -> fatal "Impossible"
               Just x  -> x
     l = T.length title
-    spaces :: Int -> T.Text
+    spaces :: Int -> Text
     spaces i = T.replicate i " "
     firstspaces :: Int
     firstspaces = (width - 6 - l) `quot` 2 
-addSeparator :: T.Text -> T.Text
+addSeparator :: Text -> Text
 addSeparator t = t <> ";"
