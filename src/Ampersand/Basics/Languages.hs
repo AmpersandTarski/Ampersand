@@ -8,6 +8,7 @@ import Ampersand.Basics.Prelude
 import RIO.Char (toLower)
 import qualified RIO.List as L
 
+-- | An enumeration of supported natural languages.
 data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data, Enum, Bounded)
 
 -- | Returns the plural of a given word based on a specific language
@@ -66,11 +67,15 @@ plural Dutch str =
 -- you can use:  l (NL "Nederlandse tekst", EN "English text")
 -- to specify strings in multiple languages.
 
+-- | Dutch text
 newtype NLString = NL String
+-- | English text
 newtype ENString = EN String
 
+-- | Type of text containing all localized variations
 type LocalizedStr = (NLString, ENString)
 
+-- | Select the correct text based on the chosen language
 localize :: Lang -> LocalizedStr -> String
 localize Dutch   (NL s, _) = s
 localize English (_, EN s) = s
