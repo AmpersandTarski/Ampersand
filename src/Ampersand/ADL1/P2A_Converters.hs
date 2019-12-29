@@ -245,7 +245,7 @@ pCtx2aCtx env
       pats        <- traverse (pPat2aPat contextInfo) p_patterns            --  The patterns defined in this context
       uniqueNames pats
       rules       <- traverse (pRul2aRul contextInfo Nothing) p_rules       --  All user defined rules in this context, but outside patterns
-      uniqueNames rules
+      uniqueNames $ rules ++ concatMap (toList . udefrules) pats
       identdefs   <- traverse (pIdentity2aIdentity contextInfo Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       viewdefs    <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames viewdefs
@@ -374,7 +374,7 @@ pCtx2aCtx env
             case filter (not . isSpecific) cs of
                []  -> -- there must be at least one cycle in the CLASSIFY statements.
                       case L.nub cycles of
-                        []  -> fatal "No cycles found!"
+                        []  -> fatal $ "No cycles found!"<> show cs
                         x:xs -> mkCyclesInGensError (x NE.:| xs)
                         where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
                                 where
@@ -782,7 +782,10 @@ pCtx2aCtx env
     
     pPat2aPat :: ContextInfo -> P_Pattern -> Guarded Pattern
     pPat2aPat ci ppat
-     = f <$> traverse (pRul2aRul ci (Just $ name ppat)) (pt_rls ppat)
+     = f <$> do 
+               rules <- traverse (pRul2aRul ci (Just $ name ppat)) (pt_rls ppat)
+               uniqueNames rules
+               return rules
          <*> traverse (pIdentity2aIdentity ci (Just $ name ppat)) (pt_ids ppat) 
          <*> traverse (pPop2aPop ci) (pt_pop ppat)
          <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat) 
