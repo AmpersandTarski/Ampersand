@@ -20,9 +20,9 @@ import qualified RIO.Text as T
 import           Language.SQL.SimpleSQL.Pretty
 import           Language.SQL.SimpleSQL.Syntax
 import           RIO.List (intercalate,nub,partition,(\\),lastMaybe,maximumMaybe)
-data SqlQuery = SqlQueryPlain  T.Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
-              | SqlQueryPretty [T.Text] -- Human readable, neatly prettyprinted
-              | SqlQuerySimple T.Text -- Simple sql statement, could be both plain and pretty.
+data SqlQuery = SqlQueryPlain  Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
+              | SqlQueryPretty [Text] -- Human readable, neatly prettyprinted
+              | SqlQuerySimple Text -- Simple sql statement, could be both plain and pretty.
 placeHolderSQL :: String
 placeHolderSQL = "_SRCATOM"
 

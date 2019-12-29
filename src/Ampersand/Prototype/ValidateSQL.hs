@@ -1,8 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
-import           Ampersand.Basics
 import           Ampersand.ADL1
+import           Ampersand.Basics
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
@@ -10,6 +11,7 @@ import           Ampersand.Prototype.PHP
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
@@ -23,12 +25,12 @@ validateRulesSQL fSpec = do
        viols -> exitWith . ViolationsInDatabase . map stringify $ viols
     hSetBuffering stdout NoBuffering
 
-    sayWhenLoudLn "Initializing temporary database (this could take a while)"
+    logDebug "Initializing temporary database (this could take a while)"
     succes <- createTempDatabase fSpec
     if succes 
     then actualValidation 
     else do 
-        sayLn "Error: Database creation failed. No validation could be done."
+        logInfo "Error: Database creation failed. No validation could be done."
         return []
   where
     actualValidation = do
@@ -37,11 +39,12 @@ validateRulesSQL fSpec = do
                       getAllPairViewExps fSpec ++
                       getAllIdExps fSpec ++
                       getAllViewExps fSpec
-        sayWhenLoudLn $ "Number of expressions to be validated: "++show (length allExps)
-        results <- mapM (validateExp fSpec) $ zip allExps [1..]
+        logDebug $ "Number of expressions to be validated: "<>displayShow (length allExps)
+        results <- mapM (validateExp fSpec (length allExps)) $ zip allExps [1..]
+        logStickyDone ""
         case [ ve | (ve, False) <- results] of
            [] -> do
-               sayWhenLoudLn $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+               logDebug $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
                return []
            ves -> return $ "Validation error. The following expressions failed validation:"
                          : map showVExp ves
@@ -89,14 +92,15 @@ showVExp (expr, orig) = "Origin: "++orig++", expression: "++showA expr
 
 -- validate a single expression and report the results
 validateExp :: (HasProtoOpts env, HasLogFunc env) 
-         => FSpec 
+         => FSpec
+         -> Int -- total amount of expressions to be validated (for showing progress) 
          -> (ValidationExp -- The expression to be validated
             , Int) -- The index of the expression (for showing progress) 
          -> RIO env (ValidationExp, Bool)
-validateExp fSpec (vExp, i) =
+validateExp fSpec total (vExp, i) = do
+    logSticky $ "Validating exprssions: "<>displayShow i<>" of "<>displayShow total
     case vExp of
         (EDcD{}, _) -> do -- skip all simple relations
-            sayLn $ replicate i '.'
             return (vExp, True)
         (expr, orig) -> do
             env <- ask
@@ -104,16 +108,15 @@ validateExp fSpec (vExp, i) =
             let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
             if L.sort violationsSQL == L.sort violationsAmp
             then do
-                sayLn $ replicate i '.'
                 return (vExp, True)
             else do
-                sayLn ""
-                sayLn $ "Checking "++orig ++": expression = "++showA expr
-                sayLn ""
-                sayLn "Mismatch between SQL and Ampersand"
-                sayLn $ showVExp vExp
-                sayLn "SQL violations:"
-                sayLn $ show violationsSQL
-                sayLn "Ampersand violations:"
-                sayLn $ show violationsAmp
+                logInfo ""
+                logInfo $ "Checking "<>display (T.pack orig) <>": expression = "<>display (T.pack $ showA expr)
+                logInfo ""
+                logInfo "Mismatch between SQL and Ampersand"
+                logInfo $ display (T.pack $ showVExp vExp)
+                logInfo "SQL violations:"
+                logInfo $ displayShow violationsSQL
+                logInfo "Ampersand violations:"
+                logInfo $ displayShow violationsAmp
                 return (vExp, False)
