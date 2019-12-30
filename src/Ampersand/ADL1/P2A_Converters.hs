@@ -241,15 +241,16 @@ pCtx2aCtx env
       }
  = do contextInfo <- g_contextInfo
       let declMap = declDisambMap contextInfo
+      uniqueNames p_patterns
       pats        <- traverse (pPat2aPat contextInfo) p_patterns            --  The patterns defined in this context
-      uniqueNames pats
+      uniqueNames $ p_rules ++ concatMap pt_rls p_patterns
       rules       <- traverse (pRul2aRul contextInfo Nothing) p_rules       --  All user defined rules in this context, but outside patterns
-      uniqueNames rules
+      uniqueNames $ p_identdefs ++ concatMap pt_ids p_patterns
       identdefs   <- traverse (pIdentity2aIdentity contextInfo Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
+      uniqueNames $ p_viewdefs ++ concatMap pt_vds p_patterns
       viewdefs    <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
-      uniqueNames viewdefs
+      uniqueNames p_interfaces
       interfaces  <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap)   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
-      uniqueNames interfaces
       purposes    <- traverse (pPurp2aPurp contextInfo) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
       relations <- traverse (pDecl2aDecl Nothing deflangCtxt deffrmtCtxt) p_relations
@@ -373,7 +374,7 @@ pCtx2aCtx env
             case filter (not . isSpecific) cs of
                []  -> -- there must be at least one cycle in the CLASSIFY statements.
                       case L.nub cycles of
-                        []  -> fatal "No cycles found!"
+                        []  -> fatal $ "No cycles found!"<> show cs
                         x:xs -> mkCyclesInGensError (x NE.:| xs)
                         where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
                                 where
@@ -687,9 +688,10 @@ pCtx2aCtx env
          P_Box{}
            -> addWarnings warnings $
                        build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
-                             <*  uniqueNames l
+                             <*  uniqueNames l  -- ensure that each label in a box has a unique name.
                              <*  mustBeObject (target objExpr)
-                  where l = si_box x
+                  where l :: [P_BoxItem (TermPrim, DisambPrim)]
+                        l = si_box x
                         build :: [BoxItem] -> (Expression, SubInterface)
                         build lst = (objExpr,Box { siConcept = target objExpr
                                                  , siMClass  = si_class x
