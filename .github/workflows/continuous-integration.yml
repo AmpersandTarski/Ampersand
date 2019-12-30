@@ -43,7 +43,7 @@ jobs:
     
     # This step build the final (slim) image 
     - name: Build final image
-      run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
+      run: docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
     
     # Push latest
     - name: Build and push ampersand:latest
