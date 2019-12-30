@@ -5,7 +5,7 @@ on:
 
 env:
   DOCKER_AMPERSAND_IMAGE: docker.pkg.github.com/ampersandtarski/ampersand/ampersand
-  IMAGE_DEV_BUILD_TAG: docker.pkg.github.com/ampersandtarski/ampersand/ampersand:dev-build
+  DOCKER_AMPERSAND_IMAGE_DEV: docker.pkg.github.com/ampersandtarski/ampersand/ampersand:development
   # IMAGE_BRANCH_TAG: ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} # Does not work because bash expression is not allowed here
 
 jobs:
@@ -29,12 +29,12 @@ jobs:
     - name: Pull images to use as cache
       run: |
         docker pull ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} || true
-        docker pull ${IMAGE_DEV_BUILD_TAG} || true
+        docker pull ${DOCKER_AMPERSAND_IMAGE_DEV} || true
     
     - name: Build
       run: |
         # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
-        docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --cache-from ${IMAGE_DEV_BUILD_TAG} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
+        docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --cache-from ${DOCKER_AMPERSAND_IMAGE_DEV} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
     
     - name: Push
       run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
