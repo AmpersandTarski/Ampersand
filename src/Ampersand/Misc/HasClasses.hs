@@ -211,7 +211,11 @@ instance HasDaemonOpts DaemonOpts where
   daemonOptsL = id
   {-# INLINE daemonOptsL #-}
 
-
+-- | An enumeration type for building an FSpec in some common way
+data KnownRecipe = 
+    Standard -- ^ Plain way of building. No fancy stuff. 
+  | Atlas    -- ^ A recipe to build an FSpec as used by RAP, for the Atlas.
+    deriving (Show, Enum, Bounded)
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.
   , xsqlBinTables :: !Bool
@@ -220,6 +224,7 @@ data FSpecGenOpts = FSpecGenOpts
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
   , xmetaModelsToAdd :: ![MetaModel] -- The metamodels that should be added to the FSpec
+  , xrecipeName :: !KnownRecipe 
   -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
   } deriving Show
 

@@ -3,7 +3,7 @@ module Ampersand.Options.FSpecGenOptsParser
    (fSpecGenOptsParser, defFSpecGenOpts)
 where
 
-import           Ampersand.Misc.HasClasses (FSpecGenOpts (..))
+import           Ampersand.Misc.HasClasses (FSpecGenOpts (..),KnownRecipe(..))
 import           Ampersand.Basics
 import           Ampersand.FSpec.ShowMeatGrinder (MetaModel(..))
 import           Options.Applicative
@@ -19,6 +19,7 @@ fSpecGenOptsParser ::
 fSpecGenOptsParser isForDaemon =
       ( \rootFile sqlBinTables genInterfaces namespace 
          defaultCrud trimXLSXCells metaModels
+         knownRecipe
         -> FSpecGenOpts
                 { xrootFile = rootFile
                 , xsqlBinTables = sqlBinTables
@@ -27,6 +28,7 @@ fSpecGenOptsParser isForDaemon =
                 , xdefaultCrud = defaultCrud
                 , xtrimXLSXCells = trimXLSXCells
                 , xmetaModelsToAdd = metaModels
+                , xrecipeName = knownRecipe
                 }
       ) <$> (if isForDaemon 
               then pure Nothing -- The rootfile should come from the daemon config file.
@@ -37,6 +39,7 @@ fSpecGenOptsParser isForDaemon =
         <*> crudP
         <*> trimXLSXCellsP
         <*> metaModelsP
+        <*> knownRecipeP
 defFSpecGenOpts :: FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl = FSpecGenOpts
      { xrootFile = Just rootAdl
@@ -46,6 +49,7 @@ defFSpecGenOpts rootAdl = FSpecGenOpts
      , xdefaultCrud = (True,True,True,True)
      , xtrimXLSXCells = True
      , xmetaModelsToAdd = []
+     , xrecipeName = Standard
      } 
 rootFileP :: Parser FilePath
 rootFileP = strArgument 
@@ -96,6 +100,37 @@ trimXLSXCellsP = boolFlags True "trim-cellvalues"
         ( "ignoring the leading and trailing spaces in .xlsx files "<>
                  "that are INCLUDED in the script.")
          mempty
+knownRecipeP :: Parser KnownRecipe
+knownRecipeP = toKnownRecipe <$> strOption
+      (  long "build-recipe"
+      <> metavar "RECIPE"
+      <> value (show Standard)
+      <> showDefault
+      <> completeWith (map show allKnownRecipes)
+      <> (  help $ "Build the internal FSpec with a predefined recipe. Allowd values are: "
+         <> show allKnownRecipes
+         )
+      )
+    where
+      allKnownRecipes :: [KnownRecipe]
+      allKnownRecipes = [minBound .. maxBound]
+      toKnownRecipe :: String -> KnownRecipe
+      toKnownRecipe s = case filter matches allKnownRecipes of
+            -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
+            --        See https://hackage.haskell.org/package/optparse-applicative
+                   [] -> fatal $ unlines
+                        ["No matching recipe found. Possible recipes are:"
+                        , "  "<>L.intercalate ", " (map show allKnownRecipes)
+                        , "  You specified: `"<>s<>"`"
+                        ]
+                   [f] -> f
+                   xs -> fatal $ unlines 
+                        [ "Ambiguous recipe specified. Possible matches are:"
+                        , "  "<>L.intercalate ", " (map show xs)
+                        ]
+            where
+              matches :: (Show a) => a -> Bool
+              matches x = map toLower s `L.isPrefixOf` (map toLower $ show x)
 metaModelsP :: Parser [MetaModel]
 metaModelsP = L.nub <$> many metaModelP -- (zero or more)
   where
@@ -124,5 +159,5 @@ metaModelsP = L.nub <$> many metaModelP -- (zero or more)
                         , "  "<>L.intercalate ", " (map show xs)
                         ]
             where
-              matches :: MetaModel -> Bool
+              matches :: (Show a) => a -> Bool
               matches x = map toLower s `L.isPrefixOf` (map toLower $ show x)

@@ -438,17 +438,17 @@ recipeBuilder :: (HasFSpecGenOpts env) => Bool -> env -> BuildRecipe
 recipeBuilder isForPrototype env 
   |     isForPrototype = BuildRecipe UserScript 
                             [MergeWith (BuildRecipe UserScript $ 
-                                                     Grind PrototypeContext : optionalMetaModels env
+                                                     Grind PrototypeContext : optionalMetaModels
                                         )
                             ]
-  | not isForPrototype = BuildRecipe UserScript $ 
-                            optionalMetaModels env
+  | not isForPrototype = BuildRecipe UserScript optionalMetaModels
+  | otherwise = fatal $ "Impossible! " <> show isForPrototype
   where
         
     -- This function takes care of the metamodels that could be requested by the user
     -- as a command line option. 
-    optionalMetaModels :: (HasFSpecGenOpts a) => a -> [BuildStep]
-    optionalMetaModels env = go models
+    optionalMetaModels :: [BuildStep]
+    optionalMetaModels = go models
       where models = view xmetaModelsToAddL env 
             go [] = []
             go (m:ms) = [MergeWith $ BuildRecipe (MetaScript m) (go ms)]
