@@ -121,7 +121,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
 --                  initCmd
 --                  initOptsParser
       addCommand'' Population
-                  "Generate an .xmlx file containing the populations of your script."
+                  "Generate a file that contains the population of your script."
                   populationCmd
                   populationOptsParser
       addCommand'' Proofs
