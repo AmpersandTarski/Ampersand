@@ -25,7 +25,7 @@ data AmpersandExit
   | NoValidFSpec [String]
   | ViolationsInDatabase [(String,[String])]
   | InvalidSQLExpression [String]
-  | NoPrototypeBecauseOfRuleViolations
+  | NoPrototypeBecauseOfRuleViolations [String]
   | FailedToInstallComposer [String]
   | PHPExecutionFailed [String]
   | WrongArgumentsGiven [String]
@@ -59,8 +59,8 @@ info x =
               -> (SE.ExitFailure  20 , "ERROR: The population would violate invariants. Could not generate your database." : concatMap showViolatedRule viols)
     InvalidSQLExpression msg
               -> (SE.ExitFailure  30 , "ERROR: Invalid SQL Expression" : map ("  "++) msg)
-    NoPrototypeBecauseOfRuleViolations
-              -> (SE.ExitFailure  40 , ["ERROR: No prototype generated because of rule violations."])
+    NoPrototypeBecauseOfRuleViolations msg
+              -> (SE.ExitFailure  40 , "ERROR: No prototype generated because of rule violations." : map ("  "++) msg)
     FailedToInstallComposer msg
               -> (SE.ExitFailure  50 , msg)
     PHPExecutionFailed msg

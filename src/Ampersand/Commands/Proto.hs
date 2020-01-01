@@ -12,6 +12,7 @@ module Ampersand.Commands.Proto
     ) where
 
 import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.FSpec2SQL
@@ -28,7 +29,9 @@ proto fSpec = do
     env <- ask
     let dirPrototype = getDirPrototype env
     allowInvariantViolations <- view allowInvariantViolationsL
-    if null (violationsOfInvariants fSpec) || allowInvariantViolations
+    let violatedRules :: [(Rule,AAtomPairs)]
+        violatedRules = violationsOfInvariants fSpec
+    if null violatedRules || allowInvariantViolations
     then do
        logDebug "Generating prototype..."
        liftIO $ createDirectoryIfMissing True dirPrototype
@@ -38,6 +41,23 @@ proto fSpec = do
        generateAllJSONfiles dir fSpec
        dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
        logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
-    else exitWith NoPrototypeBecauseOfRuleViolations
+    else exitWith $ NoPrototypeBecauseOfRuleViolations (violationMessages violatedRules)
 
-
+violationMessages :: [(Rule,AAtomPairs)] -> [String]
+violationMessages = concatMap violationMessage
+  where
+    violationMessage :: (Rule,AAtomPairs) -> [String]
+    violationMessage (r,ps) = 
+      [("There are "<>show (length ps)<>" violation(s) of RULE "<>name r<>":")]
+      <> (map ("  "<>) . listPairs 3 . toList $ ps)
+    listPairs :: Int -> [AAtomPair] -> [String]
+    listPairs i xs = 
+                case xs of
+                  [] -> []
+                  h:tl 
+                    | i == 0 -> ["  ..."]
+                    | otherwise -> showAP h : listPairs (i-1) tl
+        where
+          showAP :: AAtomPair -> String
+          showAP x= "("<>aavstr (apLeft x)<>", "<>aavstr (apRight x)<>")"
+        
