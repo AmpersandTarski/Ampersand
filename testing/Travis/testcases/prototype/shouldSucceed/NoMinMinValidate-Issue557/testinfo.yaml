@@ -1,3 +1,4 @@
 testCmds:
-#  - command: ampersand proto --verbose --sqlLogin ="root" --sqlPwd="" --build-recipe AtlasComplete
-#    exitcode: 0
+#  - command: ampersand population --verbose --sqlLogin ="root" --sqlPwd="" --build-recipe AtlasComplete
+  - command: ampersand population --verbose --sqlLogin ="root" --sqlPwd=""
+    exitcode: 0
