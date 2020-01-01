@@ -165,4 +165,3 @@ instance HasDirOutput (ExtendedRunner a) where
   dirOutputL = runnerL . dirOutputL
 instance HasBlackWhite a => HasBlackWhite (ExtendedRunner a) where
   blackWhiteL = cmdOptsL . blackWhiteL
--- instance HasProtoOpts a => Has
