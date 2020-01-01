@@ -30,13 +30,13 @@ proto fSpec = do
     allowInvariantViolations <- view allowInvariantViolationsL
     if null (violationsOfInvariants fSpec) || allowInvariantViolations
     then do
-       logInfo "Generating prototype..."
+       logDebug "Generating prototype..."
        liftIO $ createDirectoryIfMissing True dirPrototype
        doGenFrontend fSpec
        generateDatabaseFile fSpec
        generateJSONfiles False fSpec
        dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
-       logDebug $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
+       logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
     else exitWith NoPrototypeBecauseOfRuleViolations
 
 
