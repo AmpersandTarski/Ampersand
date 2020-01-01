@@ -113,7 +113,7 @@ knownRecipeP = toKnownRecipe <$> strOption
       )
     where
       allKnownRecipes :: [KnownRecipe]
-      allKnownRecipes = [minBound .. maxBound]
+      allKnownRecipes = [minBound..]
       toKnownRecipe :: String -> KnownRecipe
       toKnownRecipe s = case filter matches allKnownRecipes of
             -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
@@ -143,7 +143,7 @@ metaModelsP = L.nub <$> many metaModelP -- (zero or more)
          )
       where 
          allMetaModels :: [MetaModel]
-         allMetaModels = [minBound .. maxBound]
+         allMetaModels = [minBound..]
          toMetaModel :: String -> MetaModel
          toMetaModel s = case filter matches allMetaModels of
             -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.

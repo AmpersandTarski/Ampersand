@@ -21,8 +21,8 @@ import qualified RIO.Text as T
 import           Text.Pandoc.Class(runIO,getPOSIXTime) --TODO: Replace by RIO's getCurrentTime
 import           Text.Pandoc.Error(handleError)
 
--- | Builds an .xlsx file containing the population of the current project.
---
+-- | Builds a file containing the population of the current project.
+--   depending on a switch this could be an .xlsx file or a json file. 
 population :: (HasDirOutput env, HasRootFile env ,HasLogFunc env)
        => FSpec -> RIO env ()
 population fSpec = do

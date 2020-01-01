@@ -297,10 +297,15 @@ data DocOpts = DocOpts
    , xgenLegalRefs :: !Bool
    -- ^ enable/disable generation of legal references in the documentation
    } deriving Show
+data PopulationOutputFormat =
+    XLSX 
+  | JSON
+  deriving (Show, Enum, Bounded)
 -- | Options for @ampersand population@
 data PopulationOpts = PopulationOpts
    { x5fSpecGenOpts :: !FSpecGenOpts
    -- ^ Options required to build the fSpec
+   , xoutputFormat :: !PopulationOutputFormat 
    } deriving Show
 -- | Options for @ampersand proofs@
 data ProofOpts = ProofOpts
