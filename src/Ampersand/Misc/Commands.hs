@@ -17,7 +17,7 @@ import           Ampersand.Commands.Daemon
 import           Ampersand.Commands.Documentation
 import           Ampersand.Commands.Devoutput
 import           Ampersand.Commands.ExportAsADL
-import           Ampersand.Commands.Init
+--import           Ampersand.Commands.Init
 import           Ampersand.Commands.Population
 import           Ampersand.Commands.Proof
 import           Ampersand.Commands.Test
@@ -121,7 +121,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
 --                  initCmd
 --                  initOptsParser
       addCommand'' Population
-                  "Generate an .xmlx file containing the populations of your script."
+                  "Generate a file that contains the population of your script."
                   populationCmd
                   populationOptsParser
       addCommand'' Proofs
@@ -324,7 +324,7 @@ documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts =
     extendWith docOpts $ do
         env <- ask
-        let recipe = BuildRecipe UserScript [optionalMetaModels env]
+        let recipe = recipeBuilder False env
         mFSpec <- createFspec recipe
         doOrDie mFSpec doGenDocument
 
@@ -332,7 +332,8 @@ documentationCmd docOpts =
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd protoOpts = 
     extendWith protoOpts $ do
-        let recipe = BuildRecipe UserScript [MergeWith (BuildRecipe UserScript [Grind PrototypeContext])]
+        env <- ask
+        let recipe = recipeBuilder True env
         mFSpec <- createFspec recipe
         doOrDie mFSpec proto
 testCmd :: TestOpts -> RIO Runner ()
@@ -348,14 +349,14 @@ pprintCmd :: InputOutputOpts -> RIO Runner ()
 pprintCmd opts = 
     extendWith opts $ do
         env <- ask
-        let recipe = BuildRecipe UserScript [optionalMetaModels env]
+        let recipe = recipeBuilder False env
         mFSpec <- createFspec recipe
         doOrDie mFSpec exportAsAdl
 checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd opts =
     extendWith opts $ do
         env <- ask
-        let recipe = BuildRecipe UserScript [optionalMetaModels env]
+        let recipe = recipeBuilder False env
         mFSpec <- createFspec recipe
         doOrDie mFSpec doNothing
    where doNothing fSpec = do
@@ -364,7 +365,7 @@ populationCmd :: PopulationOpts -> RIO Runner ()
 populationCmd opts = 
     extendWith opts $ do
         env <- ask
-        let recipe = BuildRecipe UserScript [optionalMetaModels env]
+        let recipe = recipeBuilder False env
         mFSpec <- createFspec recipe
         doOrDie mFSpec population
 
@@ -372,7 +373,7 @@ proofCmd :: ProofOpts -> RIO Runner ()
 proofCmd opts = 
     extendWith opts $ do
         env <- ask
-        let recipe = BuildRecipe UserScript [optionalMetaModels env]
+        let recipe = recipeBuilder False env
         mFSpec <- createFspec recipe
         doOrDie mFSpec proof
 
@@ -384,14 +385,15 @@ umlCmd :: UmlOpts -> RIO Runner ()
 umlCmd opts = 
     extendWith opts $ do
         env <- ask
-        let recipe = BuildRecipe UserScript [optionalMetaModels env]
+        let recipe = recipeBuilder False env
         mFSpec <- createFspec recipe
         doOrDie mFSpec uml
 
 validateCmd :: ValidateOpts -> RIO Runner ()
 validateCmd opts = 
     extendWith opts $ do
-        let recipe = BuildRecipe UserScript [MergeWith (BuildRecipe UserScript [Grind PrototypeContext])]
+        env <- ask
+        let recipe = recipeBuilder True env
         mFSpec <- createFspec recipe
         doOrDie mFSpec validate
 
@@ -399,7 +401,7 @@ devoutputCmd :: DevOutputOpts -> RIO Runner ()
 devoutputCmd opts = 
     extendWith opts $ do
         env <- ask
-        let recipe = BuildRecipe UserScript [optionalMetaModels env]
+        let recipe = recipeBuilder False env
         mFSpec <- createFspec recipe
         doOrDie mFSpec devoutput
 
@@ -431,10 +433,26 @@ data Command =
       | Uml
       | Validate deriving Show
 
--- This function takes care of the metamodels that could be requested by the user
--- as a command line option. 
-optionalMetaModels :: (HasFSpecGenOpts a) => a -> BuildStep
-optionalMetaModels env = go models
-   where models = view xmetaModelsToAddL env 
-         go [] = NoConversion
-         go (m:ms) = MergeWith $ BuildRecipe (MetaScript m) [go ms]
+-- | Generic way to specify the recipe to be used to generate an FSpec
+recipeBuilder :: (HasFSpecGenOpts env) => Bool -> env -> BuildRecipe
+recipeBuilder isForPrototype env = 
+  (if isForPrototype then enablePrototype else id) $
+  case view recipeNameL env of
+    Standard -> BuildRecipe UserScript []
+    AtlasPopulation -> BuildRecipe UserScript [Grind FormalAmpersand]
+    AtlasComplete -> BuildRecipe (MetaScript FormalAmpersand) 
+                       [ MergeWith (BuildRecipe UserScript
+                                      [Grind FormalAmpersand]
+                                   )
+                       ]
+  where
+    enablePrototype :: BuildRecipe -> BuildRecipe
+    enablePrototype (BuildRecipe start steps) = 
+      BuildRecipe start $ 
+        steps ++ [MergeWith (BuildRecipe 
+                              (MetaScript PrototypeContext)
+                              [MergeWith (BuildRecipe start $ 
+                                            steps ++ [Grind PrototypeContext]
+                                         )]
+                            )
+                 ]

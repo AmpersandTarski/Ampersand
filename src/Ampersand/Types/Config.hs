@@ -152,6 +152,8 @@ instance (HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
   dirPrototypeL = cmdOptsL . dirPrototypeL
 instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where
   protoOptsL = cmdOptsL . protoOptsL
+instance (HasPopulationOpts a) => HasPopulationOpts (ExtendedRunner a) where
+  populationOptsL = cmdOptsL . populationOptsL
 instance (HasOutputFile a) => HasOutputFile (ExtendedRunner a) where
   outputfileL = cmdOptsL . outputfileL
 
@@ -165,4 +167,3 @@ instance HasDirOutput (ExtendedRunner a) where
   dirOutputL = runnerL . dirOutputL
 instance HasBlackWhite a => HasBlackWhite (ExtendedRunner a) where
   blackWhiteL = cmdOptsL . blackWhiteL
--- instance HasProtoOpts a => Has

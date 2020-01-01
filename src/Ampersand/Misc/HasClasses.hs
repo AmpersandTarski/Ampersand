@@ -4,7 +4,6 @@ module Ampersand.Misc.HasClasses
 where
 import Ampersand.Basics
 import RIO.FilePath
-import Ampersand.FSpec.ShowMeatGrinder (MetaModel)
 
 class HasFSpecGenOpts a where
   fSpecGenOptsL :: Lens' a FSpecGenOpts
@@ -18,8 +17,8 @@ class HasFSpecGenOpts a where
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
   trimXLSXCellsL :: Lens' a Bool
   trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x { xtrimXLSXCells = y })
-  xmetaModelsToAddL :: Lens' a [MetaModel]
-  xmetaModelsToAddL = fSpecGenOptsL . lens xmetaModelsToAdd (\x y -> x { xmetaModelsToAdd = y })
+  recipeNameL :: Lens' a KnownRecipe
+  recipeNameL = fSpecGenOptsL . lens xrecipeName (\x y -> x { xrecipeName = y })
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
   {-# INLINE fSpecGenOptsL #-}
@@ -188,6 +187,8 @@ class HasProofOpts env where
    proofOptsL :: Lens' env ProofOpts
 class HasPopulationOpts env where
    populationOptsL :: Lens' env PopulationOpts
+   outputFormatL :: Lens' env PopulationOutputFormat
+   outputFormatL = populationOptsL . (lens xoutputFormat (\x y -> x { xoutputFormat = y }))
 class HasValidateOpts env where
    validateOptsL :: Lens' env ValidateOpts
 class HasTestOpts env where
@@ -211,7 +212,12 @@ instance HasDaemonOpts DaemonOpts where
   daemonOptsL = id
   {-# INLINE daemonOptsL #-}
 
-
+-- | An enumeration type for building an FSpec in some common way
+data KnownRecipe = 
+    Standard -- ^ Plain way of building. No fancy stuff. 
+  | AtlasComplete    -- ^ A recipe to build an FSpec containing a selfcontained Atlas. 
+  | AtlasPopulation  -- ^ A recipe to build an FSpec as used by RAP, for the Atlas.
+    deriving (Show, Enum, Bounded)
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.
   , xsqlBinTables :: !Bool
@@ -219,7 +225,7 @@ data FSpecGenOpts = FSpecGenOpts
   , xnamespace :: !String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
-  , xmetaModelsToAdd :: ![MetaModel] -- The metamodels that should be added to the FSpec
+  , xrecipeName :: !KnownRecipe 
   -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
   } deriving Show
 
@@ -292,11 +298,20 @@ data DocOpts = DocOpts
    , xgenLegalRefs :: !Bool
    -- ^ enable/disable generation of legal references in the documentation
    } deriving Show
+data PopulationOutputFormat =
+    XLSX 
+  | JSON
+  deriving (Show, Enum, Bounded)
 -- | Options for @ampersand population@
 data PopulationOpts = PopulationOpts
    { x5fSpecGenOpts :: !FSpecGenOpts
    -- ^ Options required to build the fSpec
+   , xoutputFormat :: !PopulationOutputFormat 
    } deriving Show
+instance HasPopulationOpts PopulationOpts where
+   populationOptsL = id
+   outputFormatL = populationOptsL . (lens xoutputFormat (\x y -> x { xoutputFormat = y }))
+   {-# INLINE populationOptsL #-}
 -- | Options for @ampersand proofs@
 data ProofOpts = ProofOpts
    { x6fSpecGenOpts :: !FSpecGenOpts
