@@ -18,8 +18,10 @@ class HasFSpecGenOpts a where
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
   trimXLSXCellsL :: Lens' a Bool
   trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x { xtrimXLSXCells = y })
-  xmetaModelsToAddL :: Lens' a [MetaModel]
-  xmetaModelsToAddL = fSpecGenOptsL . lens xmetaModelsToAdd (\x y -> x { xmetaModelsToAdd = y })
+  metaModelsToAddL :: Lens' a [MetaModel]
+  metaModelsToAddL = fSpecGenOptsL . lens xmetaModelsToAdd (\x y -> x { xmetaModelsToAdd = y })
+  recipeNameL :: Lens' a KnownRecipe
+  recipeNameL = fSpecGenOptsL . lens xrecipeName (\x y -> x { xrecipeName = y })
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
   {-# INLINE fSpecGenOptsL #-}
@@ -216,7 +218,8 @@ instance HasDaemonOpts DaemonOpts where
 -- | An enumeration type for building an FSpec in some common way
 data KnownRecipe = 
     Standard -- ^ Plain way of building. No fancy stuff. 
-  | Atlas    -- ^ A recipe to build an FSpec as used by RAP, for the Atlas.
+  | AtlasComplete    -- ^ A recipe to build an FSpec containing a selfcontained Atlas. 
+  | AtlasPopulation  -- ^ A recipe to build an FSpec as used by RAP, for the Atlas.
     deriving (Show, Enum, Bounded)
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.

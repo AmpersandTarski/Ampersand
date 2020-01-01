@@ -435,20 +435,31 @@ data Command =
 
 -- | Generic way to specify the recipe to be used to generate an FSpec
 recipeBuilder :: (HasFSpecGenOpts env) => Bool -> env -> BuildRecipe
-recipeBuilder isForPrototype env 
-  |     isForPrototype = BuildRecipe UserScript 
-                            [MergeWith (BuildRecipe UserScript $ 
-                                                     Grind PrototypeContext : optionalMetaModels
-                                        )
-                            ]
-  | not isForPrototype = BuildRecipe UserScript optionalMetaModels
-  | otherwise = fatal $ "Impossible! " <> show isForPrototype
+recipeBuilder isForPrototype env = 
+  (if isForPrototype then enablePrototype else id) $
+  case view recipeNameL env of
+    Standard -> BuildRecipe UserScript optionalMetaModels
+    AtlasPopulation -> BuildRecipe UserScript [Grind FormalAmpersand]
+    AtlasComplete -> BuildRecipe (MetaScript FormalAmpersand) 
+                       [ MergeWith (BuildRecipe UserScript
+                                      [Grind FormalAmpersand]
+                                   )
+                       ]
   where
-        
+    enablePrototype :: BuildRecipe -> BuildRecipe
+    enablePrototype (BuildRecipe start steps) = 
+      BuildRecipe start $ 
+        steps ++ [MergeWith (BuildRecipe 
+                              (MetaScript PrototypeContext)
+                              [MergeWith (BuildRecipe start $ 
+                                            steps ++ [Grind PrototypeContext]
+                                         )]
+                            )
+                 ]
     -- This function takes care of the metamodels that could be requested by the user
     -- as a command line option. 
     optionalMetaModels :: [BuildStep]
     optionalMetaModels = go models
-      where models = view xmetaModelsToAddL env 
+      where models = view metaModelsToAddL env 
             go [] = []
             go (m:ms) = [MergeWith $ BuildRecipe (MetaScript m) (go ms)]
