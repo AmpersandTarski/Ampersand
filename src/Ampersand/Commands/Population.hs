@@ -15,6 +15,7 @@ import           Ampersand.Basics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec(FSpec(..))
 import           Ampersand.Output.Population2Xlsx (fSpec2PopulationXlsx)
+import           Ampersand.Output.ToJSON.ToJson
 import           System.FilePath
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.Text as T
@@ -23,15 +24,20 @@ import           Text.Pandoc.Error(handleError)
 
 -- | Builds a file containing the population of the current project.
 --   depending on a switch this could be an .xlsx file or a json file. 
-population :: (HasDirOutput env, HasRootFile env ,HasLogFunc env)
+population :: (HasPopulationOpts env, HasDirOutput env, HasRootFile env,HasLogFunc env)
        => FSpec -> RIO env ()
 population fSpec = do
-        outputFile <- outputFile' <$> ask
-        logDebug "Generating .xlsx file containing the population..."
-        ct <- liftIO $ runIO getPOSIXTime >>= handleError
-        BL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
-        logInfo $ "Generated file: " <> display (T.pack outputFile)
-      where outputFile' env = view dirOutputL env </> baseName env <> "_generated_pop" -<.> ".xlsx"
+        env <- ask
+        format <- view outputFormatL
+        logDebug $ "Generating population output in "<>displayShow format
+        case format of
+          XLSX -> do let outputFile = view dirOutputL env </> baseName env <> "_generated_pop" -<.> ".xlsx"
+                     ct <- liftIO $ runIO getPOSIXTime >>= handleError
+                     BL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
+                     logInfo $ "Generated file: " <> display (T.pack outputFile)
+          JSON -> do let dir = view dirOutputL env
+                     generatePopJSONfile dir fSpec
+                     logInfo $ "JSON population file is generated"
 
 
 

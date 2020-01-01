@@ -188,6 +188,8 @@ class HasProofOpts env where
    proofOptsL :: Lens' env ProofOpts
 class HasPopulationOpts env where
    populationOptsL :: Lens' env PopulationOpts
+   outputFormatL :: Lens' env PopulationOutputFormat
+   outputFormatL = populationOptsL . (lens xoutputFormat (\x y -> x { xoutputFormat = y }))
 class HasValidateOpts env where
    validateOptsL :: Lens' env ValidateOpts
 class HasTestOpts env where
@@ -307,6 +309,10 @@ data PopulationOpts = PopulationOpts
    -- ^ Options required to build the fSpec
    , xoutputFormat :: !PopulationOutputFormat 
    } deriving Show
+instance HasPopulationOpts PopulationOpts where
+   populationOptsL = id
+   outputFormatL = populationOptsL . (lens xoutputFormat (\x y -> x { xoutputFormat = y }))
+   {-# INLINE populationOptsL #-}
 -- | Options for @ampersand proofs@
 data ProofOpts = ProofOpts
    { x6fSpecGenOpts :: !FSpecGenOpts

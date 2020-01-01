@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToJSON.JSONutils 
-  (writeJSONFile, JSON(..), ToJSON(..)
+  (writeJSONFile, JSON(..), JSON'(..), ToJSON(..)
   , module Ampersand.Basics
   , module Ampersand.Classes
   , module Ampersand.Core.ParseTree
@@ -34,24 +34,26 @@ import           GHC.Generics
 import           System.FilePath
 import           System.Directory
 
-writeJSONFile :: (ToJSON a, HasDirPrototype env, HasLogFunc env) => 
+writeJSONFile :: (ToJSON a, HasLogFunc env) => 
                  FilePath -> a -> RIO env ()
-writeJSONFile fName x = do
-    env <- ask
-    let fullFile = getGenericsDir env </> file
-    logDebug $ "  Generating "<>display (T.pack file) 
+writeJSONFile fullFile x = do
+    logDebug $ "  Generating "<>display (T.pack fullFile) 
     liftIO $ createDirectoryIfMissing True (takeDirectory fullFile)
     liftIO $ BL.writeFile fullFile (encodePretty x)
-  where file = fName <.> "json"
-        
 
--- We use aeson to generate .json in a simple and efficient way.
--- For details, see http://hackage.haskell.org/package/aeson/docs/Data-Aeson.html#t:ToJSON
+-- | We use aeson to generate .json in a simple and efficient way.
+--   For details, see http://hackage.haskell.org/package/aeson/docs/Data-Aeson.html#t:ToJSON
 class (GToJSON Zero (Rep b), Generic b) => JSON a b | b -> a where
-  fromAmpersand :: (Show env, HasProtoOpts env) 
+  fromAmpersand  :: () 
        => env -> FSpec -> a -> b
   amp2Jason :: b -> Value
   amp2Jason = genericToJSON ampersandDefault
+-- | Same as JSON, but different constraints for fromAmpersand'
+class (GToJSON Zero (Rep b), Generic b) => JSON' a b | b -> a where
+  fromAmpersand' :: (HasProtoOpts env, Show env) 
+       => env -> FSpec -> a -> b
+  amp2Jason' :: b -> Value
+  amp2Jason' = genericToJSON ampersandDefault
 
 -- These are the modified defaults, to generate .json 
 ampersandDefault :: AT.Options

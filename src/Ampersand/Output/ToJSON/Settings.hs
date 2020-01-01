@@ -19,9 +19,9 @@ data Settings = Settings
   , sngJSONcompiler_modelHash :: String
   } deriving (Generic, Show)
 instance ToJSON Settings where
-  toJSON = amp2Jason
-instance JSON FSpec Settings where
- fromAmpersand env fSpec _ = Settings 
+  toJSON = amp2Jason'
+instance JSON' FSpec Settings where
+ fromAmpersand' env fSpec _ = Settings 
   { sngJSONglobal_contextName = T.unpack (fsName fSpec)
   , sngJSONmysql_dbHost       = view sqlHostL env
   , sngJSONmysql_dbName       = case view dbNameL env of

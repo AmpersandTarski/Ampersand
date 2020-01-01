@@ -34,7 +34,8 @@ proto fSpec = do
        liftIO $ createDirectoryIfMissing True dirPrototype
        doGenFrontend fSpec
        generateDatabaseFile fSpec
-       generateJSONfiles False fSpec
+       let dir = getGenericsDir env
+       generateAllJSONfiles dir fSpec
        dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
        logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
     else exitWith NoPrototypeBecauseOfRuleViolations
