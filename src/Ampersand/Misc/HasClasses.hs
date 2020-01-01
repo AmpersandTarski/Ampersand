@@ -4,7 +4,6 @@ module Ampersand.Misc.HasClasses
 where
 import Ampersand.Basics
 import RIO.FilePath
-import Ampersand.FSpec.ShowMeatGrinder (MetaModel)
 
 class HasFSpecGenOpts a where
   fSpecGenOptsL :: Lens' a FSpecGenOpts
@@ -18,8 +17,6 @@ class HasFSpecGenOpts a where
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
   trimXLSXCellsL :: Lens' a Bool
   trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x { xtrimXLSXCells = y })
-  metaModelsToAddL :: Lens' a [MetaModel]
-  metaModelsToAddL = fSpecGenOptsL . lens xmetaModelsToAdd (\x y -> x { xmetaModelsToAdd = y })
   recipeNameL :: Lens' a KnownRecipe
   recipeNameL = fSpecGenOptsL . lens xrecipeName (\x y -> x { xrecipeName = y })
 instance HasFSpecGenOpts FSpecGenOpts where
@@ -228,7 +225,6 @@ data FSpecGenOpts = FSpecGenOpts
   , xnamespace :: !String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
-  , xmetaModelsToAdd :: ![MetaModel] -- The metamodels that should be added to the FSpec
   , xrecipeName :: !KnownRecipe 
   -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
   } deriving Show

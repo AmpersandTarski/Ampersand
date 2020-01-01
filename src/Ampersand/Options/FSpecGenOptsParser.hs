@@ -5,7 +5,7 @@ where
 
 import           Ampersand.Misc.HasClasses (FSpecGenOpts (..),KnownRecipe(..))
 import           Ampersand.Basics
-import           Ampersand.FSpec.ShowMeatGrinder (MetaModel(..))
+-- import           Ampersand.FSpec.ShowMeatGrinder (MetaModel(..))
 import           Options.Applicative
 import           Options.Applicative.Builder.Extra
 import           RIO.Char (toLower)
@@ -18,7 +18,7 @@ fSpecGenOptsParser ::
   -> Parser FSpecGenOpts
 fSpecGenOptsParser isForDaemon =
       ( \rootFile sqlBinTables genInterfaces namespace 
-         defaultCrud trimXLSXCells metaModels
+         defaultCrud trimXLSXCells -- metaModels
          knownRecipe
         -> FSpecGenOpts
                 { xrootFile = rootFile
@@ -27,7 +27,6 @@ fSpecGenOptsParser isForDaemon =
                 , xnamespace = namespace
                 , xdefaultCrud = defaultCrud
                 , xtrimXLSXCells = trimXLSXCells
-                , xmetaModelsToAdd = metaModels
                 , xrecipeName = knownRecipe
                 }
       ) <$> (if isForDaemon 
@@ -38,7 +37,7 @@ fSpecGenOptsParser isForDaemon =
         <*> namespaceP
         <*> crudP
         <*> trimXLSXCellsP
-        <*> metaModelsP
+      --  <*> metaModelsP
         <*> knownRecipeP
 defFSpecGenOpts :: FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl = FSpecGenOpts
@@ -48,7 +47,6 @@ defFSpecGenOpts rootAdl = FSpecGenOpts
      , xnamespace = ""
      , xdefaultCrud = (True,True,True,True)
      , xtrimXLSXCells = True
-     , xmetaModelsToAdd = []
      , xrecipeName = Standard
      } 
 rootFileP :: Parser FilePath
@@ -126,36 +124,6 @@ knownRecipeP = toKnownRecipe <$> strOption
                    [f] -> f
                    xs -> fatal $ unlines 
                         [ "Ambiguous recipe specified. Possible matches are:"
-                        , "  "<>L.intercalate ", " (map show xs)
-                        ]
-            where
-              matches :: (Show a) => a -> Bool
-              matches x = map toLower s `L.isPrefixOf` (map toLower $ show x)
-metaModelsP :: Parser [MetaModel]
-metaModelsP = L.nub <$> many metaModelP -- (zero or more)
-  where
-    metaModelP :: Parser MetaModel
-    metaModelP = toMetaModel <$> strOption
-         (  long "addMetaModel"
-         <> metavar "METAMODEL"
-         <> completeWith (map show allMetaModels)
-         <> help "add a metamodel to your model."
-         )
-      where 
-         allMetaModels :: [MetaModel]
-         allMetaModels = [minBound..]
-         toMetaModel :: String -> MetaModel
-         toMetaModel s = case filter matches allMetaModels of
-            -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
-            --        See https://hackage.haskell.org/package/optparse-applicative
-                   [] -> fatal $ unlines
-                        ["No matching metamodels found. Possible metamodels are:"
-                        , "  "<>L.intercalate ", " (map show allMetaModels)
-                        , "  You specified: `"<>s<>"`"
-                        ]
-                   [f] -> f
-                   xs -> fatal $ unlines 
-                        [ "Ambiguous metamodel specified. Possible matches are:"
                         , "  "<>L.intercalate ", " (map show xs)
                         ]
             where

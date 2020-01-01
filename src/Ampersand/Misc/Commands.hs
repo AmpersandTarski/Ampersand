@@ -438,7 +438,7 @@ recipeBuilder :: (HasFSpecGenOpts env) => Bool -> env -> BuildRecipe
 recipeBuilder isForPrototype env = 
   (if isForPrototype then enablePrototype else id) $
   case view recipeNameL env of
-    Standard -> BuildRecipe UserScript optionalMetaModels
+    Standard -> BuildRecipe UserScript []
     AtlasPopulation -> BuildRecipe UserScript [Grind FormalAmpersand]
     AtlasComplete -> BuildRecipe (MetaScript FormalAmpersand) 
                        [ MergeWith (BuildRecipe UserScript
@@ -456,10 +456,3 @@ recipeBuilder isForPrototype env =
                                          )]
                             )
                  ]
-    -- This function takes care of the metamodels that could be requested by the user
-    -- as a command line option. 
-    optionalMetaModels :: [BuildStep]
-    optionalMetaModels = go models
-      where models = view metaModelsToAddL env 
-            go [] = []
-            go (m:ms) = [MergeWith $ BuildRecipe (MetaScript m) (go ms)]
