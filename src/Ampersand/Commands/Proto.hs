@@ -48,14 +48,17 @@ violationMessages = concatMap violationMessage
   where
     violationMessage :: (Rule,AAtomPairs) -> [String]
     violationMessage (r,ps) = 
-      [("There are "<>show (length ps)<>" violation(s) of RULE "<>show (name r)<>":")]
+      [if length ps == 1 
+        then "There is " <>show (length ps)<>" violation of RULE " <>show (name r)<>":"
+        else "There are "<>show (length ps)<>" violations of RULE "<>show (name r)<>":"
+      ] 
       <> (map ("  "<>) . listPairs 3 . toList $ ps)
     listPairs :: Int -> [AAtomPair] -> [String]
     listPairs i xs = 
                 case xs of
                   [] -> []
                   h:tl 
-                    | i == 0 -> ["  ... ("<>show (length tl)<>" more)"]
+                    | i == 0 -> ["  ... ("<>show (length xs)<>" more)"]
                     | otherwise -> showAP h : listPairs (i-1) tl
         where
           showAP :: AAtomPair -> String
