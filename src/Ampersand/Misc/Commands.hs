@@ -17,7 +17,7 @@ import           Ampersand.Commands.Daemon
 import           Ampersand.Commands.Documentation
 import           Ampersand.Commands.Devoutput
 import           Ampersand.Commands.ExportAsADL
-import           Ampersand.Commands.Init
+--import           Ampersand.Commands.Init
 import           Ampersand.Commands.Population
 import           Ampersand.Commands.Proof
 import           Ampersand.Commands.Test
