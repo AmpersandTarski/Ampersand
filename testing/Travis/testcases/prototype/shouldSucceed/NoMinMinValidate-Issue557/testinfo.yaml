@@ -1,4 +1,3 @@
 testCmds:
-#  - command: ampersand population --verbose --build-recipe AtlasComplete
-  - command: ampersand population --verbose 
+  - command: ampersand population --verbose --build-recipe AtlasComplete
     exitcode: 0
