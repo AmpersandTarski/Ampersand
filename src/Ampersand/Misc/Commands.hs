@@ -439,6 +439,9 @@ recipeBuilder isForPrototype env =
   (if isForPrototype then enablePrototype else id) $
   case view recipeNameL env of
     Standard        -> script UserScript
+    RAP             -> script UserScript 
+                        `merge`
+                       script (MetaScript FormalAmpersand) 
     AtlasPopulation -> script UserScript `andThen` Grind FormalAmpersand
     AtlasComplete   -> (script (MetaScript FormalAmpersand))
                         `merge`
