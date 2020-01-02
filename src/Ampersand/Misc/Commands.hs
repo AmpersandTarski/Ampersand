@@ -342,7 +342,7 @@ testCmd testOpts =
 dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
 dataAnalysisCmd opts = 
     extendWith opts $ do
-        let recipe = BuildRecipe UserScript [EncloseInConstraints]
+        let recipe = script UserScript `andThen` EncloseInConstraints
         mFSpec <- createFspec recipe
         doOrDie mFSpec exportAsAdl
 pprintCmd :: InputOutputOpts -> RIO Runner ()
@@ -438,19 +438,16 @@ recipeBuilder :: (HasFSpecGenOpts env) => Bool -> env -> BuildRecipe
 recipeBuilder isForPrototype env = 
   (if isForPrototype then enablePrototype else id) $
   case view recipeNameL env of
-    Standard -> BuildRecipe UserScript []
-    AtlasPopulation -> BuildRecipe UserScript [Grind FormalAmpersand]
-    AtlasComplete -> BuildRecipe (MetaScript FormalAmpersand) 
-                       [ MergeWith (BuildRecipe UserScript
-                                      [Grind FormalAmpersand]
-                                   )
-                       ]
+    Standard        -> script UserScript
+    AtlasPopulation -> script UserScript `andThen` Grind FormalAmpersand
+    AtlasComplete   -> (script (MetaScript FormalAmpersand))
+                        `merge`
+                       (script UserScript `andThen` Grind FormalAmpersand)
   where
     enablePrototype :: BuildRecipe -> BuildRecipe
     enablePrototype x = three
-      where prototypeContext = BuildRecipe (MetaScript PrototypeContext) []
+      where prototypeContext = script (MetaScript PrototypeContext)
             one = x `merge` prototypeContext
-            two = x `merge` prototypeContext
-                     `andThen` Grind PrototypeContext
+            two = one `andThen` Grind PrototypeContext
             three = one `merge` two
               
