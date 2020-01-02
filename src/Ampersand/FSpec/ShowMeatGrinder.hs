@@ -205,19 +205,24 @@ grindedPops grindInfo userFspec rel =
   case filter (isForRel rel) ((transformers grindInfo) userFspec) of
     []  -> fatal . unlines $ 
               ["Every relation in "++name (metaModel grindInfo)++" must have a transformer in Transformers.hs"
-              ,"   Violations:"
+              ," However, the following relations have none:"
               ] ++ map ("      "++) viols
             where 
               viols = map showRelOrigin 
                     . Set.toList
                     . Set.filter hasNoTransformer 
                     . instances . fModel $ grindInfo
-              hasNoTransformer :: Relation -> Bool
-              hasNoTransformer d = null (filter (isForRel d) ((transformers grindInfo) userFspec))
-              showRelOrigin :: Relation -> String
-              showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
-    ts  -> Set.fromList . map transformer2Pop $ ts 
+    [t] -> Set.singleton . transformer2Pop $ t
+    ts  -> fatal . unlines $ 
+              ["Every relation in "++name (metaModel grindInfo)++" must have a transformer in Transformers.hs"
+              ," However there are "<>show (length ts)<>" transformers for relation: "
+              ,"      "++showRelOrigin rel
+              ]
   where
+    showRelOrigin :: Relation -> String
+    showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
+    hasNoTransformer :: Relation -> Bool
+    hasNoTransformer d = null (filter (isForRel d) ((transformers grindInfo) userFspec))
     transformer2Pop :: Transformer -> Pop
     transformer2Pop (Transformer relName src tgt popPairs) 
       | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ popPairs) ) =
