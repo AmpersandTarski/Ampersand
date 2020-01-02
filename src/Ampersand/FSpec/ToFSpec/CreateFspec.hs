@@ -41,12 +41,15 @@ createFspec :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) =>
                BuildRecipe -> RIO env (Guarded FSpec)
 createFspec recipe = do 
     env <- ask
-    cooked <- cook env
-                      <$> do rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
-                             snd <$> parseADL rootFile -- the P_Context of the user's sourceFile
-                      <*> do let fun m = (,) m <$> mkGrindInfo m
-                             Map.fromList <$> (sequence $ fun <$> (Set.toList $ metaModelsIn recipe))
-                      <*> pure recipe
+    metaModelsMap :: Map MetaModel GrindInfo <- do 
+         let fun :: (HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> RIO env (MetaModel , GrindInfo)
+             fun m = (,) m <$> mkGrindInfo m
+         Map.fromList <$> (sequence $ fun <$> (Set.toList $ metaModelsIn recipe))
+    parsedUserScript :: Guarded P_Context <- do
+         rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
+         snd <$> parseFileTransitive rootFile -- the P_Context of the user's sourceFile
+    let cooked :: Guarded P_Context
+        cooked = cook env recipe metaModelsMap parsedUserScript
     return . join $ pCtx2Fspec env <$> cooked
 
 class MetaModelContainer a where
@@ -85,11 +88,12 @@ instance MetaModelContainer a => MetaModelContainer [a] where
 --   given as parameter, like the original user's P_Context, and a map that can be used
 --   to obtain GrindInfo for metamodels. 
 cook :: (HasFSpecGenOpts env) => 
-         env -- The environment
-      -> Guarded P_Context  -- The original user's P_Context, Guarded because it might have errors 
-      -> Map MetaModel GrindInfo -- a map containing all GrindInfo that could be required
-      -> BuildRecipe -> Guarded P_Context 
-cook env user grindInfoMap (BuildRecipe start steps) = 
+         env -- ^ The environment
+      -> BuildRecipe -- ^ Instructions for the man in the kitchen
+      -> Map MetaModel GrindInfo -- ^ A map containing all GrindInfo that could be required
+      -> Guarded P_Context  -- ^ The original user's P_Context, Guarded because it might have errors 
+      -> Guarded P_Context 
+cook env (BuildRecipe start steps) grindInfoMap user = 
     join $ doSteps <$> case start of
                     UserScript -> user
                     MetaScript mm -> pure . pModel $ gInfo mm
@@ -102,7 +106,7 @@ cook env user grindInfoMap (BuildRecipe start steps) =
         case step of 
           EncloseInConstraints -> pure $ encloseInConstraints ctx 
           Grind mm -> grind (gInfo mm) <$> (pCtx2Fspec env ctx)
-          MergeWith recipe -> mergeContexts ctx <$> cook env user grindInfoMap recipe
+          MergeWith recipe -> mergeContexts ctx <$> cook env recipe grindInfoMap user
           NoConversion -> pure ctx
           
   gInfo :: MetaModel -> GrindInfo

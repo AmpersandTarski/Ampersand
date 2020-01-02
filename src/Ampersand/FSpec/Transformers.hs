@@ -54,8 +54,7 @@ dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
-toTransformer (a,b,c,d) = Transformer a b c d
-
+toTransformer (rel,src,tgt,tuples) = Transformer rel src tgt tuples
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: FSpec -> [Transformer]
 transformersFormalAmpersand fSpec = map toTransformer [

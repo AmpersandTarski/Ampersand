@@ -24,11 +24,10 @@ import qualified RIO.List as L
 import qualified RIO.Set as Set
 import           RIO.Time
 
-data MetaModel = FormalAmpersand | FADocumented | PrototypeContext
+data MetaModel = FormalAmpersand | PrototypeContext
        deriving (Eq, Ord, Enum, Bounded, Show)
 instance Named MetaModel where
   name FormalAmpersand = "Formal Ampersand"
-  name FADocumented    = "Formal Ampersand (documented)"
   name PrototypeContext   = "System context"
 
 data GrindInfo = GrindInfo
