@@ -38,8 +38,8 @@ data GrindInfo = GrindInfo
     }
 
 -- | The 'grind' function creates a P_Context that contains the population for every
---   relation in the metamodel. The population is defined by the given FSpec,
---   which usually is the FSpec of the user. 
+--   relation in the metamodel for which the GrindInfo is given. 
+--   The population is defined by the given FSpec, which usually is the FSpec of the user. 
 grind :: GrindInfo -> FSpec -> P_Context
 grind grindInfo userFspec =
   PCtx{ ctx_nm     = "Grinded_"++name userFspec
