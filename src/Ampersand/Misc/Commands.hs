@@ -447,12 +447,10 @@ recipeBuilder isForPrototype env =
                        ]
   where
     enablePrototype :: BuildRecipe -> BuildRecipe
-    enablePrototype (BuildRecipe start steps) = 
-      BuildRecipe start $ 
-        steps ++ [MergeWith (BuildRecipe 
-                              (MetaScript PrototypeContext)
-                              [MergeWith (BuildRecipe start $ 
-                                            steps ++ [Grind PrototypeContext]
-                                         )]
-                            )
-                 ]
+    enablePrototype x = three
+      where prototypeContext = BuildRecipe (MetaScript PrototypeContext) []
+            one = x `merge` prototypeContext
+            two = x `merge` prototypeContext
+                     `andThen` Grind PrototypeContext
+            three = one `merge` two
+              
