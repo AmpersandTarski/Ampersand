@@ -85,8 +85,11 @@ aRelation2pRelation dcl =
        }
 
 aRelation2pNamedRel :: Relation -> P_NamedRel
-aRelation2pNamedRel dcl =
- PNamedRel (decfpos dcl) (T.unpack $ decnm dcl) (Just (aSign2pSign (decsgn dcl)))
+aRelation2pNamedRel dcl = PNamedRel
+  { pos      = decfpos dcl
+  , p_nrnm   = T.unpack $ decnm dcl
+  , p_mbSign = Just . aSign2pSign $ decsgn dcl
+  }
  
 aIdentityDef2pIdentityDef :: IdentityDef -> P_IdentDf TermPrim -- P_IdentDef
 aIdentityDef2pIdentityDef iDef =
