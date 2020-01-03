@@ -16,12 +16,9 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.A2P_Converters
-import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
-import qualified RIO.List as L
 import qualified RIO.Set as Set
-import           RIO.Time
 
 data MetaModel = FormalAmpersand | PrototypeContext
        deriving (Eq, Ord, Enum, Bounded, Show)
@@ -56,21 +53,17 @@ grind grindInfo userFspec =
       , ctx_gs     = map aClassify2pClassify . Set.toList . instances . fModel $ grindInfo
       , ctx_ifcs   = []
       , ctx_ps     = []
-      , ctx_pops   = mapMaybe populationFromPop . Set.toList $ metaPops2
+      , ctx_pops   = populationFromPop <$> metaPops2
       , ctx_metas  = []
       }
   where
-    metaPops2 :: Set.Set Pop
-    metaPops2 = Set.fromList 
-              . concatMap (Set.toList . grindedPops grindInfo userFspec)
+    metaPops2 :: [Pop]
+    metaPops2 = concatMap (Set.toList . grindedPops grindInfo userFspec)
               . Set.toList . instances . fModel $ grindInfo
-    populationFromPop :: Pop -> Maybe P_Population
+    populationFromPop :: Pop -> P_Population
     populationFromPop pop =
-      case pop of 
-        Comment{} -> Nothing
-        Pop{}     -> Just $
-             P_RelPopu { p_src  = Nothing
-                       , p_tgt  = Nothing
+             P_RelPopu { p_src  = Just $ name (source rel)
+                       , p_tgt  = Just $ name (target rel)
                        , pos    = orig
                        , p_nmdr = PNamedRel 
                             { pos    = orig
@@ -98,75 +91,6 @@ grind grindInfo userFspec =
 data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
                , popRelation :: Relation
                }
-         | Comment { comment :: [String]  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
-                   } deriving (Eq,Ord)
-
-showPop :: Pop -> String
-showPop pop =
-  case pop of
-      Pop{} -> showP . aRelation2pRelation . popRelation $ pop
-      Comment{} -> L.intercalate "\n" . map ("-- " ++) . comment $ pop
--- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
---   The comments that are in Pop are preserved. 
-makeMetaFile :: UTCTime -> GrindInfo -> FSpec -> (FilePath,String)
-makeMetaFile now metaModel userFspec
-  = ("MetaPopulationFile.adl", content )
-  where
-    content = unlines $
-        ([ "{- Do not edit manually. This code has been generated!!!"
-        , "    Generated with "++ampersandVersionStr
-        , "    Generated at "++show now
-        , " "
-        , "The populations defined in this file are the populations from the user's"
-        , "model named '"++name userFspec++"'."
-        , ""
-        , "-}"
-        , "CONTEXT Grinded_"++name userFspec
-        , "" ]
-        ++ listOfConcepts
-        ++ [""]
-        ++ body
-        ++
-        [ ""
-        , "ENDCONTEXT"
-        ])
-    body :: [String]
-    body =
-         L.intercalate [""]
-       . L.sort
-       . map (lines . showPop )
-       . concatMap (Set.toList . popsOfRelation)
-       . L.sortOn showRel
-       . Set.toList . instances . fModel $ metaModel
-    listOfConcepts :: [String]
-    listOfConcepts = map ("-- "++) .
-                     L.intercalate [""] . 
-                     map showCpt . L.sortOn name . Set.toList . instances . fModel $ metaModel
-       where
-        showCpt :: A_Concept -> [String]
-        showCpt cpt = [name cpt] ++ ( map ("  "++)
-                                    . L.sort 
-                                    . map show
-                                    . Set.toList
-                                    $ pAtomsOfConcept cpt
-                                    )
-        
-    popsOfRelation :: Relation -> Set.Set Pop
-    popsOfRelation = grindedPops metaModel userFspec
-    pAtomsOfConcept :: A_Concept -> Set.Set PopAtom
-    pAtomsOfConcept cpt = getPopsSet Src `Set.union` getPopsSet Tgt
-      where getPopsSet :: SrcOrTgt -> Set.Set PopAtom
-            getPopsSet x = Set.fromList . map (case x of
-                                                 Src -> fst
-                                                 Tgt -> snd
-                                              )
-                         . Set.toList . Set.unions.  map popPairs 
-                         . Set.toList . Set.unions . map popsOfRelation 
-                         . Set.toList . Set.filter (\rel-> case x of
-                                                             Src -> source rel == cpt
-                                                             Tgt -> target rel == cpt
-                                                   ) 
-                         . instances . fModel $ metaModel
 
 grindedPops :: GrindInfo -> FSpec -> Relation -> Set.Set Pop
 grindedPops grindInfo userFspec rel = 

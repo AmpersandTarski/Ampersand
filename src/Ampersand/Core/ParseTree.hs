@@ -65,7 +65,6 @@ data P_Context
 
 instance Eq P_Context where
   c1 == c2  =  name c1 == name c2
-
 instance Named P_Context where
   name = ctx_nm
 
@@ -843,7 +842,8 @@ mergeContexts ctx1 ctx2 =
              mergePopsSameType (h :| tl) = case h of
                 P_RelPopu{} -> h {p_popps = Set.toList . Set.unions $ (map (Set.fromList . p_popps) (h:tl))}
                 P_CptPopu{} -> h {p_popas = Set.toList . Set.unions $ (map (Set.fromList . p_popas) (h:tl))}
-                   
+
+               
                
       contexts = [ctx1,ctx2]
       nubSortConcatMap :: Ord b => (a -> [b]) -> [a] -> [b]
