@@ -149,7 +149,7 @@ encloseInConstraints pCtx = enrichedContext
     declaredRelations ::  [P_Relation]   -- relations declared in the user's script
     popRelations ::       [P_Relation]   -- relations that are "annotated" by the user in Excel-sheets.
                                          -- popRelations are derived from P_Populations only.
-    declaredRelations = L.nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
+    declaredRelations = mergeRels (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
     -- | To derive relations from populations, we derive the signature from the population's signature directly.
     --   Multiplicity properties are added to constrain the population without introducing violations.
     popRelations 

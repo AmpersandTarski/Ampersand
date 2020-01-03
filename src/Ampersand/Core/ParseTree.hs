@@ -191,15 +191,16 @@ data P_Relation =
 --   For this reason, equality in the P-structure is defined on origin.
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
---   The only reason for having Ord P_Relation is to represent sets of P_Relations by Data.Set
-instance Eq P_Relation where
- decl==decl' = compare decl decl' == EQ
-instance Ord P_Relation where
- compare p1 p2 
-   = case compare (origin p1) (origin p2) of
-      LT -> LT
-      GT -> GT
-      EQ -> compare (name p1,dec_sign p1) (name p2,dec_sign p2)
+--   This is still not true for MEATGRINDER stuff!
+--     DO NOT USE ORD and EQ on P_Relation!
+--instance Eq P_Relation where
+-- decl==decl' = compare decl decl' == EQ
+--instance Ord P_Relation where
+-- compare p1 p2 
+--   = case compare (origin p1) (origin p2) of
+--      LT -> LT
+--      GT -> GT
+--      EQ -> compare (name p1,dec_sign p1) (name p2,dec_sign p2)
 instance Named P_Relation where
  name = dec_nm
 instance Traced P_Relation where
@@ -550,10 +551,9 @@ data P_Population
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
    deriving (Show) --For QuickCheck error messages only!
-
+--NOTE :: Do NOT make instance Eq P_Population, for this is causing problems with merging. 
 instance Traced P_Population where
  origin = pos
-
 data P_Interface =
      P_Ifc { ifc_IsAPI :: Bool      -- ^ The interface is of type API
            , ifc_Name :: String           -- ^ the name of the interface
@@ -646,7 +646,10 @@ data P_ViewD a =
               , vd_ats :: [(P_ViewSegment a)] -- ^ the constituent segments of this view.
               } deriving (Show)
 instance Ord (P_ViewD a) where
- compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
+ compare p1 p2 = compare 
+    -- all three items are required, for origin could be Meatgrinder
+     (name p1, origin p1, vd_cpt p1)  
+     (name p2, origin p2, vd_cpt p2)
 instance Eq (P_ViewD a) where --Required for merge of P_Contexts
  p1 == p2 = compare p1 p2 == EQ
 instance Traced (P_ViewD a) where
@@ -805,24 +808,36 @@ mergeContexts ctx1 ctx2 =
   PCtx{ ctx_nm     = case (filter (not.null) . map ctx_nm) contexts of
                         []    -> ""
                         (x:_) -> x
-      , ctx_pos    = nubSortConcatMap ctx_pos contexts
+      , ctx_pos    = fromContextsKeepDoubles ctx_pos
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
-      , ctx_pats   = nubSortConcatMap ctx_pats contexts
-      , ctx_rs     = nubSortConcatMap ctx_rs contexts
+      , ctx_pats   = fromContextsKeepDoubles ctx_pats
+      , ctx_rs     = fromContextsRemoveDoubles ctx_rs
       , ctx_ds     = mergeRels (ctx_ds ctx1++ctx_ds ctx2)
-      , ctx_cs     = nubSortConcatMap ctx_cs contexts
-      , ctx_ks     = nubSortConcatMap ctx_ks contexts
-      , ctx_rrules = nubSortConcatMap ctx_rrules contexts
-      , ctx_reprs  = nubSortConcatMap ctx_reprs contexts
-      , ctx_vs     = nubSortConcatMap ctx_vs contexts
-      , ctx_gs     = nubSortConcatMap ctx_gs contexts
-      , ctx_ifcs   = nubSortConcatMap ctx_ifcs contexts
-      , ctx_ps     = nubSortConcatMap ctx_ps contexts
+      , ctx_cs     = fromContextsKeepDoubles ctx_cs
+      , ctx_ks     = fromContextsKeepDoubles ctx_ks
+      , ctx_rrules = fromContextsKeepDoubles ctx_rrules
+      , ctx_reprs  = fromContextsKeepDoubles ctx_reprs
+      , ctx_vs     = fromContextsRemoveDoubles ctx_vs
+      , ctx_gs     = fromContextsKeepDoubles ctx_gs
+      , ctx_ifcs   = fromContextsRemoveDoubles ctx_ifcs
+      , ctx_ps     = fromContextsKeepDoubles ctx_ps
       , ctx_pops   = mergePops (ctx_pops ctx1++ctx_pops ctx2)
-      , ctx_metas  = nubSortConcatMap ctx_metas contexts
+      , ctx_metas  = fromContextsKeepDoubles ctx_metas
       }
     where
+      -- NOTE:
+      -- In the P_Structure we want to limit nub as much as possible. 
+      -- this is to ensure that no information is lost because we do
+      -- not know a proper origin of some element. Sometimes the origin
+      -- is used to distinquish between two elements. That is not 
+      -- usefull here, and might lead to information lost.
+      fromContextsKeepDoubles :: (P_Context -> [a]) -> [a]         
+      fromContextsKeepDoubles fun = concatMap fun contexts          
+      contexts = [ctx1,ctx2]
+      fromContextsRemoveDoubles :: Ord b => (P_Context -> [b]) -> [b]
+      fromContextsRemoveDoubles f = 
+         Set.toList . Set.unions . map (Set.fromList . f) $ contexts
       mergePops :: [P_Population] -> [P_Population]
       mergePops = map mergePopsSameType . NE.groupBy groupCondition
          where
@@ -843,14 +858,6 @@ mergeContexts ctx1 ctx2 =
                 P_RelPopu{} -> h {p_popps = Set.toList . Set.unions $ (map (Set.fromList . p_popps) (h:tl))}
                 P_CptPopu{} -> h {p_popas = Set.toList . Set.unions $ (map (Set.fromList . p_popas) (h:tl))}
 
-               
-               
-      contexts = [ctx1,ctx2]
-      nubSortConcatMap :: Ord b => (a -> [b]) -> [a] -> [b]
-      nubSortConcatMap f = Set.toList 
-                         . Set.unions 
-                         . map Set.fromList 
-                         . map f
       -- | Left-biased choice on maybes
       orElse :: Maybe a -> Maybe a -> Maybe a
       x `orElse` y = case x of
