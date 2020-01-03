@@ -34,7 +34,7 @@ matrix:
       - BUILD=stack
       - ARGS="--interleaved-output"
       - STACK_YAML=stack.yaml
-      - AMPERSAND_RELEASE_BRANCH=master
+      - AMPERSAND_RELEASE_BRANCH=master-v3x
 #    compiler: ": #stack"
     addons: {apt: {packages: [ ] 
                   ,sources: [hvr-ghc]}}
