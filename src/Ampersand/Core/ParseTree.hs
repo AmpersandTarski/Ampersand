@@ -562,9 +562,9 @@ instance Ord P_Population where
 instance Eq P_Population where --Required for merge of P_Contexts  -- see also the comment at `Eq P_Concept`
  p1 == p2 = compare p1 p2 == EQ
  
-instance Named P_Population where
- name P_RelPopu{p_nmdr = nr} = name nr
- name P_CptPopu{p_cnme = nm} = nm
+--instance Named P_Population where
+-- name P_RelPopu{p_nmdr = nr} = name nr
+-- name P_CptPopu{p_cnme = nm} = nm
 
 instance Traced P_Population where
  origin = pos
