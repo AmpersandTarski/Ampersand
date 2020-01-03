@@ -438,6 +438,7 @@ recipeBuilder :: (HasFSpecGenOpts env) => Bool -> env -> BuildRecipe
 recipeBuilder isForPrototype env = 
   (if isForPrototype then enablePrototype else id) $
   case view recipeNameL env of
+    Prototype       -> enablePrototype (script UserScript)
     Standard        -> script UserScript
     RAP             -> script UserScript 
                         `merge`

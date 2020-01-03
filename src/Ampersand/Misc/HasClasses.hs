@@ -215,6 +215,7 @@ instance HasDaemonOpts DaemonOpts where
 -- | An enumeration type for building an FSpec in some common way
 data KnownRecipe = 
     Standard -- ^ Plain way of building. No fancy stuff. 
+  | Prototype -- ^ Userscript grinded with prototype metamodel
   | RAP -- ^ Merge the metamodel of FormalAmpersand to your script
   | AtlasComplete    -- ^ A recipe to build an FSpec containing a selfcontained Atlas. 
   | AtlasPopulation  -- ^ A recipe to build an FSpec as used by RAP, for the Atlas.
