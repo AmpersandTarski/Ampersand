@@ -1,11 +1,14 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
-  ( BuildRecipe(..)
-  , BuildStep(..)
+  ( BuildRecipe
+  , BuildStep(Grind,EncloseInConstraints)
   , StartContext(..)
   , MetaModel(..)
   , createFspec 
+  , script
+  , merge
+  , andThen
   )
 
 where
@@ -81,6 +84,19 @@ instance MetaModelContainer BuildStep where
   metaModelsIn EncloseInConstraints = mempty 
 instance MetaModelContainer a => MetaModelContainer [a] where
   metaModelsIn = Set.unions . fmap metaModelsIn
+
+-- | A simple recipe that builds from a script
+script :: StartContext -> BuildRecipe
+script x = BuildRecipe x []
+
+-- | Merge two recipes together
+merge :: BuildRecipe -> BuildRecipe -> BuildRecipe
+merge a b = a `andThen` MergeWith b
+
+-- | Add an additional step after the steps of a recipe
+andThen :: BuildRecipe -> BuildStep -> BuildRecipe
+andThen (BuildRecipe start steps) step = BuildRecipe start (steps++[step])
+
 -- | This functions does the work in the kitchen: use the recipe to return a
 --   P_Context from which the FSpec can be built. 
 --   Note that we do not want this function to run in the RIO monad, for we want it to
