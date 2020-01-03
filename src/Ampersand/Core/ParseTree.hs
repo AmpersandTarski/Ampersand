@@ -552,20 +552,6 @@ data P_Population
               }
    deriving (Show) --For QuickCheck error messages only!
 
-instance Ord P_Population where
-  compare p1 p2 = case (p1,p2) of -- P_Population cannot be compaired using 'pos', because Origin of grinded population (meat grinder) is the same for all
-    ( P_RelPopu{} , P_RelPopu{} ) -> compare (p_popps p1) (p_popps p2)
-    ( P_CptPopu{} , P_CptPopu{} ) -> compare (p_popas p1) (p_popas p2)
-    ( P_RelPopu{} , _           ) -> LT
-    ( _           , P_RelPopu{} ) -> GT
-   
-instance Eq P_Population where --Required for merge of P_Contexts  -- see also the comment at `Eq P_Concept`
- p1 == p2 = compare p1 p2 == EQ
- 
---instance Named P_Population where
--- name P_RelPopu{p_nmdr = nr} = name nr
--- name P_CptPopu{p_cnme = nm} = nm
-
 instance Traced P_Population where
  origin = pos
 
@@ -834,10 +820,31 @@ mergeContexts ctx1 ctx2 =
       , ctx_gs     = nubSortConcatMap ctx_gs contexts
       , ctx_ifcs   = nubSortConcatMap ctx_ifcs contexts
       , ctx_ps     = nubSortConcatMap ctx_ps contexts
-      , ctx_pops   = nubSortConcatMap ctx_pops contexts
+      , ctx_pops   = mergePops (ctx_pops ctx1++ctx_pops ctx2)
       , ctx_metas  = nubSortConcatMap ctx_metas contexts
       }
     where
+      mergePops :: [P_Population] -> [P_Population]
+      mergePops = map mergePopsSameType . NE.groupBy groupCondition
+         where
+             groupCondition :: P_Population -> P_Population -> Bool
+             groupCondition a b = 
+               case (a,b) of
+                 (P_RelPopu{},P_RelPopu{}) -> p_src a == p_src b 
+                                           && p_tgt a == p_tgt b
+                                           && sameNamedRels (p_nmdr a) (p_nmdr b)
+                 (P_CptPopu{},P_CptPopu{}) -> p_cnme a == p_cnme b
+                 _  -> False
+               where
+                 sameNamedRels :: P_NamedRel -> P_NamedRel -> Bool
+                 sameNamedRels x y = p_nrnm x == p_nrnm y 
+                                  && p_mbSign x == p_mbSign y
+             mergePopsSameType :: NE.NonEmpty P_Population -> P_Population
+             mergePopsSameType (h :| tl) = case h of
+                P_RelPopu{} -> h {p_popps = Set.toList . Set.unions $ (map (Set.fromList . p_popps) (h:tl))}
+                P_CptPopu{} -> h {p_popas = Set.toList . Set.unions $ (map (Set.fromList . p_popas) (h:tl))}
+                   
+               
       contexts = [ctx1,ctx2]
       nubSortConcatMap :: Ord b => (a -> [b]) -> [a] -> [b]
       nubSortConcatMap f = Set.toList 

@@ -5,7 +5,6 @@ module Ampersand.FSpec.MetaModels
   , mkGrindInfo
   , GrindInfo
   , grind
-  , addSemanticModel
   , pCtx2Fspec
   )
 

@@ -3,12 +3,11 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DuplicateRecordFields#-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.FSpec.ShowMeatGrinder
-  ( makeMetaFile
-  , grind 
-  , addSemanticModel
+  ( grind 
   , GrindInfo(..)
   , MetaModel(..)
   )
@@ -96,37 +95,6 @@ grind grindInfo userFspec =
                     PopAlphaNumeric str -> ScriptString orig str
                     PopInt i            -> ScriptInt orig i
            
--- | When the semantic model of a metamodel is added to the user's model, we add
---   the relations as wel as the generalisations to it, so they are available to the user
---   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
-addSemanticModel :: GrindInfo -> P_Context -> P_Context
-addSemanticModel gInfo pCtx = 
-   PCtx    
-        { ctx_nm     = ctx_nm     pCtx
-        , ctx_pos    = ctx_pos    pCtx
-        , ctx_lang   = ctx_lang   pCtx
-        , ctx_markup = ctx_markup pCtx
-        , ctx_pats   = ctx_pats   pCtx `uni` ctx_pats   pCtxOfMetaModel
-        , ctx_rs     = ctx_rs     pCtx `uni` ctx_rs     pCtxOfMetaModel
-        , ctx_ds     = ctx_ds     pCtx `uni` ctx_ds     pCtxOfMetaModel
-        , ctx_cs     = ctx_cs     pCtx `uni` ctx_cs     pCtxOfMetaModel
-        , ctx_ks     = ctx_ks     pCtx `uni` ctx_ks     pCtxOfMetaModel
-        , ctx_rrules = ctx_rrules pCtx `uni` ctx_rrules pCtxOfMetaModel
-        , ctx_reprs  = ctx_reprs  pCtx `uni` ctx_reprs  pCtxOfMetaModel
-        , ctx_vs     = ctx_vs     pCtx `uni` ctx_vs     pCtxOfMetaModel
-        , ctx_gs     = ctx_gs     pCtx `uni` ctx_gs     pCtxOfMetaModel
-        , ctx_ifcs   = ctx_ifcs   pCtx `uni` (if True -- DISABLED. See issue #979
-                                              then [] 
-                                              else ctx_ifcs   pCtxOfMetaModel)
-        , ctx_ps     = ctx_ps     pCtx 
-        , ctx_pops   = ctx_pops   pCtx `uni` ctx_pops   pCtxOfMetaModel
-        , ctx_metas  = ctx_metas  pCtx
-        }
-           where
-            pCtxOfMetaModel = pModel gInfo
-            uni :: Eq a => [a] -> [a] -> [a]
-            uni xs ys = L.nub (xs ++ ys)
- 
 data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
                , popRelation :: Relation
                }
