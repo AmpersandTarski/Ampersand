@@ -324,9 +324,18 @@ pCtx2aCtx env
               stripOrigin ::  (A_Concept,TType,[Origin]) -> (A_Concept,TType)
               stripOrigin (cpt,t,_) = (cpt,t)
               reprTrios :: [(A_Concept,TType,Origin)]
-              reprTrios = L.nub $ concatMap toReprs reprs
+              reprTrios = nubTrios $ concatMap toReprs reprs
                 where toReprs :: Representation -> [(A_Concept,TType,Origin)]
                       toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- NE.toList $ reprcpts r]
+                      nubTrios :: [(A_Concept,TType,Origin)] -> [(A_Concept,TType,Origin)]
+                      nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
+                        where withNonFuzzyOrigin :: NE.NonEmpty (A_Concept,TType,Origin) -> (A_Concept,TType,Origin)
+                              withNonFuzzyOrigin xs = case NE.filter (not . isFuzzyOrigin . thdOf3) xs of
+                                [] -> NE.head xs
+                                h:_ -> h
+                              groupCondition :: (A_Concept,TType,Origin) -> (A_Concept,TType,Origin) -> Bool
+                              groupCondition = undefined
+                              thdOf3 (_,_,x) = x
               conceptsOfGroups :: [A_Concept]
               conceptsOfGroups = L.nub (concat groups)
               conceptsOfReprs :: [A_Concept]

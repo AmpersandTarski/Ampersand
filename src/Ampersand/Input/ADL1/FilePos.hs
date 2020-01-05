@@ -2,15 +2,16 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Ampersand.Input.ADL1.FilePos (
     FilePos(..), Origin(..), Traced(..),
+    isFuzzyOrigin, maybeOrdering, sortWithOrigins,
     addPos, initPos, updatePos
 ) where
 
-import Ampersand.Basics
-import GHC.Generics (Generic)
-import Data.Hashable
-import Codec.Xlsx.Types
+import           Ampersand.Basics
+import           Codec.Xlsx.Types
+import           Data.Hashable
+import           GHC.Generics (Generic)
+import qualified RIO.List as L
 import qualified RIO.Text as T
-
 -- | The line number
 type Line = Int
 -- | The column number
@@ -57,10 +58,53 @@ data Origin = OriginUnknown
             | FileLoc FilePos SymbolName 
             | XLSXLoc FilePath String (Int,Int) 
             | MeatGrinder -- Constructor is used to specify stuff that originates from meatgrinder
-    deriving (Eq, Ord, Typeable, Generic, Data)
+    deriving (Typeable, Generic, Data)
+-- Eq and Ord have been removed by desing on Origin. See issue #1035
+-- | A fuzzy origin has a constructor that breaks tracability. They should be used as little as possible.
+isFuzzyOrigin :: Origin -> Bool
+isFuzzyOrigin OriginUnknown = True
+isFuzzyOrigin Origin{}      = True
+isFuzzyOrigin MeatGrinder   = True
+isFuzzyOrigin _             = False
+sortWithOrigins :: Traced a => [a] -> [a]
+sortWithOrigins xs = sortedNonFuzzy <> fuzzy
+  where (fuzzy, nonfuzzy) = L.partition (isFuzzyOrigin . origin) xs
+        sortedNonFuzzy = L.sortBy nonFuzzyOrdering nonfuzzy
+        nonFuzzyOrdering :: Traced a => a -> a -> Ordering
+        nonFuzzyOrdering x y = case maybeOrdering (origin x) (origin y) of
+                                 Just ordering -> ordering
+                                 Nothing -> fatal "nonFuzzyOrdering must only be used on list containing non-fuzzy origins"
 
-instance Unique Origin where
-  showUnique = show
+-- | Not all Origins have an ordering. This function serves as a replacement
+--   for ordering of Origins in cases where that can be done. 
+maybeOrdering :: Origin -> Origin -> Maybe Ordering
+maybeOrdering x y = case x of
+-- FileLoc{} > XLSXLoc{} > PropertyRule{}
+  FileLoc fpx _ 
+      -> case y of
+           FileLoc fpy _ -> Just $ compare fpx fpy
+           XLSXLoc{}       -> Just GT
+           PropertyRule{}  -> Just GT
+           _ -> if isFuzzyOrigin y then Nothing 
+                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show y
+  XLSXLoc fpx wbx (rowx,colx) 
+      -> case y of
+           FileLoc{}       -> Just LT
+           XLSXLoc fpy wby (rowy,coly) 
+             -> Just $ compare (fpx, wbx, (rowx,colx))
+                               (fpy, wby, (rowy,coly))
+           PropertyRule{}  -> Just GT
+           _ -> if isFuzzyOrigin y then Nothing 
+                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show y
+  PropertyRule _ ox 
+      -> case y of
+           FileLoc{}       -> Just LT
+           XLSXLoc{}       -> Just LT
+           PropertyRule _ oy -> maybeOrdering ox oy
+           _ -> if isFuzzyOrigin y then Nothing 
+                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show y
+  _ -> if isFuzzyOrigin x then Nothing 
+       else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show x   
 instance Hashable Origin
 
 instance Show FilePos where

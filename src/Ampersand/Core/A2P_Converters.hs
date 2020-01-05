@@ -190,7 +190,7 @@ aObjectDef2pObjectDef x =
                , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
                , obj_crud  = case objmsub oDef of 
                                Just (InterfaceRef False _) -> Nothing  -- Crud specification is not allowed in combination with a reference to an interface.
-                               _ -> aCruds2pCruds (objcrud oDef)
+                               _ -> Just $ aCruds2pCruds (objcrud oDef)
                , obj_mView = objmView oDef
                , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
                }
@@ -352,10 +352,7 @@ aSubIfc2pSubIfc sub =
                       , si_str    = str
                       }
 
-aCruds2pCruds :: Cruds -> Maybe P_Cruds
-aCruds2pCruds x = 
-  if crudOrig x == Origin "default for Cruds" 
-  then Nothing
-  else Just $ P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
+aCruds2pCruds :: Cruds -> P_Cruds
+aCruds2pCruds x = P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
    where f :: (Bool,Char) -> Char
          f (b,c) = (if b then toUpper else toLower) c
