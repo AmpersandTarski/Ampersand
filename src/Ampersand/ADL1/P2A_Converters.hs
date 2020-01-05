@@ -334,7 +334,7 @@ pCtx2aCtx env
                                 [] -> NE.head xs
                                 h:_ -> h
                               groupCondition :: (A_Concept,TType,Origin) -> (A_Concept,TType,Origin) -> Bool
-                              groupCondition = undefined
+                              groupCondition (cptA,typA,_) (cptB,typB,_) = cptA == cptB && typA == typB
                               thdOf3 (_,_,x) = x
               conceptsOfGroups :: [A_Concept]
               conceptsOfGroups = L.nub (concat groups)
