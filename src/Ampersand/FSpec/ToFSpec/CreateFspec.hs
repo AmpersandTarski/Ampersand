@@ -25,7 +25,6 @@ import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import           Data.Foldable (foldrM)
 -- | create an FSpec, based on the provided command-line options.
 --   Without the command-line switch "--meta-tables", 
 --   Ampersand compiles its script (userP_Ctx) straightforwardly in first order relation algebra.
@@ -115,10 +114,10 @@ cook env (BuildRecipe start steps) grindInfoMap user =
                     MetaScript mm -> pure . pModel $ gInfo mm
   where 
   doSteps :: P_Context -> Guarded P_Context
-  doSteps pCtx = foldrM nextStep pCtx steps
+  doSteps pCtx = foldM nextStep pCtx steps
     where
-      nextStep :: BuildStep -> P_Context -> Guarded P_Context
-      nextStep step ctx = 
+      nextStep :: P_Context -> BuildStep -> Guarded P_Context
+      nextStep ctx step = 
         case step of 
           EncloseInConstraints -> pure $ encloseInConstraints ctx 
           Grind mm -> grind (gInfo mm) <$> (pCtx2Fspec env ctx)
