@@ -255,7 +255,7 @@ data PAtomPair
           } deriving (Show) -- Show is for QuickCheck error messages and/or input redundancy removal only!
 instance Ord PAtomPair where
   compare a b = case compare (ppLeft a, ppRight a) (ppLeft b, ppRight b) of
-    EQ -> fromMaybe (trace "Have a look at this compare, if it shows up." LT) 
+    EQ -> fromMaybe (fatal $ "Have a look at this compare, if it shows up.") 
                     (maybeOrdering (origin a) (origin b))
     x -> x
 instance Eq PAtomPair where
