@@ -239,7 +239,7 @@ pCtx2aCtx env
       , ctx_pops   = p_pops
       , ctx_metas  = p_metas
       }
- = do contextInfo <- g_contextInfo
+ = do contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfo
       uniqueNames p_patterns
       pats        <- traverse (pPat2aPat contextInfo) p_patterns            --  The patterns defined in this context
@@ -275,11 +275,11 @@ pCtx2aCtx env
                      , ctxInfo = contextInfo 
                      }
       checkOtherAtomsInSessionConcept actx
-      checkPurposes actx             -- Check whether all purposes refer to existing objects
+      checkPurposes actx                 -- Check whether all purposes refer to existing objects
       checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
-      checkInterfaceCycles actx      -- Check that interface references are not cyclic
-      checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
-      warnCaseProblems actx   -- Warn if there are problems with the casing of names of relations and/or concepts  
+      checkInterfaceCycles actx          -- Check that interface references are not cyclic
+      checkMultipleDefaultViews actx     -- Check whether each concept has at most one default view
+      warnCaseProblems actx              -- Warn if there are problems with the casing of names of relations and/or concepts  
       return actx
   where
     concGroups = getGroups genLatticeIncomplete :: [[Type]]
@@ -289,29 +289,33 @@ pCtx2aCtx env
     allGens = p_gens ++ concatMap pt_gns p_patterns
     allReprs = p_representations++concatMap pt_Reprs p_patterns
     g_contextInfo :: Guarded ContextInfo
-    g_contextInfo
-     = do let connectedConcepts = connect [] (map (Set.elems . concs) gns)
-          typeMap <- mkTypeMap connectedConcepts allReprs
+    g_contextInfo -- SJ: The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
+     = do -- SJ: @Han, is the following true?: Two concepts are connected if there is a path between them consisting of ISA or IS-links.
+          let connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
+              connectedConcepts = connect [] (map (Set.elems . concs) gns)
+          typeMap <- mkTypeMap connectedConcepts allReprs -- SJ: I presume this yields errors unless every partition refers to precisely one built-in type (aka technical type)?
           let findR :: A_Concept -> TType
               findR cpt = fromMaybe
                             Object -- default representation is Object (sometimes called `ugly identifiers')
                             (lookup cpt typeMap)
-          multitypologies <- traverse mkTypology connectedConcepts
+          -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
+          --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
+          multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
           decls <- traverse (pDecl2aDecl Nothing deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
           let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[EDcD d]) | d <- decls])
                 where groupOnTp lst = Map.fromListWith const [(SignOrd$ sign d,d) | d <- lst]
-          let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
+          let allConcs = Set.fromList (map aConcToType (map source decls ++ map target decls))  :: Set.Set Type
           return CI { ctxiGens = gns
                     , representationOf = findR
                     , multiKernels = multitypologies
                     , reprList = allReprs
                     , declDisambMap = declMap
-                    , soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs)
+                    , soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs) -- SJ: Does Haskell have a filter on sets? Shouldn't `soloConcs` be a set?
                     , gens_efficient = genLattice
                     }
         where
           gns = map pClassify2aClassify allGens
-          -- | function that creates a lookup table of concepts with a representation. 
+          -- | function `mkTypeMap` creates a lookup table of concepts with a representation. 
           --   it is checked that concepts in the same conceptgroup share a common TType. 
           mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept , TType)]
           mkTypeMap groups reprs 
@@ -364,7 +368,11 @@ pCtx2aCtx env
                        []  -> pure []
                        [t] -> pure [(cpt,t) | cpt <- grp]
                        _   -> mkMultipleTypesInTypologyError typeList
-
+          -- | SJ: What is the purpose of connect? I cannot quickly figure it out from the code, so please enlighten me...
+          --       I think:  `connect [] css` yields a partitioning of all A_Concepts where every two connected concepts are in the same partition,
+          --                 under the condition that:
+          --                  a.  every two concepts in an element of `css` are connected.
+          --                  b.  every `A_Concept` is in `css`
           connect :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
           connect typols gs = 
              case gs of
@@ -375,8 +383,8 @@ pCtx2aCtx env
                     g a as = case L.partition (hasConceptsOf a) as of
                               (_,[])   -> (a,as)
                               (hs',hs) -> g (L.nub $ a ++ concat hs) hs'
-                    hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool
-                    hasConceptsOf a b = and [ x' `notElem` b | x' <- a]
+                    hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool  -- SJ: This should be called "disjoint".
+                    hasConceptsOf a b = and [ x' `notElem` b | x' <- a]  -- SJ: This is code for "hasNoConcepsOf", or even better: "disjoint"
 
           mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs = 
@@ -419,7 +427,7 @@ pCtx2aCtx env
     -- story about genRules and genLattice
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
-    genRules :: [(Set.Set Type, Set.Set Type)]
+    genRules :: [(Set.Set Type, Set.Set Type)]  -- SJ: Why not [(NE.NonEmpty Type, NE.NonEmpty Type)] ?
     genRules = [ ( Set.fromList [ pConcToType . specific $ x]
                  , Set.fromList . NE.toList . NE.map pConcToType . generics $ x
                  )
