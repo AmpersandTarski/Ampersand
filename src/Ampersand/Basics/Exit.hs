@@ -26,7 +26,6 @@ data AmpersandExit
   | ViolationsInDatabase [(String,[String])]
   | InvalidSQLExpression [String]
   | NoPrototypeBecauseOfRuleViolations [String]
-  | FailedToInstallComposer [String]
   | PHPExecutionFailed [String]
   | WrongArgumentsGiven [String]
   | FailedToInstallPrototypeFramework [String]
@@ -61,8 +60,7 @@ info x =
               -> (SE.ExitFailure  30 , "ERROR: Invalid SQL Expression" : map ("  "++) msg)
     NoPrototypeBecauseOfRuleViolations msg
               -> (SE.ExitFailure  40 , "ERROR: No prototype generated because of rule violations." : map ("  "++) msg)
-    FailedToInstallComposer msg
-              -> (SE.ExitFailure  50 , msg)
+    -- Exit code 50 can be reused. Formerly used for FailedToInstallComposer (php dependencies for prototype framework)
     PHPExecutionFailed msg
               -> (SE.ExitFailure  60 , msg)
     WrongArgumentsGiven msg 

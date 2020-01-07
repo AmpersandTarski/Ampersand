@@ -85,6 +85,12 @@ even more complex than it already was.
           retyping (and remembering) the command line options for
           ampersand.
 
+* Removed
+
+  * ***--skip-composer***
+          skip installing php dependencies (using Composer) for prototype
+          framework.
+          
 * Changed in some way
 
   * We used to have verbose and not-verbose. Now we have 4 levels of verbosity. This effects the former swich --verbose. We now have
@@ -147,9 +153,6 @@ even more complex than it already was.
   * ***--prototype-framework-version=VERSION***
           tag, branch or SHA of the prototype framework on Github. (What
           purpose does this serve?)
-  * ***--skip-composer***
-          skip installing php dependencies (using Composer) for prototype
-          framework.
   * ***--sqlHost=HOSTNAME***
           set SQL host name (Defaults to `localhost`), to identify the host
           on which the persistent store resides

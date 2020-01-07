@@ -62,13 +62,12 @@ This is considered editable iff the composition rel;relRef yields an editable re
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirCustomizations env,HasRunComposer env, HasDirPrototype env) =>
+doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirCustomizations env, HasDirPrototype env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     now <- getCurrentTime
-    skipComposer <- view skipComposerL
     logInfo "Generating frontend..."
-    isCleanInstall <- downloadPrototypeFramework
+    _ <- downloadPrototypeFramework
     copyTemplates
     feInterfaces <- buildInterfaces fSpec
     genViewInterfaces fSpec feInterfaces
@@ -76,11 +75,6 @@ doGenFrontend fSpec = do
     genRouteProvider fSpec feInterfaces
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     copyCustomizations
-    when (isCleanInstall && not skipComposer) $ do
-      logInfo "Installing dependencies..." -- don't use logDebug here, because installing dependencies takes some time and we want the user to see this
-      env <- ask 
-      let dirPrototype = getDirPrototype env
-      installComposerLibs dirPrototype
     logInfo "Frontend generated"
   
 copyTemplates :: (HasDirPrototype env, HasLogFunc env) =>

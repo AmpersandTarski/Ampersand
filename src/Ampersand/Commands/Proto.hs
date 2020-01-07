@@ -23,7 +23,7 @@ import qualified RIO.Text as T
 import           System.Directory
 -- | Builds a prototype of the current project.
 --
-proto :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env) 
+proto :: (Show env, HasRunner env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env) 
        => FSpec -> RIO env ()
 proto fSpec = do
     env <- ask

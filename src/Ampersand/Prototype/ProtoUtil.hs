@@ -9,7 +9,6 @@ module Ampersand.Prototype.ProtoUtil
          , addSlashes
          , indentBlock
          , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
-         , installComposerLibs
          ) where
  
 import           Ampersand.Basics
@@ -17,12 +16,7 @@ import           Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.Text as T
 import           System.Directory
-import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))
 import           System.FilePath
-import           System.Process(CreateProcess(..),readCreateProcessWithExitCode
-                               ,CmdSpec(..),StdStream(..))
-
-
 
 
 writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
@@ -153,51 +147,3 @@ showPhpBool b = if b then "true" else "false"
 showPhpMaybeBool :: Maybe Bool -> String
 showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
-
-
-installComposerLibs :: (HasLogFunc env) => 
-                       FilePath -> RIO env ()
-installComposerLibs installTarget = do
-    curPath <- liftIO $ getCurrentDirectory
-    logDebug $ "current directory: "<>display (T.pack curPath)
-    logDebug "  Trying to download and install Composer libraries..."
-    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode myProc ""
-    case exit_code of
-      SE.ExitSuccess   -> do logDebug $
-                              " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                             logDebug $ display (T.pack stdout')
-      SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
-
-   where
-     myProc :: CreateProcess
-     myProc = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<> installTarget
-       , cwd = Nothing
-       , env = Nothing
-       , std_in = Inherit
-       , std_out = Inherit
-       , std_err = Inherit
-       , close_fds = False
-       , create_group = False
-       , delegate_ctlc = True
-       , detach_console = False
-       , create_new_console = False
-       , new_session = False
-       , child_group = Nothing
-       , child_user = Nothing
-       , use_process_jobs = False
-       }
-     failOutput :: (ExitCode, String, String) -> RIO env ()
-     failOutput (exit_code, out, err) = do
-        exitWith . FailedToInstallComposer  $
-            [ "Failed!"
-            , "composerTargetPath: "++installTarget
-            , "Exit code of trying to install Composer: "<>show exit_code<>". "
-            ] ++ 
-            (if null out then [] else "stdout:" : lines out) ++
-            (if null err then [] else "stderr:" : lines err) ++
-            [ "Possible solutions to fix your prototype:"
-            , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
-            , "  2) Make sure you have an active internet connection."
-            , "  3) If you previously built another Ampersand prototype succesfully, you could try to copy the lib directory from it into you prototype manually."
-            ]

@@ -114,12 +114,6 @@ instance HasOutputLanguage DocOpts where
 instance HasOutputLanguage UmlOpts where
   languageL = lens x4OutputLanguage (\x y -> x { x4OutputLanguage = y })
 
-class HasRunComposer a where
-  skipComposerL :: Lens' a Bool -- if True, runs Composer (php package manager) when generating prototype. Requires PHP and Composer on the machine. Added as switch to disable when building with Docker.
-instance HasRunComposer ProtoOpts where
-  skipComposerL = lens xskipComposer (\x y -> x { xskipComposer = y })
-
-
 class HasDirCustomizations a where
   dirCustomizationsL :: Lens' a [FilePath] -- the directories that are copied after generating the prototype
 instance HasDirCustomizations ProtoOpts where
@@ -276,7 +270,6 @@ data ProtoOpts = ProtoOpts
    -- ^ when true, an existing prototype directory will be destroyed and re-installed
    , x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts
-   , xskipComposer :: !Bool
    , xdirPrototype :: !(Maybe FilePath)
    , xdirCustomizations :: ![FilePath]
    , xzwolleVersion :: !String

@@ -15,7 +15,7 @@ protoOptsParser :: Parser ProtoOpts
 protoOptsParser = 
    ( \dbName sqlHost sqlLogin sqlPwd forceReinstall 
         outputLanguage fSpecGenOpts 
-        skipComposer dirPrototype dirCustomizations 
+        dirPrototype dirCustomizations 
         zwolleVersion allowInvariantViolations -> ProtoOpts
             { xdbName = dbName
             , xsqlHost = sqlHost
@@ -24,7 +24,6 @@ protoOptsParser =
             , xforceReinstallFramework = forceReinstall
             , x1OutputLanguage = outputLanguage
             , x1fSpecGenOpts = fSpecGenOpts
-            , xskipComposer = skipComposer
             , xdirPrototype = dirPrototype 
             , xdirCustomizations = dirCustomizations
             , xzwolleVersion = zwolleVersion
@@ -32,7 +31,7 @@ protoOptsParser =
             }) 
   <$> optional dbNameP <*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
-  <*> skipComposerP <*> optional dirPrototypeP <*> dirCustomizationsP
+  <*> optional dirPrototypeP <*> dirCustomizationsP
   <*> zwolleVersionP <*> allowInvariantViolationsP
 
 dbNameP :: Parser String
@@ -67,12 +66,6 @@ forceReinstallP = switch
         ( long "force-reinstall-framework"
         <> help ("Re-install the prototype framework. This discards any previously "<>
                 "installed version.")
-        )
-skipComposerP :: Parser Bool
-skipComposerP = switch
-        ( long "skip-composer"
-        <> help ("Skip installing php dependencies (using Composer) "
-                <>"for prototype framework.")
         )
 dirPrototypeP :: Parser String
 dirPrototypeP = strOption
