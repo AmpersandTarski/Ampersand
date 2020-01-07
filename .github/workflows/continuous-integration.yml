@@ -48,6 +48,7 @@ jobs:
     - name: Push ampersand:latest
       if: github.ref == 'refs/heads/development'
       run: |
+        docker push ${DOCKER_AMPERSAND_IMAGE_DEV}
         docker push ${DOCKER_AMPERSAND_IMAGE}:latest
   
   # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
