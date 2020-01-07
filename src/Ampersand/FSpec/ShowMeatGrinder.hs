@@ -3,12 +3,11 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DuplicateRecordFields#-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.FSpec.ShowMeatGrinder
-  ( makeMetaFile
-  , grind 
-  , addSemanticModel
+  ( grind 
   , GrindInfo(..)
   , MetaModel(..)
   )
@@ -17,18 +16,14 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.A2P_Converters
-import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
-import qualified RIO.List as L
 import qualified RIO.Set as Set
-import           RIO.Time
 
-data MetaModel = FormalAmpersand | FADocumented | PrototypeContext
+data MetaModel = FormalAmpersand | PrototypeContext
        deriving (Eq, Ord, Enum, Bounded, Show)
 instance Named MetaModel where
   name FormalAmpersand = "Formal Ampersand"
-  name FADocumented    = "Formal Ampersand (documented)"
   name PrototypeContext   = "System context"
 
 data GrindInfo = GrindInfo
@@ -39,8 +34,8 @@ data GrindInfo = GrindInfo
     }
 
 -- | The 'grind' function creates a P_Context that contains the population for every
---   relation in the metamodel. The population is defined by the given FSpec,
---   which usually is the FSpec of the user. 
+--   relation in the metamodel for which the GrindInfo is given. 
+--   The population is defined by the given FSpec, which usually is the FSpec of the user. 
 grind :: GrindInfo -> FSpec -> P_Context
 grind grindInfo userFspec =
   PCtx{ ctx_nm     = "Grinded_"++name userFspec
@@ -58,21 +53,17 @@ grind grindInfo userFspec =
       , ctx_gs     = map aClassify2pClassify . Set.toList . instances . fModel $ grindInfo
       , ctx_ifcs   = []
       , ctx_ps     = []
-      , ctx_pops   = mapMaybe populationFromPop . Set.toList $ metaPops2
+      , ctx_pops   = populationFromPop <$> metaPops2
       , ctx_metas  = []
       }
   where
-    metaPops2 :: Set.Set Pop
-    metaPops2 = Set.fromList 
-              . concatMap (Set.toList . grindedPops grindInfo userFspec)
+    metaPops2 :: [Pop]
+    metaPops2 = concatMap (Set.toList . grindedPops grindInfo userFspec)
               . Set.toList . instances . fModel $ grindInfo
-    populationFromPop :: Pop -> Maybe P_Population
+    populationFromPop :: Pop -> P_Population
     populationFromPop pop =
-      case pop of 
-        Comment{} -> Nothing
-        Pop{}     -> Just $
-             P_RelPopu { p_src  = Nothing
-                       , p_tgt  = Nothing
+             P_RelPopu { p_src  = Just $ name (source rel)
+                       , p_tgt  = Just $ name (target rel)
                        , pos    = orig
                        , p_nmdr = PNamedRel 
                             { pos    = orig
@@ -97,128 +88,33 @@ grind grindInfo userFspec =
                     PopAlphaNumeric str -> ScriptString orig str
                     PopInt i            -> ScriptInt orig i
            
--- | When the semantic model of a metamodel is added to the user's model, we add
---   the relations as wel as the generalisations to it, so they are available to the user
---   in an implicit way. We want other things, like Idents, Views and REPRESENTs available too.
-addSemanticModel :: GrindInfo -> P_Context -> P_Context
-addSemanticModel gInfo pCtx = 
-   PCtx    
-        { ctx_nm     = ctx_nm     pCtx
-        , ctx_pos    = ctx_pos    pCtx
-        , ctx_lang   = ctx_lang   pCtx
-        , ctx_markup = ctx_markup pCtx
-        , ctx_pats   = ctx_pats   pCtx `uni` ctx_pats   pCtxOfMetaModel
-        , ctx_rs     = ctx_rs     pCtx `uni` ctx_rs     pCtxOfMetaModel
-        , ctx_ds     = ctx_ds     pCtx `uni` ctx_ds     pCtxOfMetaModel
-        , ctx_cs     = ctx_cs     pCtx `uni` ctx_cs     pCtxOfMetaModel
-        , ctx_ks     = ctx_ks     pCtx `uni` ctx_ks     pCtxOfMetaModel
-        , ctx_rrules = ctx_rrules pCtx `uni` ctx_rrules pCtxOfMetaModel
-        , ctx_reprs  = ctx_reprs  pCtx `uni` ctx_reprs  pCtxOfMetaModel
-        , ctx_vs     = ctx_vs     pCtx `uni` ctx_vs     pCtxOfMetaModel
-        , ctx_gs     = ctx_gs     pCtx `uni` ctx_gs     pCtxOfMetaModel
-        , ctx_ifcs   = ctx_ifcs   pCtx `uni` (if True -- DISABLED. See issue #979
-                                              then [] 
-                                              else ctx_ifcs   pCtxOfMetaModel)
-        , ctx_ps     = ctx_ps     pCtx 
-        , ctx_pops   = ctx_pops   pCtx `uni` ctx_pops   pCtxOfMetaModel
-        , ctx_metas  = ctx_metas  pCtx
-        }
-           where
-            pCtxOfMetaModel = pModel gInfo
-            uni :: Eq a => [a] -> [a] -> [a]
-            uni xs ys = L.nub (xs ++ ys)
- 
 data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
                , popRelation :: Relation
                }
-         | Comment { comment :: [String]  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
-                   } deriving (Eq,Ord)
-
-showPop :: Pop -> String
-showPop pop =
-  case pop of
-      Pop{} -> showP . aRelation2pRelation . popRelation $ pop
-      Comment{} -> L.intercalate "\n" . map ("-- " ++) . comment $ pop
--- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
---   The comments that are in Pop are preserved. 
-makeMetaFile :: UTCTime -> GrindInfo -> FSpec -> (FilePath,String)
-makeMetaFile now metaModel userFspec
-  = ("MetaPopulationFile.adl", content )
-  where
-    content = unlines $
-        ([ "{- Do not edit manually. This code has been generated!!!"
-        , "    Generated with "++ampersandVersionStr
-        , "    Generated at "++show now
-        , " "
-        , "The populations defined in this file are the populations from the user's"
-        , "model named '"++name userFspec++"'."
-        , ""
-        , "-}"
-        , "CONTEXT Grinded_"++name userFspec
-        , "" ]
-        ++ listOfConcepts
-        ++ [""]
-        ++ body
-        ++
-        [ ""
-        , "ENDCONTEXT"
-        ])
-    body :: [String]
-    body =
-         L.intercalate [""]
-       . L.sort
-       . map (lines . showPop )
-       . concatMap (Set.toList . popsOfRelation)
-       . L.sortOn showRel
-       . Set.toList . instances . fModel $ metaModel
-    listOfConcepts :: [String]
-    listOfConcepts = map ("-- "++) .
-                     L.intercalate [""] . 
-                     map showCpt . L.sortOn name . Set.toList . instances . fModel $ metaModel
-       where
-        showCpt :: A_Concept -> [String]
-        showCpt cpt = [name cpt] ++ ( map ("  "++)
-                                    . L.sort 
-                                    . map show
-                                    . Set.toList
-                                    $ pAtomsOfConcept cpt
-                                    )
-        
-    popsOfRelation :: Relation -> Set.Set Pop
-    popsOfRelation = grindedPops metaModel userFspec
-    pAtomsOfConcept :: A_Concept -> Set.Set PopAtom
-    pAtomsOfConcept cpt = getPopsSet Src `Set.union` getPopsSet Tgt
-      where getPopsSet :: SrcOrTgt -> Set.Set PopAtom
-            getPopsSet x = Set.fromList . map (case x of
-                                                 Src -> fst
-                                                 Tgt -> snd
-                                              )
-                         . Set.toList . Set.unions.  map popPairs 
-                         . Set.toList . Set.unions . map popsOfRelation 
-                         . Set.toList . Set.filter (\rel-> case x of
-                                                             Src -> source rel == cpt
-                                                             Tgt -> target rel == cpt
-                                                   ) 
-                         . instances . fModel $ metaModel
 
 grindedPops :: GrindInfo -> FSpec -> Relation -> Set.Set Pop
 grindedPops grindInfo userFspec rel = 
   case filter (isForRel rel) ((transformers grindInfo) userFspec) of
     []  -> fatal . unlines $ 
               ["Every relation in "++name (metaModel grindInfo)++" must have a transformer in Transformers.hs"
-              ,"   Violations:"
+              ," However, the following relations have none:"
               ] ++ map ("      "++) viols
             where 
               viols = map showRelOrigin 
                     . Set.toList
                     . Set.filter hasNoTransformer 
                     . instances . fModel $ grindInfo
-              hasNoTransformer :: Relation -> Bool
-              hasNoTransformer d = null (filter (isForRel d) ((transformers grindInfo) userFspec))
-              showRelOrigin :: Relation -> String
-              showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
-    ts  -> Set.fromList . map transformer2Pop $ ts 
+    [t] -> Set.singleton . transformer2Pop $ t
+    ts  -> fatal . unlines $ 
+              ["Every relation in "++name (metaModel grindInfo)++" must have a transformer in Transformers.hs"
+              ," However there are "<>show (length ts)<>" transformers for relation: "
+              ,"      "++showRelOrigin rel
+              ]
   where
+    showRelOrigin :: Relation -> String
+    showRelOrigin r = showRel r++" ( "++show (origin r)++" )."
+    hasNoTransformer :: Relation -> Bool
+    hasNoTransformer d = null (filter (isForRel d) ((transformers grindInfo) userFspec))
     transformer2Pop :: Transformer -> Pop
     transformer2Pop (Transformer relName src tgt popPairs) 
       | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ popPairs) ) =

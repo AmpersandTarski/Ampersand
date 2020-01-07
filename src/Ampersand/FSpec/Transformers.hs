@@ -54,8 +54,7 @@ dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
-toTransformer (a,b,c,d) = Transformer a b c d
-
+toTransformer (rel,src,tgt,tuples) = Transformer rel src tgt tuples
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: FSpec -> [Transformer]
 transformersFormalAmpersand fSpec = map toTransformer [
@@ -245,16 +244,23 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | rul::Rule <- instanceList fSpec
         ]
       )
+     ,("gengen"                , "Isa"                   , "Concept" 
+      , Set.fromList $
+        [ ( dirtyId isa, dirtyId (gengen isa)) 
+        | isa@Isa{} <- instanceList fSpec
+        ]
+      )
      ,("gengen"                , "IsE"                   , "Concept" 
       , Set.fromList $
         [ ( dirtyId ise, dirtyId cpt) 
         | ise@IsE{} <- instanceList fSpec
         , cpt <- genrhs ise]
       )
-     ,("gengen"                , "Isa"                   , "Concept" 
+     ,("gens"                  , "Context"               , "Isa"     
       , Set.fromList $
-        [ ( dirtyId isa, dirtyId (gengen isa)) 
-        | isa@Isa{} <- instanceList fSpec
+        [(dirtyId ctx, dirtyId isa) 
+        | ctx::A_Context <- instanceList fSpec
+        , isa@Isa{} <- instanceList fSpec
         ]
       )
      ,("gens"                  , "Context"               , "IsE"     
@@ -263,13 +269,6 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | ctx::A_Context <- instanceList fSpec
         , ise@IsE{} <- instanceList fSpec
         ] 
-      )
-     ,("gens"                  , "Context"               , "Isa"     
-      , Set.fromList $
-        [(dirtyId ctx, dirtyId isa) 
-        | ctx::A_Context <- instanceList fSpec
-        , isa@Isa{} <- instanceList fSpec
-        ]
       )
      ,("genspc"                , "IsE"                   , "Concept" 
       , Set.fromList $
@@ -626,12 +625,6 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("right"                 , "Pair"                  , "Atom"    
       , Set.empty  --TODO
-      )
-     ,("formalExpression"      , "Rule"                  , "Expression"
-      , Set.fromList
-        [(dirtyId rul, dirtyId (formalExpression rul))
-        | rul::Rule <- instanceList fSpec
-        ]
       )
      ,("second"                , "BinaryTerm"            , "Expression"
       , Set.fromList

@@ -24,7 +24,7 @@ parseScripts paths =
     [] -> return True
     (f:fs) -> do
         let fSpecGenOpts = defFSpecGenOpts f
-        parsed <- snd <$> extendWith fSpecGenOpts (parseADL f)
+        parsed <- snd <$> extendWith fSpecGenOpts (parseFileTransitive f)
         case parsed of
             Checked _ ws -> do
                 logInfo $ "Parsed: " <> display (T.pack f)

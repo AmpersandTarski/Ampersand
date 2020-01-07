@@ -25,7 +25,6 @@ import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import           Data.Foldable (foldrM)
 -- | create an FSpec, based on the provided command-line options.
 --   Without the command-line switch "--meta-tables", 
 --   Ampersand compiles its script (userP_Ctx) straightforwardly in first order relation algebra.
@@ -44,12 +43,15 @@ createFspec :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) =>
                BuildRecipe -> RIO env (Guarded FSpec)
 createFspec recipe = do 
     env <- ask
-    cooked <- cook env
-                      <$> do rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
-                             snd <$> parseADL rootFile -- the P_Context of the user's sourceFile
-                      <*> do let fun m = (,) m <$> mkGrindInfo m
-                             Map.fromList <$> (sequence $ fun <$> (Set.toList $ metaModelsIn recipe))
-                      <*> pure recipe
+    metaModelsMap :: Map MetaModel GrindInfo <- do 
+         let fun :: (HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> RIO env (MetaModel , GrindInfo)
+             fun m = (,) m <$> mkGrindInfo m
+         Map.fromList <$> (sequence $ fun <$> (Set.toList $ metaModelsIn recipe))
+    parsedUserScript :: Guarded P_Context <- do
+         rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
+         snd <$> parseFileTransitive rootFile -- the P_Context of the user's sourceFile
+    let cooked :: Guarded P_Context
+        cooked = cook env recipe metaModelsMap parsedUserScript
     return . join $ pCtx2Fspec env <$> cooked
 
 class MetaModelContainer a where
@@ -101,24 +103,25 @@ andThen (BuildRecipe start steps) step = BuildRecipe start (steps++[step])
 --   given as parameter, like the original user's P_Context, and a map that can be used
 --   to obtain GrindInfo for metamodels. 
 cook :: (HasFSpecGenOpts env) => 
-         env -- The environment
-      -> Guarded P_Context  -- The original user's P_Context, Guarded because it might have errors 
-      -> Map MetaModel GrindInfo -- a map containing all GrindInfo that could be required
-      -> BuildRecipe -> Guarded P_Context 
-cook env user grindInfoMap (BuildRecipe start steps) = 
+         env -- ^ The environment
+      -> BuildRecipe -- ^ Instructions for the man in the kitchen
+      -> Map MetaModel GrindInfo -- ^ A map containing all GrindInfo that could be required
+      -> Guarded P_Context  -- ^ The original user's P_Context, Guarded because it might have errors 
+      -> Guarded P_Context 
+cook env (BuildRecipe start steps) grindInfoMap user = 
     join $ doSteps <$> case start of
                     UserScript -> user
                     MetaScript mm -> pure . pModel $ gInfo mm
   where 
   doSteps :: P_Context -> Guarded P_Context
-  doSteps pCtx = foldrM nextStep pCtx steps
+  doSteps pCtx = foldM nextStep pCtx steps
     where
-      nextStep :: BuildStep -> P_Context -> Guarded P_Context
-      nextStep step ctx = 
+      nextStep :: P_Context -> BuildStep -> Guarded P_Context
+      nextStep ctx step = 
         case step of 
           EncloseInConstraints -> pure $ encloseInConstraints ctx 
           Grind mm -> grind (gInfo mm) <$> (pCtx2Fspec env ctx)
-          MergeWith recipe -> mergeContexts ctx <$> cook env user grindInfoMap recipe
+          MergeWith recipe -> mergeContexts ctx <$> cook env recipe grindInfoMap user
           NoConversion -> pure ctx
           
   gInfo :: MetaModel -> GrindInfo
@@ -145,7 +148,7 @@ encloseInConstraints pCtx = enrichedContext
     declaredRelations ::  [P_Relation]   -- relations declared in the user's script
     popRelations ::       [P_Relation]   -- relations that are "annotated" by the user in Excel-sheets.
                                          -- popRelations are derived from P_Populations only.
-    declaredRelations = L.nub (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
+    declaredRelations = mergeRels (ctx_ds pCtx++concatMap pt_dcs (ctx_pats pCtx))
     -- | To derive relations from populations, we derive the signature from the population's signature directly.
     --   Multiplicity properties are added to constrain the population without introducing violations.
     popRelations 
@@ -249,6 +252,7 @@ encloseInConstraints pCtx = enrichedContext
         srcPop pop@P_RelPopu{p_src = src} = case src of Just s -> PCpt s; _ -> fatal ("srcPop ("++showP pop++") is mistaken.")
         tgtPop pop@P_CptPopu{} = PCpt (name pop)
         tgtPop pop@P_RelPopu{p_tgt = tgt} = case tgt of Just t -> PCpt t; _ -> fatal ("tgtPop ("++showP pop++") is mistaken.")
+
     sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
     sourc = pSrc . dec_sign
     targt = pTgt . dec_sign
