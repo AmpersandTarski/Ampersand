@@ -23,9 +23,8 @@ ARG GIT_Branch
 RUN stack install
 
 # Show the results of the build stage
-RUN ls -al /root/.local/bin
-
-COPY /root/.local/bin/ampersand /bin/
+RUN ls -al /root/.local/bin \
+ && cp /root/.local/bin/ampersand /bin/ampersand
 
 # Create a light-weight image that has the Ampersand compiler available
 FROM ubuntu
