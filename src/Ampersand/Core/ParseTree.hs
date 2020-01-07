@@ -599,6 +599,11 @@ data P_Population
               }
    deriving (Show) --For QuickCheck error messages only!
 --NOTE :: Do NOT make instance Eq P_Population, for this is causing problems with merging. 
+
+instance Named P_Population where
+    name P_RelPopu{p_nmdr = nr} = name nr
+    name P_CptPopu{p_cnme = nm} = nm
+
 instance Traced P_Population where
  origin = pos
 data P_Interface =
