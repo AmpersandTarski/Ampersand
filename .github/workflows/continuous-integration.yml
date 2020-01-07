@@ -26,20 +26,19 @@ jobs:
         docker version
         docker login docker.pkg.github.com -u ${GITHUB_ACTOR} -p ${{secrets.GITHUB_TOKEN}}
     
-    - name: Pull images to use as cache
-      run: |
-        docker pull ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} || true
-        docker pull ${DOCKER_AMPERSAND_IMAGE_DEV} || true
+    - name: Pull dev image to use as cache
+      run: docker pull ${DOCKER_AMPERSAND_IMAGE_DEV} || true
     
     # This step only builds the 'buildstage' stage (see `--target buildstage`)
     - name: Build buildstage
       run: |
         # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
-        docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --cache-from ${DOCKER_AMPERSAND_IMAGE_DEV} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
+        docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE_DEV} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
     
-    # This step allows for quicker builds in a future run (see step above where image is pulled to use as cache)
-    - name: Push buildstage 
-      run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
+    # Step disabled because it clutters the package registry on github. Currently public packages cannot be deleted on github.
+    # # This step allows for quicker builds in a future run (see step above where image is pulled to use as cache)
+    # - name: Push buildstage 
+    #   run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
     
     # This step build the final (slim) image 
     - name: Build final image
