@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveDataTypeable,OverloadedStrings #-}
-module Ampersand.Prototype.GenFrontend (doGenFrontend) where
+module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend) where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -9,6 +9,8 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc.HasClasses
+import           Ampersand.Output.FSpec2SQL (generateDatabaseFile)
+import           Ampersand.Output.ToJSON.ToJson (generateAllJSONfiles)
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Runners (logLevel)
 import           Ampersand.Types.Config
@@ -76,6 +78,16 @@ doGenFrontend fSpec = do
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     copyCustomizations
     logInfo "Frontend generated"
+
+doGenBackend :: (Show env, HasRunner env, HasProtoOpts env, HasDirPrototype env) =>
+                FSpec -> RIO env ()
+doGenBackend fSpec = do
+  env <- ask
+  logInfo "Generating backend..."
+  generateDatabaseFile fSpec
+  let dir = getGenericsDir env
+  generateAllJSONfiles dir fSpec
+  logInfo "Backend generated"
   
 copyTemplates :: (HasDirPrototype env, HasLogFunc env) =>
                  RIO env ()
