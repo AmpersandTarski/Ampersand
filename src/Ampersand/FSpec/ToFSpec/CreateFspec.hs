@@ -155,7 +155,7 @@ encloseInConstraints pCtx = enrichedContext
      = [ computeProps rel
        | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx++[pop |pat<-ctx_pats pCtx, pop<-pt_pop pat]
        , Just src'<-[src], Just tgt'<-[tgt]
-       , rel<-[ P_Sgn{ dec_nm     = nameFIXME pop
+       , rel<-[ P_Sgn{ dec_nm     = name (p_nmdr pop)
                      , dec_sign   = P_Sign (PCpt src') (PCpt tgt')
                      , dec_prps   = mempty
                      , dec_pragma = mempty
@@ -172,12 +172,12 @@ encloseInConstraints pCtx = enrichedContext
                sgn  = dec_sign rel
                s = pSrc sgn; t = pTgt sgn
                popu :: P_Concept -> Set.Set PAtomValue
-               popu c = (Set.fromList . concat .map p_popas) [ pop | pop@P_CptPopu{}<-pops, name c==nameFIXME pop ]
+               popu c = (Set.fromList . concat .map p_popas) [ pop | pop@P_CptPopu{}<-pops, name c==p_cnme pop ]
                popR :: Set.Set PAtomPair
                popR = (Set.fromList . concat. map p_popps )
                       [ pop
                       | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-pops, Just src'<-[src], Just tgt'<-[tgt]
-                      , name rel==nameFIXME pop, src'==name s, tgt'==name t
+                      , name rel==name (p_nmdr pop), src'==name s, tgt'==name t
                       ]
                domR = Set.fromList . map ppLeft  . Set.toList $ popR
                codR = Set.fromList . map ppRight . Set.toList $ popR
@@ -227,7 +227,10 @@ encloseInConstraints pCtx = enrichedContext
                        , not (specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap sourc sRel))]
                       )
             sameNameTargetPops :: [NE.NonEmpty P_Population]
-            sameNameTargetPops = eqCl (\r->(nameFIXME r,tgtPop r)) unseenpops
+            sameNameTargetPops = eqCl (\r->(givenName r,tgtPop r)) unseenpops
+              where
+                givenName P_RelPopu{p_nmdr = nr} = name nr
+                givenName P_CptPopu{p_cnme = nm} = nm
             genericPops ::    [P_Population]
             remainingPops :: [[P_Population]]
             (genericPops, remainingPops)
@@ -248,13 +251,10 @@ encloseInConstraints pCtx = enrichedContext
                       )
         recur _ rels popus [] = (rels,popus)
         srcPop, tgtPop :: P_Population -> P_Concept -- get the source concept of a P_Population.
-        srcPop pop@P_CptPopu{} = PCpt (nameFIXME pop)
+        srcPop pop@P_CptPopu{} = PCpt (name (p_nmdr pop))
         srcPop pop@P_RelPopu{p_src = src} = case src of Just s -> PCpt s; _ -> fatal ("srcPop ("++showP pop++") is mistaken.")
-        tgtPop pop@P_CptPopu{} = PCpt (nameFIXME pop)
+        tgtPop pop@P_CptPopu{} = PCpt (p_cnme pop)
         tgtPop pop@P_RelPopu{p_tgt = tgt} = case tgt of Just t -> PCpt t; _ -> fatal ("tgtPop ("++showP pop++") is mistaken.")
-    -- nameFIXME was introduced by Stef, but P_Population must not be an instance of Named. See issue #1037
-    nameFIXME P_RelPopu{p_nmdr = nr} = name nr
-    nameFIXME P_CptPopu{p_cnme = nm} = nm
     sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
     sourc = pSrc . dec_sign
     targt = pTgt . dec_sign
@@ -266,7 +266,7 @@ encloseInConstraints pCtx = enrichedContext
     signatur :: P_Relation -> (String, P_Sign)
     signatur rel =(name rel, dec_sign rel)
     concepts = L.nub $
-            [ PCpt (nameFIXME pop) | pop@P_CptPopu{}<-ctx_pops pCtx] ++
+            [ PCpt (p_cnme pop) | pop@P_CptPopu{}<-ctx_pops pCtx] ++
             [ PCpt src' | P_RelPopu{p_src = src}<-ctx_pops pCtx, Just src'<-[src]] ++
             [ PCpt tgt' | P_RelPopu{p_tgt = tgt}<-ctx_pops pCtx, Just tgt'<-[tgt]] ++
             map sourc declaredRelations++ map targt declaredRelations++
@@ -275,7 +275,7 @@ encloseInConstraints pCtx = enrichedContext
     computeConceptPopulations :: [P_Population] -> [P_Population]
     computeConceptPopulations pps -- I feel this computation should be done in P2A_Converters.hs, so every A_structure has compliant populations.
      = [ P_CptPopu{pos = OriginUnknown, p_cnme = name c, p_popas = L.nub $
-                       [ atom | cpt@P_CptPopu{}<-pps, PCpt (nameFIXME cpt) == c, atom<-p_popas cpt]++
+                       [ atom | cpt@P_CptPopu{}<-pps, PCpt (p_cnme cpt) == c, atom<-p_popas cpt]++
                        [ ppLeft pair
                        | pop@P_RelPopu{p_src = src}<-pps, Just src'<-[src], PCpt src' == c
                        , pair<-p_popps pop]++
@@ -285,7 +285,7 @@ encloseInConstraints pCtx = enrichedContext
        | c<-concepts
        ] ++
        [ rpop{p_popps=concat (fmap p_popps cl)}
-       | cl<-eqCl (\pop->(nameFIXME pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NE.head cl]
+       | cl<-eqCl (\pop->(name (p_nmdr pop),p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NE.head cl]
        ]
 
 --    specializations :: P_Concept -> [P_Concept]
