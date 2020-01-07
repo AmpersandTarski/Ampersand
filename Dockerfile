@@ -25,9 +25,11 @@ RUN stack install
 # Show the results of the build stage
 RUN ls -al /root/.local/bin
 
+COPY /root/.local/bin/ampersand /bin/
+
 # Create a light-weight image that has the Ampersand compiler available
 FROM ubuntu
 
-COPY --from=buildstage /root/.local/bin/ampersand /bin/
+COPY --from=buildstage /bin/ampersand /bin/
 
 ENTRYPOINT ["/bin/ampersand"]
