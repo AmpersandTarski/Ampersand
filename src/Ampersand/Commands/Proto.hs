@@ -21,7 +21,7 @@ import qualified RIO.Text as T
 import           System.Directory
 -- | Builds a prototype of the current project.
 --
-proto :: (Show env, HasRunner env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env) 
+proto :: (Show env, HasRunner env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env, HasGenerateFrontend env) 
        => FSpec -> RIO env ()
 proto fSpec = do
     env <- ask
@@ -33,7 +33,8 @@ proto fSpec = do
     then do
        logDebug "Generating prototype..."
        liftIO $ createDirectoryIfMissing True dirPrototype
-       doGenFrontend fSpec
+       generateFrontend <- view generateFrontendL
+       when generateFrontend $ doGenFrontend fSpec
        doGenBackend fSpec
        dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
        logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)

@@ -6,7 +6,9 @@
 * Add continuous integration via Github Actions. With cache.
 * [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. Changes are documented in Commands.md
 * [Issue #1029](https://github.com/AmpersandTarski/Ampersand/issues/1029) Fixed detection of rules with same name.
+
 * Remove option --skip-composer. Relates to topic of [Archicture of Ampersand compiler](https://github.com/AmpersandTarski/Ampersand/issues/903)
+* Introduce option --[no-]frontend to do/don't generate frontend (i.e. javascript and html files for Angular app)
 
 ## v3.17.4 (13 september 2019)
 

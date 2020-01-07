@@ -65,6 +65,11 @@ class HasAllowInvariantViolations a where
 instance HasAllowInvariantViolations ProtoOpts where
   allowInvariantViolationsL = lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
 
+class HasGenerateFrontend a where
+  generateFrontendL :: Lens' a Bool
+instance HasGenerateFrontend ProtoOpts where
+  generateFrontendL = lens xgenerateFrontend (\x y -> x { xgenerateFrontend = y })
+
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
   baseName :: a -> String
@@ -274,6 +279,7 @@ data ProtoOpts = ProtoOpts
    , xdirCustomizations :: ![FilePath]
    , xzwolleVersion :: !String
    , xallowInvariantViolations :: !Bool
+   , xgenerateFrontend :: !Bool
   } deriving Show
 
 -- | Options for @ampersand documentation@.

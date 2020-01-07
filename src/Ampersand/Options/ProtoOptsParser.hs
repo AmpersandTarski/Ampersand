@@ -4,6 +4,7 @@ module Ampersand.Options.ProtoOptsParser
 where
 
 import           Options.Applicative
+import           Options.Applicative.Builder.Extra
 import           Ampersand.Commands.Proto (ProtoOpts (..))
 import           Ampersand.Basics
 import           Ampersand.Options.Utils
@@ -16,6 +17,7 @@ protoOptsParser =
    ( \dbName sqlHost sqlLogin sqlPwd forceReinstall 
         outputLanguage fSpecGenOpts 
         dirPrototype dirCustomizations 
+        generateFrontend 
         zwolleVersion allowInvariantViolations -> ProtoOpts
             { xdbName = dbName
             , xsqlHost = sqlHost
@@ -28,10 +30,12 @@ protoOptsParser =
             , xdirCustomizations = dirCustomizations
             , xzwolleVersion = zwolleVersion
             , xallowInvariantViolations = allowInvariantViolations
+            , xgenerateFrontend = generateFrontend
             }) 
   <$> optional dbNameP <*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
   <*> optional dirPrototypeP <*> dirCustomizationsP
+  <*> generateFrontendP
   <*> zwolleVersionP <*> allowInvariantViolationsP
 
 dbNameP :: Parser String
@@ -100,5 +104,9 @@ allowInvariantViolationsP = switch
                <>"that are being violated. (See "
                <>"https://github.com/AmpersandTarski/Ampersand/issues/728)")
         )
+generateFrontendP :: Parser Bool
+generateFrontendP = boolFlags True "frontend"
+        ( "Generate prototype frontend files (Angular application)")
+        mempty
 
 

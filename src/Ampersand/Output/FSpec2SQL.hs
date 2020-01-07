@@ -20,7 +20,7 @@ import           System.FilePath
 generateDatabaseFile :: (HasDirPrototype env, HasLogFunc env) => FSpec -> RIO env ()
 generateDatabaseFile fSpec = 
    do env <- ask
-      logInfo $ "  Generating "<>display (T.pack file)
+      logDebug $ "  Generating "<>display (T.pack file)
       liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile env))
       writeFileUtf8 (fullFile env) content
   where 
