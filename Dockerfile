@@ -4,9 +4,10 @@ FROM haskell:8.6.5 AS buildstage
 RUN mkdir /opt/ampersand
 WORKDIR /opt/ampersand
 
-# Start with a layer to build dependencies that can be cached
-# Only updates to these files must trigger this layer
-# https://medium.com/permutive/optimized-docker-builds-for-haskell-76a9808eb10b
+# Start with a docker-layer that contains build dependencies, to maximize the reuse of these dependencies by docker's cache mechanism.
+# Only updates to the files stack.yaml package.yaml will rebuild this layer; all other changes use the cache.
+# Expect stack to give warnings in this step, which you can ignore.
+# Idea taken from https://medium.com/permutive/optimized-docker-builds-for-haskell-76a9808eb10b
 COPY stack.yaml package.yaml /opt/ampersand/
 RUN stack build --dependencies-only
 
