@@ -193,10 +193,9 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
         replaceAll :: (Text,Text) -> Text -> Text
         replaceAll (needle,replacement) = Partial.replace needle replacement
         substMap :: [(Text,Text)]
-        -- This substitusions are required so we can use the 
-        -- templates from pandoc unchanged. Without this substitutions
-        -- all kind of crazy errors occur with LaTeX, and possibly other
-        -- templates as well.
+        -- The following substitutions are required to use the 
+        -- templates from pandoc unchanged. Without them we get
+        -- errors with LaTeX, and possibly other templates.
         substMap = 
             [ ("\r\n$if("   ,"$if("   )        
             , ("$endif$\r\n","$endif$")
