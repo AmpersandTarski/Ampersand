@@ -9,7 +9,7 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Output.FSpec2SQL (generateDatabaseFile)
+import           Ampersand.Output.FSpec2SQL (databaseStructureSql)
 import           Ampersand.Output.ToJSON.ToJson (generateAllJSONfiles)
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Runners (logLevel)
@@ -84,10 +84,18 @@ doGenBackend :: (Show env, HasRunner env, HasProtoOpts env, HasDirPrototype env)
 doGenBackend fSpec = do
   env <- ask
   logInfo "Generating backend..."
-  generateDatabaseFile fSpec
   let dir = getGenericsDir env
+  generateDatabaseFile (dir </> "database" <.> "sql") fSpec
   generateAllJSONfiles dir fSpec
   logInfo "Backend generated"
+
+generateDatabaseFile :: (HasLogFunc env) => FilePath -> FSpec -> RIO env ()
+generateDatabaseFile filePath fSpec =
+   do logDebug $ "  Generating "<>display (T.pack filePath)
+      liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
+      writeFileUtf8 filePath content
+  where 
+   content = databaseStructureSql fSpec
   
 copyTemplates :: (HasDirPrototype env, HasLogFunc env) =>
                  RIO env ()
