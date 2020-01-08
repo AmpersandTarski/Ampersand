@@ -1,7 +1,8 @@
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Ampersand.FSpec.Transformers 
   ( transformersFormalAmpersand
   , transformersPrototypeContext
@@ -18,7 +19,7 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-
+import qualified Text.Pandoc.Shared as P
 
 -- | The function that retrieves the population of
 --   some relation of Formal Ampersand of a given
@@ -94,7 +95,10 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("asMarkdown"            , "Markup"                , "Text"
-      , Set.empty  --TODO
+      , Set.fromList
+        [(dirtyId mrk,(PopAlphaNumeric . P.stringify . amPandoc) mrk)
+        | mrk::Markup <- instanceList fSpec
+        ]
       )
      ,("attIn"                 , "Attribute"             , "ObjectDef"
       , Set.empty  --TODO
@@ -171,7 +175,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList $
         [(dirtyId rul, dirtyId ctx) 
         | ctx::A_Context <- instanceList fSpec
-        , rul::Rule <- instanceList fSpec
+        , rul::Rule <- Set.elems $ ctxrs ctx
         ]
       )
      ,("dbName"                , "Context"               , "DatabaseName"
@@ -199,7 +203,11 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("decMean"               , "Relation"              , "Meaning" 
-      , Set.empty  --TODO
+      , Set.fromList $
+        [(dirtyId rel, dirtyId mean) 
+        | rel::Relation <- instanceList fSpec
+        , mean::Meaning <- decMean rel
+        ]
       )
      ,("decprL"                , "Relation"              , "String"  
       , Set.fromList $
@@ -410,7 +418,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("left"                  , "Pair"                  , "Atom"    
-      , Set.empty  --TODO
+      , Set.empty  --This goes too deep. Keep it empty.
       )
      ,("maintains"             , "Role"                  , "Rule"    
       , Set.fromList
@@ -431,7 +439,11 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("meaning"               , "Rule"                  , "Meaning" 
-      , Set.empty  --TODO
+      , Set.fromList $
+        [(dirtyId rul, dirtyId mean) 
+        | rul::Rule <- instanceList fSpec
+        , mean::Meaning <- rrmean rul
+        ]
       )
      ,("message"               , "Rule"                  , "Message" 
       , Set.empty  --TODO
@@ -468,7 +480,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | ifc::Interface <- instanceList fSpec
         ]
       )
-     ,("name"                 , "ObjectDef"             , "ObjectName"  
+     ,("name"                  , "ObjectDef"             , "ObjectName"  
       , Set.fromList
         [(dirtyId obj, (PopAlphaNumeric . name) obj)
         | obj::ObjectDef <- instanceList fSpec
@@ -624,7 +636,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("right"                 , "Pair"                  , "Atom"    
-      , Set.empty  --TODO
+      , Set.empty  --This goes too deep. Keep it empty.
       )
      ,("second"                , "BinaryTerm"            , "Expression"
       , Set.fromList
@@ -643,7 +655,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.empty  --TODO
       )
      ,("sessAtom"              , "SESSION"               , "Atom"    
-      , Set.empty  --TODO
+      , Set.empty  --This goes too deep. Keep it empty.
       )
      ,("sessIfc"               , "SESSION"               , "Interface"
       , Set.empty  --TODO

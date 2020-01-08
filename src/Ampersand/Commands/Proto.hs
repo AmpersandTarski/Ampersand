@@ -52,7 +52,7 @@ violationMessages = concatMap violationMessage
         then "There is " <>show (length ps)<>" violation of RULE " <>show (name r)<>":"
         else "There are "<>show (length ps)<>" violations of RULE "<>show (name r)<>":"
       ] 
-      <> (map ("  "<>) . listPairs 3 . toList $ ps)
+      <> (map ("  "<>) . listPairs 10 . toList $ ps)
     listPairs :: Int -> [AAtomPair] -> [String]
     listPairs i xs = 
                 case xs of
