@@ -17,7 +17,7 @@ protoOptsParser =
    ( \dbName sqlHost sqlLogin sqlPwd forceReinstall 
         outputLanguage fSpecGenOpts 
         dirPrototype dirCustomizations 
-        generateFrontend 
+        generateFrontend generateBackend
         zwolleVersion allowInvariantViolations -> ProtoOpts
             { xdbName = dbName
             , xsqlHost = sqlHost
@@ -31,11 +31,12 @@ protoOptsParser =
             , xzwolleVersion = zwolleVersion
             , xallowInvariantViolations = allowInvariantViolations
             , xgenerateFrontend = generateFrontend
+            , xgenerateBackend = generateBackend
             }) 
   <$> optional dbNameP <*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
   <*> optional dirPrototypeP <*> dirCustomizationsP
-  <*> generateFrontendP
+  <*> generateFrontendP <*> generateBackendP
   <*> zwolleVersionP <*> allowInvariantViolationsP
 
 dbNameP :: Parser String
@@ -109,4 +110,8 @@ generateFrontendP = boolFlags True "frontend"
         ( "Generate prototype frontend files (Angular application)")
         mempty
 
+generateBackendP :: Parser Bool
+generateBackendP = boolFlags True "backend"
+        ( "Generate backend files (PHP application)")
+        mempty
 

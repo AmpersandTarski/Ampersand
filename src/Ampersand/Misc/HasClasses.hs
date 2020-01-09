@@ -70,6 +70,11 @@ class HasGenerateFrontend a where
 instance HasGenerateFrontend ProtoOpts where
   generateFrontendL = lens xgenerateFrontend (\x y -> x { xgenerateFrontend = y })
 
+class HasGenerateBackend a where
+  generateBackendL :: Lens' a Bool
+instance HasGenerateBackend ProtoOpts where
+  generateBackendL = lens xgenerateBackend (\x y -> x { xgenerateBackend = y })
+
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
   baseName :: a -> String
@@ -280,6 +285,7 @@ data ProtoOpts = ProtoOpts
    , xzwolleVersion :: !String
    , xallowInvariantViolations :: !Bool
    , xgenerateFrontend :: !Bool
+   , xgenerateBackend :: !Bool
   } deriving Show
 
 -- | Options for @ampersand documentation@.
