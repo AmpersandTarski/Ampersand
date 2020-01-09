@@ -15,7 +15,7 @@ import           Ampersand.Basics
 import           Ampersand.Core.AbstractSyntaxTree
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend)
+import           Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, copyCustomizations)
 import           Ampersand.Types.Config
 import qualified RIO.Text as T
 import           System.Directory
@@ -37,6 +37,7 @@ proto fSpec = do
        generateBackend <- view generateBackendL
        when generateFrontend $ doGenFrontend fSpec
        when generateBackend $ doGenBackend fSpec
+       copyCustomizations
        dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
        logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
     else exitWith $ NoPrototypeBecauseOfRuleViolations (violationMessages violatedRules)

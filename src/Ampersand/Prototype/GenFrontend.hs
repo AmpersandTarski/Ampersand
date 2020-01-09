@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveDataTypeable,OverloadedStrings #-}
-module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend) where
+module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, copyCustomizations) where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -64,7 +64,7 @@ This is considered editable iff the composition rel;relRef yields an editable re
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirCustomizations env, HasDirPrototype env) =>
+doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     now <- getCurrentTime
@@ -76,7 +76,6 @@ doGenFrontend fSpec = do
     genControllerInterfaces fSpec feInterfaces
     genRouteProvider fSpec feInterfaces
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
-    copyCustomizations
     logInfo "Frontend generated"
 
 doGenBackend :: (Show env, HasRunner env, HasProtoOpts env, HasDirPrototype env) =>
