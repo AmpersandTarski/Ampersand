@@ -94,7 +94,7 @@ doGenBackend fSpec = do
   writeFile (dir </> "interfaces" <.>"json") $ interfacesToJSON env fSpec
   writeFile (dir </> "views"      <.>"json") $ viewsToJSON env fSpec
   writeFile (dir </> "roles"      <.>"json") $ rolesToJSON env fSpec
-  generatePopJSONfile dir fSpec
+  writeFile (dir </> "populations"<.>"json") $ populationToJSON env fSpec
   logInfo "Backend generated"
 
 generateDatabaseFile :: (HasLogFunc env) => FilePath -> FSpec -> RIO env ()
