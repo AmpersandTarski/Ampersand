@@ -85,7 +85,7 @@ doGenBackend fSpec = do
   env <- ask
   logInfo "Generating backend..."
   let dir = getGenericsDir env
-  generateDatabaseFile (dir </> "database" <.> "sql") fSpec
+  writeFile (dir </> "database"   <.>"sql" ) $ BL.fromStrict . T.encodeUtf8 . databaseStructureSql $ fSpec
   writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
   writeFile (dir </> "relations"  <.>"json") $ relationsToJSON env fSpec
   writeFile (dir </> "rules"      <.>"json") $ rulesToJSON env fSpec
@@ -96,14 +96,6 @@ doGenBackend fSpec = do
   writeFile (dir </> "roles"      <.>"json") $ rolesToJSON env fSpec
   writeFile (dir </> "populations"<.>"json") $ populationToJSON env fSpec
   logInfo "Backend generated"
-
-generateDatabaseFile :: (HasLogFunc env) => FilePath -> FSpec -> RIO env ()
-generateDatabaseFile filePath fSpec =
-   do logDebug $ "  Generating "<>display (T.pack filePath)
-      liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
-      writeFileUtf8 filePath content
-  where 
-   content = databaseStructureSql fSpec
 
 writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do
