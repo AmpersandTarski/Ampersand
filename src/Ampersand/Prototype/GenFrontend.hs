@@ -10,7 +10,7 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.FSpec2SQL (databaseStructureSql)
-import           Ampersand.Output.ToJSON.ToJson (generateAllJSONfiles)
+import           Ampersand.Output.ToJSON.ToJson
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Runners (logLevel)
 import           Ampersand.Types.Config
@@ -86,7 +86,15 @@ doGenBackend fSpec = do
   logInfo "Generating backend..."
   let dir = getGenericsDir env
   generateDatabaseFile (dir </> "database" <.> "sql") fSpec
-  generateAllJSONfiles dir fSpec
+  writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
+  writeFile (dir </> "relations"  <.>"json") $ relationsToJSON env fSpec
+  writeFile (dir </> "rules"      <.>"json") $ rulesToJSON env fSpec
+  writeFile (dir </> "concepts"   <.>"json") $ conceptsToJSON env fSpec
+  writeFile (dir </> "conjuncts"  <.>"json") $ conjunctsToJSON env fSpec
+  writeFile (dir </> "interfaces" <.>"json") $ interfacesToJSON env fSpec
+  writeFile (dir </> "views"      <.>"json") $ viewsToJSON env fSpec
+  writeFile (dir </> "roles"      <.>"json") $ rolesToJSON env fSpec
+  generatePopJSONfile dir fSpec
   logInfo "Backend generated"
 
 generateDatabaseFile :: (HasLogFunc env) => FilePath -> FSpec -> RIO env ()
@@ -96,6 +104,12 @@ generateDatabaseFile filePath fSpec =
       writeFileUtf8 filePath content
   where 
    content = databaseStructureSql fSpec
+
+writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
+writeFile filePath content = do
+  logDebug $ "  Generating "<>display (T.pack filePath) 
+  liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
+  liftIO $ BL.writeFile filePath content
   
 copyTemplates :: (HasDirPrototype env, HasLogFunc env) =>
                  RIO env ()

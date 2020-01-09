@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToJSON.ToJson
-  ( generateAllJSONfiles
+  ( settingsToJSON, relationsToJSON, rulesToJSON, conceptsToJSON, conjunctsToJSON
+  , interfacesToJSON, viewsToJSON, rolesToJSON
   , generatePopJSONfile
   )
 where
@@ -14,26 +15,35 @@ import           Ampersand.Output.ToJSON.Roles
 import           Ampersand.Output.ToJSON.Rules 
 import           Ampersand.Output.ToJSON.Settings
 import           Ampersand.Output.ToJSON.Views
+import           Data.Aeson.Encode.Pretty
+import qualified RIO.ByteString.Lazy as BL
 import           RIO.FilePath
 
--- | Generate all JSON files from a given FSpec
-generateAllJSONfiles :: (HasProtoOpts env, Show env, HasLogFunc env)
-    => FilePath  -- ^ The directory where the files should be written
-    -> FSpec     -- ^ The FSpec that contains all content of the generated files
-    -> RIO env ()
-generateAllJSONfiles dir fSpec = do
-  env <- ask
-  sequence_ $
-    [ writeJSONFile (dir </> "settings"   <.>"json") (fromAmpersand' env fSpec fSpec :: Settings)
-    , writeJSONFile (dir </> "relations"  <.>"json") (fromAmpersand env fSpec fSpec :: Relationz)
-    , writeJSONFile (dir </> "rules"      <.>"json") (fromAmpersand env fSpec fSpec :: Rulez)
-    , writeJSONFile (dir </> "concepts"   <.>"json") (fromAmpersand env fSpec fSpec :: Concepts)
-    , writeJSONFile (dir </> "conjuncts"  <.>"json") (fromAmpersand env fSpec fSpec :: Conjuncts)
-    , writeJSONFile (dir </> "interfaces" <.>"json") (fromAmpersand env fSpec fSpec :: Interfaces)
-    , writeJSONFile (dir </> "views"      <.>"json") (fromAmpersand env fSpec fSpec :: Views)
-    , writeJSONFile (dir </> "roles"      <.>"json") (fromAmpersand env fSpec fSpec :: Roles)
-    ]
-  generatePopJSONfile dir fSpec
+settingsToJSON :: (HasProtoOpts env, Show env)
+    => env -> FSpec -> BL.ByteString
+settingsToJSON env fSpec = encodePretty (fromAmpersand' env fSpec fSpec :: Settings)
+
+relationsToJSON :: env -> FSpec -> BL.ByteString
+relationsToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Relationz)
+
+rulesToJSON :: env -> FSpec -> BL.ByteString
+rulesToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Rulez)
+
+conceptsToJSON :: env -> FSpec -> BL.ByteString
+conceptsToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Concepts)
+
+conjunctsToJSON :: env -> FSpec -> BL.ByteString
+conjunctsToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Conjuncts)
+
+interfacesToJSON :: env -> FSpec -> BL.ByteString
+interfacesToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Interfaces)
+
+viewsToJSON :: env -> FSpec -> BL.ByteString
+viewsToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Views)
+
+rolesToJSON :: env -> FSpec -> BL.ByteString
+rolesToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Roles)
+
 -- | Generate only population.json
 generatePopJSONfile :: (HasLogFunc env)
     => FilePath  -- ^ The directory where the files should be written
