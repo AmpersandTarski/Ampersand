@@ -32,7 +32,7 @@ writePrototypeAppFile relFilePath content = do
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
 -- NOTE: directories with extention .proto are excluded. This would compromise regression tests, 
---       where foo.adl.proto is used to output the prototype of foo.adl
+--       where '.proto' is the default output directory (if not specified)
 copyDirRecursively :: (HasLogFunc env) =>
                       FilePath -> FilePath -> RIO env ()
 copyDirRecursively srcBase tgtBase 

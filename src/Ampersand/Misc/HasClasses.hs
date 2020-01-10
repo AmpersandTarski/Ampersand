@@ -55,7 +55,7 @@ class (HasRootFile a) => HasDirPrototype a where
   getDirPrototype :: a -> FilePath
   getDirPrototype x =
     (case view dirPrototypeL x of
-       Nothing -> fromMaybe "" (view (rootFileL) x) <> ".proto"
+       Nothing -> ".proto"
        Just nm -> nm )
 instance HasDirPrototype ProtoOpts where
   dirPrototypeL = lens xdirPrototype (\x y -> x { xdirPrototype = y })
