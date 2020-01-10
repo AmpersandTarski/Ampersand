@@ -35,8 +35,12 @@ proto fSpec = do
        liftIO $ createDirectoryIfMissing True dirPrototype
        generateFrontend <- view generateFrontendL
        generateBackend <- view generateBackendL
-       when generateFrontend $ doGenFrontend fSpec
-       when generateBackend $ doGenBackend fSpec
+       if generateFrontend 
+        then do doGenFrontend fSpec
+        else do logDebug "  Skipping generating frontend files"
+       if generateBackend
+         then do doGenBackend fSpec
+         else do logDebug "  Skipping generating backend files"
        copyCustomizations
        dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
        logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
