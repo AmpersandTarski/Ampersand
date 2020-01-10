@@ -9,6 +9,7 @@
 
 * Remove option --skip-composer. Relates to topic of [Archicture of Ampersand compiler](https://github.com/AmpersandTarski/Ampersand/issues/903)
 * Introduce option --[no-]frontend to do/don't generate frontend (i.e. javascript and html files for Angular app)
+* Remove default value 'customizations' for option --customizations. Copying folders must be explicitly specified.
 * Change default output folder to .proto instead of '<scriptname.adl>.proto'
 
 ## v3.17.4 (13 september 2019)

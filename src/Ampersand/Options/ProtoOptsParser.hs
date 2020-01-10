@@ -82,7 +82,6 @@ dirCustomizationsP :: Parser [String]
 dirCustomizationsP = (splitWhen (== ';') <$> strOption
         ( long "customizations"
         <> metavar "DIRECTORY"
-        <> value "customizations"
         <> showDefault
         <> help ("Copy one or more directories into the generated prototype. "
                 )
