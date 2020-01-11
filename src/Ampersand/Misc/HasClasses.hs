@@ -3,6 +3,7 @@ module Ampersand.Misc.HasClasses
 
 where
 import Ampersand.Basics
+import Ampersand.Misc.Defaults (defaultDirPrototype)
 import RIO.FilePath
 
 class HasFSpecGenOpts a where
@@ -55,7 +56,7 @@ class (HasRootFile a) => HasDirPrototype a where
   getDirPrototype :: a -> FilePath
   getDirPrototype x =
     (case view dirPrototypeL x of
-       Nothing -> ".proto"
+       Nothing -> defaultDirPrototype
        Just nm -> nm )
 instance HasDirPrototype ProtoOpts where
   dirPrototypeL = lens xdirPrototype (\x y -> x { xdirPrototype = y })

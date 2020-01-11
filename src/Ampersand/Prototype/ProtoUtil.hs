@@ -12,6 +12,7 @@ module Ampersand.Prototype.ProtoUtil
          ) where
  
 import           Ampersand.Basics
+import           Ampersand.Misc.Defaults (defaultDirPrototype)
 import           Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.Text as T
@@ -59,7 +60,7 @@ copyDirRecursively srcBase tgtBase
               then do
                 logDebug $ "Skipping "<>display (T.pack srcPath)<>" because it is the target directory of the recursive copy action."
               else 
-                if takeExtension srcPath == ".proto" 
+                if takeExtension srcPath == defaultDirPrototype 
                   then do  
                     logDebug $ "Skipping "<>display (T.pack srcPath)<>" because its extention is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
                   else do

@@ -7,6 +7,7 @@ import           Options.Applicative
 import           Options.Applicative.Builder.Extra
 import           Ampersand.Commands.Proto (ProtoOpts (..))
 import           Ampersand.Basics
+import           Ampersand.Misc.Defaults (defaultDirPrototype)
 import           Ampersand.Options.Utils
 import           Ampersand.Options.FSpecGenOptsParser
 import           Data.List.Split (splitWhen)
@@ -76,7 +77,9 @@ dirPrototypeP :: Parser String
 dirPrototypeP = strOption
         ( long "output-directory"
         <> metavar "DIRECTORY"
-        <> help ("Specify the directory where the prototype will be generated. (defaults to ??)") --TODO: Fill in the ?? part.
+        <> value defaultDirPrototype
+        <> showDefault
+        <> help ("Specify the directory where the prototype will be generated")
         )
 dirCustomizationsP :: Parser [String]
 dirCustomizationsP = (splitWhen (== ';') <$> strOption
