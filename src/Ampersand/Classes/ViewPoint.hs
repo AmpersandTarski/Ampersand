@@ -33,21 +33,17 @@ class Language a where
 
 rulesFromIdentity :: IdentityDef -> Rules
 rulesFromIdentity identity
- = if null (identityAts identity) 
-   then fatal "Moving into foldr1 with empty list (identityAts identity)."
-   else
-     Set.singleton . mkKeyRule $
+ = Set.singleton . mkKeyRule $
        foldr (./\.) h t 
         .|-. EDcI (idCpt identity)
  {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}
  where (h NE.:| t) = fmap (\expr-> expr .:. flp expr) 
                     . fmap (objExpression . segment) 
                     . identityAts $ identity
-       ruleName = "identity_" ++ name identity
        meaningEN = "Identity rule" ++ ", following from identity "++name identity
        meaningNL = "Identiteitsregel" ++ ", volgend uit identiteit "++name identity
        mkKeyRule expression =
-         Ru { rrnm   = ruleName
+         Ru { rrnm   = "identity_" ++ name identity
             , formalExpression  = expression
             , rrfps  = origin identity     -- position in source file
             , rrmean = 

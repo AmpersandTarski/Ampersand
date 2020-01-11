@@ -11,7 +11,6 @@ import           Ampersand.Basics.Languages
 import           Ampersand.Basics.Prelude
 import           Ampersand.Basics.Unique
 import           Ampersand.Basics.Version
---import           Data.Data
 import qualified RIO.Text as T
 import           Text.Pandoc hiding (Meta)
 
