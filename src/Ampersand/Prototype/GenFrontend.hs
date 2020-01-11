@@ -121,7 +121,7 @@ copyCustomizations = do
   env <- ask
   dirCustomizations <- view dirCustomizationsL
   let dirPrototype = getDirPrototype env
-  let custDirs = map (dirSource env</>) dirCustomizations
+  let custDirs = map (dirSource env</>) (fromMaybe [] dirCustomizations)
   mapM_ (copyDir dirPrototype) custDirs
     where
       copyDir :: (HasLogFunc env) =>

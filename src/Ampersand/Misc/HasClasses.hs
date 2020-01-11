@@ -126,7 +126,7 @@ instance HasOutputLanguage UmlOpts where
   languageL = lens x4OutputLanguage (\x y -> x { x4OutputLanguage = y })
 
 class HasDirCustomizations a where
-  dirCustomizationsL :: Lens' a [FilePath] -- the directories that are copied after generating the prototype
+  dirCustomizationsL :: Lens' a (Maybe [FilePath]) -- the directories that are copied after generating the prototype
 instance HasDirCustomizations ProtoOpts where
   dirCustomizationsL = lens xdirCustomizations (\x y -> x { xdirCustomizations = y })
 
@@ -282,7 +282,7 @@ data ProtoOpts = ProtoOpts
    , x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts
    , xdirPrototype :: !(Maybe FilePath)
-   , xdirCustomizations :: ![FilePath]
+   , xdirCustomizations :: !(Maybe [FilePath])
    , xzwolleVersion :: !String
    , xallowInvariantViolations :: !Bool
    , xgenerateFrontend :: !Bool

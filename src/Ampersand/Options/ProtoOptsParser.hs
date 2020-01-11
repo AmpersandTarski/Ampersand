@@ -36,7 +36,7 @@ protoOptsParser =
             }) 
   <$> optional dbNameP <*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
-  <*> optional dirPrototypeP <*> dirCustomizationsP
+  <*> optional dirPrototypeP <*> optional dirCustomizationsP
   <*> generateFrontendP <*> generateBackendP
   <*> zwolleVersionP <*> allowInvariantViolationsP
 
@@ -84,8 +84,7 @@ dirPrototypeP = strOption
 dirCustomizationsP :: Parser [String]
 dirCustomizationsP = (splitWhen (== ';') <$> strOption
         ( long "customizations"
-        <> metavar "DIRECTORY"
-        <> showDefault
+        <> metavar "DIR;DIR;.."
         <> help ("Copy one or more directories into the generated prototype. "
                 )
         ))
