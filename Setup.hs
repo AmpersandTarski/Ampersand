@@ -5,7 +5,6 @@ import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive
 import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as BLC
 import           RIO.Char
-import           Data.Either
 import qualified RIO.List as L
 import           RIO.Time
 import           Distribution.Simple

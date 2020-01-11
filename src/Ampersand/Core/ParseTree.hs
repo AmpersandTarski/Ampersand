@@ -215,22 +215,12 @@ data P_Relation =
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
 --   This is still not true for MEATGRINDER stuff!
---     DO NOT USE ORD and EQ on P_Relation!
---instance Eq P_Relation where
--- decl==decl' = compare decl decl' == EQ
---instance Ord P_Relation where
--- compare p1 p2 
---   = case compare (origin p1) (origin p2) of
---      LT -> LT
---      GT -> GT
---      EQ -> compare (name p1,dec_sign p1) (name p2,dec_sign p2)
+
+-- DO NOT USE ORD and EQ on P_Relation!
 instance Named P_Relation where
  name = dec_nm
 instance Traced P_Relation where
  origin = pos
--- instance Flippable P_Relation where
---   flp rel = rel{dec_nm = if last (name rel)=='~' then init (name rel) else (name rel)++"~"
---                ,dec_sign = flp (dec_sign rel)}
 
 -- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
 --   Relations with the same signature are merged. Relations with different signatures are left alone.
