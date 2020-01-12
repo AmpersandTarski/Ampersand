@@ -335,11 +335,8 @@ instance Pretty P_Concept where
 
 instance Pretty P_Sign where
     pretty (P_Sign src tgt) = brackets (pretty src <> maybeTgt)
-        where maybeTgt = if src `equal` tgt then empty
+        where maybeTgt = if src == tgt then empty
                          else text "*" <> pretty tgt
-              equal (PCpt x) (PCpt y) = x == y
-              equal P_ONE P_ONE = True
-              equal _ _ = False
 
 instance Pretty PClassify where
     pretty p = 
