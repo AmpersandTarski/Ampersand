@@ -56,20 +56,20 @@ objTermPrim isTxtAllowed i =
     where ifc :: Int -> Gen (P_SubIfc TermPrim)
           ifc n = subIfc (objTermPrim True) (n`div`2)
           --TODO: The view is never tested like this
-          genView = return Nothing
+          genView = pure Nothing
           genPrim :: Gen TermPrim
           genPrim = PNamedR <$> arbitrary
 
 --TODO: refactor obj/ifc generators
 genObj :: Arbitrary a => Bool -> Int -> Gen (P_BoxItem a)
-genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (return Nothing)
+genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (pure Nothing)
 
 makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
   oneof $ [P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
         ++[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
      where term = Prim <$> genPrim
-           ifc  = if n == 0 then return Nothing
+           ifc  = if n == 0 then pure Nothing
                   else Just <$> ifcGen (n`div`2)
         
 genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
@@ -89,7 +89,7 @@ instance Arbitrary P_Cruds where
       where isCrud str = L.nub (map toUpper str) == map toUpper str
 
 instance Arbitrary Origin where
-    arbitrary = return OriginUnknown
+    arbitrary = pure OriginUnknown
 
 instance Arbitrary P_Context where
     arbitrary = PCtx
@@ -115,7 +115,7 @@ instance Arbitrary Meta where
     arbitrary = Meta <$> arbitrary <*> arbitrary <*>  safeStr  <*> safeStr
 
 instance Arbitrary MetaObj where
-    arbitrary = return ContextMeta
+    arbitrary = pure ContextMeta
 
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
@@ -199,7 +199,7 @@ instance Arbitrary TermPrim where
            Pfull <$> arbitrary <*> genConceptOne <*> genConceptOne,
            PNamedR <$> arbitrary
        ]
-      where maybeConceptOne = oneof [return Nothing, Just <$> genConceptOne]
+      where maybeConceptOne = oneof [pure Nothing, Just <$> genConceptOne]
 
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
     arbitrary = PairView <$> listOf1 arbitrary
@@ -270,7 +270,7 @@ instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
     arbitrary = do 
          h <- arbitrary
          t <- arbitrary 
-         return $ h NE.:| t
+         pure $ h NE.:| t
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
                      <*> arbitrary
