@@ -331,14 +331,14 @@ instance Pretty PMessage where
 
 instance Pretty P_Concept where
     pretty (PCpt nm)   = quoteConcept nm
-    pretty P_Singleton = text "ONE"
+    pretty P_ONE = text "ONE"
 
 instance Pretty P_Sign where
     pretty (P_Sign src tgt) = brackets (pretty src <> maybeTgt)
         where maybeTgt = if src `equal` tgt then empty
                          else text "*" <> pretty tgt
               equal (PCpt x) (PCpt y) = x == y
-              equal P_Singleton P_Singleton = True
+              equal P_ONE P_ONE = True
               equal _ _ = False
 
 instance Pretty PClassify where

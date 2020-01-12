@@ -318,7 +318,7 @@ instance Arbitrary P_Concept where
     arbitrary = PCpt <$> upperId
 
 genConceptOne :: Gen P_Concept
-genConceptOne = oneof [arbitrary, return P_Singleton]
+genConceptOne = oneof [arbitrary, pure P_ONE]
 
 instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary

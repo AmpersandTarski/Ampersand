@@ -28,7 +28,7 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
 pConcToType :: P_Concept -> Type
-pConcToType P_Singleton = BuiltIn TypeOfOne
+pConcToType P_ONE = BuiltIn TypeOfOne
 pConcToType p = UserConcept (name p)
 aConcToType :: A_Concept -> Type
 aConcToType ONE = BuiltIn TypeOfOne

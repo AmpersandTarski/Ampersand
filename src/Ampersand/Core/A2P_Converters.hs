@@ -150,7 +150,7 @@ aSign2pSign sgn =
 aConcept2pConcept :: A_Concept -> P_Concept
 aConcept2pConcept cpt =
  case cpt of
-   ONE            -> P_Singleton
+   ONE            -> P_ONE
    PlainConcept{} -> PCpt { p_cptnm = T.unpack $ cptnm cpt
                           }
 

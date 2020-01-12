@@ -708,7 +708,7 @@ pConceptRef = PCpt <$> pConceptName
 
 --- ConceptOneRef ::= 'ONE' | ConceptRef
 pConceptOneRef :: AmpParser P_Concept
-pConceptOneRef = (P_Singleton <$ pKey "ONE") <|> pConceptRef
+pConceptOneRef = (P_ONE <$ pKey "ONE") <|> pConceptRef
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String

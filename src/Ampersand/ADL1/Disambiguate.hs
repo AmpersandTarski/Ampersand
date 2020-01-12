@@ -273,7 +273,7 @@ pCpt2aCpt :: P_Concept -> A_Concept
 pCpt2aCpt pc
     = case pc of
         PCpt{} -> makeConcept (p_cptnm pc)
-        P_Singleton -> ONE
+        P_ONE -> ONE
 
 data Change a
   = Stable a

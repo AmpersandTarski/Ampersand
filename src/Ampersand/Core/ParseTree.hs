@@ -812,14 +812,14 @@ instance Traced PPurpose where
 
 data P_Concept
    = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
-   | P_Singleton
+   | P_ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
       deriving (Eq,Ord)
 -- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
 -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
 
 instance Named P_Concept where
  name PCpt {p_cptnm = nm} = nm
- name P_Singleton = "ONE"
+ name P_ONE = "ONE"
 
 instance Show P_Concept where
  show = name
