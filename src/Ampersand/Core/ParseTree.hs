@@ -215,38 +215,33 @@ data P_Relation =
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
 --   This is still not true for MEATGRINDER stuff!
---     DO NOT USE ORD and EQ on P_Relation!
---instance Eq P_Relation where
--- decl==decl' = compare decl decl' == EQ
---instance Ord P_Relation where
--- compare p1 p2 
---   = case compare (origin p1) (origin p2) of
---      LT -> LT
---      GT -> GT
---      EQ -> compare (name p1,dec_sign p1) (name p2,dec_sign p2)
+
+-- DO NOT USE ORD and EQ on P_Relation!
 instance Named P_Relation where
  name = dec_nm
 instance Traced P_Relation where
  origin = pos
--- instance Flippable P_Relation where
---   flp rel = rel{dec_nm = if last (name rel)=='~' then init (name rel) else (name rel)++"~"
---                ,dec_sign = flp (dec_sign rel)}
 
 -- | The union of relations requires the conservation of properties of relations, so it is called 'merge' rather than 'union'.
 --   Relations with the same signature are merged. Relations with different signatures are left alone.
 mergeRels :: [P_Relation] -> [P_Relation]
-mergeRels rs = map (foldr1 mergeRel) (eqCl signat rs) -- each equiv. class contains at least 1 element, so foldr1 is just right!
+mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1 element, so foldr1 is just right!
   where
-    signat rel = (name rel, pSrc (dec_sign rel), pTgt (dec_sign rel))
-    mergeRel :: P_Relation -> P_Relation -> P_Relation -- merges attributes, assuming both signatures are equal.
-    mergeRel r0 r1
+    fun :: NonEmpty P_Relation -> P_Relation
+    fun rels
      = P_Sgn { dec_nm     = name r0
              , dec_sign   = dec_sign r0
-             , dec_prps   = dec_prps r0 `Set.union` dec_prps r1
-             , dec_pragma = if (null.concat.dec_pragma) r1 then dec_pragma r0 else  dec_pragma r1
-             , dec_Mean   = dec_Mean r0++dec_Mean r1
-             , pos        = if isFuzzyOrigin (origin r1) then origin r0 else origin r1
+             , dec_prps   = Set.unions (fmap dec_prps rels)
+             , dec_pragma = case NE.filter (not . null . concat . dec_pragma) rels of
+                              []  -> dec_pragma r0
+                              h:_ -> dec_pragma h
+             , dec_Mean   = L.nub $ concatMap dec_Mean rels
+             , pos        = case NE.filter (not . isFuzzyOrigin . origin) rels of
+                              []  -> origin r0
+                              h:_ -> origin h
              }
+         where (r0 :| _ ) = rels
+    signat rel = (name rel, pSrc (dec_sign rel), pTgt (dec_sign rel))
 
 data PAtomPair
   = PPair { pos :: Origin
@@ -577,14 +572,14 @@ instance Named (P_Rule a) where
  name = rr_nm
 
 newtype PMeaning = PMeaning P_Markup
-         deriving Show
+         deriving (Show, Eq)
 newtype PMessage = PMessage P_Markup
          deriving Show
 data P_Markup =
     P_Markup  { mLang   ::   Maybe Lang
               , mFormat :: Maybe PandocFormat
               , mString :: String
-              } deriving Show -- for debugging only
+              } deriving (Show,Eq) -- for debugging only
 
 data P_Population
   = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.

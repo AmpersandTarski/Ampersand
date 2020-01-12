@@ -5,8 +5,8 @@ import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive
 import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as BLC
 import           RIO.Char
-import           Data.Either
 import qualified RIO.List as L
+import           RIO.Prelude
 import           RIO.Time
 import           Distribution.Simple
 import           Distribution.Simple.LocalBuildInfo
@@ -19,7 +19,6 @@ import           System.Exit
 import           System.FilePath
 import           System.IO(withFile,IOMode(ReadMode),hGetContents)
 import           System.Process(readProcessWithExitCode)
-
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
 

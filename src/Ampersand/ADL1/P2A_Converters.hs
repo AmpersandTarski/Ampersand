@@ -19,7 +19,6 @@ import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
 import           Control.Arrow(first)
 import           RIO.Char(toUpper,toLower)
-import           Data.Foldable (toList)
 import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Hashable
 import qualified RIO.List as L

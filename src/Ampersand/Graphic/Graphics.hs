@@ -21,7 +21,6 @@ import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import           Data.String(fromString)
 import           System.Directory(createDirectoryIfMissing)
 import           System.FilePath hiding (addExtension)
 import           System.Process (callCommand)
