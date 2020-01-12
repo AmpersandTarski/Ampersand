@@ -285,18 +285,13 @@ pCtx2aCtx env
     deflangCtxt = fromMaybe English ctxmLang
     deffrmtCtxt = fromMaybe ReST pandocf
     
+    allGens :: [PClassify]
     allGens = p_gens ++ concatMap pt_gns p_patterns
+    allReprs :: [Representation]
     allReprs = p_representations++concatMap pt_Reprs p_patterns
     g_contextInfo :: Guarded ContextInfo
-    g_contextInfo -- SJ: The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
-     = do -- SJ: @Han, is the following true?: Two concepts are connected if there is a path between them consisting of ISA or IS-links.
-          let connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
-              connectedConcepts = connect [] (map (Set.elems . concs) gns)
-          typeMap <- mkTypeMap connectedConcepts allReprs -- SJ: I presume this yields errors unless every partition refers to precisely one built-in type (aka technical type)?
-          let findR :: A_Concept -> TType
-              findR cpt = fromMaybe
-                            Object -- default representation is Object (sometimes called `ugly identifiers')
-                            (lookup cpt typeMap)
+    g_contextInfo = do -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
+          typeMap <- mkTypeMap connectedConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
           -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
           --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
           multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
@@ -305,7 +300,9 @@ pCtx2aCtx env
                 where groupOnTp lst = Map.fromListWith const [(SignOrd$ sign d,d) | d <- lst]
           let allConcs = Set.fromList (map aConcToType (map source decls ++ map target decls))  :: Set.Set Type
           return CI { ctxiGens = gns
-                    , representationOf = findR
+                    , representationOf = (\cpt -> fromMaybe
+                                                    Object -- default representation is Object (sometimes called `ugly identifiers')
+                                                    (lookup cpt typeMap))
                     , multiKernels = multitypologies
                     , reprList = allReprs
                     , declDisambMap = declMap
@@ -314,6 +311,9 @@ pCtx2aCtx env
                     }
         where
           gns = map pClassify2aClassify allGens
+          -- | Two concepts are connected if there is a path between them consisting of ISA or IS-links.
+          connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
+          connectedConcepts = connect [] (map (Set.elems . concs) gns)
           -- | function `mkTypeMap` creates a lookup table of concepts with a representation. 
           --   it is checked that concepts in the same conceptgroup share a common TType. 
           mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept , TType)]
@@ -373,17 +373,18 @@ pCtx2aCtx env
           --                  a.  every two concepts in an element of `css` are connected.
           --                  b.  every `A_Concept` is in `css`
           connect :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
-          connect typols gs = 
-             case gs of
+          connect typols gss = 
+             case gss of
                []   -> typols
                x:xs -> connect (t:typols) rest
                  where 
-                    (t,rest) = g x xs 
-                    g a as = case L.partition (hasConceptsOf a) as of
+                    (t,rest) = g' x xs 
+                    g' a as = case L.partition (disjoint a) as of
                               (_,[])   -> (a,as)
-                              (hs',hs) -> g (L.nub $ a ++ concat hs) hs'
-                    hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool  -- SJ: This should be called "disjoint".
-                    hasConceptsOf a b = and [ x' `notElem` b | x' <- a]  -- SJ: This is code for "hasNoConcepsOf", or even better: "disjoint"
+                              (hs',hs) -> g' (L.nub $ a ++ concat hs) hs'
+                    -- | are two lists disjoint, with no elements in common.
+                    disjoint :: Eq a => [a] -> [a] -> Bool  
+                    disjoint ys = null . L.intersect ys
 
           mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs = 

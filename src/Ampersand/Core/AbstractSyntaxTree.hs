@@ -824,7 +824,10 @@ instance Eq A_Concept where
   
 makeConcept :: String -> A_Concept
 makeConcept "ONE" = ONE
-makeConcept v = PlainConcept (hash v) (T.pack v)
+makeConcept v = PlainConcept
+    { cpthash = hash v
+    , cptnm   = T.pack v
+    }
 
 instance Unique A_Concept where
   showUnique = name
