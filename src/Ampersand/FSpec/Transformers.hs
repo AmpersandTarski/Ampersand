@@ -855,7 +855,7 @@ transformersPrototypeContext fSpec = map toTransformer [
     , ("label"                 , "PF_NavMenuItem"        , "PF_Label"
       , Set.empty
       )
-    , ("label"                 , "Role"               , "PF_Label"
+    , ("label"                 , "PF_Role"               , "PF_Label"
       , Set.fromList $
         [ (dirtyIdWithoutType role, PopAlphaNumeric . name $ role)
         | role::Role <- instanceList fSpec
@@ -864,23 +864,23 @@ transformersPrototypeContext fSpec = map toTransformer [
     , ("lastAccess"            , "SESSION"               , "DateTime"
       , Set.empty
       )
-    , ("pf_ifcRoles"           , "PF_Interface"          , "Role"
+    , ("pf_ifcRoles"           , "PF_Interface"          , "PF_Role"
       , Set.fromList $
         [(dirtyIdWithoutType ifc , dirtyIdWithoutType role)
         | ifc::Interface <- instanceList fSpec
         , role <- ifcRoles ifc
         ]
       )
-    , ("pf_navItemRoles"       , "PF_NavMenuItem"        , "Role"
+    , ("pf_navItemRoles"       , "PF_NavMenuItem"        , "PF_Role"
       , Set.empty
       )
     , ("seqNr"                 , "PF_NavMenuItem"        , "PF_SeqNr"
       , Set.empty
       )
-    , ("sessionActiveRoles"    , "SESSION"               , "Role"
+    , ("sessionActiveRoles"    , "SESSION"               , "PF_Role"
       , Set.empty
       )
-    , ("sessionAllowedRoles"   , "SESSION"               , "Role"
+    , ("sessionAllowedRoles"   , "SESSION"               , "PF_Role"
       , Set.empty
       )
     , ("url"                   , "PF_NavMenuItem"        , "PF_URL"
