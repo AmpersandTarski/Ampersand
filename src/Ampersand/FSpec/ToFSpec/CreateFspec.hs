@@ -152,7 +152,7 @@ encloseInConstraints pCtx = enrichedContext
        | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx++[pop |pat<-ctx_pats pCtx, pop<-pt_pop pat]
        , Just src'<-[src], Just tgt'<-[tgt]
        , rel<-[ P_Sgn{ dec_nm     = name pop
-                     , dec_sign   = P_Sign (PCpt src') (PCpt tgt')
+                     , dec_sign   = P_Sign src' tgt'
                      , dec_prps   = mempty
                      , dec_pragma = mempty
                      , dec_Mean   = mempty
@@ -173,7 +173,7 @@ encloseInConstraints pCtx = enrichedContext
                popR = (Set.fromList . concat. map p_popps )
                       [ pop
                       | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-pops, Just src'<-[src], Just tgt'<-[tgt]
-                      , name rel==name pop, src'==name s, tgt'==name t
+                      , name rel==name pop, src'== s, tgt'== t
                       ]
                domR = Set.fromList . map ppLeft  . Set.toList $ popR
                codR = Set.fromList . map ppRight . Set.toList $ popR
@@ -228,7 +228,7 @@ encloseInConstraints pCtx = enrichedContext
             remainingPops :: [[P_Population]]
             (genericPops, remainingPops)
              = L.unzip
-               [ ( headPop{p_src=Just (name g)}                   -- the generic relation that summarizes sRel
+               [ ( headPop{p_src=Just g}                   -- the generic relation that summarizes sRel
             --   , [ pop| pop<-sPop, srcPop pop `elem` specs ]    -- the specific (and therefore obsolete) populations
                  , [ pop| pop<-NE.toList sPop, srcPop pop `notElem` specs ] -- the remaining relations
                  )
@@ -245,9 +245,9 @@ encloseInConstraints pCtx = enrichedContext
         recur _ rels popus [] = (rels,popus)
         srcPop, tgtPop :: P_Population -> P_Concept -- get the source concept of a P_Population.
         srcPop pop@P_CptPopu{} = PCpt (name pop)
-        srcPop pop@P_RelPopu{p_src = src} = case src of Just s -> PCpt s; _ -> fatal ("srcPop ("++showP pop++") is mistaken.")
+        srcPop pop@P_RelPopu{p_src = src} = case src of Just s -> s; _ -> fatal ("srcPop ("++showP pop++") is mistaken.")
         tgtPop pop@P_CptPopu{} = PCpt (name pop)
-        tgtPop pop@P_RelPopu{p_tgt = tgt} = case tgt of Just t -> PCpt t; _ -> fatal ("tgtPop ("++showP pop++") is mistaken.")
+        tgtPop pop@P_RelPopu{p_tgt = tgt} = case tgt of Just t -> t; _ -> fatal ("tgtPop ("++showP pop++") is mistaken.")
 
     sourc, targt :: P_Relation -> P_Concept -- get the source concept of a P_Relation.
     sourc = pSrc . dec_sign
@@ -261,20 +261,20 @@ encloseInConstraints pCtx = enrichedContext
     signatur rel =(name rel, dec_sign rel)
     concepts = L.nub $
             [ PCpt (name pop) | pop@P_CptPopu{}<-ctx_pops pCtx] ++
-            [ PCpt src' | P_RelPopu{p_src = src}<-ctx_pops pCtx, Just src'<-[src]] ++
-            [ PCpt tgt' | P_RelPopu{p_tgt = tgt}<-ctx_pops pCtx, Just tgt'<-[tgt]] ++
+            [ src' | P_RelPopu{p_src = src}<-ctx_pops pCtx, Just src'<-[src]] ++
+            [ tgt' | P_RelPopu{p_tgt = tgt}<-ctx_pops pCtx, Just tgt'<-[tgt]] ++
             map sourc declaredRelations++ map targt declaredRelations++
             concat [specific gen: NE.toList (generics gen)| gen<-ctx_gs pCtx]
     pops = computeConceptPopulations (ctx_pops pCtx++[p |pat<-ctx_pats pCtx, p<-pt_pop pat])   -- All populations defined in this context, from POPULATION statements as well as from Relation declarations.
     computeConceptPopulations :: [P_Population] -> [P_Population]
     computeConceptPopulations pps -- I feel this computation should be done in P2A_Converters.hs, so every A_structure has compliant populations.
-     = [ P_CptPopu{pos = OriginUnknown, p_cnme = name c, p_popas = L.nub $
+     = [ P_CptPopu{pos = OriginUnknown, p_cpt = c, p_popas = L.nub $
                        [ atom | cpt@P_CptPopu{}<-pps, PCpt (name cpt) == c, atom<-p_popas cpt]++
                        [ ppLeft pair
-                       | pop@P_RelPopu{p_src = src}<-pps, Just src'<-[src], PCpt src' == c
+                       | pop@P_RelPopu{p_src = src}<-pps, Just src'<-[src], src' == c
                        , pair<-p_popps pop]++
                        [ ppRight pair
-                       | pop@P_RelPopu{p_tgt = tgt}<-pps, Just tgt'<-[tgt], PCpt tgt' == c
+                       | pop@P_RelPopu{p_tgt = tgt}<-pps, Just tgt'<-[tgt], tgt' == c
                        , pair<-p_popps pop]}
        | c<-concepts
        ] ++

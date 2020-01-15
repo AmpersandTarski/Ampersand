@@ -28,7 +28,7 @@ module Ampersand.Core.ParseTree (
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
 
    , P_Concept(..), P_Sign(..)
-
+   , mkPConcept
    , PClassify(..)
 
    , P_Markup(..)
@@ -166,7 +166,7 @@ instance Named ConceptDef where
  name = cdcpt
 data Representation
   = Repr { pos  :: Origin
-         , reprcpts  :: NE.NonEmpty String  -- ^ the concepts
+         , reprcpts  :: NE.NonEmpty P_Concept  -- ^ the concepts
          , reprdom :: TType     -- the type of the concept the atom is in
          } deriving (Show)
 instance Traced Representation where
@@ -582,22 +582,22 @@ data P_Markup =
               } deriving (Show,Eq) -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
-              , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
+  = P_RelPopu { p_src   :: Maybe P_Concept -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+              , p_tgt   :: Maybe P_Concept -- these src and tgt must be more specific than the P_NamedRel
               , pos     :: Origin       -- the origin
               , p_nmdr  :: P_NamedRel   -- the named relation
               , p_popps :: [PAtomPair]  -- the contents
               }
   | P_CptPopu { pos     :: Origin  -- the origin
-              , p_cnme  :: String  -- the name of a concept
+              , p_cpt  :: P_Concept  -- the concept the population belongs to
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
    deriving (Show) --For QuickCheck error messages only!
 --NOTE :: Do NOT make instance Eq P_Population, for this is causing problems with merging. 
 
 instance Named P_Population where
-    name P_RelPopu{p_nmdr = nr} = name nr
-    name P_CptPopu{p_cnme = nm} = nm
+    name P_RelPopu{p_nmdr = rel} = name rel
+    name P_CptPopu{p_cpt  = cpt} = name cpt
 
 instance Traced P_Population where
  origin = pos
@@ -816,7 +816,9 @@ data P_Concept
       deriving (Eq,Ord)
 -- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
 -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
-
+mkPConcept :: String -> P_Concept
+mkPConcept "ONE" = P_ONE
+mkPConcept nm = PCpt {p_cptnm = nm}
 instance Named P_Concept where
  name PCpt {p_cptnm = nm} = nm
  name P_ONE = "ONE"
@@ -923,7 +925,7 @@ mergeContexts ctx1 ctx2 =
                  (P_RelPopu{},P_RelPopu{}) -> p_src a == p_src b 
                                            && p_tgt a == p_tgt b
                                            && sameNamedRels (p_nmdr a) (p_nmdr b)
-                 (P_CptPopu{},P_CptPopu{}) -> p_cnme a == p_cnme b
+                 (P_CptPopu{},P_CptPopu{}) -> p_cpt a == p_cpt b
                  _  -> False
                where
                  sameNamedRels :: P_NamedRel -> P_NamedRel -> Bool

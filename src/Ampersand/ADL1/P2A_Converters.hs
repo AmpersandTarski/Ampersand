@@ -329,7 +329,7 @@ pCtx2aCtx env
               reprTrios :: [(A_Concept,TType,Origin)]
               reprTrios = nubTrios $ concatMap toReprs reprs
                 where toReprs :: Representation -> [(A_Concept,TType,Origin)]
-                      toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- NE.toList $ reprcpts r]
+                      toReprs r = [ (pCpt2aCpt cpt,reprdom r,origin r) | cpt <- NE.toList $ reprcpts r]
                       nubTrios :: [(A_Concept,TType,Origin)] -> [(A_Concept,TType,Origin)]
                       nubTrios = map withNonFuzzyOrigin . NE.groupBy groupCondition
                         where withNonFuzzyOrigin :: NE.NonEmpty (A_Concept,TType,Origin) -> (A_Concept,TType,Origin)
@@ -473,16 +473,16 @@ pCtx2aCtx env
                      , genspc = pCpt2aCpt $ specific pg
                      }
 
-    userConcept :: String -> Type
-    userConcept "ONE" = BuiltIn TypeOfOne
-    userConcept x     = UserConcept x
+    userConcept :: P_Concept -> Type
+    userConcept P_ONE = BuiltIn TypeOfOne
+    userConcept x     = UserConcept (name x)
     
     pPop2aPop :: ContextInfo -> P_Population -> Guarded Population
     pPop2aPop ci pop = 
      case pop of
        P_RelPopu{p_nmdr = nmdr, p_popps=aps, p_src = src, p_tgt = tgt}
          -> do dcl <- case p_mbSign nmdr of
-                        Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (makeConcept <$> src) (makeConcept <$> tgt)
+                        Nothing -> findDeclLooselyTyped declMap nmdr (name nmdr) (pCpt2aCpt <$> src) (pCpt2aCpt <$> tgt)
                         _ -> namedRel2Decl declMap nmdr
                       
                aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
@@ -494,7 +494,7 @@ pCtx2aCtx env
                                , poptgt = fromMaybe (target dcl) tgt'
                                }
        P_CptPopu{}
-         -> let cpt = makeConcept (p_cnme pop) in  
+         -> let cpt = pCpt2aCpt (p_cpt pop) in  
             (\vals
               -> ACptPopu { popcpt = cpt
                           , popas  = vals

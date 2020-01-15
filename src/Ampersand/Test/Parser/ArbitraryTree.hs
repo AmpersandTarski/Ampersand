@@ -124,7 +124,7 @@ listOf1 :: Gen a -> Gen (NE.NonEmpty a)
 listOf1 p = (NE.:|) <$> p <*> listOf p
 
 instance Arbitrary Representation where
-    arbitrary = Repr <$> arbitrary <*> listOf1 upperId <*> arbitrary
+    arbitrary = Repr <$> arbitrary <*> listOf1 arbitrary <*> arbitrary
 
 instance Arbitrary TType where
     arbitrary = elements [ tt | tt <- [minBound..] , tt /= TypeOfOne]
@@ -235,7 +235,7 @@ instance Arbitrary P_Population where
     arbitrary =
         oneof [
           P_RelPopu Nothing Nothing <$> arbitrary <*> arbitrary <*> arbitrary,
-          P_CptPopu <$> arbitrary <*> lowerId <*> arbitrary
+          P_CptPopu <$> arbitrary <*> arbitrary <*> arbitrary
         ]
 
 instance Arbitrary P_NamedRel where

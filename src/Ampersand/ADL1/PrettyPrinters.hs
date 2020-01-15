@@ -220,7 +220,7 @@ instance Pretty ConceptDef where
 instance Pretty P_Population where
     pretty p = case p of
                 P_RelPopu _ _ _ nrel cs -> text "POPULATION" <+> pretty nrel      <+> text "CONTAINS" <+> contents cs
-                P_CptPopu _ nm       ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> pretty ps
+                P_CptPopu _ cpt       ps -> text "POPULATION" <+> pretty cpt  <+> text "CONTAINS" <+> pretty ps
                where contents = list . map pretty
 
 instance Pretty Representation where
@@ -315,7 +315,7 @@ instance Pretty PPurpose where
 instance Pretty PRef2Obj where
     pretty p = case p of
         PRef2ConceptDef str       -> text "CONCEPT"   <+> quoteConcept str
-        PRef2Relation namedRel -> text "RELATION"  <~> namedRel
+        PRef2Relation namedRel    -> text "RELATION"  <~> namedRel
         PRef2Rule str             -> text "RULE"      <+> maybeQuote str
         PRef2IdentityDef str      -> text "IDENT"     <+> maybeQuote str
         PRef2ViewDef str          -> text "VIEW"      <+> maybeQuote str

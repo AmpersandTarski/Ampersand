@@ -313,7 +313,7 @@ pRepresentation :: AmpParser Representation
 pRepresentation
   = Repr <$> currPos
          <*  pKey "REPRESENT"
-         <*> pConceptName `sepBy1` pComma
+         <*> pConceptRef `sepBy1` pComma
          <*  pKey "TYPE"
          <*> pAdlTType
 --- AdlTType = ...<enumeration>
@@ -530,7 +530,7 @@ pInterfaceIsAPI = ("API" ==) <$> pInterfaceKey
 pPopulation :: AmpParser P_Population -- ^ The population parser
 pPopulation = pKey "POPULATION" *> (
                   P_RelPopu Nothing Nothing <$> currPos <*> pNamedRel <* pKey "CONTAINS" <*> pContent <|>
-                  P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
+                  P_CptPopu <$> currPos <*> pConceptRef <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 --TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.

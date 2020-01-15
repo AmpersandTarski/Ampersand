@@ -3,6 +3,7 @@ module Ampersand.Core.A2P_Converters (
     aAtomValue2pAtomValue
   , aConcept2pConcept
   , aCtx2pCtx
+  , aCpt2pCpt
   , aExpression2pTermPrim
   , aExplObj2PRef2Obj
   , aClassify2pClassify
@@ -176,10 +177,11 @@ aPopulation2pPopulation p =
                           }
       where pDcl = aRelation2pNamedRel (popdcl p)
   ACptPopu{} -> P_CptPopu { pos  = Origin $ "Origin is not present in Population("++name (popcpt p)++") from A-Structure"
-                          , p_cnme  = name (popcpt p)
+                          , p_cpt  = aCpt2pCpt (popcpt p)
                           , p_popas = map aAtomValue2pAtomValue (popas p)
                           }
-
+aCpt2pCpt :: A_Concept -> P_Concept
+aCpt2pCpt = undefined
 
 aObjectDef2pObjectDef :: BoxItem -> P_BoxItemTermPrim
 aObjectDef2pObjectDef x =

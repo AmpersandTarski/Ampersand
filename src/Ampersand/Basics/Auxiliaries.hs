@@ -7,7 +7,7 @@ module Ampersand.Basics.Auxiliaries
           converse, converseNE, converseSet,
           commaEng, commaNL,
           liftFst,liftSnd,
-          Flippable(..),
+          Flippable(..)
         ) where
 
 import           Ampersand.Basics.Prelude

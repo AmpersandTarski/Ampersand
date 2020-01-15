@@ -2,13 +2,14 @@
 module Ampersand.Input.Xslx.XLSX 
   (parseXlsxFile)
 where
-import           Ampersand.ADL1
 import           Ampersand.Basics hiding (view, (^.))
+import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
 import           Codec.Xlsx
-import           Control.Lens -- ((^?),ix)
+import           Control.Lens hiding (both) -- ((^?),ix)
+import           Data.Tuple.Extra
 import qualified RIO.List as L
 import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
@@ -61,7 +62,7 @@ toPops env file x = map popForColumn (colNrs x)
     popForColumn i =
       if i  == sourceCol  
       then  P_CptPopu { pos = popOrigin
-                      , p_cnme = sourceConceptName 
+                      , p_cpt = mkPConcept sourceConceptName 
                       , p_popas = concat [ case value(row,i) of
                                              Nothing -> []
                                              Just cv -> cellToAtomValues mSourceConceptDelimiter cv popOrigin
@@ -75,9 +76,9 @@ toPops env file x = map popForColumn (colNrs x)
                       , p_popps = thePairs
                       }
      where                             
-       src, trg :: Maybe String
+       src, trg :: Maybe P_Concept
        (src,trg) = case mTargetConceptName of
-                  Just tCptName -> (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
+                  Just tCptName -> both (fmap mkPConcept) $ (if isFlipped' then swap else id) (Just sourceConceptName, Just tCptName)
                   Nothing -> (Nothing,Nothing)
           
        popOrigin :: Origin
@@ -96,7 +97,7 @@ toPops env file x = map popForColumn (colNrs x)
           = case value (conceptNamesRow,sourceCol) of
                 Just (CellText t) -> 
                    fromMaybe (fatal "No valid source conceptname found. This should have been checked before")
-                             (conceptNameWithOptionalDelimiter . trim $ t)
+                             (conceptNameWithOptionalDelimiter t)
                 _ -> fatal "No valid source conceptname found. This should have been checked before"
        mTargetConceptName :: Maybe String
        mTargetConceptDelimiter :: Maybe Char
@@ -105,7 +106,7 @@ toPops env file x = map popForColumn (colNrs x)
                 Just (CellText t) -> let (nm,mDel) 
                                            = fromMaybe
                                                 (fatal "No valid source conceptname found. This should have been checked before")
-                                                (conceptNameWithOptionalDelimiter . trim $ t)
+                                                (conceptNameWithOptionalDelimiter t)
                                      in (Just nm, mDel)
                 _ -> (Nothing, Nothing)
        relName :: String
@@ -242,7 +243,7 @@ theSheetCellsForTable (sheetName,ws)
           | otherwise  = isProperConceptName (conceptNameRowNr,colNr) && isProperRelName(relationNameRowNr,colNr)
        isProperConceptName k 
          = case value k of
-            Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter . trim $ t
+            Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter $ t
             _ -> False
        isProperRelName k 
          = case value k of
@@ -256,7 +257,7 @@ conceptNameWithOptionalDelimiter :: Text -> Maybe ( String     {- Conceptname -}
 --         2) Conceptname
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
-conceptNameWithOptionalDelimiter t
+conceptNameWithOptionalDelimiter t'
   | isBracketed t   = 
        let mid = T.dropEnd 1 . T.drop 1 $ t
        in case T.uncons . T.reverse $ mid of 
@@ -268,7 +269,7 @@ conceptNameWithOptionalDelimiter t
                           else Nothing
   | isConceptName t = Just (T.unpack t, Nothing)
   | otherwise       = Nothing
-           
+  where t = trim t'
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation
 isConceptName :: Text -> Bool
