@@ -8,8 +8,8 @@ CONTEXT PrototypeContxt IN ENGLISH
 
   INCLUDE "Roles.adl"
 
-  RELATION sessionAllowedRoles[SESSION*Role]
-  RELATION sessionActiveRoles[SESSION*Role]
+  RELATION sessionAllowedRoles[SESSION*PF_Role]
+  RELATION sessionActiveRoles[SESSION*PF_Role]
   
   RULE "Active roles MUST be a subset of allowed roles": -- This rule is required for the access control mechanism.
      sessionActiveRoles |- sessionAllowedRoles           -- It ensures that only allowed roles can be activated.

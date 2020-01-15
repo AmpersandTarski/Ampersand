@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased changes
+* [Issue #1045](https://github.com/AmpersandTarski/Ampersand/issues/1045) Rename Role into PF_Role in PrototypeContext.
 * [Issue #1067](https://github.com/AmpersandTarski/Ampersand/issues/1067) Docker build push to Docker hub instead of Github package repo
 * [Issue #1084](https://github.com/AmpersandTarski/Ampersand/issues/1084) Add template attributes to BOX syntax
 * **Breaking change** Because of the implementation of feature of #1084 we could greatly reduce the number of BOX templates (e.g. ROWS, ROWSNL, HROWS and HROWSNL are merged into a single template). Documentation of new templates can be found [here](https://github.com/AmpersandTarski/prototype/tree/master/templates). 

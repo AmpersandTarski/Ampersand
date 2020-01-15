@@ -1,14 +1,14 @@
 CONTEXT PrototypeFramework IN ENGLISH
 
-    CONCEPT Role ""
-        REPRESENT Role TYPE OBJECT
-        POPULATION Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
+    CONCEPT PF_Role ""
+        REPRESENT PF_Role TYPE OBJECT
+        POPULATION PF_Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
     
-    RELATION label[Role*PF_Label] [UNI,TOT]
+    RELATION label[PF_Role*PF_Label] [UNI,TOT]
         REPRESENT PF_Label TYPE ALPHANUMERIC
-        POPULATION label[Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ]
+        POPULATION label[PF_Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ]
 
-    API "PF_AllRoles" FOR SYSTEM : V[ONE*Role] BOX
+    API "PF_AllRoles" FOR SYSTEM : V[ONE*PF_Role] BOX
         [ "id"              : I
         , "label"           : label
         -- , "maintains"       : 

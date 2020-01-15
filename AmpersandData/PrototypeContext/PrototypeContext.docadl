@@ -13,10 +13,10 @@ PATTERN SystemSpecific
   {+Sessies zijn nodig om de dialoog aan te kunnen duiden tussen de gebruiker en de computer+}
   PURPOSE CONCEPT SESSION IN ENGLISH
   {+Sessions are required to allow for associating information with individual visitors+}
-  CONCEPT Role "een functie of onderdeel die speciaal in een bepaalde bewerking of proces wordt uitgevoerd"
-  PURPOSE CONCEPT Role IN DUTCH
+  CONCEPT PF_Role "een functie of onderdeel die speciaal in een bepaalde bewerking of proces wordt uitgevoerd"
+  PURPOSE CONCEPT PF_Role IN DUTCH
   {+We hebben rollen nodig om een basale vorm van beveiliging te implementeren, gebaseerd op permissies. +}
-  PURPOSE CONCEPT Role IN ENGLISH
+  PURPOSE CONCEPT PF_Role IN ENGLISH
   {+We need roles to implement a basic form of security based on permissions. +}
   CONCEPT DateTime "een specifiek moment, tijdstip"
   PURPOSE CONCEPT DateTime IN DUTCH
@@ -32,7 +32,7 @@ PATTERN SystemSpecific
   PURPOSE RELATION lastAccess IN ENGLISH
   {+A session can be active at some moment in time. This relation holds the information when that was for the last time.+}
 
-  RELATION sessionAllowedRoles[SESSION*Role] -- This definition is only needed for `MEANING` to be interpreted correctly.
+  RELATION sessionAllowedRoles[SESSION*PF_Role] -- This definition is only needed for `MEANING` to be interpreted correctly.
   MEANING IN DUTCH "een rol kan zijn toegestaan gedurende een sessie"
   MEANING IN ENGLISH "a role can be allowed during a session"
   PURPOSE RELATION sessionAllowedRoles IN DUTCH
@@ -40,7 +40,7 @@ PATTERN SystemSpecific
   PURPOSE RELATION sessionAllowedRoles IN ENGLISH
   {+A user can be granted specific roles.+}
 
-  RELATION sessionActiveRoles[SESSION*Role] -- This definition is only needed for `MEANING` to be interpreted correctly.
+  RELATION sessionActiveRoles[SESSION*PF_Role] -- This definition is only needed for `MEANING` to be interpreted correctly.
   MEANING IN DUTCH "een rol kan in gebruik zijn gedurende een sessie"
   MEANING IN ENGLISH "a role can be active during a session"
   PURPOSE RELATION sessionActiveRoles IN DUTCH
