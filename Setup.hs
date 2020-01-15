@@ -7,6 +7,7 @@ import qualified Data.ByteString.Lazy.Char8 as BLC
 import           RIO.Char
 import qualified RIO.List as L
 import           RIO.Prelude
+import           Prelude
 import           RIO.Time
 import           Distribution.Simple
 import           Distribution.Simple.LocalBuildInfo
