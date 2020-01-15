@@ -181,7 +181,9 @@ aPopulation2pPopulation p =
                           , p_popas = map aAtomValue2pAtomValue (popas p)
                           }
 aCpt2pCpt :: A_Concept -> P_Concept
-aCpt2pCpt = undefined
+aCpt2pCpt cpt = case cpt of
+  PlainConcept{} -> PCpt{ p_cptnm = T.unpack $ cptnm cpt }
+  ONE{}          -> P_ONE
 
 aObjectDef2pObjectDef :: BoxItem -> P_BoxItemTermPrim
 aObjectDef2pObjectDef x =
