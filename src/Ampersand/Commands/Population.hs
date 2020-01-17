@@ -16,9 +16,10 @@ import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec(FSpec(..))
 import           Ampersand.Output.Population2Xlsx (fSpec2PopulationXlsx)
 import           Ampersand.Output.ToJSON.ToJson
-import           System.FilePath
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.Text as T
+import           System.Directory
+import           System.FilePath
 import           Text.Pandoc.Class(runIO,getPOSIXTime) --TODO: Replace by RIO's getCurrentTime
 import           Text.Pandoc.Error(handleError)
 
@@ -33,6 +34,7 @@ population fSpec = do
         case format of
           XLSX -> do let outputFile = view dirOutputL env </> baseName env <> "_generated_pop" -<.> ".xlsx"
                      ct <- liftIO $ runIO getPOSIXTime >>= handleError
+                     liftIO $ createDirectoryIfMissing True (takeDirectory outputFile)
                      BL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
                      logInfo $ "Generated file: " <> display (T.pack outputFile)
           JSON -> do let dir = view dirOutputL env
