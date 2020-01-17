@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.FSpec.ToFSpec.ADL2FSpec
    ( makeFSpec
    ) where

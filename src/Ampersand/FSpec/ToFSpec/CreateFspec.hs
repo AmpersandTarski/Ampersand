@@ -74,12 +74,10 @@ data BuildStep =
                           --   original P_Context. 
   | MergeWith BuildRecipe -- ^ Merge the given P_Context with the P_Context that is the result of 
                           --   applying the BuildRecipe.
-  | NoConversion          -- ^ the ID step. The P_Context that goes out is equal to the one that goes in. 
   | EncloseInConstraints  -- ^ Apply the encloseInConstraints function to the given P_Context.
 instance MetaModelContainer BuildStep where
   metaModelsIn (Grind m) = Set.singleton m
   metaModelsIn (MergeWith x) = metaModelsIn x
-  metaModelsIn NoConversion = mempty
   metaModelsIn EncloseInConstraints = mempty 
 instance MetaModelContainer a => MetaModelContainer [a] where
   metaModelsIn = Set.unions . fmap metaModelsIn
@@ -122,8 +120,6 @@ cook env (BuildRecipe start steps) grindInfoMap user =
           EncloseInConstraints -> pure $ encloseInConstraints ctx 
           Grind mm -> grind (gInfo mm) <$> (pCtx2Fspec env ctx)
           MergeWith recipe -> mergeContexts ctx <$> cook env recipe grindInfoMap user
-          NoConversion -> pure ctx
-          
   gInfo :: MetaModel -> GrindInfo
   gInfo mm = case Map.lookup mm grindInfoMap of
             Just x -> x

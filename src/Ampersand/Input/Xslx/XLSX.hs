@@ -14,7 +14,7 @@ import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
 import qualified RIO.Map as Map
 import qualified RIO.Text as T
-import           Data.Tuple
+import           Data.Tuple(swap)
 
 parseXlsxFile :: (HasFSpecGenOpts env) => 
     Maybe FileKind -> FilePath -> RIO env (Guarded [P_Population])

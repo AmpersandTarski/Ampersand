@@ -69,7 +69,6 @@ import           Ampersand.Core.ParseTree
     )
 import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import           Data.Default       (Default(..))
-import           Data.Function      (on)
 import           Data.Hashable      (Hashable(..),hashWithSalt)
 import           Data.Typeable (typeOf)
 import           GHC.Generics       (Generic)
