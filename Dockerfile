@@ -1,4 +1,5 @@
 # The purpose of this docker file is to produce a latest Ampersand-compiler in the form of a docker image.
+# Instruction: If '.' (your working directory) contains this Dockerfile, run "docker build -t docker.pkg.github.com/ampersandtarski/ampersand/ampersand:latest ."
 FROM haskell:8.6.5 AS buildstage
 
 RUN mkdir /opt/ampersand
