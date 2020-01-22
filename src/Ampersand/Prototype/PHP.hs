@@ -90,6 +90,7 @@ executePHPStr phpStr = do
                           return "."
                      )
     let phpPath = tempdir </> "tmpPhpQueryOfAmpersand" <.> "php"
+    liftIO $ createDirectoryIfMissing True (takeDirectory phpPath)
     writeFileUtf8 phpPath phpStr
     
     executePHP phpPath
