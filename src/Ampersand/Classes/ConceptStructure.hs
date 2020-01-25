@@ -55,7 +55,7 @@ instance (Eq a ,ConceptStructure a) => ConceptStructure (Set.Set a) where
 instance ConceptStructure A_Context where
   concs ctx = Set.unions -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
               [ Set.singleton ONE
-              , Set.singleton (makeConcept "SESSION")
+            --  , Set.singleton (makeConcept "SESSION") --SESSION is in PrototypeContext.adl
               , (concs . ctxcds) ctx
               , (concs . ctxds) ctx
               , (concs . ctxgs) ctx
@@ -110,7 +110,7 @@ instance ConceptStructure A_Concept where
   expressionsIn _ = Set.empty
 
 instance ConceptStructure ConceptDef where
-  concs           = Set.singleton . makeConcept . name
+  concs cd        = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into P_ConceptDef and A_ConceptDef
   expressionsIn _ = Set.empty
 
 instance ConceptStructure Signature where

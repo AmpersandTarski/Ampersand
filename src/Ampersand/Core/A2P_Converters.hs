@@ -152,7 +152,7 @@ aConcept2pConcept :: A_Concept -> P_Concept
 aConcept2pConcept cpt =
  case cpt of
    ONE            -> P_ONE
-   PlainConcept{} -> PCpt { p_cptnm = T.unpack $ cptnm cpt
+   PlainConcept{} -> PCpt { p_cptnm = name cpt
                           }
 
 aPurpose2pPurpose :: Purpose -> Maybe PPurpose 
@@ -182,7 +182,7 @@ aPopulation2pPopulation p =
                           }
 aCpt2pCpt :: A_Concept -> P_Concept
 aCpt2pCpt cpt = case cpt of
-  PlainConcept{} -> PCpt{ p_cptnm = T.unpack $ cptnm cpt }
+  PlainConcept{} -> PCpt{ p_cptnm = name cpt }
   ONE{}          -> P_ONE
 
 aObjectDef2pObjectDef :: BoxItem -> P_BoxItemTermPrim

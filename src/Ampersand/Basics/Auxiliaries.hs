@@ -3,6 +3,7 @@
 module Ampersand.Basics.Auxiliaries 
         ( eqClass,eqClassNE,
           eqCl,eqClNE,
+          getCycles,
           transClosureMap, transClosureMap',
           converse, converseNE, converseSet,
           commaEng, commaNL,
@@ -10,13 +11,15 @@ module Ampersand.Basics.Auxiliaries
           Flippable(..)
         ) where
 
-import           Ampersand.Basics.Prelude
+import           Ampersand.Basics.Prelude hiding (to)
+import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           RIO.List(foldl,intersect,nub,union)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
+import qualified RIO.List as L
 import qualified RIO.Map as Map 
 import qualified RIO.Map.Partial as PARTIAL --TODO: Get rid of partial functions.
-import qualified RIO.Set as Set 
+import qualified RIO.Set as Set
 
 -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
 -- that each sublist in the result contains only equal elements, and all equal elements are in
@@ -43,6 +46,14 @@ eqClassNE f = PARTIAL.fromList . eqClass f . NE.toList
 eqClNE :: Ord b => (a -> b) -> NE.NonEmpty a -> NE.NonEmpty (NE.NonEmpty a)
 eqClNE f = PARTIAL.fromList . eqCl f . NE.toList
 
+-- | getCycles returns a list of cycles in the edges list (each edge is a pair of a from-vertex
+--   and a list of to-vertices)
+getCycles :: Eq a => [(a, [a])] -> [[a]]
+getCycles edges =
+  let allVertices = L.nub . concat $ [ from : to | (from, to) <- edges ]
+      keyFor v = fromMaybe (error "FATAL") $ L.elemIndex v allVertices
+      graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
+  in  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]
 
 -- |  Warshall's transitive closure algorithm
 transClosureMap' :: Ord a => Map.Map a [a] -> Map.Map a [a]

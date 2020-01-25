@@ -50,14 +50,15 @@ module Ampersand.Core.AbstractSyntaxTree (
  , SignOrd(..), Type(..), typeOrConcept
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
- , makeConcept
+-- , makeConcept
+ , makeConceptMap, ConceptMap
  , aavstr
  ) where
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree 
     ( Meta(..)
     , Role(..)
-    , ConceptDef
+    , ConceptDef, P_Concept(..), mkPConcept, PClassify(specific,generics)
     , Origin(..)
     , maybeOrdering
     , Traced(..)
@@ -804,7 +805,8 @@ getExpressionRelation expr = case getRelation expr of
 
 data A_Concept
    = PlainConcept { cpthash :: Int
-                  , cptnm :: Text  -- ^PlainConcept nm represents the set of instances cs by name nm.
+                  --, cptnm :: Text  -- ^PlainConcept nm represents the set of instances cs by name nm.
+                  , aliases :: NE.NonEmpty Text -- List of names that the concept is refered to, sorted by importance
                   }
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     deriving (Typeable,Data,Ord,Eq)
@@ -822,12 +824,9 @@ instance Eq A_Concept where
 -- SJC TODO: put "makeConcept" in a monad or something, and number them consecutively to avoid hash collisions
 -}
   
-makeConcept :: String -> A_Concept
-makeConcept "ONE" = ONE
-makeConcept v = PlainConcept
-    { cpthash = hash v
-    , cptnm   = T.pack v
-    }
+makeConcept :: ConceptMap -> String -> A_Concept
+makeConcept _   "ONE" = ONE
+makeConcept fun str = fun . mkPConcept $ str
 
 instance Unique A_Concept where
   showUnique = name
@@ -838,7 +837,7 @@ instance Hashable A_Concept where
                         ONE            -> 1::Int
                       )
 instance Named A_Concept where
-  name PlainConcept{cptnm = nm} = T.unpack nm
+  name PlainConcept{aliases = names} = T.unpack . NE.head $ names
   name ONE = "ONE"
 
 instance Show A_Concept where
@@ -881,19 +880,20 @@ data ContextInfo =
      , declDisambMap    :: Map.Map String (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
      , soloConcs        :: [Type] -- types not used in any declaration
      , gens_efficient   :: (Op1EqualitySystem Type) -- generalisation relations again, as a type system (including phantom types)
+     , conceptMap       :: ConceptMap -- a map that must be used to convert P_Concept to A_Concept
      } 
                        
 instance Named Type where
-  name v = case typeOrConcept v of
+  name v = case typeOrConcept dummy v of
                 Right (Just x) -> "Built-in type "++show x
                 Right Nothing  -> "The Generic Built-in type"
                 Left  x -> "Concept: "++name x
-
-typeOrConcept :: Type -> Either A_Concept (Maybe TType)
-typeOrConcept (BuiltIn TypeOfOne)  = Left  ONE
-typeOrConcept (UserConcept s)      = Left$ makeConcept s
-typeOrConcept (BuiltIn x)          = Right (Just x)
-typeOrConcept RepresentSeparator = Right Nothing
+    where dummy = makeConceptMap []
+typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
+typeOrConcept _   (BuiltIn TypeOfOne)  = Left  ONE
+typeOrConcept fun (UserConcept s)      = Left $makeConcept fun s
+typeOrConcept _   (BuiltIn x)          = Right (Just x)
+typeOrConcept _   RepresentSeparator   = Right Nothing
 
 data Type = UserConcept String
           | BuiltIn TType
@@ -1139,3 +1139,33 @@ data Typology = Typology { tyroot :: A_Concept -- the most generic concept in th
                          , tyCpts :: [A_Concept] -- all concepts, from generic to specific
                          } deriving Show
 
+-- | Since we can have concepts with several aliasses, we need to have a 
+--   way to resolve these aliasses. In the A-structure, we do not want to
+--   bother: if `foo` is an alias of `bar`, there should only be one A_Concept
+--   that represents both `foo` and `bar`. We should be able to use a map
+--   whenever we need to know the A_Concept for a P_Concept.  
+type ConceptMap = P_Concept -> A_Concept
+
+makeConceptMap :: [PClassify] -> ConceptMap
+makeConceptMap gs = mapFunction
+   where
+     mapFunction :: P_Concept -> A_Concept
+     mapFunction pCpt = case L.nub . concat . filter inCycle $ getCycles edges of
+                          xs -> mkConcept pCpt xs
+       where
+         inCycle xs = pCpt `elem` xs
+     mkConcept :: P_Concept -> [P_Concept] -> A_Concept
+     mkConcept pCpt aliasses = 
+       case pCpt of
+         P_ONE  -> fatal $ "`ONE` is not expected here."
+         PCpt{} -> PlainConcept 
+           { cpthash = hash sorted
+           , aliases = sorted
+           }
+        where sorted = NE.nub . NE.sort . fmap T.pack $ ( name pCpt NE.:| map name aliasses)    
+     edges :: [(P_Concept, [P_Concept])]
+     edges = map mkEdge . eqCl specific $ gs
+     mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])
+     mkEdge x = ( from , to's)
+       where from = specific . NE.head $ x
+             to's = L.nub . concat . fmap (toList . generics) $ x

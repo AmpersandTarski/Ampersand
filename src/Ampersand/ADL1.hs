@@ -55,7 +55,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Pattern(..)
          , Relation(..), Relations, getExpressionRelation, showRel
          , Rule(..), Rules, A_RoleRule(..)
-         , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, makeConcept ,unsafePAtomVal2AtomValue 
+         , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, unsafePAtomVal2AtomValue 
          , Conjunct(..)
          , PAtomValue(..)
          , AAtomValues, AAtomPairs, safePSingleton2AAtomVal
