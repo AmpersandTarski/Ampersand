@@ -65,7 +65,7 @@ import           Ampersand.Core.ParseTree
     , PairView(..)
     , PairViewSegment(..)
     , Prop(..), Props
-    , Representation(..), TType(..), PAtomValue(..), PSingleton
+    , Representation(..), TType(..), PAtomValue(..)
     )
 import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import           Data.Default       (Default(..))
@@ -630,7 +630,7 @@ data Expression
       | EDcI A_Concept                 -- ^ Identity relation
       | EEps A_Concept Signature       -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Signature                 -- ^ Cartesian product relation
-      | EMp1 PSingleton A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
+      | EMp1 PAtomValue A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
       deriving (Eq, Ord, Show, Typeable, Generic, Data)
 instance Hashable Expression where
    hashWithSalt s expr =
@@ -844,7 +844,7 @@ instance Named A_Concept where
 instance Show A_Concept where
   show = name
 
-instance Unique (A_Concept, PSingleton) where
+instance Unique (A_Concept, PAtomValue) where
   showUnique (c,val) = show val++"["++showUnique c++"]"
 
 data Signature = Sign A_Concept A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
@@ -913,7 +913,7 @@ instance Eq SignOrd where
 --   the TType is known, enabling the correct transformation.
 --   To ensure that this function is not used too early, ContextInfo is required,
 --   which only exsists after disambiguation.
-safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
+safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
 safePSingleton2AAtomVal ci c val =
    case unsafePAtomVal2AtomValue typ (Just c) val of
      Left _ -> fatal . L.intercalate "\n  " $

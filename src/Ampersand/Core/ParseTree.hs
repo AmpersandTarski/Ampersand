@@ -18,7 +18,7 @@ module Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , Representation(..), TType(..)
    , P_Population(..)
-   , PAtomPair(..), PAtomValue(..), mkPair, PSingleton, makePSingleton
+   , PAtomPair(..), PAtomValue(..), mkPair, makePSingleton
    , P_BoxItemTermPrim, P_SubInterface, P_Interface(..), P_IClass(..), P_BoxItem(..), P_SubIfc(..)
    , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
@@ -273,8 +273,8 @@ instance Flippable PAtomPair where
 -- compare a b = compare (psRaw a) (psRaw b)
 --instance Traced PSingleton where
 -- origin = pos
-type PSingleton = PAtomValue
-makePSingleton :: String -> PSingleton
+--type PSingleton = PAtomValue
+makePSingleton :: String -> PAtomValue
 makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
 --   PSingleton { psOrig =Origin "ParseTree.hs"
 --              , psRaw = s
@@ -355,7 +355,7 @@ data TermPrim
                                             --   to know whether an eqClass represents a concept, we only look at its witness
                                             --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
    | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-   | Patm Origin PSingleton (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values
+   | Patm Origin PAtomValue (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values
                                                   --   eg, when `123` is found by the parser, the list will contain both interpretations as
                                                   --   the String "123" or as Integer 123.
                                                   --   Since everything between the single quotes can allways be interpretated as a String,

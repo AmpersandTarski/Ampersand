@@ -656,7 +656,7 @@ pRelationRef      = PNamedR <$> pNamedRel
                           pfull orig Nothing = PVee orig
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
-pSingleton :: AmpParser PSingleton
+pSingleton :: AmpParser PAtomValue
 pSingleton = value2PAtomValue <$> currPos <*> 
                  (             pAtomValInPopulation True
                   <|> pBraces (pAtomValInPopulation False)

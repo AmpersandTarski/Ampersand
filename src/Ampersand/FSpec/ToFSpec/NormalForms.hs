@@ -76,7 +76,7 @@ data RTerm = RIsc {rTermSet :: Set RTerm}  -- intersection is associative and co
            | RFlp {rTermUny :: RTerm}
            | RId  A_Concept
            | RVee A_Concept A_Concept
-           | RAtm PSingleton A_Concept
+           | RAtm PAtomValue A_Concept
            | RVar String A_Concept A_Concept  -- relation name, source name, target name.
            | RConst Expression
            deriving (Eq,Ord,Show)
