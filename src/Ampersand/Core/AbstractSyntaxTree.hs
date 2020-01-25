@@ -1157,7 +1157,7 @@ makeConceptMap gs = mapFunction
      mkConcept :: P_Concept -> [P_Concept] -> A_Concept
      mkConcept pCpt aliasses = 
        case pCpt of
-         P_ONE  -> fatal $ "`ONE` is not expected here."
+         P_ONE  -> ONE
          PCpt{} -> PlainConcept 
            { cpthash = hash sorted
            , aliases = sorted
