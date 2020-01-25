@@ -1,8 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.FSpec.ToFSpec.NormalForms
-  (delta,conjNF,disjNF,cfProof,dfProof,simplify
-  ,cfProofs, dfProofs  -- these are for confluence testing.
-  , makeAllConjs, conjuncts
+  ( conjNF
+  , cfProof
+  , dfProofs  -- these are for confluence testing.
+  , makeAllConjs
+  , conjuncts
   ) where
   
 import           Ampersand.ADL1
@@ -36,8 +38,8 @@ Ideas for future work:
 -- The following was built for the purpose of testing confluence.
 -- These functions produce all derivations of results from the normalizer.
 -- A useful side effect is that it implicitly tests for soundness.
-cfProofs, dfProofs :: Expression -> [(Expression, Proof Expression)]
-(cfProofs, dfProofs) = (prfs False, prfs True)
+dfProofs :: Expression -> [(Expression, Proof Expression)]
+dfProofs = prfs True
  where
    prfs :: Bool -> Expression -> [(Expression, Proof Expression)]
    prfs dnf expr
@@ -1035,7 +1037,7 @@ taeDerivRules = concatMap (dRule.parseRule)
  , "(r[A*B]\\q[A*C])\\/-s[B*C] = -(r[A*B];s[B*C])\\/q[A*C]"    -- T{ (r\\q)\\/-s)} = [B*C] ; T{ -(r;s)\\/q} = [A*C] ; remove right residual (\\)
  ]
 -}
-
+{-
 -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
 delta :: Signature -> Expression
 delta sgn
@@ -1056,7 +1058,7 @@ delta sgn
               , decpat  = Nothing
               , dechash = hash sgn
               }
-
+-}
 {- Normalization of process algebra clauses -}
 
 type Proof a = [(a, [String], String)]
