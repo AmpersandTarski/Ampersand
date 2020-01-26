@@ -225,13 +225,9 @@ data Relation = Relation
       } deriving (Typeable, Data)
 
 instance Eq Relation where
-  d == d' = dechash d == dechash d' && decnm d == decnm d' && decsgn d==decsgn d'
-
+  a == b = compare a b == EQ
 instance Ord Relation where
-  compare a b =
-    if name a == name b
-    then compare (sign a) (sign b)
-    else compare (name a) (name b)
+  compare a b = compare (name a, sign a) (name b, sign b)
 instance Unique Relation where
   showUnique d =
     name d++showUnique (decsgn d)
@@ -361,7 +357,7 @@ data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type
                      } deriving Show
 
 instance Eq Interface where
-  s==s' = name s==name s'
+  a == b = compare a b == EQ
 instance Ord Interface where
   compare a b = compare (name a) (name b)
 instance Named Interface where
@@ -589,7 +585,7 @@ showValADL val =
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
 
-data ExplObj = ExplConceptDef ConceptDef
+data ExplObj = ExplConcept A_Concept
              | ExplRelation Relation
              | ExplRule String
              | ExplIdentityDef String
@@ -601,8 +597,8 @@ data ExplObj = ExplConceptDef ConceptDef
 instance Unique ExplObj where
   showUnique e = "Explanation of "++
     case e of
-     (ExplConceptDef cd) -> uniqueShowWithType cd
-     (ExplRelation d)    -> uniqueShowWithType d
+     (ExplConcept cpt)   -> uniqueShowWithType cpt
+     (ExplRelation rel)  -> uniqueShowWithType rel
      (ExplRule s)        -> "a Rule named "++s
      (ExplIdentityDef s) -> "an Ident named "++s
      (ExplViewDef s)     -> "a View named "++s
@@ -903,9 +899,9 @@ data Type = UserConcept String
 -- for faster comparison
 newtype SignOrd = SignOrd Signature
 instance Ord SignOrd where
-  compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
+  compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (a, b) (c, d)
 instance Eq SignOrd where
-  (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
+  a == b = compare a b == EQ
    
 
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,

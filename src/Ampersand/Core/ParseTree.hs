@@ -99,7 +99,7 @@ data Role = Role String
 instance Ord Role where
   compare a b = compare (name a) (name b)
 instance Eq Role where
- r == r' = name r == name r'
+  a == b = compare a b == EQ
 instance Named Role where
  name (Role nm) = nm
  name (Service nm) = nm

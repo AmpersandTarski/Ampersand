@@ -976,7 +976,7 @@ class Instances a => HasPurpose a where
 instance HasPurpose A_Concept where
   isFor cpt purp =
     case explObj purp of
-        ExplConceptDef x  -> name cpt == name x
+        ExplConcept x  -> cpt == x
         _                 -> False
 instance HasPurpose A_Context where
   isFor ctx purp =

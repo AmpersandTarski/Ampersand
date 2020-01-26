@@ -370,8 +370,8 @@ instance ShowHS Purpose where
 
 instance ShowHS ExplObj where
  showHS env i peObj = case peObj of
-          ExplConceptDef cd  -> "ExplConceptDef " ++showHS env i cd
-          ExplRelation d  -> "ExplRelation "++showHSName d
+          ExplConcept cpt    -> "ExplConcept "    ++showHS env i cpt
+          ExplRelation rel   -> "ExplRelation "   ++showHSName rel
           ExplRule str       -> "ExplRule "       ++show str
           ExplIdentityDef str-> "ExplIdentityDef "++show str
           ExplViewDef str    -> "ExplViewDef "    ++show str

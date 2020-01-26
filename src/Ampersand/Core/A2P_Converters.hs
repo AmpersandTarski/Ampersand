@@ -283,8 +283,8 @@ aIdentitySegment2pIdentSegmnt (IdentityExp oDef) =
 aExplObj2PRef2Obj :: ExplObj -> PRef2Obj
 aExplObj2PRef2Obj obj =
  case obj of
-  ExplConceptDef cd   -> PRef2ConceptDef (name cd)
-  ExplRelation d   -> PRef2Relation (aRelation2pNamedRel d)
+  ExplConcept cpt     -> PRef2ConceptDef (name cpt)
+  ExplRelation rel    -> PRef2Relation (aRelation2pNamedRel rel)
   ExplRule str        -> PRef2Rule str
   ExplIdentityDef str -> PRef2IdentityDef str
   ExplViewDef str     -> PRef2ViewDef str

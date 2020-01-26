@@ -1,5 +1,9 @@
-{-# LANGUAGE LambdaCase, ImplicitParams #-}
-{-# LANGUAGE ApplicativeDo, DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE ImplicitParams #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.ADL1.P2A_Converters
     ( pCtx2aCtx
     , pCpt2aCpt
@@ -70,7 +74,7 @@ checkPurposes ctx = let topLevelPurposes = ctxps ctx
 isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
-    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (Set.elems $ concs ctx )
+    ExplConcept concDef -> let nm = name concDef in nm `notElem` map name (Set.elems $ concs ctx )
     ExplRelation decl -> not (name decl `elem` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
     ExplRule nm -> nm `notElem` map name (Set.elems $ udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
@@ -138,7 +142,7 @@ checkOtherAtomsInSessionConcept ctx =
         ] ++
         [ mkOtherTupleInSessionError d pr
         | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
-        , name src == "SESSION" || name tgt == "SESSION"
+        , "SESSION" `elem` aliases src || "SESSION" `elem` aliases tgt
         , pr <- Set.elems ps
         , (name src == "SESSION" && not (_isPermittedSessionValue (apLeft pr)))
           ||
@@ -185,10 +189,10 @@ findRelsLooselyTyped declMap x (Just src) (Just tgt)
        unin lsta lstb = L.nub (lsta ++ lstb)
 findRelsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
 findRelsLooselyTyped declMap x (Just src) Nothing
- = [dcl | dcl <- findDecls' declMap x, name (source dcl) == name src ]
+ = [dcl | dcl <- findDecls' declMap x, source dcl == src ]
    `orWhenEmpty` findDecls' declMap x
 findRelsLooselyTyped declMap x Nothing (Just tgt)
- = [dcl | dcl <- findDecls' declMap x, name (target dcl) == name tgt ]
+ = [dcl | dcl <- findDecls' declMap x, target dcl == tgt ]
    `orWhenEmpty` findDecls' declMap x
 findDeclLooselyTyped :: DeclMap
                      -> P_NamedRel
@@ -626,10 +630,12 @@ pCtx2aCtx env
          Nothing -> mostLiberalCruds (Origin "Default for Cruds") ""
          Just pc@(P_Cruds org userCrudString )
              | (length . L.nub . map toUpper) userCrudString == length userCrudString &&
-                all (`elem` "cCrRuUdD") userCrudString  
+                (all isValidChar userCrudString)  
                          -> warnings pc $ mostLiberalCruds org userCrudString 
              | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrudString
-      where (defC, defR, defU, defD) = view defaultCrudL env
+      where isValidChar :: Char -> Bool
+            isValidChar c = toUpper c `elem` ['C','R','U','D']
+            (defC, defR, defU, defD) = view defaultCrudL env
             mostLiberalCruds :: Origin -> String -> Guarded Cruds
             mostLiberalCruds o str
              = pure Cruds { crudOrig = o
@@ -902,7 +908,7 @@ pCtx2aCtx env
                       })
        <$> pRefObj2aRefObj ci objref
     pRefObj2aRefObj :: ContextInfo -> PRef2Obj -> Guarded ExplObj
-    pRefObj2aRefObj _       (PRef2ConceptDef  s ) = pure$ ExplConceptDef (lookupConceptDef s)
+    pRefObj2aRefObj ci      (PRef2ConceptDef  s ) = pure$ ExplConcept (pCpt2aCpt (conceptMap ci) $ mkPConcept s)
     pRefObj2aRefObj ci      (PRef2Relation tm)    = ExplRelation <$> namedRel2Decl (conceptMap ci) (declDisambMap ci) tm
     pRefObj2aRefObj _       (PRef2Rule        s ) = pure$ ExplRule s
     pRefObj2aRefObj _       (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
@@ -910,11 +916,6 @@ pCtx2aCtx env
     pRefObj2aRefObj _       (PRef2Pattern     s ) = pure$ ExplPattern s
     pRefObj2aRefObj _       (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj _       (PRef2Context     s ) = pure$ ExplContext s
-    lookupConceptDef :: String -> ConceptDef
-    lookupConceptDef s
-     = case filter (\cd -> name cd == s) allConceptDefs of
-        []    -> Cd{pos=OriginUnknown, cdcpt=s, cddef="", cdref="", cdfrom=n1} 
-        (x:_) -> x
     allConceptDefs :: [ConceptDef]
     allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns
     allRoleRules :: [A_RoleRule]

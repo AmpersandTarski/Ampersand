@@ -110,7 +110,7 @@ instance ConceptStructure A_Concept where
   expressionsIn _ = Set.empty
 
 instance ConceptStructure ConceptDef where
-  concs cd        = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into P_ConceptDef and A_ConceptDef
+  concs _         = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into P_ConceptDef and A_ConceptDef
   expressionsIn _ = Set.empty
 
 instance ConceptStructure Signature where
@@ -183,7 +183,7 @@ instance ConceptStructure Purpose where
   expressionsIn _ = Set.empty
 
 instance ConceptStructure ExplObj where
-  concs (ExplConceptDef cd) = concs cd
+  concs (ExplConcept cpt)   = Set.singleton cpt
   concs (ExplRelation d)    = concs d
   concs (ExplRule _)        = Set.empty {-beware of loops...-}
   concs (ExplIdentityDef _) = Set.empty {-beware of loops...-}
