@@ -262,7 +262,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList $
         [ ( dirtyId ise, dirtyId cpt) 
         | ise@IsE{} <- instanceList fSpec
-        , cpt <- genrhs ise]
+        , cpt <- NE.toList $ genrhs ise]
       )
      ,("gens"                  , "Context"               , "Isa"     
       , Set.fromList $
@@ -377,7 +377,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList 
         [ ( dirtyId gCpt, dirtyId (genspc ise)) 
         | ise@IsE{} <- instanceList fSpec
-        , gCpt <- genrhs ise
+        , gCpt <- NE.toList $ genrhs ise
         ] `Set.union`
         Set.fromList
         [ ( dirtyId (genspc isa), dirtyId (genspc isa)) 

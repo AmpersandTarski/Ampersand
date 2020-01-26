@@ -3,6 +3,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
@@ -50,7 +51,6 @@ module Ampersand.Core.AbstractSyntaxTree (
  , SignOrd(..), Type(..), typeOrConcept
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
--- , makeConcept
  , makeConceptMap, ConceptMap
  , aavstr
  ) where
@@ -314,7 +314,7 @@ data AClassify =
                  }
            | IsE { genpos :: Origin
                  , genspc :: A_Concept      -- ^ specific concept
-                 , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
+                 , genrhs :: NE.NonEmpty A_Concept    -- ^ concepts of which the conjunction is equivalent to the specific concept
                  } deriving (Typeable)
 instance Ord AClassify where
 -- subjective choice: Isa > IsE
@@ -332,19 +332,19 @@ instance Unique AClassify where
   showUnique a =
     case a of
       Isa{} -> showUnique (genspc a)++" ISA "++showUnique (gengen a)
-      IsE{} -> showUnique (genspc a)++" IS "++L.intercalate " /\\ " (map (showUnique) (genrhs a))
+      IsE{} -> showUnique (genspc a)++" IS "++L.intercalate " /\\ " (NE.toList . fmap showUnique $ genrhs a)
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
   show g =
     case g of
      Isa{} -> "CLASSIFY "++show (genspc g)++" ISA "++show (gengen g)
-     IsE{} -> "CLASSIFY "++show (genspc g)++" IS "++L.intercalate " /\\ " (map show (genrhs g))
+     IsE{} -> "CLASSIFY "++show (genspc g)++" IS "++L.intercalate " /\\ " (NE.toList . fmap show $ genrhs g)
 instance Hashable AClassify where
     hashWithSalt s g = 
       s `hashWithSalt` (genspc g)
         `hashWithSalt` (case g of 
                          Isa{} -> [genspc g]
-                         IsE{} -> L.sort $ genrhs g 
+                         IsE{} -> NE.toList . NE.sort $ genrhs g 
                        )
 
 data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type API?
@@ -800,11 +800,10 @@ getExpressionRelation expr = case getRelation expr of
 -- It is called Concept, meaning "type checking concept"
 
 data A_Concept
-   = PlainConcept { cpthash :: Int
-                  --, cptnm :: Text  -- ^PlainConcept nm represents the set of instances cs by name nm.
-                  , aliases :: NE.NonEmpty Text -- List of names that the concept is refered to, sorted by importance
+   = PlainConcept { aliases :: NE.NonEmpty Text 
+                    -- ^ List of names that the concept is refered to, in random order
                   }
-   | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
+   | ONE -- ^ The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     deriving (Typeable,Data,Ord,Eq)
 type A_Concepts = Set.Set A_Concept
 {- -- this is faster, so if you think Eq on concepts is taking a long time, try this..
@@ -817,27 +816,26 @@ instance Ord A_Concept where
 instance Eq A_Concept where
   (==) a b = compare a b == EQ
 
--- SJC TODO: put "makeConcept" in a monad or something, and number them consecutively to avoid hash collisions
 -}
   
-makeConcept :: ConceptMap -> String -> A_Concept
-makeConcept _   "ONE" = ONE
-makeConcept fun str = fun . mkPConcept $ str
-
 instance Unique A_Concept where
-  showUnique = name
+  showUnique = show
 instance Hashable A_Concept where
   hashWithSalt s cpt =
      s `hashWithSalt` (case cpt of
-                        PlainConcept{} -> (0::Int) `hashWithSalt` cpthash cpt
-                        ONE            -> 1::Int
+                        PlainConcept{} -> (0::Int) `hashWithSalt` NE.sort (aliases cpt)
+                        ONE          -> 1::Int
                       )
 instance Named A_Concept where
   name PlainConcept{aliases = names} = T.unpack . NE.head $ names
   name ONE = "ONE"
 
 instance Show A_Concept where
-  show = name
+  show ONE = name ONE
+  show cpt@PlainConcept{aliases = names} =
+     case NE.tail names of
+       [] ->  name cpt
+       alies -> name cpt <> "("<>(T.unpack $ T.intercalate ", " alies)<>")"
 
 instance Unique (A_Concept, PAtomValue) where
   showUnique (c,val) = show val++"["++showUnique c++"]"
@@ -874,7 +872,7 @@ data ContextInfo =
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
      , reprList         :: [Representation] -- a list of all Representations
      , declDisambMap    :: Map.Map String (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
-     , soloConcs        :: [Type] -- types not used in any declaration
+     , soloConcs        :: Set.Set Type -- types not used in any declaration
      , gens_efficient   :: (Op1EqualitySystem Type) -- generalisation relations again, as a type system (including phantom types)
      , conceptMap       :: ConceptMap -- a map that must be used to convert P_Concept to A_Concept
      } 
@@ -886,8 +884,8 @@ instance Named Type where
                 Left  x -> "Concept: "++name x
     where dummy = makeConceptMap []
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
-typeOrConcept _   (BuiltIn TypeOfOne)  = Left  ONE
-typeOrConcept fun (UserConcept s)      = Left $makeConcept fun s
+typeOrConcept fun (BuiltIn TypeOfOne)  = Left . fun . mkPConcept $ "ONE"
+typeOrConcept fun (UserConcept s)      = Left . fun . mkPConcept $ s
 typeOrConcept _   (BuiltIn x)          = Right (Just x)
 typeOrConcept _   RepresentSeparator   = Right Nothing
 
@@ -1155,13 +1153,13 @@ makeConceptMap gs = mapFunction
        case pCpt of
          P_ONE  -> ONE
          PCpt{} -> PlainConcept 
-           { cpthash = hash sorted
-           , aliases = sorted
+           { aliases = sorted
            }
         where sorted = NE.nub . NE.sort . fmap T.pack $ ( name pCpt NE.:| map name aliasses)    
      edges :: [(P_Concept, [P_Concept])]
-     edges = map mkEdge . eqCl specific $ gs
+     edges = L.nub . map mkEdge . eqCl specific $ gs
      mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])
      mkEdge x = ( from , to's)
        where from = specific . NE.head $ x
              to's = L.nub . concat . fmap (toList . generics) $ x
+

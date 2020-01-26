@@ -23,7 +23,6 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           RIO.Char
 import qualified RIO.NonEmpty as NE
-import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
@@ -128,7 +127,7 @@ aClassify2pClassify gen =
   IsE{} -> PClassify 
                 { pos      = genpos gen
                 , specific = aConcept2pConcept (genspc gen) 
-                , generics = PARTIAL.fromList . map aConcept2pConcept . genrhs $ gen
+                , generics = fmap aConcept2pConcept . genrhs $ gen
                 }
 
 aInterface2pInterface :: Interface -> P_Interface
@@ -183,7 +182,7 @@ aPopulation2pPopulation p =
 aCpt2pCpt :: A_Concept -> P_Concept
 aCpt2pCpt cpt = case cpt of
   PlainConcept{} -> PCpt{ p_cptnm = name cpt }
-  ONE{}          -> P_ONE
+  ONE          -> P_ONE
 
 aObjectDef2pObjectDef :: BoxItem -> P_BoxItemTermPrim
 aObjectDef2pObjectDef x =

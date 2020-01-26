@@ -135,18 +135,18 @@ checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
 checkOtherAtomsInSessionConcept ctx = 
    case [mkOtherAtomInSessionError atom
         | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
-        , name cpt == "SESSION"
+        , isSESSION cpt 
         , atom <- popas pop
         -- SJC: I think we should not allow _SESSION in a POPULATION statement, as there is no current session at that time (_SESSION should only be allowed as Atom in expressions)
         , not (_isPermittedSessionValue atom)
         ] ++
         [ mkOtherTupleInSessionError d pr
         | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
-        , "SESSION" `elem` aliases src || "SESSION" `elem` aliases tgt
+        , isSESSION src || isSESSION tgt
         , pr <- Set.elems ps
-        , (name src == "SESSION" && not (_isPermittedSessionValue (apLeft pr)))
+        , (isSESSION src && not (_isPermittedSessionValue (apLeft pr)))
           ||
-          (name tgt == "SESSION" && not (_isPermittedSessionValue (apRight pr)))
+          (isSESSION tgt && not (_isPermittedSessionValue (apRight pr)))
         ]
         of
     [] -> return ()
@@ -270,8 +270,8 @@ pCtx2aCtx env
                      , ctxrrules = allRoleRules
                      , ctxreprs = representationOf contextInfo
                      , ctxvs = viewdefs
-                     , ctxgs = map (pClassify2aClassify conceptmap) p_gens
-                     , ctxgenconcs = onlyUserConcepts contextInfo (concGroups ++ map (:[]) (soloConcs contextInfo))
+                     , ctxgs = catMaybes . map (pClassify2aClassify conceptmap) $ p_gens
+                     , ctxgenconcs = onlyUserConcepts contextInfo (concGroups ++ map (:[]) (Set.toList $ soloConcs contextInfo))
                      , ctxifcs = interfaces
                      , ctxps = purposes
                      , ctxmetas = p_metas
@@ -310,12 +310,12 @@ pCtx2aCtx env
                     , multiKernels = multitypologies
                     , reprList = allReprs
                     , declDisambMap = declMap
-                    , soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs) -- SJ: Does Haskell have a filter on sets? Shouldn't `soloConcs` be a set?
+                    , soloConcs = Set.filter (not . isInSystem genLattice) allConcs
                     , gens_efficient = genLattice
                     , conceptMap = conceptmap
                     }
         where
-          gns = pClassify2aClassify conceptmap <$> allGens
+          gns = catMaybes $ pClassify2aClassify conceptmap <$> allGens
           -- | Two concepts are connected if there is a path between them consisting of ISA or IS-links.
           connectedConcepts :: [[A_Concept]] -- a partitioning of all A_Concepts where every two connected concepts are in the same partition.
           connectedConcepts = connect [] (map (Set.elems . concs) gns)
@@ -422,7 +422,7 @@ pCtx2aCtx env
                    isTrivial g =
                       case g of 
                         Isa{} -> gengen g == genspc g
-                        IsE{} -> genrhs g == [genspc g]
+                        IsE{} -> genrhs g == genspc g NE.:| []
                isInvolved :: AClassify -> Bool
                isInvolved gn = not . null $ concs gn `Set.intersection` Set.fromList cs
 
@@ -468,18 +468,23 @@ pCtx2aCtx env
     genLattice :: Op1EqualitySystem Type
     genLattice = optimize1 (foldr addEquality emptySystem completeRules)
 
-    pClassify2aClassify :: ConceptMap -> PClassify -> AClassify
+    pClassify2aClassify :: ConceptMap -> PClassify -> Maybe AClassify
     pClassify2aClassify fun pg = 
           case NE.tail (generics pg) of
-            [] -> Isa{ genpos = origin pg
-                     , gengen = pCpt2aCpt fun . NE.head $ generics pg
-                     , genspc = pCpt2aCpt fun $ specific pg
-                     }
-            _  -> IsE{ genpos = origin pg
-                     , genrhs = NE.toList . NE.map (pCpt2aCpt fun) $ generics pg
-                     , genspc = pCpt2aCpt fun $ specific pg
-                     }
-
+            [] -> case filter (/= specCpt) [pCpt2aCpt fun . NE.head $ generics pg] of
+                    []  -> Nothing
+                    h:_ -> Just Isa{ genpos = origin pg
+                                    , gengen = h
+                                    , genspc = specCpt
+                                    }
+            _  -> case NE.filter (/= specCpt) . fmap (pCpt2aCpt fun) $ generics pg of
+                    []  -> Nothing
+                    h:tl -> Just IsE
+                             { genpos = origin pg
+                             , genrhs = h NE.:| tl
+                             , genspc = specCpt
+                             }
+       where specCpt = pCpt2aCpt fun $ specific pg
     userConcept :: P_Concept -> Type
     userConcept P_ONE = BuiltIn TypeOfOne
     userConcept x     = UserConcept (name x)
@@ -822,7 +827,7 @@ pCtx2aCtx env
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
                    , ptrls = Set.fromList rules'
-                   , ptgns = pClassify2aClassify (conceptMap ci) <$> (pt_gns ppat)
+                   , ptgns = catMaybes $ pClassify2aClassify (conceptMap ci) <$> (pt_gns ppat)
                    , ptdcs = Set.fromList relations
                    , ptups = pops' 
                    , ptids = keys'

@@ -154,7 +154,10 @@ instance Unique A_Pair where
               ++ showUnique (lnkLeft x)
               ++ showUnique (lnkRight x)
 concDefs :: FSpec -> A_Concept -> [ConceptDef]
-concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, T.pack (name cdef) `elem` aliases c ]
+concDefs fSpec c = 
+  case c of
+    ONE -> []
+    PlainConcept{} -> [ cdef | cdef<-conceptDefs fSpec, T.pack (name cdef) `elem` aliases c ]
 
 instance ConceptStructure FSpec where
   concs         = allConcepts

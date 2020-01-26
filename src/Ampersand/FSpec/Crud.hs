@@ -37,7 +37,7 @@ getCrudObjectsForInterface crudInfo ifc =
 mkCrudInfo :: A_Concepts -> Relations -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
-  where allConcs = [ c | c <- Set.elems allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
+  where allConcs = [ c | c <- Set.elems allConceptsPrim, not $ isONE c || isSESSION c ]
         nonCrudConcpts = (map source . filter isUni . filter isSur . map EDcD . Set.elems $ decls) ++
                          (map target . filter isInj . filter isTot . map EDcD . Set.elems $ decls)
         crudCncpts = allConcs L.\\ nonCrudConcpts

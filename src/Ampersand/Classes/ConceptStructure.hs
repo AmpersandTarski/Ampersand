@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
 import           Ampersand.ADL1
@@ -204,7 +205,7 @@ instance ConceptStructure (PairViewSegment Expression) where
 
 instance ConceptStructure AClassify where
   concs g@Isa{}  = Set.fromList [gengen g,genspc g]
-  concs g@IsE{}  = Set.singleton (genspc g) `Set.union` Set.fromList (genrhs g)
+  concs g@IsE{}  = Set.singleton (genspc g) `Set.union` (Set.fromList . NE.toList $ genrhs g)
   expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n"++show g)
 
 instance ConceptStructure Conjunct where

@@ -559,7 +559,7 @@ instance ShowHS AClassify where
  showHS _ _ gen =
    case gen of
      Isa{} -> "Isa "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
-     IsE{} -> "IsE "++showHSName (genspc gen)++" ["++L.intercalate ", " (map showHSName (genrhs gen))++"] "
+     IsE{} -> "IsE "++showHSName (genspc gen)++" ["++L.intercalate ", " (NE.toList . fmap showHSName $ genrhs gen)++"] "
 
 instance ShowHSName Relation where
  showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- user defined relations
