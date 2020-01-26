@@ -321,9 +321,9 @@ instance Ord AClassify where
  compare a b = case (a,b) of
    (Isa{},Isa{}) -> compare (genspc a,gengen a) (genspc b,gengen b)
    (Isa{},IsE{}) -> GT  
-   (IsE{},Isa{}) -> let fun = L.nub . L.sort . genrhs 
+   (IsE{},IsE{}) -> let fun = NE.nub . NE.sort . genrhs 
                     in compare (genspc a,fun a) (genspc b,fun b)
-   (IsE{},IsE{}) -> LT 
+   (IsE{},Isa{}) -> LT 
 instance Eq AClassify where
   a == b = compare a b == EQ
 instance Traced AClassify where
