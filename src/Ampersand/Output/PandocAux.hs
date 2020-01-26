@@ -30,7 +30,8 @@ import           RIO.Char hiding    (Space)
 import qualified RIO.Text as T
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.Text.Partial as Partial (replace)
-import           System.FilePath  -- (combine,addExtension,replaceExtension)
+import           System.Directory
+import           System.FilePath
 import           Text.Pandoc
 import           Text.Pandoc.Builder
 import           Text.Pandoc.PDF (makePDF)
@@ -149,6 +150,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
        res <- f writerOptions thePandoc -- >>= handleError
        let content :: LByteString
            content = res
+       liftIO $ createDirectoryIfMissing True (takeDirectory (outputFile env))
        BL.writeFile (outputFile env) content
      TextWriter f -> case view fspecFormatL env of
         Fpdf -> do
@@ -172,7 +174,9 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
        FPandoc -> "native"
        fmt     -> map toLower . drop 1 . show $ fmt
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
-    writeFnBinary f   = liftIO . BL.writeFile (UTF8.encodePath f)
+    writeFnBinary f bs = do
+        liftIO $ createDirectoryIfMissing True (takeDirectory f)
+        liftIO . BL.writeFile (UTF8.encodePath f) $ bs
     
     writerOptions :: WriterOptions
     writerOptions = def
@@ -193,10 +197,9 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
         replaceAll :: (Text,Text) -> Text -> Text
         replaceAll (needle,replacement) = Partial.replace needle replacement
         substMap :: [(Text,Text)]
-        -- This substitusions are required so we can use the 
-        -- templates from pandoc unchanged. Without this substitutions
-        -- all kind of crazy errors occur with LaTeX, and possibly other
-        -- templates as well.
+        -- The following substitutions are required to use the 
+        -- templates from pandoc unchanged. Without them we get
+        -- errors with LaTeX, and possibly other templates.
         substMap = 
             [ ("\r\n$if("   ,"$if("   )        
             , ("$endif$\r\n","$endif$")
