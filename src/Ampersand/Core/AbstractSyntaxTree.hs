@@ -34,6 +34,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Expression(..)
  , getExpressionRelation
  , A_Concept(..), A_Concepts
+ , ShowWithAliases(..)
  , Meaning(..)
  , A_RoleRule(..)
  , Representation(..), TType(..)
@@ -831,11 +832,22 @@ instance Named A_Concept where
   name ONE = "ONE"
 
 instance Show A_Concept where
-  show ONE = name ONE
-  show cpt@PlainConcept{aliases = names} =
+  show = name
+-- | special type of Show, for types that can have aliases. Its purpose is
+--   to use when giving feedback to the ampersand modeler, in cases aliases 
+--   are used. 
+class Show a => ShowWithAliases a where
+  showWithAliases :: a -> String
+  -- Default is to just use show. This makes it easier to use showAliases 
+  -- at more places, even if there is not a specific implementation 
+  -- for it
+  showWithAliases = show
+instance ShowWithAliases A_Concept where
+  showWithAliases ONE = name ONE
+  showWithAliases cpt@PlainConcept{aliases = names} =
      case NE.tail names of
        [] ->  name cpt
-       alies -> name cpt <> "("<>(T.unpack $ T.intercalate ", " alies)<>")"
+       xs -> name cpt <> "("<>(T.unpack $ T.intercalate ", " xs)<>")"
 
 instance Unique (A_Concept, PAtomValue) where
   showUnique (c,val) = show val++"["++showUnique c++"]"
@@ -845,6 +857,9 @@ instance Hashable Signature
 instance Show Signature where
   show (Sign s t) =
      "[" ++ show s ++ "*" ++ show t ++ "]"
+instance ShowWithAliases Signature where
+  showWithAliases (Sign s t) =
+     "[" ++ showWithAliases s ++ "*" ++ showWithAliases t ++ "]"
 instance Unique Signature where
   showUnique (Sign s t) = "[" ++ showUnique s ++ "*" ++ showUnique t ++ "]"
 instance HasSignature Signature where

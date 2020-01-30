@@ -394,19 +394,8 @@ pCtx2aCtx env
           mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs = 
             case filter (not . isSpecific) cs of
-               []  -> -- there must be at least one cycle in the CLASSIFY statements.
-                      case L.nub cycles of
-                        []  -> fatal $ "No cycles found!"<> show cs
-                        x:xs -> mkCyclesInGensError (x NE.:| xs)
-                        where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
-                                where
-                                  f :: AClassify -> [AClassify]
-                                  f g = [gn | gn <- gns
-                                            , gn /= g
-                                            , genspc g `elem` concs gn
-                                        ]
-                                  hasMultipleSpecifics :: [AClassify]-> Bool
-                                  hasMultipleSpecifics gs = length (L.nub (map genspc gs)) > 1
+               []  -> fatal "Every typology must have at least one specific concept."
+                      -- When this fatal occurs, there is something wrong with detecting cycles in the p-structure.
                [r] -> pure  
                           Typology { tyroot = r
                                    , tyCpts = reverse . sortSpecific2Generic gns $ cs
