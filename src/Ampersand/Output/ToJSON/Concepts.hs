@@ -79,7 +79,7 @@ instance JSON A_Concept TableCols where
  fromAmpersand _ fSpec cpt = TableCols
   { tclJSONname    = name cptTable
   , tclJSONcols    = case L.nub . map fst $ cols of
-                       [t] -> if name t == name cptTable
+                       [t] -> if t == cptTable
                               then map (attName . snd) cols
                               else fatal $ "Table names should match: "++name t++" "++name cptTable++"." 
                        _   -> fatal "All concepts in a typology should be in exactly one table."

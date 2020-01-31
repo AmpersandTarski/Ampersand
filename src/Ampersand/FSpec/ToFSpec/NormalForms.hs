@@ -1,12 +1,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.FSpec.ToFSpec.NormalForms
-  (delta,conjNF,disjNF,cfProof,dfProof,simplify
-  ,cfProofs, dfProofs  -- these are for confluence testing.
-  , makeAllConjs, conjuncts
+  ( conjNF
+  , cfProof
+  , dfProofs  -- these are for confluence testing.
+  , makeAllConjs
+  , conjuncts
   ) where
   
 import           Ampersand.ADL1
-import           Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
+import           Ampersand.ADL1.P2A_Converters (pCpt2aCpt,ConceptMap)
 import           Ampersand.Basics
 import           Ampersand.Classes.Relational
 import           Ampersand.Core.ShowAStruct
@@ -36,8 +38,8 @@ Ideas for future work:
 -- The following was built for the purpose of testing confluence.
 -- These functions produce all derivations of results from the normalizer.
 -- A useful side effect is that it implicitly tests for soundness.
-cfProofs, dfProofs :: Expression -> [(Expression, Proof Expression)]
-(cfProofs, dfProofs) = (prfs False, prfs True)
+dfProofs :: ConceptMap -> Expression -> [(Expression, Proof Expression)]
+dfProofs cptMap = prfs True
  where
    prfs :: Bool -> Expression -> [(Expression, Proof Expression)]
    prfs dnf expr
@@ -48,7 +50,7 @@ cfProofs, dfProofs :: Expression -> [(Expression, Proof Expression)]
                  [ (t, (term, [showStep dstep], "<=>"):deriv)
                  | dstep<-dsteps, (t,deriv)<-f (rhs dstep)
                  ]
-                 where dsteps = [ dstep | dstep<-dSteps tceDerivRules term, w (rhs dstep)<w term]
+                 where dsteps = [ dstep | dstep<-dSteps (tceDerivRules cptMap) term, w (rhs dstep)<w term]
         w = weightNF dnf -- the weight function for disjunctive normal form.
         showStep dstep = " weight: "++(show . w . lhs) dstep++",   "++showIT tmpl++" = "++showIT stp++"  with unifier: "++showIT unif
                          where (tmpl,unif,stp) = rul dstep
@@ -74,8 +76,8 @@ data RTerm = RIsc {rTermSet :: Set RTerm}  -- intersection is associative and co
            | RFlp {rTermUny :: RTerm}
            | RId  A_Concept
            | RVee A_Concept A_Concept
-           | RAtm PSingleton A_Concept
-           | RVar String String String  -- relation name, source name, target name.
+           | RAtm PAtomValue A_Concept
+           | RVar String A_Concept A_Concept  -- relation name, source name, target name.
            | RConst Expression
            deriving (Eq,Ord,Show)
 
@@ -393,6 +395,26 @@ dSteps drs x = dStps x
            stepTerms :: RTerm -> NE.NonEmpty DerivRule -> [RTerm]
            stepTerms template cl  -- Only select rules with bindings within the template. Otherwise, we would have to "invent" bindings.
             = [term' | rule<-NE.toList cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template ]
+           vars :: RTerm -> Set String
+           vars (RIsc rs)     = (Set.unions . map vars . Set.toList) rs
+           vars (RUni rs)     = (Set.unions . map vars . Set.toList) rs
+           vars (RDif l r)    = vars l `Set.union` vars r
+           vars (RCpl e)      = vars e
+           vars (RDia l r)    = vars l `Set.union` vars r
+           vars (RLrs l r)    = vars l `Set.union` vars r
+           vars (RRrs l r)    = vars l `Set.union` vars r
+           vars (RRad rs)     = foldr (Set.union . vars) Set.empty rs
+           vars (RCps rs)     = foldr (Set.union . vars) Set.empty rs
+           vars (RPrd rs)     = foldr (Set.union . vars) Set.empty rs
+           vars (RKl0 e)      = vars e
+           vars (RKl1 e)      = vars e
+           vars (RFlp e)      = vars e
+           vars (RId  c)      = Set.fromList [name c]
+           vars (RVee s t)    = Set.fromList [name s, name t]
+           vars (RVar r s t)  = Set.fromList [r, name s, name t]
+           vars  RConst{}     = Set.empty
+           vars  RAtm{}       = Set.empty
+
 
 {-
      showMatchableRules :: [(RTerm,[RTerm])] -> String
@@ -423,65 +445,6 @@ instance HasSignature RTerm where
   sign RVar{}        = fatal "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
   sign (RConst e)    = sign e
 
--- In order to write deriviation rules in the Ampersand syntax, RTerms are obtained by means of the (already available) Ampersand parser.
--- For that reason, we need a function term2rTerm to translate a term obtained by parsing (type: Term TermPrim) to a RTerm.
-term2rTerm :: Term TermPrim -> RTerm
-term2rTerm term
-   = if isValid result then result else fatal ("term2rTerm has produced an invalid result: "++showIT result)
-     where
-      result
-       = case term of
-           PEqu o l r               -> term2rTerm (PIsc o (PInc o l r) (PInc o r l))
-           PInc o l r               -> term2rTerm (PUni o (PCpl o l) r)
-           PIsc _ l r               -> combSet RIsc (lSet `Set.union` rSet)
-                                       where lSet = case term2rTerm l of
-                                                      RIsc terms -> terms
-                                                      trm        -> Set.singleton trm
-                                             rSet = case term2rTerm r of
-                                                      RIsc terms -> terms
-                                                      trm        -> Set.singleton trm
-           PUni _ l r               -> combSet RUni (lSet `Set.union` rSet)
-                                       where lSet = case term2rTerm l of
-                                                      RUni terms -> terms
-                                                      trm        -> Set.singleton trm
-                                             rSet = case term2rTerm r of
-                                                      RUni terms -> terms
-                                                      trm        -> Set.singleton trm
-           PDif _ l r               -> RDif (term2rTerm l) (term2rTerm r)
-           PCpl _ e                 -> RCpl (term2rTerm e)
-           PDia _ l r               -> RDia (term2rTerm l) (term2rTerm r)
-           PLrs _ l r               -> RLrs (term2rTerm l) (term2rTerm r)
-           PRrs _ l r               -> RRrs (term2rTerm l) (term2rTerm r)
-           PRad _ l r               -> RRad (lLst++rLst)
-                                       where lLst = case term2rTerm l of
-                                                      RRad terms -> terms
-                                                      trm        -> [trm]
-                                             rLst = case term2rTerm r of
-                                                      RRad terms -> terms
-                                                      trm        -> [trm]
-           PCps _ l r               -> RCps (lLst++rLst)
-                                       where lLst = case term2rTerm l of
-                                                      RCps terms -> terms
-                                                      trm        -> [trm]
-                                             rLst = case term2rTerm r of
-                                                      RCps terms -> terms
-                                                      trm        -> [trm]
-           PPrd _ l r               -> RPrd (lLst++rLst)
-                                       where lLst = case term2rTerm l of
-                                                      RPrd terms -> terms
-                                                      trm        -> [trm]
-                                             rLst = case term2rTerm r of
-                                                      RPrd terms -> terms
-                                                      trm        -> [trm]
-           PKl0 _ e                 -> RKl0 (term2rTerm e)
-           PKl1 _ e                 -> RKl1 (term2rTerm e)
-           PFlp _ e                 -> RFlp (term2rTerm e)
-           PBrk _ e                 -> term2rTerm e
-           Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (name (pSrc sgn)) (name (pTgt sgn))
-           Prim (Pid _ c)           -> RId  (pCpt2aCpt c)
-           Prim (Pfull _ s t)       -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
-           Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt c)
-           _                        -> fatal ("Cannot cope with untyped "++showP term++" in a dRule inside the normalizer.")
 
 expr2RTerm :: Expression -> RTerm
 expr2RTerm expr
@@ -576,7 +539,7 @@ rTerm2expr term
      RKl0 e     -> EKl0$ rTerm2expr e
      RKl1 e     -> EKl1$ rTerm2expr e
      RFlp e     -> EFlp$ rTerm2expr e
-     RVar r s t -> EDcD (makeDecl r (Sign (makeConcept s) (makeConcept t)))
+     RVar r s t -> EDcD (makeDecl r (Sign s t))
      RId  c     -> EDcI c
      RVee s t   -> EDcV (Sign s t)
      RAtm a c   -> EMp1 a c
@@ -621,7 +584,7 @@ instance ShowIT RTerm where
           RKl1 e     -> wrap i 9 (showExpr 9 e++closK1)
           RFlp e     -> wrap i 9 (showExpr 9 e++flp')
           RCpl e     -> wrap i 9 (compl (showExpr 10 e))
-          RVar r s t -> r++lbr++s++star++t++rbr
+          RVar r s t -> r++lbr++name s++star++name t++rbr
           RConst e   -> wrap i i (showA e)
           RId c      -> "I"++lbr++name c++rbr
           RVee s t   -> "V"++lbr++name s++star++name t++rbr
@@ -634,26 +597,6 @@ instance ShowIT RTerm where
    unVar (RVar r _ _) = r
    unVar _ = fatal "Illegal call on unVar"
 -}
-
-vars :: RTerm -> Set String
-vars (RIsc rs)     = (Set.unions . map vars . Set.toList) rs
-vars (RUni rs)     = (Set.unions . map vars . Set.toList) rs
-vars (RDif l r)    = vars l `Set.union` vars r
-vars (RCpl e)      = vars e
-vars (RDia l r)    = vars l `Set.union` vars r
-vars (RLrs l r)    = vars l `Set.union` vars r
-vars (RRrs l r)    = vars l `Set.union` vars r
-vars (RRad rs)     = foldr (Set.union . vars) Set.empty rs
-vars (RCps rs)     = foldr (Set.union . vars) Set.empty rs
-vars (RPrd rs)     = foldr (Set.union . vars) Set.empty rs
-vars (RKl0 e)      = vars e
-vars (RKl1 e)      = vars e
-vars (RFlp e)      = vars e
-vars (RId  c)      = Set.fromList [name c]
-vars (RVee s t)    = Set.fromList [name s, name t]
-vars (RVar r s t)  = Set.fromList [r, s, t]
-vars  RConst{}     = Set.empty
-vars  RAtm{}       = Set.empty
 
 data DerivRule = DEquiR { lTerm :: RTerm  -- equivalence rule
                         , rTerm :: RTerm
@@ -673,10 +616,77 @@ data DerivStep = DStep { lhs :: RTerm
                        , rhs :: RTerm
                        }
 
-dRule :: Term TermPrim -> [DerivRule]
-dRule (PEqu _ l r) = [DEquiR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
-dRule (PInc _ l r) = [DInclR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
-dRule term         = fatal ("Illegal use of dRule with term "++showP term)
+dRule :: ConceptMap -> Term TermPrim -> [DerivRule]
+dRule cptMap term0 = case term0 of
+  (PEqu _ l r) -> [DEquiR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
+  (PInc _ l r) -> [DInclR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
+  _  ->  fatal ("Illegal use of dRule with term "++showP term0)
+-- In order to write deriviation rules in the Ampersand syntax, RTerms are obtained by means of the (already available) Ampersand parser.
+-- For that reason, we need a function term2rTerm to translate a term obtained by parsing (type: Term TermPrim) to a RTerm.
+  where
+    term2rTerm :: Term TermPrim -> RTerm
+    term2rTerm term1 = if isValid result
+                       then result 
+                       else fatal ("term2rTerm has produced an invalid result: "++showIT result)
+     where
+      result
+       = case term1 of
+           PEqu o l r               -> term2rTerm (PIsc o (PInc o l r) (PInc o r l))
+           PInc o l r               -> term2rTerm (PUni o (PCpl o l) r)
+           PIsc _ l r               -> combSet RIsc (lSet `Set.union` rSet)
+                                       where lSet = case term2rTerm l of
+                                                      RIsc terms -> terms
+                                                      trm        -> Set.singleton trm
+                                             rSet = case term2rTerm r of
+                                                      RIsc terms -> terms
+                                                      trm        -> Set.singleton trm
+           PUni _ l r               -> combSet RUni (lSet `Set.union` rSet)
+                                       where lSet = case term2rTerm l of
+                                                      RUni terms -> terms
+                                                      trm        -> Set.singleton trm
+                                             rSet = case term2rTerm r of
+                                                      RUni terms -> terms
+                                                      trm        -> Set.singleton trm
+           PDif _ l r               -> RDif (term2rTerm l) (term2rTerm r)
+           PCpl _ e                 -> RCpl (term2rTerm e)
+           PDia _ l r               -> RDia (term2rTerm l) (term2rTerm r)
+           PLrs _ l r               -> RLrs (term2rTerm l) (term2rTerm r)
+           PRrs _ l r               -> RRrs (term2rTerm l) (term2rTerm r)
+           PRad _ l r               -> RRad (lLst++rLst)
+                                       where lLst = case term2rTerm l of
+                                                      RRad terms -> terms
+                                                      trm        -> [trm]
+                                             rLst = case term2rTerm r of
+                                                      RRad terms -> terms
+                                                      trm        -> [trm]
+           PCps _ l r               -> RCps (lLst++rLst)
+                                       where lLst = case term2rTerm l of
+                                                      RCps terms -> terms
+                                                      trm        -> [trm]
+                                             rLst = case term2rTerm r of
+                                                      RCps terms -> terms
+                                                      trm        -> [trm]
+           PPrd _ l r               -> RPrd (lLst++rLst)
+                                       where lLst = case term2rTerm l of
+                                                      RPrd terms -> terms
+                                                      trm        -> [trm]
+                                             rLst = case term2rTerm r of
+                                                      RPrd terms -> terms
+                                                      trm        -> [trm]
+           PKl0 _ e                 -> RKl0 (term2rTerm e)
+           PKl1 _ e                 -> RKl1 (term2rTerm e)
+           PFlp _ e                 -> RFlp (term2rTerm e)
+           PBrk _ e                 -> term2rTerm e
+           Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (pCpt2aCpt cptMap (pSrc sgn)) (pCpt2aCpt cptMap (pTgt sgn))
+           Prim (Pid _ c)           -> RId  (pCpt2aCpt cptMap c)
+           Prim (Pfull _ s t)       -> RVee (pCpt2aCpt cptMap s) (pCpt2aCpt cptMap t)
+           Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt cptMap c)
+           Prim (PI _)              -> fatal ("Cannot cope with untyped "++showP term1++" in a dRule inside the normalizer.")
+           Prim (Patm _ _ Nothing)  -> fatal ("Cannot cope with untyped "++showP term1++" in a dRule inside the normalizer.")
+           Prim (PVee _)            -> fatal ("Cannot cope with untyped "++showP term1++" in a dRule inside the normalizer.")
+           Prim (PNamedR (PNamedRel _ _ Nothing)) 
+                                    -> fatal ("Cannot cope with untyped "++showP term1++" in a dRule inside the normalizer.")
+
 
 weightNF :: Bool -> RTerm -> Integer
 weightNF dnf = w
@@ -782,7 +792,7 @@ matches term expr
      (RCpl e,         RCpl e')    -> matches e e'
      (RId  c,         RId _     ) -> [Set.fromList [(name c,expr)]]
      (RVee s t,       RVee s' t') -> [Set.fromList [(name s,RId s'), (name t,RId t')]]
-     (RVar v s t,     _         ) -> [Set.fromList [(v,expr),(s,RId (source expr)),(t,RId (target expr))]]
+     (RVar v s t,     _         ) -> [Set.fromList [(v,expr),(name s,RId (source expr)),(name t,RId (target expr))]]
      (RAtm a c,       RAtm a' c') -> [Set.singleton (name c,RId c') | a==a']
      (RConst e,       RConst e' ) -> [Set.empty | e==e']
      (_, _)                       -> []
@@ -951,8 +961,8 @@ safezip _ _ = fatal "Zip of two lists with different lengths!"
 -- If rules are ill formed, this will result in fatal errors.
 
 -- Type conserving equivalences: The following equivalences have an identical signature on either side.
-tceDerivRules :: [DerivRule]
-tceDerivRules = concatMap (dRule.parseRule)
+tceDerivRules :: ConceptMap -> [DerivRule]
+tceDerivRules cptMap = concatMap (dRule cptMap .parseRule)
 --    [ "r[A*B]\\/s[A*B] = s[A*B]\\/r[A*B]"                         --  Commutativity of \/
 --    , "r[A*B]/\\s[A*B] = s[A*B]/\\r[A*B]"                         --  Commutativity of /\
 --    , "(r[A*B]\\/s[A*B])\\/q[A*B] = r[A*B]\\/(s[A*B]\\/q[A*B])"   --  Associativity of \/
@@ -1035,7 +1045,7 @@ taeDerivRules = concatMap (dRule.parseRule)
  , "(r[A*B]\\q[A*C])\\/-s[B*C] = -(r[A*B];s[B*C])\\/q[A*C]"    -- T{ (r\\q)\\/-s)} = [B*C] ; T{ -(r;s)\\/q} = [A*C] ; remove right residual (\\)
  ]
 -}
-
+{-
 -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
 delta :: Signature -> Expression
 delta sgn
@@ -1056,7 +1066,7 @@ delta sgn
               , decpat  = Nothing
               , dechash = hash sgn
               }
-
+-}
 {- Normalization of process algebra clauses -}
 
 type Proof a = [(a, [String], String)]

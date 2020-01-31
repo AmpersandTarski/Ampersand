@@ -55,7 +55,7 @@ instance JSON Rule JsonRule where
  fromAmpersand env fSpec rule = JsonRule
   { rulJSONname        = rrnm         rule
   , rulJSONruleAdl     = showA.formalExpression $ rule
-  , rulJSONorigin      = show.rrfps     $ rule
+  , rulJSONorigin      = show.origin $ rule
   , rulJSONmeaning     = showMeaning
   , rulJSONmessage     = showMessage
   , rulJSONsrcConceptId = idWithoutType . source . formalExpression $ rule

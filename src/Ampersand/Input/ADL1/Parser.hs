@@ -313,7 +313,7 @@ pRepresentation :: AmpParser Representation
 pRepresentation
   = Repr <$> currPos
          <*  pKey "REPRESENT"
-         <*> pConceptName `sepBy1` pComma
+         <*> pConceptRef `sepBy1` pComma
          <*  pKey "TYPE"
          <*> pAdlTType
 --- AdlTType = ...<enumeration>
@@ -530,7 +530,7 @@ pInterfaceIsAPI = ("API" ==) <$> pInterfaceKey
 pPopulation :: AmpParser P_Population -- ^ The population parser
 pPopulation = pKey "POPULATION" *> (
                   P_RelPopu Nothing Nothing <$> currPos <*> pNamedRel <* pKey "CONTAINS" <*> pContent <|>
-                  P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
+                  P_CptPopu <$> currPos <*> pConceptRef <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 --TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
@@ -656,7 +656,7 @@ pRelationRef      = PNamedR <$> pNamedRel
                           pfull orig Nothing = PVee orig
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
-pSingleton :: AmpParser PSingleton
+pSingleton :: AmpParser PAtomValue
 pSingleton = value2PAtomValue <$> currPos <*> 
                  (             pAtomValInPopulation True
                   <|> pBraces (pAtomValInPopulation False)
@@ -708,7 +708,7 @@ pConceptRef = PCpt <$> pConceptName
 
 --- ConceptOneRef ::= 'ONE' | ConceptRef
 pConceptOneRef :: AmpParser P_Concept
-pConceptOneRef = (P_Singleton <$ pKey "ONE") <|> pConceptRef
+pConceptOneRef = (P_ONE <$ pKey "ONE") <|> pConceptRef
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String

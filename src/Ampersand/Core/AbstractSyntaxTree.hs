@@ -3,6 +3,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
@@ -33,6 +34,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Expression(..)
  , getExpressionRelation
  , A_Concept(..), A_Concepts
+ , ShowWithAliases(..)
  , Meaning(..)
  , A_RoleRule(..)
  , Representation(..), TType(..)
@@ -50,14 +52,14 @@ module Ampersand.Core.AbstractSyntaxTree (
  , SignOrd(..), Type(..), typeOrConcept
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
- , makeConcept
+ , makeConceptMap, ConceptMap
  , aavstr
  ) where
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree 
     ( Meta(..)
     , Role(..)
-    , ConceptDef
+    , ConceptDef, P_Concept(..), mkPConcept, PClassify(specific,generics)
     , Origin(..)
     , maybeOrdering
     , Traced(..)
@@ -65,7 +67,7 @@ import           Ampersand.Core.ParseTree
     , PairView(..)
     , PairViewSegment(..)
     , Prop(..), Props
-    , Representation(..), TType(..), PAtomValue(..), PSingleton
+    , Representation(..), TType(..), PAtomValue(..)
     )
 import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import           Data.Default       (Default(..))
@@ -224,13 +226,9 @@ data Relation = Relation
       } deriving (Typeable, Data)
 
 instance Eq Relation where
-  d == d' = dechash d == dechash d' && decnm d == decnm d' && decsgn d==decsgn d'
-
+  a == b = compare a b == EQ
 instance Ord Relation where
-  compare a b =
-    if name a == name b
-    then compare (sign a) (sign b)
-    else compare (name a) (name b)
+  compare a b = compare (name a, sign a) (name b, sign b)
 instance Unique Relation where
   showUnique d =
     name d++showUnique (decsgn d)
@@ -317,16 +315,16 @@ data AClassify =
                  }
            | IsE { genpos :: Origin
                  , genspc :: A_Concept      -- ^ specific concept
-                 , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
+                 , genrhs :: NE.NonEmpty A_Concept    -- ^ concepts of which the conjunction is equivalent to the specific concept
                  } deriving (Typeable)
 instance Ord AClassify where
 -- subjective choice: Isa > IsE
  compare a b = case (a,b) of
    (Isa{},Isa{}) -> compare (genspc a,gengen a) (genspc b,gengen b)
    (Isa{},IsE{}) -> GT  
-   (IsE{},Isa{}) -> let fun = L.nub . L.sort . genrhs 
+   (IsE{},IsE{}) -> let fun = NE.nub . NE.sort . genrhs 
                     in compare (genspc a,fun a) (genspc b,fun b)
-   (IsE{},IsE{}) -> LT 
+   (IsE{},Isa{}) -> LT 
 instance Eq AClassify where
   a == b = compare a b == EQ
 instance Traced AClassify where
@@ -335,19 +333,19 @@ instance Unique AClassify where
   showUnique a =
     case a of
       Isa{} -> showUnique (genspc a)++" ISA "++showUnique (gengen a)
-      IsE{} -> showUnique (genspc a)++" IS "++L.intercalate " /\\ " (map (showUnique) (genrhs a))
+      IsE{} -> showUnique (genspc a)++" IS "++L.intercalate " /\\ " (NE.toList . fmap showUnique $ genrhs a)
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
   show g =
     case g of
      Isa{} -> "CLASSIFY "++show (genspc g)++" ISA "++show (gengen g)
-     IsE{} -> "CLASSIFY "++show (genspc g)++" IS "++L.intercalate " /\\ " (map show (genrhs g))
+     IsE{} -> "CLASSIFY "++show (genspc g)++" IS "++L.intercalate " /\\ " (NE.toList . fmap show $ genrhs g)
 instance Hashable AClassify where
     hashWithSalt s g = 
       s `hashWithSalt` (genspc g)
         `hashWithSalt` (case g of 
                          Isa{} -> [genspc g]
-                         IsE{} -> L.sort $ genrhs g 
+                         IsE{} -> NE.toList . NE.sort $ genrhs g 
                        )
 
 data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type API?
@@ -360,7 +358,7 @@ data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type
                      } deriving Show
 
 instance Eq Interface where
-  s==s' = name s==name s'
+  a == b = compare a b == EQ
 instance Ord Interface where
   compare a b = compare (name a) (name b)
 instance Named Interface where
@@ -588,7 +586,7 @@ showValADL val =
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
 
-data ExplObj = ExplConceptDef ConceptDef
+data ExplObj = ExplConcept A_Concept
              | ExplRelation Relation
              | ExplRule String
              | ExplIdentityDef String
@@ -600,8 +598,8 @@ data ExplObj = ExplConceptDef ConceptDef
 instance Unique ExplObj where
   showUnique e = "Explanation of "++
     case e of
-     (ExplConceptDef cd) -> uniqueShowWithType cd
-     (ExplRelation d)    -> uniqueShowWithType d
+     (ExplConcept cpt)   -> uniqueShowWithType cpt
+     (ExplRelation rel)  -> uniqueShowWithType rel
      (ExplRule s)        -> "a Rule named "++s
      (ExplIdentityDef s) -> "an Ident named "++s
      (ExplViewDef s)     -> "a View named "++s
@@ -630,7 +628,7 @@ data Expression
       | EDcI A_Concept                 -- ^ Identity relation
       | EEps A_Concept Signature       -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Signature                 -- ^ Cartesian product relation
-      | EMp1 PSingleton A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
+      | EMp1 PAtomValue A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
       deriving (Eq, Ord, Show, Typeable, Generic, Data)
 instance Hashable Expression where
    hashWithSalt s expr =
@@ -803,10 +801,10 @@ getExpressionRelation expr = case getRelation expr of
 -- It is called Concept, meaning "type checking concept"
 
 data A_Concept
-   = PlainConcept { cpthash :: Int
-                  , cptnm :: Text  -- ^PlainConcept nm represents the set of instances cs by name nm.
+   = PlainConcept { aliases :: NE.NonEmpty Text 
+                    -- ^ List of names that the concept is refered to, in random order
                   }
-   | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
+   | ONE -- ^ The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     deriving (Typeable,Data,Ord,Eq)
 type A_Concepts = Set.Set A_Concept
 {- -- this is faster, so if you think Eq on concepts is taking a long time, try this..
@@ -819,29 +817,39 @@ instance Ord A_Concept where
 instance Eq A_Concept where
   (==) a b = compare a b == EQ
 
--- SJC TODO: put "makeConcept" in a monad or something, and number them consecutively to avoid hash collisions
 -}
   
-makeConcept :: String -> A_Concept
-makeConcept "ONE" = ONE
-makeConcept v = PlainConcept (hash v) (T.pack v)
-
 instance Unique A_Concept where
-  showUnique = name
+  showUnique = show
 instance Hashable A_Concept where
   hashWithSalt s cpt =
      s `hashWithSalt` (case cpt of
-                        PlainConcept{} -> (0::Int) `hashWithSalt` cpthash cpt
-                        ONE            -> 1::Int
+                        PlainConcept{} -> (0::Int) `hashWithSalt` NE.sort (aliases cpt)
+                        ONE          -> 1::Int
                       )
 instance Named A_Concept where
-  name PlainConcept{cptnm = nm} = T.unpack nm
+  name PlainConcept{aliases = names} = T.unpack . NE.head $ names
   name ONE = "ONE"
 
 instance Show A_Concept where
   show = name
+-- | special type of Show, for types that can have aliases. Its purpose is
+--   to use when giving feedback to the ampersand modeler, in cases aliases 
+--   are used. 
+class Show a => ShowWithAliases a where
+  showWithAliases :: a -> String
+  -- Default is to just use show. This makes it easier to use showAliases 
+  -- at more places, even if there is not a specific implementation 
+  -- for it
+  showWithAliases = show
+instance ShowWithAliases A_Concept where
+  showWithAliases ONE = name ONE
+  showWithAliases cpt@PlainConcept{aliases = names} =
+     case NE.tail names of
+       [] ->  name cpt
+       xs -> name cpt <> "("<>(T.unpack $ T.intercalate ", " xs)<>")"
 
-instance Unique (A_Concept, PSingleton) where
+instance Unique (A_Concept, PAtomValue) where
   showUnique (c,val) = show val++"["++showUnique c++"]"
 
 data Signature = Sign A_Concept A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
@@ -849,6 +857,9 @@ instance Hashable Signature
 instance Show Signature where
   show (Sign s t) =
      "[" ++ show s ++ "*" ++ show t ++ "]"
+instance ShowWithAliases Signature where
+  showWithAliases (Sign s t) =
+     "[" ++ showWithAliases s ++ "*" ++ showWithAliases t ++ "]"
 instance Unique Signature where
   showUnique (Sign s t) = "[" ++ showUnique s ++ "*" ++ showUnique t ++ "]"
 instance HasSignature Signature where
@@ -876,21 +887,22 @@ data ContextInfo =
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
      , reprList         :: [Representation] -- a list of all Representations
      , declDisambMap    :: Map.Map String (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
-     , soloConcs        :: [Type] -- types not used in any declaration
+     , soloConcs        :: Set.Set Type -- types not used in any declaration
      , gens_efficient   :: (Op1EqualitySystem Type) -- generalisation relations again, as a type system (including phantom types)
+     , conceptMap       :: ConceptMap -- a map that must be used to convert P_Concept to A_Concept
      } 
                        
 instance Named Type where
-  name v = case typeOrConcept v of
+  name v = case typeOrConcept dummy v of
                 Right (Just x) -> "Built-in type "++show x
                 Right Nothing  -> "The Generic Built-in type"
                 Left  x -> "Concept: "++name x
-
-typeOrConcept :: Type -> Either A_Concept (Maybe TType)
-typeOrConcept (BuiltIn TypeOfOne)  = Left  ONE
-typeOrConcept (UserConcept s)      = Left$ makeConcept s
-typeOrConcept (BuiltIn x)          = Right (Just x)
-typeOrConcept RepresentSeparator = Right Nothing
+    where dummy = makeConceptMap []
+typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
+typeOrConcept fun (BuiltIn TypeOfOne)  = Left . fun . mkPConcept $ "ONE"
+typeOrConcept fun (UserConcept s)      = Left . fun . mkPConcept $ s
+typeOrConcept _   (BuiltIn x)          = Right (Just x)
+typeOrConcept _   RepresentSeparator   = Right Nothing
 
 data Type = UserConcept String
           | BuiltIn TType
@@ -900,9 +912,9 @@ data Type = UserConcept String
 -- for faster comparison
 newtype SignOrd = SignOrd Signature
 instance Ord SignOrd where
-  compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
+  compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (a, b) (c, d)
 instance Eq SignOrd where
-  (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
+  a == b = compare a b == EQ
    
 
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
@@ -910,7 +922,7 @@ instance Eq SignOrd where
 --   the TType is known, enabling the correct transformation.
 --   To ensure that this function is not used too early, ContextInfo is required,
 --   which only exsists after disambiguation.
-safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
+safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
 safePSingleton2AAtomVal ci c val =
    case unsafePAtomVal2AtomValue typ (Just c) val of
      Left _ -> fatal . L.intercalate "\n  " $
@@ -1135,4 +1147,34 @@ unsafePAtomVal2AtomValue typ mCpt pav =
 data Typology = Typology { tyroot :: A_Concept -- the most generic concept in the typology 
                          , tyCpts :: [A_Concept] -- all concepts, from generic to specific
                          } deriving Show
+
+-- | Since we can have concepts with several aliasses, we need to have a 
+--   way to resolve these aliasses. In the A-structure, we do not want to
+--   bother: if `foo` is an alias of `bar`, there should only be one A_Concept
+--   that represents both `foo` and `bar`. We should be able to use a map
+--   whenever we need to know the A_Concept for a P_Concept.  
+type ConceptMap = P_Concept -> A_Concept
+
+makeConceptMap :: [PClassify] -> ConceptMap
+makeConceptMap gs = mapFunction
+   where
+     mapFunction :: P_Concept -> A_Concept
+     mapFunction pCpt = case L.nub . concat . filter inCycle $ getCycles edges of
+                          xs -> mkConcept pCpt xs
+       where
+         inCycle xs = pCpt `elem` xs
+     mkConcept :: P_Concept -> [P_Concept] -> A_Concept
+     mkConcept pCpt aliasses = 
+       case pCpt of
+         P_ONE  -> ONE
+         PCpt{} -> PlainConcept 
+           { aliases = sorted
+           }
+        where sorted = NE.nub . NE.sort . fmap T.pack $ ( name pCpt NE.:| map name aliasses)    
+     edges :: [(P_Concept, [P_Concept])]
+     edges = L.nub . map mkEdge . eqCl specific $ gs
+     mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])
+     mkEdge x = ( from , to's)
+       where from = specific . NE.head $ x
+             to's = L.nub . concat . fmap (toList . generics) $ x
 

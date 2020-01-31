@@ -62,8 +62,8 @@ grind grindInfo userFspec =
               . Set.toList . instances . fModel $ grindInfo
     populationFromPop :: Pop -> P_Population
     populationFromPop pop =
-             P_RelPopu { p_src  = Just $ name (source rel)
-                       , p_tgt  = Just $ name (target rel)
+             P_RelPopu { p_src  = Just $ aCpt2pCpt (source rel)
+                       , p_tgt  = Just $ aCpt2pCpt (target rel)
                        , pos    = orig
                        , p_nmdr = PNamedRel 
                             { pos    = orig

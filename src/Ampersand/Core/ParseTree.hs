@@ -18,7 +18,7 @@ module Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , Representation(..), TType(..)
    , P_Population(..)
-   , PAtomPair(..), PAtomValue(..), mkPair, PSingleton, makePSingleton
+   , PAtomPair(..), PAtomValue(..), mkPair, makePSingleton
    , P_BoxItemTermPrim, P_SubInterface, P_Interface(..), P_IClass(..), P_BoxItem(..), P_SubIfc(..)
    , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
@@ -28,7 +28,7 @@ module Ampersand.Core.ParseTree (
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
 
    , P_Concept(..), P_Sign(..)
-
+   , mkPConcept
    , PClassify(..)
 
    , P_Markup(..)
@@ -99,7 +99,7 @@ data Role = Role String
 instance Ord Role where
   compare a b = compare (name a) (name b)
 instance Eq Role where
- r == r' = name r == name r'
+  a == b = compare a b == EQ
 instance Named Role where
  name (Role nm) = nm
  name (Service nm) = nm
@@ -166,7 +166,7 @@ instance Named ConceptDef where
  name = cdcpt
 data Representation
   = Repr { pos  :: Origin
-         , reprcpts  :: NE.NonEmpty String  -- ^ the concepts
+         , reprcpts  :: NE.NonEmpty P_Concept  -- ^ the concepts
          , reprdom :: TType     -- the type of the concept the atom is in
          } deriving (Show)
 instance Traced Representation where
@@ -273,8 +273,8 @@ instance Flippable PAtomPair where
 -- compare a b = compare (psRaw a) (psRaw b)
 --instance Traced PSingleton where
 -- origin = pos
-type PSingleton = PAtomValue
-makePSingleton :: String -> PSingleton
+--type PSingleton = PAtomValue
+makePSingleton :: String -> PAtomValue
 makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
 --   PSingleton { psOrig =Origin "ParseTree.hs"
 --              , psRaw = s
@@ -355,7 +355,7 @@ data TermPrim
                                             --   to know whether an eqClass represents a concept, we only look at its witness
                                             --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
    | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-   | Patm Origin PSingleton (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values
+   | Patm Origin PAtomValue (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values
                                                   --   eg, when `123` is found by the parser, the list will contain both interpretations as
                                                   --   the String "123" or as Integer 123.
                                                   --   Since everything between the single quotes can allways be interpretated as a String,
@@ -582,22 +582,22 @@ data P_Markup =
               } deriving (Show,Eq) -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
-              , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
+  = P_RelPopu { p_src   :: Maybe P_Concept -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+              , p_tgt   :: Maybe P_Concept -- these src and tgt must be more specific than the P_NamedRel
               , pos     :: Origin       -- the origin
               , p_nmdr  :: P_NamedRel   -- the named relation
               , p_popps :: [PAtomPair]  -- the contents
               }
   | P_CptPopu { pos     :: Origin  -- the origin
-              , p_cnme  :: String  -- the name of a concept
+              , p_cpt  :: P_Concept  -- the concept the population belongs to
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
    deriving (Show) --For QuickCheck error messages only!
 --NOTE :: Do NOT make instance Eq P_Population, for this is causing problems with merging. 
 
 instance Named P_Population where
-    name P_RelPopu{p_nmdr = nr} = name nr
-    name P_CptPopu{p_cnme = nm} = nm
+    name P_RelPopu{p_nmdr = rel} = name rel
+    name P_CptPopu{p_cpt  = cpt} = name cpt
 
 instance Traced P_Population where
  origin = pos
@@ -812,14 +812,16 @@ instance Traced PPurpose where
 
 data P_Concept
    = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
-   | P_Singleton
+   | P_ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
       deriving (Eq,Ord)
 -- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
 -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
-
+mkPConcept :: String -> P_Concept
+mkPConcept "ONE" = P_ONE
+mkPConcept nm = PCpt {p_cptnm = nm}
 instance Named P_Concept where
  name PCpt {p_cptnm = nm} = nm
- name P_Singleton = "ONE"
+ name P_ONE = "ONE"
 
 instance Show P_Concept where
  show = name
@@ -923,7 +925,7 @@ mergeContexts ctx1 ctx2 =
                  (P_RelPopu{},P_RelPopu{}) -> p_src a == p_src b 
                                            && p_tgt a == p_tgt b
                                            && sameNamedRels (p_nmdr a) (p_nmdr b)
-                 (P_CptPopu{},P_CptPopu{}) -> p_cnme a == p_cnme b
+                 (P_CptPopu{},P_CptPopu{}) -> p_cpt a == p_cpt b
                  _  -> False
                where
                  sameNamedRels :: P_NamedRel -> P_NamedRel -> Bool
