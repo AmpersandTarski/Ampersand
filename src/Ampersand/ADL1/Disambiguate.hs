@@ -54,7 +54,7 @@ class Traversable d => Disambiguatable d where
 --          where (a', (ia,ic1)) = disambInfo cptMap a (ia1,ic2) -- here ic2 is top-down, so that is ok
 --                (b', (ic2,ib)) = disambInfo cptMap b (ic1,ib1)
   disambInfo :: 
-      ConceptMap -- required to turn P_Concepts into proper A_Concepts
+      ConceptMap -- required to turn P_Concepts into proper A_Concepts (see issue #999)
    -> d (TermPrim,DisambPrim)  --the thing that is disabmiguated
    -> Constraints -- the inferred types (from the environment = top down)
    -> ( d ((TermPrim,DisambPrim), Constraints) -- only the environment for the term (top down)
