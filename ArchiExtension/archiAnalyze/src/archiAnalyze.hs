@@ -107,8 +107,8 @@ where
                  , p_nmdr  :: P_NamedRel  -- the named relation
                  , p_popps :: [PAtomPair]   -- the contents
                  }
-     | P_CptPopu { p_orig  :: Origin  -- the origin
-                 , p_cnme  :: String  -- the name of a concept
+     | P_CptPopu { pos     :: Origin  -- the origin
+                 , p_cpt   :: P_Concept  -- the concept the population belongs to
                  , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
                  }
 

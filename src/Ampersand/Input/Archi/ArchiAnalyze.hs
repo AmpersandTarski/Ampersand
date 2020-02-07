@@ -27,7 +27,7 @@ where
    --   It produces the P_Populations and P_Declarations that represent the Archimate model.
    --   Finally, the function `mkArchiContext` produces a `P_Context` ready to be merged into the rest of Ampersand's population.
    archi2PContext :: (HasLogFunc env) => String -> RIO env (Guarded P_Context)
-   archi2PContext archiRepoFilename  -- e.g. "CA repository.xml"
+   archi2PContext archiRepoFilename  -- e.g. "CArepository.xml"
     = do -- hSetEncoding stdout utf8
          archiRepo <- liftIO $ runX (processStraight archiRepoFilename)
          let fst3 (x,_,_) = x
@@ -59,8 +59,8 @@ data P_Population
               , p_nmdr  :: P_NamedRel   -- the named relation
               , p_popps :: [PAtomPair]  -- the contents
               }
-  | P_CptPopu { p_orig  :: Origin  -- the origin
-              , p_cnme  :: String  -- the name of a concept
+  | P_CptPopu { pos     :: Origin  -- the origin
+              , p_cpt   :: P_Concept  -- the concept the population belongs to
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
 data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
@@ -79,7 +79,7 @@ data PAtomPair
             atomMap pops = Map.fromListWith L.union
                               ([ (pSrc sgn, (L.nub.map ppLeft.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]++
                                [ (pTgt sgn, (L.nub.map ppRight.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]++
-                               [ ((PCpt . p_cnme) pop, (L.nub.p_popas) pop) | pop@P_CptPopu{}<-pops ]
+                               [ (p_cpt pop, (L.nub.p_popas) pop) | pop@P_CptPopu{}<-pops ]
                               )
             atomCount :: Map.Map c [a] -> [(c,Int)]
             atomCount am = [ (archiElem,length atoms) | (archiElem,atoms)<-Map.toList am ]
@@ -95,7 +95,7 @@ data PAtomPair
              = case (p_mbSign nr, p_mbSign nr') of
                     (Just sgn,    Just sgn') -> p_nrnm nr==p_nrnm nr' && sgn==sgn'
                     _                        -> fatal ("Cannot compare partially defined populations of\n"++show nr++" and\n"++show nr')
-   samePop pop@P_CptPopu{} pop'@P_CptPopu{} = p_cnme pop == p_cnme pop'
+   samePop pop@P_CptPopu{} pop'@P_CptPopu{} = p_cpt pop == p_cpt pop'
    samePop _ _ = False
 
    mkArchiContext :: [(P_Population,Maybe P_Relation,[PClassify])] -> Guarded P_Context
@@ -106,13 +106,13 @@ data PAtomPair
          , ctx_markup = Nothing
          , ctx_pats   = []
          , ctx_rs     = []
-         , ctx_ds     = L.nub [ ad | Just ad<-archiDecls ]
+         , ctx_ds     = [ ad | Just ad<-archiDecls ]
          , ctx_cs     = []
          , ctx_ks     = []
          , ctx_rrules = []
          , ctx_reprs  = []
          , ctx_vs     = []
-         , ctx_gs     = L.nub (concat archiGenss)
+         , ctx_gs     = concat archiGenss
          , ctx_ifcs   = []
          , ctx_ps     = []
          , ctx_pops   = sortRelPops archiPops ++ sortCptPops archiPops
@@ -497,7 +497,7 @@ data PAtomPair
         )
       ] ++
       [ (   P_CptPopu { pos     = OriginUnknown
-                      , p_cnme  = relTyp 
+                      , p_cpt   = PCpt relTyp 
                       , p_popas = [ScriptString OriginUnknown relId] 
                       }
         , Nothing
