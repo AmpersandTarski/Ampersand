@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand proto --verbose
+    exitcode: 0

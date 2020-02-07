@@ -133,7 +133,13 @@ toPops env file x = map popForColumn (colNrs x)
                        _               -> Nothing
             where origSrc = XLSXLoc file (theSheetName x) (r,sourceCol)
                   origTrg = XLSXLoc file (theSheetName x) (r,targetCol)
-       cellToAtomValues :: Maybe Char -> CellValue -> Origin -> [PAtomValue]  -- The value in a cell can contain the delimeter of the row
+       -- | Read a cel, If it is text, it could represent multiple values. This is 
+       --   the case if the header cell contains a delimiter. 
+       cellToAtomValues 
+            :: Maybe Char -- ^ the delimiter, if there is any, used as seperator for multiple values in the cell 
+            -> CellValue  -- ^ The value that is read from the cell
+            -> Origin     -- ^ the origin of the value.
+            -> [PAtomValue]  
        cellToAtomValues mDelimiter cv orig
          = case cv of
              CellText t   -> map (XlsxString orig . T.unpack) 
