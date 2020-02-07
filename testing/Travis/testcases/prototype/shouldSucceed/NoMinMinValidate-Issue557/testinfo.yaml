@@ -1,3 +1,4 @@
 testCmds:
-  - command: ampersand proto --verbose --sqlLogin ="root" --sqlPwd="" --addMetaModel=FormalAmpersand
+#  - command: ampersand population --verbose --build-recipe AtlasComplete
+  - command: ampersand population --verbose 
     exitcode: 0

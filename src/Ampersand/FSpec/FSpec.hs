@@ -34,7 +34,6 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.FSpec.Crud
-import           Data.Function (on)
 import           Data.Hashable
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -103,7 +102,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    } deriving Typeable
 instance Eq FSpec where
- f == f' = name f == name f'
+ f == f' = originalContext f == originalContext f'
 instance Unique FSpec where
  showUnique = showUnique . originalContext
 metaValues :: String -> FSpec -> [String]
@@ -155,7 +154,10 @@ instance Unique A_Pair where
               ++ showUnique (lnkLeft x)
               ++ showUnique (lnkRight x)
 concDefs :: FSpec -> A_Concept -> [ConceptDef]
-concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
+concDefs fSpec c = 
+  case c of
+    ONE -> []
+    PlainConcept{} -> [ cdef | cdef<-conceptDefs fSpec, T.pack (name cdef) `elem` aliases c ]
 
 instance ConceptStructure FSpec where
   concs         = allConcepts
@@ -248,7 +250,7 @@ data PlugSQL
 instance Named PlugSQL where
   name = sqlname
 instance Eq PlugSQL where
-  x==y = name x==name y
+  a == b = compare a b == EQ
 instance Unique PlugSQL where
   showUnique = name
 instance Ord PlugSQL where

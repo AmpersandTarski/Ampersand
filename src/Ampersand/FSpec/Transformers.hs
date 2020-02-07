@@ -1,7 +1,8 @@
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Ampersand.FSpec.Transformers 
   ( transformersFormalAmpersand
   , transformersPrototypeContext
@@ -18,7 +19,7 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Motivations
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-
+import qualified Text.Pandoc.Shared as P
 
 -- | The function that retrieves the population of
 --   some relation of Formal Ampersand of a given
@@ -54,8 +55,7 @@ dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
-toTransformer (a,b,c,d) = Transformer a b c d
-
+toTransformer (rel,src,tgt,tuples) = Transformer rel src tgt tuples
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: FSpec -> [Transformer]
 transformersFormalAmpersand fSpec = map toTransformer [
@@ -95,7 +95,10 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("asMarkdown"            , "Markup"                , "Text"
-      , Set.empty  --TODO
+      , Set.fromList
+        [(dirtyId mrk,(PopAlphaNumeric . P.stringify . amPandoc) mrk)
+        | mrk::Markup <- instanceList fSpec
+        ]
       )
      ,("attIn"                 , "Attribute"             , "ObjectDef"
       , Set.empty  --TODO
@@ -172,7 +175,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList $
         [(dirtyId rul, dirtyId ctx) 
         | ctx::A_Context <- instanceList fSpec
-        , rul::Rule <- instanceList fSpec
+        , rul::Rule <- Set.elems $ ctxrs ctx
         ]
       )
      ,("dbName"                , "Context"               , "DatabaseName"
@@ -200,7 +203,11 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("decMean"               , "Relation"              , "Meaning" 
-      , Set.empty  --TODO
+      , Set.fromList $
+        [(dirtyId rel, dirtyId mean) 
+        | rel::Relation <- instanceList fSpec
+        , mean::Meaning <- decMean rel
+        ]
       )
      ,("decprL"                , "Relation"              , "String"  
       , Set.fromList $
@@ -245,16 +252,23 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | rul::Rule <- instanceList fSpec
         ]
       )
-     ,("gengen"                , "IsE"                   , "Concept" 
-      , Set.fromList $
-        [ ( dirtyId ise, dirtyId cpt) 
-        | ise@IsE{} <- instanceList fSpec
-        , cpt <- genrhs ise]
-      )
      ,("gengen"                , "Isa"                   , "Concept" 
       , Set.fromList $
         [ ( dirtyId isa, dirtyId (gengen isa)) 
         | isa@Isa{} <- instanceList fSpec
+        ]
+      )
+     ,("gengen"                , "IsE"                   , "Concept" 
+      , Set.fromList $
+        [ ( dirtyId ise, dirtyId cpt) 
+        | ise@IsE{} <- instanceList fSpec
+        , cpt <- NE.toList $ genrhs ise]
+      )
+     ,("gens"                  , "Context"               , "Isa"     
+      , Set.fromList $
+        [(dirtyId ctx, dirtyId isa) 
+        | ctx::A_Context <- instanceList fSpec
+        , isa@Isa{} <- instanceList fSpec
         ]
       )
      ,("gens"                  , "Context"               , "IsE"     
@@ -263,13 +277,6 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | ctx::A_Context <- instanceList fSpec
         , ise@IsE{} <- instanceList fSpec
         ] 
-      )
-     ,("gens"                  , "Context"               , "Isa"     
-      , Set.fromList $
-        [(dirtyId ctx, dirtyId isa) 
-        | ctx::A_Context <- instanceList fSpec
-        , isa@Isa{} <- instanceList fSpec
-        ]
       )
      ,("genspc"                , "IsE"                   , "Concept" 
       , Set.fromList $
@@ -370,7 +377,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList 
         [ ( dirtyId gCpt, dirtyId (genspc ise)) 
         | ise@IsE{} <- instanceList fSpec
-        , gCpt <- genrhs ise
+        , gCpt <- NE.toList $ genrhs ise
         ] `Set.union`
         Set.fromList
         [ ( dirtyId (genspc isa), dirtyId (genspc isa)) 
@@ -411,7 +418,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("left"                  , "Pair"                  , "Atom"    
-      , Set.empty  --TODO
+      , Set.empty  --This goes too deep. Keep it empty.
       )
      ,("maintains"             , "Role"                  , "Rule"    
       , Set.fromList
@@ -432,7 +439,11 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("meaning"               , "Rule"                  , "Meaning" 
-      , Set.empty  --TODO
+      , Set.fromList $
+        [(dirtyId rul, dirtyId mean) 
+        | rul::Rule <- instanceList fSpec
+        , mean::Meaning <- rrmean rul
+        ]
       )
      ,("message"               , "Rule"                  , "Message" 
       , Set.empty  --TODO
@@ -469,7 +480,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | ifc::Interface <- instanceList fSpec
         ]
       )
-     ,("name"                 , "ObjectDef"             , "ObjectName"  
+     ,("name"                  , "ObjectDef"             , "ObjectName"  
       , Set.fromList
         [(dirtyId obj, (PopAlphaNumeric . name) obj)
         | obj::ObjectDef <- instanceList fSpec
@@ -625,13 +636,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("right"                 , "Pair"                  , "Atom"    
-      , Set.empty  --TODO
-      )
-     ,("formalExpression"      , "Rule"                  , "Expression"
-      , Set.fromList
-        [(dirtyId rul, dirtyId (formalExpression rul))
-        | rul::Rule <- instanceList fSpec
-        ]
+      , Set.empty  --This goes too deep. Keep it empty.
       )
      ,("second"                , "BinaryTerm"            , "Expression"
       , Set.fromList
@@ -650,7 +655,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.empty  --TODO
       )
      ,("sessAtom"              , "SESSION"               , "Atom"    
-      , Set.empty  --TODO
+      , Set.empty  --This goes too deep. Keep it empty.
       )
      ,("sessIfc"               , "SESSION"               , "Interface"
       , Set.empty  --TODO
@@ -884,7 +889,7 @@ transformersPrototypeContext fSpec = map toTransformer [
 
 
 
-     -- | Within a specific context there are all kinds of things.
+-- | Within a specific context there are all kinds of things.
 --   These 'things' are instances (elements / atoms) of some
 --   Concept. They are the atoms of the concepts, as looked
 --   upon from the Formal Ampersand viewpoint.
@@ -971,7 +976,7 @@ class Instances a => HasPurpose a where
 instance HasPurpose A_Concept where
   isFor cpt purp =
     case explObj purp of
-        ExplConceptDef x  -> name cpt == name x
+        ExplConcept x  -> cpt == x
         _                 -> False
 instance HasPurpose A_Context where
   isFor ctx purp =

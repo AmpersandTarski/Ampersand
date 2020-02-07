@@ -101,7 +101,7 @@ even more complex than it already was.
   * We used to have the possibility to fiddle around with the formal ampersand metamodel. This
     has been generalized, and we now have another metamodel as well, called PrototypeContext. The
     latter is used during the generation of prototypes. This is still an experimental feature.
-    * ***--add-semantic-metamodel, --meta-tables*** Changed to `--addMetaModel=FormalAmpersand`.
+    * ***--add-semantic-metamodel, --meta-tables*** Changed to `--build-recipe RECIPE`.
           All relations, views, idents etc. from the specified metamodel will be
           available for use in your model. These artefacts do not have to
           be declared explicitly in your own model.

@@ -2,8 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Graphic.Graphics
-          (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
-    )where
+          (makePicture, writePicture, Picture(..), PictureTyp(..), imagePath)
+where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -21,29 +21,37 @@ import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import           Data.String(fromString)
 import           System.Directory(createDirectoryIfMissing)
 import           System.FilePath hiding (addExtension)
 import           System.Process (callCommand)
 
-data PictureReq = PTClassDiagram
-                | PTCDPattern Pattern
-                | PTDeclaredInPat Pattern
-                | PTCDConcept A_Concept
-                | PTCDRule Rule
-                | PTLogicalDM
-                | PTTechnicalDM
+data PictureTyp = PTClassDiagram           -- classification model of the entire script
+                | PTCDPattern Pattern      -- conceptual diagram of the pattern
+                | PTDeclaredInPat Pattern  -- conceptual diagram of relations and gens within one pattern
+                | PTCDConcept A_Concept    -- conceptual diagram comprising all rules in which c is used
+                | PTCDRule Rule            -- conceptual diagram of the rule in isolation of any context.
+                | PTLogicalDM              -- logical data model of the entire script
+                | PTTechnicalDM            -- technical data model of the entire script
 data DotContent = 
      ClassDiagram ClassDiag
    | ConceptualDg ConceptualStructure
-data Picture = Pict { pType :: PictureReq             -- ^ the type of the picture
+data Picture = Pict { pType :: PictureTyp             -- ^ the type of the picture
                     , scale :: String                 -- ^ a scale factor, intended to pass on to LaTeX, because Pandoc seems to have a problem with scaling.
                     , dotContent :: DotContent
                     , dotProgName :: GraphvizCommand  -- ^ the name of the program to use  ("dot" or "neato" or "fdp" or "Sfdp")
                     , caption :: String               -- ^ a human readable name of this picture
                     }
 
-makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureReq -> Picture
+instance Named PictureTyp where -- for displaying a fatal error
+  name PTClassDiagram        = "PTClassDiagram"
+  name (PTCDPattern pat)     = name pat
+  name (PTDeclaredInPat pat) = name pat
+  name (PTCDConcept c)       = name c
+  name (PTCDRule r)          = name r
+  name PTLogicalDM           = "PTLogicalDM"
+  name PTTechnicalDM         = "PTTechnicalDM"
+
+makePicture :: (HasOutputLanguage env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
   case pr of
    PTClassDiagram      -> Pict { pType = pr
@@ -126,7 +134,9 @@ makePicture env fSpec pr =
        Neato 
        -- Sfdp is a bad choice, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
 
-pictureID :: PictureReq -> String
+-- | pictureID is used in the filename of the picture.
+--   Each pictureID must be unique (within fSpec) to prevent overwriting newly created files.
+pictureID :: PictureTyp -> String
 pictureID pr =
      case pr of
       PTClassDiagram   -> "Classification"
@@ -137,9 +147,12 @@ pictureID pr =
       PTCDPattern pat     -> "CDPattern"++name pat
       PTCDRule r          -> "CDRule"++name r
 
-conceptualStructure :: FSpec -> PictureReq -> ConceptualStructure
+-- | conceptualStructure produces a uniform structure,
+--   so the transformation to .dot-format can be done with one function.
+conceptualStructure :: FSpec -> PictureTyp -> ConceptualStructure
 conceptualStructure fSpec pr =
       case pr of
+        --  A conceptual diagram comprising all rules in which c is used
         PTCDConcept c ->
           let gs = fsisa fSpec
               cpts' = concs rs
@@ -195,7 +208,7 @@ conceptualStructure fSpec pr =
                            $ bindedRelationsIn r
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
-        _  -> fatal "No conceptual graph defined for this type."
+        _  -> fatal ("No conceptual graph defined for pictureReq "++name pr++".")
 
 writePicture :: (HasDirOutput env, HasBlackWhite env, HasDocumentOpts env, HasLogFunc env) =>
                 Picture -> RIO env ()
@@ -219,14 +232,14 @@ writePicture pict = do
          do env <- ask
             logDebug $ "Generating "<>displayShow gvOutput<>" using "<>displayShow gvCommand<>"."
             let dotSource = mkDotGraph env pict
-            path <- liftIO $ (addExtension (runGraphvizCommand gvCommand dotSource) gvOutput) $ 
+            path <- liftIO $ addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
                        (dropExtension . imagePath env) pict
             logDebug $ display (T.pack path)<>" written."
             case postProcess of
               Nothing -> return ()
               Just x -> x path
        where  gvCommand = dotProgName pict
-     -- The GraphVizOutput Pdf generates pixelised graphics on Linux
+     -- The GraphVizOutput Pdf generates pixelized graphics on Linux
      -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
      makePdf :: (HasLogFunc env ) => 
                 FilePath -> RIO env ()
@@ -239,7 +252,7 @@ writePicture pict = do
                    
      writePdf :: (HasBlackWhite env, HasDocumentOpts env, HasDirOutput env, HasLogFunc env) 
           => GraphvizOutput -> RIO env ()
-     writePdf x = (writeDotPostProcess (Just makePdf) x)
+     writePdf x = writeDotPostProcess (Just makePdf) x
        `catch` (\ e -> logDebug ("Something went wrong while creating your Pdf."<>  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
                                   "\n  Your error message is:\n " <> displayShow (e :: IOException)))
      ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)

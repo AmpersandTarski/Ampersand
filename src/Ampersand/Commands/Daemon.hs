@@ -58,10 +58,11 @@ mainWithTerminal termSize termOutput = goForever
                 termSize' <- liftIO $ return $ do
                         term <- termSize
                         -- if we write to the final column of the window then it wraps automatically
-                        -- so logInfo width 'x' uses up two lines
+                        -- so logInfo width 'x' uses up two lines.
+                        -- Logging *always* ends the line, so we need to substract 1 of the hight as well.
                         return $ TermSize
                             (termWidth term - 1)
-                            (termHeight term)
+                            (termHeight term -1)
                             (termWrap term)
 
                 restyle <- liftIO $ do
@@ -94,8 +95,7 @@ runDaemon = mainWithTerminal termSize termOutput
 
         termOutput :: (HasLogFunc env) => [String] -> RIO env ()
         termOutput xs = do
-            mapM_ logInfo $ map (display . T.pack . ('\n':)) xs
-            hFlush stdout -- must flush, since we don't finish with a newline
+            mapM_ logInfo $ map (display . T.pack) xs
 
 
 data Continue = Continue

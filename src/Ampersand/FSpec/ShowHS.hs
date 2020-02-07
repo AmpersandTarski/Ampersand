@@ -370,8 +370,8 @@ instance ShowHS Purpose where
 
 instance ShowHS ExplObj where
  showHS env i peObj = case peObj of
-          ExplConceptDef cd  -> "ExplConceptDef " ++showHS env i cd
-          ExplRelation d  -> "ExplRelation "++showHSName d
+          ExplConcept cpt    -> "ExplConcept "    ++showHS env i cpt
+          ExplRelation rel   -> "ExplRelation "   ++showHSName rel
           ExplRule str       -> "ExplRule "       ++show str
           ExplIdentityDef str-> "ExplIdentityDef "++show str
           ExplViewDef str    -> "ExplViewDef "    ++show str
@@ -559,7 +559,7 @@ instance ShowHS AClassify where
  showHS _ _ gen =
    case gen of
      Isa{} -> "Isa "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
-     IsE{} -> "IsE "++showHSName (genspc gen)++" ["++L.intercalate ", " (map showHSName (genrhs gen))++"] "
+     IsE{} -> "IsE "++showHSName (genspc gen)++" ["++L.intercalate ", " (NE.toList . fmap showHSName $ genrhs gen)++"] "
 
 instance ShowHSName Relation where
  showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- user defined relations

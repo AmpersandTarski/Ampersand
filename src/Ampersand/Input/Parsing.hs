@@ -5,9 +5,8 @@
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Ampersand.Input.Parsing (
-      parseADL
+      parseFileTransitive
     , parseFormalAmpersand
-    , parseFormalAmpersandDocumented
     , parsePrototypeContext
     , parseRule
     , runParser
@@ -33,11 +32,13 @@ import           System.FilePath
 import           Text.Parsec.Prim (runP)
 import Ampersand.Input.Archi.ArchiAnalyze
 
+
+
 -- | Parse an Ampersand file and all transitive includes
-parseADL :: (HasFSpecGenOpts env, HasLogFunc env) =>
+parseFileTransitive :: (HasFSpecGenOpts env, HasLogFunc env) =>
             FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
-         -> RIO env ([ParseCandidate], Guarded P_Context)     -- ^ The resulting context
-parseADL fp = do 
+         -> RIO env ([ParseCandidate], Guarded P_Context) -- ^ A tuple containing a list of parsed files and the The resulting context
+parseFileTransitive fp = do 
     curDir <- liftIO getCurrentDirectory
     canonical <- liftIO $ canonicalizePath fp
     parseThing' ParseCandidate
@@ -47,20 +48,13 @@ parseADL fp = do
        , pcCanonical = canonical
        , pcDefineds  = Set.empty
        }
+ 
 parseFormalAmpersand :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
 parseFormalAmpersand = parseThing ParseCandidate
        { pcBasePath  = Nothing
        , pcOrigin    = Just $ Origin "Formal Ampersand specification"
        , pcFileKind  = Just FormalAmpersand
        , pcCanonical = "AST.adl"
-       , pcDefineds  = Set.empty
-       }
-parseFormalAmpersandDocumented :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)
-parseFormalAmpersandDocumented = parseThing ParseCandidate
-       { pcBasePath  = Nothing
-       , pcOrigin    = Just $ Origin "Formal Ampersand specification + documentation"
-       , pcFileKind  = Just FormalAmpersand
-       , pcCanonical = "AST.adl"  --TODO: Must be replaced by documented formal ampersand script
        , pcDefineds  = Set.empty
        }
 parsePrototypeContext :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded P_Context)

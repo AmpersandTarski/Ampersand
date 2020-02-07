@@ -3,6 +3,7 @@ module Ampersand.Core.A2P_Converters (
     aAtomValue2pAtomValue
   , aConcept2pConcept
   , aCtx2pCtx
+  , aCpt2pCpt
   , aExpression2pTermPrim
   , aExplObj2PRef2Obj
   , aClassify2pClassify
@@ -22,7 +23,6 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           RIO.Char
 import qualified RIO.NonEmpty as NE
-import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
@@ -85,8 +85,11 @@ aRelation2pRelation dcl =
        }
 
 aRelation2pNamedRel :: Relation -> P_NamedRel
-aRelation2pNamedRel dcl =
- PNamedRel (decfpos dcl) (T.unpack $ decnm dcl) (Just (aSign2pSign (decsgn dcl)))
+aRelation2pNamedRel dcl = PNamedRel
+  { pos      = decfpos dcl
+  , p_nrnm   = T.unpack $ decnm dcl
+  , p_mbSign = Just . aSign2pSign $ decsgn dcl
+  }
  
 aIdentityDef2pIdentityDef :: IdentityDef -> P_IdentDf TermPrim -- P_IdentDef
 aIdentityDef2pIdentityDef iDef =
@@ -124,7 +127,7 @@ aClassify2pClassify gen =
   IsE{} -> PClassify 
                 { pos      = genpos gen
                 , specific = aConcept2pConcept (genspc gen) 
-                , generics = PARTIAL.fromList . map aConcept2pConcept . genrhs $ gen
+                , generics = fmap aConcept2pConcept . genrhs $ gen
                 }
 
 aInterface2pInterface :: Interface -> P_Interface
@@ -147,8 +150,8 @@ aSign2pSign sgn =
 aConcept2pConcept :: A_Concept -> P_Concept
 aConcept2pConcept cpt =
  case cpt of
-   ONE            -> P_Singleton
-   PlainConcept{} -> PCpt { p_cptnm = T.unpack $ cptnm cpt
+   ONE            -> P_ONE
+   PlainConcept{} -> PCpt { p_cptnm = name cpt
                           }
 
 aPurpose2pPurpose :: Purpose -> Maybe PPurpose 
@@ -173,10 +176,13 @@ aPopulation2pPopulation p =
                           }
       where pDcl = aRelation2pNamedRel (popdcl p)
   ACptPopu{} -> P_CptPopu { pos  = Origin $ "Origin is not present in Population("++name (popcpt p)++") from A-Structure"
-                          , p_cnme  = name (popcpt p)
+                          , p_cpt  = aCpt2pCpt (popcpt p)
                           , p_popas = map aAtomValue2pAtomValue (popas p)
                           }
-
+aCpt2pCpt :: A_Concept -> P_Concept
+aCpt2pCpt cpt = case cpt of
+  PlainConcept{} -> PCpt{ p_cptnm = name cpt }
+  ONE          -> P_ONE
 
 aObjectDef2pObjectDef :: BoxItem -> P_BoxItemTermPrim
 aObjectDef2pObjectDef x =
@@ -187,7 +193,7 @@ aObjectDef2pObjectDef x =
                , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
                , obj_crud  = case objmsub oDef of 
                                Just (InterfaceRef False _) -> Nothing  -- Crud specification is not allowed in combination with a reference to an interface.
-                               _ -> aCruds2pCruds (objcrud oDef)
+                               _ -> Just $ aCruds2pCruds (objcrud oDef)
                , obj_mView = objmView oDef
                , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
                }
@@ -276,8 +282,8 @@ aIdentitySegment2pIdentSegmnt (IdentityExp oDef) =
 aExplObj2PRef2Obj :: ExplObj -> PRef2Obj
 aExplObj2PRef2Obj obj =
  case obj of
-  ExplConceptDef cd   -> PRef2ConceptDef (name cd)
-  ExplRelation d   -> PRef2Relation (aRelation2pNamedRel d)
+  ExplConcept cpt     -> PRef2ConceptDef (name cpt)
+  ExplRelation rel    -> PRef2Relation (aRelation2pNamedRel rel)
   ExplRule str        -> PRef2Rule str
   ExplIdentityDef str -> PRef2IdentityDef str
   ExplViewDef str     -> PRef2ViewDef str
@@ -349,10 +355,7 @@ aSubIfc2pSubIfc sub =
                       , si_str    = str
                       }
 
-aCruds2pCruds :: Cruds -> Maybe P_Cruds
-aCruds2pCruds x = 
-  if crudOrig x == Origin "default for Cruds" 
-  then Nothing
-  else Just $ P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
+aCruds2pCruds :: Cruds -> P_Cruds
+aCruds2pCruds x = P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
    where f :: (Bool,Char) -> Char
          f (b,c) = (if b then toUpper else toLower) c

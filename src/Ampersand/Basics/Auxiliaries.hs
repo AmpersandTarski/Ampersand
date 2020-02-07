@@ -3,21 +3,26 @@
 module Ampersand.Basics.Auxiliaries 
         ( eqClass,eqClassNE,
           eqCl,eqClNE,
+          getCycles,
           transClosureMap, transClosureMap',
           converse, converseNE, converseSet,
           commaEng, commaNL,
           liftFst,liftSnd,
-          Flippable(..),
+          Flippable(..)
         ) where
 
-import           Ampersand.Basics.Prelude
+import           Ampersand.Basics.Prelude hiding (to)
+import           Ampersand.Basics.Version
+import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
+import           Data.Typeable
 import           RIO.List(foldl,intersect,nub,union)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
+import qualified RIO.List as L
 import qualified RIO.Map as Map 
 import qualified RIO.Map.Partial as PARTIAL --TODO: Get rid of partial functions.
-import qualified RIO.Set as Set 
-
+import qualified RIO.Set as Set
+ 
 -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
 -- that each sublist in the result contains only equal elements, and all equal elements are in
 -- the same sublist.  For example,
@@ -43,6 +48,28 @@ eqClassNE f = PARTIAL.fromList . eqClass f . NE.toList
 eqClNE :: Ord b => (a -> b) -> NE.NonEmpty a -> NE.NonEmpty (NE.NonEmpty a)
 eqClNE f = PARTIAL.fromList . eqCl f . NE.toList
 
+-- | getCycles returns a list of cycles in the edges list (each edge is a pair of a from-vertex
+--   and a list of to-vertices)
+getCycles :: (Ord a, Show a,Typeable a) => [(a, [a])] -> [[a]]
+getCycles edges' = 
+  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]
+  where
+      edges = L.nub $ map nubbed edges'
+        where nubbed :: (Eq a) => (a, [a]) -> (a, [a]) 
+              nubbed (a,xs)= (a,nub xs)
+      allVertices = Set.toList . Set.fromList . concat $ [ from : to | (from, to) <- edges ]
+      graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
+      keyFor v = fromMaybe fatalError $ L.elemIndex v allVertices
+        where
+          fatalError = fatal $ L.intercalate "\n" $
+              [ "v ("<>show (typeOf v) <>") = "<>show v
+              , "length edges = "<>show (length edges)
+              , "edges = "
+              ]++map (("  "++) .show) edges++
+              [ "allVertices ="
+              ]++map (("  "++) .show) allVertices++
+              [ "graphEdges ="
+              ]++map (("  "++) .show) graphEdges
 
 -- |  Warshall's transitive closure algorithm
 transClosureMap' :: Ord a => Map.Map a [a] -> Map.Map a [a]

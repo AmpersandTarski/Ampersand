@@ -1,6 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Classes.Relational
    ( HasProps(..)
    , Relational(..)
+   , isONE, isSESSION
    ) where
 
 import           Ampersand.ADL1
@@ -31,10 +33,15 @@ class Relational r where
 instance HasProps Relation where
     properties d = fromMaybe (decprps d) (decprps_calc d)
 
-isSingleton :: A_Concept -> Bool
-isSingleton ONE = True
-isSingleton _   = False
-
+-- | Is the concept the ONE and only? (universal singleton) 
+isONE :: A_Concept -> Bool
+isONE ONE = True
+isONE _   = False
+isSESSION :: A_Concept -> Bool
+isSESSION cpt = 
+           case cpt of
+             PlainConcept{} -> "SESSION" `elem` aliases cpt
+             ONE            -> False              
 -- The function "properties" does not only provide the properties provided by the Ampersand user,
 -- but tries to derive the most obvious multiplicity constraints as well. The more multiplicity constraints are known,
 -- the better the data structure that is derived.
@@ -47,9 +54,9 @@ properties' expr = case expr of
      EDcV sgn   -> Set.fromList $ 
                  --NOT totaal
                  --NOT surjective
-                   [Inj | isSingleton (source sgn)]
-                 ++[Uni | isSingleton (target sgn)]
-                 ++[Asy | isEndo sgn, isSingleton (source sgn)]
+                   [Inj | isONE (source sgn)]
+                 ++[Uni | isONE (target sgn)]
+                 ++[Asy | isEndo sgn, isONE (source sgn)]
                  ++[Sym | isEndo sgn]
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
@@ -83,8 +90,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EFlp e     -> isTrue e
      ECpl e     -> isFalse e
      EDcD{}     -> False
-     EDcI c     -> isSingleton c
-     EEps i _   -> isSingleton i
+     EDcI c     -> isONE c
+     EEps i _   -> isONE i
      EDcV{}     -> True
      EBrk e     -> isTrue e
      _          -> False  -- TODO: find richer answers for ERrs, ELrs, EDia, ERad, and EMp1
@@ -134,7 +141,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EDcD{}     -> False
      EDcI{}     -> True
      EEps{}     -> False
-     EDcV sgn   -> isEndo sgn && isSingleton (source sgn)
+     EDcV sgn   -> isEndo sgn && isONE (source sgn)
      EBrk f     -> isIdent f
      EFlp f     -> isIdent f
      _          -> False  -- TODO: find richer answers for ELrs, ERrs, EDia, EPrd, and ERad

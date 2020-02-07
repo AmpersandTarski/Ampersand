@@ -3,11 +3,12 @@ module Ampersand.Options.DocOptsParser
    (docOptsParser)
 where
 
-import           Options.Applicative
 import           Ampersand.Basics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Options.FSpecGenOptsParser
 import           Ampersand.Options.Utils
+import           Data.Tuple.Extra
+import           Options.Applicative
 import           Options.Applicative.Builder.Extra
 import           RIO.Char (toLower)
 import qualified RIO.List as L
@@ -127,8 +128,3 @@ genLegalRefsP = boolFlags True "legal-refs"
         ) mempty
 
 
--- | Apply a single function to both components of a pair.
---
--- > both succ (1,2) == (2,3)
-both :: (a -> b) -> (a, a) -> (b, b)
-both f (x,y) = (f x, f y)

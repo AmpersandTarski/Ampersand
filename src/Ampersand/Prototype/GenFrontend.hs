@@ -270,7 +270,9 @@ genRouteProvider fSpec ifcs = do
   writePrototypeAppFile "routeProvider.config.js" contents
       
 ------ Generate view html code
-
+isTopLevel :: A_Concept -> Bool
+isTopLevel cpt = isONE cpt || isSESSION cpt
+      
 genViewInterfaces :: (HasRunner env, HasDirPrototype env) => 
                      FSpec -> [FEInterface] -> RIO env ()
 genViewInterfaces fSpec = mapM_ (genViewInterface fSpec)
@@ -284,7 +286,7 @@ genViewInterface fSpec interf = do
   template <- readTemplate "interface.html"
   let contents = T.pack . renderTemplate template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
-                  . setAttribute "isTopLevel"          ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
+                  . setAttribute "isTopLevel"          (isTopLevel . source . _ifcExp $ interf)
                   . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                   . setAttribute "ampersandVersionStr" ampersandVersionStr
                   . setAttribute "interfaceName"       (ifcName  interf)
@@ -413,7 +415,7 @@ genControllerInterface fSpec interf = do
     let loglevel' = logLevel runner
     let contents = T.pack . renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
-                     . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
+                     . setAttribute "isRoot"                   (isTopLevel . source . _ifcExp $ interf)
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (ifcName interf)

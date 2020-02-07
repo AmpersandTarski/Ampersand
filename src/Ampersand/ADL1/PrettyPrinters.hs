@@ -220,7 +220,7 @@ instance Pretty ConceptDef where
 instance Pretty P_Population where
     pretty p = case p of
                 P_RelPopu _ _ _ nrel cs -> text "POPULATION" <+> pretty nrel      <+> text "CONTAINS" <+> contents cs
-                P_CptPopu _ nm       ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> pretty ps
+                P_CptPopu _ cpt       ps -> text "POPULATION" <+> pretty cpt  <+> text "CONTAINS" <+> pretty ps
                where contents = list . map pretty
 
 instance Pretty Representation where
@@ -315,7 +315,7 @@ instance Pretty PPurpose where
 instance Pretty PRef2Obj where
     pretty p = case p of
         PRef2ConceptDef str       -> text "CONCEPT"   <+> quoteConcept str
-        PRef2Relation namedRel -> text "RELATION"  <~> namedRel
+        PRef2Relation namedRel    -> text "RELATION"  <~> namedRel
         PRef2Rule str             -> text "RULE"      <+> maybeQuote str
         PRef2IdentityDef str      -> text "IDENT"     <+> maybeQuote str
         PRef2ViewDef str          -> text "VIEW"      <+> maybeQuote str
@@ -331,15 +331,12 @@ instance Pretty PMessage where
 
 instance Pretty P_Concept where
     pretty (PCpt nm)   = quoteConcept nm
-    pretty P_Singleton = text "ONE"
+    pretty P_ONE = text "ONE"
 
 instance Pretty P_Sign where
     pretty (P_Sign src tgt) = brackets (pretty src <> maybeTgt)
-        where maybeTgt = if src `equal` tgt then empty
+        where maybeTgt = if src == tgt then empty
                          else text "*" <> pretty tgt
-              equal (PCpt x) (PCpt y) = x == y
-              equal P_Singleton P_Singleton = True
-              equal _ _ = False
 
 instance Pretty PClassify where
     pretty p = 

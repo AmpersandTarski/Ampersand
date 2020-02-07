@@ -13,6 +13,7 @@ import           Data.GraphViz.Attributes.Complete as GVcomp
 import           Data.GraphViz.Attributes.HTML as Html
 import           Data.GraphViz.Types.Canonical hiding (attrs)
 import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
@@ -178,7 +179,7 @@ classdiagram2dot env cd
              ] 
           splits gen = case gen of
                                Isa{} -> [(genspc gen, gengen gen)]
-                               IsE{} -> [(genspc gen, x ) | x<-genrhs gen]
+                               IsE{} -> [(genspc gen, x ) | x<-NE.toList $ genrhs gen]
 
 
 

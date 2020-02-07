@@ -121,8 +121,7 @@ chpDiagnosis env fSpec
                               ,EN " remain without a purpose.")
                   )
    where missing = [c | c <-ccs
-                      , cd <- concDefs fSpec c
-                      , null (purposesDefinedIn fSpec outputLang' cd)
+                      , null (purposesDefinedIn fSpec outputLang' c)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
          ccs = Set.elems . concs . vrels $ fSpec

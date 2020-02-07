@@ -28,14 +28,9 @@ class  Named a => Motivated a where
         , amLang (explMarkup e) == l  -- filter by language
         , isForObject x (explObj e)   -- informally: "if x and e are the same"
      ]
-instance Motivated ConceptDef where
---  meaning _ cd = fatal ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
-  isForObject x (ExplConceptDef x') = x == x'
-  isForObject _ _ = False
-
 instance Motivated A_Concept where
 --  meaning _ c = fatal ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
-  isForObject x (ExplConceptDef cd) = name x == name cd
+  isForObject c1 (ExplConcept c2) = c1 == c2
   isForObject _ _ = False
 
 instance Motivated Relation where

@@ -11,7 +11,6 @@ module Ampersand.Daemon.Escape(
 import RIO.Char
 import Data.Either.Extra(rights)
 import Data.List.Extra(unfoldr)
-import Data.Maybe
 import Data.Tuple.Extra(swap,both)
 import Ampersand.Basics
 

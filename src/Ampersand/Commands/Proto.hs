@@ -12,6 +12,7 @@ module Ampersand.Commands.Proto
     ) where
 
 import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.FSpec2SQL
@@ -28,15 +29,38 @@ proto fSpec = do
     env <- ask
     let dirPrototype = getDirPrototype env
     allowInvariantViolations <- view allowInvariantViolationsL
-    if null (violationsOfInvariants fSpec) || allowInvariantViolations
+    let violatedRules :: [(Rule,AAtomPairs)]
+        violatedRules = violationsOfInvariants fSpec
+    if null violatedRules || allowInvariantViolations
     then do
-       logInfo "Generating prototype..."
+       logDebug "Generating prototype..."
        liftIO $ createDirectoryIfMissing True dirPrototype
        doGenFrontend fSpec
        generateDatabaseFile fSpec
-       generateJSONfiles False fSpec
+       let dir = getGenericsDir env
+       generateAllJSONfiles dir fSpec
        dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
-       logDebug $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
-    else exitWith NoPrototypeBecauseOfRuleViolations
+       logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
+    else exitWith $ NoPrototypeBecauseOfRuleViolations (violationMessages violatedRules)
 
-
+violationMessages :: [(Rule,AAtomPairs)] -> [String]
+violationMessages = concatMap violationMessage
+  where
+    violationMessage :: (Rule,AAtomPairs) -> [String]
+    violationMessage (r,ps) = 
+      [if length ps == 1 
+        then "There is " <>show (length ps)<>" violation of RULE " <>show (name r)<>":"
+        else "There are "<>show (length ps)<>" violations of RULE "<>show (name r)<>":"
+      ] 
+      <> (map ("  "<>) . listPairs 10 . toList $ ps)
+    listPairs :: Int -> [AAtomPair] -> [String]
+    listPairs i xs = 
+                case xs of
+                  [] -> []
+                  h:tl 
+                    | i == 0 -> ["  ... ("<>show (length xs)<>" more)"]
+                    | otherwise -> showAP h : listPairs (i-1) tl
+        where
+          showAP :: AAtomPair -> String
+          showAP x= "("<>aavstr (apLeft x)<>", "<>aavstr (apRight x)<>")"
+        

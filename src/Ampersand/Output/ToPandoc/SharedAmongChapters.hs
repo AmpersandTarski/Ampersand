@@ -30,18 +30,18 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , ThemeContent(..), orderingByTheme
     , Numbered(..), RuleCont(..),DeclCont(..),CptCont(..)
     , plainText
-    , sortWith)
+    )
 where
 import           Ampersand.ADL1 hiding (Meta)
 import           Ampersand.Basics hiding (Reader,Identity,toList,link)
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
+import           Ampersand.Input.ADL1.FilePos
 import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux
 import           Data.Typeable (typeOf)
-import           GHC.Exts(sortWith)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -322,8 +322,8 @@ data Counters
 orderingByTheme :: (HasOutputLanguage env) => env -> FSpec -> [ThemeContent]
 orderingByTheme env fSpec
  = f ( Counter 1 1 1 --the initial numbers of the countes
-     , (sortWith origin . filter rulMustBeShown . Set.elems . fallRules)  fSpec
-     , (sortWith origin . filter relMustBeShown . Set.elems . relsDefdIn) fSpec 
+     , (sortWithOrigins . filter rulMustBeShown . Set.elems . fallRules)  fSpec
+     , (sortWithOrigins . filter relMustBeShown . Set.elems . relsDefdIn) fSpec 
      , (L.sortBy conceptOrder . filter cptMustBeShown . Set.elems . concs)  fSpec
      ) $
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
@@ -334,13 +334,19 @@ orderingByTheme env fSpec
   -- The sorting of Concepts is done by the origin of its first definition if there is one.
   -- Concepts without definition are placed last, and sorted by name.
    case (originOfFirstCDef a, originOfFirstCDef b) of
-     (Just origA, Just origB) -> compare origA origB
+     (Just origA, Just origB) -> case maybeOrdering origA origB of
+                                   Just ord -> ord
+                                   Nothing -> case (isFuzzyOrigin origA,isFuzzyOrigin origB) of
+                                                (False,False) -> fatal "This should be impossible"
+                                                (False,True)  -> LT
+                                                (True,False)  -> GT
+                                                (True,True)   -> comparing name a b 
      (Just _    , Nothing   ) -> LT
      (Nothing   , Just _    ) -> GT
      (Nothing   , Nothing   ) -> comparing name a b
   originOfFirstCDef :: A_Concept -> Maybe Origin
   originOfFirstCDef cpt
-    = case sortWith origin $ concDefs fSpec cpt of
+    = case sortWithOrigins $ concDefs fSpec cpt of
         [] -> Nothing
         cd :_ -> Just (origin cd)
   rulMustBeShown :: Rule -> Bool
@@ -375,7 +381,7 @@ orderingByTheme env fSpec
   cpt2cptCont :: A_Concept -> CptCont
   cpt2cptCont cpt
     = CCpt { cCpt      = cpt
-           , cCptDefs  = sortWith origin $ concDefs fSpec cpt
+           , cCptDefs  = sortWithOrigins $ concDefs fSpec cpt
            , cCptPurps = purposesDefinedIn fSpec (outputLang env fSpec) cpt
            }
 

@@ -19,7 +19,7 @@ parseProject :: (HasRunner env) =>
 parseProject rootAdl = do
     let fSpecGenOpts = defFSpecGenOpts rootAdl 
     extendWith fSpecGenOpts $ do 
-        (pc,gPctx) <- parseADL rootAdl 
+        (pc,gPctx) <- parseFileTransitive rootAdl 
         env2 <- ask
         let loadedFiles = map pcCanonical pc
             gActx = pCtx2Fspec env2 <$> gPctx

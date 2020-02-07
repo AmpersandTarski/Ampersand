@@ -12,7 +12,6 @@ module Ampersand.Input.ADL1.CtxError
   , mkErrorReadingINCLUDE
   , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
-  , mkCyclesInGensError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError, mkOtherTupleInSessionError
   , mkInvalidCRUDError
@@ -49,7 +48,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.ADL1.Disambiguate(DisambPrim(..))
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree (Type)
+import           Ampersand.Core.AbstractSyntaxTree (Type,showWithAliases)
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.FilePos()
@@ -132,7 +131,7 @@ mkMultipleRepresentTypesError cpt rs
            []  -> fatal "Call of mkMultipleRepresentTypesError with no Representations"
            (_,x):_ -> x
       msg = L.intercalate "\n" $
-             [ "The Concept "++showA cpt++" was shown to be representable with multiple types."
+             [ "The Concept "++showWithAliases cpt++" was shown to be representable with multiple types."
              , "The following TYPEs are defined for it:"
              ]++
              [ "  - "++show t++" at "++showFullOrig orig | (t,orig)<-rs]
@@ -148,20 +147,7 @@ mkMultipleTypesInTypologyError tripls
              , "The following concepts are in the same typology, but not all"
              , "of them have the same TYPE:"
              ]++
-             [ "  - REPRESENT "++name c++" TYPE "++show t++" at "++showFullOrig orig | (c,t,origs) <- tripls, orig <- origs]
-mkCyclesInGensError :: NE.NonEmpty [AClassify] -> Guarded a
-mkCyclesInGensError cycles = Errors (fmap mkErr cycles)
- where 
-  mkErr :: [AClassify] -> CtxError
-  mkErr gs = 
-    case gs of 
-      []    -> fatal "Nothing to report about!" 
-      (g:_) -> CTXE (origin g) 
-             . L.intercalate "\n" $
-             [ "Classifications must not contain cycles."
-             , "The following CLASSIFY statements are cyclic:"
-             ]++
-             [ "  - "++showA gn++" at "++showFullOrig (origin gn) | gn <- gs]
+             [ "  - REPRESENT "++showWithAliases c++" TYPE "++show t++" at "++showFullOrig orig | (c,t,origs) <- tripls, orig <- origs]
 
 mkMultipleRootsError :: [A_Concept] -> NE.NonEmpty AClassify -> Guarded a
 mkMultipleRootsError roots gs
@@ -174,9 +160,9 @@ mkMultipleRootsError roots gs
              ] ++
              [ "  - "++showA x++" at "++showFullOrig (origin x) | x<-NE.toList gs]++
              [ "Parhaps you could add the following statements:"]++
-             [ "  CLASSIFY "++name cpt++" ISA "++show rootName    | cpt<-roots]
+             [ "  CLASSIFY "++showWithAliases cpt++" ISA "++show rootName    | cpt<-roots]
+       where rootName = L.intercalate "_Or_" . map showWithAliases $ roots 
           
-       where rootName = L.intercalate "_Or_" . map name $ roots 
 nonMatchingRepresentTypes :: Origin -> TType -> TType -> Guarded a
 nonMatchingRepresentTypes orig wrongType rightType
  = Errors . pure $
@@ -195,7 +181,6 @@ class GetOneGuarded a b | b -> a where
       Just (CTXE o' s NE.:| _) -> Errors . pure $ CTXE o' $ "Found too many:\n  "++s
       Just (PE _      NE.:| _) -> fatal "Didn't expect a PE constructor here"
       Just (LE _      NE.:| _) -> fatal "Didn't expect a LE constructor here"
-      
   hasNone :: b  -- the object where the problem is arising
              -> Guarded a
   hasNone o = getOneExactly o []
@@ -218,7 +203,7 @@ mkTypeMismatchError o rel sot typ
                        Tgt -> "target"
                     )++"("++name typ++") for the population pairs "
             ++"\n  must be more specific or equal to that of the "
-            ++"relation you wish to populate ("++name rel++show (sign rel)++" found at "++show (origin rel)++")."
+            ++"relation you wish to populate ("++name rel++showWithAliases (sign rel)++" found at "++show (origin rel)++")."
 
 
 cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded Expression
@@ -233,17 +218,32 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
                        ["Cannot disambiguate the relation: "++showP o
                        ,"  Please add a signature (e.g. [A*B]) to the relation."
                        ,"  Relations you may have intended:"
-                       ]++
-                       map (("  "++) . showA) exprs
+                       ]
+                       ++ map (("  "++) . showA') exprs
+                       ++ noteIssue980
              _  -> L.intercalate "\n" $
                        ["Cannot disambiguate: "++showP o
-                       ,"  Please add a signature."
+                       ,"  Please add a signature (e.g. [A*B]) to the expression."
                        ,"  You may have intended one of these:"
-                       ]++
-                       ["  "++showA e|e<-exprs]
+                       ]
+                       ++ map (("  "++) . showA') exprs
+                       ++ noteIssue980
         Known _ -> fatal "We have a known expression, so it is allready disambiguated."
-        _ -> "Cannot disambiguate: "++showP o++"\n  Please add a signature to it"
-
+        _       -> L.intercalate "\n" $
+                       ["Cannot disambiguate: "++showP o
+                       ,"  Please add a signature (e.g. [A*B]) to it."
+                       ]
+                       ++ noteIssue980
+    noteIssue980 =     [ "Note: Some cases are not disambiguated fully by desing. You can read about"
+                       , "  this at https://github.com/AmpersandTarski/Ampersand/issues/980#issuecomment-508985676"
+                       ]
+    -- | Also show the origin of the defining relation, if applicable
+    showA' :: Expression -> String
+    showA' e = showA e 
+        <> case e of 
+             EDcD rel -> " ("<>show (origin rel)<>")"
+             EFlp e' -> showA' e'
+             _ -> ""
 uniqueNames :: (Named a, Traced a) =>
                      [a] -> Guarded ()
 uniqueNames = uniqueBy name
@@ -319,14 +319,14 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
   case objDef of
     P_BxExpr{} -> CTXE (origin objDef) $ 
         "Incompatible interface reference "++ show ref ++ " at field " ++ show (obj_nm objDef) ++
-        ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++
-        ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
+        ":\nReferenced interface "++show ref++" has type " ++ showWithAliases refSrc ++
+        ", which is not comparable to the target " ++ showWithAliases expTgt ++ " of the expression at this field."
     _ -> fatal "Improper use of mkIncompatibleInterfaceError"
   
 mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
 mkMultipleDefaultError vds =
   CTXE (origin . NE.head $ vds) $ 
-      "Multiple default views for concept " <> show (name cpt) <> ":" <>
+      "Multiple default views for concept " <> showWithAliases cpt <> ":" <>
         (concatMap (\vd -> "\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")") $ vds)
      where
        cpt = case nubOrd . NE.toList . fmap vdcpt $ vds of
@@ -354,13 +354,13 @@ mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxErro
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =
   CTXE (origin ifc) . L.intercalate "\n  " $
       ["The TYPE of the concept for which an INTERFACE is defined must be OBJECT."
-      ,"The TYPE of the concept `"++name cpt++"`, for interface `"++name ifc++"`, however is "++show tt++"."
+      ,"The TYPE of the concept `"++showWithAliases cpt++"`, for interface `"++name ifc++"`, however is "++show tt++"."
       ]
 mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc (TermPrim, DisambPrim) -> A_Concept -> TType -> CtxError
 mkSubInterfaceMustBeDefinedOnObject x cpt tt =
   CTXE (origin x). L.intercalate "\n  " $
       ["The TYPE of the concept for which a "++boxClass++" is defined must be OBJECT."
-      ,"The TYPE of the concept `"++name cpt++"`, for this "++boxClass++", however is "++show tt++"."
+      ,"The TYPE of the concept `"++showWithAliases cpt++"`, for this "++boxClass++", however is "++show tt++"."
       ]
     where boxClass = fromMaybe "BOX" (si_class x)
                        
@@ -376,7 +376,7 @@ instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1,c1,e1) = showEC' (p1,c1,showA e1)
 
 showEC' :: (SrcOrTgt, A_Concept, String) -> String
-showEC' (p1,c1,e1) = showA c1++" ("++show p1++" of "++e1++")"
+showEC' (p1,c1,e1) = showWithAliases c1++" ("++show p1++" of "++e1++")"
 
 instance (AStruct declOrExpr, HasSignature declOrExpr) => ErrorConcept (SrcOrTgt, declOrExpr) where
   showEC (p1,e1)
@@ -404,7 +404,7 @@ mustBeOrderedLst o lst
      [ "Type error in BOX"
      , "  Cannot match:"
      ]++
-     [ "  - concept "++showA c++" , "++showP st++" of: "++showP (exprOf a)
+     [ "  - concept "++showWithAliases c++" , "++showP st++" of: "++showP (exprOf a)
      | (c,st,a) <- lst
      ]++ 
      [ "  if you think there is no type error, add an order between the mismatched concepts."
@@ -420,7 +420,7 @@ mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
  = Errors . pure . CTXE (origin o) . unlines $
     [ "Ambiguous type when matching: "++show p1++" of "++showA e1
     , " and "++show p2++" of "++showA e2++"."
-    , "  The type can be "++L.intercalate " or " (map (L.intercalate "/" . map name) cs)
+    , "  The type can be "++L.intercalate " or " (map (L.intercalate "/" . map showWithAliases) cs)
     , "  None of these concepts is known to be the smallest, you may want to add an order between them."
     ]
 
