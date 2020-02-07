@@ -219,14 +219,14 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
                        ,"  Please add a signature (e.g. [A*B]) to the relation."
                        ,"  Relations you may have intended:"
                        ]
-                       ++ map (("  "++) . showA) exprs
+                       ++ map (("  "++) . showA') exprs
                        ++ noteIssue980
              _  -> L.intercalate "\n" $
                        ["Cannot disambiguate: "++showP o
                        ,"  Please add a signature (e.g. [A*B]) to the expression."
                        ,"  You may have intended one of these:"
                        ]
-                       ++ map (("  "++) . showA) exprs
+                       ++ map (("  "++) . showA') exprs
                        ++ noteIssue980
         Known _ -> fatal "We have a known expression, so it is allready disambiguated."
         _       -> L.intercalate "\n" $
@@ -237,7 +237,13 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
     noteIssue980 =     [ "Note: Some cases are not disambiguated fully by desing. You can read about"
                        , "  this at https://github.com/AmpersandTarski/Ampersand/issues/980#issuecomment-508985676"
                        ]
-
+    -- | Also show the origin of the defining relation, if applicable
+    showA' :: Expression -> String
+    showA' e = showA e 
+        <> case e of 
+             EDcD rel -> " ("<>show (origin rel)<>")"
+             EFlp e' -> showA' e'
+             _ -> ""
 uniqueNames :: (Named a, Traced a) =>
                      [a] -> Guarded ()
 uniqueNames = uniqueBy name
