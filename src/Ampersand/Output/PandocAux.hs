@@ -9,7 +9,6 @@ module Ampersand.Output.PandocAux
       , chptTitle
       , count
       , showMath
-      , showMathWithSign
       , latexEscShw
       , texOnlyMarginNote
       , newGlossaryEntry
@@ -295,15 +294,13 @@ addParensToSuper e@EFlp{} = EBrk e
 addParensToSuper e        = e
 
 instance ShowMath Relation where
- showMath decl = math $ 
-        inMathText (name decl)++":\\ "
-     ++(inMathText . name . source $ decl)++(if isFunction (EDcD decl) then "\\mapsto" else "*")
-     ++(inMathText . name . target $ decl)++"]"
-showMathWithSign :: Relation -> Inlines
-showMathWithSign decl = math $ 
-        inMathText (name decl)++"["
-     ++(inMathText . name . source $ decl)++"*"
-     ++(inMathText . name . target $ decl)++"]"
+ showMath decl = math . noBreaking $ 
+        inMathText (name decl)<>" \\lbrack "
+     <>(inMathText . name . source $ decl)<> (if isFunction (EDcD decl) then " \\mapsto " else "*")
+     <>(inMathText . name . target $ decl)<>" \\rbrack "
+
+noBreaking :: (IsString a, Semigroup a) => a -> a
+noBreaking x = "{"<>x<>"}"
 -- | latexEscShw escapes to LaTeX encoding. It is intended to be used in LaTeX text mode.
 --   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
 --   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
@@ -453,7 +450,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 ---------------------------
 -- safe function to have plain text in a piece of Math
 inMathText :: String -> String
-inMathText s = "\\text{"++latexEscShw s++"} "
+inMathText s = latexEscShw s
 
 inMathCartesianProduct :: String
 inMathCartesianProduct = "\\times "
