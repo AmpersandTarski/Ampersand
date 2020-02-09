@@ -15,7 +15,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , Chapter(..)
     , chaptersInDoc
     , Xreferenceble(..)
-    , XRefSection(..)
+    , CustomSection(..)
     , pandocEqnArray
     , pandocEquationWithLabel
     , Purpose(..)
@@ -53,7 +53,7 @@ import           Text.Pandoc.Builder
 chaptersInDoc :: (HasDocumentOpts env) => env -> [Chapter]
 chaptersInDoc env = view chaptersL env
 
-data XRefSection
+data CustomSection
              = XRefSharedLangRelation Relation
              | XRefSharedLangRule Rule
              | XRefSharedLangTheme (Maybe Pattern)
@@ -84,7 +84,7 @@ instance Xreferenceble Picture where
   xDefBlck env _ a = para $ imageWith (xSafeLabel a, [], []) src (xSafeLabel a)(text (caption a))
    where
     src  = imagePath env $ a
-instance Xreferenceble XRefSection where
+instance Xreferenceble CustomSection where
   xSafeLabel a = 
        (show . xrefPrefix . refStuff $ a)
      <> show (chapterOfSection x)
@@ -97,7 +97,7 @@ instance Xreferenceble XRefSection where
   xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget env fSpec a)
   xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (hyperTarget env fSpec a)
 
-hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> XRefSection -> Either Blocks Inlines 
+hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Either Blocks Inlines 
 hyperTarget env fSpec a =
     case a of
       XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff $ a)
@@ -153,7 +153,7 @@ citeGen l =
                  , citationMode = NormalCitation
                  }
        ] mempty
-codeGen :: XRefSection -> Inlines
+codeGen :: CustomSection -> Inlines
 codeGen a = 
   cite [Citation { citationId = xSafeLabel a
                  , citationPrefix = [Space]
@@ -178,7 +178,7 @@ instance Show CrossrefType where
             Sec -> "sec:"
             Tbl -> "tbl:"
             Fig -> "fig:"
-pandocEquationWithLabel :: (HasOutputLanguage env) => env -> FSpec -> XRefSection -> Inlines -> Blocks
+pandocEquationWithLabel :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Inlines -> Blocks
 pandocEquationWithLabel env fSpec xref x = 
   para (strong (xDefInln env fSpec xref) <> x)
 
@@ -188,7 +188,7 @@ data RefStuff =
            , nameOfThing      :: String
            , xrefPrefix       :: CrossrefType
            } deriving Show
-refStuff :: XRefSection -> RefStuff
+refStuff :: CustomSection -> RefStuff
 refStuff x  = 
    case x of
      XRefSharedLangRelation d 
