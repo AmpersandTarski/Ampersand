@@ -20,7 +20,6 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes (isFunction)
-import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
@@ -280,17 +279,17 @@ instance ShowMath Expression where
           showExpr (ECpl e)     = inMathOverline (showExpr e)
           showExpr (EBrk e)     = "("++showExpr e++")"
           showExpr (EDcD d)     = inMathText (name d)
-          showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
+          showExpr (EDcI c)     = "I_{ \\lbrack "++inMathText (name c)++" \\rbrack }"
           showExpr  EEps{}      = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
-          showExpr (EDcV sgn)   = "V_{["++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++"]}"
+          showExpr (EDcV sgn)   = "V_{ \\lbrack "++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++" \\rbrack }"
           showExpr (EMp1 val _) = atomVal2Math val --"\texttt{"<>show val<>"}"
           
 atomVal2Math :: PAtomValue -> String
 atomVal2Math pav =
    case pav of
-    PSingleton   _ s _ -> "\\texttt{"<>show s<>"}"
-    ScriptString   _ s -> "\\texttt{"<>show s<>"}"
-    XlsxString     _ s -> "\\texttt{"<>show s<>"}"
+    PSingleton   _ s _ -> " \\texttt{"<>show s<>"}"
+    ScriptString   _ s -> " \\texttt{"<>show s<>"}"
+    XlsxString     _ s -> " \\texttt{"<>show s<>"}"
     ScriptInt      _ i -> show i
     ScriptFloat    _ d -> show d
     XlsxDouble     o d -> fatal ("We got a value "++show d++" from "++show o++", which has to be shown in an expression, however the technicaltype is not known.")
