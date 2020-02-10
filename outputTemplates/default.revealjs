@@ -17,7 +17,7 @@ $endif$
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
   <link rel="stylesheet" href="$revealjs-url$/css/reveal.css">
-  <style type="text/css">
+  <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
       span.underline{text-decoration: underline;}
@@ -27,7 +27,7 @@ $if(quotes)$
 $endif$
   </style>
 $if(highlighting-css)$
-  <style type="text/css">
+  <style>
 $highlighting-css$
   </style>
 $endif$
@@ -170,6 +170,10 @@ $if(mouseWheel)$
         // Enable slide navigation via mouse wheel
         mouseWheel: $mouseWheel$,
 $endif$
+$if(rollingLinks)$
+        // Apply a 3D roll to links on hover
+        rollingLinks: $rollingLinks$,
+$endif$
 $if(hideAddressBar)$
         // Hides the address bar on mobile devices
         hideAddressBar: $hideAddressBar$,
@@ -197,6 +201,11 @@ $endif$
 $if(parallaxBackgroundImage)$
         // Parallax background image
         parallaxBackgroundImage: '$parallaxBackgroundImage$', // e.g. "'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg'"
+$else$
+$if(background-image)$
+       // Parallax background image
+       parallaxBackgroundImage: '$background-image$', // e.g. "'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg'"
+$endif$
 $endif$
 $if(parallaxBackgroundSize)$
         // Parallax background size
@@ -230,9 +239,13 @@ $endif$
 $if(maxScale)$
         maxScale: $maxScale$,
 $endif$
+$if(zoomKey)$
+        // Modifier key used to click-zoom to part of the slide
+        zoomKey: '$zoomKey$',
+$endif$
 $if(mathjax)$
         math: {
-          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js',
+          mathjax: '$mathjaxurl$',
           config: 'TeX-AMS_HTML-full',
           tex2jax: {
             inlineMath: [['\\(','\\)']],
@@ -254,7 +267,7 @@ $endif$
           { src: '$revealjs-url$/lib/js/classList.js', condition: function() { return !document.body.classList; } },
           { src: '$revealjs-url$/plugin/zoom-js/zoom.js', async: true },
 $if(notes-server)$
-          { src: '$revealjs-url$/socket.io/socker.io.js', async: true },
+          { src: '$revealjs-url$/socket.io/socket.io.js', async: true },
           { src: '$revealjs-url$/plugin/notes-server/client.js', async: true },
 $endif$
 $if(mathjax)$
