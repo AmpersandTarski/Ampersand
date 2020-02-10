@@ -116,8 +116,8 @@ chpConceptualAnalysis env lev fSpec = (
   nladjs d = if Uni `elem` (properties d) && Tot `elem` (properties d)
              then commaNL "en" (map adjNL . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])++" functie"
              else commaNL "en" (map adjNL . Set.elems $ properties d)++" relatie"
-  adj = propFullName outputLang' 
-  adjNL x = propFullName outputLang' x <> "e"
+  adj = propFullName True outputLang' 
+  adjNL x = propFullName True outputLang' x <> "e"
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
         = let purp = purposes2Blocks env (purposesDefinedIn fSpec outputLang' r)

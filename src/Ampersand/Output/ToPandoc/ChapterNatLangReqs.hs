@@ -201,7 +201,7 @@ chpNatLangReqs env lev fSpec =
               <>(case Set.elems $ properties dcl of
                     []  -> mempty
                     ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
-                                   <> (commaPandocAnd outputLang' (map (str . propFullName outputLang') ps)<>"."
+                                   <> (commaPandocAnd outputLang' (map (str . propFullName False outputLang') ps)<>"."
                                       )
                                   )
                            ]

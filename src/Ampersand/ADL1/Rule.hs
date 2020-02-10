@@ -65,7 +65,7 @@ rulefromProp prp d =
         meanings prop = map (Meaning . markup) [English,Dutch]
           where 
             markup lang = Markup lang (string2Blocks ReST $ f lang)
-            f lang = showDcl++" is "++propFullName lang prop
+            f lang = showDcl++" is "++propFullName False lang prop
          
         violMsg prop = [ msg lang | lang <-[English,Dutch]]
           where
@@ -98,10 +98,10 @@ rulefromProp prp d =
                     Tot-> "Elke "++s++" dient één "      ++t++" te hebben" ++" in de relatie "++name d
                     Sur-> "Elke "++t++" dient een "      ++s++" te hebben" ++" in de relatie "++name d
                     Prop -> fatal "Prop should have been converted by pattern the parser"
-            explByFullName lang = showDcl++" is "++propFullName lang prop
+            explByFullName lang = showDcl++" is "++propFullName False lang prop
 
-propFullName :: Lang -> Prop -> String
-propFullName lang prop =
+propFullName :: Bool -> Lang -> Prop -> String
+propFullName isAdjective lang prop =
   case lang of 
     English ->
         case prop of
@@ -115,15 +115,15 @@ propFullName lang prop =
           Inj-> "injective"
           Tot-> "total"
           Prop -> fatal "Prop should have been converted by the parser"
-    Dutch ->
+    Dutch -> (if isAdjective then snd else fst) $
         case prop of
-          Sym-> "symmetrisch"
-          Asy-> "antisymmetrisch"
-          Trn-> "transitief"
-          Rfx-> "reflexief"
-          Irf-> "irreflexief"
-          Uni-> "univalent"
-          Sur-> "surjectief"
-          Inj-> "injectief"
-          Tot-> "totaal"
+          Sym-> ("symmetrisch"    ,"symmetrische")
+          Asy-> ("antisymmetrisch","antisymmetrische")
+          Trn-> ("transitief"     ,"transitieve")
+          Rfx-> ("reflexief"      ,"reflexieve")
+          Irf-> ("irreflexief"    ,"irreflexieve")
+          Uni-> ("univalent"      ,"univalente")
+          Sur-> ("surjectief"     ,"surjectieve")
+          Inj-> ("injectief"      ,"injectieve")
+          Tot-> ("totaal"         ,"totale")
           Prop -> fatal "Prop should have been converted by the parser"

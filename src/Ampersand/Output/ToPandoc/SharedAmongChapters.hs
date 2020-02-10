@@ -41,6 +41,7 @@ import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux
+import           Data.Hashable
 import           Data.Typeable (typeOf)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -90,10 +91,10 @@ instance Xreferenceble CustomSection where
      <> show (chapterOfSection x)
      <> typeOfSection x
      <> "-"
-     <> nameOfThing x
+     <> (show . hash . nameOfThing $ x) -- Hash, to make sure there are no fancy characters. 
     where 
       x = refStuff a
-  hyperLinkTo = codeGen
+  hyperLinkTo = citeGen -- codeGen
   xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget env fSpec a)
   xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (hyperTarget env fSpec a)
 
@@ -153,8 +154,8 @@ citeGen l =
                  , citationMode = NormalCitation
                  }
        ] mempty
-codeGen :: CustomSection -> Inlines
-codeGen a = 
+codeGen' :: CustomSection -> Inlines
+codeGen' a = 
   cite [Citation { citationId = xSafeLabel a
                  , citationPrefix = [Space]
                  , citationSuffix = [Space]
