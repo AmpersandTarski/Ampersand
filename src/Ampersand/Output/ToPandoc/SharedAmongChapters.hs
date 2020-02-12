@@ -191,7 +191,7 @@ refStuff x  =
        -> RefStuff { typeOfSection    = rule
                    , chapterOfSection = DataAnalysis
                    , nameOfThing      = name r
-                   , xrefPrefix       = Eq
+                   , xrefPrefix       = Agr
                    }
      XRefSharedLangRule r
        -> RefStuff { typeOfSection    = rule
