@@ -76,12 +76,12 @@ class Typeable a => Xreferenceble a where
 
 instance Xreferenceble Chapter where
   xSafeLabel a = show Sec++show a
-  hyperLinkTo = citeGen
+  hyperLinkTo = codeGen'
   xDefBlck env fSpec a = headerWith (xSafeLabel a,[],[]) 1 (chptTitle (outputLang env fSpec) a)
 
 instance Xreferenceble Picture where
   xSafeLabel a = show Fig++caption a
-  hyperLinkTo = citeGen
+  hyperLinkTo = codeGen'
   xDefBlck env _ a = para $ imageWith (xSafeLabel a, [], []) src (xSafeLabel a)(text (caption a))
    where
     src  = imagePath env $ a
@@ -94,7 +94,7 @@ instance Xreferenceble CustomSection where
      <> (show . hash . nameOfThing $ x) -- Hash, to make sure there are no fancy characters. 
     where 
       x = refStuff a
-  hyperLinkTo = citeGen -- codeGen
+  hyperLinkTo = codeGen'
   xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget env fSpec a)
   xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (hyperTarget env fSpec a)
 
@@ -114,7 +114,7 @@ hyperTarget env fSpec a =
                                       --                         ("", ["adl"],[("caption",showRel d)]) 
                                       --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
                                       --                  )
-      XRefSharedLangRule r            -> Right $ spanWith (xSafeLabel a,[],[]) (str . name $ r)
+      XRefSharedLangRule r            -> Right $ spanWith (xSafeLabel a,[],[]) (str . show . name $ r)
                                       --   Left $ divWith (xSafeLabel a,[],[])
                                       --                  (   (para . text $ name r)
                                       --                  --  <>codeBlockWith 
@@ -143,17 +143,7 @@ hyperTarget env fSpec a =
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
     l = localize (outputLang env fSpec)
-citeGen :: Xreferenceble a => a -> Inlines
-citeGen l = 
-  cite [Citation { citationId = xSafeLabel l
-                 , citationPrefix = []
-                 , citationSuffix = []
-                 , citationHash = 0
-                 , citationNoteNum = 0
-                 , citationMode = NormalCitation
-                 }
-       ] mempty
-codeGen' :: CustomSection -> Inlines
+codeGen' :: Xreferenceble a => a -> Inlines
 codeGen' a = 
   cite [Citation { citationId = xSafeLabel a
                  , citationPrefix = [Space]
