@@ -92,27 +92,30 @@ chpConceptualAnalysis env lev fSpec = (
                    )
                    <> definitionList blocks
     )
+  
   caRelation :: Relation -> (Inlines, [Blocks])
-  caRelation d
-        = let purp =  purposes2Blocks env (purposesDefinedIn fSpec outputLang' d)
-          in ((xDefInln env fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMathWithSign d))
-             ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
-                ( case ( isNull purp, outputLang') of
-                   (True , Dutch)   -> plain ("De volgende " <> str(nladjs d) <> " is gedefinieerd ")
-                   (True , English) -> plain ("The following " <> str(ukadjs d) <> " has been defined ")
-                   (False, Dutch)   -> purp <> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " gedefinieerd ")
-                   (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
-                )
-                  -- Then the relation of the relation with its properties and its intended meaning
-               <> printMeaning outputLang' d
-              ])
-  ukadjs d  = if Uni `elem` (properties d) && Tot `elem` (properties d)
-              then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
-              else commaEng "and" (map adj . Set.elems $ (properties d))++" relation"
-  nladjs d = if Uni `elem` (properties d) && Tot `elem` (properties d)
-             then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])++" functie"
-             else commaNL "en" (map adj . Set.elems $ properties d)++" relatie"
-  adj = propFullName outputLang' 
+  caRelation d = (titel, [body])
+     where 
+        titel = xDefInln env fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMath d)
+        purp =  purposes2Blocks env (purposesDefinedIn fSpec outputLang' d)
+        body =  para linebreak
+                -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
+                <> ( case ( isNull purp, outputLang') of
+                  (True , Dutch)   -> plain ("De volgende " <> str(nladjs) <> " is gedefinieerd: ")
+                  (True , English) -> plain ("The following " <> str(ukadjs) <> " has been defined: ")
+                  (False, Dutch)   -> purp <> plain ("Voor dat doel is de volgende " <> str(nladjs) <> " gedefinieerd: ")
+                  (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs) <> " has been defined: ")
+               )
+                 -- Then the relation of the relation with its properties and its intended meaning
+              <> printMeaning outputLang' d
+        ukadjs = if Uni `elem` (properties d) && Tot `elem` (properties d)
+                    then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
+                    else commaEng "and" (map adj . Set.elems $ (properties d))++" relation"
+        nladjs = if Uni `elem` (properties d) && Tot `elem` (properties d)
+                  then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])++" functie"
+                  else commaNL "en" (map adj . Set.elems $ properties d)++" relatie"
+        adj   = propFullName True outputLang' 
+
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
         = let purp = purposes2Blocks env (purposesDefinedIn fSpec outputLang' r)

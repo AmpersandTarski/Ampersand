@@ -194,14 +194,14 @@ chpNatLangReqs env lev fSpec =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
             [(   (str.l) (NL "Afspraak ", EN "Agreement ")
-              <> ": " <> (xDefInln env fSpec (XRefSharedLangRelation dcl))
-             , -- (xDefInln env fSpec (XRefSharedLangRelation dcl) 
-              mempty --  [xDefBlck fSpec (XRefSharedLangRelation dcl)]
+              <> (text . show . theNr $ nDcl) <> ": " <> (xDefInln env fSpec (XRefSharedLangRelation dcl))
+             , 
+              mempty 
               <>[printMeaning outputLang' dcl]
               <>(case Set.elems $ properties dcl of
                     []  -> mempty
                     ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
-                                   <> (commaPandocAnd outputLang' (map (str . propFullName outputLang') ps)<>"."
+                                   <> (commaPandocAnd outputLang' (map (str . propFullName False outputLang') ps)<>"."
                                       )
                                   )
                            ]
@@ -220,25 +220,24 @@ chpNatLangReqs env lev fSpec =
             []  -> mempty
             _   -> bulletList . map (plain . mkPhrase dcl) $ samples
     where dcl = cDcl . theLoad $ nDcl
+          
           samples = take 3 . Set.elems . cDclPairs . theLoad $ nDcl
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul =
-         xDefBlck env fSpec (XRefSharedLangRule rul)
-      <> (printPurposes . cRulPurps . theLoad) nRul
-      -- <> definitionList 
-      --       [(   str (l (NL "Afspraak ", EN "Agreement "))
-      --         <> ": TODO"
-      --        , case (cRulMeaning . theLoad) nRul of
-      --            Nothing 
-      --               -> [plain $
-      --                       (str.l) (NL "De regel ",EN "The rule ")
-      --                    <> (emph.str.name) rul
-      --                    <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
-      --                  ]
-      --            Just m
-      --               -> [printMeaning m]
-      --        )
-      --       ]
+         (printPurposes . cRulPurps . theLoad) nRul
+      <> definitionList 
+            [(   str (l (NL "Afspraak ", EN "Agreement "))
+              <> (text . show . theNr $ nRul) <>": "
+              <> xDefInln env fSpec (XRefSharedLangRule rul)<>"."
+
+             , case (cRulMeanings . theLoad) nRul of
+                 [] -> [plain $
+                            (str.l) (NL "Deze regel ",EN "The rule ")
+                         <> (str.l) (NL " is ongedocumenteerd.",EN " is undocumented.")
+                       ]
+                 ms -> fmap (printMarkup . ameaMrk) ms
+             )
+            ]
      where rul = cRul . theLoad $ nRul
   mkPhrase :: Relation -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom

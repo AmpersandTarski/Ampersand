@@ -9,7 +9,6 @@ module Ampersand.Output.PandocAux
       , chptTitle
       , count
       , showMath
-      , showMathWithSign
       , latexEscShw
       , texOnlyMarginNote
       , newGlossaryEntry
@@ -21,7 +20,6 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes (isFunction)
-import           Ampersand.Core.ShowPStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
@@ -281,10 +279,23 @@ instance ShowMath Expression where
           showExpr (ECpl e)     = inMathOverline (showExpr e)
           showExpr (EBrk e)     = "("++showExpr e++")"
           showExpr (EDcD d)     = inMathText (name d)
-          showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
+          showExpr (EDcI c)     = "I_{ \\lbrack "++inMathText (name c)++" \\rbrack }"
           showExpr  EEps{}      = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
-          showExpr (EDcV sgn)   = "V_{["++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++"]}"
-          showExpr (EMp1 val _) = inMathText $ showP val
+          showExpr (EDcV sgn)   = "V_{ \\lbrack "++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++" \\rbrack }"
+          showExpr (EMp1 val _) = atomVal2Math val --"\texttt{"<>show val<>"}"
+          
+atomVal2Math :: PAtomValue -> String
+atomVal2Math pav =
+   case pav of
+    PSingleton   _ s _ -> " \\texttt{"<>show s<>"}"
+    ScriptString   _ s -> " \\texttt{"<>show s<>"}"
+    XlsxString     _ s -> " \\texttt{"<>show s<>"}"
+    ScriptInt      _ i -> show i
+    ScriptFloat    _ d -> show d
+    XlsxDouble     o d -> fatal ("We got a value "++show d++" from "++show o++", which has to be shown in an expression, however the technicaltype is not known.")
+    ComnBool       _ b -> show b
+    ScriptDate     _ x -> show x
+    ScriptDateTime _ x -> show x
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -295,15 +306,13 @@ addParensToSuper e@EFlp{} = EBrk e
 addParensToSuper e        = e
 
 instance ShowMath Relation where
- showMath decl = math $ 
-        inMathText (name decl)++":\\ "
-     ++(inMathText . name . source $ decl)++(if isFunction (EDcD decl) then "\\mapsto" else "*")
-     ++(inMathText . name . target $ decl)++"]"
-showMathWithSign :: Relation -> Inlines
-showMathWithSign decl = math $ 
-        inMathText (name decl)++"["
-     ++(inMathText . name . source $ decl)++"*"
-     ++(inMathText . name . target $ decl)++"]"
+ showMath decl = math . noBreaking $ 
+        inMathText (name decl)<>" \\lbrack "
+     <>(inMathText . name . source $ decl)<> (if isFunction (EDcD decl) then " \\mapsto " else "*")
+     <>(inMathText . name . target $ decl)<>" \\rbrack "
+
+noBreaking :: (IsString a, Semigroup a) => a -> a
+noBreaking x = "{"<>x<>"}"
 -- | latexEscShw escapes to LaTeX encoding. It is intended to be used in LaTeX text mode.
 --   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
 --   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
@@ -453,7 +462,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 ---------------------------
 -- safe function to have plain text in a piece of Math
 inMathText :: String -> String
-inMathText s = "\\text{"++latexEscShw s++"} "
+inMathText s = latexEscShw s
 
 inMathCartesianProduct :: String
 inMathCartesianProduct = "\\times "

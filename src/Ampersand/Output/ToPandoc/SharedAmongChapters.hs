@@ -15,7 +15,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , Chapter(..)
     , chaptersInDoc
     , Xreferenceble(..)
-    , XRefSection(..)
+    , CustomSection(..)
     , pandocEqnArray
     , pandocEquationWithLabel
     , Purpose(..)
@@ -41,6 +41,7 @@ import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux
+import           Data.Hashable
 import           Data.Typeable (typeOf)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -53,7 +54,7 @@ import           Text.Pandoc.Builder
 chaptersInDoc :: (HasDocumentOpts env) => env -> [Chapter]
 chaptersInDoc env = view chaptersL env
 
-data XRefSection
+data CustomSection
              = XRefSharedLangRelation Relation
              | XRefSharedLangRule Rule
              | XRefSharedLangTheme (Maybe Pattern)
@@ -75,29 +76,29 @@ class Typeable a => Xreferenceble a where
 
 instance Xreferenceble Chapter where
   xSafeLabel a = show Sec++show a
-  hyperLinkTo = citeGen
+  hyperLinkTo = codeGen'
   xDefBlck env fSpec a = headerWith (xSafeLabel a,[],[]) 1 (chptTitle (outputLang env fSpec) a)
 
 instance Xreferenceble Picture where
   xSafeLabel a = show Fig++caption a
-  hyperLinkTo = citeGen
+  hyperLinkTo = codeGen'
   xDefBlck env _ a = para $ imageWith (xSafeLabel a, [], []) src (xSafeLabel a)(text (caption a))
    where
     src  = imagePath env $ a
-instance Xreferenceble XRefSection where
+instance Xreferenceble CustomSection where
   xSafeLabel a = 
        (show . xrefPrefix . refStuff $ a)
      <> show (chapterOfSection x)
      <> typeOfSection x
      <> "-"
-     <> nameOfThing x
+     <> (show . hash . nameOfThing $ x) -- Hash, to make sure there are no fancy characters. 
     where 
       x = refStuff a
-  hyperLinkTo = codeGen
+  hyperLinkTo = codeGen'
   xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget env fSpec a)
   xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (hyperTarget env fSpec a)
 
-hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> XRefSection -> Either Blocks Inlines 
+hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Either Blocks Inlines 
 hyperTarget env fSpec a =
     case a of
       XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff $ a)
@@ -113,15 +114,14 @@ hyperTarget env fSpec a =
                                       --                         ("", ["adl"],[("caption",showRel d)]) 
                                       --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
                                       --                  )
-      XRefSharedLangRule r            -> -- Right $ spanWith (xSafeLabel a,[],[]) (str . show . numberOf fSpec $ r)
-                                         Left $ divWith (xSafeLabel a,[],[])
-                                                        (   (para . text $ name r)
-                                                        --  <>codeBlockWith 
-                                                        --       ("", ["adl"],[("caption",name r)]) 
-                                                        --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
-
-                                                          <>printMeaning (outputLang env fSpec) r
-                                                        )
+      XRefSharedLangRule r            -> Right $ spanWith (xSafeLabel a,[],[]) (str . show . name $ r)
+                                      --   Left $ divWith (xSafeLabel a,[],[])
+                                      --                  (   (para . text $ name r)
+                                      --                  --  <>codeBlockWith 
+                                      --                  --       ("", ["adl"],[("caption",name r)]) 
+                                      --                  --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
+                                      --                    <>printMeaning (outputLang env fSpec) r
+                                      --                  )
       XRefConceptualAnalysisRelation _d 
             -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Relatie ",EN "Relation ")
@@ -143,18 +143,8 @@ hyperTarget env fSpec a =
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
     l = localize (outputLang env fSpec)
-citeGen :: Xreferenceble a => a -> Inlines
-citeGen l = 
-  cite [Citation { citationId = xSafeLabel l
-                 , citationPrefix = []
-                 , citationSuffix = []
-                 , citationHash = 0
-                 , citationNoteNum = 0
-                 , citationMode = NormalCitation
-                 }
-       ] mempty
-codeGen :: XRefSection -> Inlines
-codeGen a = 
+codeGen' :: Xreferenceble a => a -> Inlines
+codeGen' a = 
   cite [Citation { citationId = xSafeLabel a
                  , citationPrefix = [Space]
                  , citationSuffix = [Space]
@@ -178,7 +168,7 @@ instance Show CrossrefType where
             Sec -> "sec:"
             Tbl -> "tbl:"
             Fig -> "fig:"
-pandocEquationWithLabel :: (HasOutputLanguage env) => env -> FSpec -> XRefSection -> Inlines -> Blocks
+pandocEquationWithLabel :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Inlines -> Blocks
 pandocEquationWithLabel env fSpec xref x = 
   para (strong (xDefInln env fSpec xref) <> x)
 
@@ -188,7 +178,7 @@ data RefStuff =
            , nameOfThing      :: String
            , xrefPrefix       :: CrossrefType
            } deriving Show
-refStuff :: XRefSection -> RefStuff
+refStuff :: CustomSection -> RefStuff
 refStuff x  = 
    case x of
      XRefSharedLangRelation d 
@@ -201,7 +191,7 @@ refStuff x  =
        -> RefStuff { typeOfSection    = rule
                    , chapterOfSection = DataAnalysis
                    , nameOfThing      = name r
-                   , xrefPrefix       = Eq
+                   , xrefPrefix       = Agr
                    }
      XRefSharedLangRule r
        -> RefStuff { typeOfSection    = rule

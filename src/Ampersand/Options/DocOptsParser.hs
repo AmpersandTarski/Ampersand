@@ -123,7 +123,7 @@ blackWhiteP = switch
         )
 
 genLegalRefsP :: Parser Bool
-genLegalRefsP = boolFlags True "legal-refs"
+genLegalRefsP = boolFlags False "legal-refs"
         ( "generation of a table of legal references in Natural Language chapter of the output document."
         ) mempty
 
