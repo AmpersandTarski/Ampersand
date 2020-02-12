@@ -114,15 +114,14 @@ hyperTarget env fSpec a =
                                       --                         ("", ["adl"],[("caption",showRel d)]) 
                                       --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
                                       --                  )
-      XRefSharedLangRule r            -> -- Right $ spanWith (xSafeLabel a,[],[]) (str . show . numberOf fSpec $ r)
-                                         Left $ divWith (xSafeLabel a,[],[])
-                                                        (   (para . text $ name r)
-                                                        --  <>codeBlockWith 
-                                                        --       ("", ["adl"],[("caption",name r)]) 
-                                                        --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
-
-                                                          <>printMeaning (outputLang env fSpec) r
-                                                        )
+      XRefSharedLangRule r            -> Right $ spanWith (xSafeLabel a,[],[]) (str . name $ r)
+                                      --   Left $ divWith (xSafeLabel a,[],[])
+                                      --                  (   (para . text $ name r)
+                                      --                  --  <>codeBlockWith 
+                                      --                  --       ("", ["adl"],[("caption",name r)]) 
+                                      --                  --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
+                                      --                    <>printMeaning (outputLang env fSpec) r
+                                      --                  )
       XRefConceptualAnalysisRelation _d 
             -> Right $ spanWith (xSafeLabel a,[],[]) 
                                 (    (text.l) (NL "Relatie ",EN "Relation ")
