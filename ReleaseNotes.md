@@ -9,6 +9,7 @@
 * [Issue #1047](https://github.com/AmpersandTarski/Ampersand/issues/1047) Non-existing directory is generated automagically when required for output.
 * [Issue #999] (https://github.com/AmpersandTarski/Ampersand/issues/999) Treat all concepts in a cycle in CLASSIFY statements as aliases of a single concept.
 * [Issue #1056] (https://github.com/AmpersandTarski/Ampersand/issues/#1056) Bugfix in .xlsx parser
+* [Issue #1054] (https://github.com/AmpersandTarski/Ampersand/issues/#1054) Ampersand daemon now also reports type errors
 
 ## v3.17.4 (13 september 2019)
 
