@@ -1,5 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- | Reads a project and parses it
 module Ampersand.Daemon.Parser (
     parseProject
@@ -14,20 +15,25 @@ import qualified RIO.NonEmpty as NE
 import           Ampersand.FSpec.MetaModels
 import           Ampersand.Types.Config
 import           Ampersand.Options.FSpecGenOptsParser
+
+-- | parseProject will try to parse a file. If it succeeds, it will 
+--   also parse all INCLUDED files transitive. All of these parses could
+--   fail. It will return a tuple containing the Loads and a list of 
+--   the filepaths that are read. 
 parseProject :: (HasRunner env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
 parseProject rootAdl = do
     let fSpecGenOpts = defFSpecGenOpts rootAdl 
     extendWith fSpecGenOpts $ do 
         (pc,gPctx) <- parseFileTransitive rootAdl 
-        env2 <- ask
+        env <- ask
         let loadedFiles = map pcCanonical pc
             gActx = pCtx2Fspec env2 <$> gPctx
         return ( case gActx of
                 Checked _ ws -> map warning2Load $ ws
                 Errors  es   -> NE.toList . fmap error2Load $ es
-            , loadedFiles
-            )
+               , loadedFiles
+               )
 
 warning2Load :: Warning -> Load
 warning2Load warn = Message
