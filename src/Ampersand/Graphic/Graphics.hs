@@ -234,7 +234,7 @@ writePicture pict = do
             let dotSource = mkDotGraph env pict
             path <- liftIO $ addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
                        (dropExtension . imagePath env) pict
-            logDebug $ display (T.pack path)<>" written."
+            logInfo $ display (T.pack path)<>" written."
             case postProcess of
               Nothing -> return ()
               Just x -> x path
