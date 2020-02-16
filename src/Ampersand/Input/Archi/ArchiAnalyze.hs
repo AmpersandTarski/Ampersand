@@ -214,12 +214,12 @@ data PAtomPair
      { archDocuVal    :: String
      } deriving (Show, Eq)
 
--- | Properties in Archimate have no identifying key. In Ampersand, that key is necessary to get objects that represent an Archimate-property.
+   class WithProperties a where
+-- ^ Properties in Archimate have no identifying key. In Ampersand, that key is necessary to get objects that represent an Archimate-property.
 --   So the class WithProperties is defined to generate keys for properties, to be inserted in the grinding process.
 --   The only data structures with properties in the inner structure of Archi (i.e. in the repository minus the Views),
 --   are folders and elements.
 --   For this reason, the types ArchiRepo, Folder, and Element are instances of class WithProperties.
-   class WithProperties a where
      allProps      :: a -> [ArchiProp]   -- takes all properties from an ArchiRepo, a Folder, or an Element
      identifyProps :: [String] -> a -> a -- distributes identifiers ( [String] ) over an ArchiRepo, a Folder, or an Element, in order to assign a unique identifier to each property in it.
 
