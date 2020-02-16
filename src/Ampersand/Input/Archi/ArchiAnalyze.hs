@@ -265,9 +265,9 @@ data PAtomPair
          distr []     _      = []
 
 
--- | In order to populate an Archi-metamodel with the contents of an Archi-repository,
---   we must grind that contents into binary tables. For that purpose, we define the
---   class MetaArchi, and instantiate it on ArchiRepo and all its constituent types.
+   -- | In order to populate an Archi-metamodel with the contents of an Archi-repository,
+   --   we must grind that contents into binary tables. For that purpose, we define the
+   --   class MetaArchi, and instantiate it on ArchiRepo and all its constituent types.
    class MetaArchi a where
      typeMap    :: a -> [(String,String)]           -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
      grindArchi :: (String->Maybe String) -> a ->   -- create population and the corresponding metamodel for the P-structure in Ampersand
@@ -369,8 +369,8 @@ data PAtomPair
      keyArchi = fldId
 
 
--- | If a folder has a fldType, all subfolders without a type are meant to have the same fldType.
---   For this purpose, the fldType is transported recursively to subfolders.
+   -- | If a folder has a fldType, all subfolders without a type are meant to have the same fldType.
+   --   For this purpose, the fldType is transported recursively to subfolders.
    insType :: Folder -> Folder -> Folder
    insType super sub
     = case (fldType super, fldType sub) of
@@ -417,9 +417,9 @@ data PAtomPair
      grindArchi elemLookup xs = concat [ grindArchi elemLookup x | x<-xs ]
      keyArchi = error "fatal: cannot use keyArchi on a list"
 
--- | The function `translateArchiObj` does the actual compilation of data objects from archiRepo into the Ampersand structure.
---   It looks redundant to produce both a `P_Population` and a `P_Relation`, but the first contains the population and the second is used to
---   include the metamodel of Archimate in the population. This saves the author the effort of maintaining an Archimate-metamodel.
+   -- | The function `translateArchiObj` does the actual compilation of data objects from archiRepo into the Ampersand structure.
+   --   It looks redundant to produce both a `P_Population` and a `P_Relation`, but the first contains the population and the second is used to
+   --   include the metamodel of Archimate in the population. This saves the author the effort of maintaining an Archimate-metamodel.
    translateArchiObj :: String -> String -> [(String, String)] -> (P_Population,Maybe P_Relation,[PClassify])
    translateArchiObj "purpose" "ArchiRepo" tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "purpose" (Just (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")))) (transTuples tuples)
@@ -469,8 +469,8 @@ data PAtomPair
    translateArchiObj a b c = error ("!fatal: non-exhaustive pattern in translateArchiObj\ntranslateArchiObj "++ show a++" "++show b++" "++show c)
 
 
--- | Purpose: To generate relationships from archiRepo as elements the Ampersand P-structure
--- | Pre:     isRelationship element
+   -- | Purpose: To generate relationships from archiRepo as elements the Ampersand P-structure
+   -- | Pre:     isRelationship element
    translateArchiRel :: (String -> Maybe String) -> Element -> [(P_Population, Maybe P_Relation, [PClassify])]
    translateArchiRel elemLookup element
     = [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relNm (Just (P_Sign (PCpt xType) (PCpt yType)))) (transTuples [(x,y)])
