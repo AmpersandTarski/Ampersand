@@ -16,7 +16,7 @@ import           Distribution.PackageDescription
 import           Distribution.Pretty (prettyShow)
 import           System.Directory
 import           System.Environment (getEnvironment)
-import           System.Exit
+import qualified System.Exit as SE
 import           System.FilePath
 import           System.IO(withFile,IOMode(ReadMode),hGetContents)
 import           System.Process(readProcessWithExitCode)
@@ -81,7 +81,7 @@ getGitInfoStr = getInfoStr `catch` warnGracefully
      eSHA <- readProcessEither "git" ["rev-parse", "--short", "HEAD"] ""
      eBranch <- readProcessEither "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
      (exitCode, _, _) <- readProcessWithExitCode "git" ["diff", "--quiet"] ""
-     let isDirty = exitCode /= ExitSuccess -- exit code signals whether branch is dirty
+     let isDirty = exitCode /= SE.ExitSuccess -- exit code signals whether branch is dirty
      case (eSHA, eBranch) of
        (Right sha, Right branch) ->
            return $ gitInfoStr sha branch isDirty
@@ -111,8 +111,8 @@ getGitInfoStr = getInfoStr `catch` warnGracefully
    readProcessEither cmd args stdinStr = do
      (exitCode,stdoutStr,stderrStr) <- readProcessWithExitCode cmd args stdinStr
      case exitCode of
-       ExitSuccess   -> return $ Right stdoutStr
-       ExitFailure _ -> return $ Left stderrStr
+       SE.ExitSuccess   -> return $ Right stdoutStr
+       SE.ExitFailure _ -> return $ Left stderrStr
 
 warnNoCommitInfo :: IO String
 warnNoCommitInfo = do
