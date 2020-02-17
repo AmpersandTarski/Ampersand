@@ -501,8 +501,8 @@ data PAtomPair
         , Nothing
         , [ PClassify
                 { pos     = OriginUnknown
-                , specific = PCpt relTyp           -- ^ specific concept
-                , generics = NEL.fromList [PCpt "Relationship"]   -- ^ generic concepts
+                , specific = PCpt relTyp                          --  specific concept
+                , generics = NEL.fromList [PCpt "Relationship"]   --  generic concepts
                 } ]
         )
       | relTyp/="Relationship" ] ++
