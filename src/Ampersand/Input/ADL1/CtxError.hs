@@ -18,6 +18,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkMultipleRepresentTypesError, nonMatchingRepresentTypes
   , mkEndoPropertyError
   , mkMultipleTypesInTypologyError
+  , mkInvariantViolationsError
   , mkIncompatibleAtomValueError
   , mkTypeMismatchError
   , mkMultipleRootsError
@@ -305,7 +306,28 @@ mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
 mkIncompatibleAtomValueError pav msg = CTXE (origin pav) (case msg of 
                                                             "" -> fatal "Error message must not be empty."
                                                             _  -> msg)
-
+mkInvariantViolationsError :: (Rule,AAtomPairs) -> CtxError
+mkInvariantViolationsError (r,ps) = 
+  CTXE (origin r) violationMessage 
+      where
+        violationMessage :: String
+        violationMessage = unlines $
+          [if length ps == 1 
+            then "There is " <>show (length ps)<>" violation of RULE " <>show (name r)<>":"
+            else "There are "<>show (length ps)<>" violations of RULE "<>show (name r)<>":"
+          ] 
+          <> (map ("  "<>) . listPairs 10 . toList $ ps)
+        listPairs :: Int -> [AAtomPair] -> [String]
+        listPairs i xs = 
+                    case xs of
+                      [] -> []
+                      h:tl 
+                        | i == 0 -> ["  ... ("<>show (length xs)<>" more)"]
+                        | otherwise -> showAP h : listPairs (i-1) tl
+            where
+              showAP :: AAtomPair -> String
+              showAP x= "("<>aavstr (apLeft x)<>", "<>aavstr (apRight x)<>")"
+    
 mkInterfaceRefCycleError :: NE.NonEmpty Interface -> CtxError
 mkInterfaceRefCycleError cyclicIfcs =
   CTXE (origin (NE.head cyclicIfcs)) $

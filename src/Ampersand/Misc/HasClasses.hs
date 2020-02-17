@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Ampersand.Misc.HasClasses
 
 where
@@ -62,9 +64,8 @@ instance HasDirPrototype ProtoOpts where
 
 class HasAllowInvariantViolations a where
   allowInvariantViolationsL :: Lens' a Bool
-instance HasAllowInvariantViolations ProtoOpts where
-  allowInvariantViolationsL = lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
-
+instance (HasFSpecGenOpts a) => HasAllowInvariantViolations a where
+  allowInvariantViolationsL = fSpecGenOptsL . (lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y }))
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
   baseName :: a -> String
@@ -229,7 +230,9 @@ data FSpecGenOpts = FSpecGenOpts
   , xtrimXLSXCells :: !Bool
   , xrecipeName :: !KnownRecipe 
   -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
-  } deriving Show
+  , xallowInvariantViolations :: !Bool
+  -- ^ Should invariant violations be ignored?
+} deriving Show
 
 data FSpecFormat = 
          FPandoc
@@ -280,7 +283,6 @@ data ProtoOpts = ProtoOpts
    , xdirPrototype :: !(Maybe FilePath)
    , xdirCustomizations :: ![FilePath]
    , xzwolleVersion :: !String
-   , xallowInvariantViolations :: !Bool
   } deriving Show
 
 -- | Options for @ampersand documentation@.

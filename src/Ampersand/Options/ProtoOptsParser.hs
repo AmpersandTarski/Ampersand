@@ -16,7 +16,7 @@ protoOptsParser =
    ( \dbName sqlHost sqlLogin sqlPwd forceReinstall 
         outputLanguage fSpecGenOpts 
         skipComposer dirPrototype dirCustomizations 
-        zwolleVersion allowInvariantViolations -> ProtoOpts
+        zwolleVersion -> ProtoOpts
             { xdbName = dbName
             , xsqlHost = sqlHost
             , xsqlLogin = sqlLogin
@@ -28,12 +28,11 @@ protoOptsParser =
             , xdirPrototype = dirPrototype 
             , xdirCustomizations = dirCustomizations
             , xzwolleVersion = zwolleVersion
-            , xallowInvariantViolations = allowInvariantViolations
             }) 
   <$> optional dbNameP <*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
   <*> skipComposerP <*> optional dirPrototypeP <*> dirCustomizationsP
-  <*> zwolleVersionP <*> allowInvariantViolationsP
+  <*> zwolleVersionP
 
 dbNameP :: Parser String
 dbNameP = strOption
@@ -99,13 +98,6 @@ zwolleVersionP = strOption
                 <>"Normally you shouldn't need to use anohter version "
                 <>"than the default. Only a developer of the framework "
                 <>"can make good use of it. ")
-        )
-allowInvariantViolationsP :: Parser Bool
-allowInvariantViolationsP = switch
-        ( long "ignore-invariant-violations"
-        <> help ("Allow to build a prototype, even if there are invariants "
-               <>"that are being violated. (See "
-               <>"https://github.com/AmpersandTarski/Ampersand/issues/728)")
         )
 
 

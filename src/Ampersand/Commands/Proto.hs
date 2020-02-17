@@ -12,7 +12,6 @@ module Ampersand.Commands.Proto
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.FSpec2SQL
@@ -23,44 +22,18 @@ import qualified RIO.Text as T
 import           System.Directory
 -- | Builds a prototype of the current project.
 --
-proto :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasAllowInvariantViolations env, HasDirPrototype env) 
+proto :: (Show env, HasRunner env, HasRunComposer env, HasDirCustomizations env, HasZwolleVersion env, HasProtoOpts env, HasDirPrototype env) 
        => FSpec -> RIO env ()
 proto fSpec = do
     env <- ask
     let dirPrototype = getDirPrototype env
-    allowInvariantViolations <- view allowInvariantViolationsL
-    let violatedRules :: [(Rule,AAtomPairs)]
-        violatedRules = violationsOfInvariants fSpec
-    if null violatedRules || allowInvariantViolations
-    then do
-       logDebug "Generating prototype..."
-       liftIO $ createDirectoryIfMissing True dirPrototype
-       doGenFrontend fSpec
-       generateDatabaseFile fSpec
-       let dir = getGenericsDir env
-       generateAllJSONfiles dir fSpec
-       dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
-       logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
-    else exitWith $ NoPrototypeBecauseOfRuleViolations (violationMessages violatedRules)
+    logDebug "Generating prototype..."
+    liftIO $ createDirectoryIfMissing True dirPrototype
+    doGenFrontend fSpec
+    generateDatabaseFile fSpec
+    let dir = getGenericsDir env
+    generateAllJSONfiles dir fSpec
+    dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
+    logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
 
-violationMessages :: [(Rule,AAtomPairs)] -> [String]
-violationMessages = concatMap violationMessage
-  where
-    violationMessage :: (Rule,AAtomPairs) -> [String]
-    violationMessage (r,ps) = 
-      [if length ps == 1 
-        then "There is " <>show (length ps)<>" violation of RULE " <>show (name r)<>":"
-        else "There are "<>show (length ps)<>" violations of RULE "<>show (name r)<>":"
-      ] 
-      <> (map ("  "<>) . listPairs 10 . toList $ ps)
-    listPairs :: Int -> [AAtomPair] -> [String]
-    listPairs i xs = 
-                case xs of
-                  [] -> []
-                  h:tl 
-                    | i == 0 -> ["  ... ("<>show (length xs)<>" more)"]
-                    | otherwise -> showAP h : listPairs (i-1) tl
-        where
-          showAP :: AAtomPair -> String
-          showAP x= "("<>aavstr (apLeft x)<>", "<>aavstr (apRight x)<>")"
         

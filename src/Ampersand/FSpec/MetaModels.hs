@@ -20,13 +20,26 @@ import           Ampersand.Input
 import           Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
-
 parser :: (HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> RIO env (Guarded P_Context)
 parser FormalAmpersand = parseFormalAmpersand
 parser PrototypeContext   = parsePrototypeContext 
 
 pCtx2Fspec :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded FSpec
-pCtx2Fspec env c = makeFSpec env <$> pCtx2aCtx env c
+pCtx2Fspec env c = do
+    fSpec <- makeFSpec env <$> pCtx2aCtx env c
+    checkInvariants fSpec
+  where 
+    checkInvariants :: FSpec -> Guarded FSpec
+    checkInvariants fSpec =
+      if view allowInvariantViolationsL env 
+        then 
+          pure fSpec
+        else 
+          case violationsOfInvariants fSpec of
+            [] -> pure fSpec
+            h:tl -> Errors $ fmap mkInvariantViolationsError $ h NE.:| tl
+
+
 
 
 mkGrindInfo :: (HasFSpecGenOpts env, HasLogFunc env) => MetaModel -> RIO env GrindInfo
