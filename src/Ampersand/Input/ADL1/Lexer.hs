@@ -34,7 +34,7 @@ import qualified RIO.Set as Set
 import           RIO.Time
 import           Numeric
 
--- | Retrieves a list of keywords accepted by the ampersand language
+-- | Retrieves a list of keywords accepted by the Ampersand language
 keywords :: [String] -- ^ The keywords
 keywords  = L.nub $
                 [ "CONTEXT", "ENDCONTEXT"
@@ -87,12 +87,12 @@ keywords  = L.nub $
                 -- Depreciated keywords:
                 ]
 
--- | Retrieves a list of operators accepted by the ampersand language
+-- | Retrieves a list of operators accepted by the Ampersand language
 operators :: [String] -- ^ The operators
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
               "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."]
 
--- | Retrieves the list of symbols accepted by the ampersand language
+-- | Retrieves the list of symbols accepted by the Ampersand language
 symbols :: String -- ^ The list of symbol characters / [Char]
 symbols = "()[],{}<>"
 

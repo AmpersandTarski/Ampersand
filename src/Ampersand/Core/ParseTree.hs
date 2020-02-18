@@ -49,23 +49,23 @@ import           GHC.Generics (Generic)
 import           Data.Typeable (typeOf)
 
 data P_Context
-   = PCtx{ ctx_nm ::     String           -- ^ The name of this context
-         , ctx_pos ::    [Origin]         -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctx_lang ::   Maybe Lang       -- ^ The language specified on the top-level context. If omitted, English will be the default.
-         , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-         , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
-         , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctx_ds ::     [P_Relation]  -- ^ The relations defined in this context, outside the scope of patterns
-         , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
-         , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
-         , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
+   = PCtx{ ctx_nm ::     String             -- ^ The name of this context
+         , ctx_pos ::    [Origin]           -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+         , ctx_lang ::   Maybe Lang         -- ^ The language specified on the top-level context. If omitted, English will be the default.
+         , ctx_markup :: Maybe PandocFormat -- ^ The default markup format for free text in this context
+         , ctx_pats ::   [P_Pattern]        -- ^ The patterns defined in this context
+         , ctx_rs ::     [P_Rule TermPrim]  -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctx_ds ::     [P_Relation]       -- ^ The relations defined in this context, outside the scope of patterns
+         , ctx_cs ::     [ConceptDef]       -- ^ The concept definitions defined in this context, outside the scope of patterns
+         , ctx_ks ::     [P_IdentDef]       -- ^ The identity definitions defined in this context, outside the scope of patterns
+         , ctx_rrules :: [P_RoleRule]       -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
          , ctx_reprs ::  [Representation]
-         , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
-         , ctx_gs ::     [PClassify]          -- ^ The gen definitions defined in this context, outside the scope of patterns
-         , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
-         , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
-         , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
-         , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+         , ctx_vs ::     [P_ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
+         , ctx_gs ::     [PClassify]        -- ^ The gen definitions defined in this context, outside the scope of patterns
+         , ctx_ifcs ::   [P_Interface]      -- ^ The interfaces defined in this context
+         , ctx_ps ::     [PPurpose]         -- ^ The purposes defined in this context, outside the scope of patterns and processes
+         , ctx_pops ::   [P_Population]     -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
+         , ctx_metas ::  [Meta]             -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
          } deriving Show --for QuickCheck
 
 instance Eq P_Context where
@@ -249,10 +249,7 @@ data PAtomPair
           , ppRight :: PAtomValue
           } deriving (Show) -- Show is for QuickCheck error messages and/or input redundancy removal only!
 instance Ord PAtomPair where
-  compare a b = case compare (ppLeft a, ppRight a) (ppLeft b, ppRight b) of
-    EQ -> fromMaybe (fatal $ "Have a look at this compare, if it shows up.") 
-                    (maybeOrdering (origin a) (origin b))
-    x -> x
+  compare a b = compare (ppLeft a, ppRight a) (ppLeft b, ppRight b)
 instance Eq PAtomPair where
   a == b = compare a b == EQ
 instance Traced PAtomPair where
@@ -369,6 +366,12 @@ data TermPrim
 
 data P_NamedRel = PNamedRel { pos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
    deriving Show
+
+instance Eq P_NamedRel where
+     nr==nr'
+      = case (p_mbSign nr, p_mbSign nr') of
+             (Just sgn, Just sgn')  -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
+             _                      -> False
 
 {- For whenever it may turn out to be useful
 instance Eq TermPrim where
@@ -589,7 +592,7 @@ data P_Population
               , p_popps :: [PAtomPair]  -- the contents
               }
   | P_CptPopu { pos     :: Origin  -- the origin
-              , p_cpt  :: P_Concept  -- the concept the population belongs to
+              , p_cpt   :: P_Concept  -- the concept the population belongs to
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
    deriving (Show) --For QuickCheck error messages only!
