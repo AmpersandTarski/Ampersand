@@ -41,7 +41,9 @@ proto fSpec = do
        generateAllJSONfiles dir fSpec
        dirPrototypeA <- liftIO $ makeAbsolute dirPrototype
        logInfo $ "Prototype files have been written to " <> display (T.pack dirPrototypeA)
-    else exitWith $ NoPrototypeBecauseOfRuleViolations (violationMessages violatedRules)
+    else do 
+       logError $ "No prototype was generated, because your script has violations of invariants."
+       exitWith $ InvariantRuleViolated (violationMessages violatedRules)
 
 violationMessages :: [(Rule,AAtomPairs)] -> [String]
 violationMessages = concatMap violationMessage
