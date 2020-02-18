@@ -15,6 +15,7 @@ module Ampersand.Input.Parsing (
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
+import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Input.ADL1.Lexer
 import           Ampersand.Input.ADL1.Parser
@@ -29,6 +30,7 @@ import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           Text.Parsec.Prim (runP)
+import Ampersand.Input.Archi.ArchiAnalyze
 
 
 
@@ -126,11 +128,23 @@ parseSingleADL pc
                                                         , "   File does not exist." ]
     where
      filePath = pcCanonical pc
-     parseSingleADL' :: (HasFSpecGenOpts env) => RIO env (Guarded (P_Context, [ParseCandidate]))
+     parseSingleADL' :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
-         | extension == ".xlsx" =
+         | extension == ".xlsx" =  -- This feature enables the parsing of Excell files, that are prepared for Ampersand.
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+                }
+         | extension == ".xml" = -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
+             do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
+                ; logInfo (display (T.pack filePath) <> " has been interpreted as an Archi-repository.")
+                ; case ctxFromArchi of
+                    Checked ctx _ -> do
+                         writeFileUtf8 "ArchiMetaModel.adl" (T.pack $ showP ctx)
+                         logInfo ("ArchiMetaModel.adl written")
+                    Errors _ -> pure ()
+                ; return ((,) <$> ctxFromArchi
+                              <*> pure [] -- ArchiMate file cannot contain include files
+                         )
                 }
          | otherwise =
              do { mFileContents

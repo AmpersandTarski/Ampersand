@@ -78,4 +78,3 @@ import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Rule 
          ( consequent, antecedent, hasantecedent
          , rulefromProp, isPropertyRule, propFullName)
-

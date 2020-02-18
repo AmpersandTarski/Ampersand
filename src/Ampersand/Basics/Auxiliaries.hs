@@ -118,4 +118,3 @@ commaNL  _  []     = ""
 
 class Flippable a where
   flp :: a -> a
-

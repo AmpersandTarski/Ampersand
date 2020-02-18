@@ -50,6 +50,7 @@ dependencies:
       - hashable == 1.2.*
       - HStringTemplate == 0.8.*
       - http-conduit == 2.3.*
+      - hxt == 9.3.*
       - lens == 4.17.*
       - mtl == 2.2.*
       - optparse-applicative == 0.14.*
