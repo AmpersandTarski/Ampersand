@@ -1,9 +1,16 @@
 {-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings, DuplicateRecordFields #-}
+{-|
+Module      : ArchiAnalyze
+Description : Interprets an ArchiMate(r) repository as Ampersand context.
+Maintainer  : stef.joosten@ou.nl
+Stability   : experimental
+
+The purpose of this module is to load Archimate content into an Ampersand context.
+This module parses an Archi-repository by means of function `archi2PContext`, which produces a `P_Context` for merging into Ampersand.
+That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
+In this way, `archi2PContext ` deals with the fact that Archimate produces a mix of model and metamodel.
+-}
 module Ampersand.Input.Archi.ArchiAnalyze (archi2PContext) where
--- ^ The purpose of this module is to load Archimate content into an Ampersand context.
--- This module parses an Archi-repository by means of function `archi2PContext`, which produces a `P_Context` for merging into Ampersand.
--- That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
--- In this way, `archi2PContext ` deals with the fact that Archimate produces a mix of model and metamodel.
 
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
