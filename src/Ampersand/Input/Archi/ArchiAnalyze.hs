@@ -1,6 +1,6 @@
 {-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings, DuplicateRecordFields #-}
 module Ampersand.Input.Archi.ArchiAnalyze (archi2PContext) where
-   -- The purpose of this module is to load Archimate content into an Ampersand context.
+   -- ^ The purpose of this module is to load Archimate content into an Ampersand context.
    -- This module parses an Archi-repository by means of function `archi2PContext`, which produces a `P_Context` for merging into Ampersand.
    -- That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
    -- In this way, `archi2PContext ` deals with the fact that Archimate produces a mix of model and metamodel.
@@ -67,7 +67,8 @@ archi2PContext archiRepoFilename  -- e.g. "CArepository.xml"
          showArchiElems :: (P_Concept,Int) -> String
          showArchiElems (c,n) = "\n"++p_cptnm c++"\t"++show n
 
--- | function `samePop` is used to merge atoms of the same concept into one concept and to merge pairs of `the same` relations into one.
+-- | function `samePop` is used to merge concepts with the same name into one concept,
+--   and to merge pairs of `the same` relations into one.
 --   It compares name and signature of a relation, because two relations with the same name and signature have the same set of pairs.
 --   Similarly for concepts: two concepts with the same name are the same concept.
 samePop :: P_Population -> P_Population -> Bool
@@ -80,7 +81,7 @@ samePop pop@P_RelPopu{} pop'@P_RelPopu{}
 samePop pop@P_CptPopu{} pop'@P_CptPopu{} = p_cpt pop == p_cpt pop'
 samePop _ _ = False
 
--- | Function `mkArchiContext` determines the P_Context that has been constructed from the ArchiMate repo
+-- | Function `mkArchiContext` defines the P_Context that has been constructed from the ArchiMate repo
 mkArchiContext :: [(P_Population,Maybe P_Relation,[PClassify])] -> Guarded P_Context
 mkArchiContext pops = pure
   PCtx{ ctx_nm     = "Archimate"
@@ -200,12 +201,12 @@ data ArchiDocu = ArchiDocu
   { archDocuVal    :: String
   } deriving (Show, Eq)
 
--- | Properties in Archimate have no identifying key.
---   In Ampersand, that key is necessary to get objects that represent an Archimate-property.
---   So the class WithProperties is defined to generate keys for properties,
+-- | The class WithProperties is defined to generate keys for properties,
 --   to be inserted in the grinding process.
+--   Properties in Archimate have no identifying key.
 --   The only data structures with properties in the inner structure of Archi
 --   (i.e. in the repository minus the Views) are folders and elements.
+--   In Ampersand, that key is necessary to get objects that represent an Archimate-property.
 --   For this reason, the types ArchiRepo, Folder, and Element are instances
 --   of class WithProperties.
 class WithProperties a where
@@ -311,8 +312,8 @@ insType super sub
         (ftyp,"") -> sub{fldType=ftyp}
         _         -> sub
 
+-- A type map is constructed for Archi-objects only. Taking relationships into this map brings Archi into higher order logic, and may cause black holes in Haskell. 
 instance MetaArchi Element where
--- ^ A type map is constructed for Archi-objects only. Taking relationships into this map brings Archi into higher order logic, and may cause black holes in Haskell. 
   typeMap element
    = [(keyArchi element, elemType element) | (not.null.elemName) element, (null.elemSrc) element] ++
      typeMap (elProps element)
@@ -331,7 +332,8 @@ instance MetaArchi Element where
      (concat.map (grindArchi elemLookup).elProps) element
   keyArchi = elemId
 
-isRelationship :: Element -> Bool  -- figure out whether this XML-element is an Archimate Relationship.
+-- | Function `isRelationship` can tell whether this XML-element is an Archimate Relationship.
+isRelationship :: Element -> Bool
 isRelationship element = (not.null.elemSrc) element
 
 instance MetaArchi ArchiProp where
@@ -458,6 +460,8 @@ translateArchiRel elemLookup element
                     Nothing -> fatal ("No Archi-object found for Archi-identifier "++show y)
        relNm    = relCase relLabel  --  ++"["++xType++"*"++yType++"]"
 
+-- | Function `unfixRel` is used to generate Ampersand keys from Archimate identifiers.
+--   It removes a trailing `R` and whatever comes after it.
 unfixRel :: String -> String
 unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
 relCase :: String -> String
