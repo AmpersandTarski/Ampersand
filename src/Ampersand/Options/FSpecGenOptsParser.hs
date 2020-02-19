@@ -18,8 +18,8 @@ fSpecGenOptsParser ::
   -> Parser FSpecGenOpts
 fSpecGenOptsParser isForDaemon =
       ( \rootFile sqlBinTables genInterfaces namespace 
-         defaultCrud trimXLSXCells -- metaModels
-         knownRecipe
+         defaultCrud trimXLSXCells
+         knownRecipe allowInvariantViolations
         -> FSpecGenOpts
                 { xrootFile = rootFile
                 , xsqlBinTables = sqlBinTables
@@ -28,6 +28,7 @@ fSpecGenOptsParser isForDaemon =
                 , xdefaultCrud = defaultCrud
                 , xtrimXLSXCells = trimXLSXCells
                 , xrecipeName = knownRecipe
+                , xallowInvariantViolations = allowInvariantViolations
                 }
       ) <$> (if isForDaemon 
               then pure Nothing -- The rootfile should come from the daemon config file.
@@ -37,8 +38,8 @@ fSpecGenOptsParser isForDaemon =
         <*> namespaceP
         <*> crudP
         <*> trimXLSXCellsP
-      --  <*> metaModelsP
         <*> knownRecipeP
+        <*> allowInvariantViolationsP
 defFSpecGenOpts :: FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl = FSpecGenOpts
      { xrootFile = Just rootAdl
@@ -48,6 +49,7 @@ defFSpecGenOpts rootAdl = FSpecGenOpts
      , xdefaultCrud = (True,True,True,True)
      , xtrimXLSXCells = True
      , xrecipeName = Standard
+     , xallowInvariantViolations = False
      } 
 rootFileP :: Parser FilePath
 rootFileP = strArgument 
@@ -129,3 +131,10 @@ knownRecipeP = toKnownRecipe <$> strOption
             where
               matches :: (Show a) => a -> Bool
               matches x = map toLower s `L.isPrefixOf` (map toLower $ show x)
+
+allowInvariantViolationsP :: Parser Bool
+allowInvariantViolationsP = switch
+        ( long "ignore-invariant-violations"
+        <> help ("Do not report violations of invariants. (See "
+               <>"https://github.com/AmpersandTarski/Ampersand/issues/728)")
+        )
