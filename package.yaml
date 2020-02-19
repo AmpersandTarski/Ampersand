@@ -54,9 +54,9 @@ dependencies:
       - lens == 4.17.*
       - mtl == 2.2.*
       - optparse-applicative == 0.14.*
-      - pandoc == 2.7.*
-      - pandoc-crossref == 0.3.4.0
-      - pandoc-types == 1.17.*
+      - pandoc == 2.9.*
+      - pandoc-crossref == 0.3.6.1
+      - pandoc-types == 1.20.*
       - parsec == 3.1.*
       - process == 1.6.*
       - QuickCheck == 2.13.*
@@ -65,6 +65,7 @@ dependencies:
       - split == 0.2.*
       - SpreadsheetML == 0.1.*
       - terminal-size == 0.3.*
+      - texmath == 0.12.*
       - text == 1.2.*
       - time == 1.8.*
       - transformers
