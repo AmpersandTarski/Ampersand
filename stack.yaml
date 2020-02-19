@@ -24,7 +24,6 @@ extra-deps:
 - emojis-0.1
 - haddock-library-1.8.0
 - jira-wiki-markup-1.0.0
-#- pandoc-types-1.17.6.1
 - skylighting-0.8.3.2
 - skylighting-core-0.8.3.2
 - regex-pcre-builtin-0.95.1.1.8.43
