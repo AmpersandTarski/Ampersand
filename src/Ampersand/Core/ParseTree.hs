@@ -43,6 +43,7 @@ import           Data.Foldable hiding (concat)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           RIO.Time
 import           Data.Traversable
 import           GHC.Generics (Generic)
@@ -158,7 +159,7 @@ instance Ord ConceptDef where
 instance Eq ConceptDef where
   a == b = compare a b == EQ
 instance Unique ConceptDef where
-  showUnique cd = cdcpt cd++"At"++show (typeOf x) ++"_" ++ show x
+  showUnique cd = cdcpt cd<>"At"<>tshow (typeOf x) <>"_" <> tshow x
     where x = origin cd
 instance Traced ConceptDef where
  origin = pos
@@ -180,7 +181,7 @@ data TType
   | TypeOfOne --special type for the special concept ONE.
      deriving (Eq, Ord, Typeable, Enum, Bounded)
 instance Unique TType where
- showUnique = show
+ showUnique = tshow
 instance Show TType where
   show tt = case tt of
     Alphanumeric      ->   "ALPHANUMERIC"
@@ -232,7 +233,7 @@ mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1
      = P_Sgn { dec_nm     = name r0
              , dec_sign   = dec_sign r0
              , dec_prps   = Set.unions (fmap dec_prps rels)
-             , dec_pragma = case NE.filter (not . null . concat . dec_pragma) rels of
+             , dec_pragma = case NE.filter (not . T.null . T.concat . dec_pragma) rels of
                               []  -> dec_pragma r0
                               h:_ -> dec_pragma h
              , dec_Mean   = L.nub $ concatMap dec_Mean rels
@@ -296,7 +297,7 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     XlsxString     _ s -> show s
     ScriptInt      _ i -> show i
     ScriptFloat    _ d -> show d
-    XlsxDouble     o d -> fatal ("We got a value "++show d++" from "++show o++", which has to be shown in an expression, however the technicaltype is not known.")
+    XlsxDouble     o d -> fatal ("We got a value "<>show d<>" from "<>show o<>", which has to be shown in an expression, however the technicaltype is not known.")
     ComnBool       _ b -> show b
     ScriptDate     _ x -> show x
     ScriptDateTime _ x -> show x
@@ -338,7 +339,7 @@ instance Traced PAtomValue where
     ScriptDate     o _ -> o
     ScriptDateTime o _ -> o
 instance Unique PAtomValue where
-  showUnique = show
+  showUnique = tshow
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r
    = PPair { pos   = o
@@ -782,7 +783,7 @@ data PRef2Obj = PRef2ConceptDef Text
 instance Named PRef2Obj where
   name pe = case pe of
      PRef2ConceptDef str -> str
-     PRef2Relation (PNamedRel _ nm mSgn) -> nm++maybe "" show mSgn
+     PRef2Relation (PNamedRel _ nm mSgn) -> nm<>maybe "" tshow mSgn
      PRef2Rule str -> str
      PRef2IdentityDef str -> str
      PRef2ViewDef str -> str
@@ -827,7 +828,7 @@ instance Named P_Concept where
  name P_ONE = "ONE"
 
 instance Show P_Concept where
- show = name
+ show = T.unpack . name
 
 data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept } deriving (Ord,Eq)
 -- (Stef June 17th, 2016)   P_Sign is defined Ord,Eq, because P_Relation must be Ord,Eq on name and signature.
@@ -875,7 +876,7 @@ instance Show Prop where
  show Prop = "PROP"
 
 instance Unique Prop where
- showUnique = show
+ showUnique = tshow
 
 instance Flippable Prop where
  flp Uni = Inj
@@ -886,7 +887,7 @@ instance Flippable Prop where
 
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =
-  PCtx{ ctx_nm     = case (filter (not.null) . map ctx_nm) contexts of
+  PCtx{ ctx_nm     = case (filter (not.T.null) . map ctx_nm) contexts of
                         []    -> ""
                         (x:_) -> x
       , ctx_pos    = fromContextsKeepDoubles ctx_pos
@@ -894,7 +895,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
       , ctx_pats   = fromContextsKeepDoubles ctx_pats
       , ctx_rs     = fromContextsRemoveDoubles ctx_rs
-      , ctx_ds     = mergeRels (ctx_ds ctx1++ctx_ds ctx2)
+      , ctx_ds     = mergeRels (ctx_ds ctx1<>ctx_ds ctx2)
       , ctx_cs     = fromContextsKeepDoubles ctx_cs
       , ctx_ks     = fromContextsKeepDoubles ctx_ks
       , ctx_rrules = fromContextsKeepDoubles ctx_rrules
@@ -903,7 +904,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_gs     = fromContextsKeepDoubles ctx_gs
       , ctx_ifcs   = fromContextsRemoveDoubles ctx_ifcs
       , ctx_ps     = fromContextsKeepDoubles ctx_ps
-      , ctx_pops   = mergePops (ctx_pops ctx1++ctx_pops ctx2)
+      , ctx_pops   = mergePops (ctx_pops ctx1<>ctx_pops ctx2)
       , ctx_metas  = fromContextsKeepDoubles ctx_metas
       }
     where

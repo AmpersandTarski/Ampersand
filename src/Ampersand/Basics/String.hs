@@ -5,6 +5,7 @@ module Ampersand.Basics.String
         , escapeNonAlphaNum
         , escapeIdentifier
         , optionalQuote
+        , mapText
         ) where
 
 import           Ampersand.Basics.Prelude
@@ -46,6 +47,8 @@ escapeIdentifier txt = case T.uncons txt of
         encode allowNum c | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = T.singleton c
                           | c == '_'  = "__" -- shorthand for '_' to improve readability
                           | otherwise = "_" <> tshow (ord c) <> "_"
+
+-- | convenient function like map on String
 mapText :: (Char -> Text) -> Text -> Text
 mapText fun txt = case T.uncons txt of
   Nothing -> mempty
