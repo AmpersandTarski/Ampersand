@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Test.Parser.ArbitraryTree () where
 
 import           Ampersand.Basics
@@ -20,34 +21,38 @@ printable = suchThat arbitrary isValid
 
 -- Generates a simple string of ascii characters
 safeStr :: Gen Text
-safeStr = T.pack <$> listOf printable `suchThat` noEsc
+safeStr = (T.pack <$> listOf printable) `suchThat` noEsc
 
 -- Generates a simple non-empty string of ascii characters
-safeStr1 :: Gen String
-safeStr1 = (listOf printable `suchThat` noEsc) `suchThat` (not.null)
+safeStr1 :: Gen Text
+safeStr1 = safeStr `suchThat` (not.T.null)
 
-noEsc :: String -> Bool
-noEsc = notElem '\\'
+noEsc :: Text -> Bool
+noEsc = not . T.any ( == '\\')
 
 -- Genrates a valid ADL identifier
-identifier :: Gen String
+identifier :: Gen Text
 identifier = suchThat str2 noKeyword
-    where noKeyword x = x `notElem` keywords
+    where noKeyword :: Text -> Bool
+          noKeyword x = x `notElem` (map T.pack keywords)
           -- The prelude functions accept Unicode characters
           idChar = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
-          str2   = listOf idChar `suchThat` (\s -> length s > 1)
+          str2 :: Gen Text
+          str2   = (T.pack <$> listOf idChar) `suchThat` (\s -> T.length s > 1)
 
 -- Genrates a valid ADL upper-case identifier
-upperId :: Gen String
+upperId :: Gen Text
 upperId = suchThat identifier startUpper
-    where startUpper [] = False
-          startUpper (h:_) = isUpper h
+    where startUpper txt = case T.uncons txt of
+            Nothing -> False
+            Just (h,_) -> isUpper h
 
 -- Genrates a valid ADL lower-case identifier
-lowerId :: Gen String
+lowerId :: Gen Text
 lowerId = suchThat identifier startLower
-    where startLower [] = False
-          startLower (h:_) = isLower h
+    where startLower txt = case T.uncons txt of
+            Nothing -> False
+            Just (h,_) ->  isLower h
 
 -- Generates an object
 objTermPrim :: Bool -> Int -> Gen (P_BoxItem TermPrim)
@@ -65,10 +70,10 @@ objTermPrim isTxtAllowed i =
 genObj :: Arbitrary a => Bool -> Int -> Gen (P_BoxItem a)
 genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (pure Nothing)
 
-makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_BoxItem a)
+makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
   oneof $ [P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
-        ++[P_BxTxt  <$> lowerId  <*> arbitrary <*> (T.unpack <$>safeStr) | isTxtAllowed]
+        ++[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
      where term = Prim <$> genPrim
            ifc  = if n == 0 then pure Nothing
                   else Just <$> ifcGen (n`div`2)
@@ -86,7 +91,7 @@ subIfc objGen n =
 --- Now the arbitrary instances
 instance Arbitrary P_Cruds where
     arbitrary = P_Cruds <$> arbitrary
-                        <*> suchThat (sublistOf "cCrRuUdD") isCrud
+                        <*> (T.pack <$> suchThat (sublistOf "cCrRuUdD") isCrud)
       where isCrud str = L.nub (map toUpper str) == map toUpper str
 
 instance Arbitrary Origin where
@@ -113,13 +118,13 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- generic meta information
 
 instance Arbitrary Meta where
-    arbitrary = Meta <$> arbitrary <*> arbitrary <*>  (T.unpack <$> safeStr)  <*> (T.unpack <$> safeStr)
+    arbitrary = Meta <$> arbitrary <*> arbitrary <*>  safeStr  <*> safeStr
 
 instance Arbitrary MetaObj where
     arbitrary = pure ContextMeta
 
 instance Arbitrary P_RoleRule where
-    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 (T.unpack <$> safeStr)
+    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
 
 listOf1 :: Gen a -> Gen (NE.NonEmpty a)
 listOf1 p = (NE.:|) <$> p <*> listOf p
@@ -132,8 +137,8 @@ instance Arbitrary TType where
 
 instance Arbitrary Role where
     arbitrary =
-      oneof [ Role    <$> (T.unpack <$> safeStr)
-            , Service <$> (T.unpack <$> safeStr)
+      oneof [ Role    <$> safeStr
+            , Service <$> safeStr
             ]
 
 instance Arbitrary P_Pattern where
@@ -207,7 +212,7 @@ instance Arbitrary a => Arbitrary (PairView (Term a)) where
                
 instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
     arbitrary = oneof [
-            PairViewText <$> arbitrary <*> (T.unpack <$> safeStr),
+            PairViewText <$> arbitrary <*> safeStr,
             PairViewExp <$> arbitrary <*> arbitrary <*> sized(genTerm 1) -- only accepts pTerm, no pRule.
         ]
 
@@ -221,13 +226,13 @@ instance Arbitrary SrcOrTgt where
     arbitrary = elements [minBound..]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
-    arbitrary = P_Ru <$> arbitrary <*> (T.unpack <$> safeStr) <*> ruleTerm  <*> arbitrary <*> arbitrary
+    arbitrary = P_Ru <$> arbitrary <*> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary
                      <*> arbitrary
               where ruleTerm = sized $ genTerm 0 -- rule is a term level 0
 
 instance Arbitrary ConceptDef where
-    arbitrary = Cd <$> arbitrary <*> (T.unpack <$> safeStr) <*> (T.unpack <$> safeStr)
-                   <*> (T.unpack <$> safeStr)  <*> (T.unpack <$> safeStr)
+    arbitrary = Cd <$> arbitrary <*> safeStr <*> safeStr
+                   <*> safeStr  <*> safeStr
 
 instance Arbitrary PAtomPair where
     arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
@@ -262,7 +267,7 @@ instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> arbitrary
                       <*> safeStr1
                       <*> listOf arbitrary
-                      <*> sized (objTermPrim False) <*> arbitrary <*> (T.unpack <$> safeStr)
+                      <*> sized (objTermPrim False) <*> arbitrary <*> safeStr
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
@@ -273,24 +278,24 @@ instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
          t <- arbitrary 
          pure $ h NE.:| t
 instance Arbitrary P_IdentDef where
-    arbitrary = P_Id <$> arbitrary <*> (T.unpack <$> safeStr) <*> arbitrary 
+    arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
                      <*> arbitrary
 instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> (T.unpack <$> safeStr) <*> genConceptOne
+    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
                     <*> arbitrary <*> arbitrary <*> listOf arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
-    arbitrary = ViewHtmlTemplateFile <$> (T.unpack <$> safeStr)
+    arbitrary = ViewHtmlTemplateFile <$> safeStr
 
 instance Arbitrary a => Arbitrary (P_ViewSegment a) where
-    arbitrary = P_ViewSegment <$> (Just <$> (T.unpack <$> safeStr)) <*> arbitrary <*> arbitrary 
+    arbitrary = P_ViewSegment <$> (Just <$> safeStr) <*> arbitrary <*> arbitrary 
 instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
     arbitrary =
         oneof [ P_ViewExp  <$> sized(genTerm 1) -- only accepts pTerm, no pRule.
-              , P_ViewText <$> (T.unpack <$> safeStr)
+              , P_ViewText <$> safeStr
               ]
 
 instance Arbitrary PPurpose where
@@ -299,7 +304,7 @@ instance Arbitrary PPurpose where
 instance Arbitrary PRef2Obj where
     arbitrary =
         oneof [
-            PRef2ConceptDef <$> (T.unpack <$> safeStr),
+            PRef2ConceptDef <$> safeStr,
             PRef2Relation <$> arbitrary,
             PRef2Rule <$> upperId,
             PRef2IdentityDef <$> upperId,
@@ -332,10 +337,10 @@ instance Arbitrary Lang where
     arbitrary = elements [minBound..]
 
 instance Arbitrary P_Markup where
-    arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> (T.unpack <$> safeStr) `suchThat` noEndMarkup
+    arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr `suchThat` noEndMarkup
      where 
-       noEndMarkup :: String -> Bool
-       noEndMarkup = not . L.isInfixOf "+}"
+       noEndMarkup :: Text -> Bool
+       noEndMarkup = not . T.isInfixOf "+}"
 
 instance Arbitrary PandocFormat where
     arbitrary = elements [minBound..]
