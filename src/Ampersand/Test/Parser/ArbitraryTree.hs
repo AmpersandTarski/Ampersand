@@ -8,6 +8,7 @@ import           Ampersand.Input.ADL1.Lexer (keywords)
 import           RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
 import           Test.QuickCheck hiding (listOf1)
 
 -- Useful functions to build on the quick check functions
@@ -18,8 +19,8 @@ printable = suchThat arbitrary isValid
     where isValid x = isPrint x && x <= 'Ñ' -- printable ASCII characters
 
 -- Generates a simple string of ascii characters
-safeStr :: Gen String
-safeStr = listOf printable `suchThat` noEsc
+safeStr :: Gen Text
+safeStr = T.pack <$> listOf printable `suchThat` noEsc
 
 -- Generates a simple non-empty string of ascii characters
 safeStr1 :: Gen String
@@ -67,7 +68,7 @@ genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (pure Nothing)
 makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
   oneof $ [P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
-        ++[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
+        ++[P_BxTxt  <$> lowerId  <*> arbitrary <*> (T.unpack <$>safeStr) | isTxtAllowed]
      where term = Prim <$> genPrim
            ifc  = if n == 0 then pure Nothing
                   else Just <$> ifcGen (n`div`2)
@@ -112,13 +113,13 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- generic meta information
 
 instance Arbitrary Meta where
-    arbitrary = Meta <$> arbitrary <*> arbitrary <*>  safeStr  <*> safeStr
+    arbitrary = Meta <$> arbitrary <*> arbitrary <*>  (T.unpack <$> safeStr)  <*> (T.unpack <$> safeStr)
 
 instance Arbitrary MetaObj where
     arbitrary = pure ContextMeta
 
 instance Arbitrary P_RoleRule where
-    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
+    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 (T.unpack <$> safeStr)
 
 listOf1 :: Gen a -> Gen (NE.NonEmpty a)
 listOf1 p = (NE.:|) <$> p <*> listOf p
@@ -131,8 +132,8 @@ instance Arbitrary TType where
 
 instance Arbitrary Role where
     arbitrary =
-      oneof [ Role    <$> safeStr
-            , Service <$> safeStr
+      oneof [ Role    <$> (T.unpack <$> safeStr)
+            , Service <$> (T.unpack <$> safeStr)
             ]
 
 instance Arbitrary P_Pattern where
@@ -206,7 +207,7 @@ instance Arbitrary a => Arbitrary (PairView (Term a)) where
                
 instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
     arbitrary = oneof [
-            PairViewText <$> arbitrary <*> safeStr,
+            PairViewText <$> arbitrary <*> (T.unpack <$> safeStr),
             PairViewExp <$> arbitrary <*> arbitrary <*> sized(genTerm 1) -- only accepts pTerm, no pRule.
         ]
 
@@ -220,13 +221,13 @@ instance Arbitrary SrcOrTgt where
     arbitrary = elements [minBound..]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
-    arbitrary = P_Ru <$> arbitrary <*> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary
+    arbitrary = P_Ru <$> arbitrary <*> (T.unpack <$> safeStr) <*> ruleTerm  <*> arbitrary <*> arbitrary
                      <*> arbitrary
               where ruleTerm = sized $ genTerm 0 -- rule is a term level 0
 
 instance Arbitrary ConceptDef where
-    arbitrary = Cd <$> arbitrary <*> safeStr <*> safeStr
-                   <*> safeStr  <*> safeStr
+    arbitrary = Cd <$> arbitrary <*> (T.unpack <$> safeStr) <*> (T.unpack <$> safeStr)
+                   <*> (T.unpack <$> safeStr)  <*> (T.unpack <$> safeStr)
 
 instance Arbitrary PAtomPair where
     arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
@@ -252,16 +253,16 @@ instance Arbitrary PAtomValue where
 --        ScriptDateTime <$> arbitrary <*> arbitrary,
         ComnBool <$> arbitrary <*> arbitrary
        ]
-     where stringConstraints :: String -> Bool
+     where stringConstraints :: Text -> Bool
            stringConstraints str =
-             case readLitChar str of
-              [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints cs
+             case readLitChar (T.unpack str) of
+              [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints (T.pack cs)
               _        -> True  -- end of string
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> arbitrary
                       <*> safeStr1
                       <*> listOf arbitrary
-                      <*> sized (objTermPrim False) <*> arbitrary <*> safeStr
+                      <*> sized (objTermPrim False) <*> arbitrary <*> (T.unpack <$> safeStr)
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
@@ -272,24 +273,24 @@ instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
          t <- arbitrary 
          pure $ h NE.:| t
 instance Arbitrary P_IdentDef where
-    arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
+    arbitrary = P_Id <$> arbitrary <*> (T.unpack <$> safeStr) <*> arbitrary 
                      <*> arbitrary
 instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
+    arbitrary = P_Vd <$> arbitrary <*> (T.unpack <$> safeStr) <*> genConceptOne
                     <*> arbitrary <*> arbitrary <*> listOf arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
-    arbitrary = ViewHtmlTemplateFile <$> safeStr
+    arbitrary = ViewHtmlTemplateFile <$> (T.unpack <$> safeStr)
 
 instance Arbitrary a => Arbitrary (P_ViewSegment a) where
-    arbitrary = P_ViewSegment <$> (Just <$> safeStr) <*> arbitrary <*> arbitrary 
+    arbitrary = P_ViewSegment <$> (Just <$> (T.unpack <$> safeStr)) <*> arbitrary <*> arbitrary 
 instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
     arbitrary =
         oneof [ P_ViewExp  <$> sized(genTerm 1) -- only accepts pTerm, no pRule.
-              , P_ViewText <$> safeStr
+              , P_ViewText <$> (T.unpack <$> safeStr)
               ]
 
 instance Arbitrary PPurpose where
@@ -298,7 +299,7 @@ instance Arbitrary PPurpose where
 instance Arbitrary PRef2Obj where
     arbitrary =
         oneof [
-            PRef2ConceptDef <$> safeStr,
+            PRef2ConceptDef <$> (T.unpack <$> safeStr),
             PRef2Relation <$> arbitrary,
             PRef2Rule <$> upperId,
             PRef2IdentityDef <$> upperId,
@@ -331,7 +332,7 @@ instance Arbitrary Lang where
     arbitrary = elements [minBound..]
 
 instance Arbitrary P_Markup where
-    arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr `suchThat` noEndMarkup
+    arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> (T.unpack <$> safeStr) `suchThat` noEndMarkup
      where 
        noEndMarkup :: String -> Bool
        noEndMarkup = not . L.isInfixOf "+}"

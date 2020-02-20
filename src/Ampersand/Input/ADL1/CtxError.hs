@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , Warning
@@ -54,10 +55,11 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.FilePos()
 import           Ampersand.Input.ADL1.LexerMessage
-import qualified RIO.List as L
-import qualified RIO.NonEmpty as NE
 import           Data.Typeable
 import           GHC.Exts (groupWith)
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
 import           Text.Parsec
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
@@ -323,10 +325,10 @@ mkInvariantViolationsError (r,ps) =
                       [] -> []
                       h:tl 
                         | i == 0 -> ["  ... ("<>show (length xs)<>" more)"]
-                        | otherwise -> showAP h : listPairs (i-1) tl
+                        | otherwise -> T.unpack (showAP h) : listPairs (i-1) tl
             where
-              showAP :: AAtomPair -> String
-              showAP x= "("<>aavstr (apLeft x)<>", "<>aavstr (apRight x)<>")"
+              showAP :: AAtomPair -> Text
+              showAP x= "("<>aavtxt (apLeft x)<>", "<>aavtxt (apRight x)<>")"
     
 mkInterfaceRefCycleError :: NE.NonEmpty Interface -> CtxError
 mkInterfaceRefCycleError cyclicIfcs =

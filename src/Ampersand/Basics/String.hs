@@ -1,4 +1,5 @@
-  -- | This module contains some common String funcions
+{-# LANGUAGE OverloadedStrings #-}
+-- | This module contains some common Text funcions
 module Ampersand.Basics.String 
         ( unCap,upCap
         , escapeNonAlphaNum
@@ -6,46 +7,56 @@ module Ampersand.Basics.String
         , optionalQuote
         ) where
 
-import Ampersand.Basics.Prelude
-import RIO.Char
-
+import           Ampersand.Basics.Prelude
+import           RIO.Char
+import qualified RIO.Text as T
 -- | Converts the first character of a string to lowercase, with the exception that there is a second character, which is uppercase.
 -- uncap "AbcDe" == "abcDe"
 -- uncap "ABcDE" == "ABcDE"
-unCap :: String -> String
-unCap [] = []
-unCap [h] = [toLower h]
-unCap (h:h':t) | isUpper h' = h:h':t
-               | otherwise  = toLower h:h':t
--- | Converts the first character of a string to uppercase
-upCap :: String -> String
-upCap [] = []
-upCap (h:t) = toUpper h:t
+unCap :: Text -> Text
+unCap txt = case T.uncons txt of
+  Nothing -> mempty
+  Just (h,tl) -> case T.uncons tl of
+    Nothing -> T.toLower . T.singleton $ h
+    Just (h',tl')
+      | isUpper h' -> T.cons h (T.cons h' tl')
+      | otherwise  -> T.cons (toLower h) (T.cons h' tl')
+-- | Converts the first character of a Text to uppercase
+upCap :: Text -> Text
+upCap txt = case T.uncons txt of
+  Nothing -> mempty
+  Just (h,tl) -> T.cons (toUpper h) tl
 
 -- | escape anything except regular characters and digits to _<character code>
 -- e.g. escapeNonAlphaNum "a_é" = "a_95_233"
-escapeNonAlphaNum :: String -> String
-escapeNonAlphaNum = concatMap escapeNonAlphaNumChar
- where escapeNonAlphaNumChar c
-         | isAlphaNum c && isAscii c = [c]
-         | otherwise                 = '_' : show (ord c)
+escapeNonAlphaNum :: Text -> Text
+escapeNonAlphaNum txt = case T.uncons txt of
+  Nothing -> mempty
+  Just (h,tl)
+    | isAlphaNum h && isAscii h -> T.singleton h              <> escapeNonAlphaNum tl
+    | otherwise                 -> T.cons '_' (tshow (ord h)) <> escapeNonAlphaNum tl
 
 -- Create an identifier that does not start with a digit and consists only of upper/lowercase ascii letters, underscores, and digits.
 -- This function is injective.
-escapeIdentifier :: String -> String
-escapeIdentifier ""      = "_EMPTY_"
-escapeIdentifier (c0:cs) = encode False c0 ++ concatMap (encode True) cs
-  where encode allowNum c | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = [c]
+escapeIdentifier :: Text -> Text
+escapeIdentifier txt = case T.uncons txt of
+  Nothing -> "_EMPTY_"
+  Just (c0,cs) -> encode False c0 <> mapText (encode True) cs
+  where encode :: Bool -> Char -> Text
+        encode allowNum c | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = T.singleton c
                           | c == '_'  = "__" -- shorthand for '_' to improve readability
-                          | otherwise = "_" ++ show (ord c) ++ "_"
-
-optionalQuote :: String -> String
+                          | otherwise = "_" <> tshow (ord c) <> "_"
+mapText :: (Char -> Text) -> Text -> Text
+mapText fun txt = case T.uncons txt of
+  Nothing -> mempty
+  Just (h,tl) -> fun h <> mapText fun tl
+optionalQuote :: Text -> Text
 optionalQuote str
-  | needsQuotes = show str
+  | needsQuotes = tshow str
   | otherwise   = str 
  where
   needsQuotes =
-   case words str of
+   case T.words str of
     []  -> True
     [_] -> False
     _   -> True

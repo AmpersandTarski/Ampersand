@@ -64,7 +64,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , DnfClause(..)
          , Population(..)
          , Purpose(..), ExplObj(..) ,Meaning(..)
-         , AAtomPair(..), AAtomValue(..), aavstr, mkAtomPair, ContextInfo(..)
+         , AAtomPair(..), AAtomValue(..), aavtxt, mkAtomPair, ContextInfo(..)
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
 import Ampersand.ADL1.Expression

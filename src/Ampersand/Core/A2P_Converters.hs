@@ -303,16 +303,16 @@ aAtomValue2pAtomValue AtomValueOfONE = fatal "Unexpected AtomValueOfONE in conve
 aAtomValue2pAtomValue val =
   case aavtyp val of
     Alphanumeric     -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     BigAlphanumeric  -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     HugeAlphanumeric -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     Password         -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal  "Unexpected combination of value types"
     Binary           -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
     BigBinary        -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
@@ -335,7 +335,7 @@ aAtomValue2pAtomValue val =
                           AAVBoolean{} -> ComnBool o (aavbool val)
                           _            -> fatal "Unexpected combination of value types"
     Object           -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     TypeOfOne        -> fatal "Unexpected combination of value types"
   where

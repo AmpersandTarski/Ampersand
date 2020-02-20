@@ -152,7 +152,7 @@ checkOtherAtomsInSessionConcept ctx =
     [] -> return ()
     x:xs -> Errors (x NE.:| xs)
   where _isPermittedSessionValue :: AAtomValue -> Bool
-        _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
+        _isPermittedSessionValue v@AAVString{} = aavtxt v == "_SESSION"
         _isPermittedSessionValue _                 = False
 warnCaseProblems :: A_Context -> Guarded ()
 warnCaseProblems ctx = 

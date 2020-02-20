@@ -4,7 +4,7 @@ module Ampersand.Output.Population2Xlsx
 where
 
 import           Ampersand.Basics
-import           Ampersand.ADL1(AAtomValue(..),HasSignature(..),aavstr)
+import           Ampersand.ADL1(AAtomValue(..),HasSignature(..),aavtxt)
 import           Ampersand.FSpec
 import           Codec.Xlsx
 import qualified RIO.ByteString.Lazy as BL
@@ -69,7 +69,7 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
                                     Nothing -> Nothing
                                     Just aVal -> Just $
                                       case aVal of
-                                        AAVString{} -> CellText $ T.pack (aavstr aVal)
+                                        AAVString{} -> CellText $ T.pack (aavtxt aVal)
                                         AAVInteger _ int -> CellDouble (fromInteger int)
                                         AAVFloat _ x -> CellDouble x
                                         AAVBoolean _ b -> CellBool b

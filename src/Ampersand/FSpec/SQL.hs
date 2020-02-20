@@ -884,7 +884,7 @@ traceExprComment expr caseStr =
 atomVal2InSQL :: AAtomValue -> ValueExpr
 atomVal2InSQL val =
  case val of 
-   AAVString{}         -> StringLit (aavstr val)
+   AAVString{}         -> StringLit (aavtxt val)
    AAVInteger _ int    -> NumLit (show int)
    AAVFloat _ d        -> NumLit (show d)
    AAVBoolean _ b      -> NumLit $ if b then "1" else "0"

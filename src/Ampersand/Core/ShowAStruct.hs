@@ -33,7 +33,7 @@ instance AStruct AAtomPair where
 
 instance AStruct AAtomValue where
  showA at = case at of
-              AAVString{} -> show (aavstr at)
+              AAVString{} -> show (aavtxt at)
               AAVInteger _ i   -> show i
               AAVFloat   _ f   -> show f
               AAVBoolean _ b   -> show b

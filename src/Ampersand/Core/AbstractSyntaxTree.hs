@@ -53,7 +53,7 @@ module Ampersand.Core.AbstractSyntaxTree (
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
  , makeConceptMap, ConceptMap
- , aavstr
+ , aavtxt
  ) where
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree 
@@ -552,19 +552,18 @@ instance Unique AAtomValue where   -- FIXME:  this in incorrect! (AAtomValue sho
   showUnique pop@AAVDateTime{} = (show.aadatetime) pop
   showUnique AtomValueOfONE    = "ONE"
 
-aavstr :: AAtomValue -> String
-aavstr = T.unpack . aavtxt
-
 showValSQL :: AAtomValue -> String
 showValSQL val =
   case val of
-   AAVString{}  -> singleQuote . f . aavstr $ val
+   AAVString{}  -> singleQuote . T.unpack . f . aavtxt $ val
      where 
-       f [] = []
-       f (c:cs) 
-         | c `elem` ['\'','\\'] 
-                     = c : c : f cs
-         | otherwise = c     : f cs
+       f :: Text -> Text
+       f txt = case T.uncons txt of
+         Nothing -> mempty
+         Just (h,tl)
+          | h `elem` ['\'','\\'] 
+                      -> T.cons h (T.cons h (f tl))
+          | otherwise -> T.cons h (f tl)
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> singleQuote $ showGregorian (aadateDay val)
@@ -575,15 +574,15 @@ showValSQL val =
 singleQuote :: String -> String
 singleQuote str = "'"++str++"'"
 
-showValADL :: AAtomValue -> String
+showValADL :: AAtomValue -> Text
 showValADL val =
   case val of
-   AAVString{}  ->       aavstr val
-   AAVInteger{} -> show (aavint val)
-   AAVBoolean{} -> show (aavbool val)
-   AAVDate{}    -> showGregorian (aadateDay val)
-   AAVDateTime {} -> formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
-   AAVFloat{}   -> show (aavflt val)
+   AAVString{}  -> aavtxt val
+   AAVInteger{} -> tshow (aavint val)
+   AAVBoolean{} -> tshow (aavbool val)
+   AAVDate{}    -> T.pack $ showGregorian (aadateDay val)
+   AAVDateTime {} -> T.pack $ formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVFloat{}   -> tshow (aavflt val)
    AtomValueOfONE{} -> "1"
 
 data ExplObj = ExplConcept A_Concept
@@ -982,10 +981,10 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                                        Just x -> unsafePAtomVal2AtomValue typ mCpt x
           ScriptString o str
              -> case typ of
-                 Alphanumeric     -> Right (AAVString (hash str) typ (T.pack str))
-                 BigAlphanumeric  -> Right (AAVString (hash str) typ (T.pack str))
-                 HugeAlphanumeric -> Right (AAVString (hash str) typ (T.pack str))
-                 Password         -> Right (AAVString (hash str) typ (T.pack str))
+                 Alphanumeric     -> Right (AAVString (hash str) typ str)
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ str)
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ str)
+                 Password         -> Right (AAVString (hash str) typ str)
                  Binary           -> Left "Binary cannot be populated in an ADL script"
                  BigBinary        -> Left "Binary cannot be populated in an ADL script"
                  HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -995,13 +994,13 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                  Integer          -> Left (message o str)
                  Float            -> Left (message o str)
                  TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-                 Object           -> Right (AAVString (hash str) typ (T.pack str))
+                 Object           -> Right (AAVString (hash str) typ str)
           XlsxString o str
              -> case typ of
-                 Alphanumeric     -> Right (AAVString (hash str) typ (T.pack str))
-                 BigAlphanumeric  -> Right (AAVString (hash str) typ (T.pack str))
-                 HugeAlphanumeric -> Right (AAVString (hash str) typ (T.pack str))
-                 Password         -> Right (AAVString (hash str) typ (T.pack str))
+                 Alphanumeric     -> Right (AAVString (hash str) typ str)
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ str)
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ str)
+                 Password         -> Right (AAVString (hash str) typ str)
                  Binary           -> Left "Binary cannot be populated in an ADL script"
                  BigBinary        -> Left "Binary cannot be populated in an ADL script"
                  HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -1014,19 +1013,21 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                                             ,("JA"  , True), ("NEE"   , False)
                                             ,("WEL" , True), ("NIET"  , False)
                                             ]
-                                     in case lookup (map toUpper str) table of
+                                     in case lookup (T.toUpper str) table of
                                         Just b -> Right (AAVBoolean typ b)
-                                        Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table
-                                       where camelCase []     = []
-                                             camelCase (c:xs) = toUpper c: map toLower xs
-                 Integer          -> case readMaybe str  of
+                                        Nothing -> Left $ "permitted Booleans: "++(show . fmap (camelCase . fst) $ table)
+                                       where camelCase :: Text -> Text
+                                             camelCase txt = case T.uncons txt of
+                                               Nothing -> mempty
+                                               Just(h,tl) -> T.cons (toUpper h) (T.toLower tl)
+                 Integer          -> case readMaybe . T.unpack $ str  of
                                            Just i  -> Right (AAVInteger typ i)
                                            Nothing -> Left (message o str)
-                 Float            -> case readMaybe str of
+                 Float            -> case readMaybe . T.unpack $ str of
                                            Just r  -> Right (AAVFloat typ r)
                                            Nothing -> Left (message o str)
                  TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-                 Object           -> Right (AAVString (hash str) typ (T.pack str))
+                 Object           -> Right (AAVString (hash str) typ str)
           ScriptInt o i
              -> case typ of
                  Alphanumeric     -> Left (message o i)
