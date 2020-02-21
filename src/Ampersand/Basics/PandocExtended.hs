@@ -57,7 +57,8 @@ string2Blocks defaultformat str
        Nothing -> mempty
        Just ('\r',tl) -> case T.uncons tl of
          Nothing -> T.singleton '\r'
-         Just ('\n',xs) -> T.cons '\n' (removeCRs xs)
+         Just ('\n',xs) -> T.cons '\n' $ removeCRs xs
+         Just (c,xs)    -> T.cons '\r' . T.cons c $ removeCRs xs
        Just (h,tl) -> T.cons h (removeCRs tl)
 
 
