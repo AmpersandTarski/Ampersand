@@ -14,7 +14,6 @@ module Ampersand.Input.ADL1.Parser
 import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.ParsingLib
-import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Text.Partial as PARTIAL
@@ -725,7 +724,7 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
                             <*> pAtomValue
                      )
 
---- ADLid ::= Varid | Conid | Text
+--- ADLid ::= Varid | Conid | String
 --- ADLidList ::= ADLid (',' ADLid)*
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pADLid :: AmpParser Text

@@ -11,8 +11,6 @@ module Ampersand.Basics.Unique
 where
 import           Ampersand.Basics.Prelude
 import           Ampersand.Basics.String(escapeIdentifier)
-import           RIO.Char
-import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           Data.Hashable

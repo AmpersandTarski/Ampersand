@@ -53,10 +53,10 @@ instance Hashable FilePos where
   hashWithSalt s (FilePos fn l c) = s `hashWithSalt` fn `hashWithSalt` l `hashWithSalt` c
 
 data Origin = OriginUnknown
-            | Origin String 
-            | PropertyRule String Origin -- Constructor is used to hold the origin of a propertyrule.
+            | Origin Text 
+            | PropertyRule Text Origin -- Constructor is used to hold the origin of a propertyrule.
             | FileLoc FilePos SymbolName 
-            | XLSXLoc FilePath String (Int,Int) 
+            | XLSXLoc FilePath Text (Int,Int) 
             | MeatGrinder -- Constructor is used to specify stuff that originates from meatgrinder
     deriving (Typeable, Generic, Data)
 -- Eq and Ord have been removed by desing on Origin. See issue #1035
@@ -108,7 +108,7 @@ maybeOrdering x y = case x of
 instance Hashable Origin
 
 instance Show FilePos where
-  show (FilePos fn l c) = fn ++ ":" ++ show l ++ ":" ++ show c
+  show (FilePos fn l c) = fn <> ":" <> show l <> ":" <> show c
 
 instance Show Origin where
   -- The vscode extension expects errors and warnings
@@ -118,10 +118,10 @@ instance Show Origin where
   -- the proper working of the ampersand-language-extension
   show (FileLoc pos _) = show pos
   show (XLSXLoc filePath sheet (row,col)) 
-                       = filePath++":"++
-                         "\n   Sheet: "++sheet++", Cell: "++T.unpack (int2col col)++show row++". "
-  show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
-  show (Origin str)    = str
+                       = filePath<>":"<>
+                         "\n   Sheet: "<>T.unpack sheet<>", Cell: "<>T.unpack (int2col col)<>show row<>". "
+  show (PropertyRule dcl o) = "PropertyRule for "<>T.unpack dcl<>" which is defined at "<>show o
+  show (Origin str)    = T.unpack str
   show OriginUnknown   = "Unknown origin"
   show MeatGrinder     = "MeatGrinder"
 
