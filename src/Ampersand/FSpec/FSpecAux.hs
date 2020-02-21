@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.FSpec.FSpecAux 
   (getRelationTableInfo,getConceptTableInfo)
 where
@@ -11,8 +12,8 @@ getRelationTableInfo :: FSpec -> Relation -> (PlugSQL,RelStore)
 getRelationTableInfo fSpec dcl 
      = case filter thisDcl . concatMap getRelInfos $ [p | InternalPlug p<-plugInfos fSpec ] of
                 [(p,store)] -> (p,store)
-                []          -> fatal ("Relation not found: "++name dcl)
-                _           -> fatal ("Relation found multiple times: "++name dcl)
+                []          -> fatal ("Relation not found: "<>name dcl)
+                _           -> fatal ("Relation found multiple times: "<>name dcl)
   where
     getRelInfos :: PlugSQL -> [(PlugSQL,RelStore)]
     getRelInfos p = zip (repeat p) (dLkpTbl p)  
@@ -23,6 +24,6 @@ getRelationTableInfo fSpec dcl
 getConceptTableInfo :: FSpec -> A_Concept -> (PlugSQL,SqlAttribute)
 getConceptTableInfo fSpec cpt 
   = case lookupCpt fSpec cpt of
-      []  -> fatal ("No plug found for concept '"++name cpt++"'.")
+      []  -> fatal ("No plug found for concept '"<>name cpt<>"'.")
       [x] -> x  --Any of the resulting plugs should do. 
-      xs  -> fatal ("Only one result expected:"++show xs)
+      xs  -> fatal ("Only one result expected:"<>tshow xs)

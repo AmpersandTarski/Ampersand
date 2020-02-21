@@ -241,7 +241,7 @@ pChevrons parser = pSpec '<' *> parser <* pSpec '>'
 -----------------------------------------------------------
 
 posOrigin :: Show a => a -> SourcePos -> Origin
-posOrigin sym p = FileLoc (FilePos (sourceName p) (sourceLine p) (sourceColumn p)) (show sym)
+posOrigin sym p = FileLoc (FilePos (sourceName p) (sourceLine p) (sourceColumn p)) (tshow sym)
 
 currPos :: AmpParser Origin
 currPos = posOf $ return ()

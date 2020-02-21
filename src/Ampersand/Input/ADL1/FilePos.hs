@@ -18,7 +18,7 @@ type Line = Int
 -- | The column number
 type Column = Int
 -- | The name of a symbol
-type SymbolName = String
+type SymbolName = Text
 
 -- | Makes the initial position for a file
 initPos :: FilePath -- ^ The file path
