@@ -19,11 +19,11 @@ data ClassDiag = OOclassdiagram {cdName :: String
 instance Named ClassDiag where
    name = cdName
 
-data Class          = OOClass  { clName :: String          -- ^ name of the class
-                               , clcpt ::  Maybe A_Concept -- ^ Main concept of the class. (link tables do not have a main concept)
-                               , clAtts :: [CdAttribute]   -- ^ Attributes of the class
-                               , clMths :: [Method]        -- ^ Methods of the class
-                               } deriving Show
+data Class = OOClass  { clName :: String          -- ^ name of the class
+                      , clcpt ::  Maybe A_Concept -- ^ Main concept of the class. (link tables do not have a main concept)
+                      , clAtts :: [CdAttribute]   -- ^ Attributes of the class
+                      , clMths :: [Method]        -- ^ Methods of the class
+                      } deriving Show
 instance Named Class where
    name = clName
 data CdAttribute    = OOAttr   { attNm :: String            -- ^ name of the attribute
