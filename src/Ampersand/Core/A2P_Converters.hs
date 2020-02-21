@@ -316,9 +316,9 @@ aAtomValue2pAtomValue val =
     Password         -> case val of 
                           AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal  "Unexpected combination of value types"
-    Binary           -> fatal $ show (aavtyp val) <> " cannot be represented in P-structure currently."
-    BigBinary        -> fatal $ show (aavtyp val) <> " cannot be represented in P-structure currently."
-    HugeBinary       -> fatal $ show (aavtyp val) <> " cannot be represented in P-structure currently."
+    Binary           -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    BigBinary        -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    HugeBinary       -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
     Date             -> case val of
                           AAVDate{} -> --TODO: Needs rethinking. A string or a double?
                                        ScriptString o (showValADL val)

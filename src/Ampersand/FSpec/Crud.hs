@@ -7,7 +7,6 @@ import           Ampersand.ADL1
 import qualified RIO.List as L
 import qualified RIO.Map as Map 
 import qualified RIO.Set as Set
-import qualified RIO.Text as T
 
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
 
@@ -23,7 +22,7 @@ data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[A_Concept])] -- crud c
 
 getCrudObjectsForInterface :: CrudInfo -> Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
 getCrudObjectsForInterface crudInfo ifc = 
-  fromMaybe (fatal $ "NO CRUD objects for interface " <> show (name ifc))
+  fromMaybe (fatal $ "NO CRUD objects for interface " <> tshow (name ifc))
             (lookup ifc $ crudObjsPerInterface crudInfo) 
   
 mkCrudInfo :: A_Concepts -> Relations -> [Interface] -> CrudInfo

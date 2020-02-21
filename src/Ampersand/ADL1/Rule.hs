@@ -20,7 +20,7 @@ antecedent r
  = case formalExpression r of
      EEqu (le,_) -> le
      EInc (le,_) -> le
-     _           -> fatal ("erroneous reference to antecedent of rule "<>show r)
+     _           -> fatal ("erroneous reference to antecedent of rule "<>tshow r)
 
 consequent :: Rule -> Expression
 consequent r
@@ -51,7 +51,7 @@ rulefromProp prp d =
         r:: Expression
         r = EDcD d
         rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
-                then fatal ("Illegal property of an endo relation "<>show (name d)) else
+                then fatal ("Illegal property of an endo relation "<>tshow (name d)) else
                 case prp of
                      Uni-> r .:. ECpl (EDcI (target r)) .:. flp r .|-. ECpl (EDcI (source r))
                      Tot-> EDcI (source r)  .|-. r .:. flp r

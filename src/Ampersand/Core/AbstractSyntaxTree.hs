@@ -140,10 +140,10 @@ data A_RoleRule = A_RoleRule { arPos ::   Origin
                              , arRules :: NE.NonEmpty Text -- the names of the rules
                              } deriving (Show)
 instance Ord A_RoleRule where
- compare a b = fromMaybe (fatal . L.intercalate "\n" $
+ compare a b = fromMaybe (fatal . T.intercalate "\n" $
                         ["PPurpose a should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
 instance Eq A_RoleRule where
@@ -369,9 +369,9 @@ instance Unique Interface where
 -- Utility function for looking up interface refs
 getInterfaceByName :: [Interface] -> Text -> Interface
 getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
-                                []    -> fatal $ "getInterface by name: no interfaces named "<>show nm
+                                []    -> fatal $ "getInterface by name: no interfaces named "<>tshow nm
                                 [ifc] -> ifc
-                                _     -> fatal $ "getInterface by name: multiple interfaces named "<>show nm
+                                _     -> fatal $ "getInterface by name: multiple interfaces named "<>tshow nm
 
 
 class Object a where
@@ -409,10 +409,10 @@ data BoxTxt =
            } deriving (Show)
 instance Ord BoxTxt where
  compare a b = case compare (name a,objtxt a) (name b,objtxt b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["BoxTxt should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x  
@@ -434,10 +434,10 @@ instance Unique ObjectDef where
   showUnique = tshow
 instance Ord ObjectDef where
  compare a b = case compare (name a) (name b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["ObjectDef should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x
@@ -478,10 +478,10 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
 --               (amLang . explMarkup) x0 == (amLang . explMarkup) x1
 instance Ord Purpose where
  compare a b = case compare (explObj a) (explObj b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["Purpose should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x  
@@ -678,25 +678,25 @@ infixl 8 .!.    -- relative addition
 infixl 8 .*.    -- cartesian product
 
 -- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. For that reason, they are not being removed. Not even for performance reasons.
-l .==. r = if source l/=source r ||  target l/=target r then fatal ("Cannot equate (with operator \"==\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l .==. r = if source l/=source r ||  target l/=target r then fatal ("Cannot equate (with operator \"==\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EEqu (l,r)
-l .|-. r = if source l/=source r ||  target l/=target r then fatal ("Cannot include (with operator \"|-\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l .|-. r = if source l/=source r ||  target l/=target r then fatal ("Cannot include (with operator \"|-\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EInc (l,r)
-l ./\. r = if source l/=source r ||  target l/=target r then fatal ("Cannot intersect (with operator \"/\\\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l ./\. r = if source l/=source r ||  target l/=target r then fatal ("Cannot intersect (with operator \"/\\\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EIsc (l,r)
-l .\/. r = if source l/=source r ||  target l/=target r then fatal ("Cannot unite (with operator \"\\/\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l .\/. r = if source l/=source r ||  target l/=target r then fatal ("Cannot unite (with operator \"\\/\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EUni (l,r)
-l .-. r  = if source l/=source r ||  target l/=target r then fatal ("Cannot subtract (with operator \"-\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l .-. r  = if source l/=source r ||  target l/=target r then fatal ("Cannot subtract (with operator \"-\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EDif (l,r)
-l ./. r  = if target l/=target r then fatal ("Cannot residuate (with operator \"/\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l ./. r  = if target l/=target r then fatal ("Cannot residuate (with operator \"/\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            ELrs (l,r)
-l .\. r  = if source l/=source r then fatal ("Cannot residuate (with operator \"\\\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l .\. r  = if source l/=source r then fatal ("Cannot residuate (with operator \"\\\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            ERrs (l,r)
-l .<>. r = if source r/=target l then fatal ("Cannot use diamond operator \"<>\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l .<>. r = if source r/=target l then fatal ("Cannot use diamond operator \"<>\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EDia (l,r)
-l .:. r  = if source r/=target l then fatal ("Cannot compose (with operator \";\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l .:. r  = if source r/=target l then fatal ("Cannot compose (with operator \";\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            ECps (l,r)
-l .!. r  = if source r/=target l then fatal ("Cannot add (with operator \"!\") expression l of type "<>show (sign l)<>"\n   "<>show l<>"\n   with expression r of type "<>show (sign r)<>"\n   "<>show r<>".") else
+l .!. r  = if source r/=target l then fatal ("Cannot add (with operator \"!\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            ERad (l,r)
 l .*. r  = -- SJC: always fits! No fatal here..
            EPrd (l,r)
@@ -923,21 +923,21 @@ instance Eq SignOrd where
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
 safePSingleton2AAtomVal ci c val =
    case unsafePAtomVal2AtomValue typ (Just c) val of
-     Left _ -> fatal . L.intercalate "\n  " $
+     Left _ -> fatal . T.intercalate "\n  " $
                   [ "This should be impossible: after checking everything an unhandled singleton value found!"
-                  , "Concept: "<>show c
-                  , "TType: "<>show typ
-                  , "Origin: "<>show (origin val)
+                  , "Concept: "<>tshow c
+                  , "TType: "<>tshow typ
+                  , "Origin: "<>tshow (origin val)
                   , "PAtomValue: "<>case val of
-                                      (PSingleton _ _ v) -> "PSingleton ("<>show v<>")"
-                                      (ScriptString _ v) -> "ScriptString ("<>show v<>")"
-                                      (XlsxString _ v)   -> "XlsxString ("<>show v<>")"
-                                      (ScriptInt _ v)    -> "ScriptInt ("<>show v<>")"
-                                      (ScriptFloat _ v)  -> "ScriptFloat ("<>show v<>")"
-                                      (XlsxDouble _ v)   -> "XlsxDouble ("<>show v<>")"
-                                      (ComnBool _ v)     -> "ComnBool ("<>show v<>")"
-                                      (ScriptDate _ v)   -> "ScriptDate ("<>show v<>")"
-                                      (ScriptDateTime _ v) -> "ScriptDateTime ("<>show v<>")"
+                                      (PSingleton _ _ v) -> "PSingleton ("<>tshow v<>")"
+                                      (ScriptString _ v) -> "ScriptString ("<>tshow v<>")"
+                                      (XlsxString _ v)   -> "XlsxString ("<>tshow v<>")"
+                                      (ScriptInt _ v)    -> "ScriptInt ("<>tshow v<>")"
+                                      (ScriptFloat _ v)  -> "ScriptFloat ("<>tshow v<>")"
+                                      (XlsxDouble _ v)   -> "XlsxDouble ("<>tshow v<>")"
+                                      (ComnBool _ v)     -> "ComnBool ("<>tshow v<>")"
+                                      (ScriptDate _ v)   -> "ScriptDate ("<>tshow v<>")"
+                                      (ScriptDateTime _ v) -> "ScriptDateTime ("<>tshow v<>")"
                   ]
      Right x -> x
   where typ = representationOf ci c
@@ -1134,7 +1134,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                   Integer          -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
                   Password         -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
                   Object           -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
-                  _                -> fatal $ "There is no example denotational syntax for a value of type `"<>show typ<>"`." 
+                  _                -> fatal $ "There is no example denotational syntax for a value of type `"<>tshow typ<>"`." 
          dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      
 
