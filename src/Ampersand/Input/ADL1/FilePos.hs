@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.ADL1.FilePos (
     FilePos(..), Origin(..), Traced(..),
     isFuzzyOrigin, maybeOrdering, sortWithOrigins,
@@ -86,7 +87,7 @@ maybeOrdering x y = case x of
            XLSXLoc{}       -> Just GT
            PropertyRule{}  -> Just GT
            _ -> if isFuzzyOrigin y then Nothing 
-                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show y
+                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>tshow y
   XLSXLoc fpx wbx (rowx,colx) 
       -> case y of
            FileLoc{}       -> Just LT
@@ -95,16 +96,16 @@ maybeOrdering x y = case x of
                                (fpy, wby, (rowy,coly))
            PropertyRule{}  -> Just GT
            _ -> if isFuzzyOrigin y then Nothing 
-                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show y
+                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>tshow y
   PropertyRule _ ox 
       -> case y of
            FileLoc{}       -> Just LT
            XLSXLoc{}       -> Just LT
            PropertyRule _ oy -> maybeOrdering ox oy
            _ -> if isFuzzyOrigin y then Nothing 
-                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show y
+                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>tshow y
   _ -> if isFuzzyOrigin x then Nothing 
-       else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show x   
+       else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>tshow x   
 instance Hashable Origin
 
 instance Show FilePos where

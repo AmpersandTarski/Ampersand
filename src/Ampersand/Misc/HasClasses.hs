@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
-
 module Ampersand.Misc.HasClasses
 
 where

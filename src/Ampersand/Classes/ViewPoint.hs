@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Classes.ViewPoint 
    (Language(..)) 
 where
@@ -40,10 +41,11 @@ rulesFromIdentity identity
  where (h NE.:| t) = fmap (\expr-> expr .:. flp expr) 
                     . fmap (objExpression . segment) 
                     . identityAts $ identity
-       meaningEN = "Identity rule" ++ ", following from identity "++name identity
-       meaningNL = "Identiteitsregel" ++ ", volgend uit identiteit "++name identity
+       meaningEN :: Text
+       meaningEN = "Identity rule" <> ", following from identity "<>name identity
+       meaningNL = "Identiteitsregel" <> ", volgend uit identiteit "<>name identity
        mkKeyRule expression =
-         Ru { rrnm   = "identity_" ++ name identity
+         Ru { rrnm   = "identity_" <> name identity
             , formalExpression  = expression
             , rrfps  = origin identity     -- position in source file
             , rrmean = 
@@ -87,9 +89,9 @@ instance Language A_Context where
                                           ,decprps_calc = Nothing -- Calculation is only done in ADL2Fspc.
                                           }
   udefrules    context = (Set.unions . map udefrules $ ctxpats context) `Set.union` ctxrs context
-  identities   context =       concatMap identities (ctxpats context) ++ ctxks context
-  viewDefs     context =       concatMap viewDefs   (ctxpats context) ++ ctxvs context
-  gens         context = L.nub $ concatMap gens       (ctxpats context) ++ ctxgs context
+  identities   context =       concatMap identities (ctxpats context) <> ctxks context
+  viewDefs     context =       concatMap viewDefs   (ctxpats context) <> ctxvs context
+  gens         context = L.nub $ concatMap gens       (ctxpats context) <> ctxgs context
   patterns             =       ctxpats
 
 instance Language Pattern where

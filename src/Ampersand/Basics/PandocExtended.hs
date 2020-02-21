@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Basics.PandocExtended
    ( PandocFormat(..)
    , Markup(..)
@@ -31,7 +32,7 @@ aMarkup2String = blocks2String . amPandoc
     blocks2String :: [Block] -> Text
     blocks2String ec
       = case runPure $ writeMarkdown def (Pandoc nullMeta ec) of
-              Left pandocError -> fatal $ "Pandoc error: "++show pandocError
+              Left pandocError -> fatal $ "Pandoc error: "<>tshow pandocError
               Right txt -> txt
 
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
@@ -40,8 +41,8 @@ string2Blocks :: PandocFormat -> Text -> [Block]
 string2Blocks defaultformat str
  = case runPure $ theParser (removeCRs str) of
     Left err ->  fatal ("Proper error handling of Pandoc is still TODO."
-                        ++"\n  This particular error is cause by some "++show defaultformat++" in your script:"
-                        ++"\n"++show err)
+                        <>"\n  This particular error is cause by some "<>tshow defaultformat<>" in your script:"
+                        <>"\n"<>tshow err)
     Right (Pandoc _ blocks) -> blocks
    where
      theParser =

@@ -125,10 +125,10 @@ data P_Pattern
 
 instance Ord P_Pattern where
  compare a b = case compare (name a) (name b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["P_Pattern should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x  
@@ -149,10 +149,10 @@ data ConceptDef
          }   deriving (Show,Typeable)
 instance Ord ConceptDef where
  compare a b = case compare (name a) (name b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["ConceptDef should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x  
@@ -297,7 +297,7 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     XlsxString     _ s -> show s
     ScriptInt      _ i -> show i
     ScriptFloat    _ d -> show d
-    XlsxDouble     o d -> fatal ("We got a value "<>show d<>" from "<>show o<>", which has to be shown in an expression, however the technicaltype is not known.")
+    XlsxDouble     o d -> fatal ("We got a value "<>tshow d<>" from "<>tshow o<>", which has to be shown in an expression, however the technicaltype is not known.")
     ComnBool       _ b -> show b
     ScriptDate     _ x -> show x
     ScriptDateTime _ x -> show x
@@ -513,10 +513,10 @@ instance Eq (PairViewSegment a) where
  p1 == p2 = compare p1 p2 == EQ
 instance Ord (PairViewSegment a) where
  compare a b = fromMaybe 
-    (fatal . L.intercalate "\n" $
+    (fatal . T.intercalate "\n" $
        ["P_Rule a should have a non-fuzzy Origin."
-       , show (origin a)
-       , show (origin b)
+       , tshow (origin a)
+       , tshow (origin b)
        ])
     (maybeOrdering (origin a) (origin b))
 instance Hashable a => Hashable (PairViewSegment a)
@@ -555,10 +555,10 @@ data P_Rule a  =
         } deriving Show
 instance Ord (P_Rule a) where
  compare a b = case compare (name a) (name b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["P_Rule a should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x  
@@ -616,10 +616,10 @@ data P_Interface =
 
 instance Ord P_Interface where --Required for merge of P_Contexts
  compare a b = case compare (name a) (name b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["P_Interface should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x
@@ -657,10 +657,10 @@ data P_BoxItem a =
            , obj_txt :: Text
            } deriving (Show)       -- just for debugging (zie ook instance Show BoxItem)
 instance Ord (P_BoxItem a) where
- compare a b = fromMaybe (fatal . L.intercalate "\n" $
+ compare a b = fromMaybe (fatal . T.intercalate "\n" $
                         ["P_BoxItem a should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
 instance Eq (P_BoxItem a) where
@@ -680,10 +680,10 @@ data P_IdentDf a = -- so this is the parametric data-structure
 instance Named (P_IdentDf a) where
  name = ix_lbl
 instance Ord (P_IdentDf a) where
- compare a b = fromMaybe (fatal . L.intercalate "\n" $
+ compare a b = fromMaybe (fatal . T.intercalate "\n" $
                         ["P_IdentDf a should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
 instance Eq (P_IdentDf a) where 
@@ -716,10 +716,10 @@ data P_ViewD a =
               } deriving (Show)
 instance Ord (P_ViewD a) where
  compare a b = case compare (name a) (name b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["P_ViewD a should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x
@@ -798,10 +798,10 @@ data PPurpose = PRef2 { pos :: Origin      -- the position in the Ampersand scri
                       } deriving Show
 instance Ord PPurpose where --Required for merge of P_Contexts
  compare a b = case compare (name a) (name b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["PPurpose a should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x

@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.ADL1.Lexer
     ( keywords
     , operators
@@ -31,6 +32,7 @@ import           RIO.Char hiding(isSymbol)
 import qualified RIO.List as L
 import qualified RIO.Char.Partial as Partial (chr)
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           RIO.Time
 import           Numeric
 
@@ -350,7 +352,7 @@ getNumber str =
                            [(flt,rest)] -> (LexFloat flt, Right flt, length str - length rest,rest)
                            _            -> fatal "Unexpected: can read decimal, but not float???"
     [(dec,rest)]  -> (LexDecimal dec , Left dec, length str - length rest,rest)
-    _  -> fatal ("No number to read!\n  " ++ take 40 str)
+    _  -> fatal $ "No number to read!\n  " <> T.take 40 (T.pack str)
 --getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
 --getNumber [] = fatal "getNumber"
 --getNumber cs@(c:s)
@@ -422,7 +424,7 @@ getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
                                       | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
-                                    _  -> fatal ("Impossible! first char is a digit.. "++take 40 s)
+                                    _  -> fatal $ "Impossible! first char is a digit.. "<>(T.take 40 $ T.pack s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)
                     | otherwise = case x `lookup` cntrChars of
                                  Nothing -> (Nothing,0,s)

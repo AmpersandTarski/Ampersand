@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | This module contains a datastructure for exceptions that
 --   can be thrown by Ampersand.
@@ -19,62 +20,63 @@ import           System.IO.Unsafe(unsafePerformIO)
 -- program's caller.
 exitWith :: AmpersandExit -> a
 exitWith x = unsafePerformIO $ do
-  runSimpleApp (mapM_ (logInfo . display . T.pack) message)
+  runSimpleApp (mapM_ (logInfo . display) message)
   SE.exitWith exitcode
  where (exitcode,message) = info x
 
 -- | Datastructure that contains all kind of exitcodes that
 --   are specific for Ampersand
 data AmpersandExit 
-  = FailedToInstallComposer [String]
+  = FailedToInstallComposer [Text]
   -- ^ An attempt to install Composer failed.
-  | FailedToInstallPrototypeFramework [String]
+  | FailedToInstallPrototypeFramework [Text]
   -- ^ An attempt to install the prototype framework failed.
-  | Fatal [String]
+  | Fatal [Text]
   -- ^ These specific errors are due to some bug in the Ampersand code. Please report such bugs!
-  | InvalidSQLExpression [String]
+  | InvalidSQLExpression [Text]
   -- ^ An attempt to run some SQL code failed.
-  | InvariantRuleViolated [String]
+  | InvariantRuleViolated [Text]
   -- ^ There are violations of one or more invariants
-  | NoConfigurationFile [String]
+  | NoConfigurationFile [Text]
   -- ^ There is no configuration file.
   | NoFilesToWatch
   -- ^ While running the daemon, somehow the list of files to watch is empty.
-  | NoValidFSpec [String]
+  | NoValidFSpec [Text]
   -- ^ Thrown whenever a ctxError occurs.
-  | PHPExecutionFailed [String]
+  | PHPExecutionFailed [Text]
   -- ^ An attempt to run some PHP code failed.
-  | PosAndNegChaptersSpecified [String]
+  | PosAndNegChaptersSpecified [Text]
   -- ^ The user is unclear about what chapters she likes in the generated document
-  | ReadFileError [String]
+  | ReadFileError [Text]
   -- ^ An attempt to read a file failed.
-  | SomeTestsFailed [String]
+  | SomeTestsFailed [Text]
   -- ^ Running some test yealded failed tests.
-  | ViolationsInDatabase [(String,[String])]
+  | ViolationsInDatabase [(Text,[Text])]
   -- ^ The population in the script is not the same as the population in the generated database
 
 instance Exception AmpersandExit
 
 instance Show AmpersandExit where
-  show x = "["++show exitcode++"] "
-         ++concatMap ("    "++) message
+  show x = T.unpack $ 
+           "["<>tshow exitcode<>"] "
+         <>T.concat (fmap ("    "<>) message)
      where (exitcode, message) = info x
 
-info :: AmpersandExit -> (SE.ExitCode, [String])
+info :: AmpersandExit -> (SE.ExitCode, [Text])
 info x = 
   case x of
     Fatal msg -> (SE.ExitFailure   2 , msg) 
     NoValidFSpec msg
-              -> (SE.ExitFailure  10 , case msg of
-                                         [] -> ["ERROR Something is wrong with your script. See https://github.com/AmpersandTarski/Ampersand/issues/751"]
-                                         _  -> msg
+              -> (SE.ExitFailure  10 , if null msg 
+                                       then ["ERROR Something is wrong with your script. See https://github.com/AmpersandTarski/Ampersand/issues/751"]
+                                       else msg
                  ) 
     ViolationsInDatabase viols
               -> (SE.ExitFailure  20 , "ERROR: The population would violate invariants. Could not generate your database." : concatMap showViolatedRule viols)
     InvalidSQLExpression msg
-              -> (SE.ExitFailure  30 , "ERROR: Invalid SQL Expression" : map ("  "++) msg)
+              -> (SE.ExitFailure  30 , "ERROR: Invalid SQL Expression" : map ("  "<>) msg)
     InvariantRuleViolated msg
-              -> (SE.ExitFailure  40 , "ERROR: No prototype generated because of rule violations." : map ("  "++) msg)
+              -> (SE.ExitFailure  40 , "ERROR: No prototype generated because of rule violations." : map ("  "<>) msg)
     FailedToInstallComposer msg
               -> (SE.ExitFailure  50 , msg)
     PHPExecutionFailed msg
@@ -92,8 +94,8 @@ info x =
     PosAndNegChaptersSpecified msg 
               -> (SE.ExitFailure 150 , msg)
   where
-    showViolatedRule :: (String,[String]) -> [String]
+    showViolatedRule :: (Text,[Text]) -> [Text]
     showViolatedRule (rule,pairs) = 
-         [ "Rule: "++rule
-         , "   violations: "++L.intercalate ", " pairs
+         [ "Rule: "<>rule
+         , "   violations: "<>T.intercalate ", " pairs
          ]
