@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.FSpec.FPA (FPA(..), FP(..), FPType(..), ShowLang(..), fpAnalyze, fpVal, fpaPlugInfo, fpaInterface) where 
                                            -- fpaPlugInfo and fpaInterface are exported for legacy modules Statistics and FSpec2Excel
 
@@ -20,7 +21,11 @@ data FPType
  | OF   -- ^ is een speciaal (eenvoudig) soort uitvoerfunctie. Een opvraagfunctie presenteert gegevens uit het systeem op basis van een uniek identificerend zoekgegeven, waarbij geen aanvullende bewerkingen (zoals berekeningen of het bijwerken van een gegevensverzameling) plaats hebben. Voorbeeld: Het tonen van de gegevens van de klant met klantnummer 123456789.
   deriving Show
 
-data FP = FP { fpType :: FPType, fpName :: String, fpComplexity :: Complexity } deriving Show
+data FP = FP 
+    { fpType :: FPType
+    , fpName :: Text
+    , fpComplexity :: Complexity
+    } deriving Show
 
 
 -- | Valuing of function points according to par. 3.9 (UK) or par. 2.9 (NL), see http://www.nesma.nl/sectie/fpa/hoefpa.asp
@@ -82,10 +87,10 @@ fpaInterface ifc =
              Box{}          -> 1 + (fromMaybe 0 . L.maximumMaybe . map getDepth $ [x | BxExpr x <- siObjs si])
 
 class ShowLang a where
-  showLang :: Lang -> a -> String
+  showLang :: Lang -> a -> Text
 
 instance ShowLang FP where
-  showLang lang fp = showLang lang (fpType fp) ++ " " ++ showLang lang (fpComplexity fp)
+  showLang lang fp = showLang lang (fpType fp) <> " " <> showLang lang (fpComplexity fp)
 
 
 instance ShowLang FPType where

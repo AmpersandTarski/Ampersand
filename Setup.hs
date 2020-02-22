@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- | Before each build, generate a BuildInfo_Generated module that exports the project version from cabal,
 -- the current revision number and the build time. Also generate a file that contains files that 
 -- are being included into the ampersand.exe file
@@ -5,11 +6,12 @@
 module Main 
 where
 import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive.Zip from package zip-archive. This reduces the amount of packages. (We now use two for zipping/unzipping)
-import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as BLC
 import           RIO.Char
 import qualified RIO.List as L
 import           RIO.Prelude
+import           RIO
+import qualified RIO.Text as T
 import           Prelude
 import           RIO.Time
 import           Distribution.Simple
@@ -21,7 +23,7 @@ import           System.Directory
 import           System.Environment (getEnvironment)
 import qualified System.Exit as SE
 import           System.FilePath
-import           System.IO(withFile,IOMode(ReadMode),hGetContents)
+import           System.IO(IOMode(ReadMode),hGetContents)
 import           System.Process(readProcessWithExitCode)
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateHook } )
@@ -29,30 +31,30 @@ main = defaultMainWithHooks (simpleUserHooks { buildHook = generateHook } )
 generateHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
 -- | Generate Haskell modules that are required for the build and start the build
 generateHook pd lbi uh bf = do
-    generateBuildInfoModule (prettyShow . pkgVersion . package $ pd)
+    generateBuildInfoModule (T.pack . prettyShow . pkgVersion . package $ pd)
     generateStaticFileModule
     (buildHook simpleUserHooks) pd lbi uh bf -- start the build
  
-generateBuildInfoModule :: String -> IO ()
+generateBuildInfoModule :: Text -> IO ()
 -- | Generate a Haskell module that contains information that is available
 --   only during build time.
 generateBuildInfoModule cabalVersionStr = do 
     content <- buildInfoModule cabalVersionStr 
                    <$> getGitInfoStr
-                   <*> (formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" 
+                   <*> (T.pack . formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" 
                            <$> (getCurrentTime >>= utcToLocalZonedTime)
                        )
-    writeFile (pathFromModuleName buildInfoModuleName) content
+    writeFileUtf8 (pathFromModuleName buildInfoModuleName) content
   where
-    buildInfoModuleName :: String
+    buildInfoModuleName :: Text
     buildInfoModuleName = "Ampersand.Basics.BuildInfo_Generated"
 
-    buildInfoModule :: String -> String -> String -> String
-    buildInfoModule cabalVersion gitInfo time = unlines
+    buildInfoModule :: Text -> Text -> Text -> Text
+    buildInfoModule cabalVersion gitInfo time = T.unlines
       [ "-- | This module is generated automatically by Setup.hs before building. Do not edit!"
       , "--   It contains some functions that are supposed to grab information at the time of"
       , "--   building the ampersand executable."
-      , "module "++buildInfoModuleName++"("
+      , "module "<>buildInfoModuleName<>"("
       , ""
       , "      cabalVersionStr"
       , "    , gitInfoStr"
@@ -60,24 +62,24 @@ generateBuildInfoModule cabalVersionStr = do
       , "    ) where"
       , "import Ampersand.Basics.Prelude"
       , ""
-      , "{-"++"# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
+      , "{-"<>"# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
       , "-- | The version of Ampersand as it is stated in the package.yaml file."
-      , "cabalVersionStr :: String"
-      , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
+      , "cabalVersionStr :: Text"
+      , "cabalVersionStr = \"" <> cabalVersion <> "\""
       , ""
-      , "{-"++"# NOINLINE gitInfoStr #-}"
+      , "{-"<>"# NOINLINE gitInfoStr #-}"
       , "-- | The version of Ampersand as seen by Git."
-      , "gitInfoStr :: String"
-      , "gitInfoStr = \"" ++ gitInfo ++ "\""
+      , "gitInfoStr :: Text"
+      , "gitInfoStr = \"" <> gitInfo <> "\""
       , ""
-      , "{-"++"# NOINLINE buildTimeStr #-}"
+      , "{-"<>"# NOINLINE buildTimeStr #-}"
       , "-- | The time of the build."
-      , "buildTimeStr :: String"
-      , "buildTimeStr = \"" ++ time ++ "\""
+      , "buildTimeStr :: Text"
+      , "buildTimeStr = \"" <> time <> "\""
       , ""
       ]
 
-    getGitInfoStr :: IO String
+    getGitInfoStr :: IO Text
     getGitInfoStr = getInfoStr `catch` warnGracefully
       where 
        getInfoStr = do
@@ -107,17 +109,17 @@ generateBuildInfoModule cabalVersionStr = do
          print (err :: IOException)
          warnNoCommitInfo
        gitInfoStr sha branch isDirty =
-          strip branch ++ ":" ++ strip sha ++ (if isDirty then "*" else "")   
+          strip branch <> ":" <> strip sha <> (if isDirty then "*" else "")   
        strip str = reverse . dropWhile isSpace . reverse $ str
     
-       readProcessEither :: String -> [String] -> String -> IO (Either String String)
+       readProcessEither :: Text -> [Text] -> Text -> IO (Either Text Text)
        readProcessEither cmd args stdinStr = do
          (exitCode,stdoutStr,stderrStr) <- readProcessWithExitCode cmd args stdinStr
          case exitCode of
            SE.ExitSuccess   -> return $ Right stdoutStr
            SE.ExitFailure _ -> return $ Left stderrStr
 
-    warnNoCommitInfo :: IO String
+    warnNoCommitInfo :: IO Text
     warnNoCommitInfo = do
       putStrLn ""
       putStrLn ""
@@ -152,17 +154,17 @@ generateStaticFileModule = do
     let updateRequired = previousModuleContents == currentModuleContents
     if updateRequired 
       then
-        putStrLn $ "Static files unchanged, no need to update "++sfModulePath
+        putStrLn $ "Static files unchanged, no need to update "<>sfModulePath
       else do
-        putStrLn $ "Static files have changed, updating "++sfModulePath
+        putStrLn $ "Static files have changed, updating "<>sfModulePath
         writeFile sfModulePath currentModuleContents
   where 
-    staticFileModuleName :: String
+    staticFileModuleName :: Text
     staticFileModuleName = "Ampersand.Prototype.StaticFiles_Generated"
 
     sfModulePath = pathFromModuleName staticFileModuleName
     
-    getPreviousModuleContents :: IO String
+    getPreviousModuleContents :: IO Text
     getPreviousModuleContents = reader `catch` errorHandler
       where
         reader = withFile sfModulePath ReadMode $ \h -> do
@@ -172,7 +174,7 @@ generateStaticFileModule = do
         errorHandler err = do  -- old generated module exists, but we can't read the file or read the contents
           putStrLn $ unlines 
              [ ""
-             , "Warning: Cannot read previously generated " ++ sfModulePath ++ ":"
+             , "Warning: Cannot read previously generated " <> sfModulePath <> ":"
              , show (err :: SomeException)
              , "This warning should disappear the next time you build Ampersand. If the error persists, please report this as a bug."
              , ""
@@ -181,15 +183,15 @@ generateStaticFileModule = do
          
     
     -- | Collect all files required to be inside the ampersand.exe 
-    readAllStaticFiles :: IO String
+    readAllStaticFiles :: IO Text
     readAllStaticFiles = do
         pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
         formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand"  "."  --meta information about Ampersand
         systemContextFiles   <- readStaticFiles PrototypeContext "AmpersandData/PrototypeContext" "."  --Special system context for Ampersand
-        return $ mkStaticFileModule $ pandocTemplatesFiles ++ formalAmpersandFiles ++ systemContextFiles
+        return $ mkStaticFileModule $ pandocTemplatesFiles <> formalAmpersandFiles <> systemContextFiles
         
 
-    readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [String]
+    readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [Text]
     readStaticFiles fkind base fileOrDirPth = do
         let path = combine base fileOrDirPth
         isDir <- doesDirectoryExist path
@@ -200,23 +202,23 @@ generateStaticFileModule = do
            else do
              timeStamp <- getModificationTime path
              fileContents <- BLC.readFile path
-             return [ "SF "++show fkind++" "++show fileOrDirPth++" "++utcToEpochTime timeStamp ++
-                                 " {-"++show timeStamp++" -} (BLC.unpack$ GZip.decompress "++show (GZip.compress fileContents)++")"
+             return [ "SF "<>show fkind<>" "<>show fileOrDirPth<>" "<>utcToEpochTime timeStamp <>
+                                 " {-"<>show timeStamp<>" -} (BLC.unpack$ GZip.decompress "<>show (GZip.compress fileContents)<>")"
                         ]
-      where utcToEpochTime :: UTCTime -> String
+      where utcToEpochTime :: UTCTime -> Text
             utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
 
 
-    mkStaticFileModule :: [String] -> String
+    mkStaticFileModule :: [Text] -> Text
     mkStaticFileModule sfDeclStrs =
-      unlines staticFileModuleHeader ++
-      "  [ " ++ L.intercalate "\n  , " sfDeclStrs ++ "\n" ++
+      unlines staticFileModuleHeader <>
+      "  [ " <> L.intercalate "\n  , " sfDeclStrs <> "\n" <>
       "  ]\n"
 
-    staticFileModuleHeader :: [String]
+    staticFileModuleHeader :: [Text]
     staticFileModuleHeader =
       [ "{-# LANGUAGE OverloadedStrings #-}"
-      , "module "++staticFileModuleName
+      , "module "<>staticFileModuleName
       , "   ( StaticFile(..),FileKind(..)"
       , "   , allStaticFiles, getStaticFileContent"
       , "   )"
@@ -230,10 +232,10 @@ generateStaticFileModule = do
       , "data StaticFile = SF { fileKind      :: FileKind"
       , "                     , filePath      :: FilePath -- relative path, including extension"
       , "                     , timeStamp     :: Integer  -- unix epoch time"
-      , "                     , contentString :: String"
+      , "                     , contentString :: Text"
       , "                     }"
       , ""
-      , "getStaticFileContent :: FileKind -> FilePath -> Maybe String"
+      , "getStaticFileContent :: FileKind -> FilePath -> Maybe Text"
       , "getStaticFileContent fk fp ="
       , "     case filter isRightFile allStaticFiles of"
       , "        [x] -> Just (contentString x)"
@@ -242,13 +244,13 @@ generateStaticFileModule = do
       , "    isRightFile :: StaticFile -> Bool"
       , "    isRightFile (SF fKind path _ _ ) = fKind == fk && equalFilePath path (\".\" </> fp)"
       , ""
-      , "{-"++"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
+      , "{-"<>"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
       , "allStaticFiles :: [StaticFile]"
       , "allStaticFiles ="
       ]
 
-    getProperDirectoryContents :: FilePath -> IO [String]
-    getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth
-    
-pathFromModuleName :: String -> String
-pathFromModuleName m = "src/" ++ [if c == '.' then '/' else c | c <- m] ++ ".hs"
+    getProperDirectoryContents :: FilePath -> IO [Text]
+    getProperDirectoryContents fp = (fmap T.pack . filter (`notElem` [".","..",".svn"])) <$> getDirectoryContents fp
+
+pathFromModuleName :: Text -> FilePath
+pathFromModuleName m = T.unpack $ "src/" <> T.map (\c -> if c == '.' then '/' else c) m <> ".hs"
