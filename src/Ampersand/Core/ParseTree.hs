@@ -750,7 +750,7 @@ data P_ViewSegmtPayLoad a
                     | P_ViewText { vs_txt :: Text }
                       deriving (Show)
 
-data ViewHtmlTemplate = ViewHtmlTemplateFile Text
+data ViewHtmlTemplate = ViewHtmlTemplateFile FilePath
 --              | ViewHtmlTemplateInline Text -- Future extension
                   deriving (Eq, Ord, Show)
 

@@ -33,7 +33,7 @@ data TableCols = TableCols
 data View = View
   { vwJSONlabel        :: Text
   , vwJSONisDefault    :: Bool
-  , vwJSONhtmlTemplate :: Maybe Text
+  , vwJSONhtmlTemplate :: Maybe FilePath
   , vwJSONsegments :: [Segment]
   } deriving (Generic, Show)
 data Segment = Segment

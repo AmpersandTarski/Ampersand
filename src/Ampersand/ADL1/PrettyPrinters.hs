@@ -293,7 +293,7 @@ instance Pretty (P_ViewD TermPrim) where
                     <+> braces (listOf ats) <~> html <+> text "ENDVIEW"
 
 instance Pretty ViewHtmlTemplate where
-    pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
+    pretty (ViewHtmlTemplateFile file) = text "HTML" <+> text "TEMPLATE" <+> quote (T.pack file)
 instance Pretty (P_ViewSegment TermPrim) where
     pretty (P_ViewSegment mlab _ pl)
         = ( case mlab of 

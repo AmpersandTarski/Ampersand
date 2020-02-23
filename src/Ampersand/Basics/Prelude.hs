@@ -15,7 +15,6 @@ module Ampersand.Basics.Prelude
   , defaultFirstFalse
   , decodeUtf8
   )where
-import           Ampersand.Basics.Exit
 import           Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import           RIO hiding (zipWith,exitWith)
 import qualified RIO.Text as T
@@ -24,14 +23,14 @@ import           System.IO (openTempFile, stderr)
 data Verbosity = Loud | Silent deriving (Eq, Data, Show)
 
 -- Wrapper around readFileUtf8. It exits with an error:
-readUTF8File :: FilePath -> RIO env Text
-readUTF8File fp = readFileUtf8 fp `catch` handler
+readUTF8File :: FilePath -> RIO env (Either [Text] Text)
+readUTF8File fp = (Right <$> readFileUtf8 fp) `catch` handler
   where 
-     handler :: IOException -> RIO env a
-     handler err = exitWith $ ReadFileError
-         [ "Error reading: "<> T.pack fp
-         , tshow $ err
-         ]
+     handler :: IOException -> RIO env (Either [Text] a)
+     handler err = return . Left $
+               [ "File could not be read: "<> T.pack fp
+               , tshow $ err
+               ]
 
 zipWith :: (a->b->c) -> [a]->[b]->[c]
 zipWith fun = go
