@@ -206,7 +206,7 @@ custom-setup:
       - process == 1.6.*
       - rio == 0.1.*
       - time == 1.8.*
-      - zlib == 0.6.*
+      - zip-archive >= 0.4.1
 
 executables:
   ampersand:

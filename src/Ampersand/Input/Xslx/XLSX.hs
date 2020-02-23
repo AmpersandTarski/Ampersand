@@ -8,11 +8,12 @@ import           Ampersand.Basics hiding (view, (^.))
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
+import           Ampersand.Prototype.StaticFiles_Generated
 import           Codec.Xlsx
 import           Control.Lens hiding (both) -- ((^?),ix)
 import           Data.Tuple.Extra
 import qualified RIO.List as L
+import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
 import qualified RIO.Map as Map
@@ -27,11 +28,11 @@ parseXlsxFile mFk file =
         case mFk of
           Just fileKind 
              -> case getStaticFileContent fileKind file of
-                      Just cont -> return $ fromString cont
+                      Just cont -> return cont
                       Nothing -> fatal ("Statically included "<> tshow fileKind<> " files. \n  Cannot find `"<>T.pack file<>"`.")
           Nothing
-             -> liftIO $ BL.readFile file
-     return . xlsx2pContext env . toXlsx $ bytestr
+             -> liftIO $ B.readFile file
+     return . xlsx2pContext env . toXlsx . BL.fromStrict $ bytestr
  where
   xlsx2pContext :: (HasFSpecGenOpts env) 
       => env -> Xlsx -> Guarded [P_Population]

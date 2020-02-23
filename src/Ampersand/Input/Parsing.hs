@@ -19,10 +19,11 @@ import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Input.ADL1.Lexer
 import           Ampersand.Input.ADL1.Parser
+import           Ampersand.Input.Archi.ArchiAnalyze
 import           Ampersand.Input.PreProcessor
 import           Ampersand.Input.Xslx.XLSX
-import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,PrototypeContext))
 import           Ampersand.Misc.HasClasses
+import           Ampersand.Prototype.StaticFiles_Generated
 import           RIO.Char(toLower)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
@@ -30,7 +31,6 @@ import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           Text.Parsec.Prim (runP)
-import Ampersand.Input.Archi.ArchiAnalyze
 
 
 
@@ -151,10 +151,10 @@ parseSingleADL pc
                     <- case pcFileKind pc of
                        Just fileKind
                          -> case getStaticFileContent fileKind filePath of
-                              Just cont -> return (Right . stripBom . T.pack $ cont)
+                              Just cont -> return (Right . stripBom . decodeUtf8 $ cont)
                               Nothing -> fatal ("Statically included "<> tshow fileKind<> " files. \n  Cannot find `"<>T.pack filePath<>"`.")
                        Nothing
-                         -> readUTF8File filePath
+                         -> Right <$> readFileUtf8 filePath
               case mFileContents of
                     Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) (map T.pack err)
                     Right fileContents ->

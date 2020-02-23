@@ -5,9 +5,8 @@
 -- Note that in order for this Setup.hs to be used by cabal, the build-type should be Custom.
 module Main 
 where
-import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive.Zip from package zip-archive. This reduces the amount of packages. (We now use two for zipping/unzipping)
---import           Control.Exception
-import qualified Data.ByteString.Lazy.Char8 as BLC
+--import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive.Zip from package zip-archive. This reduces the amount of packages. (We now use two for zipping/unzipping)
+import           Codec.Archive.Zip
 import           Distribution.Simple
 import           Distribution.Simple.LocalBuildInfo
 import           Distribution.Simple.Setup
@@ -16,13 +15,13 @@ import           Distribution.Pretty (prettyShow)
 import           Prelude(print,putStrLn)
 import           RIO
 import           RIO.Char
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import           RIO.Time
 import           System.Directory
 import           System.Environment (getEnvironment)
 import qualified System.Exit as SE
 import           System.FilePath
-import           System.IO(IOMode(ReadMode),hGetContents)
 import           System.Process(readProcessWithExitCode)
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateHook } )
@@ -141,10 +140,10 @@ data FileKind =
   -- ^ The adl script files for formal ampersand
   | PrototypeContext
   -- ^ The adl script files for the prototype context
-   deriving (Show, Eq)
+   deriving (Show, Eq, Bounded, Enum)
 
 generateStaticFileModule :: IO ()
--- | For each file that should be in the ampersand executable, we generate a StaticFile value,
+-- | For each set of files (by FileKind), we generate an Archive value,
 --   which contains the information necessary for Ampersand to create the file at run-time.
 --
 --   To prevent compiling the generated module (which can get rather big) on each build, we compare the contents
@@ -168,12 +167,10 @@ generateStaticFileModule = do
     sfModulePath = pathFromModuleName staticFileModuleName
     
     getPreviousModuleContents :: IO Text
-    getPreviousModuleContents = T.pack <$> reader `catch` errorHandler
+    getPreviousModuleContents = reader `catch` errorHandler
       where
-        reader = withFile sfModulePath ReadMode $ \h -> do
-            str <- hGetContents h
-            length str `seq` return () -- lazy IO is :-(
-            return str
+        reader :: IO Text
+        reader = readFileUtf8 sfModulePath  
         errorHandler err = do  -- old generated module exists, but we can't read the file or read the contents
           putStrLn $ unlines 
              [ ""
@@ -182,7 +179,7 @@ generateStaticFileModule = do
              , "This warning should disappear the next time you build Ampersand. If the error persists, please report this as a bug."
              , ""
              ]
-          return []
+          return mempty
          
     
     -- | Collect all files required to be inside the ampersand.exe 
@@ -192,10 +189,9 @@ generateStaticFileModule = do
         formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand"  "."  --meta information about Ampersand
         systemContextFiles   <- readStaticFiles PrototypeContext "AmpersandData/PrototypeContext" "."  --Special system context for Ampersand
         return $ mkStaticFileModule $ pandocTemplatesFiles <> formalAmpersandFiles <> systemContextFiles
-        
 
-    readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [Text]
-    readStaticFiles fkind base fileOrDirPth = do
+    readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [(FileKind,Entry)]
+    readStaticFiles fkind base fileOrDirPth = do 
         let path = base </> fileOrDirPth
         isDir <- doesDirectoryExist path
         if isDir 
@@ -203,51 +199,48 @@ generateStaticFileModule = do
              fOrDs <- getProperDirectoryContents path
              fmap concat $ mapM (\fOrD -> readStaticFiles fkind base (fileOrDirPth </> fOrD)) fOrDs
            else do
-             timeStamp <- getModificationTime path
-             fileContents <- BLC.readFile path
-             return $ T.pack <$> 
-                 [ "SF "<>show fkind<>" "<>show fileOrDirPth<>" "<>utcToEpochTime timeStamp <>
-                          " {-"<>show timeStamp<>" -} (T.pack . BLC.unpack $ GZip.decompress "<>show (GZip.compress fileContents)<>")"
-                 ]
-      where utcToEpochTime :: UTCTime -> String
-            utcToEpochTime = formatTime defaultTimeLocale "%s"
-
-
-    mkStaticFileModule :: [Text] -> Text
-    mkStaticFileModule sfDeclStrs =
+             entry <- readEntry [OptVerbose] (base</>fileOrDirPth)
+             return [(fkind,entry)]
+    mkStaticFileModule :: [(FileKind,Entry)] -> Text
+    mkStaticFileModule xs =
       T.unlines staticFileModuleHeader <>
-      "  [ " <> T.intercalate "\n  , " sfDeclStrs <> "\n" <>
+      "  [ " <> T.intercalate "\n  , " (map toText archives) <> "\n" <>
       "  ]\n"
-
+      where toText :: (FileKind,Archive) -> Text
+            toText (fk, archive) = "SF "<>tshow fk<>" "<>tshow archive
+            archives :: [(FileKind,Archive)]
+            archives = map mkArchive $ NE.groupBy tst xs
+              where tst :: (FileKind,a) -> (FileKind,a) -> Bool
+                    tst a b = fst a == fst b
+                    mkArchive :: NE.NonEmpty (FileKind,Entry) -> (FileKind,Archive)
+                    mkArchive entries = 
+                        ( fst . NE.head $ entries
+                        , foldr addEntryToArchive emptyArchive $ snd <$> NE.toList entries
+                        )
     staticFileModuleHeader :: [Text]
     staticFileModuleHeader =
       [ "{-# LANGUAGE OverloadedStrings #-}"
       , "module "<>staticFileModuleName
-      , "   ( StaticFile(..),FileKind(..)"
-      , "   , allStaticFiles, getStaticFileContent"
+      , "   ( FileKind(..)"
+      , "   , getStaticFileContent"
       , "   )"
       , "where"
       , "import           Ampersand.Basics"
-      , "import qualified Codec.Compression.GZip as GZip"
-      , "import qualified Data.ByteString.Lazy.Char8 as BLC"
-      , "import qualified RIO.Text as T"
-      , "import           System.FilePath"
+      , "import           Codec.Archive.Zip"
+      , "import qualified RIO.ByteString as B"
+      , "import qualified RIO.ByteString.Lazy as BL"
       , ""
       , "data FileKind = PandocTemplates | FormalAmpersand | PrototypeContext deriving (Show, Eq)"
-      , "data StaticFile = SF { fileKind      :: FileKind"
-      , "                     , filePath      :: FilePath -- relative path, including extension"
-      , "                     , timeStamp     :: Integer  -- unix epoch time"
-      , "                     , contentString :: Text"
-      , "                     }"
+      , "data StaticFile = SF FileKind Archive"
       , ""
-      , "getStaticFileContent :: FileKind -> FilePath -> Maybe Text"
-      , "getStaticFileContent fk fp ="
-      , "     case filter isRightFile allStaticFiles of"
-      , "        [x] -> Just (contentString x)"
-      , "        _   -> Nothing"
+      , "getStaticFileContent :: FileKind -> FilePath -> Maybe B.ByteString"
+      , "getStaticFileContent fk fp = BL.toStrict <$>"
+      , "     case filter isRightArchive allStaticFiles of"
+      , "        [SF _ a] -> fromEntry <$> findEntryByPath fp a"
+      , "        _        -> Nothing"
       , "  where"
-      , "    isRightFile :: StaticFile -> Bool"
-      , "    isRightFile (SF fKind path _ _ ) = fKind == fk && equalFilePath path (\".\" </> fp)"
+      , "    isRightArchive :: StaticFile -> Bool"
+      , "    isRightArchive (SF fKind _) = fKind == fk"
       , ""
       , "{-"<>"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
       , "allStaticFiles :: [StaticFile]"

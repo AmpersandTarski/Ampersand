@@ -22,7 +22,7 @@ import           Ampersand.Basics
 import           Ampersand.Classes (isFunction)
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
+import           Ampersand.Prototype.StaticFiles_Generated
 import           Conduit (liftIO, MonadIO)  
 import           RIO.Char hiding    (Space)
 import qualified RIO.Text as T
@@ -180,7 +180,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
     writerOptions = def
                       { writerTableOfContents=True
                       , writerNumberSections=True
-                      , writerTemplate=T.unpack <$> template
+                      , writerTemplate= template
                       , writerVariables=defaultWriterVariables env fSpec
                       , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
@@ -189,7 +189,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
                       }
       where 
         template :: Maybe Text
-        template  = substitute substMap <$> T.pack <$> getStaticFileContent PandocTemplates ("default."++writerName)
+        template  = substitute substMap <$> decodeUtf8 <$> getStaticFileContent PandocTemplates ("default."++writerName)
         substitute :: [(Text,Text)] -> Text -> Text
         substitute subs tmpl = foldr replaceAll tmpl subs
         replaceAll :: (Text,Text) -> Text -> Text
