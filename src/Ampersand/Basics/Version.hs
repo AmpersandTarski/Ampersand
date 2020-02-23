@@ -37,11 +37,11 @@ fatal msg
 
 -- | Text, containing the Ampersand version, including the build timestamp.
 ampersandVersionStr :: Text
-ampersandVersionStr = ampersandVersionWithoutBuildTimeStr <>", build time: "<>T.pack buildTimeStr
+ampersandVersionStr = ampersandVersionWithoutBuildTimeStr <>", build time: "<>buildTimeStr
 
 -- | Text, containing the Ampersand version. The part unto the first space is used as name of the release (appVeyor)
 ampersandVersionWithoutBuildTimeStr :: Text
-ampersandVersionWithoutBuildTimeStr = "Ampersand-v"<>T.pack cabalVersionStr<>" ["<>T.pack gitInfoStr<>"]"
+ampersandVersionWithoutBuildTimeStr = "Ampersand-v"<>cabalVersionStr<>" ["<>gitInfoStr<>"]"
 {-
    #1.#2.#3[$gitInfo] : #1 major version; #2 student release version; #3 production fix version (normally 0 );
    $gitInfo: "branch:SHA", followed by a '*' if the working copy was dirty: e.g. "master:0eea5e3*" 

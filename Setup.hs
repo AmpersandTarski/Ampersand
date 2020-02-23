@@ -6,19 +6,18 @@
 module Main 
 where
 import qualified Codec.Compression.GZip as GZip  --TODO replace by Codec.Archive.Zip from package zip-archive. This reduces the amount of packages. (We now use two for zipping/unzipping)
+--import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as BLC
-import           RIO.Char
-import qualified RIO.List as L
-import           RIO.Prelude
-import           RIO
-import qualified RIO.Text as T
-import           Prelude
-import           RIO.Time
 import           Distribution.Simple
 import           Distribution.Simple.LocalBuildInfo
 import           Distribution.Simple.Setup
 import           Distribution.PackageDescription
 import           Distribution.Pretty (prettyShow)
+import           Prelude(print,putStrLn)
+import           RIO
+import           RIO.Char
+import qualified RIO.Text as T
+import           RIO.Time
 import           System.Directory
 import           System.Environment (getEnvironment)
 import qualified System.Exit as SE
@@ -51,11 +50,11 @@ generateBuildInfoModule cabalVersionStr = do
 
     buildInfoModule :: Text -> Text -> Text -> Text
     buildInfoModule cabalVersion gitInfo time = T.unlines
-      [ "-- | This module is generated automatically by Setup.hs before building. Do not edit!"
+      [ "{-# LANGUAGE OverloadedStrings #-}"
+      , "-- | This module is generated automatically by Setup.hs before building. Do not edit!"
       , "--   It contains some functions that are supposed to grab information at the time of"
       , "--   building the ampersand executable."
       , "module "<>buildInfoModuleName<>"("
-      , ""
       , "      cabalVersionStr"
       , "    , gitInfoStr"
       , "    , buildTimeStr"
@@ -82,6 +81,7 @@ generateBuildInfoModule cabalVersionStr = do
     getGitInfoStr :: IO Text
     getGitInfoStr = getInfoStr `catch` warnGracefully
       where 
+       getInfoStr :: IO Text
        getInfoStr = do
          eSHA <- readProcessEither "git" ["rev-parse", "--short", "HEAD"] ""
          eBranch <- readProcessEither "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
@@ -100,24 +100,27 @@ generateBuildInfoModule cabalVersionStr = do
                     , lookup "GIT_Branch" env
                     ) of
                  (Just sha, Just branch) ->
-                   return $ gitInfoStr branch sha False
+                   return $ gitInfoStr (T.pack branch) (T.pack sha) False
                  _ -> do
                    mapM_ print $ lefts [eSHA, eBranch] -- errors during git execution
                    warnNoCommitInfo
            
+       warnGracefully :: IOException -> IO Text
        warnGracefully err = do
          print (err :: IOException)
          warnNoCommitInfo
+       gitInfoStr :: Text -> Text -> Bool -> Text
        gitInfoStr sha branch isDirty =
           strip branch <> ":" <> strip sha <> (if isDirty then "*" else "")   
-       strip str = reverse . dropWhile isSpace . reverse $ str
+       strip :: Text -> Text
+       strip = T.reverse . T.dropWhile isSpace . T.reverse
     
-       readProcessEither :: Text -> [Text] -> Text -> IO (Either Text Text)
+       readProcessEither :: FilePath -> [Text] -> Text -> IO (Either Text Text)
        readProcessEither cmd args stdinStr = do
-         (exitCode,stdoutStr,stderrStr) <- readProcessWithExitCode cmd args stdinStr
+         (exitCode,stdoutStr,stderrStr) <- readProcessWithExitCode cmd (map T.unpack args) (T.unpack stdinStr)
          case exitCode of
-           SE.ExitSuccess   -> return $ Right stdoutStr
-           SE.ExitFailure _ -> return $ Left stderrStr
+           SE.ExitSuccess   -> return . Right . T.pack $ stdoutStr
+           SE.ExitFailure _ -> return . Left  . T.pack $ stderrStr
 
     warnNoCommitInfo :: IO Text
     warnNoCommitInfo = do
@@ -157,7 +160,7 @@ generateStaticFileModule = do
         putStrLn $ "Static files unchanged, no need to update "<>sfModulePath
       else do
         putStrLn $ "Static files have changed, updating "<>sfModulePath
-        writeFile sfModulePath currentModuleContents
+        writeFileUtf8 sfModulePath currentModuleContents
   where 
     staticFileModuleName :: Text
     staticFileModuleName = "Ampersand.Prototype.StaticFiles_Generated"
@@ -165,7 +168,7 @@ generateStaticFileModule = do
     sfModulePath = pathFromModuleName staticFileModuleName
     
     getPreviousModuleContents :: IO Text
-    getPreviousModuleContents = reader `catch` errorHandler
+    getPreviousModuleContents = T.pack <$> reader `catch` errorHandler
       where
         reader = withFile sfModulePath ReadMode $ \h -> do
             str <- hGetContents h
@@ -193,26 +196,27 @@ generateStaticFileModule = do
 
     readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [Text]
     readStaticFiles fkind base fileOrDirPth = do
-        let path = combine base fileOrDirPth
+        let path = base </> fileOrDirPth
         isDir <- doesDirectoryExist path
         if isDir 
            then do
              fOrDs <- getProperDirectoryContents path
-             fmap concat $ mapM (\fOrD -> readStaticFiles fkind base (combine fileOrDirPth fOrD)) fOrDs
+             fmap concat $ mapM (\fOrD -> readStaticFiles fkind base (fileOrDirPth </> fOrD)) fOrDs
            else do
              timeStamp <- getModificationTime path
              fileContents <- BLC.readFile path
-             return [ "SF "<>show fkind<>" "<>show fileOrDirPth<>" "<>utcToEpochTime timeStamp <>
-                                 " {-"<>show timeStamp<>" -} (BLC.unpack$ GZip.decompress "<>show (GZip.compress fileContents)<>")"
-                        ]
-      where utcToEpochTime :: UTCTime -> Text
-            utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
+             return $ T.pack <$> 
+                 [ "SF "<>show fkind<>" "<>show fileOrDirPth<>" "<>utcToEpochTime timeStamp <>
+                          " {-"<>show timeStamp<>" -} (T.pack . BLC.unpack $ GZip.decompress "<>show (GZip.compress fileContents)<>")"
+                 ]
+      where utcToEpochTime :: UTCTime -> String
+            utcToEpochTime = formatTime defaultTimeLocale "%s"
 
 
     mkStaticFileModule :: [Text] -> Text
     mkStaticFileModule sfDeclStrs =
-      unlines staticFileModuleHeader <>
-      "  [ " <> L.intercalate "\n  , " sfDeclStrs <> "\n" <>
+      T.unlines staticFileModuleHeader <>
+      "  [ " <> T.intercalate "\n  , " sfDeclStrs <> "\n" <>
       "  ]\n"
 
     staticFileModuleHeader :: [Text]
@@ -224,8 +228,9 @@ generateStaticFileModule = do
       , "   )"
       , "where"
       , "import           Ampersand.Basics"
-      , "import qualified Data.ByteString.Lazy.Char8 as BLC"
       , "import qualified Codec.Compression.GZip as GZip"
+      , "import qualified Data.ByteString.Lazy.Char8 as BLC"
+      , "import qualified RIO.Text as T"
       , "import           System.FilePath"
       , ""
       , "data FileKind = PandocTemplates | FormalAmpersand | PrototypeContext deriving (Show, Eq)"
@@ -249,8 +254,8 @@ generateStaticFileModule = do
       , "allStaticFiles ="
       ]
 
-    getProperDirectoryContents :: FilePath -> IO [Text]
-    getProperDirectoryContents fp = (fmap T.pack . filter (`notElem` [".","..",".svn"])) <$> getDirectoryContents fp
+    getProperDirectoryContents :: FilePath -> IO [FilePath]
+    getProperDirectoryContents fp = (filter (`notElem` [".","..",".svn"])) <$> getDirectoryContents fp
 
 pathFromModuleName :: Text -> FilePath
 pathFromModuleName m = T.unpack $ "src/" <> T.map (\c -> if c == '.' then '/' else c) m <> ".hs"

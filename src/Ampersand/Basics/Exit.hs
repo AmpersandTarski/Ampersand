@@ -8,7 +8,8 @@ module Ampersand.Basics.Exit
          ) where
 
 import           Control.Exception hiding (catch)
-import           Ampersand.Basics.Prelude
+--import           Ampersand.Basics.Prelude
+import RIO hiding (zipWith,exitWith)
 import qualified RIO.Text as T
 import qualified System.Exit as SE
 import           System.IO.Unsafe(unsafePerformIO)
@@ -89,7 +90,7 @@ info x =
     SomeTestsFailed msg
               -> (SE.ExitFailure 120 , msg)
     ReadFileError msg
-              -> (SE.ExitFailure 130 , msg)
+              -> (SE.ExitFailure 130 , msg) -- Same magic number as used in Setup.hs
     PosAndNegChaptersSpecified msg 
               -> (SE.ExitFailure 150 , msg)
   where

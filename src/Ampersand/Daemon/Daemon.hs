@@ -49,7 +49,7 @@ initialState = do
     exists <- liftIO $ doesFileExist dotAmpersand
     if exists 
     then do
-      content <- readFileUtf8 dotAmpersand
+      content <- readUTF8File dotAmpersand
       let files = map T.unpack
                 . filter (\fn -> T.length fn > 0  --discard empty lines
                                && (not $ "#"  `T.isPrefixOf` fn)  -- line commented out yaml style
