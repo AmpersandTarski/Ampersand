@@ -68,7 +68,7 @@ instance (HasFSpecGenOpts a) => HasAllowInvariantViolations a where
   allowInvariantViolationsL = fSpecGenOptsL . (lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y }))
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
-  baseName :: a -> String
+  baseName :: a -> FilePath
   baseName  = fromMaybe (fatal "Cannot determine the basename of the script that is being compiled")
             . fmap takeBaseName
             . view rootFileL

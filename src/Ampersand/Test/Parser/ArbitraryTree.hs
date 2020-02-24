@@ -30,6 +30,10 @@ safeStr1 = safeStr `suchThat` (not.T.null)
 noEsc :: Text -> Bool
 noEsc = not . T.any ( == '\\')
 
+-- Generates a filePath
+safeFilePath :: Gen FilePath
+safeFilePath = T.unpack <$> safeStr
+
 -- Genrates a valid ADL identifier
 identifier :: Gen Text
 identifier = suchThat str2 noKeyword
@@ -288,7 +292,7 @@ instance Arbitrary a => Arbitrary (P_ViewD a) where
                     <*> arbitrary <*> arbitrary <*> listOf arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
-    arbitrary = ViewHtmlTemplateFile <$> safeStr
+    arbitrary = ViewHtmlTemplateFile <$> safeFilePath
 
 instance Arbitrary a => Arbitrary (P_ViewSegment a) where
     arbitrary = P_ViewSegment <$> (Just <$> safeStr) <*> arbitrary <*> arbitrary 
