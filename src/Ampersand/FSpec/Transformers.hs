@@ -25,9 +25,9 @@ import qualified Text.Pandoc.Shared as P
 --   some relation of Formal Ampersand of a given
 --   ampersand script.
 data Transformer = Transformer 
-      { tRel :: String  -- name of relation
-      , tSrc :: String  -- name of source
-      , tTrg :: String  -- name of target
+      { tRel :: Text  -- name of relation
+      , tSrc :: Text  -- name of source
+      , tTrg :: Text  -- name of target
       , tPairs :: Set.Set (PopAtom,PopAtom)-- the population of this relation from the user's script.
       }
 
@@ -35,7 +35,7 @@ data Transformer = Transformer
 --   the atom. 
 data PopAtom = 
     DirtyId Text
-    -- ^ Any String. must be:
+    -- ^ Any Text. must be:
     --      * unique in the scope of the entire fspec
     --      * storable in a 255 database field
   | PopAlphaNumeric Text -- ^ Intended to be observable by users. Not a 'dirty id'.
@@ -55,7 +55,7 @@ dirtyId = DirtyId . idWithType
 dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
-toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
+toTransformer :: (Text, Text, Text, Set.Set (PopAtom,PopAtom) ) -> Transformer 
 toTransformer (rel,src,tgt,tuples) = Transformer rel src tgt tuples
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: FSpec -> [Transformer]
@@ -210,19 +210,19 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , mean::Meaning <- decMean rel
         ]
       )
-     ,("decprL"                , "Relation"              , "String"  
+     ,("decprL"                , "Relation"              , "Text"  
       , Set.fromList $
         [(dirtyId rel, (PopAlphaNumeric . decprL) rel) 
         | rel::Relation <- instanceList fSpec
         ]
       )
-     ,("decprM"                , "Relation"              , "String"  
+     ,("decprM"                , "Relation"              , "Text"  
       , Set.fromList $
         [(dirtyId rel, (PopAlphaNumeric . decprM) rel) 
         | rel::Relation <- instanceList fSpec
         ]
       )
-     ,("decprR"                , "Relation"              , "String"  
+     ,("decprR"                , "Relation"              , "Text"  
       , Set.fromList $
         [(dirtyId rel, (PopAlphaNumeric . decprR) rel) 
         | rel::Relation <- instanceList fSpec
@@ -311,7 +311,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , rul          <- Set.elems $ identityRules pat
         ]
       )
-     ,("ifcClass"              , "Interface"             , "String"  
+     ,("ifcClass"              , "Interface"             , "Text"  
       , Set.empty  --TODO
       )
      ,("ifcControls"           , "Interface"             , "Conjunct"
@@ -339,7 +339,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | ifc::Interface <- instanceList fSpec
         ]
       )
-     ,("ifcPrp"                , "Interface"             , "String"  
+     ,("ifcPrp"                , "Interface"             , "Text"  
       , Set.empty  --TODO
       )
      ,("ifcQuads"              , "Interface"             , "Quad"    
@@ -710,7 +710,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | rel::Relation <- instanceList fSpec
         ]
       )
-     ,("text"                  , "PairViewSegment"       , "String"  
+     ,("text"                  , "PairViewSegment"       , "Text"  
       , Set.empty  --TODO
       )
      ,("tgt"                   , "Signature"             , "Concept" 
