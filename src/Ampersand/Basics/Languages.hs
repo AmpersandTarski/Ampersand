@@ -14,8 +14,6 @@ module Ampersand.Basics.Languages
 where
               
 import Ampersand.Basics.Prelude
-import RIO.Char (toLower)
-import qualified RIO.List as L
 import qualified RIO.Text as T
 
 -- | An enumeration of supported natural languages.

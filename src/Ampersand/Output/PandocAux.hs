@@ -36,14 +36,14 @@ import           Text.Pandoc.PDF (makePDF)
 import qualified Text.Pandoc.UTF8 as UTF8
 
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: (HasDocumentOpts env) => env -> FSpec -> [(String , String)]
+defaultWriterVariables :: (HasDocumentOpts env) => env -> FSpec -> [(Text , Text)]
 defaultWriterVariables env fSpec
   = [ ("title", (case (outputLang', view chaptersL env) of
                         (Dutch  , [Diagnosis]) -> "Diagnose van "
                         (English, [Diagnosis]) -> "Diagnosis of "
                         (Dutch  , _          ) -> "Functioneel Ontwerp van "
                         (English, _          ) -> "Functional Design of "
-                )++name fSpec)
+                )<>name fSpec)
     , ("fontsize", "12pt")   --can be overridden by geometry package (see below)
     , ("lang"    , case outputLang' of
                        Dutch   -> "nl-NL"
@@ -53,9 +53,9 @@ defaultWriterVariables env fSpec
                        Dutch   -> "dutch"
                        English -> "english")
     , ("documentclass","report")
-    ] ++
-    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == (view chaptersL env)]++
-    [ ("header-includes", unlines
+    ] <>
+    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == (view chaptersL env)]<>
+    [ ("header-includes", T.unlines
          [ "% ============Ampersand specific Begin================="
          , "% First a couple of LaTeX packages are included:"
          , ""
@@ -119,7 +119,7 @@ writepandoc fSpec thePandoc = do
 outputFile :: (HasDocumentOpts env, HasRootFile env, HasDirOutput env) => env -> FilePath
 outputFile env = view dirOutputL env </> baseName env -<.> ext (view fspecFormatL env) 
        
-ext :: FSpecFormat -> String
+ext :: FSpecFormat -> FilePath
 ext format =
       case format of
         Fasciidoc     -> ".txt"
@@ -156,14 +156,14 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
            case res of
              Right pdf -> writeFnBinary (outputFile env) pdf
              Left err' -> liftIO . throwIO . PandocPDFError .
-                               T.unpack . decodeUtf8With lenientDecode . BL.toStrict $ err'
+                               decodeUtf8 . BL.toStrict $ err'
         _     -> liftIO $ do
                 output <- runIO (f writerOptions thePandoc) >>= handleError
                 writeFileUtf8 (outputFile env) (output)
  where   
     writer :: PandocMonad m => Writer m
     writer = case lookup writerName writers of
-                Nothing -> fatal $ "There is no such Pandoc writer: "++writerName
+                Nothing -> fatal $ "There is no such Pandoc writer: "<>writerName
                 Just w -> w
     writerName =
       case view fspecFormatL env of
@@ -189,7 +189,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
                       }
       where 
         template :: Maybe Text
-        template  = substitute substMap <$> decodeUtf8 <$> getStaticFileContent PandocTemplates ("default."++writerName)
+        template  = substitute substMap <$> decodeUtf8 <$> getStaticFileContent PandocTemplates ("default."<>writerName)
         substitute :: [(Text,Text)] -> Text -> Text
         substitute subs tmpl = foldr replaceAll tmpl subs
         replaceAll :: (Text,Text) -> Text -> Text
@@ -206,25 +206,25 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
 
 -----Linguistic goodies--------------------------------------
 
-count :: Lang -> Int -> String -> String
+count :: Lang -> Int -> Text -> Text
 count    lang    n      x
  = case (lang, n) of
-      (Dutch  , 0) -> "geen "++plural Dutch x
-      (Dutch  , 1) -> "één "++x
-      (Dutch  , 2) -> "twee "++plural Dutch x
-      (Dutch  , 3) -> "drie "++plural Dutch x
-      (Dutch  , 4) -> "vier "++plural Dutch x
-      (Dutch  , 5) -> "vijf "++plural Dutch x
-      (Dutch  , 6) -> "zes "++plural Dutch x
-      (Dutch  , _) -> show n++" "++plural Dutch x
-      (English, 0) -> "no "++plural English x
-      (English, 1) -> "one "++x
-      (English, 2) -> "two "++plural English x
-      (English, 3) -> "three "++plural English x
-      (English, 4) -> "four "++plural English x
-      (English, 5) -> "five "++plural English x
-      (English, 6) -> "six "++plural English x
-      (English, _) -> show n++" "++plural English x
+      (Dutch  , 0) -> "geen "<>plural Dutch x
+      (Dutch  , 1) -> "één "<>x
+      (Dutch  , 2) -> "twee "<>plural Dutch x
+      (Dutch  , 3) -> "drie "<>plural Dutch x
+      (Dutch  , 4) -> "vier "<>plural Dutch x
+      (Dutch  , 5) -> "vijf "<>plural Dutch x
+      (Dutch  , 6) -> "zes "<>plural Dutch x
+      (Dutch  , _) -> show n<>" "<>plural Dutch x
+      (English, 0) -> "no "<>plural English x
+      (English, 1) -> "one "<>x
+      (English, 2) -> "two "<>plural English x
+      (English, 3) -> "three "<>plural English x
+      (English, 4) -> "four "<>plural English x
+      (English, 5) -> "five "<>plural English x
+      (English, 6) -> "six "<>plural English x
+      (English, _) -> show n<>" "<>plural English x
 
 
 
@@ -238,7 +238,7 @@ chptTitle lang cpt =
     DataAnalysis          -> text.l $ (NL "Gegevensstructuur", EN "Data structure")
  where 
      -- shorthand for easy localizing    
-    l :: LocalizedStr -> String
+    l :: LocalizedStr -> Text
     l = localize lang
     
 
@@ -257,34 +257,34 @@ instance ShowMath Rule where
 
 instance ShowMath Expression where
  showMath = math . showExpr . insParentheses
-   where  showExpr :: Expression -> String
-          showExpr (EEqu (l,r)) = showExpr l++inMathEquals++showExpr r
-          showExpr (EInc (l,r)) = showExpr l++inMathInclusion++showExpr r
-          showExpr (EIsc (l,r)) = showExpr l++inMathIntersect++showExpr r
-          showExpr (EUni (l,r)) = showExpr l++inMathUnion++showExpr r
-          showExpr (EDif (l,r)) = showExpr l++inMathDifference ++showExpr r
-          showExpr (ELrs (l,r)) = showExpr l++inMathLeftResidu++showExpr r
-          showExpr (ERrs (l,r)) = showExpr l++inMathRightResidu++showExpr r
-          showExpr (EDia (l,r)) = showExpr l++inMathDiamond++showExpr r
+   where  showExpr :: Expression -> Text
+          showExpr (EEqu (l,r)) = showExpr l<>inMathEquals<>showExpr r
+          showExpr (EInc (l,r)) = showExpr l<>inMathInclusion<>showExpr r
+          showExpr (EIsc (l,r)) = showExpr l<>inMathIntersect<>showExpr r
+          showExpr (EUni (l,r)) = showExpr l<>inMathUnion<>showExpr r
+          showExpr (EDif (l,r)) = showExpr l<>inMathDifference <>showExpr r
+          showExpr (ELrs (l,r)) = showExpr l<>inMathLeftResidu<>showExpr r
+          showExpr (ERrs (l,r)) = showExpr l<>inMathRightResidu<>showExpr r
+          showExpr (EDia (l,r)) = showExpr l<>inMathDiamond<>showExpr r
           showExpr (ECps (EEps i sgn,r)) | i==source sgn||i==target sgn = showExpr  r
                                          | otherwise                    = showExpr (ECps (EDcI i,r))
           showExpr (ECps (l,EEps i sgn)) | i==source sgn||i==target sgn = showExpr  l
                                          | otherwise                    = showExpr (ECps (l,EDcI i))
-          showExpr (ECps (l,r)) = showExpr l++inMathCompose++showExpr r
-          showExpr (ERad (l,r)) = showExpr l++inMathRelativeAddition++showExpr r
-          showExpr (EPrd (l,r)) = showExpr l++inMathCartesianProduct++showExpr r
-          showExpr (EKl0 e)     = showExpr (addParensToSuper e)++inMathStar
-          showExpr (EKl1 e)     = showExpr (addParensToSuper e)++inMathPlus
-          showExpr (EFlp e)     = showExpr (addParensToSuper e)++inMathFlip
+          showExpr (ECps (l,r)) = showExpr l<>inMathCompose<>showExpr r
+          showExpr (ERad (l,r)) = showExpr l<>inMathRelativeAddition<>showExpr r
+          showExpr (EPrd (l,r)) = showExpr l<>inMathCartesianProduct<>showExpr r
+          showExpr (EKl0 e)     = showExpr (addParensToSuper e)<>inMathStar
+          showExpr (EKl1 e)     = showExpr (addParensToSuper e)<>inMathPlus
+          showExpr (EFlp e)     = showExpr (addParensToSuper e)<>inMathFlip
           showExpr (ECpl e)     = inMathOverline (showExpr e)
-          showExpr (EBrk e)     = "("++showExpr e++")"
+          showExpr (EBrk e)     = "("<>showExpr e<>")"
           showExpr (EDcD d)     = inMathText (name d)
-          showExpr (EDcI c)     = "I_{ \\lbrack "++inMathText (name c)++" \\rbrack }"
+          showExpr (EDcI c)     = "I_{ \\lbrack "<>inMathText (name c)<>" \\rbrack }"
           showExpr  EEps{}      = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
-          showExpr (EDcV sgn)   = "V_{ \\lbrack "++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++" \\rbrack }"
+          showExpr (EDcV sgn)   = "V_{ \\lbrack "<>inMathText (name (source sgn))<>"*"<>inMathText (name (target sgn))<>" \\rbrack }"
           showExpr (EMp1 val _) = atomVal2Math val --"\texttt{"<>show val<>"}"
           
-atomVal2Math :: PAtomValue -> String
+atomVal2Math :: PAtomValue -> Text
 atomVal2Math pav =
    case pav of
     PSingleton   _ s _ -> " \\texttt{"<>show s<>"}"
@@ -292,7 +292,7 @@ atomVal2Math pav =
     XlsxString     _ s -> " \\texttt{"<>show s<>"}"
     ScriptInt      _ i -> show i
     ScriptFloat    _ d -> show d
-    XlsxDouble     o d -> fatal ("We got a value "++show d++" from "++show o++", which has to be shown in an expression, however the technicaltype is not known.")
+    XlsxDouble     o d -> fatal ("We got a value "<>show d<>" from "<>show o<>", which has to be shown in an expression, however the technicaltype is not known.")
     ComnBool       _ b -> show b
     ScriptDate     _ x -> show x
     ScriptDateTime _ x -> show x
@@ -316,13 +316,13 @@ noBreaking x = "{"<>x<>"}"
 -- | latexEscShw escapes to LaTeX encoding. It is intended to be used in LaTeX text mode.
 --   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
 --   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
-latexEscShw :: String -> String
+latexEscShw :: Text -> Text
 latexEscShw ""           = ""
-latexEscShw ('\"':c:cs) | isAlphaNum c = "``"++latexEscShw (c:cs)
-                        | otherwise    = "''"++latexEscShw (c:cs)
+latexEscShw ('\"':c:cs) | isAlphaNum c = "``"<>latexEscShw (c:cs)
+                        | otherwise    = "''"<>latexEscShw (c:cs)
 latexEscShw "\""        = "''"
 latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
-                        | otherwise    = f c++latexEscShw cs
+                        | otherwise    = f c<>latexEscShw cs
  where
   f '"' = "\\textquotedbl "
   f '#' = "\\#"
@@ -449,76 +449,76 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
   f 'Ú' = "\\'{U}"         --  acute accent
   f 'ý' = "\\'{y}"         --  acute accent
   f 'Ý' = "\\'{Y}"         --  acute accent
-  f _   = [c] -- let us think if this should be:    fatal ("Symbol "++show x++" (character "++show (ord c)++") is not supported")
+  f _   = [c] -- let us think if this should be:    fatal ("Symbol "<>show x<>" (character "<>show (ord c)<>") is not supported")
 
---posixFilePath :: FilePath -> String
+--posixFilePath :: FilePath -> Text
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/Ampersand/output/"}}
---posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
+--posixFilePath fp = "/"<>System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
 
 ---------------------------
 --- Math related stuff ---
 ---------------------------
 -- safe function to have plain text in a piece of Math
-inMathText :: String -> String
+inMathText :: Text -> Text
 inMathText s = latexEscShw s
 
-inMathCartesianProduct :: String
+inMathCartesianProduct :: Text
 inMathCartesianProduct = "\\times "
 
-inMathCompose :: String
+inMathCompose :: Text
 inMathCompose = ";"
 
-inMathRelativeAddition :: String
+inMathRelativeAddition :: Text
 inMathRelativeAddition = "\\dagger "
 
-inMathIntersect :: String
+inMathIntersect :: Text
 inMathIntersect = "\\cap "
 
-inMathUnion :: String
+inMathUnion :: Text
 inMathUnion = "\\cup "
 
-inMathInclusion :: String
+inMathInclusion :: Text
 inMathInclusion = "\\vdash "
 
-inMathEquals :: String
+inMathEquals :: Text
 inMathEquals = "="
 
-inMathStar :: String
+inMathStar :: Text
 inMathStar = "^{*}"
 
-inMathPlus :: String
+inMathPlus :: Text
 inMathPlus = "^{+}"
 
-inMathDifference :: String
+inMathDifference :: Text
 inMathDifference = " - "
 
-inMathLeftResidu :: String
+inMathLeftResidu :: Text
 inMathLeftResidu = " / "
 
-inMathRightResidu :: String
+inMathRightResidu :: Text
 inMathRightResidu = " \\backslash "
 
-inMathDiamond :: String
+inMathDiamond :: Text
 inMathDiamond = " \\Diamond "
 
-inMathFlip :: String
+inMathFlip :: Text
 inMathFlip = "^{\\smallsmile}"
 
-inMathOverline :: String -> String
-inMathOverline x = " \\overline{"++x++"} "
+inMathOverline :: Text -> Text
+inMathOverline x = " \\overline{"<>x<>"} "
 
-newGlossaryEntry :: String -> String -> Inlines
+newGlossaryEntry :: Text -> Text -> Inlines
 newGlossaryEntry nm cnt =
   rawInline "latex"
-    ("\\newglossaryentry{"++escapeNonAlphaNum nm ++"}\n"++
-     "     { name={"++latexEscShw nm ++"}\n"++
-     "     , description={"++latexEscShw cnt++"}}\n")
+    ("\\newglossaryentry{"<>escapeNonAlphaNum nm <>"}\n"<>
+     "     { name={"<>latexEscShw nm <>"}\n"<>
+     "     , description={"<>latexEscShw cnt<>"}}\n")
 
-texOnlyMarginNote :: String -> String
+texOnlyMarginNote :: Text -> Text
 texOnlyMarginNote mgn = 
-   "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "++mgn++"}\\end{minipage}}"
+   "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "<>mgn<>"}\\end{minipage}}"
 
 
 commaPandocAnd :: Lang -> [Inlines] -> Inlines

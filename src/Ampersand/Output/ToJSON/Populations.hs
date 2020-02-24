@@ -9,7 +9,6 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.Set as Set
-import qualified RIO.Text as T
 
 data Populations = Populations
    { epJSONatoms :: [AtomValuesOfConcept]
@@ -53,19 +52,19 @@ instance JSON FSpec Populations where
 --      where ftl = fatal "There is no grinded fSpec."
 instance JSON A_Concept AtomValuesOfConcept where
  fromAmpersand _ fSpec cpt = AtomValuesOfConcept
-   { avcJSONconcept = T.pack (idWithoutType cpt)
-   , avcJSONatoms   = map (T.pack . showValADL) (Set.elems $ atomsBySmallestConcept fSpec cpt)
+   { avcJSONconcept = idWithoutType cpt
+   , avcJSONatoms   = map showValADL (Set.elems $ atomsBySmallestConcept fSpec cpt)
    }
 
 instance JSON Relation PairsOfRelation where
  fromAmpersand env fSpec dcl = PairsOfRelation
-   { porJSONrelation = T.pack . showRel $ dcl
+   { porJSONrelation = showRel $ dcl
    , porJSONlinks = map (fromAmpersand env fSpec) . Set.elems . pairsInExpr fSpec $ EDcD dcl
    }
 
 instance JSON AAtomPair JPair where
   fromAmpersand _ _ p = JPair
-    { prJSONsrc = T.pack . showValADL . apLeft $ p 
-    , prJSONtgt = T.pack . showValADL . apRight $ p
+    { prJSONsrc = showValADL . apLeft $ p 
+    , prJSONtgt = showValADL . apRight $ p
     }
 

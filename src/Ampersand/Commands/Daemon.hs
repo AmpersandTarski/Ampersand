@@ -52,7 +52,7 @@ mainWithTerminal termSize termOutput = goForever
             curDir <- liftIO $ getCurrentDirectory
             logDebug $ "%OS: " <> display (T.pack os)
             logDebug $ "%ARCH: " <> display (T.pack arch)
-            logDebug $ "%VERSION: " <> display (T.pack ampersandVersionWithoutBuildTimeStr)
+            logDebug $ "%VERSION: " <> display ampersandVersionWithoutBuildTimeStr
             env <- ask
             withCurrentDirectory curDir $ do
                 termSize' <- liftIO $ return $ do
