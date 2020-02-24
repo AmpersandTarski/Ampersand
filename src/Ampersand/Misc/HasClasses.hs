@@ -127,12 +127,12 @@ instance HasDirCustomizations ProtoOpts where
   dirCustomizationsL = lens xdirCustomizations (\x y -> x { xdirCustomizations = y })
 
 class HasZwolleVersion a where
-  zwolleVersionL :: Lens' a Text -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
+  zwolleVersionL :: Lens' a FilePath -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
 instance HasZwolleVersion ProtoOpts where
   zwolleVersionL = lens xzwolleVersion (\x y -> x { xzwolleVersion = y })
 
 class HasDirOutput a where
-  dirOutputL :: Lens' a Text -- the directory to generate the output in.
+  dirOutputL :: Lens' a FilePath -- the directory to generate the output in.
 
 class HasOutputLanguage a => HasDocumentOpts a where
   documentOptsL :: Lens' a DocOpts
@@ -282,7 +282,7 @@ data ProtoOpts = ProtoOpts
    , xskipComposer :: !Bool
    , xdirPrototype :: !(Maybe FilePath)
    , xdirCustomizations :: ![FilePath]
-   , xzwolleVersion :: !Text
+   , xzwolleVersion :: !FilePath
   } deriving Show
 
 -- | Options for @ampersand documentation@.

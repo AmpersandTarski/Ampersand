@@ -69,7 +69,7 @@ genInterfacesP = switch
         <> help "Generate interfaces, which currently does not work."
         )
 
-namespaceP :: Parser String
+namespaceP :: Parser Text
 namespaceP = strOption
         ( long "namespace"
         <> metavar "NAMESPACE"
