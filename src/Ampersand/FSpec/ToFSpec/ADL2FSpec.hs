@@ -14,7 +14,6 @@ import           Ampersand.FSpec.ToFSpec.Calc
 import           Ampersand.FSpec.ToFSpec.NormalForms 
 import           Ampersand.FSpec.ToFSpec.Populated 
 import           Ampersand.Misc.HasClasses
-import           RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL

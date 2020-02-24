@@ -26,7 +26,6 @@ import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import qualified RIO.Text as T
 -- | create an FSpec, based on the provided command-line options.
 --   Without the command-line switch "--meta-tables", 
 --   Ampersand compiles its script (userP_Ctx) straightforwardly in first order relation algebra.

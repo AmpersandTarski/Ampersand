@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE OverloadedStrings #-} 
 module Ampersand.Output.ToJSON.Rules 
   (Rulez)
 where
@@ -15,25 +16,25 @@ data Rulez = Rulez
   , rulJSONsignals    :: [JsonRule]
   } deriving (Generic, Show)
 data JsonRule = JsonRule
-  { rulJSONname         :: String
-  , rulJSONruleAdl      :: String
-  , rulJSONorigin       :: String
-  , rulJSONmeaning      :: String
-  , rulJSONmessage      :: String
-  , rulJSONsrcConceptId :: String
-  , rulJSONtgtConceptId :: String
-  , rulJSONconjunctIds  :: [String]
+  { rulJSONname         :: Text
+  , rulJSONruleAdl      :: Text
+  , rulJSONorigin       :: Text
+  , rulJSONmeaning      :: Text
+  , rulJSONmessage      :: Text
+  , rulJSONsrcConceptId :: Text
+  , rulJSONtgtConceptId :: Text
+  , rulJSONconjunctIds  :: [Text]
   , rulJSONpairView     :: Maybe JsonPairView
   } deriving (Generic, Show)
 data JsonPairView = JsonPairView [JsonPairViewSegment]
     deriving (Generic, Show)
 data JsonPairViewSegment = JsonPairViewSegment
   { pvsJSONseqNr   :: Int
-  , pvsJSONsegType :: String
-  , pvsJSONtext        :: Maybe String
-  , pvsJSONsrcOrTgt    :: Maybe String
-  , pvsJSONexpTgt      :: Maybe String
-  , pvsJSONexpSQL      :: Maybe String
+  , pvsJSONsegType :: Text
+  , pvsJSONtext        :: Maybe Text
+  , pvsJSONsrcOrTgt    :: Maybe Text
+  , pvsJSONexpTgt      :: Maybe Text
+  , pvsJSONexpSQL      :: Maybe Text
   , pvsJSONexpIsIdent  :: Maybe Bool
   } deriving (Generic, Show)
 
@@ -55,7 +56,7 @@ instance JSON Rule JsonRule where
  fromAmpersand env fSpec rule = JsonRule
   { rulJSONname        = rrnm         rule
   , rulJSONruleAdl     = showA.formalExpression $ rule
-  , rulJSONorigin      = show.origin $ rule
+  , rulJSONorigin      = tshow.origin $ rule
   , rulJSONmeaning     = showMeaning
   , rulJSONmessage     = showMessage
   , rulJSONsrcConceptId = idWithoutType . source . formalExpression $ rule
@@ -64,9 +65,11 @@ instance JSON Rule JsonRule where
   , rulJSONpairView    = fmap (fromAmpersand env fSpec) (rrviol rule)
   } 
    where 
-    showMeaning = maybe "" aMarkup2String (fmap ameaMrk . meaning (defOutputLang fSpec) $ rule)
+    showMeaning :: Text
+    showMeaning = maybe mempty aMarkup2String (fmap ameaMrk . meaning (defOutputLang fSpec) $ rule)
+    showMessage :: Text
     showMessage = case filter (\x -> amLang x == defOutputLang fSpec) (rrmsg rule) of
-                              [] -> ""
+                              [] -> mempty
                               h:_ -> aMarkup2String h
 instance JSON (PairView Expression) JsonPairView where
  fromAmpersand env fSpec pv = JsonPairView $ map (fromAmpersand env fSpec) (zip [0..] (NE.toList . ppv_segs $ pv))
@@ -81,10 +84,10 @@ instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
                            PairViewExp{}  -> Nothing
   , pvsJSONsrcOrTgt    = case pvs of
                            PairViewText{} -> Nothing
-                           PairViewExp _ srcOrTgt _  -> Just . show $ srcOrTgt
+                           PairViewExp _ srcOrTgt _  -> Just . tshow $ srcOrTgt
   , pvsJSONexpTgt      = case pvs of
                            PairViewText{} -> Nothing
-                           PairViewExp _ _ e         -> Just . show . target $ e
+                           PairViewExp _ _ e         -> Just . tshow . target $ e
   , pvsJSONexpSQL      = case pvs of
                            PairViewText{} -> Nothing
                            PairViewExp _ _ e         -> Just . sqlQuery fSpec $ e

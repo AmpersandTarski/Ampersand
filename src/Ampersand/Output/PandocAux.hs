@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -24,7 +23,6 @@ import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.StaticFiles_Generated
 import           Conduit (liftIO, MonadIO)  
-import           RIO.Char hiding    (Space)
 import qualified RIO.Text as T
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.Text.Partial as Partial (replace)
@@ -170,7 +168,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
        Fpdf    -> "latex"
        Flatex  -> "latex"
        FPandoc -> "native"
-       fmt     -> map toLower . drop 1 . show $ fmt
+       fmt     -> T.toLower . T.drop 1 . tshow $ fmt
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f bs = do
         liftIO $ createDirectoryIfMissing True (takeDirectory f)
@@ -188,8 +186,8 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
                     --  , writerVerbose=optVerbosity
                       }
       where 
-        template :: Maybe Text
-        template  = substitute substMap <$> decodeUtf8 <$> getStaticFileContent PandocTemplates ("default."<>writerName)
+        template :: IO (Either String (Template a))
+        template  = compileTemplate "" $ substitute substMap <$> decodeUtf8 <$> getStaticFileContent PandocTemplates ("default."<>writerName)
         substitute :: [(Text,Text)] -> Text -> Text
         substitute subs tmpl = foldr replaceAll tmpl subs
         replaceAll :: (Text,Text) -> Text -> Text
@@ -216,7 +214,7 @@ count    lang    n      x
       (Dutch  , 4) -> "vier "<>plural Dutch x
       (Dutch  , 5) -> "vijf "<>plural Dutch x
       (Dutch  , 6) -> "zes "<>plural Dutch x
-      (Dutch  , _) -> show n<>" "<>plural Dutch x
+      (Dutch  , _) -> tshow n<>" "<>plural Dutch x
       (English, 0) -> "no "<>plural English x
       (English, 1) -> "one "<>x
       (English, 2) -> "two "<>plural English x
@@ -224,7 +222,7 @@ count    lang    n      x
       (English, 4) -> "four "<>plural English x
       (English, 5) -> "five "<>plural English x
       (English, 6) -> "six "<>plural English x
-      (English, _) -> show n<>" "<>plural English x
+      (English, _) -> tshow n<>" "<>plural English x
 
 
 
@@ -287,15 +285,15 @@ instance ShowMath Expression where
 atomVal2Math :: PAtomValue -> Text
 atomVal2Math pav =
    case pav of
-    PSingleton   _ s _ -> " \\texttt{"<>show s<>"}"
-    ScriptString   _ s -> " \\texttt{"<>show s<>"}"
-    XlsxString     _ s -> " \\texttt{"<>show s<>"}"
-    ScriptInt      _ i -> show i
-    ScriptFloat    _ d -> show d
-    XlsxDouble     o d -> fatal ("We got a value "<>show d<>" from "<>show o<>", which has to be shown in an expression, however the technicaltype is not known.")
-    ComnBool       _ b -> show b
-    ScriptDate     _ x -> show x
-    ScriptDateTime _ x -> show x
+    PSingleton   _ s _ -> " \\texttt{"<>tshow s<>"}"
+    ScriptString   _ s -> " \\texttt{"<>tshow s<>"}"
+    XlsxString     _ s -> " \\texttt{"<>tshow s<>"}"
+    ScriptInt      _ i -> tshow i
+    ScriptFloat    _ d -> tshow d
+    XlsxDouble     o d -> fatal ("We got a value "<>tshow d<>" from "<>tshow o<>", which has to be shown in an expression, however the technicaltype is not known.")
+    ComnBool       _ b -> tshow b
+    ScriptDate     _ x -> tshow x
+    ScriptDateTime _ x -> tshow x
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -317,7 +315,10 @@ noBreaking x = "{"<>x<>"}"
 --   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
 --   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
 latexEscShw :: Text -> Text
-latexEscShw ""           = ""
+latexEscShw = id
+{-# DEPRECATED latexEscShw "latexEscShw has become obsolete, because we now use Text, which is UTF8 compliant by itself." #-}
+
+{- latexEscShw ""           = ""
 latexEscShw ('\"':c:cs) | isAlphaNum c = "``"<>latexEscShw (c:cs)
                         | otherwise    = "''"<>latexEscShw (c:cs)
 latexEscShw "\""        = "''"
@@ -450,7 +451,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
   f 'ý' = "\\'{y}"         --  acute accent
   f 'Ý' = "\\'{Y}"         --  acute accent
   f _   = [c] -- let us think if this should be:    fatal ("Symbol "<>show x<>" (character "<>show (ord c)<>") is not supported")
-
+ -}
 --posixFilePath :: FilePath -> Text
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/Ampersand/output/"}}

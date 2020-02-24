@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE OverloadedStrings #-} 
 {-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Interfaces 
    (Interfaces)
@@ -12,30 +13,30 @@ import Ampersand.FSpec.ToFSpec.Calc
 
 data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
-  { ifcJSONid                 :: String
-  , ifcJSONlabel              :: String
-  , ifcJSONboxClass           :: Maybe String
+  { ifcJSONid                 :: Text
+  , ifcJSONlabel              :: Text
+  , ifcJSONboxClass           :: Maybe Text
   , ifcJSONifcObject          :: JSONObjectDef
   , ifcJSONisAPI              :: Bool
   } deriving (Generic, Show)
 data JSONObjectDef = 
   JSONObjectDef
-    { ifcobjJSONtype               :: String
-    , ifcobjJSONtxt                :: Maybe String
-    , ifcobjJSONid                 :: String
-    , ifcobjJSONlabel              :: String
-    , ifcobjJSONviewId             :: Maybe String
-    , ifcobjJSONNormalizationSteps :: Maybe [String] -- Not used in frontend. Just informative for analysis
-    , ifcobjJSONrelation           :: Maybe String
+    { ifcobjJSONtype               :: Text
+    , ifcobjJSONtxt                :: Maybe Text
+    , ifcobjJSONid                 :: Text
+    , ifcobjJSONlabel              :: Text
+    , ifcobjJSONviewId             :: Maybe Text
+    , ifcobjJSONNormalizationSteps :: Maybe [Text] -- Not used in frontend. Just informative for analysis
+    , ifcobjJSONrelation           :: Maybe Text
     , ifcobjJSONrelationIsFlipped  :: Maybe Bool
     , ifcobjJSONcrud               :: Maybe JSONCruds
     , ifcobjJSONexpr               :: Maybe JSONexpr
     , ifcobjJSONsubinterfaces      :: Maybe JSONSubInterface
     } deriving (Generic, Show)
 data JSONSubInterface = JSONSubInterface
-  { subJSONboxClass           :: Maybe String
+  { subJSONboxClass           :: Maybe Text
   , subJSONifcObjects         :: Maybe [JSONObjectDef]
-  , subJSONrefSubInterfaceId  :: Maybe String
+  , subJSONrefSubInterfaceId  :: Maybe Text
   , subJSONrefIsLinkTo        :: Maybe Bool
   } deriving (Generic, Show)
 data JSONCruds = JSONCruds
@@ -45,12 +46,12 @@ data JSONCruds = JSONCruds
   , crudJSONdelete            :: Bool
   } deriving (Generic, Show)
 data JSONexpr = JSONexpr
-  { exprJSONsrcConceptId      :: String
-  , exprJSONtgtConceptId      :: String
+  { exprJSONsrcConceptId      :: Text
+  , exprJSONtgtConceptId      :: Text
   , exprJSONisUni             :: Bool
   , exprJSONisTot             :: Bool
   , exprJSONisIdent           :: Bool
-  , exprJSONquery             :: String
+  , exprJSONquery             :: Text
   } deriving (Generic, Show)
 
 instance ToJSON JSONSubInterface where
