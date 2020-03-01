@@ -8,10 +8,10 @@ import           Ampersand.FSpec.ToFSpec.ADL2Plug
 import           Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
-import           RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
@@ -295,7 +295,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
         Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "<>tshow nrOfTables<>" tabellen:")
         English -> text ("The technical datamodel consists of the following "<>tshow nrOfTables<>" tables:")
             )
-    <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
+    <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (T.toLower . name)) (plugInfos fSpec), isTable p]
    where
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True

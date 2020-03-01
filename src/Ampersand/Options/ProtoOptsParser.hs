@@ -3,12 +3,13 @@ module Ampersand.Options.ProtoOptsParser
    (protoOptsParser)
 where
 
-import           Options.Applicative
 import           Ampersand.Commands.Proto (ProtoOpts (..))
 import           Ampersand.Basics
 import           Ampersand.Options.Utils
 import           Ampersand.Options.FSpecGenOptsParser
 import           Data.List.Split (splitWhen)
+import           Options.Applicative
+import qualified RIO.Text as T
 
 -- | Command-line parser for the proto command.
 protoOptsParser :: Parser ProtoOpts
@@ -34,28 +35,28 @@ protoOptsParser =
   <*> skipComposerP <*> optional dirPrototypeP <*> dirCustomizationsP
   <*> zwolleVersionP
 
-dbNameP :: Parser String
-dbNameP = strOption
+dbNameP :: Parser Text
+dbNameP = T.pack <$> strOption
         ( long "dbName"
         <> short 'd'
         <> metavar "DATABASENAME"
         <> help "Name of the schema of the database that is generated as part of the prototype. (defaults to name of your context)" )
-sqlHostP :: Parser String
-sqlHostP =  strOption
+sqlHostP :: Parser Text
+sqlHostP = T.pack <$> strOption
         ( long "sqlHost"
         <> metavar "HOSTNAME"
         <> value "localhost"
         <> showDefault
         <> help "Name of the host of the database." )
-sqlLoginP :: Parser String
-sqlLoginP = strOption
+sqlLoginP :: Parser Text
+sqlLoginP = T.pack <$> strOption
         ( long "sqlLogin"
         <> metavar "USER"
         <> value "ampersand"
         <> showDefault
         <> help "Name of the database user." )
-sqlPwdP :: Parser String
-sqlPwdP = strOption
+sqlPwdP :: Parser Text
+sqlPwdP = T.pack <$> strOption
         ( long "sqlPwd"
         <> metavar "PASSWORD"
         <> value "ampersand"

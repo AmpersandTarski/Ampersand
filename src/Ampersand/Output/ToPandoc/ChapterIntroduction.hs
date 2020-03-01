@@ -1,9 +1,11 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Output.ToPandoc.ChapterIntroduction
    (chpIntroduction)
 where
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
+import qualified RIO.Text as T
 import           RIO.Time
 
 chpIntroduction :: (HasDirOutput env, HasDocumentOpts env) 
@@ -18,7 +20,7 @@ chpIntroduction env now fSpec =
       = case outputLang' of
           Dutch
             -> para ( text "Dit document"
-                   <> (note.para.text) ("Dit document is gegenereerd op "++date++" om "++time++", dmv. "++ampersandVersionStr++".")
+                   <> (note.para.text) ("Dit document is gegenereerd op "<>date<>" om "<>time<>", dmv. "<>ampersandVersionStr<>".")
                    <> text " definieert de functionaliteit van een informatiesysteem genaamd "
                    <> (singleQuoted.text.name) fSpec
                    <> text ". "
@@ -68,7 +70,7 @@ chpIntroduction env now fSpec =
 
           English
             -> para ( text "This document"
-                   <> (note.para.text) ("This document was generated at "++date++" on "++time++", using "++ampersandVersionStr++".")
+                   <> (note.para.text) ("This document was generated at "<>date<>" on "<>time<>", using "<>ampersandVersionStr<>".")
                    <> text " defines the functionality of an information system called "
                    <> (singleQuoted.text.name) fSpec
                    <> text ". "
@@ -115,7 +117,9 @@ chpIntroduction env now fSpec =
                          )
                else mempty
 
-    date = formatTime (lclForLang outputLang') "%-d-%-m-%Y" now
-    time = formatTime (lclForLang outputLang') "%H:%M:%S" now
+    date :: Text
+    date = T.pack $ formatTime (lclForLang outputLang') "%-d-%-m-%Y" now
+    time :: Text
+    time = T.pack $ formatTime (lclForLang outputLang') "%H:%M:%S" now
 
     purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec outputLang' fSpec]

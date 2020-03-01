@@ -115,7 +115,7 @@ hyperTarget env fSpec a =
                                       --                         ("", ["adl"],[("caption",showRel d)]) 
                                       --                         ( "Deze RELATIE moet nog verder worden uitgewerkt in de Haskell code")
                                       --                  )
-      XRefSharedLangRule r            -> Right $ spanWith (xSafeLabel a,[],[]) (str . show . name $ r)
+      XRefSharedLangRule r            -> Right $ spanWith (xSafeLabel a,[],[]) (str . tshow . name $ r)
                                       --   Left $ divWith (xSafeLabel a,[],[])
                                       --                  (   (para . text $ name r)
                                       --                  --  <>codeBlockWith 
@@ -530,7 +530,7 @@ concatMarkup es
                         , amPandoc = concatMap amPandoc es
                         }
     cls  -> fatal ("don't call concatMarkup with different languages and formats\n   "<>
-                   L.intercalate "\n   " (map (show . amLang . NE.head) cls)
+                   T.intercalate "\n   " (map (tshow . amLang . NE.head) cls)
                   )
 
 -- Insert an inline after the first inline in the list of blocks, if possible.

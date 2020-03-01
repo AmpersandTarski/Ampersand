@@ -18,7 +18,7 @@ chpConceptualAnalysis env lev fSpec = (
    caBlocks, pictures)
   where
   -- shorthand for easy localizing
-  l :: LocalizedStr -> String
+  l :: LocalizedStr -> Text
   l = localize outputLang'
   outputLang' = outputLang env fSpec
   caIntro :: Blocks
@@ -55,8 +55,8 @@ chpConceptualAnalysis env lev fSpec = (
       <> definitionList (map caRelation (Set.elems $ vrels fSpec))
      
   pictures = map pictOfPat (vpatterns fSpec)
-          ++ map pictOfConcept (Set.elems $ concs fSpec)
-          ++ map pictOfRule (Set.elems $ vrules fSpec)
+          <> map pictOfConcept (Set.elems $ concs fSpec)
+          <> map pictOfRule (Set.elems $ vrules fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
   pictOfPat ::  Pattern ->  Picture
@@ -101,19 +101,19 @@ chpConceptualAnalysis env lev fSpec = (
         body =  para linebreak
                 -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 <> ( case ( isNull purp, outputLang') of
-                  (True , Dutch)   -> plain ("De volgende " <> str(nladjs) <> " is gedefinieerd: ")
-                  (True , English) -> plain ("The following " <> str(ukadjs) <> " has been defined: ")
-                  (False, Dutch)   -> purp <> plain ("Voor dat doel is de volgende " <> str(nladjs) <> " gedefinieerd: ")
-                  (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs) <> " has been defined: ")
+                  (True , Dutch)   -> plain ("De volgende " <> str nladjs <> " is gedefinieerd: ")
+                  (True , English) -> plain ("The following " <> str ukadjs <> " has been defined: ")
+                  (False, Dutch)   -> purp <> plain ("Voor dat doel is de volgende " <> str nladjs <> " gedefinieerd: ")
+                  (False, English) -> purp <> plain ("For this purpose, the following " <> str ukadjs <> " has been defined: ")
                )
                  -- Then the relation of the relation with its properties and its intended meaning
               <> printMeaning outputLang' d
         ukadjs = if Uni `elem` (properties d) && Tot `elem` (properties d)
-                    then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))++" function"
-                    else commaEng "and" (map adj . Set.elems $ (properties d))++" relation"
+                    then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))<>" function"
+                    else commaEng "and" (map adj . Set.elems $ (properties d))<>" relation"
         nladjs = if Uni `elem` (properties d) && Tot `elem` (properties d)
-                  then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])++" functie"
-                  else commaNL "en" (map adj . Set.elems $ properties d)++" relatie"
+                  then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])<>" functie"
+                  else commaNL "en" (map adj . Set.elems $ properties d)<>" relatie"
         adj   = propFullName True outputLang' 
 
   caRule :: Rule -> (Inlines, [Blocks])
@@ -139,7 +139,7 @@ chpConceptualAnalysis env lev fSpec = (
                              ,EN "Using relations "  ))
                     <> mconcat (L.intersperse  (str ", ")
                                 [   hyperLinkTo (XRefConceptualAnalysisRelation d)
-                                 <> text (" ("++name d++")")
+                                 <> text (" ("<>name d<>")")
                                 | d<-Set.elems $ bindedRelationsIn r])
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
