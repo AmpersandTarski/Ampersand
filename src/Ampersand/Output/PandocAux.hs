@@ -178,16 +178,16 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
     writerOptions = def
                       { writerTableOfContents=True
                       , writerNumberSections=True
-                      , writerTemplate= template
-                      , writerVariables=defaultWriterVariables env fSpec
+              --        , writerTemplate= template
+              --        , writerVariables=defaultWriterVariables env fSpec
                       , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath
                     --  , writerVerbose=optVerbosity
                       }
       where 
-        template :: IO (Either String (Template a))
-        template  = compileTemplate "" $ substitute substMap <$> decodeUtf8 <$> getStaticFileContent PandocTemplates ("default."<>writerName)
+ --       template :: IO (Either String (Template a))
+ --       template  = compileTemplate "" $ substitute substMap <$> decodeUtf8 <$> getStaticFileContent PandocTemplates ("default."<>writerName)
         substitute :: [(Text,Text)] -> Text -> Text
         substitute subs tmpl = foldr replaceAll tmpl subs
         replaceAll :: (Text,Text) -> Text -> Text
