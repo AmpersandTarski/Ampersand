@@ -6,6 +6,7 @@ module Ampersand.Basics.String
         , escapeIdentifier
         , optionalQuote
         , mapText
+        , toFileName
         ) where
 
 import           Ampersand.Basics.Prelude
@@ -63,3 +64,7 @@ optionalQuote str
     []  -> True
     [_] -> False
     _   -> True
+
+-- This function tries to create a valid filename based on a given text. 
+toFileName :: Text -> FilePath
+toFileName txt = T.unpack txt

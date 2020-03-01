@@ -46,6 +46,7 @@ import           Data.Typeable (typeOf)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           RIO.Time
 import           Text.Pandoc hiding (trace,Verbosity,getVerbosity)
 import           Text.Pandoc.Builder
@@ -66,37 +67,37 @@ data CustomSection
 
 ------ Symbolic referencing to a chapter/section. ---------------------------------
 class Typeable a => Xreferenceble a where
-  xSafeLabel :: a -> String -- The full string that is used as ID for referencing
+  xSafeLabel :: a -> Text -- The full string that is used as ID for referencing
   hyperLinkTo :: a -> Inlines
   xDefBlck :: (HasDirOutput env, HasDocumentOpts env) => env -> FSpec -> a -> Blocks
-  xDefBlck _ _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
+  xDefBlck _ _ a = fatal ("A "<>tshow (typeOf a)<>" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
   xDefInln :: (HasOutputLanguage env) => env -> FSpec -> a -> Inlines
-  xDefInln _ _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
+  xDefInln _ _ a = fatal ("A "<>tshow (typeOf a)<>" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
   {-# MINIMAL xSafeLabel, hyperLinkTo, (xDefBlck | xDefInln) #-}
 
 instance Xreferenceble Chapter where
-  xSafeLabel a = show Sec++show a
+  xSafeLabel a = tshow Sec<>tshow a
   hyperLinkTo = codeGen'
   xDefBlck env fSpec a = headerWith (xSafeLabel a,[],[]) 1 (chptTitle (outputLang env fSpec) a)
 
 instance Xreferenceble Picture where
-  xSafeLabel a = show Fig++caption a
+  xSafeLabel a = tshow Fig<>caption a
   hyperLinkTo = codeGen'
-  xDefBlck env _ a = para $ imageWith (xSafeLabel a, [], []) src (xSafeLabel a)(text (caption a))
+  xDefBlck env _ a = para $ imageWith (xSafeLabel a, [], []) (T.pack src) (xSafeLabel a)(text (caption a))
    where
     src  = imagePath env $ a
 instance Xreferenceble CustomSection where
   xSafeLabel a = 
-       (show . xrefPrefix . refStuff $ a)
-     <> show (chapterOfSection x)
+       (tshow . xrefPrefix . refStuff $ a)
+     <> tshow (chapterOfSection x)
      <> typeOfSection x
      <> "-"
-     <> (show . hash . nameOfThing $ x) -- Hash, to make sure there are no fancy characters. 
+     <> (tshow . hash . nameOfThing $ x) -- Hash, to make sure there are no fancy characters. 
     where 
       x = refStuff a
   hyperLinkTo = codeGen'
-  xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (hyperTarget env fSpec a)
-  xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (hyperTarget env fSpec a)
+  xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  "<>tshow (refStuff a))) (hyperTarget env fSpec a)
+  xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  "<>tshow (refStuff a))) id (hyperTarget env fSpec a)
 
 hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Either Blocks Inlines 
 hyperTarget env fSpec a =
@@ -137,11 +138,11 @@ hyperTarget env fSpec a =
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                --   <> (str . show . numberOf fSpec $ r)
                                 ) 
-      _ ->  fatal ("hyperTarget not yet defined for "++show (refStuff a))
+      _ ->  fatal ("hyperTarget not yet defined for "<>tshow (refStuff a))
    where
     hdr = headerWith (xSafeLabel a, [], []) 2
     -- shorthand for easy localizing    
-    l :: LocalizedStr -> String
+    l :: LocalizedStr -> Text
     l = localize (outputLang env fSpec)
 codeGen' :: Xreferenceble a => a -> Inlines
 codeGen' a = 
@@ -173,9 +174,9 @@ pandocEquationWithLabel env fSpec xref x =
   para (strong (xDefInln env fSpec xref) <> x)
 
 data RefStuff = 
-  RefStuff { typeOfSection    :: String
+  RefStuff { typeOfSection    :: Text
            , chapterOfSection :: Chapter
-           , nameOfThing      :: String
+           , nameOfThing      :: Text
            , xrefPrefix       :: CrossrefType
            } deriving Show
 refStuff :: CustomSection -> RefStuff
@@ -241,25 +242,25 @@ class NumberedThing a where
 
 instance NumberedThing Rule where
   numberOf fSpec r = case filter isTheOne ns of
-                      [] -> fatal ("Rule has not been numbered: "++name r)
+                      [] -> fatal ("Rule has not been numbered: "<>name r)
                       [nr] -> theNr nr 
-                      _ -> fatal ("Rule has been numbered multiple times: "++name r)
+                      _ -> fatal ("Rule has been numbered multiple times: "<>name r)
     where ns = concatMap rulesOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered RuleCont -> Bool
           isTheOne = (r ==) . cRul . theLoad
 instance NumberedThing Relation where
   numberOf fSpec d = case filter isTheOne ns of
-                      [] -> fatal ("Relation has not been numbered: "++showRel d)
+                      [] -> fatal ("Relation has not been numbered: "<>showRel d)
                       [nr] -> theNr nr 
-                      _ -> fatal ("Relation has been numbered multiple times: "++showRel d)
+                      _ -> fatal ("Relation has been numbered multiple times: "<>showRel d)
     where ns = concatMap dclsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered DeclCont -> Bool
           isTheOne = (d ==) . cDcl . theLoad
 instance NumberedThing A_Concept where
   numberOf fSpec c = case filter isTheOne ns of
-                      [] -> fatal ("Concept has not been numbered: "++name c)
+                      [] -> fatal ("Concept has not been numbered: "<>name c)
                       [nr] -> theNr nr 
-                      _ -> fatal ("Concept has been numbered multiple times: "++name c)
+                      _ -> fatal ("Concept has been numbered multiple times: "<>name c)
     where ns = concatMap cptsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered CptCont -> Bool
           isTheOne = (c ==) . cCpt . theLoad
@@ -317,7 +318,7 @@ orderingByTheme env fSpec
      , (L.sortBy conceptOrder . filter cptMustBeShown . Set.elems . concs)  fSpec
      ) $
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
-     ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
+     ]<>[Nothing] --Make sure the last is Nothing, to take all res stuff.
  where
   conceptOrder :: A_Concept -> A_Concept -> Ordering
   conceptOrder a b =
@@ -445,8 +446,8 @@ dpRule' env fSpec = dpR
              ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
              (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> hyperLinkTo (XRefSharedLangRule r)
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
-                                    <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
-             (_  ,English) -> plain ("To arrive at the formalization of "   <> hyperLinkTo (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
+                                    <> str (" zijn de volgende "<>count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"<>" nodig."))
+             (_  ,English) -> plain ("To arrive at the formalization of "   <> hyperLinkTo (XRefSharedLangRule r) <> str (", the following "<>count English (length nds) "relation"<>" are introduced."))
          <> (bulletList . map (plain . showRef) . Set.elems $ nds)
          <> (if null nds
              then case Set.elems rds of
@@ -519,7 +520,7 @@ purposes2Blocks env ps
         ref :: Purpose -> [Inline]
         ref purp = if view fspecFormatL env `elem` [Fpdf, Flatex] && (not.null.explRefIds) purp
                    then [RawInline (Text.Pandoc.Builder.Format "latex")
-                            (texOnlyMarginNote (L.intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
+                            (texOnlyMarginNote (T.intercalate "; " (map latexEscShw (explRefIds purp))<>"\n"))]
                    else []
 concatMarkup :: [Markup] -> Maybe Markup
 concatMarkup es
@@ -528,15 +529,15 @@ concatMarkup es
     [cl] -> Just Markup { amLang   = amLang (NE.head cl)
                         , amPandoc = concatMap amPandoc es
                         }
-    cls  -> fatal ("don't call concatMarkup with different languages and formats\n   "++
+    cls  -> fatal ("don't call concatMarkup with different languages and formats\n   "<>
                    L.intercalate "\n   " (map (show . amLang . NE.head) cls)
                   )
 
 -- Insert an inline after the first inline in the list of blocks, if possible.
 insertAfterFirstInline :: [Inline] -> [Block] -> [Block]
-insertAfterFirstInline inlines (            Plain (inl:inls):pblocks)        =             Plain (inl : (inlines++inls)) : pblocks
-insertAfterFirstInline inlines (            Para (inl:inls):pblocks)         =             Para (inl : (inlines++inls)) : pblocks
-insertAfterFirstInline inlines (BlockQuote (Para (inl:inls):pblocks):blocks) = BlockQuote (Para (inl : (inlines++inls)) : pblocks):blocks
+insertAfterFirstInline inlines (            Plain (inl:inls):pblocks)        =             Plain (inl : (inlines<>inls)) : pblocks
+insertAfterFirstInline inlines (            Para (inl:inls):pblocks)         =             Para (inl : (inlines<>inls)) : pblocks
+insertAfterFirstInline inlines (BlockQuote (Para (inl:inls):pblocks):blocks) = BlockQuote (Para (inl : (inlines<>inls)) : pblocks):blocks
 insertAfterFirstInline inlines blocks                                        = Plain inlines : blocks
 
 isMissing :: Maybe Purpose -> Bool
@@ -556,7 +557,7 @@ lclForLang lang = defaultTimeLocale { months =
                       , ("September","Sep"),("October","Oct"),("November","Nov"),("December","Dec")]
            }
 
-plainText :: String -> Blocks
+plainText :: Text -> Blocks
 plainText = plain . text
 
 violation2Inlines :: (HasOutputLanguage env) => env -> FSpec -> PairView Expression -> Inlines
