@@ -294,8 +294,8 @@ getArticlesOfLaw ref = map buildLA . map T.pack . splitOn ", " .T.unpack . T.unw
          scanRefTxt :: Text -> [Either Text Int]
          scanRefTxt txt = case T.uncons txt of
            Nothing -> mempty
-           Just _ -> let (txt, rest) = T.break isDigit txt
-                           in  Left txt : scanRefInt rest
+           Just _ -> let (txt', rest) = T.break isDigit txt'
+                           in  Left txt' : scanRefInt rest
 
          scanRefInt :: Text -> [Either Text Int]
          scanRefInt txt = case T.uncons txt of

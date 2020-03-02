@@ -39,6 +39,8 @@ defaultWriterVariables env fSpec
   = [ ("title", (case (outputLang', view chaptersL env) of
                         (Dutch  , [Diagnosis]) -> "Diagnose van "
                         (English, [Diagnosis]) -> "Diagnosis of "
+                        (Dutch  , [SharedLang])-> "Taalmodel van "
+                        (English, [SharedLang])-> "Shared language of "
                         (Dutch  , _          ) -> "Functioneel Ontwerp van "
                         (English, _          ) -> "Functional Design of "
                 )<>name fSpec)

@@ -17,7 +17,6 @@ import           Codec.Archive.Zip
 import           Data.Hashable (hash)
 import           Network.HTTP.Simple
 import qualified RIO.ByteString.Lazy  as BL
-import qualified RIO.List as L
 import qualified RIO.Text as T
 import           RIO.Time
 import           System.Directory

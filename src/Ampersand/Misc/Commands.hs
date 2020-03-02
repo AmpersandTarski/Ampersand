@@ -46,7 +46,6 @@ import           Options.Applicative.Builder.Internal hiding (name)
 import           Options.Applicative.Help hiding (fullDesc)
 import           Options.Applicative.Types
 import           Options.Applicative.Common
-import qualified RIO.List as L
 import           RIO.Char 
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T

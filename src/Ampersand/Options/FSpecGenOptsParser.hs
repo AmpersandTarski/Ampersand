@@ -9,8 +9,6 @@ import           Ampersand.Basics
 -- import           Ampersand.FSpec.ShowMeatGrinder (MetaModel(..))
 import           Options.Applicative
 import           Options.Applicative.Builder.Extra
-import           RIO.Char (toLower)
-import qualified RIO.List as L
 import qualified RIO.Text as T
 
 -- | Command-line parser for the proto command.

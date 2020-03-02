@@ -16,7 +16,6 @@ import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux (outputLang)
 import           Data.GraphViz
 import           Data.GraphViz.Attributes.Complete
-import           RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set

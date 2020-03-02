@@ -9,7 +9,6 @@ import           Ampersand.Output.PandocAux
 import           Ampersand.Graphic.Graphics
 import           Ampersand.FSpec.FSpec
 import           RIO.Time
-import qualified RIO.Text as T
 -- This function will generate all Pictures for a given FSpec.
 -- the returned FSpec contains the details about the Pictures, so they
 -- can be referenced while rendering the FSpec.
