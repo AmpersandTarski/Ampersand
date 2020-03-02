@@ -15,6 +15,7 @@ import           Distribution.Pretty (prettyShow)
 import           Prelude(print,putStrLn)
 import           RIO
 import           RIO.Char
+import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import           RIO.Time
@@ -185,22 +186,38 @@ generateStaticFileModule = do
     -- | Collect all files required to be inside the ampersand.exe 
     readAllStaticFiles :: IO Text
     readAllStaticFiles = do
-        pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
-        formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand"  "."  --meta information about Ampersand
-        systemContextFiles   <- readStaticFiles PrototypeContext "AmpersandData/PrototypeContext" "."  --Special system context for Ampersand
+        pandocTemplatesFiles <- readStaticFiles PandocTemplates  "." -- templates for several PANDOC output types
+        formalAmpersandFiles <- readStaticFiles FormalAmpersand  "." -- meta information about Ampersand
+        systemContextFiles   <- readStaticFiles PrototypeContext "." -- Special system context for Ampersand
         return $ mkStaticFileModule $ pandocTemplatesFiles <> formalAmpersandFiles <> systemContextFiles
 
-    readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [(FileKind,Entry)]
-    readStaticFiles fkind base fileOrDirPth = do 
+    readStaticFiles :: FileKind -> FilePath -> IO [(FileKind,Entry)]
+    readStaticFiles fkind fileOrDirPth = do 
         let path = base </> fileOrDirPth
         isDir <- doesDirectoryExist path
         if isDir 
            then do
              fOrDs <- getProperDirectoryContents path
-             fmap concat $ mapM (\fOrD -> readStaticFiles fkind base (fileOrDirPth </> fOrD)) fOrDs
+             fmap concat $ mapM (\fOrD -> readStaticFiles fkind (fileOrDirPth </> fOrD)) fOrDs
            else do
-             entry <- readEntry [OptVerbose] (base</>fileOrDirPth)
+             entry <- removeBase <$> readEntry [OptVerbose] (base</>fileOrDirPth)
              return [(fkind,entry)]
+      where removeBase :: Entry -> Entry
+            removeBase entry = entry{eRelativePath = rpWithoutBase}
+                where rpWithoutBase = stripbase (eRelativePath entry)
+                      stripbase :: FilePath -> FilePath
+                      stripbase fp = case L.stripPrefix (base++"/") fp of
+                                       Just stripped -> stripped
+                                       Nothing -> error . L.intercalate "\n" $
+                                          ["ERROR: Reading static files failed:"
+                                          ,"  base: "<>base
+                                          ,"  fp  : "<>fp
+                                          ]
+            base = case fkind of
+               PandocTemplates  -> "outputTemplates"
+               FormalAmpersand  -> "AmpersandData/FormalAmpersand"
+               PrototypeContext -> "AmpersandData/PrototypeContext"
+
     mkStaticFileModule :: [(FileKind,Entry)] -> Text
     mkStaticFileModule xs =
       T.unlines staticFileModuleHeader <>
@@ -229,6 +246,7 @@ generateStaticFileModule = do
       , "import           Codec.Archive.Zip"
       , "import qualified RIO.ByteString as B"
       , "import qualified RIO.ByteString.Lazy as BL"
+      , "import qualified RIO.Text as T"
       , ""
       , "data FileKind = PandocTemplates | FormalAmpersand | PrototypeContext deriving (Show, Eq)"
       , "data StaticFile = SF FileKind Archive"
@@ -236,19 +254,40 @@ generateStaticFileModule = do
       , "getStaticFileContent :: FileKind -> FilePath -> Maybe B.ByteString"
       , "getStaticFileContent fk fp = BL.toStrict <$>"
       , "     case filter isRightArchive allStaticFiles of"
-      , "        [SF _ a] -> fromEntry <$> findEntryByPath fp a"
-      , "        _        -> Nothing"
+      , "        [SF _ a] -> case findEntryByPath fp a of"
+      , "                      Just entry -> Just $ fromEntry entry"
+      , "                      Nothing    -> fatal . T.intercalate \"\\n\" $ "
+      , "                       [ \"Looking for file: \"<>tshow fp"
+      , "                       , \"in archive: \"<>tshow fk"
+      , "                       , \"Archive found. it contains:\""
+      , "                       ]++map ((\"  \" <>) . showEntry) (zEntries a)"
+      , "        xs       -> fatal . T.intercalate \"\\n\" $"
+      , "                       [ \"Looking for file: \"<>tshow fp"
+      , "                       , \"in archive: \"<>tshow fk"
+      , "                       ]++showArchives xs"
       , "  where"
       , "    isRightArchive :: StaticFile -> Bool"
       , "    isRightArchive (SF fKind _) = fKind == fk"
+      , "    showEntry :: Entry -> Text"
+      , "    showEntry = tshow . eRelativePath  "
+      , "    showArchives :: [StaticFile] -> [Text]"
+      , "    showArchives xs = "
+      , "       [ \"Number of archives: \"<>tshow (length xs)"
+      , "       ]++"
+      , "       concatMap showSF xs"
+      , "       where"
+      , "         showSF :: StaticFile -> [Text]"
+      , "         showSF (SF fKind archive) = "
+      , "           [ \"  Archive: \"<>tshow fKind<>\" (\"<>(tshow . length . zEntries $ archive)<>\" entries)\""
+      , "           ]"
       , ""
       , "{-"<>"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
       , "allStaticFiles :: [StaticFile]"
-      , "allStaticFiles ="
+      , "allStaticFiles = "
       ]
 
     getProperDirectoryContents :: FilePath -> IO [FilePath]
-    getProperDirectoryContents fp = (filter (`notElem` [".","..",".svn"])) <$> getDirectoryContents fp
+    getProperDirectoryContents fp = (filter (`notElem` [".","..",".git"])) <$> getDirectoryContents fp
 
 pathFromModuleName :: Text -> FilePath
 pathFromModuleName m = T.unpack $ "src/" <> T.map (\c -> if c == '.' then '/' else c) m <> ".hs"
