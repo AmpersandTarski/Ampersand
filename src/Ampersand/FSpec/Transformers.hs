@@ -210,19 +210,19 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , mean::Meaning <- decMean rel
         ]
       )
-     ,("decprL"                , "Relation"              , "Text"  
+     ,("decprL"                , "Relation"              , "String"  
       , Set.fromList $
         [(dirtyId rel, (PopAlphaNumeric . decprL) rel) 
         | rel::Relation <- instanceList fSpec
         ]
       )
-     ,("decprM"                , "Relation"              , "Text"  
+     ,("decprM"                , "Relation"              , "String"  
       , Set.fromList $
         [(dirtyId rel, (PopAlphaNumeric . decprM) rel) 
         | rel::Relation <- instanceList fSpec
         ]
       )
-     ,("decprR"                , "Relation"              , "Text"  
+     ,("decprR"                , "Relation"              , "String"  
       , Set.fromList $
         [(dirtyId rel, (PopAlphaNumeric . decprR) rel) 
         | rel::Relation <- instanceList fSpec
@@ -311,7 +311,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , rul          <- Set.elems $ identityRules pat
         ]
       )
-     ,("ifcClass"              , "Interface"             , "Text"  
+     ,("ifcClass"              , "Interface"             , "String"  
       , Set.empty  --TODO
       )
      ,("ifcControls"           , "Interface"             , "Conjunct"
@@ -339,7 +339,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | ifc::Interface <- instanceList fSpec
         ]
       )
-     ,("ifcPrp"                , "Interface"             , "Text"  
+     ,("ifcPrp"                , "Interface"             , "String"  
       , Set.empty  --TODO
       )
      ,("ifcQuads"              , "Interface"             , "Quad"    
@@ -710,7 +710,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | rel::Relation <- instanceList fSpec
         ]
       )
-     ,("text"                  , "PairViewSegment"       , "Text"  
+     ,("text"                  , "PairViewSegment"       , "String"  
       , Set.empty  --TODO
       )
      ,("tgt"                   , "Signature"             , "Concept" 
