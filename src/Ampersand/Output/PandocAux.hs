@@ -8,7 +8,6 @@ module Ampersand.Output.PandocAux
       , chptTitle
       , count
       , showMath
-      , latexEscShw
       , texOnlyMarginNote
       , newGlossaryEntry
       , commaPandocAnd
@@ -313,152 +312,6 @@ instance ShowMath Relation where
 
 noBreaking :: (IsString a, Semigroup a) => a -> a
 noBreaking x = "{"<>x<>"}"
--- | latexEscShw escapes to LaTeX encoding. It is intended to be used in LaTeX text mode.
---   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
---   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
-latexEscShw :: Text -> Text
-latexEscShw = id
-{-# DEPRECATED latexEscShw "latexEscShw has become obsolete, because we now use Text, which is UTF8 compliant by itself." #-}
-
-{- latexEscShw ""           = ""
-latexEscShw ('\"':c:cs) | isAlphaNum c = "``"<>latexEscShw (c:cs)
-                        | otherwise    = "''"<>latexEscShw (c:cs)
-latexEscShw "\""        = "''"
-latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
-                        | otherwise    = f c<>latexEscShw cs
- where
-  f '"' = "\\textquotedbl "
-  f '#' = "\\#"
-  f '$' = "\\$"
-  f '%' = "\\%"
-  f '&' = "\\&"
-  f '\\'= "\\textbackslash "
-  f '^' = "\\^{}"
-  f '_' = "\\_"
-  f '{' = "\\{"
-  f '|' = "\\textbar "
-  f '}' = "\\}"
-  f '~' = "\\~{}"
-  f '¦' = "\\textbrokenbar "
-  f '¨' = "\\textasciidieresis "
-  f '¯' = "\\textasciimacron "
-  f '´' = "\\textasciiacute "
-  f '¢' = "\\textcent "
-  f '£' = "\\textpound "
-  f '¤' = "\\textcurrency "
-  f '¥' = "\\textyen "
-  f '€' = "\\texteuro "
-  f '<' = "\\textless "
-  f '>' = "\\textgreater "
-  f '±' = "\\textpm "
-  f '«' = "\\guillemotleft "
-  f '»' = "\\guillemotright "
-  f '×' = "\\texttimes "
-  f '÷' = "\\textdiv "
-  f '§' = "\\S "
-  f '©' = "\\textcopyright "
-  f '¬' = "\\textlnot "
-  f '®' = "\\textregistered "
-  f '°' = "\\textdegree "
-  f 'µ' = "\\textmu "
-  f '¶' = "\\P "
-  f '·' = "\\textperiodcentered "
-  f '¼' = "\\textonequarter "
-  f '½' = "\\textonehalf "
-  f '¾' = "\\textthreequarters "
-  f '¹' = "\\textonesuperior "
-  f '²' = "\\texttwosuperior "
-  f '³' = "\\textthreesuperior "
-  f '∞' = "\\hbipropto "
-  f 'ä' = "\\\"{a}"        --  umlaut or dieresis
-  f 'Ä' = "\\\"{A}"        --  umlaut or dieresis
-  f 'â' = "\\^{a}"         --  circumflex
-  f 'Â' = "\\^{A}"         --  circumflex
-  f 'à' = "\\`{a}"         --  grave accent
-  f 'À' = "\\`{A}"         --  grave accent
-  f 'á' = "\\'{a}"         --  acute accent
-  f 'Á' = "\\'{A}"         --  acute accent
-  f 'ã' = "\\~{a}"         --  tilde
-  f 'Ã' = "\\~{A}"         --  tilde
-  f 'å' = "\\aa "
---  f 'å' = "\\r{a}"       --  alternatively: ring over the letter
-  f 'Å' = "\\AA "
---  f 'Å' = "\\r{A}"       --  alternatively: ring over the letter
-  f 'ą' = "\\k{a}"         --  ogonek
-  f 'Ą' = "\\k{A}"         --  ogonek
-  f 'ª' = "\\textordfeminine "
-  f 'æ' = "\\ae "
-  f 'Æ' = "\\AE "
-  f 'ç' = "\\c{c}"         --  cedilla
-  f 'Ç' = "\\c{C}"         --  cedilla
-  f 'Ð' = "\\DH "
-  f 'ð' = "\\dh "
-  f 'ë' = "\\\"{e}"        --  umlaut or dieresis
-  f 'Ë' = "\\\"{E}"        --  umlaut or dieresis
-  f 'ê' = "\\^{e}"         --  circumflex
-  f 'Ê' = "\\^{E}"         --  circumflex
-  f 'è' = "\\`{e}"         --  grave accent
-  f 'È' = "\\`{E}"         --  grave accent
-  f 'é' = "\\'{e}"         --  acute accent
-  f 'É' = "\\'{E}"         --  acute accent
-  f 'ï' = "\\\"{\\i}"      --  umlaut or dieresis
-  f 'Ï' = "\\\"{I}"        --  umlaut or dieresis
-  f 'î' = "\\^{\\i}"       --  circumflex
-  f 'Î' = "\\^{I}"         --  circumflex
-  f 'ì' = "\\`{\\i}"       --  grave accent
-  f 'Ì' = "\\`{I}"         --  grave accent
-  f 'í' = "\\'{\\i}"       --  acute accent
-  f 'Í' = "\\'{I}"         --  acute accent
-  f 'ł' = "\\l "           --  l with stroke
-  f 'Ł' = "\\L "           --  l with stroke
-  f 'n' = "\\~{n}"         --  tilde
-  f 'Ñ' = "\\~{N}"         --  tilde
-  f 'Ȯ' = "\\.{O}"         --  dot over the letter
-  f 'ȯ' = "\\.{o}"         --  dot over the letter
-  f 'ö' = "\\\"{o}"        --  umlaut or dieresis
-  f 'Ö' = "\\\"{O}"        --  umlaut or dieresis
-  f 'ô' = "\\^{o}"         --  circumflex
-  f 'Ô' = "\\^{O}"         --  circumflex
-  f 'ò' = "\\`{o}"         --  grave accent
-  f 'Ò' = "\\`{O}"         --  grave accent
-  f 'ó' = "\\'{o}"         --  acute accent
-  f 'Ó' = "\\'{O}"         --  acute accent
-  f 'õ' = "\\~{o}"         --  tilde
-  f 'Õ' = "\\~{O}"         --  tilde
-  f 'ō' = "\\={o}"         --  macron accent a bar over the letter)
-  f 'Ō' = "\\={O}"         --  macron accent a bar over the letter)
-  f 'ő' = "\\H{o}"         --  long Hungarian umlaut double acute)
-  f 'Ő' = "\\H{O}"         --  long Hungarian umlaut double acute)
-  f 'Ø' = "\\O "
-  f 'ø' = "\\o "
-  f 'º' = "\\textordmasculine "
-  f 'ŏ' = "\\u{o}"         --  breve over the letter
-  f 'Ŏ' = "\\u{O}"         --  breve over the letter
-  f 'œ' = "\\oe "
-  f 'Œ' = "\\OE "
-  f 'š' = "\\v{s}"         --  caron/hacek "v") over the letter
-  f 'Š' = "\\v{S}"         --  caron/hacek "v") over the letter
-  f 'ß' = "\\ss "
-  f 'Þ' = "\\TH "
-  f 'þ' = "\\th "
-  f '™' = "\\texttrademark "
-  f 'ü' = "\\\"{u}"        --  umlaut or dieresis
-  f 'Ü' = "\\\"{U}"        --  umlaut or dieresis
-  f 'û' = "\\^{u}"         --  circumflex
-  f 'Û' = "\\^{U}"         --  circumflex
-  f 'ù' = "\\`{u}"         --  grave accent
-  f 'Ù' = "\\`{U}"         --  grave accent
-  f 'ú' = "\\'{u}"         --  acute accent
-  f 'Ú' = "\\'{U}"         --  acute accent
-  f 'ý' = "\\'{y}"         --  acute accent
-  f 'Ý' = "\\'{Y}"         --  acute accent
-  f _   = [c] -- let us think if this should be:    fatal ("Symbol "<>show x<>" (character "<>show (ord c)<>") is not supported")
- -}
---posixFilePath :: FilePath -> Text
--- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
--- To set the graphicspath, we want something like: \graphicspath{{"c:/data/Ampersand/output/"}}
---posixFilePath fp = "/"<>System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
-
 
 ---------------------------
 --- Math related stuff ---
@@ -516,8 +369,8 @@ newGlossaryEntry :: Text -> Text -> Inlines
 newGlossaryEntry nm cnt =
   rawInline "latex"
     ("\\newglossaryentry{"<>escapeNonAlphaNum nm <>"}\n"<>
-     "     { name={"<>latexEscShw nm <>"}\n"<>
-     "     , description={"<>latexEscShw cnt<>"}}\n")
+     "     { name={"<> nm <>"}\n"<>
+     "     , description={"<> cnt<>"}}\n")
 
 texOnlyMarginNote :: Text -> Text
 texOnlyMarginNote mgn = 

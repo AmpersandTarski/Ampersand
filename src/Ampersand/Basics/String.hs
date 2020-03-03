@@ -6,7 +6,7 @@ module Ampersand.Basics.String
         , escapeIdentifier
         , optionalQuote
         , mapText
-        , toFileName
+        , toBaseFileName
         ) where
 
 import           Ampersand.Basics.Prelude
@@ -65,6 +65,12 @@ optionalQuote str
     [_] -> False
     _   -> True
 
--- This function tries to create a valid filename based on a given text. 
-toFileName :: Text -> FilePath
-toFileName txt = T.unpack txt
+-- | This function tries to create a valid filename based on a given text. 
+--   see https://stackoverflow.com/questions/1976007/what-characters-are-forbidden-in-windows-and-linux-directory-names
+toBaseFileName :: Text -> FilePath
+toBaseFileName txt = concatMap convertChar $ T.unpack txt
+  where convertChar :: Char -> [Char]
+        convertChar c
+          | isSpace c = ['_']
+          | c `elem` ['<','>',':','\"','/','\\','|','?','*'] = '%': show (ord c)
+          | otherwise = [c]

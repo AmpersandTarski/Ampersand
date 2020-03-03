@@ -207,7 +207,7 @@ pRuleDef =  P_Ru <$> currPos
                  <*> many pMeaning
                  <*> many pMessage
                  <*> pMaybe pViolation
-           where rulid (FileLoc pos' _) = tshow("rule@" <>show pos')
+           where rulid (FileLoc pos' _) = "rule@" <>tshow pos'
                  rulid _ = fatal "pRuleDef is expecting a file location."
 
                  --- Violation ::= 'VIOLATION' PairView

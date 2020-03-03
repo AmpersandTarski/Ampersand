@@ -137,15 +137,15 @@ makePicture env fSpec pr =
 -- | pictureFileName is used in the filename of the picture.
 --   Each pictureFileName must be unique (within fSpec) to prevent overwriting newly created files.
 pictureFileName :: PictureTyp -> FilePath
-pictureFileName pr =
+pictureFileName pr = toBaseFileName $
      case pr of
-      PTClassDiagram   -> "Classification"
-      PTLogicalDM      -> "LogicalDataModel"
-      PTTechnicalDM    -> "TechnicalDataModel"
-      PTCDConcept cpt     -> toFileName $ "CDConcept"<>name cpt
-      PTDeclaredInPat pat -> toFileName $ "RelationsInPattern"<>name pat
-      PTCDPattern pat     -> toFileName $ "CDPattern"<>name pat
-      PTCDRule r          -> toFileName $ "CDRule"<>name r
+      PTClassDiagram      -> "Classification"
+      PTLogicalDM         -> "LogicalDataModel"
+      PTTechnicalDM       -> "TechnicalDataModel"
+      PTCDConcept cpt     -> "CDConcept"<>name cpt
+      PTDeclaredInPat pat -> "RelationsInPattern"<>name pat
+      PTCDPattern pat     -> "CDPattern"<>name pat
+      PTCDRule r          -> "CDRule"<>name r
 
 -- | conceptualStructure produces a uniform structure,
 --   so the transformation to .dot-format can be done with one function.
