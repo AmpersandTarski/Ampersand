@@ -318,7 +318,7 @@ noBreaking x = "{"<>x<>"}"
 ---------------------------
 -- safe function to have plain text in a piece of Math
 inMathText :: Text -> Text
-inMathText s = latexEscShw s
+inMathText = id
 
 inMathCartesianProduct :: Text
 inMathCartesianProduct = "\\times "
