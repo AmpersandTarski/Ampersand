@@ -493,7 +493,7 @@ downloadPrototypeFramework = ( do
       logDebug "Emptying folder to deploy prototype framework"
       liftIO $ removeDirectoryRecursive dirPrototype
       let url :: FilePath
-          url = "https://github.com/AmpersandTarski/Prototype/archive/"</>zwolleVersion</>".zip"
+          url = "https://github.com/AmpersandTarski/Prototype/archive/"<>zwolleVersion<>".zip"
       logDebug "Start downloading prototype framework."
       response <- (parseRequest url >>= httpBS) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
