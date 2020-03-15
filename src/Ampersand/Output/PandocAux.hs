@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -15,7 +16,7 @@ module Ampersand.Output.PandocAux
       , outputLang
       )
 where
-import           Ampersand.ADL1
+import           Ampersand.ADL1 hiding (Identity)
 import           Ampersand.Basics
 import           Ampersand.Classes (isFunction)
 import           Ampersand.FSpec
@@ -24,18 +25,20 @@ import           Ampersand.Prototype.StaticFiles_Generated
 import           Conduit (liftIO, MonadIO)  
 import qualified RIO.Text as T
 import qualified RIO.ByteString.Lazy as BL
-import qualified RIO.Text.Partial as Partial (replace)
 import           System.Directory
 import           System.FilePath
 import           Text.Pandoc
 import           Text.Pandoc.Builder
 import           Text.Pandoc.PDF (makePDF)
 import qualified Text.Pandoc.UTF8 as UTF8
-
+import qualified Text.DocTemplates.Internal as PT
+import qualified RIO.Map as Map
+import Text.DocTemplates
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: (HasDocumentOpts env) => env -> FSpec -> [(Text , Text)]
+defaultWriterVariables :: (HasDocumentOpts env) => env -> FSpec -> PT.Context Text -- [(Text , Text)]
 defaultWriterVariables env fSpec
-  = [ ("title", (case (outputLang', view chaptersL env) of
+  = mkContext $
+    [ ("title", (case (outputLang', view chaptersL env) of
                         (Dutch  , [Diagnosis]) -> "Diagnose van "
                         (English, [Diagnosis]) -> "Diagnosis of "
                         (Dutch  , [SharedLang])-> "Taalmodel van "
@@ -101,9 +104,13 @@ defaultWriterVariables env fSpec
     | (view fspecFormatL env) `elem` [Fpdf,Flatex]
     ]
   where
-   outputLang' :: Lang
-   outputLang' = outputLang env fSpec
-
+    outputLang' :: Lang
+    outputLang' = outputLang env fSpec
+    mkContext :: [(Text,Text)] -> PT.Context Text
+    mkContext xs = PT.Context $ Map.fromList . map fun $ xs
+      where fun :: (Text,Text) -> (Text,PT.Val Text)
+            fun (k,v)= (k, SimpleVal (Text (T.length v) v))
+            
 --DESCR -> functions to write the pandoc
 writepandoc :: (HasDirOutput env, HasRootFile env, HasDocumentOpts env, HasLogFunc env) => 
       FSpec -> Pandoc -> RIO env ()
@@ -179,29 +186,23 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
     writerOptions = def
                       { writerTableOfContents=True
                       , writerNumberSections=True
-              --        , writerTemplate= template
-              --        , writerVariables=defaultWriterVariables env fSpec
+                      , writerTemplate= Just template
+                      , writerVariables=defaultWriterVariables env fSpec
                       , writerHTMLMathMethod =MathML
                     --  , writerMediaBag=bag
                     --  , writerReferenceDocx=Just docxStyleUserPath
                     --  , writerVerbose=optVerbosity
                       }
       where 
- --       template :: IO (Either String (Template a))
- --       template  = compileTemplate "" $ substitute substMap <$> decodeUtf8 <$> getStaticFileContent PandocTemplates ("default."<>writerName)
-        substitute :: [(Text,Text)] -> Text -> Text
-        substitute subs tmpl = foldr replaceAll tmpl subs
-        replaceAll :: (Text,Text) -> Text -> Text
-        replaceAll (needle,replacement) = Partial.replace needle replacement
-        substMap :: [(Text,Text)]
-        -- The following substitutions are required to use the 
-        -- templates from pandoc unchanged. Without them we get
-        -- errors with LaTeX, and possibly other templates.
-        substMap = 
-            [ ("\r\n$if("   ,"$if("   )        
-            , ("$endif$\r\n","$endif$")
-            , ("\r\n$endif$","$endif$")
-            ]
+        template :: Template Text
+        template = case runIdentity $ compileTemplate "" templateText of
+                Right a -> a
+                Left b  -> fatal $ "Could not compile the template. "<> T.pack b
+          where
+            templateText :: Text
+            templateText = case decodeUtf8 <$> getStaticFileContent PandocTemplates (T.unpack $ "default."<>writerName) of
+                             Nothing -> fatal $ "Cannot get the pandoc template for "<> writerName
+                             Just partial  -> partial
 
 -----Linguistic goodies--------------------------------------
 
