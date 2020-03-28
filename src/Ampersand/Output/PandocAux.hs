@@ -63,7 +63,7 @@ defaultWriterVariables env fSpec
          , ""
          , "% The glossaries package supports acronyms and multiple glossaries"
          , "\\usepackage[toc]{glossaries}    % Add the glossaries to the table of contents"
-         , "\\makeglossaries"
+         , "% \\makeglossaries" -- Disabled because of warnings in LaTeX. TODO: Have to generate glossaries using Pandoc, not only for LaTeX. 
          , ""
          , "% geometry provides a flexible and easy interface to page dimentions"
          , "\\usepackage[ top=1.5cm, bottom=1.5cm, outer=5cm, inner=2cm"
