@@ -175,7 +175,7 @@ chpNatLangReqs env lev fSpec =
                         <> ( if fspecFormat `elem` [Fpdf, Flatex]
                              then rawInline "latex"
                                     ("~"<>texOnlyMarginNote 
-                                            ("\\gls{"<>escapeNonAlphaNum 
+                                            ("\\gls{"<>escapeLatex 
                                                         (name cDef<>fromMaybe "" suffx)
                                                 <>"}"
                                             )

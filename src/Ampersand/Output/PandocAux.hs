@@ -117,6 +117,7 @@ writepandoc :: (HasDirOutput env, HasRootFile env, HasDocumentOpts env, HasLogFu
 writepandoc fSpec thePandoc = do
   env <- ask
   logInfo $ "Generating "<>display (fSpecFormatString env) <>" to : "<>display (T.pack $ outputFile env)
+  liftIO $ createDirectoryIfMissing True (takeDirectory (outputFile env))
   liftIO $ writepandoc' env fSpec thePandoc
  where
     fSpecFormatString :: (HasDocumentOpts env) => env -> Text 
@@ -176,6 +177,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
        Fpdf    -> "latex"
        Flatex  -> "latex"
        FPandoc -> "native"
+       Fhtml   -> "html5"
        fmt     -> T.toLower . T.drop 1 . tshow $ fmt
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f bs = do
@@ -369,13 +371,13 @@ inMathOverline x = " \\overline{"<>x<>"} "
 newGlossaryEntry :: Text -> Text -> Inlines
 newGlossaryEntry nm cnt =
   rawInline "latex"
-    ("\\newglossaryentry{"<>escapeNonAlphaNum nm <>"}\n"<>
-     "     { name={"<> nm <>"}\n"<>
+    ("\\newglossaryentry{"<> escapeLatex nm <>"}\n"<>
+     "     { name={"<> toLatexVariable nm <>"}\n"<>
      "     , description={"<> cnt<>"}}\n")
 
 texOnlyMarginNote :: Text -> Text
-texOnlyMarginNote mgn = 
-   "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "<>mgn<>"}\\end{minipage}}"
+texOnlyMarginNote marginNote = 
+   "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "<>marginNote<>"}\\end{minipage}}"
 
 
 commaPandocAnd :: Lang -> [Inlines] -> Inlines

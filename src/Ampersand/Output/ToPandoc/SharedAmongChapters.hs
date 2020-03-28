@@ -66,13 +66,20 @@ data CustomSection
              | XRefConceptualAnalysisExpression Rule
 
 ------ Symbolic referencing to a chapter/section. ---------------------------------
+
 class Typeable a => Xreferenceble a where
-  xSafeLabel :: a -> Text -- The full string that is used as ID for referencing
-  hyperLinkTo :: a -> Inlines
+-- ^ Things that can be referenced in a document. 
   xDefBlck :: (HasDirOutput env, HasDocumentOpts env) => env -> FSpec -> a -> Blocks
   xDefBlck _ _ a = fatal ("A "<>tshow (typeOf a)<>" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
+  -- ^ function that defines the target Blocks of something that can be referenced.
+
   xDefInln :: (HasOutputLanguage env) => env -> FSpec -> a -> Inlines
   xDefInln _ _ a = fatal ("A "<>tshow (typeOf a)<>" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
+  -- ^ function that defines the target Inlines of something that can e referenced.
+
+  hyperLinkTo :: a -> Inlines
+  -- ^ function that returns a link to something that can be referenced.
+  xSafeLabel :: a -> Text -- The full string that is used as ID for referencing
   {-# MINIMAL xSafeLabel, hyperLinkTo, (xDefBlck | xDefInln) #-}
 
 instance Xreferenceble Chapter where
@@ -85,7 +92,7 @@ instance Xreferenceble Picture where
   hyperLinkTo = codeGen'
   xDefBlck env _ a = para $ imageWith (xSafeLabel a, [], []) (T.pack src) (xSafeLabel a)(text (caption a))
    where
-    src  = imagePath env $ a
+    src  = imagePathRelativeToDirOutput env $ a
 instance Xreferenceble CustomSection where
   xSafeLabel a = 
        (tshow . xrefPrefix . refStuff $ a)

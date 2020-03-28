@@ -4,6 +4,8 @@ module Ampersand.Basics.String
         ( unCap,upCap
         , escapeNonAlphaNum
         , escapeIdentifier
+        , escapeLatex
+        , toLatexVariable
         , optionalQuote
         , mapText
         , toBaseFileName
@@ -37,7 +39,23 @@ escapeNonAlphaNum txt = case T.uncons txt of
   Just (h,tl)
     | isAlphaNum h && isAscii h -> T.singleton h              <> escapeNonAlphaNum tl
     | otherwise                 -> T.cons '_' (tshow (ord h)) <> escapeNonAlphaNum tl
-
+ 
+escapeLatex :: Text -> Text
+escapeLatex txt = case T.uncons txt of
+  Nothing -> mempty
+  Just (h,tl)
+    | isAlphaNum h -> T.singleton h              <> escapeNonAlphaNum tl
+    | otherwise    -> T.cons '_' (tshow (ord h)) <> escapeNonAlphaNum tl
+-- | Make sure that a text can be used safely as a Latex variable.
+toLatexVariable :: Text -> Text
+toLatexVariable txt = 
+   case T.uncons txt of
+     Nothing -> mempty
+     Just (h,tl) 
+      | h `elem` specialLaTeXChars -> "\\"<> T.singleton h <> toLatexVariable tl
+      | otherwise                  ->        T.singleton h <> toLatexVariable tl
+   where specialLaTeXChars :: [Char] -- Based on https://tex.stackexchange.com/questions/34580/escape-character-in-latex 
+         specialLaTeXChars = "&%$#_{}~^\\" 
 -- Create an identifier that does not start with a digit and consists only of upper/lowercase ascii letters, underscores, and digits.
 -- This function is injective.
 escapeIdentifier :: Text -> Text

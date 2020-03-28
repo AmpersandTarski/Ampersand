@@ -1,8 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Graphic.Graphics
-          (makePicture, writePicture, Picture(..), PictureTyp(..), imagePath)
+          (makePicture, writePicture, Picture(..), PictureTyp(..), imagePathRelativeToDirOutput)
 where
 
 import           Ampersand.ADL1
@@ -14,7 +13,7 @@ import           Ampersand.Graphic.ClassDiag2Dot
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux (outputLang)
-import           Data.GraphViz
+import           Data.GraphViz as GV
 import           Data.GraphViz.Attributes.Complete
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -22,7 +21,7 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
 import           System.Directory(createDirectoryIfMissing)
-import           System.FilePath hiding (addExtension)
+import           System.FilePath 
 import           System.Process (callCommand)
 
 data PictureTyp = PTClassDiagram           -- classification model of the entire script
@@ -176,9 +175,9 @@ conceptualStructure fSpec pr =
               gs   = fsisa fSpec
               cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NE.toList cl] -- up to two more general concepts
               cpts' = concs pat `Set.union` concs rels
-              rels = Set.fromList . filter (not . isProp . EDcD) . Set.elems . bindedRelationsIn $ pat
+              rels = Set.filter (not . isProp . EDcD) . bindedRelationsIn $ pat
           in
-          CStruct { csCpts = Set.elems $ cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NE.toList cl] -- up to two more general concepts
+          CStruct { csCpts = Set.elems $ cpts
                   , csRels = Set.elems $ rels  `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
@@ -214,26 +213,30 @@ writePicture :: (HasDirOutput env, HasBlackWhite env, HasDocumentOpts env, HasLo
                 Picture -> RIO env ()
 writePicture pict = do
     env <- ask
-    liftIO $ createDirectoryIfMissing True  (takeDirectory (imagePath env pict))
+    dirOutput <- view dirOutputL
+    let imagePathRelativeToCurrentDir = dirOutput </> imagePathRelativeToDirOutput env pict
+    logDebug $ "imagePathRelativeToCurrentDir = "<> display (T.pack imagePathRelativeToCurrentDir)
+    liftIO $ createDirectoryIfMissing True (takeDirectory imagePathRelativeToCurrentDir)
   --  writeDot Canon  --Pretty-printed Dot output with no layout performed.
   --  writeDot DotOutput --Reproduces the input along with layout information.
-    writeDot Png    --handy format to include in github comments/issues
-    writeDot Svg    -- format that is used when docx docs are being generated.
-    writePdf Eps    -- .eps file that is postprocessed to a .pdf file 
+    writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
+    writeDot imagePathRelativeToCurrentDir Svg    -- format that is used when docx docs are being generated.
+    writePdf imagePathRelativeToCurrentDir Eps    -- .eps file that is postprocessed to a .pdf file 
    where
-     writeDot :: (HasDirOutput env, HasDocumentOpts env, HasBlackWhite env, HasLogFunc env) =>
-                 GraphvizOutput -> RIO env ()
-     writeDot = writeDotPostProcess Nothing
-     writeDotPostProcess :: (HasDirOutput env, HasDocumentOpts env, HasBlackWhite env, HasLogFunc env) =>
-                 Maybe (FilePath -> RIO env ()) --Optional postprocessor
+     writeDot :: (HasBlackWhite env, HasLogFunc env) =>
+                 FilePath -> GraphvizOutput -> RIO env ()
+     writeDot fp = writeDotPostProcess fp Nothing
+     writeDotPostProcess :: (HasBlackWhite env, HasLogFunc env) =>
+                 FilePath
+              -> Maybe (FilePath -> RIO env ()) --Optional postprocessor
               -> GraphvizOutput
               -> RIO env ()
-     writeDotPostProcess postProcess gvOutput  =
+     writeDotPostProcess fp postProcess gvOutput  =
          do env <- ask
             logDebug $ "Generating "<>displayShow gvOutput<>" using "<>displayShow gvCommand<>"."
             let dotSource = mkDotGraph env pict
-            path <- liftIO $ addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
-                       (dropExtension . imagePath env) pict
+            path <- liftIO $ GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
+                       (dropExtension fp)
             logInfo $ display (T.pack path)<>" written."
             case postProcess of
               Nothing -> return ()
@@ -244,15 +247,16 @@ writePicture pict = do
      makePdf :: (HasLogFunc env ) => 
                 FilePath -> RIO env ()
      makePdf path = do
+         logDebug $ "Call to makePdf with path = "<>display (T.pack path)
          liftIO $ callCommand (ps2pdfCmd path)
          logDebug $ display (T.pack $ replaceExtension path ".pdf") <> " written."
        `catch` \ e -> logDebug ("Could not invoke PostScript->PDF conversion."<>
                                  "\n  Did you install MikTex? Can the command epstopdf be found?"<>
                                  "\n  Your error message is:\n " <> displayShow (e :: IOException))
                    
-     writePdf :: (HasBlackWhite env, HasDocumentOpts env, HasDirOutput env, HasLogFunc env) 
-          => GraphvizOutput -> RIO env ()
-     writePdf x = writeDotPostProcess (Just makePdf) x
+     writePdf :: (HasBlackWhite env, HasLogFunc env) 
+          => FilePath -> GraphvizOutput -> RIO env ()
+     writePdf fp x = writeDotPostProcess fp (Just makePdf) x
        `catch` (\ e -> logDebug ("Something went wrong while creating your Pdf."<>  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
                                   "\n  Your error message is:\n " <> displayShow (e :: IOException)))
      ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
@@ -264,21 +268,22 @@ mkDotGraph env pict =
     ConceptualDg x -> conceptual2Dot x
 
 class ReferableFromPandoc a where
-  imagePath :: (HasDocumentOpts env, HasDirOutput env) =>
-     env -> a -> FilePath   -- ^ the full file path to the image file
+  imagePathRelativeToDirOutput :: (HasDocumentOpts env, HasDirOutput env) =>
+     env -> a -> FilePath   
+  -- ^ the file path to the image file. This must be relative from the path where the 
+  --   document is written. 
 
 instance ReferableFromPandoc Picture where
-  imagePath env p =
-    prefix </> filename <.> extention
+  imagePathRelativeToDirOutput env p =
+    "images" </> filename <.> extention
     where 
       filename = pictureFileName . pType $ p
-      dirOutput = view dirOutputL env
-      (prefix,extention) =
+      extention =
          case view fspecFormatL env of
-           Fpdf   -> (dirOutput ,"png")   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
-           Fdocx  -> (dirOutput ,"svg")   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
-           Fhtml  -> (""        ,"png")
-           _      -> (dirOutput ,"pdf")
+           Fpdf   -> "png"   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
+           Fdocx  -> "svg"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
+           Fhtml  -> "png"
+           _      -> "pdf"
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to draw in the graph
                                    , csRels :: [Relation]   -- ^ The relations, (the edges in the graph)
@@ -286,45 +291,46 @@ data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to
                                    }
 
 conceptual2Dot :: ConceptualStructure -> DotGraph Text
-conceptual2Dot cs@(CStruct _ rels idgs) = 
-      DotGraph { strictGraph = False
-               , directedGraph = True
-               , graphID = Nothing
-               , graphStatements =
-                   DotStmts { attrStmts = [GraphAttrs [ BgColor [WC (X11Color White ) Nothing]
-                                                      , Landscape False
-                                                      , Mode IpSep
-                                                      , OutputOrder EdgesFirst
-                                                      , Overlap VoronoiOverlap
-                                                      , Sep (DVal 0.8)
-                                                      , NodeSep 1.0 
-                                                      , Rank SameRank
-                                                      , RankDir FromTop
-                                                      , RankSep [2.5]
-                                                      , ReMinCross True
-                                                {-  Commented out because of an issue: See https://gitlab.com/graphviz/graphviz/issues/1485
-                                                      , Splines Curved  
-                                                -}  
-                                                      ]
-                                          , NodeAttrs [ Shape BoxShape
-                                                      , BgColor [WC (X11Color LightGray ) Nothing]
-                                                      , Style [SItem Rounded []
-                                                              ,SItem Filled  []
-                                                              ,SItem Bold []
-                                                              ]
-                                                      ] 
-                                          , EdgeAttrs [ Color [WC (X11Color Black ) Nothing]
-                                                      , edgeLenFactor 1 ]
-                                          ]
-                            , subGraphs = []
-                            , nodeStmts = concatMap nodes (allCpts cs)
-                                        <>concatMap nodes rels
-                                        <>concatMap nodes idgs
-                            , edgeStmts = concatMap edges (allCpts cs)
-                                        <>concatMap edges rels
-                                        <>concatMap edges idgs
-                            }
-               }
+conceptual2Dot cs@(CStruct _ rels idgs) = DotGraph 
+    { strictGraph = False
+    , directedGraph = True
+    , graphID = Nothing
+    , graphStatements = DotStmts
+          { attrStmts = [GraphAttrs
+                            [ BgColor [WC (X11Color White ) Nothing]
+                            , Landscape False
+                            , Mode IpSep
+                            , OutputOrder EdgesFirst
+                            , Overlap VoronoiOverlap
+                            , Sep (DVal 0.8)
+                            , NodeSep 1.0 
+                            , Rank SameRank
+                            , RankDir FromTop
+                            , RankSep [2.5]
+                            , ReMinCross True
+                      {-  Commented out because of an issue: See https://gitlab.com/graphviz/graphviz/issues/1485
+                            , Splines Curved  
+                      -}  
+                            ]
+                        , NodeAttrs [ Shape BoxShape
+                                    , BgColor [WC (X11Color LightGray ) Nothing]
+                                    , Style [SItem Rounded []
+                                            ,SItem Filled  []
+                                            ,SItem Bold []
+                                            ]
+                                    ] 
+                        , EdgeAttrs [ Color [WC (X11Color Black ) Nothing]
+                                    , edgeLenFactor 1 ]
+                        ]
+          , subGraphs = []
+          , nodeStmts = concatMap nodes (allCpts cs)
+                      <>concatMap nodes rels
+                      <>concatMap nodes idgs
+          , edgeStmts = concatMap edges (allCpts cs)
+                      <>concatMap edges rels
+                      <>concatMap edges idgs
+          }
+    }
        where
     nodes :: HasDotParts a => a -> [DotNode Text]
     nodes = dotNodes cs
