@@ -67,8 +67,8 @@ data CustomSection
 
 ------ Symbolic referencing to a chapter/section. ---------------------------------
 
+-- | Things that can be referenced in a document. 
 class Typeable a => Xreferenceble a where
--- ^ Things that can be referenced in a document. 
   xDefBlck :: (HasDirOutput env, HasDocumentOpts env) => env -> FSpec -> a -> Blocks
   xDefBlck _ _ a = fatal ("A "<>tshow (typeOf a)<>" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
   -- ^ function that defines the target Blocks of something that can be referenced.
