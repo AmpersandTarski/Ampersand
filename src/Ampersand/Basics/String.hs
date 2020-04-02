@@ -2,7 +2,7 @@
 -- | This module contains some common Text funcions
 module Ampersand.Basics.String 
         ( unCap,upCap
-        , escapeNonAlphaNum
+      --  , escapeNonAlphaNum
         , escapeIdentifier
         , escapeLatex
         , toLatexVariable
@@ -40,6 +40,7 @@ escapeNonAlphaNum txt = case T.uncons txt of
     | isAlphaNum h && isAscii h -> T.singleton h              <> escapeNonAlphaNum tl
     | otherwise                 -> T.cons '_' (tshow (ord h)) <> escapeNonAlphaNum tl
  
+-- | Make sure that the text can safely be used in LaTeX
 escapeLatex :: Text -> Text
 escapeLatex txt = case T.uncons txt of
   Nothing -> mempty
