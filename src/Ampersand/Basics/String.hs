@@ -2,7 +2,7 @@
 -- | This module contains some common Text funcions
 module Ampersand.Basics.String 
         ( unCap,upCap
-      --  , escapeNonAlphaNum
+        , escapeNonAlphaNum
         , escapeIdentifier
         , escapeLatex
         , toLatexVariable
