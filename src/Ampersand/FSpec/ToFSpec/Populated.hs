@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
     , smallerConcepts, largerConcepts, sortSpecific2Generic
@@ -111,10 +112,10 @@ fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (
                                 ] where flipr = contents (EFlp r)
          EKl0 x     -> if source x == target x --see #166
                        then transClosureMap (Map.unionWith Set.union (contents x) (contents (EDcI (source x))))
-                       else fatal ("source and target of "++show x++show (sign x)++ " are not equal.")
+                       else fatal ("source and target of "<>tshow x<>tshow (sign x)<> " are not equal.")
          EKl1 x     -> if source x == target x --see #166
                        then transClosureMap (contents x)
-                       else fatal ("source and target of "++show x++show (sign x)++ " are not equal.")
+                       else fatal ("source and target of "<>tshow x<>tshow (sign x)<> " are not equal.")
          EFlp x     -> Map.fromListWith Set.union [(b,Set.singleton a) | (a,bs)<-Map.assocs (contents x), b<-Set.toList bs]
          ECpl x     -> contents (EDcV (sign x) .-. x)
          EBrk x     -> contents x
@@ -123,7 +124,7 @@ fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (
          EEps i _   -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals i]
          EDcV sgn   -> Map.fromList [(s, Set.fromList cod) | s <- Set.elems $ aVals (source sgn), let cod=Set.elems $ aVals (target sgn), not (null cod) ]
          EMp1 val c -> if isSESSION c -- prevent populating SESSION with "_SESSION"
-                          && show val == show "_SESSION"
+                          && tshow val == tshow ("_SESSION"::Text)
                         then Map.empty
                         else Map.singleton av (Set.singleton av)
                          where 

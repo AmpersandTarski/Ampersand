@@ -26,9 +26,9 @@ import           System.FilePath
 exportAsAdl :: (HasOutputFile env, HasDirOutput env, HasLogFunc env) => FSpec -> RIO env ()
 exportAsAdl fSpec = do
     env <- ask
-    logDebug $ "Generating data analysis script (ADL) for " <> display (T.pack $ name fSpec) <> "..."
+    logDebug $ "Generating data analysis script (ADL) for " <> display (name fSpec) <> "..."
     liftIO $ createDirectoryIfMissing True (takeDirectory (outputFile' env))
-    writeFileUtf8 (outputFile' env) (T.pack $ showA ctx) 
+    writeFileUtf8 (outputFile' env) (showA ctx) 
     logInfo $ ".adl-file written to: " <> display (T.pack $ outputFile' env)
   where outputFile' env = view dirOutputL env </> view outputfileL env
         ctx = originalContext fSpec

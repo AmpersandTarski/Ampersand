@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Concepts 
   (Concepts,Segment)
@@ -12,36 +13,36 @@ import qualified RIO.Set as Set
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
 data Concept = Concept
-  { cptJSONid                :: String
-  , cptJSONlabel             :: String
-  , cptJSONtype              :: String
-  , cptJSONgeneralizations   :: [String]
-  , cptJSONspecializations   :: [String]
-  , cptJSONdirectGens        :: [String]
-  , cptJSONdirectSpecs       :: [String]
-  , cptJSONaffectedConjuncts :: [String]
-  , cptJSONinterfaces        :: [String]
-  , cptJSONdefaultViewId     :: Maybe String 
+  { cptJSONid                :: Text
+  , cptJSONlabel             :: Text
+  , cptJSONtype              :: Text
+  , cptJSONgeneralizations   :: [Text]
+  , cptJSONspecializations   :: [Text]
+  , cptJSONdirectGens        :: [Text]
+  , cptJSONdirectSpecs       :: [Text]
+  , cptJSONaffectedConjuncts :: [Text]
+  , cptJSONinterfaces        :: [Text]
+  , cptJSONdefaultViewId     :: Maybe Text 
   , cptJSONconceptTable      :: TableCols
-  , cptJSONlargestConcept    :: String
+  , cptJSONlargestConcept    :: Text
   } deriving (Generic, Show)
 data TableCols = TableCols
-  { tclJSONname              :: String
-  , tclJSONcols              :: [String]
+  { tclJSONname              :: Text
+  , tclJSONcols              :: [Text]
   } deriving (Generic, Show)
 data View = View
-  { vwJSONlabel        :: String
+  { vwJSONlabel        :: Text
   , vwJSONisDefault    :: Bool
-  , vwJSONhtmlTemplate :: Maybe String
+  , vwJSONhtmlTemplate :: Maybe FilePath
   , vwJSONsegments :: [Segment]
   } deriving (Generic, Show)
 data Segment = Segment
   { segJSONseqNr   :: Integer
-  , segJSONlabel :: Maybe String
-  , segJSONsegType :: String
-  , segJSONexpADL  :: Maybe String
-  , segJSONexpSQL :: Maybe String
-  , segJSONtext  :: Maybe String
+  , segJSONlabel :: Maybe Text
+  , segJSONsegType :: Text
+  , segJSONexpADL  :: Maybe Text
+  , segJSONexpSQL :: Maybe Text
+  , segJSONtext  :: Maybe Text
   } deriving (Generic, Show)
 instance ToJSON Concept where
   toJSON = amp2Jason
@@ -60,7 +61,7 @@ instance JSON A_Concept Concept where
  fromAmpersand env fSpec cpt = Concept
   { cptJSONid                = idWithoutType cpt
   , cptJSONlabel             = name cpt
-  , cptJSONtype              = show . cptTType fSpec $ cpt
+  , cptJSONtype              = tshow . cptTType fSpec $ cpt
   , cptJSONgeneralizations   = map idWithoutType . largerConcepts  (vgens fSpec) $ cpt
   , cptJSONspecializations   = map idWithoutType . smallerConcepts (vgens fSpec) $ cpt
   , cptJSONdirectGens        = map idWithoutType $ L.nub [ g | (s,g) <- fsisa fSpec, s == cpt]
@@ -81,15 +82,15 @@ instance JSON A_Concept TableCols where
   , tclJSONcols    = case L.nub . map fst $ cols of
                        [t] -> if t == cptTable
                               then map (attName . snd) cols
-                              else fatal $ "Table names should match: "++name t++" "++name cptTable++"." 
+                              else fatal $ "Table names should match: "<>name t<>" "<>name cptTable<>"." 
                        _   -> fatal "All concepts in a typology should be in exactly one table."
   }
   where
     cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
     cptTable = case lookupCpt fSpec cpt of
       [(table,_)] -> table
-      []      -> fatal ("Concept `"++name cpt++"` not found in a table.")
-      _       -> fatal ("Concept `"++name cpt++"` found in multiple tables.")
+      []      -> fatal ("Concept `"<>name cpt<>"` not found in a table.")
+      _       -> fatal ("Concept `"<>name cpt<>"` found in multiple tables.")
 instance JSON ViewDef View where
  fromAmpersand env fSpec vd = View
   { vwJSONlabel        = name vd

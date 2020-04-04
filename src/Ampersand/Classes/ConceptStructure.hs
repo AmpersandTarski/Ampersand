@@ -23,7 +23,7 @@ class ConceptStructure a where
       theBindedRel expr =
         case expr of
          EDcD d -> d
-         _      -> fatal $ "This function is only implemented partially, and must be called with an expression of the form BindedRelation only." ++ show expr
+         _      -> fatal $ "This function is only implemented partially, and must be called with an expression of the form BindedRelation only." <>tshow expr
   primsMentionedIn      :: a -> Expressions
   primsMentionedIn = Set.unions . Set.toList . Set.map primitives . expressionsIn
   modifyablesByInsOrDel :: a -> Expressions -- ^ the set of expressions of which population could be modified directy by Insert or Delete
@@ -161,7 +161,7 @@ instance ConceptStructure Interface where
 
 instance ConceptStructure Relation where
   concs         d = concs (sign d)
-  expressionsIn d = fatal ("expressionsIn not allowed on Relation of "++show d)
+  expressionsIn d = fatal ("expressionsIn not allowed on Relation of "<>tshow d)
 
 instance ConceptStructure Rule where
   concs r   = concs (formalExpression r) `Set.union` concs (rrviol r)
@@ -206,7 +206,7 @@ instance ConceptStructure (PairViewSegment Expression) where
 instance ConceptStructure AClassify where
   concs g@Isa{}  = Set.fromList [gengen g,genspc g]
   concs g@IsE{}  = Set.singleton (genspc g) `Set.union` (Set.fromList . NE.toList $ genrhs g)
-  expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n"++show g)
+  expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n"<>tshow g)
 
 instance ConceptStructure Conjunct where
   concs         = concs . rc_conjunct

@@ -10,9 +10,9 @@ import qualified RIO.Set as Set
 
 data Roles = Roles [RoleJson] deriving (Generic, Show)
 data RoleJson = RoleJson
-  { roleJSONid         :: String
-  , roleJSONname       :: String
-  , roleJSONmaintains  :: [String] 
+  { roleJSONid         :: Text
+  , roleJSONname       :: Text
+  , roleJSONmaintains  :: [Text] 
   } deriving (Generic, Show)
 instance ToJSON RoleJson where
   toJSON = amp2Jason

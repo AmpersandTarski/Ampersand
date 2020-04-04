@@ -13,7 +13,6 @@ import           Ampersand.FSpec.SQL
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
-import qualified RIO.List as L
 import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
@@ -22,7 +21,7 @@ import           System.Process(cwd,shell,readCreateProcess)
 
 createTablePHP :: TableSpec -> [Text]
 createTablePHP tSpec =
-  map (T.pack . ("// "<>)) (tsCmnt tSpec) <>
+  map ("// "<>) (tsCmnt tSpec) <>
   [-- Drop table if it already exists
     "if($columns = mysqli_query($DB_link, "<>queryAsPHP (showColumsSql tSpec)<>")){"
   , "    mysqli_query($DB_link, "<>queryAsPHP (dropTableSql tSpec)<>");"
@@ -39,7 +38,7 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec -> Text -> Expression ->  RIO env [(String,String)]
+evaluateExpSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec -> Text -> Expression ->  RIO env [(Text,Text)]
 evaluateExpSQL fSpec dbNm expr = do
     env <- ask
     let violationsExpr = conjNF env expr
@@ -47,16 +46,16 @@ evaluateExpSQL fSpec dbNm expr = do
     performQuery dbNm violationsQuery
 
 performQuery :: (HasProtoOpts env, HasLogFunc env) =>
-                Text -> SqlQuery ->  RIO env [(String,String)]
+                Text -> SqlQuery ->  RIO env [(Text,Text)]
 performQuery dbNm queryStr = do
     env <- ask
-    queryResult <- T.unpack <$> (executePHPStr . showPHP) (php env)
-    if "Error" `L.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
+    queryResult <- (executePHPStr . showPHP) (php env)
+    if "Error" `T.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
     then do mapM_ (logInfo . display) (T.lines ("\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
-    else case reads queryResult of
+    else case reads (T.unpack queryResult) of
            [(pairs,"")] -> return pairs
-           _            -> fatal ("Parse error on php result: \n"<>(unlines . map ("     " ++) . lines $ queryResult))
+           _            -> fatal ("Parse error on php result: \n"<>(T.unlines . map ("     " <>) . T.lines $ queryResult))
      
    where 
     php :: HasProtoOpts env => env -> [Text]
@@ -72,7 +71,7 @@ performQuery dbNm queryStr = do
       , "    unset($row);"
       , "  }"
       , "echo '[';"
-      , "for ($i = 0; $i < count($rows); $i++) {"
+      , "for ($i = 0; $i < count($rows); $i<>) {"
       , "  if ($i==0) echo ''; else echo ',';"
       , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
       , "}"
@@ -96,14 +95,14 @@ executePHPStr phpStr = do
     executePHP phpPath
     
 
-executePHP :: String ->  RIO env Text
+executePHP :: FilePath ->  RIO env Text
 executePHP phpPath = do
     let cp = (shell command) 
                 { cwd = Just (takeDirectory phpPath)
                 }
         inputFile = phpPath
-        outputFile = inputFile++"Result"
-        command = "php "++show inputFile++" > "++show outputFile
+        outputFile = inputFile<>"Result"
+        command = "php "<>show inputFile<>" > "<>show outputFile
     _ <- liftIO $ readCreateProcess cp ""
     result <- readUTF8File outputFile
     case result of
@@ -112,7 +111,7 @@ executePHP phpPath = do
             return content
       Left err -> exitWith . PHPExecutionFailed $ 
             "PHP execution failed:"
-            : fmap ("  "++) err
+            : fmap ("  "<>) err
             
    
 
@@ -121,17 +120,17 @@ showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
 tempDbName :: HasProtoOpts a => FSpec -> a -> Text
-tempDbName fSpec x = "TempDB_"<>case T.pack <$> view dbNameL x of
-                                  Nothing -> T.pack (name fSpec)
+tempDbName fSpec x = "TempDB_"<>case view dbNameL x of
+                                  Nothing -> name fSpec
                                   Just nm -> nm
 
 connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe Text-> [Text]
 connectToMySqlServerPHP x mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
-    , "$DB_host='"<>subst (view sqlHostL x) <>"';"
-    , "$DB_user='"<>subst (view sqlLoginL x)<>"';"
-    , "$DB_pass='"<>subst (view sqlPwdL x)  <>"';"
+    , "$DB_host='"<>addSlashes (view sqlHostL x) <>"';"
+    , "$DB_user='"<>addSlashes (view sqlLoginL x)<>"';"
+    , "$DB_pass='"<>addSlashes (view sqlPwdL x)  <>"';"
     , ""
     ]<>
     (case mDbName of
@@ -147,9 +146,6 @@ connectToMySqlServerPHP x mDbName =
          ["$DB_name='"<>dbNm<>"';"]<>
          connectToTheDatabasePHP
     )
-  where
-   subst :: String -> Text
-   subst = addSlashes . T.pack
 connectToTheDatabasePHP :: [Text]
 connectToTheDatabasePHP =
     [ "// Connect to the database"
@@ -182,7 +178,7 @@ createTempDatabase fSpec = do
                  , "The result:"
                  , result
                  , "The statements:"
-                 ] ++
+                 ] <>
                  lineNumbers (phpStr env)
                  
     return (T.null result)
@@ -262,6 +258,6 @@ createTempDatabase fSpec = do
              -> ( "mysqli_query($DB_link, "<> queryAsPHP query <>");"
                 ):["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
                where query = insertQuery True tableName attrNames tblRecords
-                     tableName = T.pack . name $ plug
-                     attrNames = fmap (T.pack . attName) . plugAttributes $ plug
+                     tableName = name plug
+                     attrNames = fmap attName . plugAttributes $ plug
            

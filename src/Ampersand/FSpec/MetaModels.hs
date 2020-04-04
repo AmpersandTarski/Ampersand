@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.FSpec.MetaModels
   ( MetaModel(..)
   , mkGrindInfo
@@ -18,8 +19,9 @@ import           Ampersand.FSpec.ToFSpec.ADL2FSpec
 import           Ampersand.FSpec.Transformers 
 import           Ampersand.Input
 import           Ampersand.Misc.HasClasses
-import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
+
 parser :: (HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> RIO env (Guarded P_Context)
 parser FormalAmpersand = parseFormalAmpersand
 parser PrototypeContext   = parsePrototypeContext 
@@ -52,25 +54,21 @@ mkGrindInfo metamodel = do
     build env pCtx = GrindInfo
             { metaModel    = metamodel
             , pModel       = case pCtx of
-                  Errors errs -> fatal . unlines $
-                          ("The ADL scripts of "++name metamodel++" cannot be parsed:")
-                        : (L.intersperse (replicate 30 '=') . fmap show . NE.toList $ errs)
+                  Errors errs -> fatal $ showWithHeader
+                          ("The ADL scripts of "<>name metamodel<>" cannot be parsed:") errs
                   Checked x [] -> x
-                  Checked _ ws -> fatal . unlines $
-                          ("The ADL scripts of "++name metamodel++" are not free of warnings:")
-                        : (L.intersperse (replicate 30 '=') . fmap show $ ws)
+                  Checked _ (h:tl) -> fatal $ showWithHeader
+                          ("The ADL scripts of "<>name metamodel<>" are not free of warnings:") (h NE.:|tl)
             , fModel       = 
                 case join $ pCtx2Fspec env <$> pCtx of
-                  Errors errs -> fatal . unlines $
-                          ("The ADL scripts of "++name metamodel++" cannot be parsed:")
-                        : (L.intersperse (replicate 30 '=') . fmap show . NE.toList $ errs)
+                  Errors errs -> fatal $ showWithHeader
+                          ("The ADL scripts of "<>name metamodel<>" cannot be parsed:") errs
                   Checked x [] -> x
-                  Checked _ ws -> fatal . unlines $
-                          ("The ADL scripts of "++name metamodel++" are not free of warnings:")
-                        : (L.intersperse (replicate 30 '=') . fmap show $ ws)
+                  Checked _ (h:tl) -> fatal $ showWithHeader
+                          ("The ADL scripts of "<>name metamodel<>" are not free of warnings:") (h NE.:|tl)
             , transformers = case metamodel of
-                                FormalAmpersand -> transformersFormalAmpersand
-                                PrototypeContext   -> transformersPrototypeContext
+                                FormalAmpersand  -> transformersFormalAmpersand
+                                PrototypeContext -> transformersPrototypeContext
             }
-
-
+      where showWithHeader :: Show a => Text -> NE.NonEmpty a -> Text
+            showWithHeader txt xs = T.intercalate "\n" $ txt : (map tshow . NE.toList $ xs)

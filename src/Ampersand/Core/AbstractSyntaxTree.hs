@@ -53,7 +53,6 @@ module Ampersand.Core.AbstractSyntaxTree (
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
  , makeConceptMap, ConceptMap
- , aavstr
  ) where
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree 
@@ -74,7 +73,7 @@ import           Data.Default       (Default(..))
 import           Data.Hashable      (Hashable(..),hashWithSalt)
 import           Data.Typeable (typeOf)
 import           GHC.Generics       (Generic)
-import           RIO.Char           (toUpper,toLower)
+import           RIO.Char           (toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
@@ -83,7 +82,7 @@ import qualified RIO.Text as T
 import           RIO.Time
 
 data A_Context
-   = ACtx{ ctxnm :: String           -- ^ The name of this context
+   = ACtx{ ctxnm :: Text           -- ^ The name of this context
          , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctxlang :: Lang           -- ^ The default language used in this context.
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context.
@@ -104,7 +103,7 @@ data A_Context
          , ctxInfo :: ContextInfo
          } deriving (Typeable)              --deriving (Show) -- voor debugging
 instance Show A_Context where
-  show = name
+  show = T.unpack . name
 instance Eq A_Context where
   c1 == c2  =  name c1 == name c2
 instance Unique A_Context where
@@ -113,7 +112,7 @@ instance Named A_Context where
   name  = ctxnm
 
 data Pattern
-   = A_Pat { ptnm ::  String        -- ^ Name of this pattern
+   = A_Pat { ptnm ::  Text        -- ^ Name of this pattern
            , ptpos :: Origin        -- ^ the position in the file in which this pattern was declared.
            , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
            , ptrls :: Rules         -- ^ The user defined rules in this pattern
@@ -138,13 +137,13 @@ instance Traced Pattern where
 
 data A_RoleRule = A_RoleRule { arPos ::   Origin
                              , arRoles :: NE.NonEmpty Role
-                             , arRules :: NE.NonEmpty String -- the names of the rules
+                             , arRules :: NE.NonEmpty Text -- the names of the rules
                              } deriving (Show)
 instance Ord A_RoleRule where
- compare a b = fromMaybe (fatal . L.intercalate "\n" $
+ compare a b = fromMaybe (fatal . T.intercalate "\n" $
                         ["PPurpose a should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
 instance Eq A_RoleRule where
@@ -157,14 +156,14 @@ data RuleOrigin = UserDefined     -- This rule was specified explicitly as a rul
                 deriving (Show, Eq)
 type Rules = Set.Set Rule
 data Rule =
-     Ru { rrnm ::     String                      -- ^ Name of this rule
+     Ru { rrnm ::     Text                      -- ^ Name of this rule
         , formalExpression :: Expression          -- ^ The expression that should be True
         , rrfps ::    Origin                      -- ^ Position in the Ampersand file
         , rrmean ::   [Meaning]                  -- ^ Ampersand generated meaning (for all known languages)
         , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
         , rrdcl ::    Maybe (Prop,Relation)    -- ^ The property, if this rule originates from a property on a Relation
-        , rrpat ::    Maybe String                -- ^ If the rule is defined in the context of a pattern, the name of that pattern.
+        , rrpat ::    Maybe Text                -- ^ If the rule is defined in the context of a pattern, the name of that pattern.
         , r_usr ::    RuleOrigin                  -- ^ Where does this rule come from?
         , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
         } deriving Typeable
@@ -176,7 +175,7 @@ instance Ord Rule where
   compare = compare `on` rrnm
 instance Show Rule where
   show x
-   = "RULE "++ (if null (name x) then "" else name x++": ")++ show (formalExpression x)
+   = "RULE "<> (T.unpack $ if T.null (name x) then mempty else name x<>": ")<> show (formalExpression x)
 instance Traced Rule where
   origin = rrfps
 instance Named Rule where
@@ -186,7 +185,7 @@ instance Hashable Rule where
     `hashWithSalt` (name rul)
     `hashWithSalt` (formalExpression rul)
 
-data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
+data Conjunct = Cjct { rc_id ::         Text -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)
                      , rc_orgRules ::   NE.NonEmpty Rule -- All rules this conjunct originates from
                      , rc_conjunct ::   Expression
@@ -197,7 +196,7 @@ data DnfClause = Dnf { antcs :: [Expression]
                      , conss :: [Expression]
                      }  deriving (Show, Eq) -- Show is for debugging purposes only.
 
-{- The intended semantics of |Dnf ns ps| is the disjunction |foldr1 ( .\/. ) (map notCpl ns ++ ps)|.
+{- The intended semantics of |Dnf ns ps| is the disjunction |foldr1 ( .\/. ) (map notCpl ns <> ps)|.
    The list |ns| and |ps| are not guaranteed to be sorted or duplicate-free.
 -}
 
@@ -215,13 +214,13 @@ data Relation = Relation
        --properties returns decprps_calc, when it has been calculated. So if you only need the user defined properties do not use 'properties' but 'decprps'.
       , decprps :: Props            -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
       , decprps_calc :: Maybe Props -- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx, Irf). Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
-      , decprL :: String             -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
-      , decprM :: String             -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-      , decprR :: String
+      , decprL :: Text             -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+      , decprM :: Text             -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+      , decprR :: Text
       , decMean :: [Meaning]          -- ^ the meaning of a relation, for each language supported by Ampersand.
       , decfpos :: Origin            -- ^ the position in the Ampersand source file where this declaration is declared. Not all declarations come from the ampersand souce file.
       , decusr ::  Bool              -- ^ if true, this relation is declared by an author in the Ampersand script; otherwise it was generated by Ampersand.
-      , decpat ::  Maybe String      -- ^ If the relation is declared inside a pattern, the name of that pattern.
+      , decpat ::  Maybe Text      -- ^ If the relation is declared inside a pattern, the name of that pattern.
       , dechash :: Int
       } deriving (Typeable, Data)
 
@@ -231,31 +230,31 @@ instance Ord Relation where
   compare a b = compare (name a, sign a) (name b, sign b)
 instance Unique Relation where
   showUnique d =
-    name d++showUnique (decsgn d)
+    name d<>showUnique (decsgn d)
 instance Hashable Relation where
    hashWithSalt s Relation{dechash = v} = s `hashWithSalt` v
 instance Show Relation where  -- For debugging purposes only (and fatal messages)
   show decl
-   = name decl++showSign (sign decl)
+   = T.unpack $ name decl<>showSign (sign decl)
 
-showRel :: Relation -> String
-showRel rel = name rel++"["++show (source rel) ++ "*"++ show (target rel)++"]"
+showRel :: Relation -> Text
+showRel rel = name rel<>"["<>tshow (source rel) <> "*"<> tshow (target rel)<>"]"
 
 data Meaning = Meaning { ameaMrk ::Markup} deriving (Show, Eq, Ord, Typeable, Data)
 instance Unique Meaning where
-  showUnique = show
+  showUnique = tshow
 
 instance Named Relation where
-  name = T.unpack . decnm
+  name = decnm
 instance HasSignature Relation where
   sign = decsgn
 instance Traced Relation where
   origin = decfpos
 
 data IdentityDef = Id { idPos :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-                      , idLbl :: String        -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+                      , idLbl :: Text        -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                       , idCpt :: A_Concept     -- ^ this expression describes the instances of this object, related to their context
-                      , idPat :: Maybe String  -- ^ if defined within a pattern, then the name of that pattern.
+                      , idPat :: Maybe Text  -- ^ if defined within a pattern, then the name of that pattern.
                       , identityAts :: NE.NonEmpty IdentitySegment  -- ^ the constituent attributes (i.e. name/expression pairs) of this identity.
                       } deriving (Show)
 instance Named IdentityDef where
@@ -273,7 +272,7 @@ data IdentitySegment = IdentityExp
          } deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
 data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-                  , vdlbl :: String          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+                  , vdlbl :: Text          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                   , vdcpt :: A_Concept       -- ^ the concept for which this view is applicable
                   , vdIsDefault :: Bool      -- ^ whether or not this is the default view for the concept
                   , vdhtml :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
@@ -285,14 +284,14 @@ instance Named ViewDef where
 instance Traced ViewDef where
   origin = vdpos
 instance Unique ViewDef where
-  showUnique vd = name vd++"_"++name (vdcpt vd) 
+  showUnique vd = name vd<>"_"<>name (vdcpt vd) 
 instance Eq ViewDef where
   a == b = vdlbl a == vdlbl b && vdcpt a == vdcpt b
 instance Ord ViewDef where
   a `compare` b = (vdlbl a,vdcpt a) `compare` (vdlbl b, vdcpt b)
 data ViewSegment = ViewSegment
      { vsmpos :: Origin
-     , vsmlabel :: Maybe String
+     , vsmlabel :: Maybe Text
      , vsmSeqNr :: Integer
      , vsmLoad  :: ViewSegmentPayLoad
      } deriving Show
@@ -301,7 +300,7 @@ instance Traced ViewSegment where
 data ViewSegmentPayLoad
                  = ViewExp { vsgmExpr :: Expression
                            }
-                 | ViewText{ vsgmTxt  :: String
+                 | ViewText{ vsgmTxt  :: Text
                            }deriving (Eq, Show)
 
 
@@ -332,14 +331,14 @@ instance Traced AClassify where
 instance Unique AClassify where
   showUnique a =
     case a of
-      Isa{} -> showUnique (genspc a)++" ISA "++showUnique (gengen a)
-      IsE{} -> showUnique (genspc a)++" IS "++L.intercalate " /\\ " (NE.toList . fmap showUnique $ genrhs a)
+      Isa{} -> showUnique (genspc a)<>" ISA "<>showUnique (gengen a)
+      IsE{} -> showUnique (genspc a)<>" IS "<>T.intercalate " /\\ " (NE.toList . fmap showUnique $ genrhs a)
 instance Show AClassify where
   -- This show is used in error messages. It should therefore not display the term's type
   show g =
     case g of
-     Isa{} -> "CLASSIFY "++show (genspc g)++" ISA "++show (gengen g)
-     IsE{} -> "CLASSIFY "++show (genspc g)++" IS "++L.intercalate " /\\ " (NE.toList . fmap show $ genrhs g)
+     Isa{} -> "CLASSIFY "<>show (genspc g)<>" ISA "<>show (gengen g)
+     IsE{} -> "CLASSIFY "<>show (genspc g)<>" IS "<>L.intercalate " /\\ " (NE.toList . fmap show $ genrhs g)
 instance Hashable AClassify where
     hashWithSalt s g = 
       s `hashWithSalt` (genspc g)
@@ -349,12 +348,12 @@ instance Hashable AClassify where
                        )
 
 data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type API?
-                     , ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
+                     , ifcname ::     Text        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
-                     , ifcPrp ::      String        -- The purpose of the interface
+                     , ifcPrp ::      Text        -- The purpose of the interface
                      } deriving Show
 
 instance Eq Interface where
@@ -368,11 +367,11 @@ instance Traced Interface where
 instance Unique Interface where
   showUnique = name
 -- Utility function for looking up interface refs
-getInterfaceByName :: [Interface] -> String -> Interface
+getInterfaceByName :: [Interface] -> Text -> Interface
 getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
-                                []    -> fatal $ "getInterface by name: no interfaces named "++show nm
+                                []    -> fatal $ "getInterface by name: no interfaces named "<>tshow nm
                                 [ifc] -> ifc
-                                _     -> fatal $ "getInterface by name: multiple interfaces named "++show nm
+                                _     -> fatal $ "getInterface by name: multiple interfaces named "<>tshow nm
 
 
 class Object a where
@@ -397,34 +396,34 @@ data BoxItem =
       | BxTxt {objT :: BoxTxt}
       deriving (Eq, Show)
 instance Unique BoxItem where
-  showUnique = show
+  showUnique = tshow
 instance Traced BoxItem where
   origin o 
     = case o of
         BxExpr{} -> origin . objE $ o
         BxTxt{} -> origin . objT $ o
 data BoxTxt =
-    BoxTxt { objnm  :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+    BoxTxt { objnm  :: Text         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , objpos :: Origin
-           , objtxt :: String
+           , objtxt :: Text
            } deriving (Show)
 instance Ord BoxTxt where
  compare a b = case compare (name a,objtxt a) (name b,objtxt b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["BoxTxt should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x  
 instance Eq BoxTxt where
  a == b = compare a b == EQ
 data ObjectDef = 
-    ObjectDef { objnm    :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+    ObjectDef { objnm    :: Text         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , objpos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , objExpression :: Expression -- ^ this expression describes the instances of this object, related to their context.
            , objcrud  :: Cruds          -- ^ CRUD as defined by the user 
-           , objmView :: Maybe String   -- ^ The view that should be used for this object
+           , objmView :: Maybe Text   -- ^ The view that should be used for this object
            , objmsub  :: Maybe SubInterface -- ^ the fields, which are object definitions themselves.
            } deriving (Show)        -- just for debugging (zie ook instance Show BoxItem)
 instance Named ObjectDef where
@@ -432,13 +431,13 @@ instance Named ObjectDef where
 instance Traced ObjectDef where
   origin = objpos
 instance Unique ObjectDef where
-  showUnique = show
+  showUnique = tshow
 instance Ord ObjectDef where
  compare a b = case compare (name a) (name b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["ObjectDef should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x
@@ -455,12 +454,12 @@ data Cruds = Cruds { crudOrig :: Origin
                    , crudD :: Bool
                    } deriving (Show)
 data SubInterface = Box { siConcept :: A_Concept
-                        , siMClass  :: Maybe String
+                        , siMClass  :: Maybe Text
                         , siObjs    :: [BoxItem] 
                         }
                   | InterfaceRef 
                         { siIsLink :: Bool
-                        , siIfcId  :: String  --id of the interface that is referenced to
+                        , siIfcId  :: Text  --id of the interface that is referenced to
                         } deriving (Show)
 
 
@@ -471,7 +470,7 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
                      , explObj :: ExplObj    -- ^ The object that is explained.
                      , explMarkup :: Markup   -- ^ This field contains the text of the explanation including language and markup info.
                      , explUserdefd :: Bool       -- ^ Is this purpose defined in the script?
-                     , explRefIds :: [String]     -- ^ The references of the explaination
+                     , explRefIds :: [Text]     -- ^ The references of the explaination
                      } deriving (Show, Typeable)
 --instance Eq Purpose where
 --  x0 == x1  =  explObj x0 == explObj x1 &&  
@@ -479,10 +478,10 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
 --               (amLang . explMarkup) x0 == (amLang . explMarkup) x1
 instance Ord Purpose where
  compare a b = case compare (explObj a) (explObj b) of
-     EQ -> fromMaybe (fatal . L.intercalate "\n" $
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["Purpose should have a non-fuzzy Origin."
-                        , show (origin a)
-                        , show (origin b)
+                        , tshow (origin a)
+                        , tshow (origin b)
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x  
@@ -490,7 +489,7 @@ instance Eq Purpose where
   a == b = compare a b == EQ
 instance Unique Purpose where
   showUnique p = uniqueShowWithType (explMarkup p)
-              ++ show (typeOf x) ++"_" ++ show x
+              <> tshow (typeOf x) <>"_" <> tshow x
     where x = origin p
 instance Traced Purpose where
   origin = explPos
@@ -506,8 +505,8 @@ data Population -- The user defined populations
              } deriving (Eq,Ord)
 
 instance Unique Population where
-  showUnique pop@ARelPopu{} = (uniqueShowWithType.popdcl) pop ++ (showUnique.popps) pop
-  showUnique pop@ACptPopu{} = (uniqueShowWithType.popcpt) pop ++ (showUnique.popas) pop
+  showUnique pop@ARelPopu{} = (uniqueShowWithType.popdcl) pop <> (showUnique.popps) pop
+  showUnique pop@ACptPopu{} = (uniqueShowWithType.popcpt) pop <> (showUnique.popas) pop
 
 type AAtomPairs = Set.Set AAtomPair
 data AAtomPair
@@ -518,7 +517,7 @@ mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
 
 instance Unique AAtomPair where
-  showUnique apair = "("++(showUnique.apLeft) apair ++","++ (showUnique.apRight) apair++")"
+  showUnique apair = "("<>(showUnique.apLeft) apair <>","<> (showUnique.apRight) apair<>")"
 
 type AAtomValues = Set.Set AAtomValue
 data AAtomValue
@@ -544,68 +543,67 @@ data AAtomValue
   | AtomValueOfONE deriving (Eq,Ord, Show)
 
 instance Unique AAtomValue where   -- FIXME:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
-  showUnique pop@AAVString{}   = (show.aavhash) pop
-  showUnique pop@AAVInteger{}  = (show.aavint) pop
-  showUnique pop@AAVFloat{}    = (show.aavflt) pop
-  showUnique pop@AAVBoolean{}  = (show.aavbool) pop
-  showUnique pop@AAVDate{}     = (show.aadateDay) pop
-  showUnique pop@AAVDateTime{} = (show.aadatetime) pop
+  showUnique pop@AAVString{}   = (tshow.aavhash) pop
+  showUnique pop@AAVInteger{}  = (tshow.aavint) pop
+  showUnique pop@AAVFloat{}    = (tshow.aavflt) pop
+  showUnique pop@AAVBoolean{}  = (tshow.aavbool) pop
+  showUnique pop@AAVDate{}     = (tshow.aadateDay) pop
+  showUnique pop@AAVDateTime{} = (tshow.aadatetime) pop
   showUnique AtomValueOfONE    = "ONE"
 
-aavstr :: AAtomValue -> String
-aavstr = T.unpack . aavtxt
-
-showValSQL :: AAtomValue -> String
+showValSQL :: AAtomValue -> Text
 showValSQL val =
   case val of
-   AAVString{}  -> singleQuote . f . aavstr $ val
+   AAVString{}  -> singleQuote . f . aavtxt $ val
      where 
-       f [] = []
-       f (c:cs) 
-         | c `elem` ['\'','\\'] 
-                     = c : c : f cs
-         | otherwise = c     : f cs
-   AAVInteger{} -> show (aavint val)
-   AAVBoolean{} -> show (aavbool val)
-   AAVDate{}    -> singleQuote $ showGregorian (aadateDay val)
-   AAVDateTime {} -> singleQuote $ formatTime defaultTimeLocale "%F %T" (aadatetime val) --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
+       f :: Text -> Text
+       f txt = case T.uncons txt of
+         Nothing -> mempty
+         Just (h,tl)
+          | h `elem` ['\'','\\'] 
+                      -> T.cons h (T.cons h (f tl))
+          | otherwise -> T.cons h (f tl)
+   AAVInteger{} -> tshow (aavint val)
+   AAVBoolean{} -> tshow (aavbool val)
+   AAVDate{}    -> singleQuote . T.pack $ showGregorian (aadateDay val)
+   AAVDateTime {} -> singleQuote . T.pack $ formatTime defaultTimeLocale "%F %T" (aadatetime val) --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
      --formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
-   AAVFloat{}   -> show (aavflt val)
+   AAVFloat{}   -> tshow (aavflt val)
    AtomValueOfONE{} -> "1"
-singleQuote :: String -> String
-singleQuote str = "'"++str++"'"
+singleQuote :: Text -> Text
+singleQuote str = "'"<>str<>"'"
 
-showValADL :: AAtomValue -> String
+showValADL :: AAtomValue -> Text
 showValADL val =
   case val of
-   AAVString{}  ->       aavstr val
-   AAVInteger{} -> show (aavint val)
-   AAVBoolean{} -> show (aavbool val)
-   AAVDate{}    -> showGregorian (aadateDay val)
-   AAVDateTime {} -> formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
-   AAVFloat{}   -> show (aavflt val)
+   AAVString{}  -> aavtxt val
+   AAVInteger{} -> tshow (aavint val)
+   AAVBoolean{} -> tshow (aavbool val)
+   AAVDate{}    -> T.pack $ showGregorian (aadateDay val)
+   AAVDateTime {} -> T.pack $ formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVFloat{}   -> tshow (aavflt val)
    AtomValueOfONE{} -> "1"
 
 data ExplObj = ExplConcept A_Concept
              | ExplRelation Relation
-             | ExplRule String
-             | ExplIdentityDef String
-             | ExplViewDef String
-             | ExplPattern String
-             | ExplInterface String
-             | ExplContext String
+             | ExplRule Text
+             | ExplIdentityDef Text
+             | ExplViewDef Text
+             | ExplPattern Text
+             | ExplInterface Text
+             | ExplContext Text
           deriving (Show ,Eq, Typeable, Ord)
 instance Unique ExplObj where
-  showUnique e = "Explanation of "++
+  showUnique e = "Explanation of "<>
     case e of
      (ExplConcept cpt)   -> uniqueShowWithType cpt
      (ExplRelation rel)  -> uniqueShowWithType rel
-     (ExplRule s)        -> "a Rule named "++s
-     (ExplIdentityDef s) -> "an Ident named "++s
-     (ExplViewDef s)     -> "a View named "++s
-     (ExplPattern s)     -> "a Pattern named "++s
-     (ExplInterface s)   -> "an Interface named "++s
-     (ExplContext s)     -> "a Context named "++s
+     (ExplRule s)        -> "a Rule named "<>s
+     (ExplIdentityDef s) -> "an Ident named "<>s
+     (ExplViewDef s)     -> "a View named "<>s
+     (ExplPattern s)     -> "a Pattern named "<>s
+     (ExplInterface s)   -> "an Interface named "<>s
+     (ExplContext s)     -> "a Context named "<>s
 
 data Expression
       = EEqu (Expression,Expression)   -- ^ equivalence             =
@@ -657,13 +655,13 @@ instance Hashable Expression where
         EMp1 val c -> (21::Int) `hashWithSalt` show val `hashWithSalt` c
 
 instance Unique Expression where
-  showUnique = show -- showA is not good enough: epsilons are disguised, so there can be several different
+  showUnique = tshow -- showA is not good enough: epsilons are disguised, so there can be several different
                     -- expressions with the same showA. 
 
 instance Unique (PairView Expression) where
-  showUnique = show
+  showUnique = tshow
 instance Unique (PairViewSegment Expression) where
-  showUnique = show
+  showUnique = tshow
 
 
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
@@ -680,25 +678,25 @@ infixl 8 .!.    -- relative addition
 infixl 8 .*.    -- cartesian product
 
 -- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. For that reason, they are not being removed. Not even for performance reasons.
-l .==. r = if source l/=source r ||  target l/=target r then fatal ("Cannot equate (with operator \"==\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .==. r = if source l/=source r ||  target l/=target r then fatal ("Cannot equate (with operator \"==\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EEqu (l,r)
-l .|-. r = if source l/=source r ||  target l/=target r then fatal ("Cannot include (with operator \"|-\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .|-. r = if source l/=source r ||  target l/=target r then fatal ("Cannot include (with operator \"|-\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EInc (l,r)
-l ./\. r = if source l/=source r ||  target l/=target r then fatal ("Cannot intersect (with operator \"/\\\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l ./\. r = if source l/=source r ||  target l/=target r then fatal ("Cannot intersect (with operator \"/\\\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EIsc (l,r)
-l .\/. r = if source l/=source r ||  target l/=target r then fatal ("Cannot unite (with operator \"\\/\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .\/. r = if source l/=source r ||  target l/=target r then fatal ("Cannot unite (with operator \"\\/\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EUni (l,r)
-l .-. r  = if source l/=source r ||  target l/=target r then fatal ("Cannot subtract (with operator \"-\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .-. r  = if source l/=source r ||  target l/=target r then fatal ("Cannot subtract (with operator \"-\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EDif (l,r)
-l ./. r  = if target l/=target r then fatal ("Cannot residuate (with operator \"/\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l ./. r  = if target l/=target r then fatal ("Cannot residuate (with operator \"/\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            ELrs (l,r)
-l .\. r  = if source l/=source r then fatal ("Cannot residuate (with operator \"\\\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .\. r  = if source l/=source r then fatal ("Cannot residuate (with operator \"\\\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            ERrs (l,r)
-l .<>. r = if source r/=target l then fatal ("Cannot use diamond operator \"<>\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .<>. r = if source r/=target l then fatal ("Cannot use diamond operator \"<>\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            EDia (l,r)
-l .:. r  = if source r/=target l then fatal ("Cannot compose (with operator \";\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .:. r  = if source r/=target l then fatal ("Cannot compose (with operator \";\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            ECps (l,r)
-l .!. r  = if source r/=target l then fatal ("Cannot add (with operator \"!\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .!. r  = if source r/=target l then fatal ("Cannot add (with operator \"!\") expression l of type "<>tshow (sign l)<>"\n   "<>tshow l<>"\n   with expression r of type "<>tshow (sign r)<>"\n   "<>tshow r<>".") else
            ERad (l,r)
 l .*. r  = -- SJC: always fits! No fatal here..
            EPrd (l,r)
@@ -755,8 +753,8 @@ instance HasSignature Expression where
  sign (EDcV sgn)   = sgn
  sign (EMp1 _ c)   = Sign c c
 
-showSign :: HasSignature a => a -> String
-showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
+showSign :: HasSignature a => a -> Text
+showSign x = let Sign s t = sign x in "["<>name s<>"*"<>name t<>"]"
 
 -- We allow editing on basic relations (Relations) that may have been flipped, or narrowed/widened by composing with I.
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
@@ -820,7 +818,7 @@ instance Eq A_Concept where
 -}
   
 instance Unique A_Concept where
-  showUnique = show
+  showUnique = tshow
 instance Hashable A_Concept where
   hashWithSalt s cpt =
      s `hashWithSalt` (case cpt of
@@ -828,40 +826,40 @@ instance Hashable A_Concept where
                         ONE          -> 1::Int
                       )
 instance Named A_Concept where
-  name PlainConcept{aliases = names} = T.unpack . NE.head $ names
+  name PlainConcept{aliases = names} = NE.head $ names
   name ONE = "ONE"
 
 instance Show A_Concept where
-  show = name
+  show = T.unpack . name
 -- | special type of Show, for types that can have aliases. Its purpose is
 --   to use when giving feedback to the ampersand modeler, in cases aliases 
 --   are used. 
 class Show a => ShowWithAliases a where
-  showWithAliases :: a -> String
+  showWithAliases :: a -> Text
   -- Default is to just use show. This makes it easier to use showAliases 
   -- at more places, even if there is not a specific implementation 
   -- for it
-  showWithAliases = show
+  showWithAliases = tshow
 instance ShowWithAliases A_Concept where
   showWithAliases ONE = name ONE
   showWithAliases cpt@PlainConcept{aliases = names} =
      case NE.tail names of
        [] ->  name cpt
-       xs -> name cpt <> "("<>(T.unpack $ T.intercalate ", " xs)<>")"
+       xs -> name cpt <> "("<>(T.intercalate ", " xs)<>")"
 
 instance Unique (A_Concept, PAtomValue) where
-  showUnique (c,val) = show val++"["++showUnique c++"]"
+  showUnique (c,val) = tshow val<>"["<>showUnique c<>"]"
 
 data Signature = Sign A_Concept A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
 instance Hashable Signature
 instance Show Signature where
   show (Sign s t) =
-     "[" ++ show s ++ "*" ++ show t ++ "]"
+     "[" <> show s <> "*" <> show t <> "]"
 instance ShowWithAliases Signature where
   showWithAliases (Sign s t) =
-     "[" ++ showWithAliases s ++ "*" ++ showWithAliases t ++ "]"
+     "[" <> showWithAliases s <> "*" <> showWithAliases t <> "]"
 instance Unique Signature where
-  showUnique (Sign s t) = "[" ++ showUnique s ++ "*" ++ showUnique t ++ "]"
+  showUnique (Sign s t) = "[" <> showUnique s <> "*" <> showUnique t <> "]"
 instance HasSignature Signature where
   source (Sign s _) = s
   target (Sign _ t) = t
@@ -886,7 +884,7 @@ data ContextInfo =
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
      , reprList         :: [Representation] -- a list of all Representations
-     , declDisambMap    :: Map.Map String (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
+     , declDisambMap    :: Map.Map Text (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
      , soloConcs        :: Set.Set Type -- types not used in any declaration
      , gens_efficient   :: (Op1EqualitySystem Type) -- generalisation relations again, as a type system (including phantom types)
      , conceptMap       :: ConceptMap -- a map that must be used to convert P_Concept to A_Concept
@@ -894,9 +892,9 @@ data ContextInfo =
                        
 instance Named Type where
   name v = case typeOrConcept dummy v of
-                Right (Just x) -> "Built-in type "++show x
+                Right (Just x) -> "Built-in type "<>tshow x
                 Right Nothing  -> "The Generic Built-in type"
-                Left  x -> "Concept: "++name x
+                Left  x -> "Concept: "<>name x
     where dummy = makeConceptMap []
 typeOrConcept :: ConceptMap -> Type -> Either A_Concept (Maybe TType)
 typeOrConcept fun (BuiltIn TypeOfOne)  = Left . fun . mkPConcept $ "ONE"
@@ -904,7 +902,7 @@ typeOrConcept fun (UserConcept s)      = Left . fun . mkPConcept $ s
 typeOrConcept _   (BuiltIn x)          = Right (Just x)
 typeOrConcept _   RepresentSeparator   = Right Nothing
 
-data Type = UserConcept String
+data Type = UserConcept Text
           | BuiltIn TType
           | RepresentSeparator
           deriving (Eq,Ord,Show)
@@ -925,21 +923,21 @@ instance Eq SignOrd where
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PAtomValue -> AAtomValue
 safePSingleton2AAtomVal ci c val =
    case unsafePAtomVal2AtomValue typ (Just c) val of
-     Left _ -> fatal . L.intercalate "\n  " $
+     Left _ -> fatal . T.intercalate "\n  " $
                   [ "This should be impossible: after checking everything an unhandled singleton value found!"
-                  , "Concept: "++show c
-                  , "TType: "++show typ
-                  , "Origin: "++show (origin val)
-                  , "PAtomValue: "++case val of
-                                      (PSingleton _ _ v) -> "PSingleton ("++show v++")"
-                                      (ScriptString _ v) -> "ScriptString ("++show v++")"
-                                      (XlsxString _ v)   -> "XlsxString ("++show v++")"
-                                      (ScriptInt _ v)    -> "ScriptInt ("++show v++")"
-                                      (ScriptFloat _ v)  -> "ScriptFloat ("++show v++")"
-                                      (XlsxDouble _ v)   -> "XlsxDouble ("++show v++")"
-                                      (ComnBool _ v)     -> "ComnBool ("++show v++")"
-                                      (ScriptDate _ v)   -> "ScriptDate ("++show v++")"
-                                      (ScriptDateTime _ v) -> "ScriptDateTime ("++show v++")"
+                  , "Concept: "<>tshow c
+                  , "TType: "<>tshow typ
+                  , "Origin: "<>tshow (origin val)
+                  , "PAtomValue: "<>case val of
+                                      (PSingleton _ _ v) -> "PSingleton ("<>tshow v<>")"
+                                      (ScriptString _ v) -> "ScriptString ("<>tshow v<>")"
+                                      (XlsxString _ v)   -> "XlsxString ("<>tshow v<>")"
+                                      (ScriptInt _ v)    -> "ScriptInt ("<>tshow v<>")"
+                                      (ScriptFloat _ v)  -> "ScriptFloat ("<>tshow v<>")"
+                                      (XlsxDouble _ v)   -> "XlsxDouble ("<>tshow v<>")"
+                                      (ComnBool _ v)     -> "ComnBool ("<>tshow v<>")"
+                                      (ScriptDate _ v)   -> "ScriptDate ("<>tshow v<>")"
+                                      (ScriptDateTime _ v) -> "ScriptDateTime ("<>tshow v<>")"
                   ]
      Right x -> x
   where typ = representationOf ci c
@@ -948,7 +946,7 @@ safePSingleton2AAtomVal ci c val =
 -- error messages are written here, and later turned into error messages via mkIncompatibleAtomValueError
 -- Ideally, this module would import Ampersand.Input.ADL1.CtxError
 -- that way, unsafePAtomVal2AtomValue could create a 'Origin -> Guarded AAtomValue' instead.
-unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
+unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either Text AAtomValue
 unsafePAtomVal2AtomValue typ mCpt pav =
   case unsafePAtomVal2AtomValue' of
     Left err -> Left err
@@ -963,29 +961,29 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                                     truncateByFormat = f (parseTimeOrError True) . f formatTime
                                       where
                                         format = iso8601DateFormat (Just "%H:%M:%S")
-                                    --    f:: TimeLocale -> String -> typ
+                                    --    f:: TimeLocale -> Text -> typ
                                         f fun = fun defaultTimeLocale format
               _          -> rawVal
   where
-    unsafePAtomVal2AtomValue' :: Either String AAtomValue
+    unsafePAtomVal2AtomValue' :: Either Text AAtomValue
     unsafePAtomVal2AtomValue'
       = case pav of
           PSingleton o str mval
              -> case typ of
-                 Alphanumeric     -> Right (AAVString (hash str) typ (T.pack str))
-                 BigAlphanumeric  -> Right (AAVString (hash str) typ (T.pack str))
-                 HugeAlphanumeric -> Right (AAVString (hash str) typ (T.pack str))
-                 Password         -> Right (AAVString (hash str) typ (T.pack str))
-                 Object           -> Right (AAVString (hash str) typ (T.pack str))
+                 Alphanumeric     -> Right (AAVString (hash str) typ str)
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ str)
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ str)
+                 Password         -> Right (AAVString (hash str) typ str)
+                 Object           -> Right (AAVString (hash str) typ str)
                  _                -> case mval of
                                        Nothing -> Left (message o str)
                                        Just x -> unsafePAtomVal2AtomValue typ mCpt x
           ScriptString o str
              -> case typ of
-                 Alphanumeric     -> Right (AAVString (hash str) typ (T.pack str))
-                 BigAlphanumeric  -> Right (AAVString (hash str) typ (T.pack str))
-                 HugeAlphanumeric -> Right (AAVString (hash str) typ (T.pack str))
-                 Password         -> Right (AAVString (hash str) typ (T.pack str))
+                 Alphanumeric     -> Right (AAVString (hash str) typ str)
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ str)
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ str)
+                 Password         -> Right (AAVString (hash str) typ str)
                  Binary           -> Left "Binary cannot be populated in an ADL script"
                  BigBinary        -> Left "Binary cannot be populated in an ADL script"
                  HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -995,13 +993,13 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                  Integer          -> Left (message o str)
                  Float            -> Left (message o str)
                  TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-                 Object           -> Right (AAVString (hash str) typ (T.pack str))
+                 Object           -> Right (AAVString (hash str) typ str)
           XlsxString o str
              -> case typ of
-                 Alphanumeric     -> Right (AAVString (hash str) typ (T.pack str))
-                 BigAlphanumeric  -> Right (AAVString (hash str) typ (T.pack str))
-                 HugeAlphanumeric -> Right (AAVString (hash str) typ (T.pack str))
-                 Password         -> Right (AAVString (hash str) typ (T.pack str))
+                 Alphanumeric     -> Right (AAVString (hash str) typ str)
+                 BigAlphanumeric  -> Right (AAVString (hash str) typ str)
+                 HugeAlphanumeric -> Right (AAVString (hash str) typ str)
+                 Password         -> Right (AAVString (hash str) typ str)
                  Binary           -> Left "Binary cannot be populated in an ADL script"
                  BigBinary        -> Left "Binary cannot be populated in an ADL script"
                  HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -1014,19 +1012,21 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                                             ,("JA"  , True), ("NEE"   , False)
                                             ,("WEL" , True), ("NIET"  , False)
                                             ]
-                                     in case lookup (map toUpper str) table of
+                                     in case lookup (T.toUpper str) table of
                                         Just b -> Right (AAVBoolean typ b)
-                                        Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table
-                                       where camelCase []     = []
-                                             camelCase (c:xs) = toUpper c: map toLower xs
-                 Integer          -> case readMaybe str  of
+                                        Nothing -> Left $ "permitted Booleans: "<>(tshow . fmap (camelCase . fst) $ table)
+                                       where camelCase :: Text -> Text
+                                             camelCase txt = case T.uncons txt of
+                                               Nothing -> mempty
+                                               Just(h,tl) -> T.cons (toUpper h) (T.toLower tl)
+                 Integer          -> case readMaybe . T.unpack $ str  of
                                            Just i  -> Right (AAVInteger typ i)
                                            Nothing -> Left (message o str)
-                 Float            -> case readMaybe str of
+                 Float            -> case readMaybe . T.unpack $ str of
                                            Just r  -> Right (AAVFloat typ r)
                                            Nothing -> Left (message o str)
                  TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-                 Object           -> Right (AAVString (hash str) typ (T.pack str))
+                 Object           -> Right (AAVString (hash str) typ str)
           ScriptInt o i
              -> case typ of
                  Alphanumeric     -> Left (message o i)
@@ -1100,30 +1100,29 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                 else Left (message o x)
             
        where
-         relaxXLSXInput :: Double -> Either String AAtomValue
-         relaxXLSXInput v = Right (AAVString (hash v) typ (T.pack (neat (show v))))
-           where neat :: String -> String
+         relaxXLSXInput :: Double -> Either Text AAtomValue
+         relaxXLSXInput v = Right . AAVString (hash v) typ . neat . tshow $ v
+           where neat :: Text -> Text
                  neat s 
                    | onlyZeroes dotAndAfter = beforeDot
                    | otherwise = s
-                   where (beforeDot, dotAndAfter) = span (/= '.') s
-                         onlyZeroes s' =
-                          case s' of 
-                           [] -> True
-                           '.':zeros ->  L.nub zeros == "0"
+                   where (beforeDot, dotAndAfter) = T.span (/= '.') s
+                         onlyZeroes s' = case T.uncons s' of
+                           Nothing -> True
+                           Just ('.',afterDot) ->  T.all (== '0') afterDot
                            _ -> False
-         message :: Show x => Origin -> x -> String
-         message orig x = L.intercalate "\n    " $
+         message :: Show x => Origin -> x -> Text
+         message orig x = T.intercalate "\n    " $
                           ["Representation mismatch"
-                          , "Found: `"++show x++"` ("++show orig++"),"
-                          , "as representation of an atom in concept `"++name c++"`."
-                          , "However, the representation-type of that concept is "++implicitly
-                          , "defined as "++show typ++". The found value does not match that type."
-                          ]++ example
+                          , "Found: `"<>tshow x<>"` ("<>tshow orig<>"),"
+                          , "as representation of an atom in concept `"<>name c<>"`."
+                          , "However, the representation-type of that concept is "<>implicitly
+                          , "defined as "<>tshow typ<>". The found value does not match that type."
+                          ]<> example
             where
               c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
               implicitly = if typ == Object then "(implicitly) " else ""
-              example :: [String]
+              example :: [Text]
               example = case typ of
                   Alphanumeric     -> ["ALPHANUMERIC types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
                   BigAlphanumeric  -> ["BIGALPHANUMERIC types are texts (max 64k chars) surrounded with double quotes (\"-characters)."]
@@ -1135,7 +1134,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                   Integer          -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
                   Password         -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
                   Object           -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
-                  _                -> fatal $ "There is no example denotational syntax for a value of type `"++show typ++"`." 
+                  _                -> fatal $ "There is no example denotational syntax for a value of type `"<>tshow typ<>"`." 
          dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      
 
@@ -1170,7 +1169,7 @@ makeConceptMap gs = mapFunction
          PCpt{} -> PlainConcept 
            { aliases = sorted
            }
-        where sorted = NE.nub . NE.sort . fmap T.pack $ ( name pCpt NE.:| map name aliasses)    
+        where sorted = NE.nub . NE.sort $ ( name pCpt NE.:| map name aliasses)    
      edges :: [(P_Concept, [P_Concept])]
      edges = L.nub . map mkEdge . eqCl specific $ gs
      mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])

@@ -11,14 +11,13 @@ import           Ampersand.Prototype.PHP
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import qualified RIO.Text as T
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
 therefore most likely to be correct in case of discrepancies.
 -}
 
-validateRulesSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec ->  RIO env [String]
+validateRulesSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec ->  RIO env [Text]
 validateRulesSQL fSpec = do
     case filter (not . isSignal . fst) (allViolations fSpec) of
        []    -> return()
@@ -34,10 +33,10 @@ validateRulesSQL fSpec = do
         return []
   where
     actualValidation = do
-        let allExps = getAllInterfaceExps fSpec ++
-                      getAllRuleExps fSpec ++
-                      getAllPairViewExps fSpec ++
-                      getAllIdExps fSpec ++
+        let allExps = getAllInterfaceExps fSpec <>
+                      getAllRuleExps fSpec <>
+                      getAllPairViewExps fSpec <>
+                      getAllIdExps fSpec <>
                       getAllViewExps fSpec
         logDebug $ "Number of expressions to be validated: "<>displayShow (length allExps)
         results <- mapM (validateExp fSpec (length allExps)) $ zip allExps [1..]
@@ -50,45 +49,45 @@ validateRulesSQL fSpec = do
                          : map showVExp ves
     
 
-stringify :: (Rule,AAtomPairs) -> (String,[String])
+stringify :: (Rule,AAtomPairs) -> (Text,[Text])
 stringify (rule,pairs) = (name rule, map f . Set.elems $ pairs )
-  where f pair = "("++showValADL (apLeft pair)++", "++showValADL (apRight pair)++")"
+  where f pair = "("<>showValADL (apLeft pair)<>", "<>showValADL (apRight pair)<>")"
 
 
 -- functions for extracting all expressions from the context
 
 getAllInterfaceExps :: FSpec -> [ValidationExp]
 getAllInterfaceExps fSpec = concat [ getObjExps (name ifc) $ ifcObj ifc
-                                   | ifc <- interfaceS fSpec ++ interfaceG fSpec ]
- where getObjExps iName objDef = (objExpression objDef, "interface " ++ show iName) :
+                                   | ifc <- interfaceS fSpec <> interfaceG fSpec ]
+ where getObjExps iName objDef = (objExpression objDef, "interface " <> tshow iName) :
                                  concatMap (getObjExps iName) (fields objDef)
 
 -- we check the complement of the rule, since that is the expression evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]
 getAllRuleExps fSpec = map getRuleExp . Set.elems $ vrules fSpec `Set.union` grules fSpec
- where getRuleExp rule = (notCpl (formalExpression rule), "rule "++show (name rule))
+ where getRuleExp rule = (notCpl (formalExpression rule), "rule "<>tshow (name rule))
 
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps . Set.elems $ vrules fSpec `Set.union` grules fSpec
  where getPairViewExps r@Ru{rrviol = Just (PairView pvsegs)} =
-         [ (expr, "violation view for rule "++show (name r)) | PairViewExp _ _ expr <- NE.toList pvsegs ]
+         [ (expr, "violation view for rule "<>tshow (name r)) | PairViewExp _ _ expr <- NE.toList pvsegs ]
        getPairViewExps _    = []
 
 getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
- where getIdExps identity = [ (objExpression objDef, "identity "++show (name identity))
+ where getIdExps identity = [ (objExpression objDef, "identity "<>tshow (name identity))
                             | IdentityExp objDef <- NE.toList $ identityAts identity ]
 
 getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
- where getViewExps x = [ (expr, "view "++show (name x))
+ where getViewExps x = [ (expr, "view "<>tshow (name x))
                        | ViewExp expr <- fmap vsmLoad (vdats x) ]
 
-type ValidationExp = (Expression, String)
+type ValidationExp = (Expression, Text)
 -- a ValidationExp is an expression together with the place in the context where we
 -- obtained it from (e.g. rule/interface/..)
-showVExp :: (Expression, String) -> String
-showVExp (expr, orig) = "Origin: "++orig++", expression: "++showA expr
+showVExp :: (Expression, Text) -> Text
+showVExp (expr, orig) = "Origin: "<>orig<>", expression: "<>showA expr
 
 -- validate a single expression and report the results
 validateExp :: (HasProtoOpts env, HasLogFunc env) 
@@ -111,10 +110,10 @@ validateExp fSpec total (vExp, i) = do
                 return (vExp, True)
             else do
                 logInfo ""
-                logInfo $ "Checking "<>display (T.pack orig) <>": expression = "<>display (T.pack $ showA expr)
+                logInfo $ "Checking "<>display orig <>": expression = "<>display (showA expr)
                 logInfo ""
                 logInfo "Mismatch between SQL and Ampersand"
-                logInfo $ display (T.pack $ showVExp vExp)
+                logInfo $ display (showVExp vExp)
                 logInfo "SQL violations:"
                 logInfo $ displayShow violationsSQL
                 logInfo "Ampersand violations:"

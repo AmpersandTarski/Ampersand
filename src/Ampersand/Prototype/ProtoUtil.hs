@@ -191,11 +191,11 @@ installComposerLibs installTarget = do
      failOutput (exit_code, out, err) = do
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
-            , "composerTargetPath: "++installTarget
-            , "Exit code of trying to install Composer: "<>show exit_code<>". "
-            ] ++ 
-            (if null out then [] else "stdout:" : lines out) ++
-            (if null err then [] else "stderr:" : lines err) ++
+            , "composerTargetPath: "<>T.pack installTarget
+            , "Exit code of trying to install Composer: "<>tshow exit_code<>". "
+            ] <> 
+            (if null out then mempty else "stdout:" : (T.lines . T.pack $ out)) <>
+            (if null err then mempty else "stderr:" : (T.lines . T.pack $ err)) <>
             [ "Possible solutions to fix your prototype:"
             , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
             , "  2) Make sure you have an active internet connection."

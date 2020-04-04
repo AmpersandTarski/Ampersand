@@ -38,9 +38,9 @@ parseScripts paths =
 showErrors :: (HasLogFunc env) => [CtxError] ->  RIO env ()
 showErrors = sequence_ . fmap logError . map displayShow 
 
-parse :: FilePath -> String -> Guarded P_Context
+parse :: FilePath -> Text -> Guarded P_Context
 parse file txt = whenChecked (runParser pContext file txt) (pure . fst)
 
-parseReparse :: FilePath -> String -> Guarded P_Context
+parseReparse :: FilePath -> Text -> Guarded P_Context
 parseReparse file txt = whenChecked (parse file txt) reparse
                   where reparse p = parse (file ++ "**pretty") (prettyPrint p)

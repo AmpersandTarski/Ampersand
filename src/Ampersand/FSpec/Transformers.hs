@@ -25,19 +25,20 @@ import qualified Text.Pandoc.Shared as P
 --   some relation of Formal Ampersand of a given
 --   ampersand script.
 data Transformer = Transformer 
-      { tRel :: String  -- name of relation
-      , tSrc :: String  -- name of source
-      , tTrg :: String  -- name of target
+      { tRel :: Text  -- name of relation
+      , tSrc :: Text  -- name of source
+      , tTrg :: Text  -- name of target
       , tPairs :: Set.Set (PopAtom,PopAtom)-- the population of this relation from the user's script.
       }
 
 -- | This datatype reflects the nature of an atom. It is use to construct
 --   the atom. 
 data PopAtom = 
-    DirtyId String         -- ^ Any String. must be:
-                           --      * unique in the scope of the entire fspec
-                           --      * storable in a 255 database field
-  | PopAlphaNumeric String -- ^ Intended to be observable by users. Not a 'dirty id'.
+    DirtyId Text
+    -- ^ Any Text. must be:
+    --      * unique in the scope of the entire fspec
+    --      * storable in a 255 database field
+  | PopAlphaNumeric Text -- ^ Intended to be observable by users. Not a 'dirty id'.
   | PopInt Integer 
   deriving (Eq,Ord)
 instance Show PopAtom where
@@ -54,7 +55,7 @@ dirtyId = DirtyId . idWithType
 dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
-toTransformer :: (String, String, String, Set.Set (PopAtom,PopAtom) ) -> Transformer 
+toTransformer :: (Text, Text, Text, Set.Set (PopAtom,PopAtom) ) -> Transformer 
 toTransformer (rel,src,tgt,tuples) = Transformer rel src tgt tuples
 -- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformersFormalAmpersand :: FSpec -> [Transformer]
@@ -197,7 +198,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
       , Set.fromList $
-        [(dirtyId rul, PopAlphaNumeric . show $ prop) 
+        [(dirtyId rul, PopAlphaNumeric . tshow $ prop) 
         | rul::Rule <- instanceList fSpec
         , Just(prop,_) <- [rrdcl rul]
         ]
@@ -334,7 +335,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("ifcPos"                , "Interface"             , "Origin"  
       , Set.fromList $
-        [(dirtyId ifc, PopAlphaNumeric . show . ifcPos $ ifc) 
+        [(dirtyId ifc, PopAlphaNumeric . tshow . ifcPos $ ifc) 
         | ifc::Interface <- instanceList fSpec
         ]
       )
@@ -407,13 +408,13 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("language"              , "Context"               , "Language"
       , Set.fromList
-        [(dirtyId ctx,(PopAlphaNumeric . show . ctxlang) ctx)
+        [(dirtyId ctx,(PopAlphaNumeric . tshow . ctxlang) ctx)
         | ctx::A_Context <- instanceList fSpec
         ]
       )
      ,("language"              , "Markup"               , "Language"
       , Set.fromList
-        [(dirtyId mrk,(PopAlphaNumeric . show . amLang) mrk)
+        [(dirtyId mrk,(PopAlphaNumeric . tshow . amLang) mrk)
         | mrk::Markup <- instanceList fSpec
         ]
       )
@@ -521,27 +522,27 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("objpos"                , "ObjectDef"             , "Origin"  
       , Set.fromList
-        [(dirtyId obj, PopAlphaNumeric . show . origin $ obj) 
+        [(dirtyId obj, PopAlphaNumeric . tshow . origin $ obj) 
         | obj::ObjectDef <- instanceList fSpec
         ]
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
       , Set.fromList
-        [(dirtyId expr, PopAlphaNumeric . show $ op) 
+        [(dirtyId expr, PopAlphaNumeric . tshow $ op) 
         | expr::Expression <- instanceList fSpec
         , Just op <- [binOp expr]
         ]
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
       , Set.fromList
-        [(dirtyId expr, PopAlphaNumeric . show $ op) 
+        [(dirtyId expr, PopAlphaNumeric . tshow $ op) 
         | expr::Expression <- instanceList fSpec
         , Just op <- [unaryOp expr]
         ]
       )
      ,("origin"                , "Rule"                  , "Origin"  
       , Set.fromList
-        [(dirtyId rul, (PopAlphaNumeric . show . origin) rul)
+        [(dirtyId rul, (PopAlphaNumeric . tshow . origin) rul)
         | rul::Rule <- instanceList fSpec
         ]
       )
@@ -560,7 +561,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("prop"                  , "Relation"              , "Property"
       , Set.fromList
-        [(dirtyId rel, PopAlphaNumeric . show $ prop) 
+        [(dirtyId rel, PopAlphaNumeric . tshow $ prop) 
         | rel::Relation <- instanceList fSpec
         , prop <- Set.elems $ decprps rel
         ]
@@ -723,7 +724,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("ttype"                 , "Concept"               , "TType"   
       , Set.fromList
-        [(dirtyId cpt, (PopAlphaNumeric . show . cptTType fSpec) cpt) 
+        [(dirtyId cpt, (PopAlphaNumeric . tshow . cptTType fSpec) cpt) 
         | cpt::A_Concept <- instanceList fSpec
         ]
       )
@@ -743,19 +744,19 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("urlEncodedName"        , "Concept"               , "EncodedName"
       , Set.fromList
-        [(dirtyId cpt,(PopAlphaNumeric . escapeNonAlphaNum . name) cpt)
+        [(dirtyId cpt,(PopAlphaNumeric . urlEncodedName . name) cpt)
         | cpt::A_Concept <- instanceList fSpec
         ]
       )
      ,("urlEncodedName"        , "Pattern"               , "EncodedName"
       , Set.fromList
-        [(dirtyId pat,(PopAlphaNumeric . escapeNonAlphaNum . name) pat)
+        [(dirtyId pat,(PopAlphaNumeric . urlEncodedName . name) pat)
         | pat::Pattern <- instanceList fSpec
         ]
       )
      ,("urlEncodedName"        , "Rule"                  , "EncodedName"
       , Set.fromList
-        [(dirtyId rul,(PopAlphaNumeric . escapeNonAlphaNum . name) rul)
+        [(dirtyId rul,(PopAlphaNumeric . urlEncodedName . name) rul)
         | rul::Rule <- instanceList fSpec
         ]
       )
@@ -1309,7 +1310,7 @@ data UnaryOp =
            | UnaryMinus
            | Bracket deriving (Eq, Show, Typeable)
 instance Unique UnaryOp where
-  showUnique = show
+  showUnique = tshow
 
 data BinOp = CartesianProduct
            | Composition
@@ -1323,7 +1324,7 @@ data BinOp = CartesianProduct
            | RelativeAddition 
            | Union deriving (Eq, Show, Typeable)
 instance Unique BinOp where
-  showUnique = show
+  showUnique = tshow
 instance Unique (Either BinOp UnaryOp) where
   showUnique (Left  a) = showUnique a
   showUnique (Right b) = showUnique b

@@ -64,9 +64,10 @@ ampersandDefault = defaultOptions {AT.fieldLabelModifier = alterLabel}
     -- the .json side. In our case, we strip all characters upto the first occurence
     -- of the prefix "JSON" (which is mandatory). in the rest of that string, we 
     -- substitute all underscores with dots.
+    alterLabel :: String -> String
     alterLabel str =
       case filter (L.isPrefixOf pfx) (L.tails str) of
-        []  -> fatal ("Label at Haskell side must contain `JSON`: "++str)
+        []  -> fatal ("Label at Haskell side must contain `JSON`: "<>T.pack str)
         h:_ -> replace '_' '.' . snd . L.splitAt (length pfx) $ h
       where pfx = "JSON"
 

@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings, DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.Xslx.XLSX 
   (parseXlsxFile)
 where
@@ -6,11 +8,12 @@ import           Ampersand.Basics hiding (view, (^.))
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
+import           Ampersand.Prototype.StaticFiles_Generated
 import           Codec.Xlsx
 import           Control.Lens hiding (both) -- ((^?),ix)
 import           Data.Tuple.Extra
 import qualified RIO.List as L
+import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
 import qualified RIO.Map as Map
@@ -25,11 +28,11 @@ parseXlsxFile mFk file =
         case mFk of
           Just fileKind 
              -> case getStaticFileContent fileKind file of
-                      Just cont -> return $ fromString cont
-                      Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++file++"`.")
+                      Just cont -> return cont
+                      Nothing -> fatal ("Statically included "<> tshow fileKind<> " files. \n  Cannot find `"<>T.pack file<>"`.")
           Nothing
-             -> liftIO $ BL.readFile file
-     return . xlsx2pContext env . toXlsx $ bytestr
+             -> liftIO $ B.readFile file
+     return . xlsx2pContext env . toXlsx . BL.fromStrict $ bytestr
  where
   xlsx2pContext :: (HasFSpecGenOpts env) 
       => env -> Xlsx -> Guarded [P_Population]
@@ -40,21 +43,21 @@ parseXlsxFile mFk file =
           $ (xlsx ^. xlSheets)
 
 data SheetCellsForTable 
-       = Mapping{ theSheetName :: String
+       = Mapping{ theSheetName :: Text
                 , theCellMap   :: CellMap
                 , headerRowNrs :: [Int]
                 , popRowNrs    :: [Int]
                 , colNrs       :: [Int]
-                , debugInfo :: [String]
+                , debugInfo :: [Text]
                 }
 instance Show SheetCellsForTable where  --for debugging only
   show x 
-   = unlines $
-      [ "Sheet       : "++theSheetName x
-      , "headerRowNrs: "++show (headerRowNrs x)
-      , "popRowNrs   : "++show (popRowNrs x)
-      , "colNrs      : "++show (colNrs x)
-      ] ++ debugInfo x 
+   = T.unpack . T.unlines $
+      [ "Sheet       : "<>theSheetName x
+      , "headerRowNrs: "<>tshow (headerRowNrs x)
+      , "popRowNrs   : "<>tshow (popRowNrs x)
+      , "colNrs      : "<>tshow (colNrs x)
+      ] <> debugInfo x 
 toPops :: (HasFSpecGenOpts env) => env -> FilePath -> SheetCellsForTable -> [P_Population]
 toPops env file x = map popForColumn (colNrs x)
   where
@@ -91,7 +94,7 @@ toPops env file x = map popForColumn (colNrs x)
                            [] -> fatal "colNrs x is empty"
                            c:_ -> c
        targetCol       = i 
-       sourceConceptName :: String
+       sourceConceptName :: Text
        mSourceConceptDelimiter :: Maybe Char
        (sourceConceptName, mSourceConceptDelimiter)
           = case value (conceptNamesRow,sourceCol) of
@@ -99,7 +102,7 @@ toPops env file x = map popForColumn (colNrs x)
                    fromMaybe (fatal "No valid source conceptname found. This should have been checked before")
                              (conceptNameWithOptionalDelimiter t)
                 _ -> fatal "No valid source conceptname found. This should have been checked before"
-       mTargetConceptName :: Maybe String
+       mTargetConceptName :: Maybe Text
        mTargetConceptDelimiter :: Maybe Char
        (mTargetConceptName, mTargetConceptDelimiter)
           = case value (conceptNamesRow,targetCol) of
@@ -109,15 +112,16 @@ toPops env file x = map popForColumn (colNrs x)
                                                 (conceptNameWithOptionalDelimiter t)
                                      in (Just nm, mDel)
                 _ -> (Nothing, Nothing)
-       relName :: String
+       relName :: Text
        isFlipped' :: Bool
        (relName,isFlipped') 
           = case value (relNamesRow,targetCol) of
                 Just (CellText t) -> 
-                    case T.unpack . T.reverse . trim $ t of
-                      '~':rest -> (reverse rest, True )
-                      xs       -> (reverse xs  , False)
-                _ -> fatal ("No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol))
+                    case T.uncons . T.reverse . trim $ t of
+                      Nothing -> (mempty, False)
+                      Just ('~',rest) -> (T.reverse rest, True )
+                      Just (h,tl)     -> (T.reverse $ T.cons h tl, False)
+                _ -> fatal ("No valid relation name found. This should have been checked before" <>tshow (relNamesRow,targetCol))
        thePairs :: [PAtomPair]
        thePairs =  concat . mapMaybe pairsAtRow . popRowNrs $ x
        pairsAtRow :: Int -> Maybe [PAtomPair]
@@ -142,20 +146,20 @@ toPops env file x = map popForColumn (colNrs x)
             -> [PAtomValue]  
        cellToAtomValues mDelimiter cv orig
          = case cv of
-             CellText t   -> map (XlsxString orig . T.unpack) 
+             CellText t   -> map (XlsxString orig) 
                            . filter (not . T.null)
                            . unDelimit mDelimiter 
                            . handleSpaces $ t
              CellDouble d -> [XlsxDouble orig d]
              CellBool b -> [ComnBool orig b] 
-             CellRich ts -> map (XlsxString orig . T.unpack) 
+             CellRich ts -> map (XlsxString orig) 
                           . filter (not . T.null)
                           . unDelimit mDelimiter 
                           . handleSpaces . T.concat . map _richTextRunText $ ts
-             CellError e -> fatal . L.intercalate "\n  " $
+             CellError e -> fatal . T.intercalate "\n  " $
                                     [ "Error reading cell at:"
-                                    , show orig
-                                    , show e]
+                                    , tshow orig
+                                    , tshow e]
        unDelimit :: Maybe Char -> Text -> [Text]
        unDelimit mDelimiter xs = 
          case mDelimiter of
@@ -196,19 +200,19 @@ theSheetCellsForTable (sheetName,ws)
     theMapping indexInTableStarters 
      | length okHeaderRows /= nrOfHeaderRows = Nothing  -- Because there are not enough header rows
      | otherwise
-     =  Just Mapping { theSheetName = T.unpack sheetName
+     =  Just Mapping { theSheetName = sheetName
                      , theCellMap   = ws  ^. wsCells
                      , headerRowNrs = okHeaderRows
                      , popRowNrs    = populationRows
                      , colNrs       = theCols
-                     , debugInfo = [ "indexInTableStarters"++": "++show indexInTableStarters
-                                   , "maxRowOfWorksheet"++": "++show maxRowOfWorksheet
-                                   , "maxColOfWorksheet"++": "++show maxColOfWorksheet
-                                   , "startOfTable     "++": "++show startOfTable
-                                   , "firstPopRowNr    "++": "++show firstPopRowNr
-                                   , "lastPopRowNr     "++": "++show lastPopRowNr
-                                   , "[(row,isProperRow)] "++": "++concatMap show [(r,isProperRow r) | r<- [firstPopRowNr..lastPopRowNr]]
-                                   , "theCols          "++": "++show theCols
+                     , debugInfo = [ "indexInTableStarters: "<>tshow indexInTableStarters
+                                   , "maxRowOfWorksheet   : "<>tshow maxRowOfWorksheet
+                                   , "maxColOfWorksheet   : "<>tshow maxColOfWorksheet
+                                   , "startOfTable        : "<>tshow startOfTable
+                                   , "firstPopRowNr       : "<>tshow firstPopRowNr
+                                   , "lastPopRowNr        : "<>tshow lastPopRowNr
+                                   , "[(row,isProperRow)] : "<>(T.concat $ map tshow [(r,isProperRow r) | r<- [firstPopRowNr..lastPopRowNr]])
+                                   , "theCols             : "<>tshow theCols
                                    ] 
                      }
      where
@@ -226,7 +230,7 @@ theSheetCellsForTable (sheetName,ws)
                              Nothing -> fatal "Maximum of an empty list is not defined!"
                              Just m -> m
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
-       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1]) `L.genericIndex` (indexInTableStarters+1))-1
+       lastPopRowNr = ((map fst tableStarters<>[maxRowOfWorksheet+1]) `L.genericIndex` (indexInTableStarters+1))-1
        okHeaderRows = filter isProperRow [firstHeaderRowNr,firstHeaderRowNr+nrOfHeaderRows-1]
        populationRows = filter isProperRow [firstPopRowNr..lastPopRowNr]
        isProperRow :: Int -> Bool
@@ -240,7 +244,7 @@ theSheetCellsForTable (sheetName,ws)
             Just (CellDouble _) -> True
             Just (CellBool _)   -> True
             Just (CellRich _)   -> True
-            Just (CellError e)  -> fatal $ "Error reading cell "++show e
+            Just (CellError e)  -> fatal $ "Error reading cell "<>tshow e
             Nothing -> False
        theCols = filter isProperCol [1..maxColOfWorksheet]
        isProperCol :: Int -> Bool
@@ -256,10 +260,10 @@ theSheetCellsForTable (sheetName,ws)
             Just (CellText t) -> (not . T.null . trim) t -- && (isLower . T.head . trim) t
             _ -> False
                
-conceptNameWithOptionalDelimiter :: Text -> Maybe ( String     {- Conceptname -} 
+conceptNameWithOptionalDelimiter :: Text -> Maybe ( Text     {- Conceptname -} 
                                                     , Maybe Char {- Delimiter   -}
                                              )
--- Cases:  1) "[" ++ Conceptname ++ delimiter ++ "]"
+-- Cases:  1) "[" <> Conceptname <> delimiter <> "]"
 --         2) Conceptname
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
@@ -271,9 +275,9 @@ conceptNameWithOptionalDelimiter t'
             Just (d,revInit) -> 
                        let nm = T.reverse revInit
                        in if isDelimiter d && isConceptName (T.reverse nm)
-                          then Just (T.unpack nm , Just d)
+                          then Just (nm , Just d)
                           else Nothing
-  | isConceptName t = Just (T.unpack t, Nothing)
+  | isConceptName t = Just (t, Nothing)
   | otherwise       = Nothing
   where t = trim t'
 isDelimiter :: Char -> Bool

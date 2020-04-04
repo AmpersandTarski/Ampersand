@@ -20,12 +20,12 @@ import           System.Environment    (getArgs, getProgName)
   
 ampersand :: IO ()
 ampersand = do
-  progName <- getProgName
-  args <- getArgs
+  progName <- T.pack <$> getProgName
+  args <- map T.pack <$> getArgs
   work <- ampersandOptionsHandler progName args
   ampersandWorker work
 
-ampersandOptionsHandler :: String -> [String] -> IO (Either ExitCode (GlobalOptsMonoid, RIO Runner ()))
+ampersandOptionsHandler :: Text -> [Text] -> IO (Either ExitCode (GlobalOptsMonoid, RIO Runner ()))
 ampersandOptionsHandler progName args = do
   currentDir <- getCurrentDirectory
   runSimpleApp $ logDebug . display $ "args: "<>(T.pack $ show args)
@@ -72,7 +72,7 @@ preProcessor' =
 
 mainTest :: IO ()
 mainTest = do
-  progName <- getProgName
+  progName <- T.pack <$> getProgName
   let args = ["test", "testing"]
   work <- ampersandOptionsHandler progName args
   ampersandWorker work

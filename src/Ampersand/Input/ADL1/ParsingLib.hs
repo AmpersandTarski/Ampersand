@@ -27,6 +27,7 @@ import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText
 import           RIO.Char(toLower)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           RIO.Time
 import           Text.Parsec as P hiding(satisfy,sepBy1,(<|>))
 import           Text.Parsec.Pos (newPos)
@@ -141,8 +142,8 @@ pCrudString = check (\lx -> case lx of
                          else test xs (y:ys)
 
 
-data Value = VRealString String
-           | VSingleton String (Maybe Value)
+data Value = VRealString Text
+           | VSingleton Text (Maybe Value)
            | VInt Int
            | VFloat Double
            | VBoolean Bool
@@ -159,7 +160,7 @@ pAtomValInPopulation :: Bool -> AmpParser Value
 pAtomValInPopulation constrainsApply =
               VBoolean True  <$ pKey "TRUE"
           <|> VBoolean False <$ pKey "FALSE"
-          <|> VRealString <$> pString
+          <|> VRealString <$> (T.pack <$> pString)
           <|> VDateTime <$> pUTCTime
           <|> VDate <$> pDay
           <|> fromNumeric <$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
@@ -240,7 +241,7 @@ pChevrons parser = pSpec '<' *> parser <* pSpec '>'
 -----------------------------------------------------------
 
 posOrigin :: Show a => a -> SourcePos -> Origin
-posOrigin sym p = FileLoc (FilePos (sourceName p) (sourceLine p) (sourceColumn p)) (show sym)
+posOrigin sym p = FileLoc (FilePos (sourceName p) (sourceLine p) (sourceColumn p)) (tshow sym)
 
 currPos :: AmpParser Origin
 currPos = posOf $ return ()

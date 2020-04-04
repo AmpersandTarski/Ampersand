@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Options.DocOptsParser 
    (docOptsParser)
 where
@@ -10,8 +11,8 @@ import           Ampersand.Options.Utils
 import           Data.Tuple.Extra
 import           Options.Applicative
 import           Options.Applicative.Builder.Extra
-import           RIO.Char (toLower)
 import qualified RIO.List as L
+import qualified RIO.Text as T
 
 
 -- | Command-line parser for the proto command.
@@ -57,9 +58,9 @@ chaptersP =
                        then xs
                        else exitWith $ PosAndNegChaptersSpecified 
                         [ "It is unclear what chapters you want in your document."
-                        , "  You want: "<> (L.intercalate ", " . map show $ xs)
-                        , "  You don't want: "<> (L.intercalate ", " . map show $ ys)
-                        , "  What about the other chapters: " <> (L.intercalate ", " . map show $ otherChapters)<>" ?"
+                        , "  You want: "<> (T.intercalate ", " . map tshow $ xs)
+                        , "  You don't want: "<> (T.intercalate ", " . map tshow $ ys)
+                        , "  What about the other chapters: " <> (T.intercalate ", " . map tshow $ otherChapters)<>" ?"
                         , "  Please don't mix `--no-<chapter>` with `--<chapter>`."
                         ]
    ) <$> chapterParser Intro
@@ -81,32 +82,32 @@ chaptersP =
           
 
 fSpecFormatP :: Parser FSpecFormat
-fSpecFormatP = toFormat <$> strOption
+fSpecFormatP = toFormat . T.pack <$> strOption
          (  long "format"
          <> metavar "FORMAT"
-         <> completeWith (map stripF allFormats)
+         <> completeWith (map (T.unpack . stripF) allFormats)
          <> help "The format in which the output is written."
          )
-   where toFormat :: String -> FSpecFormat
+   where toFormat :: Text -> FSpecFormat
          toFormat s = case filter matches allFormats of
             -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
             --        See https://hackage.haskell.org/package/optparse-applicative
-                   [] -> fatal $ unlines
+                   [] -> fatal $ T.unlines
                         ["No matching formats found. Possible formats are:"
-                        , "  "<>L.intercalate ", " (map stripF allFormats)
+                        , "  "<>T.intercalate ", " (map stripF allFormats)
                         ]
                    [f] -> f
-                   xs -> fatal $ unlines 
+                   xs -> fatal $ T.unlines 
                         [ "Ambiguous format specified. Possible matches are:"
-                        , "  "<>L.intercalate ", " (map stripF xs)
+                        , "  "<>T.intercalate ", " (map stripF xs)
                         ]
             where
               matches :: FSpecFormat -> Bool
-              matches fmt = map toLower s `L.isPrefixOf` stripF fmt
-         stripF :: FSpecFormat -> String
-         stripF fmt = case map toLower . show $ fmt of
-                'f':tl -> tl
-                xs -> fatal $ "All formats used to start with an 'F': "<>show xs
+              matches fmt = T.toLower s `T.isPrefixOf` stripF fmt
+         stripF :: FSpecFormat -> Text
+         stripF fmt = case T.uncons . T.toLower . tshow $ fmt of
+                Just ('f',tl) -> tl
+                xs -> fatal $ "All formats used to start with an 'F': "<>tshow xs
          allFormats :: [FSpecFormat]
          allFormats = [minBound..]
 

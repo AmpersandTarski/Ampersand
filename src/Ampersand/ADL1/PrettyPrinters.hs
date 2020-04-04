@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.ADL1.PrettyPrinters(Pretty(..),prettyPrint)
 where
 
@@ -16,8 +16,8 @@ import qualified RIO.Text.Partial as Partial(replace)  --TODO: Get rid of replac
 import qualified RIO.Set as Set
 import           Text.PrettyPrint.Leijen
 
-prettyPrint :: Pretty a => a -> String
-prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
+prettyPrint :: Pretty a => a -> Text
+prettyPrint x = T.pack $ displayS (renderPretty rfrac col_width doc) ""
         where col_width = 120
               rfrac = 0.4
               doc = pretty x
@@ -34,37 +34,37 @@ prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
 perline :: Pretty a => [a] -> Doc
 perline = vsep . map pretty
 
-quote :: String -> Doc
+quote :: Text -> Doc
 quote = text.show
 
-quotePurpose :: String -> Doc
+quotePurpose :: Text -> Doc
 quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
-        where escapeExpl = text.escapeCommentStart.escapeLineComment.escapeExplEnd
+        where escapeExpl = text.T.unpack.escapeCommentStart.escapeLineComment.escapeExplEnd
               escapeCommentStart = escape "{-"
               escapeLineComment = escape "--"
               escapeExplEnd = escape "+}"
-              escape x = replace' x (L.intersperse ' ' x)
+              escape x = replace' x (T.intersperse ' ' x)
 
-isId :: String -> Bool
+isId :: Text -> Bool
 isId xs = 
-  case xs of
-   []  -> False
-   h:_ -> all isIdChar xs && isFirstIdChar h && xs `notElem` keywords
+  case T.uncons xs of
+   Nothing    -> False
+   Just (h,_) -> T.all isIdChar xs && isFirstIdChar h && xs `notElem` map T.pack keywords
        where isFirstIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']
              isIdChar x = isFirstIdChar x || elem x ['0'..'9']
 
-isUpperId :: String -> Bool
+isUpperId :: Text -> Bool
 isUpperId xs = 
-  case xs of
-   []  -> False
-   h:_ -> isId xs && h `elem` ['A'..'Z']
+  case T.uncons xs of
+   Nothing    -> False
+   Just (h,_) -> isId xs && h `elem` ['A'..'Z']
 
-maybeQuote :: String -> Doc
-maybeQuote a = if isId a then text a else quote a
+maybeQuote :: Text -> Doc
+maybeQuote a = if isId a then (text . T.unpack) a else quote a
 
 -- adds quotes unless it's an upper identifier
-quoteConcept :: String -> Doc
-quoteConcept a = if isUpperId a then text a else quote a
+quoteConcept :: Text -> Doc
+quoteConcept a = if isUpperId a then (text . T.unpack) a else quote a
 
 prettyhsep :: Pretty a => [a] -> Doc
 prettyhsep = hsep . map pretty
@@ -76,8 +76,8 @@ listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
 listOf1 :: Pretty a => NE.NonEmpty a -> Doc
 listOf1 = listOf . NE.toList
-separate :: Pretty a => String -> [a] -> Doc
-separate d xs = encloseSep empty empty (text d) $ map pretty xs
+separate :: Pretty a => Text -> [a] -> Doc
+separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
 instance Pretty P_Context where
     pretty (PCtx nm _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas) =
@@ -133,11 +133,11 @@ instance Pretty P_Pattern where
 
 instance Pretty P_Relation where
     pretty (P_Sgn nm sign prps pragma mean _) =
-        text "RELATION" <+> text nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
+        text "RELATION" <+> (text . T.unpack) nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
         where props | prps == Set.fromList [Sym, Asy] = text "[PROP]"
                     | null prps                       = empty
                     | otherwise                       = text ("["++(L.intercalate ",". map show . Set.toList) prps ++ "]") -- do not prettyprint list of properties.
-              pragmas | null (concat pragma) = empty
+              pragmas | T.null (T.concat pragma) = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
 
 instance Pretty a => Pretty (Term a) where
@@ -183,7 +183,7 @@ instance Pretty TermPrim where
         PNamedR rel -> pretty rel
 
 instance Pretty P_NamedRel where
-    pretty (PNamedRel _ str mpSign) = text str <~> mpSign
+    pretty (PNamedRel _ str mpSign) = (text . T.unpack) str <~> mpSign
 
 instance Pretty (PairView TermPrim) where
     pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
@@ -207,14 +207,14 @@ instance Pretty (P_Rule TermPrim) where
                 perline mean <+\>
                 perline msg <~\>
                 viol
-           where rName = if null nm then empty
+           where rName = if T.null nm then empty
                          else maybeQuote nm <> text ":"
 
 instance Pretty ConceptDef where
     pretty (Cd _ cpt def ref _) -- from, the last argument, is not used in the parser
         = text "CONCEPT" <+> quoteConcept cpt
                <+> quote def <+> maybeText ref
-        where maybeText txt = if null txt then empty
+        where maybeText txt = if T.null txt then empty
                               else quote txt
 
 instance Pretty P_Population where
@@ -253,17 +253,17 @@ instance Pretty a => Pretty (P_BoxItem a) where
         where crud Nothing = empty
               crud (Just cruds) = pretty cruds
               view Nothing  = empty
-              view (Just v) = text ("<" ++ v ++ ">")
+              view (Just v) = (text . T.unpack) ("<" <> v <> ">")
 instance Pretty P_Cruds where
-    pretty (P_Cruds _ str) = text str
+    pretty (P_Cruds _ str) = (text . T.unpack) str
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
                 P_Box _ c bs         -> box_type c <+> text "[" <> listOf bs <> text "]"
                 P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO "else "")++"INTERFACE") <+> maybeQuote str
-            where box_type Nothing  = text "BOX"
+            where box_type Nothing  = (text . T.unpack) "BOX"
                   box_type (Just x) 
-                   | x `elem` ["ROWS", "COLS", "TABS"] = text x
-                   | otherwise = text "BOX" <+> text ("<"++x++">") 
+                   | x `elem` ["ROWS", "COLS", "TABS"] = (text . T.unpack) x
+                   | otherwise = text "BOX" <+> (text . T.unpack) ("<"<>x<>">") 
 
 instance Pretty (P_IdentDf TermPrim) where
     pretty (P_Id _ lbl cpt ats) =
@@ -273,10 +273,10 @@ instance Pretty (P_IdentSegmnt TermPrim) where
     pretty (P_IdentExp obj) =
       case obj of
         (P_BxExpr nm _ ctx _ mView _)
-           -> (if null nm
+           -> (if T.null nm
                then pretty ctx -- no label
                else maybeQuote nm <> text ":" <~> ctx
-              ) <+> view mView
+              ) <+> (view . fmap T.unpack) mView
         (P_BxTxt  nm _ str)
            -> maybeQuote nm 
               <~> text "TXT" <+> quote str
@@ -293,7 +293,7 @@ instance Pretty (P_ViewD TermPrim) where
                     <+> braces (listOf ats) <~> html <+> text "ENDVIEW"
 
 instance Pretty ViewHtmlTemplate where
-    pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
+    pretty (ViewHtmlTemplateFile file) = text "HTML" <+> text "TEMPLATE" <+> quote (T.pack file)
 instance Pretty (P_ViewSegment TermPrim) where
     pretty (P_ViewSegment mlab _ pl)
         = ( case mlab of 
@@ -310,7 +310,7 @@ instance Pretty PPurpose where
              <+\> quotePurpose (mString markup)
         where lang = mFormat markup
               refs rs = if null rs then empty
-                        else text "REF" <+> quote (L.intercalate "; " rs)
+                        else text "REF" <+> quote (T.intercalate "; " rs)
 
 instance Pretty PRef2Obj where
     pretty p = case p of
@@ -369,7 +369,7 @@ instance Pretty PAtomValue where
     pretty pav =  
       case pav of 
        PSingleton   _ _ mav -> case mav of
-                                Nothing  -> fatal ("The singleton "++show pav++" has no type, so it cannot be accuratly prettyprinted in a population statement.")
+                                Nothing  -> fatal ("The singleton "<>tshow pav<>" has no type, so it cannot be accuratly prettyprinted in a population statement.")
                                 Just val -> text "{" <+> pretty val <+> text "}"
        ScriptString   _ s -> text . show $ s
        XlsxString     _ s -> text . show $ s
@@ -381,9 +381,8 @@ instance Pretty PAtomValue where
        ScriptDateTime _ x -> text . show $ x
 
 
-replace' :: String -> String -> String -> String
-replace' needle replacement haystack =
-   case needle of 
-     [] -> fatal "Empty needle."
-     _  -> T.unpack $ Partial.replace (T.pack needle) (T.pack replacement) (T.pack haystack)
+replace' :: Text -> Text -> Text -> Text
+replace' needle replacement haystack 
+   | T.null needle = fatal "Empty needle."
+   | otherwise = Partial.replace needle replacement haystack
 

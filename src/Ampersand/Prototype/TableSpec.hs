@@ -25,10 +25,10 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
 data TableSpec
-  = TableSpec { tsCmnt :: [String]  -- Without leading "// "
-              , tsName :: String
+  = TableSpec { tsCmnt :: [Text]  -- Without leading "// "
+              , tsName :: Text
               , tsflds :: [AttributeSpec]
-              , tsKey  ::  String
+              , tsKey  ::  Text
               }
 data AttributeSpec
   = AttributeSpec { fsname :: Text
@@ -38,7 +38,7 @@ data AttributeSpec
                   }
 
 getTableName :: TableSpec -> Text
-getTableName = T.pack . tsName
+getTableName = tsName
 
 
 plug2TableSpec :: PlugSQL -> TableSpec
@@ -58,12 +58,12 @@ plug2TableSpec plug
      , tsKey  = case (plug, (NE.head . plugAttributes) plug) of
                  (BinSQL{}, _)   -> if all (suitableAsKey . attType) (plugAttributes plug)
                                     then "PRIMARY KEY (" 
-                                            <> L.intercalate ", " (NE.toList $ fmap (show . attName) (plugAttributes plug))
+                                            <> T.intercalate ", " (NE.toList $ fmap (tshow . attName) (plugAttributes plug))
                                             <> ")"
                                     else ""
                  (TblSQL{}, primFld) ->
                       case attUse primFld of
-                         PrimaryKey _ -> "PRIMARY KEY (" <> (show . attName) primFld <> ")"
+                         PrimaryKey _ -> "PRIMARY KEY (" <> (tshow . attName) primFld <> ")"
                          ForeignKey c -> fatal ("ForeignKey "<>name c<>"not expected here!")
                          PlainAttr    -> ""
      }
@@ -71,7 +71,7 @@ plug2TableSpec plug
 createTableSql :: Bool -> TableSpec -> SqlQuery
 createTableSql withComment tSpec
   | withComment = SqlQueryPretty $
-      ( map T.pack . commentBlockSQL . tsCmnt $ tSpec
+      ( commentBlockSQL . tsCmnt $ tSpec
       ) <>
       [header] <>
       wrap cols <>
@@ -84,7 +84,7 @@ createTableSql withComment tSpec
       " " <> T.unwords endings
   where
     header :: Text
-    header = "CREATE TABLE "<>(doubleQuote . T.pack . tsName $ tSpec)
+    header = "CREATE TABLE "<>(doubleQuote . tsName $ tSpec)
     cols :: [Text]
     cols = [ T.pack [pref] <> " " <> addColumn att 
            | (pref, att) <- zip ('(' : L.repeat ',') (tsflds tSpec)]
@@ -92,7 +92,7 @@ createTableSql withComment tSpec
     mKey =
       case tsKey tSpec of
         "" -> Nothing
-        x  -> Just . T.pack $ ", "<> x
+        x  -> Just $ ", "<> x
     endings :: [Text]
     endings =   
       [ ", " <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
@@ -104,7 +104,7 @@ createTableSql withComment tSpec
     addColumn :: AttributeSpec -> Text
     addColumn att 
        =    doubleQuote (fsname att) <> " " 
-         <> (T.pack . showSQL . fstype) att 
+         <> (showSQL . fstype) att 
          <> (if fsIsPrimKey att then " UNIQUE" else "")
          <> (if fsDbNull att then " DEFAULT NULL" else " NOT NULL")
          <> " /* "
@@ -113,15 +113,15 @@ createTableSql withComment tSpec
          
 showColumsSql :: TableSpec -> SqlQuery
 showColumsSql tSpec = SqlQuerySimple $
-       "SHOW COLUMNS FROM "<>(doubleQuote . T.pack . tsName $ tSpec)
+       "SHOW COLUMNS FROM "<>(doubleQuote . tsName $ tSpec)
 
 dropTableSql :: TableSpec -> SqlQuery
 dropTableSql tSpec = SqlQuerySimple $
-       "DROP TABLE "<>(doubleQuote . T.pack . tsName $ tSpec)
+       "DROP TABLE "<>(doubleQuote . tsName $ tSpec)
 
 fld2AttributeSpec ::SqlAttribute -> AttributeSpec
 fld2AttributeSpec att 
-  = AttributeSpec { fsname = T.pack (name att)
+  = AttributeSpec { fsname = name att
                   , fstype = attType att
                   , fsIsPrimKey = isPrimaryKey att
                   , fsDbNull = attDBNull att 
@@ -153,17 +153,17 @@ insertQuery withComments tableName attNames tblRecords
 class SomeValue a where
   repr :: a -> Text
 instance SomeValue AAtomValue where
-  repr = T.pack . showValSQL
-instance SomeValue String where
-  repr = T.pack
+  repr = showValSQL
+instance SomeValue Text where
+  repr = id
 
 tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec = 
  createTableSql withComment tSpec :
- [SqlQuerySimple . T.pack $ 
-    ( "CREATE INDEX "<> show (tsName tSpec<>"_"<>show i)
-    <>" ON "<>show (tsName tSpec) <> " ("
-    <> (show . T.unpack . fsname $ fld)<>")"
+ [SqlQuerySimple $ 
+    ( "CREATE INDEX "<> tshow (tsName tSpec<>"_"<>tshow i)
+    <>" ON "<>tshow (tsName tSpec) <> " ("
+    <> (tshow . fsname $ fld)<>")"
     )
  | (i,fld) <- zip [0..(maxIndexes - 1)]
             . filter (suitableAsKey . fstype)

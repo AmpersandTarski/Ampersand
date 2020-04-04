@@ -22,6 +22,7 @@ import qualified RIO.List as L
 import qualified RIO.Map as Map 
 import qualified RIO.Map.Partial as PARTIAL --TODO: Get rid of partial functions.
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
  
 -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
 -- that each sublist in the result contains only equal elements, and all equal elements are in
@@ -61,15 +62,15 @@ getCycles edges' =
       graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
       keyFor v = fromMaybe fatalError $ L.elemIndex v allVertices
         where
-          fatalError = fatal $ L.intercalate "\n" $
-              [ "v ("<>show (typeOf v) <>") = "<>show v
-              , "length edges = "<>show (length edges)
+          fatalError = fatal $ T.intercalate "\n" $
+              [ "v ("<>tshow (typeOf v) <>") = "<>tshow v
+              , "length edges = "<>tshow (length edges)
               , "edges = "
-              ]++map (("  "++) .show) edges++
+              ]<>map (("  "<>) .tshow) edges<>
               [ "allVertices ="
-              ]++map (("  "++) .show) allVertices++
+              ]<>map (("  "<>) .tshow) allVertices<>
               [ "graphEdges ="
-              ]++map (("  "++) .show) graphEdges
+              ]<>map (("  "<>) .tshow) graphEdges
 
 -- |  Warshall's transitive closure algorithm
 transClosureMap' :: Ord a => Map.Map a [a] -> Map.Map a [a]

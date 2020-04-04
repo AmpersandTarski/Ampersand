@@ -6,23 +6,22 @@ module Ampersand.Output.ToJSON.Settings
 where
 import           Ampersand.Output.ToJSON.JSONutils 
 import           Data.Hashable
-import qualified RIO.Text as T
 
 data Settings = Settings 
-  { sngJSONglobal_contextName :: String
-  , sngJSONmysql_dbHost       :: String
-  , sngJSONmysql_dbName       :: String
-  , sngJSONmysql_dbUser       :: String
-  , sngJSONmysql_dbPass       :: String
-  , sngJSONcompiler_version   :: String
-  , sngJSONcompiler_env       :: String
-  , sngJSONcompiler_modelHash :: String
+  { sngJSONglobal_contextName :: Text
+  , sngJSONmysql_dbHost       :: Text
+  , sngJSONmysql_dbName       :: Text
+  , sngJSONmysql_dbUser       :: Text
+  , sngJSONmysql_dbPass       :: Text
+  , sngJSONcompiler_version   :: Text
+  , sngJSONcompiler_env       :: Text
+  , sngJSONcompiler_modelHash :: Text
   } deriving (Generic, Show)
 instance ToJSON Settings where
   toJSON = amp2Jason'
 instance JSON' FSpec Settings where
  fromAmpersand' env fSpec _ = Settings 
-  { sngJSONglobal_contextName = T.unpack (fsName fSpec)
+  { sngJSONglobal_contextName = fsName fSpec
   , sngJSONmysql_dbHost       = view sqlHostL env
   , sngJSONmysql_dbName       = case view dbNameL env of
                                   Nothing -> name fSpec
@@ -30,8 +29,8 @@ instance JSON' FSpec Settings where
   , sngJSONmysql_dbUser       = view sqlLoginL env
   , sngJSONmysql_dbPass       = view sqlPwdL env
   , sngJSONcompiler_version   = ampersandVersionStr
-  , sngJSONcompiler_env       = show env 
-  , sngJSONcompiler_modelHash = show . hash $ fSpec
+  , sngJSONcompiler_env       = tshow env
+  , sngJSONcompiler_modelHash = tshow . hash $ fSpec
   } 
 
          

@@ -19,10 +19,11 @@ import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Input.ADL1.Lexer
 import           Ampersand.Input.ADL1.Parser
+import           Ampersand.Input.Archi.ArchiAnalyze
 import           Ampersand.Input.PreProcessor
 import           Ampersand.Input.Xslx.XLSX
-import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,PrototypeContext))
 import           Ampersand.Misc.HasClasses
+import           Ampersand.Prototype.StaticFiles_Generated
 import           RIO.Char(toLower)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
@@ -30,7 +31,6 @@ import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
 import           Text.Parsec.Prim (runP)
-import Ampersand.Input.Archi.ArchiAnalyze
 
 
 
@@ -99,7 +99,7 @@ parseADLs parsedFilePaths fpIncludes =
                               (P_Context, [ParseCandidate]) 
                            -> RIO env (Guarded [(ParseCandidate, P_Context)])
               parseTheRest (ctx, includes) = 
-                  whenCheckedM (parseADLs (parsedFilePaths++[x]) (includes++xs)) 
+                  whenCheckedM (parseADLs (parsedFilePaths<>[x]) (includes<>xs)) 
                                           (\rst -> pure . pure $ (x,ctx):rst)        --return . pure . (:) (x,ctx) 
 
 data ParseCandidate = ParseCandidate 
@@ -124,44 +124,44 @@ parseSingleADL pc
       exists <- liftIO $ doesFileExist filePath
       if isJust (pcFileKind pc) || exists
       then parseSingleADL'
-      else return $ mkErrorReadingINCLUDE (pcOrigin pc) [ "While looking for "<>filePath
+      else return $ mkErrorReadingINCLUDE (pcOrigin pc) [ "While looking for "<>T.pack filePath
                                                         , "   File does not exist." ]
     where
      filePath = pcCanonical pc
      parseSingleADL' :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env (Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
-         | extension == ".xlsx" =  -- This feature enables the parsing of Excell files, that are prepared for Ampersand.
-             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
-                ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
-                }
-         | extension == ".xml" = -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
-             do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
-                ; logInfo (display (T.pack filePath) <> " has been interpreted as an Archi-repository.")
-                ; case ctxFromArchi of
+         | -- This feature enables the parsing of Excell files, that are prepared for Ampersand.
+           extension == ".xlsx" = do 
+              popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
+              return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+         | -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
+           extension == ".xml" = do 
+              ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
+              logInfo (display (T.pack filePath) <> " has been interpreted as an Archi-repository.")
+              case ctxFromArchi of
                     Checked ctx _ -> do
-                         writeFileUtf8 "ArchiMetaModel.adl" (T.pack $ showP ctx)
+                         writeFileUtf8 "ArchiMetaModel.adl" (showP ctx)
                          logInfo ("ArchiMetaModel.adl written")
                     Errors _ -> pure ()
-                ; return ((,) <$> ctxFromArchi
-                              <*> pure [] -- ArchiMate file cannot contain include files
+              return ((,) <$> ctxFromArchi
+                          <*> pure [] -- ArchiMate file cannot contain include files
                          )
-                }
-         | otherwise =
-             do { mFileContents
+         | otherwise = do
+              mFileContents
                     <- case pcFileKind pc of
                        Just fileKind
                          -> case getStaticFileContent fileKind filePath of
-                              Just cont -> return (Right . T.pack $ stripBom cont)
-                              Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++filePath++"`.")
+                              Just cont -> return (Right . stripBom . decodeUtf8 $ cont)
+                              Nothing -> fatal ("Statically included "<> tshow fileKind<> " files. \n  Cannot find `"<>T.pack filePath<>"`.")
                        Nothing
-                         -> readUTF8File filePath
-                ; case mFileContents of
-                    Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
+                         -> Right <$> readFileUtf8 filePath
+              case mFileContents of
+                    Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) (map T.pack err)
                     Right fileContents ->
                          let -- TODO: This should be cleaned up. Probably better to do all the file reading
                              --       first, then parsing and typechecking of each module, building a tree P_Contexts
                              meat :: Guarded (P_Context, [Include])
-                             meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= parseCtx filePath
+                             meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= parseCtx filePath . T.pack 
                              proces :: Guarded (P_Context,[Include]) -> RIO env (Guarded (P_Context, [ParseCandidate]))
                              proces (Errors err) = pure (Errors err)
                              proces (Checked (ctxts, includes) ws) = 
@@ -171,12 +171,11 @@ parseSingleADL pc
                                 foo xs = (\x -> (ctxts,x)) <$> sequence xs
                          in
                          proces meat
-                }
          where 
                include2ParseCandidate :: Include -> RIO env (Guarded ParseCandidate)
                include2ParseCandidate (Include org str defs) = do
                   let canonical = myNormalise ( takeDirectory filePath </> str )
-                      defineds  = processFlags (pcDefineds pc) defs
+                      defineds  = processFlags (pcDefineds pc) (map T.unpack defs)
                   return $ Checked ParseCandidate { pcBasePath  = Just filePath
                                         , pcOrigin    = Just org
                                         , pcFileKind  = pcFileKind pc
@@ -187,32 +186,31 @@ parseSingleADL pc
                -- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why System.Filepath doesn't support reduction of x/foo/../bar into x/bar. 
                -- However, for most Ampersand use cases, we will not deal with symlinks. 
                -- As long as that assumption holds, we can make the following reductions
-               myNormalise fp = joinDrive drive . joinPath $ f [] dirs ++ [file]
+               myNormalise fp = joinDrive drive . joinPath $ f [] dirs <> [file]
                  where
                    (drive,path) = splitDrive (normalise fp)
                    (dirs,file)  = case reverse $ splitPath path of
-                                   [] -> fatal ("Illegal filePath: "++show fp)
+                                   [] -> fatal ("Illegal filePath: "<>tshow fp)
                                    last:reverseInit -> (reverse reverseInit,last)
                    
                    f :: [FilePath] -> [FilePath] -> [FilePath]
                    f ds [] = ds
                    f ds (x:xs) | is "."  x = f ds xs   -- reduce /a/b/./c to /a/b/c/ 
                                | is ".." x = case reverse ds of
-                                              [] -> fatal ("Illegal filePath: "++show fp)
+                                              [] -> fatal ("Illegal filePath: "<>tshow fp)
                                               _:reverseInit -> f (reverse reverseInit) xs --reduce a/b/c/../d/ to a/b/d/
-                               | otherwise = f (ds++[x]) xs
-               is :: String -> FilePath -> Bool
+                               | otherwise = f (ds<>[x]) xs
+               is :: FilePath -> FilePath -> Bool
                is str fp = case L.stripPrefix str fp of
                              Just [chr] -> chr `elem` pathSeparators  
                              _          -> False
-               stripBom :: String -> String
-               stripBom ('\239':'\187':'\191': s) = s
-               stripBom s = s
+               stripBom :: Text -> Text
+               stripBom s = T.dropPrefix (T.pack ['\239','\187','\191']) s
                extension = map toLower $ takeExtension filePath
                catchInvalidXlsx :: RIO env a -> RIO env a
                catchInvalidXlsx m = catch m f
                  where f :: SomeException -> RIO env a
-                       f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "++show exception)
+                       f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "<>tshow exception)
 
 -- | To enable roundtrip testing, all data can be exported.
 -- For this purpose mkContextOfPopsOnly exports the population only
@@ -252,10 +250,10 @@ parse p fn ts =
 -- | Runs the given parser
 runParser :: AmpParser a -- ^ The parser to run
           -> FilePath    -- ^ Name of the file (for error messages)
-          -> String      -- ^ String to parse
+          -> Text      -- ^ Text to parse
           -> Guarded a   -- ^ The result
 runParser parser filename input =
-  let lexed = lexer filename input
+  let lexed = lexer filename (T.unpack input)
   in case lexed of
     Left err -> Errors . pure $ lexerError2CtxError err
     Right (tokens, lexerWarnings) 
@@ -265,15 +263,15 @@ runParser parser filename input =
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.
-parseRule :: String         -- ^ The string to be parsed
+parseRule :: Text         -- ^ The string to be parsed
           -> Term TermPrim  -- ^ The resulting rule
 parseRule str
    = case  runParser pRule "inside Haskell code" str of
        Checked result _ -> result
-       Errors  msg      -> fatal ("Parse errors in "++str++":\n   "++show msg)
+       Errors  msg      -> fatal ("Parse errors in "<>str<>":\n   "<>tshow msg)
 
 -- | Parses an Ampersand context
 parseCtx :: FilePath -- ^ The file name (used for error messages)
-         -> String   -- ^ The string to be parsed
+         -> Text   -- ^ The string to be parsed
          -> Guarded (P_Context, [Include]) -- ^ The context and a list of included files
 parseCtx = runParser pContext

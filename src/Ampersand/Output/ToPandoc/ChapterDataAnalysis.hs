@@ -8,10 +8,10 @@ import           Ampersand.FSpec.ToFSpec.ADL2Plug
 import           Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
-import           RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
@@ -21,7 +21,7 @@ chpDataAnalysis :: (HasDirOutput env, HasDocumentOpts env)
 chpDataAnalysis env fSpec = (theBlocks, thePictures)
  where
    -- shorthand for easy localizing    
-  l :: LocalizedStr -> String
+  l :: LocalizedStr -> Text
   l = localize outputLang'
   outputLang' :: Lang
   outputLang' = outputLang env fSpec
@@ -92,13 +92,13 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                Dutch   -> para (case nrOfClasses of
                                   0 -> text "Er zijn geen gegevensverzamelingen."
                                   1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
-                                  _ -> text ("Er zijn "++count Dutch nrOfClasses "gegevensverzameling"++". ")
+                                  _ -> text ("Er zijn "<>count Dutch nrOfClasses "gegevensverzameling"<>". ")
                                     <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de twee nu volgende tabellen beschreven:"
                                )
                English -> para (case nrOfClasses of
                                   0 -> text "There are no entity types."
                                   1 -> text "There is only one entity type:"
-                                  _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
+                                  _ -> text ("There are "<>count English nrOfClasses "entity type" <>".")
                                     <> text "The details of each entity type are described (in alphabetical order) in the following two tables:"
                                )
        <> conceptTables
@@ -128,8 +128,8 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                . purposesDefinedIn fSpec outputLang' 
                $ c
                )
-           , (plain . text . show . Set.size . atomsInCptIncludingSmaller fSpec) c
-           , (plain . text . show) (percent (sum [ Set.size pairs
+           , (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c
+           , (plain . text . tshow) (percent (sum [ Set.size pairs
                                                  | attr<-attributesOfConcept fSpec c, pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
                                                  ]) (Set.size (atomsInCptIncludingSmaller fSpec c)*length (attributesOfConcept fSpec c)))
            ]
@@ -147,9 +147,9 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
          , (plain.text.l) (NL "Aantal"        , EN "Count") 
          ] 
          [ [ (plain . text . name) c
-           ,   -- max 20 voorbeelden van atomen van concept c
-             (plain . text . L.intercalate "\n" . map showA . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
-           , (plain . text . show . Set.size . atomsInCptIncludingSmaller fSpec) c
+           ]   -- max 20 voorbeelden van atomen van concept c
+         ++(map (plain . text . showA) . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
+         ++[ (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c
            ]
          | c <- L.sortBy (compare `on` name) 
               . Set.elems 
@@ -162,11 +162,11 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
        meaningOf :: A_Concept -> Blocks
        meaningOf = mconcat . map (fromList . string2Blocks ReST . cddef) . concDefs fSpec 
 
-  percent :: (Integral a, Show a) => a -> a -> String
+  percent :: (Integral a, Show a) => a -> a -> Text
   percent num denom
    = if denom==0
-     then show num
-     else show num++"("++show ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)++"%)"
+     then tshow num
+     else tshow num<>"("<>tshow ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)<>"%)"
   
 
   detailsOfClass :: Class -> Blocks
@@ -176,8 +176,8 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
         <> case clcpt cl of
              Nothing -> mempty
              Just cpt -> purposes2Blocks env (purposesDefinedIn fSpec outputLang' cpt)
-        <> (para . text . l) ( NL ("Deze gegevensverzameling heeft "++show n++" elementen en bevat de volgende attributen: ")
-                             , EN ("This entity type has "++show n++" elements and contains the following attributes: ")
+        <> (para . text . l) ( NL ("Deze gegevensverzameling heeft "<>tshow n<>" elementen en bevat de volgende attributen: ")
+                             , EN ("This entity type has "<>tshow n<>" elements and contains the following attributes: ")
                              )
         <> simpleTable [(plain.text.l) (NL "Attribuut", EN "Attribute")
                        ,(plain.text.l) (NL "Type"     , EN "Type")
@@ -185,9 +185,9 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                        ,(plain.text.l) (NL "#uniek"   , EN "#unique")
                      ]
                        ( [[ (plain.text.name) attr
-                          , (plain.text) ((name.target.attExpr) attr++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                          , (plain.text) ((name.target.attExpr) attr<>"("<>tshow nTgtConcept<>")")   -- use "tshow.attType" for the technical type.
                           , (plain . text) (percent (Set.size pairs) n)
-                          , (plain . text . show . Set.size . Set.map apRight) pairs
+                          , (plain . text . tshow . Set.size . Set.map apRight) pairs
                           ]
                          | Just cpt <-[clcpt cl], attr<-attributesOfConcept fSpec cpt
                          , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr::SqlAttribute)]
@@ -195,10 +195,10 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                          ]
                          <>
                          [[ (plain.text.name) attr
-                          , (plain.text) ((name.target.attExpr) attr++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                          , (plain.text) ((name.target.attExpr) attr<>"("<>tshow nTgtConcept<>")")   -- use "tshow.attType" for the technical type.
                           , (plain . text) (percent (Set.size pairs) n)
-                          , (plain . text . show . Set.size . Set.map apRight) pairs
-                       -- , (plain . text . show) nTgtConcept
+                          , (plain . text . tshow . Set.size . Set.map apRight) pairs
+                       -- , (plain . text . tshow) nTgtConcept
                           ]
                          | Just cpt <-[clcpt cl], cpt'<-generalizationsOf fSpec cpt, cpt/=cpt', attr<-attributesOfConcept fSpec cpt'
                          , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr::SqlAttribute)]
@@ -217,10 +217,10 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                             ,(plain.text.l) (NL "Target" , EN "Target")
                             ,(plain.text.l) (NL "uniek"   , EN "unique")
                             ]
-                            [[ (plain.text) ((name.source) rel++"("++show nSrcConcept++")")   -- use "show.attType" for the technical type.
+                            [[ (plain.text) ((name.source) rel<>"("<>tshow nSrcConcept<>")")   -- use "tshow.attType" for the technical type.
                              , (plain . text) (percent (Set.size (Set.map apLeft pairs)) nSrcConcept)
-                             , (plain.text) (name rel++"("++show (Set.size pairs)++")")
-                             , (plain.text) ((name.target) rel++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                             , (plain.text) (name rel<>"("<>tshow (Set.size pairs)<>")")
+                             , (plain.text) ((name.target) rel<>"("<>tshow nTgtConcept<>")")   -- use "tshow.attType" for the technical type.
                              , (plain . text) (percent (Set.size (Set.map apRight pairs)) nTgtConcept)
                              ]
                             | Just rel<-map assmdcl asscs
@@ -292,10 +292,10 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
     <> para (let nrOfTables = length (filter isTable (plugInfos fSpec))
              in
              case outputLang' of
-        Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
-        English -> text ("The technical datamodel consists of the following "++show nrOfTables++" tables:")
+        Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "<>tshow nrOfTables<>" tabellen:")
+        English -> text ("The technical datamodel consists of the following "<>tshow nrOfTables<>" tables:")
             )
-    <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
+    <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (T.toLower . name)) (plugInfos fSpec), isTable p]
    where
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
@@ -311,9 +311,9 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
              InternalPlug tbl@TblSQL{}
                -> (case outputLang' of
                 Dutch
-                   -> para (text $ "Deze tabel heeft de volgende "++(show.length.attributes) tbl++" attributen:")
+                   -> para (text $ "Deze tabel heeft de volgende "<>(tshow.length.attributes) tbl<>" attributen:")
                 English
-                   -> para (text $ "This table has the following "++(show.length.attributes) tbl++" attributes:")
+                   -> para (text $ "This table has the following "<>(tshow.length.attributes) tbl<>" attributes:")
                   )
                <> showAttributes (plugAttributes tbl)
              InternalPlug bin@BinSQL{}
@@ -322,7 +322,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                         <> primExpr2pandocMath outputLang' 
                                                (case dLkpTbl bin of
                                                   [store] -> EDcD (rsDcl store)
-                                                  ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
+                                                  ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "<>tshow (length ss))
                                                )
                         <> (text.l) (NL " implementeert. De tabel bestaat uit de volgende kolommen:"
                                     ,EN ". It contains the following columns:")
@@ -350,7 +350,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                                           <> primExpr2pandocMath outputLang' (attExpr att)
                                           <> "."
                       <> linebreak
-                      <> (code.show.attType) att
+                      <> (code.tshow.attType) att
                       <> ", "
                       <> (case outputLang' of
                             Dutch
@@ -395,12 +395,12 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
       else mconcat $
                  [ header (sectionLevel+1) . text $ l title 
                  , para . text $ l intro
-                 ] ++
+                 ] <>
                  map (docRule heading) (Set.elems rules)
     
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat
-       [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
+       [ plain $ strong (text (l heading <> ": ") <> emph (text (rrnm rule)))
        , fromList . concatMap (amPandoc . explMarkup) . purposesDefinedIn fSpec outputLang' $ rule
        , printMeaning outputLang' rule
        , para (showMath rule)
@@ -428,16 +428,16 @@ primExpr2pandocMath lang e =
            case lang of
              Dutch -> text "de relatie "
              English -> text "the relation "
-        <> math ((name.source) d++ " \\rightarrow {"++name d++"} "++(name.target) d)
+        <> math ((name.source) d<> " \\rightarrow {"<>name d<>"} "<>(name.target) d)
   (EFlp (EDcD d)) ->
            case lang of
              Dutch -> text "de relatie "
              English -> text "the relation "
-        <> math ((name.source) d++ " \\leftarrow  {"++name d++"} "++(name.target) d)
+        <> math ((name.source) d<> " \\leftarrow  {"<>name d<>"} "<>(name.target) d)
   (EIsc (r1,_)) ->
            let srcTable = case r1 of
                             EDcI c -> c
-                            _      -> fatal ("Unexpected expression: "++show r1)
+                            _      -> fatal ("Unexpected expression: "<>tshow r1)
            in
            case lang of
              Dutch -> text "de identiteitsrelatie van "
@@ -453,4 +453,4 @@ primExpr2pandocMath lang e =
              Dutch -> text "de identiteitsrelatie van "
              English -> text "the identityrelation of "
         <> math (name c)
-  _   -> fatal ("Have a look at the generated Haskell to see what is going on..\n"++show e)
+  _   -> fatal ("Have a look at the generated Haskell to see what is going on..\n"<>tshow e)

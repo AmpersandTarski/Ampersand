@@ -8,7 +8,9 @@ Maintainer  : sjcjoosten
 This module allows you to build a finite semi-Lattice using equalities over intersections of atoms, see @addEquality@.
 After changing the data type, see @optimize1@, the structure allows you to perform several queries, such as finding (sets of) least/greatests bounds.
 -}
-{-# LANGUAGE DeriveFunctor, ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.ADL1.Lattices 
     ( findExact,findUpperbounds,optimize1
     , Op1EqualitySystem,addEquality,emptySystem

@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Options.PopulationOptsParser 
    (populationOptsParser)
 where
@@ -7,9 +8,7 @@ import           Ampersand.Basics
 import           Ampersand.Misc.HasClasses (PopulationOpts (..),PopulationOutputFormat(..))
 import           Ampersand.Options.FSpecGenOptsParser
 import           Options.Applicative
-import           RIO.Char
-import qualified RIO.List as L
-
+import qualified RIO.Text as T
 -- | Command-line parser for ProofOpts.
 populationOptsParser :: Parser PopulationOpts
 populationOptsParser = 
@@ -22,7 +21,7 @@ populationOptsParser =
        <*> outputFormatP
 
 outputFormatP :: Parser PopulationOutputFormat
-outputFormatP = toFormat <$> strOption
+outputFormatP = toFormat . T.pack <$> strOption
       (  long "outputFormat"
       <> metavar "FORMAT"
       <> value (show XLSX)
@@ -36,21 +35,21 @@ outputFormatP = toFormat <$> strOption
   where 
       allformats :: [PopulationOutputFormat]
       allformats = [minBound..]
-      toFormat :: String -> PopulationOutputFormat
+      toFormat :: Text -> PopulationOutputFormat
       toFormat s = case filter matches allformats of
             -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
             --        See https://hackage.haskell.org/package/optparse-applicative
-                   [] -> fatal $ unlines
+                   [] -> fatal $ T.unlines
                         ["No matching recipe found. Possible recipes are:"
-                        , "  "<>L.intercalate ", " (map show allformats)
+                        , "  "<>T.intercalate ", " (map tshow allformats)
                         , "  You specified: `"<>s<>"`"
                         ]
                    [f] -> f
-                   xs -> fatal $ unlines 
+                   xs -> fatal $ T.unlines 
                         [ "Ambiguous recipe specified. Possible matches are:"
-                        , "  "<>L.intercalate ", " (map show xs)
+                        , "  "<>T.intercalate ", " (map tshow xs)
                         ]
             where
-              matches :: (Show a) => a -> Bool
-              matches x = map toLower s `L.isPrefixOf` (map toLower $ show x)
+              matches :: PopulationOutputFormat -> Bool
+              matches x = T.toLower s `T.isPrefixOf` (T.toLower $ tshow x)
 

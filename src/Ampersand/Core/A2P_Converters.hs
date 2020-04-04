@@ -1,4 +1,6 @@
-{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Core.A2P_Converters (
     aAtomValue2pAtomValue
   , aConcept2pConcept
@@ -76,7 +78,7 @@ aRule2pRule rul =
 
 aRelation2pRelation :: Relation -> P_Relation
 aRelation2pRelation dcl = 
- P_Sgn { dec_nm     = T.unpack $ decnm dcl
+ P_Sgn { dec_nm     = decnm dcl
        , dec_sign   = aSign2pSign (decsgn dcl)
        , dec_prps   = decprps dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]
@@ -87,7 +89,7 @@ aRelation2pRelation dcl =
 aRelation2pNamedRel :: Relation -> P_NamedRel
 aRelation2pNamedRel dcl = PNamedRel
   { pos      = decfpos dcl
-  , p_nrnm   = T.unpack $ decnm dcl
+  , p_nrnm   = decnm dcl
   , p_mbSign = Just . aSign2pSign $ decsgn dcl
   }
  
@@ -168,14 +170,14 @@ aPurpose2pPurpose p =
 aPopulation2pPopulation :: Population -> P_Population
 aPopulation2pPopulation p =
  case p of 
-  ARelPopu{} -> P_RelPopu { pos  = Origin $ "Origin is not present in Population("++name pDcl++") from A-Structure"
+  ARelPopu{} -> P_RelPopu { pos  = Origin $ "Origin is not present in Population("<>name pDcl<>") from A-Structure"
                           , p_nmdr  = pDcl
                           , p_popps = map aAtomPair2pAtomPair (Set.elems $ popps p)
                           , p_src = Nothing 
                           , p_tgt = Nothing
                           }
       where pDcl = aRelation2pNamedRel (popdcl p)
-  ACptPopu{} -> P_CptPopu { pos  = Origin $ "Origin is not present in Population("++name (popcpt p)++") from A-Structure"
+  ACptPopu{} -> P_CptPopu { pos  = Origin $ "Origin is not present in Population("<>name (popcpt p)<>") from A-Structure"
                           , p_cpt  = aCpt2pCpt (popcpt p)
                           , p_popas = map aAtomValue2pAtomValue (popas p)
                           }
@@ -303,20 +305,20 @@ aAtomValue2pAtomValue AtomValueOfONE = fatal "Unexpected AtomValueOfONE in conve
 aAtomValue2pAtomValue val =
   case aavtyp val of
     Alphanumeric     -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     BigAlphanumeric  -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     HugeAlphanumeric -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     Password         -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal  "Unexpected combination of value types"
-    Binary           -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
-    BigBinary        -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
-    HugeBinary       -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
+    Binary           -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    BigBinary        -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    HugeBinary       -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
     Date             -> case val of
                           AAVDate{} -> --TODO: Needs rethinking. A string or a double?
                                        ScriptString o (showValADL val)
@@ -335,7 +337,7 @@ aAtomValue2pAtomValue val =
                           AAVBoolean{} -> ComnBool o (aavbool val)
                           _            -> fatal "Unexpected combination of value types"
     Object           -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     TypeOfOne        -> fatal "Unexpected combination of value types"
   where
@@ -356,6 +358,6 @@ aSubIfc2pSubIfc sub =
                       }
 
 aCruds2pCruds :: Cruds -> P_Cruds
-aCruds2pCruds x = P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
+aCruds2pCruds x = P_Cruds (crudOrig x) (T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
    where f :: (Bool,Char) -> Char
          f (b,c) = (if b then toUpper else toLower) c

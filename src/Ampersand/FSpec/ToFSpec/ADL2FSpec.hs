@@ -14,7 +14,6 @@ import           Ampersand.FSpec.ToFSpec.Calc
 import           Ampersand.FSpec.ToFSpec.NormalForms 
 import           Ampersand.FSpec.ToFSpec.Populated 
 import           Ampersand.Misc.HasClasses
-import           RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
@@ -26,7 +25,7 @@ such as the code generator, the functional-specification generator, and future e
 makeFSpec :: (HasFSpecGenOpts env) =>
     env -> A_Context -> FSpec
 makeFSpec env context
- =      FSpec { fsName       = T.pack (name context)
+ =      FSpec { fsName       = name context
               , originalContext = context 
               , fspos        = ctxpos context
               , plugInfos    = allplugs
@@ -69,7 +68,7 @@ makeFSpec env context
               , getDefaultViewForConcept = getDefaultViewForConcept'
               , getAllViewsForConcept = getAllViewsForConcept'
               , conceptDefs  = ctxcds context
-              , fSexpls      = ctxps context ++ (concatMap ptxps $ patterns context)
+              , fSexpls      = ctxps context <> (concatMap ptxps $ patterns context)
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
@@ -107,7 +106,7 @@ makeFSpec env context
      typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
            [t] -> t
-           _   -> fatal ("concept "++name cpt++" should be in exactly one typology!")
+           _   -> fatal ("concept "<>name cpt<>" should be in exactly one typology!")
      pairsinexpr  :: Expression -> AAtomPairs
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> AAtomPairs
@@ -143,18 +142,18 @@ makeFSpec env context
                                 , popdcl = dcl
                                 , popps  = Set.unions [ popps pop | pop<-NE.toList eqclass ]
                                 }
-                   | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
+                   | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] <>
                    [ ACptPopu{ popcpt = popcpt (NE.head eqclass)
                              , popas  = (L.nub.concat) [ popas pop | pop<-NE.toList eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
-       where populations = ctxpopus context++concatMap ptups (patterns context)       
+       where populations = ctxpopus context<>concatMap ptups (patterns context)       
      allConjs = makeAllConjs env allrules
      fSpecAllConjsPerRule :: [(Rule, NE.NonEmpty Conjunct)]
      fSpecAllConjsPerRule = converseNE [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, Set.elems . bindedRelationsIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = 
-           converse [ (conj, L.nub $ smaller (source e) ++ smaller (target e)) 
+           converse [ (conj, L.nub $ smaller (source e) <> smaller (target e)) 
                     | conj <- allConjs
                     , e    <- Set.elems . modifyablesByInsOrDel . rc_conjunct $ conj ]
                where 
@@ -196,15 +195,15 @@ makeFSpec env context
 --                            []   -> []
 --                            h:tl -> NE.toList $ fmap exprCps2list (h NE.:| tl)
 --            -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
---                 , rel<-NE.init cons++[flp r | r<-NE.tail cons]
+--                 , rel<-NE.init cons<>[flp r | r<-NE.tail cons]
 --                 ]
   -- Lookup view by id in fSpec.
-     lookupView' :: String -> ViewDef
+     lookupView' :: Text -> ViewDef
      lookupView'  viewId =
        case filter (\v -> name v == viewId) $ viewDefs context of
-         []   -> fatal ("Undeclared view " ++ show viewId ++ ".") -- Will be caught by static analysis
+         []   -> fatal ("Undeclared view " <> tshow viewId <> ".") -- Will be caught by static analysis
          [vd] -> vd
-         vds  -> fatal ("Multiple views with id " ++ show viewId ++ ": " ++ show (map name vds)) -- Will be caught by static analysis
+         vds  -> fatal ("Multiple views with id " <> tshow viewId <> ": " <> tshow (map name vds)) -- Will be caught by static analysis
      
    -- get all views for a specific concept and all larger concepts.
      getAllViewsForConcept' :: A_Concept -> [ViewDef]
@@ -236,7 +235,7 @@ makeFSpec env context
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
                 | p <- uniqueNames [] (makeGeneratedSqlPlugs env context calcProps)
                 ]
-     qlfname x = if null ns then x else "ns"++ns++x
+     qlfname x = if T.null ns then x else "ns"<>ns<>x
        where ns = view namespaceL env
      --TODO151210 -> Plug A is overbodig, want A zit al in plug r
 --CONTEXT Temp
@@ -306,7 +305,7 @@ makeFSpec env context
 --      = foldl f [ [ x ] | x<-xs] (nub (map source xs) `Set.intersection` nub (map target xs))
 --        where
 --          f :: [[Expression]] -> A_Concept -> [[Expression]]
---          f q x = q ++ [l ++ r | l <- q, x == target (last l),
+--          f q x = q <> [l <> r | l <- q, x == target (last l),
 --                                 r <- q, x == source (head r), null (l `Set.intersection` r)]
 
 --  Step 4: i) generate interfaces starting with INTERFACE concept: I[Concept]
@@ -314,7 +313,7 @@ makeFSpec env context
 --          note: based on a theme one can pick a certain set of generated interfaces (there is not one correct set)
 --                default theme => generate interfaces from the clos total expressions and clos injective expressions (see step1-3).
 --                student theme => generate interface for each concept with relations where concept is source or target (note: step1-3 are skipped)
-     interfaceGen = step4a ++ step4b
+     interfaceGen = step4a <> step4b
      step4a :: [Interface]
      step4a
       = let recur :: [NE.NonEmpty Expression] -> [ObjectDef]
@@ -365,7 +364,7 @@ makeFSpec env context
                                  }
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
-             , ifcPrp      = "Interface " ++name c++" has been generated by Ampersand."
+             , ifcPrp      = "Interface " <>name c<>" has been generated by Ampersand."
              , ifcRoles    = []
              }
         | (c, objattributes) <- mapMaybe f $ eqCl (source . NE.head) plugPaths
@@ -391,9 +390,9 @@ makeFSpec env context
              }
         | ifcc<-step4a
         , let c   = source(objExpression (ifcObj ifcc))
-              nm'::Int->String
+              nm'::Int->Text
               nm' 0  = plural (ctxlang context) (name c)
-              nm' i  = plural (ctxlang context) (name c) ++ show i
+              nm' i  = plural (ctxlang context) (name c) <> tshow i
               nm = case [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)] of
                      []  -> fatal "impossible"
                      h:_ -> h
@@ -422,13 +421,13 @@ makeIfcControls params allConjs
   
 
 class Named a => Rename a where
- rename :: a->String->a
+ rename :: a->Text->a
  -- | the function uniqueNames ensures case-insensitive unique names like sql plug names
- uniqueNames :: [String]->[a]->[a]
+ uniqueNames :: [Text]->[a]->[a]
  uniqueNames taken xs
-  = [p | cl<-eqCl (map toLower.name) xs  -- each equivalence class cl contains (identified a) with the same map toLower (name p)
+  = [p | cl<-eqCl (T.toLower.name) xs  -- each equivalence class cl contains (identified a) with the same map toLower (name p)
        , p <-if name (NE.head cl) `elem` taken || length cl>1
-             then [rename p (name p++show i) | (p,i)<-zip (NE.toList cl) [(1::Int)..]]
+             then [rename p (name p<>tshow i) | (p,i)<-zip (NE.toList cl) [(1::Int)..]]
              else NE.toList cl
     ]
 
@@ -443,7 +442,7 @@ tblcontents ci ps plug
                                  [store] -> if rsStoredFlipped store
                                             then EFlp . EDcD . rsDcl $ store
                                             else        EDcD . rsDcl $ store
-                                 ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
+                                 ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "<>tshow (length ss))
                     in [[(Just . apLeft) p,(Just . apRight) p] |p<-Set.elems $ fullContents ci ps expr]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
@@ -468,10 +467,10 @@ tblcontents ci ps plug
                     = case [ p | p<-Set.elems pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
-                       ps' -> fatal . unlines $ 
+                       ps' -> fatal . T.unlines $ 
                                 [ "There is an attempt to populate multiple values into "
-                                , "     the row of table `"++name plug++"`, where id = "++show(showValADL a)++":"
-                                , "     Values to be inserted in field `"++name att++"` are: "++show (map (showValADL . apRight) ps')
+                                , "     the row of table `"<>name plug<>"`, where id = "<>tshow(showValADL a)<>":"
+                                , "     Values to be inserted in field `"<>name att<>"` are: "<>tshow (map (showValADL . apRight) ps')
                                 ] --this has happend before due to:
                                   --    when using --dev flag
                                   --  , when there are violations

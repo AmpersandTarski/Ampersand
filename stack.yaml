@@ -10,12 +10,26 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: 
-- pandoc-crossref-0.3.4.0
+- pandoc-crossref-0.3.6.1
 - roman-numerals-0.5.1.5
 - simple-sql-parser-0.4.4
 - SpreadsheetML-0.1
 - wl-pprint-1.2.1
 - yaml-config-0.4.0
+- pandoc-2.9.2
+- pandoc-types-1.20
+- HsYAML-0.2.1.0
+- doclayout-0.3
+- doctemplates-0.8.1
+- emojis-0.1
+- haddock-library-1.8.0
+- jira-wiki-markup-1.0.0
+- skylighting-0.8.3.2
+- skylighting-core-0.8.3.2
+- regex-pcre-builtin-0.95.1.1.8.43
+- regex-base-0.94.0.0
+- texmath-0.12.0.1
+- haskell-src-exts-1.23.0@sha256:1bb9f7e97d569e56973133cb075fdcc1bfd11f90d94b035b5cf44814bb39a73d,4541
 
 # Override default flag values for local packages and extra-deps
 flags:

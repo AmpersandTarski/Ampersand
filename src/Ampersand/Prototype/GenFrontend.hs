@@ -1,5 +1,6 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE DeriveDataTypeable,OverloadedStrings #-}
 module Ampersand.Prototype.GenFrontend (doGenFrontend) where
 
 import           Ampersand.ADL1
@@ -16,7 +17,6 @@ import           Codec.Archive.Zip
 import           Data.Hashable (hash)
 import           Network.HTTP.Simple
 import qualified RIO.ByteString.Lazy  as BL
-import qualified RIO.List as L
 import qualified RIO.Text as T
 import           RIO.Time
 import           System.Directory
@@ -116,8 +116,8 @@ copyCustomizations = do
 
 ------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
-data FEInterface = FEInterface { ifcName :: String
-                               , ifcLabel :: String
+data FEInterface = FEInterface { ifcName :: Text
+                               , ifcLabel :: Text
                                , _ifcExp :: Expression
                                , _ifcSource :: A_Concept
                                , _ifcTarget :: A_Concept
@@ -126,7 +126,7 @@ data FEInterface = FEInterface { ifcName :: String
                                } deriving (Typeable, Data)
 
 data FEObject2 =
-    FEObjE { objName     :: String
+    FEObjE { objName     :: Text
            , objExp      :: Expression
            , objSource   :: A_Concept
            , objTarget   :: A_Concept
@@ -140,15 +140,15 @@ data FEObject2 =
            , exprIsIdent :: Bool
            , atomicOrBox :: FEAtomicOrBox
            }
-  | FEObjT { objName     :: String
-           , objTxt      :: String
+  | FEObjT { objName     :: Text
+           , objTxt      :: Text
            } deriving (Show, Data, Typeable )
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
-                                                          , [String] -- the attributes of the template
+                                                          , [Text] -- the attributes of the template
                                                           ) }
-                   | FEBox    { objMClass :: Maybe String
+                   | FEBox    { objMClass :: Maybe Text
                               , ifcSubObjs :: [FEObject2] 
                               } deriving (Show, Data,Typeable)
 
@@ -196,7 +196,7 @@ buildInterface fSpec allIfcs ifc = do
                     _ -> do
                        -- no view, or no view with an html template, so we fall back to target-concept template
                        -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                      let templatePath = "Atomic-" <> (idWithoutType tgt) <> ".html"
+                      let templatePath = "Atomic-" <> (T.unpack $ idWithoutType tgt) <.> ".html"
                       hasSpecificTemplate <- doesTemplateExist templatePath
                       return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
             return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
@@ -261,7 +261,7 @@ genRouteProvider fSpec ifcs = do
   runner <- view runnerL
   let loglevel' = logLevel runner
   template <- readTemplate "routeProvider.config.js"
-  let contents = T.pack . renderTemplate template $
+  let contents = renderTemplate template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" ampersandVersionStr
                  . setAttribute "ifcs"                ifcs
@@ -284,7 +284,7 @@ genViewInterface fSpec interf = do
   let loglevel' = logLevel runner
   lns <- genViewObject fSpec 0 (_ifcObj interf)
   template <- readTemplate "interface.html"
-  let contents = T.pack . renderTemplate template $
+  let contents = renderTemplate template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                   . setAttribute "isTopLevel"          (isTopLevel . source . _ifcExp $ interf)
                   . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
@@ -298,21 +298,22 @@ genViewInterface fSpec interf = do
                   . setAttribute "crudR"               (objCrudR (_ifcObj interf))
                   . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                   . setAttribute "crudD"               (objCrudD (_ifcObj interf))
-                  . setAttribute "contents"            (L.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
+                  . setAttribute "contents"            (T.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
                   . setAttribute "verbose"             (loglevel' == LevelDebug)
                   . setAttribute "loglevel"            (show loglevel')
-  let filename = "ifc" <> ifcName interf <> ".view.html" 
+  let filename :: FilePath
+      filename = "ifc" <>(T.unpack . ifcName $ interf)<> ".view.html" 
   writePrototypeAppFile filename contents 
   
 -- Helper data structure to pass attribute values to HStringTemplate
-data SubObjectAttr2 = SubObjAttr{ subObjName :: String
-                                , subObjLabel :: String
-                                , subObjContents :: String 
+data SubObjectAttr2 = SubObjAttr{ subObjName :: Text
+                                , subObjLabel :: Text
+                                , subObjContents :: Text 
                                 , subObjExprIsUni :: Bool
                                 } deriving (Show, Data, Typeable)
  
 genViewObject :: (HasRunner env, HasDirPrototype env) =>
-                 FSpec -> Int -> FEObject2 -> RIO env [String]
+                 FSpec -> Int -> FEObject2 -> RIO env [Text]
 genViewObject fSpec depth obj =
   case obj of 
     FEObjE{} -> do
@@ -335,40 +336,40 @@ genViewObject fSpec depth obj =
       case atomicOrBox obj of
             FEAtomic{} -> do
               {-
-                  logDebug (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
-                                                " [" ++ name src ++ "*"++ name tgt ++ "], " ++
-                                                (if isEditable then "" else "not ") ++ "editable"
+                  logDebug (getOpts fSpec) $ replicate depth ' ' <> "ATOMIC "<>show nm <> 
+                                                " [" <> name src <> "*"<> name tgt <> "], " <>
+                                                (if isEditable then "" else "not ") <> "editable"
               -}
               -- For now, we choose specific template based on target concept. This will probably be too weak. 
               -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
-              -- logInfo $ nm ++ ":" ++ show mPrimTemplate
+              -- logInfo $ nm <> ":" <> show mPrimTemplate
               conceptTemplate <- getTemplateForObject
               let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
               template <- readTemplate templateFilename
                         
               return . indentation
-                     . lines 
+                     . T.lines 
                      . renderTemplate template $ 
-                      atomicAndBoxAttrs
+                       atomicAndBoxAttrs
 
             FEBox { objMClass  = mClass
                   , ifcSubObjs = subObjs
                   } -> do
               subObjAttrs <- mapM genView_SubObject subObjs
                         
-              let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" ++ cl ++ ".html") mClass
+              let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" <> cl <.> "html") (T.unpack <$> mClass)
               parentTemplate <- readTemplate clssStr
                 
               return . indentation
-                     . lines 
+                     . T.lines 
                      . renderTemplate parentTemplate $ 
                            atomicAndBoxAttrs
                          . setAttribute "isRoot"     (depth == 0)
                          . setAttribute "subObjects" subObjAttrs
     FEObjT{} -> pure []
   where 
-    indentation :: [String] -> [String]
-    indentation = map ( (replicate (if depth == 0 then 4 else 16) ' ') ++)
+    indentation :: [Text] -> [Text]
+    indentation = map ( (T.replicate (if depth == 0 then 4 else 16) " ") <>)
     genView_SubObject :: (HasRunner env, HasDirPrototype env) =>
                          FEObject2 -> RIO env SubObjectAttr2
     genView_SubObject subObj =
@@ -377,7 +378,7 @@ genViewObject fSpec depth obj =
           do lns <- genViewObject fSpec (depth + 1) subObj
              return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                               , subObjLabel = objName subObj -- no escaping for labels in templates needed
-                              , subObjContents = L.intercalate "\n" lns
+                              , subObjContents = T.intercalate "\n" lns
                               , subObjExprIsUni = exprIsUni subObj
                               } 
         FEObjT{} -> 
@@ -390,7 +391,7 @@ genViewObject fSpec depth obj =
                             RIO env FilePath
     getTemplateForObject 
        | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
-                   = return $ "View-PROPERTY"++".html"
+                   = return $ "View-PROPERTY"<>".html"
        | otherwise = getTemplateForConcept (objTarget obj)
     getTemplateForConcept :: (HasDirPrototype env) =>
                              A_Concept -> RIO env FilePath
@@ -398,9 +399,9 @@ genViewObject fSpec depth obj =
          exists <- doesTemplateExist cptfn
          return $ if exists
                   then cptfn
-                  else "Atomic-"++show ttp++".html" 
+                  else "Atomic-"<>show ttp<.>"html" 
        where ttp = cptTType fSpec cpt
-             cptfn = "Concept-"++name cpt++".html" 
+             cptfn = "Concept-"<>(T.unpack $ name cpt)<.>"html" 
 
 
 ------ Generate controller JavaScript code
@@ -413,7 +414,7 @@ genControllerInterface fSpec interf = do
     template <- readTemplate controlerTemplateName
     runner <- view runnerL
     let loglevel' = logLevel runner
-    let contents = T.pack . renderTemplate template $
+    let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   (isTopLevel . source . _ifcExp $ interf)
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
@@ -431,12 +432,12 @@ genControllerInterface fSpec interf = do
                      . setAttribute "verbose"                  (loglevel' == LevelDebug)
                      . setAttribute "loglevel"                 (show loglevel')
                      . setAttribute "usedTemplate"             controlerTemplateName
-    let filename = "ifc" ++ ifcName interf ++ ".controller.js"
+    let filename = "ifc" <> (T.unpack $ ifcName interf) <> ".controller.js"
     writePrototypeAppFile filename contents 
 
 ------ Utility functions
 -- data type to keep template and source file together for better errors
-data Template = Template (StringTemplate String) String
+data Template = Template (StringTemplate FilePath) Text
 
 -- TODO: better abstraction for specific template and fallback to default
 doesTemplateExist :: (HasDirPrototype env) => FilePath -> RIO env Bool
@@ -452,21 +453,28 @@ readTemplate templatePath = do
   let absPath = getTemplateDir env </> templatePath
   res <- readUTF8File absPath
   case res of
-    Left err   -> exitWith $ ReadFileError $ "Error while reading template.\n" : err
-    Right cont -> return $ Template (newSTMP . T.unpack $ cont) absPath
+    Left err   -> exitWith $ ReadFileError $ "Error while reading template." : err
+    Right cont -> return $ Template (newSTMP . T.unpack $ cont) (T.pack absPath)
 
--- having Bool attributes prevents us from using a [(String, String)] parameter for attribute settings
-renderTemplate :: Template -> (StringTemplate String -> StringTemplate String) -> String
+-- having Bool attributes prevents us from using a [(Text, Text)] parameter for attribute settings
+renderTemplate :: Template -> (StringTemplate String -> StringTemplate String) -> Text
 renderTemplate (Template template absPath) setAttrs =
-  let appliedTemplate = setAttrs template
+  let appliedTemplate = setAttrs (template)
   in  case checkTemplateDeep appliedTemplate of
-             ([],  [],    []) -> render appliedTemplate
-             (parseErrs@(_:_), _, _)        -> templateError $ concat [ "Parse error in " ++ tmplt ++ " " ++ err ++ "\n" 
-                                                                      | (tmplt,err) <- parseErrs]
-             ([], attrs@(_:_), _)        -> templateError $ "The following attributes are expected by the template, but not supplied: " ++ show attrs
-             ([], [], ts@(_:_)) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
+             ([],  [],    []) -> T.pack $ render appliedTemplate
+             (parseErrs@(_:_), _, _)
+                -> templateError . T.concat $
+                      [ T.pack $ "Parse error in " <> tmplt <> " " <> err <> "\n" 
+                      | (tmplt,err) <- parseErrs
+                      ]
+             ([], attrs@(_:_), _)
+                -> templateError $  
+                      "The following attributes are expected by the template, but not supplied: " <> tshow attrs
+             ([], [], ts@(_:_))
+                -> templateError $ 
+                      "Missing invoked templates: " <> tshow ts -- should not happen as we don't invoke templates
   where templateError msg = exitWith $ ReadFileError 
-            ["*** TEMPLATE ERROR in:" ++ absPath
+            ["*** TEMPLATE ERROR in:" <> absPath
             , msg
             ]
 
@@ -484,13 +492,14 @@ downloadPrototypeFramework = ( do
     then do
       logDebug "Emptying folder to deploy prototype framework"
       liftIO $ removeDirectoryRecursive dirPrototype
-      let url = "https://github.com/AmpersandTarski/Prototype/archive/"++zwolleVersion++".zip"
+      let url :: FilePath
+          url = "https://github.com/AmpersandTarski/Prototype/archive/"<>zwolleVersion<>".zip"
       logDebug "Start downloading prototype framework."
       response <- (parseRequest url >>= httpBS) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
-                              , "  Failed to download "<>url
-                              , show (err :: SomeException)
+                              , "  Failed to download "<>T.pack url
+                              , tshow (err :: SomeException)
                               ]
       let archive = removeTopLevelFolder 
                   . toArchive 
@@ -500,27 +509,27 @@ downloadPrototypeFramework = ( do
       runner <- view runnerL
       let zipoptions = 
                [OptVerbose | logLevel runner == LevelDebug]
-            ++ [OptDestination dirPrototype]
+            <> [OptDestination dirPrototype]
       ((liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
-                              , "  Failed to extract the archive found at "<>url
-                              , show (err :: SomeException)
+                              , "  Failed to extract the archive found at "<>T.pack url
+                              , tshow (err :: SomeException)
                               ])
       let dest = dirPrototype </> ".frameworkSHA"  
       ((writeFileUtf8 dest . tshow . zComment $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
-                              , "Archive seems valid: "<>url
-                              , "  Failed to write contents of archive to "<>dest
-                              , show (err :: SomeException)
+                              , "Archive seems valid: "<>T.pack url
+                              , "  Failed to write contents of archive to "<>T.pack dest
+                              , tshow (err :: SomeException)
                               ])
       return x
     else return x
   ) `catch` \err ->  -- git failed to execute
          exitWith . FailedToInstallPrototypeFramework $
             [ "Error encountered during deployment of prototype framework:"
-            , show (err :: SomeException)
+            , tshow (err :: SomeException)
             ]
             
   where

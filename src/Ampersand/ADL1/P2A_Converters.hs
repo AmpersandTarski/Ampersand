@@ -62,7 +62,7 @@ mustBeConceptBecauseMath ci tp
 checkPurposes :: A_Context -> Guarded ()
 checkPurposes ctx = let topLevelPurposes = ctxps ctx
                         purposesInPatterns = concatMap ptxps (ctxpats ctx)
-                        allPurposes = topLevelPurposes ++ purposesInPatterns
+                        allPurposes = topLevelPurposes <> purposesInPatterns
                         danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
                     in  case danglingPurposes of
                       []   -> pure () 
@@ -96,9 +96,9 @@ checkInterfaceCycles ctx =
                               . NE.nonEmpty
                               ) 
                         . getCycles $ refsPerInterface
-        refsPerInterface :: [(String, [String])]
+        refsPerInterface :: [(Text, [Text])]
         refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
-        getDeepIfcRefs :: ObjectDef -> [String]
+        getDeepIfcRefs :: ObjectDef -> [Text]
         getDeepIfcRefs obj = case objmsub obj of
                                Nothing -> []
                                Just si -> case si of 
@@ -106,7 +106,7 @@ checkInterfaceCycles ctx =
                                                              then []
                                                              else [siIfcId si]
                                            Box{}          -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
-        lookupInterface :: String -> Interface
+        lookupInterface :: Text -> Interface
         lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                [ifc] -> ifc
                                _     -> fatal "Interface lookup returned zero or more than one result"
@@ -139,7 +139,7 @@ checkOtherAtomsInSessionConcept ctx =
         , atom <- popas pop
         -- SJC: I think we should not allow _SESSION in a POPULATION statement, as there is no current session at that time (_SESSION should only be allowed as Atom in expressions)
         , not (_isPermittedSessionValue atom)
-        ] ++
+        ] <>
         [ mkOtherTupleInSessionError d pr
         | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
         , isSESSION src || isSESSION tgt
@@ -152,16 +152,16 @@ checkOtherAtomsInSessionConcept ctx =
     [] -> return ()
     x:xs -> Errors (x NE.:| xs)
   where _isPermittedSessionValue :: AAtomValue -> Bool
-        _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
+        _isPermittedSessionValue v@AAVString{} = aavtxt v == "_SESSION"
         _isPermittedSessionValue _                 = False
 warnCaseProblems :: A_Context -> Guarded ()
 warnCaseProblems ctx = 
    let warnings :: [Warning]
        warnings = warns (concs ctx) 
-               ++ warns (relsDefdIn ctx) 
+               <> warns (relsDefdIn ctx) 
        warns set = [ mkCaseProblemWarning x y
                    | x <- lst, y<- lst
-                   , map toUpper (name x) == map toUpper (name y)
+                   , T.toUpper (name x) == T.toUpper (name y)
                    , name x < name y 
                    ]
             where lst = toList set
@@ -169,24 +169,24 @@ warnCaseProblems ctx =
 
 pSign2aSign :: ConceptMap -> P_Sign -> Signature
 pSign2aSign ci (P_Sign src tgt) = Sign (pCpt2aCpt ci src) (pCpt2aCpt ci tgt)
-findRels :: DeclMap -> String -> Map.Map SignOrd Expression
+findRels :: DeclMap -> Text -> Map.Map SignOrd Expression
 findRels declMap x = Map.findWithDefault Map.empty x declMap  -- get all relations with the same name as x
 extractDecl :: P_NamedRel -> Expression -> Guarded Relation
 extractDecl _ (EDcD r) = return r
-extractDecl _ e = fatal $ "Expecting a declared relation, instead I found: "++show e -- to fix: return an error via a (still to be made) function in CtxError
+extractDecl _ e = fatal $ "Expecting a declared relation, instead I found: "<>tshow e -- to fix: return an error via a (still to be made) function in CtxError
 namedRel2Decl :: ConceptMap -> DeclMap -> P_NamedRel -> Guarded Relation
 namedRel2Decl _  declMap o@(PNamedRel _ r Nothing)  = getOneExactly o (findDecls' declMap r) >>= extractDecl o
 namedRel2Decl ci declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findRelsTyped declMap r (pSign2aSign ci s)) >>= extractDecl o
-findDecls' :: DeclMap -> String -> [Expression]
+findDecls' :: DeclMap -> Text -> [Expression]
 findDecls' declMap x = Map.elems (findRels declMap  x)
-findRelsLooselyTyped :: DeclMap -> String -> Maybe A_Concept -> Maybe A_Concept -> [Expression]
+findRelsLooselyTyped :: DeclMap -> Text -> Maybe A_Concept -> Maybe A_Concept -> [Expression]
 findRelsLooselyTyped declMap x (Just src) (Just tgt)
  = findRelsTyped declMap x (Sign src tgt)
    `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `isct` findRelsLooselyTyped declMap x Nothing (Just tgt))
    `orWhenEmpty` (findRelsLooselyTyped declMap x (Just src) Nothing `unin` findRelsLooselyTyped declMap x Nothing (Just tgt))
    `orWhenEmpty` findDecls' declMap x
  where isct lsta lstb = [a | a<-lsta, a `elem` lstb]
-       unin lsta lstb = L.nub (lsta ++ lstb)
+       unin lsta lstb = L.nub (lsta <> lstb)
 findRelsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
 findRelsLooselyTyped declMap x (Just src) Nothing
  = [dcl | dcl <- findDecls' declMap x, source dcl == src ]
@@ -196,15 +196,15 @@ findRelsLooselyTyped declMap x Nothing (Just tgt)
    `orWhenEmpty` findDecls' declMap x
 findDeclLooselyTyped :: DeclMap
                      -> P_NamedRel
-                     -> String
+                     -> Text
                      -> Maybe A_Concept
                      -> Maybe A_Concept
                      -> Guarded Relation
 findDeclLooselyTyped declMap o x src tgt = getOneExactly o (findRelsLooselyTyped declMap x src tgt) >>= extractDecl o
-findRelsTyped :: DeclMap -> String -> Signature -> [Expression]
+findRelsTyped :: DeclMap -> Text -> Signature -> [Expression]
 findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findRels declMap x))
 
-type DeclMap = Map.Map String (Map.Map SignOrd Expression)
+type DeclMap = Map.Map Text (Map.Map SignOrd Expression)
 
 onlyUserConcepts :: ContextInfo -> [[Type]] -> [[A_Concept]]
 onlyUserConcepts ci = fmap $ userList (conceptMap ci)
@@ -246,11 +246,11 @@ pCtx2aCtx env
       let declMap = declDisambMap contextInfo
       uniqueNames p_patterns
       pats        <- traverse (pPat2aPat contextInfo) p_patterns            --  The patterns defined in this context
-      uniqueNames $ p_rules ++ concatMap pt_rls p_patterns
+      uniqueNames $ p_rules <> concatMap pt_rls p_patterns
       rules       <- traverse (pRul2aRul contextInfo Nothing) p_rules       --  All user defined rules in this context, but outside patterns
-      uniqueNames $ p_identdefs ++ concatMap pt_ids p_patterns
+      uniqueNames $ p_identdefs <> concatMap pt_ids p_patterns
       identdefs   <- traverse (pIdentity2aIdentity contextInfo Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
-      uniqueNames $ p_viewdefs ++ concatMap pt_vds p_patterns
+      uniqueNames $ p_viewdefs <> concatMap pt_vds p_patterns
       viewdefs    <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       uniqueNames p_interfaces
       interfaces  <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap)   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
@@ -271,7 +271,7 @@ pCtx2aCtx env
                      , ctxreprs = representationOf contextInfo
                      , ctxvs = viewdefs
                      , ctxgs = catMaybes . map (pClassify2aClassify conceptmap) $ p_gens
-                     , ctxgenconcs = onlyUserConcepts contextInfo (concGroups ++ map (:[]) (Set.toList $ soloConcs contextInfo))
+                     , ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (:[]) (Set.toList $ soloConcs contextInfo))
                      , ctxifcs = interfaces
                      , ctxps = purposes
                      , ctxmetas = p_metas
@@ -290,19 +290,19 @@ pCtx2aCtx env
     deffrmtCtxt = fromMaybe ReST pandocf
     cptMap  = makeConceptMap allGens
     allGens :: [PClassify]
-    allGens = p_gens ++ concatMap pt_gns p_patterns
+    allGens = p_gens <> concatMap pt_gns p_patterns
     allReprs :: [Representation]
-    allReprs = p_representations++concatMap pt_Reprs p_patterns
+    allReprs = p_representations<>concatMap pt_Reprs p_patterns
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo = do -- The reason for having monadic syntax ("do") is that g_contextInfo is Guarded
           typeMap <- mkTypeMap connectedConcepts allReprs -- This yields errors unless every partition refers to precisely one built-in type (aka technical type)
           -- > SJ:  It seems to mee that `multitypologies` can be implemented more concisely and more maintainably by using a transitive closure algorithm (Warshall).
           --        Also, `connectedConcepts` is not used in the result, so is avoidable when using a transitive closure approach.
           multitypologies <- traverse mkTypology connectedConcepts -- SJ: why `traverse` instead of `map`? Does this have to do with guarded as well?
-          decls <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
-          let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[EDcD d]) | d <- decls])
+          decls <- traverse (pDecl2aDecl cptMap Nothing deflangCtxt deffrmtCtxt) (p_relations <> concatMap pt_dcs p_patterns)
+          let declMap = Map.map groupOnTp (Map.fromListWith (<>) [(name d,[EDcD d]) | d <- decls])
                 where groupOnTp lst = Map.fromListWith const [(SignOrd$ sign d,d) | d <- lst]
-          let allConcs = Set.fromList (map aConcToType (map source decls ++ map target decls))  :: Set.Set Type
+          let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls))  :: Set.Set Type
           return CI { ctxiGens = gns
                     , representationOf = (\cpt -> fromMaybe
                                                     Object -- default representation is Object (sometimes called `ugly identifiers')
@@ -328,7 +328,7 @@ pCtx2aCtx env
             where 
               f :: [[(A_Concept,TType)]] -> [Maybe (A_Concept,TType,[Origin])] -> [(A_Concept , TType)]
               f typesOfGroups typesOfOthers
-                  = concat typesOfGroups ++ map stripOrigin (catMaybes typesOfOthers)
+                  = concat typesOfGroups <> map stripOrigin (catMaybes typesOfOthers)
               stripOrigin ::  (A_Concept,TType,[Origin]) -> (A_Concept,TType)
               stripOrigin (cpt,t,_) = (cpt,t)
               reprTrios :: [(A_Concept,TType,Origin)]
@@ -386,7 +386,7 @@ pCtx2aCtx env
                     (t,rest) = g' x xs 
                     g' a as = case L.partition (disjoint a) as of
                               (_,[])   -> (a,as)
-                              (hs',hs) -> g' (L.nub $ a ++ concat hs) hs'
+                              (hs',hs) -> g' (L.nub $ a <> concat hs) hs'
                     -- | are two lists disjoint, with no elements in common.
                     disjoint :: Eq a => [a] -> [a] -> Bool  
                     disjoint ys = null . L.intersect ys
@@ -430,11 +430,11 @@ pCtx2aCtx env
                | x <- allGens
                ]
 
-    completeRules = genRules ++
+    completeRules = genRules <>
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
-               | x <- p_representations++concatMap pt_Reprs p_patterns
+               | x <- p_representations<>concatMap pt_Reprs p_patterns
                , cpt <- NE.toList $ reprcpts x
-               ] ++
+               ] <>
                [ ( Set.singleton RepresentSeparator
                  , Set.fromList [ BuiltIn Alphanumeric
                                 , BuiltIn BigAlphanumeric
@@ -518,7 +518,7 @@ pCtx2aCtx env
     typecheckViewDef :: ContextInfo -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
     typecheckViewDef ci
        o@P_Vd { pos = orig
-              , vd_lbl  = lbl   -- String
+              , vd_lbl  = lbl   -- Text
               , vd_cpt  = cpt   -- Concept
               , vd_isDefault = isDefault
               , vd_html = mHtml -- Html template
@@ -577,7 +577,7 @@ pCtx2aCtx env
                           Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
                           Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
             where      
-              lookupView :: String -> Maybe P_ViewDef
+              lookupView :: Text -> Maybe P_ViewDef
               lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
                                     []   -> Nothing
                                     vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
@@ -588,7 +588,7 @@ pCtx2aCtx env
                   (Just _ , Just P_InterfaceRef{si_isLink=False} )
                       -> Errors . pure $ mkCrudForRefInterfaceError orig
                   _   -> pure()
-              typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
+              typeCheckViewAnnotation :: Expression -> Maybe Text -> Guarded ()
               typeCheckViewAnnotation _       Nothing       = pure ()
               typeCheckViewAnnotation objExpr (Just viewId) =
                 case lookupView viewId of 
@@ -622,15 +622,17 @@ pCtx2aCtx env
     pCruds2aCruds expr mCrud = 
        case mCrud of 
          Nothing -> mostLiberalCruds (Origin "Default for Cruds") ""
-         Just pc@(P_Cruds org userCrudString )
+         Just pc@(P_Cruds org userCrud )
              | (length . L.nub . map toUpper) userCrudString == length userCrudString &&
                 (all isValidChar userCrudString)  
-                         -> warnings pc $ mostLiberalCruds org userCrudString 
-             | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrudString
-      where isValidChar :: Char -> Bool
+                         -> warnings pc $ mostLiberalCruds org userCrud 
+             | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrud
+           where userCrudString = T.unpack userCrud
+        where   
+            isValidChar :: Char -> Bool
             isValidChar c = toUpper c `elem` ['C','R','U','D']
             (defC, defR, defU, defD) = view defaultCrudL env
-            mostLiberalCruds :: Origin -> String -> Guarded Cruds
+            mostLiberalCruds :: Origin -> Text -> Guarded Cruds
             mostLiberalCruds o str
              = pure Cruds { crudOrig = o
                           , crudC    = isFitForCrudC expr && f 'C' defC
@@ -641,8 +643,8 @@ pCtx2aCtx env
                    where
                      f :: Char -> Bool -> Bool 
                      f c def'
-                      | toUpper c `elem` str = True
-                      | toLower c `elem` str = False
+                      | toUpper c `elem` T.unpack str = True
+                      | toLower c `elem` T.unpack str = False
                       | otherwise            = def'
             warnings :: P_Cruds -> Guarded Cruds -> Guarded Cruds
             warnings pc@(P_Cruds _ crd) aCruds = addWarnings warns aCruds
@@ -651,37 +653,37 @@ pCtx2aCtx env
                 warns = map (mkCrudWarning pc) $ 
                     [ 
                       [ "'C' was specified, but the expression "
-                      , "  "++showA expr
-                      , "doesn't allow for the creation of a new atom at its target concept ("++name (target expr)++") "
-                      ] ++
+                      , "  "<>showA expr
+                      , "doesn't allow for the creation of a new atom at its target concept ("<>name (target expr)<>") "
+                      ] <>
                       [ "  HINT: You might want to use U(pdate), which updates the pair in the relation."
-                      | isFitForCrudU expr, 'U' `notElem` crd
+                      | isFitForCrudU expr, 'U' `notElem` T.unpack crd
                       ]
-                    | 'C' `elem` crd && not (isFitForCrudC expr)
-                    ]++
+                    | 'C' `elem` T.unpack crd && not (isFitForCrudC expr)
+                    ]<>
                     [ [ "'R' was specified, but the expression "
-                      , "  "++showA expr
+                      , "  "<>showA expr
                       , "doesn't allow for read of the pairs in that expression."
                       ]
-                    | 'R' `elem` crd && not (isFitForCrudR expr)
-                    ]++
+                    | 'R' `elem` T.unpack crd && not (isFitForCrudR expr)
+                    ]<>
                     [ [ "'U' was specified, but the expression "
-                      , "  "++showA expr
+                      , "  "<>showA expr
                       , "doesn't allow to insert or delete pairs in it."
                       ]
-                    | 'U' `elem` crd && not (isFitForCrudU expr)
-                    ]++
+                    | 'U' `elem` T.unpack crd && not (isFitForCrudU expr)
+                    ]<>
                     [ [ "'D' was specified, but the expression "
-                      , "  "++showA expr
-                      , "doesn't allow for the deletion of an atom from its target concept ("++name (target expr)++") "
+                      , "  "<>showA expr
+                      , "doesn't allow for the deletion of an atom from its target concept ("<>name (target expr)<>") "
                       ]
-                    | 'D' `elem` crd && not (isFitForCrudD expr)
+                    | 'D' `elem` T.unpack crd && not (isFitForCrudD expr)
                     ]
-                    ++
+                    <>
                     [ [ "R(ead) is required to do U(pdate) or D(elete) "
                       , "however, you explicitly specified 'r'."
                       ]
-                    | 'r' `elem` crd && ('U' `elem` crd || 'D' `elem` crd)
+                    | 'r' `elem` T.unpack crd && ('U' `elem` T.unpack crd || 'D' `elem` T.unpack crd)
                     ]
     pSubi2aSubi :: ContextInfo
                 -> Expression -- Expression of the surrounding
@@ -734,9 +736,9 @@ pCtx2aCtx env
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
            warnings :: [Warning]
            warnings = [mkBOX_ROWSNH_Warning (origin x) | si_class x == Just "ROWSNH"] -- See issue #925
-                    ++[mkNoBoxItemsWarning  (origin x) | null (si_box x)            ]
+                    <>[mkNoBoxItemsWarning  (origin x) | null (si_box x)            ]
  
-    typeCheckInterfaceRef :: P_BoxItem a -> String -> Expression -> Expression -> Guarded Expression
+    typeCheckInterfaceRef :: P_BoxItem a -> Text -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
       let expTarget = target objExpr
           ifcSource = source ifcExpr
@@ -744,7 +746,7 @@ pCtx2aCtx env
       in  if refIsCompatible 
           then pure $ addEpsilonRight genLattice ifcSource objExpr 
           else Errors . pure $ mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef
-    lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_BoxItem (TermPrim, DisambPrim))
+    lookupDisambIfcObj :: DeclMap -> Text -> Maybe (P_BoxItem (TermPrim, DisambPrim))
     lookupDisambIfcObj declMap ifcId =
       case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId ] of
         []          -> Nothing
@@ -823,11 +825,11 @@ pCtx2aCtx env
                    , ptvds = views'
                    , ptxps = xpls
                    }
-    pRul2aRul :: ContextInfo -> Maybe String -- name of pattern the rule is defined in (if any)
+    pRul2aRul :: ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
               -> P_Rule TermPrim -> Guarded Rule
     pRul2aRul ci mPat = typeCheckRul ci mPat . disambiguate (conceptMap ci) (termPrimDisAmb (conceptMap ci) (declDisambMap ci))
     typeCheckRul :: ContextInfo -> 
-                 Maybe String -- name of pattern the rule is defined in (if any)
+                 Maybe Text -- name of pattern the rule is defined in (if any)
               -> P_Rule (TermPrim, DisambPrim) -> Guarded Rule
     typeCheckRul ci mPat P_Ru { pos = orig
                              , rr_nm = nm
@@ -850,7 +852,7 @@ pCtx2aCtx env
                     , isSignal = not . null . filter (\x -> nm `elem` arRules x) $ allRoleRules 
                     }
     pIdentity2aIdentity ::
-         ContextInfo -> Maybe String -- name of pattern the rule is defined in (if any)
+         ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
       -> P_IdentDef -> Guarded IdentityDef
     pIdentity2aIdentity ci mPat pidt
      = case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
@@ -872,7 +874,7 @@ pCtx2aCtx env
                      case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
                               [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
                               _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft genLattice conc (objExpression o)}
-                   BxTxt t -> fatal $ "TXT is not expected in IDENT statements. ("++show (origin t)++")"
+                   BxTxt t -> fatal $ "TXT is not expected in IDENT statements. ("<>tshow (origin t)<>")"
     typeCheckPairView :: ContextInfo -> Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView ci o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg ci o x) lst
@@ -892,7 +894,7 @@ pCtx2aCtx env
                 PRef2 { pos    = orig     -- :: Origin
                       , pexObj    = objref   -- :: PRefObj
                       , pexMarkup = pmarkup  -- :: P_Markup
-                      , pexRefIDs  = refIds  -- :: [String]
+                      , pexRefIDs  = refIds  -- :: [Text]
                       }
      = (\ obj -> Expl { explPos      = orig
                       , explObj      = obj
@@ -911,17 +913,17 @@ pCtx2aCtx env
     pRefObj2aRefObj _       (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj _       (PRef2Context     s ) = pure$ ExplContext s
     allConceptDefs :: [ConceptDef]
-    allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns
+    allConceptDefs = p_conceptdefs<>concatMap pt_cds p_patterns
     allRoleRules :: [A_RoleRule]
     allRoleRules = map pRoleRule2aRoleRule 
-                      (p_roleRules ++ concatMap pt_RRuls p_patterns)
+                      (p_roleRules <> concatMap pt_RRuls p_patterns)
 
 leastConcept :: Op1EqualitySystem Type -> A_Concept -> A_Concept -> A_Concept
 leastConcept genLattice c str
      = case (aConcToType c `elem` leastConcepts, aConcToType str `elem` leastConcepts) of
          (True, _) -> c
          (_, True) -> str
-         (_, _)    -> fatal ("Either "++name c++" or "++show str++" should be a subset of the other." )
+         (_, _)    -> fatal ("Either "<>name c<>" or "<>tshow str<>" should be a subset of the other." )
        where
          leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType str))
 
@@ -1055,14 +1057,14 @@ pAtomValue2aAtomValue typ cpt pav =
 
 pDecl2aDecl ::
      ConceptMap
-  -> Maybe String   -- name of pattern the rule is defined in (if any)
+  -> Maybe Text   -- name of pattern the rule is defined in (if any)
   -> Lang           -- The default language
   -> PandocFormat   -- The default pandocFormat
   -> P_Relation -> Guarded Relation
 pDecl2aDecl cptMap env defLanguage defFormat pd
- = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
+ = let (prL:prM:prR:_) = dec_pragma pd <> ["", "", ""]
        dcl = Relation
-                 { decnm   = T.pack (dec_nm pd)
+                 { decnm   = dec_nm pd
                  , decsgn  = decSign
                  , decprps = dec_prps pd
                  , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.

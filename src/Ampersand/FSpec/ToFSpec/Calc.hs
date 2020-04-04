@@ -11,9 +11,9 @@ import           Ampersand.ADL1
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
-import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 import           Text.Pandoc.Builder
 
 testConfluence :: A_Context -> Blocks
@@ -21,9 +21,9 @@ testConfluence context
  = let tcss = [(expr,tcs) | expr<-Set.elems $ expressionsIn context, let tcs=(dfProofs (conceptMap . ctxInfo $ context))expr, length tcs>1]
        sumt = sum (map (length.snd) tcss)
    in
-   para ("Confluence analysis statistics from "<>(str.show.length.expressionsIn) context<>" expressions."<>linebreak)<>
-   para ("This script contains "<>linebreak<>(str.show.length) tcss<> " non-confluent expressions "<>linebreak)<>
-   para (linebreak<>"Total number of derived expressions: "<>(str.show) sumt<>linebreak)<>
+   para ("Confluence analysis statistics from "<>(str.tshow.length.expressionsIn) context<>" expressions."<>linebreak)<>
+   para ("This script contains "<>linebreak<>(str.tshow.length) tcss<> " non-confluent expressions "<>linebreak)<>
+   para (linebreak<>"Total number of derived expressions: "<>(str.tshow) sumt<>linebreak)<>
    para ("Confluence analysis for "<>(str.name) context)<>
    mconcat
      [ para (linebreak<>"expression:   "<>(str . showA) expr<>linebreak)<>
@@ -43,30 +43,29 @@ deriveProofs env context
               | r<-Set.elems $ allRules context]
    
    where
---    interText :: (Data.String.IsString a, Data.Monoid.Monoid a) => a -> [a] -> a
     interText _ [] = ""
     interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
 
 
-type Proof expr = [(expr,[String],String)]
+type Proof expr = [(expr,[Text],Text)]
 
 showProof :: (expr->Blocks) -> Proof expr -> Blocks
-showProof shw [(expr,ss,_)]       = shw expr<> para ( str(" { "++L.intercalate " and " ss++" }"))
+showProof shw [(expr,ss,_)]       = shw expr<> para ( str(" { "<>T.intercalate " and " ss<>" }"))
 showProof shw ((expr,ss,equ):prf) = shw expr<>
                                     para (if null ss  then str equ else
-                                          if null equ then str (unwords ss) else
-                                          str equ<>str (" { "++L.intercalate " and " ss++" }"))<>
+                                          if T.null equ then str (T.unwords ss) else
+                                          str equ<>str (" { "<>T.intercalate " and " ss<>" }"))<>
                                     showProof shw prf
                                     --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr
 showProof _  []                   = fromList []
 
 -- showPrf is meant to circumvent Pandoc. For example when a proof needs to be shown in debugging texts.
-showPrf :: (expr->String) -> Proof expr -> [String]
-showPrf shw [(expr,_ ,_)]       = [ "    "++shw expr]
-showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr] ++
+showPrf :: (expr->Text) -> Proof expr -> [Text]
+showPrf shw [(expr,_ ,_)]       = [ "    "<>shw expr]
+showPrf shw ((expr,ss,equ):prf) = [ "    "<>shw expr] <>
                                   (if null ss  then [ equ ] else
-                                   if null equ then [ unwords ss ] else
-                                   [ equ++" { "++L.intercalate " and " ss++" }" ])++
+                                   if T.null equ then [ T.unwords ss ] else
+                                   [ equ<>" { "<>T.intercalate " and " ss<>" }" ])<>
                                   showPrf shw prf
 showPrf _  []                   = []
 

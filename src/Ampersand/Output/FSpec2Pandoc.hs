@@ -1,9 +1,11 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
 import           Ampersand.Output.ToPandoc
 import qualified RIO.List as L
+import qualified RIO.Text as T
 import           RIO.Time
 import           Text.Pandoc.CrossRef
 --DESCR ->
@@ -55,7 +57,7 @@ fSpec2Pandoc :: (HasDirOutput env, HasDocumentOpts env)
 fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
   where
     -- shorthand for easy localizing    
-    l :: LocalizedStr -> String
+    l :: LocalizedStr -> Text
     l = localize outputLang'
     outputLang' = outputLang env fSpec
     wrap :: Pandoc -> Pandoc
@@ -89,7 +91,7 @@ fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
                                ( NL "Diagnose van "
                                , EN "Diagnosis of ")
                       ) <> (singleQuoted.text.name) fSpec
-                titles -> (text . concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
+                titles -> (text . T.concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
            )
       . setAuthors ( 
            case metaValues "authors" fSpec of
@@ -100,7 +102,7 @@ fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
              xs -> fmap text $ L.nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
 
         )
-      . setDate (text (formatTime (lclForLang outputLang') "%-d %B %Y" now))
+      . setDate (text (T.pack $ formatTime (lclForLang outputLang') "%-d %B %Y" now))
       . doc . mconcat $ blocksByChapter
     
     thePictures = concat picturesByChapter

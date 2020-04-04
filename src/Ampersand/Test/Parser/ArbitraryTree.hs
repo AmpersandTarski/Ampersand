@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Test.Parser.ArbitraryTree () where
 
 import           Ampersand.Basics
@@ -8,6 +9,7 @@ import           Ampersand.Input.ADL1.Lexer (keywords)
 import           RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
+import qualified RIO.Text as T
 import           Test.QuickCheck hiding (listOf1)
 
 -- Useful functions to build on the quick check functions
@@ -18,35 +20,43 @@ printable = suchThat arbitrary isValid
     where isValid x = isPrint x && x <= 'Ñ' -- printable ASCII characters
 
 -- Generates a simple string of ascii characters
-safeStr :: Gen String
-safeStr = listOf printable `suchThat` noEsc
+safeStr :: Gen Text
+safeStr = (T.pack <$> listOf printable) `suchThat` noEsc
 
 -- Generates a simple non-empty string of ascii characters
-safeStr1 :: Gen String
-safeStr1 = (listOf printable `suchThat` noEsc) `suchThat` (not.null)
+safeStr1 :: Gen Text
+safeStr1 = safeStr `suchThat` (not.T.null)
 
-noEsc :: String -> Bool
-noEsc = notElem '\\'
+noEsc :: Text -> Bool
+noEsc = not . T.any ( == '\\')
+
+-- Generates a filePath
+safeFilePath :: Gen FilePath
+safeFilePath = T.unpack <$> safeStr
 
 -- Genrates a valid ADL identifier
-identifier :: Gen String
+identifier :: Gen Text
 identifier = suchThat str2 noKeyword
-    where noKeyword x = x `notElem` keywords
+    where noKeyword :: Text -> Bool
+          noKeyword x = x `notElem` (map T.pack keywords)
           -- The prelude functions accept Unicode characters
           idChar = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
-          str2   = listOf idChar `suchThat` (\s -> length s > 1)
+          str2 :: Gen Text
+          str2   = (T.pack <$> listOf idChar) `suchThat` (\s -> T.length s > 1)
 
 -- Genrates a valid ADL upper-case identifier
-upperId :: Gen String
+upperId :: Gen Text
 upperId = suchThat identifier startUpper
-    where startUpper [] = False
-          startUpper (h:_) = isUpper h
+    where startUpper txt = case T.uncons txt of
+            Nothing -> False
+            Just (h,_) -> isUpper h
 
 -- Genrates a valid ADL lower-case identifier
-lowerId :: Gen String
+lowerId :: Gen Text
 lowerId = suchThat identifier startLower
-    where startLower [] = False
-          startLower (h:_) = isLower h
+    where startLower txt = case T.uncons txt of
+            Nothing -> False
+            Just (h,_) ->  isLower h
 
 -- Generates an object
 objTermPrim :: Bool -> Int -> Gen (P_BoxItem TermPrim)
@@ -64,7 +74,7 @@ objTermPrim isTxtAllowed i =
 genObj :: Arbitrary a => Bool -> Int -> Gen (P_BoxItem a)
 genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (pure Nothing)
 
-makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_BoxItem a)
+makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
   oneof $ [P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
         ++[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
@@ -85,7 +95,7 @@ subIfc objGen n =
 --- Now the arbitrary instances
 instance Arbitrary P_Cruds where
     arbitrary = P_Cruds <$> arbitrary
-                        <*> suchThat (sublistOf "cCrRuUdD") isCrud
+                        <*> (T.pack <$> suchThat (sublistOf "cCrRuUdD") isCrud)
       where isCrud str = L.nub (map toUpper str) == map toUpper str
 
 instance Arbitrary Origin where
@@ -252,10 +262,10 @@ instance Arbitrary PAtomValue where
 --        ScriptDateTime <$> arbitrary <*> arbitrary,
         ComnBool <$> arbitrary <*> arbitrary
        ]
-     where stringConstraints :: String -> Bool
+     where stringConstraints :: Text -> Bool
            stringConstraints str =
-             case readLitChar str of
-              [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints cs
+             case readLitChar (T.unpack str) of
+              [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints (T.pack cs)
               _        -> True  -- end of string
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> arbitrary
@@ -282,7 +292,7 @@ instance Arbitrary a => Arbitrary (P_ViewD a) where
                     <*> arbitrary <*> arbitrary <*> listOf arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
-    arbitrary = ViewHtmlTemplateFile <$> safeStr
+    arbitrary = ViewHtmlTemplateFile <$> safeFilePath
 
 instance Arbitrary a => Arbitrary (P_ViewSegment a) where
     arbitrary = P_ViewSegment <$> (Just <$> safeStr) <*> arbitrary <*> arbitrary 
@@ -333,8 +343,8 @@ instance Arbitrary Lang where
 instance Arbitrary P_Markup where
     arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr `suchThat` noEndMarkup
      where 
-       noEndMarkup :: String -> Bool
-       noEndMarkup = not . L.isInfixOf "+}"
+       noEndMarkup :: Text -> Bool
+       noEndMarkup = not . T.isInfixOf "+}"
 
 instance Arbitrary PandocFormat where
     arbitrary = elements [minBound..]

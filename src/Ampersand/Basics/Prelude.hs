@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Basics.Prelude
   ( module RIO
   , readUTF8File
@@ -14,22 +15,22 @@ module Ampersand.Basics.Prelude
   , defaultFirstFalse
   , decodeUtf8
   )where
-import Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
-import RIO hiding (zipWith,exitWith)
-import System.IO (openTempFile, stderr)
-
+import           Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
+import           RIO hiding (zipWith,exitWith)
+import qualified RIO.Text as T
+import           System.IO (openTempFile, stderr)
 
 data Verbosity = Loud | Silent deriving (Eq, Data, Show)
 
--- Functions to be replaced later on:
-readUTF8File :: FilePath -> RIO env (Either [String] Text)
+-- Wrapper around readFileUtf8. It exits with an error:
+readUTF8File :: FilePath -> RIO env (Either [Text] Text)
 readUTF8File fp = (Right <$> readFileUtf8 fp) `catch` handler
   where 
-     handler :: IOException -> RIO env (Either [String] a)
+     handler :: IOException -> RIO env (Either [Text] a)
      handler err = return . Left $
-         [ "Error reading "<> fp
-         , show $ err
-         ]
+               [ "File could not be read: "<> T.pack fp
+               , tshow $ err
+               ]
 
 zipWith :: (a->b->c) -> [a]->[b]->[c]
 zipWith fun = go

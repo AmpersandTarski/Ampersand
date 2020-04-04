@@ -11,6 +11,7 @@ import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import           Data.List.Split(splitOn)
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 
 chpNatLangReqs :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> Int -> FSpec -> Blocks
@@ -42,7 +43,7 @@ chpNatLangReqs env lev fSpec =
 
   where
   -- shorthand for easy localizing    
-  l :: LocalizedStr -> String
+  l :: LocalizedStr -> Text
   l = localize outputLang'
   outputLang' = outputLang env fSpec
   genLegalRefs = view genLegalRefsL env
@@ -153,37 +154,37 @@ chpNatLangReqs env lev fSpec =
              []    -> mempty  -- There is no definition of the concept
              [cd] -> printCDef cd Nothing
              cds  -> mconcat
-                    [printCDef cd (Just ("."++ [suffx])) 
+                    [printCDef cd (Just $ T.snoc "." suffx) 
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
         where
          fspecFormat = view fspecFormatL env
          nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
          printCDef :: ConceptDef -- the definition to print
-                -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
+                -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
                 -> Blocks
          printCDef cDef suffx
            = definitionList 
               [(   str (l (NL"Definitie " ,EN "Definition "))
                 <> ( if fspecFormat `elem` [Fpdf, Flatex] 
-                     then (str . show .theNr) nCpt
+                     then (str . tshow .theNr) nCpt
                      else (str . name) cDef  
                    )  
                 <> str (fromMaybe "" suffx) <> ":" 
-               , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
+               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (cddef cDef)
                         <> ( if fspecFormat `elem` [Fpdf, Flatex]
                              then rawInline "latex"
-                                    ("~"++texOnlyMarginNote 
-                                            ("\\gls{"++escapeNonAlphaNum 
-                                                        (name cDef++fromMaybe "" suffx)
-                                                ++"}"
+                                    ("~"<>texOnlyMarginNote 
+                                            ("\\gls{"<>escapeLatex 
+                                                        (name cDef<>fromMaybe "" suffx)
+                                                <>"}"
                                             )
                                     )
                              else mempty
                            )
                         <> str (cddef cDef)
-                        <> if null (cdref cDef) then mempty
-                           else str (" ["++cdref cDef++"]")
+                        <> if T.null (cdref cDef) then mempty
+                           else str (" ["<>cdref cDef<>"]")
                        ) 
                  ] 
                )
@@ -194,7 +195,7 @@ chpNatLangReqs env lev fSpec =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
             [(   (str.l) (NL "Afspraak ", EN "Agreement ")
-              <> (text . show . theNr $ nDcl) <> ": " <> (xDefInln env fSpec (XRefSharedLangRelation dcl))
+              <> (text . tshow . theNr $ nDcl) <> ": " <> (xDefInln env fSpec (XRefSharedLangRelation dcl))
              , 
               mempty 
               <>[printMeaning outputLang' dcl]
@@ -227,7 +228,7 @@ chpNatLangReqs env lev fSpec =
          (printPurposes . cRulPurps . theLoad) nRul
       <> definitionList 
             [(   str (l (NL "Afspraak ", EN "Agreement "))
-              <> (text . show . theNr $ nRul) <>": "
+              <> (text . tshow . theNr $ nRul) <>": "
               <> xDefInln env fSpec (XRefSharedLangRule rul)<>"."
 
              , case (cRulMeanings . theLoad) nRul of
@@ -241,7 +242,7 @@ chpNatLangReqs env lev fSpec =
      where rul = cRul . theLoad $ nRul
   mkPhrase :: Relation -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
-   | null (prL++prM++prR)
+   | T.null (prL<>prM<>prR)
                    =    (atomShow . upCap) srcAtom
                      <> (pragmaShow.l) (NL " correspondeert met ", EN " corresponds to ")
                      <> atomShow tgtAtom
@@ -249,13 +250,13 @@ chpNatLangReqs env lev fSpec =
                      <> atomShow (name decl)
                      <> "."
    | otherwise
-                  =    (if null prL then mempty
+                  =    (if T.null prL then mempty
                          else pragmaShow (upCap prL) <> " ")
                      <> atomShow srcAtom <> " "
-                     <> (if null prM then mempty
+                     <> (if T.null prM then mempty
                          else pragmaShow prM <> " ")
                      <> atomShow tgtAtom
-                     <> (if null prR then mempty
+                     <> (if T.null prR then mempty
                          else " " <> pragmaShow prR)
                      <> "."
    where srcAtom = showValADL (apLeft pair)
@@ -266,40 +267,45 @@ chpNatLangReqs env lev fSpec =
          atomShow = str
          pragmaShow = emph . str
                    
-data LawRef = LawRef { lawRef :: String}
-data ArticleOfLaw = ArticleOfLaw { aOlLaw :: String
-                                 , aOlArt :: [Either String Int]
+data LawRef = LawRef { lawRef :: Text}
+data ArticleOfLaw = ArticleOfLaw { aOlLaw :: Text
+                                 , aOlArt :: [Either Text Int]
                                  } deriving Eq
-toLawRef:: String -> Maybe LawRef
-toLawRef s = case s of
-              [] -> Nothing
-              _  -> (Just . LawRef) s
-wordsOf :: LawRef -> NE.NonEmpty String
-wordsOf ref = case words . lawRef $ ref of
-                [] -> fatal $ "string in LaWRef must not be empty."
+toLawRef:: Text -> Maybe LawRef
+toLawRef txt = if T.null txt then Nothing else Just (LawRef txt)
+wordsOf :: LawRef -> NE.NonEmpty Text
+wordsOf ref = case T.words . lawRef $ ref of
+                [] -> fatal $ "text in LaWRef must not be empty."
                 h:tl -> h NE.:| tl
 -- the article is everything but the law (and we also drop any trailing commas)
 getArticlesOfLaw :: LawRef -> [ArticleOfLaw]
-getArticlesOfLaw ref = map buildLA . splitOn ", " . unwords .NE.init .wordsOf $ ref
+getArticlesOfLaw ref = map buildLA . map T.pack . splitOn ", " .T.unpack . T.unwords . NE.init . wordsOf $ ref
                              
    where
+     buildLA :: Text -> ArticleOfLaw
      buildLA art = ArticleOfLaw ((NE.last . wordsOf) ref) (scanRef art)
        where
     -- group string in number and text sequences, so "Art 12" appears after "Art 2" when sorting (unlike in normal lexicographic string sort)
-         scanRef :: String -> [Either String Int]
-         scanRef "" = []
-         scanRef str'@(c:_) | isDigit c = scanRefInt str'
-                            | otherwise = scanRefTxt str'
-         scanRefTxt "" = []
-         scanRefTxt str' = let (txt, rest) = break isDigit str'
-                           in  Left txt : scanRefInt rest
+         scanRef :: Text -> [Either Text Int]
+         scanRef txt = case T.uncons txt of
+           Nothing -> mempty
+           Just (c,_) | isDigit c -> scanRefInt txt
+                      | otherwise -> scanRefTxt txt
+         scanRefTxt :: Text -> [Either Text Int]
+         scanRefTxt txt = case T.uncons txt of
+           Nothing -> mempty
+           Just _ -> let (txt', rest) = T.break isDigit txt'
+                           in  Left txt' : scanRefInt rest
 
-         scanRefInt "" = []
-         scanRefInt str' = let (digits, rest) = span isDigit str'
-                           in  Right (case readMaybe digits of
-                                        Nothing  -> fatal $ "Impossible: This cannot be interpreted as digits: "<> digits
-                                        Just x -> x
-                                     ) : scanRefTxt rest
+         scanRefInt :: Text -> [Either Text Int]
+         scanRefInt txt = case T.uncons txt of
+           Nothing -> mempty
+           Just _  -> Right 
+                        (case readMaybe (T.unpack digits) of
+                          Nothing  -> fatal $ "Impossible: This cannot be interpreted as digits: "<> digits
+                          Just x -> x
+                        ) : scanRefTxt rest
+                  where (digits, rest) = T.span isDigit txt
 
 instance Ord ArticleOfLaw where
  compare a b =
@@ -307,7 +313,8 @@ instance Ord ArticleOfLaw where
      EQ   -> compare (aOlArt a) (aOlArt b)
      ord' -> ord'
 
-unscanRef :: [Either String Int] -> String
-unscanRef = concatMap (either id show)
+unscanRef :: [Either Text Int] -> Text
+unscanRef = T.concat . fmap (either id tshow)
+
              
              
