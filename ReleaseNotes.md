@@ -11,6 +11,7 @@
 * [Issue #1056](https://github.com/AmpersandTarski/Ampersand/issues/#1056) Bugfix in .xlsx parser
 * [Issue #1054](https://github.com/AmpersandTarski/Ampersand/issues/#1054) Ampersand daemon now also reports type errors
 * [Issue #1063](https://github.com/AmpersandTarski/Ampersand/issues/#1063) Return violations of invariants with standard check
+* [Issue #735](https://github.com/AmpersandTarski/Ampersand/issues/735) Upgrade to pandoc 2.9. 
 
 ## v3.17.4 (13 september 2019)
 

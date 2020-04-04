@@ -744,19 +744,19 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("urlEncodedName"        , "Concept"               , "EncodedName"
       , Set.fromList
-        [(dirtyId cpt,(PopAlphaNumeric . escapeNonAlphaNum . name) cpt)
+        [(dirtyId cpt,(PopAlphaNumeric . urlEncodedName . name) cpt)
         | cpt::A_Concept <- instanceList fSpec
         ]
       )
      ,("urlEncodedName"        , "Pattern"               , "EncodedName"
       , Set.fromList
-        [(dirtyId pat,(PopAlphaNumeric . escapeNonAlphaNum . name) pat)
+        [(dirtyId pat,(PopAlphaNumeric . urlEncodedName . name) pat)
         | pat::Pattern <- instanceList fSpec
         ]
       )
      ,("urlEncodedName"        , "Rule"                  , "EncodedName"
       , Set.fromList
-        [(dirtyId rul,(PopAlphaNumeric . escapeNonAlphaNum . name) rul)
+        [(dirtyId rul,(PopAlphaNumeric . urlEncodedName . name) rul)
         | rul::Rule <- instanceList fSpec
         ]
       )

@@ -2,7 +2,7 @@
 -- | This module contains some common Text funcions
 module Ampersand.Basics.String 
         ( unCap,upCap
-        , escapeNonAlphaNum
+        , urlEncodedName
         , escapeIdentifier
         , escapeLatex
         , toLatexVariable
@@ -32,21 +32,21 @@ upCap txt = case T.uncons txt of
   Just (h,tl) -> T.cons (toUpper h) tl
 
 -- | escape anything except regular characters and digits to _<character code>
--- e.g. escapeNonAlphaNum "a_é" = "a_95_233"
-escapeNonAlphaNum :: Text -> Text
-escapeNonAlphaNum txt = case T.uncons txt of
+-- e.g. urlEncodedName "a_é" = "a_95_233"
+urlEncodedName :: Text -> Text
+urlEncodedName txt = case T.uncons txt of
   Nothing -> mempty
   Just (h,tl)
-    | isAlphaNum h && isAscii h -> T.singleton h              <> escapeNonAlphaNum tl
-    | otherwise                 -> T.cons '_' (tshow (ord h)) <> escapeNonAlphaNum tl
+    | isAlphaNum h && isAscii h -> T.singleton h              <> urlEncodedName tl
+    | otherwise                 -> T.cons '_' (tshow (ord h)) <> urlEncodedName tl
  
 -- | Make sure that the text can safely be used in LaTeX
 escapeLatex :: Text -> Text
 escapeLatex txt = case T.uncons txt of
   Nothing -> mempty
   Just (h,tl)
-    | isAlphaNum h -> T.singleton h              <> escapeNonAlphaNum tl
-    | otherwise    -> T.cons '_' (tshow (ord h)) <> escapeNonAlphaNum tl
+    | isAlphaNum h -> T.singleton h              <> escapeLatex tl
+    | otherwise    -> T.cons '_' (tshow (ord h)) <> escapeLatex tl
 -- | Make sure that a text can be used safely as a Latex variable.
 toLatexVariable :: Text -> Text
 toLatexVariable txt = 
