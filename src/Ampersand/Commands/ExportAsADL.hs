@@ -14,6 +14,7 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
 import qualified RIO.Text as T
+import           System.Directory
 import           System.FilePath
 
 -- | For importing and analysing data, Ampersand allows you to annotate an Excel spreadsheet (.xlsx) and turn it into an Ampersand model.
@@ -25,8 +26,9 @@ import           System.FilePath
 exportAsAdl :: (HasOutputFile env, HasDirOutput env, HasLogFunc env) => FSpec -> RIO env ()
 exportAsAdl fSpec = do
     env <- ask
-    logDebug $ "Generating data analysis script (ADL) for " <> display (T.pack $ name fSpec) <> "..."
-    writeFileUtf8 (outputFile' env) (T.pack $ showA ctx) 
+    logDebug $ "Generating data analysis script (ADL) for " <> display (name fSpec) <> "..."
+    liftIO $ createDirectoryIfMissing True (takeDirectory (outputFile' env))
+    writeFileUtf8 (outputFile' env) (showA ctx) 
     logInfo $ ".adl-file written to: " <> display (T.pack $ outputFile' env)
   where outputFile' env = view dirOutputL env </> view outputfileL env
         ctx = originalContext fSpec

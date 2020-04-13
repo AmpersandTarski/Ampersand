@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveGeneric #-}
+﻿{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Ampersand.Types.Config
   ( 
@@ -144,8 +145,6 @@ instance (HasDirCustomizations a) => HasDirCustomizations (ExtendedRunner a) whe
   dirCustomizationsL = cmdOptsL . dirCustomizationsL
 instance (HasZwolleVersion a) => HasZwolleVersion (ExtendedRunner a) where
   zwolleVersionL = cmdOptsL . zwolleVersionL
-instance (HasAllowInvariantViolations a) => HasAllowInvariantViolations (ExtendedRunner a) where
-  allowInvariantViolationsL = cmdOptsL . allowInvariantViolationsL
 instance (HasGenerateFrontend a) => HasGenerateFrontend (ExtendedRunner a) where
   generateFrontendL = cmdOptsL . generateFrontendL
 instance (HasGenerateBackend a) => HasGenerateBackend (ExtendedRunner a) where

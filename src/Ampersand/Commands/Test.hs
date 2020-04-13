@@ -43,7 +43,7 @@ parserRoundtripTest = do
                      then ["Parser & prettyprinter test PASSED."]
                      else ( T.lines . T.intercalate "\n   " $
                              ["QuickCheck found errors in the roundtrip in parsing/prettyprinting for the following case:"]
-                           ++T.lines (T.pack msg)
+                           <>T.lines msg
                           )
                    , return parserCheckResult
                    )

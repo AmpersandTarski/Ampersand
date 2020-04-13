@@ -15,7 +15,8 @@ import           Ampersand.Basics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec
 import qualified RIO.Text as T
-import           System.FilePath ((</>), (-<.>))
+import           System.FilePath
+import           System.Directory
 import           Text.Pandoc (runIO,writeHtml5String,def,handleError)
 import           Text.Pandoc.Builder
 
@@ -25,8 +26,9 @@ proof :: (HasDirOutput env, HasRootFile env, HasLogFunc env)
        => FSpec -> RIO env ()
 proof fSpec = do 
     env <- ask
-    logInfo $ "Generating Proof for " <> display( T.pack $ name fSpec) <> " into " <> display(T.pack $ outputFile env) <> "..."
+    logInfo $ "Generating Proof for " <> display (name fSpec) <> " into " <> display(T.pack $ outputFile env) <> "..."
     content <- liftIO $ (runIO (writeHtml5String def thePandoc)) >>= handleError
+    liftIO $ createDirectoryIfMissing True (takeDirectory (outputFile env))
     writeFileUtf8 (outputFile env) content
     logDebug "Proof written."
   where 

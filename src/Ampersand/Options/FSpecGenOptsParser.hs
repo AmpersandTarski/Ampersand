@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Options.FSpecGenOptsParser 
    (fSpecGenOptsParser, defFSpecGenOpts)
 where
@@ -8,8 +9,7 @@ import           Ampersand.Basics
 -- import           Ampersand.FSpec.ShowMeatGrinder (MetaModel(..))
 import           Options.Applicative
 import           Options.Applicative.Builder.Extra
-import           RIO.Char (toLower)
-import qualified RIO.List as L
+import qualified RIO.Text as T
 
 -- | Command-line parser for the proto command.
 fSpecGenOptsParser :: 
@@ -18,8 +18,8 @@ fSpecGenOptsParser ::
   -> Parser FSpecGenOpts
 fSpecGenOptsParser isForDaemon =
       ( \rootFile sqlBinTables genInterfaces namespace 
-         defaultCrud trimXLSXCells -- metaModels
-         knownRecipe
+         defaultCrud trimXLSXCells
+         knownRecipe allowInvariantViolations
         -> FSpecGenOpts
                 { xrootFile = rootFile
                 , xsqlBinTables = sqlBinTables
@@ -28,6 +28,7 @@ fSpecGenOptsParser isForDaemon =
                 , xdefaultCrud = defaultCrud
                 , xtrimXLSXCells = trimXLSXCells
                 , xrecipeName = knownRecipe
+                , xallowInvariantViolations = allowInvariantViolations
                 }
       ) <$> (if isForDaemon 
               then pure Nothing -- The rootfile should come from the daemon config file.
@@ -37,8 +38,8 @@ fSpecGenOptsParser isForDaemon =
         <*> namespaceP
         <*> crudP
         <*> trimXLSXCellsP
-      --  <*> metaModelsP
         <*> knownRecipeP
+        <*> allowInvariantViolationsP
 defFSpecGenOpts :: FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl = FSpecGenOpts
      { xrootFile = Just rootAdl
@@ -48,6 +49,7 @@ defFSpecGenOpts rootAdl = FSpecGenOpts
      , xdefaultCrud = (True,True,True,True)
      , xtrimXLSXCells = True
      , xrecipeName = Standard
+     , xallowInvariantViolations = False
      } 
 rootFileP :: Parser FilePath
 rootFileP = strArgument 
@@ -65,7 +67,7 @@ genInterfacesP = switch
         <> help "Generate interfaces, which currently does not work."
         )
 
-namespaceP :: Parser String
+namespaceP :: Parser Text
 namespaceP = strOption
         ( long "namespace"
         <> metavar "NAMESPACE"
@@ -99,7 +101,7 @@ trimXLSXCellsP = boolFlags True "trim-cellvalues"
                  "that are INCLUDED in the script.")
          mempty
 knownRecipeP :: Parser KnownRecipe
-knownRecipeP = toKnownRecipe <$> strOption
+knownRecipeP = toKnownRecipe . T.pack <$> strOption
       (  long "build-recipe"
       <> metavar "RECIPE"
       <> value (show Standard)
@@ -112,20 +114,27 @@ knownRecipeP = toKnownRecipe <$> strOption
     where
       allKnownRecipes :: [KnownRecipe]
       allKnownRecipes = [minBound..]
-      toKnownRecipe :: String -> KnownRecipe
+      toKnownRecipe :: Text -> KnownRecipe
       toKnownRecipe s = case filter matches allKnownRecipes of
             -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
             --        See https://hackage.haskell.org/package/optparse-applicative
-                   [] -> fatal $ unlines
+                   [] -> fatal $ T.unlines
                         ["No matching recipe found. Possible recipes are:"
-                        , "  "<>L.intercalate ", " (map show allKnownRecipes)
+                        , "  "<>T.intercalate ", " (map tshow allKnownRecipes)
                         , "  You specified: `"<>s<>"`"
                         ]
                    [f] -> f
-                   xs -> fatal $ unlines 
+                   xs -> fatal $ T.unlines 
                         [ "Ambiguous recipe specified. Possible matches are:"
-                        , "  "<>L.intercalate ", " (map show xs)
+                        , "  "<>T.intercalate ", " (map tshow xs)
                         ]
             where
               matches :: (Show a) => a -> Bool
-              matches x = map toLower s `L.isPrefixOf` (map toLower $ show x)
+              matches x = T.toLower s `T.isPrefixOf` (T.toLower $ tshow x)
+
+allowInvariantViolationsP :: Parser Bool
+allowInvariantViolationsP = switch
+        ( long "ignore-invariant-violations"
+        <> help ("Do not report violations of invariants. (See "
+               <>"https://github.com/AmpersandTarski/Ampersand/issues/728)")
+        )

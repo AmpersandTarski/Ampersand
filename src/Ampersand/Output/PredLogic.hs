@@ -1,20 +1,22 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.PredLogic
-         ( PredLogicShow(..), showLatex, showRtf, mkVar
+         ( -- PredLogicShow(..), mkVar
          ) where
+{- TODO: Dit commentaarblok ont-commentaren en deze module netjes herschrijven!
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
-import           Ampersand.Output.PandocAux (latexEscShw)
 import           RIO.Char
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.List as L
+import           Text.Pandoc.Builder
 
---  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
+--  data PredVar = PV Text     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
 data PredLogic
  = Forall [Var] PredLogic            |
    Exists [Var] PredLogic            |
@@ -23,12 +25,12 @@ data PredLogic
    Conj [PredLogic]                  |
    Disj [PredLogic]                  |
    Not PredLogic                     |
-   Pred String String                |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Relation (showA e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
+   Pred Text Text                |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Relation (showA e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
    PlK0 PredLogic                    |
    PlK1 PredLogic                    |
    R PredLogic Relation PredLogic |
-   Atom String                       |
-   Funs String [Relation]         |
+   Atom Text                       |
+   Funs Text [Relation]         |
    Dom Expression Var                |
    Cod Expression Var                deriving Eq
 
@@ -39,7 +41,7 @@ data Notation = Flr | Frl | Rn | Wrap deriving Eq   -- yields notations y=r(x)  
 --        English  ->
 
 class PredLogicShow a where
-  showPredLogic :: Lang -> a -> String
+  showPredLogic :: Lang -> a -> Text
   showPredLogic l r =
     predLshow (natLangOps l) (toPredLogic r) -- predLshow produces raw LaTeX
   toPredLogic :: a -> PredLogic
@@ -50,188 +52,143 @@ instance PredLogicShow Rule where
 instance PredLogicShow Expression where
   toPredLogic = assemble
 
--- showLatex ought to produce PandDoc mathematics instead of LaTeX source code.
--- PanDoc, however, does not support mathematics sufficiently, as to date. For this reason we have showLatex.
--- It circumvents the PanDoc structure and goes straight to LaTeX source code.
--- TODO when PanDoc is up to the job.
-showLatex :: PredLogic -> [[String]]
-showLatex x 
- = chop (predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee"
-                   , "\\ \\wedge\t", "^{*}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x)
-   where rel :: Relation -> String -> String -> String 
-         rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
-           = if isIdent (EDcD r) then lhs++"\\ =\\ "++rhs else
-             case name r of
-              "lt"     -> lhs++"\\ <\\ "++rhs
-              "gt"     -> lhs++"\\ >\\ "++rhs
-              "le"     -> lhs++"\\ \\leq\\ "++rhs
-              "leq"    -> lhs++"\\ \\leq\\ "++rhs
-              "ge"     -> lhs++"\\ \\geq\\ "++rhs
-              "geq"    -> lhs++"\\ \\geq\\ "++rhs
-              _        -> lhs++"\\ \\id{"++latexEscShw (name r)++"}\\ "++rhs
-         fun :: Relation -> String -> String
-         fun r e = "\\id{"++latexEscShw (name r)++"}("++e++")"
-         implies :: String -> String -> String
-         implies antc cons = antc++" \\Rightarrow "++cons
-         apply :: Relation -> String -> String -> String    --TODO language afhankelijk maken.
-         apply decl d c =
-            d++"\\ \\id{"++latexEscShw (name decl)++"}\\ "++c
-         mathVars :: String -> [Var] -> String
-         mathVars q vs
-          = if null vs then "" else
-            q++" "++L.intercalate "; " [L.intercalate ", " var++"\\coloncolon\\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++":\n"
-            where
-             vss = [(NE.toList $ fmap fst varCl,show(snd (NE.head varCl))) |varCl<-eqCl snd vs]
-         chop :: String -> [[String]]
-         chop = map chops . lins
-          where
-            lins ""        = []
-            lins ('\n':cs) = "": lins cs
-            lins (c:cs)    = (c:r):rs where r:rs = case lins cs of  [] -> [""] ; e -> e
-            chops cs = let [a,b,c] = take 3 (tabs cs) in [a,b,c]
-            tabs "" = ["","","",""]
-            tabs ('\t':cs) = "": tabs cs
-            tabs (c:cs) = (c:r):rs where r:rs = tabs cs
-
-showRtf :: PredLogic -> String
-showRtf = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el)
-  where unicodeSym :: Int -> Char -> Char -> String
-        unicodeSym fs sym altChar = "{\\fs"++show fs++" \\u"++show (ord sym)++[altChar]++"}"
-        forallP = unicodeSym 32 '∀' 'A' --"{\\fs36 \\u8704A}"
-        existsP = unicodeSym 32 '∃' 'E'
-        impliesP antc cons = antc++" "++unicodeSym 26 '⇒' '?'++" "++cons
-        equivP = unicodeSym 26 '⇔' '='
-        orP = unicodeSym 30 '∨' 'v'
-        andP = unicodeSym 30 '∧' '^'
-        k0P = "{\\super "++unicodeSym 30 '∗' '*'++"}"
-        k1P = "{\\super +}"
-        notP = unicodeSym 26 '¬' '!'
-        el = unicodeSym 30 '∈' '?' 
-        relP r lhs rhs  -- TODO: sloppy code, copied from showLatex
-         = if isIdent (EDcD r) then lhs++"\\ =\\ "++rhs else
-           case name r of
-            "lt"     -> lhs++" < "++rhs
-            "gt"     -> lhs++" > "++rhs
-            "le"     -> lhs++" "++unicodeSym 28 '≤' '?'++" "++rhs
-            "leq"    -> lhs++" "++unicodeSym 28 '≤' '?'++" "++rhs
-            "ge"     -> lhs++" "++unicodeSym 28 '≥' '?'++" "++rhs
-            "geq"    -> lhs++" "++unicodeSym 28 '≥' '?'++" "++rhs
-            _        -> lhs++" "++name r++" "++rhs
-        funP r e = name r++"("++e++")"
-        
-        apply :: Relation -> String -> String -> String
-        apply decl d c =
-           d++" "++name decl++" "++c
-        showVarsP :: String -> [Var] -> String
-        showVarsP q vs
-         = if null vs then "" else
-           q++L.intercalate "; " [L.intercalate ", " var++" "++unicodeSym 28 '∷' '?'++" "++dType | (var,dType)<-vss]++":\\par\n"
-           where
-            vss = [(NE.toList $ fmap fst varCl,show(snd (NE.head varCl))) |varCl<-eqCl snd vs]
-        breakP = ""
-        spaceP = " "
-
+data NatLangOpts a = NatLangOpts
+   { forallP   :: Inline
+   , existsP   :: Inline
+   , impliesP  :: Inline -> Inline -> Inline
+   , equivP    :: Inline
+   , orP       :: Inline
+   , andP      :: Inline
+   , k0P       :: Inline
+   , k1P       :: Inline
+   , notP      :: Inline
+   , relP      :: Relation -> Inline -> Inline -> Inline
+   , funP      :: a -> Inline -> Inline
+   , showVarsP :: [(Inline, A_Concept)] -> Block
+   , breakP    :: Inline
+   , spaceP    :: Inline
+   , applyP    :: Relation -> Inline -> Inline -> Inline
+   , elemP     :: Inline
+   }
+ 
 -- natLangOps exists for the purpose of translating a predicate logic expression to natural language.
 -- It yields a vector of mostly strings, which are used to assemble a natural language text in one of the natural languages supported by Ampersand.
-natLangOps :: Named a => Lang -> (String,
-                                       String,
-                                       String -> String -> String,
-                                       String,
-                                       String,
-                                       String,
-                                       String,
-                                       String,
-                                       String,
-                                       Relation -> String -> String -> String,
-                                       a -> String -> String,
-                                       String -> [(String, A_Concept)] -> String,
-                                       String,
-                                       String,
-                                       Relation -> String -> String -> String,
-                                       String)
-natLangOps l
-         = case l of
--- parameternamen:         (forallP,     existsP,        impliesP, equivP,             orP,  andP,  k0P, k1P, notP,  relP, funP, showVarsP, breakP, spaceP)
-             English -> ("For each",  "There exists", implies, "is equivalent to",  "or", "and", "*", "+", "not",  rel, fun,  langVars , "\n  ", " ", apply, "is element of")
-             Dutch   -> ("Voor elke", "Er is een",    implies, "is equivalent met", "of", "en",  "*", "+", "niet", rel, fun,  langVars , "\n  ", " ", apply, "is element van")
-            where
+natLangOps :: Named a => Lang -> NatLangOpts a
+natLangOps l = case l of
+    English -> NatLangOpts
+      { forallP   = "For each"
+      , existsP   = "There exists"
+      , impliesP  = implies
+      , equivP    = "is equivalent to"
+      , orP       = "or"
+      , andP      = "and"
+      , k0P       = "*"
+      , k1P       = "+"
+      , notP      = "not"
+      , relP      = rel
+      , funP      = fun
+      , showVarsP = langVars
+      , breakP    = "\n  "
+      , spaceP    = " "
+      , applyP    = apply
+      , elemP     = "is element of"
+      }    
+    Dutch -> NatLangOpts
+      { forallP   = "Voor elke"
+      , existsP   = "Er is een"
+      , impliesP  = implies
+      , equivP    = "is equivalent met"
+      , orP       = "of"
+      , andP      = "en"
+      , k0P       = "*"
+      , k1P       = "+"
+      , notP      = "niet"
+      , relP      = rel
+      , funP      = fun
+      , showVarsP = langVars
+      , breakP    = "\n  "
+      , spaceP    = " "
+      , applyP    = apply
+      , elemP     = "is element van"
+      }    
+  where
                rel = apply
-               fun r x' = {- Todo: when using pandoc stuff: showMath -} (name r)++"("++x'++")"
+               fun r x' = {- Todo: when using pandoc stuff: showMath -} (name r)<>"("<>x'<>")"
                implies antc cons = case l of
-                                     English  -> "If "++antc++", then "++cons
-                                     Dutch    -> "Als "++antc++", dan "++cons
+                                     English  -> "If "<>antc<>", then "<>cons
+                                     Dutch    -> "Als "<>antc<>", dan "<>cons
                apply decl d c =
-                  if null (prL++prM++prR)
-                  then "$"++d++"$ "++name decl++" $"++c++"$"
-                  else prL++" $"++d++"$ "++prM++" $"++c++"$ "++prR
+                  if T.null (prL<>prM<>prR)
+                  then "$"<>d<>"$ "<>name decl<>" $"<>c<>"$"
+                  else prL<>" $"<>d<>"$ "<>prM<>" $"<>c<>"$ "<>prR
                  where prL = decprL decl
                        prM = decprM decl
                        prR = decprR decl
-               langVars :: String -> [(String, A_Concept)] -> String
+               langVars :: Text -> [(Text, A_Concept)] -> Text
                langVars q vs
                    = case l of
                       English | null vs     -> ""
                               | q=="Exists" ->
-                                  L.intercalate " and "
+                                  T.intercalate " and "
                                   ["there exist"
-                                   ++(if length vs'==1 then "s a "++dType else ' ':plural English dType)
-                                   ++" called "
-                                   ++L.intercalate ", " ['$':v'++"$" | v'<-vs'] | (vs',dType)<-vss]
-                              | otherwise   -> "If "++langVars "Exists" vs++", "
+                                   <>(if length vs'==1 then "s a "<>dType else " "<>plural English dType)
+                                   <>" called "
+                                   <>T.intercalate ", " (map math vs') | (vs',dType)<-vss]
+                              | otherwise   -> "If "<>langVars "Exists" vs<>", "
                       Dutch   | null vs     -> ""
                               | q=="Er is"  ->
-                                  L.intercalate " en "
+                                  T.intercalate " en "
                                   ["er "
-                                    ++(if length vs'==1 then "is een "++dType else "zijn "++plural Dutch dType)
-                                    ++" genaamd "
-                                    ++L.intercalate ", " ['$':v'++"$" | v'<-vs'] | (vs',dType)<-vss]
-                              | otherwise   -> "Als "++langVars "Er is" vs++", "
+                                    <>(if length vs'==1 then "is een "<>dType else "zijn "<>plural Dutch dType)
+                                    <>" genaamd "
+                                    <>T.intercalate ", " (map math vs') | (vs',dType)<-vss]
+                              | otherwise   -> "Als "<>langVars "Er is" vs<>", "
                     where
-                     vss = [(NE.toList $ fmap fst vs',show(snd (NE.head vs'))) |vs'<-eqCl snd vs]
+                     vss = [(NE.toList $ fmap fst vs',tshow(snd (NE.head vs'))) |vs'<-eqCl snd vs]
 
 -- predLshow exists for the purpose of translating a predicate logic expression to natural language.
 -- It uses a vector of operators (mostly strings) in order to produce text. This vector can be produced by, for example, natLangOps.
 -- example:  'predLshow (natLangOps l) e' translates expression 'e'
 -- into a string that contains a natural language representation of 'e'.
-predLshow :: ( String                                    -- forallP
-             , String                                    -- existsP
-             , String -> String -> String                -- impliesP
-             , String                                    -- equivP
-             , String                                    -- orP
-             , String                                    -- andP
-             , String                                    -- kleene *
-             , String                                    -- kleene +
-             , String                                    -- notP
-             , Relation -> String -> String -> String    -- relP
-             , Relation -> String -> String              -- funP
-             , String -> [(String, A_Concept)] -> String -- showVarsP
-             , String                                    -- breakP
-             , String                                    -- spaceP
-             , Relation -> String -> String -> String -- apply
-             , String                                    -- set element
-             ) -> PredLogic -> String
+predLshow :: ( Text                                    -- forallP
+             , Text                                    -- existsP
+             , Text -> Text -> Text                -- impliesP
+             , Text                                    -- equivP
+             , Text                                    -- orP
+             , Text                                    -- andP
+             , Text                                    -- kleene *
+             , Text                                    -- kleene +
+             , Text                                    -- notP
+             , Relation -> Text -> Text -> Text    -- relP
+             , Relation -> Text -> Text              -- funP
+             , Text -> [(Text, A_Concept)] -> Text -- showVarsP
+             , Text                                    -- breakP
+             , Text                                    -- spaceP
+             , Relation -> Text -> Text -> Text -- apply
+             , Text                                    -- set element
+             ) -> PredLogic -> Text
 predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el)
  = charshow 0
      where
-      wrap i j str = if i<=j then str else "("++str++")"
-      charshow :: Integer -> PredLogic -> String
+      wrap i j str = if i<=j then str else "("<>str<>")"
+      charshow :: Integer -> PredLogic -> Text
       charshow i predexpr
        = case predexpr of
-               Forall vars restr   -> wrap i 1 (showVarsP forallP vars ++ charshow 1 restr)
-               Exists vars restr   -> wrap i 1 (showVarsP existsP vars  ++ charshow 1 restr)
-               Implies antc conseq -> wrap i 2 (breakP++impliesP (charshow 2 antc) (charshow 2 conseq))
-               Equiv lhs rhs       -> wrap i 2 (breakP++charshow 2 lhs++spaceP++equivP++spaceP++ charshow 2 rhs)
+               Forall vars restr   -> wrap i 1 (showVarsP forallP vars <> charshow 1 restr)
+               Exists vars restr   -> wrap i 1 (showVarsP existsP vars  <> charshow 1 restr)
+               Implies antc conseq -> wrap i 2 (breakP<>impliesP (charshow 2 antc) (charshow 2 conseq))
+               Equiv lhs rhs       -> wrap i 2 (breakP<>charshow 2 lhs<>spaceP<>equivP<>spaceP<> charshow 2 rhs)
                Disj rs             -> if null rs
                                       then ""
-                                      else wrap i 3 (L.intercalate (spaceP++orP ++spaceP) (map (charshow 3) rs))
+                                      else wrap i 3 (T.intercalate (spaceP<>orP <>spaceP) (map (charshow 3) rs))
                Conj rs             -> if null rs
                                       then ""
-                                      else wrap i 4 (L.intercalate (spaceP++andP++spaceP) (map (charshow 4) rs))
+                                      else wrap i 4 (T.intercalate (spaceP<>andP<>spaceP) (map (charshow 4) rs))
                Funs x ls           -> case ls of
                                          []    -> x
                                          r:ms  -> if isIdent (EDcD r) then charshow i (Funs x ms) else charshow i (Funs (funP r x) ms)
-               Dom expr (x,_)      -> x++el++funP (makeRel "dom") (showA expr)
-               Cod expr (x,_)      -> x++el++funP (makeRel "cod") (showA expr)
+               Dom expr (x,_)      -> x<>el<>funP (makeRel "dom") (showA expr)
+               Cod expr (x,_)      -> x<>el<>funP (makeRel "cod") (showA expr)
                R pexpr dec pexpr'  -> case (pexpr,pexpr') of
                                          (Funs l [] , Funs r [])  -> wrap i 5 (apply dec l r)
 {-
@@ -243,12 +200,12 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                                                                                   else apply (makeRelation rel) l (funP f r))
 -}
                                          (lhs,rhs)                -> wrap i 5 (relP dec (charshow 5 lhs) (charshow 5 rhs))
-               Atom atom           -> "'"++atom++"'"
-               PlK0 rs             -> wrap i 6 (charshow 6 rs++k0P)
-               PlK1 rs             -> wrap i 7 (charshow 7 rs++k1P)
-               Not rs              -> wrap i 8 (spaceP++notP++charshow 8 rs)
-               Pred nm v'          -> nm++"{"++v'++"}"
-      makeRel :: String -> Relation -- This function exists solely for the purpose of dom and cod
+               Atom atom           -> "'"<>atom<>"'"
+               PlK0 rs             -> wrap i 6 (charshow 6 rs<>k0P)
+               PlK1 rs             -> wrap i 7 (charshow 7 rs<>k1P)
+               Not rs              -> wrap i 8 (spaceP<>notP<>charshow 8 rs)
+               Pred nm v'          -> nm<>"{"<>v'<>"}"
+      makeRel :: Text -> Relation -- This function exists solely for the purpose of dom and cod
       makeRel str
           = Relation { decnm   = T.pack str
                    , decsgn  = fatal "Do not refer to decsgn of this dummy relation"
@@ -264,16 +221,16 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                    , dechash = fatal "Do not use EQ on this dummy relation"
                    }
 
---objOrShow :: Lang -> PredLogic -> String
+--objOrShow :: Lang -> PredLogic -> Text
 --objOrShow l = predLshow ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "*", "+", "NOT", rel, fun, langVars l, "\n", " ")
 --               where rel r lhs rhs = applyM (makeRelation r) lhs rhs
---                     fun r x = x++"."++name r
---                     implies antc cons = "IF "++antc++" THEN "++cons
+--                     fun r x = x<>"."<>name r
+--                     implies antc cons = "IF "<>antc<>" THEN "<>cons
 
 -- The function 'assemble' translates a rule to predicate logic.
 -- In order to remain independent of any representation, it transforms the Haskell data structure Rule
 -- into the data structure PredLogic, rather than manipulate with texts.
-type Var = (String,A_Concept)
+type Var = (Text,A_Concept)
 assemble :: Expression -> PredLogic
 assemble expr
  = case (source expr, target expr) of
@@ -292,13 +249,13 @@ assemble expr
    f exclVars (EDif (l,r)) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
    f exclVars (ELrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
                                     where [c]   = mkVar exclVars [target l]
-                                          eVars = exclVars++[c]
+                                          eVars = exclVars<>[c]
    f exclVars (ERrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
                                     where [c]   = mkVar exclVars [source l]
-                                          eVars = exclVars++[c]
+                                          eVars = exclVars<>[c]
    f exclVars (EDia (l,r)) (a,b)  = Forall [c] (Equiv (f eVars r (b,c)) (f eVars l (a,c)))
                                     where [c]   = mkVar exclVars [target l]
-                                          eVars = exclVars++[c]
+                                          eVars = exclVars<>[c]
    f exclVars e@ECps{}     (a,b)  = fECps exclVars e (a,b)  -- special treatment, see below
    f exclVars e@ERad{}     (a,b)  = fERad exclVars e (a,b)  -- special treatment, see below
    f _        (EPrd (l,r)) (a,b)  = Conj [Dom l a, Cod r b]
@@ -324,7 +281,7 @@ assemble expr
    f _ (EMp1 val _) _             = Atom . showP $ val
    f _ (EDcI _) ((_{-a-},_),(_{-b-},_{-tv-}))     = fatal "Bitrot! R (Funs a []) (Isn tv) (Funs b [])"
    f _ (EDcV _) _                  = Atom "True"
-   f _ e _ = fatal ("Non-exhaustive pattern in subexpression "++showA e++" of assemble (<"++showA expr++">)")
+   f _ e _ = fatal ("Non-exhaustive pattern in subexpression "<>showA e<>" of assemble (<"<>showA expr<>">)")
 
 -- fECps treats the case of a composition.  It works as follows:
 --       An expression, e.g. r;s;t , is translated to Exists (zip ivs ics) (Conj (frels s t)),
@@ -343,10 +300,10 @@ assemble expr
      --         Each fragment represents a subexpression with variables
      --         at the outside only. Fragments will be reconstructed in a conjunct.
       res :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
-      res = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
+      res = pars3 (exclVars<>ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
      -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
       frels :: Var -> Var -> [PredLogic]
-      frels src trg = [r v w | ((r,_,_),v,w)<-L.zip3 res' (src: ivs) (ivs++[trg]) ]
+      frels src trg = [r v w | ((r,_,_),v,w)<-L.zip3 res' (src: ivs) (ivs<>[trg]) ]
      -- Step 3: compute the intermediate variables and their types
       res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
       res' = [triple | triple<-res, not (atomic triple)]
@@ -374,7 +331,7 @@ assemble expr
                      Atom{} -> True
                      _      -> False
    mkvar :: [Var] -> [ Either PredLogic A_Concept ] -> [Var]
-   mkvar exclVars (Right z: ics) = let vz = head (mkVar exclVars [z]) in vz: mkvar (exclVars++[vz]) ics
+   mkvar exclVars (Right z: ics) = let vz = head (mkVar exclVars [z]) in vz: mkvar (exclVars<>[vz]) ics
    mkvar exclVars (Left  _: ics) = mkvar exclVars ics
    mkvar _ [] = []
 
@@ -386,11 +343,11 @@ assemble expr
      | otherwise             = Forall ivs (Disj (frels a b))                               -- e.g.   r!-s! t  the condition or [isCpl e' |e'<-es] is true.
 {- was:
         | otherwise             = Forall ivs (Disj alls)
-                                  where alls = [f (exclVars++ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
+                                  where alls = [f (exclVars<>ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs<>[b]))]
 -}
      where
       es   = NE.filter (not . isEpsilon) $ exprRad2list e -- The definition of exprRad2list guarantees that length es>=2
-      res  = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
+      res  = pars3 (exclVars<>ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
       conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                 -- So conr is not empty.
       antr = let x = (map (notCpl . flp) . reverse . takeWhile isCpl) es in
@@ -401,7 +358,7 @@ assemble expr
              if null x then fatal "Entering in an empty foldr1" else x
      -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
       frels :: Var -> Var -> [PredLogic]
-      frels src trg = [r v w | ((r,_,_),v,w)<-L.zip3 res' (src: ivs) (ivs++[trg]) ]
+      frels src trg = [r v w | ((r,_,_),v,w)<-L.zip3 res' (src: ivs) (ivs<>[trg]) ]
      -- Step 3: compute the intermediate variables and their types
       res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
       res' = [triple | triple<-res, not (atomic triple)]
@@ -432,7 +389,7 @@ assemble expr
          EFlp (EDcD dcl) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-Set.elems $ bindedRelationsIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-Set.elems $ bindedRelationsIn t'])
          EMp1 val _      -> \_ _-> Atom . showP $ val
          EFlp EMp1{}     -> relFun exclVars lhs e rhs
-         _               -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)
+         _               -> \sv tv->f (exclVars<>[sv,tv]) e (sv,tv)
 
    pars3 :: [Var] -> [[Expression]] -> [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
    pars3 exclVars (lhs: [e]: rhs: ts)
@@ -500,12 +457,12 @@ assemble expr
 -- mkVar garandeert dat het resultaat niet in ex voorkomt, dus postconditie:   not (mkVar ex cs `elem` ex)
 -- Dat gebeurt door het toevoegen van apostrofes.
 mkVar :: [Var] -> [A_Concept] -> [Var]
-mkVar ex cs = mknew (map fst ex) [([(toLower.head.(++"x").name) c],c) |c<-cs]
+mkVar ex cs = mknew (map fst ex) [([(toLower.head.(<>"x").name) c],c) |c<-cs]
  where
   mknew _ [] = []
   mknew ex' ((x,c):xs) = if x `elem` ex'
-                         then mknew ex' ((x++"'",c):xs)
-                         else (x,c): mknew (ex'++[x]) xs
+                         then mknew ex' ((x<>"'",c):xs)
+                         else (x,c): mknew (ex'<>[x]) xs
 
 
 -- TODO: Rewrite this module. Also get rid of:
@@ -521,3 +478,5 @@ init [] = fatal $ "init is used on an empty list."
 init x = tail . reverse $ x
 foldr1 :: (a -> a -> a) -> [a] -> a
 foldr1 fun nonEmptyList = foldr fun (head nonEmptyList) (tail nonEmptyList)
+
+-}

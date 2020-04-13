@@ -17,7 +17,8 @@ import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.FSpec2SQL
 import qualified RIO.Text as T
 import           RIO.Time
-import           System.FilePath ((</>), (-<.>))
+import           System.Directory
+import           System.FilePath
 -- | Dumps diagnostic output for development purposes
 --
 devoutput :: (HasDirOutput env, HasRootFile env, HasLogFunc env) 
@@ -32,8 +33,9 @@ doGenHaskell fSpec = do
     env <- ask
     now <- getCurrentTime
     outputFile <- outputFile' <$> ask
-    logDebug $ "Generating Haskell source code for " <> display (T.pack $ name fSpec) <> "..."
-    writeFileUtf8 outputFile (T.pack $ fSpec2Haskell env now fSpec)
+    logDebug $ "Generating Haskell source code for " <> display (name fSpec) <> "..."
+    liftIO $ createDirectoryIfMissing True (takeDirectory outputFile)
+    writeFileUtf8 outputFile (fSpec2Haskell env now fSpec)
     logInfo $ "Haskell written into " <> display (T.pack outputFile)
   where 
     outputFile' env = view dirOutputL env </> baseName env -<.> ".hs"
@@ -43,7 +45,8 @@ doGenSQLdump :: (HasDirOutput env, HasRootFile env, HasLogFunc env)
 doGenSQLdump fSpec = do
     env <- ask
     outputFile <- outputFile' <$> ask
-    logDebug $ "Generating SQL queries dumpfile for " <> display (T.pack $ name fSpec) <> "..."
+    logDebug $ "Generating SQL queries dumpfile for " <> display (name fSpec) <> "..."
+    liftIO $ createDirectoryIfMissing True (takeDirectory outputFile)
     writeFileUtf8 outputFile (dumpSQLqueries env fSpec)
     logInfo $ "SQL queries dumpfile written into " <> display (T.pack outputFile)
   where 

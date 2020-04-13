@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
 ) 
@@ -15,7 +16,7 @@ import qualified RIO.Set as Set
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
-    OOclassdiagram { cdName  = "classification_"++name fSpec
+    OOclassdiagram { cdName  = "classification_"<>name fSpec
                    , classes = map classOf . Set.elems . concs . vgens $ fSpec
                    , assocs  = []
                    , aggrs   = []
@@ -41,7 +42,7 @@ clAnalysis fSpec =
 -- Properties and identities are not shown.
 cdAnalysis :: FSpec -> ClassDiag
 cdAnalysis fSpec =
-  OOclassdiagram { cdName  = "logical_"++name fSpec
+  OOclassdiagram { cdName  = "logical_"<>name fSpec
                  , classes = map buildClass 
                            . filter cptIsShown
                            . Set.elems 
@@ -58,7 +59,7 @@ cdAnalysis fSpec =
    buildClass :: A_Concept -> Class
    buildClass root 
      = case classOf root of
-         Nothing -> fatal $ "Concept is not a class: `"++name root++"`."
+         Nothing -> fatal $ "Concept is not a class: `"<>name root<>"`."
          Just exprs ->
            OOClass { clName = name root
                    , clcpt  = Just root
@@ -83,7 +84,7 @@ cdAnalysis fSpec =
       flipWhenNeeded x = if isInj x && (not.isUni) x then flp x else x
    ooAttr :: Expression -> CdAttribute
    ooAttr r = OOAttr { attNm = case Set.elems $ bindedRelationsIn r of
-                                []  -> fatal $ "No bindedRelations in an expression: " <> show r
+                                []  -> fatal $ "No bindedRelations in an expression: " <> tshow r
                                 h:_ -> name h
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
@@ -130,7 +131,7 @@ cdAnalysis fSpec =
 -- It is based on the plugs that are calculated.
 tdAnalysis :: FSpec -> ClassDiag
 tdAnalysis fSpec =
-  OOclassdiagram {cdName  = "technical_"++name fSpec
+  OOclassdiagram {cdName  = "technical_"<>name fSpec
                  ,classes = allClasses
                  ,assocs  = allAssocs
                  ,aggrs   = []
@@ -145,7 +146,7 @@ tdAnalysis fSpec =
                             TblSQL{} -> 
                               let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
                               in  map (ooAttr kernelAtts) kernelAtts
-                                ++map (ooAttr kernelAtts . rsTrgAtt) (dLkpTbl table) 
+                                <>map (ooAttr kernelAtts . rsTrgAtt) (dLkpTbl table) 
                             BinSQL{}      -> NE.toList $
                               fmap mkOOattr (plugAttributes table)
                                 where mkOOattr a =
@@ -200,7 +201,7 @@ tdAnalysis fSpec =
            EEps{} -> Nothing
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
-           _ -> fatal ("Unexpected expression: "++show expr)
+           _ -> fatal ("Unexpected expression: "<>tshow expr)
        mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Association
        mkRel t (expr,f) =
             OOAssoc { assSrc = sqlname t

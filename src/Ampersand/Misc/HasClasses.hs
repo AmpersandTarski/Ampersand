@@ -1,4 +1,6 @@
-{-# LANGUAGE FlexibleInstances #-}
+﻿{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.HasClasses
 
 where
@@ -12,7 +14,7 @@ class HasFSpecGenOpts a where
   sqlBinTablesL = fSpecGenOptsL . (lens xsqlBinTables (\x y -> x { xsqlBinTables = y }))
   genInterfacesL :: Lens' a Bool -- 
   genInterfacesL = fSpecGenOptsL . (lens xgenInterfaces (\x y -> x { xgenInterfaces = y }))
-  namespaceL :: Lens' a String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
+  namespaceL :: Lens' a Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   namespaceL = fSpecGenOptsL . (lens xnamespace (\x y -> x { xnamespace = y }))
   defaultCrudL :: Lens' a (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
@@ -44,13 +46,13 @@ instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
 class (HasRootFile a) => HasDirPrototype a where
   dirPrototypeL :: Lens' a (Maybe FilePath)
-  getTemplateDir :: a -> String
+  getTemplateDir :: a -> FilePath
   getTemplateDir x = 
     getDirPrototype x </> "templates"
-  getAppDir :: a -> String
+  getAppDir :: a -> FilePath
   getAppDir x =
     getDirPrototype x </> "public" </> "app" </> "project"
-  getGenericsDir :: a -> String
+  getGenericsDir :: a -> FilePath
   getGenericsDir x = 
     getDirPrototype x </> "generics" 
   getDirPrototype :: a -> FilePath
@@ -63,9 +65,8 @@ instance HasDirPrototype ProtoOpts where
 
 class HasAllowInvariantViolations a where
   allowInvariantViolationsL :: Lens' a Bool
-instance HasAllowInvariantViolations ProtoOpts where
-  allowInvariantViolationsL = lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
-
+instance (HasFSpecGenOpts a) => HasAllowInvariantViolations a where
+  allowInvariantViolationsL = fSpecGenOptsL . (lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y }))
 class HasGenerateFrontend a where
   generateFrontendL :: Lens' a Bool
 instance HasGenerateFrontend ProtoOpts where
@@ -78,7 +79,7 @@ instance HasGenerateBackend ProtoOpts where
 
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
-  baseName :: a -> String
+  baseName :: a -> FilePath
   baseName  = fromMaybe (fatal "Cannot determine the basename of the script that is being compiled")
             . fmap takeBaseName
             . view rootFileL
@@ -131,12 +132,12 @@ instance HasDirCustomizations ProtoOpts where
   dirCustomizationsL = lens xdirCustomizations (\x y -> x { xdirCustomizations = y })
 
 class HasZwolleVersion a where
-  zwolleVersionL :: Lens' a String -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
+  zwolleVersionL :: Lens' a FilePath -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
 instance HasZwolleVersion ProtoOpts where
   zwolleVersionL = lens xzwolleVersion (\x y -> x { xzwolleVersion = y })
 
 class HasDirOutput a where
-  dirOutputL :: Lens' a String -- the directory to generate the output in.
+  dirOutputL :: Lens' a FilePath -- the directory to generate the output in.
 
 class HasOutputLanguage a => HasDocumentOpts a where
   documentOptsL :: Lens' a DocOpts
@@ -163,15 +164,15 @@ instance HasOutputFile InputOutputOpts where
   outputfileL = lens x4outputFile (\x y -> x { x4outputFile = y })
 
 class HasVersion a where
-  preVersionL :: Lens' a String 
-  postVersionL :: Lens' a String 
+  preVersionL :: Lens' a Text 
+  postVersionL :: Lens' a Text 
 
 class HasProtoOpts env where
    protoOptsL :: Lens' env ProtoOpts
-   dbNameL   :: Lens' env (Maybe String)
-   sqlHostL  :: Lens' env String
-   sqlLoginL :: Lens' env String
-   sqlPwdL   :: Lens' env String
+   dbNameL   :: Lens' env (Maybe Text)
+   sqlHostL  :: Lens' env Text
+   sqlLoginL :: Lens' env Text
+   sqlPwdL   :: Lens' env Text
    forceReinstallFrameworkL :: Lens' env Bool
    dbNameL   = protoOptsL . lens xdbName (\x y -> x { xdbName = y })
    sqlHostL  = protoOptsL . lens xsqlHost (\x y -> x { xsqlHost = y })
@@ -229,12 +230,14 @@ data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.
   , xsqlBinTables :: !Bool
   , xgenInterfaces :: !Bool -- 
-  , xnamespace :: !String -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
+  , xnamespace :: !Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
   , xrecipeName :: !KnownRecipe 
   -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
-  } deriving Show
+  , xallowInvariantViolations :: !Bool
+  -- ^ Should invariant violations be ignored?
+} deriving Show
 
 data FSpecFormat = 
          FPandoc
@@ -269,13 +272,13 @@ data InputOutputOpts = InputOutputOpts
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
-   { xdbName :: !(Maybe String)
+   { xdbName :: !(Maybe Text)
    -- ^ Name of the database that is generated as part of the prototype
-   , xsqlHost ::  !String
+   , xsqlHost ::  !Text
    -- ^ do database queries to the specified host
-   , xsqlLogin :: !String
+   , xsqlLogin :: !Text
    -- ^ pass login name to the database server
-   , xsqlPwd :: !String
+   , xsqlPwd :: !Text
    -- ^ pass password on to the database server
    , xforceReinstallFramework :: !Bool
    -- ^ when true, an existing prototype directory will be destroyed and re-installed
@@ -283,8 +286,7 @@ data ProtoOpts = ProtoOpts
    , x1fSpecGenOpts :: !FSpecGenOpts
    , xdirPrototype :: !(Maybe FilePath)
    , xdirCustomizations :: !(Maybe [FilePath])
-   , xzwolleVersion :: !String
-   , xallowInvariantViolations :: !Bool
+   , xzwolleVersion :: !FilePath
    , xgenerateFrontend :: !Bool
    , xgenerateBackend :: !Bool
   } deriving Show

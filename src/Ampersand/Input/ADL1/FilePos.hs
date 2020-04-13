@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.ADL1.FilePos (
     FilePos(..), Origin(..), Traced(..),
     isFuzzyOrigin, maybeOrdering, sortWithOrigins,
@@ -17,7 +18,7 @@ type Line = Int
 -- | The column number
 type Column = Int
 -- | The name of a symbol
-type SymbolName = String
+type SymbolName = Text
 
 -- | Makes the initial position for a file
 initPos :: FilePath -- ^ The file path
@@ -53,10 +54,10 @@ instance Hashable FilePos where
   hashWithSalt s (FilePos fn l c) = s `hashWithSalt` fn `hashWithSalt` l `hashWithSalt` c
 
 data Origin = OriginUnknown
-            | Origin String 
-            | PropertyRule String Origin -- Constructor is used to hold the origin of a propertyrule.
+            | Origin Text 
+            | PropertyRule Text Origin -- Constructor is used to hold the origin of a propertyrule.
             | FileLoc FilePos SymbolName 
-            | XLSXLoc FilePath String (Int,Int) 
+            | XLSXLoc FilePath Text (Int,Int) 
             | MeatGrinder -- Constructor is used to specify stuff that originates from meatgrinder
     deriving (Typeable, Generic, Data)
 -- Eq and Ord have been removed by desing on Origin. See issue #1035
@@ -86,7 +87,7 @@ maybeOrdering x y = case x of
            XLSXLoc{}       -> Just GT
            PropertyRule{}  -> Just GT
            _ -> if isFuzzyOrigin y then Nothing 
-                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show y
+                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>tshow y
   XLSXLoc fpx wbx (rowx,colx) 
       -> case y of
            FileLoc{}       -> Just LT
@@ -95,20 +96,20 @@ maybeOrdering x y = case x of
                                (fpy, wby, (rowy,coly))
            PropertyRule{}  -> Just GT
            _ -> if isFuzzyOrigin y then Nothing 
-                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show y
+                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>tshow y
   PropertyRule _ ox 
       -> case y of
            FileLoc{}       -> Just LT
            XLSXLoc{}       -> Just LT
            PropertyRule _ oy -> maybeOrdering ox oy
            _ -> if isFuzzyOrigin y then Nothing 
-                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show y
+                else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>tshow y
   _ -> if isFuzzyOrigin x then Nothing 
-       else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>show x   
+       else fatal $ "All cases for non-fuzzy orderings must be implemented.\n"<>tshow x   
 instance Hashable Origin
 
 instance Show FilePos where
-  show (FilePos fn l c) = fn ++ ":" ++ show l ++ ":" ++ show c
+  show (FilePos fn l c) = fn <> ":" <> show l <> ":" <> show c
 
 instance Show Origin where
   -- The vscode extension expects errors and warnings
@@ -118,10 +119,10 @@ instance Show Origin where
   -- the proper working of the ampersand-language-extension
   show (FileLoc pos _) = show pos
   show (XLSXLoc filePath sheet (row,col)) 
-                       = filePath++":"++
-                         "\n   Sheet: "++sheet++", Cell: "++T.unpack (int2col col)++show row++". "
-  show (PropertyRule dcl o) = "PropertyRule for "++dcl++" which is defined at "++show o
-  show (Origin str)    = str
+                       = filePath<>":"<>
+                         "\n   Sheet: "<>T.unpack sheet<>", Cell: "<>T.unpack (int2col col)<>show row<>". "
+  show (PropertyRule dcl o) = "PropertyRule for "<>T.unpack dcl<>" which is defined at "<>show o
+  show (Origin str)    = T.unpack str
   show OriginUnknown   = "Unknown origin"
   show MeatGrinder     = "MeatGrinder"
 

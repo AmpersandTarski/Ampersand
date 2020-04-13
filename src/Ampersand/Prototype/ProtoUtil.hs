@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+﻿{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.ProtoUtil
@@ -148,3 +148,8 @@ showPhpBool b = if b then "true" else "false"
 showPhpMaybeBool :: Maybe Bool -> String
 showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
+            , "composerTargetPath: "<>T.pack installTarget
+            , "Exit code of trying to install Composer: "<>tshow exit_code<>". "
+            ] <> 
+            (if null out then mempty else "stdout:" : (T.lines . T.pack $ out)) <>
+            (if null err then mempty else "stderr:" : (T.lines . T.pack $ err)) <>

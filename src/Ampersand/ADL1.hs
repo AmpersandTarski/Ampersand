@@ -32,7 +32,6 @@ import Ampersand.Core.ParseTree (
          , PClassify(..)
          , P_Relation(..)
          , ConceptDef(..)
-         , PSingleton
          , PMeaning(..),PMessage(..),P_Markup(..)
          )
 import Ampersand.Core.AbstractSyntaxTree (
@@ -56,7 +55,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Pattern(..)
          , Relation(..), Relations, getExpressionRelation, showRel
          , Rule(..), Rules, A_RoleRule(..)
-         , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, makeConcept ,unsafePAtomVal2AtomValue 
+         , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, unsafePAtomVal2AtomValue 
          , Conjunct(..)
          , PAtomValue(..)
          , AAtomValues, AAtomPairs, safePSingleton2AAtomVal
@@ -65,7 +64,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , DnfClause(..)
          , Population(..)
          , Purpose(..), ExplObj(..) ,Meaning(..)
-         , AAtomPair(..), AAtomValue(..), aavstr, mkAtomPair, ContextInfo(..)
+         , AAtomPair(..), AAtomValue(..), aavtxt, mkAtomPair, ContextInfo(..)
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
 import Ampersand.ADL1.Expression
@@ -79,4 +78,3 @@ import Ampersand.ADL1.Expression
 import Ampersand.ADL1.Rule 
          ( consequent, antecedent, hasantecedent
          , rulefromProp, isPropertyRule, propFullName)
-

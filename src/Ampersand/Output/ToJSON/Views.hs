@@ -11,8 +11,8 @@ import           Ampersand.Output.ToJSON.JSONutils
 
 data Views = Views [View] deriving (Generic, Show)
 data View = View
-  { vwJSONlabel      :: String
-  , vwJSONconceptId  :: String
+  { vwJSONlabel      :: Text
+  , vwJSONconceptId  :: Text
   , vwJSONisDefault  :: Bool
   , vwJSONsegments   :: [Segment]
   } deriving (Generic, Show)

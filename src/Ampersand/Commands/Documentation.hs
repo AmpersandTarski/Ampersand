@@ -9,7 +9,6 @@ import           Ampersand.Output.PandocAux
 import           Ampersand.Graphic.Graphics
 import           Ampersand.FSpec.FSpec
 import           RIO.Time
-import qualified RIO.Text as T
 -- This function will generate all Pictures for a given FSpec.
 -- the returned FSpec contains the details about the Pictures, so they
 -- can be referenced while rendering the FSpec.
@@ -20,7 +19,7 @@ doGenDocument fSpec = do
     env <- ask
     fspecFormat <- view fspecFormatL
     now <- getCurrentTime
-    logInfo $ "Generating functional design document for " <> display (T.pack $ name fSpec) <> "..."
+    logInfo $ "Generating functional design document for " <> display (name fSpec) <> "..."
     logDebug $ "Requested chapters: "<>displayShow (view chaptersL env) 
     let (thePandoc,thePictures) = fSpec2Pandoc env now fSpec
     -- First we need to output the pictures, because they should be present 

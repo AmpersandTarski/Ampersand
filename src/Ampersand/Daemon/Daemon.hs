@@ -41,35 +41,35 @@ startAmpersandDaemon = do
         Right s -> pure s  
 
 initialState :: (HasDaemonOpts env, HasRunner env) =>
-                RIO env (Either [String] DaemonState)
+                RIO env (Either [Text] DaemonState)
 initialState = do
     daemonConfig <- view daemonConfigL 
     curDir <- liftIO $ getCurrentDirectory
     dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig
-    exists <- liftIO $ doesFileExist dotAmpersand
-    if exists 
-    then do
-      content <- readFileUtf8 dotAmpersand
-      let files = map T.unpack
-                . filter (\fn -> T.length fn > 0  --discard empty lines
-                               && (not $ "#"  `T.isPrefixOf` fn)  -- line commented out yaml style
-                               && (not $ "--" `T.isPrefixOf` fn)  -- line commented out haskellish style
-                         )
-                . L.nub                           --discard doubles
-                . T.lines $ content
-      (ls,loadedFiles) <- do
-           xs <- mapM parseProject files
-           return ( L.nub . concatMap fst $ xs
-                  , L.nub . concatMap snd $ xs
-                  )
-      return $ Right DaemonState
-        { loads = ls
-        , loadResults = L.nub $ [dotAmpersand] ++ loadedFiles
-        }
-    else return . Left $ 
-      [ "File not found: "++dotAmpersand
-      , "  Your workspace should contain a file called .ampersand. However,"
-      , "  it could not be found. Please provide that file, containing the "
-      , "  name of the top file(s) of your Ampersand project. One name per line."
-      ] 
+    result <- readUTF8File dotAmpersand
+    case result of
+     Right content -> do
+            let files = map T.unpack
+                      . filter (\fn -> T.length fn > 0  --discard empty lines
+                                    && (not $ "#"  `T.isPrefixOf` fn)  -- line commented out yaml style
+                                    && (not $ "--" `T.isPrefixOf` fn)  -- line commented out haskellish style
+                               )
+                      . L.nub                           --discard doubles
+                      . T.lines $ content
+            (ls,loadedFiles) <- do
+                xs <- mapM parseProject files
+                return ( L.nub . concatMap fst $ xs
+                       , L.nub . concatMap snd $ xs
+                       )
+            return $ Right DaemonState
+              { loads = ls
+              , loadResults = L.nub $ [dotAmpersand] ++ loadedFiles
+              }
+     Left err -> return . Left $
+        [ tshow err
+        , "File not found: "<>T.pack dotAmpersand
+        , "  Your workspace should contain a file called .ampersand. However,"
+        , "  it could not be found. Please provide that file, containing the "
+        , "  name of the top file(s) of your Ampersand project. One name per line."
+        ] 
  

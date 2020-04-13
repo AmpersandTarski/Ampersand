@@ -16,7 +16,7 @@ import qualified RIO.List as L
 databaseStructureSql :: FSpec -> Text
 databaseStructureSql fSpec
    = T.intercalate "\n" $ 
-         header (T.pack ampersandVersionStr)
+         header ampersandVersionStr
        <>header "Database structure queries"
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
 
@@ -29,7 +29,7 @@ generateDBstructQueries fSpec withComment
 dumpSQLqueries :: env -> FSpec -> Text
 dumpSQLqueries env fSpec
    = T.intercalate "\n" $ 
-         header (T.pack ampersandVersionStr)
+         header ampersandVersionStr
        <>header "Database structure queries"
        <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
        <>header "Violations of conjuncts"
@@ -43,18 +43,18 @@ dumpSQLqueries env fSpec
      y = interfaceS fSpec <> interfaceG fSpec
      showInterface :: Interface -> [Text]
      showInterface ifc 
-        = header ("INTERFACE: "<>T.pack (name ifc))
+        = header ("INTERFACE: "<>name ifc)
         <>(map ("  " <>) . showObjDef . ifcObj) ifc
         where 
           showObjDef :: ObjectDef -> [Text]
           showObjDef obj
-            = (header . T.pack . showA . objExpression) obj
+            = (header . showA . objExpression) obj
             <>[queryAsSQL . prettySQLQueryWithPlaceholder 2 fSpec . objExpression $ obj]
             <>case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
             <>header ("Broad query for the object at " <> (T.pack . show . origin) obj)
-            <>[T.pack . prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
+            <>[prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
           showSubInterface :: SubInterface -> [Text]
           showSubInterface sub = 
             case sub of 
@@ -63,10 +63,10 @@ dumpSQLqueries env fSpec
 
      showConjunct :: Conjunct -> [Text]
      showConjunct conj 
-        = header (T.pack$ rc_id conj)
+        = header (rc_id conj)
         <>["/*"
           ,"Conjunct expression:"
-          ,"  " <> (T.pack . showA . rc_conjunct $ conj)
+          ,"  " <> (showA . rc_conjunct $ conj)
           ,"Rules for this conjunct:"]
         <>map showRule (NE.toList $ rc_orgRules conj)
         <>["*/"
@@ -74,10 +74,10 @@ dumpSQLqueries env fSpec
           ,""]
         where
           showRule r 
-            = T.pack ("  - "<>name r<>": "<>showA r)
+            = "  - "<>name r<>": "<>showA r
      showDecl :: Relation -> [Text]
      showDecl decl 
-        = header (T.pack$ showA decl)
+        = header (showA decl)
         <>[(queryAsSQL . prettySQLQuery 2 fSpec $ decl)<>";",""]
 
 header :: Text -> [Text]

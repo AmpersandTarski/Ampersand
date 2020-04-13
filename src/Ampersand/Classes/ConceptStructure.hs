@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
 import           Ampersand.ADL1
@@ -22,7 +23,7 @@ class ConceptStructure a where
       theBindedRel expr =
         case expr of
          EDcD d -> d
-         _      -> fatal $ "This function is only implemented partially, and must be called with an expression of the form BindedRelation only." ++ show expr
+         _      -> fatal $ "This function is only implemented partially, and must be called with an expression of the form BindedRelation only." <>tshow expr
   primsMentionedIn      :: a -> Expressions
   primsMentionedIn = Set.unions . Set.toList . Set.map primitives . expressionsIn
   modifyablesByInsOrDel :: a -> Expressions -- ^ the set of expressions of which population could be modified directy by Insert or Delete
@@ -55,7 +56,7 @@ instance (Eq a ,ConceptStructure a) => ConceptStructure (Set.Set a) where
 instance ConceptStructure A_Context where
   concs ctx = Set.unions -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
               [ Set.singleton ONE
-              , Set.singleton (makeConcept "SESSION")
+            --  , Set.singleton (makeConcept "SESSION") --SESSION is in PrototypeContext.adl
               , (concs . ctxcds) ctx
               , (concs . ctxds) ctx
               , (concs . ctxgs) ctx
@@ -110,7 +111,7 @@ instance ConceptStructure A_Concept where
   expressionsIn _ = Set.empty
 
 instance ConceptStructure ConceptDef where
-  concs           = Set.singleton . makeConcept . name
+  concs _         = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into P_ConceptDef and A_ConceptDef
   expressionsIn _ = Set.empty
 
 instance ConceptStructure Signature where
@@ -160,7 +161,7 @@ instance ConceptStructure Interface where
 
 instance ConceptStructure Relation where
   concs         d = concs (sign d)
-  expressionsIn d = fatal ("expressionsIn not allowed on Relation of "++show d)
+  expressionsIn d = fatal ("expressionsIn not allowed on Relation of "<>tshow d)
 
 instance ConceptStructure Rule where
   concs r   = concs (formalExpression r) `Set.union` concs (rrviol r)
@@ -183,7 +184,7 @@ instance ConceptStructure Purpose where
   expressionsIn _ = Set.empty
 
 instance ConceptStructure ExplObj where
-  concs (ExplConceptDef cd) = concs cd
+  concs (ExplConcept cpt)   = Set.singleton cpt
   concs (ExplRelation d)    = concs d
   concs (ExplRule _)        = Set.empty {-beware of loops...-}
   concs (ExplIdentityDef _) = Set.empty {-beware of loops...-}
@@ -204,8 +205,8 @@ instance ConceptStructure (PairViewSegment Expression) where
 
 instance ConceptStructure AClassify where
   concs g@Isa{}  = Set.fromList [gengen g,genspc g]
-  concs g@IsE{}  = Set.singleton (genspc g) `Set.union` Set.fromList (genrhs g)
-  expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n"++show g)
+  concs g@IsE{}  = Set.singleton (genspc g) `Set.union` (Set.fromList . NE.toList $ genrhs g)
+  expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n"<>tshow g)
 
 instance ConceptStructure Conjunct where
   concs         = concs . rc_conjunct

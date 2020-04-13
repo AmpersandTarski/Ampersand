@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+﻿{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -12,7 +12,6 @@ module Ampersand.Commands.Proto
     ) where
 
 import           Ampersand.Basics
-import           Ampersand.Core.AbstractSyntaxTree
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, copyCustomizations)

@@ -11,10 +11,10 @@ import qualified RIO.NonEmpty as NE
 
 data Conjuncts = Conjuncts [JSONConjunct] deriving (Generic, Show)
 data JSONConjunct = JSONConjunct
-  { cnjJSONid                 :: String
-  , cnjJSONsignalRuleNames    :: [String]
-  , cnjJSONinvariantRuleNames :: [String]
-  , cnjJSONviolationsSQL      :: String
+  { cnjJSONid                 :: Text
+  , cnjJSONsignalRuleNames    :: [Text]
+  , cnjJSONinvariantRuleNames :: [Text]
+  , cnjJSONviolationsSQL      :: Text
   } deriving (Generic, Show)
 instance ToJSON JSONConjunct where
   toJSON = amp2Jason

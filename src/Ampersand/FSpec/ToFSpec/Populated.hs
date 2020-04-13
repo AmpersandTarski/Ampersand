@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
     , smallerConcepts, largerConcepts, sortSpecific2Generic
@@ -5,21 +6,22 @@ module Ampersand.FSpec.ToFSpec.Populated
     ) 
 where
 {- This file contains all functions to compute populations.
-   The implementation is done through Haskell's Map mechanism, as defined in Data.Map, for reasons of efficiency.
+   The implementation is done through Haskell's Map mechanism, for reasons of efficiency.
 -}
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
+import           Ampersand.Classes hiding (gens)
 import qualified RIO.Map as Map
-   -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import qualified RIO.Set as Set
 import qualified RIO.List as L
-       
+import qualified RIO.NonEmpty as NE
+ 
 genericAndSpecifics :: AClassify -> [(A_Concept,A_Concept)]
 genericAndSpecifics gen = filter (\x -> fst x /= snd x) $  -- make sure that no tuples where source and target are equal are returned. 
     case gen of
       Isa{} -> [(genspc gen, gengen gen)]
-      IsE{} -> [(genspc gen, g ) | g<-genrhs gen]
+      IsE{} -> [(genspc gen, g ) | g<-NE.toList $ genrhs gen]
 
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
 --   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
@@ -31,7 +33,7 @@ smallerConcepts gs cpt
 largerConcepts :: [AClassify] -> A_Concept -> [A_Concept]
 largerConcepts gs cpt
  = L.nub$ oneLarger ++ concatMap (largerConcepts gs) oneLarger
-  where oneLarger  = L.delete cpt. L.nub $[ gengen g | g@Isa{}<-gs, genspc g==cpt ]++[ c | g@IsE{}<-gs, genspc g==cpt, c<-genrhs g ]
+  where oneLarger  = L.delete cpt. L.nub $[ gengen g | g@Isa{}<-gs, genspc g==cpt ]++[ c | g@IsE{}<-gs, genspc g==cpt, c<-NE.toList $ genrhs g ]
 
 -- | This function returns a list of the same concepts, but in an ordering such that if for any two elements a and b in the 
 --   list, if a is more specific than b, a will be to the left of b in the resulting list.
@@ -110,10 +112,10 @@ fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (
                                 ] where flipr = contents (EFlp r)
          EKl0 x     -> if source x == target x --see #166
                        then transClosureMap (Map.unionWith Set.union (contents x) (contents (EDcI (source x))))
-                       else fatal ("source and target of "++show x++show (sign x)++ " are not equal.")
+                       else fatal ("source and target of "<>tshow x<>tshow (sign x)<> " are not equal.")
          EKl1 x     -> if source x == target x --see #166
                        then transClosureMap (contents x)
-                       else fatal ("source and target of "++show x++show (sign x)++ " are not equal.")
+                       else fatal ("source and target of "<>tshow x<>tshow (sign x)<> " are not equal.")
          EFlp x     -> Map.fromListWith Set.union [(b,Set.singleton a) | (a,bs)<-Map.assocs (contents x), b<-Set.toList bs]
          ECpl x     -> contents (EDcV (sign x) .-. x)
          EBrk x     -> contents x
@@ -121,8 +123,8 @@ fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (
          EDcI c     -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals c]
          EEps i _   -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals i]
          EDcV sgn   -> Map.fromList [(s, Set.fromList cod) | s <- Set.elems $ aVals (source sgn), let cod=Set.elems $ aVals (target sgn), not (null cod) ]
-         EMp1 val c -> if name c == "SESSION" -- prevent populating SESSION with "_SESSION"
-                          && show val == show "_SESSION"
+         EMp1 val c -> if isSESSION c -- prevent populating SESSION with "_SESSION"
+                          && tshow val == tshow ("_SESSION"::Text)
                         then Map.empty
                         else Map.singleton av (Set.singleton av)
                          where 
