@@ -78,13 +78,13 @@ doGenFrontend fSpec = do
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     logInfo "Frontend generated"
 
-doGenBackend :: (Show env, HasRunner env, HasProtoOpts env, HasDirPrototype env) =>
+doGenBackend :: (HasRunner env, HasDirPrototype env) =>
                 FSpec -> RIO env ()
 doGenBackend fSpec = do
   env <- ask
   logInfo "Generating backend..."
   let dir = getGenericsDir env
-  writeFile (dir </> "database"   <.>"sql" ) $ BL.fromStrict . T.encodeUtf8 . databaseStructureSql $ fSpec
+  writeFileUtf8 (dir </> "database"   <.>"sql" ) $ databaseStructureSql $ fSpec
   writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
   writeFile (dir </> "relations"  <.>"json") $ relationsToJSON env fSpec
   writeFile (dir </> "rules"      <.>"json") $ rulesToJSON env fSpec
@@ -100,7 +100,7 @@ writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do
   logDebug $ "  Generating "<>display (T.pack filePath) 
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
-  liftIO $ BL.writeFile filePath content
+  BL.writeFile filePath content
   
 copyTemplates :: (HasDirPrototype env, HasLogFunc env) =>
                  RIO env ()

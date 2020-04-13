@@ -26,6 +26,7 @@ import           Ampersand.Misc.HasClasses
 import           Data.Aeson hiding (Options)
 import qualified Data.Aeson.Types as AT
 import qualified RIO.List as L
+import qualified RIO.Text as T
 import           GHC.Generics
 
 -- | We use aeson to generate .json in a simple and efficient way.

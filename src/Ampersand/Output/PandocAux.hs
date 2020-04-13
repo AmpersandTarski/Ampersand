@@ -182,7 +182,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f bs = do
         liftIO $ createDirectoryIfMissing True (takeDirectory f)
-        liftIO . BL.writeFile (UTF8.encodePath f) $ bs
+        BL.writeFile (UTF8.encodePath f) $ bs
     
     writerOptions :: WriterOptions
     writerOptions = def

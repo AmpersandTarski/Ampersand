@@ -8,7 +8,7 @@ module Ampersand.Prototype.ProtoUtil
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock
-         , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
+         , phpIndent,showPhpStr,escapePhpStr
          ) where
  
 import           Ampersand.Basics
@@ -131,25 +131,15 @@ addSlashes = T.pack . addSlashes' . T.unpack
     addSlashes' "" = ""
 
 showPhpStr :: Text -> Text
-showPhpStr str = q<>T.pack (escapePhpStr (T.unpack str))<>q
-  where q = T.pack "'"
+showPhpStr txt = q<>(escapePhpStr txt)<>q
+  where q = T.singleton '\''
 
 -- NOTE: we assume a single quote php string, so $ and " are not escaped
-escapePhpStr :: String -> String
-escapePhpStr ('\'':s) = "\\'" <> escapePhpStr s
-escapePhpStr ('\\':s) = "\\\\" <> escapePhpStr s
-escapePhpStr (c:s)    = c: escapePhpStr s
-escapePhpStr []       = []
--- todo: escape everything else (unicode, etc)
+escapePhpStr :: Text -> Text
+escapePhpStr txt = 
+   case T.uncons txt of
+     Nothing -> mempty
+     Just ('\'',s) -> "\\'" <> escapePhpStr s
+     Just ('\\',s) -> "\\\\" <> escapePhpStr s
+     Just (c,s)    -> T.cons c $ escapePhpStr s
 
-showPhpBool :: Bool -> String
-showPhpBool b = if b then "true" else "false"
-
-showPhpMaybeBool :: Maybe Bool -> String
-showPhpMaybeBool Nothing = "null"
-showPhpMaybeBool (Just b) = showPhpBool b
-            , "composerTargetPath: "<>T.pack installTarget
-            , "Exit code of trying to install Composer: "<>tshow exit_code<>". "
-            ] <> 
-            (if null out then mempty else "stdout:" : (T.lines . T.pack $ out)) <>
-            (if null err then mempty else "stderr:" : (T.lines . T.pack $ err)) <>

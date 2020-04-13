@@ -17,30 +17,38 @@ import           Ampersand.Output.ToJSON.Views
 import           Data.Aeson.Encode.Pretty
 import qualified RIO.ByteString.Lazy as BL
 
-settingsToJSON :: (HasProtoOpts env, Show env)
-    => env -> FSpec -> BL.ByteString
-settingsToJSON env fSpec = encodePretty (fromAmpersand' env fSpec fSpec :: Settings)
+settingsToJSON :: env -> FSpec -> BL.ByteString
+settingsToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Settings)
 
 relationsToJSON :: env -> FSpec -> BL.ByteString
-relationsToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Relationz)
+relationsToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Relationz)
 
 rulesToJSON :: env -> FSpec -> BL.ByteString
-rulesToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Rulez)
+rulesToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Rulez)
 
 conceptsToJSON :: env -> FSpec -> BL.ByteString
-conceptsToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Concepts)
+conceptsToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Concepts)
 
 conjunctsToJSON :: env -> FSpec -> BL.ByteString
-conjunctsToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Conjuncts)
+conjunctsToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Conjuncts)
 
 interfacesToJSON :: env -> FSpec -> BL.ByteString
-interfacesToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Interfaces)
+interfacesToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Interfaces)
 
 viewsToJSON :: env -> FSpec -> BL.ByteString
-viewsToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Views)
+viewsToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Views)
 
 rolesToJSON :: env -> FSpec -> BL.ByteString
-rolesToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Roles)
+rolesToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Roles)
 
 populationToJSON :: env -> FSpec -> BL.ByteString
-populationToJSON env fSpec = encodePretty (fromAmpersand env fSpec fSpec :: Populations)
+populationToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Populations)
+
+
+encodePretty'' :: ToJSON a => a -> BL.ByteString
+encodePretty'' =  
+  encodePretty' Config { confIndent = Spaces 4
+                       , confCompare = compare
+                       , confNumFormat = Generic
+                       , confTrailingNewline = False
+                       }

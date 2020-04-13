@@ -27,9 +27,7 @@ exitWith x = unsafePerformIO $ do
 -- | Datastructure that contains all kind of exitcodes that
 --   are specific for Ampersand
 data AmpersandExit 
-  = FailedToInstallComposer [Text]
-  -- ^ An attempt to install Composer failed.
-  | FailedToInstallPrototypeFramework [Text]
+  = FailedToInstallPrototypeFramework [Text]
   -- ^ An attempt to install the prototype framework failed.
   | Fatal [Text]
   -- ^ These specific errors are due to some bug in the Ampersand code. Please report such bugs!
