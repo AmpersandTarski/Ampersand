@@ -57,11 +57,11 @@ even more complex than it already was.
   * ***--proto[=DIRECTORY]*** `proto --proto-directory=DIRECTORY`
           generate a functional prototype, so you can experiment with the
           information system specified in your script.
-  * ***--dataAnalysis[=file]*** `dataanalysis`
+  * ***--dataAnalysis[=file]*** `data-analysis`
           export a data model as plain Ampersand script, for analysing
           Excel-data.
 
-  * ***--export[=file]*** `print`
+  * ***--export[=file]*** `export`
           export as prettyprinted plain Ampersand script, for round-trip testing of the
           Ampersand compiler.
   * ***--pop-xlsx*** `population`
@@ -79,14 +79,13 @@ even more complex than it already was.
           debugging).
   * ***--sqldump*** `devoutput`
           generate a dump of SQL queries (for debugging).
-* TODO: The following options still have to be impemented as commands:
-  * ***--sampleConfigFile*** `init`
-          write a sample configuration file (sampleconfig.yaml), to avoid
-          retyping (and remembering) the command line options for
-          ampersand.
 
 * Removed
 
+  * ***--sampleConfigFile*** 
+          We depend on docker lately to run ampersand scripts. Therefor, we use
+          its features to specify the command line options for Ampersand. Because
+          of this, we no longer support configuration files for Ampersand.
   * ***--skip-composer***
           skip installing php dependencies (using Composer) for prototype
           framework.
@@ -166,15 +165,7 @@ even more complex than it already was.
   * ***--version (-V)***
           show version and exit.
   
-## TODO: configuration file
-
-The config.yaml file will be replaced by ampersand.yaml file. The generation of a sample file also wil have to be rewritten. The way this is done wil be as a monoid. This causes that you can override every option that you set in your yaml file by means of the command line, in a generic way.
-
-* ***--config=config.yaml***
-          config file (*.yaml) that contains the command line options of
-          ampersand.
-
-## TODO: working with meta-models
+## working with meta-models
 
 We now have `recipes` to deal with metamodels such as Formal Ampersand and PrototypeContext. These recipes will be used based on the chose command. There might be a need to modify those recipes by the user. This still has to be seen. In any case, the following options will be removed:
 

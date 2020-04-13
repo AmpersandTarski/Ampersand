@@ -22,7 +22,7 @@ populationOptsParser =
 
 outputFormatP :: Parser PopulationOutputFormat
 outputFormatP = toFormat . T.pack <$> strOption
-      (  long "outputFormat"
+      (  long "output-format"
       <> metavar "FORMAT"
       <> value (show XLSX)
       <> showDefault

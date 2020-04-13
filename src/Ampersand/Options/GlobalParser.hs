@@ -68,7 +68,7 @@ globalOptsParser _currentDir defLogLevel =
          hide)) <*>
     optionalFirst
         (strOption
-            (long "outputDir" <>
+            (long "output-dir" <>
             metavar "DIR" <>
             help "Specify the directory where your output will be written to" <>
             hide))

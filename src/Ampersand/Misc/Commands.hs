@@ -90,7 +90,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
                       ()
     addCommands = do
       addCommand'' Check
-                  "Use ampersand to check your model only once."
+                  "Use ampersand to check your model."
                   checkCmd
                   (fSpecGenOptsParser False)
       addCommand'' Daemon
@@ -98,8 +98,9 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   daemonCmd
                   daemonOptsParser
       addCommand'' Dataanalysis
-                  ( "Export a data model as plain Ampersand script, for "
-                  <>"analysing Excel-data.")
+                  ( "Create an ADL model based on the content of a spreadsheet. The spreadsheet"
+                  <>"must comply to the specific format."
+                  <>"This is an experimental feature.")
                   dataAnalysisCmd
                   (outputFileOptsParser "MetaModel.adl")
       addCommand'' Devoutput
@@ -131,7 +132,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   "Generate a prototype from your specification."
                   protoCmd
                   protoOptsParser
-      addCommand'' Print
+      addCommand'' Export
                   "Generate a single .adl file of your script (prettyprinted)"
                   pprintCmd
                   (outputFileOptsParser "export.adl")
@@ -157,10 +158,6 @@ commandLineHandler currentDir _progName args = complicatedOptions
         addCommand'' cmd title constr =
             addCommand (map toLower . show $ cmd) title globalFooter constr (\_ gom -> gom) globalOpts
 
---        addSubCommands' :: Text -> Text -> AddCommand
---                        -> AddCommand
---        addSubCommands' cmd title =
---            addSubCommands cmd title globalFooter globalOpts
 
 
 
@@ -422,16 +419,26 @@ data Command =
       | Dataanalysis
       | Devoutput
       | Documentation
-      | Fpa
-      | Init
+      | Export
       | Population
       | Proofs
       | Proto 
-      | Print
       | Test
       | Uml
-      | Validate deriving Show
-
+      | Validate
+instance Show Command where
+  show Check = "check"
+  show Daemon = "daemon"
+  show Dataanalysis = "data-analysis"
+  show Devoutput = "dev-output"
+  show Documentation = "documentation"
+  show Export = "export"
+  show Population = "population"
+  show Proofs = "proofs"
+  show Proto = "proto" 
+  show Test = "test"
+  show Uml = "uml"
+  show Validate = "validate"
 -- | Generic way to specify the recipe to be used to generate an FSpec
 recipeBuilder :: (HasFSpecGenOpts env) => Bool -> env -> BuildRecipe
 recipeBuilder isForPrototype env = 
