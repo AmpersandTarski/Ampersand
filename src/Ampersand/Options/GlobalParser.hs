@@ -29,7 +29,6 @@ data GlobalOptsMonoid = GlobalOptsMonoid
     , globalMonoidTimeInLog    :: !FirstTrue -- ^ Whether to include timings in logs.
     , globalMonoidTerminal     :: !(First Bool) -- ^ We're in a terminal?
     , globalMonoidTermWidth    :: !(First Int) -- ^ Terminal width override
-    , globalMonoidAmpersandYaml :: !(First FilePath) -- ^ Override project ampersand.yaml
     , globalMonoidOutputDir    :: !(First FilePath) -- ^ Override project output directory
     } deriving Generic
 
@@ -43,13 +42,12 @@ instance Monoid GlobalOptsMonoid where
 -- | Parser for global command-line options.
 globalOptsParser :: FilePath -> Maybe LogLevel -> Parser GlobalOptsMonoid
 globalOptsParser _currentDir defLogLevel =
-    let build loglevel timeInLog terminal termWidth yaml outputDir = 
+    let build loglevel timeInLog terminal termWidth outputDir = 
           GlobalOptsMonoid
           { globalMonoidLogLevel     = loglevel
           , globalMonoidTimeInLog    = timeInLog
           , globalMonoidTerminal     = terminal
           , globalMonoidTermWidth    = termWidth
-          , globalMonoidAmpersandYaml = yaml
           , globalMonoidOutputDir    = outputDir
           }
 
@@ -68,14 +66,6 @@ globalOptsParser _currentDir defLogLevel =
          metavar "INT" <>
          help "Specify the width of the terminal, used for pretty-print messages" <>
          hide)) <*>
-    optionalFirst
-        (strOption
-            (long "ampersand-yaml" <>
-             metavar "AMPERSAND-YAML" <>
-             completer (fileExtCompleter [".yaml"]) <>
-             help ("Override project ampersand.yaml file " <>
-                   "(overrides any AMPERSAND_YAML environment variable)") <>
-             hide)) <*>
     optionalFirst
         (strOption
             (long "outputDir" <>
