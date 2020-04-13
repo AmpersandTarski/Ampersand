@@ -54,7 +54,7 @@ even more complex than it already was.
           Markdown, Mediawiki, Opendocument, Org, Pandoc, Pdf, Plain, Rst,
           Rtf, Texinfo, Textile]), to kick-start your functional
           specification.
-  * ***--proto[=DIRECTORY]*** `proto --output-directory=DIRECTORY`
+  * ***--proto[=DIRECTORY]*** `proto --proto-directory=DIRECTORY`
           generate a functional prototype, so you can experiment with the
           information system specified in your script.
   * ***--dataAnalysis[=file]*** `dataanalysis`
@@ -114,7 +114,7 @@ even more complex than it already was.
 
 * Unchanged (but now only available for relevant commands)
   * ***--outputDir=DIR***
-          output directory. Not used for prototypes. This might change in the future.
+          output directory. Not used for prototypes.
   * ***--blackWhite***
           avoid coloring conventions to facilitate readable pictures in
           black and white.
@@ -149,10 +149,11 @@ even more complex than it already was.
   * ***--ignore-invariant-violations***
           Allow to build a prototype, even if there are invariants that are
           being violated. (See
-          <https://github.com/AmpersandTarski/Ampersand/issues/728)>
+          <https://github.com/AmpersandTarski/Ampersand/issues/728)>)
   * ***--prototype-framework-version=VERSION***
-          tag, branch or SHA of the prototype framework on Github. (What
-          purpose does this serve?)
+          tag, branch or SHA of the prototype framework on Github. Normally you
+          shouldn't need to change this. It refers to the version of the frontend
+          code at <https://github.com/AmpersandTarski/prototype>.
   * ***--sqlHost=HOSTNAME***
           set SQL host name (Defaults to `localhost`), to identify the host
           on which the persistent store resides

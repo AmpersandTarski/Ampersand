@@ -75,7 +75,7 @@ forceReinstallP = switch
         )
 dirPrototypeP :: Parser String
 dirPrototypeP = strOption
-        ( long "output-directory"
+        ( long "proto-directory"
         <> metavar "DIRECTORY"
         <> value defaultDirPrototype
         <> showDefault
