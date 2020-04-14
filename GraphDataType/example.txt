@@ -1,0 +1,6 @@
+Article 1: "Fun with GRDTs" [1:"常乐",2:"Sebastiaan Joosten"]
+Article 2: "GRDTs in Ampersand" [3:"Stef Joosten"]
+Reviewer 1: "Le Chang" [1,2]
+Reviewer 4: "John Doe" [1]
+Reviewer 5: "Jane Doe" [1]
+Reviews per article: 2
