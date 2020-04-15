@@ -38,7 +38,7 @@ class (GToJSON Zero (Rep b), Generic b) => JSON a b | b -> a where
   amp2Jason = genericToJSON ampersandDefault
 -- | Same as JSON, but different constraints for fromAmpersand'
 class (GToJSON Zero (Rep b), Generic b) => JSON' a b | b -> a where
-  fromAmpersand' :: (HasProtoOpts env, Show env) 
+  fromAmpersand' :: (Show env, HasProtoOpts env) 
        => env -> FSpec -> a -> b
   amp2Jason' :: b -> Value
   amp2Jason' = genericToJSON ampersandDefault

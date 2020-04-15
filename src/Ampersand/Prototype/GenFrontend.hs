@@ -78,7 +78,7 @@ doGenFrontend fSpec = do
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     logInfo "Frontend generated"
 
-doGenBackend :: (HasRunner env, HasDirPrototype env) =>
+doGenBackend :: (Show env, HasRunner env, HasProtoOpts env, HasDirPrototype env) =>
                 FSpec -> RIO env ()
 doGenBackend fSpec = do
   env <- ask

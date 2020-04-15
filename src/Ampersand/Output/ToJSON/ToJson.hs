@@ -17,8 +17,8 @@ import           Ampersand.Output.ToJSON.Views
 import           Data.Aeson.Encode.Pretty
 import qualified RIO.ByteString.Lazy as BL
 
-settingsToJSON :: env -> FSpec -> BL.ByteString
-settingsToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Settings)
+settingsToJSON :: (Show env, HasProtoOpts env) => env -> FSpec -> BL.ByteString
+settingsToJSON env fSpec = encodePretty'' (fromAmpersand' env fSpec fSpec :: Settings)
 
 relationsToJSON :: env -> FSpec -> BL.ByteString
 relationsToJSON env fSpec = encodePretty'' (fromAmpersand env fSpec fSpec :: Relationz)
