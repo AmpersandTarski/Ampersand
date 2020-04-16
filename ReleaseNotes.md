@@ -13,6 +13,12 @@
 * [Issue #1063](https://github.com/AmpersandTarski/Ampersand/issues/#1063) Return violations of invariants with standard check
 * [Issue #735](https://github.com/AmpersandTarski/Ampersand/issues/735) Upgrade to pandoc 2.9. 
 
+* Remove option --skip-composer. Relates to topic of [Archicture of Ampersand compiler](https://github.com/AmpersandTarski/Ampersand/issues/903)
+* Introduce option --[no-]frontend to do/don't generate frontend (i.e. javascript and html files for Angular app)
+* Introduce option --[no-]backend to do/don't generate backend (i.e. json model for php framework)
+* Remove default value 'customizations' for option --customizations. Copying folders must be explicitly specified.
+* Change default output folder to .proto instead of '<scriptname.adl>.proto'
+
 ## v3.17.4 (13 september 2019)
 
 * Upgrade to [LTS Haskell 14.5 (ghc-8.6.5)](https://www.stackage.org/lts-14.5)

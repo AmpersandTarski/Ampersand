@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+﻿{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -141,12 +141,14 @@ instance (HasDaemonOpts a) => HasDaemonOpts (ExtendedRunner a) where
   daemonOptsL = cmdOptsL . daemonOptsL
 instance (HasTestOpts a) => HasTestOpts (ExtendedRunner a) where 
   testOptsL = cmdOptsL . testOptsL
-instance (HasRunComposer a) => HasRunComposer (ExtendedRunner a) where
-  skipComposerL = cmdOptsL . skipComposerL
 instance (HasDirCustomizations a) => HasDirCustomizations (ExtendedRunner a) where
   dirCustomizationsL = cmdOptsL . dirCustomizationsL
 instance (HasZwolleVersion a) => HasZwolleVersion (ExtendedRunner a) where
   zwolleVersionL = cmdOptsL . zwolleVersionL
+instance (HasGenerateFrontend a) => HasGenerateFrontend (ExtendedRunner a) where
+  generateFrontendL = cmdOptsL . generateFrontendL
+instance (HasGenerateBackend a) => HasGenerateBackend (ExtendedRunner a) where
+  generateBackendL = cmdOptsL . generateBackendL
 instance (HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
   dirPrototypeL = cmdOptsL . dirPrototypeL
 instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where

@@ -54,14 +54,14 @@ even more complex than it already was.
           Markdown, Mediawiki, Opendocument, Org, Pandoc, Pdf, Plain, Rst,
           Rtf, Texinfo, Textile]), to kick-start your functional
           specification.
-  * ***--proto[=DIRECTORY]*** `proto --output-directory=DIRECTORY`
+  * ***--proto[=DIRECTORY]*** `proto --proto-directory=DIRECTORY`
           generate a functional prototype, so you can experiment with the
           information system specified in your script.
-  * ***--dataAnalysis[=file]*** `dataanalysis`
+  * ***--dataAnalysis[=file]*** `data-analysis`
           export a data model as plain Ampersand script, for analysing
           Excel-data.
 
-  * ***--export[=file]*** `print`
+  * ***--export[=file]*** `export`
           export as prettyprinted plain Ampersand script, for round-trip testing of the
           Ampersand compiler.
   * ***--pop-xlsx*** `population`
@@ -79,12 +79,17 @@ even more complex than it already was.
           debugging).
   * ***--sqldump*** `devoutput`
           generate a dump of SQL queries (for debugging).
-* TODO: The following options still have to be impemented as commands:
-  * ***--sampleConfigFile*** `init`
-          write a sample configuration file (sampleconfig.yaml), to avoid
-          retyping (and remembering) the command line options for
-          ampersand.
 
+* Removed
+
+  * ***--sampleConfigFile*** 
+          We depend on docker lately to run ampersand scripts. Therefor, we use
+          its features to specify the command line options for Ampersand. Because
+          of this, we no longer support configuration files for Ampersand.
+  * ***--skip-composer***
+          skip installing php dependencies (using Composer) for prototype
+          framework.
+          
 * Changed in some way
 
   * We used to have verbose and not-verbose. Now we have 4 levels of verbosity. This effects the former swich --verbose. We now have
@@ -108,7 +113,7 @@ even more complex than it already was.
 
 * Unchanged (but now only available for relevant commands)
   * ***--outputDir=DIR***
-          output directory. Not used for prototypes. This might change in the future.
+          output directory. Not used for prototypes.
   * ***--blackWhite***
           avoid coloring conventions to facilitate readable pictures in
           black and white.
@@ -143,13 +148,11 @@ even more complex than it already was.
   * ***--ignore-invariant-violations***
           Allow to build a prototype, even if there are invariants that are
           being violated. (See
-          <https://github.com/AmpersandTarski/Ampersand/issues/728)>
+          <https://github.com/AmpersandTarski/Ampersand/issues/728)>)
   * ***--prototype-framework-version=VERSION***
-          tag, branch or SHA of the prototype framework on Github. (What
-          purpose does this serve?)
-  * ***--skip-composer***
-          skip installing php dependencies (using Composer) for prototype
-          framework.
+          tag, branch or SHA of the prototype framework on Github. Normally you
+          shouldn't need to change this. It refers to the version of the frontend
+          code at <https://github.com/AmpersandTarski/prototype>.
   * ***--sqlHost=HOSTNAME***
           set SQL host name (Defaults to `localhost`), to identify the host
           on which the persistent store resides
@@ -162,15 +165,7 @@ even more complex than it already was.
   * ***--version (-V)***
           show version and exit.
   
-## TODO: configuration file
-
-The config.yaml file will be replaced by ampersand.yaml file. The generation of a sample file also wil have to be rewritten. The way this is done wil be as a monoid. This causes that you can override every option that you set in your yaml file by means of the command line, in a generic way.
-
-* ***--config=config.yaml***
-          config file (*.yaml) that contains the command line options of
-          ampersand.
-
-## TODO: working with meta-models
+## working with meta-models
 
 We now have `recipes` to deal with metamodels such as Formal Ampersand and PrototypeContext. These recipes will be used based on the chose command. There might be a need to modify those recipes by the user. This still has to be seen. In any case, the following options will be removed:
 

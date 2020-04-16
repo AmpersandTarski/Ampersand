@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+﻿{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -15,7 +15,7 @@ import           Ampersand.Basics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.FSpec(FSpec(..))
 import           Ampersand.Output.Population2Xlsx (fSpec2PopulationXlsx)
-import           Ampersand.Output.ToJSON.ToJson
+import           Ampersand.Output.ToJSON.ToJson (populationToJSON)
 import qualified RIO.ByteString.Lazy as BL
 import qualified RIO.Text as T
 import           System.Directory
@@ -37,9 +37,9 @@ population fSpec = do
                      liftIO $ createDirectoryIfMissing True (takeDirectory outputFile)
                      BL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
                      logInfo $ "Generated file: " <> display (T.pack outputFile)
-          JSON -> do let dir = view dirOutputL env
-                     generatePopJSONfile dir fSpec
-                     logInfo $ "JSON population file is generated"
+          JSON -> do let outputFile = view dirOutputL env </> baseName env <> "_generated_pop" -<.> ".json"
+                     BL.writeFile outputFile $ populationToJSON env fSpec
+                     logInfo $ "Generated file: " <> display (T.pack outputFile)
 
 
 

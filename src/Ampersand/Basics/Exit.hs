@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+﻿{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | This module contains a datastructure for exceptions that
 --   can be thrown by Ampersand.
@@ -27,9 +27,7 @@ exitWith x = unsafePerformIO $ do
 -- | Datastructure that contains all kind of exitcodes that
 --   are specific for Ampersand
 data AmpersandExit 
-  = FailedToInstallComposer [Text]
-  -- ^ An attempt to install Composer failed.
-  | FailedToInstallPrototypeFramework [Text]
+  = FailedToInstallPrototypeFramework [Text]
   -- ^ An attempt to install the prototype framework failed.
   | Fatal [Text]
   -- ^ These specific errors are due to some bug in the Ampersand code. Please report such bugs!
@@ -77,8 +75,7 @@ info x =
               -> (SE.ExitFailure  30 , "ERROR: Invalid SQL Expression" : map ("  "<>) msg)
     InvariantRuleViolated msg
               -> (SE.ExitFailure  40 , "ERROR: No prototype generated because of rule violations." : map ("  "<>) msg)
-    FailedToInstallComposer msg
-              -> (SE.ExitFailure  50 , msg)
+    -- Exit code 50 can be reused. Formerly used for FailedToInstallComposer (php dependencies for prototype framework)
     PHPExecutionFailed msg
               -> (SE.ExitFailure  60 , msg)
     FailedToInstallPrototypeFramework msg

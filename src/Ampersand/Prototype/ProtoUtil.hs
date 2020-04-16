@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+﻿{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.ProtoUtil
@@ -8,21 +8,16 @@ module Ampersand.Prototype.ProtoUtil
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock
-         , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
-         , installComposerLibs
+         , phpIndent,showPhpStr,escapePhpStr
          ) where
  
 import           Ampersand.Basics
+import           Ampersand.Misc.Defaults (defaultDirPrototype)
 import           Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.Text as T
 import           System.Directory
-import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))
 import           System.FilePath
-import           System.Process(CreateProcess(..),readCreateProcessWithExitCode
-                               ,CmdSpec(..),StdStream(..))
-
-
 
 
 writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
@@ -38,7 +33,7 @@ writePrototypeAppFile relFilePath content = do
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
 -- NOTE: directories with extention .proto are excluded. This would compromise regression tests, 
---       where foo.adl.proto is used to output the prototype of foo.adl
+--       where '.proto' is the default output directory (if not specified)
 copyDirRecursively :: (HasLogFunc env) =>
                       FilePath -> FilePath -> RIO env ()
 copyDirRecursively srcBase tgtBase 
@@ -65,7 +60,7 @@ copyDirRecursively srcBase tgtBase
               then do
                 logDebug $ "Skipping "<>display (T.pack srcPath)<>" because it is the target directory of the recursive copy action."
               else 
-                if takeExtension srcPath == ".proto" 
+                if takeExtension srcPath == defaultDirPrototype 
                   then do  
                     logDebug $ "Skipping "<>display (T.pack srcPath)<>" because its extention is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
                   else do
@@ -136,68 +131,15 @@ addSlashes = T.pack . addSlashes' . T.unpack
     addSlashes' "" = ""
 
 showPhpStr :: Text -> Text
-showPhpStr str = q<>T.pack (escapePhpStr (T.unpack str))<>q
-  where q = T.pack "'"
+showPhpStr txt = q<>(escapePhpStr txt)<>q
+  where q = T.singleton '\''
 
 -- NOTE: we assume a single quote php string, so $ and " are not escaped
-escapePhpStr :: String -> String
-escapePhpStr ('\'':s) = "\\'" <> escapePhpStr s
-escapePhpStr ('\\':s) = "\\\\" <> escapePhpStr s
-escapePhpStr (c:s)    = c: escapePhpStr s
-escapePhpStr []       = []
--- todo: escape everything else (unicode, etc)
+escapePhpStr :: Text -> Text
+escapePhpStr txt = 
+   case T.uncons txt of
+     Nothing -> mempty
+     Just ('\'',s) -> "\\'" <> escapePhpStr s
+     Just ('\\',s) -> "\\\\" <> escapePhpStr s
+     Just (c,s)    -> T.cons c $ escapePhpStr s
 
-showPhpBool :: Bool -> String
-showPhpBool b = if b then "true" else "false"
-
-showPhpMaybeBool :: Maybe Bool -> String
-showPhpMaybeBool Nothing = "null"
-showPhpMaybeBool (Just b) = showPhpBool b
-
-
-installComposerLibs :: (HasLogFunc env) => 
-                       FilePath -> RIO env ()
-installComposerLibs installTarget = do
-    curPath <- liftIO $ getCurrentDirectory
-    logDebug $ "current directory: "<>display (T.pack curPath)
-    logDebug "  Trying to download and install Composer libraries..."
-    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode myProc ""
-    case exit_code of
-      SE.ExitSuccess   -> do logDebug $
-                              " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                             logDebug $ display (T.pack stdout')
-      SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
-
-   where
-     myProc :: CreateProcess
-     myProc = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<> installTarget
-       , cwd = Nothing
-       , env = Nothing
-       , std_in = Inherit
-       , std_out = Inherit
-       , std_err = Inherit
-       , close_fds = False
-       , create_group = False
-       , delegate_ctlc = True
-       , detach_console = False
-       , create_new_console = False
-       , new_session = False
-       , child_group = Nothing
-       , child_user = Nothing
-       , use_process_jobs = False
-       }
-     failOutput :: (ExitCode, String, String) -> RIO env ()
-     failOutput (exit_code, out, err) = do
-        exitWith . FailedToInstallComposer  $
-            [ "Failed!"
-            , "composerTargetPath: "<>T.pack installTarget
-            , "Exit code of trying to install Composer: "<>tshow exit_code<>". "
-            ] <> 
-            (if null out then mempty else "stdout:" : (T.lines . T.pack $ out)) <>
-            (if null err then mempty else "stderr:" : (T.lines . T.pack $ err)) <>
-            [ "Possible solutions to fix your prototype:"
-            , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
-            , "  2) Make sure you have an active internet connection."
-            , "  3) If you previously built another Ampersand prototype succesfully, you could try to copy the lib directory from it into you prototype manually."
-            ]

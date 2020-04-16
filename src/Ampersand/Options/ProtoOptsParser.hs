@@ -1,10 +1,12 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+﻿{-# LANGUAGE NoImplicitPrelude #-}
 module Ampersand.Options.ProtoOptsParser 
    (protoOptsParser)
 where
 
+import           Options.Applicative.Builder.Extra
 import           Ampersand.Commands.Proto (ProtoOpts (..))
 import           Ampersand.Basics
+import           Ampersand.Misc.Defaults (defaultDirPrototype)
 import           Ampersand.Options.Utils
 import           Ampersand.Options.FSpecGenOptsParser
 import           Data.List.Split (splitWhen)
@@ -16,8 +18,9 @@ protoOptsParser :: Parser ProtoOpts
 protoOptsParser = 
    ( \dbName sqlHost sqlLogin sqlPwd forceReinstall 
         outputLanguage fSpecGenOpts 
-        skipComposer dirPrototype dirCustomizations 
-        zwolleVersion -> ProtoOpts
+        dirPrototype dirCustomizations 
+        
+        zwolleVersion generateFrontend generateBackend -> ProtoOpts
             { xdbName = dbName
             , xsqlHost = sqlHost
             , xsqlLogin = sqlLogin
@@ -25,15 +28,17 @@ protoOptsParser =
             , xforceReinstallFramework = forceReinstall
             , x1OutputLanguage = outputLanguage
             , x1fSpecGenOpts = fSpecGenOpts
-            , xskipComposer = skipComposer
             , xdirPrototype = dirPrototype 
             , xdirCustomizations = dirCustomizations
             , xzwolleVersion = zwolleVersion
+            , xgenerateFrontend = generateFrontend
+            , xgenerateBackend = generateBackend
             }) 
   <$> optional dbNameP <*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
-  <*> skipComposerP <*> optional dirPrototypeP <*> dirCustomizationsP
-  <*> zwolleVersionP
+  <*> optional dirPrototypeP <*> optional dirCustomizationsP
+  <*> zwolleVersionP 
+  <*> generateFrontendP <*> generateBackendP
 
 dbNameP :: Parser Text
 dbNameP = T.pack <$> strOption
@@ -68,24 +73,18 @@ forceReinstallP = switch
         <> help ("Re-install the prototype framework. This discards any previously "<>
                 "installed version.")
         )
-skipComposerP :: Parser Bool
-skipComposerP = switch
-        ( long "skip-composer"
-        <> help ("Skip installing php dependencies (using Composer) "
-                <>"for prototype framework.")
-        )
 dirPrototypeP :: Parser String
 dirPrototypeP = strOption
-        ( long "output-directory"
+        ( long "proto-dir"
         <> metavar "DIRECTORY"
-        <> help ("Specify the directory where the prototype will be generated. (defaults to ??)") --TODO: Fill in the ?? part.
+        <> value defaultDirPrototype
+        <> showDefault
+        <> help ("Specify the directory where the prototype will be generated")
         )
 dirCustomizationsP :: Parser [String]
 dirCustomizationsP = (splitWhen (== ';') <$> strOption
         ( long "customizations"
-        <> metavar "DIRECTORY"
-        <> value "customizations"
-        <> showDefault
+        <> metavar "DIR;DIR;.."
         <> help ("Copy one or more directories into the generated prototype. "
                 )
         ))
@@ -100,5 +99,13 @@ zwolleVersionP = strOption
                 <>"than the default. Only a developer of the framework "
                 <>"can make good use of it. ")
         )
+generateFrontendP :: Parser Bool
+generateFrontendP = boolFlags True "frontend"
+        ( "Generate prototype frontend files (Angular application)")
+        mempty
 
+generateBackendP :: Parser Bool
+generateBackendP = boolFlags True "backend"
+        ( "Generate backend files (PHP application)")
+        mempty
 

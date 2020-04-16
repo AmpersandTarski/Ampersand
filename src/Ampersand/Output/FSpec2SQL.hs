@@ -1,32 +1,17 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.FSpec2SQL
-  (dumpSQLqueries,generateDatabaseFile)
+  (dumpSQLqueries,databaseStructureSql)
 where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
-import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.TableSpec
-import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import qualified RIO.List as L
-import           System.Directory
-import           System.FilePath
-
-generateDatabaseFile :: (HasDirPrototype env, HasLogFunc env) => FSpec -> RIO env ()
-generateDatabaseFile fSpec = 
-   do env <- ask
-      logInfo $ "  Generating "<>display (T.pack file)
-      liftIO $ createDirectoryIfMissing True (takeDirectory (fullFile env))
-      writeFileUtf8 (fullFile env) content
-  where 
-   content = databaseStructureSql fSpec
-   file = "database" <.> "sql"
-   fullFile env = getGenericsDir env </> file
 
 databaseStructureSql :: FSpec -> Text
 databaseStructureSql fSpec

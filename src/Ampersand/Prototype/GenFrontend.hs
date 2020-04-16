@@ -1,7 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+﻿{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-module Ampersand.Prototype.GenFrontend (doGenFrontend) where
+module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, copyCustomizations) where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -10,6 +10,8 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ToFSpec.NormalForms
 import           Ampersand.Misc.HasClasses
+import           Ampersand.Output.FSpec2SQL (databaseStructureSql)
+import           Ampersand.Output.ToJSON.ToJson
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Runners (logLevel)
 import           Ampersand.Types.Config
@@ -62,26 +64,43 @@ This is considered editable iff the composition rel;relRef yields an editable re
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirCustomizations env,HasRunComposer env, HasDirPrototype env) =>
+doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     now <- getCurrentTime
-    skipComposer <- view skipComposerL
     logInfo "Generating frontend..."
-    isCleanInstall <- downloadPrototypeFramework
+    _ <- downloadPrototypeFramework
     copyTemplates
     feInterfaces <- buildInterfaces fSpec
     genViewInterfaces fSpec feInterfaces
     genControllerInterfaces fSpec feInterfaces
     genRouteProvider fSpec feInterfaces
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
-    copyCustomizations
-    when (isCleanInstall && not skipComposer) $ do
-      logInfo "Installing dependencies..." -- don't use logDebug here, because installing dependencies takes some time and we want the user to see this
-      env <- ask 
-      let dirPrototype = getDirPrototype env
-      installComposerLibs dirPrototype
     logInfo "Frontend generated"
+
+doGenBackend :: (Show env, HasRunner env, HasProtoOpts env, HasDirPrototype env) =>
+                FSpec -> RIO env ()
+doGenBackend fSpec = do
+  env <- ask
+  logInfo "Generating backend..."
+  let dir = getGenericsDir env
+  writeFileUtf8 (dir </> "database"   <.>"sql" ) $ databaseStructureSql $ fSpec
+  writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
+  writeFile (dir </> "relations"  <.>"json") $ relationsToJSON env fSpec
+  writeFile (dir </> "rules"      <.>"json") $ rulesToJSON env fSpec
+  writeFile (dir </> "concepts"   <.>"json") $ conceptsToJSON env fSpec
+  writeFile (dir </> "conjuncts"  <.>"json") $ conjunctsToJSON env fSpec
+  writeFile (dir </> "interfaces" <.>"json") $ interfacesToJSON env fSpec
+  writeFile (dir </> "views"      <.>"json") $ viewsToJSON env fSpec
+  writeFile (dir </> "roles"      <.>"json") $ rolesToJSON env fSpec
+  writeFile (dir </> "populations"<.>"json") $ populationToJSON env fSpec
+  logInfo "Backend generated"
+
+writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
+writeFile filePath content = do
+  logDebug $ "  Generating "<>display (T.pack filePath) 
+  liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
+  BL.writeFile filePath content
   
 copyTemplates :: (HasDirPrototype env, HasLogFunc env) =>
                  RIO env ()
@@ -102,7 +121,7 @@ copyCustomizations = do
   env <- ask
   dirCustomizations <- view dirCustomizationsL
   let dirPrototype = getDirPrototype env
-  let custDirs = map (dirSource env</>) dirCustomizations
+  let custDirs = map (dirSource env</>) (fromMaybe [] dirCustomizations)
   mapM_ (copyDir dirPrototype) custDirs
     where
       copyDir :: (HasLogFunc env) =>
