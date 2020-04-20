@@ -135,7 +135,7 @@ parseSingleADL pc
               popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
               return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
          | -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
-           extension == ".xml" = do 
+           extension == ".archimate" = do 
               ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
               logInfo (display (T.pack filePath) <> " has been interpreted as an Archi-repository.")
               case ctxFromArchi of

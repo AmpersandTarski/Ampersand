@@ -34,7 +34,7 @@ import           Text.XML.HXT.Core hiding (utf8, fatal,trace)
 --   It produces the P_Populations and P_Declarations that represent the Archimate model.
 --   Finally, the function `mkArchiContext` produces a `P_Context` ready to be merged into the rest of Ampersand's population.
 archi2PContext :: (HasLogFunc env) => FilePath -> RIO env (Guarded P_Context)
-archi2PContext archiRepoFilename  -- e.g. "CArepository.xml"
+archi2PContext archiRepoFilename  -- e.g. "CArepository.archimate"
  = do -- hSetEncoding stdout utf8
       archiRepo <- liftIO $ runX (processStraight archiRepoFilename)
       let fst3 (x,_,_) = x
