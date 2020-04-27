@@ -34,7 +34,7 @@ chpDiagnosis env fSpec
    <> ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
    <> processrulesInPatterns --
    <> wipReport              -- sums up the work items (i.e. the violations of process rules)
-   <> violationReport          -- sums up the violations caused by the population of this script.
+   <> violationReport        -- sums up the violations caused by the population of this script.
      
    , pics )
   where

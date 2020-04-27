@@ -54,15 +54,15 @@ instance JSON FSpec Rulez where
     
 instance JSON Rule JsonRule where
  fromAmpersand env fSpec rule = JsonRule
-  { rulJSONname        = rrnm         rule
-  , rulJSONruleAdl     = showA.formalExpression $ rule
-  , rulJSONorigin      = tshow.origin $ rule
-  , rulJSONmeaning     = showMeaning
-  , rulJSONmessage     = showMessage
+  { rulJSONname         = rrnm rule
+  , rulJSONruleAdl      = showA.formalExpression $ rule
+  , rulJSONorigin       = tshow.origin $ rule
+  , rulJSONmeaning      = showMeaning
+  , rulJSONmessage      = showMessage
   , rulJSONsrcConceptId = idWithoutType . source . formalExpression $ rule
   , rulJSONtgtConceptId = idWithoutType . target . formalExpression $ rule
-  , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (fmap NE.toList . lookup rule $ allConjsPerRule fSpec)
-  , rulJSONpairView    = fmap (fromAmpersand env fSpec) (rrviol rule)
+  , rulJSONconjunctIds  = map rc_id  $ fromMaybe [] (fmap NE.toList . lookup rule $ allConjsPerRule fSpec)
+  , rulJSONpairView     = fmap (fromAmpersand env fSpec) (rrviol rule)
   } 
    where 
     showMeaning :: Text
@@ -95,8 +95,3 @@ instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
                            PairViewText{} -> Nothing
                            PairViewExp _ _ e         -> Just . isIdent $ e --show $ e
   } 
-
-    
- 
-  
-

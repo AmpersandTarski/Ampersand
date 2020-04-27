@@ -39,9 +39,7 @@ pCtx2Fspec env c = do
         else 
           case violationsOfInvariants fSpec of
             [] -> pure fSpec
-            h:tl -> Errors $ fmap mkInvariantViolationsError $ h NE.:| tl
-
-
+            h:tl -> (Errors . fmap (mkInvariantViolationsError (applyViolText fSpec))) (h NE.:| tl)
 
 
 mkGrindInfo :: (HasFSpecGenOpts env, HasLogFunc env) => MetaModel -> RIO env GrindInfo

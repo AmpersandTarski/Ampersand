@@ -19,6 +19,7 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import qualified RIO.List.Partial as L'
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
@@ -79,6 +80,7 @@ makeFSpec env context
                                                . smallerConcepts (gens context) $ cpt
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
+              , applyViolText = apply_viol_text
               , allViolations  = [ (r,vs)
                                  | r <- Set.elems $ allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
@@ -109,6 +111,21 @@ makeFSpec env context
            _   -> fatal ("concept "<>name cpt<>" should be in exactly one typology!")
      pairsinexpr  :: Expression -> AAtomPairs
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
+     -- Purpose: to write a rule violation in Text as specified in the user's script,
+     -- to be used in error messages too.
+     apply_viol_text :: Rule -> AAtomPair -> Text
+     apply_viol_text rule pair
+      = case rrviol rule of
+          Nothing -> "(" <> aavtxt (apLeft pair) <> ", " <> aavtxt (apRight pair) <> ")"
+          Just pv -> pairsegs
+            where
+              pairsegs :: Text
+              pairsegs = L'.foldr1 (<>) . NE.toList . NE.map totext . ppv_segs $ pv
+     
+              totext :: PairViewSegment Expression -> Text
+              totext (PairViewText _ str) = str
+              totext (PairViewExp _ Src expr) = aavtxt . apRight . L'.head . toList . Set.filter (\ap->apLeft ap==apLeft pair) . pairsinexpr $ expr
+              totext (PairViewExp _ Tgt expr) = aavtxt . apLeft . L'.head . toList . Set.filter (\ap->apRight ap==apRight pair) . pairsinexpr $ expr
      ruleviolations :: Rule -> AAtomPairs
      ruleviolations r = case formalExpression r of
           EEqu{} -> (cra Set.\\ crc) `Set.union` (crc Set.\\ cra)

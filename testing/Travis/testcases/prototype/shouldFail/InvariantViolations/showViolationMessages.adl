@@ -1,0 +1,12 @@
+CONTEXT Test IN DUTCH
+-- We're testing that violation messages are shown in the way specified in the user's script.
+-- For this purpose I added VIOLATION statements to this script.
+
+RELATION r[A * B] [TOT]
+
+RULE TotalR : I |- r;r~
+VIOLATION (TXT "For atom ", SRC I, TXT " there is no B in relation r.")
+
+POPULATION "A" CONTAINS [ "Uiversum" ]
+
+ENDCONTEXT
