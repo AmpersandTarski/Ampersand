@@ -370,11 +370,11 @@ translateArchiObj "purpose" "ArchiRepo" tuples
  = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "purpose" (Just (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")))) (transTuples tuples)
    , Just $ P_Sgn "purpose" (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )
 translateArchiObj "folderName" _ tuples
- = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt "ArchiFolder") (PCpt "FolderName")))) (transTuples tuples)
-   , Just $ P_Sgn "naam" (P_Sign (PCpt "ArchiFolder") (PCpt "FolderName")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )
+ = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "name" (Just (P_Sign (PCpt "ArchiFolder") (PCpt "FolderName")))) (transTuples tuples)
+   , Just $ P_Sgn "name" (P_Sign (PCpt "ArchiFolder") (PCpt "FolderName")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )
 translateArchiObj "name" typeLabel tuples
- = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
-   , Just $ P_Sgn "naam" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )
+ = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "name" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+   , Just $ P_Sgn "name" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )
 translateArchiObj "type" typeLabel tuples
  = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "type" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
    , Just $ P_Sgn "type" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )
@@ -391,8 +391,8 @@ translateArchiObj "cat" typeLabel tuples
  = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "inFolderName" (Just (P_Sign (PCpt typeLabel) (PCpt "FolderName")))) (transTuples tuples)
    , Just $ P_Sgn "inFolderName" (P_Sign (PCpt typeLabel) (PCpt "FolderName")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )
 translateArchiObj "docu" typeLabel tuples
- = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "documentatie" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
-   , Just $ P_Sgn "documentatie" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )
+ = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "documentation" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+   , Just $ P_Sgn "documentation" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )
 translateArchiObj "inFolder" typeLabel tuples
  = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "inFolder" (Just (P_Sign (PCpt typeLabel) (PCpt "ArchiObject")))) (transTuples tuples)
    , Just $ P_Sgn "inFolder" (P_Sign (PCpt typeLabel) (PCpt "ArchiObject")) (Set.fromList [Uni]) [] [] OriginUnknown, [] )

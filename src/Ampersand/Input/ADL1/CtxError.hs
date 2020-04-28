@@ -236,7 +236,7 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
                        ,"  Please add a signature (e.g. [A*B]) to it."
                        ]
                        <> noteIssue980
-    noteIssue980 =     [ "Note: Some cases are not disambiguated fully by desing. You can read about"
+    noteIssue980 =     [ "Note: Some cases are not disambiguated fully by design. You can read about"
                        , "  this at https://github.com/AmpersandTarski/Ampersand/issues/980#issuecomment-508985676"
                        ]
     -- | Also show the origin of the defining relation, if applicable

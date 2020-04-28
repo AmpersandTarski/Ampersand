@@ -113,9 +113,9 @@ makeFSpec env context
      -- Purpose: to write a rule violation in Text as specified in the user's script,
      -- to be used in error messages too.
      apply_viol_text :: Rule -> AAtomPair -> Text
-     apply_viol_text rule pair
+     apply_viol_text rule violPair
       = case rrviol rule of
-          Nothing -> "(" <> aavtxt (apLeft pair) <> ", " <> aavtxt (apRight pair) <> ")"
+          Nothing -> "(" <> aavtxt (apLeft violPair) <> ", " <> aavtxt (apRight violPair) <> ")"
           Just pv -> pairsegs
             where
               pairsegs :: Text
@@ -129,7 +129,7 @@ makeFSpec env context
           --  Other cases are ignored instead of dealt with. Not Good!
               lrToText :: (AAtomPair -> AAtomValue) -> Expression -> Text
               lrToText g expr
-               = case toList . Set.filter (\ap->g ap==apLeft pair) . pairsinexpr $ expr
+               = case toList . Set.filter (\ap->g violPair==apLeft ap) . pairsinexpr $ expr
                  of h:_  -> aavtxt . apRight $ h
                     _    -> ""
      ruleviolations :: Rule -> AAtomPairs
