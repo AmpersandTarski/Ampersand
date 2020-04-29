@@ -16,7 +16,7 @@ import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError
 import           RIO.Char
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified Data.Map.Strict as Map -- import qualified, to avoid name clashes with Prelude functions
 import qualified Data.Set as Set
 import           Data.Tree.NTree.TypeDefs
@@ -61,8 +61,8 @@ archi2PContext archiRepoFilename  -- e.g. "CArepository.archimate"
       logInfo ("ArchiCount.txt written")
       return (mkArchiContext archiRepoWithProps)
    where sortRelPops, sortCptPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
-         sortRelPops pops = [ (NEL.head cl){p_popps = foldr L.union [] [p_popps decl | decl<-NEL.toList cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-pops] ]
-         sortCptPops pops = [ (NEL.head cl){p_popas = foldr L.union [] [p_popas cpt  | cpt <-NEL.toList cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-pops] ]
+         sortRelPops pops = [ (NE.head cl){p_popps = foldr L.union [] [p_popps decl | decl<-NE.toList cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-pops] ]
+         sortCptPops pops = [ (NE.head cl){p_popas = foldr L.union [] [p_popas cpt  | cpt <-NE.toList cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-pops] ]
          atomMap :: [P_Population] -> Map.Map P_Concept [PAtomValue]
          atomMap pops = Map.fromListWith L.union
                            ([ (pSrc sgn, (L.nub.map ppLeft.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]<>
@@ -100,13 +100,13 @@ mkArchiContext pops = pure
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = [ ad | Just ad<-archiDecls ]
+      , ctx_ds     = (fmap NE.head . eqCl nameSign) [ ad | Just ad<-archiDecls ]
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
       , ctx_reprs  = []
       , ctx_vs     = []
-      , ctx_gs     = concat archiGenss
+      , ctx_gs     = L.nub (concat archiGenss)
       , ctx_ifcs   = []
       , ctx_ps     = []
       , ctx_pops   = sortRelPops archiPops <> sortCptPops archiPops
@@ -117,9 +117,9 @@ mkArchiContext pops = pure
         archiGenss :: [[PClassify]]
         (archiPops, archiDecls, archiGenss) = L.unzip3 pops
         sortRelPops, sortCptPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
-        sortRelPops popus = [ (NEL.head cl){p_popps = foldr L.union [] [p_popps decl | decl<-NEL.toList cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-popus] ]
-        sortCptPops popus = [ (NEL.head cl){p_popas = foldr L.union [] [p_popas cpt  | cpt <-NEL.toList cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-popus] ]
-
+        sortRelPops popus = [ (NE.head cl){p_popps = foldr L.union [] [p_popps decl | decl<-NE.toList cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-popus] ]
+        sortCptPops popus = [ (NE.head cl){p_popas = foldr L.union [] [p_popas cpt  | cpt <-NE.toList cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-popus] ]
+        nameSign decl = (name decl, dec_sign decl)
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
 -- | `data ArchiRepo` represents an entire ArchiMate repository in one Haskell data structure.
@@ -444,9 +444,9 @@ translateArchiRel elemLookup element
                    }
      , Nothing
      , [ PClassify
-             { pos     = OriginUnknown
+             { pos      = OriginUnknown
              , specific = PCpt relTyp                          --  specific concept
-             , generics = NEL.fromList [PCpt "Relationship"]   --  generic concepts
+             , generics = PCpt "Relationship" NE.:| []   --  generic concepts
              } ]
      )
    | relTyp/="Relationship" ] <>
