@@ -125,13 +125,12 @@ makeFSpec env context
               totext (PairViewText _ str) = str
               totext (PairViewExp _ Src expr) = lrToText apLeft expr
               totext (PairViewExp _ Tgt expr) = lrToText apRight expr
-          --  TODO: the following is intended for univalent, total expressions.
-          --  Other cases are ignored instead of dealt with. Not Good!
               lrToText :: (AAtomPair -> AAtomValue) -> Expression -> Text
               lrToText g expr
-               = case toList . Set.filter (\ap->g violPair==apLeft ap) . pairsinexpr $ expr
-                 of h:_  -> aavtxt . apRight $ h
-                    _    -> ""
+               = case fmap (aavtxt.apRight) . toList . Set.filter (\ap->g violPair==apLeft ap) . pairsinexpr $ expr
+                 of [h]  -> h
+                    []   -> ""
+                    xs   -> "{" <> T.intercalate ", " xs <> "}"
      ruleviolations :: Rule -> AAtomPairs
      ruleviolations r = case formalExpression r of
           EEqu{} -> (cra Set.\\ crc) `Set.union` (crc Set.\\ cra)
