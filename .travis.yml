@@ -127,6 +127,7 @@ before_install:
 - stack setup
 - stack exec -- ghc --version
 
+
 install:
 - echo "Starting install"
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
