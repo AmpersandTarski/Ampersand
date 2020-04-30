@@ -27,8 +27,21 @@ RUN stack install
 RUN /root/.local/bin/ampersand --version
 
 # Create a light-weight image that has the Ampersand compiler available
+# to run ampersand from the command line.
+# call with docker run -it  \       # run interactively on your CLI
+#            --name devtest \       # name of the container (so you can remove it with `docker rm devtest`)
+#            -v ${pwd}:/scripts  \       # mount the current working directory of your CLI on the container directory /scripts
+#            <your subcommand>      # e.g. check, documentation, proto
 FROM ubuntu
+
+RUN apt-get update && apt-get install -y graphviz
+
+VOLUME ["/scripts"]
 
 COPY --from=buildstage /root/.local/bin/ampersand /bin/ampersand
 
+WORKDIR /scripts
+
 ENTRYPOINT ["/bin/ampersand"]
+
+CMD ["--verbose"]

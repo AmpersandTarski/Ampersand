@@ -79,6 +79,7 @@ makeFSpec env context
                                                . smallerConcepts (gens context) $ cpt
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
+              , applyViolText = apply_viol_text
               , allViolations  = [ (r,vs)
                                  | r <- Set.elems $ allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
@@ -109,6 +110,27 @@ makeFSpec env context
            _   -> fatal ("concept "<>name cpt<>" should be in exactly one typology!")
      pairsinexpr  :: Expression -> AAtomPairs
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
+     -- Purpose: to write a rule violation in Text as specified in the user's script,
+     -- to be used in error messages too.
+     apply_viol_text :: Rule -> AAtomPair -> Text
+     apply_viol_text rule violPair
+      = case rrviol rule of
+          Nothing -> "(" <> aavtxt (apLeft violPair) <> ", " <> aavtxt (apRight violPair) <> ")"
+          Just pv -> pairsegs
+            where
+              pairsegs :: Text
+              pairsegs = let (h NE.:| tl) = NE.map totext . ppv_segs $ pv 
+                         in L.foldl (<>) h tl
+              totext :: PairViewSegment Expression -> Text
+              totext (PairViewText _ str) = str
+              totext (PairViewExp _ Src expr) = lrToText apLeft expr
+              totext (PairViewExp _ Tgt expr) = lrToText apRight expr
+              lrToText :: (AAtomPair -> AAtomValue) -> Expression -> Text
+              lrToText g expr
+               = case fmap (aavtxt.apRight) . toList . Set.filter (\ap->g violPair==apLeft ap) . pairsinexpr $ expr
+                 of [h]  -> h
+                    []   -> ""
+                    xs   -> "{" <> T.intercalate ", " xs <> "}"
      ruleviolations :: Rule -> AAtomPairs
      ruleviolations r = case formalExpression r of
           EEqu{} -> (cra Set.\\ crc) `Set.union` (crc Set.\\ cra)

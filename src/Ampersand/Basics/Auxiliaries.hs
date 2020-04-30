@@ -37,7 +37,7 @@ eqClass f (x:xs) = (x NE.:| [e |e<-xs, f x e]) : eqClass f [e |e<-xs, not (f x e
 -- | eqCl is used for gathering things that are equal wrt some criterion f.
 --   For instance, if you want to have persons with the same name:
 --    'eqCl name persons' produces a list,in which each element is a list of persons with the same name.
--- Example> eqCl (=='s') "Mississippi" = "ssss"
+-- Example> eqCl (=='s') "Mississippi" = ["ssss","Miiippi"]
 
 eqCl :: Ord b => (a -> b) -> [a] -> [NE.NonEmpty a]
 eqCl _ [] = []

@@ -125,7 +125,8 @@ data FSpec = FSpec { fsName ::       Text
                    --                         we may see empty attributes. (NULL values in database terminology)
                    -- 'tableContents fSpec plug' is used in `PHP.hs` for filling the database initially.
                    -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
-                   , pairsInExpr :: Expression -> AAtomPairs   
+                   , pairsInExpr :: Expression -> AAtomPairs
+                   , applyViolText :: Rule -> AAtomPair -> Text
                    , initialConjunctSignals :: [(Conjunct,AAtomPairs)] 
                    -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,AAtomPairs)]   

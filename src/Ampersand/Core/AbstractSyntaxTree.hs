@@ -156,14 +156,14 @@ data RuleOrigin = UserDefined     -- This rule was specified explicitly as a rul
                 deriving (Show, Eq)
 type Rules = Set.Set Rule
 data Rule =
-     Ru { rrnm ::     Text                      -- ^ Name of this rule
+     Ru { rrnm ::     Text                        -- ^ Name of this rule
         , formalExpression :: Expression          -- ^ The expression that should be True
         , rrfps ::    Origin                      -- ^ Position in the Ampersand file
-        , rrmean ::   [Meaning]                  -- ^ Ampersand generated meaning (for all known languages)
+        , rrmean ::   [Meaning]                   -- ^ Ampersand generated meaning (for all known languages)
         , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
-        , rrdcl ::    Maybe (Prop,Relation)    -- ^ The property, if this rule originates from a property on a Relation
-        , rrpat ::    Maybe Text                -- ^ If the rule is defined in the context of a pattern, the name of that pattern.
+        , rrdcl ::    Maybe (Prop,Relation)       -- ^ The property, if this rule originates from a property on a Relation
+        , rrpat ::    Maybe Text                  -- ^ If the rule is defined in the context of a pattern, the name of that pattern.
         , r_usr ::    RuleOrigin                  -- ^ Where does this rule come from?
         , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
         } deriving Typeable

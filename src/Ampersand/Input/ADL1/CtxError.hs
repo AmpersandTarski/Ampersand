@@ -67,7 +67,7 @@ data CtxError = CTXE Origin Text -- SJC: I consider it ill practice to export CT
 instance Show CtxError where
   -- The vscode extension expects errors and warnings
   -- to be in a standardized format. The show function
-  -- complies to that. Iff for whatever reason 
+  -- complies to that. If for whatever reason 
   -- this function is changed, please verify 
   -- the proper working of the ampersand-language-extension
   show err = T.unpack . T.intercalate "\n  " $
@@ -79,7 +79,7 @@ instance Show CtxError where
                   -- these are in a wrong format. So we strip the first 
                   -- line of the error:
                   case T.lines (tshow e) of
-                     []       -> fatal "Whoh! the impolssible just happend! (triggered by a parse error somewhere in your script)"
+                     []       -> fatal "Whoh! the impossible just happened! (triggered by a parse error somewhere in your script)"
                      _:xs     -> xs
        LE (LexerError _ info) -> T.lines (tshow info)
     )
@@ -236,7 +236,7 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
                        ,"  Please add a signature (e.g. [A*B]) to it."
                        ]
                        <> noteIssue980
-    noteIssue980 =     [ "Note: Some cases are not disambiguated fully by desing. You can read about"
+    noteIssue980 =     [ "Note: Some cases are not disambiguated fully by design. You can read about"
                        , "  this at https://github.com/AmpersandTarski/Ampersand/issues/980#issuecomment-508985676"
                        ]
     -- | Also show the origin of the defining relation, if applicable
@@ -307,16 +307,16 @@ mkIncompatibleAtomValueError :: PAtomValue -> Text -> CtxError
 mkIncompatibleAtomValueError pav msg = CTXE (origin pav) (case msg of 
                                                             "" -> fatal "Error message must not be empty."
                                                             _  -> msg)
-mkInvariantViolationsError :: (Rule,AAtomPairs) -> CtxError
-mkInvariantViolationsError (r,ps) = 
+mkInvariantViolationsError :: (Rule->AAtomPair->Text) -> (Rule,AAtomPairs) -> CtxError
+mkInvariantViolationsError applyViolText (r,ps) = 
   CTXE (origin r) violationMessage 
       where
         violationMessage :: Text
         violationMessage = T.unlines $
           [if length ps == 1 
-            then "There is " <>tshow (length ps)<>" violation of RULE " <>tshow (name r)<>":"
+            then "There is one violation of RULE " <>tshow (name r)<>":"
             else "There are "<>tshow (length ps)<>" violations of RULE "<>tshow (name r)<>":"
-          ] 
+          ]
           <> (map ("  "<>) . listPairs 10 . toList $ ps)
         listPairs :: Int -> [AAtomPair] -> [Text]
         listPairs i xs = 
@@ -324,10 +324,7 @@ mkInvariantViolationsError (r,ps) =
                       [] -> []
                       h:tl 
                         | i == 0 -> ["  ... ("<>tshow (length xs)<>" more)"]
-                        | otherwise -> (showAP h) : listPairs (i-1) tl
-            where
-              showAP :: AAtomPair -> Text
-              showAP x= "("<>aavtxt (apLeft x)<>", "<>aavtxt (apRight x)<>")"
+                        | otherwise -> applyViolText r h : listPairs (i-1) tl
     
 mkInterfaceRefCycleError :: NE.NonEmpty Interface -> CtxError
 mkInterfaceRefCycleError cyclicIfcs =

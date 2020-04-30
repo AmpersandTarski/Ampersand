@@ -846,6 +846,10 @@ data PClassify =  PClassify
   , generics :: NE.NonEmpty P_Concept       -- ^ Right hand side concept expression
   } deriving (Show)
 
+-- (Stef April 29th, 2020) Eq PClassify is used to generate P-contexts without duplicate PClassify's in it.
+instance Eq PClassify where
+ p == q = specific p==specific q && generics p==generics q
+
 instance Traced PClassify where
  origin = pos
 
