@@ -414,11 +414,14 @@ translateArchiObj "accessType" typeLabel tuples
 translateArchiObj a b c = error ("!fatal: non-exhaustive pattern in translateArchiObj\ntranslateArchiObj "<> show a<>" "<>show b<>" "<>show c)
 
 -- | Purpose: To generate relationships from archiRepo as elements the Ampersand P-structure
--- | Pre:     isRelationship element
+-- | Pre:     isRelationship element  -- this guarantees that elemSrc is not empty.
+-- | We assume that Archi ensures that:
+-- |  1. elemTgt is not empty;
+-- |  2. the word "Relationship" may be safely stripped from the end by dropping all characters after a capital R.
 translateArchiRel :: (Text -> Maybe Text) -> Element -> [(P_Population, Maybe P_Relation, [PClassify])]
 translateArchiRel elemLookup element
- = [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relNm (Just (P_Sign (PCpt xType) (PCpt yType)))) (transTuples [(x,y)])
-     , Just $ P_Sgn relNm (P_Sign (PCpt xType) (PCpt yType)) (Set.fromList []) [] [] OriginUnknown
+ = [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relLabel (Just (P_Sign (PCpt xType) (PCpt yType)))) (transTuples [(x,y)])
+     , Just $ P_Sgn relLabel (P_Sign (PCpt xType) (PCpt yType)) (Set.fromList []) [] [] OriginUnknown
      , []
      )
    , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "source" (Just (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")))) (transTuples [(relId,x)])
@@ -457,10 +460,13 @@ translateArchiRel elemLookup element
    | xType=="ApplicationComponent" && yType=="ApplicationComponent" ]
      where
        relId    = keyArchi element                 -- the key from Archi, e.g. "693"                 
-       relTyp   = elemType element                 -- the relation type,  e.g. "AccessRelationship"  
-       relLabel = if (T.null . elemName) element          
-                  then unfixRel (elemType element)
-                  else relCase (elemName element)  -- the name given by the user, e.g. "create/update"
+       relTyp   = unfixRel (elemType element)      -- the relation type,  e.g. "Access"  
+       relLabel = case elemType element of
+                    "AssociationRelationship"
+                      -> if (T.null . elemName) element          
+                         then relTyp
+                         else relCase (elemName element)  -- the name given by the user, e.g. "create/update"
+                    _ -> relTyp
        (x,y)    = (elemSrc element, elemTgt element)
        xType    = case elemLookup x of
                     Just str -> str
@@ -468,7 +474,6 @@ translateArchiRel elemLookup element
        yType    = case elemLookup y of
                     Just str -> str
                     Nothing -> fatal ("No Archi-object found for Archi-identifier "<>tshow y)
-       relNm    = relCase relLabel  --  <>"["<>xType<>"*"<>yType<>"]"
 
 -- | Function `unfixRel` is used to generate Ampersand keys from Archimate identifiers.
 --   It removes a trailing `R` and whatever comes after it.
@@ -588,6 +593,9 @@ processStraight absFilePath
                                             , bnd_width  = T.pack bndWidth'
                                             , bnd_height = T.pack bndHeight'
                                             }
+-- The following does not work yet for recent versions of Archi
+-- which should parse with hasName "sourceConnection", but doesn't. TODO
+-- However, forget about this after the ArchiMate Exchange Format can be parsed.
      getSrcConn :: ArrowXml a => a XmlTree SourceConnection
      getSrcConn = isElem >>> hasName "sourceConnections" >>>
          proc l -> do sConType'  <- getAttrValue "xsi:type"          -< l
