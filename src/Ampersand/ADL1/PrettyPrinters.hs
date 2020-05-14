@@ -129,7 +129,7 @@ instance Pretty P_Pattern where
           <+\> perline vds
           <+\> perline xps
           <+\> perline pop
-          <+>  text "ENDPATTERN"
+          <+\> text "ENDPATTERN"
 
 instance Pretty P_Relation where
     pretty (P_Sgn nm sign prps pragma mean _) =

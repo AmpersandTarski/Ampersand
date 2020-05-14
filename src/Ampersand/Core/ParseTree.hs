@@ -216,7 +216,7 @@ data P_Relation =
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
 --   This is still not true for MEATGRINDER stuff!
-
+--   So,
 -- DO NOT USE ORD and EQ on P_Relation!
 instance Named P_Relation where
  name = dec_nm
