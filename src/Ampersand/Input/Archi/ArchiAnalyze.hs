@@ -48,7 +48,7 @@ archi2PContext archiRepoFilename  -- e.g. "CArepository.archimate"
  = do -- hSetEncoding stdout utf8
       archiRepo <- liftIO $ runX (processStraight archiRepoFilename)
       let typeLookup atom = (Map.lookup atom . typeMap Nothing) archiRepo
-      let archiRepoWithProps = (grindArchi (Nothing,typeLookup,Nothing).identifyProps []) archiRepo
+      let archiRepoWithProps = (grindArchi (Nothing,typeLookup,Nothing) . identifyProps []) archiRepo
       let relPops = (filter (not.null.p_popps) . sortRelPops . map fst3) archiRepoWithProps
       let cptPops = (filter (not.null.p_popas) . sortCptPops . map fst3) archiRepoWithProps
       let elemCount archiConcept = (Map.lookup archiConcept . Map.fromList . atomCount . atomMap) relPops
@@ -129,18 +129,23 @@ mkArchiContext [archiRepo] pops = pure
         vwAts vw@View{}
          = [ (pop,rel,v)
            | (pop,rel,v)<-pops
-           , PPair _ (ScriptString _ x) (ScriptString _ y)<-p_popps pop
-           , x `Set.member` viewAtoms || y `Set.member` viewAtoms
+           , participatingRel rel
+           , dec_nm rel `L.notElem` ["inside","inView"]
+           , PPair _ (ScriptString _ x) _<-p_popps pop
+           , x `Set.member` viewAtoms
            ]
            where viewAtoms
                   = Set.fromList
                      [ a
                      | (pop,rel,Just viewname)<-pops, viewname==viewName vw
-                     , PCpt "Property" /= pSrc (dec_sign rel)
+                     , participatingRel rel
                      , PPair _ (ScriptString _ x) (ScriptString _ y)<-p_popps pop
                      , a<-[x,y]
                      ]
         vwAts _ = fatal "May not call vwAts on a non-view element"
+
+        participatingRel :: P_Relation -> Bool
+        participatingRel rel = pSrc (dec_sign rel) `L.notElem` map PCpt ["Relationship","Property","View"]
         -- viewpoprels contains all triples that are picked by vwAts, for all views,
         -- to compute the triples that are not assembled in any pattern.
         viewpoprels :: [(P_Population,P_Relation,Maybe Text)]
