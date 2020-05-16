@@ -1,0 +1,31 @@
+CONTEXT Try20 IN ENGLISH
+
+PURPOSE PATTERN Try20 IN ENGLISH 
+{+
+This pattern is meant to test the translation of identity definitions in Ampersand.
++}
+
+PATTERN Try20
+  r :: A*A
+  s :: A*A
+  t :: A*A
+ENDPATTERN
+
+IDENT "TEST Try20": A(I)
+IDENT "TEST Try20": B(I)
+ENDCONTEXT
+
+{- 
+   Purpose: to check that uniqueness of IDENT labels are tested.
+   Result: FAIL
+   Reason: on line 14 and 15 there are two identity definitions with the same label.
+   
+   Message:
+C:> ampersand check Try20.adl
+Reading file /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try20.adl
+/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try20.adl:14:1 error:
+  Every identity definition must have a unique name. "TEST Try20", however, is used at:/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try20.adl:14:1
+      /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try20.adl:15:1.
+ExitFailure 10
+C:>
+-}
