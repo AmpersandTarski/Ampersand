@@ -244,15 +244,15 @@ pCtx2aCtx env
       }
  = do contextInfo <- g_contextInfo -- the minimal amount of data needed to transform things from P-structure to A-structure.
       let declMap = declDisambMap contextInfo
-      uniqueNames p_patterns
+  --  uniqueNames "pattern" p_patterns   -- Unclear why this restriction was in place. So I removed it
       pats        <- traverse (pPat2aPat contextInfo) p_patterns            --  The patterns defined in this context
-      uniqueNames $ p_rules <> concatMap pt_rls p_patterns
+      uniqueNames "rule" $ p_rules <> concatMap pt_rls p_patterns
       rules       <- traverse (pRul2aRul contextInfo Nothing) p_rules       --  All user defined rules in this context, but outside patterns
-      uniqueNames $ p_identdefs <> concatMap pt_ids p_patterns
+      uniqueNames "identity definition" $ p_identdefs <> concatMap pt_ids p_patterns
       identdefs   <- traverse (pIdentity2aIdentity contextInfo Nothing) p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
-      uniqueNames $ p_viewdefs <> concatMap pt_vds p_patterns
+      uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
       viewdefs    <- traverse (pViewDef2aViewDef contextInfo) p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
-      uniqueNames p_interfaces
+      uniqueNames "interface" p_interfaces
       interfaces  <- traverse (pIfc2aIfc contextInfo) (p_interfaceAndDisambObjs declMap)   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       purposes    <- traverse (pPurp2aPurp contextInfo) p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       udpops      <- traverse (pPop2aPop contextInfo) p_pops --  [Population]
@@ -710,7 +710,7 @@ pCtx2aCtx env
          P_Box{}
            -> addWarnings warnings $
                        build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
-                             <*  uniqueNames l  -- ensure that each label in a box has a unique name.
+                             <*  uniqueNames "label in box" l  -- ensure that each label in a box has a unique name.
                              <*  mustBeObject (target objExpr)
                   where l :: [P_BoxItem (TermPrim, DisambPrim)]
                         l = si_box x
