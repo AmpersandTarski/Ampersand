@@ -5,7 +5,6 @@ module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
-import           Data.Maybe(isJust,fromMaybe)
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 

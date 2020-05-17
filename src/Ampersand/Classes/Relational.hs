@@ -7,7 +7,6 @@ module Ampersand.Classes.Relational
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
-import           Ampersand.Core.ParseTree(Prop(..),Props)
 import qualified RIO.Set as Set
 
 class HasProps r where

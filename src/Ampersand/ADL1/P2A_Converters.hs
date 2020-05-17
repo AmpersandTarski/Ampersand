@@ -22,7 +22,6 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
-import           Control.Arrow(first)
 import           RIO.Char(toUpper,toLower)
 import           Data.Hashable
 import qualified RIO.List as L
