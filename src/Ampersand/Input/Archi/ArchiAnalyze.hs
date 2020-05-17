@@ -471,7 +471,9 @@ instance MetaArchi Child where
   typeMap _ _
    = Map.empty
   grindArchi env@(Just viewid,typeLookup,maybeViewName) diagrObj
-   = [ translateArchiElem "inView" (connType,viewtype) maybeViewName [(sConRel conn,viewid)]
+   = [ translateArchiElem "inView" (elType,viewtype) maybeViewName [(chldElem child,viewid)]
+     | child<-childs diagrObj, Just elType<-[typeLookup (chldElem child)], Just viewtype<-[typeLookup viewid]] <>
+     [ translateArchiElem "inView" (connType,viewtype) maybeViewName [(sConRel conn,viewid)]
      | conn<-srcConns diagrObj, Just connType<-[typeLookup (sConRel conn)], Just viewtype<-[typeLookup viewid]] <>
      [ translateArchiElem "inside" (childtype,objtype) maybeViewName [(chldElem child,chldElem diagrObj)]
      | child<-childs diagrObj, Just childtype<-[typeLookup (chldElem child)], Just objtype<-[typeLookup (chldElem diagrObj)]] <>
