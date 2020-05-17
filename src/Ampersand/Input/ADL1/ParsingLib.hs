@@ -1,30 +1,31 @@
-{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
+﻿{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
 module Ampersand.Input.ADL1.ParsingLib(
+
     AmpParser, pIsThere, optList, optSet,
-    -- Operators
+    -- * Combinators
     (<?>), (<??>),
-    -- Combinators
     sepBy, sepBy1, many, many1, opt, try, choice, pMaybe,
-    -- Positions
+    -- * Positions
     currPos, posOf, valPosOf,
-    -- Basic parsers
+    -- * Basic parsers
     pConid, pString, pAmpersandMarkup, pVarid, pCrudString,
-    -- special parsers
+    -- * special parsers
     pAtomValInPopulation, Value(..),
-    -- Special symbols
+    -- * Parsers for special symbols
     pComma, pParens, pBraces, pBrackets, pChevrons,
-    -- Keywords
+    -- * Keyword parsers
     pKey,
-    -- Operators
+    -- * Operator parsers
     pOperator, pDash, pSemi, pColon,
-    -- Integers
+    -- * Integer parsers
     pZero, pOne
 ) where
 
 import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
 import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
-import           RIO.Char(toLower)
+import           RIO.Char(toUpper)
+import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -68,24 +69,31 @@ opt ::  AmpParser a  -- ^ The parser to try
     -> AmpParser a   -- ^ The resulting parser
 a `opt` b = P.option b a
 
+-- | @sepBy1 p sep@ parses /one/ or more occurrences of @p@, separated
+-- by @sep@. Returns a non-empty list of values returned by @p@.
 sepBy1 :: AmpParser a -> AmpParser b -> AmpParser (NE.NonEmpty a)
 sepBy1 p sep = liftM2 (NE.:|) p (many (sep >> p))
 
 -----------------------------------------------------------
 -- Keywords & operators
 -----------------------------------------------------------
+-- | Take a keyword and return a parser for that keyword 
 pKey :: String -> AmpParser String
 pKey key = match (LexKeyword key)
 
+-- | Take an operator and return a parser for that operator 
 pOperator :: String -> AmpParser String
 pOperator op = match (LexOperator op)
 
+-- | a parser for a dash (-)
 pDash :: AmpParser String
 pDash = pOperator "-"
 
+-- | a parser for a semicolon (;)
 pSemi :: AmpParser String
 pSemi = pOperator ";"
 
+-- | a parser for a colon (:)
 pColon :: AmpParser String
 pColon = pOperator ":"
 
@@ -93,6 +101,7 @@ pColon = pOperator ":"
 -- Token parsers
 -----------------------------------------------------------
 
+-- | given a predicate for a token, return a parser for tokens that comply to that predicate
 check :: (Lexeme -> Maybe a) -> AmpParser a
 check predicate = tokenPrim showTok nextPos matchTok
   where  -- Token pretty-printing function
@@ -105,6 +114,7 @@ check predicate = tokenPrim showTok nextPos matchTok
          -- ^ Matching function for the token to parse.
          matchTok (Tok l _) = predicate l
 
+-- | a parser for a given @Lexeme@
 match :: Lexeme -> AmpParser String
 match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <?> show lx
 
@@ -125,6 +135,8 @@ pAmpersandMarkup = check (\lx -> case lx of { LexMarkup s -> Just s; _ -> Nothin
 pVarid :: AmpParser String
 pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "lower case identifier"
 
+-- A non-empty string that contains only the the characters "crud" in any case (upper/lower), but each of them
+-- at most once. The order of the characters is free.
 pCrudString :: AmpParser String
 pCrudString = check (\lx -> case lx of 
                               LexConId s -> testCrud s 
@@ -132,14 +144,13 @@ pCrudString = check (\lx -> case lx of
                               _ -> Nothing 
                     ) <?> "crud definition"
    where 
-     testCrud "" = Nothing
-     testCrud s = test "crud" (map toLower s)
-       where test _ [] = Just s
-             test [] _ = Nothing
-             test (x:xs) (y:ys) 
-                       = if x == y 
-                         then test xs ys
-                         else test xs (y:ys)
+    testCrud s = 
+       if and $ [ not (null s)
+                , L.nub caps == caps
+                ] ++ map (`elem` "CRUD") caps 
+          then Just s
+          else Nothing
+      where caps = map toUpper s
 
 
 data Value = VRealString Text

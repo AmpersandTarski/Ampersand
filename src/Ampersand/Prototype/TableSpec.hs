@@ -19,7 +19,6 @@ import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
 import           Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import           Ampersand.Prototype.ProtoUtil
-import           Data.String (IsString(fromString))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -175,11 +174,11 @@ tableSpec2Queries withComment tSpec =
 additionalDatabaseSettings :: [SqlQuery]
 additionalDatabaseSettings = [ SqlQuerySimple "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]
 
-doubleQuote :: (Data.String.IsString m, Monoid m) => m -> m
+doubleQuote :: (IsString m, Monoid m) => m -> m
 doubleQuote = enclose '\"'
-singleQuote :: (Data.String.IsString m, Monoid m) => m -> m
+singleQuote :: (IsString m, Monoid m) => m -> m
 singleQuote = enclose '`'
-enclose :: (Data.String.IsString m, Monoid m) => Char -> m -> m
+enclose :: (IsString m, Monoid m) => Char -> m -> m
 enclose c s = fromString [c] <> s <> fromString [c]
 
 queryAsPHP :: SqlQuery -> Text

@@ -26,7 +26,7 @@ data Lexeme  = LexSymbol      Char    -- ^ A symbol
              | LexMarkup      String  -- ^ A markup (string to be parsed by Pandoc)
              | LexSingleton   String  -- ^ An atomvalue in an Expression
              | LexDecimal     Int     -- ^ A decimal number
-             | LexFloat      Double   -- ^ A decimal floating point thing
+             | LexFloat       Double  -- ^ A decimal floating point thing
              | LexOctal       Int     -- ^ An octal number
              | LexHex         Int     -- ^ A hexadecimal number
              | LexConId       String  -- ^ An upper case identifier

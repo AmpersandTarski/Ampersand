@@ -24,7 +24,6 @@ module Ampersand.Input.ADL1.Lexer
 
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Input.ADL1.FilePos(updatePos)
 import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Input.ADL1.LexerMonad
 import           Ampersand.Input.ADL1.LexerToken
