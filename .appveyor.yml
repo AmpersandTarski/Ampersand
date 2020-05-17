@@ -19,8 +19,10 @@
     - stack build --only-snapshot --no-terminal
     - stack --local-bin-path . install ampersand
   # Set a magical environment variable
-    - cmd: for /f %%i in ('stack exec -- ampersand -v') do set AMPERSAND_VERSION=%%i
-    
+    - cmd: for /f %%i in ('stack exec ampersand -- -v') do set AMPERSAND_VERSION=%%i
+    - cmd: pwd
+    - cmd: where ampersand
+    - cmd: where stack
   # mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
   artifacts:
     - path: ampersand.exe
