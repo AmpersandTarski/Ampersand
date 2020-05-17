@@ -9,7 +9,7 @@ module Ampersand.Daemon.Escape(
     ) where
 
 import RIO.Char
-import Data.Either.Extra(rights)
+--import Data.Either.Extra(rights)
 import Data.List.Extra(unfoldr)
 import Data.Tuple.Extra(swap,both)
 import Ampersand.Basics

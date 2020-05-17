@@ -46,7 +46,6 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           RIO.Time
 import           Data.Traversable
-import           GHC.Generics (Generic)
 import           Data.Typeable (typeOf)
 
 data P_Context

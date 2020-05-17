@@ -22,7 +22,6 @@ import           Ampersand.Classes (isFunction)
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.StaticFiles_Generated
-import           Conduit (liftIO, MonadIO)  
 import qualified RIO.Text as T
 import qualified RIO.ByteString.Lazy as BL
 import           System.Directory

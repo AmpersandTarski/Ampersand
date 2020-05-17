@@ -18,7 +18,7 @@ module Ampersand.Basics.Prelude
 import           Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import           RIO hiding (zipWith,exitWith)
 import qualified RIO.Text as T
-import           System.IO (openTempFile, stderr)
+import           System.IO (openTempFile)
 
 data Verbosity = Loud | Silent deriving (Eq, Data, Show)
 

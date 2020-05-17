@@ -11,14 +11,13 @@ import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.StaticFiles_Generated
 import           Codec.Xlsx
 import           Control.Lens hiding (both) -- ((^?),ix)
-import           Data.Tuple.Extra
+import           Data.Tuple.Extra(both,swap)
 import qualified RIO.List as L
 import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
 import           RIO.Char
 import qualified RIO.Map as Map
 import qualified RIO.Text as T
-import           Data.Tuple(swap)
 
 parseXlsxFile :: (HasFSpecGenOpts env) => 
     Maybe FileKind -> FilePath -> RIO env (Guarded [P_Population])

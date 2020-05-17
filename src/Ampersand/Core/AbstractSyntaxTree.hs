@@ -72,7 +72,6 @@ import           Ampersand.ADL1.Lattices (Op1EqualitySystem)
 import           Data.Default       (Default(..))
 import           Data.Hashable      (Hashable(..),hashWithSalt)
 import           Data.Typeable (typeOf)
-import           GHC.Generics       (Generic)
 import           RIO.Char           (toUpper)
 import qualified RIO.List as L
 import qualified RIO.Map as Map

@@ -10,7 +10,6 @@ module Ampersand.Input.ADL1.FilePos (
 import           Ampersand.Basics
 import           Codec.Xlsx.Types
 import           Data.Hashable
-import           GHC.Generics (Generic)
 import qualified RIO.List as L
 import qualified RIO.Text as T
 -- | The line number
