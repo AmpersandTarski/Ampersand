@@ -1,0 +1,18 @@
+---
+  cache:
+    - '%APPDATA%\cabal'
+    - '%APPDATA%\ghc'
+    - '%APPDATA%\stack'
+  
+  install:
+    - choco install ghc --version 8.2.2
+    - choco install haskell-stack
+    - refreshenv
+    - cabal update
+    - cabal install happy --overwrite-policy=always
+  
+  build_script:
+    - stack --no-terminal build
+  
+  test_script:
+    - stack --no-terminal test --coverage
