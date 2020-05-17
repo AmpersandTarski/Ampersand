@@ -62,7 +62,7 @@ archi2PContext archiRepoFilename  -- e.g. "CArepository.archimate"
                          (p_cptnm.pTgt) sig                      <>"\t"<>
                          (tshow.length.eqCl ppRight.p_popps) pop <>"\t"<>
                          (showMaybeInt.elemCount.pTgt) sig
-      logInfo (displayShow archiRepo<>"\n")  -- for debugging
+  --  logInfo (displayShow archiRepo<>"\n")  -- for debugging
       writeFileUtf8 "ArchiCount.txt"
        (T.intercalate "\n" $
            (fmap countPop relPops)
