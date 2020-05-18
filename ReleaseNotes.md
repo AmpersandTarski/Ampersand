@@ -19,6 +19,10 @@
 * Remove default value 'customizations' for option --customizations. Copying folders must be explicitly specified.
 * Change default output folder to .proto instead of '<scriptname.adl>.proto'
 
+## v3.17.5 (3 january 2020)
+
+* Update to prototype framework v1.4.0
+
 ## v3.17.4 (13 september 2019)
 
 * Upgrade to [LTS Haskell 14.5 (ghc-8.6.5)](https://www.stackage.org/lts-14.5)
