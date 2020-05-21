@@ -4,7 +4,7 @@
 
 * Refactor Docker image for Ampersand compiler
 * Add continuous integration via Github Actions. With cache.
-* [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. Changes are documented in Commands.md
+* [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. Changes are documented in [Commands.md](https://github.com/AmpersandTarski/Ampersand/blob/development/commands.md)
 * [Issue #1029](https://github.com/AmpersandTarski/Ampersand/issues/1029) Fixed detection of rules with same name.
 * [Issue #1047](https://github.com/AmpersandTarski/Ampersand/issues/1047) Non-existing directory is generated automagically when required for output.
 * [Issue #999](https://github.com/AmpersandTarski/Ampersand/issues/999) Treat all concepts in a cycle in CLASSIFY statements as aliases of a single concept.
@@ -17,7 +17,11 @@
 * Introduce option --[no-]frontend to do/don't generate frontend (i.e. javascript and html files for Angular app)
 * Introduce option --[no-]backend to do/don't generate backend (i.e. json model for php framework)
 * Remove default value 'customizations' for option --customizations. Copying folders must be explicitly specified.
-* Change default output folder to .proto instead of '<scriptname.adl>.proto'
+* Change default output folder to .proto instead of '<scriptname.adl>.proto' for prototype generation.
+
+## v3.17.5 (3 january 2020)
+
+* Update to prototype framework v1.4.0
 
 ## v3.17.4 (13 september 2019)
 
