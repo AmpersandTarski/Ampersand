@@ -472,7 +472,7 @@ instance MetaArchi Child where
   typeMap _ _
    = Map.empty
   grindArchi env@(Just viewid,typeLookup,maybeViewName) diagrObj
-   = [ translateArlem "inView" (elType,viewtype) maybeViewName (Set.empty) [(chldElem child,viewid)]
+   = [ translateArchiElem "inView" (elType,viewtype) maybeViewName (Set.empty) [(chldElem child,viewid)]
      | child<-childs diagrObj, Just elType<-[typeLookup (chldElem child)], Just viewtype<-[typeLookup viewid]] <>
      [ translateArchiElem "inView" (connType,viewtype) maybeViewName (Set.empty) [(sConRel conn,viewid)]
      | conn<-srcConns diagrObj, Just connType<-[typeLookup (sConRel conn)], Just viewtype<-[typeLookup viewid]] <>
