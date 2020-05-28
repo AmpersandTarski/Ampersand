@@ -1,0 +1,21 @@
+CONTEXT Issue980 IN ENGLISH
+
+CONCEPT Fruit "Most general concept"
+CLASSIFY Citrus ISA Fruit
+CLASSIFY Orange ISA Citrus
+CLASSIFY Lemon ISA Citrus
+
+RELATION name[Citrus*Name]
+RELATION name[A * B]  -- This relation's purpose is to distract the typechecker. 
+
+INTERFACE Orange(name) : I[Orange]
+BOX [ "I" : I
+    , "name" : name
+    ]
+
+INTERFACE Lemon(name) : I[Lemon]
+BOX [ "I" : I
+    , "name" : name[Citrus*Name]
+    ]
+
+ENDCONTEXT

@@ -8,26 +8,28 @@ import           Ampersand.FSpec.ToFSpec.ADL2Plug
 import           Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
-import           RIO.Char
-import           Data.Function (on)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
 --         the class diagram and multiplicity rules are printed
-chpDataAnalysis :: Options -> FSpec -> (Blocks,[Picture])
-chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
+chpDataAnalysis :: (HasDirOutput env, HasDocumentOpts env) 
+   => env -> FSpec -> (Blocks,[Picture])
+chpDataAnalysis env fSpec = (theBlocks, thePictures)
  where
    -- shorthand for easy localizing    
-  l :: LocalizedStr -> String
-  l = localize (fsLang fSpec)
+  l :: LocalizedStr -> Text
+  l = localize outputLang'
+  outputLang' :: Lang
+  outputLang' = outputLang env fSpec
   sectionLevel = 2
  
   theBlocks
-    =  xDefBlck opts fSpec DataAnalysis  -- The header
-    <> (case fsLang fSpec of
+    =  xDefBlck env fSpec DataAnalysis  -- The header
+    <> (case outputLang' of
              Dutch   -> para ( "Dit hoofdstuk bevat het resultaat van de gegevensanalyse. "
                             <> "De opbouw is als volgt:"
                              )
@@ -49,7 +51,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
            (   header sectionLevel
                    (text.l $ (NL "Classificaties", EN "Classifications")
                    )
-            <> para (case fsLang fSpec of
+            <> para (case outputLang' of
                       Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
                                <> ("Deze is weergegeven in " <> hyperLinkTo classificationPicture <> "."
                                   )
@@ -57,7 +59,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                                <> ("This is shown in " <> hyperLinkTo classificationPicture <> "."
                                   )
                     )
-            <> xDefBlck opts fSpec classificationPicture
+            <> xDefBlck env fSpec classificationPicture
            )
        )    
     <> daRulesSection
@@ -66,17 +68,17 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
     <> crudMatrixSection 
   thePictures
     =  [classificationPicture, logicalDataModelPicture, technicalDataModelPicture]
-  classificationPicture = makePicture fSpec PTClassDiagram
+  classificationPicture = makePicture env fSpec PTClassDiagram
 
       
 
   logicalDataModelBlocks =
          header sectionLevel
-                    (case fsLang fSpec of
+                    (case outputLang' of
                       Dutch   -> text "Logisch gegevensmodel"
                       English -> text "Logical data model"
                     )
-      <> para (case fsLang fSpec of
+      <> para (case outputLang' of
                  Dutch   -> text "De afspraken zijn vertaald naar een gegevensmodel. "
                            <> ( text "Dit gegevensmodel is in " <> hyperLinkTo logicalDataModelPicture <> text " weergegeven."
                               )
@@ -84,25 +86,25 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                            <> ( text "This model is shown by " <> hyperLinkTo logicalDataModelPicture <> text "."
                               )
               )
-       <> xDefBlck opts fSpec logicalDataModelPicture
+       <> xDefBlck env fSpec logicalDataModelPicture
        <> let nrOfClasses = length (classes oocd)
-          in case fsLang fSpec of
+          in case outputLang' of
                Dutch   -> para (case nrOfClasses of
                                   0 -> text "Er zijn geen gegevensverzamelingen."
                                   1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
-                                  _ -> text ("Er zijn "++count Dutch nrOfClasses "gegevensverzameling"++". ")
+                                  _ -> text ("Er zijn "<>count Dutch nrOfClasses "gegevensverzameling"<>". ")
                                     <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de twee nu volgende tabellen beschreven:"
                                )
                English -> para (case nrOfClasses of
                                   0 -> text "There are no entity types."
                                   1 -> text "There is only one entity type:"
-                                  _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
+                                  _ -> text ("There are "<>count English nrOfClasses "entity type" <>".")
                                     <> text "The details of each entity type are described (in alphabetical order) in the following two tables:"
                                )
        <> conceptTables
        <> mconcat (map detailsOfClass (L.sortBy (compare `on` name) (classes oocd)))
 
-  logicalDataModelPicture = makePicture fSpec PTLogicalDM
+  logicalDataModelPicture = makePicture env fSpec PTLogicalDM
 
   oocd :: ClassDiag
   oocd = cdAnalysis fSpec
@@ -123,11 +125,11 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
            ,   meaningOf c
             <> ( fromList 
                . concatMap (amPandoc . explMarkup)
-               . purposesDefinedIn fSpec (fsLang fSpec) 
+               . purposesDefinedIn fSpec outputLang' 
                $ c
                )
-           , (plain . text . show . Set.size . atomsInCptIncludingSmaller fSpec) c
-           , (plain . text . show) (percent (sum [ Set.size pairs
+           , (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c
+           , (plain . text . tshow) (percent (sum [ Set.size pairs
                                                  | attr<-attributesOfConcept fSpec c, pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
                                                  ]) (Set.size (atomsInCptIncludingSmaller fSpec c)*length (attributesOfConcept fSpec c)))
            ]
@@ -145,9 +147,9 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
          , (plain.text.l) (NL "Aantal"        , EN "Count") 
          ] 
          [ [ (plain . text . name) c
-           ,   -- max 20 voorbeelden van atomen van concept c
-             (plain . text . L.intercalate "\n" . map showA . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
-           , (plain . text . show . Set.size . atomsInCptIncludingSmaller fSpec) c
+           ]   -- max 20 voorbeelden van atomen van concept c
+         ++(map (plain . text . showA) . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
+         ++[ (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c
            ]
          | c <- L.sortBy (compare `on` name) 
               . Set.elems 
@@ -160,11 +162,11 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
        meaningOf :: A_Concept -> Blocks
        meaningOf = mconcat . map (fromList . string2Blocks ReST . cddef) . concDefs fSpec 
 
-  percent :: (Integral a, Show a) => a -> a -> String
+  percent :: (Integral a, Show a) => a -> a -> Text
   percent num denom
    = if denom==0
-     then show num
-     else show num++"("++show ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)++"%)"
+     then tshow num
+     else tshow num<>"("<>tshow ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)<>"%)"
   
 
   detailsOfClass :: Class -> Blocks
@@ -173,9 +175,9 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                   ((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl)
         <> case clcpt cl of
              Nothing -> mempty
-             Just cpt -> purposes2Blocks opts (purposesDefinedIn fSpec (fsLang fSpec) cpt)
-        <> (para . text . l) ( NL ("Deze gegevensverzameling heeft "++show n++" elementen en bevat de volgende attributen: ")
-                             , EN ("This entity type has "++show n++" elements and contains the following attributes: ")
+             Just cpt -> purposes2Blocks env (purposesDefinedIn fSpec outputLang' cpt)
+        <> (para . text . l) ( NL ("Deze gegevensverzameling heeft "<>tshow n<>" elementen en bevat de volgende attributen: ")
+                             , EN ("This entity type has "<>tshow n<>" elements and contains the following attributes: ")
                              )
         <> simpleTable [(plain.text.l) (NL "Attribuut", EN "Attribute")
                        ,(plain.text.l) (NL "Type"     , EN "Type")
@@ -183,9 +185,9 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                        ,(plain.text.l) (NL "#uniek"   , EN "#unique")
                      ]
                        ( [[ (plain.text.name) attr
-                          , (plain.text) ((name.target.attExpr) attr++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                          , (plain.text) ((name.target.attExpr) attr<>"("<>tshow nTgtConcept<>")")   -- use "tshow.attType" for the technical type.
                           , (plain . text) (percent (Set.size pairs) n)
-                          , (plain . text . show . Set.size . Set.map apRight) pairs
+                          , (plain . text . tshow . Set.size . Set.map apRight) pairs
                           ]
                          | Just cpt <-[clcpt cl], attr<-attributesOfConcept fSpec cpt
                          , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr::SqlAttribute)]
@@ -193,10 +195,10 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                          ]
                          <>
                          [[ (plain.text.name) attr
-                          , (plain.text) ((name.target.attExpr) attr++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                          , (plain.text) ((name.target.attExpr) attr<>"("<>tshow nTgtConcept<>")")   -- use "tshow.attType" for the technical type.
                           , (plain . text) (percent (Set.size pairs) n)
-                          , (plain . text . show . Set.size . Set.map apRight) pairs
-                       -- , (plain . text . show) nTgtConcept
+                          , (plain . text . tshow . Set.size . Set.map apRight) pairs
+                       -- , (plain . text . tshow) nTgtConcept
                           ]
                          | Just cpt <-[clcpt cl], cpt'<-generalizationsOf fSpec cpt, cpt/=cpt', attr<-attributesOfConcept fSpec cpt'
                          , nTgtConcept<-[(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr::SqlAttribute)]
@@ -215,10 +217,10 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                             ,(plain.text.l) (NL "Target" , EN "Target")
                             ,(plain.text.l) (NL "uniek"   , EN "unique")
                             ]
-                            [[ (plain.text) ((name.source) rel++"("++show nSrcConcept++")")   -- use "show.attType" for the technical type.
+                            [[ (plain.text) ((name.source) rel<>"("<>tshow nSrcConcept<>")")   -- use "tshow.attType" for the technical type.
                              , (plain . text) (percent (Set.size (Set.map apLeft pairs)) nSrcConcept)
-                             , (plain.text) (name rel++"("++show (Set.size pairs)++")")
-                             , (plain.text) ((name.target) rel++"("++show nTgtConcept++")")   -- use "show.attType" for the technical type.
+                             , (plain.text) (name rel<>"("<>tshow (Set.size pairs)<>")")
+                             , (plain.text) ((name.target) rel<>"("<>tshow nTgtConcept<>")")   -- use "tshow.attType" for the technical type.
                              , (plain . text) (percent (Set.size (Set.map apRight pairs)) nTgtConcept)
                              ]
                             | Just rel<-map assmdcl asscs
@@ -233,7 +235,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
      {- <>
         if (null.assrhr) assoc
         then fatal "Shouldn't happen: flip the relation for the right direction!"
-        else para $ case fsLang fSpec of
+        else para $ case outputLang' of
            Dutch   ->   case assrhm assoc of
                               Mult MinZero MaxOne  -> "Ieder(e) " <> (emph.text.assSrc) assoc <> " heeft hooguit één "   <> (emph.text.assTgt) assoc <> "."
                               Mult MinZero MaxMany -> mempty
@@ -274,11 +276,11 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
 
   technicalDataModelBlocks = 
        header sectionLevel
-                (case fsLang fSpec of
+                (case outputLang' of
                     Dutch   ->  "Technisch datamodel"
                     English ->  "Technical datamodel"
                 )
-    <> para (case fsLang fSpec of
+    <> para (case outputLang' of
                Dutch   ->   "De afspraken zijn vertaald naar een technisch datamodel. "
                          <> ( "Dit model is in " <> hyperLinkTo technicalDataModelPicture <> " weergegeven."
                             )
@@ -286,71 +288,71 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                          <> ( "This model is shown by " <> hyperLinkTo technicalDataModelPicture <> "."
                             )
             )
-    <> xDefBlck opts fSpec technicalDataModelPicture
+    <> xDefBlck env fSpec technicalDataModelPicture
     <> para (let nrOfTables = length (filter isTable (plugInfos fSpec))
              in
-             case fsLang fSpec of
-        Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
-        English -> text ("The technical datamodel consists of the following "++show nrOfTables++" tables:")
+             case outputLang' of
+        Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "<>tshow nrOfTables<>" tabellen:")
+        English -> text ("The technical datamodel consists of the following "<>tshow nrOfTables<>" tables:")
             )
-    <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
+    <> mconcat [detailsOfplug p | p <- L.sortBy (compare `on` (T.toLower . name)) (plugInfos fSpec), isTable p]
    where
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
       isTable (InternalPlug BinSQL{}) = True
       detailsOfplug :: PlugInfo -> Blocks
       detailsOfplug p =
-           header 3 (   case (fsLang fSpec) of
+           header 3 (   case outputLang' of
                           Dutch   ->  "Tabel: "
                           English ->  "Table: "
                      <> text (name p)
                     )
         <> case p of
              InternalPlug tbl@TblSQL{}
-               -> (case fsLang fSpec of
+               -> (case outputLang' of
                 Dutch
-                   -> para (text $ "Deze tabel heeft de volgende "++(show.length.attributes) tbl++" attributen:")
+                   -> para (text $ "Deze tabel heeft de volgende "<>(tshow.length.attributes) tbl<>" attributen:")
                 English
-                   -> para (text $ "This table has the following "++(show.length.attributes) tbl++" attributes:")
+                   -> para (text $ "This table has the following "<>(tshow.length.attributes) tbl<>" attributes:")
                   )
                <> showAttributes (plugAttributes tbl)
              InternalPlug bin@BinSQL{}
                -> para (   (text.l) (NL "Dit is een koppeltabel, die "
                                     ,EN "This is a link-table, implementing ")
-                        <> primExpr2pandocMath (fsLang fSpec) 
+                        <> primExpr2pandocMath outputLang' 
                                                (case dLkpTbl bin of
                                                   [store] -> EDcD (rsDcl store)
-                                                  ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
+                                                  ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "<>tshow (length ss))
                                                )
                         <> (text.l) (NL " implementeert. De tabel bestaat uit de volgende kolommen:"
                                     ,EN ". It contains the following columns:")
                        )
                      <> showAttributes (plugAttributes bin)
 
-      showAttributes :: NEL.NonEmpty SqlAttribute -> Blocks
-      showAttributes = bulletList . NEL.toList . fmap showAttribute
+      showAttributes :: NE.NonEmpty SqlAttribute -> Blocks
+      showAttributes = bulletList . NE.toList . fmap showAttribute
         where
           showAttribute att =
                 para (  (strong.text.attName) att
                       <> linebreak
                       <> case attUse att of
-                            PrimaryKey _ -> case fsLang fSpec of
+                            PrimaryKey _ -> case outputLang' of
                                               Dutch   -> "Dit attribuut is de primaire sleutel. "
                                               English -> "This attribute is the primary key. "
-                            ForeignKey c -> (case fsLang fSpec of
+                            ForeignKey c -> (case outputLang' of
                                               Dutch   -> "Dit attribuut verwijst naar een rij in de tabel "
                                               English -> "This attribute is a foreign key to "
                                             )<> (text.name) c
-                            PlainAttr    -> (case fsLang fSpec of
+                            PlainAttr    -> (case outputLang' of
                                               Dutch   -> "Dit attribuut implementeert "
                                               English -> "This attribute implements "
                                             )
-                                          <> primExpr2pandocMath (fsLang fSpec) (attExpr att)
+                                          <> primExpr2pandocMath outputLang' (attExpr att)
                                           <> "."
                       <> linebreak
-                      <> (code.show.attType) att
+                      <> (code.tshow.attType) att
                       <> ", "
-                      <> (case fsLang fSpec of
+                      <> (case outputLang' of
                             Dutch
                               ->  (if attNull att then "Optioneel" else "Verplicht")
                                <> (if attUniq att then ", Uniek" else "")
@@ -361,7 +363,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                                <> "."
                          )
                      )
-  technicalDataModelPicture = makePicture fSpec PTTechnicalDM
+  technicalDataModelPicture = makePicture env fSpec PTTechnicalDM
 
   daRulesSection :: Blocks
   daRulesSection = mconcat 
@@ -393,14 +395,14 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
       else mconcat $
                  [ header (sectionLevel+1) . text $ l title 
                  , para . text $ l intro
-                 ] ++
+                 ] <>
                  map (docRule heading) (Set.elems rules)
     
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat
-       [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
-       , fromList . concatMap (amPandoc . explMarkup) . purposesDefinedIn fSpec (fsLang fSpec) $ rule
-       , printMeaning (fsLang fSpec) rule
+       [ plain $ strong (text (l heading <> ": ") <> emph (text (rrnm rule)))
+       , fromList . concatMap (amPandoc . explMarkup) . purposesDefinedIn fSpec outputLang' $ rule
+       , printMeaning outputLang' rule
        , para (showMath rule)
        , if isSignal rule
          then mempty
@@ -415,7 +417,7 @@ chpDataAnalysis opts@Options{..} fSpec = (theBlocks, thePictures)
                                        ,EN "Violations of this rule will result in an error message for the user: "
                                        )
                          )
-                  <>bulletList [para $ violation2Inlines fSpec sgmts]
+                  <>bulletList [para $ violation2Inlines env fSpec sgmts]
                    
        ]   
   
@@ -426,16 +428,16 @@ primExpr2pandocMath lang e =
            case lang of
              Dutch -> text "de relatie "
              English -> text "the relation "
-        <> math ((name.source) d++ " \\rightarrow {"++name d++"} "++(name.target) d)
+        <> math ((name.source) d<> " \\rightarrow {"<>name d<>"} "<>(name.target) d)
   (EFlp (EDcD d)) ->
            case lang of
              Dutch -> text "de relatie "
              English -> text "the relation "
-        <> math ((name.source) d++ " \\leftarrow  {"++name d++"} "++(name.target) d)
+        <> math ((name.source) d<> " \\leftarrow  {"<>name d<>"} "<>(name.target) d)
   (EIsc (r1,_)) ->
            let srcTable = case r1 of
                             EDcI c -> c
-                            _      -> fatal ("Unexpected expression: "++show r1)
+                            _      -> fatal ("Unexpected expression: "<>tshow r1)
            in
            case lang of
              Dutch -> text "de identiteitsrelatie van "
@@ -451,4 +453,4 @@ primExpr2pandocMath lang e =
              Dutch -> text "de identiteitsrelatie van "
              English -> text "the identityrelation of "
         <> math (name c)
-  _   -> fatal ("Have a look at the generated Haskell to see what is going on..\n"++show e)
+  _   -> fatal ("Have a look at the generated Haskell to see what is going on..\n"<>tshow e)

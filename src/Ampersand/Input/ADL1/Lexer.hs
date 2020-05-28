@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.ADL1.Lexer
     ( keywords
     , operators
@@ -23,20 +24,18 @@ module Ampersand.Input.ADL1.Lexer
 
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Input.ADL1.FilePos(updatePos)
 import           Ampersand.Input.ADL1.LexerMessage
 import           Ampersand.Input.ADL1.LexerMonad
 import           Ampersand.Input.ADL1.LexerToken
-import           Ampersand.Misc
 import           RIO.Char hiding(isSymbol)
 import qualified RIO.List as L
 import qualified RIO.Char.Partial as Partial (chr)
 import qualified RIO.Set as Set
-import           Data.Time.Calendar
-import           Data.Time.Clock
+import qualified RIO.Text as T
+import           RIO.Time
 import           Numeric
 
--- | Retrieves a list of keywords accepted by the ampersand language
+-- | Retrieves a list of keywords accepted by the Ampersand language
 keywords :: [String] -- ^ The keywords
 keywords  = L.nub $
                 [ "CONTEXT", "ENDCONTEXT"
@@ -89,22 +88,20 @@ keywords  = L.nub $
                 -- Depreciated keywords:
                 ]
 
--- | Retrieves a list of operators accepted by the ampersand language
+-- | Retrieves a list of operators accepted by the Ampersand language
 operators :: [String] -- ^ The operators
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
               "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."]
 
--- | Retrieves the list of symbols accepted by the ampersand language
+-- | Retrieves the list of symbols accepted by the Ampersand language
 symbols :: String -- ^ The list of symbol characters / [Char]
 symbols = "()[],{}<>"
 
---TODO: Options should be one item, not a list
 -- | Runs the lexer
-lexer :: [Options]  -- ^ The command line options
-      -> FilePath   -- ^ The file name, used for error messages
+lexer :: FilePath   -- ^ The file name, used for error messages
       -> String     -- ^ The content of the file
       -> Either LexerError ([Token], [LexerWarning]) -- ^ Either an error or a list of tokens and warnings
-lexer opt file input = runLexerMonad opt file (mainLexer (initPos file) input)
+lexer file input = runLexerMonad file (mainLexer (initPos file) input)
 
 -----------------------------------------------------------
 -- Help functions
@@ -354,7 +351,7 @@ getNumber str =
                            [(flt,rest)] -> (LexFloat flt, Right flt, length str - length rest,rest)
                            _            -> fatal "Unexpected: can read decimal, but not float???"
     [(dec,rest)]  -> (LexDecimal dec , Left dec, length str - length rest,rest)
-    _  -> fatal ("No number to read!\n  " ++ take 40 str)
+    _  -> fatal $ "No number to read!\n  " <> T.take 40 (T.pack str)
 --getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
 --getNumber [] = fatal "getNumber"
 --getNumber cs@(c:s)
@@ -426,7 +423,7 @@ getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
                                       | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
-                                    _  -> fatal ("Impossible! first char is a digit.. "++take 40 s)
+                                    _  -> fatal $ "Impossible! first char is a digit.. "<>(T.take 40 $ T.pack s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)
                     | otherwise = case x `lookup` cntrChars of
                                  Nothing -> (Nothing,0,s)

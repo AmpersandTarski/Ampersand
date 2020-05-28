@@ -13,8 +13,7 @@ import Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import Ampersand.FSpec.ToFSpec.Calc (showProof, showPrf)
 import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
-import Ampersand.FSpec.ToFSpec.NormalForms
-       (conjNF, disjNF, cfProof, simplify)
+import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Ampersand.FSpec.Motivations
        (HasMeaning(..), Motivated(..))
-import Ampersand.FSpec.ToFSpec.CreateFspec (createMulti)
+import Ampersand.FSpec.ToFSpec.CreateFspec

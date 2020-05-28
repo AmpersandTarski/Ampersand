@@ -1,5 +1,28 @@
 # Release notes of Ampersand
 
+## v4.0.0 (23 may 2020)
+
+* Refactor Docker image for Ampersand compiler
+* Add continuous integration via Github Actions. With cache.
+* [Issue #991](https://github.com/AmpersandTarski/Ampersand/issues/991) CLI interface has changed. Changes are documented in [Commands.md](https://github.com/AmpersandTarski/Ampersand/blob/development/commands.md)
+* [Issue #1029](https://github.com/AmpersandTarski/Ampersand/issues/1029) Fixed detection of rules with same name.
+* [Issue #1047](https://github.com/AmpersandTarski/Ampersand/issues/1047) Non-existing directory is generated automagically when required for output.
+* [Issue #999](https://github.com/AmpersandTarski/Ampersand/issues/999) Treat all concepts in a cycle in CLASSIFY statements as aliases of a single concept.
+* [Issue #1056](https://github.com/AmpersandTarski/Ampersand/issues/#1056) Bugfix in .xlsx parser
+* [Issue #1054](https://github.com/AmpersandTarski/Ampersand/issues/#1054) Ampersand daemon now also reports type errors
+* [Issue #1063](https://github.com/AmpersandTarski/Ampersand/issues/#1063) Return violations of invariants with standard check
+* [Issue #735](https://github.com/AmpersandTarski/Ampersand/issues/735) Upgrade to pandoc 2.9. 
+
+* Remove option --skip-composer. Relates to topic of [Archicture of Ampersand compiler](https://github.com/AmpersandTarski/Ampersand/issues/903)
+* Introduce option --[no-]frontend to do/don't generate frontend (i.e. javascript and html files for Angular app)
+* Introduce option --[no-]backend to do/don't generate backend (i.e. json model for php framework)
+* Remove default value 'customizations' for option --customizations. Copying folders must be explicitly specified.
+* Change default output folder to .proto instead of '<scriptname.adl>.proto' for prototype generation.
+
+## v3.17.5 (3 january 2020)
+
+* Update to prototype framework v1.4.0
+
 ## v3.17.4 (13 september 2019)
 
 * Upgrade to [LTS Haskell 14.5 (ghc-8.6.5)](https://www.stackage.org/lts-14.5)
@@ -15,6 +38,7 @@
 
 * Again some major refactoring has been done to leverage the [RIO library](https://haskell.fpcomplete.com/library/rio).
 * [Issue #976](https://github.com/AmpersandTarski/Ampersand/issues/976) Lines in --deamon configuration file can be commented out by prepending such line with "#" or "--" (MUST be at beginning of line)
+* [Issue #971](https://github.com/AmpersandTarski/Ampersand/issues/971) The functionality of meatgrinding has been refactored. It is now far more composable. It is expected that in the near future this will lead to a set of different switches.
 
 ## v3.17.1 (7 june 2019)
 
@@ -151,7 +175,7 @@
 
 It has taken some time since the last release. This release has some major work in it, and also a change of syntax of scripts. Unfortunately this is not downward compatible.
 
-* Introduction of SystemContext.adl, which will be required for new interface generation, which will become available in some future release
+* Introduction of PrototypeContext.adl, which will be required for new interface generation, which will become available in some future release
 * Upgraded to LTS-9.2
 * [Issue #713](https://github.com/AmpersandTarski/Ampersand/issues/713) New syntax for singleton expressions
 

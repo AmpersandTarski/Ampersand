@@ -1,2 +1,4 @@
-command : ampersand --proto --verbose --sqlLogin="root" --sqlPwd="" --meta-tables
-shouldSucceed : yes
+testCmds:
+#  - command: ampersand population --verbose --build-recipe AtlasComplete
+  - command: ampersand population --verbose 
+    exitcode: 0

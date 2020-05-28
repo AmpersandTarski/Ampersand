@@ -1,0 +1,47 @@
+CONTEXT Test IN DUTCH
+-- We're testing that:
+-- IDENTs work for functional relations
+-- IDENTs work with univalent relations
+
+IDENT "A's": A(r,s)
+
+r :: A * Uid [UNI,TOT]
+s :: A * PW  [UNI,TOT]
+
+POPULATION r CONTAINS [ ("a1", "r1") ]
+POPULATION s CONTAINS [ ("a1", "s1") ]
+
+POPULATION r CONTAINS [ ("a2", "r1") ]
+POPULATION s CONTAINS [ ("a2", "s2") ]
+
+POPULATION r CONTAINS [ ("a3", "r2") ]
+POPULATION s CONTAINS [ ("a3", "s1") ]
+
+POPULATION r CONTAINS [ ("a4", "r2") ]
+POPULATION s CONTAINS [ ("a4", "s2") ]
+
+IDENT "B's": B(u,v)
+
+u :: B * Uid [UNI]
+v :: B * PW  [UNI]
+
+POPULATION B CONTAINS [ "b0" ]
+--POPULATION u CONTAINS [ ("b0", "u0") ]
+--POPULATION v CONTAINS [ ("b0", "v0") ]
+
+POPULATION u CONTAINS [ ("b1", "u1") ]
+--POPULATION v CONTAINS [ ("b1", "v1") ]
+
+--POPULATION u CONTAINS [ ("b2", "u2") ]
+POPULATION v CONTAINS [ ("b2", "v2") ]
+
+POPULATION u CONTAINS [ ("b3", "u2") ] -- should fail
+POPULATION v CONTAINS [ ("b3", "v2") ]
+
+POPULATION u CONTAINS [ ("b4", "u2") ]
+POPULATION v CONTAINS [ ("b4", "v1") ]
+
+POPULATION u CONTAINS [ ("b5", "u2") ] -- should fail
+POPULATION v CONTAINS [ ("b5", "v2") ]
+
+ENDCONTEXT

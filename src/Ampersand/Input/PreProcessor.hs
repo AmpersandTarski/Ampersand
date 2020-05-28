@@ -9,7 +9,7 @@ import           Ampersand.Basics hiding (guard,many,try)
 import           Ampersand.Input.ADL1.CtxError
 import           RIO.Char(isSpace)
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import           Text.Parsec hiding ( (<|>) )
 
@@ -31,7 +31,7 @@ preProcess :: String          -- ^ filename, used only for error reporting
            -> String          -- ^ input, The actual string to processs
            -> Guarded String  -- ^ result, The result of processing
 preProcess f d i = case preProcess' f d i of
-                   (Left  err) -> Errors $ (PE err) NEL.:| []
+                   (Left  err) -> Errors $ (PE err) NE.:| []
                    (Right out) -> Checked out []
 
 -- | Runs the preProcessor on input
@@ -40,13 +40,13 @@ preProcess' :: String                   -- ^ filename, used only for error repor
             -> String                   -- ^ input, The actual string to process
             -> Either ParseError String -- ^ result, The result of processing
 -- We append "\n" because the parser cannot handle a final line not terminated by a newline.
-preProcess' fileName defs input = (block2file defs True) <$> (file2block fileName (input ++ "\n"))
+preProcess' rootFile defs input = (block2file defs True) <$> (file2block rootFile (input ++ "\n"))
 
 -- Run the parser
 file2block :: String                  -- ^ filename, used only for error reporting
            -> String                  -- ^ input, the string to process
            -> Either ParseError Block -- ^ result
-file2block fileName = (parseLexedFile fileName) <=< (runLexer fileName)
+file2block rootFile = (parseLexedFile rootFile) <=< (runLexer rootFile)
 
 ---- LEXER
 
@@ -161,7 +161,7 @@ data GuardedBlock = GuardedBlock Bool  -- ^ This covers whether this is an IF or
 type TokenParser a = Parsec [LexLine] () a
 
 parseLexedFile :: String -> [LexLine] -> (Either ParseError Block)
-parseLexedFile fileName = parse (many blockElem <* eof) fileName
+parseLexedFile rootFile = parse (many blockElem <* eof) rootFile
 
 blockElem :: TokenParser BlockElem
 blockElem = choice [lineElem, includeElem, ifBlock, ifNotBlock ]

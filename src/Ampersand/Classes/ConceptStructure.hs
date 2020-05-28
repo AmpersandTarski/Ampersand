@@ -1,10 +1,11 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
 import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ordering(..))
 import           Ampersand.Classes.ViewPoint
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 class ConceptStructure a where
@@ -22,7 +23,7 @@ class ConceptStructure a where
       theBindedRel expr =
         case expr of
          EDcD d -> d
-         _      -> fatal $ "This function is only implemented partially, and must be called with an expression of the form BindedRelation only." ++ show expr
+         _      -> fatal $ "This function is only implemented partially, and must be called with an expression of the form BindedRelation only." <>tshow expr
   primsMentionedIn      :: a -> Expressions
   primsMentionedIn = Set.unions . Set.toList . Set.map primitives . expressionsIn
   modifyablesByInsOrDel :: a -> Expressions -- ^ the set of expressions of which population could be modified directy by Insert or Delete
@@ -45,7 +46,7 @@ instance ConceptStructure a => ConceptStructure (Maybe a) where
 instance ConceptStructure a => ConceptStructure [a] where
   concs         = Set.unions . map concs
   expressionsIn = Set.unions . map expressionsIn
-instance ConceptStructure a => ConceptStructure (NEL.NonEmpty a) where
+instance ConceptStructure a => ConceptStructure (NE.NonEmpty a) where
   concs         = Set.unions . fmap concs
   expressionsIn = Set.unions . fmap expressionsIn
 instance (Eq a ,ConceptStructure a) => ConceptStructure (Set.Set a) where
@@ -55,7 +56,7 @@ instance (Eq a ,ConceptStructure a) => ConceptStructure (Set.Set a) where
 instance ConceptStructure A_Context where
   concs ctx = Set.unions -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
               [ Set.singleton ONE
-              , Set.singleton (makeConcept "SESSION")
+            --  , Set.singleton (makeConcept "SESSION") --SESSION is in PrototypeContext.adl
               , (concs . ctxcds) ctx
               , (concs . ctxds) ctx
               , (concs . ctxgs) ctx
@@ -110,7 +111,7 @@ instance ConceptStructure A_Concept where
   expressionsIn _ = Set.empty
 
 instance ConceptStructure ConceptDef where
-  concs           = Set.singleton . makeConcept . name
+  concs _         = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into P_ConceptDef and A_ConceptDef
   expressionsIn _ = Set.empty
 
 instance ConceptStructure Signature where
@@ -153,12 +154,14 @@ instance ConceptStructure Pattern where
                      ]
 
 instance ConceptStructure Interface where
-  concs         = concs         . BxExpr . ifcObj
-  expressionsIn = expressionsIn . BxExpr . ifcObj
+  concs         = concs . expressionsIn 
+  expressionsIn ifc = Set.unions
+       [expressionsIn . BxExpr        . ifcObj $ ifc
+       ,expressionsIn . objExpression . ifcObj $ ifc]
 
 instance ConceptStructure Relation where
   concs         d = concs (sign d)
-  expressionsIn d = fatal ("expressionsIn not allowed on Relation of "++show d)
+  expressionsIn d = fatal ("expressionsIn not allowed on Relation of "<>tshow d)
 
 instance ConceptStructure Rule where
   concs r   = concs (formalExpression r) `Set.union` concs (rrviol r)
@@ -168,8 +171,8 @@ instance ConceptStructure Rule where
                    ]
 
 instance ConceptStructure (PairView Expression) where
-  concs         (PairView ps) = concs         . NEL.toList $ ps
-  expressionsIn (PairView ps) = expressionsIn . NEL.toList $ ps
+  concs         (PairView ps) = concs         . NE.toList $ ps
+  expressionsIn (PairView ps) = expressionsIn . NE.toList $ ps
 
 instance ConceptStructure Population where
   concs pop@ARelPopu{} = concs (popdcl pop)
@@ -181,7 +184,7 @@ instance ConceptStructure Purpose where
   expressionsIn _ = Set.empty
 
 instance ConceptStructure ExplObj where
-  concs (ExplConceptDef cd) = concs cd
+  concs (ExplConcept cpt)   = Set.singleton cpt
   concs (ExplRelation d)    = concs d
   concs (ExplRule _)        = Set.empty {-beware of loops...-}
   concs (ExplIdentityDef _) = Set.empty {-beware of loops...-}
@@ -202,8 +205,8 @@ instance ConceptStructure (PairViewSegment Expression) where
 
 instance ConceptStructure AClassify where
   concs g@Isa{}  = Set.fromList [gengen g,genspc g]
-  concs g@IsE{}  = Set.singleton (genspc g) `Set.union` Set.fromList (genrhs g)
-  expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n"++show g)
+  concs g@IsE{}  = Set.singleton (genspc g) `Set.union` (Set.fromList . NE.toList $ genrhs g)
+  expressionsIn g = fatal ("expressionsIn not allowed on AClassify:\n"<>tshow g)
 
 instance ConceptStructure Conjunct where
   concs         = concs . rc_conjunct

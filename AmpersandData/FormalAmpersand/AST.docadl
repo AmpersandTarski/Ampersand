@@ -105,7 +105,7 @@ An Ampersand professional uses expressions to calculate with language and to spe
 An expression combines relations with operators.
 That results in new relations, the population of which can be calculated from the constituent parts.
 This is similar to arithmetic, where for instance the result of expression $(3+5)\times 2$ can be calculated from the constituent numbers.
-In ampersand, you calculate with relations rather than numbers.
+In Ampersand, you calculate with relations rather than numbers.
 \subsubsection*{Example}
 The problem of identifying which persons have been using an information system can be solved by making rules
 about log-in, users and sessions.

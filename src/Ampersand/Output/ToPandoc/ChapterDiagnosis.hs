@@ -5,22 +5,23 @@ module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
-import           Data.Maybe(isJust,fromMaybe)
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 
-chpDiagnosis :: Options -> FSpec -> (Blocks,[Picture])
-chpDiagnosis opts@Options{..} fSpec
- | noDiagnosis = mempty
+chpDiagnosis :: (HasDirOutput env, HasDocumentOpts env) 
+   => env -> FSpec -> (Blocks,[Picture])
+chpDiagnosis env fSpec
+ | Diagnosis `notElem` view chaptersL env = mempty
  | otherwise
- = (  xDefBlck opts fSpec Diagnosis
+ = (  xDefBlck env fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
             <> (emph.singleQuoted.str.name) fSpec 
             <>  str ". "
             <> (str.l) (NL $ "Deze analyse is bedoeld voor de auteur(s) van dit script. "
-                          ++ "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren."
+                          <> "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren."
                        ,EN $ "This analysis is intended for the author(s) of this script. "
-                          ++ "It can be used to complete the script or to improve possible flaws.")
+                          <> "It can be used to complete the script or to improve possible flaws.")
            )   
    <> roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
    <> roleRuleTable          -- gives an overview of rule-rule assignments
@@ -32,14 +33,14 @@ chpDiagnosis opts@Options{..} fSpec
    <> ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
    <> processrulesInPatterns --
    <> wipReport              -- sums up the work items (i.e. the violations of process rules)
-   <> violationReport          -- sums up the violations caused by the population of this script.
+   <> violationReport        -- sums up the violations caused by the population of this script.
      
    , pics )
   where
   -- shorthand for easy localizing    
-  l :: LocalizedStr -> String
-  l = localize (fsLang fSpec)
-
+  l :: LocalizedStr -> Text
+  l = localize outputLang'
+  outputLang' = outputLang env fSpec
   roleRuleTable :: Blocks
   roleRuleTable
     | null ruls = mempty
@@ -80,11 +81,7 @@ chpDiagnosis opts@Options{..} fSpec
                   
       ruls = Set.filter isSignal . vrules $ fSpec                  
       f :: Role -> Rule -> Blocks
-      f rol rul | (rol,rul) `elem` dead = (plain.str) [timesSymbol] 
-                | otherwise                      = mempty
-          where timesSymbol = '\x215'
-      dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
-       = [ ]
+      f _ _ = mempty
 
   roleomissions :: Blocks
   roleomissions
@@ -115,14 +112,13 @@ chpDiagnosis opts@Options{..} fSpec
                   )
       xs  -> para (   (str.l) (NL "De bestaansreden van de concepten: "
                               ,EN "Concepts ")
-                   <> commaPandocAnd (fsLang fSpec) (map (str.name) xs)
+                   <> commaPandocAnd outputLang' (map (str.name) xs)
                    <> (str.l) (NL " is niet gedocumenteerd."
                               ,EN " remain without a purpose.")
                   )
    where missing = [c | c <-ccs
-                      , cd <- concDefs fSpec c
-                      , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
-                   ]++
+                      , null (purposesDefinedIn fSpec outputLang' c)
+                   ]<>
                    [c | c <-ccs, null (concDefs fSpec c)]
          ccs = Set.elems . concs . vrels $ fSpec
   unusedConceptDefs :: Blocks
@@ -139,14 +135,14 @@ chpDiagnosis opts@Options{..} fSpec
                               ,EN " is defined, but isn't used.")
                   )
       xs  -> para (   (str.l) (NL "De concepten: ", EN "Concepts ")
-                   <> commaPandocAnd (fsLang fSpec) (map (str . name) xs)
+                   <> commaPandocAnd outputLang' (map (str . name) xs)
                    <> (str.l) (NL " zijn gedefinieerd, maar worden niet gebruikt."
                               ,EN " are defined, but not used.")
                   )
 
   missingRels :: Blocks
   missingRels
-   = case bothMissing ++ purposeOnlyMissing ++ meaningOnlyMissing of
+   = case bothMissing <> purposeOnlyMissing <> meaningOnlyMissing of
       [] -> (para.str.l) (NL "Alle relaties in dit document zijn voorzien van zowel een reden van bestaan (purpose) als een betekenis (meaning)."
                          ,EN "All relations in this document have been provided with a purpose as well as a meaning.")
       _ ->(case bothMissing of
@@ -157,7 +153,7 @@ chpDiagnosis opts@Options{..} fSpec
                                     ,EN " lacks both a purpose as well as a meaning.")
                         )
             ds  -> para (   (str.l) (NL "Van de relaties ",EN "The relations ")
-                          <> commaPandocAnd (fsLang fSpec) (map showDclMath ds) 
+                          <> commaPandocAnd outputLang' (map showDclMath ds) 
                           <>(str.l) (NL " ontbreken zowel de betekenis (meaning) als de reden van bestaan (purpose)."
                                     ,EN " all lack both a purpose and a meaning.")
                         )
@@ -170,7 +166,7 @@ chpDiagnosis opts@Options{..} fSpec
                                     ,EN " remains unexplained.")
                         )
             ds  -> para (   (str.l) (NL "Relaties ",EN "The purpose of relations ")
-                          <> commaPandocAnd (fsLang fSpec) (map showDclMath ds) 
+                          <> commaPandocAnd outputLang' (map showDclMath ds) 
                           <>(str.l) (NL " zijn niet voorzien van een reden van bestaan (purpose)."
                                     ,EN " is not documented.")
                         )
@@ -183,7 +179,7 @@ chpDiagnosis opts@Options{..} fSpec
                                     ,EN " is not documented.")
                         )
             ds  -> para (   (str.l) (NL "De betekenis van relaties ",EN "The meaning of relations ")
-                          <> commaPandocAnd (fsLang fSpec) (map showDclMath ds) 
+                          <> commaPandocAnd outputLang' (map showDclMath ds) 
                           <>(str.l) (NL " zijn niet gedocumenteerd."
                                     ,EN " is not documented.")
                         )
@@ -195,9 +191,9 @@ chpDiagnosis opts@Options{..} fSpec
            decls = vrels fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
-  hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
+  hasPurpose = not . null . purposesDefinedIn fSpec outputLang'
   hasMeaning :: HasMeaning a => a -> Bool
-  hasMeaning = isJust . meaning (fsLang fSpec)
+  hasMeaning = isJust . meaning outputLang'
 
   relsNotUsed :: Blocks
   pics :: [Picture]
@@ -215,7 +211,7 @@ chpDiagnosis opts@Options{..} fSpec
                                   ,EN " is not being used in any rule. ")
                       )
           rs  -> para (   (str.l) (NL "Relaties ", EN "Relations ")
-                       <> commaPandocAnd (fsLang fSpec) rs
+                       <> commaPandocAnd outputLang' rs
                        <> (str.l) (NL " worden niet gebruikt in regels. "
                                   ,EN " are not used in any rule. ")
                       ) 
@@ -224,14 +220,14 @@ chpDiagnosis opts@Options{..} fSpec
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          )
-                 <> xDefBlck opts fSpec pict
+                 <> xDefBlck env fSpec pict
           picts  -> mconcat
                        [ para (   hyperLinkTo pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
                               )
-                       <> xDefBlck opts fSpec pict
+                       <> xDefBlck env fSpec pict
                        | (pict,pat)<-zip picts pats
                        ]
        )
@@ -245,7 +241,7 @@ chpDiagnosis opts@Options{..} fSpec
                      ]
            pats  = [ pat | pat<-vpatterns fSpec
                          , (not.null) (relsDefdIn pat Set.\\ bindedRelationsIn pat) ]
-           pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
+           pictsWithUnusedRels = [makePicture env fSpec (PTDeclaredInPat pat) | pat<-pats ]
 
   missingRules :: Blocks
   missingRules
@@ -260,7 +256,7 @@ chpDiagnosis opts@Options{..} fSpec
                   rls -> (para.str.l) (NL "Van de volgende regels is de bestaansreden niet uitgelegd:"
                                       ,EN "Rules are defined without documenting their purpose:")
                        <> bulletList [    (para.emph.str.name) r 
-                                       <> (plain.str.show.origin) r 
+                                       <> (plain.str.tshow.origin) r 
                                      | r <- rls]
               ) <>
               ( case filter (not.hasMeaning) ruls of
@@ -268,18 +264,18 @@ chpDiagnosis opts@Options{..} fSpec
                   rls -> (para.str.l) (NL "Van de volgende regels is de betekenis uitgelegd in taal die door de computer is gegenereerd:"
                                       ,EN "Rules are defined, the meaning of which is documented by means of computer generated language:")
                        <> bulletList [    (para.emph.str.name) r 
-                                       <> (plain.str.show.origin) r 
+                                       <> (plain.str.tshow.origin) r 
                                      | r <- rls]
               )
         
 
   ruleRelationRefTable :: Blocks
   ruleRelationRefTable =
-       (para.str.l) (NL $ "Onderstaande tabel bevat per thema (dwz. patroon) tellingen van het aantal relaties en regels, " ++
-                          "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " ++
+       (para.str.l) (NL $ "Onderstaande tabel bevat per thema (dwz. patroon) tellingen van het aantal relaties en regels, " <>
+                          "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " <>
                           "gedeclareerd worden, worden ook meerdere keren geteld."
-                    ,EN $ "The table below shows for each theme (i.e. pattern) the number of relations and rules, followed " ++
-                          "by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
+                    ,EN $ "The table below shows for each theme (i.e. pattern) the number of relations and rules, followed " <>
+                          "by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " <>
                           "times."
                     )
     <> table -- No caption:
@@ -298,27 +294,27 @@ chpDiagnosis opts@Options{..} fSpec
              )
              -- Content rows
              (   map mkTableRowPat (vpatterns fSpec)
-              ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (Set.filter decusr $ vrels fSpec) (vrules fSpec)]
+              <> [mkTableRow (l (NL "Gehele context", EN "Entire context")) (Set.filter decusr $ vrels fSpec) (vrules fSpec)]
              )
       
-    where mkTableRow :: String  -- The name of the pattern / fSpec 
+    where mkTableRow :: Text  -- The name of the pattern / fSpec 
                      -> Relations --The user-defined relations of the pattern / fSpec
                      -> Rules  -- The user-defined rules of the pattern / fSpec
                      -> [Blocks]
           mkTableRowPat p = mkTableRow (name p) (relsDefdIn p) (udefrules p)
           mkTableRow nm rels ruls =
             map (plain.str) [ nm
-                            , (show . Set.size) rels 
-                            , (show . Set.size) (Set.filter hasRef rels)
+                            , (tshow . Set.size) rels 
+                            , (tshow . Set.size) (Set.filter hasRef rels)
                             , showPercentage (Set.size rels) (Set.size . Set.filter hasRef $ rels)
-                            , (show . Set.size) ruls
-                            , (show . Set.size) (Set.filter hasRef ruls)
+                            , (tshow . Set.size) ruls
+                            , (tshow . Set.size) (Set.filter hasRef ruls)
                             , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
-          hasRef x = (any  ((/=[]).explRefIds)) (purposesDefinedIn fSpec (fsLang fSpec) x)
+          hasRef x = (any  ((/=[]).explRefIds)) (purposesDefinedIn fSpec outputLang' x)
 
-          showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%"
+          showPercentage x y = if x == 0 then "-" else tshow (y*100 `div` x)<>"%"
 
   processrulesInPatterns :: Blocks
   processrulesInPatterns = 
@@ -336,14 +332,14 @@ chpDiagnosis opts@Options{..} fSpec
                   )
                   -- Headers:
                   (  [ (plain.str.l) (NL "rol"      , EN "role")]
-                   ++[ (plain.str.l) (NL "thema", EN "in pattern") | multProcs]
-                   ++[ (plain.str.l) (NL "regel"    , EN "rule")
+                   <>[ (plain.str.l) (NL "thema", EN "in pattern") | multProcs]
+                   <>[ (plain.str.l) (NL "regel"    , EN "rule")
                      ]
                   )
                   -- Rows:
                   [  [ (plain.str.name) rol]
-                   ++[ (plain.str.fromMaybe "--".rrpat) rul | multProcs]
-                   ++[ (plain.str.name) rul
+                   <>[ (plain.str.fromMaybe "--".rrpat) rul | multProcs]
+                   <>[ (plain.str.name) rul
                      , (plain.str.fromMaybe "--".rrpat) rul
                      ]
                   | (rol,rul)<-fRoleRuls fSpec]
@@ -357,8 +353,8 @@ chpDiagnosis opts@Options{..} fSpec
                                   ,EN "The population in this script does not specify any work in progress. ")
          [(r,ps)] -> para (   (str.l) (NL"Regel ",EN "Rule")
                             <> quoterule r
-                            <>(str.l) (NL $ " laat " ++count Dutch   (length ps) "taak"++" zien."
-                                      ,EN $ " shows "++count English (length ps) "task"++".")
+                            <>(str.l) (NL $ " laat " <>count Dutch   (length ps) "taak"<>" zien."
+                                      ,EN $ " shows "<>count English (length ps) "task"<>".")
                           )
          _        -> (para.str.l) (NL "Dit script bevat onderhanden werk. De volgende tabellen geven details met regelnummers in de oorspronkelijk script-bestanden."
                                   ,EN "This script contains work in progress. The following tables provide details with line numbers from the original script files.")
@@ -378,8 +374,8 @@ chpDiagnosis opts@Options{..} fSpec
                     -- Rows:
                     [ map (plain.str)
                            [ name r
-                           , (show.origin) r
-                           , (show.length) ps
+                           , (tshow.origin) r
+                           , (tshow.length) ps
                            ]
                     | (r,ps)<-popwork
                     ]
@@ -391,17 +387,17 @@ chpDiagnosis opts@Options{..} fSpec
                <> " ( " <> quoterule r <> " )"
                <> (str.l) (NL " luidt: ", EN " says: ")
                )
-       <> printMeaning (fsLang fSpec) r
+       <> printMeaning outputLang' r
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
                           ,EN "This rule contains work (for ")
-                <>commaPandocOr (fsLang fSpec) (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                <>commaPandocOr outputLang' (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                 <>")"
                 <> case Set.toList ps of
                      [v] ->   (str.l) (NL ", te weten ", EN " by ")
                            <> oneviol r v
                            <> "."
-                     _ -> (str.l) (NL $ ". De volgende tabel laat de "++(if Set.size ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
-                                  ,EN $ "The following table shows the "++(if Set.size ps>10 then "first ten " else "")++"items that require attention.")
+                     _ -> (str.l) (NL $ ". De volgende tabel laat de "<>(if Set.size ps>10 then "eerste tien " else "")<>"items zien die aandacht vragen."
+                                  ,EN $ "The following table shows the "<>(if Set.size ps>10 then "first ten " else "")<>"items that require attention.")
                )
        <> if Set.size ps <= 1
           then mempty -- iff there is a single violation, it is already shown in the previous paragraph
@@ -410,13 +406,13 @@ chpDiagnosis opts@Options{..} fSpec
      where
 --      text r
 --       = if null expls
---         then explains2Blocks (autoMeaning (fsLang fSpec) r)
+--         then explains2Blocks (autoMeaning outputLang' r)
 --         else expls
---         where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (fsLang fSpec) || l==Nothing, Para block<-econt]
+--         where expls = [Plain (block<>[Space]) | Means l econt<-rrxpl r, l==Just outputLang' || l==Nothing, Para block<-econt]
       quoterule r
-       = if null (name r)
-         then (str.l) (NL $ "op "++show (origin r)
-                      ,EN $ "at "++show (origin r))
+       = if T.null (name r)
+         then (str.l) (NL $ "op "<>tshow (origin r)
+                      ,EN $ "at "<>tshow (origin r))
          else (singleQuoted.str.name) r
       oneviol :: Rule -> AAtomPair -> Inlines
       oneviol r p
@@ -437,12 +433,12 @@ chpDiagnosis opts@Options{..} fSpec
                                        ,EN "The population in this script violates no rule. ")
                 (iVs, pVs) ->  (str.l) (NL "De populatie in dit script overtreedt "
                                        ,EN "The population in this script violates ")
-                             <>(str.show.length) iVs
-                             <>(str.l) (NL $ " invariant"++(if length iVs == 1 then "" else "en")++" en "
-                                       ,EN $ " invariant"++(if length iVs == 1 then "" else "s")++" and ")
-                             <>(str.show.length) pVs
-                             <>(str.l) (NL $ " procesregel" ++if length pVs == 1 then "" else "s"++"."
-                                       ,EN $ " process rule"++if length pVs == 1 then "" else "s"++"."
+                             <>(str.tshow.length) iVs
+                             <>(str.l) (NL $ " invariant"<>(if length iVs == 1 then "" else "en")<>" en "
+                                       ,EN $ " invariant"<>(if length iVs == 1 then "" else "s")<>" and ")
+                             <>(str.tshow.length) pVs
+                             <>(str.l) (NL $ " procesregel" <>if length pVs == 1 then "" else "s"<>"."
+                                       ,EN $ " process rule"<>if length pVs == 1 then "" else "s"<>"."
                            )
               )
      <> bulletList (map showViolatedRule invariantViolations)
@@ -459,12 +455,12 @@ chpDiagnosis opts@Options{..} fSpec
                           then (str.l) (NL "Totaal aantal taken: "        ,EN "Total number of work items: ")
                           else (str.l) (NL "Totaal aantal overtredingen: ",EN "Total number of violations: ")
                          )
-                       <>(str.show.length) ps
+                       <>(str.tshow.length) ps
                       )
                <> table -- Caption
                         (if isSignal r
                          then   (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
-                             <> commaPandocOr (fsLang fSpec) (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                             <> commaPandocOr outputLang' (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                          else   (str.l) (NL "Overtredingen van invariant ",EN "Violations of invariant ")
                               <>(str.name) r
                         )  

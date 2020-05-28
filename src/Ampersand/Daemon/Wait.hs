@@ -1,5 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+
 -- | Use 'withWaiterPoll' or 'withWaiterNotify' to create a 'Waiter' object,
 --   then access it (single-threaded) by using 'waitFiles'.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
@@ -11,13 +13,14 @@ module Ampersand.Daemon.Wait(
 ) where
 
 import           Ampersand.Basics
-import           Ampersand.Daemon.Daemon.Util
-import           Control.Concurrent.Extra(MVar,Var,newVar,modifyVar_)
+import           Ampersand.Daemon.Util
+import           Control.Concurrent.Extra(Var,newVar,modifyVar_)
 import           Control.Monad.Extra(partitionM,concatMapM,ifM,firstJustM)
-import qualified Data.Map as Map
-import qualified RIO.Set as Set
-import           Data.Time.Clock
 import qualified RIO.List as L
+import qualified RIO.Map as Map
+import qualified RIO.Set as Set
+import qualified RIO.Text as T
+import           RIO.Time
 import           System.Directory.Extra(doesDirectoryExist,listContents,canonicalizePath)
 import           System.FilePath
 import           System.FSNotify
@@ -59,12 +62,12 @@ listContentsInside test dir = do
 --   starting from when 'waitFiles' was initially called.
 --
 --   Returns a message about why you are continuing (usually a file name).
-waitFiles :: (HasHandle env, HasVerbosity env) => 
+waitFiles :: (HasLogFunc env) => 
              Waiter -> RIO env ([FilePath] -> RIO env [String])
 waitFiles waiter = do
     base <- liftIO getCurrentTime
     return $ \files -> do -- handle (\(e :: IOException) -> do sleep 1.0; return ["Error when waiting, if this happens repeatedly, raise an ampersand bug.",show e]) $ do
-        sayWhenLoudLn $ "%WAITING: " ++ unwords files
+        logDebug $ "%WAITING: " <> display (T.pack $ unwords files)
         -- As listContentsInside returns directories, we are waiting on them explicitly and so
         -- will pick up new files, as creating a new file changes the containing directory's modtime.
         files' <- liftIO $ fmap concat $ forM files $ \file ->
@@ -80,12 +83,12 @@ waitFiles waiter = do
                     liftIO $ sequence_ $ Map.elems del
                     new <- forM (Set.toList $ dirs `Set.difference` Map.keysSet keep) $ \dir -> do
                         can <- liftIO $ watchDir manager (fromString dir) (const True) $ \event -> do
-                            runRIO env $ sayWhenLoudLn $ "%NOTIFY: " ++ show event
+                            runRIO env $ logDebug $ "%NOTIFY: " <> displayShow event
                             void $ tryPutMVar kick ()
                         return (dir, can)
                     let mp2 :: Map FilePath StopListening
                         mp2 = keep `Map.union` Map.fromList new
-                    runRIO env $ sayWhenLoudLn $ "%WAITING: " ++ unwords (Map.keys mp2)
+                    runRIO env $ logDebug $ "%WAITING: " <> display (T.pack $ unwords (Map.keys mp2))
                     return mp2
                 void $ tryTakeMVar kick
         new <- liftIO $ mapM getModTime files'
@@ -93,7 +96,7 @@ waitFiles waiter = do
             [] -> recheck files' new
             xs -> return xs
     where
-        recheck :: (HasHandle env, HasVerbosity env) => 
+        recheck :: (HasLogFunc env) => 
                    [FilePath] -> [Maybe UTCTime] -> RIO env [FilePath]
         recheck files old = do
             liftIO $ sleep 0.1
@@ -101,7 +104,7 @@ waitFiles waiter = do
                 WaiterPoll t -> liftIO $ sleep $ max 0 $ t - 0.1 -- subtract the initial 0.1 sleep from above
                 WaiterNotify _ kick _ -> do
                     takeMVar kick
-                    sayWhenLoudLn "%WAITING: Notify signaled"
+                    logDebug "%WAITING: Notify signaled"
             new <- liftIO $ mapM getModTime files
             case [x | (x,t1,t2) <- L.zip3 files old new, t1 /= t2] of
                 [] -> recheck files new
@@ -111,7 +114,7 @@ waitFiles waiter = do
                         -- if someone is deleting a needed file, give them some space to put the file back
                         -- typically caused by VIM
                         -- but try not to
-                        sayWhenLoudLn $ "%WAITING: Waiting max of 1s due to file removal, " ++ unwords disappeared
+                        logDebug $ "%WAITING: Waiting max of 1s due to file removal, " <> display (T.pack $ unwords disappeared)
                         -- at most 20 iterations, but stop as soon as the file returns
                         void $ flip firstJustM (replicate 20 ()) $ \_ -> do
                             liftIO $ sleep 0.05

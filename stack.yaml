@@ -1,7 +1,7 @@
 # For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-14.5
+resolver: lts-15.13
 # resolver: nightly-2018-11-24 # temporarily no LTS. Same as pandoc-crossref.
 allow-newer: false
 # Local packages, usually specified by relative directory name
@@ -10,15 +10,27 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: 
-- pandoc-crossref-0.3.4.0
-- roman-numerals-0.5.1.5
-- simple-sql-parser-0.4.4
-- SpreadsheetML-0.1
-- wl-pprint-1.2.1
-- yaml-config-0.4.0
+ - pandoc-crossref-0.3.6.2
+ - simple-sql-parser-0.4.4
+ - wl-pprint-1.2.1
+ - yaml-config-0.4.0
+ - SpreadsheetML-0.1
+ - data-accessor-template-0.2.1.16@sha256:be06c253e9d8bb77a942d20e8973b112c1d30161cf5a6934bc36ee0f04d9e27f,2901
+ - roman-numerals-0.5.1.5@sha256:819d04d9d442b24629dd058f6f0b02bd78e9f9ae99538bc44ca448f1cb2b7b01,1208
 
 # Override default flag values for local packages and extra-deps
-flags: {}
+flags:
+  pandoc:
+    trypandoc: false
+    embed_data_files: true
+    static: false
+  pandoc-citeproc:
+    bibutils: true
+    embed_data_files: true
+    unicode_collation: false
+    test_citeproc: false
+    debug: false
+
 
 # Make sure we can already use GHC 7.10.3: (See https://www.fpcomplete.com/blog/2015/12/stack-with-ghc-7-10-3)
 # compiler-check: newer-minor
@@ -31,6 +43,11 @@ build:
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
+
+# Ampersand is large, and sometimes stack may crash out of memory.
+# Reducing the number of parallel jobs lowers the memory use to acceptable levels.
+# This resolved issue #1040 and is inspired on https://github.com/commercialhaskell/stack/issues/1910.
+jobs: 2
 
 # Require a specific version of stack, using version ranges
 # require-stack-version: -any # Default

@@ -6,12 +6,9 @@ module Ampersand.Input.ADL1.LexerToken
     , FilePos(..)
     ) where
 
-import Ampersand.Basics
-import Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
-import Data.Time.Calendar
-import Data.Time.Clock
-import Data.Time.LocalTime() -- for instance Show UTCTime
-import Text.Parsec()
+import           Ampersand.Basics
+import           Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
+import           RIO.Time
 
 -- | The Ampersand token
 data Token = Tok { tokLex :: Lexeme  -- ^ The lexeme
@@ -29,7 +26,7 @@ data Lexeme  = LexSymbol      Char    -- ^ A symbol
              | LexMarkup      String  -- ^ A markup (string to be parsed by Pandoc)
              | LexSingleton   String  -- ^ An atomvalue in an Expression
              | LexDecimal     Int     -- ^ A decimal number
-             | LexFloat      Double   -- ^ A decimal floating point thing
+             | LexFloat       Double  -- ^ A decimal floating point thing
              | LexOctal       Int     -- ^ An octal number
              | LexHex         Int     -- ^ A hexadecimal number
              | LexConId       String  -- ^ An upper case identifier

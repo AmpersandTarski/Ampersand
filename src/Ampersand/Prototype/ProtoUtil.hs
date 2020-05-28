@@ -1,5 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
+﻿{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
          , writePrototypeAppFile
@@ -7,58 +8,74 @@ module Ampersand.Prototype.ProtoUtil
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock
-         , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
-         , installComposerLibs
+         , phpIndent,showPhpStr,escapePhpStr
          ) where
  
 import           Ampersand.Basics
-import           Ampersand.Misc
+import           Ampersand.Misc.Defaults (defaultDirPrototype)
+import           Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.Text as T
 import           System.Directory
-import qualified System.Exit as SE (ExitCode(ExitSuccess,ExitFailure))
 import           System.FilePath
-import           System.Process
 
 
-getGenericsDir :: Options -> String
-getGenericsDir Options{..} = 
-  dirPrototype </> "generics" 
-
-writePrototypeAppFile :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
-                         String -> String -> RIO env ()
+writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
+                         FilePath -> Text -> RIO env ()
 writePrototypeAppFile relFilePath content = do
-  sayWhenLoudLn $ "  Generating "<>relFilePath 
-  opts <- view optionsL
-  let filePath = getAppDir opts </> relFilePath
+  env <- ask
+  logDebug $ "  Generating "<>display (T.pack relFilePath)
+  let filePath = getAppDir env </> relFilePath
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
-  liftIO $ writeFile filePath content
+  writeFileUtf8 filePath content
      
-getAppDir :: Options -> String
-getAppDir Options{..} =
-  dirPrototype </> "public" </> "app" </> "project"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
-copyDirRecursively :: (HasVerbosity  env, HasHandle env) =>
+-- NOTE: directories with extention .proto are excluded. This would compromise regression tests, 
+--       where '.proto' is the default output directory (if not specified)
+copyDirRecursively :: (HasLogFunc env) =>
                       FilePath -> FilePath -> RIO env ()
-copyDirRecursively srcBase tgtBase = copy ""
-  where copy fileOrDirPth = do
+copyDirRecursively srcBase tgtBase 
+  | srcBase == tgtBase = mapM_ logError
+        [ "Are you kidding me? I got the instruction to copy "
+        , "     "<>display (T.pack srcBase)
+        , "  to itself!"
+        ]
+  | otherwise = do
+        srcBaseA <- liftIO $ makeAbsolute srcBase 
+        tgtBaseA <- liftIO $ makeAbsolute tgtBase 
+        mapM_ logDebug 
+          [ "Recursively copying " 
+          , "     " <> display (T.pack srcBaseA)
+          , "  to " <> display (T.pack tgtBaseA)
+          ]
+        copy ("." </> tgtBase) ""
+  where copy shouldSkip fileOrDirPth = do
           let srcPath = srcBase </> fileOrDirPth
               tgtPath = tgtBase </> fileOrDirPth
           isDir <- liftIO $ doesDirectoryExist srcPath
-          if isDir then do
-              liftIO $ createDirectoryIfMissing True tgtPath
-              sayWhenLoudLn $ " Copying dir... " ++ srcPath
-              fOrDs <- getProperDirectoryContents srcPath
-              mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
+          if isDir then 
+            if srcPath == shouldSkip
+              then do
+                logDebug $ "Skipping "<>display (T.pack srcPath)<>" because it is the target directory of the recursive copy action."
+              else 
+                if takeExtension srcPath == defaultDirPrototype 
+                  then do  
+                    logDebug $ "Skipping "<>display (T.pack srcPath)<>" because its extention is excluded by design" --This is because of regression tests. (See what happend at https://travis-ci.org/AmpersandTarski/Ampersand/jobs/621565925 )
+                  else do
+                    logDebug $ " Copying dir... " <> display (T.pack srcPath)
+                    logDebug $ "      to dir... " <> display (T.pack tgtPath)
+                    fOrDs <- getProperDirectoryContents srcPath
+                    liftIO $ createDirectoryIfMissing True tgtPath
+                    mapM_ (\fOrD -> copy shouldSkip $ fileOrDirPth </> fOrD) fOrDs
           else do
-              sayWhenLoudLn $ "  file... " ++ fileOrDirPth
+              logDebug $ "  file... " <> display (T.pack fileOrDirPth)
               liftIO $ copyFile srcPath tgtPath
              
 
 -- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
-removeAllDirectoryFiles :: HasHandle env =>
+removeAllDirectoryFiles :: HasLogFunc env =>
                            FilePath -> RIO env ()
 removeAllDirectoryFiles dirPath = do
     dirContents <- getProperDirectoryContents dirPath
@@ -67,7 +84,7 @@ removeAllDirectoryFiles dirPath = do
          do { let absPath = dirPath </> path
             ; isDir <- liftIO $ doesDirectoryExist absPath
             ; if isDir then
-                sayLn $ "WARNING: directory '"<>dirPath<>"' contains a subdirectory '"<>path<>"' which is not cleared."
+                logInfo $ "WARNING: directory '"<>display (T.pack dirPath)<>"' contains a subdirectory '"<>display (T.pack path)<>"' which is not cleared."
               else
                 liftIO $ removeFile absPath
             }
@@ -98,13 +115,13 @@ strReplace src dst inp
           | src `L.isPrefixOf` st = dst <> process (drop n st)
           | otherwise           = c:process cs
 
-phpIndent :: Int -> T.Text
+phpIndent :: Int -> Text
 phpIndent i
  | i < 0     = T.pack " " --space instead of \n
  | otherwise = T.pack $ '\n':replicate i ' '
 
 
-addSlashes :: T.Text -> T.Text
+addSlashes :: Text -> Text
 addSlashes = T.pack . addSlashes' . T.unpack
   where
     addSlashes' ('\'': cs) = "\\'"<>addSlashes' cs
@@ -113,73 +130,16 @@ addSlashes = T.pack . addSlashes' . T.unpack
     addSlashes' (c:cs) = c:addSlashes' cs
     addSlashes' "" = ""
 
-showPhpStr :: T.Text -> T.Text
-showPhpStr str = q<>T.pack (escapePhpStr (T.unpack str))<>q
-  where q = T.pack "'"
+showPhpStr :: Text -> Text
+showPhpStr txt = q<>(escapePhpStr txt)<>q
+  where q = T.singleton '\''
 
 -- NOTE: we assume a single quote php string, so $ and " are not escaped
-escapePhpStr :: String -> String
-escapePhpStr ('\'':s) = "\\'" <> escapePhpStr s
-escapePhpStr ('\\':s) = "\\\\" <> escapePhpStr s
-escapePhpStr (c:s)    = c: escapePhpStr s
-escapePhpStr []       = []
--- todo: escape everything else (unicode, etc)
+escapePhpStr :: Text -> Text
+escapePhpStr txt = 
+   case T.uncons txt of
+     Nothing -> mempty
+     Just ('\'',s) -> "\\'" <> escapePhpStr s
+     Just ('\\',s) -> "\\\\" <> escapePhpStr s
+     Just (c,s)    -> T.cons c $ escapePhpStr s
 
-showPhpBool :: Bool -> String
-showPhpBool b = if b then "true" else "false"
-
-showPhpMaybeBool :: Maybe Bool -> String
-showPhpMaybeBool Nothing = "null"
-showPhpMaybeBool (Just b) = showPhpBool b
-
-
-installComposerLibs :: (HasOptions env, HasVerbosity  env, HasHandle env) =>
-                       RIO env ()
-installComposerLibs = do
-    opts <- view optionsL 
-    curPath <- liftIO $ getCurrentDirectory
-    sayWhenLoudLn $ "current directory: "++curPath
-    sayWhenLoud "  Trying to download and install Composer libraries..."
-    (exit_code, stdout', stderr') <- liftIO $ readCreateProcessWithExitCode (myProc opts)""
-    case exit_code of
-      SE.ExitSuccess   -> do sayWhenLoudLn $
-                              " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
-                             sayWhenLoudLn stdout'
-      SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
-
-   where
-     myProc :: Options -> CreateProcess
-     myProc opts = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --prefer-dist --no-dev --profile --working-dir="<>composerTargetPath opts
-       , cwd = Nothing
-       , env = Nothing
-       , std_in = Inherit
-       , std_out = Inherit
-       , std_err = Inherit
-       , close_fds = False
-       , create_group = False
-       , delegate_ctlc = True
-       , detach_console = False
-       , create_new_console = False
-       , new_session = False
-       , child_group = Nothing
-       , child_user = Nothing
-       , use_process_jobs = False
-       }
-     composerTargetPath = dirPrototype 
-     failOutput :: (HasOptions env) =>
-                   (ExitCode, String, String) -> RIO env ()
-     failOutput (exit_code, stdout', stderr') = do
-        opts <- view optionsL 
-        exitWith . FailedToInstallComposer  $
-            [ "Failed!"
-            , "composerTargetPath: "++composerTargetPath opts
-            , "Exit code of trying to install Composer: "<>show exit_code<>". "
-            ] ++ 
-            (if null stdout' then [] else "stdout:" : lines stdout') ++
-            (if null stderr' then [] else "stderr:" : lines stderr') ++
-            [ "Possible solutions to fix your prototype:"
-            , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
-            , "  2) Make sure you have an active internet connection."
-            , "  3) If you previously built another Ampersand prototype succesfully, you could try to copy the lib directory from it into you prototype manually."
-            ]

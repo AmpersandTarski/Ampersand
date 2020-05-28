@@ -1,12 +1,13 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
-import Ampersand.Output.ToPandoc
-import Data.Time.Format                                       (formatTime)
+import           Ampersand.Output.ToPandoc
 import qualified RIO.List as L
-import Text.Pandoc.CrossRef
-
+import qualified RIO.Text as T
+import           RIO.Time
+import           Text.Pandoc.CrossRef
 --DESCR ->
 --The functional design document starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
@@ -51,13 +52,14 @@ import Text.Pandoc.CrossRef
 --Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
-fSpec2Pandoc :: Options -> FSpec -> (Pandoc, [Picture])
-fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
+fSpec2Pandoc :: (HasDirOutput env, HasDocumentOpts env) 
+   => env -> UTCTime -> FSpec -> (Pandoc, [Picture])
+fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
   where
     -- shorthand for easy localizing    
-    l :: LocalizedStr -> String
-    l = localize (fsLang fSpec)
-    
+    l :: LocalizedStr -> Text
+    l = localize outputLang'
+    outputLang' = outputLang env fSpec
     wrap :: Pandoc -> Pandoc
     wrap (Pandoc meta blocks) = 
       Pandoc meta $ runCrossRef m' Nothing crossRefBlocks blocks 
@@ -77,6 +79,7 @@ fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
             <> cref True     --required for pandoc-crossref to do its work properly
             <> chapters True -- Numbering with subnumbers per chapter
 
+    diagnosisOnly = view chaptersL env == [Diagnosis]
     thePandoc = wrap .
         setTitle
            (case metaValues "title" fSpec of
@@ -88,7 +91,7 @@ fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
                                ( NL "Diagnose van "
                                , EN "Diagnosis of ")
                       ) <> (singleQuoted.text.name) fSpec
-                titles -> (text . concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
+                titles -> (text . T.concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
            )
       . setAuthors ( 
            case metaValues "authors" fSpec of
@@ -99,18 +102,18 @@ fSpec2Pandoc opts@Options{..} fSpec = (thePandoc,thePictures)
              xs -> fmap text $ L.nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
 
         )
-      . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime)))
+      . setDate (text (T.pack $ formatTime (lclForLang outputLang') "%-d %B %Y" now))
       . doc . mconcat $ blocksByChapter
     
     thePictures = concat picturesByChapter
     blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (blocksByChapter, picturesByChapter) = L.unzip . map fspec2Blocks . chaptersInDoc $ opts
+    (blocksByChapter, picturesByChapter) = L.unzip . map fspec2Blocks . chaptersInDoc $ env
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
-    fspec2Blocks Intro                 = (chpIntroduction       opts    fSpec, [])
-    fspec2Blocks SharedLang            = (chpNatLangReqs        opts  0 fSpec, [])
-    fspec2Blocks Diagnosis             = chpDiagnosis           opts    fSpec
-    fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis  opts  0 fSpec
-    fspec2Blocks DataAnalysis          = chpDataAnalysis        opts    fSpec
+    fspec2Blocks Intro                 = (chpIntroduction       env now fSpec, [])
+    fspec2Blocks SharedLang            = (chpNatLangReqs        env  0 fSpec, [])
+    fspec2Blocks Diagnosis             = chpDiagnosis           env    fSpec
+    fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis  env  0 fSpec
+    fspec2Blocks DataAnalysis          = chpDataAnalysis        env    fSpec
 

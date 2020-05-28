@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Classes.ViewPoint 
    (Language(..)) 
 where
@@ -5,7 +6,7 @@ import           Ampersand.ADL1
 import           Ampersand.Basics hiding (Ord(..),Identity)
 import           Ampersand.Classes.Relational  (HasProps(properties))
 import qualified RIO.List as L
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
@@ -33,21 +34,18 @@ class Language a where
 
 rulesFromIdentity :: IdentityDef -> Rules
 rulesFromIdentity identity
- = if null (identityAts identity) 
-   then fatal "Moving into foldr1 with empty list (identityAts identity)."
-   else
-     Set.singleton . mkKeyRule $
+ = Set.singleton . mkKeyRule $
        foldr (./\.) h t 
         .|-. EDcI (idCpt identity)
  {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}
- where (h NEL.:| t) = fmap (\expr-> expr .:. flp expr) 
+ where (h NE.:| t) = fmap (\expr-> expr .:. flp expr) 
                     . fmap (objExpression . segment) 
                     . identityAts $ identity
-       ruleName = "identity_" ++ name identity
-       meaningEN = "Identity rule" ++ ", following from identity "++name identity
-       meaningNL = "Identiteitsregel" ++ ", volgend uit identiteit "++name identity
+       meaningEN :: Text
+       meaningEN = "Identity rule" <> ", following from identity "<>name identity
+       meaningNL = "Identiteitsregel" <> ", volgend uit identiteit "<>name identity
        mkKeyRule expression =
-         Ru { rrnm   = ruleName
+         Ru { rrnm   = "identity_" <> name identity
             , formalExpression  = expression
             , rrfps  = origin identity     -- position in source file
             , rrmean = 
@@ -86,14 +84,14 @@ instance Language A_Context where
       uniteRels :: Relations -> Relations
       uniteRels ds = Set.fromList .
         map fun . eqClass (==) $ Set.elems ds
-         where fun :: NEL.NonEmpty Relation -> Relation
-               fun rels = (NEL.head rels) {decprps = Set.unions . fmap decprps $ rels
+         where fun :: NE.NonEmpty Relation -> Relation
+               fun rels = (NE.head rels) {decprps = Set.unions . fmap decprps $ rels
                                           ,decprps_calc = Nothing -- Calculation is only done in ADL2Fspc.
                                           }
   udefrules    context = (Set.unions . map udefrules $ ctxpats context) `Set.union` ctxrs context
-  identities   context =       concatMap identities (ctxpats context) ++ ctxks context
-  viewDefs     context =       concatMap viewDefs   (ctxpats context) ++ ctxvs context
-  gens         context = L.nub $ concatMap gens       (ctxpats context) ++ ctxgs context
+  identities   context =       concatMap identities (ctxpats context) <> ctxks context
+  viewDefs     context =       concatMap viewDefs   (ctxpats context) <> ctxvs context
+  gens         context = L.nub $ concatMap gens       (ctxpats context) <> ctxgs context
   patterns             =       ctxpats
 
 instance Language Pattern where

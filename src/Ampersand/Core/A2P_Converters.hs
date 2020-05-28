@@ -1,8 +1,11 @@
-{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Core.A2P_Converters (
     aAtomValue2pAtomValue
   , aConcept2pConcept
   , aCtx2pCtx
+  , aCpt2pCpt
   , aExpression2pTermPrim
   , aExplObj2PRef2Obj
   , aClassify2pClassify
@@ -21,7 +24,7 @@ where
 import           Ampersand.ADL1
 import           Ampersand.Basics
 import           RIO.Char
-import qualified Data.List.NonEmpty as NEL
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
@@ -75,7 +78,7 @@ aRule2pRule rul =
 
 aRelation2pRelation :: Relation -> P_Relation
 aRelation2pRelation dcl = 
- P_Sgn { dec_nm     = T.unpack $ decnm dcl
+ P_Sgn { dec_nm     = decnm dcl
        , dec_sign   = aSign2pSign (decsgn dcl)
        , dec_prps   = decprps dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]
@@ -84,8 +87,11 @@ aRelation2pRelation dcl =
        }
 
 aRelation2pNamedRel :: Relation -> P_NamedRel
-aRelation2pNamedRel dcl =
- PNamedRel (decfpos dcl) (T.unpack $ decnm dcl) (Just (aSign2pSign (decsgn dcl)))
+aRelation2pNamedRel dcl = PNamedRel
+  { pos      = decfpos dcl
+  , p_nrnm   = decnm dcl
+  , p_mbSign = Just . aSign2pSign $ decsgn dcl
+  }
  
 aIdentityDef2pIdentityDef :: IdentityDef -> P_IdentDf TermPrim -- P_IdentDef
 aIdentityDef2pIdentityDef iDef =
@@ -118,12 +124,12 @@ aClassify2pClassify gen =
   Isa{} -> PClassify 
                 { pos       = genpos gen
                 , specific  = aConcept2pConcept (genspc gen) 
-                , generics  = aConcept2pConcept (gengen gen) NEL.:| []
+                , generics  = aConcept2pConcept (gengen gen) NE.:| []
                 }
   IsE{} -> PClassify 
                 { pos      = genpos gen
                 , specific = aConcept2pConcept (genspc gen) 
-                , generics = NEL.fromList . map aConcept2pConcept . genrhs $ gen
+                , generics = fmap aConcept2pConcept . genrhs $ gen
                 }
 
 aInterface2pInterface :: Interface -> P_Interface
@@ -146,8 +152,8 @@ aSign2pSign sgn =
 aConcept2pConcept :: A_Concept -> P_Concept
 aConcept2pConcept cpt =
  case cpt of
-   ONE            -> P_Singleton
-   PlainConcept{} -> PCpt { p_cptnm = T.unpack $ cptnm cpt
+   ONE            -> P_ONE
+   PlainConcept{} -> PCpt { p_cptnm = name cpt
                           }
 
 aPurpose2pPurpose :: Purpose -> Maybe PPurpose 
@@ -164,18 +170,21 @@ aPurpose2pPurpose p =
 aPopulation2pPopulation :: Population -> P_Population
 aPopulation2pPopulation p =
  case p of 
-  ARelPopu{} -> P_RelPopu { pos  = Origin $ "Origin is not present in Population("++name pDcl++") from A-Structure"
+  ARelPopu{} -> P_RelPopu { pos  = Origin $ "Origin is not present in Population("<>name pDcl<>") from A-Structure"
                           , p_nmdr  = pDcl
                           , p_popps = map aAtomPair2pAtomPair (Set.elems $ popps p)
                           , p_src = Nothing 
                           , p_tgt = Nothing
                           }
       where pDcl = aRelation2pNamedRel (popdcl p)
-  ACptPopu{} -> P_CptPopu { pos  = Origin $ "Origin is not present in Population("++name (popcpt p)++") from A-Structure"
-                          , p_cnme  = name (popcpt p)
+  ACptPopu{} -> P_CptPopu { pos  = Origin $ "Origin is not present in Population("<>name (popcpt p)<>") from A-Structure"
+                          , p_cpt  = aCpt2pCpt (popcpt p)
                           , p_popas = map aAtomValue2pAtomValue (popas p)
                           }
-
+aCpt2pCpt :: A_Concept -> P_Concept
+aCpt2pCpt cpt = case cpt of
+  PlainConcept{} -> PCpt{ p_cptnm = name cpt }
+  ONE          -> P_ONE
 
 aObjectDef2pObjectDef :: BoxItem -> P_BoxItemTermPrim
 aObjectDef2pObjectDef x =
@@ -186,7 +195,7 @@ aObjectDef2pObjectDef x =
                , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
                , obj_crud  = case objmsub oDef of 
                                Just (InterfaceRef False _) -> Nothing  -- Crud specification is not allowed in combination with a reference to an interface.
-                               _ -> aCruds2pCruds (objcrud oDef)
+                               _ -> Just $ aCruds2pCruds (objcrud oDef)
                , obj_mView = objmView oDef
                , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
                }
@@ -241,7 +250,7 @@ aMarkup2pMarkup markup =
 
 aPairView2pPairView :: PairView Expression -> PairView (Term TermPrim)
 aPairView2pPairView pv =
- PairView { ppv_segs = NEL.map aPairViewSegment2pPairViewSegment (ppv_segs pv)
+ PairView { ppv_segs = NE.map aPairViewSegment2pPairViewSegment (ppv_segs pv)
           }
 
 aViewSegment2pP_ViewSegment :: ViewSegment -> P_ViewSegment TermPrim
@@ -275,8 +284,8 @@ aIdentitySegment2pIdentSegmnt (IdentityExp oDef) =
 aExplObj2PRef2Obj :: ExplObj -> PRef2Obj
 aExplObj2PRef2Obj obj =
  case obj of
-  ExplConceptDef cd   -> PRef2ConceptDef (name cd)
-  ExplRelation d   -> PRef2Relation (aRelation2pNamedRel d)
+  ExplConcept cpt     -> PRef2ConceptDef (name cpt)
+  ExplRelation rel    -> PRef2Relation (aRelation2pNamedRel rel)
   ExplRule str        -> PRef2Rule str
   ExplIdentityDef str -> PRef2IdentityDef str
   ExplViewDef str     -> PRef2ViewDef str
@@ -296,20 +305,20 @@ aAtomValue2pAtomValue AtomValueOfONE = fatal "Unexpected AtomValueOfONE in conve
 aAtomValue2pAtomValue val =
   case aavtyp val of
     Alphanumeric     -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     BigAlphanumeric  -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     HugeAlphanumeric -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     Password         -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal  "Unexpected combination of value types"
-    Binary           -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
-    BigBinary        -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
-    HugeBinary       -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
+    Binary           -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    BigBinary        -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    HugeBinary       -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
     Date             -> case val of
                           AAVDate{} -> --TODO: Needs rethinking. A string or a double?
                                        ScriptString o (showValADL val)
@@ -328,7 +337,7 @@ aAtomValue2pAtomValue val =
                           AAVBoolean{} -> ComnBool o (aavbool val)
                           _            -> fatal "Unexpected combination of value types"
     Object           -> case val of 
-                          AAVString{} -> ScriptString o (aavstr val)
+                          AAVString{} -> ScriptString o (aavtxt val)
                           _         -> fatal "Unexpected combination of value types"
     TypeOfOne        -> fatal "Unexpected combination of value types"
   where
@@ -348,10 +357,7 @@ aSubIfc2pSubIfc sub =
                       , si_str    = str
                       }
 
-aCruds2pCruds :: Cruds -> Maybe P_Cruds
-aCruds2pCruds x = 
-  if crudOrig x == Origin "default for Cruds" 
-  then Nothing
-  else Just $ P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
+aCruds2pCruds :: Cruds -> P_Cruds
+aCruds2pCruds x = P_Cruds (crudOrig x) (T.pack $ zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
    where f :: (Bool,Char) -> Char
          f (b,c) = (if b then toUpper else toLower) c

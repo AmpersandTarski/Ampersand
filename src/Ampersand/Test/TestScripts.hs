@@ -1,4 +1,7 @@
-{-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
 
 
@@ -21,9 +24,9 @@ getTestScripts =
 --                | DirError IOException               
 --data DirData = DirData FilePath DirContent       -- path and content of a directory
 
-testAmpersandScripts :: HasHandle env => RIO env ()
+testAmpersandScripts :: HasLogFunc env => RIO env ()
 testAmpersandScripts = do
-    sayLn "Testscripts of this kind are not available."
+    logInfo "Testscripts of this kind are not available."
 {-
 testAmpersandScripts' :: IO ()
 testAmpersandScripts'
@@ -63,23 +66,23 @@ walk path = do
             
 -- Consume directories
 myVisitor :: Sink DirData IO ()
-myVisitor = addCleanup (\_ -> sayLn "Finished.") $ loop 1
+myVisitor = addCleanup (\_ -> logInfo "Finished.") $ loop 1
   where
     loop :: Int -> ConduitM DirData a IO ()
     loop n = do
-        lift $ say $ ">> " ++ show n ++ ". "
+        lift $ say $ ">> " ++ show n
         mr <- await
         case mr of
             Nothing     -> return ()
             Just r      -> lift (process r) >> loop (n + 1)
     process :: DirData -> IO ()
     process (DirData path (DirError err)) = do
-        sayLn $ "I've tried to look in " ++ path ++ "."
-        sayLn $ "    There was an error: "
-        sayLn $ "       " ++ show err
+        logInfo $ "I've tried to look in " ++ path ++ "."
+        logInfo $ "    There was an error: "
+        logInfo $ "       " ++ show err
 
     process (DirData path (DirList dirs files)) = do
-        sayLn $ path ++ ". ("++ show (length dirs) ++ " directorie(s) and " ++ show (length files) ++ " relevant file(s):"
+        logInfo $ path ++ ". ("++ show (length dirs) ++ " directorie(s) and " ++ show (length files) ++ " relevant file(s):"
         forM_ files (runATest path) 
      
 runATest :: FilePath -> FilePath -> IO()
@@ -88,15 +91,15 @@ runATest path file =
    where 
      showError :: SomeException -> IO()
      showError err
-       = do sayLn "***** ERROR: Fatal error was thrown: *****"
-            sayLn $ (path </> file)
-            sayLn $ show err
-            sayLn "******************************************"
+       = do logInfo "***** ERROR: Fatal error was thrown: *****"
+            logInfo $ (path </> file)
+            logInfo $ show err
+            logInfo "******************************************"
         
 runATest' :: FilePath -> FilePath -> IO()
 runATest' path file = do
        [errs] <- ampersand [path </> file]
-       sayLn 
+       logInfo 
          ( file ++": "++
            case (shouldFail,errs) of
                   (False, []) -> "OK.  => Pass"
@@ -104,6 +107,6 @@ runATest' path file = do
                   (True , []) -> "Ok.  => NOT PASSED"
                   (True , _ ) -> "Fail => Pass"
          )
-       unless shouldFail $ mapM_ sayLn (map show (take 1 errs))  --for now, only show the first error
+       unless shouldFail $ mapM_ logInfo (map show (take 1 errs))  --for now, only show the first error
     where shouldFail = "SHOULDFAIL" `isInfixOf` map toUpper (path </> file)
 -} 

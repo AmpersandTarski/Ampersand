@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Concepts 
   (Concepts,Segment)
@@ -12,36 +13,36 @@ import qualified RIO.Set as Set
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
 data Concept = Concept
-  { cptJSONid                :: String
-  , cptJSONlabel             :: String
-  , cptJSONtype              :: String
-  , cptJSONgeneralizations   :: [String]
-  , cptJSONspecializations   :: [String]
-  , cptJSONdirectGens        :: [String]
-  , cptJSONdirectSpecs       :: [String]
-  , cptJSONaffectedConjuncts :: [String]
-  , cptJSONinterfaces        :: [String]
-  , cptJSONdefaultViewId     :: Maybe String 
+  { cptJSONid                :: Text
+  , cptJSONlabel             :: Text
+  , cptJSONtype              :: Text
+  , cptJSONgeneralizations   :: [Text]
+  , cptJSONspecializations   :: [Text]
+  , cptJSONdirectGens        :: [Text]
+  , cptJSONdirectSpecs       :: [Text]
+  , cptJSONaffectedConjuncts :: [Text]
+  , cptJSONinterfaces        :: [Text]
+  , cptJSONdefaultViewId     :: Maybe Text 
   , cptJSONconceptTable      :: TableCols
-  , cptJSONlargestConcept    :: String
+  , cptJSONlargestConcept    :: Text
   } deriving (Generic, Show)
 data TableCols = TableCols
-  { tclJSONname              :: String
-  , tclJSONcols              :: [String]
+  { tclJSONname              :: Text
+  , tclJSONcols              :: [Text]
   } deriving (Generic, Show)
 data View = View
-  { vwJSONlabel        :: String
+  { vwJSONlabel        :: Text
   , vwJSONisDefault    :: Bool
-  , vwJSONhtmlTemplate :: Maybe String
+  , vwJSONhtmlTemplate :: Maybe FilePath
   , vwJSONsegments :: [Segment]
   } deriving (Generic, Show)
 data Segment = Segment
   { segJSONseqNr   :: Integer
-  , segJSONlabel :: Maybe String
-  , segJSONsegType :: String
-  , segJSONexpADL  :: Maybe String
-  , segJSONexpSQL :: Maybe String
-  , segJSONtext  :: Maybe String
+  , segJSONlabel :: Maybe Text
+  , segJSONsegType :: Text
+  , segJSONexpADL  :: Maybe Text
+  , segJSONexpSQL :: Maybe Text
+  , segJSONtext  :: Maybe Text
   } deriving (Generic, Show)
 instance ToJSON Concept where
   toJSON = amp2Jason
@@ -53,14 +54,14 @@ instance ToJSON Segment where
   toJSON = amp2Jason
 instance ToJSON TableCols where
   toJSON = amp2Jason
-instance JSON MultiFSpecs Concepts where
- fromAmpersand opts@Options{..} multi _ = Concepts (map (fromAmpersand opts multi) (Set.elems $ concs fSpec))
-   where fSpec = userFSpec multi
+instance JSON FSpec Concepts where
+ fromAmpersand env fSpec _ = Concepts (map (fromAmpersand env fSpec) (Set.elems $ concs fSpec))
+
 instance JSON A_Concept Concept where
- fromAmpersand opts@Options{..} multi cpt = Concept
+ fromAmpersand env fSpec cpt = Concept
   { cptJSONid                = idWithoutType cpt
   , cptJSONlabel             = name cpt
-  , cptJSONtype              = show . cptTType fSpec $ cpt
+  , cptJSONtype              = tshow . cptTType fSpec $ cpt
   , cptJSONgeneralizations   = map idWithoutType . largerConcepts  (vgens fSpec) $ cpt
   , cptJSONspecializations   = map idWithoutType . smallerConcepts (vgens fSpec) $ cpt
   , cptJSONdirectGens        = map idWithoutType $ L.nub [ g | (s,g) <- fsisa fSpec, s == cpt]
@@ -68,40 +69,38 @@ instance JSON A_Concept Concept where
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
-  , cptJSONconceptTable      = fromAmpersand opts multi cpt
+  , cptJSONconceptTable      = fromAmpersand env fSpec cpt
   , cptJSONlargestConcept    = idWithoutType . largestConcept fSpec $ cpt
   } 
   where
-    fSpec = userFSpec multi
     hasAsSourceCpt :: Interface -> Bool
     hasAsSourceCpt ifc = (source . objExpression . ifcObj) ifc `elem` cpts
     cpts = cpt : largerConcepts  (vgens fSpec) cpt
 instance JSON A_Concept TableCols where
- fromAmpersand _ multi cpt = TableCols
+ fromAmpersand _ fSpec cpt = TableCols
   { tclJSONname    = name cptTable
   , tclJSONcols    = case L.nub . map fst $ cols of
-                       [t] -> if name t == name cptTable
+                       [t] -> if t == cptTable
                               then map (attName . snd) cols
-                              else fatal $ "Table names should match: "++name t++" "++name cptTable++"." 
+                              else fatal $ "Table names should match: "<>name t<>" "<>name cptTable<>"." 
                        _   -> fatal "All concepts in a typology should be in exactly one table."
   }
   where
-    fSpec = userFSpec multi
     cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
     cptTable = case lookupCpt fSpec cpt of
       [(table,_)] -> table
-      []      -> fatal ("Concept `"++name cpt++"` not found in a table.")
-      _       -> fatal ("Concept `"++name cpt++"` found in multiple tables.")
+      []      -> fatal ("Concept `"<>name cpt<>"` not found in a table.")
+      _       -> fatal ("Concept `"<>name cpt<>"` found in multiple tables.")
 instance JSON ViewDef View where
- fromAmpersand opts@Options{..} multi vd = View
+ fromAmpersand env fSpec vd = View
   { vwJSONlabel        = name vd
   , vwJSONisDefault    = vdIsDefault vd
   , vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd
-  , vwJSONsegments     = fmap (fromAmpersand opts multi) . vdats $ vd
+  , vwJSONsegments     = fmap (fromAmpersand env fSpec) . vdats $ vd
   }
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where
- fromAmpersand _ multi seg = Segment
+ fromAmpersand _ fSpec seg = Segment
   { segJSONseqNr = vsmSeqNr seg
   , segJSONlabel = vsmlabel seg
   , segJSONsegType = case vsmLoad seg of
@@ -117,6 +116,5 @@ instance JSON ViewSegment Segment where
                        ViewText str -> Just str
                        _            -> Nothing
   }
-  where
-    fSpec = userFSpec multi
+
     
