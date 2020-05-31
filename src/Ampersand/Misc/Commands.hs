@@ -321,9 +321,9 @@ documentationCmd docOpts = do
       let recipe = recipeBuilder False env
       mFSpec <- createFspec recipe
       doOrDie mFSpec doGenDocument
-    
-forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
-forceAllowInvariants env = local (set allowInvariantViolationsL True) env
+  where
+    forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
+    forceAllowInvariants env = local (set allowInvariantViolationsL True) env
 
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
