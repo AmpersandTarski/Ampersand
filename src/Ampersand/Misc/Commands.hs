@@ -315,12 +315,15 @@ daemonCmd daemonOpts =
     extendWith daemonOpts        
        runDaemon 
 documentationCmd :: DocOpts -> RIO Runner ()
-documentationCmd docOpts =
-    extendWith docOpts $ do
-        env <- set allowInvariantViolationsL True <$> ask
-        let recipe = recipeBuilder False env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec doGenDocument
+documentationCmd docOpts = do
+    extendWith docOpts . forceAllowInvariants $ do 
+      env <- ask
+      let recipe = recipeBuilder False env
+      mFSpec <- createFspec recipe
+      doOrDie mFSpec doGenDocument
+    
+forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
+forceAllowInvariants env = local (set allowInvariantViolationsL True) env
 
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
