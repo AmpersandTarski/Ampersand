@@ -3,6 +3,7 @@
 ## Unreleased
 
 * [Issue #1081](https://github.com/AmpersandTarski/Ampersand/issues/1081) Disable invariant checking for documentation.
+* [Issue #988](https://github.com/AmpersandTarski/Ampersand/issues/988) Add switch to disable warnings with `ampersand daemon` command
 
 ## v4.0.0 (23 may 2020)
 
