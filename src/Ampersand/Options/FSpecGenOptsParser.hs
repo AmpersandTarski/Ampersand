@@ -135,6 +135,9 @@ knownRecipeP = toKnownRecipe . T.pack <$> strOption
 allowInvariantViolationsP :: Parser Bool
 allowInvariantViolationsP = switch
         ( long "ignore-invariant-violations"
-        <> help ("Do not report (totally ignore) violations of invariants. (See "
-               <>"https://github.com/AmpersandTarski/Ampersand/issues/728)")
+        <> help ("ignore invariant violations. In case of the prototype command, the"
+                <>"generated prototype might not behave as you expect. "
+                <>"Documentation is not affected. This means that invariant violations"
+                <>"are reported anyway. "
+                <>"(See https://github.com/AmpersandTarski/Ampersand/issues/728)")
         )

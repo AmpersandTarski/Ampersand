@@ -17,7 +17,6 @@ import           Ampersand.Commands.Daemon
 import           Ampersand.Commands.Documentation
 import           Ampersand.Commands.Devoutput
 import           Ampersand.Commands.ExportAsADL
---import           Ampersand.Commands.Init
 import           Ampersand.Commands.Population
 import           Ampersand.Commands.Proof
 import           Ampersand.Commands.Test
@@ -50,8 +49,6 @@ import           RIO.Char
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import           System.Environment ({-getProgName,-} withArgs)
-
---import           System.FilePath (isValid, pathSeparator, takeDirectory)
 
 -- A lot of inspiration in this file comes from https://github.com/commercialhaskell/stack/
 
@@ -320,7 +317,7 @@ daemonCmd daemonOpts =
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts =
     extendWith docOpts $ do
-        env <- ask
+        env <- set allowInvariantViolationsL True <$> ask
         let recipe = recipeBuilder False env
         mFSpec <- createFspec recipe
         doOrDie mFSpec doGenDocument
