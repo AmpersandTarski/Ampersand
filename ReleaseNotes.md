@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v4.0.0 (23 may 2020)
 
 * Refactor Docker image for Ampersand compiler
 * Add continuous integration via Github Actions. With cache.
