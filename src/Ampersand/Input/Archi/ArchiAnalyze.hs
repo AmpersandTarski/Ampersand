@@ -159,26 +159,26 @@ mkArchiContext [archiRepo] pops = pure
         -- to compute the left-over triples, we must use L.deleteFirstsBy because we do not have Ord P_Population.
         leftovers = L.deleteFirstsBy f pops viewpoprels
          where f (pop,_,_) (pop',_,_) = Set.fromList (p_popps pop)==Set.fromList (p_popps pop')
-        archiPops ::  [P_Population]
-        archiPops = sortRelPops     -- ^ The populations that are local to this pattern
+        archiPops :: [P_Population]
+        archiPops = sortRelPops    --  The populations that are local to this pattern
                      [ pop | (pop,_,_)<-leftovers ]
         archiDecls :: [P_Relation]
-        archiDecls = sortDecls     -- ^ The relations that are declared in this pattern
+        archiDecls = sortDecls     --  The relations that are declared in this pattern
                       [ rel | (_,rel,_)<-leftovers ]
         pats
-         = [ P_Pat { pos =      OriginUnknown     -- ^ the starting position in the file in which this pattern was declared.
-                   , pt_nm =    viewName vw       -- ^ Name of this pattern
-                   , pt_rls =   []                -- ^ The user defined rules in this pattern
-                   , pt_gns =   []                -- ^ The generalizations defined in this pattern
-                   , pt_dcs =   sortDecls rels    -- ^ The relations that are declared in this pattern
-                   , pt_RRuls = []                -- ^ The assignment of roles to rules.
-                   , pt_cds =   []                -- ^ The concept definitions defined in this pattern
-                   , pt_Reprs = []                -- ^ The type into which concepts is represented
-                   , pt_ids =   []                -- ^ The identity definitions defined in this pattern
-                   , pt_vds =   []                -- ^ The view definitions defined in this pattern
-                   , pt_xps =   []                -- ^ The purposes of elements defined in this pattern
-                   , pt_pop =   sortRelPops popus -- ^ The populations that are local to this pattern
-                   , pt_end =   OriginUnknown     -- ^ the end position in the file in which this pattern was declared.
+         = [ P_Pat { pos =      OriginUnknown     -- the starting position in the file in which this pattern was declared.
+                   , pt_nm =    viewName vw       -- Name of this pattern
+                   , pt_rls =   []                -- The user defined rules in this pattern
+                   , pt_gns =   []                -- The generalizations defined in this pattern
+                   , pt_dcs =   sortDecls rels    -- The relations that are declared in this pattern
+                   , pt_RRuls = []                -- The assignment of roles to rules.
+                   , pt_cds =   []                -- The concept definitions defined in this pattern
+                   , pt_Reprs = []                -- The type into which concepts is represented
+                   , pt_ids =   []                -- The identity definitions defined in this pattern
+                   , pt_vds =   []                -- The view definitions defined in this pattern
+                   , pt_xps =   []                -- The purposes of elements defined in this pattern
+                   , pt_pop =   sortRelPops popus -- The populations that are local to this pattern
+                   , pt_end =   OriginUnknown     -- the end position in the file in which this pattern was declared.
                    }
            | folder<-allFolders archiRepo
            , vw@View{}<-fldObjs folder
