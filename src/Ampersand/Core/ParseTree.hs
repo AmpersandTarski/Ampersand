@@ -579,7 +579,7 @@ newtype PMeaning = PMeaning P_Markup
 newtype PMessage = PMessage P_Markup
          deriving Show
 data P_Markup =
-    P_Markup  { mLang   ::   Maybe Lang
+    P_Markup  { mLang   :: Maybe Lang
               , mFormat :: Maybe PandocFormat
               , mString :: Text
               } deriving (Show,Eq) -- for debugging only

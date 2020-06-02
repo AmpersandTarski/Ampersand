@@ -281,7 +281,7 @@ instance ReferableFromPandoc Picture where
       extention =
          case view fspecFormatL env of
            Fpdf   -> "png"   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
-           Fdocx  -> "svg"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
+           Fdocx  -> "png"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
            Fhtml  -> "png"
            _      -> "pdf"
 
