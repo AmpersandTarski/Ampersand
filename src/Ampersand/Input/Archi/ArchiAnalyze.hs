@@ -31,8 +31,8 @@ import qualified RIO.Text as T
 import           Text.XML.HXT.Core hiding (utf8, fatal,trace)
 
 -- Auxiliary
-fst3 :: (a, b, c) -> a
-fst3 (x,_,_) = x
+fst4 :: (a, b, c, d) -> a
+fst4 (x,_,_,_) = x
 
 -- | Function `archi2PContext` is meant to grind the contents of an Archi-repository into declarations and population inside a fresh Ampersand P_Context.
 --   The process starts by parsing an XML-file by means of function `processStraight` into a data structure called `archiRepo`. This function uses arrow-logic from the HXT-module.
@@ -49,8 +49,8 @@ archi2PContext archiRepoFilename  -- e.g. "CArepository.archimate"
       archiRepo <- liftIO $ runX (processStraight archiRepoFilename)
       let typeLookup atom = (Map.lookup atom . typeMap Nothing) archiRepo
       let archiRepoWithProps = (grindArchi (Nothing,typeLookup,Nothing) . identifyProps []) archiRepo
-      let relPops = (filter (not.null.p_popps) . sortRelPops . map fst3) archiRepoWithProps
-      let cptPops = (filter (not.null.p_popas) . sortCptPops . map fst3) archiRepoWithProps
+      let relPops = (filter (not.null.p_popps) . sortRelPops . map fst4) archiRepoWithProps
+      let cptPops = (filter (not.null.p_popas) . sortCptPops . map fst4) archiRepoWithProps
       let elemCount archiConcept = (Map.lookup archiConcept . Map.fromList . atomCount . atomMap) relPops
       let countPop :: P_Population -> Text
           countPop pop = let sig = ((\(Just sgn)->sgn).p_mbSign.p_nmdr) pop in
@@ -102,9 +102,20 @@ samePop pop@P_CptPopu{} pop'@P_CptPopu{} = p_cpt pop == p_cpt pop'
 samePop _ _ = False
 sameRel :: P_Relation -> P_Relation -> Bool
 sameRel rel rel' = dec_nm rel==dec_nm rel' && dec_sign rel==dec_sign rel'
+samePurp :: PPurpose -> PPurpose -> Bool
+samePurp prp prp' = mString (pexMarkup prp)==mString (pexMarkup prp')
+
+{- reminder
+data PPurpose = PRef2 { pos :: Origin      -- the position in the Ampersand script of this purpose definition
+                      , pexObj :: PRef2Obj    -- the reference to the object whose purpose is explained
+                      , pexMarkup:: P_Markup  -- the piece of text, including markup and language info
+                      , pexRefIDs :: [Text] -- the references (for traceability)
+                      } deriving Show
+
+-}
 
 -- | Function `mkArchiContext` defines the P_Context that has been constructed from the ArchiMate repo
-mkArchiContext :: [ArchiRepo] -> [(P_Population,P_Relation,Maybe Text)] -> Guarded P_Context
+mkArchiContext :: [ArchiRepo] -> [(P_Population,P_Relation,Maybe Text,PPurpose)] -> Guarded P_Context
 mkArchiContext [archiRepo] pops = pure
   PCtx{ ctx_nm     = archRepoName archiRepo
       , ctx_pos    = []
@@ -120,15 +131,15 @@ mkArchiContext [archiRepo] pops = pure
       , ctx_vs     = []
       , ctx_gs     = []
       , ctx_ifcs   = []
-      , ctx_ps     = []
+      , ctx_ps     = archiPurps
       , ctx_pops   = archiPops
       , ctx_metas  = []
       }
   where -- vwAts picks triples that belong to one view, to assemble a pattern for that view.
-        vwAts :: ArchiObj -> [(P_Population,P_Relation,Maybe Text)]
+        vwAts :: ArchiObj -> [(P_Population,P_Relation,Maybe Text,PPurpose)]
         vwAts vw@View{}
-         = [ (pop,rel,v)
-           | (pop,rel,v)<-pops
+         = [ (pop,rel,v,purp)
+           | (pop,rel,v,purp)<-pops
            , participatingRel rel
            , dec_nm rel `L.notElem` ["inside","inView"]
            , PPair _ (ScriptString _ x) _<-p_popps pop
@@ -137,7 +148,7 @@ mkArchiContext [archiRepo] pops = pure
            where viewAtoms
                   = Set.fromList
                      [ a
-                     | (pop,rel,Just viewname)<-pops, viewname==viewName vw
+                     | (pop,rel,Just viewname,_)<-pops, viewname==viewName vw
                      , participatingRel rel
                      , PPair _ (ScriptString _ x) (ScriptString _ y)<-p_popps pop
                      , a<-[x,y]
@@ -148,23 +159,25 @@ mkArchiContext [archiRepo] pops = pure
         participatingRel rel = pSrc (dec_sign rel) `L.notElem` map PCpt ["Relationship","Property","View"]
         -- viewpoprels contains all triples that are picked by vwAts, for all views,
         -- to compute the triples that are not assembled in any pattern.
-        viewpoprels :: [(P_Population,P_Relation,Maybe Text)]
+        viewpoprels :: [(P_Population,P_Relation,Maybe Text,PPurpose)]
         viewpoprels = removeDoubles
                        [ popRelVw
                        | folder<-allFolders archiRepo
                        , vw@View{}<-fldObjs folder
                        , popRelVw<-vwAts vw]
-        removeDoubles :: [(P_Population,P_Relation,Maybe Text)] -> [(P_Population,P_Relation,Maybe Text)]
-        removeDoubles = map NE.head . eqCl (Set.fromList . p_popps . fst3)
+        removeDoubles :: [(P_Population,P_Relation,Maybe Text,PPurpose)] -> [(P_Population,P_Relation,Maybe Text,PPurpose)]
+        removeDoubles = map NE.head . eqCl (Set.fromList . p_popps . fst4)
         -- to compute the left-over triples, we must use L.deleteFirstsBy because we do not have Ord P_Population.
         leftovers = L.deleteFirstsBy f pops viewpoprels
-         where f (pop,_,_) (pop',_,_) = Set.fromList (p_popps pop)==Set.fromList (p_popps pop')
+         where f (pop,_,_,_) (pop',_,_,_) = Set.fromList (p_popps pop)==Set.fromList (p_popps pop')
         archiPops :: [P_Population]
         archiPops = sortRelPops    --  The populations that are local to this pattern
-                     [ pop | (pop,_,_)<-leftovers ]
+                     [ pop | (pop,_,_,_)<-leftovers ]
         archiDecls :: [P_Relation]
         archiDecls = sortDecls     --  The relations that are declared in this pattern
-                      [ rel | (_,rel,_)<-leftovers ]
+                      [ rel | (_,rel,_,_)<-leftovers ]
+        archiPurps = sortPurps     --  The relations that are declared in this pattern
+                      [ purp | (_,_,_,purp)<-leftovers ]
         pats
          = [ P_Pat { pos =      OriginUnknown     -- the starting position in the file in which this pattern was declared.
                    , pt_nm =    viewName vw       -- Name of this pattern
@@ -176,13 +189,13 @@ mkArchiContext [archiRepo] pops = pure
                    , pt_Reprs = []                -- The type into which concepts is represented
                    , pt_ids =   []                -- The identity definitions defined in this pattern
                    , pt_vds =   []                -- The view definitions defined in this pattern
-                   , pt_xps =   []                -- The purposes of elements defined in this pattern
+                   , pt_xps =   purps             -- The purposes of elements defined in this pattern
                    , pt_pop =   sortRelPops popus -- The populations that are local to this pattern
                    , pt_end =   OriginUnknown     -- the end position in the file in which this pattern was declared.
                    }
            | folder<-allFolders archiRepo
            , vw@View{}<-fldObjs folder
-           , let (popus,rels,_) = L.unzip3 (vwAts vw)
+           , let (popus,rels,_,purps) = L.unzip4 (vwAts vw)
            ]
 
         sortRelPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
@@ -190,6 +203,8 @@ mkArchiContext [archiRepo] pops = pure
                             | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-popus] ]
         sortDecls :: [P_Relation] -> [P_Relation] -- assembles P_Relations with the same signature into one
         sortDecls decls = [ NE.head cl | cl<-eqClass sameRel decls ]
+        sortPurps :: [PPurpose] -> [PPurpose] -- assembles P_Relations with the same signature into one
+        sortPurps purps = [ NE.head cl | cl<-eqClass samePurp purps ]
 mkArchiContext _ _ = fatal "Something dead-wrong with mkArchiContext."
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
@@ -376,7 +391,7 @@ class MetaArchi a where
   --  1. the view name (Maybe Text), just used when scanning inside a view to link an ArchiMate object to a view;
   --  2. a lookup function (Text->Maybe Text) called typeLookup, that looks up the type of an ArchiMate object. E.g. typeLookup ("702221af-2740-46e2-a0ae-c64d0226ff95") = "BusinessRole"
   grindArchi :: (Maybe Text,Text->Maybe Text,Maybe Text) -> a ->   -- create population and the corresponding metamodel for the P-structure in Ampersand
-                   [(P_Population, P_Relation,Maybe Text)]
+                   [(P_Population, P_Relation,Maybe Text,PPurpose)]
 
 instance MetaArchi ArchiRepo where
   typeMap _ archiRepo
@@ -501,12 +516,20 @@ instance MetaArchi a => MetaArchi [a] where
 --   It looks redundant to produce both a `P_Population` and a `P_Relation`, but the first contains the population and the second is used to
 --   include the metamodel of ArchiMate in the population. This saves the author the effort of maintaining an ArchiMate-metamodel.
 translateArchiElem :: Text -> (Text, Text) -> Maybe Text -> Set.Set Prop-> [(Text, Text)]
-                      -> (P_Population,P_Relation,Maybe Text)
+                      -> (P_Population,P_Relation,Maybe Text,PPurpose)
 translateArchiElem label (srcLabel,tgtLabel) maybeViewName props tuples
- = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown label (Just (P_Sign (PCpt srcLabel) (PCpt tgtLabel)))) (transTuples tuples)
+ = ( P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (transTuples tuples)
    , P_Sgn label (P_Sign (PCpt srcLabel) (PCpt tgtLabel)) props [] [] OriginUnknown
-   , maybeViewName )
-
+   , maybeViewName
+   , PRef2 { pos = OriginUnknown      -- the position in the Ampersand script of this purpose definition
+           , pexObj = PRef2Relation ref_to_relation    -- the reference to the object whose purpose is explained
+           , pexMarkup = P_Markup Nothing Nothing "To embody the ArchiMate metamodel"  -- the piece of text, including markup and language info
+           , pexRefIDs = [] -- the references (for traceability)
+           }
+   )
+   where
+     ref_to_relation :: P_NamedRel
+     ref_to_relation = PNamedRel OriginUnknown label (Just (P_Sign (PCpt srcLabel) (PCpt tgtLabel)))
 
 -- | Function `relCase` is used to generate relation identifiers that are syntactically valid in Ampersand.
 relCase :: Text -> Text

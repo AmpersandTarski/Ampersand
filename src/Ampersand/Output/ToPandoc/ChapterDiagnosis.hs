@@ -102,15 +102,15 @@ chpDiagnosis env fSpec
    case missing of
       []  -> if (null.concs) fSpec
              then mempty
-             else (para.str.l) (NL "Alle concepten in dit document zijn voorzien van een bestaansreden."
+             else (para.str.l) (NL "Alle concepten in dit document zijn voorzien van een oogmerk (purpose)."
                                ,EN "All concepts in this document have been provided with a purpose.")
-      [c] -> para (   (str.l) (NL "De bestaansreden van concept "
+      [c] -> para (   (str.l) (NL "Het oogmerk (purpose) van concept "
                               ,EN "The concept ")
                    <> (singleQuoted.str.name) c
                    <> (str.l) (NL " is niet gedocumenteerd."
                               ,EN " remains without a purpose.")
                   )
-      xs  -> para (   (str.l) (NL "De bestaansreden van de concepten: "
+      xs  -> para (   (str.l) (NL "Het oogmerk (purpose) van de concepten: "
                               ,EN "Concepts ")
                    <> commaPandocAnd outputLang' (map (str.name) xs)
                    <> (str.l) (NL " is niet gedocumenteerd."
@@ -253,7 +253,7 @@ chpDiagnosis env fSpec
                            ,EN "All rules in this document have been provided with a meaning and a purpose.")
          else ( case filter (not.hasPurpose) ruls of
                   []  -> mempty
-                  rls -> (para.str.l) (NL "Van de volgende regels is de bestaansreden niet uitgelegd:"
+                  rls -> (para.str.l) (NL "Van de volgende regels is het oogmerk (purpose) niet uitgelegd:"
                                       ,EN "Rules are defined without documenting their purpose:")
                        <> bulletList [    (para.emph.str.name) r 
                                        <> (plain.str.tshow.origin) r 
@@ -465,17 +465,35 @@ chpDiagnosis env fSpec
                               <>(str.name) r
                         )  
                         -- Alignment:
-                        (replicate 2 (AlignLeft,1/2))
+                        (replicate 1 (AlignLeft,1/1))
                         -- Headers:
-                        [(para.strong.text.name.source.formalExpression) r
-                        ,(para.strong.text.name.target.formalExpression) r
-                        ]
+                        ( ( fmap singleton
+                          . concat
+                          . fmap (amPandoc . ameaMrk)
+                          . meanings
+                          ) r
+                        )
                         -- Rows:
-                        [ [(para.text.showValADL.apLeft) p
-                          ,(para.text.showValADL.apRight) p
-                          ]
-                        | p<- Set.elems ps]
+                        (mkInvariantViolationsError (applyViolText fSpec) (r,ps))
 
+  mkInvariantViolationsError :: (Rule->AAtomPair->Text) -> (Rule,AAtomPairs) -> [[Blocks]]
+  mkInvariantViolationsError applyViolText (r,ps) = 
+    [[(para.strong.text) violationMessage]] 
+        where
+          violationMessage :: Text
+          violationMessage = T.unlines $
+            [if length ps == 1 
+              then "There is one violation of RULE " <>tshow (name r)<>":"
+              else "There are "<>tshow (length ps)<>" violations of RULE "<>tshow (name r)<>":"
+            ]
+            <> (map ("  "<>) . listPairs 10 . Set.toList $ ps)
+          listPairs :: Int -> [AAtomPair] -> [Text]
+          listPairs i xs = 
+                      case xs of
+                        [] -> []
+                        h:tl 
+                          | i == 0 -> ["  ... ("<>tshow (length xs)<>" more)"]
+                          | otherwise -> applyViolText r h : listPairs (i-1) tl
 
 
   violtable :: Rule -> AAtomPairs -> Blocks
