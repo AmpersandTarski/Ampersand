@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* [Issue #1026](https://github.com/AmpersandTarski/Ampersand/issues/1026) Allow PATTERNs with the same name. Meaning: all declarations from patterns with the same name are merged into one.
 * [Issue #1081](https://github.com/AmpersandTarski/Ampersand/issues/1081) Disable invariant checking for documentation.
 * [Issue #988](https://github.com/AmpersandTarski/Ampersand/issues/988) Add switch to disable warnings with `ampersand daemon` command
 

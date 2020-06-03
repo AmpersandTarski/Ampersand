@@ -215,7 +215,7 @@ data P_Relation =
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
 --   This is still not true for MEATGRINDER stuff!
-
+--   So,
 -- DO NOT USE ORD and EQ on P_Relation!
 instance Named P_Relation where
  name = dec_nm
@@ -579,7 +579,7 @@ newtype PMeaning = PMeaning P_Markup
 newtype PMessage = PMessage P_Markup
          deriving Show
 data P_Markup =
-    P_Markup  { mLang   ::   Maybe Lang
+    P_Markup  { mLang   :: Maybe Lang
               , mFormat :: Maybe PandocFormat
               , mString :: Text
               } deriving (Show,Eq) -- for debugging only

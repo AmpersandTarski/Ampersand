@@ -8,7 +8,7 @@ module Ampersand.Input.ADL1.CtxError
   , cannotDisambiguate
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..), uniqueNames, uniqueBy
+  , GetOneGuarded(..), uniqueNames
   , unexpectedType
   , mkErrorReadingINCLUDE
   , mkDanglingPurposeError
@@ -246,22 +246,26 @@ cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
              EDcD rel -> " ("<>tshow (origin rel)<>")"
              EFlp e' -> showA' e'
              _ -> ""
+-- | Rules, identity statements, view definitions, interfaces, and box labels
+--   need unique names. The `nameclass` ("rule", "interface", etc.) is used to
+--   provide a more meaningful error message.
 uniqueNames :: (Named a, Traced a) =>
-                     [a] -> Guarded ()
-uniqueNames = uniqueBy name
-uniqueBy :: (Traced a, Show b, Ord b) => (a -> b) -> [a] -> Guarded ()
-uniqueBy fun a = case (filter moreThanOne . groupWith fun) a of
-                  []   -> pure ()
-                  x:xs -> Errors . fmap messageFor $ x NE.:| xs
-    where
-     moreThanOne (_:_:_) = True
-     moreThanOne  _      = False
-     messageFor (x:xs) = CTXE (origin x)
-                      ("Names / labels must be unique. "<>(tshow . fun) x<>", however, is used at:"
-                      <>  T.intercalate ("\n    ") (map (tshow . origin) (x:xs))
-                      <>  "."
-                      )
-     messageFor _ = fatal "messageFor must only be used on lists with more that one element!"
+                     Text -> [a] -> Guarded ()
+uniqueNames nameclass = uniqueBy name
+  where
+    uniqueBy :: (Traced a, Show b, Ord b) => (a -> b) -> [a] -> Guarded ()
+    uniqueBy fun a = case (filter moreThanOne . groupWith fun) a of
+                      []   -> pure ()
+                      x:xs -> Errors . fmap messageFor $ x NE.:| xs
+      where
+        messageFor (x:xs) = CTXE (origin x)
+                         ("Every "<>nameclass<>" must have a unique name. "<>(tshow . fun) x<>", however, is used at:"
+                         <>  T.intercalate ("\n    ") (map (tshow . origin) (x:xs))
+                         <>  "."
+                         )
+        messageFor _ = fatal "messageFor must only be used on lists with more that one element!"
+    moreThanOne (_:_:_) = True
+    moreThanOne  _      = False
 
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " <> showA (explObj p)
