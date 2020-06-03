@@ -457,28 +457,11 @@ chpDiagnosis env fSpec
                          )
                        <>(str.tshow.length) ps
                       )
-               <> table -- Caption
-                        (if isSignal r
-                         then   (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
-                             <> commaPandocOr outputLang' (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
-                         else   (str.l) (NL "Overtredingen van invariant ",EN "Violations of invariant ")
-                              <>(str.name) r
-                        )  
-                        -- Alignment:
-                        (replicate 1 (AlignLeft,1/1))
-                        -- Headers:
-                        ( ( fmap singleton
-                          . concat
-                          . fmap (amPandoc . ameaMrk)
-                          . meanings
-                          ) r
-                        )
-                        -- Rows:
-                        (mkInvariantViolationsError (applyViolText fSpec) (r,ps))
+               <> mkInvariantViolationsError (applyViolText fSpec) (r,ps)
 
-  mkInvariantViolationsError :: (Rule->AAtomPair->Text) -> (Rule,AAtomPairs) -> [[Blocks]]
+  mkInvariantViolationsError :: (Rule->AAtomPair->Text) -> (Rule,AAtomPairs) -> Blocks
   mkInvariantViolationsError applyViolText (r,ps) = 
-    [[(para.strong.text) violationMessage]] 
+    (para.strong.text) violationMessage
         where
           violationMessage :: Text
           violationMessage = T.unlines $
