@@ -1,0 +1,31 @@
+CONTEXT Try13 IN ENGLISH
+
+PURPOSE PATTERN Try13 IN ENGLISH 
+{+
+This pattern is meant to test the translation of Views in Ampersand.
++}
+
+PATTERN Try13
+  r :: A*A
+  s :: A*A
+  t :: A*A
+ENDPATTERN
+
+VIEW Try13: A(TXT "aap",I[A])
+VIEW Try13: A(TXT "noot",r)
+ENDCONTEXT
+
+{- 
+   Purpose: to check that uniqueness of VIEW labels are tested.
+   Result: FAIL
+   Reason: on line 14 and 15 there are two views with the same name.
+   
+   Message:
+C:> ampersand check Try13.adl
+Reading file /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try13.adl
+/Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try13.adl:14:1 error:
+  Multiple default views for concept A:VIEW Try13 (at /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try13.adl:14:1)
+      VIEW Try13 (at /Users/sjo00577/git/Ampersand/testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Try13.adl:15:1)
+ExitFailure 10
+C:>
+-}
