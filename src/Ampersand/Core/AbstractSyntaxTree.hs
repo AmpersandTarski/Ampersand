@@ -475,15 +475,20 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
 --  x0 == x1  =  explObj x0 == explObj x1 &&  
 --               origin x0  == origin x1 &&
 --               (amLang . explMarkup) x0 == (amLang . explMarkup) x1
-instance Ord Purpose where
+instance Ord Purpose where --Required for merge of P_Contexts
  compare a b = case compare (explObj a) (explObj b) of
-     EQ -> fromMaybe (fatal . T.intercalate "\n" $
-                        ["Purpose should have a non-fuzzy Origin."
-                        , tshow (origin a)
-                        , tshow (origin b)
-                        ])
-                     (maybeOrdering (origin a) (origin b))
-     x -> x  
+     EQ -> case (origin a, origin b) of
+             (OriginUnknown,OriginUnknown) -> compare (explRefIds a) (explRefIds b)
+             (OriginUnknown,_) -> LT
+             (_,OriginUnknown) -> GT
+             (_, _) -> fromMaybe (fatal . T.intercalate "\n" $
+                            ["PPurpose a should have a non-fuzzy Origin."
+                            , tshow (origin a)
+                            , tshow (origin b)
+                            ])
+                         (maybeOrdering (origin a) (origin b))
+           
+     x -> x
 instance Eq Purpose where
   a == b = compare a b == EQ
 instance Unique Purpose where

@@ -190,7 +190,7 @@ instance ShowHS FSpec where
         ,      ", interfaceS    = interfaceS'"
         ,      ", interfaceG    = interfaceG'"
         ,      ", fRoleRuls     = " <>showHS env indentA (fRoleRuls fSpec)
-        , wrap ", fRoles        = " indentA (showHS env)    [rol | (rol,_) <- fRoles fSpec]
+        , wrap ", fRoles        = " indentA (showHS env)       (map fst (fRoles fSpec))
         , wrap ", vrules        = " indentA (const showHSName) (Set.elems $ vrules fSpec)
         , wrap ", grules        = " indentA (const showHSName) (Set.elems $ grules fSpec)
         , wrap ", invariants    = " indentA (const showHSName) (Set.elems $ invariants fSpec)
@@ -200,16 +200,16 @@ instance ShowHS FSpec where
         , wrap ", allConcepts   = " indentA (const showHSName) (Set.elems $ allConcepts fSpec)
         , wrap ", vIndices      = " indentA (const showHSName) (vIndices fSpec)
         , wrap ", vviews        = " indentA (const showHSName) (vviews fSpec)
-        , wrap ", vgens         = " indentA (showHS env)    (vgens fSpec)
+        , wrap ", vgens         = " indentA (showHS env)       (vgens fSpec)
         , wrap ", fsisa         = " indentA (const showHSName) (fsisa fSpec)
         , wrap ", allConjuncts  = " indentA (const showHSName) (allConjuncts fSpec)
         , wrap ", vquads        = " indentA (const showHSName) (vquads fSpec)
         , wrap ", vpatterns     = " indentA (const showHSName) (vpatterns fSpec)
-        , wrap ", conceptDefs   = " indentA (showHS env)    (conceptDefs fSpec)
-        , wrap ", fSexpls       = " indentA (showHS env)    (fSexpls fSpec)
+        , wrap ", conceptDefs   = " indentA (showHS env)       (conceptDefs fSpec)
+        , wrap ", fSexpls       = " indentA (showHS env)       (Set.elems (fSexpls fSpec))
         ,      ", metas         = allMetas"
-        , wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
-        , wrap ", allExprs      = " indentA (showHS env)    (Set.toList $ allExprs fSpec)
+        , wrap ", allViolations = " indentA showViolatedRule   (allViolations fSpec)
+        , wrap ", allExprs      = " indentA (showHS env)       (Set.elems (allExprs fSpec))
         , "}"
         ] <>
     indent<>"where"<>

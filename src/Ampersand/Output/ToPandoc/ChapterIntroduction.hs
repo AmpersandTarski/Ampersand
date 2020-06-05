@@ -122,4 +122,4 @@ chpIntroduction env now fSpec =
     time :: Text
     time = T.pack $ formatTime (lclForLang outputLang') "%H:%M:%S" now
 
-    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec outputLang' fSpec]
+    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesOf fSpec outputLang' fSpec]

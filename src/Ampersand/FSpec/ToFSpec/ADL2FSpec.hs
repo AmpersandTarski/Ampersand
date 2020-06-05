@@ -68,7 +68,7 @@ makeFSpec env context
               , getDefaultViewForConcept = getDefaultViewForConcept'
               , getAllViewsForConcept = getAllViewsForConcept'
               , conceptDefs  = ctxcds context
-              , fSexpls      = ctxps context <> (concatMap ptxps $ patterns context)
+              , fSexpls      = Set.fromList (ctxps context <> (concatMap ptxps $ patterns context))
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`

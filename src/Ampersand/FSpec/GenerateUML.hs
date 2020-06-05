@@ -4,6 +4,7 @@ module Ampersand.FSpec.GenerateUML (generateUML) where
 import           Ampersand.Basics
 import           Ampersand.ADL1
 import           Ampersand.FSpec
+import           Ampersand.FSpec.Motivations
 import           Ampersand.Graphic.ClassDiagram
 import           Ampersand.Graphic.Fspec2ClassDiagrams 
 import           Control.Monad.State.Lazy  (State, gets, evalState, modify)  --TODO: Replace by RIO state
@@ -82,7 +83,7 @@ fSpec2UML env fSpec =
                , " </xmi:Extension>"
                , "</xmi:XMI>" ]
     }
- where classDiag     = cdAnalysis fSpec
+ where classDiag     = cdAnalysis fSpec fSpec
        contextName   = cdName classDiag
        allConcs      = ooCpts classDiag
        classNames    = map name (classes classDiag)
@@ -224,11 +225,11 @@ requirements env fSpec
   where
     decl2req d = Req { reqId = name d
                      , reqOrig = Right d
-                     , reqPurposes = purposesDefinedIn fSpec (outputLang env fSpec) d
+                     , reqPurposes = purposesOf fSpec (outputLang env fSpec) d
                      }
     rule2req r = Req { reqId = name r
                      , reqOrig = Left r
-                     , reqPurposes = purposesDefinedIn fSpec (outputLang env fSpec) r
+                     , reqPurposes = purposesOf fSpec (outputLang env fSpec) r
                      }
 
 -- State and Monad

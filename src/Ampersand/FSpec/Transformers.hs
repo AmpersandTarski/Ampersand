@@ -913,7 +913,7 @@ meaningInstances fSpec = (Set.fromList . concat . map meanings . Set.toList . re
                           `Set.union`
                          (Set.fromList . concat . map meanings . Set.toList . ruleInstances $ fSpec)
 purposeInstances :: FSpec -> Set.Set Purpose
-purposeInstances fSpec = Set.fromList . fSexpls $ fSpec
+purposeInstances fSpec = fSexpls $ fSpec
 relationInstances :: FSpec -> Set.Set Relation
 relationInstances = relsDefdIn . originalContext
 ruleInstances :: FSpec -> Set.Set Rule

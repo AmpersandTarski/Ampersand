@@ -22,7 +22,7 @@ import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
 import           System.Directory(createDirectoryIfMissing)
 import           System.FilePath 
-import           System.Process (callCommand)
+-- import           System.Process (callCommand)
 
 data PictureTyp = PTClassDiagram           -- classification model of the entire script
                 | PTCDPattern Pattern      -- conceptual diagram of the pattern
@@ -64,7 +64,7 @@ makePicture env fSpec pr =
                                }
    PTLogicalDM         -> Pict { pType = pr
                                , scale = scale'
-                               , dotContent = ClassDiagram $ cdAnalysis fSpec
+                               , dotContent = ClassDiagram $ cdAnalysis fSpec fSpec
                                , dotProgName = Dot
                                , caption =
                                    case outputLang' of
@@ -91,8 +91,8 @@ makePicture env fSpec pr =
                                }
    PTDeclaredInPat pat -> Pict { pType = pr
                                , scale = scale'
-                               , dotContent = ConceptualDg $ conceptualStructure fSpec pr
-                               , dotProgName = graphVizCmdForConceptualGraph
+                               , dotContent = ClassDiagram $ cdAnalysis fSpec pat
+                               , dotProgName = Dot
                                , caption =
                                    case outputLang' of
                                       English -> "Concept diagram of relations in " <> name pat
@@ -100,8 +100,8 @@ makePicture env fSpec pr =
                                }
    PTCDPattern pat     -> Pict { pType = pr
                                , scale = scale'
-                               , dotContent = ConceptualDg $ conceptualStructure fSpec pr
-                               , dotProgName = graphVizCmdForConceptualGraph
+                               , dotContent = ClassDiagram $ cdAnalysis fSpec pat
+                               , dotProgName = Dot
                                , caption =
                                    case outputLang' of
                                       English -> "Concept diagram of the rules in " <> name pat
@@ -220,8 +220,8 @@ writePicture pict = do
   --  writeDot Canon  --Pretty-printed Dot output with no layout performed.
   --  writeDot DotOutput --Reproduces the input along with layout information.
     writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
-    writeDot imagePathRelativeToCurrentDir Svg    -- format that is used when docx docs are being generated.
-    writePdf imagePathRelativeToCurrentDir Eps    -- .eps file that is postprocessed to a .pdf file 
+  -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
+  -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file 
    where
      writeDot :: (HasBlackWhite env, HasLogFunc env) =>
                  FilePath -> GraphvizOutput -> RIO env ()
@@ -244,22 +244,22 @@ writePicture pict = do
        where  gvCommand = dotProgName pict
      -- The GraphVizOutput Pdf generates pixelized graphics on Linux
      -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
-     makePdf :: (HasLogFunc env ) => 
-                FilePath -> RIO env ()
-     makePdf path = do
-         logDebug $ "Call to makePdf with path = "<>display (T.pack path)
-         liftIO $ callCommand (ps2pdfCmd path)
-         logDebug $ display (T.pack $ replaceExtension path ".pdf") <> " written."
-       `catch` \ e -> logDebug ("Could not invoke PostScript->PDF conversion."<>
-                                 "\n  Did you install MikTex? Can the command epstopdf be found?"<>
-                                 "\n  Your error message is:\n " <> displayShow (e :: IOException))
-                   
-     writePdf :: (HasBlackWhite env, HasLogFunc env) 
-          => FilePath -> GraphvizOutput -> RIO env ()
-     writePdf fp x = writeDotPostProcess fp (Just makePdf) x
-       `catch` (\ e -> logDebug ("Something went wrong while creating your Pdf."<>  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
-                                  "\n  Your error message is:\n " <> displayShow (e :: IOException)))
-     ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
+--     makePdf :: (HasLogFunc env ) => 
+--                FilePath -> RIO env ()
+--     makePdf path = do
+--         logDebug $ "Call to makePdf with path = "<>display (T.pack path)
+--         liftIO $ callCommand (ps2pdfCmd path)
+--         logDebug $ display (T.pack $ replaceExtension path ".pdf") <> " written."
+--       `catch` \ e -> logDebug ("Could not invoke PostScript->PDF conversion."<>
+--                                 "\n  Did you install MikTex? Can the command epstopdf be found?"<>
+--                                 "\n  Your error message is:\n " <> displayShow (e :: IOException))
+--                   
+--     writePdf :: (HasBlackWhite env, HasLogFunc env) 
+--          => FilePath -> GraphvizOutput -> RIO env ()
+--     writePdf fp x = writeDotPostProcess fp (Just makePdf) x
+--       `catch` (\ e -> logDebug ("Something went wrong while creating your Pdf."<>  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+--                                  "\n  Your error message is:\n " <> displayShow (e :: IOException)))
+--     ps2pdfCmd path = "epstopdf " <> path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 mkDotGraph :: (HasBlackWhite env) => env -> Picture -> DotGraph Text
 mkDotGraph env pict =
@@ -280,8 +280,8 @@ instance ReferableFromPandoc Picture where
       filename = pictureFileName . pType $ p
       extention =
          case view fspecFormatL env of
-           Fpdf   -> "png"   -- If Pandoc makes a PDF file, the pictures must be delivered in .png format. .pdf-pictures don't seem to work.
-           Fdocx  -> "png"   -- If Pandoc makes a .docx file, the pictures are delivered in .svg format for scalable rendering in MS-word.
+           Fpdf   -> "png"   -- When Pandoc makes a PDF file, Ampersand delivers the pictures in .png format. .pdf-pictures don't seem to work.
+           Fdocx  -> "png"   -- When Pandoc makes a .docx file, Ampersand delivers the pictures in .pdf format. The .svg format for scalable rendering does not work in MS-word.
            Fhtml  -> "png"
            _      -> "pdf"
 

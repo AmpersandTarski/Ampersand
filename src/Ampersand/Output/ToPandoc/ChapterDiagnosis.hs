@@ -117,7 +117,7 @@ chpDiagnosis env fSpec
                               ,EN " remain without a purpose.")
                   )
    where missing = [c | c <-ccs
-                      , null (purposesDefinedIn fSpec outputLang' c)
+                      , null (purposesOf fSpec outputLang' c)
                    ]<>
                    [c | c <-ccs, null (concDefs fSpec c)]
          ccs = Set.elems . concs . vrels $ fSpec
@@ -191,7 +191,7 @@ chpDiagnosis env fSpec
            decls = vrels fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
-  hasPurpose = not . null . purposesDefinedIn fSpec outputLang'
+  hasPurpose = not . null . purposesOf fSpec outputLang'
   hasMeaning :: HasMeaning a => a -> Bool
   hasMeaning = isJust . meaning outputLang'
 
@@ -312,7 +312,7 @@ chpDiagnosis env fSpec
                             , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
-          hasRef x = (any  ((/=[]).explRefIds)) (purposesDefinedIn fSpec outputLang' x)
+          hasRef x = (any  ((/=[]).explRefIds)) (purposesOf fSpec outputLang' x)
 
           showPercentage x y = if x == 0 then "-" else tshow (y*100 `div` x)<>"%"
 

@@ -107,7 +107,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
   logicalDataModelPicture = makePicture env fSpec PTLogicalDM
 
   oocd :: ClassDiag
-  oocd = cdAnalysis fSpec
+  oocd = cdAnalysis fSpec fSpec
 
   conceptTables :: Blocks  -- This produces two separate tables:
                            -- The first table contains the concepts that have their own table in the logical data model.
@@ -125,7 +125,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
            ,   meaningOf c
             <> ( fromList 
                . concatMap (amPandoc . explMarkup)
-               . purposesDefinedIn fSpec outputLang' 
+               . purposesOf fSpec outputLang' 
                $ c
                )
            , (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c
@@ -175,7 +175,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                   ((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl)
         <> case clcpt cl of
              Nothing -> mempty
-             Just cpt -> purposes2Blocks env (purposesDefinedIn fSpec outputLang' cpt)
+             Just cpt -> purposes2Blocks env (purposesOf fSpec outputLang' cpt)
         <> (para . text . l) ( NL ("Deze gegevensverzameling heeft "<>tshow n<>" elementen en bevat de volgende attributen: ")
                              , EN ("This entity type has "<>tshow n<>" elements and contains the following attributes: ")
                              )
@@ -401,7 +401,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat
        [ plain $ strong (text (l heading <> ": ") <> emph (text (rrnm rule)))
-       , fromList . concatMap (amPandoc . explMarkup) . purposesDefinedIn fSpec outputLang' $ rule
+       , fromList . concatMap (amPandoc . explMarkup) . purposesOf fSpec outputLang' $ rule
        , printMeaning outputLang' rule
        , para (showMath rule)
        , if isSignal rule

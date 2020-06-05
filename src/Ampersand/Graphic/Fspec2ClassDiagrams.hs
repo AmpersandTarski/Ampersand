@@ -17,115 +17,134 @@ import qualified RIO.Set as Set
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
     OOclassdiagram { cdName  = "classification_"<>name fSpec
-                   , classes = map classOf . Set.elems . concs . vgens $ fSpec
+                   , classes = map clas . Set.elems . concs . vgens $ fSpec
                    , assocs  = []
                    , aggrs   = []
                    , geners  = map OOGener . vgens $ fSpec
                    , ooCpts  = Set.elems . concs $ fSpec
                    }
  where
-   classOf :: A_Concept -> Class
-   classOf c = OOClass { clName = name c
-                       , clcpt  = Just c
-                       , clAtts = (map makeAttr . attributesOfConcept fSpec) c
-                       , clMths = []
-                       }
+   clas :: A_Concept -> Class
+   clas c = OOClass { clName = name c
+                    , clcpt  = Just c
+                    , clAtts = (map makeAttr . attributesOfConcept fSpec) c
+                    , clMths = []
+                    }
    makeAttr :: SqlAttribute -> CdAttribute
    makeAttr att = OOAttr { attNm       = attName att
                          , attTyp      = if isProp (attExpr att) then "Prop" else (name.target.attExpr) att
                          , attOptional = attNull att -- optional if NULL is allowed
                          }
 
+class CDAnalysable a where
+  cdAnalysis :: FSpec -> a -> ClassDiag
 -- | This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
 -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
 -- Properties and identities are not shown.
-cdAnalysis :: FSpec -> ClassDiag
-cdAnalysis fSpec =
-  OOclassdiagram { cdName  = "logical_"<>name fSpec
-                 , classes = map buildClass 
-                           . filter cptIsShown
-                           . Set.elems 
-                           . allConcepts $ fSpec
-                 , assocs  = lefts assocsAndAggrs
-                 , aggrs   = rights assocsAndAggrs
-                 , geners  = map OOGener (vgens fSpec)
-                 , ooCpts  = filter cptIsShown
-                           . Set.elems 
-                           . allConcepts $ fSpec
-                 }
 
- where
-   buildClass :: A_Concept -> Class
-   buildClass root 
-     = case classOf root of
-         Nothing -> fatal $ "Concept is not a class: `"<>name root<>"`."
-         Just exprs ->
-           OOClass { clName = name root
-                   , clcpt  = Just root
-                   , clAtts = NE.toList $ fmap ooAttr exprs
-                   , clMths = []
-                   }
-   cptIsShown :: A_Concept -> Bool
-   cptIsShown cpt = isInScope cpt && hasClass cpt
-     where 
-      isInScope _ = True 
-      hasClass = isJust . classOf
-   classOf :: A_Concept -> Maybe (NE.NonEmpty Expression)
-   classOf cpt = 
-     case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
-        []   -> Nothing
-        [es] -> Just es
-        _    -> fatal "Only one list of expressions is expected here"
-     where
-      isOfCpt :: NE.NonEmpty Expression -> Bool
-      isOfCpt es = source (NE.head es) == cpt
-      attribs = fmap (flipWhenNeeded . EDcD) attribDcls
-      flipWhenNeeded x = if isInj x && (not.isUni) x then flp x else x
-   ooAttr :: Expression -> CdAttribute
-   ooAttr r = OOAttr { attNm = case Set.elems $ bindedRelationsIn r of
-                                []  -> fatal $ "No bindedRelations in an expression: " <> tshow r
-                                h:_ -> name h
-                     , attTyp = if isProp r then "Prop" else (name.target) r
-                     , attOptional = (not.isTot) r
-                     }
-   allDcls = vrels $ fSpec
-   assocsAndAggrs = map decl2assocOrAggr 
-                  . filter dclIsShown 
-                  . Set.elems $ allDcls
-     where
-       dclIsShown :: Relation -> Bool
-       dclIsShown d = 
-             (not . isProp . EDcD) d
-          && (   (d `notElem` attribDcls)
-              || (   source d `elem` nodeConcepts
-                  && target d `elem` nodeConcepts
-                  && source d /= target d
-                 )
-             )      
-          where nodeConcepts = concatMap (tyCpts . typologyOf fSpec)
-                             . filter cptIsShown
-                             . Set.elems 
-                             . allConcepts $ fSpec
-                            
+buildClass :: FSpec -> A_Concept -> Class
+buildClass fSpec root 
+  = case classOf fSpec root of
+      Nothing -> fatal $ "Concept is not a class: `"<>name root<>"`."
+      Just exprs ->
+        OOClass { clName = name root
+                , clcpt  = Just root
+                , clAtts = NE.toList $ fmap ooAttr exprs
+                , clMths = []
+                }
 
-   -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
+cptIsShown :: FSpec -> A_Concept -> Bool
+cptIsShown fSpec cpt = isInScope cpt && hasClass cpt
+  where 
+   isInScope _ = True 
+   hasClass = isJust . classOf fSpec
+
+classOf :: FSpec -> A_Concept -> Maybe (NE.NonEmpty Expression)
+classOf fSpec cpt = 
+  case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
+     []   -> Nothing
+     [es] -> Just es
+     _    -> fatal "Only one list of expressions is expected here"
+  where
+   isOfCpt :: NE.NonEmpty Expression -> Bool
+   isOfCpt es = source (NE.head es) == cpt
+   attribs = fmap (flipWhenNeeded . EDcD) (attribDcls fSpec)
+   flipWhenNeeded x = if isInj x && (not.isUni) x then flp x else x
+
+ooAttr :: Expression -> CdAttribute
+ooAttr r = OOAttr { attNm = case Set.elems $ bindedRelationsIn r of
+                             []  -> fatal $ "No bindedRelations in an expression: " <> tshow r
+                             h:_ -> name h
+                  , attTyp = if isProp r then "Prop" else (name.target) r
+                  , attOptional = (not.isTot) r
+                  }
+attribDcls :: FSpec -> [Relation]
+attribDcls fSpec = [ d | d <- Set.elems (vrels fSpec), isUni (EDcD d) || isInj (EDcD d) ]
+
+-- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
 --   decl2assocOrAggr :: Relation -> Either Association Aggregation
 --   decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
 --   decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
-   decl2assocOrAggr d = Left
-     OOAssoc { assSrc = name $ source d
-             , assSrcPort = name d
-             , asslhm = mults . flp $ EDcD d
-             , asslhr = ""
-             , assTgt = name $ target d
-             , assrhm = mults $ EDcD d
-             , assrhr = name d
-             , assmdcl = Just d
-             }
-   
-   attribDcls = [ d | d <- Set.elems allDcls, isUni (EDcD d) || isInj (EDcD d) ]
-    
+decl2assocOrAggr :: Relation -> Either Association b
+decl2assocOrAggr d = Left
+  OOAssoc { assSrc = name $ source d
+          , assSrcPort = name d
+          , asslhm = mults . flp $ EDcD d
+          , asslhr = ""
+          , assTgt = name $ target d
+          , assrhm = mults $ EDcD d
+          , assrhr = name d
+          , assmdcl = Just d
+          }
+
+dclIsShown :: FSpec -> [A_Concept] -> Relation -> Bool
+dclIsShown fSpec nodeConcepts d = 
+      (not . isProp . EDcD) d
+   && (   (d `notElem` attribDcls fSpec)
+       || (   source d `elem` nodeConcepts
+           && target d `elem` nodeConcepts
+           && source d /= target d
+          )
+      )      
+
+instance CDAnalysable Pattern where
+  cdAnalysis fSpec pat =
+    OOclassdiagram { cdName  = "logical_"<>name pat
+                   , classes = map (buildClass fSpec) entities
+                   , assocs  = lefts assocsAndAggrs
+                   , aggrs   = rights assocsAndAggrs
+                   , geners  = map OOGener (gens pat)
+                   , ooCpts  = entities
+                   }
+
+   where
+     entities = (filter (cptIsShown fSpec) . Set.elems . concs) pat
+     assocsAndAggrs = ( map decl2assocOrAggr
+                      . filter (dclIsShown fSpec nodeConcepts)
+                      . Set.elems
+                      . ptdcs
+                      ) pat
+     nodeConcepts = concatMap (tyCpts . typologyOf fSpec) entities
+
+instance CDAnalysable FSpec where
+  cdAnalysis _ fSpec=
+    OOclassdiagram { cdName  = "logical_"<>name fSpec
+                   , classes = map (buildClass fSpec) entities
+                   , assocs  = lefts assocsAndAggrs
+                   , aggrs   = rights assocsAndAggrs
+                   , geners  = map OOGener (gens fSpec)
+                   , ooCpts  = entities
+                   }
+
+   where
+     entities = (filter (cptIsShown fSpec) . Set.elems . concs) fSpec
+     assocsAndAggrs = ( map decl2assocOrAggr
+                      . filter (dclIsShown fSpec nodeConcepts)
+                      . Set.elems
+                      . vrels
+                      ) fSpec
+     nodeConcepts = concatMap (tyCpts . typologyOf fSpec) entities
 
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.
@@ -145,8 +164,8 @@ tdAnalysis fSpec =
                , clAtts = case table of
                             TblSQL{} -> 
                               let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
-                              in  map (ooAttr kernelAtts) kernelAtts
-                                <>map (ooAttr kernelAtts . rsTrgAtt) (dLkpTbl table) 
+                              in  map (ooAtt kernelAtts) kernelAtts
+                                <>map (ooAtt kernelAtts . rsTrgAtt) (dLkpTbl table) 
                             BinSQL{}      -> NE.toList $
                               fmap mkOOattr (plugAttributes table)
                                 where mkOOattr a =
@@ -166,8 +185,8 @@ tdAnalysis fSpec =
    primKey :: PlugSQL -> Maybe A_Concept
    primKey TblSQL{attributes=(f:_)} = Just (source (attExpr f))
    primKey _                    = Nothing
-   ooAttr :: [SqlAttribute] -> SqlAttribute -> CdAttribute
-   ooAttr kernelAtts f =
+   ooAtt :: [SqlAttribute] -> SqlAttribute -> CdAttribute
+   ooAtt kernelAtts f =
      OOAttr { attNm = attName f
             , attTyp = if isProp (attExpr f) && (f `notElem` kernelAtts)
                        then "Prop"

@@ -40,7 +40,7 @@ chpConceptualAnalysis env lev fSpec = (
                     <> "This chapter allows an independent professional with sufficient background to check whether the agreements made "
                     <> "correspond to the formal rules and definitions. "
                     )
-     )<> purposes2Blocks env (purposesDefinedIn fSpec outputLang' fSpec) -- This explains the purpose of this context.
+     )<> purposes2Blocks env (purposesOf fSpec outputLang' fSpec) -- This explains the purpose of this context.
 
   caBlocks = 
          mconcat (map caSection (vpatterns fSpec))
@@ -70,7 +70,7 @@ chpConceptualAnalysis env lev fSpec = (
    =    -- new section to explain this pattern
         xDefBlck env fSpec (XRefConceptualAnalysisPattern pat)
         -- The section starts with the reason why this pattern exists
-     <> purposes2Blocks env (purposesDefinedIn fSpec outputLang' pat)
+     <> purposes2Blocks env (purposesOf fSpec outputLang' pat)
         -- followed by a conceptual model for this pattern
      <> ( case outputLang' of
                Dutch   -> -- announce the conceptual diagram
@@ -97,7 +97,7 @@ chpConceptualAnalysis env lev fSpec = (
   caRelation d = (titel, [body])
      where 
         titel = xDefInln env fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMath d)
-        purp =  purposes2Blocks env (purposesDefinedIn fSpec outputLang' d)
+        purp =  purposes2Blocks env (purposesOf fSpec outputLang' d)
         body =  para linebreak
                 -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 <> ( case ( isNull purp, outputLang') of
@@ -118,7 +118,7 @@ chpConceptualAnalysis env lev fSpec = (
 
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
-        = let purp = purposes2Blocks env (purposesDefinedIn fSpec outputLang' r)
+        = let purp = purposes2Blocks env (purposesOf fSpec outputLang' r)
           in ( mempty
              , [  -- First the reason why the rule exists, if any..
                   purp

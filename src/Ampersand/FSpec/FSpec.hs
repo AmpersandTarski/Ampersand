@@ -107,8 +107,8 @@ data FSpec = FSpec { fsName ::       Text
                    -- ^ All patterns taken from the Ampersand script
                    , conceptDefs ::  [ConceptDef]             
                    -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
-                   , fSexpls ::      [Purpose]                
-                   -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
+                   , fSexpls ::      Set.Set Purpose                
+                   -- ^ All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
                    , metas ::        [Meta]                   
                    -- ^ All meta relations from the entire context
                    , crudInfo ::     CrudInfo                 
