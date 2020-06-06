@@ -6,6 +6,7 @@ where
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
+import           Ampersand.Output.PredLogic
 
 chpConceptualAnalysis :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> Int -> FSpec -> (Blocks,[Picture])
@@ -132,8 +133,10 @@ chpConceptualAnalysis env lev fSpec = (
                        <> (hyperLinkTo . XRefSharedLangRule) r
                        <> str (l (NL " : ", EN " exists: "))
                    )
-               <> printMeaning outputLang' r
-                  -- then the formal rule
+               <> ( case meaning outputLang' r of
+                     Nothing -> plain (showPredLogic outputLang' r)
+                     Just ms -> printMarkup (ameaMrk ms)
+                  )
                <> plain
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
