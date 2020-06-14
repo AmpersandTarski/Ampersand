@@ -13,6 +13,7 @@ module Ampersand.Core.ParseTree (
    , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
+   , BoxTemplate(..), TemplateKeyValue(..)
    , SrcOrTgt(..)
    , P_Rule(..)
    , ConceptDef(..)
@@ -635,13 +636,23 @@ data P_IClass = P_IClass { iclass_name :: Text } deriving (Eq, Ord, Show)
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
               = P_Box          { pos :: Origin
-                               , si_class :: Maybe Text
+                               , si_class :: Maybe BoxTemplate
                                , si_box :: [P_BoxItem a] }
               | P_InterfaceRef { pos :: Origin
                                , si_isLink :: Bool --True iff LINKTO is used. (will display as hyperlink)
                                , si_str :: Text  -- Name of the interface that is reffered to
                                } 
                 deriving (Show)
+data BoxTemplate = BoxTemplate
+    { pos :: Origin
+    , btName :: Text
+    , btKeys :: [TemplateKeyValue]
+    } deriving (Show)
+data TemplateKeyValue = TemplateKeyValue
+    { pos :: Origin
+    , tkkey :: Text
+    , tkval :: Maybe Text
+    } deriving (Show)
 type P_BoxItemTermPrim = P_BoxItem TermPrim
 data P_BoxItem a =
      P_BxExpr { obj_nm :: Text          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
