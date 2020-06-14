@@ -346,9 +346,9 @@ aAtomValue2pAtomValue val =
 aSubIfc2pSubIfc :: SubInterface -> P_SubIfc TermPrim
 aSubIfc2pSubIfc sub =
  case sub of
-  Box _ mStr objs  
+  Box _ heading objs  
     -> P_Box          { pos   = fatal "Origin is not present in SubInterface"
-                      , si_class = mStr
+                      , si_header = heading
                       , si_box   = map aObjectDef2pObjectDef objs
                       }
   InterfaceRef isLinkto str

@@ -715,7 +715,7 @@ pCtx2aCtx env
                         l = si_box x
                         build :: [BoxItem] -> (Expression, SubInterface)
                         build lst = (objExpr,Box { siConcept = target objExpr
-                                                 , siMClass  = si_class x
+                                                 , siHeader  = si_header x
                                                  , siObjs    = lst
                                                  }
                                     )
@@ -734,7 +734,7 @@ pCtx2aCtx env
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
            warnings :: [Warning]
-           warnings = [mkBOX_ROWSNH_Warning (origin x) | (btName <$> si_class x) == Just "ROWSNH"] -- See issue #925
+           warnings = [mkBOX_ROWSNH_Warning (origin x) | "ROWSNH" `elem` (map tkkey . btKeys . si_header $ x)] -- See issue #925
                     <>[mkNoBoxItemsWarning  (origin x) | null (si_box x)            ]
  
     typeCheckInterfaceRef :: P_BoxItem a -> Text -> Expression -> Expression -> Guarded Expression

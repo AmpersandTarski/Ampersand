@@ -438,17 +438,27 @@ pInterface = lbl <$> currPos
           --- Roles ::= 'FOR' RoleList
           pRoles  = pKey "FOR" *> pRole False `sepBy1` pComma
 
---- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'LINKTO'? 'INTERFACE' ADLid
+--- SubInterface ::= ('BOX' BoxHeader? | 'ROWS' | 'COLS' | 'TABS') Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
-pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
+pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
             <|> P_InterfaceRef <$> currPos 
                                <*> pIsThere (pKey "LINKTO") <*  pInterfaceKey 
                                <*> pADLid
-  where pBoxKey :: AmpParser (Maybe Text)
-        pBoxKey = pKey "BOX" *> pMaybe (pChevrons $ asText pConid)
-              <|> Just <$> (asText $ pKey "ROWS")
-              <|> Just <$> (asText $ pKey "COLS")
-              <|> Just <$> (asText $ pKey "TABS")
+  where pBoxHeader :: AmpParser BoxHeader
+        pBoxHeader = 
+              BoxHeader <$> currPos <*> (BOX  <$ pKey "BOX") <*> pBoxKeys
+          <|> BoxHeader <$> currPos <*> (ROWS <$ pKey "ROWS") <*> pure []
+          <|> BoxHeader <$> currPos <*> (COLS <$ pKey "COLS") <*> pure []
+          <|> BoxHeader <$> currPos <*> (TABS <$ pKey "TABS") <*> pure []
+                         
+        pBoxKeys :: AmpParser [TemplateKeyValue]
+        pBoxKeys = fromMaybe [] <$> optional (id <$ pOperator "<" <*> many pTeplateKeyValue <* pOperator ">") 
+        pTeplateKeyValue :: AmpParser TemplateKeyValue
+        pTeplateKeyValue = 
+          TemplateKeyValue 
+                 <$> currPos
+                 <*> asText (pVarid <|> pConid)
+                 <*> optional (asText pString)
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*

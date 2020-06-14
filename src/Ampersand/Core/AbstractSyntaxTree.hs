@@ -63,7 +63,7 @@ import           Ampersand.Core.ParseTree
     , maybeOrdering
     , Traced(..)
     , ViewHtmlTemplate(..)
-    , BoxTemplate(..), TemplateKeyValue(..)
+    , BoxHeader(..) -- , TemplateKeyValue(..)
     , PairView(..)
     , PairViewSegment(..)
     , Prop(..), Props
@@ -454,7 +454,7 @@ data Cruds = Cruds { crudOrig :: Origin
                    , crudD :: Bool
                    } deriving (Show)
 data SubInterface = Box { siConcept :: A_Concept
-                        , siMClass  :: Maybe BoxTemplate
+                        , siHeader  :: BoxHeader
                         , siObjs    :: [BoxItem] 
                         }
                   | InterfaceRef 

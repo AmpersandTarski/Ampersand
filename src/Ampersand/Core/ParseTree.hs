@@ -13,7 +13,7 @@ module Ampersand.Core.ParseTree (
    , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
-   , BoxTemplate(..), TemplateKeyValue(..)
+   , BoxHeader(..), TemplateKeyValue(..), BoxType(..)
    , SrcOrTgt(..)
    , P_Rule(..)
    , ConceptDef(..)
@@ -635,29 +635,29 @@ data P_IClass = P_IClass { iclass_name :: Text } deriving (Eq, Ord, Show)
 
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
-              = P_Box          { pos :: Origin
-                               , si_class :: Maybe BoxTemplate
+              = P_Box          { pos :: !Origin
+                               , si_header :: !BoxHeader
                                , si_box :: [P_BoxItem a] }
-              | P_InterfaceRef { pos :: Origin
-                               , si_isLink :: Bool --True iff LINKTO is used. (will display as hyperlink)
-                               , si_str :: Text  -- Name of the interface that is reffered to
+              | P_InterfaceRef { pos :: !Origin
+                               , si_isLink :: !Bool --True iff LINKTO is used. (will display as hyperlink)
+                               , si_str :: !Text  -- Name of the interface that is reffered to
                                } 
                 deriving (Show)
-data BoxTemplate = BoxTemplate
-    { pos :: Origin
-    , btName :: Text
-    , btKeys :: [TemplateKeyValue]
-    } deriving (Show)
-instance Named BoxTemplate where
-  name = btName
-instance Traced BoxTemplate where
+data BoxHeader = BoxHeader
+    { pos :: !Origin
+    , btType :: !BoxType
+    , btKeys :: [TemplateKeyValue] 
+    } deriving (Show,Data)
+data BoxType = BOX | ROWS | COLS | TABS deriving (Eq, Show, Enum, Bounded,Data)
+
+instance Traced BoxHeader where
   origin = pos
 
 data TemplateKeyValue = TemplateKeyValue
-    { pos :: Origin
-    , tkkey :: Text
-    , tkval :: Maybe Text
-    } deriving (Show)
+    { pos :: !Origin
+    , tkkey :: !Text
+    , tkval :: !(Maybe Text)
+    } deriving (Show,Data)
 instance Named TemplateKeyValue where
   name = tkkey
 instance Traced TemplateKeyValue where

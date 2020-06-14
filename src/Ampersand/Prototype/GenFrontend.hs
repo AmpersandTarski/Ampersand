@@ -167,7 +167,7 @@ data FEObject2 =
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
                                                           , [Text] -- the attributes of the template
                                                           ) }
-                   | FEBox    { objMClass :: Maybe Text
+                   | FEBox    { objMClass :: BoxHeader
                               , ifcSubObjs :: [FEObject2] 
                               } deriving (Show, Data,Typeable)
 
@@ -224,7 +224,7 @@ buildInterface fSpec allIfcs ifc = do
             case si of
               Box{} -> do
                 subObjs <- mapM buildObject (siObjs si)
-                return (FEBox { objMClass  = siMClass si
+                return (FEBox { objMClass  = siHeader si
                               , ifcSubObjs = subObjs
                               }
                         , iExp)
@@ -371,12 +371,14 @@ genViewObject fSpec depth obj =
                      . renderTemplate template $ 
                        atomicAndBoxAttrs
 
-            FEBox { objMClass  = mClass
+            FEBox { objMClass  = header
                   , ifcSubObjs = subObjs
                   } -> do
               subObjAttrs <- mapM genView_SubObject subObjs
                         
-              let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" <> cl <.> "html") (T.unpack <$> mClass)
+              let clssStr = case btType header of 
+                              BOX -> "Box-ROWS.html" 
+                              bt  -> "Box-" <> show bt <.> "html"
               parentTemplate <- readTemplate clssStr
                 
               return . indentation
