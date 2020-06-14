@@ -263,7 +263,7 @@ instance Pretty a => Pretty (P_SubIfc a) where
             where box_type :: BoxHeader -> Doc
                   box_type x = (text . show . btType $ x) <+> prettyKeys (btKeys x)
                   prettyKeys [] = mempty
-                  prettyKeys xs = encloseSep  (text "<") (text ">") (text " ") (map prettyKey xs)
+                  prettyKeys xs = encloseSep  (text " <") (text "> ") (text " ") (map prettyKey xs)
                     where
                       prettyKey :: TemplateKeyValue -> Doc
                       prettyKey kv = (text . T.unpack . name $ kv) 
