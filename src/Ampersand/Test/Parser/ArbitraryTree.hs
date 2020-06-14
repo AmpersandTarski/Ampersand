@@ -97,7 +97,15 @@ instance Arbitrary BoxHeader where
        ]
       where notBox = filter (not . (== BOX)) [ minBound .. ] 
 instance Arbitrary TemplateKeyValue where
-    arbitrary = TemplateKeyValue <$> arbitrary <*> identifier <*> liftArbitrary safeStr1
+    arbitrary = TemplateKeyValue 
+                 <$> arbitrary 
+                 <*> identifier `suchThat` startsWithLetter
+                 <*> liftArbitrary safeStr1
+       where startsWithLetter :: Text -> Bool
+             startsWithLetter t = case T.uncons t of
+                      Nothing -> False
+                      Just (h,_) -> isLetter h
+
 --- Now the arbitrary instances
 instance Arbitrary P_Cruds where
     arbitrary = P_Cruds <$> arbitrary
