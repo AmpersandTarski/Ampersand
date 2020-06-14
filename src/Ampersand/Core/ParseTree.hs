@@ -648,11 +648,21 @@ data BoxTemplate = BoxTemplate
     , btName :: Text
     , btKeys :: [TemplateKeyValue]
     } deriving (Show)
+instance Named BoxTemplate where
+  name = btName
+instance Traced BoxTemplate where
+  origin = pos
+
 data TemplateKeyValue = TemplateKeyValue
     { pos :: Origin
     , tkkey :: Text
     , tkval :: Maybe Text
     } deriving (Show)
+instance Named TemplateKeyValue where
+  name = tkkey
+instance Traced TemplateKeyValue where
+  origin = pos
+
 type P_BoxItemTermPrim = P_BoxItem TermPrim
 data P_BoxItem a =
      P_BxExpr { obj_nm :: Text          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
