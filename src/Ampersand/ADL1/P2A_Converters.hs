@@ -734,7 +734,7 @@ pCtx2aCtx env
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
            warnings :: [Warning]
-           warnings = [mkBOX_ROWSNH_Warning (origin x) | si_class x == Just "ROWSNH"] -- See issue #925
+           warnings = [mkBOX_ROWSNH_Warning (origin x) | (btName <$> si_class x) == Just "ROWSNH"] -- See issue #925
                     <>[mkNoBoxItemsWarning  (origin x) | null (si_box x)            ]
  
     typeCheckInterfaceRef :: P_BoxItem a -> Text -> Expression -> Expression -> Guarded Expression
