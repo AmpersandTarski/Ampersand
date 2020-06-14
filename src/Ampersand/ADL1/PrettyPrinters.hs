@@ -269,7 +269,7 @@ instance Pretty a => Pretty (P_SubIfc a) where
                       prettyKey kv = (text . T.unpack . name $ kv) 
                                   <> (case tkval kv of
                                         Nothing -> mempty
-                                        Just t  -> text . T.unpack $ t
+                                        Just t  -> text . show $ t
                                     ) 
      
 instance Pretty (P_IdentDf TermPrim) where
