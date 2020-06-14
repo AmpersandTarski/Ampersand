@@ -86,15 +86,16 @@ genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
 genIfc = subIfc $ genObj True
 
 subIfc :: (Int -> Gen (P_BoxItem a)) -> Int -> Gen (P_SubIfc a)
-subIfc objGen n =
-    if n == 0 then P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
-    else P_Box          <$> arbitrary <*> arbitrary <*> vectorOf n (objGen$ n`div`2)
---    where boxKey = elements [Nothing, Just "ROWS", Just "COLS", Just "TABS"]
+subIfc objGen n 
+    | n == 0 = P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
+    | otherwise = P_Box  <$> arbitrary <*> arbitrary <*> vectorOf n (objGen$ n`div`2)
 
 instance Arbitrary BoxHeader where
-    arbitrary = BoxHeader <$> arbitrary <*> arbitrary <*> listOf arbitrary
-instance Arbitrary BoxType where
-    arbitrary = elements [minBound..]
+    arbitrary = oneof 
+       [ BoxHeader <$> arbitrary <*> elements [BOX]  <*> listOf arbitrary
+       , BoxHeader <$> arbitrary <*> elements notBox <*> pure [] 
+       ]
+      where notBox = filter (not . (== BOX)) [ minBound .. ] 
 instance Arbitrary TemplateKeyValue where
     arbitrary = TemplateKeyValue <$> arbitrary <*> identifier <*> liftArbitrary safeStr1
 --- Now the arbitrary instances
