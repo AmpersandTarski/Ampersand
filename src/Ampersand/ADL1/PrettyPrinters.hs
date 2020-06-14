@@ -267,10 +267,10 @@ instance Pretty a => Pretty (P_SubIfc a) where
                     where
                       prettyKey :: TemplateKeyValue -> Doc
                       prettyKey kv = (text . T.unpack . name $ kv) 
-                                  <> (case tkval kv of
+                                 <+> (case tkval kv of
                                         Nothing -> mempty
-                                        Just t  -> text . show $ t
-                                    ) 
+                                        Just t  -> text " = " <+> (text . show $ t)
+                                     ) 
      
 instance Pretty (P_IdentDf TermPrim) where
     pretty (P_Id _ lbl cpt ats) =
