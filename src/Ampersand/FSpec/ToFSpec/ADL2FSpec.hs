@@ -503,5 +503,6 @@ tblcontents ci ps plug
                                   --  , when you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)
                                   --  , when a relation in formalAmpersand is declared UNI, but actually it isn't.
 
+-- convenient function to give a Box header without keyvalues
 simpleBoxHeader :: Origin -> BoxHeader
-simpleBoxHeader orig = BoxHeader {pos = orig, btType = BOX, btKeys = []}
+simpleBoxHeader orig = BoxHeader {pos = orig, btType = "ROWS", btKeys = []}

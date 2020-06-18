@@ -23,7 +23,7 @@ import qualified RIO.Text as T
 import           RIO.Time
 import           System.Directory
 import           System.FilePath
-import           Text.StringTemplate
+import           Text.StringTemplate(StringTemplate, setAttribute, newSTMP, checkTemplateDeep, render)
 import           Text.StringTemplate.GenericStandard () -- only import instances
 
 {- TODO
@@ -376,10 +376,7 @@ genViewObject fSpec depth obj =
                   } -> do
               subObjAttrs <- mapM genView_SubObject subObjs
                         
-              let clssStr = case btType header of 
-                              BOX -> "Box-ROWS.html" 
-                              bt  -> "Box-" <> show bt <.> "html"
-              parentTemplate <- readTemplate clssStr
+              parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
                 
               return . indentation
                      . T.lines 

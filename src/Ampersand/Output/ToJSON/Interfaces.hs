@@ -40,7 +40,7 @@ data JSONSubInterface = JSONSubInterface
   , subJSONrefIsLinkTo        :: Maybe Bool
   } deriving (Generic, Show)
 data JSONBoxHeader = JSONBoxHeader
-  { bhJSONtype                :: Maybe Text
+  { bhJSONtype                :: Text
   , bhJSONkeyVals             :: [JSONTemplateKeyValue]
   } deriving (Generic, Show)
 data JSONTemplateKeyValue = JSONTemplateKeyValue
@@ -98,7 +98,7 @@ instance JSON SubInterface JSONSubInterface where
        }
 instance JSON BoxHeader JSONBoxHeader where
   fromAmpersand env fSpec header = JSONBoxHeader
-       { bhJSONtype = Just . tshow $ btType header
+       { bhJSONtype = tshow $ btType header
        , bhJSONkeyVals = map (fromAmpersand env fSpec) $ btKeys header
        }
 instance JSON TemplateKeyValue JSONTemplateKeyValue where

@@ -13,7 +13,7 @@ module Ampersand.Core.ParseTree (
    , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
-   , BoxHeader(..), TemplateKeyValue(..), BoxType(..)
+   , BoxHeader(..), TemplateKeyValue(..)
    , SrcOrTgt(..)
    , P_Rule(..)
    , ConceptDef(..)
@@ -645,10 +645,10 @@ data P_SubIfc a
                 deriving (Show)
 data BoxHeader = BoxHeader
     { pos :: !Origin
-    , btType :: !BoxType
-    , btKeys :: [TemplateKeyValue] 
+    , btType :: !Text
+    , btKeys :: [TemplateKeyValue]
     } deriving (Show,Data)
-data BoxType = BOX | ROWS | COLS | TABS deriving (Eq, Show, Enum, Bounded,Data)
+
 
 instance Traced BoxHeader where
   origin = pos
