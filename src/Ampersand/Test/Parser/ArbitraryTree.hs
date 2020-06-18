@@ -92,10 +92,9 @@ subIfc objGen n
 
 instance Arbitrary BoxHeader where
     arbitrary = oneof 
-       [ BoxHeader <$> arbitrary <*> elements [BOX]  <*> listOf arbitrary
-       , BoxHeader <$> arbitrary <*> elements notBox <*> pure [] 
+       [ BoxHeader <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
+       , BoxHeader <$> arbitrary <*> elements  ["COLS","ROWS","TABS"]  <*> pure [] 
        ]
-      where notBox = filter (not . (== BOX)) [ minBound .. ] 
 instance Arbitrary TemplateKeyValue where
     arbitrary = TemplateKeyValue 
                  <$> arbitrary 
