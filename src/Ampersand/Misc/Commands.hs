@@ -17,7 +17,6 @@ import           Ampersand.Commands.Daemon
 import           Ampersand.Commands.Documentation
 import           Ampersand.Commands.Devoutput
 import           Ampersand.Commands.ExportAsADL
---import           Ampersand.Commands.Init
 import           Ampersand.Commands.Population
 import           Ampersand.Commands.Proof
 import           Ampersand.Commands.Test
@@ -50,8 +49,6 @@ import           RIO.Char
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import           System.Environment ({-getProgName,-} withArgs)
-
---import           System.FilePath (isValid, pathSeparator, takeDirectory)
 
 -- A lot of inspiration in this file comes from https://github.com/commercialhaskell/stack/
 
@@ -318,12 +315,15 @@ daemonCmd daemonOpts =
     extendWith daemonOpts        
        runDaemon 
 documentationCmd :: DocOpts -> RIO Runner ()
-documentationCmd docOpts =
-    extendWith docOpts $ do
-        env <- ask
-        let recipe = recipeBuilder False env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec doGenDocument
+documentationCmd docOpts = do
+    extendWith docOpts . forceAllowInvariants $ do 
+      env <- ask
+      let recipe = recipeBuilder False env
+      mFSpec <- createFspec recipe
+      doOrDie mFSpec doGenDocument
+  where
+    forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
+    forceAllowInvariants env = local (set allowInvariantViolationsL True) env
 
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
@@ -408,7 +408,7 @@ doOrDie gA act =
     Checked a ws -> do
       showWarnings ws
       act a
-    Errors err -> exitWith . NoValidFSpec . T.lines . T.intercalate  (T.replicate 30 "=") 
+    Errors err -> exitWith . NoValidFSpec . T.lines . T.intercalate  (T.replicate 30 "=" <> "\n") 
            . NE.toList . fmap tshow $ err
   where
     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  

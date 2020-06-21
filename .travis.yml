@@ -136,14 +136,14 @@ install:
 - |
   case "$BUILD" in
     stack)
-      ./travis_long `# guarantee that something is written to output every minute, so travis doesn't stop premature` \
+      ./travis_long `# guarantee that something is written to output every minute, so Travis doesn't stop prematurely` \
            stack build `# build is the common task which is composable.` \
                 --test `# run the tests` \
                 --copy-bins `# install executables to the path` \
-                --haddock `# create haddock documentation, thus ensuring that haddock parse rules are enforsed.` \
-                --no-terminal `# fixes bug with sticky output on travis` \
+                --haddock `# create haddock documentation, thus ensuring that haddock parse rules are enforced.` \
+                --no-terminal `# fixes bug with sticky output on Travis` \
                 $ARGS  `#` \
-                --flag ampersand:buildAll `# build all executables of ampersand`
+                --flag ampersand:buildAll `# build all executables of Ampersand`
       ;;
     cabal)
       cabal --version

@@ -107,9 +107,9 @@ cook :: (HasFSpecGenOpts env) =>
       -> Map MetaModel GrindInfo -- ^ A map containing all GrindInfo that could be required
       -> Guarded P_Context  -- ^ The original user's P_Context, Guarded because it might have errors 
       -> Guarded P_Context 
-cook env (BuildRecipe start steps) grindInfoMap user = 
+cook env (BuildRecipe start steps) grindInfoMap userScript = 
     join $ doSteps <$> case start of
-                    UserScript -> user
+                    UserScript -> userScript
                     MetaScript mm -> pure . pModel $ gInfo mm
   where 
   doSteps :: P_Context -> Guarded P_Context
@@ -120,7 +120,7 @@ cook env (BuildRecipe start steps) grindInfoMap user =
         case step of 
           EncloseInConstraints -> pure $ encloseInConstraints ctx 
           Grind mm -> grind (gInfo mm) <$> (pCtx2Fspec env ctx)
-          MergeWith recipe -> mergeContexts ctx <$> cook env recipe grindInfoMap user
+          MergeWith recipe -> mergeContexts ctx <$> cook env recipe grindInfoMap userScript
   gInfo :: MetaModel -> GrindInfo
   gInfo mm = case Map.lookup mm grindInfoMap of
             Just x -> x
