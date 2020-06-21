@@ -2,8 +2,8 @@
 # (https://github.com/commercialhaskell/stack/blob/master/.travis.yml)
 #
 dist: xenial
-sudo: required
 language: php
+os: linux
 
 php:
   - 7.1
@@ -22,9 +22,9 @@ cache:
 # cache file per set of arguments.
 #
 # If you need to have different apt packages for each combination in the
-# matrix, you can use a line such as:
+# jobs matrix, you can use a line such as:
 #     addons: {apt: {packages: [libfcgi-dev,libgmp-dev]}}
-matrix:
+jobs:
   fast_finish: true
   include:
   # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
@@ -182,7 +182,7 @@ before_deploy:
 deploy:
   # Release to Github releases
   - provider: releases
-    skip_cleanup: true
+    cleanup: true
     draft: true
     file: 
       - $HOME/.local/bin/ampersand
@@ -192,5 +192,5 @@ deploy:
       branch: ${AMPERSAND_RELEASE_BRANCH}
       tags: false
       condition: $BUILD = stack
-    api_key:
+    token:
       secure: Mwgh+iWba66M+GFKGSOl4dQISFGBnE+FOyswA44P6JdXDQczpC9atxkPIQj7QVxJr4jMPor06Pl8Hcw1vhi5j4evLFXBONEV++7bCmNe0M0Z6hMU38NgIsfuvN3+NKgqOafBOlPmjHBKeVjiWqKQICn3tYgrKG9eXIBL3tn0aus=
