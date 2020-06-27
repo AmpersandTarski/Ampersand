@@ -446,7 +446,7 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
                                <*> pADLid
   where pBoxHeader :: AmpParser BoxHeader
         pBoxHeader = 
-              build <$> currPos <* pKey "BOX" <*> pBoxSpecification
+              build     <$> currPos <* pKey "BOX" <*> optional pBoxSpecification
           <|> BoxHeader <$> currPos <*> (T.pack <$> pKey "ROWS") <*> pure []
           <|> BoxHeader <$> currPos <*> (T.pack <$> pKey "COLS") <*> pure []
           <|> BoxHeader <$> currPos <*> (T.pack <$> pKey "TABS") <*> pure []
@@ -455,14 +455,12 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
           where (typ,keys) = case x of 
                                Nothing -> ("ROWS",[]) 
                                Just (boxtype, atts) -> (boxtype,atts)       
-        pBoxSpecification :: AmpParser (Maybe (Text, [TemplateKeyValue]))
-        pBoxSpecification = fun <$ pOperator "<" <*> asText (pVarid <|> pConid) <*> many pTeplateKeyValue  <* pOperator ">"
-          where
-            fun typ keyvals = Just (typ, keyvals)
+        pBoxSpecification :: AmpParser (Text, [TemplateKeyValue])
+        pBoxSpecification = (,) <$ pOperator "<" <*> asText (pVarid <|> pConid) <*> many pTemplateKeyValue  <* pOperator ">"
             
 
-        pTeplateKeyValue :: AmpParser TemplateKeyValue
-        pTeplateKeyValue = 
+        pTemplateKeyValue :: AmpParser TemplateKeyValue
+        pTemplateKeyValue = 
           TemplateKeyValue 
                  <$> currPos
                  <*> asText (pVarid <|> pConid)
