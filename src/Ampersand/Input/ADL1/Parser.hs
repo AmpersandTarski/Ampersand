@@ -13,6 +13,7 @@ module Ampersand.Input.ADL1.Parser
 
 import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Core.ParseTree
+import           Ampersand.Input.ADL1.Lexer (keywords)
 import           Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
@@ -456,15 +457,15 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
                                Nothing -> ("ROWS",[]) 
                                Just (boxtype, atts) -> (boxtype,atts)       
         pBoxSpecification :: AmpParser (Text, [TemplateKeyValue])
-        pBoxSpecification = (,) <$ pOperator "<" <*> asText (pVarid <|> pConid <|> pKey "BOX" <|> pKey "ROWS" <|> pKey "COLS" <|> pKey "TABS")
-                                                 <*> many pTemplateKeyValue  <* pOperator ">"
-            
-
+        pBoxSpecification = (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
+                                <*> many pTemplateKeyValue
+        anyKeyWord :: AmpParser String
+        anyKeyWord = foldr (<|>) mempty $ pKey <$> keywords
         pTemplateKeyValue :: AmpParser TemplateKeyValue
         pTemplateKeyValue = 
           TemplateKeyValue 
                  <$> currPos
-                 <*> asText (pVarid <|> pConid)
+                 <*> asText (pVarid <|> pConid <|> anyKeyWord)
                  <*> optional (asText pString)
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
