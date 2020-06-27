@@ -457,8 +457,10 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
                                Nothing -> ("ROWS",[]) 
                                Just (boxtype, atts) -> (boxtype,atts)       
         pBoxSpecification :: AmpParser (Text, [TemplateKeyValue])
-        pBoxSpecification = (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
+        pBoxSpecification = pChevrons $
+                                (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
                                 <*> many pTemplateKeyValue
+         
         anyKeyWord :: AmpParser String
         anyKeyWord = case map pKey keywords of
                        [] -> fatal "We should have keywords. We allways have."
@@ -468,7 +470,7 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
           TemplateKeyValue 
                  <$> currPos
                  <*> asText (pVarid <|> pConid <|> anyKeyWord)
-                 <*> optional (asText pString)
+                 <*> optional (id <$ pOperator "=" <*> asText pString)
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
