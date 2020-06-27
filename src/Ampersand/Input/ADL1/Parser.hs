@@ -460,7 +460,9 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
         pBoxSpecification = (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
                                 <*> many pTemplateKeyValue
         anyKeyWord :: AmpParser String
-        anyKeyWord = foldr (<|>) mempty $ pKey <$> keywords
+        anyKeyWord = case map pKey keywords of
+                       [] -> fatal "We should have keywords. We allways have."
+                       h:tl -> foldr (<|>) h tl
         pTemplateKeyValue :: AmpParser TemplateKeyValue
         pTemplateKeyValue = 
           TemplateKeyValue 
