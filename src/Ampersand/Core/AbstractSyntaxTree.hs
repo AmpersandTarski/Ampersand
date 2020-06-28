@@ -453,13 +453,15 @@ data Cruds = Cruds { crudOrig :: Origin
                    , crudU :: Bool
                    , crudD :: Bool
                    } deriving (Show)
-data SubInterface = Box { siConcept :: A_Concept
-                        , siHeader  :: BoxHeader
+data SubInterface = Box { pos       :: !Origin
+                        , siConcept :: !A_Concept
+                        , siHeader  :: !BoxHeader
                         , siObjs    :: [BoxItem] 
                         }
                   | InterfaceRef 
-                        { siIsLink :: Bool
-                        , siIfcId  :: Text  --id of the interface that is referenced to
+                        { pos      :: !Origin
+                        , siIsLink :: !Bool
+                        , siIfcId  :: !Text  --id of the interface that is referenced to
                         } deriving (Show)
 
 

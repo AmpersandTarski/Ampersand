@@ -346,7 +346,7 @@ makeFSpec env context
                      , objExpression  = t
                      , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
-                     , objmsub = Just . Box (target t) (simpleBoxHeader orig) . map BxExpr $ recur [ PARTIAL.fromList pth | pth <-map NE.tail $ NE.toList cl, not (null pth) ]
+                     , objmsub = Just . Box orig (target t) (simpleBoxHeader orig) . map BxExpr $ recur [ PARTIAL.fromList pth | pth <-map NE.tail $ NE.toList cl, not (null pth) ]
                      }
                | cl<-eqCl NE.head es
                , let t = NE.head . NE.head $ cl
@@ -384,7 +384,7 @@ makeFSpec env context
                                  , objExpression  = EDcI c
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
-                                 , objmsub = Just . Box c (simpleBoxHeader orig) . map BxExpr $ NE.toList objattributes
+                                 , objmsub = Just . Box orig c (simpleBoxHeader orig) . map BxExpr $ NE.toList objattributes
                                  }
                                
              , ifcControls = makeIfcControls params allConjs
@@ -407,7 +407,7 @@ makeFSpec env context
                                  , objExpression  = EDcI ONE
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
-                                 , objmsub = Just . Box ONE (simpleBoxHeader orig) $ [BxExpr att]
+                                 , objmsub = Just . Box orig ONE (simpleBoxHeader orig) $ [BxExpr att]
                                  }
              , ifcControls = ifcControls ifcc
              , ifcPos      = ifcPos      ifcc

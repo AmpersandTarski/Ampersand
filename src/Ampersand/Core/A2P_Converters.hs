@@ -194,7 +194,7 @@ aObjectDef2pObjectDef x =
                , pos       = origin oDef
                , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
                , obj_crud  = case objmsub oDef of 
-                               Just (InterfaceRef False _) -> Nothing  -- Crud specification is not allowed in combination with a reference to an interface.
+                               Just (InterfaceRef _ False _) -> Nothing  -- Crud specification is not allowed in combination with a reference to an interface.
                                _ -> Just $ aCruds2pCruds (objcrud oDef)
                , obj_mView = objmView oDef
                , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
@@ -346,13 +346,13 @@ aAtomValue2pAtomValue val =
 aSubIfc2pSubIfc :: SubInterface -> P_SubIfc TermPrim
 aSubIfc2pSubIfc sub =
  case sub of
-  Box _ heading objs  
-    -> P_Box          { pos   = fatal "Origin is not present in SubInterface"
+  Box orig _ heading objs  
+    -> P_Box          { pos   = orig
                       , si_header = heading
                       , si_box   = map aObjectDef2pObjectDef objs
                       }
-  InterfaceRef isLinkto str
-    -> P_InterfaceRef { pos    = fatal "Origin is not present in SubInterface"
+  InterfaceRef orig isLinkto str
+    -> P_InterfaceRef { pos    = orig
                       , si_isLink = isLinkto
                       , si_str    = str
                       }

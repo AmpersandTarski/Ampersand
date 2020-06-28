@@ -535,8 +535,8 @@ instance ShowHS BoxItem where
      (BxTxt t) -> "BxTxt ("<>showHS env indent t<>")"
  
 instance ShowHS SubInterface where
- showHS _     _     (InterfaceRef isLink n) = "InterfaceRef "<>tshow isLink <>" "<>tshow n
- showHS env indent (Box x cl objs) = "Box ("<>showHS env indent x<>") ("<>tshow cl<>")"<>indent<>"     ("<>showHS env (indent<>"     ") objs<>")"
+ showHS _     _     (InterfaceRef _ isLink n) = "InterfaceRef "<>tshow isLink <>" "<>tshow n
+ showHS env indent (Box _ x cl objs) = "Box ("<>showHS env indent x<>") ("<>tshow cl<>")"<>indent<>"     ("<>showHS env (indent<>"     ") objs<>")"
 
 instance ShowHS Expression where
  showHS env indent (EEqu (l,r)) = "EEqu ("<>showHS env (indent<>"      ") l<>indent<>"     ,"<>showHS env (indent<>"      ") r<>indent<>"     )"

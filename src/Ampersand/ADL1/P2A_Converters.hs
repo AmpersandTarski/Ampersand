@@ -702,7 +702,8 @@ pCtx2aCtx env
                                                                              P_BxTxt {} -> fatal "TXT is not expected here."
                                          Nothing        -> Errors . pure $ mkUndeclaredError "interface" o ifcId
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-                  return (objExprEps,InterfaceRef{ siIsLink = si_isLink x
+                  return (objExprEps,InterfaceRef{ pos = origin x
+                                                 , siIsLink = si_isLink x
                                                  , siIfcId  = ifcId
                                                  }
                          )
@@ -714,7 +715,8 @@ pCtx2aCtx env
                   where l :: [P_BoxItem (TermPrim, DisambPrim)]
                         l = si_box x
                         build :: [BoxItem] -> (Expression, SubInterface)
-                        build lst = (objExpr,Box { siConcept = target objExpr
+                        build lst = (objExpr,Box { pos = origin x
+                                                 , siConcept = target objExpr
                                                  , siHeader  = si_header x
                                                  , siObjs    = lst
                                                  }
