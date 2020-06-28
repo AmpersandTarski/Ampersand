@@ -20,6 +20,7 @@ import           Data.Hashable (hash)
 import           Network.HTTP.Simple
 import qualified RIO.ByteString.Lazy  as BL
 import qualified RIO.Text as T
+import qualified RIO.List as L
 import           RIO.Time
 import           System.Directory
 import           System.FilePath
@@ -205,9 +206,7 @@ buildInterface fSpec allIfcs ifc = do
         case objmsub object of
           Nothing -> do
             let ( _ , _ , tgt) = getSrcDclTgt iExp
-            let mView = case objmView object of
-                          Just nm -> Just $ lookupView fSpec nm
-                          Nothing -> getDefaultViewForConcept fSpec tgt
+            let mView = fromMaybe (getDefaultViewForConcept fSpec tgt) ((Just . lookupView fSpec) <$> objmView object)
             mSpecificTemplatePath <-
                   case mView of
                     Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
@@ -280,7 +279,7 @@ genRouteProvider fSpec ifcs = do
   runner <- view runnerL
   let loglevel' = logLevel runner
   template <- readTemplate "routeProvider.config.js"
-  let contents = renderTemplate template $
+  let contents = renderTemplate Nothing template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" ampersandVersionStr
                  . setAttribute "ifcs"                ifcs
@@ -303,7 +302,7 @@ genViewInterface fSpec interf = do
   let loglevel' = logLevel runner
   lns <- genViewObject fSpec 0 (_ifcObj interf)
   template <- readTemplate "interface.html"
-  let contents = renderTemplate template $
+  let contents = renderTemplate Nothing template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                   . setAttribute "isTopLevel"          (isTopLevel . source . _ifcExp $ interf)
                   . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
@@ -368,7 +367,7 @@ genViewObject fSpec depth obj =
                         
               return . indentation
                      . T.lines 
-                     . renderTemplate template $ 
+                     . renderTemplate Nothing template $ 
                        atomicAndBoxAttrs
 
             FEBox { objMClass  = header
@@ -380,7 +379,7 @@ genViewObject fSpec depth obj =
                 
               return . indentation
                      . T.lines 
-                     . renderTemplate parentTemplate $ 
+                     . renderTemplate (Just . btKeys $ header) parentTemplate $ 
                            atomicAndBoxAttrs
                          . setAttribute "isRoot"     (depth == 0)
                          . setAttribute "subObjects" subObjAttrs
@@ -432,7 +431,7 @@ genControllerInterface fSpec interf = do
     template <- readTemplate controlerTemplateName
     runner <- view runnerL
     let loglevel' = logLevel runner
-    let contents = renderTemplate template $
+    let contents = renderTemplate Nothing template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   (isTopLevel . source . _ifcExp $ interf)
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
@@ -475,10 +474,9 @@ readTemplate templatePath = do
     Right cont -> return $ Template (newSTMP . T.unpack $ cont) (T.pack absPath)
 
 -- having Bool attributes prevents us from using a [(Text, Text)] parameter for attribute settings
-renderTemplate :: Template -> (StringTemplate String -> StringTemplate String) -> Text
-renderTemplate (Template template absPath) setAttrs =
-  let appliedTemplate = setAttrs (template)
-  in  case checkTemplateDeep appliedTemplate of
+renderTemplate :: Maybe [TemplateKeyValue] -> Template -> (StringTemplate String -> StringTemplate String) -> Text
+renderTemplate userAtts (Template template absPath) setRuntimeAtts =
+    case checkTemplateDeep appliedTemplate of
              ([],  [],    []) -> T.pack $ render appliedTemplate
              (parseErrs@(_:_), _, _)
                 -> templateError . T.concat $
@@ -486,7 +484,8 @@ renderTemplate (Template template absPath) setAttrs =
                       | (tmplt,err) <- parseErrs
                       ]
              ([], attrs@(_:_), _)
-                -> templateError $  
+                | isJust userAtts -> T.pack . render . fillInTheBlanks (L.nub attrs) $ appliedTemplate
+                | otherwise -> templateError $  
                       "The following attributes are expected by the template, but not supplied: " <> tshow attrs
              ([], [], ts@(_:_))
                 -> templateError $ 
@@ -495,7 +494,15 @@ renderTemplate (Template template absPath) setAttrs =
             ["*** TEMPLATE ERROR in:" <> absPath
             , msg
             ]
-
+        appliedTemplate = setRuntimeAtts . setUserAtts (fromMaybe [] userAtts) $ (template)
+        -- Set all attributes not specified to false.
+        fillInTheBlanks :: [String] -> StringTemplate String -> StringTemplate String
+        fillInTheBlanks [] = id
+        fillInTheBlanks (h:tl) = setAttribute h ("false" :: Text) . fillInTheBlanks tl
+        setUserAtts :: [TemplateKeyValue]  -> (StringTemplate String -> StringTemplate String)
+        setUserAtts [] = id
+        setUserAtts (h:tl) = setAttribute (T.unpack $ tkkey h) (fromMaybe ("true") $ tkval h)
+                           . setUserAtts tl
 
 
 
@@ -591,4 +598,3 @@ downloadPrototypeFramework = ( do
                 logInfo  $ "You could use the switch --force-reinstall-framework"
                 return False
 
-            
