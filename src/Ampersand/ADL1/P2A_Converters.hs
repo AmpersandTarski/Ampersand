@@ -710,6 +710,7 @@ pCtx2aCtx env
          P_Box{}
            -> addWarnings warnings $
                        build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
+                             <*  uniqueNames "attribute within a BOX specification" (btKeys . si_header $ x) 
                              <*  uniqueNames "label in box" l  -- ensure that each label in a box has a unique name.
                              <*  mustBeObject (target objExpr)
                   where l :: [P_BoxItem (TermPrim, DisambPrim)]
