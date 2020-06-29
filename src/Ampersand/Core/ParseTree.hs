@@ -643,10 +643,14 @@ data P_SubIfc a
                                , si_str :: !Text  -- Name of the interface that is reffered to
                                } 
                 deriving (Show)
+
+-- | Key-value pairs used to supply attributes into an HTML template that is used to render a subinterface
 data BoxHeader = BoxHeader
     { pos :: !Origin
-    , btType :: !Text
-    , btKeys :: [TemplateKeyValue]
+    , btType :: !Text  
+    -- ^ Type of the HTML template that is used for rendering
+    , btKeys :: [TemplateKeyValue] 
+    -- ^ Key-value pairs 
     } deriving (Show,Data)
 
 
@@ -656,7 +660,9 @@ instance Traced BoxHeader where
 data TemplateKeyValue = TemplateKeyValue
     { pos :: !Origin
     , tkkey :: !Text
+    -- ^ Name of the attribute  
     , tkval :: !(Maybe Text)
+    -- ^ value of the attribute. (when no value, the attribute is handled like a switch)
     } deriving (Show,Data)
 instance Named TemplateKeyValue where
   name = tkkey
