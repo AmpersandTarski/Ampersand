@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## Unreleased
+## v4.0.1 (19 june 2020)
 
 * [Issue #1026](https://github.com/AmpersandTarski/Ampersand/issues/1026) Allow PATTERNs with the same name. Meaning: all declarations from patterns with the same name are merged into one.
 * [Issue #1081](https://github.com/AmpersandTarski/Ampersand/issues/1081) Disable invariant checking for documentation.
@@ -15,9 +15,9 @@
 * [Issue #1029](https://github.com/AmpersandTarski/Ampersand/issues/1029) Fixed detection of rules with same name.
 * [Issue #1047](https://github.com/AmpersandTarski/Ampersand/issues/1047) Non-existing directory is generated automagically when required for output.
 * [Issue #999](https://github.com/AmpersandTarski/Ampersand/issues/999) Treat all concepts in a cycle in CLASSIFY statements as aliases of a single concept.
-* [Issue #1056](https://github.com/AmpersandTarski/Ampersand/issues/#1056) Bugfix in .xlsx parser
-* [Issue #1054](https://github.com/AmpersandTarski/Ampersand/issues/#1054) Ampersand daemon now also reports type errors
-* [Issue #1063](https://github.com/AmpersandTarski/Ampersand/issues/#1063) Return violations of invariants with standard check
+* [Issue #1056](https://github.com/AmpersandTarski/Ampersand/issues/1056) Bugfix in .xlsx parser
+* [Issue #1054](https://github.com/AmpersandTarski/Ampersand/issues/1054) Ampersand daemon now also reports type errors
+* [Issue #1063](https://github.com/AmpersandTarski/Ampersand/issues/1063) Return violations of invariants with standard check
 * [Issue #735](https://github.com/AmpersandTarski/Ampersand/issues/735) Upgrade to pandoc 2.9. 
 
 * Remove option --skip-composer. Relates to topic of [Archicture of Ampersand compiler](https://github.com/AmpersandTarski/Ampersand/issues/903)
