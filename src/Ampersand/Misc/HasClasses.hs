@@ -126,6 +126,11 @@ instance HasOutputLanguage DocOpts where
 instance HasOutputLanguage UmlOpts where
   languageL = lens x4OutputLanguage (\x y -> x { x4OutputLanguage = y })
 
+class HasShowWarnings a where
+  showWarningsL :: Lens' a Bool  -- Should warnings be given to the output?
+instance HasDaemonOpts a => HasShowWarnings a where
+  showWarningsL = daemonOptsL . lens xshowWarnings (\x y -> x { xshowWarnings = y })
+
 class HasDirCustomizations a where
   dirCustomizationsL :: Lens' a (Maybe [FilePath]) -- the directories that are copied after generating the prototype
 instance HasDirCustomizations ProtoOpts where
@@ -207,8 +212,10 @@ instance HasTestOpts TestOpts where
 data DaemonOpts = DaemonOpts
   { x2OutputLanguage :: !(Maybe Lang)
   , xdaemonConfig :: !FilePath
-  , x2fSpecGenOpts :: !FSpecGenOpts
    -- ^ The path (relative from current directory OR absolute) and filename of a file that contains the root file(s) to be watched by the daemon.
+  , x2fSpecGenOpts :: !FSpecGenOpts
+  , xshowWarnings :: !Bool -- ^ Enable/disable show of warnings (if any).
+
   }
 class (HasFSpecGenOpts a) => HasDaemonOpts a where
   daemonOptsL :: Lens' a DaemonOpts

@@ -408,7 +408,7 @@ doOrDie gA act =
     Checked a ws -> do
       showWarnings ws
       act a
-    Errors err -> exitWith . NoValidFSpec . T.lines . T.intercalate  (T.replicate 30 "=") 
+    Errors err -> exitWith . NoValidFSpec . T.lines . T.intercalate  (T.replicate 30 "=" <> "\n") 
            . NE.toList . fmap tshow $ err
   where
     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
