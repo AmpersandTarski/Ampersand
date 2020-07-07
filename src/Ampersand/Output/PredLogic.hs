@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.PredLogic
-         ( PredLogicShow(..), mkVar
+         ( PredLogicShow(..)
          ) where
 
 import           Ampersand.ADL1
@@ -47,7 +47,7 @@ class PredLogicShow a where
   toPredLogic :: a -> PredLogic
 
 instance PredLogicShow Rule where
-  toPredLogic ru = assemble (formalExpression ru)
+  toPredLogic = assemble . formalExpression 
 
 instance PredLogicShow Expression where
   toPredLogic = assemble
@@ -65,8 +65,6 @@ data NatLangOpts = NatLangOpts
    , relP      :: Relation -> Inlines -> Inlines -> Inlines
    , funP      :: Relation -> Inlines -> Inlines
    , showVarsP :: Inlines -> [(Inline,A_Concept)] -> Inlines
-   , breakP    :: Inlines
-   , spaceP    :: Inlines
    , applyP    :: Relation -> Inlines -> Inlines -> Inlines
    , elemP     :: Inlines
    }
@@ -88,8 +86,6 @@ natLangOps l = case l of
       , relP      = apply
       , funP      = fun
       , showVarsP = langVars
-      , breakP    = "\n  "
-      , spaceP    = " "
       , applyP    = apply
       , elemP     = "is element of"
       }    
@@ -106,8 +102,6 @@ natLangOps l = case l of
       , relP      = apply
       , funP      = fun
       , showVarsP = langVars
-      , breakP    = "\n  "
-      , spaceP    = " "
       , applyP    = apply
       , elemP     = "is element van"
       }    
@@ -179,8 +173,6 @@ predLshow NatLangOpts
    , relP      = rel      -- :: Relation -> Inlines -> Inlines -> Inlines
    , funP      = fun      -- :: Relation -> Inlines -> Inlines
    , showVarsP = showVars -- :: Inlines -> [(Inline,A_Concept)] -> Inlines
-   , breakP    = break'   -- :: Inlines
-   , spaceP    = space'   -- :: Inlines
    , applyP    = apply    -- :: Relation -> Inlines -> Inlines -> Inlines
    , elemP     = elem'    -- :: Inlines
    }
@@ -193,14 +185,14 @@ predLshow NatLangOpts
        = case predexpr of
                Forall vars restr   -> wrap i 1 (showVars forall vars <> charshow 1 restr)
                Exists vars restr   -> wrap i 1 (showVars exists vars  <> charshow 1 restr)
-               Implies antc conseq -> wrap i 2 (break'<>implies (charshow 2 antc) (charshow 2 conseq))
-               Equiv lhs rhs       -> wrap i 2 (break'<>charshow 2 lhs<>space'<>equiv<>space'<> charshow 2 rhs)
+               Implies antc conseq -> wrap i 2 (linebreak<>implies (charshow 2 antc) (charshow 2 conseq))
+               Equiv lhs rhs       -> wrap i 2 (linebreak<>charshow 2 lhs<>space<>equiv<>space<> charshow 2 rhs)
                Disj rs             -> if null rs
                                       then ""
-                                      else wrap i 3 (chain (space'<>or' <>space') (map (charshow 3) rs))
+                                      else wrap i 3 (chain (space<>or' <>space) (map (charshow 3) rs))
                Conj rs             -> if null rs
                                       then ""
-                                      else wrap i 4 (chain (space'<>and'<>space') (map (charshow 4) rs))
+                                      else wrap i 4 (chain (space<>and'<>space) (map (charshow 4) rs))
                Funs x ls           -> case ls of
                                          []    -> x
                                          r:ms  -> if isIdent (EDcD r) then charshow i (Funs x ms) else charshow i (Funs (fun r x) ms)
