@@ -39,7 +39,7 @@ module Ampersand.Core.ParseTree (
   ) where
 import           Ampersand.Basics hiding (foldr, sequence, concatMap)
 import           Ampersand.Input.ADL1.FilePos
-import           Data.Foldable hiding (concat)
+import           Data.Foldable (concatMap)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -897,7 +897,7 @@ mergeContexts ctx1 ctx2 =
                         (x:_) -> x
       , ctx_pos    = fromContextsKeepDoubles ctx_pos
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
-      , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
+      , ctx_markup = foldl' orElse Nothing $ map ctx_markup contexts
       , ctx_pats   = fromContextsKeepDoubles ctx_pats
       , ctx_rs     = fromContextsRemoveDoubles ctx_rs
       , ctx_ds     = mergeRels (ctx_ds ctx1<>ctx_ds ctx2)

@@ -130,7 +130,7 @@ mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpaceNoTab s
                                     isSpaceNoTab x = isSpace x && (not .  isTab) x
                                     isTab = ('\t' ==)
                                 in  do when (isTab c) (lexerWarning TabCharacter p)
-                                       mainLexer (L.foldl updatePos p (c:spc)) next
+                                       mainLexer (foldl' updatePos p (c:spc)) next
 
 mainLexer p ('{':'-':s) = lexNestComment mainLexer (addPos 2 p) s
 mainLexer p ('{':'+':s) = lexMarkup mainLexer (addPos 2 p) s
@@ -161,7 +161,7 @@ mainLexer p cs@(c:s)
            in returnToken tokt p mainLexer p' s'
      | isOperatorBegin c
          = let (name', s') = getOp cs
-           in returnToken (LexOperator name') p mainLexer (L.foldl updatePos p name') s'
+           in returnToken (LexOperator name') p mainLexer (foldl' updatePos p name') s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
      | isDigit c
          = case  getDateTime cs of
