@@ -134,7 +134,7 @@ chpConceptualAnalysis env lev fSpec = (
                        <> str (l (NL " : ", EN " exists: "))
                    )
                <> ( case meaning outputLang' r of
-                     Nothing -> plain (showPredLogic outputLang' r)
+                     Nothing -> plain . showPredLogic outputLang' . formalExpression $ r
                      Just ms -> printMarkup (ameaMrk ms)
                   )
                <> plain
