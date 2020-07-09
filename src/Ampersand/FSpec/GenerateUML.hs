@@ -4,7 +4,6 @@ module Ampersand.FSpec.GenerateUML (generateUML) where
 import           Ampersand.Basics
 import           Ampersand.ADL1
 import           Ampersand.FSpec
-import           Ampersand.FSpec.Motivations
 import           Ampersand.Graphic.ClassDiagram
 import           Ampersand.Graphic.Fspec2ClassDiagrams 
 import           Control.Monad.State.Lazy  (State, gets, evalState, modify)  --TODO: Replace by RIO state
