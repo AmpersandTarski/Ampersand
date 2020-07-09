@@ -286,7 +286,7 @@ chpDiagnosis env fSpec
                   rls -> (para.str.l) (NL "Van de volgende regels is de betekenis uitgelegd in taal die door de computer is gegenereerd:"
                                       ,EN "Rules are defined, the meaning of which is documented by means of computer generated language:")
                        <> bulletList [    (para . emph . str . name) r 
-                                       <> (para . showPredLogic outputLang') r
+                                       <> (para . showPredLogic outputLang' . formalExpression) r
                                      | r <- rls]
               )
         
