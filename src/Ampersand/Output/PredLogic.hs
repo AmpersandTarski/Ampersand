@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.PredLogic
-         ( PredLogicShow(..)
+         ( showPredLogic
          ) where
 
 import           Ampersand.ADL1
@@ -17,41 +17,44 @@ import qualified Data.Text as D
 import           Text.Pandoc.Builder
 
 --  data PredVar = PV Text     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
-data PredLogic
- = Forall [Var] PredLogic            |
-   Exists [Var] PredLogic            |
-   Implies PredLogic PredLogic       |
-   Equiv PredLogic PredLogic         |
-   Conj [PredLogic]                  |
-   Disj [PredLogic]                  |
-   Not PredLogic                     |
-   Pred Inlines Inlines              |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Relation (showA e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
-   PlK0 PredLogic                    |
-   PlK1 PredLogic                    |
-   R PredLogic Relation PredLogic    |
-   Atom Inlines                      |
-   Funs Inlines [Relation]           |
-   Dom Expression Var                |
-   Cod Expression Var                deriving Eq
+type VarMap = Map Var Text
 
+data PredLogic = 
+    Forall VarMap (NE.NonEmpty Var) PredLogic
+  | Exists VarMap (NE.NonEmpty Var) PredLogic
+  | Implies VarMap PredLogic PredLogic
+  | Equiv VarMap PredLogic PredLogic
+  | Conj VarMap [PredLogic]
+  | Disj VarMap [PredLogic]
+  | Not VarMap PredLogic
+  | Kleene0 VarMap PredLogic
+  | Kleene1 VarMap PredLogic
+  | R VarMap PredLogic Relation PredLogic
+  -- ^ R _ a r b is represented as a r b 
+  --  but if isIdent r then it is represented as a = b
+  | Constant AAtomValue
+  -- ^ A constant. e.g.: "Churchill", 1
+  | Function VarMap PredLogic Relation
+  -- ^ Function a f is represented in text as f(a)
+  | Dom VarMap Expression Var
+  -- ^ Dom expr (a,_) is represented as a ∈ dom(expr) 
+  | Cod VarMap Expression Var
+    deriving Eq
+
+data Var = Var Integer A_Concept
+   deriving Eq
+
+showPredLogic :: Lang -> Expression -> Inlines
+showPredLogic lang = predLshow lang . predNormalize . toPredLogic
+   
+predLshow :: Lang -> PredLogic -> Inlines
+predLshow lang predlogic = undefined
+predNormalize :: PredLogic -> PredLogic
+predNormalize predlogic = undefined
+toPredLogic :: Expression -> PredLogic
+toPredLogic expr = undefined  
+{-
 data Notation = Flr | Frl | Rn | Wrap deriving Eq   -- yields notations y=r(x)  |  x=r(y)  |  x r y  | exists ... respectively.
-
---   predKeyWords l =
---     case l of
---        English  ->
-
-class PredLogicShow a where
-  showPredLogic :: Lang -> a -> Inlines
-  showPredLogic l r =
-    predLshow (natLangOps l) (toPredLogic r) -- predLshow produces raw LaTeX
-  toPredLogic :: a -> PredLogic
-
-instance PredLogicShow Rule where
-  toPredLogic = assemble . formalExpression 
-
-instance PredLogicShow Expression where
-  toPredLogic = assemble
-
 data NatLangOpts = NatLangOpts
    { forallP   :: Inlines
    , existsP   :: Inlines
@@ -176,6 +179,11 @@ predLshow NatLangOpts
    , applyP    = apply    -- :: Relation -> Inlines -> Inlines -> Inlines
    , elemP     = elem'    -- :: Inlines
    }
+ 
+ a (r;s;t)       t(s(r(a)))  
+
+ Funs a [f,g,h] = Funs (fun g (fun g (fun f a))) []
+
  = charshow 0
      where
       wrap :: Integer -> Integer -> Inlines -> Inlines
@@ -209,9 +217,9 @@ predLshow NatLangOpts
                                                                                   else apply (makeRelation rel) l (fun f r))
 -}
                                          (lhs,rhs)                -> wrap i 5 (rel dec (charshow 5 lhs) (charshow 5 rhs))
-               Atom atom           -> "'"<>atom<>"'"
-               PlK0 rs             -> wrap i 6 (charshow 6 rs<>k0)
-               PlK1 rs             -> wrap i 7 (charshow 7 rs<>k1)
+               Constant atom           -> "'"<>atom<>"'"
+               Kleene0 rs             -> wrap i 6 (charshow 6 rs<>k0)
+               Kleene1 rs             -> wrap i 7 (charshow 7 rs<>k1)
                Not rs              -> wrap i 8 (space<>not'<>charshow 8 rs)
                Pred nm v'          -> nm<>"{"<>v'<>"}"
       makeRel :: Text -> Relation -- This function exists solely for the purpose of dom and cod
@@ -239,7 +247,6 @@ predLshow NatLangOpts
 -- The function 'assemble' translates a rule to predicate logic.
 -- In order to remain independent of any representation, it transforms the Haskell data structure Rule
 -- into the data structure PredLogic, rather than manipulate with texts.
-type Var = (Inline,A_Concept)
 assemble :: Expression -> PredLogic
 assemble expr
  = case (source expr, target expr) of
@@ -251,27 +258,27 @@ assemble expr
    [s,t] = mkVar [] [source expr, target expr]
    rc = f [s,t] expr (s,t)
    f :: [Var] -> Expression -> (Var,Var) -> PredLogic
-   f exclVars (EEqu (l,r)) (a,b)  = Equiv (f exclVars l (a,b)) (f exclVars r (a,b))
-   f exclVars (EInc (l,r)) (a,b)  = Implies (f exclVars l (a,b)) (f exclVars r (a,b))
-   f exclVars e@EIsc{}     (a,b)  = Conj [f exclVars e' (a,b) | e'<-NE.toList $ exprIsc2list e]
-   f exclVars e@EUni{}     (a,b)  = Disj [f exclVars e' (a,b) | e'<-NE.toList $ exprUni2list e]
-   f exclVars (EDif (l,r)) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
-   f exclVars (ELrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
-                                    where [c]   = mkVar exclVars [target l]
-                                          eVars = exclVars<>[c]
-   f exclVars (ERrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
-                                    where [c]   = mkVar exclVars [source l]
-                                          eVars = exclVars<>[c]
-   f exclVars (EDia (l,r)) (a,b)  = Forall [c] (Equiv (f eVars r (b,c)) (f eVars l (a,c)))
-                                    where [c]   = mkVar exclVars [target l]
-                                          eVars = exclVars<>[c]
-   f exclVars e@ECps{}     (a,b)  = fECps exclVars e (a,b)  -- special treatment, see below
-   f exclVars e@ERad{}     (a,b)  = fERad exclVars e (a,b)  -- special treatment, see below
+   f varMap (EEqu (l,r)) (a,b)  = Equiv (f varMap l (a,b)) (f varMap r (a,b))
+   f varMap (EInc (l,r)) (a,b)  = Implies (f varMap l (a,b)) (f varMap r (a,b))
+   f varMap e@EIsc{}     (a,b)  = Conj [f varMap e' (a,b) | e'<-NE.toList $ exprIsc2list e]
+   f varMap e@EUni{}     (a,b)  = Disj [f varMap e' (a,b) | e'<-NE.toList $ exprUni2list e]
+   f varMap (EDif (l,r)) (a,b)  = Conj [f varMap l (a,b), Not (f varMap r (a,b))]
+   f varMap (ELrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
+                                    where [c]   = mkVar varMap [target l]
+                                          eVars = varMap<>[c]
+   f varMap (ERrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
+                                    where [c]   = mkVar varMap [source l]
+                                          eVars = varMap<>[c]
+   f varMap (EDia (l,r)) (a,b)  = Forall [c] (Equiv (f eVars r (b,c)) (f eVars l (a,c)))
+                                    where [c]   = mkVar varMap [target l]
+                                          eVars = varMap<>[c]
+   f varMap e@ECps{}     (a,b)  = fECps varMap e (a,b)  -- special treatment, see below
+   f varMap e@ERad{}     (a,b)  = fERad varMap e (a,b)  -- special treatment, see below
    f _        (EPrd (l,r)) (a,b)  = Conj [Dom l a, Cod r b]
-   f exclVars (EKl0 e)     (a,b)  = PlK0 (f exclVars e (a,b))
-   f exclVars (EKl1 e)     (a,b)  = PlK1 (f exclVars e (a,b))
-   f exclVars (ECpl e)     (a,b)  = Not (f exclVars e (a,b))
-   f exclVars (EBrk e)     (a,b)  = f exclVars e (a,b)
+   f varMap (EKl0 e)     (a,b)  = Kleene0 (f varMap e (a,b))
+   f varMap (EKl1 e)     (a,b)  = Kleene1 (f varMap e (a,b))
+   f varMap (ECpl e)     (a,b)  = Not (f varMap e (a,b))
+   f varMap (EBrk e)     (a,b)  = f varMap e (a,b)
    f _ e@(EDcD dcl) ((a,_{-sv-}),(b,_{-tv-})) = res
     where
      res = case denote e of
@@ -286,10 +293,10 @@ assemble expr
             Frl  -> fatal "Bitrot! R (Funs a []) (Isn sv) (Funs b [dcl])"
             Rn   -> R (Funs (singleton b) []) dcl (Funs (singleton a) [])
             Wrap -> fatal "function res not defined when denote e == Wrap. "
-   f exclVars (EFlp e)       (a,b) = f exclVars e (b,a)
-   f _ (EMp1 val _) _             = (Atom . text . showP) val
+   f varMap (EFlp e)       (a,b) = f varMap e (b,a)
+   f _ (EMp1 val _) _             = (Constant . text . showP) val
    f _ (EDcI _) ((_{-a-},_),(_{-b-},_{-tv-}))     = fatal "Bitrot! R (Funs a []) (Isn tv) (Funs b [])"
-   f _ (EDcV _) _                  = Atom "True"
+   f _ (EDcV _) _                  = Constant "True"
    f _ e _ = fatal ("Non-exhaustive pattern in subexpression "<>showA e<>" of assemble (<"<>showA expr<>">)")
 
 -- fECps treats the case of a composition.  It works as follows:
@@ -298,9 +305,9 @@ assemble expr
 --       ics contains their types, and frels s t the subexpressions that
 --       are used in the resulting conjuct (at the right of the quantifier).
    fECps :: [Var] -> Expression -> (Var,Var) -> PredLogic
-   fECps exclVars    e             (a,b)
+   fECps varMap    e             (a,b)
                             --   f :: [Var] -> Expression -> (Var,Var) -> PredLogic
-     | and [isCpl e' | e'<-es] = f exclVars (deMorganECps e) (a,b)
+     | and [isCpl e' | e'<-es] = f varMap (deMorganECps e) (a,b)
      | otherwise               = Exists ivs (Conj (frels a b))
      where
       es :: [Expression]
@@ -309,7 +316,7 @@ assemble expr
      --         Each fragment represents a subexpression with variables
      --         at the outside only. Fragments will be reconstructed in a conjunct.
       res :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
-      res = pars3 (exclVars<>ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
+      res = pars3 (varMap<>ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
      -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
       frels :: Var -> Var -> [PredLogic]
       frels src trg = [r v w | ((r,_,_),v,w)<-L.zip3 res' (src: ivs) (ivs<>[trg]) ]
@@ -317,7 +324,7 @@ assemble expr
       res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
       res' = [triple | triple<-res, not (atomic triple)]
       ivs ::  [Var]
-      ivs  = mkvar exclVars ics
+      ivs  = mkvar varMap ics
       ics ::  [ Either PredLogic A_Concept ] -- each element is either an atom or a concept
       ics  = concat
              [ case (v',w) of
@@ -327,36 +334,36 @@ assemble expr
                  (Right trg, Right  _ ) -> [ Right trg ] -- SJ 20131117, was: (if trg==src then [ Right trg ] else [ Right (trg `meet` src) ])
                                                          -- This code assumes no ISA's in the A-structure. This works due to the introduction of EEps expressions.
              | (v',w)<-zip [ case l (Str "",src) (Str "",trg) of
-                              atom@Atom{} -> Left atom
+                              atom@Constant{} -> Left atom
                               _           -> Right trg
                            | (l,src,trg)<-init res]
                            [ case r (Str "",src) (Str "",trg) of
-                              atom@Atom{} -> Left atom
+                              atom@Constant{} -> Left atom
                               _           -> Right src
                            | (r,src,trg)<-tail res]
              ]
    atomic :: (Var -> Var -> PredLogic, A_Concept, A_Concept) -> Bool
    atomic (r,a,b) = case r (Str "",a) (Str "",b) of
-                     Atom{} -> True
+                     Constant{} -> True
                      _      -> False
    mkvar :: [Var] -> [ Either PredLogic A_Concept ] -> [Var]
-   mkvar exclVars (Right z: ics) = let vz = head (mkVar exclVars [z]) in vz: mkvar (exclVars<>[vz]) ics
-   mkvar exclVars (Left  _: ics) = mkvar exclVars ics
+   mkvar varMap (Right z: ics) = let vz = head (mkVar varMap [z]) in vz: mkvar (varMap<>[vz]) ics
+   mkvar varMap (Left  _: ics) = mkvar varMap ics
    mkvar _ [] = []
 
    fERad :: [Var] -> Expression -> (Var,Var) -> PredLogic
-   fERad exclVars e (a,b)
-     | and[isCpl e' |e'<-es] = f exclVars (deMorganERad e) (a,b)                      -- e.g.  -r!-s!-t
-     | isCpl (head es)       = f exclVars (foldr1 (.:.) antr .\. foldr1 (.!.) conr) (a,b)  -- e.g.  -r!-s! t  antr cannot be empty, because isCpl (head es) is True; conr cannot be empty, because es has an element that is not isCpl.
-     | isCpl (last es)       = f exclVars (foldr1 (.!.) conl ./. foldr1 (.:.) antl) (a,b)  -- e.g.   r!-s!-t  antl cannot be empty, because isCpl (head es) is True; conl cannot be empty, because es has an element that is not isCpl.
+   fERad varMap e (a,b)
+     | and[isCpl e' |e'<-es] = f varMap (deMorganERad e) (a,b)                      -- e.g.  -r!-s!-t
+     | isCpl (head es)       = f varMap (foldr1 (.:.) antr .\. foldr1 (.!.) conr) (a,b)  -- e.g.  -r!-s! t  antr cannot be empty, because isCpl (head es) is True; conr cannot be empty, because es has an element that is not isCpl.
+     | isCpl (last es)       = f varMap (foldr1 (.!.) conl ./. foldr1 (.:.) antl) (a,b)  -- e.g.   r!-s!-t  antl cannot be empty, because isCpl (head es) is True; conl cannot be empty, because es has an element that is not isCpl.
      | otherwise             = Forall ivs (Disj (frels a b))                               -- e.g.   r!-s! t  the condition or [isCpl e' |e'<-es] is true.
 {- was:
         | otherwise             = Forall ivs (Disj alls)
-                                  where alls = [f (exclVars<>ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs<>[b]))]
+                                  where alls = [f (varMap<>ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs<>[b]))]
 -}
      where
       es   = NE.filter (not . isEpsilon) $ exprRad2list e -- The definition of exprRad2list guarantees that length es>=2
-      res  = pars3 (exclVars<>ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
+      res  = pars3 (varMap<>ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
       conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                 -- So conr is not empty.
       antr = let x = (map (notCpl . flp) . reverse . takeWhile isCpl) es in
@@ -372,7 +379,7 @@ assemble expr
       res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
       res' = [triple | triple<-res, not (atomic triple)]
       ivs ::  [Var]
-      ivs  = mkvar exclVars ics
+      ivs  = mkvar varMap ics
       ics ::  [ Either PredLogic A_Concept ] -- each element is either an atom or a concept
       ics  = concat
              [ case (v',w) of
@@ -382,61 +389,61 @@ assemble expr
                  (Right trg, Right  _ ) -> [ Right trg ] -- SJ 20131117, was: (if trg==src then [ Right trg ] else [ Right (trg `meet` src) ])
                                                          -- This code assumes no ISA's in the A-structure. This works due to the introduction of EEps expressions.
              | (v',w)<-zip [ case l (Str "",src) (Str "",trg) of
-                              atom@Atom{} -> Left atom
+                              atom@Constant{} -> Left atom
                               _           -> Right trg
                            | (l,src,trg)<-init res]
                            [ case r (Str "",src) (Str "",trg) of
-                              atom@Atom{} -> Left atom
+                              atom@Constant{} -> Left atom
                               _           -> Right src
                            | (r,src,trg)<-tail res]
              ]
 
    relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic
-   relFun exclVars lhs e rhs
+   relFun varMap lhs e rhs
      = case e of
          EDcD dcl        -> \sv _->R (Funs (singleton (fst sv)) [r | t'<-        lhs, r<-Set.elems $ bindedRelationsIn t']) dcl (Funs (singleton (fst sv)) [r | t'<-reverse rhs, r<-Set.elems $ bindedRelationsIn t'])
          EFlp (EDcD dcl) -> \_ tv->R (Funs (singleton (fst tv)) [r | t'<-reverse rhs, r<-Set.elems $ bindedRelationsIn t']) dcl (Funs (singleton (fst tv)) [r | t'<-        lhs, r<-Set.elems $ bindedRelationsIn t'])
-         EMp1 val _      -> \_ _-> Atom . text . showP $ val
-         EFlp EMp1{}     -> relFun exclVars lhs e rhs
-         _               -> \sv tv->f (exclVars<>[sv,tv]) e (sv,tv)
+         EMp1 val _      -> \_ _-> Constant . text . showP $ val
+         EFlp EMp1{}     -> relFun varMap lhs e rhs
+         _               -> \sv tv->f (varMap<>[sv,tv]) e (sv,tv)
 
    pars3 :: [Var] -> [[Expression]] -> [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
-   pars3 exclVars (lhs: [e]: rhs: ts)
+   pars3 varMap (lhs: [e]: rhs: ts)
     | denotes lhs==Flr && denote e==Rn && denotes rhs==Frl
-       = ( relFun exclVars lhs e rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
-    | otherwise = pars2 exclVars (lhs:[e]:rhs:ts)
-   pars3 exclVars ts = pars2 exclVars ts -- for lists shorter than 3
+       = ( relFun varMap lhs e rhs, source (head lhs), target (last rhs)): pars3 varMap ts
+    | otherwise = pars2 varMap (lhs:[e]:rhs:ts)
+   pars3 varMap ts = pars2 varMap ts -- for lists shorter than 3
 
    pars2 :: [Var] -> [[Expression]]-> [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
-   pars2 exclVars (lhs: [e]: ts)
+   pars2 varMap (lhs: [e]: ts)
     | denotes lhs==Flr && denote e==Rn
-                = (relFun exclVars lhs e [], source (head lhs), target e): pars3 exclVars ts
+                = (relFun varMap lhs e [], source (head lhs), target e): pars3 varMap ts
     | denotes lhs==Flr && denote e==Frl
-                = (relFun exclVars lhs (EDcI (source e)) [e], source (head lhs), target e): pars3 exclVars ts
-    | otherwise = pars1 exclVars (lhs:[e]:ts)
-   pars2 exclVars ([e]: rhs: ts)
+                = (relFun varMap lhs (EDcI (source e)) [e], source (head lhs), target e): pars3 varMap ts
+    | otherwise = pars1 varMap (lhs:[e]:ts)
+   pars2 varMap ([e]: rhs: ts)
     | denotes rhs==Frl && denote e==Rn
-                = (relFun exclVars [] e rhs, source e, target (last rhs)): pars3 exclVars ts
+                = (relFun varMap [] e rhs, source e, target (last rhs)): pars3 varMap ts
     | denote e==Flr && denotes rhs==Frl
-                = (relFun exclVars [e] (EDcI (source e)) rhs, source e, target (last rhs)): pars3 exclVars ts
-    | otherwise = pars1 exclVars ([e]:rhs:ts)
-   pars2 exclVars (lhs: rhs: ts)
+                = (relFun varMap [e] (EDcI (source e)) rhs, source e, target (last rhs)): pars3 varMap ts
+    | otherwise = pars1 varMap ([e]:rhs:ts)
+   pars2 varMap (lhs: rhs: ts)
     | denotes lhs==Flr && denotes rhs==Frl
-                = (relFun exclVars lhs (EDcI (source (head rhs))) rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
-    | otherwise = pars1 exclVars (lhs:rhs:ts)
-   pars2 exclVars ts = pars1 exclVars ts -- for lists shorter than 2
+                = (relFun varMap lhs (EDcI (source (head rhs))) rhs, source (head lhs), target (last rhs)): pars3 varMap ts
+    | otherwise = pars1 varMap (lhs:rhs:ts)
+   pars2 varMap ts = pars1 varMap ts -- for lists shorter than 2
 
    pars1 :: [Var] -> [[Expression]] -> [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
-   pars1 exclVars expressions
+   pars1 varMap expressions
      = case expressions of
          []        -> []
-         (lhs: ts) -> (pars0 exclVars lhs, source (head lhs), target (last lhs)): pars3 exclVars ts
+         (lhs: ts) -> (pars0 varMap lhs, source (head lhs), target (last lhs)): pars3 varMap ts
 
    pars0 :: [Var] -> [Expression] -> Var -> Var -> PredLogic
-   pars0 exclVars lhs
-    | denotes lhs==Flr = relFun exclVars lhs (EDcI (source (last lhs))) []
-    | denotes lhs==Frl = relFun exclVars []  (EDcI (target (last lhs))) lhs
-    | otherwise        = relFun exclVars [] (let [r]=lhs in r) []
+   pars0 varMap lhs
+    | denotes lhs==Flr = relFun varMap lhs (EDcI (source (last lhs))) []
+    | denotes lhs==Frl = relFun varMap []  (EDcI (target (last lhs))) lhs
+    | otherwise        = relFun varMap [] (let [r]=lhs in r) []
 
    denote :: Expression -> Notation
    denote e = case e of
@@ -492,3 +499,5 @@ chain :: Monoid a => a -> [a] -> a
 chain  _  []    = mempty
 chain  _  [x]   = x
 chain txt (h:t) = h<>txt<>chain txt t
+
+-}
