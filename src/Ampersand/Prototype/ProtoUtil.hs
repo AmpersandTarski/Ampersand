@@ -99,7 +99,7 @@ commentBlock ls = ["/*"<>replicate lnth '*'<>"*\\"]
                      <> ["* "<>strReplace "*/" "**" line<>replicate (lnth - length line) ' '<>" *" | line <- ls]
                      <> ["\\*"<>replicate lnth '*'<>"*/"]
    where
-     lnth = L.foldl max 0 (map length ls)
+     lnth = foldl' max 0 (map length ls)
 indentBlock :: Int -> [String] -> [String]
 indentBlock i = map (replicate i ' ' <>)
 

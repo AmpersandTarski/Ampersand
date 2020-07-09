@@ -74,7 +74,7 @@ makeFSpec env context
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
               , atomsBySmallestConcept = \cpt -> Set.map apLeft 
                                                . pairsinexpr 
-                                               . L.foldl (.-.) (EDcI cpt) 
+                                               . foldl' (.-.) (EDcI cpt) 
                                                . map (handleType cpt)
                                                . smallerConcepts (gens context) $ cpt
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
@@ -120,7 +120,7 @@ makeFSpec env context
             where
               pairsegs :: Text
               pairsegs = let (h NE.:| tl) = NE.map totext . ppv_segs $ pv 
-                         in L.foldl (<>) h tl
+                         in foldl' (<>) h tl
               totext :: PairViewSegment Expression -> Text
               totext (PairViewText _ str) = str
               totext (PairViewExp _ Src expr) = lrToText apLeft expr
@@ -324,7 +324,7 @@ makeFSpec env context
      --    Warshall's transitive closure algorithm, adapted for this purpose:
 --     clos1 :: [Expression] -> [[Expression]]
 --     clos1 xs
---      = foldl f [ [ x ] | x<-xs] (nub (map source xs) `Set.intersection` nub (map target xs))
+--      = foldl' f [ [ x ] | x<-xs] (nub (map source xs) `Set.intersection` nub (map target xs))
 --        where
 --          f :: [[Expression]] -> A_Concept -> [[Expression]]
 --          f q x = q <> [l <> r | l <- q, x == target (last l),
