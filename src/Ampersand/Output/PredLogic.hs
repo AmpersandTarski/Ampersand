@@ -41,7 +41,7 @@ data PredLogic =
     deriving Eq
 
 data Var = Var Integer A_Concept
-   deriving Eq
+   deriving (Eq,Ord,Show)
 
 showPredLogic :: Lang -> Expression -> Inlines
 showPredLogic lang = predLshow lang . predNormalize . toPredLogic
@@ -74,21 +74,21 @@ predLshow lang predlogic = charshow 0 predlogic
                Exists vMap vars restr   -> wrap i 1 (               (text . l)(NL "Er is een", EN "There exists")
                                                        <> listVars ((text . l)(NL "en er is een", EN "and there exists")
                                                     ) vMap vars <> charshow 1 restr)
-               Implies vMap antc conseq -> wrap i 2 (linebreak<>implies (charshow 2 antc) (charshow 2 conseq))
+               Implies _ antc conseq -> wrap i 2 (linebreak<>implies (charshow 2 antc) (charshow 2 conseq))
                                              where implies :: Inlines -> Inlines -> Inlines
                                                    implies antc cons =
                                                       (text . l)(NL "Als ",EN "If" )<>antc<>(text.l)(NL" dan ",EN " then ")<>cons
-               Equiv vMap lhs rhs       -> wrap i 2 (linebreak<>charshow 2 lhs<>space<>equiv<>space<> charshow 2 rhs)
-               Disj vMap rs             -> if null rs
-                                           then ""
-                                           else wrap i 3 (chain (space<>or' <>space) (map (charshow 3) rs))
-               Conj vMap rs             -> if null rs
-                                           then ""
-                                           else wrap i 4 (chain (space<>and'<>space) (map (charshow 4) rs))
+               Equiv _ lhs rhs       -> wrap i 2 (linebreak<>charshow 2 lhs<>space<>((text . l)(NL "is equivalent met",EN "is equivalent to"))<>space<> charshow 2 rhs)
+               Disj _ rs             -> if null rs
+                                           then mempty
+                                           else wrap i 3 (chain ((text.l)(NL " of ",EN" or ")) (map (charshow 3) rs))
+               Conj _ rs             -> if null rs
+                                           then mempty
+                                           else wrap i 4 (chain ((text.l)(NL " en ",EN" and ")) (map (charshow 4) rs))
 --               Funs x ls           -> case ls of
 --                                         []    -> x
 --                                         r:ms  -> if isIdent (EDcD r) then charshow i (Funs x ms) else charshow i (Funs (fun r x) ms)
-               Dom vMap expr (x,_)      -> singleton x<>elem'<>fun (makeRel "dom") (text (showA expr))
+{-               Dom vMap expr (x,_)      -> singleton x<>elem'<>fun (makeRel "dom") (text (showA expr))
                Cod vMap expr (x,_)      -> singleton x<>elem'<>fun (makeRel "cod") (text (showA expr))
 --               R pexpr dec pexpr'  -> case (pexpr,pexpr') of
 --                                         (Funs l [] , Funs r [])  -> wrap i 5 (apply dec l r)
@@ -106,7 +106,7 @@ predLshow lang predlogic = charshow 0 predlogic
                Kleene1 vMap rs             -> wrap i 7 (charshow 7 rs<>k1)
                Not vMap rs              -> wrap i 8 (space<>not'<>charshow 8 rs)
 --               Pred nm v'          -> nm<>"{"<>v'<>"}"
-
+-}
 
 predNormalize :: PredLogic -> PredLogic
 predNormalize predlogic = predlogic  --TODO: Fix normalization of PredLogic
@@ -550,9 +550,9 @@ init [] = fatal $ "init is used on an empty list."
 init x = tail . reverse $ x
 foldr1 :: (a -> a -> a) -> [a] -> a
 foldr1 fun nonEmptyList = foldr fun (head nonEmptyList) (tail nonEmptyList)
+-}
 chain :: Monoid a => a -> [a] -> a
 chain  _  []    = mempty
 chain  _  [x]   = x
 chain txt (h:t) = h<>txt<>chain txt t
 
--}
