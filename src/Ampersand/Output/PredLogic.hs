@@ -4,20 +4,19 @@ module Ampersand.Output.PredLogic
          ) where
 
 import           Ampersand.ADL1
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (toList)
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.Core.ShowPStruct
 import           RIO.Char
 import qualified RIO.NonEmpty as NE
+import qualified RIO.List as L
+import qualified RIO.Map as M
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import qualified RIO.List as L
-import qualified Data.Text as D
 import           Text.Pandoc.Builder
-
 --  data PredVar = PV Text     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
-type VarMap = Map Var Text
+type VarMap = M.Map Var Text
 
 data PredLogic = 
     Forall VarMap (NE.NonEmpty Var) PredLogic
@@ -46,11 +45,71 @@ data Var = Var Integer A_Concept
 
 showPredLogic :: Lang -> Expression -> Inlines
 showPredLogic lang = predLshow lang . predNormalize . toPredLogic
-   
+
+-- should be exported by Pandoc?
+intercalate :: Inlines -> Many Inlines -> Inlines
+intercalate x = fromList . L.intercalate (toList x) . map toList . toList 
+
 predLshow :: Lang -> PredLogic -> Inlines
-predLshow lang predlogic = undefined
+predLshow lang predlogic = charshow 0 predlogic
+     where
+        -- shorthand for easy localizing    
+      l :: LocalizedStr -> Text
+      l = localize lang
+      listVars :: Inlines -> VarMap -> NE.NonEmpty Var -> Inlines
+      listVars sep vMap vars = intercalate  sep . fromList . NE.toList $ fmap showVar vars
+         where showVar :: Var -> Inlines
+               showVar var = case M.lookup var vMap of
+                                Nothing -> fatal $ "Variable not found:" <> tshow var
+                                Just t  -> text t
+
+      wrap :: Integer -> Integer -> Inlines -> Inlines
+      wrap i j txt = if i<=j then txt else "("<>txt<>")"
+      charshow :: Integer -> PredLogic -> Inlines
+      charshow i predexpr
+       = case predexpr of
+               Forall vMap vars restr   -> wrap i 1 (               (text . l)(NL "Voor alle", EN "For all") 
+                                                       <> listVars ((text . l)(NL "en voor alle", EN "and for all")
+                                                    ) vMap vars <> charshow 1 restr)
+               Exists vMap vars restr   -> wrap i 1 (               (text . l)(NL "Er is een", EN "There exists")
+                                                       <> listVars ((text . l)(NL "en er is een", EN "and there exists")
+                                                    ) vMap vars <> charshow 1 restr)
+               Implies vMap antc conseq -> wrap i 2 (linebreak<>implies (charshow 2 antc) (charshow 2 conseq))
+                                             where implies :: Inlines -> Inlines -> Inlines
+                                                   implies antc cons =
+                                                      (text . l)(NL "Als ",EN "If" )<>antc<>(text.l)(NL" dan ",EN " then ")<>cons
+               Equiv vMap lhs rhs       -> wrap i 2 (linebreak<>charshow 2 lhs<>space<>equiv<>space<> charshow 2 rhs)
+               Disj vMap rs             -> if null rs
+                                           then ""
+                                           else wrap i 3 (chain (space<>or' <>space) (map (charshow 3) rs))
+               Conj vMap rs             -> if null rs
+                                           then ""
+                                           else wrap i 4 (chain (space<>and'<>space) (map (charshow 4) rs))
+--               Funs x ls           -> case ls of
+--                                         []    -> x
+--                                         r:ms  -> if isIdent (EDcD r) then charshow i (Funs x ms) else charshow i (Funs (fun r x) ms)
+               Dom vMap expr (x,_)      -> singleton x<>elem'<>fun (makeRel "dom") (text (showA expr))
+               Cod vMap expr (x,_)      -> singleton x<>elem'<>fun (makeRel "cod") (text (showA expr))
+--               R pexpr dec pexpr'  -> case (pexpr,pexpr') of
+--                                         (Funs l [] , Funs r [])  -> wrap i 5 (apply dec l r)
+{-
+                                            (Funs l [f], Funs r [])  -> wrap i 5 (if isIdent rel
+                                                                                  then apply (makeRelation f) l r
+                                                                                  else apply (makeRelation rel) (fun f l) r)
+                                            (Funs l [] , Funs r [f]) -> wrap i 5 (if isIdent rel
+                                                                                  then apply (makeRelation f) l r
+                                                                                  else apply (makeRelation rel) l (fun f r))
+-}
+--                                         (lhs,rhs)                -> wrap i 5 (rel dec (charshow 5 lhs) (charshow 5 rhs))
+               Constant atom           -> "'"<>atom<>"'"
+               Kleene0 vMap rs             -> wrap i 6 (charshow 6 rs<>k0)
+               Kleene1 vMap rs             -> wrap i 7 (charshow 7 rs<>k1)
+               Not vMap rs              -> wrap i 8 (space<>not'<>charshow 8 rs)
+--               Pred nm v'          -> nm<>"{"<>v'<>"}"
+
+
 predNormalize :: PredLogic -> PredLogic
-predNormalize predlogic = undefined
+predNormalize predlogic = predlogic  --TODO: Fix normalization of PredLogic
 toPredLogic :: Expression -> PredLogic
 toPredLogic expr = undefined  
 {-
@@ -180,10 +239,6 @@ predLshow NatLangOpts
    , elemP     = elem'    -- :: Inlines
    }
  
- a (r;s;t)       t(s(r(a)))  
-
- Funs a [f,g,h] = Funs (fun g (fun g (fun f a))) []
-
  = charshow 0
      where
       wrap :: Integer -> Integer -> Inlines -> Inlines
