@@ -15,7 +15,7 @@ import qualified RIO.Map as M
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           Text.Pandoc.Builder
---  data PredVar = PV Text     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
+import           Ampersand.Output.PandocAux(showMath)
 type VarMap = M.Map Var Text
 
 data PredLogic = 
@@ -31,7 +31,7 @@ data PredLogic =
   | R VarMap PredLogic Relation PredLogic
   -- ^ R _ a r b is represented as a r b 
   --  but if isIdent r then it is represented as a = b
-  | Constant AAtomValue
+  | Constant PAtomValue
   -- ^ A constant. e.g.: "Churchill", 1
   | Function VarMap PredLogic Relation
   -- ^ Function a f is represented in text as f(a)
@@ -57,9 +57,9 @@ predLshow lang predlogic = charshow 0 predlogic
       l :: LocalizedStr -> Text
       l = localize lang
       listVars :: Inlines -> VarMap -> NE.NonEmpty Var -> Inlines
-      listVars sep vMap vars = intercalate  sep . fromList . NE.toList $ fmap showVar vars
-         where showVar :: Var -> Inlines
-               showVar var = case M.lookup var vMap of
+      listVars sep vMap vars = intercalate  sep . fromList . NE.toList . fmap (showVar vMap) $ vars
+      showVar :: VarMap -> Var -> Inlines
+      showVar vMap var = case M.lookup var vMap of
                                 Nothing -> fatal $ "Variable not found:" <> tshow var
                                 Just t  -> text t
 
@@ -74,10 +74,10 @@ predLshow lang predlogic = charshow 0 predlogic
                Exists vMap vars restr   -> wrap i 1 (               (text . l)(NL "Er is een", EN "There exists")
                                                        <> listVars ((text . l)(NL "en er is een", EN "and there exists")
                                                     ) vMap vars <> charshow 1 restr)
-               Implies _ antc conseq -> wrap i 2 (linebreak<>implies (charshow 2 antc) (charshow 2 conseq))
+               Implies _ ante cons -> wrap i 2 (linebreak<>implies (charshow 2 ante) (charshow 2 cons))
                                              where implies :: Inlines -> Inlines -> Inlines
-                                                   implies antc cons =
-                                                      (text . l)(NL "Als ",EN "If" )<>antc<>(text.l)(NL" dan ",EN " then ")<>cons
+                                                   implies a b =
+                                                      (text . l)(NL "Als ",EN "If" )<>a<>(text.l)(NL" dan ",EN " then ")<>b
                Equiv _ lhs rhs       -> wrap i 2 (linebreak<>charshow 2 lhs<>space<>((text . l)(NL "is equivalent met",EN "is equivalent to"))<>space<> charshow 2 rhs)
                Disj _ rs             -> if null rs
                                            then mempty
@@ -88,25 +88,23 @@ predLshow lang predlogic = charshow 0 predlogic
 --               Funs x ls           -> case ls of
 --                                         []    -> x
 --                                         r:ms  -> if isIdent (EDcD r) then charshow i (Funs x ms) else charshow i (Funs (fun r x) ms)
-{-               Dom vMap expr (x,_)      -> singleton x<>elem'<>fun (makeRel "dom") (text (showA expr))
-               Cod vMap expr (x,_)      -> singleton x<>elem'<>fun (makeRel "cod") (text (showA expr))
---               R pexpr dec pexpr'  -> case (pexpr,pexpr') of
---                                         (Funs l [] , Funs r [])  -> wrap i 5 (apply dec l r)
-{-
-                                            (Funs l [f], Funs r [])  -> wrap i 5 (if isIdent rel
-                                                                                  then apply (makeRelation f) l r
-                                                                                  else apply (makeRelation rel) (fun f l) r)
-                                            (Funs l [] , Funs r [f]) -> wrap i 5 (if isIdent rel
-                                                                                  then apply (makeRelation f) l r
-                                                                                  else apply (makeRelation rel) l (fun f r))
--}
---                                         (lhs,rhs)                -> wrap i 5 (rel dec (charshow 5 lhs) (charshow 5 rhs))
-               Constant atom           -> "'"<>atom<>"'"
-               Kleene0 vMap rs             -> wrap i 6 (charshow 6 rs<>k0)
-               Kleene1 vMap rs             -> wrap i 7 (charshow 7 rs<>k1)
-               Not vMap rs              -> wrap i 8 (space<>not'<>charshow 8 rs)
---               Pred nm v'          -> nm<>"{"<>v'<>"}"
--}
+               Dom vMap expr var      -> showVar vMap var<>" ∈ dom(" <>showMath expr<>")"
+               Cod vMap expr var      -> showVar vMap var<>" ∈ cod(" <>showMath expr<>")"
+               R _ pexpr rel pexpr'  
+                   | isIdent (EDcD rel) -> wrap i 5 (charshow 5 pexpr) <> " = " <> wrap i 5 (charshow 5 pexpr')
+                   | otherwise          -> if T.null (prL<>prM<>prR)
+                                              then d<>text (name rel)<>c
+                                              else text prL<>d<>text prM<>c<>text prR
+                                        where d = wrap i 5 (charshow 5 pexpr)
+                                              c = wrap i 5 (charshow 5 pexpr')
+                                              prL = decprL rel
+                                              prM = decprM rel
+                                              prR = decprR rel
+               Constant atom           -> showMath atom
+               Kleene0 _ rs             -> wrap i 6 (charshow 6 rs<>"*")
+               Kleene1 _ rs             -> wrap i 7 (charshow 7 rs<>"+")
+               Not _ rs              -> wrap i 8 ((text . l)(NL " niet",EN " not")<>charshow 8 rs)
+
 
 predNormalize :: PredLogic -> PredLogic
 predNormalize predlogic = predlogic  --TODO: Fix normalization of PredLogic

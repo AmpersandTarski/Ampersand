@@ -6,7 +6,7 @@ where
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
-import           Ampersand.Output.PredLogic
+
 
 chpConceptualAnalysis :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> Int -> FSpec -> (Blocks,[Picture])

@@ -7,7 +7,6 @@ import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import           Ampersand.Output.PredLogic
 
 chpDiagnosis :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> FSpec -> (Blocks,[Picture])

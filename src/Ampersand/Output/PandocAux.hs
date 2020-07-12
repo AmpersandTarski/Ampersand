@@ -256,6 +256,8 @@ class ShowMath a where
 instance ShowMath Rule where
  showMath = showMath . formalExpression
 
+instance ShowMath PAtomValue where
+  showMath = math . atomVal2Math
 instance ShowMath Expression where
  showMath = math . showExpr . insParentheses
    where  showExpr :: Expression -> Text

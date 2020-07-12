@@ -30,6 +30,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , ThemeContent(..), orderingByTheme
     , Numbered(..), RuleCont(..),DeclCont(..),CptCont(..)
     , plainText
+    , showPredLogic
     )
 where
 import           Ampersand.ADL1 hiding (Meta)
@@ -41,6 +42,7 @@ import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux
+import           Ampersand.Output.PredLogic
 import           Data.Hashable
 import           Data.Typeable (typeOf)
 import qualified RIO.List as L
