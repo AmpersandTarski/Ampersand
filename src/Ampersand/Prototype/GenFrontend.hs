@@ -495,10 +495,10 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
             , msg
             ]
         appliedTemplate = setRuntimeAtts . setUserAtts (fromMaybe [] userAtts) $ (template)
-        -- Set all attributes not specified to false.
+        -- Set all attributes not specified to False
         fillInTheBlanks :: [String] -> StringTemplate String -> StringTemplate String
         fillInTheBlanks [] = id
-        fillInTheBlanks (h:tl) = setAttribute h ("false" :: Text) . fillInTheBlanks tl
+        fillInTheBlanks (h:tl) = setAttribute h False . fillInTheBlanks tl
         setUserAtts :: [TemplateKeyValue]  -> (StringTemplate String -> StringTemplate String)
         setUserAtts [] = id
         setUserAtts (h:tl) = setAttribute (T.unpack $ tkkey h) (fromMaybe ("true") $ tkval h)
