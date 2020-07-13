@@ -97,7 +97,7 @@ instance JSON SubInterface JSONSubInterface where
        }
 instance JSON BoxHeader JSONBoxHeader where
   fromAmpersand env fSpec header = JSONBoxHeader
-       { bhJSONtype = tshow $ btType header
+       { bhJSONtype = btType header
        , bhJSONkeyVals = map (fromAmpersand env fSpec) $ btKeys header
        }
 instance JSON TemplateKeyValue JSONTemplateKeyValue where
