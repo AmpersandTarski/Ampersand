@@ -385,11 +385,11 @@ mkInterfaceMustBeDefinedOnObject ifc cpt tt =
 mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc (TermPrim, DisambPrim) -> A_Concept -> TType -> CtxError
 mkSubInterfaceMustBeDefinedOnObject x cpt tt =
   CTXE (origin x). T.intercalate "\n  " $
-      ["The TYPE of the concept for which a "<>tshow boxClass<>" is defined must be OBJECT."
-      ,"The TYPE of the concept `"<>showWithAliases cpt<>"`, for this "<>tshow boxClass<>", however is "<>tshow tt<>"."
+      ["The TYPE of the concept for which a "<>tshow boxTemplate<>" is defined must be OBJECT."
+      ,"The TYPE of the concept `"<>showWithAliases cpt<>"`, for this "<>tshow boxTemplate<>", however is "<>tshow tt<>"."
       ]
-    where boxClass = btType . si_header $ x
-                       
+    where boxTemplate = btType . si_header $ x
+
 class ErrorConcept a where
   showEC :: a -> Text
 

@@ -15,7 +15,6 @@ data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
   { ifcJSONid                 :: Text
   , ifcJSONlabel              :: Text
-  , ifcJSONboxClass           :: Maybe Text
   , ifcJSONifcObject          :: JSONObjectDef
   , ifcJSONisAPI              :: Bool
   } deriving (Generic, Show)
@@ -111,7 +110,6 @@ instance JSON Interface JSONInterface where
  fromAmpersand env fSpec interface = JSONInterface
   { ifcJSONid                 = escapeIdentifier . ifcname $ interface
   , ifcJSONlabel              = ifcname interface
-  , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
   , ifcJSONifcObject          = fromAmpersand env fSpec (BxExpr $ ifcObj interface)
   , ifcJSONisAPI              = ifcIsAPI interface
   }
