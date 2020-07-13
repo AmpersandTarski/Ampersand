@@ -4,13 +4,13 @@ INCLUDE "Concepts.adl"
 
 INTERFACE Overview : "_SESSION"[SESSION]
 TABS[ atoms : V[SESSION*Atom]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ repr : I
            , type : pop - pop;(isas-I)
            , pop  : pop
            ]
     , concepts :V[SESSION*Concept]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ name    : I[Concept]
            , "isa"   : isa
            , "isa+"  : isas
@@ -19,17 +19,17 @@ TABS[ atoms : V[SESSION*Atom]
            , atoms   : pop~
            ]
     , pairs : V[SESSION*Pair]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ pair          : I
            , "relation(s)" : in
            ]
     , relations : V[SESSION*Relation]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
            ]
     , rules : V[SESSION*Rule]
-      COLS [ name : name
+      BOX <TABLE> [ name : name
            , signature : sign
            , term : term[Rule*Expression]
            , meaning : meaning

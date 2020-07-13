@@ -23,11 +23,11 @@ REPRESENT Atom TYPE ALPHANUMERIC
 
 INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
 TABS[ relations : V[SESSION*Relation] CRUD
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ relation   : I[Relation]
            , prop       : prop
            , table      : srcAtt;table /\ tgtAtt;table
-             COLS [ wide : I[TblSQL];rootConcept
+             BOX <TABLE> [ wide : I[TblSQL];rootConcept
                   , bin  : I[BinSQL];table~;srcAtt~
                   ]
            , srcAtt     : srcAtt;concept
@@ -35,7 +35,7 @@ TABS[ relations : V[SESSION*Relation] CRUD
            , pairs      : in~
            ]
     , concepts :V[SESSION*Concept] CRUD
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ name         : name
            , "isa"   : isa
 --           , "isa+"  : isaPlus
@@ -47,17 +47,17 @@ TABS[ relations : V[SESSION*Relation] CRUD
            , atoms        : pop~
            ]
     , "SQL plugs" : V[SESSION*SQLPlug] CRUD
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ SQLPlug : I
-           , "table~"  : table~ COLS [rel : srcAtt~\/tgtAtt~ , attr : I , c : concept ]
+           , "table~"  : table~ BOX <TABLE> [rel : srcAtt~\/tgtAtt~ , attr : I , c : concept ]
            ]
     , pairs : V[SESSION*Pair] CRUD
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ pair           : I[Pair]
            , "relation(s)"  : in
            ]
 --    , atoms : V[SESSION*Atom]
---      BOX<SCOLS>
+--      BOX<TABLE sortable>
 --           [ atom : I
 --           , "smallest concept(s)" : pop - pop;isaPlus
 --           , pop  : pop

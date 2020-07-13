@@ -5,10 +5,10 @@ INCLUDE "./PreprocTestPopulation.adl" --# [ "!GenerateErrorIfThisVarIsSet" ]
 r1 :: A * B1
 r2 :: A * B2
 
-INTERFACE "Test": I[SESSION] cRud BOX <SHCOLS>
+INTERFACE "Test": I[SESSION] cRud BOX <TABLE sortable hideEmptyTable>
   [ "Vars": V[SESSION*Var] cRud 
   , "NoVars": V[SESSION*NoVar] cRud 
-  , "Ifc" : V[SESSION*A] cRud BOX <SHCOLS>
+  , "Ifc" : V[SESSION*A] cRud BOX <TABLE sortable hideEmptyTable>
     [ "A = ": I cRud
 --#IF EditableInterfaceA
   --#IFNOT DoNotShowR1

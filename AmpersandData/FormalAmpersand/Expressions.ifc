@@ -5,12 +5,12 @@ INCLUDE "Atoms.adl"
 
 INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
 TABS[ relations : V[SESSION*Relation]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in[Pair*Relation]~
            ]
     , concepts :V[SESSION*Concept]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ name         : name
            , "isa"   : isa
 --           , "isa+"  : isaPlus
@@ -21,12 +21,12 @@ TABS[ relations : V[SESSION*Relation]
            , atoms        : pop~
            ]
     , pairs : V[SESSION*Pair]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ pair           : I[Pair]
            , "relation(s)"  : in[Pair*Relation]
            ]
 --    , atoms : V[SESSION*Atom]
---      BOX<SCOLS>
+--      BOX<TABLE sortable>
 --           [ atom : I
 --           , "smallest concept(s)" : pop - pop;isaPlus
 --           , pop  : pop

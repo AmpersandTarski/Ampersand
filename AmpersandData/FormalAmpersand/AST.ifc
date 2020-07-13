@@ -3,23 +3,23 @@ CONTEXT "AST Interface" IN ENGLISH
 
 
 --INTERFACE Contexts FOR Ampersand : "_SESSION";V[SESSION*Context]
---BOX <SHCOLS>
+--BOX <TABLE sortable hideEmptyTable>
 --    [ "Context" : I
 --    , "name" : name[Context*ContextName]
 --    ]
 
 INTERFACE Overview FOR Ampersand : I[SESSION];"_SESSION"
 TABS[ Concepts : V[SESSION*Concept]
-    COLS [ "Concept" : I 
+    BOX <TABLE> [ "Concept" : I 
          , name : name[Concept*ConceptName]
          ]
     , Relations : V[SESSION*Relation]
-    COLS [ "Relation" : I 
+    BOX <TABLE> [ "Relation" : I 
          , source : source[Relation*Concept]
          , target : target[Relation*Concept]
          ]
     , Rules : V[SESSION*Rule]
-    COLS [ "Rule" : I
+    BOX <TABLE> [ "Rule" : I
          ]
     ]
     
@@ -160,7 +160,7 @@ BOX [ "declared in context" : declaredIn[Relation*Context]
     , "declared in pattern" : declaredIn[Relation*Pattern]
     , "declared in context (outside a pattern)" : ctxds[Relation*Context]
 --    , "in~" : in[Pair*Relation]~
---          BOX <SHCOLS->
+--          BOX <TABLE sortable hideEmptyTable>
 --            [ lAtom : lAtom
 --            , rAtom : rAtom
 --            ]

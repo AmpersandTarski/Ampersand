@@ -3,14 +3,14 @@ INCLUDE "Atoms.xlsx"
 
 INTERFACE Overview : "_SESSION"[SESSION]
 TABS[ relations : V[SESSION*Relation]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
            , sources    : sources
            , targets    : targets
            ]
     , concepts :V[SESSION*Concept]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ name    : I[Concept]
            , "isa"   : isa
 --           , "isa+"  : isaPlus
@@ -21,12 +21,12 @@ TABS[ relations : V[SESSION*Relation]
            , atoms   : pop~
            ]
     , pairs : V[SESSION*Pair]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ pair          : I
            , "relation(s)" : in
            ]
     , atoms : V[SESSION*Atom]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ atom : I
            , type : pop - pop;isaPlus
            , pop  : pop

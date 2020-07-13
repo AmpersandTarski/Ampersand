@@ -5,7 +5,7 @@ INCLUDE "Braga.xslx"
 
 INTERFACE Overview : "_SESSION"
 TABS[concepts :V[SESSION*Concept]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ name         : I[Concept]
            , "isa"        : isa
            , "isa+"       : isaPlus
@@ -15,7 +15,7 @@ TABS[concepts :V[SESSION*Concept]
            , "type-term"  : popset
            ]
     , types : V[SESSION*Signature]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ signature  : I[Signature]
            , src   : src
            , tgt   : tgt
@@ -23,10 +23,10 @@ TABS[concepts :V[SESSION*Concept]
            ]
     , terms : V[SESSION*Term]
     , "type-terms" : V[SESSION*Concept]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ Concept      : I
            , "type-terms" : pretype~
-             BOX<SCOLS>
+             BOX<TABLE sortable>
                   [ "type-term" : I[TypeTerm]
                   , "sub"       : sub     
                   , "sub*"      : subStar    
@@ -35,23 +35,23 @@ TABS[concepts :V[SESSION*Concept]
                   ]
            ]
     , atoms : V[SESSION*Atom]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ repr : I
            , type : pop - pop;isaPlus
            , pop  : pop
            ]
     , pairs : V[SESSION*Pair]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ pair           : I[Pair]
            , "relation(s)"  : in
            ]
     , relations : V[SESSION*Relation]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
            ]
     , garbage : V[SESSION*Atom];(I - pop;pop~)
-      COLS [ repr : repr
+      BOX <TABLE> [ repr : repr
            ]
     ]
 
