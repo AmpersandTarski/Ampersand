@@ -454,7 +454,7 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
         build :: Origin -> Maybe (Text, [TemplateKeyValue]) ->  BoxHeader
         build o x = BoxHeader o typ keys
           where (typ,keys) = case x of 
-                               Nothing -> ("ROWS",[]) 
+                               Nothing -> ("FORM",[]) 
                                Just (boxtype, atts) -> (boxtype,atts)       
         pBoxSpecification :: AmpParser (Text, [TemplateKeyValue])
         pBoxSpecification = pChevrons $
