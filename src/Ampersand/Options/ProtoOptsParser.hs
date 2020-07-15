@@ -92,7 +92,7 @@ zwolleVersionP :: Parser String
 zwolleVersionP = strOption
         ( long "prototype-framework-version"
         <> metavar "VERSION"
-        <> value "v1.3.1"
+        <> value "feature/box-attributes"
         <> showDefault
         <> help ( "Tag, branch or SHA of the prototype framework on Github. "
                 <>"Normally you shouldn't need to use anohter version "
