@@ -124,9 +124,6 @@ instance Arbitrary P_Context where
 instance Arbitrary Meta where
     arbitrary = Meta <$> arbitrary <*> arbitrary <*>  safeStr  <*> safeStr
 
-instance Arbitrary MetaObj where
-    arbitrary = pure ContextMeta
-
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
 

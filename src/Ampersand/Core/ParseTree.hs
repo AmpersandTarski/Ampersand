@@ -6,7 +6,6 @@
 module Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
    , Meta(..)
-   , MetaObj(..)
    , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
@@ -75,13 +74,11 @@ instance Named P_Context where
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
 data Meta = Meta { pos :: Origin
-              , mtObj :: MetaObj
               , mtName :: Text
               , mtVal :: Text
               } deriving (Show)
 instance Traced Meta where
   origin = pos
-data MetaObj = ContextMeta deriving (Eq,Ord,Show) -- for now, we just have meta data for the entire context
 
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule

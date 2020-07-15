@@ -101,11 +101,8 @@ instance Pretty P_Context where
                <+\> text "ENDCONTEXT"
              
 instance Pretty Meta where
-    pretty (Meta _ obj nm val) =
-        text "META" <~> obj <+> quote nm <+> quote val
-
-instance Pretty MetaObj where
-    pretty ContextMeta = empty -- for the context meta we don't need a keyword
+    pretty (Meta _ nm val) =
+        text "META" <+> quote nm <+> quote val
 
 instance Pretty P_RoleRule where
     pretty (Maintain _ roles rules) =

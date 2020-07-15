@@ -115,8 +115,7 @@ pTextMarkup = ReST     <$ pKey "REST"     <|>
 
 --- Meta ::= 'META' Text Text
 pMeta :: AmpParser Meta
-pMeta = Meta <$> currPos <* pKey "META" <*> pMetaObj <*> asText pString <*> asText pString
- where pMetaObj = return ContextMeta -- for the context meta we don't need a keyword
+pMeta = Meta <$> currPos <* pKey "META" <*> asText pString <*> asText pString
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN' 
 pPatternDef  :: AmpParser P_Pattern
