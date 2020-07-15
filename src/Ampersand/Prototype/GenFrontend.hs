@@ -502,9 +502,9 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
         setUserAtts :: [TemplateKeyValue]  -> (StringTemplate String -> StringTemplate String)
         setUserAtts kvPairs = foldl' fun id kvPairs
           where
-            fun :: (Stringable b) => (StringTemplate  b-> StringTemplate  b) -> TemplateKeyValue -> (StringTemplate  b-> StringTemplate  b)
+            fun :: (Stringable b) => (StringTemplate b -> StringTemplate b) -> TemplateKeyValue -> (StringTemplate b -> StringTemplate b)
             fun soFar keyVal = soFar . doAttribute keyVal
-            doAttribute :: (Stringable b) => TemplateKeyValue -> (StringTemplate  b-> StringTemplate  b)
+            doAttribute :: (Stringable b) => TemplateKeyValue -> (StringTemplate b -> StringTemplate b)
             doAttribute h = case tkval h of
                 Nothing ->  setAttribute (T.unpack $ tkkey h) True
                 Just val -> setAttribute (T.unpack $ tkkey h) val
