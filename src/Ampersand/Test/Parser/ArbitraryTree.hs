@@ -14,12 +14,12 @@ import           Test.QuickCheck hiding (listOf1)
 
 -- Useful functions to build on the quick check functions
 
--- Generates a simple ascii character
+-- | Generates a simple ascii character
 printable :: Gen Char
 printable = suchThat arbitrary isValid
-    where isValid x = isPrint x && x <= 'Ñ' -- printable ASCII characters
+    where isValid x = isPrint x && isAscii x
 
--- Generates a simple string of ascii characters
+-- | Generates a simple string of ascii characters
 safeStr :: Gen Text
 safeStr = (T.pack <$> listOf printable) `suchThat` noEsc
 
