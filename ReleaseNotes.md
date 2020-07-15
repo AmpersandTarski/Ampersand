@@ -1,5 +1,13 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+* [Issue #1084](https://github.com/AmpersandTarski/Ampersand/issues/1084) Add template attributes to BOX syntax
+* **Breaking change** Because of the implementation of feature of #1084 we could greatly reduce the number of BOX templates (e.g. ROWS, ROWSNL, HROWS and HROWSNL are merged into a single template). Documentation of new templates can be found [here](https://github.com/AmpersandTarski/prototype/tree/master/templates). 
+This breaking change presents the opportunity to rename the built-in templates to more self explaining template names:
+  * ROWS -> FORM
+  * COLS -> TABLE
+  * TABS -> TABS (unchanged)
+
 ## v4.0.1 (19 june 2020)
 
 * [Issue #1026](https://github.com/AmpersandTarski/Ampersand/issues/1026) Allow PATTERNs with the same name. Meaning: all declarations from patterns with the same name are merged into one.
