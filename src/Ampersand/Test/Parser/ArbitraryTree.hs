@@ -30,6 +30,9 @@ safeStr1 = safeStr `suchThat` (not.T.null)
 noEsc :: Text -> Bool
 noEsc = not . T.any ( == '\\')
 
+listOf1 :: Gen a -> Gen (NE.NonEmpty a)
+listOf1 p = (NE.:|) <$> p <*> listOf p
+
 -- Generates a filePath
 safeFilePath :: Gen FilePath
 safeFilePath = T.unpack <$> safeStr
@@ -127,9 +130,6 @@ instance Arbitrary Meta where
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
 
-listOf1 :: Gen a -> Gen (NE.NonEmpty a)
-listOf1 p = (NE.:|) <$> p <*> listOf p
-
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary <*> listOf1 arbitrary <*> arbitrary
 
@@ -200,13 +200,13 @@ instance Arbitrary TermPrim where
     arbitrary =
         oneof [
            PI <$> arbitrary,
-           Pid <$> arbitrary <*> genConceptOne,
+           Pid <$> arbitrary <*> arbitrary,
            Patm <$> arbitrary <*> arbitrary <*> maybeConceptOne,
            PVee <$> arbitrary,
-           Pfull <$> arbitrary <*> genConceptOne <*> genConceptOne,
+           Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
            PNamedR <$> arbitrary
        ]
-      where maybeConceptOne = oneof [pure Nothing, Just <$> genConceptOne]
+      where maybeConceptOne = oneof [pure Nothing, Just <$> arbitrary]
 
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
     arbitrary = PairView <$> listOf1 arbitrary
@@ -285,7 +285,7 @@ instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
+    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> arbitrary
                     <*> arbitrary <*> arbitrary <*> listOf arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
@@ -322,10 +322,13 @@ instance Arbitrary PMessage where
     arbitrary = PMessage <$> arbitrary
 
 instance Arbitrary P_Concept where
-    arbitrary = PCpt <$> upperId
+    arbitrary = frequency 
+      [ (100, PCpt <$> upperId)
+      , (  1, pure P_ONE)
+      ]
 
-genConceptOne :: Gen P_Concept
-genConceptOne = oneof [arbitrary, pure P_ONE]
+--genConceptOne :: Gen P_Concept
+--genConceptOne = oneof [arbitrary, pure P_ONE]
 
 instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary
