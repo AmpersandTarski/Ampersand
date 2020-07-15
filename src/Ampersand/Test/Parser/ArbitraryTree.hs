@@ -125,16 +125,16 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- generic meta information
 
 instance Arbitrary Meta where
-    arbitrary = Meta <$> arbitrary <*>  safeStr  <*> safeStr
+    arbitrary = Meta <$> arbitrary <*> safeStr <*> safeStr
 
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
 
 instance Arbitrary Representation where
-    arbitrary = Repr <$> arbitrary <*> listOf1 arbitrary <*> arbitrary
+    arbitrary = Repr <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary TType where
-    arbitrary = elements [ tt | tt <- [minBound..] , tt /= TypeOfOne]
+    arbitrary = elements . filter (TypeOfOne /=) $ [minBound..]
 
 instance Arbitrary Role where
     arbitrary =
@@ -279,8 +279,12 @@ instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
          t <- arbitrary 
          pure $ h NE.:| t
 instance Arbitrary P_IdentDef where
-    arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
+    arbitrary = P_Id <$> arbitrary 
+                     <*> safeStr
+                     <*> arbitrary `suchThat` (not . isOne)
                      <*> arbitrary
+      where isOne P_ONE = True
+            isOne _     = False
 instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
