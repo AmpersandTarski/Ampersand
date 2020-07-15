@@ -132,10 +132,8 @@ instance Arbitrary P_RoleRule where
 
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary 
-                     <*> arbitrary `suchThat` notOne
+                     <*> arbitrary `suchThat` noOne
                      <*> arbitrary
-       where notOne :: NE.NonEmpty P_Concept -> Bool
-             notOne = L.notElem P_ONE . toList
 
 instance Arbitrary TType where
     arbitrary = elements . filter (TypeOfOne /=) $ [minBound..]
@@ -283,10 +281,9 @@ instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary 
                      <*> safeStr
-                     <*> arbitrary `suchThat` (not . isOne)
+                     <*> arbitrary `suchThat` notIsOne
                      <*> arbitrary
-      where isOne P_ONE = True
-            isOne _     = False
+
 instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
@@ -333,16 +330,15 @@ instance Arbitrary P_Concept where
       , (  1, pure P_ONE)
       ]
 
---genConceptOne :: Gen P_Concept
---genConceptOne = oneof [arbitrary, pure P_ONE]
-
 instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary
 
 instance Arbitrary PClassify where
-    arbitrary =
-        PClassify <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
-
+    arbitrary = PClassify 
+         <$> arbitrary 
+         <*> arbitrary `suchThat` notIsOne
+         <*> arbitrary `suchThat` noOne
+     
 instance Arbitrary Lang where
     arbitrary = elements [minBound..]
 
@@ -357,3 +353,9 @@ instance Arbitrary PandocFormat where
 
 instance Arbitrary Prop where
     arbitrary = elements [minBound..]
+
+
+noOne :: Foldable t => t P_Concept -> Bool
+noOne = all notIsOne
+notIsOne :: P_Concept -> Bool
+notIsOne = (P_ONE /= )        
