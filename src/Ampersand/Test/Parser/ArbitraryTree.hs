@@ -240,10 +240,15 @@ instance Arbitrary PAtomPair where
     arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Population where
-    arbitrary =
-        oneof [
-          P_RelPopu Nothing Nothing <$> arbitrary <*> arbitrary <*> arbitrary,
-          P_CptPopu <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = oneof 
+        [ P_RelPopu Nothing Nothing 
+             <$> arbitrary 
+             <*> arbitrary
+             <*> arbitrary
+        , P_CptPopu 
+             <$> arbitrary
+             <*> arbitrary `suchThat` notIsOne
+             <*> arbitrary
         ]
 
 instance Arbitrary P_NamedRel where
