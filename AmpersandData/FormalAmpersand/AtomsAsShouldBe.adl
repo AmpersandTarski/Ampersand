@@ -100,19 +100,19 @@ VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
-ROWS [ name             : name
+BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
      ]
 
 INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
-ROWS [ "relation(s)"  : in
+BOX [ "relation(s)"  : in
      , lAtom          : lAtom
      , rAtom          : rAtom
      ]
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
-ROWS [ name    : name
+BOX [ name    : name
      , source  : source
      , target  : target
      ]

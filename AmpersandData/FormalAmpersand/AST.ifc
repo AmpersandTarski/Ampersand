@@ -48,7 +48,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
   ]
 INTERFACE IsaTree FOR Ampersand : I[Concept]
-  BOX <ROWSNL>
+  BOX <FORM noLabels>
     [ concept : I[Concept] LINKTO INTERFACE Concept
     , "is a"  : genspc[Isa*Concept]~;gengen[Isa*Concept] LINKTO INTERFACE IsaTree
     , "Kinds" : gengen[Isa*Concept]~;genspc[Isa*Concept] LINKTO INTERFACE IsaTree
