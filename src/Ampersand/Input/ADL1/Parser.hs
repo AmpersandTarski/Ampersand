@@ -199,7 +199,7 @@ pClassify = fun <$> currPos
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
-pRuleDef =  P_Ru <$> currPos
+pRuleDef =  P_Rule <$> currPos
                  <*  pKey "RULE"
                  <*> (try pLabel <|> rulid <$> currPos)
                  <*> pRule

@@ -198,7 +198,7 @@ instance Pretty SrcOrTgt where
     pretty = text . map toUpper . show
 
 instance Pretty (P_Rule TermPrim) where
-    pretty (P_Ru _ nm expr mean msg viol) =
+    pretty (P_Rule _ nm expr mean msg viol) =
                 text "RULE" <+> rName <~>
                 expr <+\>
                 perline mean <+\>

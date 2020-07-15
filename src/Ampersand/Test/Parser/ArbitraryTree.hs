@@ -107,22 +107,22 @@ instance Arbitrary Origin where
 instance Arbitrary P_Context where
     arbitrary = PCtx
        <$> upperId   -- name
-       <*> listOf arbitrary  -- pos
+       <*> arbitrary  -- pos
        <*> arbitrary  -- lang
        <*> arbitrary  -- markup
-       <*> listOf arbitrary -- patterns
-       <*> listOf arbitrary -- rules
-       <*> listOf arbitrary -- relations
-       <*> listOf arbitrary -- concepts
-       <*> listOf arbitrary -- identities
-       <*> listOf arbitrary -- role rules
-       <*> listOf arbitrary -- representation
-       <*> listOf arbitrary -- views
-       <*> listOf arbitrary -- gen definitions
-       <*> listOf arbitrary -- interfaces
-       <*> listOf arbitrary -- purposes
-       <*> listOf arbitrary -- populations
-       <*> listOf arbitrary -- generic meta information
+       <*> arbitrary -- patterns
+       <*> arbitrary -- rules
+       <*> arbitrary -- relations
+       <*> arbitrary -- concepts
+       <*> arbitrary -- identities
+       <*> arbitrary -- role rules
+       <*> arbitrary -- representation
+       <*> arbitrary -- views
+       <*> arbitrary -- gen definitions
+       <*> arbitrary -- interfaces
+       <*> arbitrary -- purposes
+       <*> arbitrary -- populations
+       <*> arbitrary -- generic meta information
 
 instance Arbitrary Meta where
     arbitrary = Meta <$> arbitrary <*> safeStr <*> safeStr
@@ -150,12 +150,13 @@ instance Arbitrary P_Pattern where
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Relation where
-    arbitrary = P_Relation <$> lowerId         -- name
-                      <*> arbitrary       -- sign
-                      <*> arbitrary       -- props
-                      <*> listOf safeStr1 -- pragma. Should be three, but the grammar allows more.
-                      <*> arbitrary       -- meaning
-                      <*> arbitrary       -- origin
+    arbitrary = P_Relation 
+         <$> lowerId
+         <*> arbitrary
+         <*> arbitrary
+         <*> listOf safeStr1 `suchThat` (\xs -> 3 <= length xs)
+         <*> arbitrary
+         <*> arbitrary
 
 instance Arbitrary a => Arbitrary (Term a) where
     arbitrary = do lv <- choose (0,6)
@@ -227,7 +228,7 @@ instance Arbitrary SrcOrTgt where
     arbitrary = elements [minBound..]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
-    arbitrary = P_Ru <$> arbitrary <*> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary
+    arbitrary = P_Rule <$> arbitrary <*> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary
                      <*> arbitrary
               where ruleTerm = sized $ genTerm 0 -- rule is a term level 0
 

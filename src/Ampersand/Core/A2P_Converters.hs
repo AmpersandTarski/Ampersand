@@ -68,7 +68,7 @@ aPattern2pPattern pat =
 
 aRule2pRule :: Rule -> P_Rule TermPrim
 aRule2pRule rul =
- P_Ru { pos  = rrfps rul
+ P_Rule { pos  = rrfps rul
       , rr_nm   = rrnm rul
       , rr_exp  = aExpression2pTermPrim (formalExpression rul)
       , rr_mean = map aMeaning2pMeaning (rrmean rul)
