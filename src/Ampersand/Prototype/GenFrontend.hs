@@ -24,7 +24,7 @@ import qualified RIO.List as L
 import           RIO.Time
 import           System.Directory
 import           System.FilePath
-import           Text.StringTemplate(StringTemplate, setAttribute, newSTMP, checkTemplateDeep, render)
+import           Text.StringTemplate(Stringable, StringTemplate, setAttribute, newSTMP, checkTemplateDeep, render)
 import           Text.StringTemplate.GenericStandard () -- only import instances
 
 {- TODO
@@ -500,12 +500,14 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
         fillInTheBlanks [] = id
         fillInTheBlanks (h:tl) = setAttribute h False . fillInTheBlanks tl
         setUserAtts :: [TemplateKeyValue]  -> (StringTemplate String -> StringTemplate String)
-        setUserAtts [] = id
-        -- TODO: make it so that the "empty" attributes (i.e. tkval = Nothing) is set to True, not "true". Just like with the blanks are set to False.
-        setUserAtts (h:tl) = setAttribute (T.unpack $ tkkey h) (fromMaybe ("true") $ tkval h)
-                           . setUserAtts tl
-
-
+        setUserAtts kvPairs = foldl' fun id kvPairs
+          where
+            fun :: (Stringable b) => (StringTemplate  b-> StringTemplate  b) -> TemplateKeyValue -> (StringTemplate  b-> StringTemplate  b)
+            fun soFar keyVal = soFar . doAttribute keyVal
+            doAttribute :: (Stringable b) => TemplateKeyValue -> (StringTemplate  b-> StringTemplate  b)
+            doAttribute h = case tkval h of
+                Nothing ->  setAttribute (T.unpack $ tkkey h) True
+                Just val -> setAttribute (T.unpack $ tkkey h) val
 
 downloadPrototypeFramework :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
                              RIO env Bool
