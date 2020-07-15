@@ -131,8 +131,12 @@ instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
 
 instance Arbitrary Representation where
-    arbitrary = Repr <$> arbitrary <*> arbitrary <*> arbitrary
-
+    arbitrary = Repr <$> arbitrary 
+                     <*> arbitrary `suchThat` notOne
+                     <*> arbitrary
+       where notOne :: NE.NonEmpty P_Concept -> Bool
+             notOne = L.notElem P_ONE . toList
+             
 instance Arbitrary TType where
     arbitrary = elements . filter (TypeOfOne /=) $ [minBound..]
 
@@ -197,24 +201,22 @@ genTerm lv n = if n == 0
              Prim <$> arbitrary]]
 
 instance Arbitrary TermPrim where
-    arbitrary =
-        oneof [
-           PI <$> arbitrary,
-           Pid <$> arbitrary <*> arbitrary,
-           Patm <$> arbitrary <*> arbitrary <*> maybeConceptOne,
-           PVee <$> arbitrary,
-           Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
-           PNamedR <$> arbitrary
-       ]
-      where maybeConceptOne = oneof [pure Nothing, Just <$> arbitrary]
+    arbitrary = oneof 
+        [ PI      <$> arbitrary
+        , Pid     <$> arbitrary <*> arbitrary
+        , Patm    <$> arbitrary <*> arbitrary <*> arbitrary
+        , PVee    <$> arbitrary
+        , Pfull   <$> arbitrary <*> arbitrary <*> arbitrary
+        , PNamedR <$> arbitrary
+        ]
 
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
-    arbitrary = PairView <$> listOf1 arbitrary
+    arbitrary = PairView <$> arbitrary
                
 instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
-    arbitrary = oneof [
-            PairViewText <$> arbitrary <*> safeStr,
-            PairViewExp <$> arbitrary <*> arbitrary <*> sized(genTerm 1) -- only accepts pTerm, no pRule.
+    arbitrary = oneof 
+        [ PairViewText <$> arbitrary <*> safeStr
+        , PairViewExp  <$> arbitrary <*> arbitrary <*> sized(genTerm 1) -- only accepts pTerm, no pRule.
         ]
 
 instance Arbitrary a => Arbitrary (PairViewTerm a) where
