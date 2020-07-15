@@ -235,7 +235,7 @@ pRelationDef = reorder <$> currPos
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
             where reorder pos' (nm,sign,fun) prop pragma meanings prs =
-                    (P_Sgn nm sign props pragma meanings pos', map pair2pop prs)
+                    (P_Relation nm sign props pragma meanings pos', map pair2pop prs)
                     where 
                       props = prop `Set.union` fun
                       pair2pop :: PAtomPair -> P_Population

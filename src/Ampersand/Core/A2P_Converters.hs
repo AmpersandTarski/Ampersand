@@ -78,7 +78,7 @@ aRule2pRule rul =
 
 aRelation2pRelation :: Relation -> P_Relation
 aRelation2pRelation dcl = 
- P_Sgn { dec_nm     = decnm dcl
+ P_Relation { dec_nm     = decnm dcl
        , dec_sign   = aSign2pSign (decsgn dcl)
        , dec_prps   = decprps dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]

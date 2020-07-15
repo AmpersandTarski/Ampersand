@@ -129,7 +129,7 @@ instance Pretty P_Pattern where
           <+\> text "ENDPATTERN"
 
 instance Pretty P_Relation where
-    pretty (P_Sgn nm sign prps pragma mean _) =
+    pretty (P_Relation nm sign prps pragma mean _) =
         text "RELATION" <+> (text . T.unpack) nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
         where props | prps == Set.fromList [Sym, Asy] = text "[PROP]"
                     | null prps                       = empty

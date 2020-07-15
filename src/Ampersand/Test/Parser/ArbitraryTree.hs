@@ -136,7 +136,7 @@ instance Arbitrary Representation where
                      <*> arbitrary
        where notOne :: NE.NonEmpty P_Concept -> Bool
              notOne = L.notElem P_ONE . toList
-             
+
 instance Arbitrary TType where
     arbitrary = elements . filter (TypeOfOne /=) $ [minBound..]
 
@@ -152,7 +152,7 @@ instance Arbitrary P_Pattern where
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Relation where
-    arbitrary = P_Sgn <$> lowerId         -- name
+    arbitrary = P_Relation <$> lowerId         -- name
                       <*> arbitrary       -- sign
                       <*> arbitrary       -- props
                       <*> listOf safeStr1 -- pragma. Should be three, but the grammar allows more.
