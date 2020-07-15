@@ -122,7 +122,7 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- generic meta information
 
 instance Arbitrary Meta where
-    arbitrary = Meta <$> arbitrary <*> arbitrary <*>  safeStr  <*> safeStr
+    arbitrary = Meta <$> arbitrary <*>  safeStr  <*> safeStr
 
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
