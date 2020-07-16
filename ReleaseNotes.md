@@ -1,5 +1,9 @@
 # Release notes of Ampersand
 
+## v4.0.2 (17 july 2020)
+
+* Small bugfixes and refactorings
+
 ## v4.0.1 (19 june 2020)
 
 * [Issue #1026](https://github.com/AmpersandTarski/Ampersand/issues/1026) Allow PATTERNs with the same name. Meaning: all declarations from patterns with the same name are merged into one.
