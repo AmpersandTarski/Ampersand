@@ -11,6 +11,7 @@ import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import           Test.QuickCheck hiding (listOf1)
+import           Test.QuickCheck.Instances ()
 
 -- Useful functions to build on the quick check functions
 
@@ -219,18 +220,22 @@ instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
         ]
 
 instance Arbitrary a => Arbitrary (PairViewTerm a) where
-    arbitrary = PairViewTerm <$> arbitrary -- should be only (PairView (Term a))
+    arbitrary = PairViewTerm <$> arbitrary
 
 instance Arbitrary a => Arbitrary (PairViewSegmentTerm a) where
-    arbitrary = PairViewSegmentTerm <$> arbitrary -- should be only PairViewSegment (Term a)
+    arbitrary = PairViewSegmentTerm <$> arbitrary
 
 instance Arbitrary SrcOrTgt where
     arbitrary = elements [minBound..]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
-    arbitrary = P_Rule <$> arbitrary <*> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary
-                     <*> arbitrary
-              where ruleTerm = sized $ genTerm 0 -- rule is a term level 0
+    arbitrary = P_Rule 
+        <$> arbitrary
+        <*> safeStr
+        <*> sized (genTerm 0) -- rule is a term level 0
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
 
 instance Arbitrary ConceptDef where
     arbitrary = Cd <$> arbitrary <*> safeStr <*> safeStr
@@ -241,8 +246,10 @@ instance Arbitrary PAtomPair where
 
 instance Arbitrary P_Population where
     arbitrary = oneof 
-        [ P_RelPopu Nothing Nothing 
-             <$> arbitrary 
+        [ P_RelPopu 
+             <$> arbitrary `suchThat` noOne
+             <*> arbitrary `suchThat` noOne
+             <*> arbitrary
              <*> arbitrary
              <*> arbitrary
         , P_CptPopu 
@@ -261,29 +268,25 @@ instance Arbitrary PAtomValue where
        [ScriptString <$> arbitrary <*> safeStr `suchThat`  stringConstraints,
         ScriptInt <$> arbitrary <*> arbitrary `suchThat` (0 <= ) ,
         ScriptFloat <$> arbitrary <*> arbitrary `suchThat` (0 <= ) ,
---        ScriptDate <$> arbitrary <*> arbitrary,
---        ScriptDateTime <$> arbitrary <*> arbitrary,
+        ScriptDate <$> arbitrary <*> arbitrary,
+        ScriptDateTime <$> arbitrary <*> arbitrary,
         ComnBool <$> arbitrary <*> arbitrary
        ]
      where stringConstraints :: Text -> Bool
-           stringConstraints str =
-             case readLitChar (T.unpack str) of
-              [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints (T.pack cs)
-              _        -> True  -- end of string
+           stringConstraints = all isValid . T.unpack
+           isValid :: Char -> Bool
+           isValid c = c `notElem` ['\'', '"', '\\']
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> arbitrary
                       <*> safeStr1
-                      <*> listOf arbitrary
-                      <*> sized (objTermPrim False) <*> arbitrary <*> safeStr
+                      <*> arbitrary
+                      <*> sized (objTermPrim False)
+                      <*> arbitrary
+                      <*> safeStr
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
 
-instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
-    arbitrary = do 
-         h <- arbitrary
-         t <- arbitrary 
-         pure $ h NE.:| t
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary 
                      <*> safeStr
@@ -295,7 +298,7 @@ instance Arbitrary P_IdentSegment where
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
     arbitrary = P_Vd <$> arbitrary <*> safeStr <*> arbitrary
-                    <*> arbitrary <*> arbitrary <*> listOf arbitrary
+                    <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeFilePath
