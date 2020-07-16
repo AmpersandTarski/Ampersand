@@ -262,7 +262,7 @@ instance Flippable PAtomPair where
 --instance Show PSingleton where
 -- show = psRaw
 --instance Eq PSingleton where
--- a == b = psRaw a == psRaw b
+--   a == b = compare a b == EQ
 --instance Ord PSingleton where
 -- compare a b = compare (psRaw a) (psRaw b)
 --instance Traced PSingleton where
@@ -369,19 +369,6 @@ instance Eq P_NamedRel where
       = case (p_mbSign nr, p_mbSign nr') of
              (Just sgn, Just sgn')  -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
              _                      -> False
-
-{- For whenever it may turn out to be useful
-instance Eq TermPrim where
-  PI _           == PI _            = True
-  Pid _ (Just c) == Pid _ (Just c') = p_cptnm c==p_cptnm c'
-  Pid _ Nothing  == Pid _ Nothing   = True
-  Patm _ x c     == Patm _ x' c'    = x==x' && p_cptnm c==p_cptnm c'
-  PVee _         == PVee _          = True
-  Pfull _ c d    == Pfull _ c' d'   = p_cptnm c==p_cptnm c' && d==d'
-  Prel _ x       == Prel _ x'       = x==x'
-  PTrel _ x s    == PTrel _ x' s'   = x==x' && pSrc s==pSrc s' && pTgt s==pTgt s'
-  _ == _ = False
--}
 
 data Term a
    = Prim a
@@ -559,7 +546,7 @@ instance Ord (P_Rule a) where
                      (maybeOrdering (origin a) (origin b))
      x -> x  
 instance Eq (P_Rule a) where --Required for merge of P_Contexts
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Traced (P_Rule a) where
  origin = pos
 instance Functor P_Rule where fmap = fmapDefault
@@ -620,7 +607,7 @@ instance Ord P_Interface where --Required for merge of P_Contexts
                      (maybeOrdering (origin a) (origin b))
      x -> x
 instance Eq P_Interface where
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Named P_Interface where
  name = ifc_Name
 
@@ -660,7 +647,7 @@ instance Ord (P_BoxItem a) where
                         ])
                      (maybeOrdering (origin a) (origin b))
 instance Eq (P_BoxItem a) where
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Named (P_BoxItem a) where
   name = obj_nm
 instance Traced (P_BoxItem a) where
@@ -683,7 +670,7 @@ instance Ord (P_IdentDf a) where
                         ])
                      (maybeOrdering (origin a) (origin b))
 instance Eq (P_IdentDf a) where 
-  p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Traced (P_IdentDf a) where
  origin = pos
 instance Functor P_IdentDf where fmap = fmapDefault
@@ -720,7 +707,7 @@ instance Ord (P_ViewD a) where
                      (maybeOrdering (origin a) (origin b))
      x -> x
 instance Eq (P_ViewD a) where --Required for merge of P_Contexts
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Traced (P_ViewD a) where
  origin = pos
 instance Named (P_ViewD a) where
@@ -802,7 +789,7 @@ instance Ord PPurpose where --Required for merge of P_Contexts
                      (maybeOrdering (origin a) (origin b))
      x -> x
 instance Eq PPurpose where --Required for merge of P_Contexts
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 
 instance Named PPurpose where
  name pe = name (pexObj pe)
