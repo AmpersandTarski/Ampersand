@@ -123,7 +123,7 @@ data Pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
            }   deriving (Typeable)  -- Show for debugging purposes
 instance Eq Pattern where
-  p==p' = ptnm p==ptnm p'
+  a == b = compare a b == EQ
 instance Unique Pattern where
   showUnique = name
 instance Ord Pattern where
@@ -167,11 +167,11 @@ data Rule =
         , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
         } deriving Typeable
 instance Eq Rule where
-  r==r' = name r==name r' -- Origin should not be here: A check that they all have unique names is done before typechecking.
+  a == b = compare a b == EQ
 instance Unique Rule where
   showUnique = name
 instance Ord Rule where
-  compare = compare `on` rrnm
+  compare = compare `on` rrnm  -- Origin should not be here: A check that they all have unique names is done before typechecking.
 instance Show Rule where
   show x
    = "RULE "<> (T.unpack $ if T.null (name x) then mempty else name x<>": ")<> show (formalExpression x)
@@ -200,7 +200,7 @@ data DnfClause = Dnf { antcs :: [Expression]
 -}
 
 instance Eq Conjunct where
-  rc==rc' = rc_id rc==rc_id rc'
+  a == b = compare a b == EQ
 instance Unique Conjunct where
   showUnique = rc_id
 instance Ord Conjunct where
@@ -285,7 +285,7 @@ instance Traced ViewDef where
 instance Unique ViewDef where
   showUnique vd = name vd<>"_"<>name (vdcpt vd) 
 instance Eq ViewDef where
-  a == b = vdlbl a == vdlbl b && vdcpt a == vdcpt b
+  a == b = compare a b == EQ
 instance Ord ViewDef where
   a `compare` b = (vdlbl a,vdcpt a) `compare` (vdlbl b, vdcpt b)
 data ViewSegment = ViewSegment
@@ -472,9 +472,8 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
                      , explRefIds :: [Text]     -- ^ The references of the explaination
                      } deriving (Show, Typeable)
 --instance Eq Purpose where
---  x0 == x1  =  explObj x0 == explObj x1 &&  
---               origin x0  == origin x1 &&
---               (amLang . explMarkup) x0 == (amLang . explMarkup) x1
+--  a == b = compare a b == EQ
+
 instance Ord Purpose where
  compare a b = case compare (explObj a) (explObj b) of
      EQ -> fromMaybe (fatal . T.intercalate "\n" $
@@ -812,7 +811,7 @@ instance Ord A_Concept where
   compare (PlainConcept{}) ONE = GT
 
 instance Eq A_Concept where
-  (==) a b = compare a b == EQ
+  a == b = compare a b == EQ
 
 -}
   
