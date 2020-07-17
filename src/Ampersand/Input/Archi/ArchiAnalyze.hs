@@ -519,7 +519,7 @@ translateArchiElem :: Text -> (Text, Text) -> Maybe Text -> Set.Set Prop-> [(Tex
                       -> (P_Population,P_Relation,Maybe Text,PPurpose)
 translateArchiElem label (srcLabel,tgtLabel) maybeViewName props tuples
  = ( P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (transTuples tuples)
-   , P_Sgn label (P_Sign (PCpt srcLabel) (PCpt tgtLabel)) props [] [] OriginUnknown
+   , P_Relation label (P_Sign (PCpt srcLabel) (PCpt tgtLabel)) props [] [] OriginUnknown
    , maybeViewName
    , PRef2 { pos = OriginUnknown      -- the position in the Ampersand script of this purpose definition
            , pexObj = PRef2Relation ref_to_relation    -- the reference to the object whose purpose is explained

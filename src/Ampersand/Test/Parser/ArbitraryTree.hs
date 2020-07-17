@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+﻿{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Test.Parser.ArbitraryTree () where
@@ -11,15 +11,16 @@ import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import           Test.QuickCheck hiding (listOf1)
+import           Test.QuickCheck.Instances ()
 
 -- Useful functions to build on the quick check functions
 
--- Generates a simple ascii character
+-- | Generates a simple ascii character
 printable :: Gen Char
 printable = suchThat arbitrary isValid
-    where isValid x = isPrint x && x <= 'Ñ' -- printable ASCII characters
+    where isValid x = isPrint x && isAscii x
 
--- Generates a simple string of ascii characters
+-- | Generates a simple string of ascii characters
 safeStr :: Gen Text
 safeStr = (T.pack <$> listOf printable) `suchThat` noEsc
 
@@ -29,6 +30,9 @@ safeStr1 = safeStr `suchThat` (not.T.null)
 
 noEsc :: Text -> Bool
 noEsc = not . T.any ( == '\\')
+
+listOf1 :: Gen a -> Gen (NE.NonEmpty a)
+listOf1 p = (NE.:|) <$> p <*> listOf p
 
 -- Generates a filePath
 safeFilePath :: Gen FilePath
@@ -117,40 +121,36 @@ instance Arbitrary Origin where
 instance Arbitrary P_Context where
     arbitrary = PCtx
        <$> upperId   -- name
-       <*> listOf arbitrary  -- pos
+       <*> arbitrary  -- pos
        <*> arbitrary  -- lang
        <*> arbitrary  -- markup
-       <*> listOf arbitrary -- patterns
-       <*> listOf arbitrary -- rules
-       <*> listOf arbitrary -- relations
-       <*> listOf arbitrary -- concepts
-       <*> listOf arbitrary -- identities
-       <*> listOf arbitrary -- role rules
-       <*> listOf arbitrary -- representation
-       <*> listOf arbitrary -- views
-       <*> listOf arbitrary -- gen definitions
-       <*> listOf arbitrary -- interfaces
-       <*> listOf arbitrary -- purposes
-       <*> listOf arbitrary -- populations
-       <*> listOf arbitrary -- generic meta information
+       <*> arbitrary -- patterns
+       <*> arbitrary -- rules
+       <*> arbitrary -- relations
+       <*> arbitrary -- concepts
+       <*> arbitrary -- identities
+       <*> arbitrary -- role rules
+       <*> arbitrary -- representation
+       <*> arbitrary -- views
+       <*> arbitrary -- gen definitions
+       <*> arbitrary -- interfaces
+       <*> arbitrary -- purposes
+       <*> arbitrary -- populations
+       <*> arbitrary -- generic meta information
 
 instance Arbitrary Meta where
-    arbitrary = Meta <$> arbitrary <*> arbitrary <*>  safeStr  <*> safeStr
-
-instance Arbitrary MetaObj where
-    arbitrary = pure ContextMeta
+    arbitrary = Meta <$> arbitrary <*> safeStr <*> safeStr
 
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
 
-listOf1 :: Gen a -> Gen (NE.NonEmpty a)
-listOf1 p = (NE.:|) <$> p <*> listOf p
-
 instance Arbitrary Representation where
-    arbitrary = Repr <$> arbitrary <*> listOf1 arbitrary <*> arbitrary
+    arbitrary = Repr <$> arbitrary 
+                     <*> arbitrary `suchThat` noOne
+                     <*> arbitrary
 
 instance Arbitrary TType where
-    arbitrary = elements [ tt | tt <- [minBound..] , tt /= TypeOfOne]
+    arbitrary = elements . filter (TypeOfOne /=) $ [minBound..]
 
 instance Arbitrary Role where
     arbitrary =
@@ -164,12 +164,13 @@ instance Arbitrary P_Pattern where
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Relation where
-    arbitrary = P_Sgn <$> lowerId         -- name
-                      <*> arbitrary       -- sign
-                      <*> arbitrary       -- props
-                      <*> listOf safeStr1 -- pragma. Should be three, but the grammar allows more.
-                      <*> arbitrary       -- meaning
-                      <*> arbitrary       -- origin
+    arbitrary = P_Relation 
+         <$> lowerId
+         <*> arbitrary
+         <*> arbitrary
+         <*> listOf safeStr1 `suchThat` (\xs -> 3 <= length xs)
+         <*> arbitrary
+         <*> arbitrary
 
 instance Arbitrary a => Arbitrary (Term a) where
     arbitrary = do lv <- choose (0,6)
@@ -213,39 +214,41 @@ genTerm lv n = if n == 0
              Prim <$> arbitrary]]
 
 instance Arbitrary TermPrim where
-    arbitrary =
-        oneof [
-           PI <$> arbitrary,
-           Pid <$> arbitrary <*> genConceptOne,
-           Patm <$> arbitrary <*> arbitrary <*> maybeConceptOne,
-           PVee <$> arbitrary,
-           Pfull <$> arbitrary <*> genConceptOne <*> genConceptOne,
-           PNamedR <$> arbitrary
-       ]
-      where maybeConceptOne = oneof [pure Nothing, Just <$> genConceptOne]
+    arbitrary = oneof 
+        [ PI      <$> arbitrary
+        , Pid     <$> arbitrary <*> arbitrary
+        , Patm    <$> arbitrary <*> arbitrary <*> arbitrary
+        , PVee    <$> arbitrary
+        , Pfull   <$> arbitrary <*> arbitrary <*> arbitrary
+        , PNamedR <$> arbitrary
+        ]
 
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
-    arbitrary = PairView <$> listOf1 arbitrary
+    arbitrary = PairView <$> arbitrary
                
 instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
-    arbitrary = oneof [
-            PairViewText <$> arbitrary <*> safeStr,
-            PairViewExp <$> arbitrary <*> arbitrary <*> sized(genTerm 1) -- only accepts pTerm, no pRule.
+    arbitrary = oneof 
+        [ PairViewText <$> arbitrary <*> safeStr
+        , PairViewExp  <$> arbitrary <*> arbitrary <*> sized(genTerm 1) -- only accepts pTerm, no pRule.
         ]
 
 instance Arbitrary a => Arbitrary (PairViewTerm a) where
-    arbitrary = PairViewTerm <$> arbitrary -- should be only (PairView (Term a))
+    arbitrary = PairViewTerm <$> arbitrary
 
 instance Arbitrary a => Arbitrary (PairViewSegmentTerm a) where
-    arbitrary = PairViewSegmentTerm <$> arbitrary -- should be only PairViewSegment (Term a)
+    arbitrary = PairViewSegmentTerm <$> arbitrary
 
 instance Arbitrary SrcOrTgt where
     arbitrary = elements [minBound..]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
-    arbitrary = P_Ru <$> arbitrary <*> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary
-                     <*> arbitrary
-              where ruleTerm = sized $ genTerm 0 -- rule is a term level 0
+    arbitrary = P_Rule 
+        <$> arbitrary
+        <*> safeStr
+        <*> sized (genTerm 0) -- rule is a term level 0
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
 
 instance Arbitrary ConceptDef where
     arbitrary = Cd <$> arbitrary <*> safeStr <*> safeStr
@@ -255,10 +258,17 @@ instance Arbitrary PAtomPair where
     arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Population where
-    arbitrary =
-        oneof [
-          P_RelPopu Nothing Nothing <$> arbitrary <*> arbitrary <*> arbitrary,
-          P_CptPopu <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = oneof 
+        [ P_RelPopu 
+             <$> arbitrary `suchThat` noOne
+             <*> arbitrary `suchThat` noOne
+             <*> arbitrary
+             <*> arbitrary
+             <*> arbitrary
+        , P_CptPopu 
+             <$> arbitrary
+             <*> arbitrary `suchThat` notIsOne
+             <*> arbitrary
         ]
 
 instance Arbitrary P_NamedRel where
@@ -271,38 +281,37 @@ instance Arbitrary PAtomValue where
        [ScriptString <$> arbitrary <*> safeStr `suchThat`  stringConstraints,
         ScriptInt <$> arbitrary <*> arbitrary `suchThat` (0 <= ) ,
         ScriptFloat <$> arbitrary <*> arbitrary `suchThat` (0 <= ) ,
---        ScriptDate <$> arbitrary <*> arbitrary,
---        ScriptDateTime <$> arbitrary <*> arbitrary,
+        ScriptDate <$> arbitrary <*> arbitrary,
+--        ScriptDateTime <$> arbitrary <*> arbitrary, --TODO #1090 Show of ScriptDateTime doesn't pass the roundtrip.
         ComnBool <$> arbitrary <*> arbitrary
        ]
      where stringConstraints :: Text -> Bool
-           stringConstraints str =
-             case readLitChar (T.unpack str) of
-              [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints (T.pack cs)
-              _        -> True  -- end of string
+           stringConstraints = all isValid . T.unpack
+           isValid :: Char -> Bool
+           isValid c = c `notElem` ['\'', '"', '\\']
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> arbitrary
                       <*> safeStr1
-                      <*> listOf arbitrary
-                      <*> sized (objTermPrim False) <*> arbitrary <*> safeStr
+                      <*> arbitrary
+                      <*> sized (objTermPrim False)
+                      <*> arbitrary
+                      <*> safeStr
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = sized genIfc
 
-instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
-    arbitrary = do 
-         h <- arbitrary
-         t <- arbitrary 
-         pure $ h NE.:| t
 instance Arbitrary P_IdentDef where
-    arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary 
+    arbitrary = P_Id <$> arbitrary 
+                     <*> safeStr
+                     <*> arbitrary `suchThat` notIsOne
                      <*> arbitrary
+
 instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                    <*> arbitrary <*> arbitrary <*> listOf arbitrary
+    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> arbitrary
+                    <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeFilePath
@@ -338,18 +347,20 @@ instance Arbitrary PMessage where
     arbitrary = PMessage <$> arbitrary
 
 instance Arbitrary P_Concept where
-    arbitrary = PCpt <$> upperId
-
-genConceptOne :: Gen P_Concept
-genConceptOne = oneof [arbitrary, pure P_ONE]
+    arbitrary = frequency 
+      [ (100, PCpt <$> upperId)
+      , (  1, pure P_ONE)
+      ]
 
 instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary
 
 instance Arbitrary PClassify where
-    arbitrary =
-        PClassify <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
-
+    arbitrary = PClassify 
+         <$> arbitrary 
+         <*> arbitrary `suchThat` notIsOne
+         <*> arbitrary `suchThat` noOne
+     
 instance Arbitrary Lang where
     arbitrary = elements [minBound..]
 
@@ -364,3 +375,9 @@ instance Arbitrary PandocFormat where
 
 instance Arbitrary Prop where
     arbitrary = elements [minBound..]
+
+
+noOne :: Foldable t => t P_Concept -> Bool
+noOne = all notIsOne
+notIsOne :: P_Concept -> Bool
+notIsOne = (P_ONE /= )        

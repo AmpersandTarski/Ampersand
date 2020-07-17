@@ -1,4 +1,4 @@
-module Ampersand.ADL1
+﻿module Ampersand.ADL1
    ( module Ampersand.Core.ParseTree
    , module Ampersand.Core.AbstractSyntaxTree
    , module Ampersand.ADL1.Expression
@@ -14,7 +14,6 @@ import Ampersand.Core.ParseTree (
          , P_Sign(..)
          , P_Context(..), mergeContexts
          , Meta(..)
-         , MetaObj(..)
          , P_RoleRule(..)
          , P_Pattern(..)
          , PairView(..), PairViewSegment(..)

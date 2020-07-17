@@ -1,4 +1,4 @@
-# Release notes of Ampersand
+﻿# Release notes of Ampersand
 
 ## Unreleased changes
 * [Issue #1084](https://github.com/AmpersandTarski/Ampersand/issues/1084) Add template attributes to BOX syntax
@@ -8,12 +8,15 @@ This breaking change presents the opportunity to rename the built-in templates t
   * COLS -> TABLE
   * TABS -> TABS (unchanged)
 
+## v4.0.2 (17 july 2020)
+
+* Small bugfixes and refactorings
+
 ## v4.0.1 (19 june 2020)
 
 * [Issue #1026](https://github.com/AmpersandTarski/Ampersand/issues/1026) Allow PATTERNs with the same name. Meaning: all declarations from patterns with the same name are merged into one.
 * [Issue #1081](https://github.com/AmpersandTarski/Ampersand/issues/1081) Disable invariant checking for documentation.
 * [Issue #988](https://github.com/AmpersandTarski/Ampersand/issues/988) Add switch to disable warnings with `ampersand daemon` command
-* [Issue #988](https://github.com/AmpersandTarski/Ampersand/issues/1084) enhancement of the Interface box template features.
 
 ## v4.0.0 (23 may 2020)
 

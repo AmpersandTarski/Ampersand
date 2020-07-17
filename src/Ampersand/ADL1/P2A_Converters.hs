@@ -833,7 +833,7 @@ pCtx2aCtx env
     typeCheckRul :: ContextInfo -> 
                  Maybe Text -- name of pattern the rule is defined in (if any)
               -> P_Rule (TermPrim, DisambPrim) -> Guarded Rule
-    typeCheckRul ci mPat P_Ru { pos = orig
+    typeCheckRul ci mPat P_Rule { pos = orig
                              , rr_nm = nm
                              , rr_exp = expr
                              , rr_mean = meanings

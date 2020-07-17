@@ -101,11 +101,8 @@ instance Pretty P_Context where
                <+\> text "ENDCONTEXT"
              
 instance Pretty Meta where
-    pretty (Meta _ obj nm val) =
-        text "META" <~> obj <+> quote nm <+> quote val
-
-instance Pretty MetaObj where
-    pretty ContextMeta = empty -- for the context meta we don't need a keyword
+    pretty (Meta _ nm val) =
+        text "META" <+> quote nm <+> quote val
 
 instance Pretty P_RoleRule where
     pretty (Maintain _ roles rules) =
@@ -132,7 +129,7 @@ instance Pretty P_Pattern where
           <+\> text "ENDPATTERN"
 
 instance Pretty P_Relation where
-    pretty (P_Sgn nm sign prps pragma mean _) =
+    pretty (P_Relation nm sign prps pragma mean _) =
         text "RELATION" <+> (text . T.unpack) nm <~> sign <+> props <+\> pragmas <+\> prettyhsep mean
         where props | prps == Set.fromList [Sym, Asy] = text "[PROP]"
                     | null prps                       = empty
@@ -201,7 +198,7 @@ instance Pretty SrcOrTgt where
     pretty = text . map toUpper . show
 
 instance Pretty (P_Rule TermPrim) where
-    pretty (P_Ru _ nm expr mean msg viol) =
+    pretty (P_Rule _ nm expr mean msg viol) =
                 text "RULE" <+> rName <~>
                 expr <+\>
                 perline mean <+\>

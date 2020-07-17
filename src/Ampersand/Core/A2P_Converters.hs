@@ -1,4 +1,4 @@
-{-# LANGUAGE DuplicateRecordFields #-}
+﻿{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Core.A2P_Converters (
@@ -68,7 +68,7 @@ aPattern2pPattern pat =
 
 aRule2pRule :: Rule -> P_Rule TermPrim
 aRule2pRule rul =
- P_Ru { pos  = rrfps rul
+ P_Rule { pos  = rrfps rul
       , rr_nm   = rrnm rul
       , rr_exp  = aExpression2pTermPrim (formalExpression rul)
       , rr_mean = map aMeaning2pMeaning (rrmean rul)
@@ -78,7 +78,7 @@ aRule2pRule rul =
 
 aRelation2pRelation :: Relation -> P_Relation
 aRelation2pRelation dcl = 
- P_Sgn { dec_nm     = decnm dcl
+ P_Relation { dec_nm     = decnm dcl
        , dec_sign   = aSign2pSign (decsgn dcl)
        , dec_prps   = decprps dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]
