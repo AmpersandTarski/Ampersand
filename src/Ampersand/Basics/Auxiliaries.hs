@@ -15,7 +15,7 @@ import           Ampersand.Basics.Prelude hiding (to)
 import           Ampersand.Basics.Version
 import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import           Data.Typeable
-import           RIO.List(foldl,intersect,nub,union)
+import           RIO.List(intersect,nub,union)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
 import qualified RIO.List as L
@@ -75,14 +75,14 @@ getCycles edges' =
 -- |  Warshall's transitive closure algorithm
 transClosureMap' :: Ord a => Map.Map a [a] -> Map.Map a [a]
 transClosureMap' xs
-  = foldl f xs (Map.keys xs `intersect` nub (concat (Map.elems xs)))
+  = foldl' f xs (Map.keys xs `intersect` nub (concat (Map.elems xs)))
     where
      f :: Ord a => Map.Map a [a] -> a -> Map.Map a [a]   -- The type is given for documentation purposes only
      f q x = Map.unionWith union q (Map.fromListWith union [(a, q PARTIAL.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
 -- |  Warshall's transitive closure algorithm
 transClosureMap :: Ord a => Map.Map a (Set.Set a) -> Map.Map a (Set.Set a)
 transClosureMap xs
-  = foldl f xs (Map.keysSet xs `Set.intersection` mconcat (Map.elems xs))
+  = foldl' f xs (Map.keysSet xs `Set.intersection` mconcat (Map.elems xs))
     where
      f :: Ord a => Map.Map a (Set.Set a) -> a -> Map.Map a (Set.Set a)
      f q x = Map.unionWith Set.union q (Map.fromListWith Set.union [(a, q PARTIAL.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
@@ -92,7 +92,7 @@ transClosureMap xs
 -- converse [("foo",[2,2,3]),("foo",[3,4]),("bar",[4,5])]  == [(2,["foo"]),(3,["foo"]),(4,["foo","bar"]),(5,["bar"])]
 converse :: forall a b . (Ord a, Ord b) => [(a, [b])] -> [(b, [a])]
 converse aBss = let asPerB :: Map.Map b (Set.Set a)
-                    asPerB = foldl (.) id [ Map.insertWith Set.union b (Set.singleton a)  | (a,bs) <- aBss, b <- bs ] Map.empty
+                    asPerB = foldl' (.) id [ Map.insertWith Set.union b (Set.singleton a)  | (a,bs) <- aBss, b <- bs ] Map.empty
                 in Map.toList $ fmap Set.toList asPerB -- first convert each Set to a list, and then the whole Map to a list of tuples
 converseNE :: (Ord a,Ord b) => [(a, NE.NonEmpty b)] -> [(b, NE.NonEmpty a)]
 converseNE = (fmap $ liftSnd PARTIAL.fromList) . converse . (fmap $ liftSnd NE.toList)

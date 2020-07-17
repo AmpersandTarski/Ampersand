@@ -14,6 +14,7 @@ module Ampersand.Basics.Prelude
   , fromFirstFalse
   , defaultFirstFalse
   , decodeUtf8
+  , foldl
   )where
 import           Prelude (reads,getChar) -- Needs to be fixed later. See https://haskell.fpcomplete.com/library/rio we'll explain why we need this in logging
 import           RIO hiding (zipWith,exitWith)
@@ -39,6 +40,11 @@ zipWith fun = go
     go _ [] = []
     go (x':xs) (y:ys) = fun x' y : go xs ys
 
+-- Redefine foldl to ensure that we use foldl' everywhere. But make the Haskeller
+-- aware that in fact you should use fold'.
+foldl :: Foldable t => (b -> a -> b) -> b -> t a -> b
+{-# WARNING foldl "Please do not use foldl. Use foldl' instead. It is more performant." #-}
+foldl = foldl'
 
 -- Functions copied from stack
 -- | Like @First Bool@, but the default is @True@.

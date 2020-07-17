@@ -6,7 +6,6 @@
 module Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
    , Meta(..)
-   , MetaObj(..)
    , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
@@ -39,7 +38,7 @@ module Ampersand.Core.ParseTree (
   ) where
 import           Ampersand.Basics hiding (foldr, sequence, concatMap)
 import           Ampersand.Input.ADL1.FilePos
-import           Data.Foldable hiding (concat)
+import           Data.Foldable (concatMap)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -75,13 +74,11 @@ instance Named P_Context where
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
 data Meta = Meta { pos :: Origin
-              , mtObj :: MetaObj
               , mtName :: Text
               , mtVal :: Text
               } deriving (Show)
 instance Traced Meta where
   origin = pos
-data MetaObj = ContextMeta deriving (Eq,Ord,Show) -- for now, we just have meta data for the entire context
 
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
@@ -198,7 +195,7 @@ instance Show TType where
     Object            ->   "OBJECT"
     TypeOfOne         ->   "TYPEOFONE"
 data P_Relation =
-      P_Sgn { dec_nm :: Text    -- ^ the name of the relation
+      P_Relation { dec_nm :: Text    -- ^ the name of the relation
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
             , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
             , dec_pragma :: [Text]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
@@ -229,7 +226,7 @@ mergeRels rs = map fun (eqCl signat rs) -- each equiv. class contains at least 1
   where
     fun :: NonEmpty P_Relation -> P_Relation
     fun rels
-     = P_Sgn { dec_nm     = name r0
+     = P_Relation { dec_nm     = name r0
              , dec_sign   = dec_sign r0
              , dec_prps   = Set.unions (fmap dec_prps rels)
              , dec_pragma = case NE.filter (not . T.null . T.concat . dec_pragma) rels of
@@ -265,7 +262,7 @@ instance Flippable PAtomPair where
 --instance Show PSingleton where
 -- show = psRaw
 --instance Eq PSingleton where
--- a == b = psRaw a == psRaw b
+--   a == b = compare a b == EQ
 --instance Ord PSingleton where
 -- compare a b = compare (psRaw a) (psRaw b)
 --instance Traced PSingleton where
@@ -372,19 +369,6 @@ instance Eq P_NamedRel where
       = case (p_mbSign nr, p_mbSign nr') of
              (Just sgn, Just sgn')  -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
              _                      -> False
-
-{- For whenever it may turn out to be useful
-instance Eq TermPrim where
-  PI _           == PI _            = True
-  Pid _ (Just c) == Pid _ (Just c') = p_cptnm c==p_cptnm c'
-  Pid _ Nothing  == Pid _ Nothing   = True
-  Patm _ x c     == Patm _ x' c'    = x==x' && p_cptnm c==p_cptnm c'
-  PVee _         == PVee _          = True
-  Pfull _ c d    == Pfull _ c' d'   = p_cptnm c==p_cptnm c' && d==d'
-  Prel _ x       == Prel _ x'       = x==x'
-  PTrel _ x s    == PTrel _ x' s'   = x==x' && pSrc s==pSrc s' && pTgt s==pTgt s'
-  _ == _ = False
--}
 
 data Term a
    = Prim a
@@ -544,8 +528,8 @@ instance Traversable PairView where
 instance Functor PairView where fmap = fmapDefault
 instance Foldable PairView where foldMap = foldMapDefault
 
-data P_Rule a  =
-   P_Ru { pos ::  Origin            -- ^ Position in the Ampersand file
+data P_Rule a  = P_Rule 
+        { pos ::  Origin            -- ^ Position in the Ampersand file
         , rr_nm ::   Text            -- ^ Name of this rule
         , rr_exp ::  Term a            -- ^ The rule expression
         , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
@@ -562,14 +546,14 @@ instance Ord (P_Rule a) where
                      (maybeOrdering (origin a) (origin b))
      x -> x  
 instance Eq (P_Rule a) where --Required for merge of P_Contexts
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Traced (P_Rule a) where
  origin = pos
 instance Functor P_Rule where fmap = fmapDefault
 instance Foldable P_Rule where foldMap = foldMapDefault
 instance Traversable P_Rule where
- traverse f (P_Ru fps nm expr mean msg viol)
-  = (\e v -> P_Ru fps nm e mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
+ traverse f (P_Rule fps nm expr mean msg viol)
+  = (\e v -> P_Rule fps nm e mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
 
 instance Named (P_Rule a) where
  name = rr_nm
@@ -623,7 +607,7 @@ instance Ord P_Interface where --Required for merge of P_Contexts
                      (maybeOrdering (origin a) (origin b))
      x -> x
 instance Eq P_Interface where
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Named P_Interface where
  name = ifc_Name
 
@@ -663,7 +647,7 @@ instance Ord (P_BoxItem a) where
                         ])
                      (maybeOrdering (origin a) (origin b))
 instance Eq (P_BoxItem a) where
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Named (P_BoxItem a) where
   name = obj_nm
 instance Traced (P_BoxItem a) where
@@ -686,7 +670,7 @@ instance Ord (P_IdentDf a) where
                         ])
                      (maybeOrdering (origin a) (origin b))
 instance Eq (P_IdentDf a) where 
-  p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Traced (P_IdentDf a) where
  origin = pos
 instance Functor P_IdentDf where fmap = fmapDefault
@@ -723,7 +707,7 @@ instance Ord (P_ViewD a) where
                      (maybeOrdering (origin a) (origin b))
      x -> x
 instance Eq (P_ViewD a) where --Required for merge of P_Contexts
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 instance Traced (P_ViewD a) where
  origin = pos
 instance Named (P_ViewD a) where
@@ -805,7 +789,7 @@ instance Ord PPurpose where --Required for merge of P_Contexts
                      (maybeOrdering (origin a) (origin b))
      x -> x
 instance Eq PPurpose where --Required for merge of P_Contexts
- p1 == p2 = compare p1 p2 == EQ
+  a == b = compare a b == EQ
 
 instance Named PPurpose where
  name pe = name (pexObj pe)
@@ -895,7 +879,7 @@ mergeContexts ctx1 ctx2 =
                         (x:_) -> x
       , ctx_pos    = fromContextsKeepDoubles ctx_pos
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
-      , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
+      , ctx_markup = foldl' orElse Nothing $ map ctx_markup contexts
       , ctx_pats   = fromContextsKeepDoubles ctx_pats
       , ctx_rs     = fromContextsRemoveDoubles ctx_rs
       , ctx_ds     = mergeRels (ctx_ds ctx1<>ctx_ds ctx2)

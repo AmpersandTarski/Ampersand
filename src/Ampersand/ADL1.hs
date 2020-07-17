@@ -14,7 +14,6 @@ import Ampersand.Core.ParseTree (
          , P_Sign(..)
          , P_Context(..), mergeContexts
          , Meta(..)
-         , MetaObj(..)
          , P_RoleRule(..)
          , P_Pattern(..)
          , PairView(..), PairViewSegment(..)
