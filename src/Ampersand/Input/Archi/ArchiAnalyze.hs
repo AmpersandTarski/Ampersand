@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings, DuplicateRecordFields #-}
+﻿{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings, DuplicateRecordFields #-}
 {-|
 Module      : ArchiAnalyze
 Description : Interprets an ArchiMate(r) repository as Ampersand context.
@@ -510,7 +510,7 @@ translateArchiElem :: Text -> (Text, Text) -> Maybe Text -> Set.Set Prop-> [(Tex
                       -> (P_Population,P_Relation,Maybe Text,PPurpose)
 translateArchiElem label (srcLabel,tgtLabel) maybeViewName props tuples
  = ( P_RelPopu Nothing Nothing OriginUnknown ref_to_relation (transTuples tuples)
-   , P_Sgn label ref_to_signature props [] [] OriginUnknown
+   , P_Relation label ref_to_signature props [] [] OriginUnknown
    , maybeViewName
    , PRef2 { pos = OriginUnknown      -- the position in the Ampersand script of this purpose definition
            , pexObj = PRef2Relation ref_to_relation    -- the reference to the object whose purpose is explained

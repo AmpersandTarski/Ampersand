@@ -236,7 +236,8 @@ data Quad = Quad { qDcl ::       Relation   -- The relation that, when affected,
 
 instance Ord Quad where
   q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
-instance Eq Quad where q == q' = compare q q' == EQ
+instance Eq Quad where
+  a == b = compare a b == EQ
 
 --
 dnf2expr :: DnfClause -> Expression

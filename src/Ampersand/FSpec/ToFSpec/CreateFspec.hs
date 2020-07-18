@@ -152,7 +152,7 @@ encloseInConstraints pCtx = enrichedContext
      = [ computeProps rel
        | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx<>[pop |pat<-ctx_pats pCtx, pop<-pt_pop pat]
        , Just src'<-[src], Just tgt'<-[tgt]
-       , rel<-[ P_Sgn{ dec_nm     = name pop
+       , rel<-[ P_Relation{ dec_nm     = name pop
                      , dec_sign   = P_Sign src' tgt'
                      , dec_prps   = mempty
                      , dec_pragma = mempty

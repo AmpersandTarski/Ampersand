@@ -115,8 +115,7 @@ pTextMarkup = ReST     <$ pKey "REST"     <|>
 
 --- Meta ::= 'META' Text Text
 pMeta :: AmpParser Meta
-pMeta = Meta <$> currPos <* pKey "META" <*> pMetaObj <*> asText pString <*> asText pString
- where pMetaObj = return ContextMeta -- for the context meta we don't need a keyword
+pMeta = Meta <$> currPos <* pKey "META" <*> asText pString <*> asText pString
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN' 
 pPatternDef  :: AmpParser P_Pattern
@@ -200,7 +199,7 @@ pClassify = fun <$> currPos
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
-pRuleDef =  P_Ru <$> currPos
+pRuleDef =  P_Rule <$> currPos
                  <*  pKey "RULE"
                  <*> (try pLabel <|> rulid <$> currPos)
                  <*> pRule
@@ -236,7 +235,7 @@ pRelationDef = reorder <$> currPos
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
             where reorder pos' (nm,sign,fun) prop pragma meanings prs =
-                    (P_Sgn nm sign props pragma meanings pos', map pair2pop prs)
+                    (P_Relation nm sign props pragma meanings pos', map pair2pop prs)
                     where 
                       props = prop `Set.union` fun
                       pair2pop :: PAtomPair -> P_Population
