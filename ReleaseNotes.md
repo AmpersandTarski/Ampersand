@@ -7,6 +7,7 @@ This breaking change presents the opportunity to rename the built-in templates t
   * ROWS -> FORM
   * COLS -> TABLE
   * TABS -> TABS (unchanged)
+* Update default prototype framework version to v1.6.0, which includes new templates as described above
 
 ## v4.0.2 (17 july 2020)
 
