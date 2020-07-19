@@ -1,4 +1,4 @@
-module Ampersand.ADL1
+﻿module Ampersand.ADL1
    ( module Ampersand.Core.ParseTree
    , module Ampersand.Core.AbstractSyntaxTree
    , module Ampersand.ADL1.Expression
@@ -26,6 +26,7 @@ import Ampersand.Core.ParseTree (
          , P_BoxItemTermPrim,P_BoxItem(..)
          , P_Interface(..)
          , P_SubInterface,P_SubIfc(..),P_Cruds(..)
+         , BoxHeader(..), TemplateKeyValue(..)
          , Term(..)
          , TermPrim(..), P_NamedRel(..)
          , PClassify(..)

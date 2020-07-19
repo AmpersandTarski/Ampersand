@@ -12,6 +12,7 @@ module Ampersand.Core.ParseTree (
    , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
+   , BoxHeader(..), TemplateKeyValue(..)
    , SrcOrTgt(..)
    , P_Rule(..)
    , ConceptDef(..)
@@ -618,14 +619,40 @@ data P_IClass = P_IClass { iclass_name :: Text } deriving (Eq, Ord, Show)
 
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
-              = P_Box          { pos :: Origin
-                               , si_class :: Maybe Text
+              = P_Box          { pos :: !Origin
+                               , si_header :: !BoxHeader
                                , si_box :: [P_BoxItem a] }
-              | P_InterfaceRef { pos :: Origin
-                               , si_isLink :: Bool --True iff LINKTO is used. (will display as hyperlink)
-                               , si_str :: Text  -- Name of the interface that is reffered to
+              | P_InterfaceRef { pos :: !Origin
+                               , si_isLink :: !Bool --True iff LINKTO is used. (will display as hyperlink)
+                               , si_str :: !Text  -- Name of the interface that is reffered to
                                } 
                 deriving (Show)
+
+-- | Key-value pairs used to supply attributes into an HTML template that is used to render a subinterface
+data BoxHeader = BoxHeader
+    { pos :: !Origin
+    , btType :: !Text  
+    -- ^ Type of the HTML template that is used for rendering
+    , btKeys :: [TemplateKeyValue] 
+    -- ^ Key-value pairs 
+    } deriving (Show,Data)
+
+
+instance Traced BoxHeader where
+  origin = pos
+
+data TemplateKeyValue = TemplateKeyValue
+    { pos :: !Origin
+    , tkkey :: !Text
+    -- ^ Name of the attribute  
+    , tkval :: !(Maybe Text)
+    -- ^ value of the attribute. (when no value, the attribute is handled like a switch)
+    } deriving (Show,Data)
+instance Named TemplateKeyValue where
+  name = tkkey
+instance Traced TemplateKeyValue where
+  origin = pos
+
 type P_BoxItemTermPrim = P_BoxItem TermPrim
 data P_BoxItem a =
      P_BxExpr { obj_nm :: Text          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.

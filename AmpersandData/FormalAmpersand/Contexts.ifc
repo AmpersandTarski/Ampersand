@@ -4,7 +4,7 @@ INCLUDE "Contexts.adl"
 VIEW Context : Context(name)
 INTERFACE Contexts (valid,relations) : "_SESSION"[SESSION]
 TABS[ "Contexts" : V[SESSION*Context]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ context        : I
            , "valid rules"  : valid[Rule*Context]~
            , relations      : declaredIn[Relation*Context]~
@@ -35,7 +35,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
          -- INTERFACE IsaTree 
   , "Concepts" : context[Concept*Context]~
   , "Relations" : declaredIn[Relation*Context]~  -- LINKTO INTERFACE "Relation"
-       BOX<SCOLS>
+       BOX<TABLE sortable>
            [ relation   : I
            , "declared in pattern" : declaredIn[Relation*Pattern]
            , "declared in context" : declaredIn[Relation*Context]

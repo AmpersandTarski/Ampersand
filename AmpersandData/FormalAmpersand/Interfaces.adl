@@ -49,7 +49,7 @@ MEANING "Every object definition has a position in the text of the Ampersand sou
 RELATION objExpression[ObjectDef*Expression] [UNI,TOT] -- RJ: Why not call this thing 'objExpr(ession)'?
 MEANING "Every object definition has an expression, which determines the population for which that definition is applicable."
 RELATION objmView[ObjectDef*View] [UNI] -- RJ: Why not call this thing 'objView' or 'objdefView'
-MEANING "An object definition can have a view that should be used for this object (e.g. TABS, COLS, etc.)."
+MEANING "An object definition can have a view that should be used for this object (e.g. TABS, TABLE, etc.)."
 RELATION usedIn[Relation*Expression]
 MEANING "If a relation is used in an expression, this is registered in usedIn."
 RELATION formalExpression[Rule*Expression] 

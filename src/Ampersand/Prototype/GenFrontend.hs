@@ -20,10 +20,11 @@ import           Data.Hashable (hash)
 import           Network.HTTP.Simple
 import qualified RIO.ByteString.Lazy  as BL
 import qualified RIO.Text as T
+import qualified RIO.List as L
 import           RIO.Time
 import           System.Directory
 import           System.FilePath
-import           Text.StringTemplate
+import           Text.StringTemplate(Stringable, StringTemplate, setAttribute, newSTMP, checkTemplateDeep, render)
 import           Text.StringTemplate.GenericStandard () -- only import instances
 
 {- TODO
@@ -167,7 +168,7 @@ data FEObject2 =
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
                                                           , [Text] -- the attributes of the template
                                                           ) }
-                   | FEBox    { objMClass :: Maybe Text
+                   | FEBox    { objMClass :: BoxHeader
                               , ifcSubObjs :: [FEObject2] 
                               } deriving (Show, Data,Typeable)
 
@@ -205,9 +206,7 @@ buildInterface fSpec allIfcs ifc = do
         case objmsub object of
           Nothing -> do
             let ( _ , _ , tgt) = getSrcDclTgt iExp
-            let mView = case objmView object of
-                          Just nm -> Just $ lookupView fSpec nm
-                          Nothing -> getDefaultViewForConcept fSpec tgt
+            let mView = fromMaybe (getDefaultViewForConcept fSpec tgt) ((Just . lookupView fSpec) <$> objmView object)
             mSpecificTemplatePath <-
                   case mView of
                     Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
@@ -224,7 +223,7 @@ buildInterface fSpec allIfcs ifc = do
             case si of
               Box{} -> do
                 subObjs <- mapM buildObject (siObjs si)
-                return (FEBox { objMClass  = siMClass si
+                return (FEBox { objMClass  = siHeader si
                               , ifcSubObjs = subObjs
                               }
                         , iExp)
@@ -280,7 +279,7 @@ genRouteProvider fSpec ifcs = do
   runner <- view runnerL
   let loglevel' = logLevel runner
   template <- readTemplate "routeProvider.config.js"
-  let contents = renderTemplate template $
+  let contents = renderTemplate Nothing template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" ampersandVersionStr
                  . setAttribute "ifcs"                ifcs
@@ -303,7 +302,7 @@ genViewInterface fSpec interf = do
   let loglevel' = logLevel runner
   lns <- genViewObject fSpec 0 (_ifcObj interf)
   template <- readTemplate "interface.html"
-  let contents = renderTemplate template $
+  let contents = renderTemplate Nothing template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                   . setAttribute "isTopLevel"          (isTopLevel . source . _ifcExp $ interf)
                   . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
@@ -368,20 +367,19 @@ genViewObject fSpec depth obj =
                         
               return . indentation
                      . T.lines 
-                     . renderTemplate template $ 
+                     . renderTemplate Nothing template $ 
                        atomicAndBoxAttrs
 
-            FEBox { objMClass  = mClass
+            FEBox { objMClass  = header
                   , ifcSubObjs = subObjs
                   } -> do
               subObjAttrs <- mapM genView_SubObject subObjs
                         
-              let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" <> cl <.> "html") (T.unpack <$> mClass)
-              parentTemplate <- readTemplate clssStr
+              parentTemplate <- readTemplate $ "Box-" <> T.unpack (btType header) <.> "html"
                 
               return . indentation
                      . T.lines 
-                     . renderTemplate parentTemplate $ 
+                     . renderTemplate (Just . btKeys $ header) parentTemplate $ 
                            atomicAndBoxAttrs
                          . setAttribute "isRoot"     (depth == 0)
                          . setAttribute "subObjects" subObjAttrs
@@ -433,7 +431,7 @@ genControllerInterface fSpec interf = do
     template <- readTemplate controlerTemplateName
     runner <- view runnerL
     let loglevel' = logLevel runner
-    let contents = renderTemplate template $
+    let contents = renderTemplate Nothing template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   (isTopLevel . source . _ifcExp $ interf)
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
@@ -476,10 +474,9 @@ readTemplate templatePath = do
     Right cont -> return $ Template (newSTMP . T.unpack $ cont) (T.pack absPath)
 
 -- having Bool attributes prevents us from using a [(Text, Text)] parameter for attribute settings
-renderTemplate :: Template -> (StringTemplate String -> StringTemplate String) -> Text
-renderTemplate (Template template absPath) setAttrs =
-  let appliedTemplate = setAttrs (template)
-  in  case checkTemplateDeep appliedTemplate of
+renderTemplate :: Maybe [TemplateKeyValue] -> Template -> (StringTemplate String -> StringTemplate String) -> Text
+renderTemplate userAtts (Template template absPath) setRuntimeAtts =
+    case checkTemplateDeep appliedTemplate of
              ([],  [],    []) -> T.pack $ render appliedTemplate
              (parseErrs@(_:_), _, _)
                 -> templateError . T.concat $
@@ -487,7 +484,8 @@ renderTemplate (Template template absPath) setAttrs =
                       | (tmplt,err) <- parseErrs
                       ]
              ([], attrs@(_:_), _)
-                -> templateError $  
+                | isJust userAtts -> T.pack . render . fillInTheBlanks (L.nub attrs) $ appliedTemplate
+                | otherwise -> templateError $  
                       "The following attributes are expected by the template, but not supplied: " <> tshow attrs
              ([], [], ts@(_:_))
                 -> templateError $ 
@@ -496,9 +494,20 @@ renderTemplate (Template template absPath) setAttrs =
             ["*** TEMPLATE ERROR in:" <> absPath
             , msg
             ]
-
-
-
+        appliedTemplate = setRuntimeAtts . setUserAtts (fromMaybe [] userAtts) $ (template)
+        -- Set all attributes not specified to False
+        fillInTheBlanks :: [String] -> StringTemplate String -> StringTemplate String
+        fillInTheBlanks [] = id
+        fillInTheBlanks (h:tl) = setAttribute h False . fillInTheBlanks tl
+        setUserAtts :: [TemplateKeyValue]  -> (StringTemplate String -> StringTemplate String)
+        setUserAtts kvPairs = foldl' fun id kvPairs
+          where
+            fun :: (Stringable b) => (StringTemplate b -> StringTemplate b) -> TemplateKeyValue -> (StringTemplate b -> StringTemplate b)
+            fun soFar keyVal = soFar . doAttribute keyVal
+            doAttribute :: (Stringable b) => TemplateKeyValue -> (StringTemplate b -> StringTemplate b)
+            doAttribute h = case tkval h of
+                Nothing ->  setAttribute (T.unpack $ tkkey h) True
+                Just val -> setAttribute (T.unpack $ tkkey h) val
 
 downloadPrototypeFramework :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
                              RIO env Bool
@@ -592,4 +601,3 @@ downloadPrototypeFramework = ( do
                 logInfo  $ "You could use the switch --force-reinstall-framework"
                 return False
 
-            

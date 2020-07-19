@@ -7,12 +7,12 @@ REPRESENT Atom TYPE ALPHANUMERIC
 
 INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
 TABS[ relations : V[SESSION*Relation]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
            ]
     , concepts :V[SESSION*Concept]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ name         : name
            , "isa"   : isa
 --           , "isa+"  : isaPlus
@@ -23,12 +23,12 @@ TABS[ relations : V[SESSION*Relation]
            , atoms        : pop~
            ]
     , pairs : V[SESSION*Pair]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ pair           : I[Pair]
            , "relation(s)"  : in
            ]
 --    , atoms : V[SESSION*Atom]
---      BOX<SCOLS>
+--      BOX<TABLE sortable>
 --           [ atom : I
 --           , "smallest concept(s)" : pop - pop;isaPlus
 --           , pop  : pop
@@ -39,7 +39,7 @@ VIEW Concept : Concept(name)
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
-ROWS [ name             : name
+BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
      ]
@@ -47,13 +47,13 @@ ROWS [ name             : name
 VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 
 INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
-ROWS [ "relation(s)"  : in
+BOX [ "relation(s)"  : in
      , lAtom          : lAtom
      , rAtom          : rAtom
      ]
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
-ROWS [ name    : name
+BOX [ name    : name
      , source  : source
      , target  : target
      ]
@@ -61,14 +61,14 @@ ROWS [ name    : name
 --VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 --
 --INTERFACE Atom(repr) : I[Atom]
---ROWS [ repr : repr
+--BOX [ repr : repr
 --     , pop  : pop
 --     ]
 --
 --VIEW Concept : Concept(name)
 --
 --INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
---ROWS [ name             : name
+--BOX [ name             : name
 --     , generalizations  : isa
 --     , specializations  : isa~
 --     ]
@@ -76,7 +76,7 @@ ROWS [ name    : name
 --VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
 --
 --INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
---ROWS [ pair           : I
+--BOX [ pair           : I
 --     , lAtom          : lAtom
 --     , rAtom          : rAtom
 --     , "relation(s)"  : in
@@ -85,7 +85,7 @@ ROWS [ name    : name
 --VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 --
 --INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
---ROWS [ name    : name
+--BOX [ name    : name
 --     , source  : source
 --     , target  : target
 --     ]

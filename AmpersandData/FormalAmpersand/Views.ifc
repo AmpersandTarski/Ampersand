@@ -6,7 +6,7 @@ VIEW Session : Session(TXT "demo")
 
 INTERFACE Overview (concept) : "_SESSION"
 TABS [ Concepts : V[SESSION*Concept]
-       BOX<SCOLS>
+       BOX<TABLE sortable>
          [ Concept        : I
          , isa            : isa
          , "defined View" : concept~
@@ -14,13 +14,13 @@ TABS [ Concepts : V[SESSION*Concept]
          , "Viewable by"  : viewBy;concept~
          ]
      , Atoms    : V[SESSION*Atom]
-       BOX<SCOLS>
+       BOX<TABLE sortable>
          [ atom           : I
          , pop            : pop
          , "Viewable by"  : pop;viewBy;concept~
          ]
      , Views    : V[SESSION*View]
-       BOX<SCOLS>
+       BOX<TABLE sortable>
          [ View       : I
          , concept    : concept
          , Concepts   : concept;viewBy~

@@ -7,7 +7,7 @@ POPULATION myFatherIs CONTAINS [ ( "Rieks", "Pierre" ) ]
 POPULATION myFatherIs CONTAINS [ ( "Pierre", "Harry" ) ] 
 POPULATION myFatherIs CONTAINS [ ( "Harry", "Peter" ) ] 
 
-INTERFACE "[Persons]": "_SESSION";V[SESSION*Person] cRud BOX <SHCOLS>
+INTERFACE "[Persons]": "_SESSION";V[SESSION*Person] cRud BOX <TABLE sortable hideEmptyTable>
    [ "Me"        : I cRud
    , "My father" : myFatherIs cRud
    , "My son"    : myFatherIs~ cRud

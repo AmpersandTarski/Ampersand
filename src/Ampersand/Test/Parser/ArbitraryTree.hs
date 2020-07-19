@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+﻿{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Test.Parser.ArbitraryTree () where
@@ -90,11 +90,24 @@ genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
 genIfc = subIfc $ genObj True
 
 subIfc :: (Int -> Gen (P_BoxItem a)) -> Int -> Gen (P_SubIfc a)
-subIfc objGen n =
-    if n == 0 then P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
-    else P_Box          <$> arbitrary <*> boxKey   <*> vectorOf n (objGen$ n`div`2)
-    where boxKey = elements [Nothing, Just "ROWS", Just "COLS", Just "TABS"]
+subIfc objGen n 
+    | n == 0 = P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
+    | otherwise = P_Box  <$> arbitrary <*> arbitrary <*> vectorOf n (objGen$ n`div`2)
 
+instance Arbitrary BoxHeader where
+    arbitrary = oneof 
+       [ BoxHeader <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
+       , BoxHeader <$> arbitrary <*> elements  ["COLS","ROWS","TABS"]  <*> pure [] 
+       ]
+instance Arbitrary TemplateKeyValue where
+    arbitrary = TemplateKeyValue 
+                 <$> arbitrary 
+                 <*> identifier `suchThat` startsWithLetter
+                 <*> liftArbitrary safeStr1
+       where startsWithLetter :: Text -> Bool
+             startsWithLetter t = case T.uncons t of
+                      Nothing -> False
+                      Just (h,_) -> isLetter h
 
 --- Now the arbitrary instances
 instance Arbitrary P_Cruds where
