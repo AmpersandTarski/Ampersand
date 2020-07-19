@@ -438,7 +438,7 @@ pInterface = lbl <$> currPos
           --- Roles ::= 'FOR' RoleList
           pRoles  = pKey "FOR" *> pRole False `sepBy1` pComma
 
---- SubInterface ::= ('BOX' BoxHeader? | 'ROWS' | 'COLS' | 'TABS') Box | 'LINKTO'? 'INTERFACE' ADLid
+--- SubInterface ::= ('BOX' BoxHeader? | 'FORM' | 'TABLE') Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
             <|> P_InterfaceRef <$> currPos 
@@ -447,9 +447,8 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
   where pBoxHeader :: AmpParser BoxHeader
         pBoxHeader = 
               build     <$> currPos <* pKey "BOX" <*> optional pBoxSpecification
-          <|> BoxHeader <$> currPos <*> (asText $ pKey "ROWS") <*> pure []
-          <|> BoxHeader <$> currPos <*> (asText $ pKey "COLS") <*> pure []
-          <|> BoxHeader <$> currPos <*> (asText $ pKey "TABS") <*> pure []
+          <|> BoxHeader <$> currPos <*> (asText $ pKey "FORM") <*> pure []
+          <|> BoxHeader <$> currPos <*> (asText $ pKey "TABLE") <*> pure []
         build :: Origin -> Maybe (Text, [TemplateKeyValue]) ->  BoxHeader
         build o x = BoxHeader o typ keys
           where (typ,keys) = case x of 
