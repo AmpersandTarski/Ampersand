@@ -4,15 +4,13 @@ on:
     branches: # empty list to only trigger on branches (i.e. not tags, ..)
 
 env:
-  DOCKER_AMPERSAND_IMAGE: docker.pkg.github.com/ampersandtarski/ampersand/ampersand
-  DOCKER_AMPERSAND_IMAGE_DEV: docker.pkg.github.com/ampersandtarski/ampersand/ampersand:development
-  # IMAGE_BRANCH_TAG: ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} # Does not work because bash expression is not allowed here
+  DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
+  DOCKER_AMPERSAND_IMAGE_DEV: ampersandtarski/ampersand:development
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    # env:
     
     # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables
     # Because steps run in their own process, changes to environment variables are not preserved between steps
@@ -24,46 +22,15 @@ jobs:
       run: |
         echo Running on branch ${GITHUB_REF##*/}
         docker version
-        docker login docker.pkg.github.com -u ${GITHUB_ACTOR} -p ${{secrets.GITHUB_TOKEN}}
     
     - name: Pull dev image to use as cache
       run: docker pull ${DOCKER_AMPERSAND_IMAGE_DEV} || true
     
     # This step only builds the 'buildstage' stage (see `--target buildstage`)
+    # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
     - name: Build buildstage
-      run: |
-        # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
-        docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE_DEV} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
-    
-    # Step disabled because it clutters the package registry on github. Currently public packages cannot be deleted on github.
-    # # This step allows for quicker builds in a future run (see step above where image is pulled to use as cache)
-    # - name: Push buildstage 
-    #   run: docker push ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/}
+      run: docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE_DEV} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
     
     # This step build the final (slim) image 
     - name: Build final image
       run: docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
-    
-    # Push latest
-    - name: Push ampersand:latest
-      if: github.ref == 'refs/heads/development'
-      run: |
-        docker push ${DOCKER_AMPERSAND_IMAGE_DEV}
-        docker push ${DOCKER_AMPERSAND_IMAGE}:latest
-  
-  # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts
-  test:
-    name: Test
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-
-  release:
-    name: Release
-    if: github.ref == 'refs/heads/master'
-    needs: [build, test]
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo This is only a test
-      
