@@ -24,3 +24,4 @@ jobs:
         tag_with_ref: true
         cache_froms: ampersandtarski/ampersand:development
         build_args: GIT_SHA=${{ github.sha }},GIT_Branch=${{ github.ref }}
+        add_git_labels: true
