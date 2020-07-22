@@ -1,0 +1,27 @@
+name: Build push to Docker Hub
+on:
+  push:
+    branches: # empty list to trigger all branches
+    - master
+    - development
+    - use-docker-hub # test this new CI file. TODO: remove this branche here
+    tags: # empty list to trigger on all tags
+
+jobs:
+  build-push:
+    name: Build push
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+        repository: ampersandtarski/ampersand
+        tag_with_ref: true
+        tag_with_sha: true
+        cache_froms: ampersandtarski/ampersand:development
+        build_args: GIT_SHA=${{ github.sha }},GIT_Branch=${{ github.ref }}
