@@ -5,7 +5,6 @@ on:
 
 env:
   DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
-  DOCKER_AMPERSAND_IMAGE_DEV: ampersandtarski/ampersand:development
 
 jobs:
   build:
@@ -23,14 +22,6 @@ jobs:
         echo Running on branch ${GITHUB_REF##*/}
         docker version
     
-    - name: Pull dev image to use as cache
-      run: docker pull ${DOCKER_AMPERSAND_IMAGE_DEV} || true
-    
-    # This step only builds the 'buildstage' stage (see `--target buildstage`)
-    # See: https://andrewlock.net/caching-docker-layers-on-serverless-build-hosts-with-multi-stage-builds---target,-and---cache-from/ to understand why we use --target and --cache-from here
-    - name: Build buildstage
-      run: docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE_DEV} --target buildstage --tag ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
-    
     # This step build the final (slim) image 
     - name: Build final image
-      run: docker build . --cache-from ${DOCKER_AMPERSAND_IMAGE}:${GITHUB_REF##*/} --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
+      run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
