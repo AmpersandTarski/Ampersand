@@ -7,7 +7,6 @@ on:
     branches: # empty list to trigger all branches
     - master
     - development
-    - use-docker-hub # test this new CI file. TODO: remove this branche here
     tags: # empty list to trigger on all tags
 
 jobs:
