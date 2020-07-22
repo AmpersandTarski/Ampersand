@@ -14,8 +14,8 @@ jobs:
     # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables
     # Because steps run in their own process, changes to environment variables are not preserved between steps
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@master # this step reuses a default Github action; see: https://github.com/actions
+    - name: Checkout code
+      uses: actions/checkout@v2
     
     - name: Prepare for docker
       run: |
