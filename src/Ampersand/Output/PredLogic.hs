@@ -78,23 +78,23 @@ predLshow lang vMap predlogic = charshow 0 predlogic
    charshow :: Integer -> PredLogic -> Inlines
    charshow i predexpr
     = case predexpr of
-       Forall vars restr      -> wrap i 1 (             (text . l)(NL "Voor alle", EN "For all") 
-                                           <> listVars ((text . l)(NL "en voor alle", EN "and for all")) vars
+       Forall vars restr      -> wrap i 1 (             (text . l)(NL "Voor alle ", EN "For all ") 
+                                           <> listVars ((text . l)(NL ", ", EN ", ")) vars <> ": "
                                            <> charshow 1 restr)
-       Exists vars restr      -> wrap i 1 (             (text . l)(NL "Er is een", EN "There exists")
-                                           <> listVars ((text . l)(NL "en er is een", EN "and there exists")) vars
+       Exists vars restr      -> wrap i 1 (             (text . l)(NL "Er is een ", EN "There exists ")
+                                           <> listVars ((text . l)(NL ", ", EN ", ")) vars <> ": "
                                            <> charshow 1 restr)
        Implies ante cons      -> wrap i 2 (linebreak<>implies (charshow 2 ante) (charshow 2 cons))
                                  where implies :: Inlines -> Inlines -> Inlines
                                        implies a b =
-                                          (text . l)(NL "Als ",EN "If" )<>a<>(text.l)(NL" dan ",EN " then ")<>b
-       Equiv lhs rhs          -> wrap i 2 (linebreak<>charshow 2 lhs<>space<>((text . l)(NL "is equivalent met",EN "is equivalent to"))<>space<> charshow 2 rhs)
+                                          (text . l)(NL "Als ",EN "If " )<>a<>(text.l)(NL" dan ",EN " then ")<>b
+       Equiv lhs rhs          -> wrap i 2 (linebreak<>charshow 2 lhs<>space<>((text . l)(NL " is equivalent met ",EN " is equivalent to "))<>space<> charshow 2 rhs)
        Disj rs                -> if null rs
                                       then mempty
-                                      else wrap i 3 (chain ((text.l)(NL " of ",EN" or ")) (map (charshow 3) rs))
+                                      else wrap i 3 (chain ((text.l)(NL " of ",EN " or ")) (map (charshow 3) rs))
        Conj rs                -> if null rs
                                       then mempty
-                                      else wrap i 4 (chain ((text.l)(NL " en ",EN" and ")) (map (charshow 4) rs))
+                                      else wrap i 4 (chain ((text.l)(NL " en ",EN " and ")) (map (charshow 4) rs))
        Dom expr var           -> vMap var<>" ∈ dom(" <>showMath expr<>")"
        Cod expr var           -> vMap var<>" ∈ cod(" <>showMath expr<>")"
        R pexpr rel pexpr'  
@@ -113,7 +113,7 @@ predLshow lang vMap predlogic = charshow 0 predlogic
        Function pexpr rel     -> text (name rel)<>"("<>charshow 1 pexpr<>")"
        Kleene0 rs             -> wrap i 6 (charshow 6 rs<>"*")
        Kleene1 rs             -> wrap i 7 (charshow 7 rs<>"+")
-       Not rs                 -> wrap i 8 ((text . l)(NL " niet",EN " not")<>charshow 8 rs)
+       Not rs                 -> wrap i 8 (text (l(NL " niet ",EN " not "))<>charshow 8 rs)
 
 predNormalize :: PredLogic -> PredLogic
 predNormalize predlogic = predlogic  --TODO: Fix normalization of PredLogic
@@ -124,25 +124,25 @@ predNormalize predlogic = predlogic  --TODO: Fix normalization of PredLogic
 toPredLogic :: Expression -> (PredLogic,VarSet)
 toPredLogic expr
  = case (source expr, target expr) of
-        (ONE, ONE) -> f Set.empty expr (oneVar,oneVar)
-        (_  , ONE) -> (Forall (var :| []) predL, vSet)
+        (ONE, ONE) -> propagate Set.empty expr (oneVar,oneVar)
+        (_  , ONE) -> (Forall (oneVar :| []) predL, vSet)
                       where
-                        (predL, vSet) = f vM expr (var,oneVar)
-                        var = mkVar Set.empty (source expr)  :: Var
-                        vM = addVar Set.empty var            :: VarSet
+                        (predL, vSet) = propagate vM expr (var,oneVar)
+                        var = mkVar Set.empty (source expr)        :: Var
+                        vM  = addVar (addVar Set.empty oneVar) var :: VarSet
         (ONE, _)   -> (Forall (var :| []) predL, vSet)
                       where
-                        (predL, vSet) = f vM expr (oneVar,var)
-                        var = mkVar Set.empty (target expr)  :: Var
-                        vM  = addVar Set.empty var           :: VarSet
+                        (predL, vSet) = propagate vM expr (oneVar,var)
+                        var = mkVar Set.empty (target expr)        :: Var
+                        vM  = addVar (addVar Set.empty oneVar) var :: VarSet
         (_  , _)   -> (Forall vars predL, vSet)
                       where
-                        (predL, vSet) = f vM expr (s,t)
-                        s   = mkVar Set.empty (source expr)  :: Var
-                        ss  = addVar Set.empty s             :: VarSet
-                        t   = mkVar ss (target expr)         :: Var
+                        (predL, vSet) = propagate vM expr (s,t)
+                        s   = mkVar Set.empty (source expr)        :: Var
+                        ss  = addVar Set.empty s                   :: VarSet
+                        t   = mkVar ss (target expr)               :: Var
                         Just vars = NE.nonEmpty [s,t]
-                        vM  = addVar ss t                    :: VarSet
+                        vM  = addVar ss t                          :: VarSet
   where
    oneVar :: Var
    oneVar = Var 0 ONE
@@ -150,58 +150,61 @@ toPredLogic expr
    addVar varSet v = Set.insert v varSet
 
    mkVar :: VarSet -> A_Concept -> Var
-   mkVar varSet c = Var (P.maximum (Set.map (\(Var i _)->i) varSet) + 1) c
+   mkVar varSet c
+    = if Set.null varSet then Var 1 c else
+      Var (P.maximum (Set.map (\(Var i _)->i) varSet) + 1) c
 
-   f :: VarSet -> Expression -> (Var,Var) -> (PredLogic, VarSet)
-   f varSet (EEqu (l,r)) (a,b)  = (Equiv l' r', set_l `Set.union` set_r)
-                                  where (l',set_l) = f varSet l (a,b)
-                                        (r',set_r) = f varSet r (a,b)
-   f varSet (EInc (l,r)) (a,b)  = (Implies l' r', set_l `Set.union` set_r)
-                                  where (l',set_l) = f varSet l (a,b)
-                                        (r',set_r) = f varSet r (a,b)
-   f varSet e@EIsc{}     (a,b)  = (Conj (map fst ps) , Set.unions (map snd ps))
-                                  where ps = [f varSet e' (a,b) | e'<-NE.toList (exprIsc2list e)]
-   f varSet e@EUni{}     (a,b)  = (Disj (map fst ps) , Set.unions (map snd ps))
-                                  where ps = [f varSet e' (a,b) | e'<-NE.toList (exprUni2list e)]
-   f varSet (EDif (l,r)) (a,b)  = (Conj [l', Not r'] , set_l `Set.union` set_r)
-                                  where (l',set_l) = f varSet l (a,b)
-                                        (r',set_r) = f varSet r (a,b)
-   f varSet (ELrs (l,r)) (a,b)  = (Forall (c :| []) (Implies l' r') , set_l `Set.union` set_r)
+   -- pre: propagate varSet _ (a,b)  ==> {a,b} Set.isSubsetOf varSet
+   propagate :: VarSet -> Expression -> (Var,Var) -> (PredLogic, VarSet)
+   propagate varSet (EEqu (l,r)) (a,b)  = (Equiv l' r', set_l `Set.union` set_r)
+                                  where (l',set_l) = propagate varSet l (a,b)
+                                        (r',set_r) = propagate varSet r (a,b)
+   propagate varSet (EInc (l,r)) (a,b)  = (Implies l' r', set_l `Set.union` set_r)
+                                  where (l',set_l) = propagate varSet l (a,b)
+                                        (r',set_r) = propagate varSet r (a,b)
+   propagate varSet e@EIsc{}     (a,b)  = (Conj (map fst ps) , Set.unions (map snd ps))
+                                  where ps = [propagate varSet e' (a,b) | e'<-NE.toList (exprIsc2list e)]
+   propagate varSet e@EUni{}     (a,b)  = (Disj (map fst ps) , Set.unions (map snd ps))
+                                  where ps = [propagate varSet e' (a,b) | e'<-NE.toList (exprUni2list e)]
+   propagate varSet (EDif (l,r)) (a,b)  = (Conj [l', Not r'] , set_l `Set.union` set_r)
+                                  where (l',set_l) = propagate varSet l (a,b)
+                                        (r',set_r) = propagate varSet r (a,b)
+   propagate varSet (ELrs (l,r)) (a,b)  = (Forall (c :| []) (Implies l' r') , set_l `Set.union` set_r)
                                   where c          = mkVar varSet (target l)
                                         eVars      = addVar varSet c
-                                        (l',set_l) = f eVars r (b,c)
-                                        (r',set_r) = f eVars l (a,c)
-   f varSet (ERrs (l,r)) (a,b)  = (Forall (c :| []) (Implies l' r') , set_l `Set.union` set_r)
+                                        (l',set_l) = propagate eVars r (b,c)
+                                        (r',set_r) = propagate eVars l (a,c)
+   propagate varSet (ERrs (l,r)) (a,b)  = (Forall (c :| []) (Implies l' r') , set_l `Set.union` set_r)
                                   where c          = mkVar varSet (source l)
                                         eVars      = addVar varSet c
-                                        (l',set_l) = f eVars l (c,a)
-                                        (r',set_r) = f eVars r (c,b)
-   f varSet (EDia (l,r)) (a,b)  = (Forall (c :| []) (Equiv l' r') , set_l `Set.union` set_r)
+                                        (l',set_l) = propagate eVars l (c,a)
+                                        (r',set_r) = propagate eVars r (c,b)
+   propagate varSet (EDia (l,r)) (a,b)  = (Forall (c :| []) (Equiv l' r') , set_l `Set.union` set_r)
                                   where c          = mkVar varSet (target l)
                                         eVars      = addVar varSet c
-                                        (l',set_l) = f eVars r (b,c)
-                                        (r',set_r) = f eVars l (a,c)
-   f varSet e@ECps{}     (a,b)  = (Exists polVs (Conj predLs), varSet')
+                                        (l',set_l) = propagate eVars r (b,c)
+                                        (r',set_r) = propagate eVars l (a,c)
+   propagate varSet e@ECps{}     (a,b)  = (Exists polVs (Conj predLs), varSet')
                                   where (polVs, predLs, varSet') = fencePoles varSet (exprCps2list e) (a,b)
-   f varSet e@ERad{}     (a,b)  = (Forall polVs (Disj predLs), varSet')
+   propagate varSet e@ERad{}     (a,b)  = (Forall polVs (Disj predLs), varSet')
                                   where (polVs, predLs, varSet') = fencePoles varSet (exprRad2list e) (a,b)
-   f _      (EPrd (l,r)) (a,b)  = (Conj [Dom l a, Cod r b], Set.empty)
-   f varSet (EKl0 e)     (a,b)  = (Kleene0 predL, vSet)
+   propagate _      (EPrd (l,r)) (a,b)  = (Conj [Dom l a, Cod r b], Set.empty)
+   propagate varSet (EKl0 e)     (a,b)  = (Kleene0 predL, vSet)
                                    where
-                                     (predL, vSet) = f varSet e (a,b)
-   f varSet (EKl1 e)     (a,b)  = (Kleene1 predL, vSet)
+                                     (predL, vSet) = propagate varSet e (a,b)
+   propagate varSet (EKl1 e)     (a,b)  = (Kleene1 predL, vSet)
                                    where
-                                     (predL, vSet) = f varSet e (a,b)
-   f varSet (ECpl e)     (a,b)  = (Not predL, vSet)
+                                     (predL, vSet) = propagate varSet e (a,b)
+   propagate varSet (ECpl e)     (a,b)  = (Not predL, vSet)
                                    where
-                                     (predL, vSet) = f varSet e (a,b)
-   f varSet (EBrk e)     (a,b)  = f varSet e (a,b)
-   f varSet (EFlp e)     (a,b)  = f varSet e (b,a)
-   f _      (EDcD dcl)   (a,b)  = (R (Variable a) dcl (Variable b), Set.fromList [a,b])
-   f _      (EDcI _)     (a,b)  = (Equiv (Variable a) (Variable b), Set.fromList [a,b])
-   f _      (EEps _ _)   (a,b)  = (Equiv (Variable a) (Variable b), Set.fromList [a,b])
-   f _      (EDcV _)     (a,b)  = (Vee a b, Set.fromList [a,b])
-   f _      (EMp1 pAV _) _      = (Constant (T.pack (show pAV)), Set.empty)
+                                     (predL, vSet) = propagate varSet e (a,b)
+   propagate varSet (EBrk e)     (a,b)  = propagate varSet e (a,b)
+   propagate varSet (EFlp e)     (a,b)  = propagate varSet e (b,a)
+   propagate _      (EDcD dcl)   (a,b)  = (R (Variable a) dcl (Variable b), Set.fromList [a,b])
+   propagate _      (EDcI _)     (a,b)  = (Equiv (Variable a) (Variable b), Set.fromList [a,b])
+   propagate _      (EEps _ _)   (a,b)  = (Equiv (Variable a) (Variable b), Set.fromList [a,b])
+   propagate _      (EDcV _)     (a,b)  = (Vee a b, Set.fromList [a,b])
+   propagate _      (EMp1 pAV _) _      = (Constant (T.pack (show pAV)), Set.empty)
 
    fencePoles :: VarSet -> NonEmpty Expression -> (Var,Var) -> (NonEmpty Var, [PredLogic], VarSet)
    fencePoles varSet fences (a,b) = (polVs, predLs, varSet'')
@@ -210,14 +213,14 @@ toPredLogic expr
       Just polVs = NE.nonEmpty vars
       (varSet',vars)                        -- (VarSet,[Var])
        = foldr g (varSet,[]) poles
-         where g c (vSet,vs) = let v = mkVar varSet c in (addVar vSet v, vs<>[v])
+         where g c (vSet,vs) = let v = mkVar vSet c in (addVar vSet v, vs<>[v])
       predLs :: [PredLogic]
       (predLs, varSet'')
        = ( [ l' ]<>fmap fst midFences<>[ r' ], set_l `Set.union` Set.unions (map snd midFences) `Set.union` set_r )
          where
-           (l',set_l) = f varSet' (NE.head fences) (a, P.head vars)
-           midFences  = [ f varSet' ex (sVar, tVar) | (ex, sVar, tVar)<-L.zip3 (NE.tail fences) vars (P.tail vars) ]
-           (r',set_r) = f varSet' (NE.last fences) (P.last vars, b)
+           (l',set_l) = propagate varSet' (NE.head fences) (a, P.head vars)
+           midFences  = [ propagate varSet' ex (sVar, tVar) | (ex, sVar, tVar)<-L.zip3 (NE.tail fences) vars (P.tail vars) ]
+           (r',set_r) = propagate varSet' (NE.last fences) (P.last vars, b)
 
 {-
 data Notation = Flr | Frl | Rn | Wrap deriving Eq   -- yields notations y=r(x)  |  x=r(y)  |  x r y  | exists ... respectively.

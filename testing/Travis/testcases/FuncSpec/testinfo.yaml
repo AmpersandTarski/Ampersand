@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand documentation --verbose --format docx --no-graphics --Diagnosis
+    exitcode: 0
