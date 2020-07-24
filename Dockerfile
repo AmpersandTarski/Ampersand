@@ -1,5 +1,4 @@
 # The purpose of this docker file is to produce a latest Ampersand-compiler in the form of a docker image.
-# Instruction: If '.' (your working directory) contains this Dockerfile, run "docker build -t docker.pkg.github.com/ampersandtarski/ampersand/ampersand:latest ."
 FROM haskell:8.8 AS buildstage
 
 RUN mkdir /opt/ampersand
@@ -37,11 +36,11 @@ FROM ubuntu
 RUN apt-get update && apt-get install -y graphviz
 
 VOLUME ["/scripts"]
-
-COPY --from=buildstage /root/.local/bin/ampersand /bin/ampersand
-
 WORKDIR /scripts
 
-ENTRYPOINT ["/bin/ampersand"]
+# Copy the Ampersand binary from the build stage to /bin.
+# Note! Other images (i.e. prototype framework) use this image and depend on the binary to be in this location
+COPY --from=buildstage /root/.local/bin/ampersand /bin/ampersand
 
+ENTRYPOINT ["/bin/ampersand"]
 CMD ["--verbose"]
