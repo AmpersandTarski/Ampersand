@@ -7,7 +7,9 @@ on:
     branches: # empty list to trigger all branches
     - master
     - development
-    tags: # empty list to trigger on all tags
+  release:
+    types:
+    - created
 
 jobs:
   build-push:
