@@ -1,6 +1,6 @@
 CONTEXT PrototypeFramework IN ENGLISH
 
-    INTERFACE "List all interfaces" FOR Administrator: "_SESSION";V[SESSION*PF_Interface] cRud BOX <SCOLS>
+    INTERFACE "List all interfaces" FOR Administrator: "_SESSION";V[SESSION*PF_Interface] cRud BOX <TABLE sortable>
         [ "Interface"       : I             cRud
         , "Label"           : label         cRud
         , "Is public"       : isPublic      cRud

@@ -255,13 +255,19 @@ instance Pretty P_Cruds where
     pretty (P_Cruds _ str) = (text . T.unpack) str
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
-                P_Box _ c bs         -> box_type c <+> text "[" <> listOf bs <> text "]"
+                P_Box _ c bs         -> boxSpec c <+> text "[" <> listOf bs <> text "]"
                 P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO "else "")++"INTERFACE") <+> maybeQuote str
-            where box_type Nothing  = (text . T.unpack) "BOX"
-                  box_type (Just x) 
-                   | x `elem` ["ROWS", "COLS", "TABS"] = (text . T.unpack) x
-                   | otherwise = text "BOX" <+> (text . T.unpack) ("<"<>x<>">") 
-
+            where boxSpec :: BoxHeader -> Doc
+                  boxSpec x = text "BOX "<+> encloseSep  (text " <") (text "> ") (text " ") items
+                    where
+                      items = (text . T.unpack . btType $ x) : (map prettyKey . btKeys $ x)
+                      prettyKey :: TemplateKeyValue -> Doc
+                      prettyKey kv = (text . T.unpack . name $ kv) 
+                                 <+> (case tkval kv of
+                                        Nothing -> mempty
+                                        Just t  -> text " = " <+> (text . show $ t)
+                                     ) 
+     
 instance Pretty (P_IdentDf TermPrim) where
     pretty (P_Id _ lbl cpt ats) =
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)

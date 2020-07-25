@@ -104,7 +104,7 @@ CONTEXT "RAP" IN ENGLISH
   
 --[BOXCLASS]---------------------------------------------------------------------------------------
   CONCEPT BoxClass ""
-    POPULATION BoxClass CONTAINS ["ROWS", "COLS", "TABS"]
+    POPULATION BoxClass CONTAINS ["BOX", "FORM", "TABLE", "TABS"]
   
 --[EXPRESSION]-------------------------------------------------------------------------------------
   RELATION isEditable[Expression] [PROP]

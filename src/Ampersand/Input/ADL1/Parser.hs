@@ -1,4 +1,4 @@
-{-# LANGUAGE DuplicateRecordFields #-}
+﻿{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.ADL1.Parser
@@ -13,6 +13,7 @@ module Ampersand.Input.ADL1.Parser
 
 import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Core.ParseTree
+import           Ampersand.Input.ADL1.Lexer (keywords)
 import           Ampersand.Input.ADL1.ParsingLib
 import qualified RIO.NonEmpty as NE
 import qualified RIO.NonEmpty.Partial as PARTIAL
@@ -437,17 +438,38 @@ pInterface = lbl <$> currPos
           --- Roles ::= 'FOR' RoleList
           pRoles  = pKey "FOR" *> pRole False `sepBy1` pComma
 
---- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'LINKTO'? 'INTERFACE' ADLid
+--- SubInterface ::= ('BOX' BoxHeader? | 'ROWS' | 'COLS' | 'TABS') Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
-pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
+pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
             <|> P_InterfaceRef <$> currPos 
                                <*> pIsThere (pKey "LINKTO") <*  pInterfaceKey 
                                <*> pADLid
-  where pBoxKey :: AmpParser (Maybe Text)
-        pBoxKey = pKey "BOX" *> pMaybe (pChevrons $ asText pConid)
-              <|> Just <$> (asText $ pKey "ROWS")
-              <|> Just <$> (asText $ pKey "COLS")
-              <|> Just <$> (asText $ pKey "TABS")
+  where pBoxHeader :: AmpParser BoxHeader
+        pBoxHeader = 
+              build     <$> currPos <* pKey "BOX" <*> optional pBoxSpecification
+          <|> BoxHeader <$> currPos <*> (asText $ pKey "ROWS") <*> pure []
+          <|> BoxHeader <$> currPos <*> (asText $ pKey "COLS") <*> pure []
+          <|> BoxHeader <$> currPos <*> (asText $ pKey "TABS") <*> pure []
+        build :: Origin -> Maybe (Text, [TemplateKeyValue]) ->  BoxHeader
+        build o x = BoxHeader o typ keys
+          where (typ,keys) = case x of 
+                               Nothing -> ("FORM",[]) 
+                               Just (boxtype, atts) -> (boxtype,atts)       
+        pBoxSpecification :: AmpParser (Text, [TemplateKeyValue])
+        pBoxSpecification = pChevrons $
+                                (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
+                                <*> many pTemplateKeyValue
+         
+        anyKeyWord :: AmpParser String
+        anyKeyWord = case map pKey keywords of
+                       [] -> fatal "We should have keywords. We allways have."
+                       h:tl -> foldr (<|>) h tl
+        pTemplateKeyValue :: AmpParser TemplateKeyValue
+        pTemplateKeyValue = 
+          TemplateKeyValue 
+                 <$> currPos
+                 <*> asText (pVarid <|> pConid <|> anyKeyWord)
+                 <*> optional (id <$ pOperator "=" <*> asText pString)
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*

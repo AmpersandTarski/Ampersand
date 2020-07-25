@@ -87,7 +87,7 @@ BOX [ --"Actieve sessies" : V[SESSION*SESSION]
       --    , "rol"       : ingelogd;accRol
       --    ]
      "Accounts" : V[SESSION*Account]
-      COLS [ loginnaam : I LINKTO INTERFACE "Account"
+      BOX <TABLE> [ loginnaam : I LINKTO INTERFACE "Account"
            , rol       : accRol
            ]
     ]
@@ -127,7 +127,7 @@ BOX [ "Login naam"  : accLogin
 INTERFACE "Beheerde Accounts"
     (accLogin, accPassword, accRol) FOR Beheerder:
     "_SESSION";ingelogd;(accRol;'SystemAdmin';V[Role*Account]-I)
-BOX <SCOLS>
+BOX <TABLE sortable>
     [ "Login naam" : accLogin
     , "Wachtwoord" : accPassword
     , "Rol(len)"   : accRol

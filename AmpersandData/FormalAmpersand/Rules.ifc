@@ -4,13 +4,13 @@ INCLUDE "Concepts.adl"
 
 INTERFACE Overview : "_SESSION"[SESSION]
 TABS[ atoms : V[SESSION*Atom]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ repr : I
            , type : pop - pop;(isas-I)
            , pop  : pop
            ]
     , concepts :V[SESSION*Concept]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ name    : I[Concept]
            , "isa"   : isa
            , "isa+"  : isas
@@ -19,17 +19,17 @@ TABS[ atoms : V[SESSION*Atom]
            , atoms   : pop~
            ]
     , pairs : V[SESSION*Pair]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ pair          : I
            , "relation(s)" : in
            ]
     , relations : V[SESSION*Relation]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
            ]
     , rules : V[SESSION*Rule]
-      COLS [ name : name
+      BOX <TABLE> [ name : name
            , signature : sign
            , term : term[Rule*Expression]
            , meaning : meaning
@@ -40,14 +40,14 @@ TABS[ atoms : V[SESSION*Atom]
 VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 
 INTERFACE Atom(repr) : I[Atom]
-ROWS [ repr : repr
+BOX [ repr : repr
      , pop  : pop
      ]
 
 VIEW Concept : Concept(name)
 
 INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
-ROWS [ name             : name
+BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
      ]
@@ -55,7 +55,7 @@ ROWS [ name             : name
 VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
 
 INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
-ROWS [ pair           : I
+BOX [ pair           : I
      , lAtom          : lAtom
      , rAtom          : rAtom
      , "relation(s)"  : in
@@ -64,7 +64,7 @@ ROWS [ pair           : I
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
-ROWS [ name    : name
+BOX [ name    : name
      , source  : source
      , target  : target
      ]

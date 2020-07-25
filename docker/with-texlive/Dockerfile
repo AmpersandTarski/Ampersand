@@ -2,7 +2,7 @@
 # This Dockerfile is not yet working or tested
 # Contains old setup. Rethinking how to effectively and efficiently textlive can be used by Ampersand compiler
 # !!!!!!!!!!!!!
-FROM docker.pkg.github.com/ampersandtarski/ampersand/ampersand
+FROM ampersandtarski/ampersand:latest
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
