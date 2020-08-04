@@ -42,17 +42,17 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_pos    = [pos']
             , ctx_lang   = lang
             , ctx_markup = fmt
-            , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
-            , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
-            , ctx_ds     = [p | CRel (p,_)<-ces]       -- The relations defined in this context, outside the scope of patterns
+            , ctx_pats   = [p | CPat p<-ces]                     -- The patterns defined in this context
+            , ctx_rs     = [p | CRul p<-ces]                     -- All user defined rules in this context, but outside patterns
+            , ctx_ds     = [p | CRel (p,_)<-ces]                 -- The relations defined in this context, outside the scope of patterns
             , ctx_cs     = [c ("CONTEXT "<>nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
-            , ctx_gs     = concat [ys | CCfy ys<-ces]       -- The Classify definitions defined in this context, outside the scope of patterns
-            , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
-            , ctx_rrules = [x | Cm x <-ces]        -- The MAINTAINS statements in the context
+            , ctx_gs     = concat [ys | CCfy ys<-ces]            -- The Classify definitions defined in this context, outside the scope of patterns
+            , ctx_ks     = [k | CIndx k<-ces]                    -- The identity definitions defined in this context, outside the scope of patterns
+            , ctx_rrules = [x | Cm x <-ces]                      -- The MAINTAINS statements in the context
             , ctx_reprs  = [r | CRep r<-ces]
-            , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
-            , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "<>concat ["\n\n   "<>show ifc | Cifc ifc<-ces])
-            , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
+            , ctx_vs     = [v | CView v<-ces]                    -- The view definitions defined in this context, outside the scope of patterns
+            , ctx_ifcs   = [s | Cifc s<-ces]                     -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "<>concat ["\n\n   "<>show ifc | Cifc ifc<-ces])
+            , ctx_ps     = [e | CPrp e<-ces]                     -- The purposes defined in this context, outside the scope of patterns
             , ctx_pops   = [p | CPop p<-ces] <> concat [p | CRel (_,p)<-ces]  -- The populations defined in this contextplug, from POPULATION statements as well as from Relation declarations.
             , ctx_metas  = [meta | CMeta meta <-ces]
             }
@@ -61,21 +61,21 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
 
     --- ContextElement ::= Meta | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement
     pContextElement :: AmpParser ContextElement
-    pContextElement = CMeta    <$> pMeta         <|>
-                      CPat     <$> pPatternDef   <|>
-                      CRul     <$> pRuleDef      <|>
-                      CCfy     <$> pClassify     <|>
-                      CRel     <$> pRelationDef  <|>
-                      CCon     <$> pConceptDef   <|>
-                      CRep     <$> pRepresentation <|>
-                      Cm       <$> pRoleRule     <|>
-                      Cm       <$> pServiceRule  <|>
-                      CIndx    <$> pIndex        <|>
-                      CView    <$> pViewDef      <|>
-                      Cifc     <$> pInterface    <|>
-                      CPrp     <$> pPurpose      <|>
-                      CPop     <$> pPopulation   <|>
-                      CIncl    <$> pIncludeStatement
+    pContextElement = CMeta <$> pMeta           <|>
+                      CPat  <$> pPatternDef     <|>
+                      CRul  <$> pRuleDef        <|>
+                      CCfy  <$> pClassify       <|>
+                      CRel  <$> pRelationDef    <|>
+                      CCon  <$> pConceptDef     <|>
+                      CRep  <$> pRepresentation <|>
+                      Cm    <$> pRoleRule       <|>
+                      Cm    <$> pServiceRule    <|>
+                      CIndx <$> pIndex          <|>
+                      CView <$> pViewDef        <|>
+                      Cifc  <$> pInterface      <|>
+                      CPrp  <$> pPurpose        <|>
+                      CPop  <$> pPopulation     <|>
+                      CIncl <$> pIncludeStatement
 
 data ContextElement = CMeta Meta
                     | CPat P_Pattern

@@ -250,7 +250,7 @@ parse p fn ts =
 -- | Runs the given parser
 runParser :: AmpParser a -- ^ The parser to run
           -> FilePath    -- ^ Name of the file (for error messages)
-          -> Text      -- ^ Text to parse
+          -> Text        -- ^ Text to parse
           -> Guarded a   -- ^ The result
 runParser parser filename input =
   let lexed = lexer filename (T.unpack input)
