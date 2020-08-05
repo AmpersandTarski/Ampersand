@@ -154,7 +154,10 @@ toPredLogic expr
     = if Set.null varSet then Var 1 c else
       Var (P.maximum (Set.map (\(Var i _)->i) varSet) + 1) c
 
-   -- pre: propagate varSet _ (a,b)  ==> {a,b} Set.isSubsetOf varSet
+   -- propagate calls mkVar to generate fresh variables throughout the recursive tree.
+   -- For that purpose, it yield not only the answer (of type: PredLogic),
+   -- but also the set of variables (of type: VarSet) generated in the process.
+   -- precondition: propagate varSet _ (a,b)  ==> {a,b} Set.isSubsetOf varSet
    propagate :: VarSet -> Expression -> (Var,Var) -> (PredLogic, VarSet)
    propagate varSet (EEqu (l,r)) (a,b)  = (Equiv l' r', set_l `Set.union` set_r)
                                   where (l',set_l) = propagate varSet l (a,b)

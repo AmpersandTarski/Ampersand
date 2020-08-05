@@ -3,6 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
+import           Ampersand.Output.PandocAux
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
@@ -270,24 +271,41 @@ chpDiagnosis env fSpec
       []   -> mempty
       ruls ->
          if all hasMeaning ruls && all hasPurpose ruls
-         then (para.str.l) (NL "Alle regels in dit document zijn voorzien van een uitleg."
-                           ,EN "All rules in this document have been provided with a meaning and a purpose.")
-         else ( case filter (not.hasPurpose) ruls of
+         then (para.str.l) (NL "Alle regels zijn voorzien van een uitleg."
+                           ,EN "All rules have been provided with a meaning and a purpose.")
+         else ( case filter (not.hasPurpose) (filter (not.hasMeaning) ruls) of
                   []  -> mempty
-                  rls -> (para.str.l) (NL "Van de volgende regels is het oogmerk (purpose) niet uitgelegd:"
-                                      ,EN "Rules are defined without documenting their purpose:")
-                       <> bulletList [    (para.emph.str.name) r 
-                                       <> (plain.str.tshow.origin) r 
-                                     | r <- rls]
+                  [r] -> (para.str.l) (NL "De volgende regel heeft noch oogmerk (purpose), noch betekenis:"
+                                      ,EN "The following rule has neither a purpose nor a meaning.")
+                       <> formalizations [r]
+                  rls -> (para.str.l) (NL "De volgende regels hebben noch oogmerk (purpose), noch betekenis:"
+                                      ,EN "The following rules have neither a purpose nor a meaning.")
+                       <> formalizations rls
               ) <>
-              ( case filter (not.hasMeaning) ruls of
+              ( case filter (not.hasPurpose) (filter hasMeaning ruls) of
                   []  -> mempty
-                  rls -> (para.str.l) (NL "Van de volgende regels is de betekenis uitgelegd in taal die door de computer is gegenereerd:"
-                                      ,EN "Rules are defined, the meaning of which is documented by means of computer generated language:")
-                       <> bulletList [    (para . emph . str . name) r 
-                                       <> (para . showPredLogic outputLang' . formalExpression) r
-                                     | r <- rls]
+                  [r] -> (para.str.l) (NL "Van de volgende regel is het oogmerk (purpose) niet uitgelegd:"
+                                      ,EN "The following rule is defined without documenting its purpose:")
+                       <> formalizations [r]
+                  rls -> (para.str.l) (NL "Van de volgende regels is het oogmerk (purpose) niet uitgelegd:"
+                                      ,EN "The following rules are defined without documenting their purpose:")
+                       <> formalizations rls
+              ) <>
+              ( case filter hasPurpose (filter (not.hasMeaning) ruls) of
+                  []  -> mempty
+                  [r] -> (para.str.l) (NL "De volgende regel gaat niet vergezeld van een betekenis in natuurlijke taal:"
+                                      ,EN "The following rule is not accompanied by a meaning written in natural language:")
+                       <> formalizations [r]
+                  rls -> (para.str.l) (NL "De volgende regels gaan niet vergezeld van een betekenis in natuurlijke taal:"
+                                      ,EN "The following rules are not accompanied by a meaning written in natural language:")
+                       <> formalizations rls
               )
+     where
+       formalizations rls
+        = bulletList [    (para . emph . str . name) r <> (plain . str . tshow . origin) r
+                       <> (para . showMath . formalExpression) r
+                       <> (para . showPredLogic outputLang' . formalExpression) r
+                     | r <- rls]
         
   ruleRelationRefTable :: Blocks
   ruleRelationRefTable =
