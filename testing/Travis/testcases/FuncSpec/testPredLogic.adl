@@ -19,9 +19,3 @@ RULE r2 : r~;s;t~
 RULE r3 : r~;s;t~/\t~
 
 ENDCONTEXT
-EInc
-  ( ECps 
-      ( EFlp (EDcD t[A*B])
-      , ECps (ECpl (EDcI A),EDcD t[A*B])
-      )
-  , ECpl (EDcI B)

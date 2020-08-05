@@ -302,7 +302,7 @@ chpDiagnosis env fSpec
               )
      where
        formalizations rls
-        = bulletList [    (para . emph . str . name) r <> (plain . str . tshow . origin) r
+        = bulletList [    para ((emph . str . name) r <> " (" <> (str . tshow . origin) r <> ")")
                        <> (para . showMath . formalExpression) r
                        <> (para . showPredLogic outputLang' . formalExpression) r
                      | r <- rls]
