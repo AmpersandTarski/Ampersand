@@ -15,7 +15,6 @@ data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
   { ifcJSONid                 :: Text
   , ifcJSONlabel              :: Text
-  , ifcJSONboxClass           :: Maybe Text
   , ifcJSONifcObject          :: JSONObjectDef
   , ifcJSONisAPI              :: Bool
   } deriving (Generic, Show)
@@ -34,10 +33,18 @@ data JSONObjectDef =
     , ifcobjJSONsubinterfaces      :: Maybe JSONSubInterface
     } deriving (Generic, Show)
 data JSONSubInterface = JSONSubInterface
-  { subJSONboxClass           :: Maybe Text
+  { subJSONboxHeader          :: Maybe JSONBoxHeader
   , subJSONifcObjects         :: Maybe [JSONObjectDef]
   , subJSONrefSubInterfaceId  :: Maybe Text
   , subJSONrefIsLinkTo        :: Maybe Bool
+  } deriving (Generic, Show)
+data JSONBoxHeader = JSONBoxHeader
+  { bhJSONtype                :: Text
+  , bhJSONkeyVals             :: [JSONTemplateKeyValue]
+  } deriving (Generic, Show)
+data JSONTemplateKeyValue = JSONTemplateKeyValue
+  { tkvJSONkey                :: Text
+  , tkvJSONvalue              :: Maybe Text
   } deriving (Generic, Show)
 data JSONCruds = JSONCruds
   { crudJSONread              :: Bool
@@ -66,7 +73,10 @@ instance ToJSON JSONCruds where
   toJSON = amp2Jason
 instance ToJSON JSONexpr where
   toJSON = amp2Jason
-  
+instance ToJSON JSONBoxHeader where
+  toJSON = amp2Jason
+instance ToJSON JSONTemplateKeyValue where
+  toJSON = amp2Jason
 instance JSON FSpec Interfaces where
  fromAmpersand env fSpec _ = Interfaces (map (fromAmpersand env fSpec) (interfaceS fSpec ++ interfaceG fSpec))
 
@@ -74,22 +84,32 @@ instance JSON SubInterface JSONSubInterface where
  fromAmpersand env fSpec si = 
    case si of 
      Box{} -> JSONSubInterface
-       { subJSONboxClass           = siMClass si
+       { subJSONboxHeader          = Just . (fromAmpersand env fSpec) . siHeader $ si
        , subJSONifcObjects         = Just . map (fromAmpersand env fSpec) . siObjs $ si
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinkTo        = Nothing
        }
      InterfaceRef{} -> JSONSubInterface
-       { subJSONboxClass           = Nothing
+       { subJSONboxHeader          = Nothing
        , subJSONifcObjects         = Nothing
        , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si
        , subJSONrefIsLinkTo        = Just . siIsLink $ si
        }
+instance JSON BoxHeader JSONBoxHeader where
+  fromAmpersand env fSpec header = JSONBoxHeader
+       { bhJSONtype = btType header
+       , bhJSONkeyVals = map (fromAmpersand env fSpec) $ btKeys header
+       }
+instance JSON TemplateKeyValue JSONTemplateKeyValue where
+  fromAmpersand _ _ x = JSONTemplateKeyValue
+       { tkvJSONkey = tkkey x
+       , tkvJSONvalue = tkval x
+       }
+
 instance JSON Interface JSONInterface where
  fromAmpersand env fSpec interface = JSONInterface
   { ifcJSONid                 = escapeIdentifier . ifcname $ interface
   , ifcJSONlabel              = ifcname interface
-  , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
   , ifcJSONifcObject          = fromAmpersand env fSpec (BxExpr $ ifcObj interface)
   , ifcJSONisAPI              = ifcIsAPI interface
   }

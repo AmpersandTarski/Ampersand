@@ -1,4 +1,15 @@
-# Release notes of Ampersand
+﻿# Release notes of Ampersand
+
+## v4.1.0 (14 august 2020)
+
+* [Issue #1067](https://github.com/AmpersandTarski/Ampersand/issues/1067) Docker build push to Docker hub instead of Github package repo
+* [Issue #1084](https://github.com/AmpersandTarski/Ampersand/issues/1084) Add template attributes to BOX syntax
+* **Breaking change** Because of the implementation of feature of #1084 we could greatly reduce the number of BOX templates (e.g. ROWS, ROWSNL, HROWS and HROWSNL are merged into a single template). Documentation of new templates can be found [here](https://github.com/AmpersandTarski/prototype/tree/master/templates). 
+This breaking change presents the opportunity to rename the built-in templates to more self explaining template names:
+  * ROWS -> FORM
+  * COLS -> TABLE
+  * TABS -> TABS (unchanged)
+* Update default prototype framework version to v1.6.0, which includes new templates as described above
 
 ## v4.0.2 (17 july 2020)
 

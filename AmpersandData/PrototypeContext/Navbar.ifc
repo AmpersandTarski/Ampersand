@@ -8,7 +8,7 @@ CONTEXT PrototypeFramework IN ENGLISH
     INTERFACE "Edit menu item" FOR Administrator: I[PF_NavMenuItem] cRud BOX
         [ "Label"        : label
         , "Parent"       : isSubItemOf              cRUd
-        , "Items"        : isSubItemOf~ CRuD BOX <SCOLS>
+        , "Items"        : isSubItemOf~ CRuD BOX <TABLE sortable>
             [ "Item"     : I LINKTO INTERFACE "Edit menu item"
             , "# "       : seqNr                    cRUd
             , "Visible"  : isVisible                cRUd

@@ -702,20 +702,23 @@ pCtx2aCtx env
                                                                              P_BxTxt {} -> fatal "TXT is not expected here."
                                          Nothing        -> Errors . pure $ mkUndeclaredError "interface" o ifcId
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-                  return (objExprEps,InterfaceRef{ siIsLink = si_isLink x
+                  return (objExprEps,InterfaceRef{ pos = origin x
+                                                 , siIsLink = si_isLink x
                                                  , siIfcId  = ifcId
                                                  }
                          )
          P_Box{}
            -> addWarnings warnings $
                        build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
+                             <*  uniqueNames "attribute within a BOX specification" (btKeys . si_header $ x) 
                              <*  uniqueNames "label in box" l  -- ensure that each label in a box has a unique name.
                              <*  mustBeObject (target objExpr)
                   where l :: [P_BoxItem (TermPrim, DisambPrim)]
                         l = si_box x
                         build :: [BoxItem] -> (Expression, SubInterface)
-                        build lst = (objExpr,Box { siConcept = target objExpr
-                                                 , siMClass  = si_class x
+                        build lst = (objExpr,Box { pos = origin x
+                                                 , siConcept = target objExpr
+                                                 , siHeader  = si_header x
                                                  , siObjs    = lst
                                                  }
                                     )
@@ -734,7 +737,7 @@ pCtx2aCtx env
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
            warnings :: [Warning]
-           warnings = [mkBOX_ROWSNH_Warning (origin x) | si_class x == Just "ROWSNH"] -- See issue #925
+           warnings = [mkBOX_ROWSNH_Warning (origin x) | "ROWSNH" == (btType . si_header $ x) ] -- See issue #925
                     <>[mkNoBoxItemsWarning  (origin x) | null (si_box x)            ]
  
     typeCheckInterfaceRef :: P_BoxItem a -> Text -> Expression -> Expression -> Guarded Expression

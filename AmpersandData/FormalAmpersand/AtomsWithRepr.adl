@@ -3,14 +3,14 @@ INCLUDE "Atoms.xlsx"
 
 INTERFACE Overview : "_SESSION"[SESSION]
 TABS[ relations : V[SESSION*Relation]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
            , sources    : sources
            , targets    : targets
            ]
     , concepts :V[SESSION*Concept]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ name    : I[Concept]
            , "isa"   : isa
 --           , "isa+"  : isaPlus
@@ -21,12 +21,12 @@ TABS[ relations : V[SESSION*Relation]
            , atoms   : pop~
            ]
     , pairs : V[SESSION*Pair]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ pair          : I
            , "relation(s)" : in
            ]
     , atoms : V[SESSION*Atom]
-      BOX<SCOLS>
+      BOX<TABLE sortable>
            [ atom : I
            , type : pop - pop;isaPlus
            , pop  : pop
@@ -39,19 +39,19 @@ VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
-ROWS [ name             : name
+BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
      ]
 
 INTERFACE Pair(lRepr,rRepr,in[Pair*Relation]) : I[Pair]
-ROWS [ "relation(s)"  : in
+BOX [ "relation(s)"  : in
      , lRepr          : lRepr
      , rRepr          : rRepr
      ]
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
-ROWS [ name    : name
+BOX [ name    : name
      , source  : source
      , target  : target
      ]

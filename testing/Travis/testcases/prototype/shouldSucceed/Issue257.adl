@@ -1,11 +1,11 @@
 CONTEXT Bug_257 IN ENGLISH
 
  INTERFACE "Send Message" (sessionMsgText, sessionMsgPerson): "_SESSION"[SESSION]
- BOX[ "Send Message" : I COLS
+ BOX[ "Send Message" : I BOX <TABLE>
       [ "To (person)": sessionMsgPerson
       , "Message text" : sessionMsgText
       ]
-    , "Message send requests" : V[SESSION*MsgSendRequest] COLS
+    , "Message send requests" : V[SESSION*MsgSendRequest] BOX <TABLE>
       [ "To" : msgsrPerson
       , "Message text" : msgsrText
       ]

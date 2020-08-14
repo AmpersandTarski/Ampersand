@@ -1,0 +1,31 @@
+# This workflow builds and pushes Ampersand images to Docker Hub
+# We want to have images for branches 'master' (latest) and 'development' and for all tags (i.e. releases, like e.g. v4.0.2)
+# We use a Github Action from the market place. See: https://github.com/marketplace/actions/build-and-push-docker-images
+name: Build push to Docker Hub
+on:
+  push:
+    branches: # empty list to trigger all branches
+    - master
+    - development
+  release:
+    types:
+    - created
+
+jobs:
+  build-push:
+    name: Build push
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+        repository: ampersandtarski/ampersand
+        tag_with_ref: true
+        cache_froms: ampersandtarski/ampersand:development
+        build_args: GIT_SHA=${{ github.sha }},GIT_Branch=${{ github.ref }}
+        add_git_labels: true
