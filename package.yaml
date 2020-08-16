@@ -69,7 +69,7 @@ dependencies:
       - terminal-size == 0.3.*
       - texmath == 0.12.*
       - text == 1.2.*
-      - time == 1.9.*
+      - time == 1.8.*
       - transformers
       - typed-process == 0.2.*
       - wl-pprint == 1.2.* 
@@ -206,7 +206,7 @@ custom-setup:
       - filepath == 1.4.*
       - process == 1.6.*
       - rio == 0.1.*
-      - time == 1.9.*
+      - time == 1.8.*
       - zip-archive >= 0.4.1
 
 executables:
