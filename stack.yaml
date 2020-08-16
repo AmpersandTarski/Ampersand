@@ -1,7 +1,7 @@
 # For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-15.13
+resolver: lts-14.27
 # resolver: nightly-2018-11-24 # temporarily no LTS. Same as pandoc-crossref.
 allow-newer: false
 # Local packages, usually specified by relative directory name
@@ -17,6 +17,28 @@ extra-deps:
  - SpreadsheetML-0.1
  - data-accessor-template-0.2.1.16@sha256:be06c253e9d8bb77a942d20e8973b112c1d30161cf5a6934bc36ee0f04d9e27f,2901
  - roman-numerals-0.5.1.5@sha256:819d04d9d442b24629dd058f6f0b02bd78e9f9ae99538bc44ca448f1cb2b7b01,1208
+
+ - ansi-terminal-0.10.3@sha256:e2fbcef5f980dc234c7ad8e2fa433b0e8109132c9e643bc40ea5608cd5697797,3226
+ - doctemplates-0.8.2@sha256:91a7627e539782885119565f55339a8603513ff63eeed665434a2d1fb6bc7cba,3111
+ - lens-4.18.1@sha256:21ce297d6fef1805a8347393abcc931c30e007b96919794388e9f90e570a4baa,15972
+ - optparse-applicative-0.15.1.0@sha256:29ff6146aabf54d46c4c8788e8d1eadaea27c94f6d360c690c5f6c93dac4b07e,4810
+ - pandoc-2.9.2.1@sha256:0331f5ddf7bec06058fe38713ab55d3e60aac72b32f26a30e247a0ee5b15db13,36158
+ - pandoc-types-1.20@sha256:8362f8f1ed4404f5a2ffde3c6e64718a5443df88e6a93bbe59d992b1817f849a,4109
+ - texmath-0.12.0.2@sha256:745cf08b522ea30686a1bffbb122d7f834e9ee9e4cb02375d828f0eb38f15f57,6565
+ - time-1.9.3@sha256:8f1b5448722a12a952248b356c9eb366e351226543d9086a2da71270522d5f45,5679
+ - xlsx-0.8.1@sha256:2a248d10117d8bfbf52aad5872563b85fbc0030d2fe0953c5c7a18ba2a8eda38,5540
+ - HsYAML-0.2.1.0@sha256:6e63cbc919543c5a837040f063e96fe0a4e43bef8ab3c057cef8f122396fdc2d,5469
+ - directory-1.3.6.1@sha256:3dc9c69c8e09ec95a7a45c6d06abe0f0d2f604439c37e5f88e5a6c335b088d71,2810
+ - doclayout-0.3@sha256:06c03875b1645e6ab835c40f9b73fd959b6c4232c01d06f07debedfae46723f2,2059
+ - emojis-0.1@sha256:3cd86b552ad71c118a7822128c97054b6cf22bc4ff5b8f7e3eb0b356202aeecd,1907
+ - haddock-library-1.8.0@sha256:293544a80c3d817a021fec69c430e808914a9d86db0c6bd6e96a386607a66627,3850
+ - jira-wiki-markup-1.1.4@sha256:812bdd23bd0c0cf4bcbb8b5777750c476b36c8a05f0d310e5935f16ec883fb7f,3583
+ - process-1.6.10.0@sha256:c0d2d8adaca7cea7ceaa60e67b61c775dc03727b83bdb1c97aa8cbeac9f5dd84,2469
+ - type-equality-1@sha256:d36324583fbafc5698c3f898ccf7cf041cbf42435fc2559c28e8f77682739a8e,1517
+ - skylighting-0.8.5@sha256:a6e316e7440f0395d64f3a412cd6985783ec68a171e117d5e1bab1204c565a71,9726
+ - skylighting-core-0.8.5@sha256:f35397ea99d7d0fd4f45899102c040408d2bab802ea9d08ad1a970be58b43b49,8056
+ - regex-pcre-builtin-0.95.1.2.8.43@sha256:b66e9961340e4733f062e92ee7c14485f79a9e25ece19f8932f07f53fc675b52,3088
+ - regex-base-0.94.0.0@sha256:44aa95ca762294ffbb28cf0af9c567d93b5d2c56e4f38ce5385a257d899f968e,2253
 
 # Override default flag values for local packages and extra-deps
 flags:
