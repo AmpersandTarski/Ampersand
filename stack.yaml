@@ -40,7 +40,7 @@ extra-deps:
  - regex-pcre-builtin-0.95.1.2.8.43@sha256:b66e9961340e4733f062e92ee7c14485f79a9e25ece19f8932f07f53fc675b52,3088
  - regex-base-0.94.0.0@sha256:44aa95ca762294ffbb28cf0af9c567d93b5d2c56e4f38ce5385a257d899f968e,2253
  - time-1.8.0.4@sha256:3f6eddf238b828eb4f82683acce1c3afe64784f0d20114239b738c123316c85c
-
+ - unix-2.7.2.2
 # Override default flag values for local packages and extra-deps
 flags:
   pandoc:
