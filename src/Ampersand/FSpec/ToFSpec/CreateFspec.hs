@@ -40,7 +40,7 @@ import qualified RIO.Set as Set
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createFSpec.
 
-createFspec :: (HasFSpecGenOpts env, HasRootFile env, HasLogFunc env) => 
+createFspec :: (HasFSpecGenOpts env, HasLogFunc env) => 
                BuildRecipe -> RIO env (Guarded FSpec)
 createFspec recipe = do 
     env <- ask

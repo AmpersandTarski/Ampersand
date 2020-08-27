@@ -14,26 +14,23 @@ import           Ampersand.Input.ADL1.CtxError
 import qualified RIO.NonEmpty as NE
 import           Ampersand.FSpec.MetaModels
 import           Ampersand.Types.Config
-import           Ampersand.Options.FSpecGenOptsParser
-import           Ampersand.Misc.HasClasses (HasDaemonOpts(..), showWarningsL)
+import           Ampersand.Misc.HasClasses (HasRootFile(..),rootFileL, HasDaemonOpts(..), showWarningsL)
 
 -- | parseProject will try to parse a file. If it succeeds, it will 
---   also parse all INCLUDED files transitive. All of these parses could
+--   also parse all INCLUDED files transitive. Any of these parses could
 --   fail. It will return a tuple containing the Loads and a list of 
 --   the filepaths that are read. 
 parseProject :: (HasDaemonOpts env, HasRunner env) => 
                 FilePath ->  RIO env ([Load],[FilePath])
-parseProject rootAdl = do
-    env1 <- ask
-    let fSpecGenOpts = defFSpecGenOpts rootAdl 
-    extendWith fSpecGenOpts $ do 
-        (pc,gPctx) <- parseFileTransitive rootAdl 
-        env2 <- ask
-        let loadedFiles = map pcCanonical pc
-            gActx = join $ pCtx2Fspec env2 <$> gPctx
-        return ( case gActx of
+parseProject rootAdl =  local (set rootFileL (Just rootAdl)) $ do
+    showWarnings <- view showWarningsL
+    (pc,gPctx) <- parseFileTransitive rootAdl 
+    env <- ask
+    let loadedFiles = map pcCanonical pc
+        gActx = join $ pCtx2Fspec env <$> gPctx
+    return ( case gActx of
                 Checked _ ws 
-                   | view showWarningsL env1 -> map warning2Load ws
+                   | showWarnings -> map warning2Load ws
                    | otherwise -> [] 
                 Errors  es   -> NE.toList . fmap error2Load $ es
                , loadedFiles

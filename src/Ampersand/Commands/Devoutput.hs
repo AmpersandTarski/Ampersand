@@ -21,13 +21,13 @@ import           System.Directory
 import           System.FilePath
 -- | Dumps diagnostic output for development purposes
 --
-devoutput :: (HasDirOutput env, HasRootFile env, HasLogFunc env) 
+devoutput :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) 
        => FSpec -> RIO env ()
 devoutput fSpec = do
     doGenHaskell fSpec
     doGenSQLdump fSpec
 
-doGenHaskell :: (HasDirOutput env, HasRootFile env, HasLogFunc env) 
+doGenHaskell :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) 
        => FSpec -> RIO env ()
 doGenHaskell fSpec = do
     env <- ask
@@ -40,7 +40,7 @@ doGenHaskell fSpec = do
   where 
     outputFile' env = view dirOutputL env </> baseName env -<.> ".hs"
 
-doGenSQLdump :: (HasDirOutput env, HasRootFile env, HasLogFunc env) 
+doGenSQLdump :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) 
        => FSpec -> RIO env ()
 doGenSQLdump fSpec = do
     env <- ask
