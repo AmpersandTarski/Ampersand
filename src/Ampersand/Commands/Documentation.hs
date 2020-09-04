@@ -13,7 +13,7 @@ import           RIO.Time
 -- the returned FSpec contains the details about the Pictures, so they
 -- can be referenced while rendering the FSpec.
 -- This function generates a pandoc document, possibly with pictures from an fSpec.
-doGenDocument :: (HasBlackWhite env, HasRootFile env, HasDirOutput env, HasLogFunc env, HasDocumentOpts env) 
+doGenDocument :: (HasBlackWhite env, HasFSpecGenOpts env, HasDirOutput env, HasLogFunc env, HasDocumentOpts env) 
    => FSpec -> RIO env ()
 doGenDocument fSpec = do
     env <- ask

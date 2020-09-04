@@ -87,34 +87,9 @@ class HasRootFile a where
   dirSource = fromMaybe (fatal "Cannot determine the directory of the script that is being compiled")
             . fmap takeDirectory 
             . view rootFileL
-instance HasRootFile ProtoOpts where
-  rootFileL = fSpecGenOptsL . rootFileL
-instance HasRootFile FSpecGenOpts where
-  rootFileL = lens xrootFile (\x y -> x { xrootFile = y })
-              --Note: This instance definition is different, because
-              --      we need a construction that in case of the deamon
-              --      command, the root wil actually be read from a
-              --      config file.  
-  --   lens (\x -> fromMaybe
-  --                  (fatal "The rootfile must be set before it is read!")
-  --                  (xrootFile x)
-  --        )
-  --        (\x y -> x { xrootFile = Just y })
+instance (HasFSpecGenOpts a) => HasRootFile a where
+  rootFileL = fSpecGenOptsL . (lens xrootFile (\x y -> x { xrootFile = y }))
 
-instance HasRootFile DocOpts where
-  rootFileL = fSpecGenOptsL . rootFileL
-instance HasRootFile InputOutputOpts where
-  rootFileL = fSpecGenOptsL . rootFileL
-instance HasRootFile PopulationOpts where
-  rootFileL = fSpecGenOptsL . rootFileL
-instance HasRootFile ProofOpts where
-  rootFileL = fSpecGenOptsL . rootFileL
-instance HasRootFile UmlOpts where
-  rootFileL = fSpecGenOptsL . rootFileL
-instance HasRootFile ValidateOpts where
-  rootFileL = fSpecGenOptsL . rootFileL
-instance HasRootFile DevOutputOpts where
-  rootFileL = fSpecGenOptsL . rootFileL
 class HasOutputLanguage a where
   languageL :: Lens' a (Maybe Lang)  -- The language in which the user wants the documentation to be printed.
 instance HasOutputLanguage ProtoOpts where

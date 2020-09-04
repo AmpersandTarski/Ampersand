@@ -20,7 +20,7 @@ import qualified RIO.Text as T
 import           RIO.Time
 import           Text.Pandoc hiding (Meta)
 
-fSpec2Haskell :: (HasRootFile env) =>
+fSpec2Haskell :: (HasFSpecGenOpts env) =>
        env -> UTCTime -> FSpec -> Text
 fSpec2Haskell env now fSpec
     = T.intercalate "\n" $
@@ -51,7 +51,7 @@ class ShowHSName a where
  showHSName :: a -> Text
 
 class ShowHS a where
- showHS :: (HasRootFile env) => env -> Text -> a -> Text
+ showHS :: (HasFSpecGenOpts env) => env -> Text -> a -> Text
 
 instance ShowHSName a => ShowHSName [a] where
  showHSName xs = "["<>T.intercalate "," (map showHSName xs)<>"]"

@@ -20,7 +20,7 @@ import           System.Directory
 import           System.FilePath
 -- | Generate a UML output file from a project.
 --
-uml :: (HasDirOutput env, HasRootFile env, HasLogFunc env, HasOutputLanguage env) 
+uml :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env, HasOutputLanguage env) 
     => FSpec -> RIO env ()
 uml fSpec = do
    env <- ask
