@@ -168,7 +168,7 @@ data FEObject2 =
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
                                                           , [Text] -- the attributes of the template
                                                           ) }
-                   | FEBox    { objMClass :: BoxHeader
+                   | FEBox    { objMClass :: HTMLTemplateUsage
                               , ifcSubObjs :: [FEObject2] 
                               } deriving (Show, Data,Typeable)
 

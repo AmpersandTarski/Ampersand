@@ -504,5 +504,5 @@ tblcontents ci ps plug
                                   --  , when a relation in formalAmpersand is declared UNI, but actually it isn't.
 
 -- convenient function to give a Box header without keyvalues
-simpleBoxHeader :: Origin -> BoxHeader
-simpleBoxHeader orig = BoxHeader {pos = orig, btType = "ROWS", btKeys = []}
+simpleBoxHeader :: Origin -> HTMLTemplateUsage
+simpleBoxHeader orig = HTMLTemplateUsage {pos = orig, btType = "ROWS", btKeys = []}

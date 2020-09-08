@@ -257,7 +257,7 @@ instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
                 P_Box _ c bs         -> boxSpec c <+> text "[" <> listOf bs <> text "]"
                 P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO "else "")++"INTERFACE") <+> maybeQuote str
-            where boxSpec :: BoxHeader -> Doc
+            where boxSpec :: HTMLTemplateUsage -> Doc
                   boxSpec x = text "BOX "<+> encloseSep  (text " <") (text "> ") (text " ") items
                     where
                       items = (text . T.unpack . btType $ x) : (map prettyKey . btKeys $ x)

@@ -67,7 +67,7 @@ keywords  = L.nub $
                 ] ++ 
                 -- Keywords for interfaces
                 [ "INTERFACE", "FOR", "LINKTO", "API"
-                , "BOX", "FORM", "TABLE",
+                , "BOX", "FORM", "TABLE"
                 -- Keywords for identitys
                 , "IDENT"
                 -- Keywords for views

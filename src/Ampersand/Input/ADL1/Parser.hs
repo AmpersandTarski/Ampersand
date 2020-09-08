@@ -438,27 +438,38 @@ pInterface = lbl <$> currPos
           --- Roles ::= 'FOR' RoleList
           pRoles  = pKey "FOR" *> pRole False `sepBy1` pComma
 
---- SubInterface ::= ('BOX' BoxHeader? | 'FORM' | 'TABLE') Box | 'LINKTO'? 'INTERFACE' ADLid
+--- SubInterface ::= ('BOX' HTMLTemplateUsage? | 'FORM' | 'TABLE') Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
             <|> P_InterfaceRef <$> currPos 
                                <*> pIsThere (pKey "LINKTO") <*  pInterfaceKey 
                                <*> pADLid
-  where pBoxHeader :: AmpParser BoxHeader
+  where pBoxHeader :: AmpParser HTMLTemplateUsage
         pBoxHeader = 
-              build     <$> currPos <* pKey "BOX" <*> optional pBoxSpecification
-          <|> BoxHeader <$> currPos <*> (asText $ pKey "FORM") <*> pure []
-          <|> BoxHeader <$> currPos <*> (asText $ pKey "TABLE") <*> pure []
-        build :: Origin -> Maybe (Text, [TemplateKeyValue]) ->  BoxHeader
-        build o x = BoxHeader o typ keys
-          where (typ,keys) = case x of 
-                               Nothing -> ("FORM",[]) 
-                               Just (boxtype, atts) -> (boxtype,atts)       
-        pBoxSpecification :: AmpParser (Text, [TemplateKeyValue])
-        pBoxSpecification = pChevrons $
-                                (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
-                                <*> many pTemplateKeyValue
+              build     <$> currPos <* pKey "BOX" <*> optional pHtmlTemplateUsage
+          <|> HTMLTemplateUsage <$> currPos <*> (asText $ pKey "FORM") <*> pure []
+          <|> HTMLTemplateUsage <$> currPos <*> (asText $ pKey "TABLE") <*> pure []
+        build :: Origin -> Maybe HTMLTemplateUsage ->  HTMLTemplateUsage
+        build o = fromMaybe HTMLTemplateUsage 
+                              { pos = o
+                              , btType = "FORM"
+                              , btKeys = []
+                              } 
          
+pHtmlTemplateUsage :: AmpParser HTMLTemplateUsage
+pHtmlTemplateUsage = do
+    cp <- currPos
+    (typ,keys) <- pTemplateSpecification
+    return HTMLTemplateUsage
+             { pos = cp
+             , btType = typ
+             , btKeys = keys
+             }
+pTemplateSpecification :: AmpParser (Text, [TemplateKeyValue])
+pTemplateSpecification = pChevrons $
+                          (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
+                              <*> many pTemplateKeyValue
+    where
         anyKeyWord :: AmpParser String
         anyKeyWord = case map pKey keywords of
                        [] -> fatal "We should have keywords. We allways have."

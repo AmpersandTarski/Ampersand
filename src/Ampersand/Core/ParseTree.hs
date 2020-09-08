@@ -12,7 +12,7 @@ module Ampersand.Core.ParseTree (
    , P_Relation(..), mergeRels
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
-   , BoxHeader(..), TemplateKeyValue(..)
+   , HTMLTemplateUsage(..), TemplateKeyValue(..)
    , SrcOrTgt(..)
    , P_Rule(..)
    , ConceptDef(..)
@@ -620,7 +620,7 @@ data P_IClass = P_IClass { iclass_name :: Text } deriving (Eq, Ord, Show)
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
               = P_Box          { pos :: !Origin
-                               , si_header :: !BoxHeader
+                               , si_header :: !HTMLTemplateUsage
                                , si_box :: [P_BoxItem a] }
               | P_InterfaceRef { pos :: !Origin
                                , si_isLink :: !Bool --True iff LINKTO is used. (will display as hyperlink)
@@ -629,7 +629,7 @@ data P_SubIfc a
                 deriving (Show)
 
 -- | Key-value pairs used to supply attributes into an HTML template that is used to render a subinterface
-data BoxHeader = BoxHeader
+data HTMLTemplateUsage = HTMLTemplateUsage
     { pos :: !Origin
     , btType :: !Text  
     -- ^ Type of the HTML template that is used for rendering
@@ -638,7 +638,7 @@ data BoxHeader = BoxHeader
     } deriving (Show,Data)
 
 
-instance Traced BoxHeader where
+instance Traced HTMLTemplateUsage where
   origin = pos
 
 data TemplateKeyValue = TemplateKeyValue

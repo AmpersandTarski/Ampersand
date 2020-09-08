@@ -95,7 +95,7 @@ instance JSON SubInterface JSONSubInterface where
        , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si
        , subJSONrefIsLinkTo        = Just . siIsLink $ si
        }
-instance JSON BoxHeader JSONBoxHeader where
+instance JSON HTMLTemplateUsage JSONBoxHeader where
   fromAmpersand env fSpec header = JSONBoxHeader
        { bhJSONtype = btType header
        , bhJSONkeyVals = map (fromAmpersand env fSpec) $ btKeys header

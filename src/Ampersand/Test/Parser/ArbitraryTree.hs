@@ -94,10 +94,10 @@ subIfc objGen n
     | n == 0 = P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
     | otherwise = P_Box  <$> arbitrary <*> arbitrary <*> vectorOf n (objGen$ n`div`2)
 
-instance Arbitrary BoxHeader where
+instance Arbitrary HTMLTemplateUsage where
     arbitrary = oneof 
-       [ BoxHeader <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
-       , BoxHeader <$> arbitrary <*> elements  ["COLS","ROWS","TABS"]  <*> pure [] 
+       [ HTMLTemplateUsage <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
+       , HTMLTemplateUsage <$> arbitrary <*> elements  ["COLS","ROWS","TABS"]  <*> pure [] 
        ]
 instance Arbitrary TemplateKeyValue where
     arbitrary = TemplateKeyValue 
