@@ -446,9 +446,7 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
                                <*> pADLid
   where pBoxHeader :: AmpParser HTMLTemplateUsage
         pBoxHeader = 
-              build     <$> currPos <* pKey "BOX" <*> optional pHtmlTemplateUsage
-          <|> HTMLTemplateUsage <$> currPos <*> (asText $ pKey "FORM") <*> pure []
-          <|> HTMLTemplateUsage <$> currPos <*> (asText $ pKey "TABLE") <*> pure []
+              build <$> currPos <* pKey "BOX" <*> optional pHtmlTemplateUsage
         build :: Origin -> Maybe HTMLTemplateUsage ->  HTMLTemplateUsage
         build o = fromMaybe HTMLTemplateUsage 
                               { pos = o
