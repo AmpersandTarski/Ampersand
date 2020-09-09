@@ -78,7 +78,7 @@ objTermPrim isTxtAllowed i =
 genObj :: Arbitrary a => Bool -> Int -> Gen (P_BoxItem a)
 genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (pure Nothing)
 
-makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem a)
+makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe ViewUsage) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
   oneof $ [P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
         ++[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]

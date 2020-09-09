@@ -220,8 +220,8 @@ makeFSpec env context
 --                 , rel<-NE.init cons<>[flp r | r<-NE.tail cons]
 --                 ]
   -- Lookup view by id in fSpec.
-     lookupView' :: Text -> ViewDef
-     lookupView'  viewId =
+     lookupView' :: ViewUsage -> ViewDef
+     lookupView'  ViewUsage{vuView = viewId} =
        case filter (\v -> name v == viewId) $ viewDefs context of
          []   -> fatal ("Undeclared view " <> tshow viewId <> ".") -- Will be caught by static analysis
          [vd] -> vd

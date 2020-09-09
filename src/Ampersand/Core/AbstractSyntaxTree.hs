@@ -26,6 +26,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , getInterfaceByName
  , SubInterface(..)
  , BoxItem(..),ObjectDef(..),BoxTxt(..)
+ , ViewUsage(..)
  , Object(..)
  , Cruds(..)
  , Default(..)
@@ -63,6 +64,7 @@ import           Ampersand.Core.ParseTree
     , maybeOrdering
     , Traced(..)
     , ViewHtmlTemplate(..)
+    , ViewUsage(..)
     , HTMLTemplateUsage(..) -- , TemplateKeyValue(..)
     , PairView(..)
     , PairViewSegment(..)
@@ -418,14 +420,20 @@ instance Ord BoxTxt where
      x -> x  
 instance Eq BoxTxt where
  a == b = compare a b == EQ
-data ObjectDef = 
-    ObjectDef { objnm    :: Text         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-           , objpos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-           , objExpression :: Expression -- ^ this expression describes the instances of this object, related to their context.
-           , objcrud  :: Cruds          -- ^ CRUD as defined by the user 
-           , objmView :: Maybe Text   -- ^ The view that should be used for this object
-           , objmsub  :: Maybe SubInterface -- ^ the fields, which are object definitions themselves.
-           } deriving (Show)        -- just for debugging (zie ook instance Show BoxItem)
+data ObjectDef = ObjectDef
+           { objnm    :: !Text
+           -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+           , objpos   :: !Origin
+           -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+           , objExpression :: !Expression
+           -- ^ this expression describes the instances of this object, related to their context.
+           , objcrud  :: !Cruds
+           -- ^ CRUD as defined by the user 
+           , objmView :: Maybe ViewUsage
+           -- ^ The view that should be used for this object
+           , objmsub  :: Maybe SubInterface
+           -- ^ the fields, which are object definitions themselves.
+           } deriving (Show) -- just for debugging (zie ook instance Show BoxItem)
 instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where

@@ -416,9 +416,9 @@ pInterface = lbl <$> currPos
                  <*> pMaybe pRoles 
                  <*> (pColon *> pTerm)          -- the expression of the interface object
                  <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
-                 <*> pMaybe (pChevrons $ asText pConid)  -- The view that should be used for this object
+                 <*> pMaybe pViewUsage  -- The view that should be used for this object
                  <*> pSubInterface
-    where lbl :: Origin -> Bool -> Text ->  a -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Text -> P_SubInterface -> P_Interface
+    where lbl :: Origin -> Bool -> Text ->  a -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe ViewUsage -> P_SubInterface -> P_Interface
           lbl p isAPI nm _params roles ctx mCrud mView sub
              = P_Ifc { ifc_IsAPI  = isAPI
                      , ifc_Name   = nm
@@ -463,6 +463,15 @@ pHtmlTemplateUsage = do
              , btType = typ
              , btKeys = keys
              }
+pViewUsage :: AmpParser ViewUsage
+pViewUsage = do
+    cp <- currPos
+    (typ,keys) <- pTemplateSpecification
+    return ViewUsage
+             { pos = cp
+             , vuView = typ
+             , vuKeys = keys
+             }
 pTemplateSpecification :: AmpParser (Text, [TemplateKeyValue])
 pTemplateSpecification = pChevrons $
                           (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
@@ -494,7 +503,7 @@ pObjDef = pBoxItem <$> currPos
     pObj :: AmpParser (P_BoxItemTermPrim)
     pObj = obj     <$> pTerm            -- the context expression (for example: I[c])
                    <*> pMaybe pCruds
-                   <*> pMaybe (pChevrons $ asText pConid) --for the view
+                   <*> pMaybe pViewUsage --for the view
                    <*> pMaybe pSubInterface  -- the optional subinterface
           where obj ctx mCrud mView msub =
                   P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."

@@ -13,6 +13,7 @@ module Ampersand.Core.ParseTree (
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
    , HTMLTemplateUsage(..), TemplateKeyValue(..)
+   , ViewUsage(..)
    , SrcOrTgt(..)
    , P_Rule(..)
    , ConceptDef(..)
@@ -659,7 +660,7 @@ data P_BoxItem a =
            , pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , obj_ctx :: Term a         -- ^ this expression describes the instances of this object, related to their context.
            , obj_crud :: Maybe P_Cruds  -- ^ the CRUD actions as required by the user  
-           , obj_mView :: Maybe Text -- ^ The view that should be used for this object
+           , obj_mView :: Maybe ViewUsage -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
            }
    | P_BxTxt  { obj_nm :: Text          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -679,6 +680,16 @@ instance Named (P_BoxItem a) where
   name = obj_nm
 instance Traced (P_BoxItem a) where
  origin = pos
+
+data ViewUsage = ViewUsage 
+    { pos :: !Origin
+    , vuView :: !Text
+    -- ^ Name of the VIEW that is referenced by this ViewUsage.
+    , vuKeys :: [TemplateKeyValue] 
+    -- ^ Key-value pairs 
+    } deriving (Show,Data)
+
+
 data P_Cruds = P_Cruds Origin Text deriving Show
 type P_IdentDef = P_IdentDf TermPrim -- this is what is returned by the parser, but we need to change the "TermPrim" for disambiguation
 data P_IdentDf a = -- so this is the parametric data-structure

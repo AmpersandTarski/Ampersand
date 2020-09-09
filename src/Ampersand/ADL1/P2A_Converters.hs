@@ -587,9 +587,9 @@ pCtx2aCtx env
                   (Just _ , Just P_InterfaceRef{si_isLink=False} )
                       -> Errors . pure $ mkCrudForRefInterfaceError orig
                   _   -> pure()
-              typeCheckViewAnnotation :: Expression -> Maybe Text -> Guarded ()
+              typeCheckViewAnnotation :: Expression -> Maybe ViewUsage -> Guarded ()
               typeCheckViewAnnotation _       Nothing       = pure ()
-              typeCheckViewAnnotation objExpr (Just viewId) =
+              typeCheckViewAnnotation objExpr (Just ViewUsage{vuView = viewId}) =
                 case lookupView viewId of 
                   Just vd -> let viewAnnCptStr = aConcToType $ target objExpr
                                  viewDefCptStr = pConcToType $ vd_cpt vd

@@ -243,14 +243,20 @@ instance Pretty a => Pretty (P_BoxItem a) where
      maybeQuote (name obj) <+> text ":" <+>
        case obj of
         (P_BxExpr _ _ ctx mCrud mView msub)
-           -> nest 2 (pretty ctx <+> crud mCrud <+> view mView <$> pretty msub)
+           -> nest 2 (pretty ctx <+> pretty mCrud <+> pretty mView <$> pretty msub)
         (P_BxTxt  _ _ str)
            -> text "TXT" <+> quote str
            
-        where crud Nothing = empty
-              crud (Just cruds) = pretty cruds
-              view Nothing  = empty
-              view (Just v) = (text . T.unpack) ("<" <> v <> ">")
+instance Pretty ViewUsage where
+    pretty vu = encloseSep  (text " <") (text "> ") (text " ") items
+                    where
+                      items = (text . T.unpack . vuView $ vu) : (map prettyKey . vuKeys $ vu)
+                      prettyKey :: TemplateKeyValue -> Doc
+                      prettyKey kv = (text . T.unpack . name $ kv) 
+                                 <+> (case tkval kv of
+                                        Nothing -> mempty
+                                        Just t  -> text " = " <+> (text . show $ t)
+                                     ) 
 instance Pretty P_Cruds where
     pretty (P_Cruds _ str) = (text . T.unpack) str
 instance Pretty a => Pretty (P_SubIfc a) where
@@ -279,12 +285,10 @@ instance Pretty (P_IdentSegmnt TermPrim) where
            -> (if T.null nm
                then pretty ctx -- no label
                else maybeQuote nm <> text ":" <~> ctx
-              ) <+> (view . fmap T.unpack) mView
+              ) <+> pretty mView
         (P_BxTxt  nm _ str)
            -> maybeQuote nm 
               <~> text "TXT" <+> quote str
-        where view Nothing  = empty
-              view (Just v) = pretty v
 
 instance Pretty (P_ViewD TermPrim) where
     pretty (P_Vd _ lbl cpt True Nothing ats) = -- legacy syntax

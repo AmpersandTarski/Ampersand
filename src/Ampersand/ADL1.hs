@@ -27,6 +27,7 @@ import Ampersand.Core.ParseTree (
          , P_Interface(..)
          , P_SubInterface,P_SubIfc(..),P_Cruds(..)
          , HTMLTemplateUsage(..), TemplateKeyValue(..)
+         , ViewUsage(..)
          , Term(..)
          , TermPrim(..), P_NamedRel(..)
          , PClassify(..)
