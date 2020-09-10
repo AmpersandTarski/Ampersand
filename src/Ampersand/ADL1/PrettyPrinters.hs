@@ -250,13 +250,7 @@ instance Pretty a => Pretty (P_BoxItem a) where
 instance Pretty ViewUsage where
     pretty vu = encloseSep  (text " <") (text "> ") (text " ") items
                     where
-                      items = (text . T.unpack . vuView $ vu) : (map prettyKey . vuKeys $ vu)
-                      prettyKey :: TemplateKeyValue -> Doc
-                      prettyKey kv = (text . T.unpack . name $ kv) 
-                                 <+> (case tkval kv of
-                                        Nothing -> mempty
-                                        Just t  -> text " = " <+> (text . show $ t)
-                                     ) 
+                      items = (text . T.unpack . vuView $ vu) : map pretty (vuKeys vu)
 instance Pretty P_Cruds where
     pretty (P_Cruds _ str) = (text . T.unpack) str
 instance Pretty a => Pretty (P_SubIfc a) where
@@ -266,13 +260,7 @@ instance Pretty a => Pretty (P_SubIfc a) where
             where boxSpec :: HTMLTemplateUsage -> Doc
                   boxSpec x = text "BOX "<+> encloseSep  (text " <") (text "> ") (text " ") items
                     where
-                      items = (text . T.unpack . btType $ x) : (map prettyKey . btKeys $ x)
-                      prettyKey :: TemplateKeyValue -> Doc
-                      prettyKey kv = (text . T.unpack . name $ kv) 
-                                 <+> (case tkval kv of
-                                        Nothing -> mempty
-                                        Just t  -> text " = " <+> (text . show $ t)
-                                     ) 
+                      items = (text . T.unpack . btType $ x) : map pretty (btKeys x)
      
 instance Pretty (P_IdentDf TermPrim) where
     pretty (P_Id _ lbl cpt ats) =
@@ -300,7 +288,19 @@ instance Pretty (P_ViewD TermPrim) where
                     <+> braces (listOf ats) <~> html <+> text "ENDVIEW"
 
 instance Pretty ViewHtmlTemplate where
-    pretty (ViewHtmlTemplateFile file) = text "HTML" <+> text "TEMPLATE" <+> quote (T.pack file)
+    pretty (ViewHtmlTemplateFile _ file keyVals) = text "HTML" <+> text "TEMPLATE" <+> quote (T.pack file) <~>
+        (case keyVals of 
+          _:_ -> encloseSep (text " {") (text "} ") (text " ") (map pretty keyVals)
+          [] -> mempty
+        )
+
+instance Pretty TemplateKeyValue where
+    pretty kv = (text . T.unpack . name $ kv) 
+                                 <+> (case tkval kv of
+                                        Nothing -> mempty
+                                        Just t  -> text " = " <+> (text . show $ t)
+                                     ) 
+
 instance Pretty (P_ViewSegment TermPrim) where
     pretty (P_ViewSegment mlab _ pl)
         = ( case mlab of 

@@ -273,14 +273,20 @@ data IdentitySegment = IdentityExp
          { segment :: ObjectDef
          } deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
-data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-                  , vdlbl :: Text          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-                  , vdcpt :: A_Concept       -- ^ the concept for which this view is applicable
-                  , vdIsDefault :: Bool      -- ^ whether or not this is the default view for the concept
-                  , vdhtml :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
---                  , vdtext :: Maybe ViewText -- Future extension
-                  , vdats :: [ViewSegment]   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
-                  } deriving (Show)
+data ViewDef = ViewDef
+    { vdpos :: Origin
+    -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
+    , vdlbl :: Text
+    -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+    , vdcpt :: A_Concept
+    -- ^ the concept for which this view is applicable
+    , vdIsDefault :: Bool
+    -- ^ whether or not this is the default view for the concept
+    , vdhtml :: Maybe ViewHtmlTemplate
+    -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
+    , vdats :: [ViewSegment]
+    -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
+    } deriving (Show)
 instance Named ViewDef where
   name = vdlbl
 instance Traced ViewDef where

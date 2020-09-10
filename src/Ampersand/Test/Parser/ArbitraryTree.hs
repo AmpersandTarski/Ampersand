@@ -314,7 +314,8 @@ instance Arbitrary a => Arbitrary (P_ViewD a) where
                     <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
-    arbitrary = ViewHtmlTemplateFile <$> safeFilePath
+    arbitrary = ViewHtmlTemplateFile <$> arbitrary <*> safeFilePath
+                    <*> arbitrary
 
 instance Arbitrary a => Arbitrary (P_ViewSegment a) where
     arbitrary = P_ViewSegment <$> (Just <$> safeStr) <*> arbitrary <*> arbitrary 

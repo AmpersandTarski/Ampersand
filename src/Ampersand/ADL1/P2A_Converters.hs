@@ -524,7 +524,8 @@ pCtx2aCtx env
               , vd_ats  = pvs   -- view segments
               }
      = (\vdts
-        -> Vd { vdpos  = orig
+        -> ViewDef
+              { vdpos  = orig
               , vdlbl  = lbl
               , vdcpt  = pCpt2aCpt (conceptMap ci) cpt
               , vdIsDefault = isDefault

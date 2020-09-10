@@ -771,15 +771,12 @@ data P_ViewSegmtPayLoad a
                     | P_ViewText { vs_txt :: Text }
                       deriving (Show)
 
-data ViewHtmlTemplate = ViewHtmlTemplateFile FilePath
---              | ViewHtmlTemplateInline Text -- Future extension
-                  deriving (Eq, Ord, Show)
+data ViewHtmlTemplate = ViewHtmlTemplateFile
+   { pos :: !Origin
+   , vhtFile :: !FilePath
+   , vhtKeyVals :: [TemplateKeyValue]
+   } deriving (Show,Data)
 
-{- Future extension:
-data ViewText = ViewTextTemplateFile Text
-              | ViewTextTemplateInline Text
-                  deriving (Eq, Ord, Show)
--}
 
 instance Functor P_ViewSegmtPayLoad where fmap = fmapDefault
 instance Foldable P_ViewSegmtPayLoad where foldMap = foldMapDefault

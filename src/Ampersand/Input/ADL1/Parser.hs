@@ -380,9 +380,13 @@ pFancyViewDef  = mkViewDef <$> currPos
                  , vd_ats = ats
                  }
           --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
-          --- HtmlView ::= 'HTML' 'TEMPLATE' Text
+          --- HtmlView ::= 'HTML' 'TEMPLATE' Text ('{' (KEYVALS)'}')?
           pHtmlView :: AmpParser ViewHtmlTemplate
-          pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
+          pHtmlView = build <$> currPos <* pKey "HTML" <* pKey "TEMPLATE" <*> pString <*> optional pdefAtts
+            where build :: Origin -> FilePath -> Maybe [TemplateKeyValue] -> ViewHtmlTemplate
+                  build o fp mkeys = ViewHtmlTemplateFile o fp (fromMaybe [] mkeys)
+                  pdefAtts :: AmpParser [TemplateKeyValue]
+                  pdefAtts = pBraces $ many pTemplateKeyValue
 --- ViewSegmentLoad ::= Term | 'TXT' Text
 pViewSegmentLoad :: AmpParser (P_ViewSegmtPayLoad TermPrim)           
 pViewSegmentLoad = P_ViewExp  <$> pTerm
@@ -476,17 +480,16 @@ pTemplateSpecification :: AmpParser (Text, [TemplateKeyValue])
 pTemplateSpecification = pChevrons $
                           (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
                               <*> many pTemplateKeyValue
-    where
-        anyKeyWord :: AmpParser String
-        anyKeyWord = case map pKey keywords of
-                       [] -> fatal "We should have keywords. We allways have."
-                       h:tl -> foldr (<|>) h tl
-        pTemplateKeyValue :: AmpParser TemplateKeyValue
-        pTemplateKeyValue = 
-          TemplateKeyValue 
-                 <$> currPos
-                 <*> asText (pVarid <|> pConid <|> anyKeyWord)
-                 <*> optional (id <$ pOperator "=" <*> asText pString)
+anyKeyWord :: AmpParser String
+anyKeyWord = case map pKey keywords of
+                [] -> fatal "We should have keywords. We allways have."
+                h:tl -> foldr (<|>) h tl
+pTemplateKeyValue :: AmpParser TemplateKeyValue
+pTemplateKeyValue = 
+  TemplateKeyValue 
+          <$> currPos
+          <*> asText (pVarid <|> pConid <|> anyKeyWord)
+          <*> optional (id <$ pOperator "=" <*> asText pString)
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
