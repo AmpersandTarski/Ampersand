@@ -621,7 +621,7 @@ pCtx2aCtx env
     pCruds2aCruds :: Expression -> Maybe P_Cruds -> Guarded Cruds
     pCruds2aCruds expr mCrud = 
        case mCrud of 
-         Nothing -> mostLiberalCruds (Origin "Default for Cruds") ""
+         Nothing -> pure $ mostLiberalCruds (Origin "Default for Cruds") ""
          Just pc@(P_Cruds org userCrud )
              | (length . L.nub . map toUpper) userCrudString == length userCrudString &&
                 (all isValidChar userCrudString)  
@@ -632,22 +632,22 @@ pCtx2aCtx env
             isValidChar :: Char -> Bool
             isValidChar c = toUpper c `elem` ['C','R','U','D']
             (defC, defR, defU, defD) = view defaultCrudL env
-            mostLiberalCruds :: Origin -> Text -> Guarded Cruds
+            mostLiberalCruds :: Origin -> Text -> Cruds
             mostLiberalCruds o str
-             = pure Cruds { crudOrig = o
-                          , crudC    = isFitForCrudC expr && f 'C' defC
-                          , crudR    = isFitForCrudR expr && f 'R' defR
-                          , crudU    = isFitForCrudU expr && f 'U' defU
-                          , crudD    = isFitForCrudD expr && f 'D' defD
-                          }
+             = Cruds { crudOrig = o
+                     , crudC    = isFitForCrudC expr && f 'C' defC
+                     , crudR    = isFitForCrudR expr && f 'R' defR
+                     , crudU    = isFitForCrudU expr && f 'U' defU
+                     , crudD    = isFitForCrudD expr && f 'D' defD
+                     }
                    where
                      f :: Char -> Bool -> Bool 
                      f c def'
                       | toUpper c `elem` T.unpack str = True
                       | toLower c `elem` T.unpack str = False
                       | otherwise            = def'
-            warnings :: P_Cruds -> Guarded Cruds -> Guarded Cruds
-            warnings pc@(P_Cruds _ crd) aCruds = addWarnings warns aCruds
+            warnings :: P_Cruds -> Cruds -> Guarded Cruds
+            warnings pc@(P_Cruds _ crd) aCruds = addWarnings warns (pure aCruds)
               where
                 warns :: [Warning]
                 warns = map (mkCrudWarning pc) $ 
