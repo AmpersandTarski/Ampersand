@@ -621,19 +621,19 @@ pCtx2aCtx env
     pCruds2aCruds :: Expression -> Maybe P_Cruds -> Guarded Cruds
     pCruds2aCruds expr mCrud = 
        case mCrud of 
-         Nothing -> pure $ mostLiberalCruds (Origin "Default for Cruds") ""
+         Nothing -> pure $ mostLiberalCruds env expr (Right (Origin "Default for Cruds"))
          Just pc@(P_Cruds org userCrud )
              | (length . L.nub . map toUpper) userCrudString == length userCrudString &&
                 (all isValidChar userCrudString)  
-                         -> warnings pc $ mostLiberalCruds org userCrud 
+                         -> warnings pc $ mostLiberalCruds env expr (Left pc)
              | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrud
            where userCrudString = T.unpack userCrud
         where   
             isValidChar :: Char -> Bool
             isValidChar c = toUpper c `elem` ['C','R','U','D']
-            (defC, defR, defU, defD) = view defaultCrudL env
-            mostLiberalCruds :: Origin -> Text -> Cruds
-            mostLiberalCruds o str
+            
+            mostLiberalCruds :: (HasFSpecGenOpts env) => env -> Expression -> Either P_Cruds Origin -> Cruds
+            mostLiberalCruds env expr x
              = Cruds { crudOrig = o
                      , crudC    = isFitForCrudC expr && f 'C' defC
                      , crudR    = isFitForCrudR expr && f 'R' defR
@@ -641,6 +641,10 @@ pCtx2aCtx env
                      , crudD    = isFitForCrudD expr && f 'D' defD
                      }
                    where
+                     (str,o) = case x of 
+                             Right org -> ("",org)
+                             Left (P_Cruds org userstr) -> (userstr,org)
+                     (defC, defR, defU, defD) = view defaultCrudL env
                      f :: Char -> Bool -> Bool 
                      f c def'
                       | toUpper c `elem` T.unpack str = True
