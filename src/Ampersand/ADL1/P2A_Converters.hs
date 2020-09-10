@@ -22,7 +22,7 @@ import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import           Ampersand.Input.ADL1.CtxError
 import           Ampersand.Misc.HasClasses
-import           RIO.Char(toUpper,toLower)
+import           RIO.Char(toUpper)
 import           Data.Hashable
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -632,24 +632,6 @@ pCtx2aCtx env
             isValidChar :: Char -> Bool
             isValidChar c = toUpper c `elem` ['C','R','U','D']
             
-            mostLiberalCruds :: (HasFSpecGenOpts env) => env -> Expression -> Either P_Cruds Origin -> Cruds
-            mostLiberalCruds env expr x
-             = Cruds { crudOrig = o
-                     , crudC    = isFitForCrudC expr && f 'C' defC
-                     , crudR    = isFitForCrudR expr && f 'R' defR
-                     , crudU    = isFitForCrudU expr && f 'U' defU
-                     , crudD    = isFitForCrudD expr && f 'D' defD
-                     }
-                   where
-                     (str,o) = case x of 
-                             Right org -> ("",org)
-                             Left (P_Cruds org userstr) -> (userstr,org)
-                     (defC, defR, defU, defD) = view defaultCrudL env
-                     f :: Char -> Bool -> Bool 
-                     f c def'
-                      | toUpper c `elem` T.unpack str = True
-                      | toLower c `elem` T.unpack str = False
-                      | otherwise            = def'
             warnings :: P_Cruds -> Cruds -> Guarded Cruds
             warnings pc@(P_Cruds _ crd) aCruds = addWarnings warns (pure aCruds)
               where
