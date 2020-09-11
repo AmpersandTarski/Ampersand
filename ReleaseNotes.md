@@ -1,6 +1,6 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased
+## v4.1.1 (11 september 2020)
 
 * [Issue #1107](https://github.com/AmpersandTarski/Ampersand/issues/1107) Daemon doesn't correctly ignore invariant violations
 
