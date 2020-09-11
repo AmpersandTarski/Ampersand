@@ -285,12 +285,12 @@ instance Pretty (P_ViewD TermPrim) where
     pretty (P_Vd _ lbl cpt isDefault html ats) = -- new syntax
         text "VIEW" <+> maybeQuote lbl  <+> text ":"
                     <~> cpt <+> (if isDefault then text "DEFAULT" else empty)
-                    <+> braces (listOf ats) <~> html <+> text "ENDVIEW"
+                    <+> brackets (listOf ats) <~> html <+> text "ENDVIEW"
 
 instance Pretty HtmlTemplateSpec where
     pretty (HtmlTemplateSpec _ file keyVals) = text "HTML" <+> text "TEMPLATE" <+> quote (T.pack file) <~>
         (case keyVals of 
-          _:_ -> encloseSep (text " {") (text "} ") (text " ") (map pretty keyVals)
+          _:_ -> encloseSep (text " <") (text "> ") (text " ") (map pretty keyVals)
           [] -> mempty
         )
 
