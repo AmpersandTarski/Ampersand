@@ -63,7 +63,7 @@ commandLineHandler
   -> [Text] -- the (command-line) arguments
   -> IO (GlobalOptsMonoid, RIO Runner ())
 commandLineHandler currentDir _progName args = complicatedOptions
-  ampersandVersionWithoutBuildTimeStr
+  ampersandVersionStr
   "ampersand - The Ampersand generator"
   ""
   "ampersand's documentation is available at https://ampersandtarski.gitbook.io/documentation/"

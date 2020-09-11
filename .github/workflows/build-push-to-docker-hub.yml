@@ -9,7 +9,7 @@ on:
     - development
   release:
     types:
-    - created
+    - published
 
 jobs:
   build-push:

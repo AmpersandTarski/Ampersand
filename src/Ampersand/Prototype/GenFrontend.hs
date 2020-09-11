@@ -65,7 +65,7 @@ This is considered editable iff the composition rel;relRef yields an editable re
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
+doGenFrontend :: (HasFSpecGenOpts env, HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     now <- getCurrentTime
@@ -103,7 +103,7 @@ writeFile filePath content = do
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
   BL.writeFile filePath content
   
-copyTemplates :: (HasDirPrototype env, HasLogFunc env) =>
+copyTemplates :: (HasFSpecGenOpts env, HasDirPrototype env, HasLogFunc env) =>
                  RIO env ()
 copyTemplates = do
   env <- ask
@@ -116,7 +116,7 @@ copyTemplates = do
   else
          logDebug $ "No project specific templates (there is no directory " <> display (T.pack tempDir) <> ")"
 
-copyCustomizations :: (HasDirPrototype env, HasDirCustomizations env,HasLogFunc env) =>
+copyCustomizations :: (HasDirPrototype env, HasFSpecGenOpts env , HasDirCustomizations env,HasLogFunc env) =>
                       RIO env ()
 copyCustomizations = do
   env <- ask

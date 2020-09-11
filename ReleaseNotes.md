@@ -1,5 +1,9 @@
 ﻿# Release notes of Ampersand
 
+## v4.1.1 (11 september 2020)
+
+* [Issue #1107](https://github.com/AmpersandTarski/Ampersand/issues/1107) Daemon doesn't correctly ignore invariant violations
+
 ## v4.1.0 (14 august 2020)
 
 * [Issue #1067](https://github.com/AmpersandTarski/Ampersand/issues/1067) Docker build push to Docker hub instead of Github package repo
