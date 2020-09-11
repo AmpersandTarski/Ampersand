@@ -23,7 +23,7 @@ module Ampersand.Core.ParseTree (
    , P_BoxItemTermPrim, P_SubInterface, P_Interface(..), P_IClass(..), P_BoxItem(..), P_SubIfc(..)
    , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
-   , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..)
+   , P_ViewDef , P_ViewSegment(..), HtmlTemplateSpec(..)
    , P_ViewD(..) , P_ViewSegmtPayLoad(..)
 
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
@@ -731,7 +731,7 @@ data P_ViewD a =
               , vd_lbl :: Text            -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
               , vd_cpt :: P_Concept         -- ^ the concept for which this view is applicable
               , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept
-              , vd_html :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
+              , vd_html :: Maybe HtmlTemplateSpec -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
               , vd_ats :: [(P_ViewSegment a)] -- ^ the constituent segments of this view.
               } deriving (Show)
@@ -771,7 +771,7 @@ data P_ViewSegmtPayLoad a
                     | P_ViewText { vs_txt :: Text }
                       deriving (Show)
 
-data ViewHtmlTemplate = ViewHtmlTemplateFile
+data HtmlTemplateSpec = HtmlTemplateSpec
    { pos :: !Origin
    , vhtFile :: !FilePath
    , vhtKeyVals :: [TemplateKeyValue]

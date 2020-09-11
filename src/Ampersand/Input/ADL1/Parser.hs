@@ -1,4 +1,4 @@
-{-# LANGUAGE DuplicateRecordFields #-}
+﻿{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.ADL1.Parser
@@ -381,12 +381,12 @@ pFancyViewDef  = mkViewDef <$> currPos
                  }
           --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
           --- HtmlView ::= 'HTML' 'TEMPLATE' Text ('{' (KEYVALS)'}')?
-          pHtmlView :: AmpParser ViewHtmlTemplate
+          pHtmlView :: AmpParser HtmlTemplateSpec
           pHtmlView = build <$> currPos <* pKey "HTML" <* pKey "TEMPLATE" <*> pString <*> optional pdefAtts
-            where build :: Origin -> FilePath -> Maybe [TemplateKeyValue] -> ViewHtmlTemplate
-                  build o fp mkeys = ViewHtmlTemplateFile o fp (fromMaybe [] mkeys)
+            where build :: Origin -> FilePath -> Maybe [TemplateKeyValue] -> HtmlTemplateSpec
+                  build o fp mkeys = HtmlTemplateSpec o fp (fromMaybe [] mkeys)
                   pdefAtts :: AmpParser [TemplateKeyValue]
-                  pdefAtts = pBraces $ many pTemplateKeyValue
+                  pdefAtts = pChevrons $ many pTemplateKeyValue
 --- ViewSegmentLoad ::= Term | 'TXT' Text
 pViewSegmentLoad :: AmpParser (P_ViewSegmtPayLoad TermPrim)           
 pViewSegmentLoad = P_ViewExp  <$> pTerm

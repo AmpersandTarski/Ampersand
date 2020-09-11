@@ -21,7 +21,7 @@ import Ampersand.Core.ParseTree (
          , P_Rule(..),Role(..)
          , Prop(..),Props
          , P_IdentDef, P_IdentSegment,P_IdentDf(..),P_IdentSegmnt(..)
-         , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),ViewHtmlTemplate(..)
+         , P_ViewDef, P_ViewSegment(..),P_ViewSegmtPayLoad(..),P_ViewD(..),HtmlTemplateSpec(..)
          , P_Population(..),PAtomPair(..)
          , P_BoxItemTermPrim,P_BoxItem(..)
          , P_Interface(..)

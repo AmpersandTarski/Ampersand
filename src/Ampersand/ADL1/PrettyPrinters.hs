@@ -287,8 +287,8 @@ instance Pretty (P_ViewD TermPrim) where
                     <~> cpt <+> (if isDefault then text "DEFAULT" else empty)
                     <+> braces (listOf ats) <~> html <+> text "ENDVIEW"
 
-instance Pretty ViewHtmlTemplate where
-    pretty (ViewHtmlTemplateFile _ file keyVals) = text "HTML" <+> text "TEMPLATE" <+> quote (T.pack file) <~>
+instance Pretty HtmlTemplateSpec where
+    pretty (HtmlTemplateSpec _ file keyVals) = text "HTML" <+> text "TEMPLATE" <+> quote (T.pack file) <~>
         (case keyVals of 
           _:_ -> encloseSep (text " {") (text "} ") (text " ") (map pretty keyVals)
           [] -> mempty

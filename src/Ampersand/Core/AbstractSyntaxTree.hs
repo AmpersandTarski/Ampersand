@@ -63,7 +63,7 @@ import           Ampersand.Core.ParseTree
     , Origin(..)
     , maybeOrdering
     , Traced(..)
-    , ViewHtmlTemplate(..)
+    , HtmlTemplateSpec(..)
     , ViewUsage(..)
     , HTMLTemplateUsage(..) -- , TemplateKeyValue(..)
     , PairView(..)
@@ -282,7 +282,7 @@ data ViewDef = ViewDef
     -- ^ the concept for which this view is applicable
     , vdIsDefault :: Bool
     -- ^ whether or not this is the default view for the concept
-    , vdhtml :: Maybe ViewHtmlTemplate
+    , vdhtml :: Maybe HtmlTemplateSpec
     -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
     , vdats :: [ViewSegment]
     -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
