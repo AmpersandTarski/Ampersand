@@ -302,14 +302,14 @@ data ViewSegment = ViewSegment
      , vsmlabel :: Maybe Text
      , vsmSeqNr :: Integer
      , vsmLoad  :: ViewSegmentPayLoad
-     } deriving Show
+     } deriving (Show, Data)
 instance Traced ViewSegment where
   origin = vsmpos
 data ViewSegmentPayLoad
                  = ViewExp { vsgmExpr :: Expression
                            }
                  | ViewText{ vsgmTxt  :: Text
-                           }deriving (Eq, Show)
+                           }deriving (Eq, Show, Data)
 
 
 -- | data structure AClassify contains the CLASSIFY statements from an Ampersand script

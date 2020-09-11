@@ -165,8 +165,8 @@ data FEObject2 =
            } deriving (Show, Data, Typeable )
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
-data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( ViewHtmlTemplate -- the absolute path to the template
-                                                          , [Text] -- the attributes of the template
+data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( ViewHtmlTemplate -- the template specification
+                                                          , [ViewSegment] -- the attributes of the template
                                                           ) }
                    | FEBox    { objMClass :: HTMLTemplateUsage
                               , ifcSubObjs :: [FEObject2] 
@@ -207,10 +207,10 @@ buildInterface fSpec allIfcs ifc = do
           Nothing -> do
             let ( _ , _ , tgt) = getSrcDclTgt iExp
             let mView = fromMaybe (getDefaultViewForConcept fSpec tgt) ((Just . lookupView fSpec) <$> objmView object)
-            mSpecificTemplatePath <-
+            mSpecificTemplateSpec <-
                   case mView of
                     Just ViewDef {vdhtml=Just (ViewHtmlTemplateFile o fName keyvals), vdats=viewSegs}
-                              -> return $ Just (ViewHtmlTemplateFile o fName keyvals, mapMaybe vsmlabel $ viewSegs)
+                              -> return $ Just (ViewHtmlTemplateFile o fName keyvals, viewSegs)
                     _ -> do
                        -- no view, or no view with an html template, so we fall back to target-concept template
                        -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
@@ -218,7 +218,7 @@ buildInterface fSpec allIfcs ifc = do
                       hasSpecificTemplate <- doesTemplateExist templatePath
                       let o = Origin $ "Generated reference to "<> T.pack templatePath
                       return $ if hasSpecificTemplate then Just (ViewHtmlTemplateFile o templatePath [], []) else Nothing
-            return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
+            return (FEAtomic { objMPrimTemplate = mSpecificTemplateSpec}
                    , iExp)
           Just si ->
             case si of
@@ -364,12 +364,16 @@ genViewObject fSpec depth obj =
               -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
               -- logInfo $ nm <> ":" <> show mPrimTemplate
               conceptTemplate <- getTemplateForObject
-              let templateFilename = fromMaybe conceptTemplate (fmap (vhtFile . fst) . objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
+              let (templateFilename, templateKeyVals) 
+                     = case objMPrimTemplate . atomicOrBox $ obj of
+                         Nothing -> (conceptTemplate, [])
+                         Just (ViewHtmlTemplateFile _ fp keyVals ,_)  -> (fp,keyVals)              
+             --    fromMaybe conceptTemplate (fmap (vhtFile . fst) . objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
               template <- readTemplate templateFilename
                         
               return . indentation
                      . T.lines 
-                     . renderTemplate Nothing template $ 
+                     . renderTemplate (Just templateKeyVals) template $ 
                        atomicAndBoxAttrs
 
             FEBox { objMClass  = header
