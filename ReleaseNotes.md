@@ -3,6 +3,9 @@
 ## Unreleased
 
 * [Issue #1089](https://github.com/AmpersandTarski/Ampersand/issues/1089) Add template attributes to VIEW syntax
+
+## v4.1.1 (11 september 2020)
+
 * [Issue #1107](https://github.com/AmpersandTarski/Ampersand/issues/1107) Daemon doesn't correctly ignore invariant violations
 
 ## v4.1.0 (14 august 2020)
