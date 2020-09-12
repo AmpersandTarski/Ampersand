@@ -97,7 +97,7 @@ subIfc objGen n
 instance Arbitrary HTMLTemplateUsage where
     arbitrary = oneof 
        [ HTMLTemplateUsage <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
-       , HTMLTemplateUsage <$> arbitrary <*> elements  ["COLS","ROWS","TABS"]  <*> pure [] 
+       , HTMLTemplateUsage <$> arbitrary <*> elements  ["FORM","TABLE"]  <*> pure [] 
        ]
 instance Arbitrary TemplateKeyValue where
     arbitrary = TemplateKeyValue 
