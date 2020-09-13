@@ -1,44 +1,29 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.140.1/containers/docker-existing-dockerfile
 {
-	"name": "Ampersand Developer",
+  "name": "HaskellStackDev:8.6"
+  ,
+  "dockerFile": "Dockerfile",
+  "runArgs": [],
 
-	// Sets the run context to one level up instead of the .devcontainer folder.
-	"context": "..",
-
-	// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
-	"dockerFile": "..\\Dockerfile",
-
-	// Set *default* container specific settings.json values on container create.
-	"settings": { 
-    "terminal.integrated.shell.linux": null,
-    "git.path": "/usr/bin/git"
-	},
-
-	// Add the IDs of extensions you want installed when the container is created.
-  "extensions": ["aaron-bond.better-comments"
-                ,"ampersandtarski.language-ampersand"
-                ,"dotjoshjohnson.xml"
-                ,"eamodio.gitlens"
-                ,"github.vscode-pull-request-github"
-                ,"haskell.haskell"
-                ,"justusadam.language-haskell"
-                ,"me-dutour-mathieu.vscode-github-actions"
-                ,"ms-azuretools.vscode-docker"
-              ],
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Uncomment the next line to run commands after the container is created - for example installing curl.
-	// "postCreateCommand": "apt-get update && apt-get install -y curl",
-
-	// Uncomment when using a ptrace-based debugger like C++, Go, and Rust
-	// "runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
-
-	// Uncomment to use the Docker CLI from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker.
-	"mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ],
-
-	// Uncomment to connect as a non-root user if you've added one. See https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vscode"
+  // Use 'settings' to set *default* container specific settings.json values on container create. 
+  // You can edit these settings after create using File > Preferences > Settings > Remote.
+  "settings": {
+      "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  
+  // Use 'appPort' to create a container with published ports. If the port isn't working, be sure
+  // your server accepts connections from all interfaces (0.0.0.0 or '*'), not just localhost.
+  // "appPort": [],
+  
+  // Comment out the next line if you want to run as root instead
+  //"remoteUser": "vscode",
+  
+  // Add the IDs of extensions you want installed when the container is created in the array below.
+  "extensions": [
+      "haskell.haskell",
+      "justusadam.language-haskell",
+      "github.vscode-pull-request-github",
+      "eamodio.gitlens",
+      "me-dutour-mathieu.vscode-github-actions",
+      "redhat.vscode-yaml"
+  ]
 }
