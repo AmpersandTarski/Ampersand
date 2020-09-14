@@ -1,9 +1,14 @@
 # The purpose of this docker file is to produce a latest Ampersand-compiler in the form of a docker image.
-FROM haskell:8.8 AS buildstage
+FROM haskell:8.6 AS buildstage
+
 
 RUN mkdir /opt/ampersand
 WORKDIR /opt/ampersand
 
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
+    
 # Start with a docker-layer that contains build dependencies, to maximize the reuse of these dependencies by docker's cache mechanism.
 # Only updates to the files stack.yaml package.yaml will rebuild this layer; all other changes use the cache.
 # Expect stack to give warnings in this step, which you can ignore.

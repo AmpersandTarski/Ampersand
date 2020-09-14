@@ -25,6 +25,7 @@ BuildInfo_Generated.hs
 # Visual studio code stuff
 ###################
 /.vscode
+*.code-workspace
 
 # Compiled source #
 ###################

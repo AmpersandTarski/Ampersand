@@ -111,7 +111,7 @@ defaultWriterVariables env fSpec
             fun (k,v)= (k, SimpleVal (Text (T.length v) v))
             
 --DESCR -> functions to write the pandoc
-writepandoc :: (HasDirOutput env, HasRootFile env, HasDocumentOpts env, HasLogFunc env) => 
+writepandoc :: (HasDirOutput env, HasFSpecGenOpts env, HasDocumentOpts env, HasLogFunc env) => 
       FSpec -> Pandoc -> RIO env ()
 writepandoc fSpec thePandoc = do
   env <- ask
@@ -122,7 +122,7 @@ writepandoc fSpec thePandoc = do
     fSpecFormatString :: (HasDocumentOpts env) => env -> Text 
     fSpecFormatString = T.toLower . T.drop 1 . tshow . view fspecFormatL
 
-outputFile :: (HasDocumentOpts env, HasRootFile env, HasDirOutput env) => env -> FilePath
+outputFile :: (HasDocumentOpts env, HasFSpecGenOpts env, HasDirOutput env) => env -> FilePath
 outputFile env = view dirOutputL env </> baseName env -<.> ext (view fspecFormatL env) 
        
 ext :: FSpecFormat -> FilePath
@@ -147,7 +147,7 @@ ext format =
         Ftexinfo      -> ".texinfo"
         Ftextile      -> ".textile"
                    
-writepandoc' :: (HasDocumentOpts env, HasRootFile env, HasDirOutput env) => env -> FSpec -> Pandoc -> IO ()
+writepandoc' :: (HasDocumentOpts env, HasFSpecGenOpts env, HasDirOutput env) => env -> FSpec -> Pandoc -> IO ()
 writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
   case writer of 
      ByteStringWriter f -> do 
@@ -256,8 +256,6 @@ class ShowMath a where
 instance ShowMath Rule where
  showMath = showMath . formalExpression
 
-instance ShowMath PAtomValue where
-  showMath = math . atomVal2Math
 instance ShowMath Expression where
  showMath = math . showExpr . insParentheses
    where  showExpr :: Expression -> Text

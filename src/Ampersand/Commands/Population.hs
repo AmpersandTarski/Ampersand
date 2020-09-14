@@ -25,7 +25,7 @@ import           Text.Pandoc.Error(handleError)
 
 -- | Builds a file containing the population of the current project.
 --   depending on a switch this could be an .xlsx file or a json file. 
-population :: (HasPopulationOpts env, HasDirOutput env, HasRootFile env,HasLogFunc env)
+population :: (HasPopulationOpts env, HasDirOutput env, HasFSpecGenOpts env,HasLogFunc env)
        => FSpec -> RIO env ()
 population fSpec = do
         env <- ask

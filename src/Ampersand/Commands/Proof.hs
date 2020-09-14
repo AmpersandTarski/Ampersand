@@ -22,7 +22,7 @@ import           Text.Pandoc.Builder
 
 -- | Generate a proofs output document from a project.
 --
-proof :: (HasDirOutput env, HasRootFile env, HasLogFunc env) 
+proof :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env) 
        => FSpec -> RIO env ()
 proof fSpec = do 
     env <- ask

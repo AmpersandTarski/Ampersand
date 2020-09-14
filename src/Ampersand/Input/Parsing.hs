@@ -120,7 +120,7 @@ parseSingleADL pc
  = do case pcFileKind pc of
         Just _ -> {- reading a file that is included into ampersand.exe -} 
                    logDebug $ "Reading internal file " <> display (T.pack filePath) 
-        Nothing -> logInfo $ "Reading file " <> display (T.pack filePath) 
+        Nothing -> logDebug $ "Reading file " <> display (T.pack filePath) 
       exists <- liftIO $ doesFileExist filePath
       if isJust (pcFileKind pc) || exists
       then parseSingleADL'
