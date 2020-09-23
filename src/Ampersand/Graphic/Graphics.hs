@@ -213,6 +213,8 @@ writePicture :: (HasDirOutput env, HasBlackWhite env, HasDocumentOpts env, HasLo
                 Picture -> RIO env ()
 writePicture pict = do
     env <- ask
+    graphvizIsInstalled <- liftIO isGraphvizInstalled
+    when (not graphvizIsInstalled) $ exitWith GraphVizNotInstalled
     dirOutput <- view dirOutputL
     let imagePathRelativeToCurrentDir = dirOutput </> imagePathRelativeToDirOutput env pict
     logDebug $ "imagePathRelativeToCurrentDir = "<> display (T.pack imagePathRelativeToCurrentDir)

@@ -38,6 +38,7 @@ population fSpec = do
                      BL.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
                      logInfo $ "Generated file: " <> display (T.pack outputFile)
           JSON -> do let outputFile = view dirOutputL env </> baseName env <> "_generated_pop" -<.> ".json"
+                     liftIO $ createDirectoryIfMissing True (takeDirectory outputFile)
                      BL.writeFile outputFile $ populationToJSON env fSpec
                      logInfo $ "Generated file: " <> display (T.pack outputFile)
 
