@@ -188,10 +188,10 @@ instance Pretty (PairView (Term TermPrim)) where
     pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
 
 instance Pretty (PairViewSegment TermPrim) where
-    pretty (PairViewText _ str) = text "TXT" <+> quote str
+    pretty (PairViewText _ str) = text "HTML" <+> quote str
     pretty (PairViewExp _ srcTgt term) = pretty srcTgt <~> term
 instance Pretty (PairViewSegment (Term TermPrim)) where
-    pretty (PairViewText _ str) = text "TXT" <+> quote str
+    pretty (PairViewText _ str) = text "HTML" <+> quote str
     pretty (PairViewExp _ srcTgt term) = pretty srcTgt <~> term
 
 instance Pretty SrcOrTgt where
@@ -245,7 +245,7 @@ instance Pretty a => Pretty (P_BoxItem a) where
         (P_BxExpr _ _ ctx mCrud mView msub)
            -> nest 2 (pretty ctx <+> pretty mCrud <+> pretty mView <$> pretty msub)
         (P_BxTxt  _ _ str)
-           -> text "TXT" <+> quote str
+           -> text "HTML" <+> quote str
            
 instance Pretty ViewUsage where
     pretty vu = encloseSep  (text " <") (text "> ") (text " ") items
@@ -276,7 +276,7 @@ instance Pretty (P_IdentSegmnt TermPrim) where
               ) <+> pretty mView
         (P_BxTxt  nm _ str)
            -> maybeQuote nm 
-              <~> text "TXT" <+> quote str
+              <~> text "HTML" <+> quote str
 
 instance Pretty (P_ViewD TermPrim) where
     pretty (P_Vd _ lbl cpt True Nothing ats) = -- legacy syntax
@@ -309,7 +309,7 @@ instance Pretty (P_ViewSegment TermPrim) where
           ) <~> pretty pl
 instance Pretty (P_ViewSegmtPayLoad TermPrim) where
     pretty (P_ViewExp expr) = pretty expr
-    pretty (P_ViewText txt) = text "TXT" <+> quote txt
+    pretty (P_ViewText txt) = text "HTML" <+> quote txt
                         
 instance Pretty PPurpose where
     pretty (PRef2 _ obj markup refIds) =

@@ -54,7 +54,7 @@ keywords  = L.nub $
                 ] ++ 
                 [ "POPULATION", "CONTAINS"
                 -- Keywords for rules
-                , "RULE", "MESSAGE", "VIOLATION", "TXT"
+                , "RULE", "MESSAGE", "VIOLATION", "HTML"
                 ] ++
                 [map toUpper $ show x | x::SrcOrTgt <-[minBound..]
                 ] ++
