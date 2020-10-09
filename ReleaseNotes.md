@@ -4,6 +4,11 @@
 
 * [Issue #1089](https://github.com/AmpersandTarski/Ampersand/issues/1089) Add template attributes to VIEW syntax
 
+## v4.1.2 (9 october 2020)
+
+* Add devcontainer functionality for developers of Ampersand
+* Generate better error when graphviz isn't installed and is required
+
 ## v4.1.1 (11 september 2020)
 
 * [Issue #1107](https://github.com/AmpersandTarski/Ampersand/issues/1107) Daemon doesn't correctly ignore invariant violations

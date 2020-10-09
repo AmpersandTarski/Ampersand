@@ -20,7 +20,7 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
-import           System.Directory(createDirectoryIfMissing)
+import           System.Directory(createDirectoryIfMissing,makeAbsolute)
 import           System.FilePath 
 import           System.Process (callCommand)
 
@@ -239,7 +239,8 @@ writePicture pict = do
             let dotSource = mkDotGraph env pict
             path <- liftIO $ GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
                        (dropExtension fp)
-            logInfo $ display (T.pack path)<>" written."
+            absPath <- liftIO . makeAbsolute $ path
+            logInfo $ display (T.pack absPath)<>" written."
             case postProcess of
               Nothing -> return ()
               Just x -> x path

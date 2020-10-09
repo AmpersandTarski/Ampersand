@@ -50,7 +50,7 @@ import qualified RIO.Text as T
 import           RIO.Time
 import           Text.Pandoc hiding (trace,Verbosity,getVerbosity)
 import           Text.Pandoc.Builder
-
+import           System.FilePath ( (</>) )
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: (HasDocumentOpts env) => env -> [Chapter]
 chaptersInDoc env = view chaptersL env
@@ -92,7 +92,8 @@ instance Xreferenceble Picture where
   hyperLinkTo = codeGen'
   xDefBlck env _ a = para $ imageWith (xSafeLabel a, [], []) (T.pack src) (xSafeLabel a)(text (caption a))
    where
-    src  = imagePathRelativeToDirOutput env $ a
+    dirOutput = view dirOutputL env
+    src  = dirOutput </> imagePathRelativeToDirOutput env a
 instance Xreferenceble CustomSection where
   xSafeLabel a = 
        (tshow . xrefPrefix . refStuff $ a)

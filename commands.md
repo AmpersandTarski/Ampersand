@@ -112,7 +112,7 @@ even more complex than it already was.
           be declared explicitly in your own model.
 
 * Unchanged (but now only available for relevant commands)
-  * ***--outputDir=DIR***
+  * ***--output-dir=DIR***
           output directory. Not used for prototypes.
   * ***--blackWhite***
           avoid coloring conventions to facilitate readable pictures in
