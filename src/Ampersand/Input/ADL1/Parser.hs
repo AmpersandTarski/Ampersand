@@ -224,7 +224,7 @@ pRuleDef =  P_Rule <$> currPos
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
                  pPairViewSegment = PairViewExp  <$> posOf (pKey "SRC") <*> return Src <*> pTerm
                                 <|> PairViewExp  <$> posOf (pKey "TGT") <*> return Tgt <*> pTerm
-                                <|> PairViewText <$> posOf (pKey "HTML") <*> asText pString
+                                <|> PairViewText <$> posOf (pKey "TXT") <*> asText pString
 
 --- RelationDef ::= (RelationNew | RelationOld) Props? ('PRAGMA' Text+)? Meaning* ('=' Content)? '.'?
 pRelationDef :: AmpParser (P_Relation, [P_Population])
@@ -390,7 +390,7 @@ pFancyViewDef  = mkViewDef <$> currPos
 --- ViewSegmentLoad ::= Term | 'TXT' Text
 pViewSegmentLoad :: AmpParser (P_ViewSegmtPayLoad TermPrim)           
 pViewSegmentLoad = P_ViewExp  <$> pTerm
-               <|> P_ViewText <$ pKey "HTML" <*> asText pString
+               <|> P_ViewText <$ pKey "TXT" <*> asText pString
             
 --- ViewSegment ::= Label ViewSegmentLoad
 pViewSegment :: Bool -> AmpParser (P_ViewSegment  TermPrim)
@@ -517,7 +517,7 @@ pObjDef = pBoxItem <$> currPos
                         , obj_msub  = msub
                         }
     pTxt :: AmpParser P_BoxItemTermPrim
-    pTxt = obj <$ pKey "HTML"
+    pTxt = obj <$ pKey "TXT"
                <*> asText pString
           where obj txt = 
                   P_BxTxt  { obj_nm   = fatal "This should have been filled in promptly."
