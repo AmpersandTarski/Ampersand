@@ -20,7 +20,7 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
-import           System.Directory(createDirectoryIfMissing)
+import           System.Directory(createDirectoryIfMissing,makeAbsolute)
 import           System.FilePath 
 import           System.Process (callCommand)
 
@@ -213,6 +213,8 @@ writePicture :: (HasDirOutput env, HasBlackWhite env, HasDocumentOpts env, HasLo
                 Picture -> RIO env ()
 writePicture pict = do
     env <- ask
+    graphvizIsInstalled <- liftIO isGraphvizInstalled
+    when (not graphvizIsInstalled) $ exitWith GraphVizNotInstalled
     dirOutput <- view dirOutputL
     let imagePathRelativeToCurrentDir = dirOutput </> imagePathRelativeToDirOutput env pict
     logDebug $ "imagePathRelativeToCurrentDir = "<> display (T.pack imagePathRelativeToCurrentDir)
@@ -237,7 +239,8 @@ writePicture pict = do
             let dotSource = mkDotGraph env pict
             path <- liftIO $ GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
                        (dropExtension fp)
-            logInfo $ display (T.pack path)<>" written."
+            absPath <- liftIO . makeAbsolute $ path
+            logInfo $ display (T.pack absPath)<>" written."
             case postProcess of
               Nothing -> return ()
               Just x -> x path
