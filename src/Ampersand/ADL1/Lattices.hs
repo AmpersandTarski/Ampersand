@@ -156,7 +156,7 @@ largestSubset i
 
 endPoints :: (Ord a, SetLike x) => RevMap a -> [(IntSet.IntSet,x a)]
 endPoints (RevMap st im)
- = if IntMap.null im then (if slNull st then [] else [(IntSet.empty,fromSet st)]) else concatMap endPoints' (IntMap.toList im)
+ = if IntMap.null im then [(IntSet.empty, fromSet st) | not (slNull st)] else concatMap endPoints' (IntMap.toList im)
  where endPoints' (i,rm) = map addi (endPoints rm)
         where addi (lst,elm) = (IntSet.insert i lst,elm)
 

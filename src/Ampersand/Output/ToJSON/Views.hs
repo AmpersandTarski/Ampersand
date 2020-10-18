@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Views 
     (Views)
 where
@@ -9,7 +8,7 @@ import           Ampersand.ADL1
 import           Ampersand.Output.ToJSON.Concepts 
 import           Ampersand.Output.ToJSON.JSONutils 
 
-data Views = Views [View] deriving (Generic, Show)
+newtype Views = Views [View] deriving (Generic, Show)
 data View = View
   { vwJSONlabel      :: Text
   , vwJSONconceptId  :: Text

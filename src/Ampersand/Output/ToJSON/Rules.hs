@@ -26,7 +26,7 @@ data JsonRule = JsonRule
   , rulJSONconjunctIds  :: [Text]
   , rulJSONpairView     :: Maybe JsonPairView
   } deriving (Generic, Show)
-data JsonPairView = JsonPairView [JsonPairViewSegment]
+newtype JsonPairView = JsonPairView [JsonPairViewSegment]
     deriving (Generic, Show)
 data JsonPairViewSegment = JsonPairViewSegment
   { pvsJSONseqNr   :: Int
@@ -61,18 +61,21 @@ instance JSON Rule JsonRule where
   , rulJSONmessage      = showMessage
   , rulJSONsrcConceptId = idWithoutType . source . formalExpression $ rule
   , rulJSONtgtConceptId = idWithoutType . target . formalExpression $ rule
-  , rulJSONconjunctIds  = map rc_id  $ fromMaybe [] (fmap NE.toList . lookup rule $ allConjsPerRule fSpec)
+  , rulJSONconjunctIds  = maybe [] (map rc_id . NE.toList) . lookup rule . allConjsPerRule $ fSpec
   , rulJSONpairView     = fmap (fromAmpersand env fSpec) (rrviol rule)
   } 
    where 
     showMeaning :: Text
-    showMeaning = maybe mempty aMarkup2String (fmap ameaMrk . meaning (defOutputLang fSpec) $ rule)
+    showMeaning = maybe mempty (aMarkup2String . ameaMrk) $ meaning (defOutputLang fSpec) rule
     showMessage :: Text
     showMessage = case filter (\x -> amLang x == defOutputLang fSpec) (rrmsg rule) of
                               [] -> mempty
                               h:_ -> aMarkup2String h
 instance JSON (PairView Expression) JsonPairView where
- fromAmpersand env fSpec pv = JsonPairView $ map (fromAmpersand env fSpec) (zip [0..] (NE.toList . ppv_segs $ pv))
+ fromAmpersand env fSpec pv = JsonPairView 
+                            . zipWith (curry (fromAmpersand env fSpec)) [0 .. ]
+                            . NE.toList
+                            . ppv_segs $ pv
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
  fromAmpersand _ fSpec (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr

@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Output.ToPandoc.ChapterIntroduction
    (chpIntroduction)
@@ -33,13 +32,13 @@ chpIntroduction env now fSpec =
                         <> text ", geordend op thema. "
                       else text "Deze afspraken zijn niet opgenomen in dit document."
                     )
-            <> if Diagnosis `elem` chaptersInDoc env
+            <> (if Diagnosis `elem` chaptersInDoc env
                then para (   text "De diagnose in " 
                           <> hyperLinkTo Diagnosis
                           <> text " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
                          )
-               else mempty
-            <> if ConceptualAnalysis `elem` chaptersInDoc env
+               else mempty)
+            <> (if ConceptualAnalysis `elem` chaptersInDoc env
                then para (   text "De conceptuele analyse in "
                           <> hyperLinkTo ConceptualAnalysis
                           <> text " is bedoeld voor requirements engineers en architecten om de gemaakte afspraken"
@@ -48,8 +47,8 @@ chpIntroduction env now fSpec =
                           <> text "De formalisatie in dit hoofdstuk maakt consistentie van de functionele specificatie bewijsbaar. "
                           <> text "Ook garandeert het een eenduidige interpretatie van de afspraken."
                          )
-               else mempty
-            <> if DataAnalysis `elem` chaptersInDoc env
+               else mempty)
+            <> (if DataAnalysis `elem` chaptersInDoc env
                then para ( text "De hoofdstukken die dan volgen zijn bedoeld voor de bouwers van "
                         <> (singleQuoted.text.name) fSpec
                         <> text ". "
@@ -66,7 +65,7 @@ chpIntroduction env now fSpec =
                         <> (singleQuoted.text.name) fSpec
                         <> text " compliance ten aanzien van alle gestelde afspraken. "
                          )
-               else mempty
+               else mempty)
 
           English
             -> para ( text "This document"
@@ -83,13 +82,13 @@ chpIntroduction env now fSpec =
                         <> text ", ordered by theme. "
                       else text "Those rules are not included in this document."
                     )
-             <> if Diagnosis `elem` chaptersInDoc env
+             <> (if Diagnosis `elem` chaptersInDoc env
                then para (  text "The diagnosis in "
                          <> hyperLinkTo Diagnosis
                          <> text " is meant to help the authors identify shortcomings in their Ampersand script."
                          )
-               else mempty
-            <> if ConceptualAnalysis `elem` chaptersInDoc env
+               else mempty)
+            <> (if ConceptualAnalysis `elem` chaptersInDoc env
                then para (  text "The conceptual analysis in "
                          <> hyperLinkTo ConceptualAnalysis
                          <> text " is meant for requirements engineers and architects to validate and formalize the requirements. "
@@ -97,8 +96,8 @@ chpIntroduction env now fSpec =
                          <> text "The formalization in this chapter makes consistency of the functional design provable. "
                          <> text "It also yields an unambiguous interpretation of all requirements."
                          )
-               else mempty
-            <> if DataAnalysis `elem` chaptersInDoc env
+               else mempty)
+            <> (if DataAnalysis `elem` chaptersInDoc env
                then para ( text "Chapters that follow have the builders of "
                         <> (singleQuoted.text.name) fSpec
                         <> text " as their intended audience. "
@@ -115,7 +114,7 @@ chpIntroduction env now fSpec =
                         <> (singleQuoted.text.name) fSpec
                         <> text " ensures compliance to all rules agreed upon."
                          )
-               else mempty
+               else mempty)
 
     date :: Text
     date = T.pack $ formatTime (lclForLang outputLang') "%-d-%-m-%Y" now

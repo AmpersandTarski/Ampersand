@@ -161,9 +161,9 @@ isFitForCrudC expr =
      EDcI{}   -> True -- TODO: set to False when functionality of +menu is adapted from I[Cpt] to V[SESSION*Cpt] expressions (see Issue #884)
      EMp1{}   -> False
      EDcV{}   -> True
-     ECps ( (EEps _ _), e         ) -> isFitForCrudC e
-     ECps ( e         , (EEps _ _)) -> isFitForCrudC e
-     ECps ( _         , _         ) -> True
+     ECps( EEps _ _ , e        ) -> isFitForCrudC e
+     ECps( e        , EEps _ _ ) -> isFitForCrudC e
+     ECps( _        , _        ) -> True
      EEqu{}   -> True
      EInc{}   -> True
      EIsc{}   -> True
@@ -193,10 +193,10 @@ isFitForCrudU expr =
      EDcI{}   -> False
      EMp1{}   -> False
      EDcV{}   -> False
-     ECps ( (EEps _ _), e         ) -> isFitForCrudU e
-     ECps ( e         , (EEps _ _)) -> isFitForCrudU e
-     ECps ( e         , EDcI{}    ) -> isFitForCrudU e
-     ECps ( _         , _         ) -> False
+     ECps ( EEps _ _ , e        ) -> isFitForCrudU e
+     ECps ( e        , EEps _ _ ) -> isFitForCrudU e
+     ECps ( e        , EDcI{}   ) -> isFitForCrudU e
+     ECps ( _        , _        ) -> False
      EEqu{}   -> False
      EInc{}   -> False
      EIsc{}   -> False

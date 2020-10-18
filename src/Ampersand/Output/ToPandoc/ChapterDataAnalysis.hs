@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
 import           Ampersand.ADL1
@@ -48,7 +47,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
     <> ( if null (classes $ clAnalysis fSpec) 
          then mempty
          else 
-           (   header sectionLevel
+               header sectionLevel
                    (text.l $ (NL "Classificaties", EN "Classifications")
                    )
             <> para (case outputLang' of
@@ -60,7 +59,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                                   )
                     )
             <> xDefBlck env fSpec classificationPicture
-           )
+           
        )    
     <> daRulesSection
     <> logicalDataModelBlocks
@@ -166,7 +165,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
   percent num denom
    = if denom==0
      then tshow num
-     else tshow num<>"("<>tshow ((round ((fromIntegral num*100.0/fromIntegral denom)::Float))::Integer)<>"%)"
+     else tshow num<>"("<>tshow (round ((fromIntegral num*100.0/fromIntegral denom)::Float)::Integer)<>"%)"
   
 
   detailsOfClass :: Class -> Blocks

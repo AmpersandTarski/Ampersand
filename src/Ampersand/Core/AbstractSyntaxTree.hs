@@ -2,7 +2,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Core.AbstractSyntaxTree (
@@ -175,15 +174,15 @@ instance Ord Rule where
   compare = compare `on` rrnm  -- Origin should not be here: A check that they all have unique names is done before typechecking.
 instance Show Rule where
   show x
-   = "RULE "<> (T.unpack $ if T.null (name x) then mempty else name x<>": ")<> show (formalExpression x)
+   = "RULE "<> T.unpack (if T.null (name x) then mempty else name x <> ": ") <> show (formalExpression x)
 instance Traced Rule where
   origin = rrfps
 instance Named Rule where
   name   = rrnm
 instance Hashable Rule where
   hashWithSalt s rul = s 
-    `hashWithSalt` (name rul)
-    `hashWithSalt` (formalExpression rul)
+    `hashWithSalt` name rul
+    `hashWithSalt` formalExpression rul
 
 data Conjunct = Cjct { rc_id ::         Text -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)
@@ -240,7 +239,7 @@ instance Show Relation where  -- For debugging purposes only (and fatal messages
 showRel :: Relation -> Text
 showRel rel = name rel<>"["<>tshow (source rel) <> "*"<> tshow (target rel)<>"]"
 
-data Meaning = Meaning { ameaMrk ::Markup} deriving (Show, Eq, Ord, Typeable, Data)
+newtype Meaning = Meaning { ameaMrk ::Markup} deriving (Show, Eq, Ord, Typeable, Data)
 instance Unique Meaning where
   showUnique = tshow
 
@@ -267,7 +266,7 @@ instance Ord IdentityDef where
   compare a b = name a `compare` name b
 instance Eq IdentityDef where
   a == b = compare a b == EQ
-data IdentitySegment = IdentityExp 
+newtype IdentitySegment = IdentityExp 
          { segment :: ObjectDef
          } deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
@@ -341,7 +340,7 @@ instance Show AClassify where
      IsE{} -> "CLASSIFY "<>show (genspc g)<>" IS "<>L.intercalate " /\\ " (NE.toList . fmap show $ genrhs g)
 instance Hashable AClassify where
     hashWithSalt s g = 
-      s `hashWithSalt` (genspc g)
+      s `hashWithSalt` genspc g
         `hashWithSalt` (case g of 
                          Isa{} -> [genspc g]
                          IsE{} -> NE.toList . NE.sort $ genrhs g 
@@ -827,7 +826,7 @@ instance Hashable A_Concept where
                         ONE          -> 1::Int
                       )
 instance Named A_Concept where
-  name PlainConcept{aliases = names} = NE.head $ names
+  name PlainConcept{aliases = names} = NE.head names
   name ONE = "ONE"
 
 instance Show A_Concept where
@@ -846,7 +845,7 @@ instance ShowWithAliases A_Concept where
   showWithAliases cpt@PlainConcept{aliases = names} =
      case NE.tail names of
        [] ->  name cpt
-       xs -> name cpt <> "("<>(T.intercalate ", " xs)<>")"
+       xs -> name cpt <> "("<>T.intercalate ", " xs<>")"
 
 instance Unique (A_Concept, PAtomValue) where
   showUnique (c,val) = tshow val<>"["<>showUnique c<>"]"
@@ -887,7 +886,7 @@ data ContextInfo =
      , reprList         :: [Representation] -- a list of all Representations
      , declDisambMap    :: Map.Map Text (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
      , soloConcs        :: Set.Set Type -- types not used in any declaration
-     , gens_efficient   :: (Op1EqualitySystem Type) -- generalisation relations again, as a type system (including phantom types)
+     , gens_efficient   :: Op1EqualitySystem Type -- generalisation relations again, as a type system (including phantom types)
      , conceptMap       :: ConceptMap -- a map that must be used to convert P_Concept to A_Concept
      } 
                        
@@ -1176,5 +1175,5 @@ makeConceptMap gs = mapFunction
      mkEdge :: NonEmpty PClassify -> (P_Concept, [P_Concept])
      mkEdge x = ( from , to's)
        where from = specific . NE.head $ x
-             to's = L.nub . concat . fmap (toList . generics) $ x
+             to's = L.nub . concatMap (toList . generics) $ x
 

@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToJSON.ToJson
   ( settingsToJSON, relationsToJSON, rulesToJSON, conceptsToJSON, conjunctsToJSON
   , interfacesToJSON, viewsToJSON, rolesToJSON, populationToJSON

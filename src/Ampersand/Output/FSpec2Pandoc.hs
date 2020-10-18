@@ -99,7 +99,7 @@ fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
                     ( NL "Specificeer auteurs in Ampersand met: META \"authors\" \"<auteursnamen>\""
                     , EN "Specify authors in Ampersand with: META \"authors\" \"<author names>\"")
                    ] 
-             xs -> fmap text $ L.nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
+             xs -> text <$> L.nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
 
         )
       . setDate (text (T.pack $ formatTime (lclForLang outputLang') "%-d %B %Y" now))

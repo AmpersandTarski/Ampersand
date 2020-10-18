@@ -1,5 +1,5 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 module Ampersand.ADL1.Disambiguate
@@ -262,7 +262,7 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
    mayBe  xs = Set.fromList [x | (MayBe x) <- xs]
    orWhenEmptyS a b = if Set.null a then b else a
    determineBySize _   [a] = impure (t,Known a)
-   determineBySize err lst = fmap ((,) t) (err lst)
+   determineBySize err lst = fmap (t,) (err lst)
    impure x = Change x
 
 orWhenEmpty :: [a] -> [a] -> [a]
