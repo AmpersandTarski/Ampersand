@@ -47,6 +47,7 @@ import           RIO.Char
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import           System.Environment ({-getProgName,-} withArgs)
+import Ampersand.FSpec (FSpec)
 
 -- A lot of inspiration in this file comes from https://github.com/commercialhaskell/stack/
 
@@ -314,11 +315,7 @@ daemonCmd daemonOpts =
        runDaemon 
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do
-    extendWith docOpts . forceAllowInvariants $ do 
-      env <- ask
-      let recipe = recipeBuilder False env
-      mFSpec <- createFspec recipe
-      doOrDie mFSpec doGenDocument
+    extendWith docOpts . forceAllowInvariants $ mkAction False doGenDocument 
   where
     forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
     forceAllowInvariants env = local (set allowInvariantViolationsL True) env
@@ -326,11 +323,8 @@ documentationCmd docOpts = do
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd opts = 
-    extendWith opts $ do
-        env <- ask
-        let recipe = recipeBuilder True env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec proto
+    extendWith opts $ mkAction True proto
+
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
     extendWith testOpts test
@@ -342,35 +336,20 @@ dataAnalysisCmd opts =
         doOrDie mFSpec exportAsAdl
 pprintCmd :: InputOutputOpts -> RIO Runner ()
 pprintCmd opts = 
-    extendWith opts $ do
-        env <- ask
-        let recipe = recipeBuilder False env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec exportAsAdl
+    extendWith opts $ mkAction False exportAsAdl
+
 checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd opts =
-    extendWith opts $ do
-        env <- ask
-        let recipe = recipeBuilder False env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec doNothing
+    extendWith opts $ mkAction False doNothing
    where doNothing fSpec = do
             logInfo $ "This script of "<>(display . name $ fSpec)<>" contains no type errors."     
 populationCmd :: PopulationOpts -> RIO Runner ()
 populationCmd opts = 
-    extendWith opts $ do
-        env <- ask
-        let recipe = recipeBuilder False env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec population
+    extendWith opts $ mkAction False population
 
 proofCmd :: ProofOpts -> RIO Runner ()
 proofCmd opts = 
-    extendWith opts $ do
-        env <- ask
-        let recipe = recipeBuilder False env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec proof
+    extendWith opts $ mkAction False proof
 
 --initCmd :: InitOpts -> RIO Runner ()
 --initCmd opts = 
@@ -378,27 +357,15 @@ proofCmd opts =
 
 umlCmd :: UmlOpts -> RIO Runner ()
 umlCmd opts = 
-    extendWith opts $ do
-        env <- ask
-        let recipe = recipeBuilder False env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec uml
+    extendWith opts $ mkAction False uml
 
 validateCmd :: ValidateOpts -> RIO Runner ()
 validateCmd opts = 
-    extendWith opts $ do
-        env <- ask
-        let recipe = recipeBuilder True env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec validate
+    extendWith opts $ mkAction True validate
 
 devoutputCmd :: DevOutputOpts -> RIO Runner ()
 devoutputCmd opts = 
-    extendWith opts $ do
-        env <- ask
-        let recipe = recipeBuilder False env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec devoutput
+    extendWith opts $ mkAction False devoutput
 
 doOrDie :: HasLogFunc env => Guarded a -> (a -> RIO env b) -> RIO env b
 doOrDie gA act = 
@@ -410,6 +377,15 @@ doOrDie gA act =
            . NE.toList . fmap tshow $ err
   where
     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
+
+mkAction :: (HasLogFunc a, HasFSpecGenOpts a) => Bool -> (FSpec -> RIO a b) -> RIO a b
+mkAction isForPrototype theAction = do
+   env <- ask
+   let recipe = recipeBuilder isForPrototype env
+   mFSpec <- createFspec recipe
+   doOrDie mFSpec theAction
+  
+
 
 data Command = 
         Check

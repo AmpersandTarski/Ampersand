@@ -390,7 +390,7 @@ chpDiagnosis env fSpec
        <> printMeaning outputLang' r
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
                           ,EN "This rule contains work (for ")
-                <>commaPandocOr outputLang' (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                <>commaPandocOr outputLang' (map (str.name) (rolesOf r))
                 <>")"
                 <> case Set.toList ps of
                      [v] ->   (str.l) (NL ", te weten ", EN " by ")
@@ -460,7 +460,7 @@ chpDiagnosis env fSpec
                <> table -- Caption
                         (if isSignal r
                          then   (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
-                             <> commaPandocOr outputLang' (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                             <> commaPandocOr outputLang' (map (str.name) (rolesOf r))
                          else   (str.l) (NL "Overtredingen van invariant ",EN "Violations of invariant ")
                               <>(str.name) r
                         )  
@@ -475,6 +475,7 @@ chpDiagnosis env fSpec
                         -- Rows:
                         (mkInvariantViolationsError (applyViolText fSpec) (r,ps))
 
+  rolesOf r = L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]
   mkInvariantViolationsError :: (Rule->AAtomPair->Text) -> (Rule,AAtomPairs) -> [[Blocks]]
   mkInvariantViolationsError applyViolText' (r,ps) = 
     [[(para.strong.text) violationMessage]] 

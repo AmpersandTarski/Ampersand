@@ -30,7 +30,7 @@ module Ampersand.Input.ADL1.CtxError
   , lexerError2CtxError
   , addWarning, addWarnings
   , mkCrudWarning
-  , mkBOX_ROWSNH_Warning
+  , mkBoxRowsnhWarning
   , mkCaseProblemWarning
   , mkNoBoxItemsWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
@@ -478,8 +478,8 @@ lexerWarning2Warning (LexerWarning a b) =
 
 instance Traced Warning where
     origin (Warning o _) = o
-mkBOX_ROWSNH_Warning :: Origin -> Warning
-mkBOX_ROWSNH_Warning orig =
+mkBoxRowsnhWarning :: Origin -> Warning
+mkBoxRowsnhWarning orig =
   Warning orig $ T.intercalate "\n   "
      ["The common use of BOX <ROWSNH> has become obsolete. It was used to be able"
      ,   "to have rows without header."
