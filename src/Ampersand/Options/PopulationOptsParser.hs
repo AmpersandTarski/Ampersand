@@ -27,9 +27,9 @@ outputFormatP = toFormat . T.pack <$> strOption
       <> value (show XLSX)
       <> showDefault
       <> completeWith (map show allformats)
-      <> (  help $ "The format that Population should be written to. Allowd values are: "
-         <> show allformats
-         )
+      <> help ("The format that Population should be written to. Allowd values are: "
+                 <> show allformats
+              )
       )
 
   where 
@@ -51,5 +51,5 @@ outputFormatP = toFormat . T.pack <$> strOption
                         ]
             where
               matches :: PopulationOutputFormat -> Bool
-              matches x = T.toLower s `T.isPrefixOf` (T.toLower $ tshow x)
+              matches x = T.toLower s `T.isPrefixOf` T.toLower (tshow x)
 

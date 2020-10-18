@@ -79,15 +79,14 @@ dirPrototypeP = strOption
         <> metavar "DIRECTORY"
         <> value defaultDirPrototype
         <> showDefault
-        <> help ("Specify the directory where the prototype will be generated")
+        <> help "Specify the directory where the prototype will be generated"
         )
 dirCustomizationsP :: Parser [String]
-dirCustomizationsP = (splitWhen (== ';') <$> strOption
+dirCustomizationsP = splitWhen (== ';') <$> strOption
         ( long "customizations"
         <> metavar "DIR;DIR;.."
-        <> help ("Copy one or more directories into the generated prototype. "
-                )
-        ))
+        <> help "Copy one or more directories into the generated prototype. "
+        )
 zwolleVersionP :: Parser String
 zwolleVersionP = strOption
         ( long "prototype-framework-version"
@@ -101,11 +100,11 @@ zwolleVersionP = strOption
         )
 generateFrontendP :: Parser Bool
 generateFrontendP = boolFlags True "frontend"
-        ( "Generate prototype frontend files (Angular application)")
+        "Generate prototype frontend files (Angular application)"
         mempty
 
 generateBackendP :: Parser Bool
 generateBackendP = boolFlags True "backend"
-        ( "Generate backend files (PHP application)")
+        "Generate backend files (PHP application)"
         mempty
 

@@ -35,8 +35,8 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
         
         transSurjClosureMap :: Map.Map A_Concept [A_Concept]
         transSurjClosureMap = transClosureMap' . Map.fromListWith L.union $
-          (map (mkMapItem . flp) . filter isSur . map EDcD $ Set.elems decls) <> -- TODO: no isUni?
-          (map (mkMapItem      ) . filter isTot . map EDcD $ Set.elems decls)    -- TODO: no isInj?
+          (map (mkMapItem . flp) . filter isSur . map EDcD $ Set.elems decls) <> 
+          (map mkMapItem         . filter isTot . map EDcD $ Set.elems decls)    
           -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
            where
              mkMapItem :: Expression -> (A_Concept,[A_Concept])
@@ -44,12 +44,12 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
         
         -- crud concept together with its target concept in the surjective/total transitive closure of relations
         crudObjs :: [(A_Concept, [A_Concept])]
-        crudObjs = [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap) -- TODO: should [] be a fatal? 
+        crudObjs = [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap)
                    | crudCncpt <- crudCncpts ]
         
         getCrudUpdateConcpts :: Expression -> [A_Concept]
         getCrudUpdateConcpts decl = 
-          if  isSur decl || isTot decl  -- TODO: no isUni?  -- TODO: no isInj?
+          if  isSur decl || isTot decl  
           then [ cObj | (cObj, cCncpts) <- crudObjs, source decl `elem` cCncpts && target decl `elem` cCncpts ]    
           else []
           

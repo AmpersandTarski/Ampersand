@@ -43,7 +43,7 @@ initialState :: (HasDaemonOpts env, HasRunner env) =>
                 RIO env (Either [Text] DaemonState)
 initialState = do
     daemonConfig <- view daemonConfigL 
-    curDir <- liftIO $ getCurrentDirectory
+    curDir <- liftIO getCurrentDirectory
     dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig
     result <- readUTF8File dotAmpersand
     case result of

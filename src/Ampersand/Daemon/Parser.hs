@@ -26,7 +26,7 @@ parseProject rootAdl =  local (set rootFileL (Just rootAdl)) $ do
     (pc,gPctx) <- parseFileTransitive rootAdl 
     env <- ask
     let loadedFiles = map pcCanonical pc
-        gActx = join $ pCtx2Fspec env <$> gPctx
+        gActx = pCtx2Fspec env =<< gPctx
     return ( case gActx of
                 Checked _ ws 
                    | showWarnings -> map warning2Load ws

@@ -42,7 +42,7 @@ validateRulesSQL fSpec = do
         logStickyDone ""
         case [ ve | (ve, False) <- results] of
            [] -> do
-               logDebug $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+               logDebug "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
                return []
            ves -> return $ "Validation error. The following expressions failed validation:"
                          : map showVExp ves
