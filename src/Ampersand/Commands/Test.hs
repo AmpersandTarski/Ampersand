@@ -1,6 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -41,10 +40,9 @@ parserRoundtripTest = do
           (parserCheckResult, msg) <- parserQuickChecks
           return [ ( if parserCheckResult  
                      then ["Parser & prettyprinter test PASSED."]
-                     else ( T.lines . T.intercalate "\n   " $
+                     else T.lines . T.intercalate "\n   " $
                              ["QuickCheck found errors in the roundtrip in parsing/prettyprinting for the following case:"]
                            <>T.lines msg
-                          )
                    , return parserCheckResult
                    )
                  ]

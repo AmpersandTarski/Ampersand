@@ -1,7 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -68,7 +66,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
   ""
   "ampersand's documentation is available at https://ampersandtarski.gitbook.io/documentation/"
   args
-  (globalOpts)
+  globalOpts
   (Just failureCallback)
   addCommands
   where
@@ -124,7 +122,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
       addCommand'' Proofs
                   "Generate a report containing proofs."
                   proofCmd
-                  (proofOptsParser )
+                  proofOptsParser
       addCommand'' Proto
                   "Generate a prototype from your specification."
                   protoCmd
@@ -327,8 +325,8 @@ documentationCmd docOpts = do
 
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
-protoCmd protoOpts = 
-    extendWith protoOpts $ do
+protoCmd opts = 
+    extendWith opts $ do
         env <- ask
         let recipe = recipeBuilder True env
         mFSpec <- createFspec recipe
@@ -450,7 +448,7 @@ recipeBuilder isForPrototype env =
                         `merge`
                        script (MetaScript FormalAmpersand) 
     AtlasPopulation -> script UserScript `andThen` Grind FormalAmpersand
-    AtlasComplete   -> (script (MetaScript FormalAmpersand))
+    AtlasComplete   -> script (MetaScript FormalAmpersand)
                         `merge`
                        (script UserScript `andThen` Grind FormalAmpersand)
   where

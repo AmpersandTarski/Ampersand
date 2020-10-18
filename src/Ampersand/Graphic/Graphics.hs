@@ -177,8 +177,8 @@ conceptualStructure fSpec pr =
               cpts' = concs pat `Set.union` concs rels
               rels = Set.filter (not . isProp . EDcD) . bindedRelationsIn $ pat
           in
-          CStruct { csCpts = Set.elems $ cpts
-                  , csRels = Set.elems $ rels  `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
+          CStruct { csCpts = Set.elems cpts
+                  , csRels = Set.elems $ rels `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
 
@@ -214,7 +214,7 @@ writePicture :: (HasDirOutput env, HasBlackWhite env, HasDocumentOpts env, HasLo
 writePicture pict = do
     env <- ask
     graphvizIsInstalled <- liftIO isGraphvizInstalled
-    when (not graphvizIsInstalled) $ exitWith GraphVizNotInstalled
+    unless graphvizIsInstalled $ exitWith GraphVizNotInstalled
     dirOutput <- view dirOutputL
     let imagePathRelativeToCurrentDir = dirOutput </> imagePathRelativeToDirOutput env pict
     logDebug $ "imagePathRelativeToCurrentDir = "<> display (T.pack imagePathRelativeToCurrentDir)
@@ -237,8 +237,8 @@ writePicture pict = do
          do env <- ask
             logDebug $ "Generating "<>displayShow gvOutput<>" using "<>displayShow gvCommand<>"."
             let dotSource = mkDotGraph env pict
-            path <- liftIO $ GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
-                       (dropExtension fp)
+            path <- liftIO . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
+                       dropExtension fp
             absPath <- liftIO . makeAbsolute $ path
             logInfo $ display (T.pack absPath)<>" written."
             case postProcess of

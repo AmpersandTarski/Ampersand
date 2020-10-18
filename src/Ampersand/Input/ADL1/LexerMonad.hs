@@ -52,13 +52,12 @@ instance Monad LexerMonad where
 
 instance Functor LexerMonad where
     -- fmap :: (a -> b) -> LexerMonad a -> LexerMonad b
-    fmap ab la = do { a <- la; return (ab a) }
+    fmap ab la = do ab <$> la
 
 instance Applicative LexerMonad where
     pure = returnLM
     m1 <*> m2 = do x1 <- m1
-                   x2 <- m2
-                   return (x1 x2)
+                   x1 <$> m2
 
 -- | Runs the lexer monad
 runLexerMonad :: FilePath     -- ^ The file to be read (used for error messages)

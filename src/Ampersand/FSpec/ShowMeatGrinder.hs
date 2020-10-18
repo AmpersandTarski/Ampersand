@@ -1,11 +1,7 @@
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DuplicateRecordFields#-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.FSpec.ShowMeatGrinder
   ( grind 
   , GrindInfo(..)
@@ -95,7 +91,7 @@ data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
 
 grindedPops :: GrindInfo -> FSpec -> Relation -> Set.Set Pop
 grindedPops grindInfo userFspec rel = 
-  case filter (isForRel rel) ((transformers grindInfo) userFspec) of
+  case filter (isForRel rel) (transformers grindInfo userFspec) of
     []  -> fatal . T.unlines $ 
               ["Every relation in "<>name (metaModel grindInfo)<>" must have a transformer in Transformers.hs"
               ," However, the following relations have none:"
@@ -115,10 +111,10 @@ grindedPops grindInfo userFspec rel =
     showRelOrigin :: Relation -> Text
     showRelOrigin r = showRel r<>" ( "<>tshow (origin r)<>" )."
     hasNoTransformer :: Relation -> Bool
-    hasNoTransformer d = null (filter (isForRel d) ((transformers grindInfo) userFspec))
+    hasNoTransformer d = not (any (isForRel d) (transformers grindInfo userFspec))
     transformer2Pop :: Transformer -> Pop
-    transformer2Pop (Transformer relName src tgt popPairs) 
-      | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ popPairs) ) =
+    transformer2Pop (Transformer relName src tgt popPairs') 
+      | not ( all (ttypeOf (source rel) . fst) (Set.toList popPairs') ) =
              fatal . T.unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in "<>name (metaModel grindInfo)<>"."
@@ -126,7 +122,7 @@ grindedPops grindInfo userFspec rel =
                  , "   violates this rule for concept `"<> src <>"`. In "<>name (metaModel grindInfo)<>" "
                  , "   the TType of this concept is "<>(tshow . cptTType (fModel grindInfo) $ source rel)<>"."
                  ]
-      | not ( all (ttypeOf (target rel)) (map snd . Set.toList $ popPairs) ) =
+      | not ( all (ttypeOf (target rel) . snd) (Set.toList popPairs') ) =
              fatal . T.unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in "<>name (metaModel grindInfo)<>"."
@@ -135,11 +131,11 @@ grindedPops grindInfo userFspec rel =
                  , "   the TType of this concept is "<>(tshow . cptTType (fModel grindInfo) $ target rel)<>"." 
                  ]
       | otherwise = Pop { popRelation = rel
-                        , popPairs    = popPairs
+                        , popPairs    = popPairs'
                         }
       where ttypeOf :: A_Concept -> (PopAtom -> Bool)
             ttypeOf cpt =
-              case (cptTType (fModel grindInfo)) cpt of
+              case cptTType (fModel grindInfo) cpt of
                 Object          -> isDirtyId
                 Alphanumeric    -> isTextual
                 BigAlphanumeric -> isTextual
@@ -156,7 +152,7 @@ grindedPops grindInfo userFspec rel =
                                 
 isForRel :: Relation -> Transformer -> Bool
 isForRel rel (Transformer n s t _ ) =
-    and [ name rel == n
-        , name (source rel) == s
-        , name (target rel) == t]
+     (name rel == n)
+  && (name (source rel) == s)
+  && (name (target rel) == t)
                         

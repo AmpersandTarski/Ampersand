@@ -29,8 +29,8 @@ fSpec2UML env fSpec =
     ; packageId2 <- mkUnlabeledId "PackageReqs"
     ; diagramId <- mkUnlabeledId "Diagram"
 
-    ; _ <- mapM (mkLabeledId "Datatype") datatypeNames
-    ; _ <- mapM (mkLabeledId "Class") classNames
+    ; mapM_ (mkLabeledId "Datatype") datatypeNames
+    ; mapM_ (mkLabeledId "Class") classNames
 
     ; datatypesUML <- mapM genUMLDatatype datatypeNames
     ; classesUML <- mapM genUMLClass (classes classDiag)
@@ -86,7 +86,7 @@ fSpec2UML env fSpec =
        contextName   = cdName classDiag
        allConcs      = ooCpts classDiag
        classNames    = map name (classes classDiag)
-       datatypeNames = filter (\n -> n `notElem` classNames) $ map name allConcs
+       datatypeNames = filter (`notElem` classNames) $ map name allConcs
 
 genUMLRequirement :: Req -> UML
 genUMLRequirement req =
@@ -194,7 +194,7 @@ genCustomReqElements env fSpec parentPackageId =
     reqUML (xmiId, req) = T.intercalate "\n"
      ([ "    <element xmi:idref="<>tshow xmiId<>" xmi:type=\"uml:Requirement\" name="<>tshow (reqId req)<>" scope=\"public\""<>">"
       , "      <model package="<>tshow parentPackageId<>" ea_eleType=\"element\"/>"
-      , "      <properties documentation="<>tshow (maybe "" aMarkup2String (fmap ameaMrk . meaning (outputLang env fSpec) $ req))<>" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
+      , "      <properties documentation="<>tshow (maybe "" (aMarkup2String . ameaMrk) . meaning (outputLang env fSpec) $ req)<>" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
       , "      <tags>"]<>
       [ "         <tag name=\"Purpose"<>nr<>"\" value="<>tshow p<>" modelElement="<>tshow xmiId<>"/>" | (nr ,p) <- zip (map tshow [1::Int ..]) (map (aMarkup2String . explMarkup) $ reqPurposes req)  ]<>
       [ "      </tags>"

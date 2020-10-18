@@ -285,8 +285,8 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser Props
 pFun  =  Set.empty               <$ pOperator "*"  <|>
-        (Set.fromList [Uni,Tot]) <$ pOperator "->" <|>
-        (Set.fromList [Sur,Inj]) <$ pOperator "<-" <|>
+        Set.fromList [Uni,Tot] <$ pOperator "->" <|>
+        Set.fromList [Sur,Inj] <$ pOperator "<-" <|>
         pBrackets pMults
         --- Mults ::= Mult '-' Mult
   where pMults :: AmpParser Props
@@ -422,7 +422,7 @@ pInterface = lbl <$> currPos
           lbl p isAPI nm _params roles ctx mCrud mView sub
              = P_Ifc { ifc_IsAPI  = isAPI
                      , ifc_Name   = nm
-                     , ifc_Roles  = fromMaybe [] . fmap NE.toList $ roles
+                     , ifc_Roles  = maybe [] NE.toList roles
                      , ifc_Obj    = P_BxExpr { obj_nm   = nm
                                           , pos      = p
                                           , obj_ctx  = ctx
@@ -447,9 +447,9 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
   where pBoxHeader :: AmpParser BoxHeader
         pBoxHeader = 
               build     <$> currPos <* pKey "BOX" <*> optional pBoxSpecification
-          <|> BoxHeader <$> currPos <*> (asText $ pKey "ROWS") <*> pure []
-          <|> BoxHeader <$> currPos <*> (asText $ pKey "COLS") <*> pure []
-          <|> BoxHeader <$> currPos <*> (asText $ pKey "TABS") <*> pure []
+          <|> BoxHeader <$> currPos <*> asText (pKey "ROWS") <*> pure []
+          <|> BoxHeader <$> currPos <*> asText (pKey "COLS") <*> pure []
+          <|> BoxHeader <$> currPos <*> asText (pKey "TABS") <*> pure []
         build :: Origin -> Maybe (Text, [TemplateKeyValue]) ->  BoxHeader
         build o x = BoxHeader o typ keys
           where (typ,keys) = case x of 
@@ -483,7 +483,7 @@ pObjDef = pBoxItem <$> currPos
     pBoxItem p nm fun = fun{ pos    = p
                            , obj_nm = nm}
       
-    pObj :: AmpParser (P_BoxItemTermPrim)
+    pObj :: AmpParser P_BoxItemTermPrim
     pObj = obj     <$> pTerm            -- the context expression (for example: I[c])
                    <*> pMaybe pCruds
                    <*> pMaybe (pChevrons $ asText pConid) --for the view
@@ -525,7 +525,7 @@ pPurpose = rebuild <$> currPos
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NE.NonEmpty Text) -> Text -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
-           = PRef2 orig obj (P_Markup lang fmt str) (concatMap splitOnSemicolon (fromMaybe [] . fmap NE.toList $ refs))
+           = PRef2 orig obj (P_Markup lang fmt str) (concatMap splitOnSemicolon (maybe [] NE.toList refs))
               -- TODO: This separation should not happen in the parser
               where splitOnSemicolon :: Text -> [Text]
                     splitOnSemicolon = PARTIAL.splitOn ";" -- This is safe: The first argument of splitOn must not be empty.
@@ -659,7 +659,7 @@ invertT constructor (position,rightTerm) leftTerm = constructor position leftTer
 -- Help function for pTerm and pTrm4, to allow right association
 rightAssociate :: (Origin -> t -> t -> t) -> String -> AmpParser t -> AmpParser (Origin, t)
 rightAssociate combinator operator term
-                 = g <$> currPos <* (pOperator operator) <*> term <*> pMaybe (rightAssociate combinator operator term)
+                 = g <$> currPos <* pOperator operator <*> term <*> pMaybe (rightAssociate combinator operator term)
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
 
