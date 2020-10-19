@@ -333,8 +333,8 @@ dSteps drs x = dStps x
      , let subExprs = s `Set.difference` sameTrms               -- { '1', aap, aap\noot, mies;vuur }
      , let toMatchs = (subTerms `Set.difference` sameTrms) `Set.difference` termVars -- e.g. toMatchs = { p\q }
      , let n=Set.size toMatchs -- each element of toMatchs can be matched to one subTerm from subExprs.
-     , (matchCandidates,rest)<-separate n subExprs              -- e.g. matchCandidates = {aap\noot} and rest={ '1', aap, mies;vuur }
      , let m=Set.size termVars -- each variable in subTerms must be matched to one subset from rest.
+     , (matchCandidates,rest)<-separate n subExprs              -- e.g. matchCandidates = {aap\noot} and rest={ '1', aap, mies;vuur }
      , (restSets,remainder)<-partsplus m rest                   -- e.g. restSets={ {'1', aap, mies;vuur} }
      , let restTerms = Set.map (flatSet . Set.toList) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
      , Set.null restTerms ||
