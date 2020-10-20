@@ -52,8 +52,8 @@ data Aggregation    = OOAggr   { aggDel :: Deleting             --
                                , aggChild ::  A_Concept         --
                                , aggParent :: A_Concept         --
                                } deriving (Show, Eq)
-data Generalization = OOGener  { genAgen :: AClassify               --
-                               } deriving (Show)
+newtype Generalization = OOGener  { genAgen :: AClassify               --
+                                  } deriving (Show)
 
 data Deleting       = Open | Close                      --
                                  deriving (Show, Eq)

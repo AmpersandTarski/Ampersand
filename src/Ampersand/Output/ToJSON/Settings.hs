@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
-{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Settings 
   (Settings)
 where

@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
 -- | Utility types and functions for handling multiple-language strings
 module Ampersand.Basics.Languages

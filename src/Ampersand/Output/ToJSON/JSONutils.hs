@@ -1,8 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FunctionalDependencies #-} 
-{-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToJSON.JSONutils 
   (JSON(..), JSON'(..), ToJSON(..)
   , module Ampersand.Basics

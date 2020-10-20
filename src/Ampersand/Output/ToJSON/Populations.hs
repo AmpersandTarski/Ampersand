@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Populations 
   (Populations)
 where
@@ -58,7 +57,7 @@ instance JSON A_Concept AtomValuesOfConcept where
 
 instance JSON Relation PairsOfRelation where
  fromAmpersand env fSpec dcl = PairsOfRelation
-   { porJSONrelation = showRel $ dcl
+   { porJSONrelation = showRel dcl
    , porJSONlinks = map (fromAmpersand env fSpec) . Set.elems . pairsInExpr fSpec $ EDcD dcl
    }
 

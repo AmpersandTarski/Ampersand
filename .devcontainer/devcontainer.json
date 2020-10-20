@@ -8,6 +8,7 @@
   // You can edit these settings after create using File > Preferences > Settings > Remote.
   "settings": {
       "terminal.integrated.shell.linux": "/bin/bash"
+      
   },
   
   // Use 'appPort' to create a container with published ports. If the port isn't working, be sure
@@ -15,7 +16,7 @@
   // "appPort": [],
   
   // Comment out the next line if you want to run as root instead
-  //"remoteUser": "vscode",
+  // "remoteUser": "vscode",
   
   // Add the IDs of extensions you want installed when the container is created in the array below.
   "extensions": [

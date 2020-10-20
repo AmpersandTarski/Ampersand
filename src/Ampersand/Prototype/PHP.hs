@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.PHP 
          ( evaluateExpSQL
@@ -184,13 +183,13 @@ createTempDatabase fSpec = do
     return (T.null result)
  where 
   lineNumbers :: [Text] -> [Text]
-  lineNumbers = map withNumber . zip [1..]
+  lineNumbers = zipWith (curry withNumber) [1 .. ]
     where
       withNumber :: (Int,Text) -> Text
       withNumber (n,t) = "/*"<>T.take (5-length(show n)) "00000"<>tshow n<>"*/ "<>t
   phpStr :: (HasProtoOpts env) => env -> [Text]
   phpStr env = 
-    (connectToMySqlServerPHP env Nothing) <>
+    connectToMySqlServerPHP env Nothing <>
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
     , ""
     , "    /* file_per_table is required for long columns */"
@@ -247,10 +246,10 @@ createTempDatabase fSpec = do
     where
       dropDB :: SqlQuery 
       dropDB = SqlQuerySimple $
-           "DROP DATABASE "<>(singleQuote $ tempDbName fSpec env)
+           "DROP DATABASE "<>singleQuote (tempDbName fSpec env)
       createDB :: SqlQuery
       createDB = SqlQuerySimple $
-           "CREATE DATABASE "<>(singleQuote $ tempDbName fSpec env)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
+           "CREATE DATABASE "<>singleQuote (tempDbName fSpec env)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []

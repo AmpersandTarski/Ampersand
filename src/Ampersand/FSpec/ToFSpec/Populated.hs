@@ -18,7 +18,7 @@ import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
  
 genericAndSpecifics :: AClassify -> [(A_Concept,A_Concept)]
-genericAndSpecifics gen = filter (\x -> fst x /= snd x) $  -- make sure that no tuples where source and target are equal are returned. 
+genericAndSpecifics gen = filter (uncurry (/=)) $  -- make sure that no tuples where source and target are equal are returned. 
     case gen of
       Isa{} -> [(genspc gen, gengen gen)]
       IsE{} -> [(genspc gen, g ) | g<-NE.toList $ genrhs gen]
@@ -40,7 +40,7 @@ largerConcepts gs cpt
 sortSpecific2Generic :: [AClassify] -> [A_Concept] -> [A_Concept]
 sortSpecific2Generic gens = go []
   where go xs [] = xs
-        go xs (y:ys) = case [y' | y'<-L.nub ys, y' `elem` (Set.fromList $ smallerConcepts gens y)] of
+        go xs (y:ys) = case [y' | y'<-L.nub ys, y' `elem` Set.fromList (smallerConcepts gens y)] of
                           []  -> go (xs++[y]) ys
                           _:_ -> go xs (ys++[y])
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
@@ -77,8 +77,8 @@ fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (
    contents :: Expression -> Map.Map AAtomValue AAtomValues
    contents expr
     = let aVals = atomValuesOf ci ps 
-          lkp :: (Ord k) => k -> Map.Map k (Set.Set a) -> (Set.Set a)
-          lkp x contMap = (Map.findWithDefault Set.empty x contMap) in
+          lkp :: (Ord k) => k -> Map.Map k (Set.Set a) -> Set.Set a
+          lkp x contMap = Map.findWithDefault Set.empty x contMap in
       case expr of
          EEqu (l,r) -> contents ((l .|-. r) ./\. (r .|-. l))
          EInc (l,r) -> contents (notCpl l .\/. r)
@@ -105,7 +105,11 @@ fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (
                                 , null (aVals (target l) Set.\\ (lkp x (contents l) `Set.union` lkp y (contents (EFlp r))))
                                 ]
          EPrd (l,r) -> Map.fromList
-                       [ (a,Set.fromList cod) | a <- Set.elems $ aVals (source l), let cod=Set.elems $ aVals (target r), not (null cod) ]
+                       [(a, Set.fromList cod)
+                       | let cod = Set.elems $ aVals (target r)
+                       ,  not (null cod)
+                       ,  a <- Set.elems $ aVals (source l)
+                       ]
          ECps (l,r) -> Map.fromListWith Set.union
                        [(x,Set.singleton y) | (x,xv)<-Map.toList (contents l), (y,yv)<-Map.toList flipr
                                 , (not. Set.null) (xv `Set.intersection` yv)
@@ -122,7 +126,10 @@ fullContents ci ps e = Set.fromList [ mkAtomPair a b | let pairMap=contents e, (
          EDcD dcl   -> pairsOf ci ps dcl
          EDcI c     -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals c]
          EEps i _   -> Map.fromList [(a, Set.singleton a) | a <- Set.elems $ aVals i]
-         EDcV sgn   -> Map.fromList [(s, Set.fromList cod) | s <- Set.elems $ aVals (source sgn), let cod=Set.elems $ aVals (target sgn), not (null cod) ]
+         EDcV sgn   -> Map.fromList [(s, Set.fromList cod)
+                                    | let cod = Set.elems $ aVals (target sgn)
+                                    , not (null cod)
+                                    , s <- Set.elems $ aVals (source sgn)]
          EMp1 val c -> if isSESSION c -- prevent populating SESSION with "_SESSION"
                           && tshow val == tshow ("_SESSION"::Text)
                         then Map.empty

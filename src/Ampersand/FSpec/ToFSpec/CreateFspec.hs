@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.FSpec.ToFSpec.CreateFspec
@@ -47,13 +47,13 @@ createFspec recipe = do
     metaModelsMap :: Map MetaModel GrindInfo <- do 
          let fun :: (HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> RIO env (MetaModel , GrindInfo)
              fun m = (,) m <$> mkGrindInfo m
-         Map.fromList <$> (sequence $ fun <$> (Set.toList $ metaModelsIn recipe))
+         Map.fromList <$> sequence (fun <$> Set.toList (metaModelsIn recipe))
     parsedUserScript :: Guarded P_Context <- do
-         rootFile <- fromMaybe (fatal "No script was given!") <$> (view rootFileL)
+         rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
          snd <$> parseFileTransitive rootFile -- the P_Context of the user's sourceFile
     let cooked :: Guarded P_Context
         cooked = cook env recipe metaModelsMap parsedUserScript
-    return . join $ pCtx2Fspec env <$> cooked
+    return (pCtx2Fspec env =<< cooked)
 
 class MetaModelContainer a where
   metaModelsIn :: a -> Set MetaModel
@@ -108,9 +108,10 @@ cook :: (HasFSpecGenOpts env) =>
       -> Guarded P_Context  -- ^ The original user's P_Context, Guarded because it might have errors 
       -> Guarded P_Context 
 cook env (BuildRecipe start steps) grindInfoMap userScript = 
-    join $ doSteps <$> case start of
-                    UserScript -> userScript
-                    MetaScript mm -> pure . pModel $ gInfo mm
+    doSteps =<<
+    (case start of
+       UserScript -> userScript
+       MetaScript mm -> pure . pModel $ gInfo mm)
   where 
   doSteps :: P_Context -> Guarded P_Context
   doSteps pCtx = foldM nextStep pCtx steps
@@ -119,7 +120,7 @@ cook env (BuildRecipe start steps) grindInfoMap userScript =
       nextStep ctx step = 
         case step of 
           EncloseInConstraints -> pure $ encloseInConstraints ctx 
-          Grind mm -> grind (gInfo mm) <$> (pCtx2Fspec env ctx)
+          Grind mm -> grind (gInfo mm) <$> pCtx2Fspec env ctx
           MergeWith recipe -> mergeContexts ctx <$> cook env recipe grindInfoMap userScript
   gInfo :: MetaModel -> GrindInfo
   gInfo mm = case Map.lookup mm grindInfoMap of
@@ -169,12 +170,16 @@ encloseInConstraints pCtx = enrichedContext
                sgn  = dec_sign rel
                s = pSrc sgn; t = pTgt sgn
                popu :: P_Concept -> Set.Set PAtomValue
-               popu c = (Set.fromList . concat .map p_popas) [ pop | pop@P_CptPopu{}<-pops, name c==name pop ]
+               popu c = (Set.fromList . concatMap p_popas) [ pop | pop@P_CptPopu{}<-pops, name c==name pop ]
                popR :: Set.Set PAtomPair
-               popR = (Set.fromList . concat. map p_popps )
-                      [ pop
-                      | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-pops, Just src'<-[src], Just tgt'<-[tgt]
-                      , name rel==name pop, src'== s, tgt'== t
+               popR = (Set.fromList . concatMap p_popps )
+                      [pop
+                      | pop@P_RelPopu {p_src = src, p_tgt = tgt} <- pops
+                      , name rel == name pop
+                      , Just src' <- [src]
+                      , src' == s
+                      , Just tgt' <- [tgt]
+                      , tgt' == t
                       ]
                domR = Set.fromList . map ppLeft  . Set.toList $ popR
                codR = Set.fromList . map ppRight . Set.toList $ popR
@@ -214,7 +219,7 @@ encloseInConstraints pCtx = enrichedContext
                  , [ rel| rel<-NE.toList sRel, sourc rel `notElem` specs ]                 -- the remaining relations
                  )
                | sRel<-sameNameTargetRels
-               , specs `Set.isSubsetOf` (Set.fromList . NE.toList $ (fmap sourc sRel))
+               , specs `Set.isSubsetOf` (Set.fromList . NE.toList $ fmap sourc sRel)
                , headrel<-[NE.head sRel]
                ]
             remainder :: [P_Relation]
@@ -279,7 +284,7 @@ encloseInConstraints pCtx = enrichedContext
                        , pair<-p_popps pop]}
        | c<-concepts
        ] <>
-       [ rpop{p_popps=concat (fmap p_popps cl)}
+       [ rpop{p_popps=concatMap p_popps cl}
        | cl<-eqCl (\pop->(name pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NE.head cl]
        ]
 

@@ -89,7 +89,7 @@ cdAnalysis fSpec =
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
-   allDcls = vrels $ fSpec
+   allDcls = vrels fSpec
    assocsAndAggrs = map decl2assocOrAggr 
                   . filter dclIsShown 
                   . Set.elems $ allDcls

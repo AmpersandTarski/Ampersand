@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- This module provides an interface to be able to parse a script and to
@@ -141,7 +141,7 @@ parseSingleADL pc
               case ctxFromArchi of
                     Checked ctx _ -> do
                          writeFileUtf8 "ArchiMetaModel.adl" (showP ctx)
-                         logInfo ("ArchiMetaModel.adl written")
+                         logInfo "ArchiMetaModel.adl written"
                     Errors _ -> pure ()
               return ((,) <$> ctxFromArchi
                           <*> pure [] -- ArchiMate file cannot contain include files
@@ -165,10 +165,10 @@ parseSingleADL pc
                              proces :: Guarded (P_Context,[Include]) -> RIO env (Guarded (P_Context, [ParseCandidate]))
                              proces (Errors err) = pure (Errors err)
                              proces (Checked (ctxts, includes) ws) = 
-                                addWarnings ws <$> foo <$> mapM include2ParseCandidate includes
+                                addWarnings ws . foo <$> mapM include2ParseCandidate includes
                               where
-                                foo :: [Guarded ParseCandidate] -> (Guarded (P_Context, [ParseCandidate]))
-                                foo xs = (\x -> (ctxts,x)) <$> sequence xs
+                                foo :: [Guarded ParseCandidate] -> Guarded (P_Context, [ParseCandidate])
+                                foo xs = (ctxts,) <$> sequence xs
                          in
                          proces meat
          where 

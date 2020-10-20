@@ -30,7 +30,7 @@ module Ampersand.Input.ADL1.CtxError
   , lexerError2CtxError
   , addWarning, addWarnings
   , mkCrudWarning
-  , mkBOX_ROWSNH_Warning
+  , mkBoxRowsnhWarning
   , mkCaseProblemWarning
   , mkNoBoxItemsWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
@@ -106,7 +106,7 @@ instance Traced CtxError where
 
 --TODO: Give the errors in a better way
 lexerError2CtxError :: LexerError -> CtxError
-lexerError2CtxError err = LE err
+lexerError2CtxError = LE
 
 errors :: Guarded t -> Maybe (NE.NonEmpty CtxError)
 errors (Checked _ _) = Nothing
@@ -260,7 +260,7 @@ uniqueNames nameclass = uniqueBy name
       where
         messageFor (x:xs) = CTXE (origin x)
                          ("Every "<>nameclass<>" must have a unique name. "<>(tshow . fun) x<>", however, is used at:"
-                         <>  T.intercalate ("\n    ") (map (tshow . origin) (x:xs))
+                         <>  T.intercalate "\n    " (map (tshow . origin) (x:xs))
                          <>  "."
                          )
         messageFor _ = fatal "messageFor must only be used on lists with more that one element!"
@@ -305,7 +305,7 @@ mkInvalidCRUDError :: Origin -> Text -> CtxError
 mkInvalidCRUDError o str = CTXE o $ "Invalid CRUD annotation. (doubles and other characters than crud are not allowed): `"<>str<>"`."
 
 mkCrudForRefInterfaceError :: Origin -> CtxError
-mkCrudForRefInterfaceError o = CTXE o $ "Crud specification is not allowed in combination with a reference to an interface."
+mkCrudForRefInterfaceError o = CTXE o "Crud specification is not allowed in combination with a reference to an interface."
 
 mkIncompatibleAtomValueError :: PAtomValue -> Text -> CtxError
 mkIncompatibleAtomValueError pav msg = CTXE (origin pav) (case msg of 
@@ -351,7 +351,7 @@ mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
 mkMultipleDefaultError vds =
   CTXE (origin . NE.head $ vds) $ 
       "Multiple default views for concept " <> showWithAliases cpt <> ":" <>
-        (T.intercalate "\n    " $ fmap showViewDef (NE.toList vds))
+        T.intercalate "\n    " (fmap showViewDef (NE.toList vds))
      where
        showViewDef :: ViewDef -> Text
        showViewDef vd = "VIEW "<>name vd <> " (at " <> tshow (origin vd) <> ")"
@@ -478,8 +478,8 @@ lexerWarning2Warning (LexerWarning a b) =
 
 instance Traced Warning where
     origin (Warning o _) = o
-mkBOX_ROWSNH_Warning :: Origin -> Warning
-mkBOX_ROWSNH_Warning orig =
+mkBoxRowsnhWarning :: Origin -> Warning
+mkBoxRowsnhWarning orig =
   Warning orig $ T.intercalate "\n   "
      ["The common use of BOX <ROWSNH> has become obsolete. It was used to be able"
      ,   "to have rows without header."

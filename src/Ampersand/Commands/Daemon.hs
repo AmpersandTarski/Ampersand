@@ -49,7 +49,7 @@ mainWithTerminal termSize termOutput = goForever
             -- On certain Cygwin terminals stdout defaults to BlockBuffering
             hSetBuffering stdout LineBuffering
             hSetBuffering stderr NoBuffering
-            curDir <- liftIO $ getCurrentDirectory
+            curDir <- liftIO getCurrentDirectory
             logDebug $ "%OS: " <> display (T.pack os)
             logDebug $ "%ARCH: " <> display (T.pack arch)
             logDebug $ "%VERSION: " <> display ampersandVersionWithoutBuildTimeStr
@@ -95,7 +95,7 @@ runDaemon = mainWithTerminal termSize termOutput
 
         termOutput :: (HasLogFunc env) => [String] -> RIO env ()
         termOutput xs = do
-            mapM_ logInfo $ map (display . T.pack) xs
+            mapM_ (logInfo . display . T.pack) xs
 
 
 data Continue = Continue
@@ -107,9 +107,9 @@ runAmpersand :: (HasRunner env, HasDaemonOpts env)
 runAmpersand app waiter termSize termOutput = do
     let outputFill :: String -> Maybe (Int, [Load]) -> [String] -> IO ()
         outputFill currTime load' msg' = do
-            load'' <- return $ case load' of
-                Nothing -> []
-                Just (loadedCount, msgs) -> prettyOutput currTime loadedCount $ filter isMessage msgs
+            let load'' = case load' of
+                  Nothing -> []
+                  Just (loadedCount, msgs) -> prettyOutput currTime loadedCount $ filter isMessage msgs
             TermSize{..} <- termSize
             let wrap = concatMap (wordWrapE termWidth (termWidth `div` 5) . Esc)
             (termHeight1, msg) <- return $ takeRemainder termHeight $ wrap msg'
@@ -128,13 +128,13 @@ runAmpersand app waiter termSize termOutput = do
     when (null . loadResults $ aDaemon) $ do
         exitWith NoFilesToWatch 
 
-    project <- takeFileName <$> (liftIO $ getCurrentDirectory)
+    project <- takeFileName <$> liftIO getCurrentDirectory
 
     -- fire, given a waiter, the messages/loaded
     let fire :: (HasLogFunc env) =>
                 ([FilePath] -> RIO env [String]) -> DaemonState -> RIO env Continue
         fire nextWait' ad = do
-            currTime <- liftIO $ getShortTime
+            currTime <- liftIO getShortTime
             let no_title = False
             let loadedCount = length (loaded ad)
             logDebug $ "%MESSAGES: " <> (displayShow . messages $ ad)
@@ -189,7 +189,7 @@ nubOrdOn f = map snd . nubOrdBy (compare `on` fst) . map (f &&& id)
 --
 -- > nubOrdBy (compare `on` length) ["a","test","of","this"] == ["a","test","of"]
 nubOrdBy :: (a -> a -> Ordering) -> [a] -> [a]
-nubOrdBy cmp xs = f E xs
+nubOrdBy cmp = f E
     where f seen rest = 
             case rest of 
               [] -> []
@@ -260,6 +260,6 @@ withCurrentDirectory dir act =
     bracket' before after thing =
         mask $ \restore -> do
             a <- liftIO before
-            r <- restore (thing a) `onException` (liftIO $ after a)
+            r <- restore (thing a) `onException` liftIO (after a)
             _ <- liftIO $ after a
             return r

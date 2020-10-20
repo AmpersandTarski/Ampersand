@@ -39,5 +39,5 @@ outputFileP deflt = strOption
         <> metavar "OUTPUTFILE"
         <> value deflt
         <> showDefault
-        <> help ("Name of the file where the output is written to." )
+        <> help "Name of the file where the output is written to."
         )

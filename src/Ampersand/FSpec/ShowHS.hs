@@ -1,8 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-} 
 module           Ampersand.FSpec.ShowHS
     (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
 where
@@ -23,7 +21,7 @@ import           Text.Pandoc hiding (Meta)
 fSpec2Haskell :: (HasFSpecGenOpts env) =>
        env -> UTCTime -> FSpec -> Text
 fSpec2Haskell env now fSpec
-    = T.intercalate "\n" $
+    = T.intercalate "\n" 
         [ "{-# OPTIONS_GHC -Wall #-}"
         , "{-Generated code by "<>ampersandVersionStr<>" at "<>tshow now<>"-}"
         , "module Main"
@@ -34,10 +32,10 @@ fSpec2Haskell env now fSpec
         , ""
         , "main :: IO ()"
         , "main = do env <- getOptions"
-        , "          say (showHS env \"\\n  \" fSpec_"<>(T.pack $ baseName env)<>")"
+        , "          say (showHS env \"\\n  \" fSpec_"<>T.pack (baseName env)<>")"
         , ""
-        , "fSpec_"<>(T.pack $ baseName env)<>" :: FSpec"
-        , "fSpec_"<>(T.pack $ baseName env)<>" =\n  "<>showHS env "\n  " fSpec
+        , "fSpec_"<>T.pack (baseName env)<>" :: FSpec"
+        , "fSpec_"<>T.pack (baseName env)<>" =\n  "<>showHS env "\n  " fSpec
         ]
 wrap :: Text->Text->(Text->a->Text)->[a]->Text
 wrap initStr indent f xs
@@ -416,7 +414,7 @@ instance ShowHSName Rule where
  showHSName r = haskellIdentifier ("rule_"<> rrnm r)
 
 instance ShowHS Rule where
- showHS env indent r@(Ru _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
+ showHS env indent r
    = T.intercalate indent
      ["Ru{ rrnm   = " <> tshow (rrnm   r)
      ,"  , formalExpression  = -- " <> showA (formalExpression  r) <> indent<>"             " <> showHS env (indent<>"             ") (formalExpression  r)
@@ -453,7 +451,7 @@ instance ShowHSName ViewDef where
 instance ShowHS ViewDef where
  showHS env indent vd
   = "Vd ("<>showHS env "" (vdpos vd)<>") "<>tshow (name vd)<>" "<>showHSName (vdcpt vd)
-    <>indent<>"  [ "<>T.intercalate (indent<>"  , ") (fmap (showHS env indent) $ vdats vd)<>indent<>"  ]"
+    <>indent<>"  [ "<>T.intercalate (indent<>"  , ") (showHS env indent <$> vdats vd)<>indent<>"  ]"
 
 instance ShowHS ViewSegment where
   showHS env indent vs =
@@ -653,58 +651,6 @@ instance ShowHS Block where
 instance ShowHS Inline where
  showHS _ _   = tshow
                   
-{-
-instance ShowHS InfTree where
- showHS env indent itree =
-     case itree of
-       InfExprs irt (ratype,raobj) itrees ->
-           "InfExprs " <> showHS env indent irt <>
-           indent <> "   (" <> showRaType ratype <> "," <> "RelAlgObj{-"<>tshow raobj<>"-}" <> ")" <>
-           indent <> showHS env (indent <> "     ") itrees
-       InfRel drt ratype _ _ ->
-           "InfRel " <> showHS env indent drt <> " " <> showRaType ratype
-   where
-    showRaType rat = "RelAlgType{-"<>tshow rat<>"-}"
-
-instance ShowHS RelDecl where
- showHS _ indent d = case d of
-                       RelDecl{}-> "RelDecl{ dname  = " <> tshow (dname d) <> indent
-                                <> "        ,dtype  = " <> showRaType dtype <> indent
-                                <> "        ,isendo = " <> tshow (isendo d)
-                       IDecl    -> "IDecl"
-                       VDecl    -> "VDecl"
-   where
-    showRaType _ = "RelAlgType{- <>TODO<> -}"
-
-
-instance ShowHS DeclRuleType where
- showHS _ _ drt = case drt of
-                                      D_rel     -> "D_rel"
-                                      D_rel_h   -> "D_rel_h"
-                                      D_rel_c   -> "D_rel_c"
-                                      D_rel_c_h -> "D_rel_c_h"
-                                      D_id      -> "D_id"
-                                      D_v       -> "D_v"
-                                      D_id_c    -> "D_id_c"
-                                      D_v_c     -> "D_v_c"
-
-instance ShowHS InfRuleType where
- showHS _ _ irt = case irt of
-                                      ISect_cs  -> "ISect_cs"
-                                      ISect_ncs -> "ISect_ncs"
-                                      ISect_mix -> "ISect_mix"
-                                      Union_mix -> "Union_mix"
-                                      Comp_ncs  -> "Comp_ncs"
-                                      Comp_c1   -> "Comp_c1"
-                                      Comp_c2   -> "Comp_c2"
-                                      Comp_cs   -> "Comp_cs"
-                                      RAdd_ncs  -> "RAdd_ncs"
-                                      RAdd_c1   -> "RAdd_c1"
-                                      RAdd_c2   -> "RAdd_c2"
-                                      RAdd_cs   -> "RAdd_cs"
-                                      Conv_nc   -> "Conv_nc"
-                                      Conv_c    -> "Conv_c"
--}
 
 -- \***********************************************************************
 -- \*** hulpfuncties                                                    ***

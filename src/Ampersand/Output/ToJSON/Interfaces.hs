@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleInstances #-} 
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE OverloadedStrings #-} 
-{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Interfaces 
    (Interfaces)
 where
@@ -11,7 +10,7 @@ import Ampersand.ADL1
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.ToFSpec.Calc
 
-data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
+newtype Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
   { ifcJSONid                 :: Text
   , ifcJSONlabel              :: Text
@@ -84,7 +83,7 @@ instance JSON SubInterface JSONSubInterface where
  fromAmpersand env fSpec si = 
    case si of 
      Box{} -> JSONSubInterface
-       { subJSONboxHeader          = Just . (fromAmpersand env fSpec) . siHeader $ si
+       { subJSONboxHeader          = Just . fromAmpersand env fSpec . siHeader $ si
        , subJSONifcObjects         = Just . map (fromAmpersand env fSpec) . siObjs $ si
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinkTo        = Nothing

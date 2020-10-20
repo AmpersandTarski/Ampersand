@@ -1,4 +1,7 @@
-﻿{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
+﻿{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Input.ADL1.ParsingLib(
 
     AmpParser, pIsThere, optList, optSet,
@@ -120,29 +123,36 @@ match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <
 
 --- Conid ::= UpperChar (Char | '_')*
 pConid :: AmpParser String
-pConid = check (\lx -> case lx of { LexConId s -> Just s; _ -> Nothing }) <?> "upper case identifier"
+pConid = check (\case
+  LexConId s -> Just s
+  _ -> Nothing) <?> "upper case identifier"
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
 pString :: AmpParser String
-pString = check (\lx -> case lx of { LexString s -> Just s; _ -> Nothing }) <?> "string"
+pString = check (\case
+  LexString s -> Just s
+  _ -> Nothing) <?> "string"
 
 --- Markup ::= '{+' Any* '+}'
 pAmpersandMarkup :: AmpParser String
-pAmpersandMarkup = check (\lx -> case lx of { LexMarkup s -> Just s; _ -> Nothing }) <?> "markup"
+pAmpersandMarkup = check (\case
+  LexMarkup s -> Just s
+  _ -> Nothing) <?> "markup"
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpParser String
-pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "lower case identifier"
+pVarid = check (\case
+  LexVarId s -> Just s
+  _ -> Nothing) <?> "lower case identifier"
 
 -- A non-empty string that contains only the the characters "crud" in any case (upper/lower), but each of them
 -- at most once. The order of the characters is free.
 pCrudString :: AmpParser String
-pCrudString = check (\lx -> case lx of 
-                              LexConId s -> testCrud s 
-                              LexVarId s -> testCrud s
-                              _ -> Nothing 
-                    ) <?> "crud definition"
+pCrudString = check (\case
+  LexConId s -> testCrud s
+  LexVarId s -> testCrud s
+  _ -> Nothing) <?> "crud definition"
    where 
     testCrud s = 
        if and $ [ not (null s)
@@ -184,10 +194,14 @@ pAtomValInPopulation constrainsApply =
 -----------------------------------------------------------
 
 pDay :: AmpParser Day
-pDay = check (\lx -> case lx of { LexDate s -> Just s; _ -> Nothing }) <?> "iso 8601 Date"
+pDay = check (\case
+  LexDate s -> Just s
+  _ -> Nothing) <?> "iso 8601 Date"
 
 pUTCTime :: AmpParser UTCTime
-pUTCTime  = check (\lx -> case lx of { LexDateTime s -> Just s; _ -> Nothing }) <?> "iso 8601 DateTime"
+pUTCTime  = check (\case
+  LexDateTime s -> Just s
+  _ -> Nothing) <?> "iso 8601 DateTime"
 
 -----------------------------------------------------------
 -- Integers /float(Double)

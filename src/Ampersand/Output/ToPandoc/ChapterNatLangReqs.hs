@@ -1,6 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
       chpNatLangReqs
  ) where
@@ -9,9 +8,9 @@ import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import           RIO.Char hiding (Space)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
-import           Data.List.Split(splitOn)
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import qualified RIO.Text.Partial as T'(splitOn)
 
 chpNatLangReqs :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> Int -> FSpec -> Blocks
@@ -195,10 +194,9 @@ chpNatLangReqs env lev fSpec =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
             [(   (str.l) (NL "Afspraak ", EN "Agreement ")
-              <> (text . tshow . theNr $ nDcl) <> ": " <> (xDefInln env fSpec (XRefSharedLangRelation dcl))
+              <> (text . tshow . theNr $ nDcl) <> ": " <> xDefInln env fSpec (XRefSharedLangRelation dcl)
              , 
-              mempty 
-              <>[printMeaning outputLang' dcl]
+                [printMeaning outputLang' dcl]
               <>(case Set.elems $ properties dcl of
                     []  -> mempty
                     ps  -> [plain (   (str.l) (NL "Deze relatie is ",EN "This relation is " )
@@ -267,7 +265,7 @@ chpNatLangReqs env lev fSpec =
          atomShow = str
          pragmaShow = emph . str
                    
-data LawRef = LawRef { lawRef :: Text}
+newtype LawRef = LawRef { lawRef :: Text}
 data ArticleOfLaw = ArticleOfLaw { aOlLaw :: Text
                                  , aOlArt :: [Either Text Int]
                                  } deriving Eq
@@ -275,11 +273,11 @@ toLawRef:: Text -> Maybe LawRef
 toLawRef txt = if T.null txt then Nothing else Just (LawRef txt)
 wordsOf :: LawRef -> NE.NonEmpty Text
 wordsOf ref = case T.words . lawRef $ ref of
-                [] -> fatal $ "text in LaWRef must not be empty."
+                [] -> fatal "text in LaWRef must not be empty."
                 h:tl -> h NE.:| tl
 -- the article is everything but the law (and we also drop any trailing commas)
 getArticlesOfLaw :: LawRef -> [ArticleOfLaw]
-getArticlesOfLaw ref = map buildLA . map T.pack . splitOn ", " .T.unpack . T.unwords . NE.init . wordsOf $ ref
+getArticlesOfLaw ref = map buildLA . T'.splitOn ", " . T.unwords . NE.init . wordsOf $ ref
                              
    where
      buildLA :: Text -> ArticleOfLaw

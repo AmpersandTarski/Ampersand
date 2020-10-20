@@ -32,7 +32,7 @@ generateHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags 
 generateHook pd lbi uh bf = do
     generateBuildInfoModule (T.pack . prettyShow . pkgVersion . package $ pd)
     generateStaticFileModule
-    (buildHook simpleUserHooks) pd lbi uh bf -- start the build
+    buildHook simpleUserHooks pd lbi uh bf -- start the build
  
 generateBuildInfoModule :: Text -> IO ()
 -- | Generate a Haskell module that contains information that is available
@@ -272,8 +272,8 @@ generateStaticFileModule = do
       , "    showEntry = tshow . eRelativePath  "
       , "    showArchives :: [StaticFile] -> [Text]"
       , "    showArchives xs = "
-      , "       [ \"Number of archives: \"<>tshow (length xs)"
-      , "       ]++"
+      , "       ( \"Number of archives: \"<>tshow (length xs)"
+      , "       ):"
       , "       concatMap showSF xs"
       , "       where"
       , "         showSF :: StaticFile -> [Text]"
@@ -287,7 +287,7 @@ generateStaticFileModule = do
       ]
 
     getProperDirectoryContents :: FilePath -> IO [FilePath]
-    getProperDirectoryContents fp = (filter (`notElem` [".","..",".git"])) <$> getDirectoryContents fp
+    getProperDirectoryContents fp = filter (`notElem` [".","..",".git"]) <$> getDirectoryContents fp
 
 pathFromModuleName :: Text -> FilePath
 pathFromModuleName m = T.unpack $ "src/" <> T.map (\c -> if c == '.' then '/' else c) m <> ".hs"

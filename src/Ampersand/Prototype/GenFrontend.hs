@@ -1,6 +1,5 @@
 ﻿{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, copyCustomizations) where
 
 import           Ampersand.ADL1
@@ -85,7 +84,7 @@ doGenBackend fSpec = do
   env <- ask
   logInfo "Generating backend..."
   let dir = getGenericsDir env
-  writeFileUtf8 (dir </> "database"   <.>"sql" ) $ databaseStructureSql $ fSpec
+  writeFileUtf8 (dir </> "database"   <.>"sql" ) $ databaseStructureSql fSpec
   writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
   writeFile (dir </> "relations"  <.>"json") $ relationsToJSON env fSpec
   writeFile (dir </> "rules"      <.>"json") $ rulesToJSON env fSpec
@@ -122,7 +121,7 @@ copyCustomizations = do
   env <- ask
   dirCustomizations <- view dirCustomizationsL
   let dirPrototype = getDirPrototype env
-  let custDirs = map (dirSource env</>) (fromMaybe [] dirCustomizations)
+  let custDirs = maybe [] (map (dirSource env </>)) dirCustomizations
   mapM_ (copyDir dirPrototype) custDirs
     where
       copyDir :: (HasLogFunc env) =>
@@ -206,15 +205,15 @@ buildInterface fSpec allIfcs ifc = do
         case objmsub object of
           Nothing -> do
             let ( _ , _ , tgt) = getSrcDclTgt iExp
-            let mView = fromMaybe (getDefaultViewForConcept fSpec tgt) ((Just . lookupView fSpec) <$> objmView object)
+            let mView = maybe (getDefaultViewForConcept fSpec tgt) (Just . lookupView fSpec) (objmView object)
             mSpecificTemplatePath <-
                   case mView of
                     Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                              -> return $ Just (fName, mapMaybe vsmlabel $ viewSegs)
+                              -> return $ Just (fName, mapMaybe vsmlabel viewSegs)
                     _ -> do
                        -- no view, or no view with an html template, so we fall back to target-concept template
                        -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                      let templatePath = "Atomic-" <> (T.unpack $ idWithoutType tgt) <.> ".html"
+                      let templatePath = "Atomic-" <> T.unpack (idWithoutType tgt) <.> ".html"
                       hasSpecificTemplate <- doesTemplateExist templatePath
                       return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
             return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
@@ -386,7 +385,7 @@ genViewObject fSpec depth obj =
     FEObjT{} -> pure []
   where 
     indentation :: [Text] -> [Text]
-    indentation = map ( (T.replicate (if depth == 0 then 4 else 16) " ") <>)
+    indentation = map (T.replicate (if depth == 0 then 4 else 16) " " <>)
     genView_SubObject :: (HasRunner env, HasDirPrototype env) =>
                          FEObject2 -> RIO env SubObjectAttr2
     genView_SubObject subObj =
@@ -418,7 +417,7 @@ genViewObject fSpec depth obj =
                   then cptfn
                   else "Atomic-"<>show ttp<.>"html" 
        where ttp = cptTType fSpec cpt
-             cptfn = "Concept-"<>(T.unpack $ name cpt)<.>"html" 
+             cptfn = "Concept-"<> T.unpack (name cpt) <.> "html"
 
 
 ------ Generate controller JavaScript code
@@ -449,7 +448,7 @@ genControllerInterface fSpec interf = do
                      . setAttribute "verbose"                  (loglevel' == LevelDebug)
                      . setAttribute "loglevel"                 (show loglevel')
                      . setAttribute "usedTemplate"             controlerTemplateName
-    let filename = "ifc" <> (T.unpack $ ifcName interf) <> ".controller.js"
+    let filename = "ifc" <> T.unpack (ifcName interf) <> ".controller.js"
     writePrototypeAppFile filename contents 
 
 ------ Utility functions
@@ -494,7 +493,7 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
             ["*** TEMPLATE ERROR in:" <> absPath
             , msg
             ]
-        appliedTemplate = setRuntimeAtts . setUserAtts (fromMaybe [] userAtts) $ (template)
+        appliedTemplate = setRuntimeAtts . setUserAtts (fromMaybe [] userAtts) $ template
         -- Set all attributes not specified to False
         fillInTheBlanks :: [String] -> StringTemplate String -> StringTemplate String
         fillInTheBlanks [] = id
@@ -538,20 +537,24 @@ downloadPrototypeFramework = ( do
       let zipoptions = 
                [OptVerbose | logLevel runner == LevelDebug]
             <> [OptDestination dirPrototype]
-      ((liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
+      (liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
                               , "  Failed to extract the archive found at "<>T.pack url
                               , tshow (err :: SomeException)
-                              ])
+                              ]
+
+
+
+
       let dest = dirPrototype </> ".frameworkSHA"  
-      ((writeFileUtf8 dest . tshow . zComment $ archive) `catch` \err ->  
+      (writeFileUtf8 dest . tshow . zComment $ archive) `catch` \err ->  
                           exitWith . FailedToInstallPrototypeFramework $
                               [ "Error encountered during deployment of prototype framework:"
                               , "Archive seems valid: "<>T.pack url
                               , "  Failed to write contents of archive to "<>T.pack dest
                               , tshow (err :: SomeException)
-                              ])
+                              ]
       return x
     else return x
   ) `catch` \err ->  -- git failed to execute
@@ -568,8 +571,8 @@ downloadPrototypeFramework = ( do
         removeTopLevelPath :: Entry -> Maybe Entry
         removeTopLevelPath entry = 
             case splitPath . eRelativePath $ entry of
-              [] -> fatal "Impossible"
-              _:[] -> Nothing
+              []   -> fatal "Impossible"
+              [_]  -> Nothing
               _:tl -> Just entry{eRelativePath = joinPath tl}
 
     extractionIsAllowed :: (HasProtoOpts env, HasLogFunc env) =>
@@ -598,6 +601,6 @@ downloadPrototypeFramework = ( do
       where redeployNotAllowed = do
                 logError $ "(Re)deploying prototype framework not allowed, because "<>
                            "  "<>displayShow destination<>" isn't empty."
-                logInfo  $ "You could use the switch --force-reinstall-framework"
+                logInfo    "You could use the switch --force-reinstall-framework"
                 return False
 

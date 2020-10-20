@@ -331,7 +331,7 @@ nonSpecialSelectExpr fSpec expr=
                                        makeIntersectSelectExpr :: [Expression] -> BinQueryExpr
                                        makeIntersectSelectExpr exprs =
                                         case exprs of
-                                        [] -> fatal $ "makeIntersectSelectExpr must not be called with an empty list."
+                                        [] -> fatal "makeIntersectSelectExpr must not be called with an empty list."
                                         hexprs:tlexprs ->
                                           -- The story here: If at least one of the conjuncts is I, then
                                           -- we know that all results should be in the broad table where
@@ -342,7 +342,7 @@ nonSpecialSelectExpr fSpec expr=
                                          case mapMaybe isI exprs of
                                           [] -> nonOptimizedIntersectSelectExpr
                                           esI@(hesI:tlesI) ->
-                                           case (exprs \\ (map fst esI)) \\ (map fst esR) of
+                                           case (exprs \\ map fst esI) \\ map fst esR of
                                             [] -> optimizedIntersectSelectExpr
                                             esRest@(hesRest:tlesRest) ->
                                               let part1 = makeIntersectSelectExpr (map fst esI <> map fst esR)
@@ -384,12 +384,12 @@ nonSpecialSelectExpr fSpec expr=
                                           --    esRest = (exprs \\ (map fst esI)) \\ (map fst esR)
                                               optimizedIntersectSelectExpr :: BinQueryExpr
                                               optimizedIntersectSelectExpr =
-                                                  BQEComment ([BlockComment "Optimized intersection:"
-                                                              ,BlockComment .T.unpack $ "   Expression: "<>(showA . foldr (./\.) hexprs $ tlexprs)
-                                                              ]
+                                                  BQEComment [BlockComment "Optimized intersection:"
+                                                             ,BlockComment .T.unpack $ "   Expression: "<>(showA . foldr (./\.) hexprs $ tlexprs)
+                                                             ]
                                                         --    <>map (showComment "esI") esI
                                                         --    <>map (showComment "esR") esR
-                                                            ) 
+                                                             
                                                   BSE { bseSetQuantifier = SQDefault
                                                       , bseSrc = Col { cTable = []
                                                                     , cCol   = [sqlAttConcept fSpec c]
@@ -439,7 +439,7 @@ nonSpecialSelectExpr fSpec expr=
                                                                    , cSpecial = Nothing}
                                                     , bseTbl = zipWith tableRef [0 ..] es
                                                     , bseWhr = Just . conjunctSQL . concatMap constraintsOfTailExpression $ 
-                                                                  [1..(length es)-1]     
+                                                                  [1.. length es-1]     
                                                     }
                                                  where
                                                   iSect :: Int -> Name
@@ -888,7 +888,7 @@ traceExprComment expr caseStr =
 atomVal2InSQL :: AAtomValue -> ValueExpr
 atomVal2InSQL val =
  case val of 
-   AAVString{}         -> StringLit . T.unpack $ (aavtxt val)
+   AAVString{}         -> StringLit . T.unpack $ aavtxt val
    AAVInteger _ int    -> NumLit (show int)
    AAVFloat _ d        -> NumLit (show d)
    AAVBoolean _ b      -> NumLit $ if b then "1" else "0"

@@ -1,5 +1,4 @@
-﻿{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE FlexibleInstances #-}
+﻿{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
@@ -92,7 +91,7 @@ removeAllDirectoryFiles dirPath = do
 getProperDirectoryContents :: FilePath -> RIO env [String]
 getProperDirectoryContents pth = 
     filter (`notElem` [".","..",".svn"]) 
-       <$> (liftIO $ getDirectoryContents pth)
+       <$> liftIO (getDirectoryContents pth)
 
 commentBlock :: [String]->[String]
 commentBlock ls = ["/*"<>replicate lnth '*'<>"*\\"]
@@ -131,7 +130,7 @@ addSlashes = T.pack . addSlashes' . T.unpack
     addSlashes' "" = ""
 
 showPhpStr :: Text -> Text
-showPhpStr txt = q<>(escapePhpStr txt)<>q
+showPhpStr txt = q<>escapePhpStr txt<>q
   where q = T.singleton '\''
 
 -- NOTE: we assume a single quote php string, so $ and " are not escaped

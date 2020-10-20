@@ -17,7 +17,7 @@ outputFileOptsParser defOutputFile =
        }
      ) <$> fSpecGenOptsParser False
        <*> outputfileP defOutputFile
-  where
+
 outputfileP :: FilePath -> Parser FilePath
 outputfileP defOutputFile = strArgument 
       (metavar "OUTPUTFILE" 

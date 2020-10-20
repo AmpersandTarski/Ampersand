@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.Population2Xlsx
   (fSpec2PopulationXlsx)
@@ -24,7 +25,7 @@ plugs2Sheets :: FSpec -> [(Text, Worksheet)]
 plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
   where
     plug2sheet :: PlugInfo -> Maybe (Text, Worksheet)
-    plug2sheet (InternalPlug plug) = fmap (\x -> (name plug,x)) sheet
+    plug2sheet (InternalPlug plug) = fmap (name plug,) sheet
       where 
        sheet :: Maybe Worksheet
        sheet = case matrix of
