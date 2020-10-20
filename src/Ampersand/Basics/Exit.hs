@@ -51,6 +51,8 @@ data AmpersandExit
   -- ^ Running some test yealded failed tests.
   | ViolationsInDatabase [(Text,[Text])]
   -- ^ The population in the script is not the same as the population in the generated database
+  | GraphVizNotInstalled
+  -- ^ Graphviz is not properly installed. 
 
 instance Exception AmpersandExit
 
@@ -90,6 +92,9 @@ info x =
               -> (SE.ExitFailure 130 , msg) -- Same magic number as used in Setup.hs
     PosAndNegChaptersSpecified msg 
               -> (SE.ExitFailure 150 , msg)
+    GraphVizNotInstalled
+              -> (SE.ExitFailure 160 , ["ERROR: Graphviz is not properly installed. Graphviz is required to generated images."
+                                       ,"   Please make sure you have Graphviz installed. See http://www.graphviz.org/ for instructions." ])
   where
     showViolatedRule :: (Text,[Text]) -> [Text]
     showViolatedRule (rule,pairs) = 
