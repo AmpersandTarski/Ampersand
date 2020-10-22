@@ -150,9 +150,7 @@ class HasVersion a where
 
 class HasProtoOpts env where
    protoOptsL :: Lens' env ProtoOpts
-   dbNameL   :: Lens' env (Maybe Text)
    forceReinstallFrameworkL :: Lens' env Bool
-   dbNameL   = protoOptsL . lens xdbName (\x y -> x { xdbName = y })
    forceReinstallFrameworkL
              = protoOptsL . lens xforceReinstallFramework (\x y -> x { xforceReinstallFramework = y })
 instance HasProtoOpts ProtoOpts where
@@ -249,9 +247,7 @@ data InputOutputOpts = InputOutputOpts
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
-   { xdbName :: !(Maybe Text)
-   -- ^ Name of the database that is generated as part of the prototype
-   , xforceReinstallFramework :: !Bool
+   { xforceReinstallFramework :: !Bool
    -- ^ when true, an existing prototype directory will be destroyed and re-installed
    , x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts

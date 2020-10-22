@@ -30,7 +30,6 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   [ "About" : I BOX
     [ "name"  : name[Context*ContextName]
 --    , "versionInfo" : versionInfo
---    , "dbName" : dbName
     , "valid~" : valid[Rule*Context]~
     ]
   , "Patterns" : context[Pattern*Context]~ BOX 

@@ -16,13 +16,12 @@ import qualified RIO.Text as T
 -- | Command-line parser for the proto command.
 protoOptsParser :: Parser ProtoOpts
 protoOptsParser = 
-   ( \dbName forceReinstall 
+   ( \forceReinstall 
         outputLanguage fSpecGenOpts 
         dirPrototype dirCustomizations 
         
         zwolleVersion generateFrontend generateBackend -> ProtoOpts
-            { xdbName = dbName
-            , xforceReinstallFramework = forceReinstall
+            { xforceReinstallFramework = forceReinstall
             , x1OutputLanguage = outputLanguage
             , x1fSpecGenOpts = fSpecGenOpts
             , xdirPrototype = dirPrototype 
@@ -31,18 +30,12 @@ protoOptsParser =
             , xgenerateFrontend = generateFrontend
             , xgenerateBackend = generateBackend
             }) 
-  <$> optional dbNameP <*> forceReinstallP
+  <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
   <*> optional dirPrototypeP <*> optional dirCustomizationsP
   <*> zwolleVersionP 
   <*> generateFrontendP <*> generateBackendP
 
-dbNameP :: Parser Text
-dbNameP = T.pack <$> strOption
-        ( long "dbName"
-        <> short 'd'
-        <> metavar "DATABASENAME"
-        <> help "Name of the schema of the database that is generated as part of the prototype. (defaults to name of your context)" )
 forceReinstallP :: Parser Bool
 forceReinstallP = switch
         ( long "force-reinstall-framework"

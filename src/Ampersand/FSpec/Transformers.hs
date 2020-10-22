@@ -178,9 +178,6 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , rul::Rule <- Set.elems $ ctxrs ctx
         ]
       )
-     ,("dbName"                , "Context"               , "DatabaseName"
-      , Set.empty  --TODO
-      )
      ,("declaredIn"            , "Relation"              , "Context" 
       , Set.fromList $
         [(dirtyId rel, dirtyId ctx) 

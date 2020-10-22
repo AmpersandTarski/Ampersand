@@ -138,10 +138,6 @@ even more complex than it already was.
   * ***--customizations=DIRECTORY***
           copy a directory into the generated prototype, overriding the
           default directory called 'customizations'.
-  * ***--dbName=NAME (-d)***
-          database name (This overrules environment variable CCdbName,
-          defaults to filename) to which the prototype will connect for
-          persistent storage.
   * ***--force-reinstall-framework***
           re-install the prototype framework. This discards any previously
           installed version.

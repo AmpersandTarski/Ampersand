@@ -119,9 +119,7 @@ showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
 tempDbName :: HasProtoOpts a => FSpec -> a -> Text
-tempDbName fSpec x = "TempDB_"<>case view dbNameL x of
-                                  Nothing -> name fSpec
-                                  Just nm -> nm
+tempDbName fSpec x = "TempDB_" <> name fSpec
 
 connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe Text-> [Text]
 connectToMySqlServerPHP x mDbName =
