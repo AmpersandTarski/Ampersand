@@ -153,12 +153,6 @@ even more complex than it already was.
           tag, branch or SHA of the prototype framework on Github. Normally you
           shouldn't need to change this. It refers to the version of the frontend
           code at <https://github.com/AmpersandTarski/prototype>.
-  * ***--sqlLogin=USER***
-          set SQL user name (Defaults to `ampersand`), to let your
-          application login to the database.
-  * ***--sqlPwd=PASSWORD***
-          set SQL password (Defaults to `ampersand`), to let your
-          application login to the database.
   * ***--version (-V)***
           show version and exit.
   

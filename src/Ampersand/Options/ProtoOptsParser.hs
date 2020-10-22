@@ -16,14 +16,12 @@ import qualified RIO.Text as T
 -- | Command-line parser for the proto command.
 protoOptsParser :: Parser ProtoOpts
 protoOptsParser = 
-   ( \dbName sqlLogin sqlPwd forceReinstall 
+   ( \dbName forceReinstall 
         outputLanguage fSpecGenOpts 
         dirPrototype dirCustomizations 
         
         zwolleVersion generateFrontend generateBackend -> ProtoOpts
             { xdbName = dbName
-            , xsqlLogin = sqlLogin
-            , xsqlPwd = sqlPwd
             , xforceReinstallFramework = forceReinstall
             , x1OutputLanguage = outputLanguage
             , x1fSpecGenOpts = fSpecGenOpts
@@ -33,7 +31,7 @@ protoOptsParser =
             , xgenerateFrontend = generateFrontend
             , xgenerateBackend = generateBackend
             }) 
-  <$> optional dbNameP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
+  <$> optional dbNameP <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
   <*> optional dirPrototypeP <*> optional dirCustomizationsP
   <*> zwolleVersionP 
@@ -45,20 +43,6 @@ dbNameP = T.pack <$> strOption
         <> short 'd'
         <> metavar "DATABASENAME"
         <> help "Name of the schema of the database that is generated as part of the prototype. (defaults to name of your context)" )
-sqlLoginP :: Parser Text
-sqlLoginP = T.pack <$> strOption
-        ( long "sqlLogin"
-        <> metavar "USER"
-        <> value "ampersand"
-        <> showDefault
-        <> help "Name of the database user." )
-sqlPwdP :: Parser Text
-sqlPwdP = T.pack <$> strOption
-        ( long "sqlPwd"
-        <> metavar "PASSWORD"
-        <> value "ampersand"
-        <> showDefault
-        <> help "Password for the database user." )
 forceReinstallP :: Parser Bool
 forceReinstallP = switch
         ( long "force-reinstall-framework"
