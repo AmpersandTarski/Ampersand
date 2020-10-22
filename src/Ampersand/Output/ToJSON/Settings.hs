@@ -8,7 +8,6 @@ import           Data.Hashable
 
 data Settings = Settings 
   { sngJSONglobal_contextName :: Text
-  , sngJSONmysql_dbHost       :: Text
   , sngJSONmysql_dbName       :: Text
   , sngJSONmysql_dbUser       :: Text
   , sngJSONmysql_dbPass       :: Text
@@ -21,7 +20,6 @@ instance ToJSON Settings where
 instance JSON' FSpec Settings where
  fromAmpersand' env fSpec _ = Settings 
   { sngJSONglobal_contextName = fsName fSpec
-  , sngJSONmysql_dbHost       = view sqlHostL env
   , sngJSONmysql_dbName       = case view dbNameL env of
                                   Nothing -> name fSpec
                                   Just nm -> nm

@@ -127,7 +127,7 @@ connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe Text-> [Text]
 connectToMySqlServerPHP x mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
-    , "$DB_host='"<>addSlashes (view sqlHostL x) <>"';"
+    , "$DB_host='localhost';"
     , "$DB_user='"<>addSlashes (view sqlLoginL x)<>"';"
     , "$DB_pass='"<>addSlashes (view sqlPwdL x)  <>"';"
     , ""

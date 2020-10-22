@@ -151,12 +151,10 @@ class HasVersion a where
 class HasProtoOpts env where
    protoOptsL :: Lens' env ProtoOpts
    dbNameL   :: Lens' env (Maybe Text)
-   sqlHostL  :: Lens' env Text
    sqlLoginL :: Lens' env Text
    sqlPwdL   :: Lens' env Text
    forceReinstallFrameworkL :: Lens' env Bool
    dbNameL   = protoOptsL . lens xdbName (\x y -> x { xdbName = y })
-   sqlHostL  = protoOptsL . lens xsqlHost (\x y -> x { xsqlHost = y })
    sqlLoginL = protoOptsL . lens xsqlLogin (\x y -> x { xsqlLogin = y })
    sqlPwdL   = protoOptsL . lens xsqlPwd (\x y -> x { xsqlPwd = y })
    forceReinstallFrameworkL
@@ -257,8 +255,6 @@ data InputOutputOpts = InputOutputOpts
 data ProtoOpts = ProtoOpts
    { xdbName :: !(Maybe Text)
    -- ^ Name of the database that is generated as part of the prototype
-   , xsqlHost ::  !Text
-   -- ^ do database queries to the specified host
    , xsqlLogin :: !Text
    -- ^ pass login name to the database server
    , xsqlPwd :: !Text

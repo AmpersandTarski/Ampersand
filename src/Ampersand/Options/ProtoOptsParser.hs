@@ -16,13 +16,12 @@ import qualified RIO.Text as T
 -- | Command-line parser for the proto command.
 protoOptsParser :: Parser ProtoOpts
 protoOptsParser = 
-   ( \dbName sqlHost sqlLogin sqlPwd forceReinstall 
+   ( \dbName sqlLogin sqlPwd forceReinstall 
         outputLanguage fSpecGenOpts 
         dirPrototype dirCustomizations 
         
         zwolleVersion generateFrontend generateBackend -> ProtoOpts
             { xdbName = dbName
-            , xsqlHost = sqlHost
             , xsqlLogin = sqlLogin
             , xsqlPwd = sqlPwd
             , xforceReinstallFramework = forceReinstall
@@ -34,7 +33,7 @@ protoOptsParser =
             , xgenerateFrontend = generateFrontend
             , xgenerateBackend = generateBackend
             }) 
-  <$> optional dbNameP <*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
+  <$> optional dbNameP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
   <*> optional dirPrototypeP <*> optional dirCustomizationsP
   <*> zwolleVersionP 
@@ -46,13 +45,6 @@ dbNameP = T.pack <$> strOption
         <> short 'd'
         <> metavar "DATABASENAME"
         <> help "Name of the schema of the database that is generated as part of the prototype. (defaults to name of your context)" )
-sqlHostP :: Parser Text
-sqlHostP = T.pack <$> strOption
-        ( long "sqlHost"
-        <> metavar "HOSTNAME"
-        <> value "localhost"
-        <> showDefault
-        <> help "Name of the host of the database." )
 sqlLoginP :: Parser Text
 sqlLoginP = T.pack <$> strOption
         ( long "sqlLogin"

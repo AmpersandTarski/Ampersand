@@ -153,9 +153,6 @@ even more complex than it already was.
           tag, branch or SHA of the prototype framework on Github. Normally you
           shouldn't need to change this. It refers to the version of the frontend
           code at <https://github.com/AmpersandTarski/prototype>.
-  * ***--sqlHost=HOSTNAME***
-          set SQL host name (Defaults to `localhost`), to identify the host
-          on which the persistent store resides
   * ***--sqlLogin=USER***
           set SQL user name (Defaults to `ampersand`), to let your
           application login to the database.
