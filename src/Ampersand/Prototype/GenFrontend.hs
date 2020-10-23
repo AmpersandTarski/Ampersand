@@ -14,9 +14,7 @@ import           Ampersand.Output.ToJSON.ToJson
 import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Runners (logLevel)
 import           Ampersand.Types.Config
-import           Codec.Archive.Zip
 import           Data.Hashable (hash)
-import           Network.HTTP.Simple
 import qualified RIO.ByteString.Lazy  as BL
 import qualified RIO.Text as T
 import qualified RIO.List as L
@@ -64,7 +62,7 @@ This is considered editable iff the composition rel;relRef yields an editable re
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasFSpecGenOpts env, HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
+doGenFrontend :: (HasFSpecGenOpts env, HasRunner env, HasDirPrototype env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     now <- getCurrentTime

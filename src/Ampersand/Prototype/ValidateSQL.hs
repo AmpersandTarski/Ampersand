@@ -5,7 +5,6 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
-import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.PHP
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -16,7 +15,7 @@ with the results from Haskell-based Ampersand rule evaluator. The latter is much
 therefore most likely to be correct in case of discrepancies.
 -}
 
-validateRulesSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec ->  RIO env [Text]
+validateRulesSQL :: (HasLogFunc env) => FSpec ->  RIO env [Text]
 validateRulesSQL fSpec = do
     case filter (not . isSignal . fst) (allViolations fSpec) of
        []    -> return()
@@ -89,7 +88,7 @@ showVExp :: (Expression, Text) -> Text
 showVExp (expr, orig) = "Origin: "<>orig<>", expression: "<>showA expr
 
 -- validate a single expression and report the results
-validateExp :: (HasProtoOpts env, HasLogFunc env) 
+validateExp :: (HasLogFunc env) 
          => FSpec
          -> Int -- total amount of expressions to be validated (for showing progress) 
          -> (ValidationExp -- The expression to be validated

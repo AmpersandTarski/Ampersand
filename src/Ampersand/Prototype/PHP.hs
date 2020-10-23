@@ -9,8 +9,6 @@ import           Ampersand.Basics
 import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
-import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
 import qualified RIO.Text as T
 import           System.Directory
@@ -37,14 +35,14 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec -> Text -> Expression ->  RIO env [(Text,Text)]
+evaluateExpSQL :: (HasLogFunc env) => FSpec -> Text -> Expression ->  RIO env [(Text,Text)]
 evaluateExpSQL fSpec dbNm expr = do
     env <- ask
     let violationsExpr = conjNF env expr
         violationsQuery = prettySQLQuery 26 fSpec violationsExpr
     performQuery dbNm violationsQuery
 
-performQuery :: (HasProtoOpts env, HasLogFunc env) =>
+performQuery :: (HasLogFunc env) =>
                 Text -> SqlQuery ->  RIO env [(Text,Text)]
 performQuery dbNm queryStr = do
     env <- ask
@@ -57,7 +55,7 @@ performQuery dbNm queryStr = do
            _            -> fatal ("Parse error on php result: \n"<>(T.unlines . map ("     " <>) . T.lines $ queryResult))
      
    where 
-    php :: HasProtoOpts env => env -> [Text]
+    php :: env -> [Text]
     php env =
       connectToMySqlServerPHP env (Just dbNm) <>
       [ "$sql="<>queryAsPHP queryStr<>";"
@@ -118,11 +116,11 @@ showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
-tempDbName :: HasProtoOpts a => FSpec -> a -> Text
-tempDbName fSpec x = "TempDB_" <> name fSpec
+tempDbName :: FSpec -> a -> Text
+tempDbName fSpec _ = "TempDB_" <> name fSpec
 
-connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe Text-> [Text]
-connectToMySqlServerPHP x mDbName =
+connectToMySqlServerPHP :: a -> Maybe Text-> [Text]
+connectToMySqlServerPHP _ mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
     , "$DB_host='root';"
@@ -161,7 +159,7 @@ connectToTheDatabasePHP =
     , ""
     ]
 
-createTempDatabase :: (HasProtoOpts env, HasLogFunc env) =>
+createTempDatabase :: (HasLogFunc env) =>
                       FSpec ->  RIO env Bool
 createTempDatabase fSpec = do
     env <- ask
@@ -185,7 +183,7 @@ createTempDatabase fSpec = do
     where
       withNumber :: (Int,Text) -> Text
       withNumber (n,t) = "/*"<>T.take (5-length(show n)) "00000"<>tshow n<>"*/ "<>t
-  phpStr :: (HasProtoOpts env) => env -> [Text]
+  phpStr :: env -> [Text]
   phpStr env = 
     connectToMySqlServerPHP env Nothing <>
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
