@@ -16,13 +16,11 @@ import qualified RIO.Text as T
 -- | Command-line parser for the proto command.
 protoOptsParser :: Parser ProtoOpts
 protoOptsParser = 
-   ( \forceReinstall 
-        outputLanguage fSpecGenOpts 
+   ( \  outputLanguage fSpecGenOpts 
         dirPrototype dirCustomizations 
         
         zwolleVersion generateFrontend generateBackend -> ProtoOpts
-            { xforceReinstallFramework = forceReinstall
-            , x1OutputLanguage = outputLanguage
+            { x1OutputLanguage = outputLanguage
             , x1fSpecGenOpts = fSpecGenOpts
             , xdirPrototype = dirPrototype 
             , xdirCustomizations = dirCustomizations
@@ -30,18 +28,11 @@ protoOptsParser =
             , xgenerateFrontend = generateFrontend
             , xgenerateBackend = generateBackend
             }) 
-  <$> forceReinstallP
-  <*> outputLanguageP <*> fSpecGenOptsParser False
+  <$> outputLanguageP <*> fSpecGenOptsParser False
   <*> optional dirPrototypeP <*> optional dirCustomizationsP
   <*> zwolleVersionP 
   <*> generateFrontendP <*> generateBackendP
 
-forceReinstallP :: Parser Bool
-forceReinstallP = switch
-        ( long "force-reinstall-framework"
-        <> help ("Re-install the prototype framework. This discards any previously "<>
-                "installed version.")
-        )
 dirPrototypeP :: Parser String
 dirPrototypeP = strOption
         ( long "proto-dir"

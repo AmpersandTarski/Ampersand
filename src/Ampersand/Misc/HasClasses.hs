@@ -150,9 +150,6 @@ class HasVersion a where
 
 class HasProtoOpts env where
    protoOptsL :: Lens' env ProtoOpts
-   forceReinstallFrameworkL :: Lens' env Bool
-   forceReinstallFrameworkL
-             = protoOptsL . lens xforceReinstallFramework (\x y -> x { xforceReinstallFramework = y })
 instance HasProtoOpts ProtoOpts where
    protoOptsL = id
    {-# INLINE protoOptsL #-}
@@ -247,9 +244,7 @@ data InputOutputOpts = InputOutputOpts
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
-   { xforceReinstallFramework :: !Bool
-   -- ^ when true, an existing prototype directory will be destroyed and re-installed
-   , x1OutputLanguage :: !(Maybe Lang)
+   { x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts
    , xdirPrototype :: !(Maybe FilePath)
    , xdirCustomizations :: !(Maybe [FilePath])
