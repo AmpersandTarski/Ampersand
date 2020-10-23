@@ -119,17 +119,15 @@ showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
 tempDbName :: HasProtoOpts a => FSpec -> a -> Text
-tempDbName fSpec x = "TempDB_"<>case view dbNameL x of
-                                  Nothing -> name fSpec
-                                  Just nm -> nm
+tempDbName fSpec x = "TempDB_" <> name fSpec
 
 connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe Text-> [Text]
 connectToMySqlServerPHP x mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
-    , "$DB_host='"<>addSlashes (view sqlHostL x) <>"';"
-    , "$DB_user='"<>addSlashes (view sqlLoginL x)<>"';"
-    , "$DB_pass='"<>addSlashes (view sqlPwdL x)  <>"';"
+    , "$DB_host='root';"
+    , "$DB_user='ampersand';"
+    , "$DB_pass='';"
     , ""
     ]<>
     (case mDbName of

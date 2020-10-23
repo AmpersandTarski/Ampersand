@@ -150,15 +150,7 @@ class HasVersion a where
 
 class HasProtoOpts env where
    protoOptsL :: Lens' env ProtoOpts
-   dbNameL   :: Lens' env (Maybe Text)
-   sqlHostL  :: Lens' env Text
-   sqlLoginL :: Lens' env Text
-   sqlPwdL   :: Lens' env Text
    forceReinstallFrameworkL :: Lens' env Bool
-   dbNameL   = protoOptsL . lens xdbName (\x y -> x { xdbName = y })
-   sqlHostL  = protoOptsL . lens xsqlHost (\x y -> x { xsqlHost = y })
-   sqlLoginL = protoOptsL . lens xsqlLogin (\x y -> x { xsqlLogin = y })
-   sqlPwdL   = protoOptsL . lens xsqlPwd (\x y -> x { xsqlPwd = y })
    forceReinstallFrameworkL
              = protoOptsL . lens xforceReinstallFramework (\x y -> x { xforceReinstallFramework = y })
 instance HasProtoOpts ProtoOpts where
@@ -255,15 +247,7 @@ data InputOutputOpts = InputOutputOpts
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
-   { xdbName :: !(Maybe Text)
-   -- ^ Name of the database that is generated as part of the prototype
-   , xsqlHost ::  !Text
-   -- ^ do database queries to the specified host
-   , xsqlLogin :: !Text
-   -- ^ pass login name to the database server
-   , xsqlPwd :: !Text
-   -- ^ pass password on to the database server
-   , xforceReinstallFramework :: !Bool
+   { xforceReinstallFramework :: !Bool
    -- ^ when true, an existing prototype directory will be destroyed and re-installed
    , x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts

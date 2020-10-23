@@ -138,10 +138,6 @@ even more complex than it already was.
   * ***--customizations=DIRECTORY***
           copy a directory into the generated prototype, overriding the
           default directory called 'customizations'.
-  * ***--dbName=NAME (-d)***
-          database name (This overrules environment variable CCdbName,
-          defaults to filename) to which the prototype will connect for
-          persistent storage.
   * ***--force-reinstall-framework***
           re-install the prototype framework. This discards any previously
           installed version.
@@ -153,15 +149,6 @@ even more complex than it already was.
           tag, branch or SHA of the prototype framework on Github. Normally you
           shouldn't need to change this. It refers to the version of the frontend
           code at <https://github.com/AmpersandTarski/prototype>.
-  * ***--sqlHost=HOSTNAME***
-          set SQL host name (Defaults to `localhost`), to identify the host
-          on which the persistent store resides
-  * ***--sqlLogin=USER***
-          set SQL user name (Defaults to `ampersand`), to let your
-          application login to the database.
-  * ***--sqlPwd=PASSWORD***
-          set SQL password (Defaults to `ampersand`), to let your
-          application login to the database.
   * ***--version (-V)***
           show version and exit.
   
