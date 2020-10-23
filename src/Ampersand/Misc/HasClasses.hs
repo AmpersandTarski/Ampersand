@@ -107,11 +107,6 @@ class HasShowWarnings a where
 instance HasDaemonOpts a => HasShowWarnings a where
   showWarningsL = daemonOptsL . lens xshowWarnings (\x y -> x { xshowWarnings = y })
 
-class HasDirCustomizations a where
-  dirCustomizationsL :: Lens' a (Maybe [FilePath]) -- the directories that are copied after generating the prototype
-instance HasDirCustomizations ProtoOpts where
-  dirCustomizationsL = lens xdirCustomizations (\x y -> x { xdirCustomizations = y })
-
 class HasDirOutput a where
   dirOutputL :: Lens' a FilePath -- the directory to generate the output in.
 
@@ -242,7 +237,6 @@ data ProtoOpts = ProtoOpts
    { x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts
    , xdirPrototype :: !(Maybe FilePath)
-   , xdirCustomizations :: !(Maybe [FilePath])
    , xgenerateFrontend :: !Bool
    , xgenerateBackend :: !Bool
   } deriving Show

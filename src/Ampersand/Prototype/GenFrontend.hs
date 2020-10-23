@@ -1,6 +1,6 @@
 ﻿{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, copyCustomizations) where
+module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend) where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -111,24 +111,6 @@ copyTemplates = do
          copyDirRecursively tempDir toDir -- recursively copy all templates
   else
          logDebug $ "No project specific templates (there is no directory " <> display (T.pack tempDir) <> ")"
-
-copyCustomizations :: (HasDirPrototype env, HasFSpecGenOpts env , HasDirCustomizations env,HasLogFunc env) =>
-                      RIO env ()
-copyCustomizations = do
-  env <- ask
-  dirCustomizations <- view dirCustomizationsL
-  let dirPrototype = getDirPrototype env
-  let custDirs = maybe [] (map (dirSource env </>)) dirCustomizations
-  mapM_ (copyDir dirPrototype) custDirs
-    where
-      copyDir :: (HasLogFunc env) =>
-                 FilePath -> FilePath -> RIO env()
-      copyDir targetDir sourceDir = do
-        sourceDirExists <- liftIO $ doesDirectoryExist sourceDir
-        if sourceDirExists then
-          do logDebug $ "Copying customizations from " <> display (T.pack sourceDir) <> " -> " <> display (T.pack targetDir)
-             copyDirRecursively sourceDir targetDir -- recursively copy all customizations
-        else logDebug $ "No customizations (there is no directory " <> display (T.pack sourceDir) <> ")"
 
 ------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
