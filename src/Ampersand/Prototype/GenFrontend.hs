@@ -69,7 +69,6 @@ doGenFrontend :: (HasFSpecGenOpts env, HasRunner env, HasProtoOpts env, HasZwoll
 doGenFrontend fSpec = do
     now <- getCurrentTime
     logInfo "Generating frontend..."
-    _ <- downloadPrototypeFramework
     copyTemplates
     feInterfaces <- buildInterfaces fSpec
     genViewInterfaces fSpec feInterfaces
@@ -507,100 +506,3 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
             doAttribute h = case tkval h of
                 Nothing ->  setAttribute (T.unpack $ tkkey h) True
                 Just val -> setAttribute (T.unpack $ tkkey h) val
-
-downloadPrototypeFramework :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
-                             RIO env Bool
-downloadPrototypeFramework = ( do 
-    env <- ask
-    let dirPrototype = getDirPrototype env
-    x <- extractionIsAllowed dirPrototype
-    zwolleVersion <- view zwolleVersionL
-    if x
-    then do
-      logDebug "Emptying folder to deploy prototype framework"
-      liftIO $ removeDirectoryRecursive dirPrototype
-      let url :: FilePath
-          url = "https://github.com/AmpersandTarski/Prototype/archive/"<>zwolleVersion<>".zip"
-      logDebug "Start downloading prototype framework."
-      response <- (parseRequest url >>= httpBS) `catch` \err ->  
-                          exitWith . FailedToInstallPrototypeFramework $
-                              [ "Error encountered during deployment of prototype framework:"
-                              , "  Failed to download "<>T.pack url
-                              , tshow (err :: SomeException)
-                              ]
-      let archive = removeTopLevelFolder 
-                  . toArchive 
-                  . BL.fromStrict 
-                  . getResponseBody $ response
-      logDebug "Start extraction of prototype framework."
-      runner <- view runnerL
-      let zipoptions = 
-               [OptVerbose | logLevel runner == LevelDebug]
-            <> [OptDestination dirPrototype]
-      (liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
-                          exitWith . FailedToInstallPrototypeFramework $
-                              [ "Error encountered during deployment of prototype framework:"
-                              , "  Failed to extract the archive found at "<>T.pack url
-                              , tshow (err :: SomeException)
-                              ]
-
-
-
-
-      let dest = dirPrototype </> ".frameworkSHA"  
-      (writeFileUtf8 dest . tshow . zComment $ archive) `catch` \err ->  
-                          exitWith . FailedToInstallPrototypeFramework $
-                              [ "Error encountered during deployment of prototype framework:"
-                              , "Archive seems valid: "<>T.pack url
-                              , "  Failed to write contents of archive to "<>T.pack dest
-                              , tshow (err :: SomeException)
-                              ]
-      return x
-    else return x
-  ) `catch` \err ->  -- git failed to execute
-         exitWith . FailedToInstallPrototypeFramework $
-            [ "Error encountered during deployment of prototype framework:"
-            , tshow (err :: SomeException)
-            ]
-            
-  where
-    removeTopLevelFolder :: Archive -> Archive
-    removeTopLevelFolder archive = 
-       archive{zEntries = mapMaybe removeTopLevelPath . zEntries $ archive}
-      where
-        removeTopLevelPath :: Entry -> Maybe Entry
-        removeTopLevelPath entry = 
-            case splitPath . eRelativePath $ entry of
-              []   -> fatal "Impossible"
-              [_]  -> Nothing
-              _:tl -> Just entry{eRelativePath = joinPath tl}
-
-    extractionIsAllowed :: (HasProtoOpts env, HasLogFunc env) =>
-                           FilePath ->  RIO env Bool
-    extractionIsAllowed destination = do
-      pathExist <- liftIO $ doesPathExist destination
-      destIsDirectory <- liftIO $ doesDirectoryExist destination 
-      if pathExist
-      then 
-          if destIsDirectory
-          then do 
-            dirContents <- liftIO $ listDirectory destination
-            if null dirContents
-            then return True
-            else do
-              forceReinstallFramework <- view forceReinstallFrameworkL
-              if forceReinstallFramework
-              then do
-            --    logWarn $ "This will delete all files in" <> displayShow destination
-            --    logWarn $ "Are you sure? y/n"
-            --    proceed <- promptUserYesNo
-                return True -- proceed
-              else redeployNotAllowed
-          else redeployNotAllowed
-      else return True
-      where redeployNotAllowed = do
-                logError $ "(Re)deploying prototype framework not allowed, because "<>
-                           "  "<>displayShow destination<>" isn't empty."
-                logInfo    "You could use the switch --force-reinstall-framework"
-                return False
-
