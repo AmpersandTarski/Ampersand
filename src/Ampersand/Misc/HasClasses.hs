@@ -112,11 +112,6 @@ class HasDirCustomizations a where
 instance HasDirCustomizations ProtoOpts where
   dirCustomizationsL = lens xdirCustomizations (\x y -> x { xdirCustomizations = y })
 
-class HasZwolleVersion a where
-  zwolleVersionL :: Lens' a FilePath -- the version in github of the prototypeFramework. can be a tagname, a branchname or a SHA
-instance HasZwolleVersion ProtoOpts where
-  zwolleVersionL = lens xzwolleVersion (\x y -> x { xzwolleVersion = y })
-
 class HasDirOutput a where
   dirOutputL :: Lens' a FilePath -- the directory to generate the output in.
 
@@ -248,7 +243,6 @@ data ProtoOpts = ProtoOpts
    , x1fSpecGenOpts :: !FSpecGenOpts
    , xdirPrototype :: !(Maybe FilePath)
    , xdirCustomizations :: !(Maybe [FilePath])
-   , xzwolleVersion :: !FilePath
    , xgenerateFrontend :: !Bool
    , xgenerateBackend :: !Bool
   } deriving Show
