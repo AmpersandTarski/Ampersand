@@ -11,7 +11,6 @@ import           Ampersand.Options.Utils
 import           Ampersand.Options.FSpecGenOptsParser
 import           Data.List.Split (splitWhen)
 import           Options.Applicative
-import qualified RIO.Text as T
 
 -- | Command-line parser for the proto command.
 protoOptsParser :: Parser ProtoOpts
