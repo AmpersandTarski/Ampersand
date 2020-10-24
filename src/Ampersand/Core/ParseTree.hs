@@ -771,7 +771,7 @@ data P_ViewSegmtPayLoad a
                     | P_ViewText { vs_txt :: Text }
                       deriving (Show)
 
-newtype HtmlTemplateSpec = HtmlTemplateSpec
+data HtmlTemplateSpec = HtmlTemplateSpec
    { pos :: !Origin
    , vhtFile :: !FilePath
    , vhtKeyVals :: [TemplateKeyValue]
