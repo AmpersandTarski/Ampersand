@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Prototype.TableSpec
     ( TableSpec(tsCmnt)
@@ -144,10 +143,10 @@ insertQuery withComments tableName attNames tblRecords
         "INSERT INTO "<>doubleQuote tableName
      <> " ("<>T.intercalate ", " (NE.toList $ fmap  doubleQuote attNames) <>")"
      <> " VALUES "
-     <> (T.intercalate ", " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+     <> T.intercalate ", " [ "(" <>valuechain md<> ")" | md<-tblRecords]
   where
     valuechain :: SomeValue val => [Maybe val] -> Text
-    valuechain record = T.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> repr val | att<-record]
+    valuechain record = T.intercalate ", " [maybe "NULL" repr att | att<-record]
 
 class SomeValue a where
   repr :: a -> Text
@@ -159,7 +158,7 @@ instance SomeValue Text where
 tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec = 
  createTableSql withComment tSpec :
- [SqlQuerySimple $ 
+ [SqlQuerySimple 
     ( "CREATE INDEX "<> tshow (tsName tSpec<>"_"<>tshow i)
     <>" ON "<>tshow (tsName tSpec) <> " ("
     <> (tshow . fsname $ fld)<>")"

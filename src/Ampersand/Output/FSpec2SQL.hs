@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.FSpec2SQL
   (dumpSQLqueries,databaseStructureSql)
@@ -50,11 +49,9 @@ dumpSQLqueries env fSpec
           showObjDef obj
             = (header . showA . objExpression) obj
             <>[queryAsSQL . prettySQLQueryWithPlaceholder 2 fSpec . objExpression $ obj]
-            <>case objmsub obj of
-                 Nothing  -> []
-                 Just sub -> showSubInterface sub
+            <>maybe [] showSubInterface (objmsub obj)
             <>header ("Broad query for the object at " <> (T.pack . show . origin) obj)
-            <>[prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
+            <>[prettyBroadQueryWithPlaceholder 2 fSpec obj]
           showSubInterface :: SubInterface -> [Text]
           showSubInterface sub = 
             case sub of 

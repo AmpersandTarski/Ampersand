@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
-{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Conjuncts 
   (Conjuncts)
 where
@@ -9,7 +8,8 @@ import           Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import           Ampersand.Output.ToJSON.JSONutils 
 import qualified RIO.NonEmpty as NE
 
-data Conjuncts = Conjuncts [JSONConjunct] deriving (Generic, Show)
+newtype Conjuncts = Conjuncts [JSONConjunct]
+  deriving (Generic, Show)
 data JSONConjunct = JSONConjunct
   { cnjJSONid                 :: Text
   , cnjJSONsignalRuleNames    :: [Text]

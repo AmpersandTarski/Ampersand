@@ -38,9 +38,9 @@ rulesFromIdentity identity
        foldr (./\.) h t 
         .|-. EDcI (idCpt identity)
  {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}
- where (h NE.:| t) = fmap (\expr-> expr .:. flp expr) 
-                    . fmap (objExpression . segment) 
-                    . identityAts $ identity
+ where (h NE.:| t) =  fmap ((\ expr -> expr .:. flp expr) . objExpression . segment) 
+                    . identityAts
+                    $ identity
        meaningEN :: Text
        meaningEN = "Identity rule" <> ", following from identity "<>name identity
        meaningNL = "Identiteitsregel" <> ", volgend uit identiteit "<>name identity

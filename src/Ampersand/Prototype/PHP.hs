@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.PHP 
          ( evaluateExpSQL
@@ -120,17 +119,15 @@ showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
 tempDbName :: HasProtoOpts a => FSpec -> a -> Text
-tempDbName fSpec x = "TempDB_"<>case view dbNameL x of
-                                  Nothing -> name fSpec
-                                  Just nm -> nm
+tempDbName fSpec x = "TempDB_" <> name fSpec
 
 connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe Text-> [Text]
 connectToMySqlServerPHP x mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
-    , "$DB_host='"<>addSlashes (view sqlHostL x) <>"';"
-    , "$DB_user='"<>addSlashes (view sqlLoginL x)<>"';"
-    , "$DB_pass='"<>addSlashes (view sqlPwdL x)  <>"';"
+    , "$DB_host='root';"
+    , "$DB_user='ampersand';"
+    , "$DB_pass='';"
     , ""
     ]<>
     (case mDbName of
@@ -184,13 +181,13 @@ createTempDatabase fSpec = do
     return (T.null result)
  where 
   lineNumbers :: [Text] -> [Text]
-  lineNumbers = map withNumber . zip [1..]
+  lineNumbers = zipWith (curry withNumber) [1 .. ]
     where
       withNumber :: (Int,Text) -> Text
       withNumber (n,t) = "/*"<>T.take (5-length(show n)) "00000"<>tshow n<>"*/ "<>t
   phpStr :: (HasProtoOpts env) => env -> [Text]
   phpStr env = 
-    (connectToMySqlServerPHP env Nothing) <>
+    connectToMySqlServerPHP env Nothing <>
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
     , ""
     , "    /* file_per_table is required for long columns */"
@@ -247,10 +244,10 @@ createTempDatabase fSpec = do
     where
       dropDB :: SqlQuery 
       dropDB = SqlQuerySimple $
-           "DROP DATABASE "<>(singleQuote $ tempDbName fSpec env)
+           "DROP DATABASE "<>singleQuote (tempDbName fSpec env)
       createDB :: SqlQuery
       createDB = SqlQuerySimple $
-           "CREATE DATABASE "<>(singleQuote $ tempDbName fSpec env)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
+           "CREATE DATABASE "<>singleQuote (tempDbName fSpec env)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []

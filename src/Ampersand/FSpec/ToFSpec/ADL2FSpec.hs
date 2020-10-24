@@ -37,7 +37,7 @@ makeFSpec env context
                                     , view genInterfacesL env]  -- generated interfaces
               , fDeriveProofs = deriveProofs env context 
               , fRoleRuls    = L.nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
-                                   | rule <- Set.elems $ allrules
+                                   | rule <- Set.elems allrules
                                    , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
@@ -68,7 +68,7 @@ makeFSpec env context
               , getDefaultViewForConcept = getDefaultViewForConcept'
               , getAllViewsForConcept = getAllViewsForConcept'
               , conceptDefs  = ctxcds context
-              , fSexpls      = ctxps context <> (concatMap ptxps $ patterns context)
+              , fSexpls      = ctxps context <> concatMap ptxps (patterns context)
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
@@ -81,7 +81,7 @@ makeFSpec env context
               , pairsInExpr  = pairsinexpr
               , applyViolText = apply_viol_text
               , allViolations  = [ (r,vs)
-                                 | r <- Set.elems $ allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
+                                 | r <- Set.elems allrules
                                  , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context `Set.union` expressionsIn allConjs
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
@@ -308,15 +308,17 @@ makeFSpec env context
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal relations are excluded)
      cRels = Set.elems $
-             (              Set.filter      isTot                     $ toconsider) `Set.union`
+              Set.filter isTot toconsider 
+                `Set.union`
              (Set.map flp . Set.filter (not.isTot) . Set.filter isSur $ toconsider)
-       where toconsider = Set.map EDcD $ calculatedDecls
+       where toconsider = Set.map EDcD calculatedDecls
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal relations are excluded)
      dRels = Set.elems $
-             (              Set.filter      isInj                     $ toconsider) `Set.union`
+              Set.filter isInj toconsider
+                `Set.union`
              (Set.map flp . Set.filter (not.isInj) . Set.filter isUni $ toconsider)
-       where toconsider = Set.map EDcD $ calculatedDecls
+       where toconsider = Set.map EDcD calculatedDecls
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths,maxInjPaths :: [NE.NonEmpty Expression]
      maxTotPaths = map (NE.:|[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
@@ -485,8 +487,8 @@ tblcontents ci ps plug
          f:fs -> (L.nub . L.transpose)
                  ( map Just (Set.elems cAtoms)
                  : [case fExp of
-                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-Set.elems $ cAtoms ]
-                       _      -> [ (lkp att a . fullContents ci ps) fExp | a<-Set.elems $ cAtoms ]
+                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-Set.elems cAtoms ]
+                       _      -> [ (lkp att a . fullContents ci ps) fExp | a<-Set.elems cAtoms ]
                    | att<-fs, let fExp=attExpr att
                    ]
                  )

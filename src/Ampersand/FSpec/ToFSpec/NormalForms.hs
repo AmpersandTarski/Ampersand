@@ -306,11 +306,7 @@ dSteps drs x = dStps x
              }
      | (pre,l,post) <- splitList ls
      , dstep <- dStps l]
-     where dist :: Int -> [RTerm] -> [[[RTerm]]]
-           dist 1 es = [[es]]
-           dist 2 es = [ [ take i es , drop i es ] | i<-[1..length es-1] ]
-           dist n es = [ init ds<>st | ds<-dist (n-1) es, let staart=last ds, length staart>=2, st<-dist 2 staart ]
-           segments :: Int -> [([RTerm],[[RTerm]],[RTerm])]
+     where segments :: Int -> [([RTerm],[[RTerm]],[RTerm])]
            segments n
             = [ ([], ds, []) | ds<-dist n ls] <>
               [ (head ds, tail ds, []) | ds<-dist (n+1) ls ] <>
@@ -337,8 +333,8 @@ dSteps drs x = dStps x
      , let subExprs = s `Set.difference` sameTrms               -- { '1', aap, aap\noot, mies;vuur }
      , let toMatchs = (subTerms `Set.difference` sameTrms) `Set.difference` termVars -- e.g. toMatchs = { p\q }
      , let n=Set.size toMatchs -- each element of toMatchs can be matched to one subTerm from subExprs.
-     , (matchCandidates,rest)<-separate n subExprs              -- e.g. matchCandidates = {aap\noot} and rest={ '1', aap, mies;vuur }
      , let m=Set.size termVars -- each variable in subTerms must be matched to one subset from rest.
+     , (matchCandidates,rest)<-separate n subExprs              -- e.g. matchCandidates = {aap\noot} and rest={ '1', aap, mies;vuur }
      , (restSets,remainder)<-partsplus m rest                   -- e.g. restSets={ {'1', aap, mies;vuur} }
      , let restTerms = Set.map (flatSet . Set.toList) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
      , Set.null restTerms ||
@@ -740,25 +736,25 @@ substitute ruleDoc unifier term
     subs (RKl1 e  )   = RKl1 (subs e)
     subs (RFlp e  )   = RFlp (subs e)
     subs (RCpl e  )   = RCpl (subs e)
-    subs (RVar r _ _) = case [ e | (v,e)<-Set.toList unifier, v==r] of
+    subs (RVar r _ _) = case substExprs r of
                            [e] -> e
                            [] ->  fatal ("Rule:  "<>ruleDoc<>"\nVariable "<>r<>" is not in term "<>showIT term<> " using unifier "<>tshow unifier)
                            -- e.g. Variable r is not in term -V[A*B] /\ r[A*B] using unifier fromList [("A",RId Verzoek),("B",RId Persoon)]
-                           es ->  fatal ("Rule:  "<>ruleDoc<>"\nVariable "<>r<>" in term "<>showIT term<>" has been bound to multiple expressions:\n   "<>T.intercalate "\n   " [showIT e | e<-es])
-    subs (RId c)      = case [ e | (v,e)<-Set.toList unifier, v==name c] of
+                           es ->  fatal ("Rule:  "<>ruleDoc<>"\nVariable "<>r<>" in term "<>showIT term<>" has been bound to multiple expressions:\n   "<>T.intercalate "\n   " (map showIT es))
+    subs (RId c)      = case substExprs (name c) of
                            [e] -> e  -- This is e@(RId c')
                            []  -> fatal ("Rule:  "<>ruleDoc<>"\nVariable "<>name c<>" is not in term "<>showIT term)
-                           es  -> fatal ("Rule:  "<>ruleDoc<>"\nVariable "<>name c<>" in term "<>showIT term<>" has been bound to multiple expressions:\n   "<>T.intercalate "\n   " [showIT e | e<-es])
-    subs (RVee s t)   = case ([ e | (v,e)<-Set.toList unifier, v==name s], [ e | (v,e)<-Set.toList unifier, v==name t]) of
+                           es  -> fatal ("Rule:  "<>ruleDoc<>"\nVariable "<>name c<>" in term "<>showIT term<>" has been bound to multiple expressions:\n   "<>T.intercalate "\n   " (map showIT es))
+    subs (RVee s t)   = case (substExprs (name s), substExprs (name t)) of
                            ([RId s'], [RId t']) -> RVee s' t'
                            (_,_)  -> fatal ("Rule:  "<>ruleDoc<>"\nSomething wrong with RVee in term "<>showIT term<>" with unifier "<>tshow unifier)
-    subs (RAtm a c)   = case [ e | (v,e)<-Set.toList unifier, v==name c] of
+    subs (RAtm a c)   = case substExprs (name c) of
                            [RId c'] -> RAtm a c'
                            []  -> fatal ("Rule:  "<>ruleDoc<>"\nVariable "<>name c<>" is not in term "<>showIT term)
-                           es  -> fatal ("Rule:  "<>ruleDoc<>"\nVariable "<>name c<>" in term "<>showIT term<>" has been bound to multiple expressions:\n   "<>T.intercalate "\n   " [showIT e | e<-es])
+                           es  -> fatal ("Rule:  "<>ruleDoc<>"\nVariable "<>name c<>" in term "<>showIT term<>" has been bound to multiple expressions:\n   "<>T.intercalate "\n   " (map showIT es))
     subs e@RConst{}   = e
 --     subs t            = fatal ("Rule:  "<>ruleDoc<>"\nError: "<>showIT t<>"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
-
+    substExprs x = [ e | (v,e)<-Set.toList unifier, v==x]
 flat :: (RTerm -> Bool) -> [RTerm] -> [RTerm]
 flat isrComb ls
  = case ls of
@@ -813,28 +809,7 @@ matchLists rCombinator es es'
    , unif<-mix [ matches l r | (l,r)<-safezip es subTerms ]
    , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
    ]
-   where
-     dist :: Int -> [a] -> [[[a]]]
-     dist 1 ls = [[ls]]
-     dist 2 ls = [ [ take i ls , drop i ls ] | i<-[1..length ls-1] ]
-     dist n ls = [ init ds<>st | ds<-dist (n-1) ls, let staart=last ds, length staart>=2, st<-dist 2 staart ]
-     {- examples:
-     dist 1 "abcd" = [["abcd"]]
-     dist 2 "abcd" = [["a","bcd"],["ab","cd"],["abc","d"]]
-     dist 3 "abcd" = [["a","b","cd"],["a","bc","d"],["ab","c","d"]]
-     dist 3 "abcdef" =
-        [ ["a","b","cdef"]
-        , ["a","bc","def"]
-        , ["a","bcd","ef"]
-        , ["a","bcde","f"]
-        , ["ab","c","def"]
-        , ["ab","cd","ef"]
-        , ["ab","cde","f"]
-        , ["abc","d","ef"]
-        , ["abc","de","f"]
-        , ["abcd","e","f"]
-        ]
-     -}
+
 mix :: [[Unifier]] -> [Unifier]
 mix (ls:lss) = [ Set.union e str | e<-ls, str<-mix lss ]
 mix []       = [Set.empty]
@@ -1371,7 +1346,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
       | t/=l || f/=r
            = (t .\/. f, steps<>steps', fEqu [equ',equ''])
       | or [length cl>1 |cl<-NE.toList absorbClasses]   -- yields False if absorbClasses is empty
-           = ( foldr1 (.\/.) (fmap NE.head absorbClasses)  -- cl cannot be empty, because it is made by eqClass
+           = ( foldr1 (.\/.) (fmap NE.head absorbClasses)  
              , [shw e<>" \\/ "<>shw e<>" = "<>shw e | cl<-NE.toList absorbClasses, length cl>1, let e=NE.head cl]
              , "<=>"
              )
@@ -1501,11 +1476,11 @@ isEIsc EIsc{}  = True
 isEIsc _       = False
 
 conjuncts :: env -> Rule -> NE.NonEmpty Expression
-conjuncts env r = exprIsc2list
+conjuncts env = exprIsc2list
                --  . (\e -> trace ("conjNF of that expression: "<>show e) e)
-                 . conjNF env
+               . conjNF env
                --  . (\e -> trace ("FormalExpression: "<>show e) e)
-                 . formalExpression $ r
+               . formalExpression
 
 allShifts :: env -> DnfClause -> [DnfClause]
 allShifts env conjunct =  map NE.head.eqClass (==).filter pnEq.map normDNF $ (shiftL conjunct<>shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
@@ -1692,3 +1667,27 @@ last = fromMaybe (fatal "Illegal use of last") . L.lastMaybe
 tail,init :: [a] -> [a]
 tail = fromMaybe (fatal "Illegal use of tail") . L.tailMaybe
 init = fromMaybe (fatal "Illegal use of init") . L.initMaybe
+
+-- | dist will return all possible splits of a given list into n parts, such that the concatenation of the parts
+--   will result in the original list.
+dist :: Int -> [a] -> [[[a]]]
+dist 1 ls = [[ls]]
+dist 2 ls = [ [ take i ls , drop i ls ] | i<-[1..length ls-1] ]
+dist n ls = [ init ds<>st | ds<-dist (n-1) ls, let staart=last ds, length staart>=2, st<-dist 2 staart ]
+     {- examples:
+     dist 1 "abcd" = [["abcd"]]
+     dist 2 "abcd" = [["a","bcd"],["ab","cd"],["abc","d"]]
+     dist 3 "abcd" = [["a","b","cd"],["a","bc","d"],["ab","c","d"]]
+     dist 3 "abcdef" =
+        [ ["a","b","cdef"]
+        , ["a","bc","def"]
+        , ["a","bcd","ef"]
+        , ["a","bcde","f"]
+        , ["ab","c","def"]
+        , ["ab","cd","ef"]
+        , ["ab","cde","f"]
+        , ["abc","d","ef"]
+        , ["abc","de","f"]
+        , ["abcd","e","f"]
+        ]
+     -}

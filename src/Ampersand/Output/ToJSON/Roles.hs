@@ -1,14 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Roles 
     (Roles)
 where
 import           Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.Set as Set
 
-data Roles = Roles [RoleJson] deriving (Generic, Show)
+newtype Roles = Roles [RoleJson] deriving (Generic, Show)
 data RoleJson = RoleJson
   { roleJSONid         :: Text
   , roleJSONname       :: Text

@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+﻿{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.ADL1.Lexer
@@ -190,7 +190,7 @@ mainLexer p cs@(c:s)
 -----------------------------------------------------------
 
 locatein :: Ord a => [a] -> a -> Bool
-locatein es e = elem e (Set.fromList es)
+locatein es e = e `elem` Set.fromList es
 
 iskw :: String -> Bool
 iskw = locatein keywords
@@ -421,7 +421,7 @@ getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
                                       | val >= 0 && val <= ord (maxBound :: Char) -> (Just (Partial.chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
-                                    _  -> fatal $ "Impossible! first char is a digit.. "<>(T.take 40 $ T.pack s)
+                                    _  -> fatal $ "Impossible! first char is a digit.. "<>T.take 40 (T.pack s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)
                     | otherwise = case x `lookup` cntrChars of
                                  Nothing -> (Nothing,0,s)

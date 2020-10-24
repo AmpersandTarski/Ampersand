@@ -40,7 +40,7 @@ add a b = TestResults
 regressionTest :: (HasTestOpts env, HasRunner env) => RIO env ()
 regressionTest = do 
     testOpts <- view testOptsL
-    baseDir <- liftIO . makeAbsolute $ rootTestDir $ testOpts
+    baseDir <- liftIO . makeAbsolute $ rootTestDir testOpts
     runConduit $ walkDirTree baseDir .| numberIt .| doTestsInDir .| sumarize
   
 walkDirTree :: FilePath -> ConduitT () (Int -> DirData) (RIO env) ()
@@ -146,11 +146,11 @@ doTestsInDir = awaitForever once
               where
                 loop :: (HasLogFunc env) => TestResults -> ConduitT TestResults Void (RIO env) TestResults
                 loop sofar = await >>= maybe (return sofar)
-                                            (\result -> loop $! (add sofar result)) 
+                                            (\result -> loop $! add sofar result)
         parseYaml ::  RIO env (Either ParseException TestInfo) 
         parseYaml = liftIO $ decodeFileEither $ path x </> yaml
     sayInstruction :: HasLogFunc env => TestInstruction -> RIO env ()
-    sayInstruction x = logDebug $ indent <> "  Command: "<>(display $ command x)<>if exitcode x == 0 then " (should succeed)." else " (should fail with exitcode "<>display (exitcode x)<>")."
+    sayInstruction x = logDebug $ indent <> "  Command: "<>display (command x)<>if exitcode x == 0 then " (should succeed)." else " (should fail with exitcode "<>display (exitcode x)<>")."
     indent :: IsString a => a
     indent = "    "
 
@@ -165,12 +165,12 @@ sumarize = do
   where
    loop :: (HasLogFunc env) => TestResults -> ConduitT TestResults Void (RIO env) ()
    loop sofar = 
-     await >>= maybe finalize (\x -> loop $! (add sofar x)) 
+     await >>= maybe finalize (\x -> loop $! add sofar x)
      where finalize = do
              logInfo $ displayShow (successes sofar) <>" regression tests succeeded." 
              logError $ displayShow (failures sofar) <>" regression tests failed."
              if failures sofar == 0
-             then logInfo $ "Regression test of all scripts succeeded."
+             then logInfo "Regression test of all scripts succeeded."
              else exitWith (SomeTestsFailed ["Regression test failed!"])
 
 
@@ -179,7 +179,7 @@ yaml :: FilePath
 yaml = "testinfo.yaml"  -- the required name of the file that contains the test info for this directory.
 -- This data structure is directy available in .yaml files. Be aware that modification will have consequences for the 
 -- yaml files in the test suite.
-data TestInfo = TestInfo 
+newtype TestInfo = TestInfo 
    { testCmds :: [TestInstruction]
    }deriving Generic
 instance FromJSON TestInfo
@@ -203,7 +203,7 @@ testAdlfile indent dir adl tinfo = do
            proc h (tl<>[adl]) readProcess 
         
   let testPassed = case exit_code of
-        (ExitSuccess  ) -> exitcode tinfo == 0
+        ExitSuccess     -> exitcode tinfo == 0
         (ExitFailure x) -> exitcode tinfo == x
   (if testPassed then passHandler else failHandler)(exit_code, out, err)
   return testPassed
@@ -218,7 +218,7 @@ testAdlfile indent dir adl tinfo = do
                                          then "ExitSuccess" 
                                          else "ExitFailure "<>display (exitcode tinfo)
                                        )
-                     <>", Actual: "<>(display $ tshow exit_code)<>")"
+                     <>", Actual: "<>display (tshow exit_code)<>")"
           mapM_ (logWarn  . indnt) . toUtf8Builders $ out
           mapM_ (logError . indnt) . toUtf8Builders $ err
      indnt :: Utf8Builder -> Utf8Builder

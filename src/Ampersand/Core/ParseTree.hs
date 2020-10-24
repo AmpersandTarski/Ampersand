@@ -1,7 +1,6 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+﻿{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings#-}
 module Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
@@ -428,8 +427,9 @@ instance Functor P_BoxItem where fmap = fmapDefault
 instance Foldable P_BoxItem where foldMap = foldMapDefault
 instance Traversable P_BoxItem where
  traverse f (P_BxExpr nm pos' ctx mCrud mView msub)
-  = (\ctx' msub'->(P_BxExpr nm pos' ctx' mCrud mView msub')) <$>
-     traverse f ctx <*> traverse (traverse f) msub
+  = (\ctx' msub'-> P_BxExpr nm pos' ctx' mCrud mView msub') 
+       <$> traverse f ctx
+       <*> traverse (traverse f) msub
  traverse _ (P_BxTxt  nm pos' str) = pure (P_BxTxt  nm pos' str)
 
 instance Traced TermPrim where
@@ -482,7 +482,7 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
-data PairView a = PairView { ppv_segs :: NE.NonEmpty (PairViewSegment a) } deriving (Show, Typeable, Eq, Generic)
+newtype PairView a = PairView { ppv_segs :: NE.NonEmpty (PairViewSegment a) } deriving (Show, Typeable, Eq, Generic)
 instance Hashable a => Hashable (PairView a)
 instance Traced a => Traced (PairView a) where
   origin = origin . NE.head . ppv_segs
@@ -616,7 +616,7 @@ instance Named P_Interface where
 instance Traced P_Interface where
  origin = pos
 
-data P_IClass = P_IClass { iclass_name :: Text } deriving (Eq, Ord, Show)
+newtype P_IClass = P_IClass { iclass_name :: Text } deriving (Eq, Ord, Show)
 
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
@@ -721,7 +721,7 @@ instance Traversable P_IdentSegmnt where
   traverse f (P_IdentExp x) = P_IdentExp <$> traverse f x
 
 type P_IdentSegment = P_IdentSegmnt TermPrim
-data P_IdentSegmnt a
+newtype P_IdentSegmnt a
               = P_IdentExp  { ks_obj :: P_BoxItem a}
                 deriving (Eq, Ord, Show)
 
@@ -733,7 +733,7 @@ data P_ViewD a =
               , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept
               , vd_html :: Maybe HtmlTemplateSpec -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
-              , vd_ats :: [(P_ViewSegment a)] -- ^ the constituent segments of this view.
+              , vd_ats :: [P_ViewSegment a] -- ^ the constituent segments of this view.
               } deriving (Show)
 instance Ord (P_ViewD a) where
  compare a b = case compare (name a) (name b) of
@@ -771,7 +771,7 @@ data P_ViewSegmtPayLoad a
                     | P_ViewText { vs_txt :: Text }
                       deriving (Show)
 
-data HtmlTemplateSpec = HtmlTemplateSpec
+newtype HtmlTemplateSpec = HtmlTemplateSpec
    { pos :: !Origin
    , vhtFile :: !FilePath
    , vhtKeyVals :: [TemplateKeyValue]
@@ -959,8 +959,8 @@ mergeContexts ctx1 ctx2 =
                                   && p_mbSign x == p_mbSign y
              mergePopsSameType :: NE.NonEmpty P_Population -> P_Population
              mergePopsSameType (h :| tl) = case h of
-                P_RelPopu{} -> h {p_popps = Set.toList . Set.unions $ (map (Set.fromList . p_popps) (h:tl))}
-                P_CptPopu{} -> h {p_popas = Set.toList . Set.unions $ (map (Set.fromList . p_popas) (h:tl))}
+                P_RelPopu{} -> h {p_popps = Set.toList . Set.unions . map (Set.fromList . p_popps) $ (h:tl)}
+                P_CptPopu{} -> h {p_popas = Set.toList . Set.unions . map (Set.fromList . p_popas) $ (h:tl)}
 
       -- | Left-biased choice on maybes
       orElse :: Maybe a -> Maybe a -> Maybe a

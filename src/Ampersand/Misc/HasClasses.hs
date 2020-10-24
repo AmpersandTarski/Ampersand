@@ -11,11 +11,11 @@ import RIO.FilePath
 class HasFSpecGenOpts a where
   fSpecGenOptsL :: Lens' a FSpecGenOpts
   sqlBinTablesL :: Lens' a Bool
-  sqlBinTablesL = fSpecGenOptsL . (lens xsqlBinTables (\x y -> x { xsqlBinTables = y }))
+  sqlBinTablesL = fSpecGenOptsL . lens xsqlBinTables (\x y -> x { xsqlBinTables = y })
   genInterfacesL :: Lens' a Bool -- 
-  genInterfacesL = fSpecGenOptsL . (lens xgenInterfaces (\x y -> x { xgenInterfaces = y }))
+  genInterfacesL = fSpecGenOptsL . lens xgenInterfaces (\x y -> x { xgenInterfaces = y })
   namespaceL :: Lens' a Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
-  namespaceL = fSpecGenOptsL . (lens xnamespace (\x y -> x { xnamespace = y }))
+  namespaceL = fSpecGenOptsL . lens xnamespace (\x y -> x { xnamespace = y })
   defaultCrudL :: Lens' a (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
   trimXLSXCellsL :: Lens' a Bool
@@ -56,17 +56,14 @@ class (HasRootFile a) => HasDirPrototype a where
   getGenericsDir x = 
     getDirPrototype x </> "generics" 
   getDirPrototype :: a -> FilePath
-  getDirPrototype x =
-    (case view dirPrototypeL x of
-       Nothing -> defaultDirPrototype
-       Just nm -> nm )
+  getDirPrototype x = fromMaybe defaultDirPrototype . view dirPrototypeL $ x
 instance HasDirPrototype ProtoOpts where
   dirPrototypeL = lens xdirPrototype (\x y -> x { xdirPrototype = y })
 
 class HasAllowInvariantViolations a where
   allowInvariantViolationsL :: Lens' a Bool
 instance (HasFSpecGenOpts a) => HasAllowInvariantViolations a where
-  allowInvariantViolationsL = fSpecGenOptsL . (lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y }))
+  allowInvariantViolationsL = fSpecGenOptsL . lens xallowInvariantViolations (\x y -> x { xallowInvariantViolations = y })
 class HasGenerateFrontend a where
   generateFrontendL :: Lens' a Bool
 instance HasGenerateFrontend ProtoOpts where
@@ -80,15 +77,19 @@ instance HasGenerateBackend ProtoOpts where
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
   baseName :: a -> FilePath
-  baseName  = fromMaybe (fatal "Cannot determine the basename of the script that is being compiled")
-            . fmap takeBaseName
-            . view rootFileL
+  baseName  = 
+    maybe 
+      (fatal "Cannot determine the basename of the script that is being compiled")
+      takeBaseName
+    . view rootFileL
   dirSource :: a -> FilePath -- the directory of the script that is being compiled
-  dirSource = fromMaybe (fatal "Cannot determine the directory of the script that is being compiled")
-            . fmap takeDirectory 
-            . view rootFileL
+  dirSource = 
+    maybe
+      (fatal "Cannot determine the directory of the script that is being compiled")
+      takeDirectory
+    . view rootFileL
 instance (HasFSpecGenOpts a) => HasRootFile a where
-  rootFileL = fSpecGenOptsL . (lens xrootFile (\x y -> x { xrootFile = y }))
+  rootFileL = fSpecGenOptsL . lens xrootFile (\x y -> x { xrootFile = y })
 
 class HasOutputLanguage a where
   languageL :: Lens' a (Maybe Lang)  -- The language in which the user wants the documentation to be printed.
@@ -149,15 +150,7 @@ class HasVersion a where
 
 class HasProtoOpts env where
    protoOptsL :: Lens' env ProtoOpts
-   dbNameL   :: Lens' env (Maybe Text)
-   sqlHostL  :: Lens' env Text
-   sqlLoginL :: Lens' env Text
-   sqlPwdL   :: Lens' env Text
    forceReinstallFrameworkL :: Lens' env Bool
-   dbNameL   = protoOptsL . lens xdbName (\x y -> x { xdbName = y })
-   sqlHostL  = protoOptsL . lens xsqlHost (\x y -> x { xsqlHost = y })
-   sqlLoginL = protoOptsL . lens xsqlLogin (\x y -> x { xsqlLogin = y })
-   sqlPwdL   = protoOptsL . lens xsqlPwd (\x y -> x { xsqlPwd = y })
    forceReinstallFrameworkL
              = protoOptsL . lens xforceReinstallFramework (\x y -> x { xforceReinstallFramework = y })
 instance HasProtoOpts ProtoOpts where
@@ -174,7 +167,7 @@ class HasProofOpts env where
 class HasPopulationOpts env where
    populationOptsL :: Lens' env PopulationOpts
    outputFormatL :: Lens' env PopulationOutputFormat
-   outputFormatL = populationOptsL . (lens xoutputFormat (\x y -> x { xoutputFormat = y }))
+   outputFormatL = populationOptsL . lens xoutputFormat (\x y -> x { xoutputFormat = y })
 class HasValidateOpts env where
    validateOptsL :: Lens' env ValidateOpts
 class HasTestOpts env where
@@ -195,7 +188,7 @@ data DaemonOpts = DaemonOpts
 class (HasFSpecGenOpts a) => HasDaemonOpts a where
   daemonOptsL :: Lens' a DaemonOpts
   daemonConfigL :: Lens' a FilePath
-  daemonConfigL = daemonOptsL . (lens xdaemonConfig (\x y -> x { xdaemonConfig = y }))
+  daemonConfigL = daemonOptsL . lens xdaemonConfig (\x y -> x { xdaemonConfig = y })
 instance HasDaemonOpts DaemonOpts where
   daemonOptsL = id
   {-# INLINE daemonOptsL #-}
@@ -243,8 +236,8 @@ data FSpecFormat =
        deriving (Show, Eq, Enum, Bounded)
 
 -- | Options for @ampersand export@.
-data ExportOpts = ExportOpts
-   { xexport2adl :: !FilePath  --relative path
+newtype ExportOpts = ExportOpts
+   { xexport2adl :: FilePath  --relative path
    }
 -- | Options for @ampersand dataAnalysis@ and @ampersand export@.
 data InputOutputOpts = InputOutputOpts
@@ -254,15 +247,7 @@ data InputOutputOpts = InputOutputOpts
 
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
-   { xdbName :: !(Maybe Text)
-   -- ^ Name of the database that is generated as part of the prototype
-   , xsqlHost ::  !Text
-   -- ^ do database queries to the specified host
-   , xsqlLogin :: !Text
-   -- ^ pass login name to the database server
-   , xsqlPwd :: !Text
-   -- ^ pass password on to the database server
-   , xforceReinstallFramework :: !Bool
+   { xforceReinstallFramework :: !Bool
    -- ^ when true, an existing prototype directory will be destroyed and re-installed
    , x1OutputLanguage :: !(Maybe Lang)
    , x1fSpecGenOpts :: !FSpecGenOpts
@@ -302,11 +287,11 @@ data PopulationOpts = PopulationOpts
    } deriving Show
 instance HasPopulationOpts PopulationOpts where
    populationOptsL = id
-   outputFormatL = populationOptsL . (lens xoutputFormat (\x y -> x { xoutputFormat = y }))
+   outputFormatL = populationOptsL . lens xoutputFormat (\x y -> x { xoutputFormat = y })
    {-# INLINE populationOptsL #-}
 -- | Options for @ampersand proofs@
-data ProofOpts = ProofOpts
-   { x6fSpecGenOpts :: !FSpecGenOpts
+newtype ProofOpts = ProofOpts
+   { x6fSpecGenOpts :: FSpecGenOpts
    -- ^ Options required to build the fSpec
    } deriving Show
 -- | Options for @ampersand init@
@@ -320,11 +305,9 @@ data UmlOpts = UmlOpts
    -- ^ Language of the output document
    } deriving Show
 -- | Options for @ampersand validate@
-data ValidateOpts = ValidateOpts
-   { protoOpts :: !ProtoOpts
+newtype ValidateOpts = ValidateOpts
+   { protoOpts :: ProtoOpts
    -- ^ Options required to build the fSpec
-   --, x5OutputLanguage :: !(Maybe Lang)
-   -- ^ Language of the output document
    } deriving Show
 -- | Options for @ampersand devoutput@
 data DevOutputOpts = DevOutputOpts
@@ -332,8 +315,8 @@ data DevOutputOpts = DevOutputOpts
    -- ^ Options required to build the fSpec
    , x5outputFile :: !FilePath --relative path  
    } deriving Show
-data TestOpts = TestOpts
-   { rootTestDir :: !FilePath --relative path to directory containing test scripts
+newtype TestOpts = TestOpts
+   { rootTestDir :: FilePath --relative path to directory containing test scripts
    } deriving Show
 data Chapter = Intro
              | SharedLang

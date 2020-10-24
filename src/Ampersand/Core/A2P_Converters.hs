@@ -1,5 +1,4 @@
 ﻿{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Core.A2P_Converters (
     aAtomValue2pAtomValue

@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToJSON.Relations 
   (Relationz)
 where
@@ -10,7 +9,7 @@ import           Ampersand.FSpec.FSpecAux
 import           Ampersand.Output.ToJSON.JSONutils 
 import qualified RIO.Set as Set
 
-data Relationz = Relationz [RelationJson]deriving (Generic, Show)
+newtype Relationz = Relationz [RelationJson]deriving (Generic, Show)
 data RelationJson = RelationJson
   { relJSONname         :: Text
   , relJSONsignature    :: Text
@@ -56,7 +55,7 @@ instance JSON Relation RelationJson where
          , relJSONinj      = isInj bindedExp
          , relJSONsur      = isSur bindedExp
          , relJSONprop     = isProp bindedExp
-         , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
+         , relJSONaffectedConjuncts = maybe [] (map rc_id) . lookup dcl . allConjsPerDecl $ fSpec
          , relJSONmysqlTable = fromAmpersand env fSpec dcl
          }
       where bindedExp = EDcD dcl

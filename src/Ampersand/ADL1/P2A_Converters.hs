@@ -1,3 +1,4 @@
+﻿{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ImplicitParams #-}
@@ -29,6 +30,7 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
+import           Control.Monad ( (<=<) )
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne
@@ -74,7 +76,7 @@ isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
     ExplConcept concDef -> let nm = name concDef in nm `notElem` map name (Set.elems $ concs ctx )
-    ExplRelation decl -> not (name decl `elem` Set.map name (relsDefdIn ctx)) -- is already covered by type checker
+    ExplRelation decl -> name decl `notElem` Set.map name (relsDefdIn ctx) -- is already covered by type checker
     ExplRule nm -> nm `notElem` map name (Set.elems $ udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
@@ -101,9 +103,7 @@ checkInterfaceCycles ctx =
         getDeepIfcRefs obj = case objmsub obj of
                                Nothing -> []
                                Just si -> case si of 
-                                           InterfaceRef{} -> if siIsLink si
-                                                             then []
-                                                             else [siIfcId si]
+                                           InterfaceRef{} -> [siIfcId si | not (siIsLink si)]
                                            Box{}          -> concatMap getDeepIfcRefs [x | BxExpr x <- siObjs si]
         lookupInterface :: Text -> Interface
         lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
@@ -269,7 +269,7 @@ pCtx2aCtx env
                      , ctxrrules = allRoleRules
                      , ctxreprs = representationOf contextInfo
                      , ctxvs = viewdefs
-                     , ctxgs = catMaybes . map (pClassify2aClassify conceptmap) $ p_gens
+                     , ctxgs = mapMaybe (pClassify2aClassify conceptmap) p_gens
                      , ctxgenconcs = onlyUserConcepts contextInfo (concGroups <> map (:[]) (Set.toList $ soloConcs contextInfo))
                      , ctxifcs = interfaces
                      , ctxps = purposes
@@ -303,9 +303,9 @@ pCtx2aCtx env
                 where groupOnTp lst = Map.fromListWith const [(SignOrd$ sign d,d) | d <- lst]
           let allConcs = Set.fromList (map aConcToType (map source decls <> map target decls))  :: Set.Set Type
           return CI { ctxiGens = gns
-                    , representationOf = (\cpt -> fromMaybe
+                    , representationOf = \cpt -> fromMaybe
                                                     Object -- default representation is Object (sometimes called `ugly identifiers')
-                                                    (lookup cpt typeMap))
+                                                    (lookup cpt typeMap)
                     , multiKernels = multitypologies
                     , reprList = allReprs
                     , declDisambMap = declMap
@@ -486,15 +486,15 @@ pCtx2aCtx env
                         _ -> namedRel2Decl cptMap declMap nmdr
                       
                aps' <- traverse (pAtomPair2aAtomPair (representationOf ci) dcl) aps
-               src' <- maybeOverGuarded ((getAsConcept ci (origin pop) =<<) . isMoreGeneric (origin pop) dcl Src . userConcept) src
-               tgt' <- maybeOverGuarded ((getAsConcept ci (origin pop) =<<) . isMoreGeneric (origin pop) dcl Tgt . userConcept) tgt
+               src' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Src . userConcept)) src
+               tgt' <- maybeOverGuarded (getAsConcept ci (origin pop) <=< (isMoreGeneric (origin pop) dcl Tgt . userConcept)) tgt
                return ARelPopu { popdcl = dcl
                                , popps  = Set.fromList aps'
                                , popsrc = fromMaybe (source dcl) src'
                                , poptgt = fromMaybe (target dcl) tgt'
                                }
        P_CptPopu{}
-         -> let cpt = (pCpt2aCpt cptMap) (p_cpt pop) in  
+         -> let cpt = pCpt2aCpt cptMap (p_cpt pop) in  
             (\vals
               -> ACptPopu { popcpt = cpt
                           , popas  = vals
@@ -612,7 +612,7 @@ pCtx2aCtx env
           P_BxTxt  { obj_nm  = nm
                 , pos = orig
                 , obj_txt = str
-                } -> pure $ (BxTxt
+                } -> pure (BxTxt
                              BoxTxt { objnm = nm
                                     , objpos = orig
                                     , objtxt = str
@@ -624,7 +624,7 @@ pCtx2aCtx env
          Nothing -> pure $ mostLiberalCruds env expr (Right (Origin "Default for Cruds"))
          Just pc@(P_Cruds org userCrud )
              | (length . L.nub . map toUpper) userCrudString == length userCrudString &&
-                (all isValidChar userCrudString)  
+               all isValidChar userCrudString
                          -> warnings pc $ mostLiberalCruds env expr (Left pc)
              | otherwise -> Errors . pure $ mkInvalidCRUDError org userCrud
            where userCrudString = T.unpack userCrud
@@ -696,7 +696,7 @@ pCtx2aCtx env
                          )
          P_Box{}
            -> addWarnings warnings $
-                       build <$> traverse (join . fmap fn . typecheckObjDef ci) l 
+                       build <$> traverse (fn <=< typecheckObjDef ci) l 
                              <*  uniqueNames "attribute within a BOX specification" (btKeys . si_header $ x) 
                              <*  uniqueNames "label in box" l  -- ensure that each label in a box has a unique name.
                              <*  mustBeObject (target objExpr)
@@ -709,14 +709,14 @@ pCtx2aCtx env
                                                  , siObjs    = lst
                                                  }
                                     )
-                        fn :: (BoxItem, Bool) -> (Guarded BoxItem)
-                        fn (BxExpr e,p) = fmap BxExpr $ matchWith (e,p)
+                        fn :: (BoxItem, Bool) -> Guarded BoxItem
+                        fn (BxExpr e,p) = BxExpr <$> matchWith (e,p)
                         fn (BxTxt t,_) = pure $ BxTxt t
                         mustBeObject :: A_Concept -> Guarded ()
-                        mustBeObject cpt = case (representationOf ci) cpt of
+                        mustBeObject cpt = case representationOf ci cpt of
                                              Object -> pure ()
                                              tt     -> Errors . pure $ mkSubInterfaceMustBeDefinedOnObject x cpt tt
-     where matchWith :: (ObjectDef, Bool) -> (Guarded ObjectDef)
+     where matchWith :: (ObjectDef, Bool) -> Guarded ObjectDef
            matchWith (ojd,exprBound)
             = if b || exprBound then
                 case userList (conceptMap ci) $toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
@@ -724,7 +724,7 @@ pCtx2aCtx env
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
            warnings :: [Warning]
-           warnings = [mkBOX_ROWSNH_Warning (origin x) | "ROWSNH" == (btType . si_header $ x) ] -- See issue #925
+           warnings = [mkBoxRowsnhWarning (origin x) | "ROWSNH" == (btType . si_header $ x) ] -- See issue #925
                     <>[mkNoBoxItemsWarning  (origin x) | null (si_box x)            ]
  
     typeCheckInterfaceRef :: P_BoxItem a -> Text -> Expression -> Expression -> Guarded Expression
@@ -807,7 +807,7 @@ pCtx2aCtx env
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
                    , ptrls = Set.fromList rules'
-                   , ptgns = catMaybes $ pClassify2aClassify (conceptMap ci) <$> (pt_gns ppat)
+                   , ptgns = catMaybes $ pClassify2aClassify (conceptMap ci) <$> pt_gns ppat
                    , ptdcs = Set.fromList relations
                    , ptups = pops' 
                    , ptids = keys'
@@ -838,7 +838,7 @@ pCtx2aCtx env
                     , rrdcl = Nothing
                     , rrpat = mPat
                     , r_usr = UserDefined
-                    , isSignal = not . null . filter (\x -> nm `elem` arRules x) $ allRoleRules 
+                    , isSignal = not . any (\x -> nm `elem` arRules x) $ allRoleRules 
                     }
     pIdentity2aIdentity ::
          ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
@@ -928,13 +928,18 @@ addEpsilon genLattice s t e
 typecheckTerm :: ContextInfo -> Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
 typecheckTerm ci tct
  = case tct of
-     Prim (t,v) -> join $ (\x -> case x of
-        EMp1 s c -> const (x,(True,True)) <$> pAtomValue2aAtomValue (representationOf ci) c s
-        _ -> return (x, case t of
-                               PVee _ -> (False,False)
-                               -- PI   _ -> (False,False) -- this line needs to be uncommented, but it causes too many problems in travis (scripts that turn out to be genuinely unbounded and ambiguous)
-                               _      -> (True,True)
-                               )) <$> pDisAmb2Expr (t,v)
+     Prim (t,v) ->
+        (\ x -> case x of
+                  EMp1 s c
+                    -> (x, (True, True))
+                         <$ pAtomValue2aAtomValue (representationOf ci) c s
+                  _ -> return
+                      (x, 
+                        case t of
+                          PVee _ -> (False, False)
+                          _ -> (True, True))
+                ) 
+        =<< pDisAmb2Expr (t, v)
      PEqu _ a b -> join $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
      PInc _ a b -> join $ binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <$> tt a <*> tt b
      PIsc _ a b -> join $ binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
@@ -946,8 +951,8 @@ typecheckTerm ci tct
      PCps _ a b -> join $ binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b
      PRad _ a b -> join $ binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- Using MBE instead of ISC allows the programmer to use De Morgan
      PPrd _ a b -> (\(x,(s,_)) (y,(_,t)) -> (x .*. y, (s,t))) <$> tt a <*> tt b
-     PKl0 _ a   -> join $ unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
-     PKl1 _ a   -> join $ unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
+     PKl0 _ a   -> unary EKl0 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) =<< tt a
+     PKl1 _ a   -> unary EKl1 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) =<< tt a
      PFlp _ a   -> (\(x,(s,t)) -> (EFlp x, (t,s))) <$> tt a
      PCpl _ a   -> (\(x,_) -> (ECpl x,(False,False))) <$> tt a
      PBrk _ e   -> first EBrk <$> tt e 
@@ -1008,7 +1013,7 @@ typecheckTerm ci tct
   deriv1 x'
      = case x' of
         (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
-             if (b1 && b2) || (getAConcept p1 e1 == getAConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType lJoin (p1, e1) (p2, e2)
+             if (b1 && b2) || (getAConcept p1 e1 == getAConcept p2 e2) then (, b1 || b2) <$> getExactType lJoin (p1, e1) (p2, e2)
              else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
         (MBG (p1,(e1,b1)) (p2,(e2,b2))) ->
              (\x -> (fst x,b1)) <$> getAndCheckType lJoin (p1, True, e1) (p2, b2, e2)

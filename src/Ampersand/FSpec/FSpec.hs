@@ -161,7 +161,7 @@ instance Hashable FSpec where
       `composeHash` (L.sortBy (compare `on` genspc) . vgens)
       where 
         composeHash :: Hashable a => Int -> (FSpec -> a) -> Int
-        composeHash s fun = s `hashWithSalt` (fun fSpec) 
+        composeHash s fun = s `hashWithSalt` fun fSpec 
 
 instance Language FSpec where
   relsDefdIn = relsDefdIn.originalContext
@@ -247,7 +247,7 @@ dnf2expr dnf =
     ([],hc:tlc ) -> foldr (.\/.) hc tlc
     (ha:tla,[]) -> notCpl (foldr (./\.) ha tla)
     (ha:tla,hc:tlc) -> notCpl (foldr (./\.) ha tla) .\/. foldr (.\/.) hc tlc
-data PlugInfo = InternalPlug PlugSQL
+newtype PlugInfo = InternalPlug PlugSQL
                 deriving (Show, Eq,Typeable)
 instance Named PlugInfo where
   name (InternalPlug psql) = name psql
@@ -310,8 +310,11 @@ plugAttributes plug = case plug of
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
 lookupCpt :: FSpec -> A_Concept -> [(PlugSQL,SqlAttribute)]
-lookupCpt fSpec cpt = [(plug,att) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]<>
-                      [(plug,att) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]
+lookupCpt fSpec cpt = [(plug,att) 
+                      |InternalPlug plug<-plugInfos fSpec
+                      , (c,att)<-cLkpTbl plug
+                      , c==cpt
+                      ]
 
 -- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
 getConceptTableFor :: FSpec -> A_Concept -> PlugSQL
@@ -400,7 +403,7 @@ substituteReferenceObjectDef fSpec originalObjectDef =
         _ -> Nothing
     lookupInterface :: Text -> Interface
     lookupInterface nm = 
-        case [ ifc | ifc <- (interfaceS fSpec <> interfaceG fSpec), name ifc == nm ] of
+        case [ ifc | ifc <- interfaceS fSpec <> interfaceG fSpec, name ifc == nm ] of
           [ifc] -> ifc
           _     -> fatal "Interface lookup returned zero or more than one result"
 

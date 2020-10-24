@@ -1,5 +1,4 @@
 ﻿{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Ampersand.Types.Config
@@ -98,8 +97,8 @@ instance Yaml.FromJSON ColorWhen where
                        "option are 'never', 'always', or 'auto'.")
 
 -- | The top-level Stackage configuration.
-data Config =
-  Config {configWorkDir             :: !FilePath --Dummy, to make sure Config has some stuff in it.
+newtype Config =
+  Config {configWorkDir             :: FilePath --Dummy, to make sure Config has some stuff in it.
          -- ^ this allows to override .stack-work directory
          }
 
