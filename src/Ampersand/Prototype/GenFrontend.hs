@@ -83,7 +83,7 @@ doGenBackend fSpec = do
   env <- ask
   logInfo "Generating backend..."
   let dir = getGenericsDir env
-  _ <- compilerIsCompatibility env
+  checkCompilerCompatibility env
   writeFileUtf8 (dir </> "database"   <.>"sql" ) $ databaseStructureSql fSpec
   writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
   writeFile (dir </> "relations"  <.>"json") $ relationsToJSON env fSpec
@@ -96,22 +96,20 @@ doGenBackend fSpec = do
   writeFile (dir </> "populations"<.>"json") $ populationToJSON env fSpec
   logInfo "Backend generated"
 
-compilerIsCompatibility :: (HasLogFunc env, HasDirPrototype env) => env -> RIO env Bool
-compilerIsCompatibility env = 
+checkCompilerCompatibility :: (HasLogFunc env, HasDirPrototype env) => env -> RIO env ()
+checkCompilerCompatibility env =
   do
     let filePath = compilerVersionFile
     res <- readUTF8File filePath
     case res of
-      -- For now, log a warning when compiler-version.txt cannot be read (e.g. when file does not exists)
-      -- #TODO after some time we can throw an error and exit instead
-      Left err    -> do
+      Left err -> do
+        -- For now, log a warning when compiler-version.txt cannot be read (e.g. when file does not exists)
+        -- #TODO when prototype framework is updated (i.e. contains compiler-version.txt), throw an error and exit
         logWarn $ "WARNING: Cannot determine compiler compatibility. Error reading compiler version file: " <> displayShow err
-        return True
       Right content -> do
         let isCompatible = checkVersionConstraints compilerVersion $ map makeConstraint $ lines (T.unpack content)
         if isCompatible then do
           logInfo "Ampersand compiler is compatible with targeted prototype framework"
-          return isCompatible
         else
           exitWith $ FailedToGeneratePrototypeBackend ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack compilerVersionFile)]
   where
@@ -130,7 +128,16 @@ compilerIsCompatibility env =
     compilerVersionFile = getGenericsDir env </> "compiler-version.txt"
 
     checkVersionConstraints :: Version -> [Constraint] -> Bool
-    checkVersionConstraints version constraints = foldl' (\acc constraint -> acc && (satisfiesConstraint constraint version)) True constraints
+    checkVersionConstraints version constraints =
+      foldl' (\acc constraint -> acc && (checkVersionConstraint version constraint)) True constraints
+
+    checkVersionConstraint :: Version -> Constraint -> Bool
+    checkVersionConstraint version constraint =
+      case satisfiesConstraint constraint version of
+        True -> True
+        False -> False
+          -- TODO: @han, please add the log below in case 'False'. I can't get it done.
+          -- logInfo $ "Ampersand compiler version " <> displayShow compilerVersion <> " does not satisfy constraint " <> displayShow constraint
 
 writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do
