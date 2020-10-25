@@ -105,7 +105,7 @@ compilerIsCompatibility env =
       -- For now, log a warning when compiler-version.txt cannot be read (e.g. when file does not exists)
       -- #TODO after some time we can throw an error and exit instead
       Left err    -> do
-        logWarn $ "Cannot determine compiler compatibility. Error reading compiler version file: " <> displayShow err
+        logWarn $ "WARNING: Cannot determine compiler compatibility. Error reading compiler version file: " <> displayShow err
         return True
       Right content -> do
         let isCompatible = checkVersionConstraints compilerVersion $ mapMaybe parseConstraint $ lines (T.unpack content) -- #TODO replace mapMaybe, log warning when constraint cannot be parsed
