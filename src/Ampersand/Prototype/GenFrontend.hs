@@ -124,7 +124,7 @@ compilerIsCompatibility env =
     compilerVersionFile = getGenericsDir env </> "compiler-version.txt"
 
     checkVersionConstraints :: Version -> [Constraint] -> Bool
-    checkVersionConstraints version constraints = foldl' (\acc constraint -> acc || satisfiesConstraint constraint version) True constraints
+    checkVersionConstraints version constraints = foldl' (\acc constraint -> acc && (satisfiesConstraint constraint version)) True constraints
 
 writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do
