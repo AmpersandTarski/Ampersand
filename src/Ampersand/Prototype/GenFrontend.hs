@@ -81,6 +81,7 @@ doGenBackend fSpec = do
   env <- ask
   logInfo "Generating backend..."
   let dir = getGenericsDir env
+  _ <- compilerIsCompatibility env
   writeFileUtf8 (dir </> "database"   <.>"sql" ) $ databaseStructureSql fSpec
   writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
   writeFile (dir </> "relations"  <.>"json") $ relationsToJSON env fSpec
@@ -92,6 +93,34 @@ doGenBackend fSpec = do
   writeFile (dir </> "roles"      <.>"json") $ rolesToJSON env fSpec
   writeFile (dir </> "populations"<.>"json") $ populationToJSON env fSpec
   logInfo "Backend generated"
+
+compilerIsCompatibility :: (HasLogFunc env, HasDirPrototype env) => env -> RIO env Bool
+compilerIsCompatibility env = 
+  do
+    let filePath = compilerVersionFile
+    res <- readUTF8File filePath
+    case res of
+      -- For now, log a warning when compiler-version.txt cannot be read (e.g. when file does not exists)
+      -- #TODO after some time we can throw an error and exit instead
+      Left err    -> do
+        logWarn $ "Cannot determine compiler compatibility. Error reading compiler version file: " <> displayShow err
+        return True
+      Right content -> do
+        let isCompatible = checkVersionConstraints $ lines (T.unpack content)
+        if isCompatible then do
+          logInfo "Ampersand compiler is compatible with targeted prototype framework"
+          return isCompatible
+        else
+          exitWith $ FailedToGeneratePrototypeBackend $ ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack compilerVersionFile)]
+  where
+    compilerVersionFile :: FilePath
+    compilerVersionFile = getGenericsDir env </> "compiler-version.txt"
+
+    checkVersionConstraints :: [String] -> Bool
+    checkVersionConstraints constraints = foldl' (\acc constraint -> acc || checkConstraint constraint) True constraints
+
+    checkConstraint :: String -> Bool
+    checkConstraint _constraint = True -- #TODO implement version constraint check here
 
 writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do
