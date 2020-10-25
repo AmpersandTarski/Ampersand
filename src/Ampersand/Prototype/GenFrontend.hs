@@ -108,13 +108,19 @@ compilerIsCompatibility env =
         logWarn $ "WARNING: Cannot determine compiler compatibility. Error reading compiler version file: " <> displayShow err
         return True
       Right content -> do
-        let isCompatible = checkVersionConstraints compilerVersion $ mapMaybe parseConstraint $ lines (T.unpack content) -- #TODO replace mapMaybe, log warning when constraint cannot be parsed
+        let isCompatible = checkVersionConstraints compilerVersion $ map makeConstraint $ lines (T.unpack content)
         if isCompatible then do
           logInfo "Ampersand compiler is compatible with targeted prototype framework"
           return isCompatible
         else
           exitWith $ FailedToGeneratePrototypeBackend ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack compilerVersionFile)]
   where
+    makeConstraint :: String -> Constraint
+    makeConstraint constraintStr =
+      case parseConstraint constraintStr of
+        Just constraint -> constraint
+        Nothing -> exitWith $ FailedToGeneratePrototypeBackend ["Cannot parse Ampersand compiler version constraint " <> T.pack (constraintStr)]
+    
     compilerVersion = 
       case parseVersion (T.unpack cabalVersionStr) of
         Just version -> version
