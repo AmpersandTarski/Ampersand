@@ -119,7 +119,7 @@ compilerIsCompatibility env =
     makeConstraint constraintStr =
       case parseConstraint constraintStr of
         Just constraint -> constraint
-        Nothing -> exitWith $ FailedToGeneratePrototypeBackend ["Cannot parse Ampersand compiler version constraint " <> T.pack (constraintStr)]
+        Nothing -> exitWith $ FailedToGeneratePrototypeBackend ["Cannot parse Ampersand compiler version constraint '" <> T.pack (constraintStr) <> "'"]
     
     compilerVersion = 
       case parseVersion (T.unpack cabalVersionStr) of
