@@ -74,6 +74,11 @@ class HasGenerateBackend a where
 instance HasGenerateBackend ProtoOpts where
   generateBackendL = lens xgenerateBackend (\x y -> x { xgenerateBackend = y })
 
+class HasCheckCompilerVersion a where
+  checkCompilerVersionL :: Lens' a Bool
+instance HasCheckCompilerVersion ProtoOpts where
+  checkCompilerVersionL = lens xcheckCompilerVersion (\x y -> x { xcheckCompilerVersion = y })
+
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
   baseName :: a -> FilePath
@@ -239,6 +244,7 @@ data ProtoOpts = ProtoOpts
    , xdirPrototype :: !(Maybe FilePath)
    , xgenerateFrontend :: !Bool
    , xgenerateBackend :: !Bool
+   , xcheckCompilerVersion :: !Bool
   } deriving Show
 
 -- | Options for @ampersand documentation@.
