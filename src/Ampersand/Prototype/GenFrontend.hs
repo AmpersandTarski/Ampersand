@@ -4,6 +4,7 @@ module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend) where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
+import           Ampersand.Basics.BuildInfo_Generated (cabalVersionStr)
 import           Ampersand.Classes.Relational
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec.FSpec
@@ -19,6 +20,7 @@ import qualified RIO.ByteString.Lazy  as BL
 import qualified RIO.Text as T
 import qualified RIO.List as L
 import           RIO.Time
+import           Salve
 import           System.Directory
 import           System.FilePath
 import           Text.StringTemplate(Stringable, StringTemplate, setAttribute, newSTMP, checkTemplateDeep, render)
@@ -106,21 +108,23 @@ compilerIsCompatibility env =
         logWarn $ "Cannot determine compiler compatibility. Error reading compiler version file: " <> displayShow err
         return True
       Right content -> do
-        let isCompatible = checkVersionConstraints $ lines (T.unpack content)
+        let isCompatible = checkVersionConstraints compilerVersion $ mapMaybe parseConstraint $ lines (T.unpack content) -- #TODO replace mapMaybe, log warning when constraint cannot be parsed
         if isCompatible then do
           logInfo "Ampersand compiler is compatible with targeted prototype framework"
           return isCompatible
         else
-          exitWith $ FailedToGeneratePrototypeBackend $ ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack compilerVersionFile)]
+          exitWith $ FailedToGeneratePrototypeBackend ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack compilerVersionFile)]
   where
+    compilerVersion = 
+      case parseVersion (T.unpack cabalVersionStr) of
+        Just version -> version
+        Nothing -> exitWith $ FailedToGeneratePrototypeBackend ["Cannot parse Ampersand compiler version " <> cabalVersionStr]
+
     compilerVersionFile :: FilePath
     compilerVersionFile = getGenericsDir env </> "compiler-version.txt"
 
-    checkVersionConstraints :: [String] -> Bool
-    checkVersionConstraints constraints = foldl' (\acc constraint -> acc || checkConstraint constraint) True constraints
-
-    checkConstraint :: String -> Bool
-    checkConstraint _constraint = True -- #TODO implement version constraint check here
+    checkVersionConstraints :: Version -> [Constraint] -> Bool
+    checkVersionConstraints version constraints = foldl' (\acc constraint -> acc || satisfiesConstraint constraint version) True constraints
 
 writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do
