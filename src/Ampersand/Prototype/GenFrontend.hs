@@ -110,11 +110,13 @@ checkCompilerCompatibility env =
         -- #TODO when prototype framework is updated (i.e. contains compiler-version.txt), throw an error and exit
         logWarn $ "WARNING: Cannot determine compiler compatibility. Error reading compiler version file: " <> displayShow err
       Right content -> do
-        let isCompatible = checkVersionConstraints compilerVersion $ map makeConstraint $ lines (T.unpack content)
-        if isCompatible then do
-          logInfo "Ampersand compiler is compatible with targeted prototype framework"
-        else
-          exitWith $ FailedToGeneratePrototypeBackend ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack compilerVersionFile)]
+        let constraints = map makeConstraint $ lines (T.unpack content)
+        let failedConstraints = checkConstraints compilerVersion constraints
+        case failedConstraints of
+          [] -> do logInfo "Ampersand compiler is compatible with targeted prototype framework"
+          _  -> do
+            mapM_ (\ constraint -> logInfo $ "Ampersand compiler version " <> displayShow (renderVersion compilerVersion) <> " does not satisfy constraint " <> displayShow (renderConstraint constraint)) failedConstraints
+            exitWith $ FailedToGeneratePrototypeBackend ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack compilerVersionFile)]
   where
     makeConstraint :: String -> Constraint
     makeConstraint constraintStr =
@@ -130,17 +132,9 @@ checkCompilerCompatibility env =
     compilerVersionFile :: FilePath
     compilerVersionFile = getGenericsDir env </> "compiler-version.txt"
 
-    checkVersionConstraints :: Version -> [Constraint] -> Bool
-    checkVersionConstraints version constraints =
-      foldl' (\acc constraint -> acc && (checkVersionConstraint version constraint)) True constraints
-
-    checkVersionConstraint :: Version -> Constraint -> Bool
-    checkVersionConstraint version constraint =
-      case satisfiesConstraint constraint version of
-        True -> True
-        False -> False
-          -- TODO: @han, please add the log below in case 'False'. I can't get it done.
-          -- logInfo $ "Ampersand compiler version " <> displayShow compilerVersion <> " does not satisfy constraint " <> displayShow constraint
+    checkConstraints :: Version -> [Constraint] -> [Constraint]
+    checkConstraints version constraints =
+      filter (\ constraint -> not $ satisfiesConstraint constraint version) constraints
 
 writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do
