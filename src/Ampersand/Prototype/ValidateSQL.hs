@@ -100,8 +100,7 @@ validateExp fSpec total (vExp, i) = do
         (EDcD{}, _) -> do -- skip all simple relations
             return (vExp, True)
         (expr, orig) -> do
-            env <- ask
-            violationsSQL <- evaluateExpSQL fSpec (tempDbName fSpec env) expr
+            violationsSQL <- evaluateExpSQL fSpec (tempDbName fSpec) expr
             let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
             if L.sort violationsSQL == L.sort violationsAmp
             then do
