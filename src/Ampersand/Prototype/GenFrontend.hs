@@ -85,7 +85,7 @@ doGenBackend fSpec = do
   logInfo "Generating backend..."
   let dir = getGenericsDir env
   if checkCompilerVersion
-    then do checkCompilerCompatibility env
+    then do checkCompilerCompatibility
     else do logInfo "Skipping compiler version check"
   writeFileUtf8 (dir </> "database"   <.>"sql" ) $ databaseStructureSql fSpec
   writeFile (dir </> "settings"   <.>"json") $ settingsToJSON env fSpec
@@ -99,13 +99,14 @@ doGenBackend fSpec = do
   writeFile (dir </> "populations"<.>"json") $ populationToJSON env fSpec
   logInfo "Backend generated"
 
-checkCompilerCompatibility :: (HasLogFunc env, HasDirPrototype env) => env -> RIO env ()
-checkCompilerCompatibility env =
+checkCompilerCompatibility :: (HasLogFunc env, HasDirPrototype env) => RIO env ()
+checkCompilerCompatibility =
   do
-    let filePath = compilerVersionFile
+    env <- ask
+    let filePath = compilerVersionFile env
     res <- readUTF8File filePath
     case res of
-      Left err -> do
+      Left err ->
         -- For now, log a warning when compiler-version.txt cannot be read (e.g. when file does not exists)
         -- #TODO when prototype framework is updated (i.e. contains compiler-version.txt), throw an error and exit
         logWarn $ "WARNING: Cannot determine compiler compatibility. Error reading compiler version file: " <> displayShow err
@@ -113,10 +114,10 @@ checkCompilerCompatibility env =
         let constraints = map makeConstraint $ lines (T.unpack content)
         let failedConstraints = checkConstraints compilerVersion constraints
         case failedConstraints of
-          [] -> do logInfo "Ampersand compiler is compatible with targeted prototype framework"
+          [] -> logInfo "Ampersand compiler is compatible with targeted prototype framework"
           _  -> do
             mapM_ (\ constraint -> logInfo $ "Ampersand compiler version " <> displayShow (renderVersion compilerVersion) <> " does not satisfy constraint " <> displayShow (renderConstraint constraint)) failedConstraints
-            exitWith $ FailedToGeneratePrototypeBackend ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack compilerVersionFile)]
+            exitWith $ FailedToGeneratePrototypeBackend ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack $ compilerVersionFile env)]
   where
     makeConstraint :: String -> Constraint
     makeConstraint constraintStr =
@@ -129,8 +130,8 @@ checkCompilerCompatibility env =
         Just version -> version
         Nothing -> exitWith $ FailedToGeneratePrototypeBackend ["Cannot parse Ampersand compiler version " <> cabalVersionStr]
 
-    compilerVersionFile :: FilePath
-    compilerVersionFile = getGenericsDir env </> "compiler-version.txt"
+    compilerVersionFile :: HasDirPrototype a => a -> FilePath
+    compilerVersionFile env = getGenericsDir env </> "compiler-version.txt"
 
     checkConstraints :: Version -> [Constraint] -> [Constraint]
     checkConstraints version constraints =
