@@ -117,13 +117,13 @@ checkCompilerCompatibility =
           [] -> logInfo "Ampersand compiler is compatible with targeted prototype framework"
           _  -> do
             mapM_ (\ constraint -> logInfo $ "Ampersand compiler version " <> displayShow (renderVersion compilerVersion) <> " does not satisfy constraint " <> displayShow (renderConstraint constraint)) failedConstraints
-            exitWith $ FailedToGeneratePrototypeBackend ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", (T.pack $ compilerVersionFile env)]
+            exitWith $ FailedToGeneratePrototypeBackend ["Ampersand compiler is not compatible with deployed prototype framework. Check version constraints in ", T.pack (compilerVersionFile env)]
   where
     makeConstraint :: String -> Constraint
     makeConstraint constraintStr =
       case parseConstraint constraintStr of
         Just constraint -> constraint
-        Nothing -> exitWith $ FailedToGeneratePrototypeBackend ["Cannot parse Ampersand compiler version constraint '" <> T.pack (constraintStr) <> "'"]
+        Nothing -> exitWith $ FailedToGeneratePrototypeBackend ["Cannot parse Ampersand compiler version constraint '" <> T.pack constraintStr <> "'"]
     
     compilerVersion = 
       case parseVersion (T.unpack cabalVersionStr) of
