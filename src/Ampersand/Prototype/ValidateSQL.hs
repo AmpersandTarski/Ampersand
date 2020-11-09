@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
@@ -6,7 +5,6 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.ShowAStruct
 import           Ampersand.FSpec
-import           Ampersand.Misc.HasClasses
 import           Ampersand.Prototype.PHP
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -17,7 +15,7 @@ with the results from Haskell-based Ampersand rule evaluator. The latter is much
 therefore most likely to be correct in case of discrepancies.
 -}
 
-validateRulesSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec ->  RIO env [Text]
+validateRulesSQL :: (HasLogFunc env) => FSpec ->  RIO env [Text]
 validateRulesSQL fSpec = do
     case filter (not . isSignal . fst) (allViolations fSpec) of
        []    -> return()
@@ -43,7 +41,7 @@ validateRulesSQL fSpec = do
         logStickyDone ""
         case [ ve | (ve, False) <- results] of
            [] -> do
-               logDebug $ "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+               logDebug "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
                return []
            ves -> return $ "Validation error. The following expressions failed validation:"
                          : map showVExp ves
@@ -90,7 +88,7 @@ showVExp :: (Expression, Text) -> Text
 showVExp (expr, orig) = "Origin: "<>orig<>", expression: "<>showA expr
 
 -- validate a single expression and report the results
-validateExp :: (HasProtoOpts env, HasLogFunc env) 
+validateExp :: (HasLogFunc env) 
          => FSpec
          -> Int -- total amount of expressions to be validated (for showing progress) 
          -> (ValidationExp -- The expression to be validated
@@ -102,8 +100,7 @@ validateExp fSpec total (vExp, i) = do
         (EDcD{}, _) -> do -- skip all simple relations
             return (vExp, True)
         (expr, orig) -> do
-            env <- ask
-            violationsSQL <- evaluateExpSQL fSpec (tempDbName fSpec env) expr
+            violationsSQL <- evaluateExpSQL fSpec (tempDbName fSpec) expr
             let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- Set.elems $ pairsInExpr fSpec expr]
             if L.sort violationsSQL == L.sort violationsAmp
             then do

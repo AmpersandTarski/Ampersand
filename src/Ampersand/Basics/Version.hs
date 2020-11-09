@@ -1,4 +1,3 @@
-{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- | This module contains Version of Ampersand
 module Ampersand.Basics.Version 
@@ -19,12 +18,12 @@ maxLen = 1500000 -- This trick is to make sure the process is terminated after t
 
 -- | a function to create error message in a structured way, containing the version of Ampersand.
 --   It throws an error, showing a (module)name and a number. This makes debugging pretty easy.
-fatal :: (HasCallStack) => Text -> a
+fatal :: HasCallStack => Text -> a
 fatal msg
  = exitWith . Fatal . T.lines $
-        ("!             "<>ampersandVersionWithoutBuildTimeStr<>"\n"<>
-          lazyCutoff maxLen msg<>"\n"<>
-          (T.pack $ prettyCallStack callStack)
+        ("!             "<>ampersandVersionWithoutBuildTimeStr<>"\n"
+        <> lazyCutoff maxLen msg<>"\n" 
+        <> T.pack (prettyCallStack callStack)
         )
  where lazyCutoff n txt = case T.uncons txt of
           Nothing -> mempty

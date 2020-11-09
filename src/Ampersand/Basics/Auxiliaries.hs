@@ -78,14 +78,16 @@ transClosureMap' xs
   = foldl' f xs (Map.keys xs `intersect` nub (concat (Map.elems xs)))
     where
      f :: Ord a => Map.Map a [a] -> a -> Map.Map a [a]   -- The type is given for documentation purposes only
-     f q x = Map.unionWith union q (Map.fromListWith union [(a, q PARTIAL.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
+     f q x = Map.unionWith union q (Map.fromListWith union (pleasefixthisname q x)) -- FIXME @Stefjoosten: what whould be a good name for this function?
 -- |  Warshall's transitive closure algorithm
 transClosureMap :: Ord a => Map.Map a (Set.Set a) -> Map.Map a (Set.Set a)
 transClosureMap xs
   = foldl' f xs (Map.keysSet xs `Set.intersection` mconcat (Map.elems xs))
     where
      f :: Ord a => Map.Map a (Set.Set a) -> a -> Map.Map a (Set.Set a)
-     f q x = Map.unionWith Set.union q (Map.fromListWith Set.union [(a, q PARTIAL.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
+     f q x = Map.unionWith Set.union q (Map.fromListWith Set.union (pleasefixthisname q x))
+pleasefixthisname :: (Foldable t, Ord k) => Map k (t k) -> k -> [(k, t k)]
+pleasefixthisname q x = [(a, q PARTIAL.! x) | (a, bs) <- Map.assocs q, x `elem` bs]
 
 -- Convert list of a's with associated b's to a list of b's with associated a's.
 -- Each b in the result is unique, and so is each a per b, eg.: 
@@ -95,9 +97,9 @@ converse aBss = let asPerB :: Map.Map b (Set.Set a)
                     asPerB = foldl' (.) id [ Map.insertWith Set.union b (Set.singleton a)  | (a,bs) <- aBss, b <- bs ] Map.empty
                 in Map.toList $ fmap Set.toList asPerB -- first convert each Set to a list, and then the whole Map to a list of tuples
 converseNE :: (Ord a,Ord b) => [(a, NE.NonEmpty b)] -> [(b, NE.NonEmpty a)]
-converseNE = (fmap $ liftSnd PARTIAL.fromList) . converse . (fmap $ liftSnd NE.toList)
+converseNE = fmap (liftSnd PARTIAL.fromList) . converse . fmap (liftSnd NE.toList)
 converseSet :: (Ord a,Ord b) => [(a, Set b)] -> [(b, Set a)]
-converseSet = (fmap $ liftSnd Set.fromList) . converse . (fmap $ liftSnd Set.toList)
+converseSet = fmap (liftSnd Set.fromList) . converse . fmap (liftSnd Set.toList)
 liftFst :: (a -> b) -> (a, c) -> (b, c)
 liftFst f (a,c) = (f a, c)
 

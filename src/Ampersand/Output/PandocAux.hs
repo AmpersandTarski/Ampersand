@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.PandocAux
       ( writepandoc
       , chptTitle
@@ -55,7 +54,7 @@ defaultWriterVariables env fSpec
                        English -> "english")
     , ("documentclass","report")
     ] <>
-    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == (view chaptersL env)]<>
+    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | [Diagnosis] == view chaptersL env ]<>
     [ ("header-includes", T.unlines
          [ "% ============Ampersand specific Begin================="
          , "% First a couple of LaTeX packages are included:"
@@ -100,7 +99,7 @@ defaultWriterVariables env fSpec
          , ""
          , "% ============Ampersand specific End==================="
          ])
-    | (view fspecFormatL env) `elem` [Fpdf,Flatex]
+    | view fspecFormatL env `elem` [Fpdf,Flatex]
     ]
   where
     outputLang' :: Lang
@@ -165,7 +164,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
                                decodeUtf8 . BL.toStrict $ err'
         _     -> liftIO $ do
                 output <- runIO (f writerOptions thePandoc) >>= handleError
-                writeFileUtf8 (outputFile env) (output)
+                writeFileUtf8 (outputFile env) output
  where   
     writer :: PandocMonad m => Writer m
     writer = case lookup writerName writers of
@@ -181,7 +180,7 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
     writeFnBinary :: MonadIO m => FilePath -> BL.ByteString -> m()
     writeFnBinary f bs = do
         liftIO $ createDirectoryIfMissing True (takeDirectory f)
-        BL.writeFile (UTF8.encodePath f) $ bs
+        BL.writeFile (UTF8.encodePath f) bs
     
     writerOptions :: WriterOptions
     writerOptions = def

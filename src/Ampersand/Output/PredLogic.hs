@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.PredLogic
          ( -- PredLogicShow(..), mkVar
          ) where

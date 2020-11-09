@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module MainApps(
@@ -28,7 +27,7 @@ ampersand = do
 ampersandOptionsHandler :: Text -> [Text] -> IO (Either ExitCode (GlobalOptsMonoid, RIO Runner ()))
 ampersandOptionsHandler progName args = do
   currentDir <- getCurrentDirectory
-  runSimpleApp $ logDebug . display $ "args: "<>(T.pack $ show args)
+  runSimpleApp $ logDebug . display $ "args: "<> T.pack (show args)
   try $ commandLineHandler currentDir progName args
 
 ampersandWorker :: Either ExitCode (GlobalOptsMonoid, RIO Runner ()) -> IO ()

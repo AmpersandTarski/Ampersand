@@ -11,21 +11,16 @@ import           Ampersand.Options.Utils
 import           Ampersand.Options.FSpecGenOptsParser
 import           Data.List.Split (splitWhen)
 import           Options.Applicative
-import qualified RIO.Text as T
 
 -- | Command-line parser for the proto command.
 protoOptsParser :: Parser ProtoOpts
 protoOptsParser = 
-   ( \dbName sqlHost sqlLogin sqlPwd forceReinstall 
+   ( \forceReinstall 
         outputLanguage fSpecGenOpts 
         dirPrototype dirCustomizations 
         
         zwolleVersion generateFrontend generateBackend -> ProtoOpts
-            { xdbName = dbName
-            , xsqlHost = sqlHost
-            , xsqlLogin = sqlLogin
-            , xsqlPwd = sqlPwd
-            , xforceReinstallFramework = forceReinstall
+            { xforceReinstallFramework = forceReinstall
             , x1OutputLanguage = outputLanguage
             , x1fSpecGenOpts = fSpecGenOpts
             , xdirPrototype = dirPrototype 
@@ -34,39 +29,12 @@ protoOptsParser =
             , xgenerateFrontend = generateFrontend
             , xgenerateBackend = generateBackend
             }) 
-  <$> optional dbNameP <*> sqlHostP <*> sqlLoginP <*> sqlPwdP <*> forceReinstallP
+  <$> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
   <*> optional dirPrototypeP <*> optional dirCustomizationsP
   <*> zwolleVersionP 
   <*> generateFrontendP <*> generateBackendP
 
-dbNameP :: Parser Text
-dbNameP = T.pack <$> strOption
-        ( long "dbName"
-        <> short 'd'
-        <> metavar "DATABASENAME"
-        <> help "Name of the schema of the database that is generated as part of the prototype. (defaults to name of your context)" )
-sqlHostP :: Parser Text
-sqlHostP = T.pack <$> strOption
-        ( long "sqlHost"
-        <> metavar "HOSTNAME"
-        <> value "localhost"
-        <> showDefault
-        <> help "Name of the host of the database." )
-sqlLoginP :: Parser Text
-sqlLoginP = T.pack <$> strOption
-        ( long "sqlLogin"
-        <> metavar "USER"
-        <> value "ampersand"
-        <> showDefault
-        <> help "Name of the database user." )
-sqlPwdP :: Parser Text
-sqlPwdP = T.pack <$> strOption
-        ( long "sqlPwd"
-        <> metavar "PASSWORD"
-        <> value "ampersand"
-        <> showDefault
-        <> help "Password for the database user." )
 forceReinstallP :: Parser Bool
 forceReinstallP = switch
         ( long "force-reinstall-framework"
@@ -79,15 +47,14 @@ dirPrototypeP = strOption
         <> metavar "DIRECTORY"
         <> value defaultDirPrototype
         <> showDefault
-        <> help ("Specify the directory where the prototype will be generated")
+        <> help "Specify the directory where the prototype will be generated"
         )
 dirCustomizationsP :: Parser [String]
-dirCustomizationsP = (splitWhen (== ';') <$> strOption
+dirCustomizationsP = splitWhen (== ';') <$> strOption
         ( long "customizations"
         <> metavar "DIR;DIR;.."
-        <> help ("Copy one or more directories into the generated prototype. "
-                )
-        ))
+        <> help "Copy one or more directories into the generated prototype. "
+        )
 zwolleVersionP :: Parser String
 zwolleVersionP = strOption
         ( long "prototype-framework-version"
@@ -101,11 +68,11 @@ zwolleVersionP = strOption
         )
 generateFrontendP :: Parser Bool
 generateFrontendP = boolFlags True "frontend"
-        ( "Generate prototype frontend files (Angular application)")
+        "Generate prototype frontend files (Angular application)"
         mempty
 
 generateBackendP :: Parser Bool
 generateBackendP = boolFlags True "backend"
-        ( "Generate backend files (PHP application)")
+        "Generate backend files (PHP application)"
         mempty
 

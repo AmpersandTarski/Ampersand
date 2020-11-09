@@ -1,6 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -27,7 +26,7 @@ proof :: (HasDirOutput env, HasFSpecGenOpts env, HasLogFunc env)
 proof fSpec = do 
     env <- ask
     logInfo $ "Generating Proof for " <> display (name fSpec) <> " into " <> display(T.pack $ outputFile env) <> "..."
-    content <- liftIO $ (runIO (writeHtml5String def thePandoc)) >>= handleError
+    content <- liftIO $ runIO (writeHtml5String def thePandoc) >>= handleError
     liftIO $ createDirectoryIfMissing True (takeDirectory (outputFile env))
     writeFileUtf8 (outputFile env) content
     logDebug "Proof written."

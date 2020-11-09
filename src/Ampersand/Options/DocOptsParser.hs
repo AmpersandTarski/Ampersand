@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Options.DocOptsParser 
@@ -73,12 +74,11 @@ chaptersP =
     isTrue (_,Just True) = True
     isTrue _             = False
     chapterParser :: Chapter -> Parser (Chapter,Maybe Bool)
-    chapterParser chp = (\x -> (chp,x)) 
+    chapterParser chp = (chp,) 
           <$> enableDisableFlags Nothing (Just True) (Just False)
                 (show chp) (" printing of chapter "<>show chp<>".") mods
        where 
-         mods = case chp of
-           _ -> help $ "Do or do not include chapter "<>show chp<>" in the generated document."
+         mods = help $ "Do or do not include chapter "<>show chp<>" in the generated document."
           
 
 fSpecFormatP :: Parser FSpecFormat
@@ -113,8 +113,8 @@ fSpecFormatP = toFormat . T.pack <$> strOption
 
 genGraphicsP :: Parser Bool
 genGraphicsP = boolFlags True "graphics"
-        ( "generation of graphics before generating the document."
-        ) mempty
+         "generation of graphics before generating the document."
+         mempty
 
 blackWhiteP :: Parser Bool
 blackWhiteP = switch
@@ -125,7 +125,7 @@ blackWhiteP = switch
 
 genLegalRefsP :: Parser Bool
 genLegalRefsP = boolFlags False "legal-refs"
-        ( "generation of a table of legal references in Natural Language chapter of the output document."
-        ) mempty
+         "generation of a table of legal references in Natural Language chapter of the output document."
+         mempty
 
 

@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleInstances #-} 
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-} 
 module Ampersand.Output.ToJSON.Concepts 
   (Concepts,Segment)
 where
@@ -11,7 +10,7 @@ import           Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 
-data Concepts = Concepts [Concept] deriving (Generic, Show)
+newtype Concepts = Concepts [Concept] deriving (Generic, Show)
 data Concept = Concept
   { cptJSONid                :: Text
   , cptJSONlabel             :: Text
@@ -66,7 +65,7 @@ instance JSON A_Concept Concept where
   , cptJSONspecializations   = map idWithoutType . smallerConcepts (vgens fSpec) $ cpt
   , cptJSONdirectGens        = map idWithoutType $ L.nub [ g | (s,g) <- fsisa fSpec, s == cpt]
   , cptJSONdirectSpecs       = map idWithoutType $ L.nub [ s | (s,g) <- fsisa fSpec, g == cpt]
-  , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
+  , cptJSONaffectedConjuncts = maybe [] (map rc_id) . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
   , cptJSONconceptTable      = fromAmpersand env fSpec cpt

@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- | Library for spawning and working with Ghci sessions.
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
@@ -44,15 +43,15 @@ initialState :: (HasDaemonOpts env, HasRunner env) =>
                 RIO env (Either [Text] DaemonState)
 initialState = do
     daemonConfig <- view daemonConfigL 
-    curDir <- liftIO $ getCurrentDirectory
+    curDir <- liftIO getCurrentDirectory
     dotAmpersand <- liftIO $ makeAbsolute $ curDir </> daemonConfig
     result <- readUTF8File dotAmpersand
     case result of
      Right content -> do
             let files = map T.unpack
                       . filter (\fn -> T.length fn > 0  --discard empty lines
-                                    && (not $ "#"  `T.isPrefixOf` fn)  -- line commented out yaml style
-                                    && (not $ "--" `T.isPrefixOf` fn)  -- line commented out haskellish style
+                                    && not ("#"  `T.isPrefixOf` fn)  -- line commented out yaml style
+                                    && not ("--" `T.isPrefixOf` fn)  -- line commented out haskellish style
                                )
                       . L.nub                           --discard doubles
                       . T.lines $ content
@@ -63,7 +62,7 @@ initialState = do
                        )
             return $ Right DaemonState
               { loads = ls
-              , loadResults = L.nub $ [dotAmpersand] ++ loadedFiles
+              , loadResults = L.nub $ dotAmpersand : loadedFiles
               }
      Left err -> return . Left $
         [ tshow err

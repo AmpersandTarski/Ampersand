@@ -30,7 +30,7 @@ readUTF8File fp = (Right <$> readFileUtf8 fp) `catch` handler
      handler :: IOException -> RIO env (Either [Text] a)
      handler err = return . Left $
                [ "File could not be read: "<> T.pack fp
-               , tshow $ err
+               , tshow err
                ]
 
 zipWith :: (a->b->c) -> [a]->[b]->[c]

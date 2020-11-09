@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.FSpec.Transformers 
@@ -178,9 +177,6 @@ transformersFormalAmpersand fSpec = map toTransformer [
         | ctx::A_Context <- instanceList fSpec
         , rul::Rule <- Set.elems $ ctxrs ctx
         ]
-      )
-     ,("dbName"                , "Context"               , "DatabaseName"
-      , Set.empty  --TODO
       )
      ,("declaredIn"            , "Relation"              , "Context" 
       , Set.fromList $
@@ -909,11 +905,11 @@ expressionInstances = allExprs
 interfaceInstances :: FSpec -> Set.Set Interface
 interfaceInstances = Set.fromList . ctxifcs . originalContext
 meaningInstances :: FSpec -> Set.Set Meaning
-meaningInstances fSpec = (Set.fromList . concat . map meanings . Set.toList . relationInstances $ fSpec)
+meaningInstances fSpec = (Set.fromList . concatMap meanings . Set.toList . relationInstances $ fSpec)
                           `Set.union`
-                         (Set.fromList . concat . map meanings . Set.toList . ruleInstances $ fSpec)
+                         (Set.fromList . concatMap meanings . Set.toList . ruleInstances $ fSpec)
 purposeInstances :: FSpec -> Set.Set Purpose
-purposeInstances fSpec = Set.fromList . fSexpls $ fSpec
+purposeInstances = Set.fromList . fSexpls
 relationInstances :: FSpec -> Set.Set Relation
 relationInstances = relsDefdIn . originalContext
 ruleInstances :: FSpec -> Set.Set Rule

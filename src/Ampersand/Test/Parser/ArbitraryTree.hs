@@ -42,7 +42,7 @@ safeFilePath = T.unpack <$> safeStr
 identifier :: Gen Text
 identifier = suchThat str2 noKeyword
     where noKeyword :: Text -> Bool
-          noKeyword x = x `notElem` (map T.pack keywords)
+          noKeyword x = x `notElem` map T.pack keywords
           -- The prelude functions accept Unicode characters
           idChar = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
           str2 :: Gen Text
@@ -80,8 +80,8 @@ genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (pure Nothing)
 
 makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
-  oneof $ [P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc]
-        ++[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
+  oneof $ (P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc)
+         :[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
      where term = Prim <$> genPrim
            ifc  = if n == 0 then pure Nothing
                   else Just <$> ifcGen (n`div`2)

@@ -1,6 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
@@ -85,17 +84,18 @@ chpDiagnosis env fSpec
 
   roleomissions :: Blocks
   roleomissions
-   = if null (vpatterns fSpec)
-     then mempty
-     else (if (null.fRoleRuls) fSpec && (not.null.vrules) fSpec
-           then plain (   (emph.str.upCap.name) fSpec
-                       <> (str.l) (NL " kent geen regels aan rollen toe. "
-                                  ,EN " does not assign rules to roles. ")
-                       <> (str.l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
-                                  ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process.")
-                      )
-           else mempty
-          )
+   | null (vpatterns fSpec)
+        = mempty
+   | (null.fRoleRuls) fSpec && (not.null.vrules) fSpec
+        = plain (   (emph.str.upCap.name) fSpec
+                 <> (str.l) (NL " kent geen regels aan rollen toe. "
+                            ,EN " does not assign rules to roles. ")
+                 <> (str.l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
+                            ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process.")
+                )
+   | otherwise
+        = mempty
+          
 
   missingConceptDefs :: Blocks
   missingConceptDefs =
@@ -312,7 +312,7 @@ chpDiagnosis env fSpec
                             , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
-          hasRef x = (any  ((/=[]).explRefIds)) (purposesDefinedIn fSpec outputLang' x)
+          hasRef x = any ((/=[]).explRefIds) (purposesDefinedIn fSpec outputLang' x)
 
           showPercentage x y = if x == 0 then "-" else tshow (y*100 `div` x)<>"%"
 
@@ -390,7 +390,7 @@ chpDiagnosis env fSpec
        <> printMeaning outputLang' r
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
                           ,EN "This rule contains work (for ")
-                <>commaPandocOr outputLang' (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                <>commaPandocOr outputLang' (map (str.name) (rolesOf r))
                 <>")"
                 <> case Set.toList ps of
                      [v] ->   (str.l) (NL ", te weten ", EN " by ")
@@ -460,24 +460,24 @@ chpDiagnosis env fSpec
                <> table -- Caption
                         (if isSignal r
                          then   (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
-                             <> commaPandocOr outputLang' (map (str.name) (L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                             <> commaPandocOr outputLang' (map (str.name) (rolesOf r))
                          else   (str.l) (NL "Overtredingen van invariant ",EN "Violations of invariant ")
                               <>(str.name) r
                         )  
                         -- Alignment:
-                        (replicate 1 (AlignLeft,1/1))
+                        (replicate 1 (AlignLeft,1))
                         -- Headers:
                         ( ( fmap singleton
-                          . concat
-                          . fmap (amPandoc . ameaMrk)
+                          . concatMap (amPandoc . ameaMrk)
                           . meanings
                           ) r
                         )
                         -- Rows:
                         (mkInvariantViolationsError (applyViolText fSpec) (r,ps))
 
+  rolesOf r = L.nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]
   mkInvariantViolationsError :: (Rule->AAtomPair->Text) -> (Rule,AAtomPairs) -> [[Blocks]]
-  mkInvariantViolationsError applyViolText (r,ps) = 
+  mkInvariantViolationsError applyViolText' (r,ps) = 
     [[(para.strong.text) violationMessage]] 
         where
           violationMessage :: Text
@@ -493,7 +493,7 @@ chpDiagnosis env fSpec
                         [] -> []
                         h:tl 
                           | i == 0 -> ["  ... ("<>tshow (length xs)<>" more)"]
-                          | otherwise -> applyViolText r h : listPairs (i-1) tl
+                          | otherwise -> applyViolText' r h : listPairs (i-1) tl
 
 
   violtable :: Rule -> AAtomPairs -> Blocks

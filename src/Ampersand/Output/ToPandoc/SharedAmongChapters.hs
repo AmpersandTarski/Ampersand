@@ -1,6 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc.Builder
     , module Text.Pandoc
@@ -53,7 +52,7 @@ import           Text.Pandoc.Builder
 import           System.FilePath ( (</>) )
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: (HasDocumentOpts env) => env -> [Chapter]
-chaptersInDoc env = view chaptersL env
+chaptersInDoc = view chaptersL
 
 data CustomSection
              = XRefSharedLangRelation Relation
@@ -209,7 +208,7 @@ refStuff x  =
                    , xrefPrefix       = Agr
                    }
      XRefConceptualAnalysisPattern p
-       -> RefStuff { typeOfSection    = pattern
+       -> RefStuff { typeOfSection    = pattern'
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = name p
                    , xrefPrefix       = Sec
@@ -235,12 +234,10 @@ refStuff x  =
      XRefSharedLangTheme mt
        -> RefStuff { typeOfSection    = theme
                    , chapterOfSection = SharedLang
-                   , nameOfThing      = case mt of
-                                          Nothing -> ":losseEindjes"
-                                          Just t  -> name t
+                   , nameOfThing      = maybe ":losseEindjes" name mt
                    , xrefPrefix       = Sec
                    }
-  where (relation , rule  , expression , pattern , theme) =
+  where (relation , rule  , expression , pattern' , theme) =
           ("relation","rule" ,"expression","pattern","theme")
          
 
@@ -350,7 +347,7 @@ orderingByTheme env fSpec
         cd :_ -> Just (origin cd)
   rulMustBeShown :: Rule -> Bool
   rulMustBeShown r = 
-     (not . isPropertyRule $ r) -- property rules are shown as part of the declaration
+     not . isPropertyRule $ r -- property rules are shown as part of the declaration
   relMustBeShown :: Relation -> Bool
   relMustBeShown = decusr
   cptMustBeShown = not . null . concDefs fSpec
@@ -508,7 +505,7 @@ dpRule' env fSpec = dpR
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs `Set.union` seenConcs) (nds `Set.union` seenRelations)
 
 printMeaning :: HasMeaning a => Lang -> a -> Blocks
-printMeaning lang = fromMaybe mempty . fmap (printMarkup . ameaMrk) . meaning lang
+printMeaning lang = maybe mempty (printMarkup . ameaMrk) . meaning lang
 
 printPurposes :: [Purpose] -> Blocks
 printPurposes = mconcat . map (printMarkup . explMarkup)
@@ -526,10 +523,13 @@ purposes2Blocks env ps
              Just p  -> fromList $ amPandoc p
        where   -- The reference information, if available for this purpose, is put
         ref :: Purpose -> [Inline]
-        ref purp = if view fspecFormatL env `elem` [Fpdf, Flatex] && (not.null.explRefIds) purp
-                   then [RawInline (Text.Pandoc.Builder.Format "latex")
-                            (texOnlyMarginNote (T.intercalate "; " (explRefIds purp)<>"\n"))]
-                   else []
+        ref purp = [RawInline
+                      (Text.Pandoc.Builder.Format "latex")
+                      (texOnlyMarginNote
+                        (T.intercalate "; " (explRefIds purp) <> "\n"))
+                   | view fspecFormatL env `elem` [Fpdf, Flatex]
+                        && (not . null . explRefIds) purp
+                   ]
 concatMarkup :: [Markup] -> Maybe Markup
 concatMarkup es
  = case eqCl amLang es of
@@ -549,10 +549,7 @@ insertAfterFirstInline inlines (BlockQuote (Para (inl:inls):pblocks):blocks) = B
 insertAfterFirstInline inlines blocks                                        = Plain inlines : blocks
 
 isMissing :: Maybe Purpose -> Bool
-isMissing mp =
-  case mp of
-    Nothing -> True
-    Just p  -> (not . explUserdefd) p
+isMissing = maybe True (not . explUserdefd)
 
 lclForLang :: Lang -> TimeLocale
 lclForLang lang = defaultTimeLocale { months =

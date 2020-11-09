@@ -1,6 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
@@ -96,7 +95,7 @@ chpConceptualAnalysis env lev fSpec = (
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d = (titel, [body])
      where 
-        titel = xDefInln env fSpec (XRefConceptualAnalysisRelation d) <> ": "<>(showMath d)
+        titel = xDefInln env fSpec (XRefConceptualAnalysisRelation d) <> ": "<> showMath d
         purp =  purposes2Blocks env (purposesDefinedIn fSpec outputLang' d)
         body =  para linebreak
                 -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
@@ -108,10 +107,10 @@ chpConceptualAnalysis env lev fSpec = (
                )
                  -- Then the relation of the relation with its properties and its intended meaning
               <> printMeaning outputLang' d
-        ukadjs = if Uni `elem` (properties d) && Tot `elem` (properties d)
+        ukadjs = if Uni `elem` properties d && Tot `elem` properties d
                     then commaEng "and" (map adj . Set.elems $ (properties d Set.\\ Set.fromList [Uni,Tot]))<>" function"
-                    else commaEng "and" (map adj . Set.elems $ (properties d))<>" relation"
-        nladjs = if Uni `elem` (properties d) && Tot `elem` (properties d)
+                    else commaEng "and" (map adj . Set.elems $ properties d)<>" relation"
+        nladjs = if Uni `elem` properties d && Tot `elem` properties d
                   then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])<>" functie"
                   else commaNL "en" (map adj . Set.elems $ properties d)<>" relatie"
         adj   = propFullName True outputLang' 

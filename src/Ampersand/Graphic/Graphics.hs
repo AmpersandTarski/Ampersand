@@ -153,8 +153,7 @@ conceptualStructure fSpec pr =
       case pr of
         --  A conceptual diagram comprising all rules in which c is used
         PTCDConcept c ->
-          let gs = fsisa fSpec
-              cpts' = concs rs
+          let cpts' = concs rs
               rs    = [r | r<-Set.elems $ vrules fSpec, c `elem` concs r]
           in
           CStruct { csCpts = L.nub$ Set.elems cpts' <> [g |(s,g)<-gs, elem g cpts' || elem s cpts'] <> [s |(s,g)<-gs, elem g cpts' || elem s cpts']
@@ -171,21 +170,20 @@ conceptualStructure fSpec pr =
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
-              idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
-              gs   = fsisa fSpec
+              idgs = isaEdges cpts --  all isa edges within the concepts
+              
               cpts = cpts' `Set.union` Set.fromList [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-NE.toList cl] -- up to two more general concepts
               cpts' = concs pat `Set.union` concs rels
               rels = Set.filter (not . isProp . EDcD) . bindedRelationsIn $ pat
           in
-          CStruct { csCpts = Set.elems $ cpts
-                  , csRels = Set.elems $ rels  `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
+          CStruct { csCpts = Set.elems cpts
+                  , csRels = Set.elems $ rels `Set.union` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
 
         -- PTDeclaredInPat makes a picture of relations and gens within pat only
         PTDeclaredInPat pat ->
-          let gs   = fsisa fSpec
-              cpts = concs decs `Set.union` concs (gens pat)
+          let cpts = concs decs `Set.union` concs (gens pat)
               decs = relsDefdIn pat `Set.union` bindedRelationsIn (udefrules pat)
           in
           CStruct { csCpts = Set.elems cpts
@@ -193,12 +191,12 @@ conceptualStructure fSpec pr =
                            . Set.filter (not . isProp . EDcD)
                            . Set.filter decusr
                            $ decs 
-                  , csIdgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
+                  , csIdgs = isaEdges cpts
                   }
 
         PTCDRule r ->
-          let idgs = [(s,g) | (s,g)<-fsisa fSpec
-                     , g `elem` concs r || s `elem` concs r]  --  all isa edges
+          let cpts = concs r
+              idgs = isaEdges cpts
           in
           CStruct { csCpts = Set.elems $ concs r `Set.union` Set.fromList [c |(s,g)<-idgs, c<-[g,s]]
                   , csRels = Set.elems
@@ -208,13 +206,16 @@ conceptualStructure fSpec pr =
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
         _  -> fatal ("No conceptual graph defined for pictureReq "<>name pr<>".")
-
+    where
+      -- | all isa edges within the concepts
+      isaEdges cpts = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]
+      gs   = fsisa fSpec
 writePicture :: (HasDirOutput env, HasBlackWhite env, HasDocumentOpts env, HasLogFunc env) =>
                 Picture -> RIO env ()
 writePicture pict = do
     env <- ask
     graphvizIsInstalled <- liftIO isGraphvizInstalled
-    when (not graphvizIsInstalled) $ exitWith GraphVizNotInstalled
+    unless graphvizIsInstalled $ exitWith GraphVizNotInstalled
     dirOutput <- view dirOutputL
     let imagePathRelativeToCurrentDir = dirOutput </> imagePathRelativeToDirOutput env pict
     logDebug $ "imagePathRelativeToCurrentDir = "<> display (T.pack imagePathRelativeToCurrentDir)
@@ -237,8 +238,8 @@ writePicture pict = do
          do env <- ask
             logDebug $ "Generating "<>displayShow gvOutput<>" using "<>displayShow gvCommand<>"."
             let dotSource = mkDotGraph env pict
-            path <- liftIO $ GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
-                       (dropExtension fp)
+            path <- liftIO . GV.addExtension (runGraphvizCommand gvCommand dotSource) gvOutput $ 
+                       dropExtension fp
             absPath <- liftIO . makeAbsolute $ path
             logInfo $ display (T.pack absPath)<>" written."
             case postProcess of

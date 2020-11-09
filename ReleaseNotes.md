@@ -1,5 +1,9 @@
 ﻿# Release notes of Ampersand
 
+## v4.1.3 (9 november 2020)
+* [Issue #1070](https://github.com/AmpersandTarski/Ampersand/issues/1070) Remove CLI options dbHost, dbName, dbUser and dbPass. These are part of the prototype framework and can be specified as config or environment variable as described here: https://github.com/AmpersandTarski/prototype/tree/development/config 
+* internal refactorings
+
 ## v4.1.2 (9 october 2020)
 
 * Add devcontainer functionality for developers of Ampersand

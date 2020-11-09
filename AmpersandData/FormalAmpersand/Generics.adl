@@ -6,7 +6,6 @@ REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
 
 
 RELATION versionInfo[Context*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
-RELATION dbName[Context*DatabaseName] [UNI]   -- e.g. 'GRCengine';
 
 -- HJO20150206 @Rieks: Willen we hier nog iets met signalTableName, isDev, autoRefreshInterval?
 

@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.PHP 
          ( evaluateExpSQL
@@ -10,8 +9,6 @@ import           Ampersand.Basics
 import           Ampersand.ADL1
 import           Ampersand.FSpec
 import           Ampersand.FSpec.SQL
-import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.ProtoUtil
 import           Ampersand.Prototype.TableSpec
 import qualified RIO.Text as T
 import           System.Directory
@@ -38,18 +35,17 @@ createTablePHP tSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: (HasProtoOpts env, HasLogFunc env) => FSpec -> Text -> Expression ->  RIO env [(Text,Text)]
+evaluateExpSQL :: (HasLogFunc env) => FSpec -> Text -> Expression ->  RIO env [(Text,Text)]
 evaluateExpSQL fSpec dbNm expr = do
     env <- ask
     let violationsExpr = conjNF env expr
         violationsQuery = prettySQLQuery 26 fSpec violationsExpr
     performQuery dbNm violationsQuery
 
-performQuery :: (HasProtoOpts env, HasLogFunc env) =>
+performQuery :: (HasLogFunc env) =>
                 Text -> SqlQuery ->  RIO env [(Text,Text)]
 performQuery dbNm queryStr = do
-    env <- ask
-    queryResult <- (executePHPStr . showPHP) (php env)
+    queryResult <- (executePHPStr . showPHP) php
     if "Error" `T.isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
     then do mapM_ (logInfo . display) (T.lines ("\n******Problematic query:\n"<>queryAsSQL queryStr<>"\n******"))
             fatal ("PHP/SQL problem: "<>queryResult)
@@ -58,9 +54,9 @@ performQuery dbNm queryStr = do
            _            -> fatal ("Parse error on php result: \n"<>(T.unlines . map ("     " <>) . T.lines $ queryResult))
      
    where 
-    php :: HasProtoOpts env => env -> [Text]
-    php env =
-      connectToMySqlServerPHP env (Just dbNm) <>
+    php :: [Text]
+    php =
+      connectToMySqlServerPHP (Just dbNm) <>
       [ "$sql="<>queryAsPHP queryStr<>";"
       , "$result=mysqli_query($DB_link,$sql);"
       , "if(!$result)"
@@ -119,18 +115,16 @@ showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
-tempDbName :: HasProtoOpts a => FSpec -> a -> Text
-tempDbName fSpec x = "TempDB_"<>case view dbNameL x of
-                                  Nothing -> name fSpec
-                                  Just nm -> nm
+tempDbName :: FSpec -> Text
+tempDbName fSpec = "TempDB_" <> name fSpec
 
-connectToMySqlServerPHP :: HasProtoOpts a => a -> Maybe Text-> [Text]
-connectToMySqlServerPHP x mDbName =
+connectToMySqlServerPHP :: Maybe Text-> [Text]
+connectToMySqlServerPHP mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
-    , "$DB_host='"<>addSlashes (view sqlHostL x) <>"';"
-    , "$DB_user='"<>addSlashes (view sqlLoginL x)<>"';"
-    , "$DB_pass='"<>addSlashes (view sqlPwdL x)  <>"';"
+    , "$DB_host='root';"
+    , "$DB_user='ampersand';"
+    , "$DB_pass='';"
     , ""
     ]<>
     (case mDbName of
@@ -164,12 +158,11 @@ connectToTheDatabasePHP =
     , ""
     ]
 
-createTempDatabase :: (HasProtoOpts env, HasLogFunc env) =>
+createTempDatabase :: (HasLogFunc env) =>
                       FSpec ->  RIO env Bool
 createTempDatabase fSpec = do
-    env <- ask
     result <- executePHPStr .
-              showPHP $ phpStr env
+              showPHP $ phpStr
     logInfo $ 
          if T.null result 
           then "Temp database created succesfully."
@@ -179,18 +172,18 @@ createTempDatabase fSpec = do
                  , result
                  , "The statements:"
                  ] <>
-                 lineNumbers (phpStr env)
+                 lineNumbers phpStr
                  
     return (T.null result)
  where 
   lineNumbers :: [Text] -> [Text]
-  lineNumbers = map withNumber . zip [1..]
+  lineNumbers = zipWith (curry withNumber) [1 .. ]
     where
       withNumber :: (Int,Text) -> Text
       withNumber (n,t) = "/*"<>T.take (5-length(show n)) "00000"<>tshow n<>"*/ "<>t
-  phpStr :: (HasProtoOpts env) => env -> [Text]
-  phpStr env = 
-    (connectToMySqlServerPHP env Nothing) <>
+  phpStr :: [Text]
+  phpStr = 
+    connectToMySqlServerPHP Nothing <>
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
     , ""
     , "    /* file_per_table is required for long columns */"
@@ -211,7 +204,7 @@ createTempDatabase fSpec = do
     , "       if(!$result)"
     , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
     , ""
-    , "$DB_name='"<>tempDbName fSpec env <>"';"
+    , "$DB_name='"<>tempDbName fSpec <>"';"
     , "// Drop the database if it exists"
     , "$sql="<>queryAsPHP dropDB<>";"
     , "mysqli_query($DB_link,$sql);"
@@ -247,10 +240,10 @@ createTempDatabase fSpec = do
     where
       dropDB :: SqlQuery 
       dropDB = SqlQuerySimple $
-           "DROP DATABASE "<>(singleQuote $ tempDbName fSpec env)
+           "DROP DATABASE "<>singleQuote (tempDbName fSpec)
       createDB :: SqlQuery
       createDB = SqlQuerySimple $
-           "CREATE DATABASE "<>(singleQuote $ tempDbName fSpec env)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
+           "CREATE DATABASE "<>singleQuote (tempDbName fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []

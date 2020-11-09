@@ -17,7 +17,7 @@ devoutputOptsParser defOutputdir =
        }
      ) <$> fSpecGenOptsParser False
        <*> outputdirP defOutputdir
-  where
+
 outputdirP :: FilePath -> Parser FilePath
 outputdirP defOutputdir = strArgument 
       (metavar "OUTPUTDIRECTORY" 

@@ -14,7 +14,7 @@ testOptsParser dir =
        { rootTestDir = root
        }
      ) <$> rootTestDirP dir
-  where
+
 rootTestDirP :: FilePath -> Parser FilePath
 rootTestDirP fp = strArgument 
       (metavar "TESTDIRECTORY" 

@@ -1,5 +1,5 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 module Ampersand.ADL1.Disambiguate
@@ -18,13 +18,13 @@ import           Control.Arrow
 import           Text.PrettyPrint.Leijen (Pretty(..),text)
 
 -- this is *only* used internally!
-data D_Concept
+data DConcept
  = MustBe A_Concept
  | MayBe  A_Concept
  deriving (Show, Eq)
 
-data Constraints = Cnstr {bottomUpSourceTypes :: [D_Concept]
-                         ,bottomUpTargetTypes :: [D_Concept]
+data Constraints = Cnstr {bottomUpSourceTypes :: [DConcept]
+                         ,bottomUpTargetTypes :: [DConcept]
                          }deriving Show
 
 class Traversable d => Disambiguatable d where
@@ -210,7 +210,7 @@ instance Disambiguatable Term where
          (b', envB) = disambInfo cptMap b (Cnstr [] (bottomUpTargetTypes env1))
   disambInfo _   (Prim (a,b)) st = (Prim ((a,b), st), Cnstr (getDConcepts source b) (getDConcepts target b))
 
-getDConcepts :: (Expression -> A_Concept) -> DisambPrim -> [D_Concept]
+getDConcepts :: (Expression -> A_Concept) -> DisambPrim -> [DConcept]
 getDConcepts sot (Rel lst) = map (MayBe . sot) lst
 getDConcepts sot (Known e) = [MustBe (sot e)]
 getDConcepts _ _ = []
@@ -262,7 +262,7 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
    mayBe  xs = Set.fromList [x | (MayBe x) <- xs]
    orWhenEmptyS a b = if Set.null a then b else a
    determineBySize _   [a] = impure (t,Known a)
-   determineBySize err lst = fmap ((,) t) (err lst)
+   determineBySize err lst = fmap (t,) (err lst)
    impure x = Change x
 
 orWhenEmpty :: [a] -> [a] -> [a]

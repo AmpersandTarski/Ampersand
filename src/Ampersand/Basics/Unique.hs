@@ -68,7 +68,7 @@ uniqueButNotTooLong txt =
   
 
 -- | this is the implementation of the abstract data type. It mustn't be exported
-data UniqueObj a = 
+newtype UniqueObj a = 
        UniqueObj { theThing :: a
                  } deriving (Typeable)
 

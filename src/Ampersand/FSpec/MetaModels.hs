@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.FSpec.MetaModels
@@ -58,7 +57,7 @@ mkGrindInfo metamodel = do
                   Checked _ (h:tl) -> fatal $ showWithHeader
                           ("The ADL scripts of "<>name metamodel<>" are not free of warnings:") (h NE.:|tl)
             , fModel       = 
-                case join $ pCtx2Fspec env <$> pCtx of
+                case pCtx2Fspec env =<< pCtx of
                   Errors errs -> fatal $ showWithHeader
                           ("The ADL scripts of "<>name metamodel<>" cannot be parsed:") errs
                   Checked x [] -> x

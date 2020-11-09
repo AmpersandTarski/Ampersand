@@ -168,7 +168,7 @@ commasAndLang :: String   -- ^ The word to use for 'and'
               -> String   -- ^ The result
 commasAndLang _ [] = []
 commasAndLang _ [x] = x
-commasAndLang a (x:y:[]) = x ++ " " ++ a ++ " " ++ y
+commasAndLang a [x,y] = x ++ " " ++ a ++ " " ++ y
 commasAndLang a (x:y:zs) = x ++ ", " ++ commasAndLang a (y:zs)
 
 commasAnd :: [String] -> String

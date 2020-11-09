@@ -107,9 +107,9 @@ knownRecipeP = toKnownRecipe . T.pack <$> strOption
       <> value (show Standard)
       <> showDefault
       <> completeWith (map show allKnownRecipes)
-      <> (  help $ "Build the internal FSpec with a predefined recipe. Allowd values are: "
-         <> show allKnownRecipes
-         )
+      <> help ("Build the internal FSpec with a predefined recipe. Allowd values are: "
+                  <> show allKnownRecipes
+              )
       )
     where
       allKnownRecipes :: [KnownRecipe]
@@ -130,7 +130,7 @@ knownRecipeP = toKnownRecipe . T.pack <$> strOption
                         ]
             where
               matches :: (Show a) => a -> Bool
-              matches x = T.toLower s `T.isPrefixOf` (T.toLower $ tshow x)
+              matches x = T.toLower s `T.isPrefixOf` T.toLower (tshow x)
 
 allowInvariantViolationsP :: Parser Bool
 allowInvariantViolationsP = switch
