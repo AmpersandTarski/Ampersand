@@ -40,7 +40,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
            , "declared in pattern" : declaredIn[Relation*Pattern]
            , "declared in context" : declaredIn[Relation*Context]
            ]
---  , "Roles" : allRoles[Context*Role]
+  , "Roles" : allRoles[Context*Role]
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]
 --  , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
   ]

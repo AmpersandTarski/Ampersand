@@ -95,7 +95,7 @@ data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
 
 grindedPops :: GrindInfo -> FSpec -> Relation -> Set.Set Pop
 grindedPops grindInfo userFspec rel = 
-  case filter (isForRel rel) ((transformers grindInfo) userFspec) of
+  case filter (isForRel rel) (transformers grindInfo userFspec) of
     []  -> fatal . T.unlines $ 
               ["Every relation in "<>name (metaModel grindInfo)<>" must have a transformer in Transformers.hs"
               ," However, the following relations have none:"
@@ -118,7 +118,7 @@ grindedPops grindInfo userFspec rel =
     hasNoTransformer d = null (filter (isForRel d) ((transformers grindInfo) userFspec))
     transformer2Pop :: Transformer -> Pop
     transformer2Pop (Transformer relName src tgt popPairs) 
-      | not ( all (ttypeOf (source rel)) (map fst . Set.toList $ popPairs) ) =
+      | not ( all (ttypeOf (source rel) . fst) (Set.toList popPairs) ) =
              fatal . T.unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in "<>name (metaModel grindInfo)<>"."
@@ -126,7 +126,7 @@ grindedPops grindInfo userFspec rel =
                  , "   violates this rule for concept `"<> src <>"`. In "<>name (metaModel grindInfo)<>" "
                  , "   the TType of this concept is "<>(tshow . cptTType (fModel grindInfo) $ source rel)<>"."
                  ]
-      | not ( all (ttypeOf (target rel)) (map snd . Set.toList $ popPairs) ) =
+      | not ( all (ttypeOf (target rel) . snd) (Set.toList popPairs) ) =
              fatal . T.unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in "<>name (metaModel grindInfo)<>"."

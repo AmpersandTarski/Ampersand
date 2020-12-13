@@ -1,7 +1,5 @@
 CONTEXT "AST Interface" IN ENGLISH
 
-
-
 --INTERFACE Contexts FOR Ampersand : "_SESSION";V[SESSION*Context]
 --BOX <TABLE sortable hideEmptyTable>
 --    [ "Context" : I
@@ -23,9 +21,6 @@ TABS[ Concepts : V[SESSION*Concept]
          ]
     ]
     
-
-
-
 INTERFACE "Context" FOR Ampersand : I[Context] TABS
   [ "About" : I BOX
     [ "name"  : name[Context*ContextName]
@@ -43,7 +38,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
   , "Relations" : declaredIn[Relation*Context]~  LINKTO INTERFACE "Relation"
---  , "Roles" : allRoles[Context*Role]
+  , "Roles" : allRoles[Context*Role]
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
   ]

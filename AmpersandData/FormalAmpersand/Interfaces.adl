@@ -5,7 +5,7 @@ CONTEXT RAP IN ENGLISH
 
 PATTERN Interfaces
 CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
-IDENT Interface: Interface(ifcObj;name)
+IDENT Interface: Interface(ifcObj;name,interfaces[Context*Interface]~)
 CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
 {-Han,

@@ -111,7 +111,7 @@ mkArchiContext :: [ArchiRepo] -> [(P_Population,P_Relation,Maybe Text,PPurpose)]
 mkArchiContext [archiRepo] pops = pure
   PCtx{ ctx_nm     = archRepoName archiRepo
       , ctx_pos    = []
-      , ctx_lang   = Just Dutch  -- fatal "No language because of Archi-import hack. Please report this as a bug"
+      , ctx_lang   = Just Dutch
       , ctx_markup = Nothing
       , ctx_pats   = pats
       , ctx_rs     = []
@@ -210,10 +210,10 @@ data ArchiRepo = ArchiRepo
 
 -- | Where 'archFolders' gives the top level folders, allFolders provides all subfolders as well.
 allFolders :: ArchiRepo -> [Folder]
-allFolders  = concat . map recur . archFolders
+allFolders  = concatMap recur . archFolders
  where
     recur :: Folder -> [Folder]
-    recur fld = fld : (concat . map recur . fldFolders) fld
+    recur fld = fld : (concatMap recur . fldFolders) fld
 
 -- | `data Folder` represents the folder structure of the ArchiMate Tool.
 data Folder = Folder
@@ -280,7 +280,7 @@ data Bound = Bound
   , bnd_height     :: Text
   } deriving (Show, Eq)
 
-data SourceConnection = SrcConn
+newtype SourceConnection = SrcConn
   {
 --  sConType       :: Text,
 --  sConId         :: Text,
@@ -306,11 +306,11 @@ data ArchiProp = ArchiProp
   , archPropVal    :: Text
   } deriving (Show, Eq)
 
-data ArchiPurpose = ArchiPurpose
+newtype ArchiPurpose = ArchiPurpose
   { archPurpVal    :: Text
   } deriving (Show, Eq)
 
-data ArchiDocu = ArchiDocu
+newtype ArchiDocu = ArchiDocu
   { archDocuVal    :: Text
   } deriving (Show, Eq)
 
@@ -396,16 +396,16 @@ instance MetaArchi ArchiRepo where
      | (not.null.archPurposes) archiRepo ] <>
      [ translateArchiElem "propOf" ("Property", "ArchiRepo") Nothing (Set.singleton Uni) [(propid, archRepoId archiRepo)]
      | prop<-archProperties archiRepo, Just propid<-[archPropId prop]] <>
-     (concat . map (grindArchi env)) (archFolders archiRepo)  <> 
-     (concat . map (grindArchi env) . archProperties) archiRepo
+     concatMap (grindArchi env) (archFolders archiRepo)  <> 
+     (concatMap (grindArchi env) . archProperties) archiRepo
 
 instance MetaArchi Folder where
   typeMap _ folder
    = (typeMap Nothing . fldObjs)    folder <> 
      (typeMap Nothing . fldFolders) folder
   grindArchi env folder
-   = (concat . map (grindArchi env) . fldObjs)    folder  <> 
-     (concat . map (grindArchi env) . fldFolders) folder
+   = (concatMap (grindArchi env) . fldObjs)    folder  <> 
+     (concatMap (grindArchi env) . fldFolders) folder
 
 -- A type map is constructed for Archi-objects only. Taking relationships into this map brings Archi into higher order logic, and may cause black holes in Haskell. 
 instance MetaArchi ArchiObj where
@@ -427,9 +427,9 @@ instance MetaArchi ArchiObj where
      | eldo<-elemDocus element] <>
      [ translateArchiElem "propOf" ("Property", "ArchiObject") maybeViewname (Set.singleton Uni) [(propid, elemId element)]
      | prop<-elemProps element, Just propid<-[archPropId prop]] <>
-     (concat.map (grindArchi env).elemProps) element
+     (concatMap (grindArchi env).elemProps) element
   grindArchi env@(_,typeLookup,maybeViewname) relation@Relationship{}
-   = [ translateArchiElem relLabel (xType,yType) maybeViewname (Set.empty) [(relSrc relation,relTgt relation)]] <>
+   = [ translateArchiElem relLabel (xType,yType) maybeViewname Set.empty [(relSrc relation,relTgt relation)]] <>
      [ translateArchiElem "name" ("Relationship","Text") maybeViewname (Set.singleton Uni) [(relId relation, relLabel)]] <>
      [ translateArchiElem "type" ("Relationship","Text") maybeViewname (Set.singleton Uni) [(relId relation, relTyp)]] <>
      [ translateArchiElem "source" ("Relationship",xType) maybeViewname (Set.singleton Uni) [(relId relation, relSrc relation)]] <>
@@ -442,7 +442,7 @@ instance MetaArchi ArchiObj where
      | (not . T.null . relAccTp) relation] <>
      [ translateArchiElem "propOf" ("Property", "Relationship") maybeViewname (Set.singleton Uni) [(propid, relId relation)]
      | prop<-relProps relation, Just propid<-[archPropId prop]] <>
-     (concat.map (grindArchi env).relProps) relation
+     (concatMap (grindArchi env).relProps) relation
      where
        relTyp   = (relCase . unFix . relType) relation    -- the relation type,  e.g. "access"  
        relLabel = case relTyp of
@@ -466,25 +466,25 @@ instance MetaArchi ArchiObj where
      | (not . T.null . viewDocu) diagram] <>
      [ translateArchiElem "docu" ("View","Text") maybeViewName (Set.singleton Uni) [(viewId diagram, archDocuVal viewdoc)] -- documentation with <documentation/> tags.
      | viewdoc<-viewDocus diagram] <>
-     [ translateArchiElem "inView" (chldType,"View") maybeViewName (Set.empty) [(chldElem viewelem, viewId diagram)] -- register the views in which an element is used.
+     [ translateArchiElem "inView" (chldType,"View") maybeViewName Set.empty [(chldElem viewelem, viewId diagram)] -- register the views in which an element is used.
      | viewelem<-viewChilds diagram, Just chldType<-[typeLookup (chldElem viewelem)]] <>
      [ translateArchiElem "viewpoint" ("View","ViewPoint") maybeViewName (Set.singleton Uni) [(viewId diagram, viewPoint diagram)] -- documentation with <documentation/> tags.
      | (not . T.null . viewPoint) diagram] <>
-     (concat . map (grindArchi (Nothing,typeLookup,maybeViewName)) . viewProps) diagram <>
-     (concat . map (grindArchi (Just (viewId diagram),typeLookup,maybeViewName)) . viewChilds) diagram
+     (concatMap (grindArchi (Nothing,typeLookup,maybeViewName)) . viewProps) diagram <>
+     (concatMap (grindArchi (Just (viewId diagram),typeLookup,maybeViewName)) . viewChilds) diagram
      where maybeViewName = Just (viewName diagram)
 
 instance MetaArchi Child where
   typeMap _ _
    = Map.empty
   grindArchi env@(Just viewid,typeLookup,maybeViewName) diagrObj
-   = [ translateArchiElem "inView" (elType,viewtype) maybeViewName (Set.empty) [(chldElem child,viewid)]
+   = [ translateArchiElem "inView" (elType,viewtype) maybeViewName Set.empty [(chldElem child,viewid)]
      | child<-childs diagrObj, Just elType<-[typeLookup (chldElem child)], Just viewtype<-[typeLookup viewid]] <>
-     [ translateArchiElem "inView" (connType,viewtype) maybeViewName (Set.empty) [(sConRel conn,viewid)]
+     [ translateArchiElem "inView" (connType,viewtype) maybeViewName Set.empty [(sConRel conn,viewid)]
      | conn<-srcConns diagrObj, Just connType<-[typeLookup (sConRel conn)], Just viewtype<-[typeLookup viewid]] <>
-     [ translateArchiElem "inside" (childtype,objtype) maybeViewName (Set.empty) [(chldElem child,chldElem diagrObj)]
+     [ translateArchiElem "inside" (childtype,objtype) maybeViewName Set.empty [(chldElem child,chldElem diagrObj)]
      | child<-childs diagrObj, Just childtype<-[typeLookup (chldElem child)], Just objtype<-[typeLookup (chldElem diagrObj)]] <>
-     (concat.map (grindArchi env).childs) diagrObj
+     (concatMap (grindArchi env).childs) diagrObj
   grindArchi (maybeViewid,_,maybeViewName) _ = fatal ("\nmaybeViewid = "<>tshow maybeViewid<>"\nmaybeViewName = "<>tshow maybeViewName)
 
 instance MetaArchi ArchiProp where

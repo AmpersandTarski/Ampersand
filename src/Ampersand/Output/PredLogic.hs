@@ -186,7 +186,9 @@ toPredLogic expr
                                   where (polVs, predLs, varSet') = fencePoles varSet (exprCps2list e) (a,b)
    propagate varSet e@ERad{}     (a,b)  = (Forall polVs (Disj predLs), varSet')
                                   where (polVs, predLs, varSet') = fencePoles varSet (exprRad2list e) (a,b)
-   propagate _      (EPrd (l,r)) (a,b)  = (Conj [Dom l a, Cod r b], Set.empty)
+   propagate varSet (EPrd (l,r)) (a,b)  = (Conj [Dom l' a, Cod r' b], Set.empty)
+                                  where (l',_) = propagate varSet l (a,b)
+                                        (r',_) = propagate varSet r (a,b)
    propagate varSet (EKl0 e)     (a,b)  = (Kleene0 predL, vSet)
                                    where
                                      (predL, vSet) = propagate varSet e (a,b)

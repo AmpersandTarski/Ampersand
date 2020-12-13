@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.FSpec.Transformers 
@@ -71,7 +70,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList $
         [(dirtyId ctx, dirtyId rol ) 
         | ctx::A_Context <- instanceList fSpec
-        , rol::Role <- instanceList fSpec
+        , rol::Role      <- instanceList fSpec
         ]
       )
      ,("allRules"              , "Context"               , "Rule"    
@@ -85,7 +84,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList $
         [(dirtyId pat, dirtyId rul) 
         | pat::Pattern <- instanceList fSpec
-        , rul::Rule      <- Set.elems $ allRules pat
+        , rul::Rule    <- Set.elems $ allRules pat
         ]
       )
      ,("arg"                   , "UnaryTerm"             , "Expression"
@@ -120,8 +119,8 @@ transformersFormalAmpersand fSpec = map toTransformer [
      ,("concepts"              , "Pattern"               , "Concept" 
       , Set.fromList $
         [(dirtyId pat, dirtyId cpt)
-        | pat::Pattern <- instanceList fSpec
-        , cpt <- Set.elems $ concs pat
+        | pat::Pattern   <- instanceList fSpec
+        , cpt::A_Concept <- Set.elems $ concs pat
         ]
       )
      ,("conjunct"              , "Conjunct"              , "Expression"
@@ -140,7 +139,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
      ,("context"               , "IdentityDef"           , "Context" 
       , Set.fromList $
         [(dirtyId idf, dirtyId ctx) 
-        | ctx::A_Context <- instanceList fSpec
+        | ctx::A_Context   <- instanceList fSpec
         , idf::IdentityDef <- instanceList fSpec
         ]
       )
@@ -148,13 +147,13 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList $
         [(dirtyId pat, dirtyId ctx) 
         | ctx::A_Context <- instanceList fSpec
-        , pat::Pattern <- instanceList fSpec
+        , pat::Pattern   <- instanceList fSpec
         ]
       )
      ,("context"               , "Population"            , "Context" 
       , Set.fromList $
         [(dirtyId pop, dirtyId ctx) 
-        | ctx::A_Context <- instanceList fSpec
+        | ctx::A_Context  <- instanceList fSpec
         , pop::Population <- instanceList fSpec
         ]
       )
@@ -162,21 +161,21 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList $
         [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context <- instanceList fSpec
-        , rel::Relation <- instanceList fSpec
+        , rel::Relation  <- instanceList fSpec
         ]
       )
      ,("ctxds"                 , "Relation"              , "Context" 
       , Set.fromList $
         [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context <- instanceList fSpec
-        , rel::Relation <- Set.elems $ ctxds ctx
+        , rel::Relation  <- Set.elems $ ctxds ctx
         ]
       )
      ,("ctxrs"                 , "Rule"                  , "Context" 
       , Set.fromList $
         [(dirtyId rul, dirtyId ctx) 
         | ctx::A_Context <- instanceList fSpec
-        , rul::Rule <- Set.elems $ ctxrs ctx
+        , rul::Rule      <- Set.elems $ ctxrs ctx
         ]
       )
      ,("dbName"                , "Context"               , "DatabaseName"
@@ -186,20 +185,20 @@ transformersFormalAmpersand fSpec = map toTransformer [
       , Set.fromList $
         [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context <- instanceList fSpec
-        , rel::Relation <- Set.elems $ relsDefdIn ctx
+        , rel::Relation  <- Set.elems $ relsDefdIn ctx
         ]
       )
      ,("declaredIn"            , "Relation"              , "Pattern" 
       , Set.fromList $
         [(dirtyId rel, dirtyId pat) 
-        | pat::Pattern <- instanceList fSpec
+        | pat::Pattern  <- instanceList fSpec
         , rel::Relation <- Set.elems $ relsDefdIn pat
         ]
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
       , Set.fromList $
         [(dirtyId rul, PopAlphaNumeric . tshow $ prop) 
-        | rul::Rule <- instanceList fSpec
+        | rul::Rule    <- instanceList fSpec
         , Just(prop,_) <- [rrdcl rul]
         ]
       )
@@ -909,11 +908,11 @@ expressionInstances = allExprs
 interfaceInstances :: FSpec -> Set.Set Interface
 interfaceInstances = Set.fromList . ctxifcs . originalContext
 meaningInstances :: FSpec -> Set.Set Meaning
-meaningInstances fSpec = (Set.fromList . concat . map meanings . Set.toList . relationInstances $ fSpec)
+meaningInstances fSpec = (Set.fromList . concatMap meanings . Set.toList . relationInstances $ fSpec)
                           `Set.union`
-                         (Set.fromList . concat . map meanings . Set.toList . ruleInstances $ fSpec)
+                         (Set.fromList . concatMap meanings . Set.toList . ruleInstances $ fSpec)
 purposeInstances :: FSpec -> Set.Set Purpose
-purposeInstances fSpec = fSexpls $ fSpec
+purposeInstances = fSexpls
 relationInstances :: FSpec -> Set.Set Relation
 relationInstances = relsDefdIn . originalContext
 ruleInstances :: FSpec -> Set.Set Rule

@@ -238,7 +238,7 @@ block2file :: Set.Set PreProcDefine -- ^ defs, List of defined flags
            -> Bool    -- ^ showing, whether we are showing the current block, or it is hidden
            -> Block   -- ^ block, the block we want to process
            -> String
-block2file defs showing = concat . map (blockElem2string defs showing)
+block2file defs showing = concatMap (blockElem2string defs showing)
 
 -- | Renders a single block element back into text
 blockElem2string :: Set.Set PreProcDefine -- ^ flags, the list of active flags
