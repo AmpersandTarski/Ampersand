@@ -121,7 +121,6 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  isProp expr = isAsy expr && isSym expr
 
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
- --    It does a little bit more than just test on ERel I _.
  --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value.
  isIdent expr = (\x -> if x && (source expr /= target expr) 
                        then fatal $ "Something wrong with isIdent." <> tshow expr
@@ -137,7 +136,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EKl0 e     -> isIdent e || isFalse e
      EKl1 e     -> isIdent e
      ECpl e     -> isImin e
-     EDcD{}     -> False
+     EDcD dcl   -> name dcl == "="
      EDcI{}     -> True
      EEps{}     -> False
      EDcV sgn   -> isEndo sgn && isONE (source sgn)

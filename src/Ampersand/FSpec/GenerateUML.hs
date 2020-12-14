@@ -82,7 +82,7 @@ fSpec2UML env fSpec =
                , " </xmi:Extension>"
                , "</xmi:XMI>" ]
     }
- where classDiag     = cdAnalysis fSpec
+ where classDiag     = cdAnalysis fSpec fSpec
        contextName   = cdName classDiag
        allConcs      = ooCpts classDiag
        classNames    = map name (classes classDiag)
@@ -224,11 +224,11 @@ requirements env fSpec
   where
     decl2req d = Req { reqId = name d
                      , reqOrig = Right d
-                     , reqPurposes = purposesDefinedIn fSpec (outputLang env fSpec) d
+                     , reqPurposes = purposesOf fSpec (outputLang env fSpec) d
                      }
     rule2req r = Req { reqId = name r
                      , reqOrig = Left r
-                     , reqPurposes = purposesDefinedIn fSpec (outputLang env fSpec) r
+                     , reqPurposes = purposesOf fSpec (outputLang env fSpec) r
                      }
 
 -- State and Monad

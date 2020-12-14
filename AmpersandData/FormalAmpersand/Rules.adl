@@ -5,7 +5,7 @@ CONTEXT AST IN ENGLISH LATEX
 PATTERN Rules
     VIEW Rule: Rule(name[Rule*RuleName])
     REPRESENT RuleName TYPE ALPHANUMERIC
-    IDENT Rules: Rule(ctxrs[Rule*Context],name[Rule*RuleName])
+    IDENT Rules: Rule(allRules[Context*Rule]~,name[Rule*RuleName])
 
     RELATION ctxrs[Rule*Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."

@@ -29,6 +29,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , ThemeContent(..), orderingByTheme
     , Numbered(..), RuleCont(..),DeclCont(..),CptCont(..)
     , plainText
+    , showPredLogic
     )
 where
 import           Ampersand.ADL1 hiding (Meta)
@@ -40,6 +41,7 @@ import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc.HasClasses
 import           Ampersand.Output.PandocAux
+import           Ampersand.Output.PredLogic
 import           Data.Hashable
 import           Data.Typeable (typeOf)
 import qualified RIO.List as L
@@ -363,13 +365,13 @@ orderingByTheme env fSpec
   rul2rulCont :: Rule -> RuleCont
   rul2rulCont rul
     = CRul { cRul      = rul
-           , cRulPurps = purposesDefinedIn fSpec (outputLang env fSpec) rul
+           , cRulPurps = purposesOf fSpec (outputLang env fSpec) rul
            , cRulMeanings = meanings rul
            }
   dcl2dclCont :: Relation -> DeclCont
   dcl2dclCont dcl
     = CDcl { cDcl      = dcl
-           , cDclPurps = purposesDefinedIn fSpec (outputLang env fSpec) dcl
+           , cDclPurps = purposesOf fSpec (outputLang env fSpec) dcl
            , cDclMeanings = meanings dcl
            , cDclPairs = pairsInExpr fSpec (EDcD dcl)
            }
@@ -378,7 +380,7 @@ orderingByTheme env fSpec
   cpt2cptCont cpt
     = CCpt { cCpt      = cpt
            , cCptDefs  = sortWithOrigins $ concDefs fSpec cpt
-           , cCptPurps = purposesDefinedIn fSpec (outputLang env fSpec) cpt
+           , cCptPurps = purposesOf fSpec (outputLang env fSpec) cpt
            }
 
 
@@ -443,8 +445,8 @@ dpRule' env fSpec = dpR
        where
         theBlocks :: Blocks
         theBlocks =
-            purposes2Blocks env (purposesDefinedIn fSpec (outputLang env fSpec) r) -- Als eerste de uitleg van de betreffende regel..
-         <> purposes2Blocks env [p | d<-Set.elems nds, p<-purposesDefinedIn fSpec (outputLang env fSpec) d]  -- Dan de uitleg van de betreffende relaties
+            purposes2Blocks env (purposesOf fSpec (outputLang env fSpec) r) -- Als eerste de uitleg van de betreffende regel..
+         <> purposes2Blocks env [p | d<-Set.elems nds, p<-purposesOf fSpec (outputLang env fSpec) d]  -- Dan de uitleg van de betreffende relaties
          <> case (Set.elems . Set.map EDcD $ nds, outputLang env fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")

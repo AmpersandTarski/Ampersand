@@ -143,7 +143,7 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   validateCmd
                   validateOptsParser
       addCommand'' Test
-                  ("Run testsuites in a given directory. This is ment to do regression testing" <>
+                  ("Run testsuites in a given directory. This is meant to do regression testing" <>
                    " during automatic build (e.g. Travis-ci)")
                   testCmd
                   (testOptsParser ".")
@@ -322,9 +322,12 @@ documentationCmd docOpts = do
 
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
-protoCmd opts = 
-    extendWith opts $ mkAction True proto
-
+protoCmd protOpts = 
+    extendWith protOpts $ do
+        env <- ask
+        let recipe = recipeBuilder True env
+        mFSpec <- createFspec recipe
+        doOrDie mFSpec proto
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
     extendWith testOpts test

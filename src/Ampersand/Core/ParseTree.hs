@@ -788,7 +788,7 @@ data PRef2Obj = PRef2ConceptDef Text
               | PRef2Pattern Text
               | PRef2Interface Text
               | PRef2Context Text
-              deriving Show -- only for fatal error messages
+              deriving (Show, Eq) -- only for fatal error messages
 
 instance Named PRef2Obj where
   name pe = case pe of
@@ -807,19 +807,21 @@ data PPurpose = PRef2 { pos :: Origin      -- the position in the Ampersand scri
                       , pexRefIDs :: [Text] -- the references (for traceability)
                       } deriving Show
 instance Ord PPurpose where --Required for merge of P_Contexts
- compare a b = case compare (name a) (name b) of
-     EQ -> fromMaybe (fatal . T.intercalate "\n" $
-                        ["PPurpose a should have a non-fuzzy Origin."
-                        , tshow (origin a)
-                        , tshow (origin b)
-                        ])
-                     (maybeOrdering (origin a) (origin b))
+ compare a b = case compare (name (pexObj a)) (name (pexObj b)) of
+     EQ -> case (origin a, origin b) of
+             (OriginUnknown,OriginUnknown) -> compare (pexRefIDs a) (pexRefIDs b)
+             (OriginUnknown,_) -> LT
+             (_,OriginUnknown) -> GT
+             (_, _) -> fromMaybe (fatal . T.intercalate "\n" $
+                            ["PPurpose a should have a non-fuzzy Origin."
+                            , tshow (origin a)
+                            , tshow (origin b)
+                            ])
+                         (maybeOrdering (origin a) (origin b))
+           
      x -> x
 instance Eq PPurpose where --Required for merge of P_Contexts
   a == b = compare a b == EQ
-
-instance Named PPurpose where
- name pe = name (pexObj pe)
 
 instance Traced PPurpose where
  origin = pos
