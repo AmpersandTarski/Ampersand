@@ -6,7 +6,8 @@ INCLUDE "Atoms.adl"
 REPRESENT Atom TYPE ALPHANUMERIC
 
 INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
-TABS[ relations : V[SESSION*Relation]
+BOX <TABS>
+    [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in~

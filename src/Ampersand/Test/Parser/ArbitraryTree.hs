@@ -95,10 +95,8 @@ subIfc objGen n
     | otherwise = P_Box  <$> arbitrary <*> arbitrary <*> vectorOf n (objGen$ n`div`2)
 
 instance Arbitrary BoxHeader where
-    arbitrary = oneof 
-       [ BoxHeader <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
-       , BoxHeader <$> arbitrary <*> elements  ["COLS","ROWS","TABS"]  <*> pure [] 
-       ]
+    arbitrary = BoxHeader <$> arbitrary <*> pure "BOX" <*> listOf arbitrary
+    
 instance Arbitrary TemplateKeyValue where
     arbitrary = TemplateKeyValue 
                  <$> arbitrary 

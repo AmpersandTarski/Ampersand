@@ -438,7 +438,7 @@ pInterface = lbl <$> currPos
           --- Roles ::= 'FOR' RoleList
           pRoles  = pKey "FOR" *> pRole False `sepBy1` pComma
 
---- SubInterface ::= ('BOX' BoxHeader? | 'ROWS' | 'COLS' | 'TABS') Box | 'LINKTO'? 'INTERFACE' ADLid
+--- SubInterface ::= 'BOX' BoxHeader? Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
             <|> P_InterfaceRef <$> currPos 
@@ -447,9 +447,6 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
   where pBoxHeader :: AmpParser BoxHeader
         pBoxHeader = 
               build     <$> currPos <* pKey "BOX" <*> optional pBoxSpecification
-          <|> BoxHeader <$> currPos <*> asText (pKey "ROWS") <*> pure []
-          <|> BoxHeader <$> currPos <*> asText (pKey "COLS") <*> pure []
-          <|> BoxHeader <$> currPos <*> asText (pKey "TABS") <*> pure []
         build :: Origin -> Maybe (Text, [TemplateKeyValue]) ->  BoxHeader
         build o x = BoxHeader o typ keys
           where (typ,keys) = case x of 
@@ -462,7 +459,7 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
          
         anyKeyWord :: AmpParser String
         anyKeyWord = case map pKey keywords of
-                       [] -> fatal "We should have keywords. We allways have."
+                       [] -> fatal "We should have keywords. We always have."
                        h:tl -> foldr (<|>) h tl
         pTemplateKeyValue :: AmpParser TemplateKeyValue
         pTemplateKeyValue = 

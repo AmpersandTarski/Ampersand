@@ -22,7 +22,8 @@ BOX [ SqlAttribute : I
 REPRESENT Atom TYPE ALPHANUMERIC
 
 INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
-TABS[ relations : V[SESSION*Relation] CRUD
+BOX <TABS>
+    [ relations : V[SESSION*Relation] CRUD
       BOX<TABLE sortable>
            [ relation   : I[Relation]
            , prop       : prop
