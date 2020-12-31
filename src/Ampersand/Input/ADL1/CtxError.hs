@@ -483,9 +483,9 @@ mkBoxRowsnhWarning orig =
   Warning orig $ T.intercalate "\n   "
      ["The common use of BOX <ROWSNH> has become obsolete. It was used to be able"
      ,   "to have rows without header."
-     ,   "In that case, please use ROWS for this purpose."
+     ,   "In that case, please use BOX <FORM hideLabels> for this purpose."
      ,   "If you still want to use this class for some reason, you have to provide"
-     ,   "the template for youself. Failing to do so will cause an error when you"
+     ,   "the ROWSNH.html template youself. Failing to do so will cause an error when you"
      ,   "generate your prototype."
      ]
 mkNoBoxItemsWarning :: Origin -> Warning

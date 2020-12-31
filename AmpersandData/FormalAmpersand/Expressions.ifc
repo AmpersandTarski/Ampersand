@@ -4,7 +4,8 @@ INCLUDE "Views.adl"
 INCLUDE "Atoms.adl"
 
 INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
-TABS[ relations : V[SESSION*Relation]
+BOX <TABS>
+    [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in[Pair*Relation]~

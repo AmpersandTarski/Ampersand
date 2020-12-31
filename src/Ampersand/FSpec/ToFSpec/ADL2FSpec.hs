@@ -507,4 +507,4 @@ tblcontents ci ps plug
 
 -- convenient function to give a Box header without keyvalues
 simpleBoxHeader :: Origin -> BoxHeader
-simpleBoxHeader orig = BoxHeader {pos = orig, btType = "ROWS", btKeys = []}
+simpleBoxHeader orig = BoxHeader {pos = orig, btType = "FORM", btKeys = []}

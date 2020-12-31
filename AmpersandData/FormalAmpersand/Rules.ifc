@@ -3,7 +3,8 @@ INCLUDE "Concepts.adl"
 --INCLUDE "Atoms.xlsx"
 
 INTERFACE Overview : "_SESSION"[SESSION]
-TABS[ atoms : V[SESSION*Atom]
+BOX <TABS>
+    [ atoms : V[SESSION*Atom]
       BOX<TABLE sortable>
            [ repr : I
            , type : pop - pop;(isas-I)

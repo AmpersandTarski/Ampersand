@@ -2,7 +2,8 @@
 INCLUDE "Atoms.xlsx"
 
 INTERFACE Overview : "_SESSION"[SESSION]
-TABS[ relations : V[SESSION*Relation]
+BOX <TABS>
+    [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
