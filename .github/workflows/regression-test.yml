@@ -42,7 +42,7 @@ jobs:
         # - { build: cabal, ghc: 8.6.5, cabal-install: "2.4"  }
         # - { build: cabal, ghc: 8.8.1, cabal-install: "2.4"  }   # currently not working for >= 3.0
         # use this to include any dependencies from OS package managers
-        include: []
+        include: [] 
         # - os: macOS-latest
         #   brew: anybrewdeps
         # - os: ubuntu-latest
