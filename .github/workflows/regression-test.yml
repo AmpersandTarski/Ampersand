@@ -39,7 +39,7 @@ jobs:
         # - { build: cabal, ghc: 8.0.2, cabal-install: "2.0"  }   # setup-haskell only supports cabal-install 2.0 and higher
         # - { build: cabal, ghc: 8.2.2, cabal-install: "2.0"  }
         # - { build: cabal, ghc: 8.4.4, cabal-install: "2.2"  }
-        # - { build: cabal, ghc: 8.6.5, cabal-install: "2.4"  }
+        - { build: cabal, ghc: 8.6.5, cabal-install: "2.4"  }
         # - { build: cabal, ghc: 8.8.1, cabal-install: "2.4"  }   # currently not working for >= 3.0
         # use this to include any dependencies from OS package managers
         include: []
@@ -58,6 +58,16 @@ jobs:
     - name: 'GitHub actions env workaround' # See https://github.com/mstksg/setup-stack/issues/13
       run: 'echo "ACTIONS_ALLOW_UNSECURE_COMMANDS=true" >> $GITHUB_ENV'
 
+    - name: Cache several directories
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.ghc
+          ~/.cabal/packages
+          ~/.cabal/store
+          dist-newstyle
+          ~/.stack
+        key: ${{ runner.os }}-${{ matrix.ghc }}
     - name: Install OS Packages
       uses: mstksg/get-package@v1
       with:
