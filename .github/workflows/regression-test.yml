@@ -29,18 +29,18 @@ jobs:
         os: [ubuntu-latest, macOS-latest]
         # use this to specify what resolvers and ghc to use
         plan:
-        - { build: stack, resolver: "--resolver lts-9"  }    # ghc-8.0.2
-        - { build: stack, resolver: "--resolver lts-11"  }   # ghc-8.2.2
-        - { build: stack, resolver: "--resolver lts-12"  }   # ghc-8.4.4
+        # - { build: stack, resolver: "--resolver lts-9"  }    # ghc-8.0.2
+        # - { build: stack, resolver: "--resolver lts-11"  }   # ghc-8.2.2
+        # - { build: stack, resolver: "--resolver lts-12"  }   # ghc-8.4.4
         # - { build: stack, resolver: "--resolver lts-13"  }  redundant because lts-14 checks ghc-8.6 already
         - { build: stack, resolver: "--resolver lts-14"  }   # ghc-8.6.5
-        - { build: stack, resolver: "--resolver nightly" }
-        - { build: stack, resolver: ""                   }
-        - { build: cabal, ghc: 8.0.2, cabal-install: "2.0"  }   # setup-haskell only supports cabal-install 2.0 and higher
-        - { build: cabal, ghc: 8.2.2, cabal-install: "2.0"  }
-        - { build: cabal, ghc: 8.4.4, cabal-install: "2.2"  }
-        - { build: cabal, ghc: 8.6.5, cabal-install: "2.4"  }
-        - { build: cabal, ghc: 8.8.1, cabal-install: "2.4"  }   # currently not working for >= 3.0
+        # - { build: stack, resolver: "--resolver nightly" }
+        # - { build: stack, resolver: ""                   }
+        # - { build: cabal, ghc: 8.0.2, cabal-install: "2.0"  }   # setup-haskell only supports cabal-install 2.0 and higher
+        # - { build: cabal, ghc: 8.2.2, cabal-install: "2.0"  }
+        # - { build: cabal, ghc: 8.4.4, cabal-install: "2.2"  }
+        # - { build: cabal, ghc: 8.6.5, cabal-install: "2.4"  }
+        # - { build: cabal, ghc: 8.8.1, cabal-install: "2.4"  }   # currently not working for >= 3.0
         # use this to include any dependencies from OS package managers
         include: []
         # - os: macOS-latest
@@ -55,6 +55,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
+    - name: 'GitHub actions env workaround' # See https://github.com/mstksg/setup-stack/issues/13
+      run: 'echo "ACTIONS_ALLOW_UNSECURE_COMMANDS=true" >> $GITHUB_ENV'
+
     - name: Install OS Packages
       uses: mstksg/get-package@v1
       with:
