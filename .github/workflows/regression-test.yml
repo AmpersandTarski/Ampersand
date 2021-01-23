@@ -15,7 +15,7 @@
 #     so we can wait for then.
 # * support for cabal-install >= 3
 
-name: Haskell Stack Project CI
+name: Build and regression test of Ampersand generator
 
 on:
   push:
