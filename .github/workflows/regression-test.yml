@@ -78,7 +78,7 @@ jobs:
     - name: Setup stack
       uses: mstksg/setup-stack@v1
       if: matrix.plan.build == 'stack'
-      
+
     - name: Setup cabal-install
       uses: actions/setup-haskell@v1
       with:
@@ -141,3 +141,21 @@ jobs:
       env:
         ARGS: ${{ matrix.plan.resolver }}
         BUILD: ${{ matrix.plan.build }}
+
+    - name: install composer # We need composer for the Ampersand Prototypes to be installed.
+      run: composer install
+
+    - name: Regression test (using stack)
+      if: matrix.plan.build == 'stack'
+      run: ./travis_long `# guarantee that something is written to output every minute, so Travis doesn't stop prematurely` \
+              stack build `# build is the common task which is composable.` \
+                   --test `# run the tests` \
+                   --copy-bins `# install executables to the path` \
+                   --haddock `# create haddock documentation, thus ensuring that haddock parse rules are enforced.` \
+                   --no-terminal `# fixes bug with sticky output on Travis` \
+                   $ARGS  `#` \
+                   --flag ampersand:buildAll `# build all executables of Ampersand`
+      env:
+        ARGS: ${{ matrix.plan.resolver }}
+        BUILD: ${{ matrix.plan.build }}
+      
