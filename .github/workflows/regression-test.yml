@@ -24,6 +24,9 @@ on:
 
 jobs:
   build:
+    services:
+      mysql:
+        image: mysql:5.7
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
