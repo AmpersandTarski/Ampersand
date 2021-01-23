@@ -116,47 +116,11 @@ jobs:
         ARGS: ${{ matrix.plan.resolver }}
         BUILD: ${{ matrix.plan.build }}
 
-    - name: Build
-      run: |
-        set -ex
-        case "$BUILD" in
-          stack)
-            stack --no-terminal $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps
-            ;;
-          cabal)
-            PACKAGES=$(stack --install-ghc query locals | grep '^ *path' | sed 's@^ *path:@@')
-            cabal install --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
-            ORIGDIR=$(pwd)
-            for dir in $PACKAGES
-            do
-              cd $dir
-              cabal check || [ "$CABALVER" == "1.16" ]
-              cabal sdist
-              PKGVER=$(cabal info . | awk '{print $2;exit}')
-              SRC_TGZ=$PKGVER.tar.gz
-              cd dist
-              tar zxfv "$SRC_TGZ"
-              cd "$PKGVER"
-              cabal configure --enable-tests --ghc-options -O0
-              cabal build
-              if [ "$CABALVER" = "1.16" ] || [ "$CABALVER" = "1.18" ]; then
-                cabal test
-              else
-                cabal test --show-details=streaming --log=/dev/stdout
-              fi
-              cd $ORIGDIR
-            done
-            ;;
-        esac
-        set +ex
-      env:
-        ARGS: ${{ matrix.plan.resolver }}
-        BUILD: ${{ matrix.plan.build }}
 
     - name: install composer # We need composer for the Ampersand Prototypes to be installed.
       run: composer install
 
-    - name: Regression test (using stack)
+    - name: build and do regression testing (using stack)
       if: matrix.plan.build == 'stack'
       run: # ./travis_long `# guarantee that something is written to output every minute, so Travis doesn't stop prematurely`
               stack build `# build is the common task which is composable.`
