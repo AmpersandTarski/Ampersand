@@ -77,7 +77,8 @@ jobs:
 
     - name: Setup stack
       uses: mstksg/setup-stack@v1
-
+      if: matrix.plan.build == 'stack'
+      
     - name: Setup cabal-install
       uses: actions/setup-haskell@v1
       with:
