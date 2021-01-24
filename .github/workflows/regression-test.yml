@@ -124,7 +124,7 @@ jobs:
               ;;
             cabal)
               cabal --version
-              travis_retry cabal new-update
+              cabal new-update
               cabal new-install exe:ampersand exe:ampPreProc lib:ampersand --flags=buildAll -j1 --overwrite-policy=always
               ;;
           esac
