@@ -109,9 +109,11 @@ jobs:
     - name: install composer # We need composer for the Ampersand Prototypes to be installed.
       run: composer install
 
-    - name: build and do regression testing (using stack)
-      if: matrix.plan.build == 'stack'
-      run: # ./travis_long `# guarantee that something is written to output every minute, so Travis doesn't stop prematurely`
+    - name: build and do regression testing
+      run: |
+         case "$BUILD" in
+            stack)
+            # ./travis_long `# guarantee that something is written to output every minute, so Travis doesn't stop prematurely`
               stack build `# build is the common task which is composable.`
                    --test `# run the tests`
                    --copy-bins `# install executables to the path`
@@ -119,6 +121,13 @@ jobs:
                    --no-terminal `# fixes bug with sticky output on Travis`
                    $ARGS  
                    --flag ampersand:buildAll `# build all executables of Ampersand`
+              ;;
+            cabal)
+              cabal --version
+              travis_retry cabal new-update
+              cabal new-install exe:ampersand exe:ampPreProc lib:ampersand --flags=buildAll -j1 --overwrite-policy=always
+              ;;
+          esac
       env:
         ARGS: ${{ matrix.plan.resolver }}
         BUILD: ${{ matrix.plan.build }}
