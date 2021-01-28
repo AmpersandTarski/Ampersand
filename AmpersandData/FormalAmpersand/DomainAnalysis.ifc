@@ -4,7 +4,8 @@ INCLUDE "Terms.adl"
 INCLUDE "Braga.xslx"
 
 INTERFACE Overview : "_SESSION"
-TABS[concepts :V[SESSION*Concept]
+BOX <TABS>
+    [concepts :V[SESSION*Concept]
       BOX<TABLE sortable>
            [ name         : I[Concept]
            , "isa"        : isa

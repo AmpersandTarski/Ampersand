@@ -209,7 +209,7 @@ theSheetCellsForTable (sheetName,ws)
                                    , "startOfTable        : "<>tshow startOfTable
                                    , "firstPopRowNr       : "<>tshow firstPopRowNr
                                    , "lastPopRowNr        : "<>tshow lastPopRowNr
-                                   , "[(row,isProperRow)] : "<>T.concat [tshow (r,isProperRow r) | r<- [firstPopRowNr..lastPopRowNr]]
+                                   , "[(row,isProperRow)] : "<>T.concat [tshow (r,isProperRow r) | r<-[firstPopRowNr..lastPopRowNr] ]
                                    , "theCols             : "<>tshow theCols
                                    ] 
                      }

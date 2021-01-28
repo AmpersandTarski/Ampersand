@@ -557,7 +557,7 @@ rTerm2expr term
             , decpat  = fatal "Illegal RTerm in rTerm2expr"
             , dechash = hash nm `hashWithSalt` sgn
             }
-class ShowIT a where  --class ment for stuff not belonging to A-struct and/or P-struct
+class ShowIT a where  --class meant for stuff not belonging to A-struct and/or P-struct
   showIT :: a -> Text
 
 instance ShowIT RTerm where

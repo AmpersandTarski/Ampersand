@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
+import           Ampersand.Output.PandocAux
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
@@ -40,6 +41,17 @@ chpDiagnosis env fSpec
   l :: LocalizedStr -> Text
   l = localize outputLang'
   outputLang' = outputLang env fSpec
+  roleomissions :: Blocks
+  roleomissions
+    | null (vpatterns fSpec) = mempty
+    | (null . fRoleRuls) fSpec && (not . null . vrules) fSpec
+      = plain (   (emph . str . upCap . name) fSpec
+               <> (str . l) (NL " kent geen regels aan rollen toe. "
+                            ,EN " does not assign rules to roles. ")
+               <> (str . l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
+                            ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process."))
+    | otherwise = mempty
+
   roleRuleTable :: Blocks
   roleRuleTable
     | null ruls = mempty
@@ -82,21 +94,6 @@ chpDiagnosis env fSpec
       f :: Role -> Rule -> Blocks
       f _ _ = mempty
 
-  roleomissions :: Blocks
-  roleomissions
-   | null (vpatterns fSpec)
-        = mempty
-   | (null.fRoleRuls) fSpec && (not.null.vrules) fSpec
-        = plain (   (emph.str.upCap.name) fSpec
-                 <> (str.l) (NL " kent geen regels aan rollen toe. "
-                            ,EN " does not assign rules to roles. ")
-                 <> (str.l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
-                            ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process.")
-                )
-   | otherwise
-        = mempty
-          
-
   missingConceptDefs :: Blocks
   missingConceptDefs =
    case missing of
@@ -117,28 +114,34 @@ chpDiagnosis env fSpec
                               ,EN " remain without a purpose.")
                   )
    where missing = [c | c <-ccs
-                      , null (purposesDefinedIn fSpec outputLang' c)
+                      , null (purposesOf fSpec outputLang' c)
                    ]<>
                    [c | c <-ccs, null (concDefs fSpec c)]
          ccs = Set.elems . concs . vrels $ fSpec
+
   unusedConceptDefs :: Blocks
   unusedConceptDefs
-   = case [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (Set.elems $ concs fSpec)] of
+   = case undefinedConcepts of
       []  -> if (null.conceptDefs) fSpec
              then mempty
              else para.str.l $
                      (NL "Alle concepten, die in dit document zijn voorzien van een definitie, worden gebruikt in relaties."
                      ,EN "All concepts defined in this document are used in relations.")
-      [c] -> para (   (str.l) (NL "Het concept ",EN "The concept ") 
+      [c] -> para (   (str.l) (NL "Het concept "
+                              ,EN "The concept ") 
                    <> singleQuoted (str (name c))
-                   <> (str.l) (NL " is gedefinieerd, maar wordt niet gebruikt."
-                              ,EN " is defined, but isn't used.")
+                   <> (str.l) (NL " is gedefinieerd, maar wordt niet gebruikt in een relatie."
+                              ,EN " is defined, but isn't used in a relation.")
                   )
       xs  -> para (   (str.l) (NL "De concepten: ", EN "Concepts ")
                    <> commaPandocAnd outputLang' (map (str . name) xs)
                    <> (str.l) (NL " zijn gedefinieerd, maar worden niet gebruikt."
                               ,EN " are defined, but not used.")
                   )
+     where
+       concepts :: [A_Concept]
+       concepts = Set.elems (concs fSpec)
+       undefinedConcepts = [cd | cd <-conceptDefs fSpec, name cd `notElem` map name concepts]
 
   missingRels :: Blocks
   missingRels
@@ -152,11 +155,16 @@ chpDiagnosis env fSpec
                          <> (str.l) (NL " ontbreekt zowel de betekenis (meaning) als de reden van bestaan (purpose)."
                                     ,EN " lacks both a purpose as well as a meaning.")
                         )
-            ds  -> para (   (str.l) (NL "Van de relaties ",EN "The relations ")
-                          <> commaPandocAnd outputLang' (map showDclMath ds) 
-                          <>(str.l) (NL " ontbreken zowel de betekenis (meaning) als de reden van bestaan (purpose)."
-                                    ,EN " all lack both a purpose and a meaning.")
-                        )
+            ds  -> if length ds < 10
+                   then para (   (str.l) (NL "Van de relaties ",EN "The relations ")
+                               <> commaPandocAnd outputLang' (map showDclMath ds) 
+                               <>(str.l) (NL " ontbreken zowel de betekenis (meaning) als de reden van bestaan (purpose)."
+                                         ,EN " all lack both a purpose and a meaning.")
+                             )
+                   else para (   (str.l) (NL ("Van "<>tshow (length ds)<>" relaties is noch het oogmerk (purpose), noch de betekenis gespecificeerd. Drie voorbeelden daarvan zijn: ")
+                                         ,EN ("Neither purpose nor meaning is specified in "<>tshow (length ds)<>" relations. Three examples of such relations are: "))
+                               <> (commaPandocAnd outputLang' . map showDclMath . take 3) ds
+                             )
           )<>
           (case purposeOnlyMissing of
             []  -> mempty
@@ -165,11 +173,16 @@ chpDiagnosis env fSpec
                          <> (str.l) (NL " bestaat wordt niet uitgelegd."
                                     ,EN " remains unexplained.")
                         )
-            ds  -> para (   (str.l) (NL "Relaties ",EN "The purpose of relations ")
-                          <> commaPandocAnd outputLang' (map showDclMath ds) 
-                          <>(str.l) (NL " zijn niet voorzien van een reden van bestaan (purpose)."
-                                    ,EN " is not documented.")
-                        )
+            ds  -> if length ds < 10
+                   then para (   (str.l) (NL "Relaties ",EN "The purpose of relations ")
+                               <> commaPandocAnd outputLang' (map showDclMath ds) 
+                               <>(str.l) (NL " zijn niet voorzien van een reden van bestaan (purpose)."
+                                         ,EN " is not documented.")
+                             )
+                   else para (   (str.l) (NL ("Het oogmerk (purpose) van "<>tshow (length ds)<>" relaties is niet gespecificeerd. Drie voorbeelden van relaties zonder oogmerk zijn: ")
+                                         ,EN ("The purpose of "<>tshow (length ds)<>" relations is not specified. Three examples of relations without a purpose are: "))
+                               <> (commaPandocAnd outputLang' . map showDclMath . take 3) ds
+                             )
           )<>
           (case meaningOnlyMissing of
             []  -> mempty
@@ -178,11 +191,16 @@ chpDiagnosis env fSpec
                          <> (str.l) (NL " is niet gedocumenteerd."
                                     ,EN " is not documented.")
                         )
-            ds  -> para (   (str.l) (NL "De betekenis van relaties ",EN "The meaning of relations ")
-                          <> commaPandocAnd outputLang' (map showDclMath ds) 
-                          <>(str.l) (NL " zijn niet gedocumenteerd."
-                                    ,EN " is not documented.")
-                        )
+            ds  -> if length ds < 10
+                   then para (   (str.l) (NL "De betekenis van relaties ",EN "The meaning of relations ")
+                               <> commaPandocAnd outputLang' (map showDclMath ds) 
+                               <>(str.l) (NL " is niet gedocumenteerd."
+                                         ,EN " is not documented.")
+                             )
+                   else para (   (str.l) (NL ("De betekenis van "<>tshow (length ds)<>" relaties is niet gedocumenteerd. Bijvoorbeeld: ")
+                                         ,EN ("The meaning of "<>tshow (length ds)<>" relations is not documented. For instance: "))
+                               <> (commaPandocAnd outputLang' . map showDclMath . take 3) ds
+                             )
           )
      where bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Relation]
            bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) . Set.elems $ decls
@@ -191,7 +209,7 @@ chpDiagnosis env fSpec
            decls = vrels fSpec
            showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
-  hasPurpose = not . null . purposesDefinedIn fSpec outputLang'
+  hasPurpose = not . null . purposesOf fSpec outputLang'
   hasMeaning :: HasMeaning a => a -> Bool
   hasMeaning = isJust . meaning outputLang'
 
@@ -249,26 +267,42 @@ chpDiagnosis env fSpec
       []   -> mempty
       ruls ->
          if all hasMeaning ruls && all hasPurpose ruls
-         then (para.str.l) (NL "Alle regels in dit document zijn voorzien van een uitleg."
-                           ,EN "All rules in this document have been provided with a meaning and a purpose.")
-         else ( case filter (not.hasPurpose) ruls of
+         then (para.str.l) (NL "Alle regels zijn voorzien van een uitleg."
+                           ,EN "All rules have been provided with a meaning and a purpose.")
+         else ( case filter (not.hasPurpose) (filter (not.hasMeaning) ruls) of
                   []  -> mempty
-                  rls -> (para.str.l) (NL "Van de volgende regels is het oogmerk (purpose) niet uitgelegd:"
-                                      ,EN "Rules are defined without documenting their purpose:")
-                       <> bulletList [    (para.emph.str.name) r 
-                                       <> (plain.str.tshow.origin) r 
-                                     | r <- rls]
+                  [r] -> (para.str.l) (NL "De volgende regel heeft noch oogmerk (purpose), noch betekenis:"
+                                      ,EN "The following rule has neither a purpose nor a meaning.")
+                       <> formalizations [r]
+                  rls -> (para.str.l) (NL "De volgende regels hebben noch oogmerk (purpose), noch betekenis:"
+                                      ,EN "The following rules have neither a purpose nor a meaning.")
+                       <> formalizations rls
               ) <>
-              ( case filter (not.hasMeaning) ruls of
+              ( case filter (not.hasPurpose) (filter hasMeaning ruls) of
                   []  -> mempty
-                  rls -> (para.str.l) (NL "Van de volgende regels is de betekenis uitgelegd in taal die door de computer is gegenereerd:"
-                                      ,EN "Rules are defined, the meaning of which is documented by means of computer generated language:")
-                       <> bulletList [    (para.emph.str.name) r 
-                                       <> (plain.str.tshow.origin) r 
-                                     | r <- rls]
+                  [r] -> (para.str.l) (NL "Van de volgende regel is het oogmerk (purpose) niet uitgelegd:"
+                                      ,EN "The following rule is defined without documenting its purpose:")
+                       <> formalizations [r]
+                  rls -> (para.str.l) (NL "Van de volgende regels is het oogmerk (purpose) niet uitgelegd:"
+                                      ,EN "The following rules are defined without documenting their purpose:")
+                       <> formalizations rls
+              ) <>
+              ( case filter hasPurpose (filter (not.hasMeaning) ruls) of
+                  []  -> mempty
+                  [r] -> (para.str.l) (NL "De volgende regel gaat niet vergezeld van een betekenis in natuurlijke taal:"
+                                      ,EN "The following rule is not accompanied by a meaning written in natural language:")
+                       <> formalizations [r]
+                  rls -> (para.str.l) (NL "De volgende regels gaan niet vergezeld van een betekenis in natuurlijke taal:"
+                                      ,EN "The following rules are not accompanied by a meaning written in natural language:")
+                       <> formalizations rls
               )
+     where
+       formalizations rls
+        = bulletList [    para ((emph . str . name) r <> " (" <> (str . tshow . origin) r <> ")")
+                       <> (para . showMath . formalExpression) r
+                       <> (para . showPredLogic outputLang' . formalExpression) r
+                     | r <- rls]
         
-
   ruleRelationRefTable :: Blocks
   ruleRelationRefTable =
        (para.str.l) (NL $ "Onderstaande tabel bevat per thema (dwz. patroon) tellingen van het aantal relaties en regels, " <>
@@ -312,7 +346,7 @@ chpDiagnosis env fSpec
                             , showPercentage (Set.size ruls) (Set.size . Set.filter hasRef $ ruls)
                             ]
 
-          hasRef x = any ((/=[]).explRefIds) (purposesDefinedIn fSpec outputLang' x)
+          hasRef x = any ((/=[]).explRefIds) (purposesOf fSpec outputLang' x)
 
           showPercentage x y = if x == 0 then "-" else tshow (y*100 `div` x)<>"%"
 

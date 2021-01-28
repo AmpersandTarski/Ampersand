@@ -199,7 +199,8 @@ findDeclLooselyTyped :: DeclMap
                      -> Maybe A_Concept
                      -> Maybe A_Concept
                      -> Guarded Relation
-findDeclLooselyTyped declMap o x src tgt = getOneExactly o (findRelsLooselyTyped declMap x src tgt) >>= extractDecl o
+findDeclLooselyTyped declMap o x src tgt
+  = getOneExactly (o, (src,tgt)) (findRelsLooselyTyped declMap x src tgt) >>= extractDecl o
 findRelsTyped :: DeclMap -> Text -> Signature -> [Expression]
 findRelsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findRels declMap x))
 

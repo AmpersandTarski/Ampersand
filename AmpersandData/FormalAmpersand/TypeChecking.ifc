@@ -4,7 +4,8 @@ INCLUDE "Views.adl"
 INCLUDE "Terms.xlsx"
 
 INTERFACE Contexts (valid,relations) : "_SESSION"
-TABS[ "" : V[SESSION*Context]
+BOX <TABS>
+    [ "" : V[SESSION*Context]
       BOX [ context        : I
            , "valid rules"  : valid~
            , relations      : relations
@@ -12,7 +13,8 @@ TABS[ "" : V[SESSION*Context]
     ]
 
 INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) : "_SESSION"
-TABS[ relations : V[SESSION*Relation]
+BOX <TABS>
+    [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
            [ relation   : I
            , name       : name
@@ -38,7 +40,8 @@ TABS[ relations : V[SESSION*Relation]
     ]
 
 INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
-TABS[ relations : V[SESSION*Relation]
+BOX <TABS>
+    [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
            [ relation   : I[Relation]
            , name       : name

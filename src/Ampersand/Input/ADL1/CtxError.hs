@@ -190,11 +190,26 @@ class GetOneGuarded a b | b -> a where
 instance GetOneGuarded Expression P_NamedRel where
   getOneExactly _ [d] = pure d
   getOneExactly o []  = Errors . pure $ CTXE (origin o) $
-      "No relation for "<>showP o
+      "A relation is used that is not explicitly declared: "<>showP o
   getOneExactly o lst = Errors . pure $ CTXE (origin o) $
-      "An ambiguity arises in trying to match "<>showP o
-    <>".\n  Be more specific by using one of the following matching expressions:"
+      "A relation is used that is not explicitly declared: "<>showP o
+    <>".\n  Explicitly mention one of the following matching expressions:"
     <>T.concat ["\n  - "<>showA l | l<-lst]
+
+instance GetOneGuarded Expression (P_NamedRel,(A_Concept,A_Concept)) where
+  getOneExactly (o,(sr,tg)) = getOneExactly (o,(Just sr,Just tg))
+instance GetOneGuarded Expression (P_NamedRel,(Maybe A_Concept, Maybe A_Concept)) where
+  getOneExactly _ [d] = pure d
+  getOneExactly o []  = Errors . pure $ (CTXE . origin . fst) o $
+      "A relation is used that is not explicitly declared: "<>showP_T o
+  getOneExactly o lst = Errors . pure $ (CTXE . origin . fst) o $
+      "A relation is used that is not explicitly declared: "<>showP_T o
+    <>".\n  Perhaps you meant one of the following matching expressions:"
+    <>T.concat ["\n  - "<>showA l | l<-lst]
+showP_T :: (P_NamedRel, (Maybe A_Concept, Maybe A_Concept)) -> Text
+showP_T (p,(src,tgt)) = p_nrnm p <> "["<>showC src<>"*"<>showC tgt<>"]"
+ where showC Nothing = "???"
+       showC (Just tp) = showA tp
 
 mkTypeMismatchError :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
 mkTypeMismatchError o rel sot typ
@@ -483,9 +498,9 @@ mkBoxRowsnhWarning orig =
   Warning orig $ T.intercalate "\n   "
      ["The common use of BOX <ROWSNH> has become obsolete. It was used to be able"
      ,   "to have rows without header."
-     ,   "In that case, please use ROWS for this purpose."
+     ,   "In that case, please use BOX <FORM hideLabels> for this purpose."
      ,   "If you still want to use this class for some reason, you have to provide"
-     ,   "the template for youself. Failing to do so will cause an error when you"
+     ,   "the ROWSNH.html template youself. Failing to do so will cause an error when you"
      ,   "generate your prototype."
      ]
 mkNoBoxItemsWarning :: Origin -> Warning

@@ -68,7 +68,7 @@ makeFSpec env context
               , getDefaultViewForConcept = getDefaultViewForConcept'
               , getAllViewsForConcept = getAllViewsForConcept'
               , conceptDefs  = ctxcds context
-              , fSexpls      = ctxps context <> concatMap ptxps (patterns context)
+              , fSexpls      = Set.fromList $ ctxps context <> concatMap ptxps (patterns context)
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
@@ -507,4 +507,4 @@ tblcontents ci ps plug
 
 -- convenient function to give a Box header without keyvalues
 simpleBoxHeader :: Origin -> BoxHeader
-simpleBoxHeader orig = BoxHeader {pos = orig, btType = "ROWS", btKeys = []}
+simpleBoxHeader orig = BoxHeader {pos = orig, btType = "FORM", btKeys = []}

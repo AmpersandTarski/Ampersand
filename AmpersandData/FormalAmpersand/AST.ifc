@@ -1,7 +1,5 @@
 CONTEXT "AST Interface" IN ENGLISH
 
-
-
 --INTERFACE Contexts FOR Ampersand : "_SESSION";V[SESSION*Context]
 --BOX <TABLE sortable hideEmptyTable>
 --    [ "Context" : I
@@ -9,24 +7,26 @@ CONTEXT "AST Interface" IN ENGLISH
 --    ]
 
 INTERFACE Overview FOR Ampersand : I[SESSION];"_SESSION"
-TABS[ Concepts : V[SESSION*Concept]
-    BOX <TABLE> [ "Concept" : I 
+BOX <TABS>
+    [ Concepts : V[SESSION*Concept]
+      BOX <TABLE>
+         [ "Concept" : I 
          , name : name[Concept*ConceptName]
          ]
     , Relations : V[SESSION*Relation]
-    BOX <TABLE> [ "Relation" : I 
+      BOX <TABLE>
+         [ "Relation" : I 
          , source : source[Relation*Concept]
          , target : target[Relation*Concept]
          ]
     , Rules : V[SESSION*Rule]
-    BOX <TABLE> [ "Rule" : I
+      BOX <TABLE>
+         [ "Rule" : I
          ]
     ]
     
-
-
-
-INTERFACE "Context" FOR Ampersand : I[Context] TABS
+INTERFACE "Context" FOR Ampersand : I[Context]
+BOX <TABS>
   [ "About" : I BOX
     [ "name"  : name[Context*ContextName]
 --    , "versionInfo" : versionInfo
@@ -42,7 +42,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
   , "Relations" : declaredIn[Relation*Context]~  LINKTO INTERFACE "Relation"
---  , "Roles" : allRoles[Context*Role]
+  , "Roles" : allRoles[Context*Role]
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
   ]

@@ -59,7 +59,7 @@ chpNatLangReqs env lev fSpec =
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
                getRefs ::FSpec ->  [LawRef]
-               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesDefinedIn fSpec outputLang'
+               getRefs = concatMap (mapMaybe toLawRef . explRefIds) . purposesOf fSpec outputLang'
 
 
   -- | printOneTheme tells the story in natural language of a single theme.
@@ -81,7 +81,7 @@ chpNatLangReqs env lev fSpec =
                      ,EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
                      )
                  Just pat -> 
-                   case purposesDefinedIn fSpec outputLang' pat of
+                   case purposesOf fSpec outputLang' pat of
                      []    -> printIntro    (cptsOfTheme tc)
                      purps -> purposes2Blocks env purps
              )
@@ -193,7 +193,7 @@ chpNatLangReqs env lev fSpec =
   printRel nDcl =
          (printPurposes . cDclPurps . theLoad) nDcl
       <> definitionList 
-            [(   (str.l) (NL "Afspraak ", EN "Agreement ")
+            [(   (str.l) (NL "Relatie ", EN "Relation ")
               <> (text . tshow . theNr $ nDcl) <> ": " <> xDefInln env fSpec (XRefSharedLangRelation dcl)
              , 
                 [printMeaning outputLang' dcl]
