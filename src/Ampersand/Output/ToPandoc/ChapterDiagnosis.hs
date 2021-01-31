@@ -72,7 +72,7 @@ chpDiagnosis env fSpec
                          <> (str.l) (NL "De volgende tabel toont welke regels door een bepaalde rol worden bewaakt."
                                     ,EN "The following table shows the rules that are being maintained by a given role.")
                         )
-                <> table -- No caption:
+                <> legacyTable -- No caption:
                           mempty
                           -- Alignment:
                           (  (AlignLeft,0.4) 
@@ -312,7 +312,7 @@ chpDiagnosis env fSpec
                           "by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " <>
                           "times."
                     )
-    <> table -- No caption:
+    <> legacyTable -- No caption:
              mempty
              -- Alignment:
              ((AlignLeft,0.4) : replicate 6 (AlignCenter,0.1))
@@ -357,7 +357,7 @@ chpDiagnosis env fSpec
        else (para.str.l) (NL "Onderstaande tabel bevat een overzicht van de signaalregels per rol."
                          ,EN "The table below shows the signal rules per role."
                          ) 
-         <> table -- No caption:
+         <> legacyTable -- No caption:
                   mempty
                   -- Alignment:
                   ( if multProcs
@@ -395,7 +395,7 @@ chpDiagnosis env fSpec
             
      <> if null popwork
         then mempty
-        else table -- No caption:
+        else legacyTable -- No caption:
                     mempty
                     -- Alignment:
                     ((AlignLeft,1/3): replicate 2 (AlignRight,1/3))
@@ -491,7 +491,7 @@ chpDiagnosis env fSpec
                          )
                        <>(str.tshow.length) ps
                       )
-               <> table -- Caption
+               <> legacyTable -- Caption
                         (if isSignal r
                          then   (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
                              <> commaPandocOr outputLang' (map (str.name) (rolesOf r))
@@ -533,7 +533,7 @@ chpDiagnosis env fSpec
   violtable :: Rule -> AAtomPairs -> Blocks
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
-        then table -- No caption:
+        then legacyTable -- No caption:
                    mempty
                    -- Alignment:
                    [(AlignLeft,1.0)]
@@ -543,7 +543,7 @@ chpDiagnosis env fSpec
                    [ [(plain.str.showValADL.apLeft) p]
                    | p <-take 10 . Set.elems $ ps --max 10 rows
                    ]
-        else table -- No caption:
+        else legacyTable -- No caption:
                    mempty
                    -- Alignment:
                    (replicate 2 (AlignLeft,1/2))

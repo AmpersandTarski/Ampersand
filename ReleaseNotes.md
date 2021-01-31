@@ -1,4 +1,8 @@
 ﻿# Release notes of Ampersand
+
+* Upgrade to LTS-17.0 . This includes an upgrade of Pandoc. This could effect tables in the documentation that is generated with the `documentation` command.
+
+## v4.1.4 (29 january 2021)
 * [Issue #1131](https://github.com/AmpersandTarski/Ampersand/issues/1131) remove COLS and ROWS from the parser and from other parts of the Ampersand compiler.
 
 ## v4.1.3 (9 november 2020)
