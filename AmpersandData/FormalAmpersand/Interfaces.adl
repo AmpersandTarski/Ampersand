@@ -7,7 +7,6 @@ PATTERN Interfaces
 CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
 -- As long as multi-contexts do not work, the following rule may jeopardize the working of prototypes in RAP.
 IDENT Interface: Interface(ifcObj;name,interfaces[Context*Interface]~)
-VIOLATION (TXT "Interface ", SRC fcObj;name, TXT " from context ", SRC interfaces[Context*Interface]~, TXT "and interface ", TGT fcObj;name, TXT " from context ", TGT interfaces[Context*Interface]~, TXT " should be different.")
 CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
 {-@Han,
