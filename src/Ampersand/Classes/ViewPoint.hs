@@ -45,7 +45,7 @@ rulesFromIdentity identity
        meaningEN = "Identity rule" <> ", following from identity "<>name identity
        meaningNL = "Identiteitsregel" <> ", volgend uit identiteit "<>name identity
        mkKeyRule expression =
-         Ru { rrnm   = "identity_" <> name identity
+         Ru { rrnm   = "IDENT " <> name identity
             , formalExpression  = expression
             , rrfps  = origin identity     -- position in source file
             , rrmean = 

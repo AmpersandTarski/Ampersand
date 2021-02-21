@@ -435,7 +435,7 @@ instance ShowHS Meaning where
   showHS env indent (Meaning x) = "Meaning " <> showHS env (indent<>"        ") x
 
 instance ShowHSName IdentityDef where
- showHSName identity = haskellIdentifier ("identity_"<>name identity)
+ showHSName identity = haskellIdentifier ("IDENT "<>name identity)
 
 instance ShowHS IdentityDef where
  showHS env indent identity
