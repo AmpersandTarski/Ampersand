@@ -29,7 +29,10 @@ MEANING "The source of a signature."
 RELATION tgt[Signature*Concept] [UNI,TOT]
 MEANING "The target of a signature."
 
-RELATION bind[BindedRelation*Relation][UNI,TOT]
+RELATION bind[BindedRelation*Relation][UNI]
+RULE bindTotal : I[BindedRelation] |- bind;bind~
+-- VIOLATION ( TXT "The (sub-)expression ", SRC showADL, TXT " should have been bound to a relation. ")
+VIOLATION ( TXT "{EX} DelAtom;BindedRelation;", SRC I )
 
 RELATION prop[Relation*Property]
 
