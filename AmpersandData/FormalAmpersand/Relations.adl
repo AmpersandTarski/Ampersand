@@ -30,6 +30,7 @@ RELATION tgt[Signature*Concept] [UNI,TOT]
 MEANING "The target of a signature."
 
 RELATION bind[BindedRelation*Relation][UNI]
+ROLE ExecEngine MAINTAINS bindTotal
 RULE bindTotal : I[BindedRelation] |- bind;bind~
 -- VIOLATION ( TXT "The (sub-)expression ", SRC showADL, TXT " should have been bound to a relation. ")
 VIOLATION ( TXT "{EX} DelAtom;BindedRelation;", SRC I )

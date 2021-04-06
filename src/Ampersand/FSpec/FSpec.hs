@@ -10,7 +10,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Ampersand.FSpec.FSpec
-          ( FSpec(..), concDefs, Atom(..), A_Pair(..)
+          ( FSpec(..), concDefs, Atom(..), APair(..)
           , Quad(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
@@ -182,13 +182,13 @@ instance Unique Atom where
              [x] -> uniqueShowWithType x
              xs  -> "["<>T.intercalate ", " (map uniqueShowWithType xs)<>"]"
 
-data A_Pair = Pair { lnkDcl :: Relation
-                   , lnkLeft :: Atom
-                   , lnkRight :: Atom
-                   } deriving (Typeable,Eq)
-instance HasSignature A_Pair where
+data APair = Pair { lnkDcl :: Relation
+                  , lnkLeft :: Atom
+                  , lnkRight :: Atom
+                  } deriving (Typeable,Eq)
+instance HasSignature APair where
   sign = sign . lnkDcl
-instance Unique A_Pair where
+instance Unique APair where
   showUnique x = showUnique (lnkDcl x)
               <> showUnique (lnkLeft x)
               <> showUnique (lnkRight x)
@@ -266,15 +266,15 @@ data PlugSQL
    --                                            <> [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
    --     kernel = A closure of concepts A,B for which there exists a r::A->B[INJ]
    --              (r=attExpr of kernel attribute holding instances of B, in practice r is I or a makeRelation(flipped relation))
-   --      attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
+   --     attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
    --              (r=attExpr of attMor attribute, in practice r is a makeRelation(relation))
  = TblSQL  { sqlname ::    Text
-           , attributes :: [SqlAttribute]                           -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
-                                                                    --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
-                                                                    --   the remaining attributes represent attributes.
-           , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all typology concepts to attributes in the plug
-                                                                    -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-           , dLkpTbl ::   [RelStore]
+           , attributes :: [SqlAttribute]               -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
+                                                        --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
+                                                        --   the remaining attributes represent attributes.
+           , cLkpTbl ::    [(A_Concept,SqlAttribute)]   -- ^ lookup table that links all typology concepts to attributes in the plug
+                                                        -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+           , dLkpTbl ::    [RelStore]
            }
    -- | stores one relation r in two ordered columns
    --   i.e. a tuple of SqlAttribute -> (source r,target r) with (attExpr=I/\r;r~, attExpr=r)
@@ -316,13 +316,14 @@ lookupCpt fSpec cpt = [(plug,att)
                       , c==cpt
                       ]
 
--- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
-getConceptTableFor :: FSpec -> A_Concept -> PlugSQL
+-- getConceptTableFor yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
+getConceptTableFor :: FSpec -> A_Concept -> PlugSQL    -- this corresponds to sqlConceptPlug in SQL.hs
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
                                []      -> fatal $ "tableFor: No concept table for " <> name c
                                (t,_):_ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
+--   A RelStore is used to identify a relation within a persistent store.
 data RelStore 
   = RelStore
      { rsDcl       :: Relation
