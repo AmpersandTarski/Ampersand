@@ -1,0 +1,146 @@
+{-
+A message contains an aggragate of pairs in a hierarchical structure that resembles the interface structure.
+Only, a message does not contain expressions but only relations and flipped relations.
+
+The idea is to have a conceptual model that matches the messages in JSON.
+Take for example the following message (code in JavaScript)
+<script>
+var myJSON = '{ "command" : "INSERT", "concept" : "Person", "rel" : [ { "name" : "lastName", "target" : "Text", "atoms" : ["John"] }, { "name" : "age", "target" : "Age", "atoms" : [34] }, { "name" : "address", "target" : "Address", "frames" : [{ "name" : "street", "atoms" : ["Albert Cuyplaan"] }, { "name" : "zipCode", "atoms" : ["1012AB"] }, { "name" : "city", "atoms" : ["Amsterdam"] }] }], "relFlp" : [ { "name" : "member", "source" : "Company", "atoms" : ["ACME"] } }';
+var myObj = JSON.parse(myJSON);
+document.getElementById("demo").innerHTML = JSON.stringify(myObj.rel[2].frames[2]);
+</script>
+yields the text '{"name":"city","atoms":["Amsterdam"]}'
+
+The JSON-message
+{ "command" : "INSERT"
+, "concept" : "Person"
+, "rel" : [ { "name" : "lastName", "target" : "Text", "atoms" : ["John"] }
+          , { "name" : "age", "target" : "Age", "atoms" : [34] }
+          , { "name" : "address"
+            , "target" : "Address"
+            , "frames" : [ { "name" : "street", "atoms" : ["Albert Cuyplaan"] }
+                         , { "name" : "zipCode", "atoms" : ["1012AB"] }
+                         , { "name" : "city", "atoms" : ["Amsterdam"] }
+                         ]
+            }
+          ]
+, "relFlp" : [ { "name" : "member", "source" : "Company", "atoms" : ["ACME"] }
+}
+can be consumed by a service that has matching relations, e.g.:
+```Ampersand4
+SERVICE "receiver"
+   RELATION member[Company*Person]
+   RELATION lastName[Person*Text]
+   RELATION age[Person*Age]
+   REPRESENT Age TYPE INTEGER
+ENDSERVICE
+```
+If a service cannot match one of the relations in the message,
+Ampersand will block with a type error.
+The matching process resembles type checking in the current Ampersand:
+source and target fields in the JSON message may be omitted if
+the type checker can resolve the type in the relation set of the
+consuming service.
+
+The Haskell data structure looks like this:
+```Haskell
+data Message =
+  Message { command : Command
+          , concept : Concept
+          , rel, relFlp : [Frame]
+          }
+
+data Frame = -- A frame has a tree structure. Value are leaves and Comp are nodes.
+  Value { name : Identifier
+        , source, target : Maybe Concept
+        , value : Set Atom
+        }
+ | Comp { name : Identifier
+        , source, target : Maybe Concept
+        , rel, relFlp : [Frame]
+        }
+```
+-}
+CONTEXT "MESSAGING"
+
+PATTERN Atoms -- This pattern is copied from FormalAmpersand
+    RELATION name[Concept*Identifier] [UNI,TOT]
+    RELATION name[Relation*Identifier] [UNI,TOT]
+    RELATION source[Relation*Concept] [UNI,TOT]
+    RELATION target[Relation*Concept] [UNI,TOT]
+
+    REPRESENT Identifier TYPE ALPHANUMERIC
+
+    RULE "Identifiability of concepts": name;name~ |- I[Concept]
+    VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
+
+    RELATION in[Pair*Relation] [UNI,TOT]
+    RELATION pop[Atom*Concept] [UNI,TOT]
+    RELATION lAtom[Pair*Atom] [UNI,TOT]
+    RELATION rAtom[Pair*Atom] [UNI,TOT]
+ENDPATTERN
+
+-- The following stuff is not (yet) in FormalAmpersand
+RELATION context[Relation*Service] [UNI,TOT]
+RELATION command[Message*Command] [UNI,TOT]
+RELATION concept[Message*Concept] [UNI,TOT]
+RELATION rel[Message*Frame]
+RELATION relFlp[Message*Frame]
+RELATION name[Frame*Identifier] [UNI,TOT]
+RELATION source[Frame*Concept] [UNI]
+RELATION target[Frame*Concept] [UNI]
+RELATION value[Frame*Atom]
+RELATION sub[Frame*Frame]
+
+PATTERN "Message Type System"
+    RELATION matchExists[Relation*Frame]
+    MEANING "Registers a match between relation and frame"
+    PURPOSE RULE "Definition of matchExists"
+    {+ To allow shorter JSON messages, a frame does not have to specify its source and target concepts.
+    In case this leads to ambiguity, the compiler must signal a mistake and refrain from generating code.
+    +}
+    RULE "Definition of matchExists" :
+         matchExists = name;name~     /\     -- names must match in all cases
+                       source/source  /\     -- if the frame has a source, it must match
+                       target/target         -- if the frame has a target, it must match
+    MEANING "There is a match between a frame and a relation if their name, source, and target match, insofar the frame has a source or target."
+    
+    RELATION uniqueMatch[Relation*Frame]
+    MEANING "A relation matches to a frame if the type checker says so."
+    PURPOSE RULE "Definition of uniqueMatch"
+    {+ This relation allows the type checker to determine that there is precisely one match for every frame.
+    If not, the compiler must signal a mistake and refrain from generating code.
+    +}
+    RULE "Definition of uniqueMatch" :
+         uniqueMatch = matchExists - -I;matchExists
+    MEANING "f is a unique match to r if there exists only one r for every f."
+    
+    RELATION acceptable[Service*Message]
+    MEANING "A service can only consume a message if it is acceptable to that service."
+    PURPOSE RULE "Definition of acceptable"
+    {+ If a message contains pairs that do not fit into one of the relations of a service or if it fits in multiple relations, that service cannot interpret this message.
+    This definition lets the type checker verify that all pairs will find "a home" inside the service.
+    +}
+    RULE "Definition of acceptable" :
+         acceptable = context~;uniqueMatch;(rel\/relFlp)~
+    MEANING "A message is acceptable iff every frame in that message can be matched to one relation."
+ENDPATTERN
+
+PATTERN "Allocation of atoms"
+    PURPOSE RULE rhsAtoms
+    {+ This rule describes which pairs are generated from a message.
+    The left-hand side atom is to be generated by the exec-engine (TBD)+}
+    RULE rhsAtoms : uniqueMatch;(rel~;rel/\I);value |- in~;rAtom
+    MEANING "The value of a frame (unflipped) is the right-hand side atom of a pair."
+    
+    PURPOSE RULE lhsAtoms
+    {+ This rule describes which pairs are generated from a message.
+    The right-hand side atom is to be generated by the exec-engine (TBD)+}
+    RULE lhsAtoms : uniqueMatch;(relFlp~;relFlp/\I);value |- in~;lAtom
+    MEANING "The value of a frame (flipped) is the left-hand side atom of a pair."
+ENDPATTERN
+
+PATTERN "Streams"
+ENDPATTERN
+
+ENDCONTEXT
