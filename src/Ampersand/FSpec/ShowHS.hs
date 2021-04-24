@@ -107,7 +107,7 @@ instance ShowHS PlugSQL where
 instance ShowHS RelStore where
  showHS _ indent store
    = T.intercalate indent
-       [  "Relstore { rsDcl           = " <> showHSName (rsDcl store)
+       [  "RelStore { rsDcl           = " <> showHSName (rsDcl store)
        ,  "         , rsStoredFlipped = " <> tshow (rsStoredFlipped store)
        ,  "         , rsSrcAtt        = " <> showHSName (rsSrcAtt store)
        ,  "         , rsTrgAtt        = " <> showHSName (rsTrgAtt store)
