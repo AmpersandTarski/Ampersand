@@ -39,7 +39,7 @@ jobs:
         # - { build: cabal, ghc: 8.0.2, cabal-install: "2.0"  }   # setup-haskell only supports cabal-install 2.0 and higher
         # - { build: cabal, ghc: 8.2.2, cabal-install: "2.0"  }
         # - { build: cabal, ghc: 8.4.4, cabal-install: "2.2"  }
-        - { build: cabal, ghc: 8.10.3, cabal-install: "3.2"  }
+        # - { build: cabal, ghc: 8.10.3, cabal-install: "3.2"  }
         # - { build: cabal, ghc: 8.8.1, cabal-install: "2.4"  }   # currently not working for >= 3.0
         # use this to include any dependencies from OS package managers
         include: [] 
