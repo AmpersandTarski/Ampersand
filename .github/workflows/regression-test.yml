@@ -26,7 +26,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-latest, macOS-latest, windows-latest]
         # use this to specify what resolvers and ghc to use
         plan:
         # - { build: stack, resolver: "--resolver lts-9"  }    # ghc-8.0.2
