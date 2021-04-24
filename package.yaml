@@ -7,7 +7,7 @@ description:    You can define your business processes by means of rules, writte
 homepage:       http://ampersandtarski.github.io/
 category:       Database Design
 stability:      alpha
-tested-with:    GHC == 8.6.5
+tested-with:    GHC == 8.10.4
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE
@@ -33,7 +33,7 @@ ghc-options:
 default-extensions: 
       - NoImplicitPrelude
 dependencies:
-      - aeson == 1.5.5.1
+      - aeson == 1.5.6.0
       - aeson-pretty == 0.8.*
       - ansi-terminal == 0.10.*
       - base == 4.14.1.0
