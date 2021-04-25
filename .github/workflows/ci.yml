@@ -78,7 +78,7 @@ jobs:
         # - { build: stack, resolver: "--resolver lts-13"  }  redundant because lts-14 checks ghc-8.6 already
         - { build: stack, resolver: "--resolver lts-17.9"  }   # ghc-8.10.3
 
-    name: ${{ plan.build }} ${{ matrix.os }}
+    name: ${{ matrix.plan.build }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     steps:
