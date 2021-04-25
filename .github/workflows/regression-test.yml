@@ -133,26 +133,26 @@ jobs:
         BUILD: ${{ matrix.plan.build }}
 
 # Windows as seperate runner, for to add windows-latest to above fails (See https://github.com/jaspervdj/hakyll/pull/782 and )      
-  Windows:
-    runs-on: windows-latest
-
-    strategy:
-      matrix:
-        ghc-ver: [8.10.4]
-
-    env:
-      ARGS: "--stack-yaml stack-${{ matrix.ghc-ver }}.yaml --no-terminal --system-ghc --fast"
-
-    steps:
-    - uses: 'actions/checkout@v2'
-    - uses: actions/setup-haskell@v1.1
-      with:
-        ghc-version: ${{ matrix.ghc-ver }}
-    - uses: 'actions/cache@v1'
-      with:
-        path: '~/.stack'
-        key: "v3-stack-${{ hashFiles('stack-${{ matrix-ghc-ver }}.yaml') }}"
-        restore-keys: 'v3-stack'
-    - name: Install dependencies
-      run: |
-        stack build ${ARGS} --test --only-dependencies
+#  Windows:
+#    runs-on: windows-latest
+#
+#    strategy:
+#      matrix:
+#        ghc-ver: [8.10.4]
+#
+#    env:
+#      ARGS: "--stack-yaml stack-${{ matrix.ghc-ver }}.yaml --no-terminal --system-ghc --fast"
+#
+#    steps:
+#    - uses: 'actions/checkout@v2'
+#    - uses: actions/setup-haskell@v1.1
+#      with:
+#        ghc-version: ${{ matrix.ghc-ver }}
+#    - uses: 'actions/cache@v1'
+#      with:
+#        path: '~/.stack'
+#        key: "v3-stack-${{ hashFiles('stack-${{ matrix-ghc-ver }}.yaml') }}"
+#        restore-keys: 'v3-stack'
+#    - name: Install dependencies
+#      run: |
+#        stack build ${ARGS} --test --only-dependencies
