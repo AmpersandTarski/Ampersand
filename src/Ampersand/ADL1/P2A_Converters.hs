@@ -790,9 +790,9 @@ pCtx2aCtx env
                                   , ifcname = name pIfc 
                                   , ifcRoles = ifc_Roles pIfc
                                   , ifcObj = o
-                                  , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
+                                  , ifcConjuncts = []  -- to be enriched in Adl2fSpec with rules to be checked
                                   , ifcPos = origin pIfc
-                                  , ifcPrp = ifc_Prp pIfc
+                                  , ifcPurpose = ifc_Prp pIfc
                                   }
                       tt -> Errors . pure
                             . mkInterfaceMustBeDefinedOnObject pIfc (target . objExpression $ o) $ tt

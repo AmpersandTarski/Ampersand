@@ -69,8 +69,8 @@ BOX [ "name" : name[Rule*RuleName]
  --   , "maintains~ (Role)" : maintains[Role*Rule]~
  --   , "tgtConcept" : tgtConcept[Rule*Concept]
  --   , "srcConcept" : srcConcept[Rule*Concept]
-    , "formalExpression" : formalExpression[Rule*Expression]
-    , "sign" : formalExpression[Rule*Expression];sign[Expression*Signature]
+    , "formalTerm" : formalTerm[Rule*Term]
+    , "sign" : formalTerm[Rule*Term];sign[Term*Signature]
 --    , "maintains~ (Plug)" : maintains[Plug*Rule]~
  --   , "origin" : origin[Rule*Origin]
 --    , "rrviols" : rrviols
@@ -83,7 +83,7 @@ BOX [ "name" : name[Rule*RuleName]
 INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
     [ "ID" : I
 --    , "originatesFrom" : originatesFrom[Conjunct*Rule]
---    , "conjunct"       : conjunct[Conjunct*Expression]
+--    , "conjunct"       : conjunct[Conjunct*Term]
     ]
 INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I
@@ -94,8 +94,8 @@ INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     , "gengen~" : gengen[Isa*Concept]~
     , "genspc~" : genspc[Isa*Concept]~
 --    , "rootConcept~" : rootConcept~
-    , "src of expression~" : (sign[Expression*Signature];src[Signature*Concept])~
-    , "tgt of expression~" : (sign[Expression*Signature];tgt[Signature*Concept])~
+    , "src of term~" : (sign[Term*Signature];src[Signature*Concept])~
+    , "tgt of term~" : (sign[Term*Signature];tgt[Signature*Concept])~
     , "src of sign~" : src[Signature*Concept]~
     , "tgt of sign~" : tgt[Signature*Concept]~
 --    , "concept~" : concept~
@@ -103,15 +103,15 @@ INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
 --    , "in" : in[Concept*Plug]
     ]
 
-INTERFACE Expression FOR Ampersand : I[Expression] cRud
-BOX [ up : first~ \/ second~ \/ arg~ cRud LINKTO INTERFACE Expression
-    , expression: I[Expression] cRud LINKTO INTERFACE Expression
-    , first : first[BinaryTerm*Expression] cRud LINKTO INTERFACE Expression
+INTERFACE Term FOR Ampersand : I[Term] cRud
+BOX [ up : first~ \/ second~ \/ arg~ cRud LINKTO INTERFACE Term
+    , term: I[Term] cRud LINKTO INTERFACE Term
+    , first : first[BinaryTerm*Term] cRud LINKTO INTERFACE Term
     , binaryOperator : operator[BinaryTerm*Operator] cRud
-    , second : second[BinaryTerm*Expression] cRud LINKTO INTERFACE Expression
-    , arg : arg[UnaryTerm*Expression] cRud LINKTO INTERFACE Expression
+    , second : second[BinaryTerm*Term] cRud LINKTO INTERFACE Term
+    , arg : arg[UnaryTerm*Term] cRud LINKTO INTERFACE Term
     , unaryOperator : operator[UnaryTerm*Operator] cRud
-    , "defines rule" : formalExpression[Rule*Expression]~ cRud
+    , "defines rule" : formalTerm[Rule*Term]~ cRud
     , bind  : bind[BindedRelation*Relation] cRud LINKTO INTERFACE Relation
     , singleton : singleton[Singleton*AtomValue] cRud 
 --    , "user defined src" : userSrc["V"*Concept]cRud
@@ -123,7 +123,7 @@ BOX [ Signature: I[Signature]
     , src : src[Signature*Concept] LINKTO INTERFACE "Concept"
     , tgt : tgt[Signature*Concept] LINKTO INTERFACE "Concept"
     , "sign~ (Relation)" : sign[Relation*Signature]~ LINKTO INTERFACE "Relation"
-    , "sign~ (Rule)" : sign[Expression*Signature]~;formalExpression[Rule*Expression]~ LINKTO INTERFACE "Rule"
+    , "sign~ (Rule)" : sign[Term*Signature]~;formalTerm[Rule*Term]~ LINKTO INTERFACE "Rule"
     ] 
 
 
@@ -184,10 +184,10 @@ BOX [ "table" : table
 -}
 --INTERFACE Role FOR Ampersand : I[Role]
 --BOX [ "name" : name[Role*RoleName]
---    , "interfaces" : interfaces[Role*Interface] 
+--    , "interfaces" : ifcRoles[Interface*Role]~ 
 --    ]
 --INTERFACE Interface FOR Ampersand : I[Interface]
---BOX [ "interfaces~"  : interfaces[Role*Interface]~
+--BOX [ "interfaces~"  : ifcRoles[Interface*Role]
 --    ]
 ENDCONTEXT
 

@@ -32,7 +32,7 @@ BOX <TABS>
     , rules : V[SESSION*Rule]
       BOX <TABLE> [ name : name
            , signature : sign
-           , term : term[Rule*Expression]
+           , term : term[Rule*Term]
            , meaning : meaning
            , purpose : purpose
            ]

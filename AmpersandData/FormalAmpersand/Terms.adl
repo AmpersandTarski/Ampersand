@@ -1,0 +1,105 @@
+CONTEXT AST IN ENGLISH LATEX
+-- The comments for this script can be found in Atoms.doc
+INCLUDE "Concepts.adl"
+INCLUDE "Relations.adl"
+
+
+PATTERN "Term definitions"
+    RELATION usedIn[Relation*Term]
+    MEANING "The rule expressed in relation algebra."
+--    TODO make transitive closure of usedIn
+    ROLE ExecEngine MAINTAINS bindUsedIn
+    RULE bindUsedIn : bind |- usedIn~
+    VIOLATION (TXT "{EX} InsPair;usedIn;Relation;", TGT I, TXT ";Term;", SRC I[Term])
+
+    RELATION sign[Term*Signature][UNI,TOT]
+    RELATION in[Pair*Term]
+
+    VIEW Equivalence        : Equivalence(TXT "RULE ", first[BinaryTerm*Term], TXT " = ", second[BinaryTerm*Term])
+    VIEW Inclusion          : Inclusion  (TXT "RULE ", first[BinaryTerm*Term], TXT " |- ", second[BinaryTerm*Term])
+  --  VIEW Truth              : Truth      (TXT "RULE ", I[Term])
+    VIEW Relation           : Relation(name[Relation*RelationName], TXT "[", source[Relation*Concept];name[Concept*ConceptName], TXT "*", target[Relation*Concept];name[Concept*ConceptName], TXT "]")
+    VIEW UnaryMinus         : UnaryMinus(TXT "-", arg[UnaryTerm*Term])
+    VIEW Converse           : Converse  (arg[UnaryTerm*Term], TXT "~")
+    VIEW KleeneStar         : KleeneStar(arg[UnaryTerm*Term], TXT "*")
+    VIEW KleenePlus         : KleenePlus(arg[UnaryTerm*Term], TXT "+")
+    VIEW Intersection       : Intersection      (TXT "(", first[BinaryTerm*Term], TXT "/\\", second[BinaryTerm*Term], TXT ")")
+    VIEW Union              : Union             (TXT "(", first[BinaryTerm*Term], TXT "\\/", second[BinaryTerm*Term], TXT ")")
+    VIEW BinaryMinus        : BinaryMinus       (TXT "(", first[BinaryTerm*Term], TXT  "-" , second[BinaryTerm*Term], TXT ")")
+    VIEW Composition        : Composition       (TXT "(", first[BinaryTerm*Term], TXT  ";" , second[BinaryTerm*Term], TXT ")")
+    VIEW CartesianProduct   : CartesianProduct  (TXT "(", first[BinaryTerm*Term], TXT  "#" , second[BinaryTerm*Term], TXT ")")
+    VIEW RelationalAddition : RelationalAddition(TXT "(", first[BinaryTerm*Term], TXT  "!" , second[BinaryTerm*Term], TXT ")")
+    VIEW LeftResidual       : LeftResidual      (TXT "(", first[BinaryTerm*Term], TXT  "/" , second[BinaryTerm*Term], TXT ")")
+    VIEW RightResidual      : RightResidual     (TXT "(", first[BinaryTerm*Term], TXT "\\" , second[BinaryTerm*Term], TXT ")")
+
+    CONCEPT Operator ""
+    REPRESENT Operator TYPE ALPHANUMERIC
+    CONCEPT BinaryTerm ""
+    CLASSIFY BinaryTerm ISA Term
+    RELATION first[BinaryTerm*Term] [UNI]
+    RELATION second[BinaryTerm*Term] [UNI]
+    RELATION operator[BinaryTerm*Operator] [UNI]
+
+    CONCEPT UnaryTerm ""
+    CLASSIFY UnaryTerm ISA Term
+    RELATION arg[UnaryTerm*Term] [UNI]
+    RELATION operator[UnaryTerm*Operator] [UNI]
+
+    CONCEPT AtomValue "A value can exist on it's own, without having one or more concepts, where it is a value of an atom in it."
+    RELATION singleton[Singleton*AtomValue] [UNI]
+    
+    CONCEPT "V" "The cartesian product."
+    CLASSIFY "V" ISA Term
+    RELATION userSrc["V"*Concept] [UNI]
+    RELATION userTrg["V"*Concept] [UNI]
+    
+    CONCEPT Epsilon "An term between two concepts that have an generalisation relation between them" 
+    CLASSIFY Epsilon ISA Term
+    RELATION userCpt[Epsilon*Concept] [UNI]
+    CONCEPT "I" "The identity term on a concept."
+    CLASSIFY "I" ISA Epsilon
+    
+    CLASSIFY Equivalence ISA BinaryTerm
+    CLASSIFY Inclusion   ISA BinaryTerm
+    
+    --RELATION repr[Term*Representation] [UNI, TOT, INJ]
+    --The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
+    CLASSIFY Singleton          ISA Term
+    CLASSIFY BindedRelation     ISA Term
+    CLASSIFY Converse           ISA UnaryTerm
+    CLASSIFY KleeneStar         ISA UnaryTerm
+    CLASSIFY KleenePlus         ISA UnaryTerm
+    CLASSIFY UnaryMinus         ISA UnaryTerm
+    CLASSIFY Intersection       ISA BinaryTerm
+    CLASSIFY Union              ISA BinaryTerm
+    CLASSIFY BinaryMinus        ISA BinaryTerm
+    CLASSIFY Composition        ISA BinaryTerm
+    CLASSIFY CartesianProduct   ISA BinaryTerm
+    CLASSIFY RelationalAddition ISA BinaryTerm
+    CLASSIFY LeftResidual       ISA BinaryTerm
+    CLASSIFY RightResidual      ISA BinaryTerm
+ENDPATTERN
+
+RELATION showADL[Term*ShowADL] [UNI,TOT]
+REPRESENT ShowADL TYPE BIGALPHANUMERIC
+--HJI20161004: This execEngine rule doesn't work, because of the ';'-characters that may be in the ShowADL term
+      ROLE ExecEngine MAINTAINS "del unused ShowADL"
+      RULE "del unused ShowADL" : I[ShowADL] |- showADL~;showADL
+      MEANING "A ShowADL without Term will be removed."
+      VIOLATION ( TXT "{EX}_;DelAtom_;ShowADL_;", SRC I )
+VIEW Term : Term(showADL)
+
+{- I can't get the following to work...  Grrr!
+PATTERN "Type graph"
+    RELATION elem[TypeTerm*Node] [UNI]
+
+    ROLE ExecEngine MAINTAINS elemFill, elemNew
+    RULE elemNew : I[TypeTerm] |- elem;elem~
+    VIOLATION (TXT "{EX}_; NewStruct_;Node" -- maak een nieuw atoom in concept Node
+                    ,TXT "_;elem_;TypeTerm_;", SRC I, TXT "_;Node_;_NEW"
+              )
+    RULE elemFill : (subStar/\subStar~);elem |- elem
+    VIOLATION (TXT "{EX} InsPair;elem;TypeTerm;", SRC I, TXT ";Node;", TGT I)
+ENDPATTERN -}
+
+ENDCONTEXT

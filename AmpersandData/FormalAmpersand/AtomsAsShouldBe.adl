@@ -1,13 +1,14 @@
-﻿CONTEXT AST IN ENGLISH 
+CONTEXT AST IN ENGLISH 
 INCLUDE "Atoms.xlsx"
 
 PATTERN Atoms
-    RELATION name[Concept*Identifier] [UNI,TOT]
-    RELATION name[Relation*Identifier] [UNI,TOT]
+    RELATION name[Concept*ConceptName] [UNI,TOT]
+    RELATION name[Relation*RelationName] [UNI,TOT]
     RELATION source[Relation*Concept] [UNI,TOT]
     RELATION target[Relation*Concept] [UNI,TOT]
 
     REPRESENT Identifier TYPE ALPHANUMERIC
+    CLASSIFY ConceptName, RelationName ISA Identifier
 
     RULE "Identifiability of concepts": name;name~ |- I[Concept]
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
@@ -61,38 +62,47 @@ PATTERN "Compute Closures"
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPATTERN
 
-INTERFACE Overview : "_SESSION"[SESSION]
+INTERFACE Overzicht : "_SESSION"[SESSION]
 BOX <TABS>
     [ relations : V[SESSION*Relation]
       BOX<TABLE sortable>
            [ relation   : I[Relation]
+           , name       : name
+           , source     : source
+           , target     : target
            , "pair(s)"  : in~
            , sources    : sources
            , targets    : targets
            ]
     , concepts :V[SESSION*Concept]
       BOX<TABLE sortable>
-           [ name    : I[Concept]
+           [ id      : I[Concept]
+           , name    : name
            , "isa"   : isa
 --           , "isa+"  : isaPlus
 --           , "isa*"  : isaStar
            , "isa~"  : isa~
 --           , "isa+~" : isaPlus~
 --           , "isa*~" : isaStar~
-           , atoms   : pop~
+           , atoms   : pop~ cRud
            ]
     , pairs : V[SESSION*Pair]
-      BOX<TABLE sortable>
-           [ pair          : I
-           , "relation(s)" : in
+      BOX <TABLE>
+           [ Pair : I 
+           , lAtom : lAtom
+           , rAtom : rAtom
+           , in : in[Pair*Relation]
+           , field : pair~
            ]
---    , atoms : V[SESSION*Atom]
---      BOX<TABLE sortable>
---           [ atom : I
---           , type : pop - pop;isaPlus
---           , pop  : pop
---           ]
     ]
+
+ROLE ExecEngine MAINTAINS InsConcept, DelConcept
+RULE InsConcept : I[ConceptName] |- name~;I[Concept];name
+VIOLATION (TXT "{EX} InsPair;name;Concept;", SRC I, TXT ";ConceptName;", SRC I)
+RULE DelConcept : I[Concept] |- name;I[ConceptName];name~
+VIOLATION ( TXT "{EX} DelAtom;ConceptName;", SRC I
+          , TXT "{EX} DelAtom;Concept;", SRC I
+          )
 
 --VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 REPRESENT Atom TYPE ALPHANUMERIC
@@ -100,7 +110,7 @@ VIEW Concept : Concept(name)
 VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
-INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+INTERFACE Concept(name[Concept*ConceptName],isa) : I[Concept]
 BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
@@ -112,8 +122,8 @@ BOX [ "relation(s)"  : in
      , rAtom          : rAtom
      ]
 
-INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
-BOX [ name    : name
+INTERFACE Relation(name[Relation*RelationName],source,target) : I[Relation]
+BOX  [ name    : name
      , source  : source
      , target  : target
      ]

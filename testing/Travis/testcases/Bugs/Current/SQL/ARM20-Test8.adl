@@ -51,14 +51,14 @@ $allInterfaceObjects =
     ( // Top-level interface Overzicht for all roles:
       'Overzicht' => 
       array ( 'name' => 'Overzicht'
-            // original expression: I[ONE]
+            // original term: I[ONE]
             , 'interfaceRoles' => array ()
             , 'editableConcepts' => array ()
             , 'relation' => ''
             , 'relationIsFlipped' => ''
             , 'srcConcept' => 'ONE'
             , 'tgtConcept' => 'ONE'
-            , 'expressionSQL' => '/* case: ETyp x _
+            , 'termSQL' => '/* case: ETyp x _
                                      ETyp ( \"I\" ) _ */
                                   /* I[ONE] */
                                   /* case: (ERel (V (Sign s t)))
@@ -69,12 +69,12 @@ $allInterfaceObjects =
             , 'boxSubInterfaces' =>
                 array
                   ( array ( 'name' => 'Personen'
-                          // original expression: V[ONE*Persoon]
+                          // original term: V[ONE*Persoon]
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'ONE'
                           , 'tgtConcept' => 'Persoon'
-                          , 'expressionSQL' => '/* case: ETyp x _
+                          , 'termSQL' => '/* case: ETyp x _
                                                    ETyp ( \"V\" ) _ */
                                                 /* case: (ERel (V (Sign s t)))
                                                    ERel [ \"V[ONE*Persoon]\" ] */
@@ -84,23 +84,23 @@ $allInterfaceObjects =
                           , 'boxSubInterfaces' =>
                               array
                                 ( array ( 'name' => 'Naam'
-                                        // original expression: I
+                                        // original term: I
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Persoon'
                                         , 'tgtConcept' => 'Persoon'
-                                        , 'expressionSQL' => 'SELECT DISTINCT `Persoon` AS src, `Persoon` AS tgt
+                                        , 'termSQL' => 'SELECT DISTINCT `Persoon` AS src, `Persoon` AS tgt
                                                               FROM `Persoon`
                                                               WHERE `Persoon` IS NOT NULL AND `Persoon` IS NOT NULL'
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Eigenaar van'
-                                        // original expression: bfEigenaar~
+                                        // original term: bfEigenaar~
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Persoon'
                                         , 'tgtConcept' => 'Bedrijfsfunctie'
-                                        , 'expressionSQL' => '/* case: EFlp x. */
+                                        , 'termSQL' => '/* case: EFlp x. */
                                                               SELECT DISTINCT `Bedrijfsfunctie` AS tgt, `bfEigenaar` AS src
                                                               FROM `Bedrijfsfunctie`
                                                               WHERE `Bedrijfsfunctie` IS NOT NULL AND `bfEigenaar` IS NOT NULL'
@@ -109,12 +109,12 @@ $allInterfaceObjects =
                                 )
                           )
                   , array ( 'name' => 'Bedrijfsfuncties'
-                          // original expression: V[ONE*Bedrijfsfunctie]
+                          // original term: V[ONE*Bedrijfsfunctie]
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'ONE'
                           , 'tgtConcept' => 'Bedrijfsfunctie'
-                          , 'expressionSQL' => '/* case: ETyp x _
+                          , 'termSQL' => '/* case: ETyp x _
                                                    ETyp ( \"V\" ) _ */
                                                 /* case: (ERel (V (Sign s t)))
                                                    ERel [ \"V[ONE*Bedrijfsfunctie]\" ] */
@@ -123,12 +123,12 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Critera'
-                          // original expression: V[ONE*Criterium]
+                          // original term: V[ONE*Criterium]
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'ONE'
                           , 'tgtConcept' => 'Criterium'
-                          , 'expressionSQL' => '/* case: ETyp x _
+                          , 'termSQL' => '/* case: ETyp x _
                                                    ETyp ( \"V\" ) _ */
                                                 /* case: (ERel (V (Sign s t)))
                                                    ERel [ \"V[ONE*Criterium]\" ] */

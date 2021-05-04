@@ -1,6 +1,6 @@
 {-
 A message contains an aggragate of pairs in a hierarchical structure that resembles the interface structure.
-Only, a message does not contain expressions but only relations and flipped relations.
+Only, a message does not contain terms but only relations and flipped relations.
 
 The idea is to have a conceptual model that matches the messages in JSON.
 Take for example the following message (code in JavaScript)
@@ -75,7 +75,7 @@ PATTERN Atoms -- This pattern is copied from FormalAmpersand
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
     RELATION in[Pair*Relation] [UNI,TOT]
-    RELATION pop[Atom*Concept] [UNI,TOT]
+    RELATION pop[Atom*Concept]
     RELATION lAtom[Pair*Atom] [UNI,TOT]
     RELATION rAtom[Pair*Atom] [UNI,TOT]
 ENDPATTERN

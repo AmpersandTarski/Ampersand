@@ -3,24 +3,24 @@ PATTERN Conjuncts
 RELATION qRule[Quad*Rule] [UNI,TOT]
 RELATION qConjuncts[Quad*Conjunct]
 RELATION rc_rulename[Conjunct*Identifier] [UNI,TOT]
-RELATION rc_conjunct[Conjunct*Expression] [UNI,TOT]
+RELATION rc_conjunct[Conjunct*Term] [UNI,TOT]
 RELATION rc_dnfClauses[Conjunct*DnfClause]
-RELATION conjuncts[Rule*Expression]
-RELATION expr2dnfClause[Expression*DnfClause] [UNI,TOT]
+RELATION conjuncts[Rule*Term]
+RELATION expr2dnfClause[Term*DnfClause] [UNI,TOT]
 RELATION allShifts[DnfClause*DnfClause]
-RELATION term[Rule*Expression][UNI,TOT] --is defined somewhere else too.
-RELATION conjNF[Expression*Expression] [UNI,TOT]
-RELATION exprIsc2list[Expression*Expression] [TOT]
+RELATION term[Rule*Term][UNI,TOT] --is defined somewhere else too.
+RELATION conjNF[Term*Term] [UNI,TOT]
+RELATION exprIsc2list[Term*Term] [TOT]
 RELATION name[Rule*RuleName] [UNI,TOT]
 
 RULE Conjuncts1 : qConjuncts;rc_conjunct |- qRule;conjuncts
 MEANING "All conjuncts in a quad are derived by means of the relation ``conjuncts''."
 
 RULE Conjuncts2 : rc_conjunct~;rc_dnfClauses = expr2dnfClause;allShifts
-MEANING "A conjunct in a quad stores all dnf-clauses that are derived from the expression in that conjunct."
+MEANING "A conjunct in a quad stores all dnf-clauses that are derived from the term in that conjunct."
 
-RULE defconjuncts : conjuncts = term[Rule*Expression];conjNF;exprIsc2list
-MEANING "The conjuncts in a rule are defined as the top-level subexpressions in the conjunctive normal form of the expression related to that rule."
+RULE defconjuncts : conjuncts = term[Rule*Term];conjNF;exprIsc2list
+MEANING "The conjuncts in a rule are defined as the top-level subterms in the conjunctive normal form of the term related to that rule."
 
 RULE Conjuncts4 : qConjuncts~;qRule |- rc_rulename;name~
 MEANING "The name of every conjunct in a quad is the name of the rule from which it has been derived."

@@ -19,8 +19,9 @@ RELATION on[Interface*Service] [UNI,TOT]
 RELATION type[Widget*EventType] [UNI,TOT]
 RELATION type[Stream*MsgType] [UNI,TOT]
 RELATION in[Widget*Interface] [UNI,TOT]
-RELATION reaction[EventType*Action] [UNI,TOT]
-RELATION reaction[Rule*Action] [UNI,TOT]
+RELATION reaction[EventType*CodeFragment] [UNI,TOT]
+RELATION reaction[Rule*CodeFragment] [UNI,TOT]
+RELATION exec[Action*CodeFragment] [UNI,TOT]
 RELATION trig[Event*Conjunct]
 RELATION trig[Violation*Action] [UNI]
 RELATION conjunct[SatComputation*Conjunct] [UNI]
@@ -61,13 +62,13 @@ PATTERN "Evaluation of actions"
     PURPOSE RULE "Evaluate which actions to take"
     {+ This rule specifies which actions are triggered. +}
     RULE "Evaluate which actions to take" :
-         compBy;conjunct |- trig;reaction~;originatesFrom~
+         compBy;conjunct |- trig;exec;reaction~;originatesFrom~
     MEANING "Every violation triggers the action specified by the rules in which the conjunct occurs."
 
     PURPOSE RULE "Take action on a widget event"
     {+ This rule specifies which actions are triggered. +}
     RULE "Take action on a widget event" :
-         reaction;context |- type~;in;on;I[Service];context
+         reaction;exec~;context |- type~;in;on;I[Service];context
     MEANING "An event that has the type of a widget causes an action in that context."
 ENDPATTERN
 

@@ -22,7 +22,7 @@ PATTERN Rules
     RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
 --    RELATION srcConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
 --    RELATION tgtConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
-    RELATION formalExpression[Rule*Expression] [UNI,TOT]
+    RELATION formalTerm[Rule*Term] [UNI,TOT]
     MEANING "The rule expressed in relation algebra."
     RELATION meaning[Rule*Meaning] -- e.g. 'BusinessFunction' 
   --  RELATION sign[Rule*Signature] [UNI,TOT]

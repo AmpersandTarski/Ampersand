@@ -1,7 +1,7 @@
 ﻿CONTEXT Ticket454 IN ENGLISH
 {-
 PURPOSE:
-Inside the Ampersand compiler, this script causes an EEps expression with EEps B (Sign B B)
+Inside the Ampersand compiler, this script causes an EEps term with EEps B (Sign B B)
 That is not harmful, but rare. Therefore this script should succeed.
 -}
 

@@ -7,7 +7,7 @@ INCLUDE "Contexts.adl"
 INCLUDE "Relations.adl"
 INCLUDE "Documentation.adl"
 INCLUDE "Rules.adl"
-INCLUDE "Expressions.adl"
+INCLUDE "Terms.adl"
 INCLUDE "Views.adl"
 INCLUDE "Generics.adl"
 INCLUDE "Interfaces.adl"
@@ -17,7 +17,7 @@ INCLUDE "Interfaces.adl"
    *** om te voorkomen dat Travis gaat piepen. Deze relaties ontbreken elders
    *** in de FormalAmpersand scripts, maar worden door de 
    *** meatgrinder wél gevuld. 
--}
+
 RELATION interfaces[Context*Interface]
 RELATION name[Role*RoleName]
 REPRESENT RoleName TYPE ALPHANUMERIC
@@ -29,7 +29,6 @@ REPRESENT Language TYPE ALPHANUMERIC
 REPRESENT Text TYPE BIGALPHANUMERIC
 RELATION urlEncodedName[Concept*EncodedName]
 REPRESENT EncodedName TYPE ALPHANUMERIC
-RELATION context[Relation*Context]
 RELATION ttype[Concept*TType][UNI]
 REPRESENT TType TYPE ALPHANUMERIC
 RELATION allRoles[Context*Role]
@@ -38,7 +37,6 @@ RELATION maintains[Role*Rule]
 RELATION context[Population*Context]
 RELATION gens[Context*IsE]
 RELATION urlEncodedName[Pattern*EncodedName]
-RELATION interfaces[Role*Interface]
 RELATION context[Population*Context]
 RELATION language[Context*Language]
 REPRESENT Language TYPE ALPHANUMERIC
@@ -49,7 +47,7 @@ RELATION versionInfo[Context*AmpersandVersion]
 REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 RELATION urlEncodedName[Rule*EncodedName]
 RELATION context[IdentityDef*Context]
-
+-}
 {- ******************************************** 
    *** Einde elders neer te zetten relaties *** 
    ******************************************** 

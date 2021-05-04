@@ -1,78 +1,302 @@
 CONTEXT RAP IN ENGLISH
+
+INCLUDE "AtomsAsShouldBe.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
--- RJ: I wish you guys would use relation names that are easily interpretable by people that do not know about the Haskell stuff behind all this. Use 'ifcPurpose' rather than 'ifcPrp', and use something like 'ifcViolatableRules' rather than 'viol'. More or less self explanatory naming is considered a good practice. Use it.
+-- RJ: I wish you guys would use relation names that are easily interpretable by people that do not know about the Haskell stuff behind all this. Use 'ifcPurpose' rather than 'ifcPurpose', and use something like 'ifcViolatableRules' rather than 'violatable'. More or less self explanatory naming is considered a good practice. Use it.
+-- SJ: I made some changes. By the way, the story is being told in the accompanying file called Interfaces.docadl.
+
+
+{-
+PATTERN Atoms -- This pattern is copied from FormalAmpersand
+    RELATION name[Concept*ConceptName] [UNI,TOT]   -- from Concepts.adl
+    RELATION name[Relation*RelationName] [UNI,TOT] -- from Concepts.adl
+    RELATION source[Relation*Concept] [UNI,TOT]
+    RELATION target[Relation*Concept] [UNI,TOT]
+
+    REPRESENT Identifier TYPE ALPHANUMERIC
+
+    RULE "Identifiability of concepts": name;name~ |- I[Concept]
+    VIOLATION (TXT "The name \"", SRC name, TXT "\" is already in use")
+
+    RELATION in[Pair*Relation] [UNI,TOT]
+    RELATION pop[Atom*Concept]
+    RELATION lAtom[Pair*Atom] [UNI,TOT]
+    RELATION rAtom[Pair*Atom] [UNI,TOT]
+
+    ROLE ExecEngine MAINTAINS "InsPair pop", "DelPair pop"
+    RULE "InsPair pop" : lAtom~;in;source \/ rAtom~;in;target |- pop
+    VIOLATION ( TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I )
+    RULE "DelPair pop" : pop |- lAtom~;in;source \/ rAtom~;in;target
+    VIOLATION ( TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I )
+ENDPATTERN
+-}
+
+PURPOSE PATTERN "Data objects"
+{+This pattern describes the invariant semamtics of data objects (concept: Object).+}
+PATTERN "Data objects"
+    PURPOSE CONCEPT Field
+    {+The concept of Field is used to link the content of a term to data in an interface.+}
+    CONCEPT Field "A field is a labeled part of an object, which displays a number of atoms." ""
+    RELATION field[Div*Field] [UNI,TOT]
+    MEANING "Each Div corresponds to precisely one field in an object. We represent only the DIV-sections that are used to create, read, update, or delete atoms (Hence this relation is total)."
+
+    PURPOSE RELATION content[Div*Atom]
+    {+To determine which atoms are shown at any moment in time, we use the relation "content".
+    For every DIV-section used by Ampersand to display atoms, this relation says which atoms are in which DIV-section.+}
+    RELATION content[Div*Atom] [UNI]
+    MEANING "Each DIV-section may contain an atom, which is visible to the user."
+    CONCEPT Object "An object is (part of) a hierarchical structure that contains data as defined by a corresponding ObjectDef. The object is an instance of an ObjectDef." ""
+    RELATION fieldIn[Field*Object] [UNI,TOT]
+    MEANING "Each Field corresponds to precisely one object."
+    CLASSIFY FieldDef ISA ObjectDef
+    RELATION selfAtom[Object*Atom] [UNI,TOT]
+    RELATION def[Object*ObjectDef] [UNI,TOT]
+    MEANING "Each Object is related to the ObjectDef of which it is an instance."
+    RELATION pair[Field*Pair]
+    MEANING "All pairs of which the right atoms (rAtom) are displayed are in the relation pair."
+    RELATION def[Field*FieldDef] [UNI,TOT]
+    MEANING "Each Field is related to the FieldDef of which it is an instance."
+    RELATION eval[Term*Pair]
+    MEANING "This relation contains the pairs that are obtained by evaluating the term. The combination of a pair and an term yields a statement or a phrase, which makes sense to users."
+
+    PURPOSE RULE "Object definitions"
+    {+ To maintain strong typing we impose that every object satisfies its definition.+}
+    RULE "Object definitions" : def;fieldIn = fieldIn;def
+    MEANING "Every field in an object is defined in the field definition of that object's definition."
+
+    PURPOSE RULE "DelPair pair"  -- , "InsPair pair"
+    {+ The pairs in a field are determined by evaluating the term in the definition of the field,
+    restricted to those with this object's left atom.+}
+    ROLE ExecEngine MAINTAINS "DelPair pair", "InsPair pair"
+    RULE "DelPair pair" : pair |- def[Field*FieldDef];eval /\ fieldIn;selfAtom;lAtom~
+    VIOLATION ( TXT "{EX} DelPair;pair;Field;", SRC I, TXT ";Pair;", SRC I )
+    RULE "InsPair pair" : def[Field*FieldDef];eval /\ fieldIn;selfAtom;lAtom~ |- pair
+    VIOLATION ( TXT "{EX} InsPair;pair;Field;", SRC I, TXT ";Pair;", SRC I )
+
+    RULE lksjdflksdj : def;(edit\/editFlp) |- field~;(I[Div]-content;content~);V
+
+    PURPOSE RULE "Create new DIV-section"
+    {+ If the population of a field changes, this is visible in the relation "pair".
+    For each pair, there should be a DIV-section in the interface to display it.
+    So pairs created that show up in a field yield a new DIV-section to display an atom.
+    A pair removed leads to the removal of the corresponding DIV-section. +}
+    ROLE ExecEngine MAINTAINS "Create new DIV-section", "Delete DIV-section"
+    RULE "Create new DIV-section" : pair;rAtom |- field~;content
+    VIOLATION ( TXT "{EX} NewStruct;Div"
+              , TXT ";field;Div;NULL;Field;", SRC I
+              , TXT ";content;Div;NULL;Field;", TGT I
+              )
+    RULE "Delete DIV-section" : content |- field;pair;rAtom
+    VIOLATION ( TXT "{EX} DelAtom;Div;", SRC I)
+ENDPATTERN
+
+PURPOSE PATTERN "Interface events"
+{+This pattern describes how an insertion in a DIV-section on the screen
+causes the desired insertion of a pair in a relation.+}
+PATTERN "Interface events"
+    PURPOSE CONCEPT InsAtom
+    {+This event causes a new atom in a DIV-section of the user interface.+}
+    CONCEPT InsAtom "An InsAtom event inserts an atom in a DIV-section of a user interface." ""
+    CLASSIFY InsAtom ISA Event
+    RELATION div[InsAtom * Div]
+    RELATION atom[InsAtom * Atom]
+    PURPOSE RELATION edit[FieldDef*Relation]
+    {+ To allow editing to insert, update and delete links,
+    Ampersand registers whether the term in a field def is just the relation.+}
+    RELATION edit[FieldDef*Relation]
+    MEANING "The term in this FieldDef is just the relation."
+    PURPOSE RELATION editFlp[FieldDef*Relation]
+    {+ To allow editing to insert, update and delete links,
+    Ampersand registers whether the term in a field def is just the flipped relation.+}
+    RELATION editFlp[FieldDef*Relation]
+    MEANING "The term in this FieldDef is just the flipped relation."
+
+    ROLE ExecEngine MAINTAINS "userFillsDiv"
+    RULE userFillsDiv :
+      div~;I[InsAtom];atom |- content
+    VIOLATION ( TXT "{EX} DelPair;content;DivSection;", SRC I, TXT ";Atom;", SRC content
+              , TXT "{EX} InsPair;content;DivSection;", SRC I, TXT ";Atom;", TGT I
+              )
+
+    PURPOSE RULE InsertInField
+    {+To insert an atom in an empty interface field results in the creation of a pair.
+    This pair is inserted in the appropriate relation.
+    Note that this can only be done if the term of that field is editable,
+    i.e. one of `edit` or `editFlp` is populated.
+    +}
+    ROLE ExecEngine MAINTAINS "InsertInField"
+    RULE InsertInField :
+      field~;div~;atom
+        |- (selfAtom;lAtom~ /\
+            def;(edit\/editFlp);in~)
+           ;rAtom
+    MEANING "To insert an atom in a field means to insert a pair in the relation that corresponds to that field."
+    VIOLATION ( TXT "{EX} NewStruct;Pair"
+              , TXT ";lAtom;Pair;NULL;Atom;", SRC selfAtom
+              , TXT ";in;Pair;NULL;Relation;", SRC def;(edit\/editFlp)
+              , TXT ";rAtom;Pair;NULL;Atom;", TGT I
+              , TXT "{EX} InsPair;"
+              , SRC def;(edit\/editFlp);name[Relation*RelationName], TXT ";"  -- <relation name>
+              , SRC def;(edit;target\/editFlp;source), TXT ";"                -- <source concept>
+              , SRC selfAtom, TXT ";"                                -- <source atom>
+              , SRC def;(edit;source\/editFlp;target), TXT ";"                -- <target concept>
+              , TGT I                                                         -- <target atom>
+              )
+
+--    PURPOSE RULE RemoveFromField
+--    {+To remove an atom from an interface field (i.e. the `minus`-icon. Not the `bin`-icon) results
+--    in the deletion of a pair from the appropriate relation.
+--    +}
+--    ROLE ExecEngine MAINTAINS "RemoveFromField"
+--    RULE RemoveFromField :
+--      field~;(I[Div]/\content;content~);div~
+--        |- (selfAtom;lAtom~ /\ def;(edit\/editFlp);in~);rAtom
+--    MEANING "To insert an atom in a field means to insert a pair in the relation that corresponds to that field."
+--    VIOLATION ( TXT "{EX} DelPair;"
+--              , SRC def;(edit\/editFlp);name, TXT ";"           -- <relation name>
+--              , SRC def;(edit;target\/editFlp;source), TXT ";"  -- <source concept>
+--              , SRC selfAtom, TXT ";"                  -- <source atom>
+--              , SRC def;(edit;source\/editFlp;target), TXT ";"  -- <target concept>
+--              , TGT I                                           -- <target atom>
+--              )
+ENDPATTERN
+
+VIEW "Interface": Interface DEFAULT
+   { name : name[Interface*InterfaceName]
+   }
+ENDVIEW
+
+VIEW "FieldDef": FieldDef DEFAULT
+   { name : label[FieldDef*FieldName]
+   }
+ENDVIEW
+
+VIEW "Field": Field DEFAULT
+   { name : def;label[FieldDef*FieldName]
+   }
+ENDVIEW
+
+INTERFACE "Overview" : I[SESSION] ; "_SESSION" cRud BOX<TABS>
+   [ interfaces : V[SESSION*Interface]
+     BOX <TABLE>
+       [ "Interface" : I
+       , name : name
+       , context : context
+       , pos : ifcPos cRud
+       , fieldDefs : fieldIn[FieldDef*ObjectDef]~ BOX <TABLE>
+           [ FieldDef : I[FieldDef]
+           , label : label
+           , edit : edit
+           , editFlp : editFlp
+           ]
+       ]
+   , DIVs : V[SESSION*Div]
+     BOX <TABLE>
+       [ Div : I 
+       , field : field
+       , content : content
+       ]
+   , Fields : I[SESSION] BOX<TABLE>
+       [ Fields : V[SESSION*Field]
+           BOX <TABLE>
+             [ Field : I
+             , fieldIn : fieldIn
+             , divs : field~
+             , def : def
+             , pairs : pair
+             ] 
+       , FieldDefs : V[SESSION*FieldDef]
+           BOX <TABLE>
+             [ FieldDef : I 
+             , label : label
+             , fieldIn : fieldIn
+             , edit : edit
+             , editFlp : editFlp
+             ]
+       ]
+   , Objects : I[SESSION] BOX<TABLE>
+       [ Objects : V[SESSION*Object]
+           BOX <TABLE>
+             [ Object : I 
+             , selfAtom : selfAtom
+             , def : def
+             ] 
+       ]
+   , Relations : V[SESSION*Relation] cRud
+     BOX <TABLE>
+       [ Relation : I
+       , "field for edit" : edit~
+       , "field for editFpl" : editFlp~
+       ]
+   ]
+
+PATTERN "Static Interface Rules"
+    CLASSIFY Interface ISA ObjectDef
+    CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
+
+    CLASSIFY ObjectDef ISA Term
+    CONCEPT Term "Formerly known as Expression." 
+
+    {-Han,
+    ifcParams contain the editable relations. This needs to be enhanced to ifcInputs and ifcOutputs.
+    So I have substituted ifcParams by ifcInputs everywhere in the Haskell code.
+    ifcOutputs has to be added yet.
+    -}
+    RELATION name[Interface*InterfaceName] [UNI,TOT]
+    MEANING "This relation contains the name of each interface."
+    REPRESENT InterfaceName TYPE ALPHANUMERIC
+
+    RELATION context[Interface*Context][UNI]
+    CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
+
+    IDENT Interface: Interface(name,context[Interface*Context])
+
+    RELATION ifcPos[Interface*Origin] [UNI]
+    MEANING "The position in the file (filename, line- and column number)."
+    RELATION ifcPurpose[Interface*Purpose] [UNI]
+    MEANING "The purpose of each interface is being registered."
+ENDPATTERN
 
 PATTERN Interfaces
-CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
-IDENT Interface: Interface(ifcObj;name,interfaces[Context*Interface]~)
-CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
-
-{-Han,
-ifcParams contain the editable relations. This needs to be enhanced to ifcInputs and ifcOutputs.
-So I have substituted ifcParams by ifcInputs everywhere in the Haskell code.
-ifcOutputs has to be added yet.
--}
-RELATION name[Interface*InterfaceName] [UNI,TOT]
-MEANING "This relation contains the name of each interface."
-REPRESENT InterfaceName TYPE ALPHANUMERIC
 RELATION ifcInputs[Interface*Relation]  -- was: ifcParams
 MEANING "This relation contains the relations that can be edited in an interface by a user or another computer."
 RELATION ifcOutputs[Interface*Relation]
 MEANING "This relation contains the relations that can be edited by the computer for restoring invariants."
-{- Replace ifcInputs and ifcOutputs with:
-CONCEPT ContextRelation "a relation in a specific context"
-RELATION ifcRelation[Interface*ContextRelation]
-MEANING "This relation contains the relations in either of the contexts that the Interface connects and whose population may be modified within a transaction.
--}
-RELATION ifcClass[Interface*String] [UNI] --RJ: What is this for?
+
 RELATION ifcRoles[Interface*Role]
 MEANING "This relation contains the roles for which an interface is available (empty means: available for all roles)."
-RELATION ifcObj[Interface*ObjectDef] [UNI,TOT,INJ]
-MEANING "Every interface has precisely one object definition, which defines the structure of objects to be changed by transactions of this interface."
 RELATION ifcQuads[Interface*Quad] -- RJ: What is a Quad?
 MEANING "All quads that are needed to perform computations for maintaining rules in an interface are registered."
-RELATION ifcControls[Interface*Conjunct] -- RJ: Why not call this 'ifcConjuncts'?
+RELATION ifcConjuncts[Interface*Conjunct]
 MEANING "All conjuncts that must be evaluated after a transation are registered."
-RELATION ifcPos[Interface*Origin] [UNI,TOT]
-MEANING "The position in the file (filename, line- and column number)."
-RELATION ifcPrp[Interface*String] [UNI] -- RJ: use more self-explanatory (longer) name, please
-MEANING "The purpose of each interface is being registered."
-RELATION viol[Interface*Rule] -- RJ: use more self-explanatory (longer) name, please
-MEANING "All rules that can be violated by an interface are included in viol."
+RELATION violatable[Interface*Rule]
+MEANING "All rules that can be violated by an interface are included in violatable."
 
-RELATION name[ObjectDef*ObjectName] [UNI,TOT]
-MEANING "Every object definition has a name."
-REPRESENT ObjectName TYPE ALPHANUMERIC
-RELATION objpos[ObjectDef*Origin] [UNI,TOT]
+RELATION label[FieldDef*FieldName] [UNI,TOT]
+MEANING "Every field definition has a label."
+REPRESENT FieldName TYPE ALPHANUMERIC
+RELATION objpos[ObjectDef*Origin] [UNI]
 MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
-RELATION objExpression[ObjectDef*Expression] [UNI,TOT] -- RJ: Why not call this thing 'objExpr(ession)'?
-MEANING "Every object definition has an expression, which determines the population for which that definition is applicable."
-RELATION objmView[ObjectDef*View] [UNI] -- RJ: Why not call this thing 'objView' or 'objdefView'
+RELATION objView[ObjectDef*View] [UNI] -- RJ: Why not call this thing 'objView' or 'objdefView'
 MEANING "An object definition can have a view that should be used for this object (e.g. TABS, TABLE, etc.)."
-RELATION usedIn[Relation*Expression]
-MEANING "If a relation is used in an expression, this is registered in usedIn."
-RELATION formalExpression[Rule*Expression] 
-MEANING "The expression, of which a rule consists, is accessible via the relation formalExpression."
+RELATION usedIn[Relation*Term]
+MEANING "If a relation is used in an term, this is registered in usedIn."
+RELATION formalTerm[Rule*Term] 
+MEANING "The term, of which a rule consists, is accessible via the relation formalTerm."
 
-RULE violatableByInterface : viol = (ifcInputs\/ifcOutputs);usedIn;formalExpression~
+RULE violatableByInterface : violatable = (ifcInputs\/ifcOutputs);usedIn;formalTerm~
 MEANING "An interface may violate any rule that uses an input- or output relation of that interface."
-RELATION getExpressionRelation[Expression*Relation] [UNI] -- RJ: use a more self-explanatory name, please
-MEANING "An Expression that is equivalent to a Relation, allows that relation to be edited."
-
-RULE checkExpressionRelation : getExpressionRelation |- (usedIn~;-I;usedIn/\I);getExpressionRelation
--- How is that different from: usedIn~;getExpressionRelation |- I
-MEANING "An editable expression contains one relation only."
 
 {- HJO, 20170825 Disabled this rule, for kleenePlus is currently not supported by the database 
-RULE "possible inputs" : ifcInputs |- ifcObj;(attIn~;attObj)+;objExpression;getExpressionRelation
+RULE "possible inputs" : ifcInputs |- fieldIn~+;getTermRelation
 MEANING "Allow only those input relations that have an editable field inside the interface."
 MESSAGE "Unusable input relation in interface:"
 VIOLATION (TXT "Relation ", TGT I, TXT " has no editable field in interface ", SRC I)
--}
-RULE "accessible relations" : V[Context*Interface];ifcObj;objExpression;getExpressionRelation
+RULE "accessible relations" : V[Context*Interface];getTermRelation
 MEANING "For every relation that is potentially editable, there exists an interface through which it can be accessed."
 ROLE "FormalAmpersand" MAINTAINS "accessible relations"
+-}
 ENDPATTERN
 
 {-
@@ -85,7 +309,7 @@ RELATION sessionRole[SESSION*Role] [UNI,TOT]
 MEANING "The current role of the session user is registered with the session a user is in."
 RULE "Current role" : sessIfc |- sessionRole;ifcRoles~ \/ -(V;ifcRoles~)
 MEANING "Each session has a current interface, which is linked to one of the roles allowed for that interface, or to any interface if no roles are specified."
-RULE "Current atom" : sessIfc |- sessAtom;right~;in;(ifcObj;objExpression)~
+RULE "Current atom" : sessIfc |- sessAtom;right~;in
 MEANING "Each session has a current interface, which is linked to one of the roles allowed for that interface, or to any interface if no roles are specified."
 ENDPATTERN
 -}
@@ -95,24 +319,14 @@ CONCEPT Transaction "A transaction is an instance of an interface, which is bein
 CONCEPT Object "An object is an instance of an ObjectDef."  -- Objects reside in the front end.
 CONCEPT Act "An act is an event that inserts or deletes a set of pairs in a relation."   -- Acts occur in the front end.
 
-CLASSIFY Object ISA Pair
-RELATION inst[Object*ObjectDef] [UNI,TOT]
-MEANING "Because each object is an instance of an ObjectDef, we need to know that ObjectDef."
-RELATION left[Pair*Atom] [UNI,TOT]
-RELATION right[Pair*Atom] [UNI,TOT]
-RELATION in[Pair*Expression]
-MEANING "The combination of a pair and an expression yields a statement, which makes sense to users."
-RULE "atoms in objects" : inst;objExpression = I[Object];in
-MEANING "An object is a pair of atoms that is in the object expression"
-
-RELATION attIn[Attribute*ObjectDef] [UNI,TOT]
-MEANING "Every attribute belongs to an ObjectDef."
-RELATION attObj[Attribute*ObjectDef] [UNI,TOT]
-MEANING "Every attribute represents an ObjectDef (inside another Objectdef)."
-RULE "attributes in objects" : left~;inst[Object*ObjectDef];attObj~;attIn = right~;inst[Object*ObjectDef]
-MEANING "A left atom in an attribute ob an object is the right atom in that object's instance."
-RULE "attributes with unique names" : name;name~ /\ attIn~;attIn |- I[ObjectDef]
-MEANING "Every attribute within one object definition has a unique name."
+RELATION fieldIn[FieldDef*ObjectDef] [UNI,TOT]
+MEANING "Every field belongs to an ObjectDef."
+CLASSIFY Field ISA Object
+RULE "fields in objects" : selfAtom |- pair;lAtom
+MEANING "A left atom in a field of an object is the right atom in that object's instance."
+RULE "fields with unique names" : -I[FieldDef] |- label;-I;label~
+MEANING "Every field within one object definition has a unique name."
+VIOLATION (TXT "Multiple fields are labeled identically: ", SRC label)
 
 RELATION transactionObject[Transaction*Object] [UNI,TOT]
 MEANING "Each Ampersand transaction has a transaction object, in which the front end administers the progress of a transaction."
@@ -129,7 +343,6 @@ MEANING "The acts that can be caused by a Quad firing."
 RULE quadsInInterface : ifcQuads = ifcInputs;changes~;inQ~ /\ ifcOutputs;changes~;outQ~
 MEANING "An interface contains those quads that are fired by its inputs and that produce changes in its outputs."
 ENDPATTERN
-
 
 ENDCONTEXT
 

@@ -2,6 +2,7 @@ CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Rules.doc
 
 PATTERN Relations
+RELATION context[Relation*Context]
 --VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*ConceptName] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
 IDENT Relation: Relation( name, sign[Relation*Signature];src, sign[Relation*Signature];tgt[Signature*Concept] , context[Relation*Context])
 RULE "eq relation": name[Relation*RelationName];name[Relation*RelationName]~ 

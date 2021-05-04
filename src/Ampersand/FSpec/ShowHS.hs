@@ -522,9 +522,9 @@ instance ShowHS Interface where
         [ "Ifc { ifcname   = " <> tshow(ifcname ifc)
         , "    , ifcRoles  = " <> tshow(ifcRoles ifc)
         , "    , ifcObj"<>indent<>"       = " <> showHS env (indent<>"         ") (ifcObj ifc)
-        , wrap "    , ifcControls = " (indent<>"                  ") (const showHSName) (ifcControls ifc)
+        , wrap "    , ifcConjuncts = " (indent<>"                  ") (const showHSName) (ifcConjuncts ifc)
         , "    , ifcPos    = " <> showHS env "" (ifcPos ifc)
-        , "    , ifcPrp    = " <> tshow(ifcPrp ifc)
+        , "    , ifcPurpose    = " <> tshow(ifcPurpose ifc)
         ]<>indent<>"    }"
 instance ShowHS BoxItem where
  showHS env indent obj =

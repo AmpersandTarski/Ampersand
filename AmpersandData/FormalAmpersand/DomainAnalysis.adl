@@ -59,7 +59,7 @@ ENDPATTERN
 
 PATTERN "Domain Analysis for Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
     CONCEPT Rule ""
-    RELATION formalExpression[Rule*Term] [UNI]
+    RELATION formalTerm[Rule*Term] [UNI]
     VIEW Relation : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
 
     CLASSIFY Equivalence ISA BinaryTerm

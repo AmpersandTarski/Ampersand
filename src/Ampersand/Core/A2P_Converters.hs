@@ -138,7 +138,7 @@ aInterface2pInterface ifc =
        , ifc_Roles  = ifcRoles ifc
        , ifc_Obj    = aObjectDef2pObjectDef (BxExpr (ifcObj ifc))
        , pos        = origin ifc
-       , ifc_Prp    = ifcPrp ifc
+       , ifc_Prp    = ifcPurpose ifc
        }
 
 
