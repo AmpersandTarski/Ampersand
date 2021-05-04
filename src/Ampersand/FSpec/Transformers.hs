@@ -520,21 +520,19 @@ transformersFormalAmpersand fSpec = map toTransformer [
            , objmView :: Maybe Text   -- ^ The view that should be used for this object
            , objmsub  :: Maybe SubInterface -- ^ the fields, which are object definitions themselves.
            } deriving (Show)        -- just for debugging (zie ook instance Show BoxItem)
-data SubInterface = Box { pos       :: !Origin
-                        , siConcept :: !A_Concept
-                        , siHeader  :: !BoxHeader
-                        , siObjs    :: [BoxItem] 
-                        }
-                  | InterfaceRef 
-                        { pos      :: !Origin
-                        , siIsLink :: !Bool
-                        , siIfcId  :: !Text  --id of the interface that is referenced to
-                        } deriving (Show)
 -}
+     ,("label"              , "FieldDef"             , "FieldNamensnw"    
+      , Set.fromList
+        [ (dirtyId fld, dirtyId obj) 
+        | obj::ObjectDef <- instanceList fSpec
+        , fld <- fields obj
+        ]
+      )
      ,("objView"              , "ObjectDef"             , "View"    
       , Set.fromList
-        [(dirtyId obj, PopAlphaNumeric . tshow . origin $ obj) 
+        [(dirtyId obj, PopAlphaNumeric vw) 
         | obj::ObjectDef <- instanceList fSpec
+        , Just vw <- [objmView obj]
         ]
       )
      ,("objpos"                , "ObjectDef"             , "Origin"  

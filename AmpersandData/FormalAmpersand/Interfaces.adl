@@ -278,7 +278,7 @@ MEANING "Every field definition has a label."
 REPRESENT FieldName TYPE ALPHANUMERIC
 RELATION objpos[ObjectDef*Origin] [UNI]
 MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
-RELATION objView[ObjectDef*View] [UNI] -- RJ: Why not call this thing 'objView' or 'objdefView'
+RELATION objView[ObjectDef*View] [UNI]
 MEANING "An object definition can have a view that should be used for this object (e.g. TABS, TABLE, etc.)."
 RELATION usedIn[Relation*Term]
 MEANING "If a relation is used in an term, this is registered in usedIn."
