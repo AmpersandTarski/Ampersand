@@ -16,7 +16,7 @@ stack.yaml.lock
 /testing/Travis/testcases/**/*.proto
 
 # Temporarily disable ampersand.cabal (See issue #931)
-/ampersand.cabal
+# NO LONGER include ampersand.cabal in .gitignore. See https://github.com/commercialhaskell/stack/issues/5210
 /stack.yaml.lock
 
 StaticFiles_Generated.hs

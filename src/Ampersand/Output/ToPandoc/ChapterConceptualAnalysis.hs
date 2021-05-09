@@ -100,7 +100,7 @@ chpConceptualAnalysis env lev fSpec = (
         purp =  purposes2Blocks env (purposesOf fSpec outputLang' d)
         body =  para linebreak
                 -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
-                <> ( case ( isNull purp, outputLang') of
+                <> ( case ( null purp, outputLang') of
                   (True , Dutch)   -> plain ("De volgende " <> str nladjs <> " is gedefinieerd: ")
                   (True , English) -> plain ("The following " <> str ukadjs <> " has been defined: ")
                   (False, Dutch)   -> purp <> plain ("Voor dat doel is de volgende " <> str nladjs <> " gedefinieerd: ")
@@ -124,7 +124,7 @@ chpConceptualAnalysis env lev fSpec = (
                   purp
                   -- Then the rule as a requirement
                <> plain
-                   ( if isNull purp
+                   ( if null purp
                      then str (l (NL "De ongedocumenteerde afspraak ", EN "The undocumented agreement "))
                        <> (hyperLinkTo . XRefSharedLangRule) r
                        <> str (l (NL " bestaat: " ,EN " has been made: "))
