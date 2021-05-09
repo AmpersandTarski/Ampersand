@@ -856,7 +856,7 @@ pCtx2aCtx env
                     }
     pIdentity2aIdentity ::
          ContextInfo -> Maybe Text -- name of pattern the rule is defined in (if any)
-      -> P_IdentDef -> Guarded IdentityDef
+      -> P_IdentDef -> Guarded IdentityRule
     pIdentity2aIdentity ci mPat pidt
      = case disambiguate cptMap (termPrimDisAmb cptMap (declDisambMap ci)) pidt of
            P_Id { ix_lbl = lbl

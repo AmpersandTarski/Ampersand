@@ -115,7 +115,7 @@ BOX [ up : first~ \/ second~ \/ arg~ cRud LINKTO INTERFACE Term
     , bind  : bind[BindedRelation*Relation] cRud LINKTO INTERFACE Relation
     , singleton : singleton[Singleton*AtomValue] cRud 
 --    , "user defined src" : userSrc["V"*Concept]cRud
---    , "user defined trg" : userTrg["V"*Concept]cRud
+--    , "user defined trg" : userTgt["V"*Concept]cRud
 --    , "user defined cpt" : userCpt["I"*Concept]cRud
     ]
 INTERFACE Signature FOR Ampersand : I[Signature] cRud
@@ -126,18 +126,21 @@ BOX [ Signature: I[Signature]
     , "sign~ (Rule)" : sign[Term*Signature]~;formalTerm[Rule*Term]~ LINKTO INTERFACE "Rule"
     ] 
 
-
 INTERFACE PropertyRule FOR Ampersand : I[PropertyRule]
 BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]
     , "propertyRule~" : propertyRule[Relation*PropertyRule]~  LINKTO INTERFACE "Relation"
     ]
-     
-
 
 INTERFACE Isa FOR Ampersand : I[Isa]
-BOX [ "gens~" : gens[Context*Isa]~
-    , "gengen" : gengen[Isa*Concept]
-    , "genspc" : genspc[Isa*Concept]
+BOX [ "context" : context[Isa*Context]
+    , "gengen"  : gengen[Isa*Concept]
+    , "genspc"  : genspc[Isa*Concept]
+    ]
+
+INTERFACE IsE FOR Ampersand : I[IsE]
+BOX [ "context" : context[IsE*Context]
+    , "gengen"  : gengen[IsE*Concept]
+    , "genspc"  : genspc[IsE*Concept]
     ]
 
 INTERFACE Relation FOR Ampersand : I[Relation]

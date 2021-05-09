@@ -1,18 +1,8 @@
 CONTEXT AST IN ENGLISH 
+INCLUDE "Concepts.adl"
 INCLUDE "Atoms.xlsx"
 
-PATTERN Atoms
-    RELATION name[Concept*ConceptName] [UNI,TOT]
-    RELATION name[Relation*RelationName] [UNI,TOT]
-    RELATION source[Relation*Concept] [UNI,TOT]
-    RELATION target[Relation*Concept] [UNI,TOT]
-
-    REPRESENT Identifier TYPE ALPHANUMERIC
-    CLASSIFY ConceptName, RelationName ISA Identifier
-
-    RULE "Identifiability of concepts": name;name~ |- I[Concept]
-    VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
-
+PATTERN Pairs
     RELATION in[Pair*Relation] [UNI,TOT]
     RELATION lAtom[Pair*Atom] [UNI,TOT]
     RELATION rAtom[Pair*Atom] [UNI,TOT]
@@ -35,31 +25,18 @@ PATTERN "Compute sources, targets, and populations"
     RELATION pop[Atom*Concept]
     MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
+    PURPOSE RULE specialization
+    {+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
+    If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
+    +}
+    RULE specialization : pop;genspc~;gengen |- pop
+    MEANING "Every instance of a specialized concept is an instance of the generic concept too."
+
     ROLE ExecEngine MAINTAINS insPop, delPop
     RULE insPop : lAtom~;in;source;isaStar \/ rAtom~;in;target;isaStar |- pop
     VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
     RULE delPop : pop |- lAtom~;in;source;isaStar \/ rAtom~;in;target;isaStar
     VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-ENDPATTERN
-
-PATTERN "Compute Closures"
-    RELATION isa[Concept*Concept] [IRF,ASY]
-    MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
-    RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
-    MEANING "s isa g  means that  s  is  g  or  each element of concept s  is an element of concept  g  as well."
-    RELATION isaPlus[Concept*Concept] -- Transitive closure of isa, aka isa+
-    MEANING "s isa g  means that each element of concept  s  is an element of concept  g  as well."
-
-    RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
-    RULE "Compute transitive closure of isa" : isa = isaCopy
-    VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
-
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
-    RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
-    VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
-    VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPATTERN
 
 INTERFACE Overzicht : "_SESSION"[SESSION]
@@ -106,20 +83,20 @@ VIOLATION ( TXT "{EX} DelAtom;ConceptName;", SRC I
 
 --VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 REPRESENT Atom TYPE ALPHANUMERIC
-VIEW Concept : Concept(name)
+-- VIEW Concept : Concept(name)   -- already in Concepts.adl
 VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
-VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+-- VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")   -- already in Terms.adl
 
-INTERFACE Concept(name[Concept*ConceptName],isa) : I[Concept]
+INTERFACE ConceptWithSiblings(name[Concept*ConceptName],isa) : I[Concept]
 BOX [ name             : name
      , generalizations  : isa
      , specializations  : isa~
      ]
 
 INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
-BOX [ "relation(s)"  : in
-     , lAtom          : lAtom
-     , rAtom          : rAtom
+BOX [ "relation(s)"  : in[Pair*Relation]
+     , lAtom         : lAtom
+     , rAtom         : rAtom
      ]
 
 INTERFACE Relation(name[Relation*RelationName],source,target) : I[Relation]

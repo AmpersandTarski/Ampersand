@@ -24,17 +24,17 @@ class Language a where
   multrules x   = Set.fromList $ 
                  [rulefromProp p d |d<-Set.elems $ relsDefdIn x, p<-Set.elems (properties d)]
   identityRules :: a -> Rules       -- all identity rules that are maintained within this viewpoint.
-  identityRules x    = Set.unions . map rulesFromIdentity $ identities x
+  identityRules x    = Set.fromList . map ruleFromIdentity $ identities x
   allRules :: a -> Rules
   allRules x = udefrules x `Set.union` multrules x `Set.union` identityRules x
-  identities :: a -> [IdentityDef]   -- ^ all keys that are defined in a
+  identities :: a -> [IdentityRule]   -- ^ all keys that are defined in a
   viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
   gens :: a -> [AClassify]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
 
-rulesFromIdentity :: IdentityDef -> Rules
-rulesFromIdentity identity
- = Set.singleton . mkKeyRule $
+ruleFromIdentity :: IdentityRule -> Rule
+ruleFromIdentity identity
+ = mkKeyRule $
        foldr (./\.) h t 
         .|-. EDcI (idCpt identity)
  {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}

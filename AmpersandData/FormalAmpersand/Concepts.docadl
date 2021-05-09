@@ -1,12 +1,12 @@
 CONTEXT AST IN ENGLISH 
 
 PATTERN Concepts
+    VIEW Concept: Concept(name)
     RELATION name[Concept*ConceptName] [UNI,TOT,SUR]
-
-    ROLE ExecEngine MAINTAINS "del unused ConceptName"
-    RULE "del unused ConceptName" : I[ConceptName] |- name~;name
-    MEANING "A ConceptName without Concept will be removed."
-    VIOLATION ( TXT "{EX} DelAtom;ConceptName;", SRC I )
+      ROLE ExecEngine MAINTAINS "del unused ConceptName"
+      RULE "del unused ConceptName" : I[ConceptName] |- name~;name
+      MEANING "A ConceptName without Concept will be removed."
+      VIOLATION ( TXT "{EX} DelAtom;ConceptName;", SRC I )
     
     IDENT Concept : Concept(name,context[Concept*Context])
 
@@ -20,9 +20,19 @@ PATTERN Concepts
     RELATION context[Concept*Context] [UNI] -- comes from concs, which is defined in FSpec. This contains all concepts declared inside a context but outside the patterns it contains.
 ENDPATTERN
 
+PATTERN Pairs
+    RELATION in[Pair*Relation] [UNI,TOT]
+    RELATION lAtom[Pair*Atom] [UNI,TOT]
+    RELATION rAtom[Pair*Atom] [UNI,TOT]
+ENDPATTERN
+
 --    RULE "Identifiability of concepts": name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
 
 PATTERN Specialization
+--    VIEW Isa: Isa( TXT "CLASSIFY ", genspc;name{-[Concept*ConceptName]-} , TXT " ISA " , gengen;name{-[Concept*ConceptName]-} )
+--    RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
+--    MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
+-- HJO, 20160906: Disabled above rule and view, because a generalisation can currently have more than one generic concepts (CLASSIFY A IS B /\ C )
     RELATION gengen[Isa*Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more generic concepts."
     RELATION genspc[Isa*Concept] [UNI,TOT]
@@ -31,6 +41,15 @@ PATTERN Specialization
     MEANING "A generalization rule refers to one or more generic concepts."
     RELATION genspc[IsE*Concept] [UNI,TOT]
     MEANING "A generalization rule refers to one or more specific concepts."
+
+--PURPOSE RULE specialization
+--{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
+--If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
+--+}
+--RELATION instanceOf[Atom*Concept] [TOT] 
+--RULE specialization : instanceOf;genspc~;gengen |- instanceOf
+--MEANING "Every instance of a specialized concept is an instance of the generic concept too."
+
 ENDPATTERN
 
 PATTERN "Compute Closures"

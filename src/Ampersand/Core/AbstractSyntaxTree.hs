@@ -15,7 +15,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Rule(..), Rules
  , RuleOrigin(..)
  , Relation(..), Relations, showRel
- , IdentityDef(..)
+ , IdentityRule(..)
  , IdentitySegment(..)
  , ViewDef(..)
  , ViewSegment(..)
@@ -90,7 +90,7 @@ data A_Context
          , ctxds :: Relations        -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
          , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
-         , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
+         , ctxks :: [IdentityRule]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxrrules :: [A_RoleRule]
          , ctxreprs :: A_Concept -> TType
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
@@ -118,7 +118,7 @@ data Pattern
            , ptgns :: [AClassify]   -- ^ The generalizations defined in this pattern
            , ptdcs :: Relations     -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
-           , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
+           , ptids :: [IdentityRule] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
            }   deriving (Typeable)  -- Show for debugging purposes
@@ -250,21 +250,21 @@ instance HasSignature Relation where
 instance Traced Relation where
   origin = decfpos
 
-data IdentityDef = Id { idPos :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
+data IdentityRule = Id { idPos :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                       , idLbl :: Text        -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                       , idCpt :: A_Concept     -- ^ this expression describes the instances of this object, related to their context
                       , idPat :: Maybe Text  -- ^ if defined within a pattern, then the name of that pattern.
                       , identityAts :: NE.NonEmpty IdentitySegment  -- ^ the constituent attributes (i.e. name/expression pairs) of this identity.
                       } deriving (Show)
-instance Named IdentityDef where
+instance Named IdentityRule where
   name = idLbl
-instance Traced IdentityDef where
+instance Traced IdentityRule where
   origin = idPos
-instance Unique IdentityDef where
+instance Unique IdentityRule where
   showUnique = name
-instance Ord IdentityDef where
+instance Ord IdentityRule where
   compare a b = name a `compare` name b
-instance Eq IdentityDef where
+instance Eq IdentityRule where
   a == b = compare a b == EQ
 newtype IdentitySegment = IdentityExp 
          { segment :: ObjectDef

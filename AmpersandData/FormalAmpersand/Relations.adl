@@ -21,7 +21,7 @@ REPRESENT RelationName TYPE ALPHANUMERIC
     VIOLATION ( TXT "{EX} DelAtom;RelationName;", SRC I )
 
 
-RELATION sign[Relation*Signature] [UNI,TOT] 
+RELATION sign[Relation*Signature] [UNI] 
 MEANING "The signature of a relation."
 
 RELATION src[Signature*Concept] [UNI,TOT]

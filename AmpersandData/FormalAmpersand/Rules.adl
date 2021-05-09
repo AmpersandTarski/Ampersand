@@ -9,12 +9,13 @@ PATTERN Rules
 
     RELATION ctxrs[Rule*Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
-    RELATION name[Rule*RuleName] [UNI,TOT] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
+    RELATION name[Rule*RuleName] [UNI] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
     MEANING "The name of a rule."
       ROLE ExecEngine MAINTAINS "del unused RuleName"
       RULE "del unused RuleName" : I[RuleName] |- name~;name
       MEANING "A RuleName without Rule will be removed."
       VIOLATION ( TXT "{EX} DelAtom;RuleName;", SRC I )
+    REPRESENT EncodedName TYPE ALPHANUMERIC
     RELATION urlEncodedName[Rule*EncodedName] [UNI]
     MEANING "The location where a graphic of this rule can be found."
     RELATION origin[Rule*Origin] [UNI]
@@ -22,7 +23,7 @@ PATTERN Rules
     RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
 --    RELATION srcConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
 --    RELATION tgtConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
-    RELATION formalTerm[Rule*Term] [UNI,TOT]
+    RELATION formalTerm[Rule*Term] [UNI]
     MEANING "The rule expressed in relation algebra."
     RELATION meaning[Rule*Meaning] -- e.g. 'BusinessFunction' 
   --  RELATION sign[Rule*Signature] [UNI,TOT]

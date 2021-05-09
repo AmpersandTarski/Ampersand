@@ -2,6 +2,11 @@ CONTEXT RAP IN ENGLISH LATEX
 INCLUDE "Interfaces.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
+PURPOSE PATTERN "Data objects" MARKDOWN
+{+This pattern describes the invariant semamtics of data objects (concept: Object).
+An `Object` is a runtime thing, which is defined by an `ObjectDef`.
++}
+
 PURPOSE PATTERN Interfaces
 {+One purpose of Interfaces is to convert/translate data from one context (that is governed by specific rules/relations/presentations)
 to another context (governed by another set of rules/relations/presentations).
@@ -102,11 +107,11 @@ PURPOSE RELATION def[Object*ObjectDef]
 {+Being an instance of an object definition, every object must be in the def-relation to identify the object definition of which it is an instance.
 +}
 
-PURPOSE RELATION left[Pair*Atom]
+PURPOSE RELATION lAtom[Pair*Atom]
 {+The relation ``left'' is needed to identify one of the atoms in a pair.
 +}
 
-PURPOSE RELATION right[Pair*Atom]
+PURPOSE RELATION rAtom[Pair*Atom]
 {+The relation ``right'' is needed to identify the other atom in a pair.
 +}
 

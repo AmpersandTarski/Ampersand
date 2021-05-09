@@ -434,10 +434,10 @@ instance ShowHS Rule where
 instance ShowHS Meaning where
   showHS env indent (Meaning x) = "Meaning " <> showHS env (indent<>"        ") x
 
-instance ShowHSName IdentityDef where
+instance ShowHSName IdentityRule where
  showHSName identity = haskellIdentifier ("identity_"<>name identity)
 
-instance ShowHS IdentityDef where
+instance ShowHS IdentityRule where
  showHS env indent identity
   = "Id ("<>showHS env "" (idPos identity)<>") "<>tshow (idLbl identity)<>" ("<>showHSName (idCpt identity)<>")"
     <>indent<>"  [ "<>T.intercalate (indent<>"  , ") (NE.toList . fmap (showHS env indent) $ identityAts identity)<>indent<>"  ]"

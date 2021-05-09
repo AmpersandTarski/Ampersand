@@ -92,7 +92,7 @@ aRelation2pNamedRel dcl = PNamedRel
   , p_mbSign = Just . aSign2pSign $ decsgn dcl
   }
  
-aIdentityDef2pIdentityDef :: IdentityDef -> P_IdentDf TermPrim -- P_IdentDef
+aIdentityDef2pIdentityDef :: IdentityRule -> P_IdentDf TermPrim -- P_IdentDef
 aIdentityDef2pIdentityDef iDef =
  P_Id { pos    = idPos iDef
       , ix_lbl = idLbl iDef

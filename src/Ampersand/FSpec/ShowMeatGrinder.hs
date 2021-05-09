@@ -87,7 +87,7 @@ grind grindInfo userFspec =
            
 data Pop = Pop { popPairs  :: Set.Set (PopAtom,PopAtom)
                , popRelation :: Relation
-               }
+               } deriving (Eq,Ord)
 
 grindedPops :: GrindInfo -> FSpec -> Relation -> Set.Set Pop
 grindedPops grindInfo userFspec rel = 
@@ -101,12 +101,15 @@ grindedPops grindInfo userFspec rel =
                     . Set.toList
                     . Set.filter hasNoTransformer 
                     . instances . fModel $ grindInfo
-    [t] -> Set.singleton . transformer2Pop $ t
+    ts  -> Set.fromList (map transformer2Pop ts)
+    {- obsolete
+    [t] -> Set.singleton .  $ t
     ts  -> fatal . T.unlines $ 
               ["Every relation in "<>name (metaModel grindInfo)<>" must have a transformer in Transformers.hs"
               ," However there are "<>tshow (length ts)<>" transformers for relation: "
               ,"      "<>showRelOrigin rel
               ]
+    -}
   where
     showRelOrigin :: Relation -> Text
     showRelOrigin r = showRel r<>" ( "<>tshow (origin r)<>" )."
@@ -114,39 +117,42 @@ grindedPops grindInfo userFspec rel =
     hasNoTransformer d = not (any (isForRel d) (transformers grindInfo userFspec))
     transformer2Pop :: Transformer -> Pop
     transformer2Pop (Transformer relName src tgt popPairs') 
-      | not ( all (ttypeOf (source rel) . fst) (Set.toList popPairs') ) =
+-- To test the following error messages, run:
+--  > ampersand population foo.adl --build-recipe AtlasPopulation --output-format json
+      | not . all (ttypeOf (source rel) . fst) . Set.toList $ popPairs' =
              fatal . T.unlines $
-                 [ "The TType of the population produced by the meatgrinder must"
-                 , "   match the TType of the concept as specified in "<>name (metaModel grindInfo)<>"."
+                 [ "The TType of the population produced by the meatgrinder must match the TType of the concept as specified in "<>name (metaModel grindInfo)<>"."
                  , "   The population of the relation `" <> relName <>"["<> src <>" * "<> tgt <>"]` "
-                 , "   violates this rule for concept `"<> src <>"`. In "<>name (metaModel grindInfo)<>" "
-                 , "   the TType of this concept is "<>(tshow . cptTType (fModel grindInfo) $ source rel)<>"."
+                 , "   violates this rule for source concept `"<> src <>"`. In "<>name (metaModel grindInfo)<>" "
+                 , "   the TType of `"<> src <>"` is "<>(tshow . cptTType (fModel grindInfo) $ source rel)<>"."
+                 , "   Atoms that violate this are " <> T.intercalate ", " (take 3 [ tshow a | (a,_)<-Set.toList popPairs', not . ttypeOf (source rel) $ a ])<>"."
                  ]
-      | not ( all (ttypeOf (target rel) . snd) (Set.toList popPairs') ) =
+      | not . all (ttypeOf (target rel) . snd) . Set.toList $ popPairs' =
              fatal . T.unlines $
-                 [ "The TType of the population produced by the meatgrinder must"
-                 , "   match the TType of the concept as specified in "<>name (metaModel grindInfo)<>"."
+                 [ "The TType of the population produced by the meatgrinder must match the TType of the concept as specified in "<>name (metaModel grindInfo)<>"."
                  , "   The population of the relation `"<> relName <>"["<> src <>" * "<> tgt <>"]` "
-                 , "   violates this rule for concept `"<> tgt <>"`. In "<>name (metaModel grindInfo)<>" "
-                 , "   the TType of this concept is "<>(tshow . cptTType (fModel grindInfo) $ target rel)<>"." 
+                 , "   violates this rule for target concept `"<> tgt <>"`. In "<>name (metaModel grindInfo)<>" "
+                 , "   The TType of `"<> tgt <>"` is "<>(tshow . cptTType (fModel grindInfo) $ target rel)<>"." 
+                 , "   Atoms that violate this are " <> T.intercalate ", " (take 3 [ tshow b | (_,b)<-Set.toList popPairs', not . ttypeOf (target rel) $ b ])<>"."
                  ]
       | otherwise = Pop { popRelation = rel
                         , popPairs    = popPairs'
                         }
-      where ttypeOf :: A_Concept -> (PopAtom -> Bool)
-            ttypeOf cpt =
-              case cptTType (fModel grindInfo) cpt of
-                Object          -> isDirtyId
-                Alphanumeric    -> isTextual
-                BigAlphanumeric -> isTextual
-                HugeAlphanumeric -> isTextual
-                tt              -> fatal $ "No test available yet. "<>tshow tt<>" encountered for the first time in "<>name (metaModel grindInfo)<>""
-            isDirtyId pa = case pa of
-                            DirtyId{}         -> True
-                            _                 -> False
-            isTextual pa = case pa of
-                            PopAlphaNumeric{} -> True
-                            _                 -> False
+      where
+          ttypeOf :: A_Concept -> PopAtom -> Bool
+          ttypeOf cpt popatom =
+            case cptTType (fModel grindInfo) cpt of
+              Object          -> isDirtyId popatom
+              Alphanumeric    -> isTextual popatom
+              BigAlphanumeric -> isTextual popatom
+              HugeAlphanumeric -> isTextual popatom
+              tt              -> fatal $ "No test available yet. "<>tshow tt<>" encountered for the first time in "<>name (metaModel grindInfo)<>""
+          isDirtyId pa = case pa of
+                          DirtyId{}         -> True
+                          _                 -> False
+          isTextual pa = case pa of
+                          PopAlphaNumeric{} -> True
+                          _                 -> False
                                         
                             
                                 

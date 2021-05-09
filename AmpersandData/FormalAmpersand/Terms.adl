@@ -12,8 +12,7 @@ PATTERN "Term definitions"
     RULE bindUsedIn : bind |- usedIn~
     VIOLATION (TXT "{EX} InsPair;usedIn;Relation;", TGT I, TXT ";Term;", SRC I[Term])
 
-    RELATION sign[Term*Signature][UNI,TOT]
-    RELATION in[Pair*Term]
+    RELATION sign[Term*Signature] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs
 
     VIEW Equivalence        : Equivalence(TXT "RULE ", first[BinaryTerm*Term], TXT " = ", second[BinaryTerm*Term])
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first[BinaryTerm*Term], TXT " |- ", second[BinaryTerm*Term])
@@ -51,7 +50,7 @@ PATTERN "Term definitions"
     CONCEPT "V" "The cartesian product."
     CLASSIFY "V" ISA Term
     RELATION userSrc["V"*Concept] [UNI]
-    RELATION userTrg["V"*Concept] [UNI]
+    RELATION userTgt["V"*Concept] [UNI]
     
     CONCEPT Epsilon "An term between two concepts that have an generalisation relation between them" 
     CLASSIFY Epsilon ISA Term
@@ -80,7 +79,7 @@ PATTERN "Term definitions"
     CLASSIFY RightResidual      ISA BinaryTerm
 ENDPATTERN
 
-RELATION showADL[Term*ShowADL] [UNI,TOT]
+RELATION showADL[Term*ShowADL] [UNI]  -- TODO should be TOT also, but this is TODO for ObjectDefs
 REPRESENT ShowADL TYPE BIGALPHANUMERIC
 --HJI20161004: This execEngine rule doesn't work, because of the ';'-characters that may be in the ShowADL term
       ROLE ExecEngine MAINTAINS "del unused ShowADL"

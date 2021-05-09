@@ -3,6 +3,7 @@ PURPOSE CONTEXT Generics
 {+This context specifies the administration that currently is, and in future will have been, the contents of GENERICS.PHP+}
 
 REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
+REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 
 
 RELATION versionInfo[Context*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
@@ -44,6 +45,6 @@ REPRESENT RoleName TYPE ALPHANUMERIC
 RELATION maintains[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
 
 --[Interfaces]--
-RELATION interfaces[Context*Interface][INJ]
+RELATION context[Interface*Context] [UNI]
 
 ENDCONTEXT

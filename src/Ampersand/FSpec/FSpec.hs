@@ -81,7 +81,7 @@ data FSpec = FSpec { fsName ::       Text
                    , allConcepts ::  A_Concepts
                    -- ^ All concepts in the fSpec
                    , cptTType :: A_Concept -> TType 
-                   , vIndices ::     [IdentityDef]            
+                   , vIndices ::     [IdentityRule]            
                    -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                
                    -- ^ All views that apply in the entire FSpec
