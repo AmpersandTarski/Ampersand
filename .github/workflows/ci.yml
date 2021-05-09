@@ -108,6 +108,6 @@ jobs:
         stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
 
     - name: Test
-      if: ${{ runner.os != "windows" }}
+      if: ${{ runner.os != 'windows' }}
       run: |
         stack test --system-ghc
