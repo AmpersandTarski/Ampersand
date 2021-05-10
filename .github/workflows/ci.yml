@@ -8,7 +8,8 @@ name: CI
 on:
   pull_request:
   push:
-    branches: # empty list to only trigger on branches (i.e. not tags, ..)
+    branches: 
+      - '**' # Only trigger on branches (i.e. not tags, ..)
 
 jobs:
 #  cabal:
