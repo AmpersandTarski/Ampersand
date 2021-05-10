@@ -113,6 +113,10 @@ jobs:
       run: |
         stack test --system-ghc
 
+    - name: Install 
+      run : |
+        stack install --flag ampersand:buildAll 
+    
     - name: version
       run: echo "::set-output name=version::$(ampersand --version)"
       id: version
@@ -125,6 +129,6 @@ jobs:
         prerelease: true
         release_name: ${{ steps.version.outputs.version }}
         tag_name: ${{ github.ref }}
-        body_path: CHANGELOG.md
+        body_path: ReleaseNotes.md
       env:
         GITHUB_TOKEN: ${{ github.token }}        
