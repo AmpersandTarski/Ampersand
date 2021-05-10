@@ -116,7 +116,11 @@ jobs:
     - name: Install 
       run : |
         stack install --flag ampersand:buildAll 
-    
+    - name: SetPath
+      run : |
+        set path=C:\Users\runneradmin\AppData\Roaming\local\bin;%path%
+        if: ${{ runner.os != 'windows' }}
+        
     - name: version
       run: echo "::set-output name=version::$(ampersand --version)"
       id: version
