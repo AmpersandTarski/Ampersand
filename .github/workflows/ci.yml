@@ -102,7 +102,7 @@ jobs:
 
     - name: SetPath
       run : |
-        $env:PATH = "${env:PATH};C:/Users/runneradmin/AppData/Roaming/local/bin"
+         PATH=$HOME/.local/bin:$PATH
       if: ${{ runner.os == 'windows' }}
 
     - name: Install dependencies
@@ -111,32 +111,28 @@ jobs:
 
     - name: Build
       run: |
-        stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
+        stack install --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll
 
     - name: Test
       if: ${{ runner.os != 'windows' }}
       run: |
         stack test --system-ghc
 
-    - name: Install 
-      run : |
-        stack install --flag ampersand:buildAll 
-
     - name: version
       run: echo "::set-output name=version::$(ampersand --version)"
       id: version
 
-    - name: release
-      uses: actions/create-release@v1
-      id: create_release
-      with:
-        draft: true
-        prerelease: true
-        release_name: ${{ steps.version.outputs.version }}
-        tag_name: ${{ github.ref }}
-        body_path: ReleaseNotes.md
-      env:
-        GITHUB_TOKEN: ${{ github.token }}     
+#    - name: release
+#      uses: actions/create-release@v1
+#      id: create_release
+#      with:
+#        draft: true
+#        prerelease: true
+#        release_name: ${{ steps.version.outputs.version }}
+#        tag_name: ${{ github.ref }}
+#        body_path: ReleaseNotes.md
+#      env:
+#        GITHUB_TOKEN: ${{ github.token }}     
 
 
 #    - name: Upload artifacts (Windows)
