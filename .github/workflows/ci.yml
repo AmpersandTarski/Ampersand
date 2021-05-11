@@ -102,7 +102,7 @@ jobs:
 
     - name: SetPath
       run : |
-        $env:PATH = "${env:PATH}:/${env:HOME}/.local/bin"
+        $env:PATH = "${env:PATH};C:/Users/runneradmin/AppData/Roaming/local/bin"
       if: ${{ runner.os == 'windows' }}
 
     - name: Install dependencies
