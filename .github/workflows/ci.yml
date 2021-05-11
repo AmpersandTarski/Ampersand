@@ -100,6 +100,11 @@ jobs:
           ~/.stack
         key: ${{ runner.os }}-${{ matrix.ghc }}-stack
 
+    - name: SetPath
+      run : |
+        $env:PATH = "${env:PATH}:/${env:HOME}/.local/bin"
+      if: ${{ runner.os == 'windows' }}
+
     - name: Install dependencies
       run: |
         stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies
@@ -116,10 +121,6 @@ jobs:
     - name: Install 
       run : |
         stack install --flag ampersand:buildAll 
-    - name: SetPath
-      run : |
-        set path=C:\Users\runneradmin\AppData\Roaming\local\bin;%path%
-      if: ${{ runner.os == 'windows' }}
 
     - name: version
       run: echo "::set-output name=version::$(ampersand --version)"
