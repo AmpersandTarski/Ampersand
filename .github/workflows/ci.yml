@@ -119,7 +119,7 @@ jobs:
     - name: SetPath
       run : |
         set path=C:\Users\runneradmin\AppData\Roaming\local\bin;%path%
-        if: ${{ runner.os == 'windows' }}
+      if: ${{ runner.os == 'windows' }}
 
     - name: version
       run: echo "::set-output name=version::$(ampersand --version)"
@@ -135,4 +135,18 @@ jobs:
         tag_name: ${{ github.ref }}
         body_path: ReleaseNotes.md
       env:
-        GITHUB_TOKEN: ${{ github.token }}        
+        GITHUB_TOKEN: ${{ github.token }}     
+
+
+#    - name: Upload artifacts (Windows)
+#      if: ${{ runner.os == 'Windows' }}
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: build-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.python-version }}
+#        path: distrib/*
+#    - name: Upload artifacts (macOS/Linux)
+#      if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: build-${{ matrix.platform }}-${{ matrix.arch }}
+#        path: build-${{ matrix.platform }}.tar.gz   
