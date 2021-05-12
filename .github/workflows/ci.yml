@@ -119,7 +119,7 @@ jobs:
         stack test --system-ghc
 
     - name: version
-      run: echo "::set-output name=version::$(ampersand --version)"
+      run: echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --version)"
       id: version
 
 #    - name: release
