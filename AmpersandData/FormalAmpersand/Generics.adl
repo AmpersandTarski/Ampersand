@@ -6,7 +6,7 @@ REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
 REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 
 
-RELATION versionInfo[Context*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
+RELATION versionInfo[Context*AmpersandVersion] [UNI]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
 
 -- HJO20150206 @Rieks: Willen we hier nog iets met signalTableName, isDev, autoRefreshInterval?
 
@@ -29,11 +29,6 @@ RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
 RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 
-
---[Conjuncts]--
-RELATION allConjuncts[Context*Conjunct] [INJ]
-RELATION originatesFrom[Conjunct*Rule] [TOT] -- rule where the conjunct originates from.
-RELATION conjunct[Conjunct*Term] [TOT]
 
 --[Roles]--
 

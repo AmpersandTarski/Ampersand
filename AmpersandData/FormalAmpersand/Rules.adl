@@ -3,12 +3,14 @@ CONTEXT AST IN ENGLISH LATEX
 -- This file has been aligned with ShowMeatgrinder on 2017-07-21 by SJ.
 
 PATTERN Rules
-    VIEW Rule: Rule(name[Rule*RuleName])
     REPRESENT RuleName TYPE ALPHANUMERIC
-    IDENT Rules: Rule(allRules[Context*Rule]~,name[Rule*RuleName])
+    IDENT Rules: Rule(context[Rule*Context],name[Rule*RuleName])
 
-    RELATION ctxrs[Rule*Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
+    RELATION ctxrs[Rule*Context]  -- This contains all rules declared inside a context but outside the patterns it contains.
+    RELATION context[Rule*Context] [UNI]  -- This contains all rules declared inside a context
+
     MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
+    REPRESENT RuleName TYPE ALPHANUMERIC
     RELATION name[Rule*RuleName] [UNI] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
     MEANING "The name of a rule."
       ROLE ExecEngine MAINTAINS "del unused RuleName"
@@ -17,7 +19,8 @@ PATTERN Rules
       VIOLATION ( TXT "{EX} DelAtom;RuleName;", SRC I )
     REPRESENT EncodedName TYPE ALPHANUMERIC
     RELATION urlEncodedName[Rule*EncodedName] [UNI]
-    MEANING "The location where a graphic of this rule can be found."
+    RELATION urlEncodedName[Pattern*EncodedName] [UNI]
+    RELATION urlEncodedName[Concept*EncodedName] [UNI]
     RELATION origin[Rule*Origin] [UNI]
     MEANING "The location where a rule is defined."  -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'
     RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'

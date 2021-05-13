@@ -119,9 +119,9 @@ instance Arbitrary Origin where
 instance Arbitrary P_Context where
     arbitrary = PCtx
        <$> upperId   -- name
-       <*> arbitrary  -- pos
-       <*> arbitrary  -- lang
-       <*> arbitrary  -- markup
+       <*> arbitrary -- pos
+       <*> arbitrary -- lang
+       <*> arbitrary -- markup
        <*> arbitrary -- patterns
        <*> arbitrary -- rules
        <*> arbitrary -- relations

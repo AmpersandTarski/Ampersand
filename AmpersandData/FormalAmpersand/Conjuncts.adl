@@ -1,20 +1,22 @@
 CONTEXT FormalAmpersand IN ENGLISH LATEX
 PATTERN Conjuncts
-    RELATION allConjuncts[Context*Conjunct]
+    RELATION allConjuncts[Context*Conjunct] [INJ]
     MEANING "All conjuncts in a context."
     RELATION allShifts[DnfClause*DnfClause]
     RELATION conjNF[Term*Term] [UNI,TOT]
-    RELATION conjunct[Conjunct*Term]
+    RELATION conjunct[Conjunct*Term] [TOT]
     RELATION conjuncts[Rule*Term]
     RELATION exprIsc2list[Term*Term] [TOT]
     RELATION expr2dnfClause[Term*DnfClause] [UNI,TOT]
     RELATION name[Rule*RuleName] [UNI,TOT]
+    RELATION originatesFrom[Conjunct*Rule] [TOT] -- rule where the conjunct originates from.
     RELATION qRule[Quad*Rule] [UNI,TOT]
     RELATION qConjuncts[Quad*Conjunct]
     RELATION rc_orgRules[Conjunct*RuleName] [UNI,TOT]
     RELATION rc_conjunct[Conjunct*Term] [UNI,TOT]
     RELATION rc_dnfClauses[Conjunct*DnfClause]
     RELATION term[Rule*Term][UNI,TOT] --is defined somewhere else too.
+
 
     RULE Conjuncts1 : qConjuncts;rc_conjunct |- qRule;conjuncts
     MEANING "All conjuncts in a quad are derived by means of the relation ``conjuncts''."

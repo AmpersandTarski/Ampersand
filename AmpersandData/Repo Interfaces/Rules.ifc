@@ -70,4 +70,6 @@ BOX [ name    : name
      , target  : target
      ]
 
+VIEW Rule: Rule(name[Rule*RuleName])
+
 ENDCONTEXT

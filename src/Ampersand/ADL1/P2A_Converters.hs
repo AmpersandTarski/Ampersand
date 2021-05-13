@@ -603,7 +603,7 @@ pCtx2aCtx env
               obj crud (e,sr) s
                 = ( BxExpr
                     ObjectDef { objnm = nm
-                           , objpos = orig
+                           , objPos = orig
                            , objExpression = e
                            , objcrud = crud
                            , objmView = mView

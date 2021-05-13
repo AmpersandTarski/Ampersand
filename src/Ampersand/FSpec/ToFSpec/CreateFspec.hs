@@ -46,7 +46,7 @@ createFspec recipe = do
     env <- ask
     metaModelsMap :: Map MetaModel GrindInfo <- do 
          let fun :: (HasLogFunc env, HasFSpecGenOpts env) => MetaModel -> RIO env (MetaModel , GrindInfo)
-             fun m = (,) m <$> mkGrindInfo m
+             fun m = (,) m <$> mkGrindInfo
          Map.fromList <$> sequence (fun <$> Set.toList (metaModelsIn recipe))
     parsedUserScript :: Guarded P_Context <- do
          rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
@@ -120,13 +120,19 @@ cook env (BuildRecipe start steps) grindInfoMap userScript =
       nextStep ctx step = 
         case step of 
           EncloseInConstraints -> pure $ encloseInConstraints ctx 
+          Grind _ -> grind <$> pCtx2Fspec env ctx
+          MergeWith recipe -> mergeContexts ctx <$> cook env recipe grindInfoMap userScript
+{- obsolete
+      nextStep ctx step = 
+        case step of 
+          EncloseInConstraints -> pure $ encloseInConstraints ctx 
           Grind mm -> grind (gInfo mm) <$> pCtx2Fspec env ctx
           MergeWith recipe -> mergeContexts ctx <$> cook env recipe grindInfoMap userScript
+-}
   gInfo :: MetaModel -> GrindInfo
   gInfo mm = case Map.lookup mm grindInfoMap of
             Just x -> x
             Nothing -> fatal $ "metaModel `"<>tshow mm<>"`was not found!"
-
 
 -- | To analyse spreadsheets means to enrich the context with the relations that are defined in the spreadsheet.
 --   The function encloseInConstraints does not populate existing relations.

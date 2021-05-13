@@ -419,7 +419,7 @@ instance Eq BoxTxt where
  a == b = compare a b == EQ
 data ObjectDef = 
     ObjectDef { objnm    :: Text         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-           , objpos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+           , objPos   :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , objExpression :: Expression -- ^ this expression describes the instances of this object, related to their context.
            , objcrud  :: Cruds          -- ^ CRUD as defined by the user 
            , objmView :: Maybe Text   -- ^ The view that should be used for this object
@@ -428,7 +428,7 @@ data ObjectDef =
 instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
-  origin = objpos
+  origin = objPos
 instance Unique ObjectDef where
   showUnique = tshow
 instance Ord ObjectDef where

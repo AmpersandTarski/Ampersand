@@ -29,7 +29,7 @@ INTERFACE "Context" FOR Ampersand : I[Context]
 BOX <TABS>
   [ "About" : I BOX
     [ "name"  : name[Context*ContextName]
---    , "versionInfo" : versionInfo
+    , "versionInfo" : versionInfo
     , "valid~" : valid[Rule*Context]~
     ]
   , "Patterns" : context[Pattern*Context]~ BOX 
@@ -44,7 +44,7 @@ BOX <TABS>
   , "Relations" : declaredIn[Relation*Context]~  LINKTO INTERFACE "Relation"
   , "Roles" : allRoles[Context*Role]
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]
-  , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
+  , "Rules" : context[Rule*Context]~ INTERFACE "Rule"
   ]
 INTERFACE IsaTree FOR Ampersand : I[Concept]
   BOX <FORM noLabels>
@@ -56,16 +56,16 @@ INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternName] cRud
     , "context" : context[Pattern*Context] cRud
     , "Relations" : declaredIn[Relation*Pattern]~  LINKTO INTERFACE "Relation"
-    , "rules"  : allRules[Pattern*Rule] cRud
+    , "rules"  : patRules[Pattern*Rule] cRud
     , "purpose" : purpose[Pattern*Purpose] cRud
     ]
 
 INTERFACE "Rule" FOR Ampersand : I[Rule]
 BOX [ "name" : name[Rule*RuleName]
     , "valid" : valid[Rule*Context]
-    , "context" : allRules[Context*Rule]~
+    , "context" : context[Rule*Context]
  --   , "originatesFrom~" : originatesFrom[Conjunct*Rule]~
-    , "pattern"  : allRules[Pattern*Rule]~
+    , "pattern"  : patRules[Pattern*Rule]~
  --   , "maintains~ (Role)" : maintains[Role*Rule]~
  --   , "tgtConcept" : tgtConcept[Rule*Concept]
  --   , "srcConcept" : srcConcept[Rule*Concept]

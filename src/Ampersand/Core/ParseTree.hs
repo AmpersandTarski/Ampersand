@@ -818,8 +818,8 @@ instance Ord PPurpose where --Required for merge of P_Contexts
                             , tshow (origin b)
                             ])
                          (maybeOrdering (origin a) (origin b))
-           
      x -> x
+           
 instance Eq PPurpose where --Required for merge of P_Contexts
   a == b = compare a b == EQ
 
@@ -876,7 +876,7 @@ data Prop      = Uni          -- ^ univalent
                | Trn          -- ^ transitive
                | Rfx          -- ^ reflexive
                | Irf          -- ^ irreflexive
-               | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
+               | Prop         -- ^ PROP keyword, the parser must replace this by [Sym, Asy]. It may not occur in the A-structure.
                  deriving (Eq, Ord, Enum, Bounded,Typeable, Data)
 
 instance Show Prop where

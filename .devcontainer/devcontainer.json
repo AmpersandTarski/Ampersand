@@ -25,6 +25,7 @@
       "github.vscode-pull-request-github",
       "eamodio.gitlens",
       "me-dutour-mathieu.vscode-github-actions",
-      "redhat.vscode-yaml"
+      "redhat.vscode-yaml",
+      "ampersandtarski.language-ampersand"
   ]
 }
