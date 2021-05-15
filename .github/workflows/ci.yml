@@ -68,7 +68,7 @@ jobs:
 #      run: |
 #        cabal test all
 
-  stack:
+  build-and-test-with-stack:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
@@ -123,17 +123,26 @@ jobs:
       run: echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --version)"
       id: version
 
-#    - name: release
-#      uses: actions/create-release@v1
-#      id: create_release
-#      with:
-#        draft: true
-#        prerelease: true
-#        release_name: ${{ steps.version.outputs.version }}
-#        tag_name: ${{ github.ref }}
-#        body_path: ReleaseNotes.md
-#      env:
-#        GITHUB_TOKEN: ${{ github.token }}     
+    - uses: actions/upload-artifact@v2
+      with:
+        name: ${{ runner.os }}-release-candidate
+        path: ~/local/bin/*
+
+  release:
+    needs: build-and-test-with-stack
+    runs-on: ubuntu-latest
+    steps:
+    - name: release
+      uses: actions/create-release@v1
+      id: create_release
+      with:
+        draft: true
+        prerelease: true
+        release_name: ${{ steps.version.outputs.version }}
+        tag_name: ${{ github.ref }}
+        body_path: ReleaseNotes.md
+      env:
+        GITHUB_TOKEN: ${{ github.token }}     
 
 
 #    - name: Upload artifacts (Windows)
