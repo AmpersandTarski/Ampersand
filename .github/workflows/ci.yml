@@ -94,6 +94,7 @@ jobs:
 
     - uses: actions/cache@v2.1.3
       name: Cache ~/.stack
+# TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
       with:
         path: | 
           ~/.ghc
