@@ -108,6 +108,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        stack path
         stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies
 
     - name: Build
@@ -121,12 +122,27 @@ jobs:
 
     - name: version
       run: echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --version)"
+# TODO: implement --numeric-version (could use stack as an example)
       id: version
 
     - uses: actions/upload-artifact@v2
       with:
         name: ${{ runner.os }}-release-candidate
-        path: ~/local/bin/*
+        path: /home/runner/.local/bin/*
+
+
+#    - name: Upload artifacts (Windows)
+#      if: ${{ runner.os == 'Windows' }}
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: build-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.python-version }}
+#        path: distrib/*
+#    - name: Upload artifacts (macOS/Linux)
+#      if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: build-${{ matrix.platform }}-${{ matrix.arch }}
+#        path: build-${{ matrix.platform }}.tar.gz   
 
   release:
     needs: build-and-test-with-stack
@@ -146,16 +162,3 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}     
 
-
-#    - name: Upload artifacts (Windows)
-#      if: ${{ runner.os == 'Windows' }}
-#      uses: actions/upload-artifact@v2
-#      with:
-#        name: build-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.python-version }}
-#        path: distrib/*
-#    - name: Upload artifacts (macOS/Linux)
-#      if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
-#      uses: actions/upload-artifact@v2
-#      with:
-#        name: build-${{ matrix.platform }}-${{ matrix.arch }}
-#        path: build-${{ matrix.platform }}.tar.gz   
