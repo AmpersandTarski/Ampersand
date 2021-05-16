@@ -228,7 +228,7 @@ complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = d
             numeric :: Parser (a -> a)
             numeric =
               infoOption
-                (T.unpack $ shortVersion appVersion)
+                (T.unpack $ numericVersion appVersion)
                 (long "numeric-version" <>
                  help "Show version in numeric format")
              
