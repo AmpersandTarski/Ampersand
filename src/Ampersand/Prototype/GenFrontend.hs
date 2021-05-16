@@ -280,7 +280,7 @@ genRouteProvider fSpec ifcs = do
   template <- readTemplate "routeProvider.config.js"
   let contents = renderTemplate Nothing template $
                    setAttribute "contextName"         (fsName fSpec)
-                 . setAttribute "ampersandVersionStr" ampersandVersionStr
+                 . setAttribute "ampersandVersionStr" (longVersion appVersion)
                  . setAttribute "ifcs"                ifcs
                  . setAttribute "verbose"             (loglevel' == LevelDebug)
                  . setAttribute "loglevel"            (show loglevel')
@@ -305,7 +305,7 @@ genViewInterface fSpec interf = do
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
                   . setAttribute "isTopLevel"          (isTopLevel . source . _ifcExp $ interf)
                   . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-                  . setAttribute "ampersandVersionStr" ampersandVersionStr
+                  . setAttribute "ampersandVersionStr" (longVersion appVersion)
                   . setAttribute "interfaceName"       (ifcName  interf)
                   . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
                   . setAttribute "expAdl"              (showA . _ifcExp $ interf)
@@ -434,7 +434,7 @@ genControllerInterface fSpec interf = do
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   (isTopLevel . source . _ifcExp $ interf)
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "ampersandVersionStr"      ampersandVersionStr
+                     . setAttribute "ampersandVersionStr"      (longVersion appVersion)
                      . setAttribute "interfaceName"            (ifcName interf)
                      . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"                   (showA . _ifcExp $ interf)
