@@ -56,7 +56,7 @@ makeFSpec env context
               , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
               , allUsedDecls = bindedRelationsIn context
-              , vrels        = calculatedDecls
+              , vrels        = relsDefdInContext
               , allConcepts  = fSpecAllConcepts
               , cptTType     = representationOf contextinfo
               , fsisa        = L.nub . concatMap genericAndSpecifics . gens $ context
@@ -70,7 +70,7 @@ makeFSpec env context
               , conceptDefs  = ctxcds context
               , fSexpls      = Set.fromList $ ctxps context <> concatMap ptxps (patterns context)
               , metas        = ctxmetas context
-              , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
+              , crudInfo     = mkCrudInfo fSpecAllConcepts relsDefdInContext fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
               , atomsBySmallestConcept = \cpt -> Set.map apLeft 
                                                . pairsinexpr 
@@ -182,6 +182,8 @@ makeFSpec env context
                  smaller :: A_Concept -> [A_Concept]
                  smaller cpt = L.nub $ cpt : smallerConcepts (gens context) cpt
      allQuads = quadsOfRules env allrules 
+     relsDefdInContext :: Relations
+     relsDefdInContext = relsDefdIn context
      
      allrules = Set.map setIsSignal (allRules context)
         where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
@@ -196,29 +198,6 @@ makeFSpec env context
          UserDefined  -> True
          Multiplicity -> False
          Identity     -> False
-     calcProps :: Relation -> Relation
-     calcProps d = d{decprps_calc = Just calculated}
-         where calculated = decprps d `Set.union` (if d `elem` totals      then Set.singleton Tot else Set.empty)
-                                      `Set.union` (if d `elem` surjectives then Set.singleton Sur else Set.empty)
-     calculatedDecls :: Relations
-     calculatedDecls = Set.map calcProps (relsDefdIn context)
-  -- determine relations that are total (as many as possible, but not necessarily all)
-     totals      = [ d |       EDcD d  <- totsurs ]
-     surjectives = [ d | EFlp (EDcD d) <- totsurs ]
-     totsurs :: [Expression]
-     totsurs = []
---      = L.nub [rel | q<- filter (isIdent . EDcD . qDcl)   -- FIXME: This cannot be correct. This filter will block everything!
---                     . filter (not . isSignal . qRule)
---                     $ allQuads -- all quads for invariant rules
---                 , dnf<- concatMap rc_dnfClauses . qConjuncts $ q
---                 , let antc = conjNF env (foldr (./\.) (EDcV (sign (NE.head (antcs dnf)))) (antcs dnf))
---                 , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
---                 , cons<- case conss dnf of
---                            []   -> []
---                            h:tl -> NE.toList $ fmap exprCps2list (h NE.:| tl)
---            -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
---                 , rel<-NE.init cons<>[flp r | r<-NE.tail cons]
---                 ]
   -- Lookup view by id in fSpec.
      lookupView' :: Text -> ViewDef
      lookupView'  viewId =
@@ -255,7 +234,7 @@ makeFSpec env context
      --------------
      allplugs = genPlugs             -- all generated plugs
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
-                | p <- uniqueNames [] (makeGeneratedSqlPlugs env context calcProps)
+                | p <- uniqueNames [] (makeGeneratedSqlPlugs env context)
                 ]
      qlfname x = if T.null ns then x else "ns"<>ns<>x
        where ns = view namespaceL env
@@ -311,14 +290,14 @@ makeFSpec env context
               Set.filter isTot toconsider 
                 `Set.union`
              (Set.map flp . Set.filter (not.isTot) . Set.filter isSur $ toconsider)
-       where toconsider = Set.map EDcD calculatedDecls
+       where toconsider = Set.map EDcD relsDefdInContext
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal relations are excluded)
      dRels = Set.elems $
               Set.filter isInj toconsider
                 `Set.union`
              (Set.map flp . Set.filter (not.isInj) . Set.filter isUni $ toconsider)
-       where toconsider = Set.map EDcD calculatedDecls
+       where toconsider = Set.map EDcD relsDefdInContext
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths,maxInjPaths :: [NE.NonEmpty Expression]
      maxTotPaths = map (NE.:|[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!

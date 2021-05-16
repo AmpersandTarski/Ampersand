@@ -10,7 +10,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Ampersand.FSpec.FSpec
-          ( FSpec(..), concDefs, Atom(..), A_Pair(..)
+          ( FSpec(..), concDefs, Atom(..), APair(..)
           , Quad(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
@@ -38,86 +38,86 @@ import           Ampersand.FSpec.Crud
 import           Data.Hashable
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
-import qualified RIO.Text as T
+import qualified RIO.Text as T 
 import qualified RIO.List as L
 import           Text.Pandoc.Builder (Blocks)
 
 data FSpec = FSpec { fsName ::       Text
                    -- ^ The name of the specification, taken from the Ampersand script
-                   , originalContext :: A_Context
+                   , originalContext :: A_Context             
                    -- ^ the original context. (for showA)  
-                   , fspos ::        [Origin]
+                   , fspos ::        [Origin]                 
                    -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
-                   , plugInfos ::    [PlugInfo]
+                   , plugInfos ::    [PlugInfo]               
                    -- ^ All plugs (derived)
-                   , interfaceS ::   [Interface]
+                   , interfaceS ::   [Interface]              
                    -- ^ All interfaces defined in the Ampersand script
-                   , interfaceG ::   [Interface]
+                   , interfaceG ::   [Interface]              
                    -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
-                   , roleInterfaces  :: Role -> [Interface]
+                   , roleInterfaces  :: Role -> [Interface]   
                    -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
-                   , fDeriveProofs :: Blocks
+                   , fDeriveProofs :: Blocks                  
                    -- ^ The proofs in Pandoc format
-                   , fRoleRuls ::    [(Role,Rule)]
+                   , fRoleRuls ::    [(Role,Rule)]            
                    -- ^ the relation saying which roles maintain which rules.
                    , fMaintains ::   Role -> Rules
                    , fRoles ::       [(Role,Int)]
                    -- ^ All roles mentioned in this context, numbered.
                    , fallRules ::    Rules
-                   , vrules ::       Rules
+                   , vrules ::       Rules                   
                    -- ^ All user defined rules that apply in the entire FSpec
-                   , grules ::       Rules
+                   , grules ::       Rules                   
                    -- ^ All rules that are generated: multiplicity rules and identity rules
-                   , invariants ::   Rules
+                   , invariants ::   Rules                   
                    -- ^ All invariant rules
-                   , signals ::      Rules
+                   , signals ::      Rules                   
                    -- ^ All signal rules
-                   , allUsedDecls :: Relations
+                   , allUsedDecls :: Relations               
                    -- ^ All relations that are used in the fSpec
-                   , vrels ::        Relations
+                   , vrels ::        Relations               
                    -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and
                                                               --   one relation for each signal.
                    , allConcepts ::  A_Concepts
                    -- ^ All concepts in the fSpec
-                   , cptTType :: A_Concept -> TType
-                   , vIndices ::     [IdentityRule]
+                   , cptTType :: A_Concept -> TType 
+                   , vIndices ::     [IdentityDef]            
                    -- ^ All keys that apply in the entire FSpec
-                   , vviews ::       [ViewDef]
+                   , vviews ::       [ViewDef]                
                    -- ^ All views that apply in the entire FSpec
                    , getDefaultViewForConcept :: A_Concept -> Maybe ViewDef
                    , getAllViewsForConcept :: A_Concept -> [ViewDef]
-                   , lookupView :: Text -> ViewDef
+                   , lookupView :: Text -> ViewDef            
                    -- ^ Lookup view by id in fSpec.
-                   , vgens ::        [AClassify]
+                   , vgens ::        [AClassify]              
                    -- ^ All gens that apply in the entire FSpec
-                   , allConjuncts :: [Conjunct]
+                   , allConjuncts :: [Conjunct]               
                    -- ^ All conjuncts generated (by ADL2FSpec)
-                   , allConjsPerRule :: [(Rule,NE.NonEmpty Conjunct)]
+                   , allConjsPerRule :: [(Rule,NE.NonEmpty Conjunct)]   
                    -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
-                   , allConjsPerDecl :: [(Relation, [Conjunct])]
+                   , allConjsPerDecl :: [(Relation, [Conjunct])]        
                    -- ^ Maps each relation to the conjuncts it appears in   
-                   , allConjsPerConcept :: [(A_Concept, [Conjunct])]
+                   , allConjsPerConcept :: [(A_Concept, [Conjunct])]    
                    -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
-                   , vquads ::       [Quad]
+                   , vquads ::       [Quad]                   
                    -- ^ All quads generated (by ADL2FSpec)
-                   , fsisa ::        [(A_Concept, A_Concept)]
+                   , fsisa ::        [(A_Concept, A_Concept)] 
                    -- ^ generated: The data structure containing the generalization structure of concepts
-                   , vpatterns ::    [Pattern]
+                   , vpatterns ::    [Pattern]                
                    -- ^ All patterns taken from the Ampersand script
-                   , conceptDefs ::  [ConceptDef]
+                   , conceptDefs ::  [ConceptDef]             
                    -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
-                   , fSexpls ::      Set.Set Purpose
+                   , fSexpls ::      Set.Set Purpose                
                    -- ^ All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
-                   , metas ::        [Meta]
+                   , metas ::        [Meta]                   
                    -- ^ All meta relations from the entire context
-                   , crudInfo ::     CrudInfo
+                   , crudInfo ::     CrudInfo                 
                    -- ^ Information for CRUD matrices 
-                   , atomsInCptIncludingSmaller :: A_Concept -> AAtomValues
+                   , atomsInCptIncludingSmaller :: A_Concept -> AAtomValues 
                    -- ^ All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
-                   , atomsBySmallestConcept :: A_Concept -> AAtomValues
+                   , atomsBySmallestConcept :: A_Concept -> AAtomValues     
                    -- ^ All user defined populations of an A_Concept, where a population is NOT listed iff it also is in a smaller A_Concept.
-                   , tableContents :: PlugSQL -> [[Maybe AAtomValue]]
+                   , tableContents :: PlugSQL -> [[Maybe AAtomValue]] 
                    -- ^ tableContents is meant to compute the contents of an entity table.
                    --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than Text.
                    -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
@@ -127,17 +127,17 @@ data FSpec = FSpec { fsName ::       Text
                    -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
                    , pairsInExpr :: Expression -> AAtomPairs
                    , applyViolText :: Rule -> AAtomPair -> Text
-                   , initialConjunctSignals :: [(Conjunct,AAtomPairs)]
+                   , initialConjunctSignals :: [(Conjunct,AAtomPairs)] 
                    -- ^ All conjuncts that have process-rule violations.
-                   , allViolations ::  [(Rule,AAtomPairs)]
+                   , allViolations ::  [(Rule,AAtomPairs)]   
                    -- ^ All invariant rules with violations.
-                   , allExprs ::     Expressions
+                   , allExprs ::     Expressions             
                    -- ^ All expressions in the fSpec
-                   , fcontextInfo   :: ContextInfo
+                   , fcontextInfo   :: ContextInfo 
                    , ftypologies   :: [Typology]
                    , typologyOf :: A_Concept -> Typology
                    , largestConcept :: A_Concept -> A_Concept
-                   , specializationsOf :: A_Concept -> [A_Concept]
+                   , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    } deriving Typeable
 instance Eq FSpec where
@@ -153,15 +153,15 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 -- to reinstall the database. (e.g. changing the order of things in the script
 -- would not require a change of the database. However, change the name of concepts would.)
 instance Hashable FSpec where
-    hashWithSalt salt fSpec = salt
+    hashWithSalt salt fSpec = salt 
       `composeHash` name
-      `composeHash` (L.sort . Set.toList . fallRules)
+      `composeHash` (L.sort . Set.toList . fallRules) 
       `composeHash` (L.sort . Set.toList . vrels)
       `composeHash` (L.sort . Set.toList . allConcepts)
       `composeHash` (L.sortBy (compare `on` genspc) . vgens)
-      where
+      where 
         composeHash :: Hashable a => Int -> (FSpec -> a) -> Int
-        composeHash s fun = s `hashWithSalt` fun fSpec
+        composeHash s fun = s `hashWithSalt` fun fSpec 
 
 instance Language FSpec where
   relsDefdIn = relsDefdIn.originalContext
@@ -182,27 +182,49 @@ instance Unique Atom where
              [x] -> uniqueShowWithType x
              xs  -> "["<>T.intercalate ", " (map uniqueShowWithType xs)<>"]"
 
-data A_Pair = Pair { lnkDcl :: Relation
-                   , lnkLeft :: Atom
-                   , lnkRight :: Atom
-                   } deriving (Typeable,Eq)
-instance HasSignature A_Pair where
+data APair = Pair { lnkDcl :: Relation
+                  , lnkLeft :: Atom
+                  , lnkRight :: Atom
+                  } deriving (Typeable,Eq)
+instance HasSignature APair where
   sign = sign . lnkDcl
-instance Unique A_Pair where
+instance Unique APair where
   showUnique x = showUnique (lnkDcl x)
               <> showUnique (lnkLeft x)
               <> showUnique (lnkRight x)
 concDefs :: FSpec -> A_Concept -> [ConceptDef]
-concDefs fSpec c =
+concDefs fSpec c = 
   case c of
     ONE -> []
     PlainConcept{} -> [ cdef | cdef<-conceptDefs fSpec, name cdef `elem` aliases c ]
 
 instance ConceptStructure FSpec where
   concs         = allConcepts
-  expressionsIn = allExprs
+  expressionsIn = allExprs 
 
 
+--type Attributes = [Attribute]
+--data Attribute  = Attr { fld_name :: Text        -- The name of this attribute
+--                       , fld_sub :: Attributes        -- all sub-attributes
+--                       , fld_expr :: Expression    -- The expression by which this attribute is attached to the interface
+--                       , fld_rel :: Relation      -- The relation to which the database table is attached.
+--                       , fld_editable :: Bool          -- can this attribute be changed by the user of this interface?
+--                       , fld_list :: Bool          -- can there be multiple values in this attribute?
+--                       , fld_must :: Bool          -- is this attribute obligatory?
+--                       , fld_new :: Bool          -- can new elements be filled in? (if no, only existing elements can be selected)
+--                       , fld_sLevel :: Int           -- The (recursive) depth of the current servlet wrt the entire interface. This is used for documentation.
+--                       , fld_insAble :: Bool          -- can the user insert in this attribute?
+--                       , fld_onIns :: ECArule       -- the PAclause to be executed after an insert on this attribute
+--                       , fld_delAble :: Bool          -- can the user delete this attribute?
+--                       , fld_onDel :: ECArule       -- the PAclause to be executed after a delete on this attribute
+--                       }
+
+{- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
+ - "The properties of the Interface Operation component are as follows:
+ - ...
+ - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
+ - ..."
+-}
 
 instance Named FSpec where
   name = fsName
@@ -216,8 +238,6 @@ instance Ord Quad where
   q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
 instance Eq Quad where
   a == b = compare a b == EQ
-instance Unique Quad where
-  showUnique quad =  "ONCHANGE "<>showRel (qDcl quad)<>" FIX "<>name (qRule quad)
 
 --
 dnf2expr :: DnfClause -> Expression
@@ -246,15 +266,15 @@ data PlugSQL
    --                                            <> [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
    --     kernel = A closure of concepts A,B for which there exists a r::A->B[INJ]
    --              (r=attExpr of kernel attribute holding instances of B, in practice r is I or a makeRelation(flipped relation))
-   --      attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
+   --     attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
    --              (r=attExpr of attMor attribute, in practice r is a makeRelation(relation))
  = TblSQL  { sqlname ::    Text
-           , attributes :: [SqlAttribute]                           -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
-                                                                    --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
-                                                                    --   the remaining attributes represent attributes.
-           , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all typology concepts to attributes in the plug
-                                                                    -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-           , dLkpTbl ::   [RelStore]
+           , attributes :: [SqlAttribute]               -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
+                                                        --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
+                                                        --   the remaining attributes represent attributes.
+           , cLkpTbl ::    [(A_Concept,SqlAttribute)]   -- ^ lookup table that links all typology concepts to attributes in the plug
+                                                        -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+           , dLkpTbl ::    [RelStore]
            }
    -- | stores one relation r in two ordered columns
    --   i.e. a tuple of SqlAttribute -> (source r,target r) with (attExpr=I/\r;r~, attExpr=r)
@@ -262,7 +282,7 @@ data PlugSQL
    --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r].
    --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
  | BinSQL  { sqlname :: Text
-           , cLkpTbl :: [(A_Concept,SqlAttribute)]
+           , cLkpTbl :: [(A_Concept,SqlAttribute)] 
            , dLkpTbl :: [RelStore]
            }
    deriving (Show, Typeable)
@@ -290,20 +310,21 @@ plugAttributes plug = case plug of
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
 lookupCpt :: FSpec -> A_Concept -> [(PlugSQL,SqlAttribute)]
-lookupCpt fSpec cpt = [(plug,att)
+lookupCpt fSpec cpt = [(plug,att) 
                       |InternalPlug plug<-plugInfos fSpec
                       , (c,att)<-cLkpTbl plug
                       , c==cpt
                       ]
 
--- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
-getConceptTableFor :: FSpec -> A_Concept -> PlugSQL
+-- getConceptTableFor yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
+getConceptTableFor :: FSpec -> A_Concept -> PlugSQL    -- this corresponds to sqlConceptPlug in SQL.hs
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
                                []      -> fatal $ "tableFor: No concept table for " <> name c
                                (t,_):_ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
-data RelStore
+--   A RelStore is used to identify a relation within a persistent store.
+data RelStore 
   = RelStore
      { rsDcl       :: Relation
      , rsStoredFlipped :: Bool
@@ -345,7 +366,7 @@ isForeignKey att = case attUse att of
 
 showSQL :: TType -> Text
 showSQL tt =
-  case tt of
+  case tt of 
      Alphanumeric     -> "VARCHAR(255)"
      BigAlphanumeric  -> "TEXT"
      HugeAlphanumeric -> "MEDIUMTEXT"
@@ -359,7 +380,7 @@ showSQL tt =
      Integer          -> "BIGINT"
      Float            -> "FLOAT"
      Object           -> "VARCHAR(255)"
-     TypeOfOne        -> fatal "ONE is not represented in SQL"
+     TypeOfOne        -> fatal "ONE is not represented in SQL" 
 
 -- In case of reference to an INTERFACE, not used as a LINKTO, the
 -- expression and cruds are replaced. This is introduced with the
@@ -377,18 +398,18 @@ substituteReferenceObjectDef fSpec originalObjectDef =
     substitution =
       case objmsub originalObjectDef of
         Just InterfaceRef{ siIsLink=False
-                          , siIfcId=interfaceId}
+                          , siIfcId=interfaceId} 
           -> let ifc = substituteReferenceObjectDef fSpec (ifcObj (lookupInterface interfaceId))
               in Just (objExpression originalObjectDef .:. objExpression ifc, objcrud ifc)
         _ -> Nothing
     lookupInterface :: Text -> Interface
-    lookupInterface nm =
+    lookupInterface nm = 
         case [ ifc | ifc <- interfaceS fSpec <> interfaceG fSpec, name ifc == nm ] of
           [ifc] -> ifc
           _     -> fatal "Interface lookup returned zero or more than one result"
 
 violationsOfInvariants :: FSpec -> [(Rule,AAtomPairs)]
-violationsOfInvariants fSpec
+violationsOfInvariants fSpec 
   = [(r,vs) |(r,vs) <- allViolations fSpec
             , not (isSignal r)
     ]
