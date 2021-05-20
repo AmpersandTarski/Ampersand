@@ -60,8 +60,7 @@ jobs:
         stack test --system-ghc
 
     - name: version
-      run: echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --version)"
-# TODO: implement --numeric-version (could use stack as an example)
+      run: echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --numeric-version)"
       id: version
 
     - name: Upload artifacts (Windows)
