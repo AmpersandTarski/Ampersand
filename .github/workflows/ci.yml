@@ -41,10 +41,10 @@ jobs:
           ~/.stack
         key: ${{ runner.os }}-${{ matrix.ghc }}-stack
 
-#    - name: SetPath
-#      run : |
-#         $env:PATH = "${env:PATH};C:/Users/runneradmin/AppData/Roaming/local/bin"
-#      if: ${{ runner.os == 'windows' }}
+    - name: SetPath
+      run : |
+         echo "$HOME/.local/bin" >> $GITHUB_PATH
+      if: ${{ runner.os == 'windows' }}
 
     - name: Install dependencies
       run: |
@@ -60,20 +60,21 @@ jobs:
         stack test --system-ghc
 
     - name: version
-      run: echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --numeric-version)"
+      run: | 
+        echo "::set-output name=version::$(ampersand --numeric-version)"
       id: version
 
     - name: Upload artifacts (Windows)
       if: ${{ runner.os == 'Windows' }}
       uses: actions/upload-artifact@v2
       with:
-        name: build-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.python-version }}
+        name: build-${{ runner.os }}-binaries-${{ version }}
         path: C:/Users/runneradmin/AppData/Roaming/local/bin/*
     - name: Upload artifacts (macOS/Linux)
       if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ runner.os }}-binaries
+        name: build-${{ runner.os }}-binaries-${{ version }}
         path: /home/runner/.local/bin/*
 
 
