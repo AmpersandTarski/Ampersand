@@ -136,8 +136,8 @@ instance Arbitrary P_Context where
        <*> arbitrary -- populations
        <*> arbitrary -- generic meta information
 
-instance Arbitrary Meta where
-    arbitrary = Meta <$> arbitrary <*> safeStr <*> safeStr
+instance Arbitrary MetaData where
+    arbitrary = MetaData <$> arbitrary <*> safeStr <*> safeStr
 
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr

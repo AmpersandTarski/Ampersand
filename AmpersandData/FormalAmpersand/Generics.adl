@@ -32,10 +32,10 @@ RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 --[Conjuncts]--
 RELATION allConjuncts[Context*Conjunct] [INJ]
-RELATION conjunct[Conjunct*Expression] [TOT]
+RELATION rc_conjunct[Conjunct*Term] [TOT]
 ROLE ExecEngine MAINTAINS conjunctTotal
-RULE conjunctTotal : I[Conjunct] |- conjunct;conjunct~
--- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to an expression.")
+RULE conjunctTotal : I[Conjunct] |- rc_conjunct;rc_conjunct~
+-- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to a term.")
 VIOLATION ( TXT "{EX} DelAtom;Conjunct;", SRC I )
 
 RELATION originatesFrom[Conjunct*Rule] -- rule where the conjunct originates from.

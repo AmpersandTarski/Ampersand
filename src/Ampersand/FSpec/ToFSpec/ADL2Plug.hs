@@ -224,6 +224,7 @@ wayToStore env dcl
                                  -- the relation is TOT or SUR. In that case there
                                  -- should be no need to look in the concept table,
                                  -- for all atoms are in the first colum of the link table
+  where d = EDcD dcl
 
 unquote :: Text -> Text
 unquote str =

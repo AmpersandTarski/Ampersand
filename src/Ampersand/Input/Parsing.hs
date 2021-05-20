@@ -133,7 +133,7 @@ parseSingleADL pc
          | -- This feature enables the parsing of Excell files, that are prepared for Ampersand.
            extension == ".xlsx" = do 
               popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
-              return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+              return ((,[]) <$> popFromExcel)  -- An Excel file does not contain include files
          | -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
            extension == ".archimate" = do 
               ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
@@ -143,9 +143,7 @@ parseSingleADL pc
                          writeFileUtf8 "ArchiMetaModel.adl" (showP ctx)
                          logInfo "ArchiMetaModel.adl written"
                     Errors _ -> pure ()
-              return ((,) <$> ctxFromArchi
-                          <*> pure [] -- ArchiMate file cannot contain include files
-                         )
+              return ((,[]) <$> ctxFromArchi)  -- An Archimate file does not contain include files
          | otherwise = do
               mFileContents
                     <- case pcFileKind pc of
@@ -211,29 +209,6 @@ parseSingleADL pc
                catchInvalidXlsx m = catch m f
                  where f :: SomeException -> RIO env a
                        f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "<>tshow exception)
-
--- | To enable roundtrip testing, all data can be exported.
--- For this purpose mkContextOfPopsOnly exports the population only
-mkContextOfPopsOnly :: [P_Population] -> P_Context
-mkContextOfPopsOnly pops =
-  PCtx{ ctx_nm     = ""
-      , ctx_pos    = []
-      , ctx_lang   = Nothing
-      , ctx_markup = Nothing
-      , ctx_pats   = []
-      , ctx_rs     = []
-      , ctx_ds     = []
-      , ctx_cs     = []
-      , ctx_ks     = []
-      , ctx_rrules = []
-      , ctx_reprs  = []
-      , ctx_vs     = []
-      , ctx_gs     = []
-      , ctx_ifcs   = []
-      , ctx_ps     = []
-      , ctx_pops   = pops
-      , ctx_metas  = []
-      }
 
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =

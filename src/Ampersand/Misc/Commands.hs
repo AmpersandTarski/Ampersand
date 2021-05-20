@@ -315,7 +315,7 @@ daemonCmd daemonOpts =
        runDaemon 
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do
-    extendWith docOpts . forceAllowInvariants $ mkAction False doGenDocument 
+    extendWith docOpts . forceAllowInvariants $ mkAction doGenDocument 
   where
     forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
     forceAllowInvariants env = local (set allowInvariantViolationsL True) env
@@ -324,51 +324,45 @@ documentationCmd docOpts = do
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd protOpts = 
     extendWith protOpts $ do
-        env <- ask
-        let recipe = recipeBuilder True env
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec proto
+        mkAction proto
+
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
     extendWith testOpts test
+
 dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
 dataAnalysisCmd opts = 
-    extendWith opts $ do
-        let recipe = script UserScript `andThen` EncloseInConstraints
-        mFSpec <- createFspec recipe
-        doOrDie mFSpec exportAsAdl
+    extendWith opts $ mkAction exportAsAdl
+
 pprintCmd :: InputOutputOpts -> RIO Runner ()
 pprintCmd opts = 
-    extendWith opts $ mkAction False exportAsAdl
+    extendWith opts $ mkAction exportAsAdl
 
 checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd opts =
-    extendWith opts $ mkAction False doNothing
+    extendWith opts $ mkAction doNothing
    where doNothing fSpec = do
             logInfo $ "This script of "<>(display . name $ fSpec)<>" contains no type errors."     
+
 populationCmd :: PopulationOpts -> RIO Runner ()
 populationCmd opts = 
-    extendWith opts $ mkAction False population
+    extendWith opts $ mkAction population
 
 proofCmd :: ProofOpts -> RIO Runner ()
 proofCmd opts = 
-    extendWith opts $ mkAction False proof
-
---initCmd :: InitOpts -> RIO Runner ()
---initCmd opts = 
---    extendWith opts init
+    extendWith opts $ mkAction proof
 
 umlCmd :: UmlOpts -> RIO Runner ()
 umlCmd opts = 
-    extendWith opts $ mkAction False uml
+    extendWith opts $ mkAction uml
 
 validateCmd :: ValidateOpts -> RIO Runner ()
 validateCmd opts = 
-    extendWith opts $ mkAction True validate
+    extendWith opts $ mkAction validate
 
 devoutputCmd :: DevOutputOpts -> RIO Runner ()
 devoutputCmd opts = 
-    extendWith opts $ mkAction False devoutput
+    extendWith opts $ mkAction devoutput
 
 doOrDie :: HasLogFunc env => Guarded a -> (a -> RIO env b) -> RIO env b
 doOrDie gA act = 
@@ -381,14 +375,12 @@ doOrDie gA act =
   where
     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
 
-mkAction :: (HasLogFunc a, HasFSpecGenOpts a) => Bool -> (FSpec -> RIO a b) -> RIO a b
-mkAction isForPrototype theAction = do
+mkAction :: (HasLogFunc a, HasFSpecGenOpts a) => (FSpec -> RIO a b) -> RIO a b
+mkAction theAction = do
    env <- ask
-   let recipe = recipeBuilder isForPrototype env
+   let recipe = view recipeNameL env
    mFSpec <- createFspec recipe
    doOrDie mFSpec theAction
-  
-
 
 data Command = 
         Check
@@ -416,25 +408,3 @@ instance Show Command where
   show Test = "test"
   show Uml = "uml"
   show Validate = "validate"
--- | Generic way to specify the recipe to be used to generate an FSpec
-recipeBuilder :: (HasFSpecGenOpts env) => Bool -> env -> BuildRecipe
-recipeBuilder isForPrototype env = 
-  (if isForPrototype then enablePrototype else id) $
-  case view recipeNameL env of
-    Prototype       -> enablePrototype (script UserScript)
-    Standard        -> script UserScript
-    RAP             -> script UserScript 
-                        `merge`
-                       script (MetaScript FormalAmpersand) 
-    AtlasPopulation -> script UserScript `andThen` Grind FormalAmpersand
-    AtlasComplete   -> script (MetaScript FormalAmpersand)
-                        `merge`
-                       (script UserScript `andThen` Grind FormalAmpersand)
-  where
-    enablePrototype :: BuildRecipe -> BuildRecipe
-    enablePrototype x = three
-      where prototypeContext = script (MetaScript PrototypeContext)
-            one = x `merge` prototypeContext
-            two = one `andThen` Grind PrototypeContext
-            three = one `merge` two
-              

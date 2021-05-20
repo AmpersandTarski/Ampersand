@@ -3,7 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ShowMeatGrinder
-  ( grind 
+  ( grind
+  , metaModelTransformers
   , GrindInfo(..)
   , MetaModel(..)
   )

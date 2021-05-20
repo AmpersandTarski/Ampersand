@@ -20,7 +20,7 @@ class HasFSpecGenOpts a where
   defaultCrudL = fSpecGenOptsL . lens xdefaultCrud (\x y -> x { xdefaultCrud = y })
   trimXLSXCellsL :: Lens' a Bool
   trimXLSXCellsL = fSpecGenOptsL . lens xtrimXLSXCells (\x y -> x { xtrimXLSXCells = y })
-  recipeNameL :: Lens' a KnownRecipe
+  recipeNameL :: Lens' a Recipe
   recipeNameL = fSpecGenOptsL . lens xrecipeName (\x y -> x { xrecipeName = y })
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
@@ -194,12 +194,9 @@ instance HasDaemonOpts DaemonOpts where
   {-# INLINE daemonOptsL #-}
 
 -- | An enumeration type for building an FSpec in some common way
-data KnownRecipe = 
+data Recipe = 
     Standard -- ^ Plain way of building. No fancy stuff. 
-  | Prototype -- ^ Userscript grinded with prototype metamodel
-  | RAP -- ^ Merge the metamodel of FormalAmpersand to your script
-  | AtlasComplete    -- ^ A recipe to build an FSpec containing a selfcontained Atlas. 
-  | AtlasPopulation  -- ^ A recipe to build an FSpec as used by RAP, for the Atlas.
+  | Atlas    -- ^ A recipe to build metamodel for making an Atlas. 
     deriving (Show, Enum, Bounded)
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.
@@ -208,7 +205,7 @@ data FSpecGenOpts = FSpecGenOpts
   , xnamespace :: !Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
-  , xrecipeName :: !KnownRecipe 
+  , xrecipeName :: !Recipe 
   -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
   , xallowInvariantViolations :: !Bool
   -- ^ Should invariant violations be ignored?

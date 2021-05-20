@@ -278,7 +278,7 @@ uniqueNames nameclass = uniqueBy name
                          <>  T.intercalate "\n    " (map (tshow . origin) (x:xs))
                          <>  "."
                          )
-        messageFor _ = fatal "messageFor must only be used on lists with more that one element!"
+        messageFor _ = fatal "messageFor must only be used on lists with more than one element!"
     moreThanOne (_:_:_) = True
     moreThanOne  _      = False
 

@@ -1,6 +1,6 @@
 ADL_V2          ::= ContextDef
 ContextDef      ::= 'CONTEXT' Id IncludeStatement* LanguageRef? TextMarkup?
-                  ( Meta         |
+                  ( MetaData     |
                     PatternDef   |
                     ProcessDef   |
                     RuleDef      |
@@ -17,7 +17,7 @@ ContextDef      ::= 'CONTEXT' Id IncludeStatement* LanguageRef? TextMarkup?
 IncludeStatement ::= 'INCLUDE' FilePath
 LanguageRef     ::= 'IN' ('DUTCH' | 'ENGLISH')
 TextMarkup      ::= 'REST' | 'HTML' | 'LATEX' | 'MARKDOWN'
-Meta            ::= 'META' String String
+MetaData        ::= 'META' String String
 PatternDef      ::= 'PATTERN' Id LanguageRef?
                   ( RuleDef      |
                     RelationDef  |

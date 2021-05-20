@@ -125,7 +125,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         , cpt::A_Concept <- Set.elems $ concs pat
         ]
       )
-     ,("conjunct"              , "Conjunct"              , "Term"
+     ,("rc_conjunct"           , "Conjunct"              , "Term"
       , Set.fromList [Uni,Tot]
       , [(dirtyId conj, dirtyId (rc_conjunct conj))
         | conj::Conjunct <- instanceList fSpec
@@ -975,7 +975,7 @@ instance Instances ObjectDef where
       objects :: ObjectDef -> [ObjectDef]
       objects obj = obj : fields obj
 instance Instances Pattern where
-  instances = Set.fromList . ctxpats . originalContext
+  instances = Set.fromList . vpatterns
 instance Instances Population where
   instances = Set.fromList . ctxpopus . originalContext
 instance Instances Purpose where

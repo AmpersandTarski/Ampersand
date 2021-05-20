@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings#-}
 module Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
-   , Meta(..)
+   , MetaData(..)
    , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
@@ -64,7 +64,7 @@ data P_Context
          , ctx_ifcs ::   [P_Interface]      -- ^ The interfaces defined in this context
          , ctx_ps ::     [PPurpose]         -- ^ The purposes defined in this context, outside the scope of patterns and processes
          , ctx_pops ::   [P_Population]     -- ^ The populations defined in this context (without patterns), from POPULATION statements as well as from Relation declarations
-         , ctx_metas ::  [Meta]             -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+         , ctx_metas ::  [MetaData]             -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
          } deriving Show --for QuickCheck
 
 instance Eq P_Context where
@@ -73,11 +73,11 @@ instance Named P_Context where
   name = ctx_nm
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
-data Meta = Meta { pos :: Origin
+data MetaData = MetaData { pos :: Origin
               , mtName :: Text
               , mtVal :: Text
               } deriving (Show)
-instance Traced Meta where
+instance Traced MetaData where
   origin = pos
 
 -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'

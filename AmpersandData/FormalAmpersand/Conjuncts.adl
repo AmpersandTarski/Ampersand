@@ -4,7 +4,7 @@ PATTERN Conjuncts
     MEANING "All conjuncts in a context."
     RELATION allShifts[DnfClause*DnfClause]
     RELATION conjNF[Term*Term] [UNI,TOT]
-    RELATION conjunct[Conjunct*Term] [TOT]
+    RELATION rc_conjunct[Conjunct*Term] [TOT]
     RELATION conjuncts[Rule*Term]
     RELATION exprIsc2list[Term*Term] [TOT]
     RELATION expr2dnfClause[Term*DnfClause] [UNI,TOT]

@@ -32,7 +32,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , showPredLogic
     )
 where
-import           Ampersand.ADL1 hiding (Meta)
+import           Ampersand.ADL1 hiding (MetaData)
 import           Ampersand.Basics hiding (Reader,Identity,toList,link)
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct

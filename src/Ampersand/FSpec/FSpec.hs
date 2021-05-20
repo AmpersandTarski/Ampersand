@@ -81,7 +81,7 @@ data FSpec = FSpec { fsName ::       Text
                    , allConcepts ::  A_Concepts
                    -- ^ All concepts in the fSpec
                    , cptTType :: A_Concept -> TType 
-                   , vIndices ::     [IdentityDef]            
+                   , vIndices ::     [IdentityRule]            
                    -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                
                    -- ^ All views that apply in the entire FSpec
@@ -109,7 +109,7 @@ data FSpec = FSpec { fsName ::       Text
                    -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                    , fSexpls ::      Set.Set Purpose                
                    -- ^ All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
-                   , metas ::        [Meta]                   
+                   , metas ::        [MetaData]                   
                    -- ^ All meta relations from the entire context
                    , crudInfo ::     CrudInfo                 
                    -- ^ Information for CRUD matrices 
@@ -238,6 +238,8 @@ instance Ord Quad where
   q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
 instance Eq Quad where
   a == b = compare a b == EQ
+instance Unique Quad where
+  showUnique quad =  "ONCHANGE "<>showRel (qDcl quad)<>" FIX "<>name (qRule quad)
 
 --
 dnf2expr :: DnfClause -> Expression

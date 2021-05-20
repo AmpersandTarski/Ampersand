@@ -7,7 +7,7 @@
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
- , Meta(..)
+ , MetaData(..)
  , Origin(..)
  , Pattern(..) 
  , PairView(..)
@@ -55,7 +55,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  ) where
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree 
-    ( Meta(..)
+    ( MetaData(..)
     , Role(..)
     , ConceptDef, P_Concept(..), mkPConcept, PClassify(specific,generics)
     , Origin(..)
@@ -98,7 +98,7 @@ data A_Context
          , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
          , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context
          , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns and processes
-         , ctxmetas :: [Meta]        -- ^ used for Pandoc authors (and possibly other things)
+         , ctxmetas :: [MetaData]        -- ^ used for Pandoc authors (and possibly other things)
          , ctxInfo :: ContextInfo
          } deriving (Typeable)              --deriving (Show) -- voor debugging
 instance Show A_Context where

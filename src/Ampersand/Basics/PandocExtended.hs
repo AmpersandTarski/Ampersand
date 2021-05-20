@@ -13,7 +13,7 @@ import           Ampersand.Basics.Prelude
 import           Ampersand.Basics.Unique
 import           Ampersand.Basics.Version
 import qualified RIO.Text as T
-import           Text.Pandoc hiding (Meta)
+import           Text.Pandoc
 
 data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord, Enum, Bounded)
 

@@ -4,7 +4,7 @@ module Ampersand.Options.FSpecGenOptsParser
    (fSpecGenOptsParser, defFSpecGenOpts)
 where
 
-import           Ampersand.Misc.HasClasses (FSpecGenOpts (..),KnownRecipe(..))
+import           Ampersand.Misc.HasClasses (FSpecGenOpts (..),Recipe(..))
 import           Ampersand.Basics
 -- import           Ampersand.FSpec.ShowMeatGrinder (MetaModel(..))
 import           Options.Applicative
@@ -100,7 +100,10 @@ trimXLSXCellsP = boolFlags True "trim-cellvalues"
         ( "ignoring the leading and trailing spaces in .xlsx files "<>
                  "that are INCLUDED in the script.")
          mempty
-knownRecipeP :: Parser KnownRecipe
+
+-- | This code is written such that the recipe names from `data Recipe` (from CreateFspec.hs)
+--   can be altered without changing the code below.
+knownRecipeP :: Parser Recipe
 knownRecipeP = toKnownRecipe . T.pack <$> strOption
       (  long "build-recipe"
       <> metavar "RECIPE"
@@ -112,12 +115,12 @@ knownRecipeP = toKnownRecipe . T.pack <$> strOption
               )
       )
     where
-      allKnownRecipes :: [KnownRecipe]
+      allKnownRecipes :: [Recipe]
       allKnownRecipes = [minBound..]
-      toKnownRecipe :: Text -> KnownRecipe
+      toKnownRecipe :: Text -> Recipe
       toKnownRecipe s = case filter matches allKnownRecipes of
-            -- FIXME: The fatals here should be plain parse errors. Not sure yet how that should be done.
-            --        See https://hackage.haskell.org/package/optparse-applicative
+            -- TODO: The fatals here should be plain parse errors. Not sure yet how that should be done.
+            --       See https://hackage.haskell.org/package/optparse-applicative
                    [] -> fatal $ T.unlines
                         ["No matching recipe found. Possible recipes are:"
                         , "  "<>T.intercalate ", " (map tshow allKnownRecipes)

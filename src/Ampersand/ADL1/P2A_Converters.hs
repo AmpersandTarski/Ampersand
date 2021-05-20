@@ -1069,7 +1069,7 @@ pDecl2aDecl ::
   -> Lang           -- The default language
   -> PandocFormat   -- The default pandocFormat
   -> P_Relation -> Guarded Relation
-pDecl2aDecl cptMap env defLanguage defFormat pd
+pDecl2aDecl cptMap maybePatName defLanguage defFormat pd
  = let (prL:prM:prR:_) = dec_pragma pd <> ["", "", ""]
        dcl = Relation
                  { decnm   = dec_nm pd
@@ -1082,7 +1082,7 @@ pDecl2aDecl cptMap env defLanguage defFormat pd
                  , decMean = map (pMean2aMean defLanguage defFormat) (dec_Mean pd)
                  , decfpos = origin pd
                  , decusr  = True
-                 , decpat  = env
+                 , decpat  = maybePatName
                  , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                  }
    in checkEndoProps >> pure dcl
