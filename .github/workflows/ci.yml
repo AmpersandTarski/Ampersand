@@ -59,7 +59,7 @@ jobs:
       run: |
         stack test --system-ghc
 
-    - name: version
+    - name: get-version
       run: | 
         echo "::set-output name=version::$(ampersand --numeric-version)"
       id: version
@@ -68,13 +68,13 @@ jobs:
       if: ${{ runner.os == 'Windows' }}
       uses: actions/upload-artifact@v2
       with:
-        name: build-${{ runner.os }}-binaries-${{ version }}
+        name: build-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
         path: C:/Users/runneradmin/AppData/Roaming/local/bin/*
     - name: Upload artifacts (macOS/Linux)
       if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
       uses: actions/upload-artifact@v2
       with:
-        name: build-${{ runner.os }}-binaries-${{ version }}
+        name: build-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
         path: /home/runner/.local/bin/*
 
 
@@ -91,7 +91,7 @@ jobs:
       with:
         draft: true
         prerelease: false
-        release_name: ${{ steps.version.outputs.version }}
+        release_name: ${{ steps.get-version.outputs.version }}
         tag_name: ${{ github.ref }}
         body: |
           Here you find yet another release of Ampersand. Check out the [releasenotes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) to see what has changed. 
