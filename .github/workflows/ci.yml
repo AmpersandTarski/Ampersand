@@ -69,7 +69,7 @@ jobs:
 
     - name: get-version
       run: | 
-        echo "::set-output name=version::$(ampersand --numeric-version)"
+        echo "::set-output name=version::$(stack run ampersand -- --numeric-version)"
         ampersand --numeric-version > VersionNumber # create a file with the version number.
       id: version
     - name: save version 
