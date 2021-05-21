@@ -61,7 +61,7 @@ jobs:
 
     - name: get-version
       run: | 
-        echo "::set-output name=version::$(ampersand --numeric-version)"
+        echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --numeric-version)"
       id: version
 
     - name: Upload artifacts (Windows)
