@@ -70,7 +70,15 @@ jobs:
     - name: get-version
       run: | 
         echo "::set-output name=version::$(ampersand --numeric-version)"
+        ampersand --numeric-version > VersionNumber # create a file with the version number.
       id: version
+    - name: save version 
+      if: ${{ runner.os == 'ubuntu' }}  # save the file that contains the version number for use in the release job.
+      uses: actions/upload-artifact@v2
+      with:
+        name: VersionNumber
+        path: VersionNumber
+
 
     - name: Upload artifacts (Windows)
       if: ${{ runner.os == 'Windows' }}
@@ -79,7 +87,7 @@ jobs:
         name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
         path: C:/Users/runneradmin/AppData/Roaming/local/bin/*
     - name: Upload artifacts (macOS)
-      if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
+      if: ${{ runner.os == 'macOS' }}
       uses: actions/upload-artifact@v2
       with:
         name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
@@ -94,6 +102,7 @@ jobs:
 
 
   release:
+    name: Create Release
     needs: build-and-test-with-stack
     runs-on: ubuntu-latest
     steps:
@@ -111,4 +120,33 @@ jobs:
           Here you find yet another release of Ampersand. Check out the [releasenotes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) to see what has changed. 
       env:
         GITHUB_TOKEN: ${{ github.token }}     
+    - name: download VersionNumber from previous job
+      uses: actions/download-artifact@v2
+      with:
+        name: VersionNumber
+    - name: get-version
+      run: | 
+        echo "::set-output name=version::$(cat VersionNumber)"
+      id: version
 
+    - name: upload ubuntu artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_name: ampersand-ubuntu-binaries-${{ steps.get-version.outputs.version }}
+    - name: upload windows artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_name: ampersand-ubuntu-binaries-${{ steps.get-version.outputs.version }}
+    - name: upload macOS artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}
