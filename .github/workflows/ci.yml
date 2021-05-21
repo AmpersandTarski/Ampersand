@@ -67,15 +67,26 @@ jobs:
 #      run: |
 #        stack test --system-ghc
 
-    - name: get-version
+    - name: get-version (windows)
       if: ${{ runner.os == 'Windows' }}
       run: | 
         echo $GITHUB_PATH
         echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand -- --numeric-version)"
         C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --numeric-version > VersionNumber # create a file with the version number.
       id: version
+    - name: get-version (macOS)
+      if: ${{ runner.os == 'macOS' }}
+      run: | 
+        echo "::set-output name=version::$(ampersand --numeric-version)"
+        ampersand --numeric-version > VersionNumber # create a file with the version number.
+      id: version
+    - name: get-version (ubuntu)
+      if: ${{ runner.os == 'ubuntu' }}
+      run: | 
+        echo "::set-output name=version::$(ampersand --numeric-version)"
+        ampersand --numeric-version > VersionNumber # create a file with the version number.
+      id: version
     - name: save version 
-      if: ${{ runner.os == 'ubuntu' }}  # save the file that contains the version number for use in the release job.
       uses: actions/upload-artifact@v2
       with:
         name: VersionNumber
