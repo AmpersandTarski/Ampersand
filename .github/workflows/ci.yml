@@ -83,7 +83,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
-        path: /home/runner/.local/bin/*
+        path: /Users/runner/.local/bin/*
     - name: Upload artifacts (ubuntu)
       if: ${{ runner.os == 'ubuntu' }}
       uses: actions/upload-artifact@v2
