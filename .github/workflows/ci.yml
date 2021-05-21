@@ -48,7 +48,7 @@ jobs:
     - name: SetPath-windows
       if: ${{ runner.os == 'Windows' }}
       run : |
-         echo "C:\Users\runneradmin\AppData\Roaming\local\bin" >> $GITHUB_PATH
+         echo "C:\Users\runneradmin\AppData\Roaming\local\bin\" >> $GITHUB_PATH
     - name: SetPath-macOS
       if: ${{ runner.os == 'macOS' }}
       run : |
@@ -68,9 +68,11 @@ jobs:
 #        stack test --system-ghc
 
     - name: get-version
+      if: ${{ runner.os == 'Windows' }}
       run: | 
-        echo "::set-output name=version::$(stack run ampersand -- --numeric-version)"
-        ampersand --numeric-version > VersionNumber # create a file with the version number.
+        echo $GITHUB_PATH
+        echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand -- --numeric-version)"
+        C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --numeric-version > VersionNumber # create a file with the version number.
       id: version
     - name: save version 
       if: ${{ runner.os == 'ubuntu' }}  # save the file that contains the version number for use in the release job.
