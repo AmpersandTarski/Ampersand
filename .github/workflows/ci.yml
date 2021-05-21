@@ -41,10 +41,18 @@ jobs:
           ~/.stack
         key: ${{ runner.os }}-${{ matrix.ghc }}-stack
 
-    - name: SetPath
+    - name: SetPath-ubuntu
+      if: ${{ runner.os == 'ubuntu' }}
       run : |
          echo "$HOME/.local/bin" >> $GITHUB_PATH
-      if: ${{ runner.os == 'windows' }}
+    - name: SetPath-windows
+      if: ${{ runner.os == 'Windows' }}
+      run : |
+         echo "C:\Users\runneradmin\AppData\Roaming\local\bin" >> $GITHUB_PATH
+    - name: SetPath-macOS
+      if: ${{ runner.os == 'macOS' }}
+      run : |
+         echo "/Users/runner/.local/bin" >> $GITHUB_PATH
 
     - name: Install dependencies
       run: |
@@ -54,27 +62,33 @@ jobs:
       run: |
         stack install --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll
 
-    - name: Test
-      if: ${{ runner.os != 'windows' }}
-      run: |
-        stack test --system-ghc
+#    - name: Test
+#      if: ${{ runner.os == 'ubuntu' }}
+#      run: |
+#        stack test --system-ghc
 
     - name: get-version
       run: | 
-        echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --numeric-version)"
+        echo "::set-output name=version::$(ampersand --numeric-version)"
       id: version
 
     - name: Upload artifacts (Windows)
       if: ${{ runner.os == 'Windows' }}
       uses: actions/upload-artifact@v2
       with:
-        name: build-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
+        name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
         path: C:/Users/runneradmin/AppData/Roaming/local/bin/*
-    - name: Upload artifacts (macOS/Linux)
+    - name: Upload artifacts (macOS)
       if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
       uses: actions/upload-artifact@v2
       with:
-        name: build-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
+        name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
+        path: /home/runner/.local/bin/*
+    - name: Upload artifacts (ubuntu)
+      if: ${{ runner.os == 'ubuntu' }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
         path: /home/runner/.local/bin/*
 
 
