@@ -72,22 +72,22 @@ jobs:
       run: | 
         echo $GITHUB_PATH
         echo "::set-output name=version::$(C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand -- --numeric-version)"
-        C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --numeric-version > VersionNumber # create a file with the version number.
+        C:/Users/runneradmin/AppData/Roaming/local/bin/ampersand --numeric-version > Version.txt # create a file with the version number.
     - name: get-version (macOS)
       if: ${{ runner.os == 'macOS' }}
       run: | 
         echo "::set-output name=version::$(ampersand --numeric-version)"
-        ampersand --numeric-version > VersionNumber # create a file with the version number.
+        ampersand --numeric-version > Version.txt # create a file with the version number.
     - name: get-version (ubuntu)
       if: ${{ runner.os == 'ubuntu' }}
       run: | 
         echo "::set-output name=version::$(ampersand --numeric-version)"
-        ampersand --numeric-version > VersionNumber # create a file with the version number.
+        ampersand --numeric-version > Version.txt # create a file with the version number.
     - name: save version 
       uses: actions/upload-artifact@v2
       with:
-        name: VersionNumber
-        path: VersionNumber
+        name: Version.txt
+        path: Version.txt
 
 
     - name: Upload artifacts (Windows)
@@ -130,13 +130,13 @@ jobs:
           Here you find yet another release of Ampersand. Check out the [releasenotes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) to see what has changed. 
       env:
         GITHUB_TOKEN: ${{ github.token }}     
-    - name: download VersionNumber from previous job
+    - name: download Version.txt from previous job
       uses: actions/download-artifact@v2
       with:
-        name: VersionNumber
+        name: Version.txt
     - name: get-version
       run: | 
-        echo "::set-output name=version::$(cat VersionNumber)"
+        echo "::set-output name=version::$(cat Version.txt)"
       id: version
 
     - name: upload ubuntu artifact
@@ -152,7 +152,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_name: ampersand-ubuntu-binaries-${{ steps.get-version.outputs.version }}
+        asset_name: ampersand-windows-binaries-${{ steps.get-version.outputs.version }}
     - name: upload macOS artifact
       uses: actions/upload-release-asset@v1
       env:
