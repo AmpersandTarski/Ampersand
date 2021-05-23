@@ -1,0 +1,27 @@
+# Inspired by https://tech.freckle.com/2021/05/18/haskell-on-actions/
+name: CI_test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "**" # Only trigger on branches (i.e. not tags, ..)
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        stack-yaml:
+          - stack.yaml
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: freckle/stack-cache-action@main
+        with:
+          stack-yaml: ${{ matrix.stack-yaml }}
+      - uses: freckle/stack-action@main
+        with:
+          stack-yaml: ${{ matrix.stack-yaml }}
