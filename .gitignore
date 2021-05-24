@@ -10,7 +10,7 @@ cabal.sandbox.config
 /dist-newstyle
 .idea
 
-stack.yaml.lock
+# stack.yaml.lock # enable versioning of stack.yaml.lock: See https://stackoverflow.com/questions/64682066/should-stack-yaml-lock-be-checked-into-source-control/64684211#64684211
 
 # Disable testresults 
 /testing/Travis/testcases/**/*.proto
