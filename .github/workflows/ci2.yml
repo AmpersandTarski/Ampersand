@@ -24,13 +24,13 @@ jobs:
       - name: Build dependencies
         uses: freckle/stack-action@main
         with:
-          stack-arguments: --system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies
+          stack-arguments: --system-ghc --test --bench --no-run-benchmarks --only-dependencies
           weeder: false
           hlint: false
       - name: Build and test
         uses: freckle/stack-action@main
         with:
-          stack-arguments: --copy-bins --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll
+          stack-arguments: --copy-bins --system-ghc --test --bench --no-run-benchmarks --flag ampersand:buildAll
           weeder: false
           hlint: false
       - name: Get version
@@ -54,13 +54,13 @@ jobs:
       - name: Build dependencies
         uses: freckle/stack-action@main
         with:
-          stack-arguments: --system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies
+          stack-arguments: --system-ghc --test --only-dependencies
           weeder: false
           hlint: false
       - name: Build and test
         uses: freckle/stack-action@main
         with:
-          stack-arguments: --copy-bins --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll
+          stack-arguments: --copy-bins --system-ghc --test --flag ampersand:buildAll
           weeder: false
           hlint: false
       - name: Get version
