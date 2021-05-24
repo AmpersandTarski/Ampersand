@@ -8,8 +8,14 @@ on:
       - "**" # Only trigger on branches (i.e. not tags, ..)
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build-and-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+        plan:
+        - { build: stack }
+    name: ${{ matrix.plan.build }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v2
@@ -17,3 +23,4 @@ jobs:
       - uses: freckle/stack-action@main
         with:
           weeder: false
+          hlint: true
