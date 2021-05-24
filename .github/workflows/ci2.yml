@@ -8,20 +8,91 @@ on:
       - "**" # Only trigger on branches (i.e. not tags, ..)
 
 jobs:
-  build-and-test:
-    strategy:
-      fail-fast: false # We want to know what happens with other jobs, when one fails.
-      matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
-        plan:
-        - { build: stack }
-    name: ${{ matrix.plan.build }} ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-
+  build-and-test-ubuntu:
+    name: Build and test on ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: freckle/stack-cache-action@main
-      - uses: freckle/stack-action@main
+      - name: Set path
+        run : |
+          echo $GITHUB_PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo $GITHUB_PATH
+      - name: Checkout project contents
+        uses: actions/checkout@v2
+      - name: Use cache when available
+        uses: freckle/stack-cache-action@main
+      - name: Build dependencies
+        uses: freckle/stack-action@main
         with:
+          stack-arguments: --system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies
           weeder: false
-          hlint: true
+          hlint: false
+      - name: Build and test
+        uses: freckle/stack-action@main
+        with:
+          stack-arguments: --copy-bins --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll
+          weeder: false
+          hlint: false
+      - name: Get version
+        run: |
+          ampersand --numeric-version > Version.txt 
+          cat Version.txt
+
+  build-and-test-macOS:
+    name: Build and test on macOS
+    runs-on: macos-latest
+    steps:
+      - name: Set path
+        run : |
+          echo $GITHUB_PATH
+          echo "/Users/runner/.local/bin" >> $GITHUB_PATH
+          echo $GITHUB_PATH
+      - name: Checkout project contents
+        uses: actions/checkout@v2
+      - name: Use cache when available
+        uses: freckle/stack-cache-action@main
+      - name: Build dependencies
+        uses: freckle/stack-action@main
+        with:
+          stack-arguments: --system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies
+          weeder: false
+          hlint: false
+      - name: Build and test
+        uses: freckle/stack-action@main
+        with:
+          stack-arguments: --copy-bins --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll
+          weeder: false
+          hlint: false
+      - name: Get version
+        run: |
+          ampersand --numeric-version > Version.txt 
+          cat Version.txt
+
+  build-and-test-windows:
+    name: Build and test on windows-latest
+    runs-on: windows-latest
+    steps:
+      - name: Checkout project contents
+        uses: actions/checkout@v2
+      - name: Use cache (manually) # See https://github.com/freckle/stack-cache-action/issues/5
+        uses: actions/cache@v2.1.3
+# TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
+        with:
+          path: | 
+            ~/.ghc
+            ~/.stack
+          key: ${{ runner.os }}-${{ matrix.ghc }}-stack
+      - name: Build dependencies
+        uses: freckle/stack-action@main
+        with:
+          stack-arguments: --system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies
+          weeder: false
+          hlint: false
+      - name: Build and test
+        uses: freckle/stack-action@main
+        with:
+          stack-arguments: --copy-bins --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll
+          weeder: false
+          hlint: false
+
+  
