@@ -21,16 +21,10 @@ jobs:
         uses: actions/checkout@v2
       - name: Use cache when available
         uses: freckle/stack-cache-action@main
-      - name: Build dependencies
-        uses: freckle/stack-action@main
-        with:
-          stack-arguments: '--system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies'
-          weeder: false
-          hlint: false
       - name: Build and test
-        uses: freckle/stack-action@main
+        uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
         with:
-          stack-arguments: '--copy-bins --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll'
+          stack-arguments: '--copy-bins --flag ampersand:buildAll'
           weeder: false
           hlint: false
       - name: Get version
@@ -51,16 +45,10 @@ jobs:
         uses: actions/checkout@v2
       - name: Use cache when available
         uses: freckle/stack-cache-action@main
-      - name: Build dependencies
-        uses: freckle/stack-action@main
-        with:
-          stack-arguments: '--system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies'
-          weeder: false
-          hlint: false
       - name: Build and test
         uses: freckle/stack-action@main
         with:
-          stack-arguments: '--copy-bins --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll'
+          stack-arguments: '--copy-bins --flag ampersand:buildAll'
           weeder: false
           hlint: false
       - name: Get version
@@ -82,16 +70,10 @@ jobs:
             ~/.ghc
             ~/.stack
           key: ${{ runner.os }}-${{ matrix.ghc }}-stack
-      - name: Build dependencies
-        uses: freckle/stack-action@main
-        with:
-          stack-arguments: '--system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies'
-          weeder: false
-          hlint: false
       - name: Build and test
         uses: freckle/stack-action@main
         with:
-          stack-arguments: '--copy-bins --system-ghc --test --bench --no-run-tests --no-run-benchmarks --flag ampersand:buildAll'
+          stack-arguments: '--copy-bins --flag ampersand:buildAll'
           weeder: false
           hlint: false
 
