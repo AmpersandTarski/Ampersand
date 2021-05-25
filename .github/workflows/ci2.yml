@@ -74,6 +74,10 @@ jobs:
         uses: shogo82148/actions-setup-mysql@v1
         with:
           mysql-version: '8.0'
+      - name: Setup PHP 
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
       - name: Build and test
         uses: freckle/stack-action@main
         with:
