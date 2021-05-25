@@ -71,7 +71,7 @@ jobs:
             ~/.stack
           key: ${{ runner.os }}-${{ matrix.ghc }}-stack
       - name: Set up MySQL
-      - uses: shogo82148/actions-setup-mysql@v1
+        uses: shogo82148/actions-setup-mysql@v1
         with:
           mysql-version: '8.0'
       - name: Build and test
