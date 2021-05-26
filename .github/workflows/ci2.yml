@@ -42,21 +42,21 @@ jobs:
       - name: create directory structure
         run: |
           mkdir release
-          mkdir release/${{ runner.os }}
+          mkdir release/Linux
           mkdir release/windows
           mkdir release/macOS
-      - name: Download artifacts (ubuntu)
+      - name: Download artifacts (Linux)
         uses: actions/download-artifact@v2
         with:
-          name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
-          path: /release/${{ runner.os }}
-      - name: Upload ubuntu artifact
+          name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}
+          path: release/Linux
+      - name: Upload Linux artifact
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: ampersand-ubuntu-binaries-${{ steps.get-version.outputs.version }}
+          asset_name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}
 
 
 
@@ -93,10 +93,10 @@ jobs:
         with:
           name: version.txt
           path: version.txt
-      - name: Upload artifacts (ubuntu)
+      - name: Upload artifacts (Linux)
         uses: actions/upload-artifact@v2
         with:
-          name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
+          name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}
           path: /home/runner/.local/bin/*
       
 
@@ -120,12 +120,17 @@ jobs:
           weeder: false
           hlint: false
       - name: Get version
+        id: get-version
         run: |
-          ampersand --numeric-version > version.txt 
-          cat version.txt
+          echo "::set-output name=version::$(ampersand --numeric-version)"
+      - name: Upload artifacts (macOS)
+        uses: actions/upload-artifact@v2
+        with:
+          name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}
+          path: /Users/runner/.local/bin/*
 
   build-and-test-windows:
-    name: Build and test on windows-latest
+    name: Build and test on Windows
     runs-on: windows-latest
     steps:
       - name: Checkout project contents
@@ -137,7 +142,7 @@ jobs:
           path: | 
             ~/.ghc
             ~/.stack
-          key: ${{ runner.os }}-${{ matrix.ghc }}-stack
+          key: ${{ runner.os }}-stack
       - name: Set up MySQL
         uses: shogo82148/actions-setup-mysql@v1
         with:
@@ -153,5 +158,14 @@ jobs:
           stack-arguments: '--copy-bins --flag ampersand:buildAll'
           weeder: false
           hlint: false
+      - name: Get version
+        id: get-version
+        run: |
+          echo "::set-output name=version::$(C:\Users\runneradmin\AppData\Roaming\local\bin\ampersand --numeric-version)"
+      - name: Upload artifacts (Windows)
+        uses: actions/upload-artifact@v2
+        with:
+          name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
+          path: C:\Users\runneradmin\AppData\Roaming\local\bin\*
 
   
