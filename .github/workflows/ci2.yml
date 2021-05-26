@@ -12,20 +12,20 @@ jobs:
   release:
     name: Release
     needs: [ build-and-test-ubuntu
-           , build-and-test-macOS
-           , build-and-test-windows
+#           , build-and-test-macOS
+#           , build-and-test-windows
            ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: download Version.txt from previous job
+      - name: download version.txt from previous job
         uses: actions/download-artifact@v2
         with:
-          name: Version.txt
+          name: version.txt
       - name: get-version
         run: | 
-          echo "::set-output name=version::$(cat Version.txt)"
+          echo "::set-output name=version::$(cat version.txt)"
         id: get-version
       - name: Create release
         uses: actions/create-release@v1
@@ -115,8 +115,8 @@ jobs:
           hlint: false
       - name: Get version
         run: |
-          ampersand --numeric-version > Version.txt 
-          cat Version.txt
+          ampersand --numeric-version > version.txt 
+          cat version.txt
 
   build-and-test-windows:
     name: Build and test on windows-latest
