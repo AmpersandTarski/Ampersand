@@ -11,7 +11,7 @@ on:
     branches: 
       - '**' # Only trigger on branches (i.e. not tags, ..)
 
-jobs:
+jo bs:
 
   build-and-test-with-stack:
     strategy:
