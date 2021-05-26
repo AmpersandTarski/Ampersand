@@ -8,6 +8,55 @@ on:
       - "**" # Only trigger on branches (i.e. not tags, ..)
 
 jobs:
+
+  release:
+    name: Release
+    needs: [ build-and-test-ubuntu
+           , build-and-test-macOS
+           , build-and-test-windows
+           ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: download Version.txt from previous job
+        uses: actions/download-artifact@v2
+        with:
+          name: Version.txt
+      - name: get-version
+        run: | 
+          echo "::set-output name=version::$(cat Version.txt)"
+        id: get-version
+      - name: Create release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: true
+          prerelease: false
+          release_name: ${{ steps.get-version.outputs.version }}
+          tag_name: ${{ github.ref }}
+          body: |
+            Here you find yet another release of Ampersand. Check out the [releasenotes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) to see what has changed. 
+        env:
+          GITHUB_TOKEN: ${{ github.token }}     
+      - name: Download artifacts (ubuntu)
+        uses: actions/download-artifact@v2
+        with:
+          name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
+          path: /release/${{ runner.os }}
+      - name: Upload ubuntu artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_name: ampersand-ubuntu-binaries-${{ steps.get-version.outputs.version }}
+
+
+
+
+
+
   build-and-test-ubuntu:
     name: Build and test on ubuntu-latest
     runs-on: ubuntu-latest
@@ -28,9 +77,22 @@ jobs:
           weeder: false
           hlint: false
       - name: Get version
+        id: get-version
         run: |
-          ampersand --numeric-version > Version.txt 
-          cat Version.txt
+          ampersand --numeric-version > version.txt 
+          echo "::set-output name=version::$(cat version.txt)"
+          cat version.txt
+      - name: save version 
+        uses: actions/upload-artifact@v2
+        with:
+          name: version.txt
+          path: version.txt
+      - name: Upload artifacts (ubuntu)
+        uses: actions/upload-artifact@v2
+        with:
+          name: ampersand-${{ runner.os }}-binaries-${{ steps.get-version.outputs.version }}
+          path: /home/runner/.local/bin/*
+      
 
   build-and-test-macOS:
     name: Build and test on macOS
