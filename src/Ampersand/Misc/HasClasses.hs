@@ -55,6 +55,9 @@ class (HasRootFile a) => HasDirPrototype a where
   getGenericsDir :: a -> FilePath
   getGenericsDir x = 
     getDirPrototype x </> "generics" 
+  getMetamodelDir :: a -> FilePath
+  getMetamodelDir x = 
+    getDirPrototype x </> "metamodel" 
   getDirPrototype :: a -> FilePath
   getDirPrototype x = fromMaybe defaultDirPrototype . view dirPrototypeL $ x
 instance HasDirPrototype ProtoOpts where
@@ -68,11 +71,14 @@ class HasGenerateFrontend a where
   generateFrontendL :: Lens' a Bool
 instance HasGenerateFrontend ProtoOpts where
   generateFrontendL = lens xgenerateFrontend (\x y -> x { xgenerateFrontend = y })
-
 class HasGenerateBackend a where
   generateBackendL :: Lens' a Bool
 instance HasGenerateBackend ProtoOpts where
   generateBackendL = lens xgenerateBackend (\x y -> x { xgenerateBackend = y })
+class HasGenerateMetamodel a where
+  generateMetamodelL :: Lens' a Bool
+instance HasGenerateMetamodel ProtoOpts where
+  generateMetamodelL = lens xgenerateMetamodel (\x y -> x { xgenerateMetamodel = y })
 
 class HasRootFile a where
   rootFileL :: Lens' a (Maybe FilePath)
@@ -253,6 +259,7 @@ data ProtoOpts = ProtoOpts
    , xzwolleVersion :: !FilePath
    , xgenerateFrontend :: !Bool
    , xgenerateBackend :: !Bool
+   , xgenerateMetamodel :: !Bool
   } deriving Show
 
 -- | Options for @ampersand documentation@.

@@ -1,6 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.Misc.Commands
@@ -323,8 +324,7 @@ documentationCmd docOpts = do
 -- | Create a prototype based on the current script.
 protoCmd :: ProtoOpts -> RIO Runner ()
 protoCmd protOpts = 
-    extendWith protOpts $ do
-        mkAction proto
+    extendWith protOpts $ mkAction proto
 
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
@@ -342,7 +342,7 @@ checkCmd :: FSpecGenOpts -> RIO Runner ()
 checkCmd opts =
     extendWith opts $ mkAction doNothing
    where doNothing fSpec = do
-            logInfo $ "This script of "<>(display . name $ fSpec)<>" contains no type errors."     
+            logInfo $ "This script of "<>display (name fSpec)<>" contains no type errors."     
 
 populationCmd :: PopulationOpts -> RIO Runner ()
 populationCmd opts = 
@@ -370,8 +370,9 @@ doOrDie gA act =
     Checked a ws -> do
       showWarnings ws
       act a
-    Errors err -> exitWith . NoValidFSpec . T.lines . T.intercalate  (T.replicate 30 "=" <> "\n") 
-           . NE.toList . fmap tshow $ err
+    Errors err -> exitWith . NoValidFSpec
+                . T.lines . T.intercalate  (T.replicate 30 "=" <> "\n") 
+                . NE.toList . fmap tshow $ err
   where
     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
 

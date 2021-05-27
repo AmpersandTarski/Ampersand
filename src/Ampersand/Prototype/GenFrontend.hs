@@ -1,6 +1,6 @@
 ﻿{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, copyCustomizations) where
+module Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, doGenMetaModel, copyCustomizations) where
 
 import           Ampersand.ADL1
 import           Ampersand.Basics
@@ -95,6 +95,13 @@ doGenBackend fSpec = do
   writeFile (dir </> "roles"      <.>"json") $ rolesToJSON env fSpec
   writeFile (dir </> "populations"<.>"json") $ populationToJSON env fSpec
   logInfo "Backend generated"
+
+doGenMetaModel :: (HasLogFunc env, HasDirPrototype env) => FSpec -> RIO env()
+doGenMetaModel fSpec = do
+  env <- ask
+  logInfo "Generating metamodel ..."
+  let dir = getMetamodelDir env
+  writeFileUtf8 (dir </> "metamodel"   <.>"adl" ) (showA (originalContext fSpec))
 
 writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do

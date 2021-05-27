@@ -132,7 +132,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("context"               , "Concept"               , "Context"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni]
       , [(dirtyId cpt, dirtyId ctx)
         | ctx::A_Context <- instanceList fSpec
         , cpt::A_Concept <- Set.toList . concs $ ctx
@@ -195,7 +195,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("declaredIn"            , "Relation"              , "Pattern"
-      , Set.fromList [Uni]
+      , Set.empty
       , [(dirtyId rel, dirtyId pat)
         | pat::Pattern  <- instanceList fSpec
         , rel::Relation <- Set.elems $ relsDefdIn pat
@@ -722,13 +722,13 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("urlEncodedName"        , "Concept"               , "EncodedName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni]
       , [(dirtyId cpt, PopAlphaNumeric . urlEncodedName . name $ cpt)
         | cpt::A_Concept <- instanceList fSpec
         ]
       )
      ,("urlEncodedName"        , "Pattern"               , "EncodedName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni]
       , [(dirtyId pat, PopAlphaNumeric . urlEncodedName . name $ pat)
         | pat::Pattern <- instanceList fSpec
         ]
@@ -775,13 +775,13 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("vdcpt"                 , "ViewDef"              , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni]
       , [(dirtyId vd, PopAlphaNumeric . tshow . vdcpt $ vd)
         | vd::ViewDef <- instanceList fSpec, vdIsDefault vd
         ]
       )
      ,("vdhtml"                , "ViewDef"              , "Concept"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni]
       , [(dirtyId vd, PopAlphaNumeric . tshow $ html)
         | vd::ViewDef <- instanceList fSpec
         , Just html <- [vdhtml vd]
@@ -816,7 +816,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ]
 
-{-}
+{-
 dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 

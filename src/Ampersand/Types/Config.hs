@@ -117,10 +117,6 @@ extendWith ext inner = do
     runRIO env1 $ do -- extendWith ext $ inner
       env2 <- ask
       runRIO (ExtendedRunner env2 ext) inner
---extendWith :: a -> RIO (ExtendedRunner a) b -> RIO Runner b
---extendWith opts inner = do
---   env <- ask
---   runRIO (ExtendedRunner env opts) inner
 
 data ExtendedRunner a = ExtendedRunner
    { eRunner :: !Runner
@@ -146,6 +142,8 @@ instance (HasGenerateFrontend a) => HasGenerateFrontend (ExtendedRunner a) where
   generateFrontendL = cmdOptsL . generateFrontendL
 instance (HasGenerateBackend a) => HasGenerateBackend (ExtendedRunner a) where
   generateBackendL = cmdOptsL . generateBackendL
+instance (HasGenerateMetamodel a) => HasGenerateMetamodel (ExtendedRunner a) where
+  generateMetamodelL = cmdOptsL . generateMetamodelL
 instance (HasFSpecGenOpts a, HasDirPrototype a) => HasDirPrototype (ExtendedRunner a) where
   dirPrototypeL = cmdOptsL . dirPrototypeL
 instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where

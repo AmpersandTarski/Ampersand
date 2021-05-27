@@ -19,7 +19,7 @@ protoOptsParser =
         outputLanguage fSpecGenOpts 
         dirPrototype dirCustomizations 
         
-        zwolleVersion generateFrontend generateBackend -> ProtoOpts
+        zwolleVersion generateFrontend generateBackend generateMetamodel -> ProtoOpts
             { xforceReinstallFramework = forceReinstall
             , x1OutputLanguage = outputLanguage
             , x1fSpecGenOpts = fSpecGenOpts
@@ -28,12 +28,13 @@ protoOptsParser =
             , xzwolleVersion = zwolleVersion
             , xgenerateFrontend = generateFrontend
             , xgenerateBackend = generateBackend
+            , xgenerateMetamodel = generateMetamodel
             }) 
   <$> forceReinstallP
   <*> outputLanguageP <*> fSpecGenOptsParser False
   <*> optional dirPrototypeP <*> optional dirCustomizationsP
   <*> zwolleVersionP 
-  <*> generateFrontendP <*> generateBackendP
+  <*> generateFrontendP <*> generateBackendP <*> generateMetamodelP
 
 forceReinstallP :: Parser Bool
 forceReinstallP = switch
@@ -76,3 +77,8 @@ generateBackendP = boolFlags True "backend"
         "Generate backend files (PHP application)"
         mempty
 
+-- This metamodel shows what the meatgrinder has made. This is useful for building prototypes that build on the meatgrinder.
+generateMetamodelP :: Parser Bool
+generateMetamodelP = boolFlags False "metamodel" -- the default is "do NOT generate a metamodel"
+        "Generate metamodel.adl"
+        mempty
