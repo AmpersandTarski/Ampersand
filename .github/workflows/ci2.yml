@@ -47,9 +47,9 @@ jobs:
         name: create directory structure
         run: |
           mkdir release
-          mkdir release/Linux
-          mkdir release/windows
-          mkdir release/macOS
+#          mkdir release/Linux
+#          mkdir release/windows
+#          mkdir release/macOS
       - 
         name: Download artifacts (Linux)
         uses: actions/download-artifact@v2
