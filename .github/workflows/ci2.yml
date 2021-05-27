@@ -13,7 +13,7 @@ jobs:
     name: Release
     needs: [ build-and-test-ubuntu
            , build-and-test-macOS
-           , build-and-test-windows
+#           , build-and-test-windows
            ]
     runs-on: ubuntu-latest
     steps:
@@ -64,7 +64,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}
-          asset_path: release/Linux
+          asset_path: release
           asset_content_type: application/zip
       - 
         name: Download artifacts (macOS)
@@ -80,24 +80,24 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}
-          asset_path: release/macOS
+          asset_path: release
           asset_content_type: application/zip
-      - 
-        name: Download artifacts (Windows)
-        uses: actions/download-artifact@v2
-        with:
-          name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
-          path: release/Windows
-      - 
-        name: Upload Windows artifact
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
-          asset_path: release/Windows
-          asset_content_type: application/zip
+#      - 
+#        name: Download artifacts (Windows)
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
+#          path: release/Windows
+#      - 
+#        name: Upload Windows artifact
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ github.token }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
+#          asset_path: release
+#          asset_content_type: application/zip
 
 
 
