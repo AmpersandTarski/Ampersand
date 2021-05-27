@@ -101,7 +101,10 @@ doGenMetaModel fSpec = do
   env <- ask
   logInfo "Generating metamodel ..."
   let dir = getMetamodelDir env
-  writeFileUtf8 (dir </> "metamodel"   <.>"adl" ) (showA (originalContext fSpec))
+      filepath = dir </> "metamodel.adl"
+  logDebug $ "  Generating "<>display (T.pack filepath) 
+  liftIO $ createDirectoryIfMissing True dir
+  writeFileUtf8 filepath (showA (originalContext fSpec))
 
 writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
 writeFile filePath content = do
