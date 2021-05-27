@@ -58,6 +58,7 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}
           asset_path: release/Linux/*
+          asset_content_type: application/zip
       - name: Download artifacts (macOS)
         uses: actions/download-artifact@v2
         with:
@@ -71,7 +72,7 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}
           asset_path: release/macOS/*
-
+          asset_content_type: application/zip
       - name: Download artifacts (Windows)
         uses: actions/download-artifact@v2
         with:
@@ -85,6 +86,7 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
           asset_path: release/Windows/*
+          asset_content_type: application/zip
 
 
 
