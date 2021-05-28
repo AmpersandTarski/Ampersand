@@ -21,15 +21,33 @@ jobs:
         name: Checkout code
         uses: actions/checkout@v2
       - 
-        name: download version.txt from previous job
+        name: Download artifacts (Linux)
         uses: actions/download-artifact@v2
         with:
-          name: version.txt
+          name: Linux-binaries
+          path: release/Linux
+      - 
+        name: Download artifacts (macOS)
+        uses: actions/download-artifact@v2
+        with:
+          name: macOS-binaries
+          path: release/macOS
+#      - 
+#        name: Download artifacts (Windows)
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: Windows-binaries
+#          path: release/Windows
+      - 
+        name: Display structure of downloaded files
+        run: ls -R release
       - 
         name: get-version
         run: | 
-          echo "::set-output name=version::$(cat version.txt)"
+          echo "::set-output name=version::$(release/Linux/ampersand --numeric-version)"
+          echo "::set-output name=the-date::$(echo "($(date '+%B %-d'))")"
         id: get-version
+          
       - 
         name: Create release
         uses: actions/create-release@v1
@@ -47,18 +65,6 @@ jobs:
         name: create directory structure
         run: |
           mkdir release
-#          mkdir release/Linux
-#          mkdir release/windows
-#          mkdir release/macOS
-      - 
-        name: Download artifacts (Linux)
-        uses: actions/download-artifact@v2
-        with:
-          name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}
-          path: release/Linux
-      - 
-        name: Display structure of downloaded files
-        run: ls -R release
       - 
         name: Upload Linux artifact
         uses: actions/upload-release-asset@v1
@@ -70,12 +76,6 @@ jobs:
           asset_path: release/Linux
           asset_content_type: application/zip
       - 
-        name: Download artifacts (macOS)
-        uses: actions/download-artifact@v2
-        with:
-          name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}
-          path: release/macOS
-      - 
         name: Upload macOS artifact
         uses: actions/upload-release-asset@v1
         env:
@@ -85,22 +85,16 @@ jobs:
           asset_name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}
           asset_path: release
           asset_content_type: application/zip
-#      - 
-#        name: Download artifacts (Windows)
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
-#          path: release/Windows
-#      - 
-#        name: Upload Windows artifact
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
-#          asset_path: release
-#          asset_content_type: application/zip
+      - 
+        name: Upload Windows artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
+          asset_path: release
+          asset_content_type: application/zip
 
 
 
@@ -136,13 +130,6 @@ jobs:
           weeder: false
           hlint: false
       - 
-        name: Get version
-        id: get-version
-        run: |
-          ampersand --numeric-version > version.txt 
-          echo "::set-output name=version::$(cat version.txt)"
-          cat version.txt
-      - 
         name: save version 
         uses: actions/upload-artifact@v2
         with:
@@ -152,7 +139,7 @@ jobs:
         name: Upload artifacts (Linux)
         uses: actions/upload-artifact@v2
         with:
-          name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}
+          name: Linux-binaries
           path: /home/runner/.local/bin/*
       
 
@@ -180,15 +167,10 @@ jobs:
           weeder: false
           hlint: false
       - 
-        name: Get version
-        id: get-version
-        run: |
-          echo "::set-output name=version::$(ampersand --numeric-version)"
-      - 
         name: Upload artifacts (macOS)
         uses: actions/upload-artifact@v2
         with:
-          name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}
+          name: macOS-binaries
           path: /Users/runner/.local/bin/*
 
   build-and-test-windows:
@@ -226,15 +208,10 @@ jobs:
           weeder: false
           hlint: false
       - 
-        name: Get version
-        id: get-version
-        run: |
-          echo "::set-output name=version::$(C:\Users\runneradmin\AppData\Roaming\local\bin\ampersand --numeric-version)"
-      - 
         name: Upload artifacts (Windows)
         uses: actions/upload-artifact@v2
         with:
-          name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
+          name: Windows-binaries
           path: C:\Users\runneradmin\AppData\Roaming\local\bin\*
 
   
