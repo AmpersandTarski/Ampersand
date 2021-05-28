@@ -44,8 +44,9 @@ jobs:
       - 
         name: get-version
         run: | 
+          chmod +x release/Linux/ampersand
           echo "::set-output name=version::$(release/Linux/ampersand --numeric-version)"
-          echo "::set-output name=the-date::$(echo "($(date '+%B %-d'))")"
+          echo "::set-output name=theReleaseName::$(echo "Ampersand-v$(release/Linux/ampersand --numeric-version) ($(date '+%_d %B %Y'))")"
         id: get-version
           
       - 
@@ -55,16 +56,12 @@ jobs:
         with:
           draft: true
           prerelease: false
-          release_name: ${{ steps.get-version.outputs.version }}
-          tag_name: ${{ github.ref }}
+          release_name: ${{ steps.get-version.outputs.theReleaseName }}
+          tag_name: Ampersand-test-v${{ steps.get-version.outputs.version }}
           body: |
             Here you find yet another release of Ampersand. Check out the [releasenotes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) to see what has changed. 
         env:
           GITHUB_TOKEN: ${{ github.token }}     
-      - 
-        name: create directory structure
-        run: |
-          mkdir release
       - 
         name: Upload Linux artifact
         uses: actions/upload-release-asset@v1
