@@ -25,7 +25,7 @@ jobs:
 #          path: release/Linux
       - 
         name: Display structure of downloaded files
-        run: ls -R .
+        run: ls -alR .
       - 
         name: Download artifacts (macOS)
         uses: actions/download-artifact@v2
@@ -41,7 +41,7 @@ jobs:
 ##          path: release/Windows
       - 
         name: Display structure of downloaded files
-        run: ls -R .
+        run: ls -alR .
       - 
         name: get-version
         run: | 
