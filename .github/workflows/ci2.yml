@@ -1,5 +1,5 @@
 # Inspired by https://tech.freckle.com/2021/05/18/haskell-on-actions/
-name: CI_test
+name: CI_test 🚀
 
 on:
   pull_request:
@@ -10,7 +10,8 @@ on:
 jobs:
 
   release:
-    name: Release
+    name: Release 🥧
+    if: contains(github.ref, "master") || contains(github.ref, "testautomation")
     needs: [ build-and-test-ubuntu
            , build-and-test-macOS
            , build-and-test-windows
@@ -18,54 +19,51 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - 
-        name: Download artifacts (Linux)
+        name: Download artifacts (Linux) 📥
         uses: actions/download-artifact@v2
         with:
           name: Linux-binaries
           path: release/Linux
       - 
-        name: get-version
+        name: get-version 🆕
         run: | 
           chmod +x release/Linux/ampersand
           echo "::set-output name=version::$(release/Linux/ampersand --numeric-version)"
           echo "::set-output name=theReleaseName::$(echo "Ampersand-v$(release/Linux/ampersand --numeric-version) ($(date '+%_d %B %Y'))")"
         id: get-version
       - 
+        name: zip the binaries (Linux) 🎒
         uses: papeloto/action-zip@v1
         with:
           files: release/Linux/
           dest: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
       - 
-        name: Display structure of downloaded files
-        run: ls -alR .
-      - 
-        name: Download artifacts (macOS)
+        name: Download artifacts (macOS) 📥
         uses: actions/download-artifact@v2
         with:
           name: macOS-binaries
           path: release/macOS
       - 
+        name: zip the binaries (macOS) 🎒
         uses: papeloto/action-zip@v1
         with:
           files: release/macOS/
           dest: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
 
       - 
-        name: Download artifacts (Windows)
+        name: Download artifacts (Windows) 📥
         uses: actions/download-artifact@v2
         with:
           name: Windows-binaries
           path: release/Windows
-      - uses: papeloto/action-zip@v1
+      - 
+        name: zip the binaries (Windows) 🎒
+        uses: papeloto/action-zip@v1
         with:
           files: release/Windows/
           dest: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
       - 
-        name: Display structure of downloaded files
-        run: ls -alR .
-          
-      - 
-        name: Create release
+        name: Create release 🥧
         uses: actions/create-release@v1
         id: create_release
         with:
@@ -78,7 +76,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}     
       - 
-        name: Upload Linux artifact
+        name: Upload Linux artifact 📤
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -88,7 +86,7 @@ jobs:
           asset_path: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
       - 
-        name: Upload macOS artifact
+        name: Upload macOS artifact 📤
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -98,7 +96,7 @@ jobs:
           asset_path: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
       - 
-        name: Upload Windows artifact
+        name: Upload Windows artifact 📤
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -112,7 +110,7 @@ jobs:
 
 
   build-and-test-ubuntu:
-    name: Build and test on ubuntu-latest
+    name: Build and test on ubuntu-latest 🏗 🧪
     runs-on: ubuntu-latest
     steps:
       - 
@@ -122,31 +120,25 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo $GITHUB_PATH
       - 
-        name: Checkout project contents
+        name: Checkout project contents 📡
         uses: actions/checkout@v2
       - 
-        name: Use cache when available
+        name: Use cache when available 📦
         uses: freckle/stack-cache-action@main
       - 
-        name: Archive content
+        name: Archive content 🎒
         uses: thedoctor0/zip-release@master
         with:
           filename: Ampersand.zip
       - 
-        name: Build and test
+        name: Build and test 🏗 🧪
         uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
         with:
           stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false
-          hlint: false
+          weeder: true
+          hlint: true
       - 
-        name: save version 
-        uses: actions/upload-artifact@v2
-        with:
-          name: version.txt
-          path: version.txt
-      - 
-        name: Upload artifacts (Linux)
+        name: Upload artifacts (Linux)  📤
         uses: actions/upload-artifact@v2
         with:
           name: Linux-binaries
@@ -154,116 +146,74 @@ jobs:
       
 
   build-and-test-macOS:
-    name: Build and test on macOS
+    name: Build and test on macOS  🏗 🧪
     runs-on: macos-latest
     steps:
+#      - 
+#        name: Set path
+#        run : |
+#          echo $GITHUB_PATH
+#          echo "/Users/runner/.local/bin" >> $GITHUB_PATH
+#          echo $GITHUB_PATH
       - 
-        name: Set path
-        run : |
-          echo $GITHUB_PATH
-          echo "/Users/runner/.local/bin" >> $GITHUB_PATH
-          echo $GITHUB_PATH
-      - 
-        name: Checkout project contents
+        name: Checkout project contents 📡
         uses: actions/checkout@v2
       - 
-        name: Use cache when available
+        name: Use cache when available 📦
         uses: freckle/stack-cache-action@main
       - 
-        name: Build and test
+        name: Build and test  🏗 🧪
         uses: freckle/stack-action@main
         with:
           stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false
-          hlint: false
+          weeder: true
+          hlint: true
       - 
-        name: Upload artifacts (macOS)
+        name: Upload artifacts (macOS) 📤
         uses: actions/upload-artifact@v2
         with:
           name: macOS-binaries
           path: /Users/runner/.local/bin/*
 
   build-and-test-windows:
-    name: Build and test on Windows
+    name: Build and test on Windows 🏗 🧪
     runs-on: windows-latest
     steps:
       - 
-        name: Checkout project contents
+        name: Checkout project contents 📡
         uses: actions/checkout@v2
       - 
-        name: Use cache (manually) # See https://github.com/freckle/stack-cache-action/issues/5
+        name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
         uses: actions/cache@v2.1.3
 # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
         with:
           path: | 
             ~/.ghc
             ~/.stack
+            ~/.stack-work
           key: ${{ runner.os }}-stack
       - 
-        name: Set up MySQL
+        name: Set up MySQL 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
           mysql-version: '8.0'
       - 
-        name: Setup PHP 
+        name: Setup PHP 🧰
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.0'
           extensions: mysqli
       - 
-        name: Build and test
+        name: Build and test 🏗 🧪
         uses: freckle/stack-action@main
         with:
           stack-arguments: '--copy-bins --flag ampersand:buildAll'
           weeder: false
           hlint: false
       - 
-        name: Upload artifacts (Windows)
+        name: Upload artifacts (Windows) 📤
         uses: actions/upload-artifact@v2
         with:
           name: Windows-binaries
           path: C:\Users\runneradmin\AppData\Roaming\local\bin\*
 
-  build-and-test-windows-freckle-cache:
-    name: Build and test on Windows
-    runs-on: windows-latest
-    steps:
-      - 
-        name: Checkout project contents
-        uses: actions/checkout@v2
-      - 
-        name: Use cache when available
-        uses: freckle/stack-cache-action@main
-#      - 
-#        name: Use cache (manually) # See https://github.com/freckle/stack-cache-action/issues/5
-#        uses: actions/cache@v2.1.3
-## TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
-#        with:
-#          path: | 
-#            ~/.ghc
-#            ~/.stack
-#          key: ${{ runner.os }}-stack
-      - 
-        name: Set up MySQL
-        uses: shogo82148/actions-setup-mysql@v1
-        with:
-          mysql-version: '8.0'
-      - 
-        name: Setup PHP 
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.0'
-          extensions: mysqli
-      - 
-        name: Build and test
-        uses: freckle/stack-action@main
-        with:
-          stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false
-          hlint: false
-#      - 
-#        name: Upload artifacts (Windows)
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: Windows-binaries
-#          path: C:\Users\runneradmin\AppData\Roaming\local\bin\*
