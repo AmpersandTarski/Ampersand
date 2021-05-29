@@ -1,4 +1,4 @@
-CONTEXT PrototypeFramework IN ENGLISH
+CONTEXT PrototypeContext IN ENGLISH
 {-This file contains the heritage documentation of PrototypeContext.adl. 
 This heritage documentation, however, still has several problems, e.g:
  - The default texts are not ENGLISH, even though this is specified in the CONTEXT statement.
@@ -8,13 +8,11 @@ This heritage documentation, however, still has several problems, e.g:
 For a better explanation of stuff around sessions, roles, accounts, etc., see SIAMv3.
 -}
 PATTERN SystemSpecific
-  CONCEPT SESSION "Een session is een semi-permanente interactieve informatie-uitwisseling, ook bekend als een dialoog, een gesprek of een vergadering, tussen twee of meer communicerende apparaten, of tussen een computer en gebruiker."
+  CONCEPT SESSION "een semi-permanente interactieve informatie-uitwisseling, ook bekend als een dialoog, een gesprek of een vergadering, tussen twee of meer communicerende apparaten, of tussen een computer en gebruiker"
   PURPOSE CONCEPT SESSION IN DUTCH
-  {+Sessies zijn nodig om de dialoog aan te kunnen duiden tussen de gebruiker en de computer.
-  Het sessie-id van de browser is tevens het atoom in Ampersand wat die sessie weergeeft.+}
+  {+Sessies zijn nodig om de dialoog aan te kunnen duiden tussen de gebruiker en de computer+}
   PURPOSE CONCEPT SESSION IN ENGLISH
-  {+Sessions are required to allow for associating information with individual visitors.
-  The session identifier of the browser is also the atom in Ampersand that represents the session.+}
+  {+Sessions are required to allow for associating information with individual visitors+}
   CONCEPT Role "een functie of onderdeel die speciaal in een bepaalde bewerking of proces wordt uitgevoerd"
   PURPOSE CONCEPT Role IN DUTCH
   {+We hebben rollen nodig om een basale vorm van beveiliging te implementeren, gebaseerd op permissies. +}

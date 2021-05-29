@@ -4,13 +4,13 @@ CONTEXT PrototypeFramework IN ENGLISH
         REPRESENT Role TYPE OBJECT
         POPULATION Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
     
-    RELATION name[Role*RoleName] [UNI,TOT]
-        REPRESENT RoleName TYPE ALPHANUMERIC
-        POPULATION name[Role*RoleName] CONTAINS [ ("Anonymous", "Anonymous") ]
+    RELATION label[Role*PF_Label] [UNI,TOT]
+        REPRESENT PF_Label TYPE ALPHANUMERIC
+        POPULATION label[Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ]
 
-    API "AllRoles" FOR SYSTEM : V[ONE*Role] BOX
+    API "PF_AllRoles" FOR SYSTEM : V[ONE*Role] BOX
         [ "id"              : I
-        , "name"            : name[Role*RoleName]
+        , "label"           : label
         -- , "maintains"       : 
         -- , "interfaces"      :
         ]
