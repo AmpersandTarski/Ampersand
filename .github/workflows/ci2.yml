@@ -114,12 +114,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - 
-        name: Set path
-        run : |
-          echo $GITHUB_PATH
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          echo $GITHUB_PATH
-      - 
         name: Checkout project contents 📡
         uses: actions/checkout@v2
       - 
@@ -149,12 +143,6 @@ jobs:
     name: Build and test on macOS  🏗 🧪
     runs-on: macos-latest
     steps:
-#      - 
-#        name: Set path
-#        run : |
-#          echo $GITHUB_PATH
-#          echo "/Users/runner/.local/bin" >> $GITHUB_PATH
-#          echo $GITHUB_PATH
       - 
         name: Checkout project contents 📡
         uses: actions/checkout@v2
