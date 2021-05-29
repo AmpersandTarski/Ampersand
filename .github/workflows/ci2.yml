@@ -33,7 +33,7 @@ jobs:
       - 
         uses: papeloto/action-zip@v1
         with:
-          files: release/Linux/*
+          files: release/Linux/
           dest: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
       - 
         name: Display structure of downloaded files
@@ -47,7 +47,7 @@ jobs:
       - 
         uses: papeloto/action-zip@v1
         with:
-          files: release/macOS/*
+          files: release/macOS/
           dest: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
 
 #      - 
@@ -58,7 +58,7 @@ jobs:
 ##          path: release/Windows
 #      - uses: papeloto/action-zip@v1
 #        with:
-#          files: release/Windows/*
+#          files: release/Windows/
 #          dest: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
       - 
         name: Display structure of downloaded files
