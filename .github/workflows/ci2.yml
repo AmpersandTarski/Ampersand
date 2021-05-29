@@ -13,7 +13,7 @@ jobs:
     name: Release
     needs: [ build-and-test-ubuntu
            , build-and-test-macOS
-#           , build-and-test-windows
+           , build-and-test-windows
            ]
     runs-on: ubuntu-latest
     steps:
@@ -50,16 +50,16 @@ jobs:
           files: release/macOS/
           dest: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
 
-#      - 
-#        name: Download artifacts (Windows)
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: Windows-binaries
-##          path: release/Windows
-#      - uses: papeloto/action-zip@v1
-#        with:
-#          files: release/Windows/
-#          dest: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
+      - 
+        name: Download artifacts (Windows)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows-binaries
+          path: release/Windows
+      - uses: papeloto/action-zip@v1
+        with:
+          files: release/Windows/
+          dest: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
       - 
         name: Display structure of downloaded files
         run: ls -alR .
@@ -84,7 +84,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}
+          asset_name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}.zip
           asset_path: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
       - 
@@ -94,19 +94,19 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}
+          asset_name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}.zip
           asset_path: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
-#      - 
-#        name: Upload Windows artifact
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}
-#          asset_path: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
-#          asset_content_type: application/zip
+      - 
+        name: Upload Windows artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}.zip
+          asset_path: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
+          asset_content_type: application/zip
 
 
 
