@@ -19,6 +19,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - 
+        name: Checkout project contents 📡
+        uses: actions/checkout@v2
+      - 
+        name: Archive Release 🎒
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: 'source-code.zip'
+          exclusions: '*.git*'
+      - 
         name: Download artifacts (Linux) 📥
         uses: actions/download-artifact@v2
         with:
