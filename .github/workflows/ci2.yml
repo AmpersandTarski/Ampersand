@@ -82,7 +82,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: ampersand-Linux-binaries-${{ steps.get-version.outputs.version }}.zip
+          asset_name: ampersand-${{ steps.get-version.outputs.version }}-Linux-binaries.zip
           asset_path: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
       - 
@@ -92,7 +92,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: ampersand-macOS-binaries-${{ steps.get-version.outputs.version }}.zip
+          asset_name: ampersand-${{ steps.get-version.outputs.version }}-macOS-binaries.zip
           asset_path: release/macOS-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
       - 
@@ -102,7 +102,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: ampersand-Windows-binaries-${{ steps.get-version.outputs.version }}.zip
+          asset_name: ampersand-${{ steps.get-version.outputs.version }}-Windows-binaries.zip
           asset_path: release/Windows-binaries-v${{ steps.get-version.outputs.version }}.zip
           asset_content_type: application/zip
 
