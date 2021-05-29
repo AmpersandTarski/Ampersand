@@ -22,7 +22,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: Linux-binaries
-#          path: release/Linux
+          path: release/Linux
       - 
         name: Display structure of downloaded files
         run: ls -alR .
@@ -31,7 +31,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: macOS-binaries
-#          path: release/macOS
+          path: release/macOS
 
 #      - 
 #        name: Download artifacts (Windows)
