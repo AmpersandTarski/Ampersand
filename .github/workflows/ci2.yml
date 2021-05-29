@@ -129,7 +129,7 @@ jobs:
         uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
         with:
           stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: true
+          weeder: false
           hlint: true
       - 
         name: Upload artifacts (Linux)  📤
@@ -154,7 +154,7 @@ jobs:
         uses: freckle/stack-action@main
         with:
           stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: true
+          weeder: false
           hlint: true
       - 
         name: Upload artifacts (macOS) 📤
