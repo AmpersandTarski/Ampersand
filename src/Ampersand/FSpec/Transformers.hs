@@ -4,6 +4,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Ampersand.FSpec.Transformers
   ( transformersFormalAmpersand
+  , transformersPrototypeContext
   , Transformer(..)
   , PopAtom(..)
   , instances
@@ -816,15 +817,15 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ]
 
-{-
+
 dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
 -- | The information in the following function is fully contained in FormalAmpersand.
---   For this reason, it will become obsolete some time in the future.
+--   For this reason, it may become obsolete some time in the future.
 --   However, this metamodel has already been used in Ampersand.
---   In the PrototypeContext metamodel, all prefixes "PF_" and "pf_" have been dropped.
---   One transformations has been made:
+--   In the PrototypeContext metamodel, all prefixes "PF_" and "pf_" may been dropped.
+--   One transformations can be made:
 --     label[Role*PF_Label]                -> name[Role*RoleName]
 -- | The list of all transformers, one for each and every relation in PrototypeContext.
 transformersPrototypeContext :: FSpec -> [Transformer]
@@ -880,7 +881,7 @@ transformersPrototypeContext fSpec = map toTransformer [
         | role::Role <- instanceList fSpec
         ]
       )
-    , ("lastAccess"            , "SESSION"               , "DateTime"
+    , ("lastAccess"            , "SESSION"            , "DateTime"
       , Set.fromList [Uni,Tot]
       , []
       )
@@ -900,11 +901,11 @@ transformersPrototypeContext fSpec = map toTransformer [
       , Set.fromList []
       , []
       )
-    , ("sessionActiveRoles"    , "SESSION"               , "Role"
+    , ("sessionActiveRoles"    , "SESSION"            , "Role"
       , Set.fromList []
       , []
       )
-    , ("sessionAllowedRoles"   , "SESSION"               , "Role"
+    , ("sessionAllowedRoles"   , "SESSION"            , "Role"
       , Set.fromList []
       , []
       )
@@ -913,7 +914,6 @@ transformersPrototypeContext fSpec = map toTransformer [
       , []
       )
     ]
--}
 
 -- | Within a specific context there are all kinds of things.
 --   These 'things' are instances (elements / atoms) of some

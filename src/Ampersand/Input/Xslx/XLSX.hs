@@ -39,40 +39,36 @@ parseXlsxFile mFk file =
       => env -> Xlsx -> Guarded P_Context
   xlsx2pContext env xlsx = Checked pop []
     where 
-      pop = addRelations
-          . mkContextOfPopsOnly
+      pop = mkContextOfPops
           . concatMap (toPops env file)
           . concatMap theSheetCellsForTable 
           $ (xlsx ^. xlSheets)
 
 -- | To enable roundtrip testing, all data can be exported.
 -- For this purpose mkContextOfPopsOnly exports the population only
-mkContextOfPopsOnly :: [P_Population] -> P_Context
-mkContextOfPopsOnly pops =
-  PCtx{ ctx_nm     = ""
-      , ctx_pos    = []
-      , ctx_lang   = Nothing
-      , ctx_markup = Nothing
-      , ctx_pats   = []
-      , ctx_rs     = []
-      , ctx_ds     = []
-      , ctx_cs     = []
-      , ctx_ks     = []
-      , ctx_rrules = []
-      , ctx_reprs  = []
-      , ctx_vs     = []
-      , ctx_gs     = []
-      , ctx_ifcs   = []
-      , ctx_ps     = []
-      , ctx_pops   = pops
-      , ctx_metas  = []
-      }
-
-addRelations :: P_Context -> P_Context
-addRelations pCtx = enrichedContext
+mkContextOfPops :: [P_Population] -> P_Context
+mkContextOfPops populations = enrichedContext
   where
-  --The result of addRelations is a P_Context enriched with the relations in genericRelations
+  --The result of mkContextOfPops is a P_Context enriched with the relations in genericRelations
   --The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
+    pCtx = PCtx{ ctx_nm     = ""
+               , ctx_pos    = []
+               , ctx_lang   = Nothing
+               , ctx_markup = Nothing
+               , ctx_pats   = []
+               , ctx_rs     = []
+               , ctx_ds     = []
+               , ctx_cs     = []
+               , ctx_ks     = []
+               , ctx_rrules = []
+               , ctx_reprs  = []
+               , ctx_vs     = []
+               , ctx_gs     = []
+               , ctx_ifcs   = []
+               , ctx_ps     = []
+               , ctx_pops   = populations
+               , ctx_metas  = []
+               }
     enrichedContext :: P_Context
     enrichedContext
      = pCtx{ ctx_ds     = mergeRels (genericRelations<>declaredRelations)

@@ -5,6 +5,7 @@
 module Ampersand.FSpec.ShowMeatGrinder
   ( grind
   , metaModelTransformers
+  , metaModelPrototypeContext
   , GrindInfo(..)
   , MetaModel(..)
   )
@@ -23,7 +24,7 @@ data MetaModel = FormalAmpersand | PrototypeContext
        deriving (Eq, Ord, Enum, Bounded, Show)
 instance Named MetaModel where
   name FormalAmpersand = "Formal Ampersand"
-  name PrototypeContext   = "System context"
+  name PrototypeContext = "Prototype context"
 
 data GrindInfo = GrindInfo
     { metaModel    :: MetaModel
@@ -41,7 +42,29 @@ metaModelTransformers anyFspec =
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = map metarelation  (transformersFormalAmpersand anyFspec)
+      , ctx_ds     = map metarelation (transformersFormalAmpersand anyFspec)
+      , ctx_cs     = []
+      , ctx_ks     = []
+      , ctx_rrules = []
+      , ctx_reprs  = []
+      , ctx_vs     = []
+      , ctx_gs     = []
+      , ctx_ifcs   = []
+      , ctx_ps     = []
+      , ctx_pops   = []
+      , ctx_metas  = []
+      }
+
+-- | This produces "FormalAmpersand" as defined by the transformers
+metaModelPrototypeContext :: FSpec -> P_Context
+metaModelPrototypeContext anyFspec = 
+  PCtx{ ctx_nm     = "MetaModelPrototypeContext"
+      , ctx_pos    = []
+      , ctx_lang   = Nothing
+      , ctx_markup = Nothing
+      , ctx_pats   = []
+      , ctx_rs     = []
+      , ctx_ds     = map metarelation (transformersPrototypeContext anyFspec)
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []

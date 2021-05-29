@@ -13,23 +13,80 @@ module Ampersand.Input.Parsing (
     , ParseCandidate(..) -- exported for use with --daemon
 ) where
 
-import           Ampersand.ADL1
-import           Ampersand.Basics
-import           Ampersand.Core.ShowPStruct
-import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Input.ADL1.Lexer
-import           Ampersand.Input.ADL1.Parser
-import           Ampersand.Input.Archi.ArchiAnalyze
-import           Ampersand.Input.PreProcessor
-import           Ampersand.Input.Xslx.XLSX
-import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.ADL1
+    ( Origin(Origin), mergeContexts, P_Context, Term, TermPrim )
+import Ampersand.Basics
+    ( snd,
+      otherwise,
+      map,
+      ($),
+      Eq((==)),
+      Monad((>>=), return),
+      Applicative(pure),
+      Foldable(elem, foldr),
+      Traversable(mapM, sequence),
+      Semigroup((<>)),
+      Bool(False),
+      Maybe(..),
+      Either(Left, Right),
+      tshow,
+      (.),
+      Text,
+      fatal,
+      FilePath,
+      SomeException,
+      (<$>),
+      isJust,
+      reverse,
+      (&&),
+      (||),
+      decodeUtf8,
+      readFileUtf8,
+      writeFileUtf8,
+      logDebug,
+      logInfo,
+      catch,
+      MonadIO(liftIO),
+      Display(display),
+      HasLogFunc,
+      RIO )
+import Ampersand.Core.ShowPStruct ( showP )
+import Ampersand.Input.ADL1.CtxError
+    ( addWarnings,
+      lexerError2CtxError,
+      lexerWarning2Warning,
+      mkErrorReadingINCLUDE,
+      whenCheckedM,
+      CtxError(PE),
+      Guarded(..) )
+import Ampersand.Input.ADL1.Lexer ( initPos, Token(tokPos), lexer )
+import Ampersand.Input.ADL1.Parser
+    ( AmpParser, pContext, pRule, Include(..) )
+import Ampersand.Input.Archi.ArchiAnalyze ( archi2PContext )
+import Ampersand.Input.PreProcessor
+    ( preProcess, processFlags, PreProcDefine )
+import Ampersand.Input.Xslx.XLSX ( parseXlsxFile )
+import Ampersand.Misc.HasClasses ( HasFSpecGenOpts )
+import Ampersand.Prototype.StaticFiles_Generated
+    ( getStaticFileContent,
+      FileKind(PrototypeContext, FormalAmpersand) )
 import           RIO.Char(toLower)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import           System.Directory
-import           System.FilePath
+import System.Directory
+    ( canonicalizePath, doesFileExist, getCurrentDirectory )
+import System.FilePath
+    ( takeDirectory,
+      (</>),
+      equalFilePath,
+      joinDrive,
+      joinPath,
+      normalise,
+      pathSeparators,
+      splitDrive,
+      splitPath,
+      takeExtension )
 import           Text.Parsec.Prim (runP)
 
 

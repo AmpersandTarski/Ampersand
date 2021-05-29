@@ -201,8 +201,9 @@ instance HasDaemonOpts DaemonOpts where
 
 -- | An enumeration type for building an FSpec in some common way
 data Recipe = 
-    Standard -- ^ Plain way of building. No fancy stuff. 
-  | Atlas    -- ^ A recipe to build metamodel for making an Atlas. 
+    Standard  -- ^ Plain way of building. No fancy stuff. 
+  | Atlas     -- ^ A recipe to build metamodel for making an Atlas. 
+  | Prototype -- ^ A recipe to build a prototyping environment. 
     deriving (Show, Enum, Bounded)
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !(Maybe FilePath)  --relative path. Must be set the first time it is read.

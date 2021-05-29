@@ -51,8 +51,9 @@ cook :: (HasFSpecGenOpts env) =>
       -> Guarded FSpec
 cook env recipe userScript
      = case recipe of
-         Standard      -> userGFspec
-         Atlas         -> pCtx2Fspec env =<< completeMetamodel
+         Standard  -> userGFspec
+         Atlas     -> pCtx2Fspec env =<< liftM2 mergeContexts userMetamodel emptyMetaModel
+         Prototype -> pCtx2Fspec env =<< liftM2 mergeContexts userMetamodel prototypeMetamodel
        where
        -- typecheck and check the user's script
           userGFspec = pCtx2Fspec env =<< userScript
@@ -61,5 +62,5 @@ cook env recipe userScript
           userMetamodel = grind <$!> userGFspec
        -- create FormalAmpersand without population. Just the metamodel used by the transformers.
           emptyMetaModel = metaModelTransformers <$!> userGFspec
-       -- add the relations of this empty Ampersand meta model to the user's script
-          completeMetamodel = liftM2 mergeContexts userMetamodel emptyMetaModel
+       -- create FormalAmpersand without population. Just the metamodel used by the transformers.
+          prototypeMetamodel = metaModelPrototypeContext <$!> userGFspec
