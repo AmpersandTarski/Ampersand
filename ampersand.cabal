@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 94a07959d78bf010c061b3dc46b352c832ab87b212c8fc3242d928de60c2dbe8
+-- hash: 90d4fb7638c72485bd2412894ffec7e92ef8a7c2861f6410d8e5030bd26471c1
 
 name:           ampersand
 version:        4.1.4
@@ -25,68 +25,28 @@ build-type:     Custom
 extra-source-files:
     LICENSE
     ReleaseNotes.md
-    AmpersandData/FormalAmpersand/ADLTool.adl
-    AmpersandData/FormalAmpersand/admin_interfaces.ifc
     AmpersandData/FormalAmpersand/AST.adl
     AmpersandData/FormalAmpersand/AST.docadl
-    AmpersandData/FormalAmpersand/AST.ifc
-    AmpersandData/FormalAmpersand/AST.xlsx
-    AmpersandData/FormalAmpersand/Atoms.adl
-    AmpersandData/FormalAmpersand/Atoms.docadl
-    AmpersandData/FormalAmpersand/Atoms.ifc
-    AmpersandData/FormalAmpersand/Atoms.xlsx
-    AmpersandData/FormalAmpersand/AtomsAsShouldBe.adl
-    AmpersandData/FormalAmpersand/AtomsWithRepr.adl
-    AmpersandData/FormalAmpersand/Authorisation.adl
     AmpersandData/FormalAmpersand/Concepts.adl
+    AmpersandData/FormalAmpersand/Concepts.docadl
     AmpersandData/FormalAmpersand/Conjuncts.adl
     AmpersandData/FormalAmpersand/Conjuncts.docadl
     AmpersandData/FormalAmpersand/Contexts.adl
     AmpersandData/FormalAmpersand/Contexts.docadl
-    AmpersandData/FormalAmpersand/Contexts.ifc
-    AmpersandData/FormalAmpersand/Contexts.xlsx
-    AmpersandData/FormalAmpersand/ContextsTry.xlsx
     AmpersandData/FormalAmpersand/Documentation.adl
-    AmpersandData/FormalAmpersand/DomainAnalysis.adl
-    AmpersandData/FormalAmpersand/DomainAnalysis.ifc
-    AmpersandData/FormalAmpersand/Enforcements.adl
-    AmpersandData/FormalAmpersand/Expressions.adl
-    AmpersandData/FormalAmpersand/Expressions.docadl
-    AmpersandData/FormalAmpersand/Expressions.ifc
-    AmpersandData/FormalAmpersand/Expressions.xlsx
     AmpersandData/FormalAmpersand/FormalAmpersand.adl
-    AmpersandData/FormalAmpersand/FSpec.adl
     AmpersandData/FormalAmpersand/Generics.adl
     AmpersandData/FormalAmpersand/Interfaces.adl
     AmpersandData/FormalAmpersand/Interfaces.docadl
-    AmpersandData/FormalAmpersand/Interfaces_WIP.adl
-    AmpersandData/FormalAmpersand/IS.adl
-    AmpersandData/FormalAmpersand/IS.docadl
-    AmpersandData/FormalAmpersand/IS.ifc
-    AmpersandData/FormalAmpersand/IS.pop
-    AmpersandData/FormalAmpersand/Login.adl
-    AmpersandData/FormalAmpersand/Login.xlsx
     AmpersandData/FormalAmpersand/MinimalAST.xlsx
-    AmpersandData/FormalAmpersand/Modules.adl
     AmpersandData/FormalAmpersand/Patterns.adl
     AmpersandData/FormalAmpersand/Patterns.docadl
     AmpersandData/FormalAmpersand/README.txt
     AmpersandData/FormalAmpersand/Relations.adl
     AmpersandData/FormalAmpersand/Rules.adl
     AmpersandData/FormalAmpersand/Rules.docadl
-    AmpersandData/FormalAmpersand/Rules.ifc
-    AmpersandData/FormalAmpersand/student_AST_interfaces.ifc
-    AmpersandData/FormalAmpersand/Tables.adl
-    AmpersandData/FormalAmpersand/Tables.docadl
-    AmpersandData/FormalAmpersand/Tables.ifc
-    AmpersandData/FormalAmpersand/Tables.xlsx
-    AmpersandData/FormalAmpersand/TypeChecking.adl
-    AmpersandData/FormalAmpersand/TypeChecking.docadl
-    AmpersandData/FormalAmpersand/TypeChecking.ifc
-    AmpersandData/FormalAmpersand/Views.adl
-    AmpersandData/FormalAmpersand/Views.docadl
-    AmpersandData/FormalAmpersand/Views.ifc
-    AmpersandData/FormalAmpersand/Views.xlsx
+    AmpersandData/FormalAmpersand/Terms.adl
+    AmpersandData/FormalAmpersand/Terms.docadl
     AmpersandData/PrototypeContext/Interfaces.adl
     AmpersandData/PrototypeContext/Interfaces.ifc
     AmpersandData/PrototypeContext/Navbar.adl
