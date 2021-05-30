@@ -30,7 +30,6 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
-import           Control.Monad ( (<=<) )
 
 pConcToType :: P_Concept -> Type
 pConcToType P_ONE = BuiltIn TypeOfOne

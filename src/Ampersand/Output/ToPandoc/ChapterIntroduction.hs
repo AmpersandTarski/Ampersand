@@ -19,7 +19,7 @@ chpIntroduction env now fSpec =
       = case outputLang' of
           Dutch
             -> para ( text "Dit document"
-                   <> (note.para.text) ("Dit document is gegenereerd op "<>date<>" om "<>time<>", dmv. "<>ampersandVersionStr<>".")
+                   <> (note.para.text) ("Dit document is gegenereerd op "<>date<>" om "<>time<>", dmv. "<>longVersion appVersion<>".")
                    <> text " definieert de functionaliteit van een informatiesysteem genaamd "
                    <> (singleQuoted.text.name) fSpec
                    <> text ". "
@@ -69,7 +69,7 @@ chpIntroduction env now fSpec =
 
           English
             -> para ( text "This document"
-                   <> (note.para.text) ("This document was generated at "<>date<>" on "<>time<>", using "<>ampersandVersionStr<>".")
+                   <> (note.para.text) ("This document was generated at "<>date<>" on "<>time<>", using "<>longVersion appVersion<>".")
                    <> text " defines the functionality of an information system called "
                    <> (singleQuoted.text.name) fSpec
                    <> text ". "

@@ -23,7 +23,7 @@ fSpec2Haskell :: (HasFSpecGenOpts env) =>
 fSpec2Haskell env now fSpec
     = T.intercalate "\n" 
         [ "{-# OPTIONS_GHC -Wall #-}"
-        , "{-Generated code by "<>ampersandVersionStr<>" at "<>tshow now<>"-}"
+        , "{-Generated code by "<>longVersion appVersion<>" at "<>tshow now<>"-}"
         , "module Main"
         , "where"
         , ""
@@ -107,7 +107,7 @@ instance ShowHS PlugSQL where
 instance ShowHS RelStore where
  showHS _ indent store
    = T.intercalate indent
-       [  "Relstore { rsDcl           = " <> showHSName (rsDcl store)
+       [  "RelStore { rsDcl           = " <> showHSName (rsDcl store)
        ,  "         , rsStoredFlipped = " <> tshow (rsStoredFlipped store)
        ,  "         , rsSrcAtt        = " <> showHSName (rsSrcAtt store)
        ,  "         , rsTrgAtt        = " <> showHSName (rsTrgAtt store)

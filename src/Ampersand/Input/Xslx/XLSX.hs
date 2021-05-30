@@ -3,7 +3,7 @@
 module Ampersand.Input.Xslx.XLSX 
   (parseXlsxFile)
 where
-import           Ampersand.Basics hiding (view, (^.))
+import           Ampersand.Basics hiding (view, (^?), (^.))
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.ShowPStruct  -- Just for debugging purposes
 import           Ampersand.Input.ADL1.CtxError

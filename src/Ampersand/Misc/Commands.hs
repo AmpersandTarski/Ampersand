@@ -63,7 +63,6 @@ commandLineHandler
   -> [Text] -- the (command-line) arguments
   -> IO (GlobalOptsMonoid, RIO Runner ())
 commandLineHandler currentDir _progName args = complicatedOptions
-  ampersandVersionStr
   "ampersand - The Ampersand generator"
   ""
   "ampersand's documentation is available at https://ampersandtarski.gitbook.io/documentation/"
@@ -177,8 +176,6 @@ type AddCommand =
 complicatedOptions
   :: Monoid a
   => Text
-  -- ^ version string
-  -> Text
   -- ^ header
   -> Text
   -- ^ program description (displayed between usage and options listing in the help output)
@@ -194,7 +191,7 @@ complicatedOptions
   -> ExceptT b (Writer (Mod CommandFields (b,a))) ()
   -- ^ commands (use 'addCommand')
   -> IO (a,b)
-complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure commandParser = do
+complicatedOptions h pd footerStr args commonParser mOnFailure commandParser = do
      runSimpleApp $ do
           logDebug $ displayShow helpDoc'
      (a,(b,c)) <- case execParserPure myPreferences parser (T.unpack <$> args) of
@@ -219,14 +216,23 @@ complicatedOptions stringVersion h pd footerStr args commonParser mOnFailure com
                 paragraph (show opt) -- optHelp opt -- "Een of andere optie."
         parser = info (helpOption <*> versionOptions <*> complicatedParser "COMMAND" commonParser commandParser) desc
         desc = fullDesc <> header (T.unpack h) <> progDesc (T.unpack pd) <> footer (T.unpack footerStr)
-        versionOptions = versionOption stringVersion
-        versionOption :: Text -> Parser (a -> a)
-        versionOption txt =
-          infoOption
-            (T.unpack txt)
-            (long "version" <>
-             help "Show version")
-
+        versionOptions :: Parser (a -> a)
+        versionOptions = normal <*> numeric
+          where
+            normal :: Parser (a -> a)
+            normal =
+              infoOption
+                (T.unpack $ shortVersion appVersion)
+                (short 'V' <> 
+                 long "version" <>
+                 help "Show version")
+            numeric :: Parser (a -> a)
+            numeric =
+              infoOption
+                (T.unpack $ numericVersion appVersion)
+                (long "numeric-version" <>
+                 help "Show version in numeric format")
+             
 -- | Add a command to the options dispatcher.
 addCommand :: String   -- ^ command string
            -> String   -- ^ title of command

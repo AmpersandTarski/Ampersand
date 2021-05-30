@@ -30,6 +30,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , Numbered(..), RuleCont(..),DeclCont(..),CptCont(..)
     , plainText
     , showPredLogic
+    , legacyTable
     )
 where
 import           Ampersand.ADL1 hiding (MetaData)
@@ -50,7 +51,7 @@ import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           RIO.Time
 import           Text.Pandoc hiding (trace,Verbosity,getVerbosity)
-import           Text.Pandoc.Builder
+import           Text.Pandoc.Builder hiding (caption)
 import           System.FilePath ( (</>) )
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: (HasDocumentOpts env) => env -> [Chapter]
@@ -573,3 +574,35 @@ violation2Inlines env fSpec _ = (text.l) (NL "<meldingstekst moet hier nog worde
                                         )
   where
     l = localize (outputLang env fSpec)
+
+-- Some helper function to cope with changes in Pandoc. In the newer versions of Pandoc,
+-- tables have gotten more possibilities. For the time being, we do not use them. Maybe later.
+legacyTable 
+      :: Inlines               -- ^ Caption
+      -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
+      -> [Blocks]              -- ^ Headers
+      -> [[Blocks]]            -- ^ Rows
+      -> Blocks
+legacyTable caption' cellspecs headers rows = 
+  table tCaption tColSpec tHead tBodies tFooter
+    where
+      tCaption :: Caption
+      tCaption 
+        | null caption' = emptyCaption 
+        | otherwise = Caption (Just . toList $ caption') []
+      tColSpec :: [ColSpec]
+      tColSpec = map toColSpec cellspecs
+        where toColSpec :: (Alignment, Double) -> ColSpec
+              toColSpec (a, d) = (a, ColWidth d)
+      tHead :: TableHead 
+      tHead = TableHead nullAttr (zipWith toRow (map fst cellspecs) headers) 
+        where toRow :: Alignment -> Blocks -> Row
+              toRow a bs = Row nullAttr (map (toCell a . singleton) $ toList bs)
+      toCell :: Alignment -> Blocks -> Cell
+      toCell a b = Cell nullAttr a (RowSpan 1) (ColSpan 1) (toList b)
+      tBodies :: [TableBody]
+      tBodies = map toBodyRow rows
+         where toBodyRow :: [Blocks] -> TableBody
+               toBodyRow bs = TableBody nullAttr (RowHeadColumns 0) [] [Row nullAttr $ zipWith toCell (map fst cellspecs) bs] 
+      tFooter :: TableFoot
+      tFooter = TableFoot nullAttr []

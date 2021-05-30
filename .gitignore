@@ -10,14 +10,15 @@ cabal.sandbox.config
 /dist-newstyle
 .idea
 
-stack.yaml.lock
 
 # Disable testresults 
 /testing/Travis/testcases/**/*.proto
 
 # Temporarily disable ampersand.cabal (See issue #931)
-/ampersand.cabal
-/stack.yaml.lock
+# NO LONGER include ampersand.cabal in .gitignore. See https://github.com/commercialhaskell/stack/issues/5210
+
+
+# stack.yaml.lock # enable versioning of stack.yaml.lock: See https://stackoverflow.com/questions/64682066/should-stack-yaml-lock-be-checked-into-source-control/64684211#64684211
 
 StaticFiles_Generated.hs
 BuildInfo_Generated.hs
