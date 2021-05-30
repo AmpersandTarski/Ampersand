@@ -70,7 +70,7 @@ jobs:
           draft: false
           prerelease: false
           release_name: ${{ steps.get-version.outputs.theReleaseName }}
-          tag_name: Ampersand-test-v${{ steps.get-version.outputs.version }}
+          tag_name: Ampersand-v${{ steps.get-version.outputs.version }}
           body: |
             Here you find yet another release of Ampersand. Check out the [releasenotes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) to see what has changed. 
         env:
