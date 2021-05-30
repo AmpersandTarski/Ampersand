@@ -36,7 +36,7 @@ module Ampersand.Core.ParseTree (
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
-import           Ampersand.Basics hiding (foldr, sequence, concatMap)
+import           Ampersand.Basics hiding (foldr, sequence, concatMap, orElse)
 import           Ampersand.Input.ADL1.FilePos
 import           Data.Foldable (concatMap)
 import qualified RIO.List as L

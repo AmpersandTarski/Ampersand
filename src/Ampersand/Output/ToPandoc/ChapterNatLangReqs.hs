@@ -48,7 +48,7 @@ chpNatLangReqs env lev fSpec =
   genLegalRefs = view genLegalRefsL env
   legalRefs :: Blocks
   legalRefs =  header (lev+2) sectionTitle
-            <> table caption'
+            <> legacyTable caption'
                      [(AlignLeft,1/4),(AlignLeft,3/4)]
                      [plain lawHeader, plain articleHeader]  --headers
                      [ [(para.str.aOlLaw) art  , (para.str.unscanRef.aOlArt) art]

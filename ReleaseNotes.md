@@ -1,5 +1,11 @@
 ﻿# Release notes of Ampersand
 
+## v4.1.5 (30 May 2021)
+
+* Upgrade to [LTS Haskell 17.9 (ghc-8.10.4)](https://www.stackage.org/lts-17.9) . This includes an upgrade of Pandoc. This might effect tables in the documentation that is generated with the `documentation` command.
+* Add switch `--numeric-version`
+* Improvement to the CI/CD. We abandon travis-ci and appveyor, and are now totally using github actions for our Continous Integration. 
+
 ## v4.1.4 (29 january 2021)
 * [Issue #1131](https://github.com/AmpersandTarski/Ampersand/issues/1131) remove COLS and ROWS from the parser and from other parts of the Ampersand compiler.
 

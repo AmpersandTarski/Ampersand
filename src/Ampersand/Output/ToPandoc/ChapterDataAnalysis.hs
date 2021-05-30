@@ -112,7 +112,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                            -- The first table contains the concepts that have their own table in the logical data model.
                            -- The second table contains all other concepts.  
   conceptTables = 
-    table (text.l $ (NL "Logische gegevensverzamelingen"
+    legacyTable (text.l $ (NL "Logische gegevensverzamelingen"
                     ,EN "Logical entity types"))
          [(AlignLeft,1/8),(AlignLeft,4/8),(AlignLeft,1/8),(AlignLeft,1/8),(AlignLeft,1/8)]
          [ (plain.text.l) (NL "Concept"       , EN "Concept")
@@ -138,7 +138,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
               . Set.elems 
               $ concs fSpec
          ]  <>
-    table (text.l $ (NL "Overige attributen"
+    legacyTable (text.l $ (NL "Overige attributen"
                     ,EN "Other attributes"))
          [(AlignLeft,1/6),(AlignLeft,4/6),(AlignLeft,1/6)]
          [ (plain.text.l) (NL "Concept"       , EN "Concept")
