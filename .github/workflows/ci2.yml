@@ -11,16 +11,13 @@ jobs:
 
   release:
     name: Release 🥧
-    if: contains(github.ref, 'master') || github.ref == 'testautomation'
+    if: github.ref == 'master'
     needs: [ build-and-test-ubuntu
            , build-and-test-macOS
            , build-and-test-windows
            ]
     runs-on: ubuntu-latest
     steps:
-#      - 
-#        name: Checkout project contents 📡
-#        uses: actions/checkout@v2
       - 
         name: Download artifacts (Linux) 📥
         uses: actions/download-artifact@v2
