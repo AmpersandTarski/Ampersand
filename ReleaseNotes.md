@@ -1,6 +1,6 @@
 ﻿# Release notes of Ampersand
 
-## Unreleased
+## v4.1.5 (30 May 2021)
 
 * Upgrade to [LTS Haskell 17.9 (ghc-8.10.4)](https://www.stackage.org/lts-17.9) . This includes an upgrade of Pandoc. This might effect tables in the documentation that is generated with the `documentation` command.
 * Add switch `--numeric-version`
