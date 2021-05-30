@@ -1,10 +1,10 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fe4fbe294a77e1bed47b4a4e1df99bef67bbc7d3778c2cc610e5c830d84b6dcc
+-- hash: 94a07959d78bf010c061b3dc46b352c832ab87b212c8fc3242d928de60c2dbe8
 
 name:           ampersand
 version:        4.1.4
@@ -19,7 +19,8 @@ maintainer:     stef.joosten@ou.nl
 copyright:      Stef Joosten
 license:        GPL
 license-file:   LICENSE
-tested-with:    GHC == 8.10.4
+tested-with:
+    GHC == 8.10.4
 build-type:     Custom
 extra-source-files:
     LICENSE
@@ -590,7 +591,8 @@ library
       Ampersand.Prototype.StaticFiles_Generated
   hs-source-dirs:
       src/
-  default-extensions: NoImplicitPrelude
+  default-extensions:
+      NoImplicitPrelude
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints
   build-depends:
       HStringTemplate ==0.8.*
@@ -651,7 +653,8 @@ executable ampPreProc
       Paths_ampersand
   hs-source-dirs:
       app/AmpPreProc
-  default-extensions: NoImplicitPrelude
+  default-extensions:
+      NoImplicitPrelude
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
   build-depends:
       HStringTemplate ==0.8.*
@@ -715,7 +718,8 @@ executable ampersand
       Paths_ampersand
   hs-source-dirs:
       app/Ampersand
-  default-extensions: NoImplicitPrelude
+  default-extensions:
+      NoImplicitPrelude
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
   build-depends:
       Cabal ==3.2.1.0
@@ -779,7 +783,8 @@ test-suite ampersand-test
       Paths_ampersand
   hs-source-dirs:
       app/Test
-  default-extensions: NoImplicitPrelude
+  default-extensions:
+      NoImplicitPrelude
   ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
   build-depends:
       HStringTemplate ==0.8.*

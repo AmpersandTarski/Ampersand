@@ -17,7 +17,7 @@ instance ToJSON Settings where
 instance JSON' FSpec Settings where
  fromAmpersand' env fSpec _ = Settings 
   { sngJSONglobal_contextName = fsName fSpec
-  , sngJSONcompiler_version   = ampersandVersionStr
+  , sngJSONcompiler_version   = longVersion appVersion
   , sngJSONcompiler_env       = tshow env
   , sngJSONcompiler_modelHash = tshow . hash $ fSpec
   } 

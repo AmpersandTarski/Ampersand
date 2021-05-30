@@ -798,7 +798,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
       )
      ,("versionInfo"           , "Context"               , "AmpersandVersion"
       , Set.fromList
-        [(dirtyId ctx,PopAlphaNumeric ampersandVersionStr)
+        [(dirtyId ctx,PopAlphaNumeric (longVersion appVersion))
         | ctx::A_Context <- instanceList fSpec
         ]
       )

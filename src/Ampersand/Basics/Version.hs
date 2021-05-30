@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- | This module contains Version of Ampersand
 module Ampersand.Basics.Version 
-       ( ampersandVersionStr
-       , ampersandVersionWithoutBuildTimeStr
+       ( VersionInfo(..)
+       , appVersion
        , fatal
        ) where
 import           Ampersand.Basics.BuildInfo_Generated
@@ -21,7 +21,7 @@ maxLen = 1500000 -- This trick is to make sure the process is terminated after t
 fatal :: HasCallStack => Text -> a
 fatal msg
  = exitWith . Fatal . T.lines $
-        ("!             "<>ampersandVersionWithoutBuildTimeStr<>"\n"
+        ("!             "<>shortVersion appVersion<>"\n"
         <> lazyCutoff maxLen msg<>"\n" 
         <> T.pack (prettyCallStack callStack)
         )
@@ -33,15 +33,17 @@ fatal msg
             | otherwise -> T.cons h (lazyCutoff (n-1) tl)
 
 {-# NOINLINE fatal #-}
+data VersionInfo = VersionInfo
+   { longVersion :: !Text  -- ^ The Ampersand version, including the build timestamp.
+   , shortVersion :: !Text -- ^ The Ampersand version. The part unto the first space is used as name of the release (appVeyor)
+   , numericVersion :: !Text -- ^ Numeric only, including dots as seperation 
+   }
 
--- | Text, containing the Ampersand version, including the build timestamp.
-ampersandVersionStr :: Text
-ampersandVersionStr = ampersandVersionWithoutBuildTimeStr <>", build time: "<>buildTimeStr
+appVersion :: VersionInfo
+appVersion = VersionInfo
+   { longVersion  = short <>", build time: "<>buildTimeStr
+   , shortVersion = short
+   , numericVersion = cabalVersionStr} 
+   where
+     short = "Ampersand-v"<>cabalVersionStr<>" ["<>gitInfoStr<>"]"
 
--- | Text, containing the Ampersand version. The part unto the first space is used as name of the release (appVeyor)
-ampersandVersionWithoutBuildTimeStr :: Text
-ampersandVersionWithoutBuildTimeStr = "Ampersand-v"<>cabalVersionStr<>" ["<>gitInfoStr<>"]"
-{-
-   #1.#2.#3[$gitInfo] : #1 major version; #2 student release version; #3 production fix version (normally 0 );
-   $gitInfo: "branch:SHA", followed by a '*' if the working copy was dirty: e.g. "master:0eea5e3*" 
--}
