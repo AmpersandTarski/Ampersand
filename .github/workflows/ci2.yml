@@ -11,7 +11,7 @@ jobs:
 
   release:
     name: Release 🥧
-    if: contains(github.ref, 'master') || github.ref == 'testautomation')
+    if: contains(github.ref, 'master') || github.ref == 'testautomation'
     needs: [ build-and-test-ubuntu
            , build-and-test-macOS
            , build-and-test-windows
