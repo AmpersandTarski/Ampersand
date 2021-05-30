@@ -222,7 +222,6 @@ addRelations pCtx = enrichedContext
        | cl<-eqCl (\pop->(name pop,p_src pop,p_tgt pop)) [ pop | pop@P_RelPopu{}<-pps], rpop<-[NE.head cl]
        ]
 
-
 data SheetCellsForTable 
        = Mapping{ theSheetName :: Text
                 , theCellMap   :: CellMap

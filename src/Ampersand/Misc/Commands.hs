@@ -242,16 +242,11 @@ addCommand cmd title footerStr constr extendCommon =
 -- -- | Add a command that takes sub-commands to the options dispatcher.
 -- addSubCommands
 --   :: Monoid c
---   => Text
---   -- ^ command string
---   -> Text
---   -- ^ title of command
---   -> Text
---   -- ^ footer of command help
---   -> Parser c
---   -- ^ common parser
---   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
---   -- ^ sub-commands (use 'addCommand')
+--   => Text                                             -- ^ command string
+--   -> Text                                             -- ^ title of command
+--   -> Text                                             -- ^ footer of command help
+--   -> Parser c                                         -- ^ common parser
+--   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()  -- ^ sub-commands (use 'addCommand')
 --   -> ExceptT b (Writer (Mod CommandFields (b,c))) ()
 -- addSubCommands cmd title footerStr commonParser commandParser =
 --   addCommand' cmd
@@ -312,8 +307,7 @@ helpOption =
 
 daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd daemonOpts = 
-    extendWith daemonOpts        
-       runDaemon 
+    extendWith daemonOpts runDaemon 
 
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do

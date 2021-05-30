@@ -7,6 +7,9 @@ module MainApps(
   , mainTest
 ) where
 
+-- The purpose of this module is to call "commandLineHandler" with the correct directory, program name, and arguments.
+-- Or, in case of the preprocessor or test engine, call them.
+
 import           Ampersand
 import           Ampersand.Input.PreProcessor
 import           Ampersand.Options.GlobalParser

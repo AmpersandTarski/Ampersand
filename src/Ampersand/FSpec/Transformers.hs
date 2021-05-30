@@ -876,7 +876,7 @@ transformersPrototypeContext fSpec = map toTransformer [
       )
 -- the following transformer is called name[Role*RoleName] in FormalAmpersand
     , ("label"                 , "Role"               , "PF_Label"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni]
       , [ (dirtyIdWithoutType role, PopAlphaNumeric . name $ role)
         | role::Role <- instanceList fSpec
         ]
