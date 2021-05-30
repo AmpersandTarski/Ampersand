@@ -18,9 +18,9 @@ jobs:
            ]
     runs-on: ubuntu-latest
     steps:
-      - 
-        name: Checkout project contents 📡
-        uses: actions/checkout@v2
+#      - 
+#        name: Checkout project contents 📡
+#        uses: actions/checkout@v2
       - 
         name: Download artifacts (Linux) 📥
         uses: actions/download-artifact@v2
@@ -34,12 +34,6 @@ jobs:
           echo "::set-output name=version::$(release/Linux/ampersand --numeric-version)"
           echo "::set-output name=theReleaseName::$(echo "Ampersand-v$(release/Linux/ampersand --numeric-version) ($(date '+%_d %B %Y'))")"
         id: get-version
-      - 
-        name: Archive Release 🎒
-        uses: thedoctor0/zip-release@master
-        with:
-          filename: 'Ampersand-v${{ steps.get-version.outputs.version }}-source-code.zip'
-          exclusions: '*.git* /*release/* '
       - 
         name: zip the binaries (Linux) 🎒
         uses: papeloto/action-zip@v1
@@ -93,16 +87,6 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_name: ampersand-${{ steps.get-version.outputs.version }}-Linux-binaries.zip
           asset_path: release/linux-binaries-v${{ steps.get-version.outputs.version }}.zip
-          asset_content_type: application/zip
-      - 
-        name: Upload source code archive 📤
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: Ampersand-v${{ steps.get-version.outputs.version }}-source-code.zip
-          asset_path: Ampersand-v${{ steps.get-version.outputs.version }}-source-code.zip
           asset_content_type: application/zip
       - 
         name: Upload macOS artifact 📤
