@@ -98,11 +98,11 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   ( "Create an ADL model based on the content of a spreadsheet. The spreadsheet"
                   <>"must comply to the specific format."
                   <>"This is an experimental feature.")
-                  dataAnalysisCmd
+                  (mkAction exportAsAdl)
                   (outputFileOptsParser "MetaModel.adl")
       addCommand'' Devoutput
                   "Generate some diagnostic files, intended for developers of ampersand."
-                  devoutputCmd
+                  (mkAction devoutput)
                   (devoutputOptsParser ".")
       addCommand'' Documentation
                   ( "Generate a functional design document, to kick-start your "
@@ -111,37 +111,37 @@ commandLineHandler currentDir _progName args = complicatedOptions
                   docOptsParser
 --      addCommand'' Fpa
 --                  ""
---                  fpaCmd
+--                  (mkAction fpa)
 --                  fpaOptsParser
 --      addCommand'' Init
 --                  ""
---                  initCmd
+--                  (mkAction init)
 --                  initOptsParser
       addCommand'' Population
                   "Generate a file that contains the population of your script."
-                  populationCmd
+                  (mkAction population)
                   populationOptsParser
       addCommand'' Proofs
                   "Generate a report containing proofs."
-                  proofCmd
+                  (mkAction proof)
                   proofOptsParser
       addCommand'' Proto
                   "Generate a prototype from your specification."
-                  protoCmd
+                  (mkAction proto)
                   protoOptsParser
       addCommand'' Export
                   "Generate a single .adl file of your script (prettyprinted)"
-                  pprintCmd
+                  (mkAction exportAsAdl)
                   (outputFileOptsParser "export.adl")
       addCommand'' Uml
                   "Generate a data model in UML 2.0 style."
-                  umlCmd
+                  (mkAction uml)
                   umlOptsParser
       addCommand'' Validate
                   ("Compare results of rule evaluation in Haskell and SQL, for" <>
                    "testing expression semantics. This requires command line php with"<>
                    "MySQL support.")
-                  validateCmd
+                  (mkAction validate)
                   validateOptsParser
       addCommand'' Test
                   ("Run testsuites in a given directory. This is meant to do regression testing" <>
@@ -314,74 +314,44 @@ daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd daemonOpts = 
     extendWith daemonOpts        
        runDaemon 
+
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do
-    extendWith docOpts . forceAllowInvariants $ mkAction doGenDocument 
+  (extendWith docOpts.forceAllowInvariants.doOrDie) doGenDocument
   where
     forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
     forceAllowInvariants env = local (set allowInvariantViolationsL True) env
-
--- | Create a prototype based on the current script.
-protoCmd :: ProtoOpts -> RIO Runner ()
-protoCmd protOpts = 
-    extendWith protOpts $ mkAction proto
 
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
     extendWith testOpts test
 
-dataAnalysisCmd :: InputOutputOpts -> RIO Runner ()
-dataAnalysisCmd opts = 
-    extendWith opts $ mkAction exportAsAdl
-
-pprintCmd :: InputOutputOpts -> RIO Runner ()
-pprintCmd opts = 
-    extendWith opts $ mkAction exportAsAdl
-
 checkCmd :: FSpecGenOpts -> RIO Runner ()
-checkCmd opts =
-    extendWith opts $ mkAction doNothing
+checkCmd = mkAction doNothing
    where doNothing fSpec = do
             logInfo $ "This script of "<>display (name fSpec)<>" contains no type errors."     
 
-populationCmd :: PopulationOpts -> RIO Runner ()
-populationCmd opts = 
-    extendWith opts $ mkAction population
 
-proofCmd :: ProofOpts -> RIO Runner ()
-proofCmd opts = 
-    extendWith opts $ mkAction proof
+mkAction :: forall a . (HasFSpecGenOpts a) =>
+             (FSpec -> RIO (ExtendedRunner a) ()) -> a -> RIO Runner ()
+mkAction theAction opts
+ = extendWith opts $ doOrDie theAction
 
-umlCmd :: UmlOpts -> RIO Runner ()
-umlCmd opts = 
-    extendWith opts $ mkAction uml
-
-validateCmd :: ValidateOpts -> RIO Runner ()
-validateCmd opts = 
-    extendWith opts $ mkAction validate
-
-devoutputCmd :: DevOutputOpts -> RIO Runner ()
-devoutputCmd opts = 
-    extendWith opts $ mkAction devoutput
-
-doOrDie :: HasLogFunc env => Guarded a -> (a -> RIO env b) -> RIO env b
-doOrDie gA act = 
-  case gA of
-    Checked a ws -> do
-      showWarnings ws
-      act a
-    Errors err -> exitWith . NoValidFSpec
-                . T.lines . T.intercalate  (T.replicate 30 "=" <> "\n") 
-                . NE.toList . fmap tshow $ err
-  where
-    showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
-
-mkAction :: (HasLogFunc a, HasFSpecGenOpts a) => (FSpec -> RIO a b) -> RIO a b
-mkAction theAction = do
+doOrDie :: (HasLogFunc env, HasFSpecGenOpts env) =>
+             (FSpec -> RIO env b) -> RIO env b
+doOrDie theAction = do
    env <- ask
    let recipe = view recipeNameL env
    mFSpec <- createFspec recipe
-   doOrDie mFSpec theAction
+   case mFSpec of
+     Checked a ws -> do
+       showWarnings ws
+       theAction a
+     Errors err -> exitWith . NoValidFSpec
+                 . T.lines . T.intercalate  (T.replicate 30 "=" <> "\n") 
+                 . NE.toList . fmap tshow $ err
+   where
+     showWarnings ws = mapM_ logWarn (fmap displayShow ws)  
 
 data Command = 
         Check

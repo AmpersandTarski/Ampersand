@@ -44,31 +44,33 @@ parseXlsxFile mFk file =
           . concatMap theSheetCellsForTable 
           $ (xlsx ^. xlSheets)
 
--- | To enable roundtrip testing, all data can be exported.
--- For this purpose mkContextOfPopsOnly exports the population only
 mkContextOfPops :: [P_Population] -> P_Context
-mkContextOfPops populations = enrichedContext
+mkContextOfPops pops = addRelations
+  PCtx{ ctx_nm     = ""
+      , ctx_pos    = []
+      , ctx_lang   = Nothing
+      , ctx_markup = Nothing
+      , ctx_pats   = []
+      , ctx_rs     = []
+      , ctx_ds     = []
+      , ctx_cs     = []
+      , ctx_ks     = []
+      , ctx_rrules = []
+      , ctx_reprs  = []
+      , ctx_vs     = []
+      , ctx_gs     = []
+      , ctx_ifcs   = []
+      , ctx_ps     = []
+      , ctx_pops   = pops
+      , ctx_metas  = []
+      }
+
+-- | addRelations is meant to enrich a population to a P_Context
+--   The result of addRelations is a P_Context enriched with the relations in genericRelations
+--   The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
+addRelations :: P_Context -> P_Context
+addRelations pCtx = enrichedContext
   where
-  --The result of mkContextOfPops is a P_Context enriched with the relations in genericRelations
-  --The population is reorganized in genericPopulations to accommodate the particular ISA-graph.
-    pCtx = PCtx{ ctx_nm     = ""
-               , ctx_pos    = []
-               , ctx_lang   = Nothing
-               , ctx_markup = Nothing
-               , ctx_pats   = []
-               , ctx_rs     = []
-               , ctx_ds     = []
-               , ctx_cs     = []
-               , ctx_ks     = []
-               , ctx_rrules = []
-               , ctx_reprs  = []
-               , ctx_vs     = []
-               , ctx_gs     = []
-               , ctx_ifcs   = []
-               , ctx_ps     = []
-               , ctx_pops   = populations
-               , ctx_metas  = []
-               }
     enrichedContext :: P_Context
     enrichedContext
      = pCtx{ ctx_ds     = mergeRels (genericRelations<>declaredRelations)
@@ -96,12 +98,12 @@ mkContextOfPops populations = enrichedContext
        where
           computeProps :: P_Relation -> P_Relation
           computeProps rel
-           = rel{dec_prps = Set.fromList ([ Uni | isUni popR]<>[ Tot | isTot ]<>[ Inj | isInj popR ]<>[ Sur | isSur ])}
+           = rel{dec_prps = Set.fromList ([ Uni | isUni popR]<>[ Inj | isInj popR ])}
               where
                sgn  = dec_sign rel
                s = pSrc sgn; t = pTgt sgn
-               popu :: P_Concept -> Set.Set PAtomValue
-               popu c = (Set.fromList . concatMap p_popas) [ pop | pop@P_CptPopu{}<-pops, name c==name pop ]
+--             popu :: P_Concept -> Set.Set PAtomValue
+--             popu c = (Set.fromList . concatMap p_popas) [ pop | pop@P_CptPopu{}<-pops, name c==name pop ]
                popR :: Set.Set PAtomPair
                popR = (Set.fromList . concatMap p_popps )
                       [pop
@@ -112,18 +114,19 @@ mkContextOfPops populations = enrichedContext
                       , Just tgt' <- [tgt]
                       , tgt' == t
                       ]
-               domR = Set.fromList . map ppLeft  . Set.toList $ popR
-               codR = Set.fromList . map ppRight . Set.toList $ popR
+--             domR = Set.fromList . map ppLeft  . Set.toList $ popR
+--             codR = Set.fromList . map ppRight . Set.toList $ popR
                equal f (a,b) = f a == f b
                isUni :: Set.Set PAtomPair -> Bool
                isUni x = null . Set.filter (not . equal ppRight) . Set.filter (equal ppLeft) $ cartesianProduct x x
-               isTot = popu s `Set.isSubsetOf` domR
+--             isTot = popu s `Set.isSubsetOf` domR
                isInj :: Set.Set PAtomPair -> Bool
                isInj x = null . Set.filter (not . equal ppLeft) . Set.filter (equal ppRight) $ cartesianProduct x x
-               isSur = popu t `Set.isSubsetOf` codR
+--             isSur = popu t `Set.isSubsetOf` codR
                cartesianProduct :: -- Should be implemented as Set.cartesianProduct, but isn't. See https://github.com/commercialhaskell/rio/issues/177
                                    (Ord a, Ord b) => Set a -> Set b -> Set (a, b)
                cartesianProduct xs ys = Set.fromList $ liftA2 (,) (toList xs) (toList ys)
+
     genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
     genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
     -- | To derive relations from populations, we derive the signature from the population's signature directly.
