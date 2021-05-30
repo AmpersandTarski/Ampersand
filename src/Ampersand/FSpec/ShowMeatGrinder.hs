@@ -55,7 +55,7 @@ metaModelTransformers anyFspec =
       , ctx_metas  = []
       }
 
--- | This produces "FormalAmpersand" as defined by the transformers
+-- | This produces "PrototypeContext" as defined by the transformers
 metaModelPrototypeContext :: FSpec -> P_Context
 metaModelPrototypeContext anyFspec = 
   PCtx{ ctx_nm     = "MetaModelPrototypeContext"
