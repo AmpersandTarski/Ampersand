@@ -1,7 +1,5 @@
 # Ampersand
 
-[![Build Status](https://travis-ci.org/AmpersandTarski/Ampersand.svg?branch=master)](https://travis-ci.org/AmpersandTarski/Ampersand)
-[![Build status](https://ci.appveyor.com/api/projects/status/9stn8mx3w8vsbt2r?svg=true)](https://ci.appveyor.com/project/Ampersand-Sentinel/ampersand)
 [![Latest Release](https://img.shields.io/github/release/AmpersandTarski/Ampersand.svg)](https://github.com/AmpersandTarski/Ampersand/releases/latest)
 
 ## Releases
