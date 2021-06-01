@@ -114,6 +114,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - 
+        name: diagnosis
+        run: |
+          echo "version:    ${{ steps.get-version.outputs.version }}"
+          echo "github.ref: ${{github.ref}}"
+      - 
         name: Checkout project contents 📡
         uses: actions/checkout@v2
       - 
