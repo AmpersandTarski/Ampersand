@@ -11,7 +11,7 @@ jobs:
 
   release:
     name: Release 🥧
-    if: github.ref == 'master'
+    if: github.ref == 'refs/heads/master'
     needs: [ build-and-test-ubuntu
            , build-and-test-macOS
            , build-and-test-windows
@@ -113,11 +113,6 @@ jobs:
     name: Build and test on ubuntu-latest 🏗 🧪
     runs-on: ubuntu-latest
     steps:
-      - 
-        name: diagnosis
-        run: |
-          echo "version:    ${{ steps.get-version.outputs.version }}"
-          echo "github.ref: ${{github.ref}}"
       - 
         name: Checkout project contents 📡
         uses: actions/checkout@v2
