@@ -10,7 +10,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Ampersand.FSpec.FSpec
-          ( FSpec(..), concDefs, Atom(..), APair(..)
+          ( FSpec(..), emptyFSpec, concDefs, Atom(..), APair(..)
           , Quad(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
@@ -417,3 +417,103 @@ violationsOfInvariants fSpec
     ]
 defOutputLang :: FSpec -> Lang
 defOutputLang = ctxlang . originalContext
+
+emptyFSpec :: FSpec
+emptyFSpec = FSpec { fsName = ""
+                   -- The name of the specification, taken from the Ampersand script
+                   , originalContext = undefined         
+                   -- the original context. (for showA)  
+                   , fspos =        []                 
+                   -- The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
+                   , plugInfos =    []               
+                   -- All plugs (derived)
+                   , interfaceS =   []              
+                   -- All interfaces defined in the Ampersand script
+                   , interfaceG =   []              
+                   -- All interfaces derived from the basic ontology (the Lonneker interface)
+                   , roleInterfaces  = undefined 
+                   -- All interfaces defined in the Ampersand script, for use by a specific Role
+                   , fDeriveProofs = mempty                  
+                   -- The proofs in Pandoc format
+                   , fRoleRuls =    []            
+                   -- the relation saying which roles maintain which rules.
+                   , fMaintains =   undefined
+                   , fRoles =       []
+                   -- All roles mentioned in this context, numbered.
+                   , fallRules =    Set.empty
+                   , vrules =       Set.empty                   
+                   -- All user defined rules that apply in the entire FSpec
+                   , grules =       Set.empty                   
+                   -- All rules that are generated: multiplicity rules and identity rules
+                   , invariants =   Set.empty                   
+                   -- All invariant rules
+                   , signals =      Set.empty                   
+                   -- All signal rules
+                   , allUsedDecls = Set.empty               
+                   -- All relations that are used in the fSpec
+                   , vrels =        Set.empty               
+                   -- All user defined and generated relations plus all defined and computed totals.
+                                                              --   The generated relations are all generalizations and
+                                                              --   one relation for each signal.
+                   , allConcepts =  Set.empty
+                   -- All concepts in the fSpec
+                   , cptTType = undefined
+                   , vIndices =     []            
+                   -- All keys that apply in the entire FSpec
+                   , vviews =       []                
+                   -- All views that apply in the entire FSpec
+                   , getDefaultViewForConcept = undefined
+                   , getAllViewsForConcept = undefined
+                   , lookupView = undefined         
+                   -- Lookup view by id in fSpec.
+                   , vgens =        []              
+                   -- All gens that apply in the entire FSpec
+                   , allConjuncts = []               
+                   -- All conjuncts generated (by ADL2FSpec)
+                   , allConjsPerRule = []   
+                   -- Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
+                   , allConjsPerDecl = []        
+                   -- Maps each relation to the conjuncts it appears in   
+                   , allConjsPerConcept = []    
+                   -- Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
+                   , vquads =       []                   
+                   -- All quads generated (by ADL2FSpec)
+                   , fsisa =        [] 
+                   -- generated: The data structure containing the generalization structure of concepts
+                   , vpatterns =    []                
+                   -- All patterns taken from the Ampersand script
+                   , conceptDefs =  []             
+                   -- All concept definitions defined throughout a context, including those inside patterns and processes
+                   , fSexpls =      Set.empty             
+                   -- All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
+                   , metas =        []                   
+                   -- All meta relations from the entire context
+                   , crudInfo =     undefined                 
+                   -- Information for CRUD matrices 
+                   , atomsInCptIncludingSmaller = undefined
+                   -- All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
+                   , atomsBySmallestConcept = undefined
+                   -- All user defined populations of an A_Concept, where a population is NOT listed iff it also is in a smaller A_Concept.
+                   , tableContents = undefined
+                   -- tableContents is meant to compute the contents of an entity table.
+                   --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than Text.
+                   -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
+                   -- HJO 2016-09-05: Answer: Broad tables may contain rows where some of the attributes implement a relation that is UNI, but not TOT. In such case,
+                   --                         we may see empty attributes. (NULL values in database terminology)
+                   -- 'tableContents fSpec plug' is used in `PHP.hs` for filling the database initially.
+                   -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
+                   , pairsInExpr = undefined
+                   , applyViolText = undefined
+                   , initialConjunctSignals = [] 
+                   -- All conjuncts that have process-rule violations.
+                   , allViolations =  []   
+                   -- All invariant rules with violations.
+                   , allExprs =      Set.empty
+                   -- All expressions in the fSpec
+                   , fcontextInfo   = undefined 
+                   , ftypologies   = []
+                   , typologyOf = undefined
+                   , largestConcept = undefined
+                   , specializationsOf = undefined
+                   , generalizationsOf = undefined
+                   }

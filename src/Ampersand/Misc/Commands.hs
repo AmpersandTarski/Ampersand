@@ -317,7 +317,7 @@ daemonCmd daemonOpts =
 
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do
-  (extendWith docOpts.forceAllowInvariants.doOrDie) doGenDocument
+  (extendWith docOpts . forceAllowInvariants . doOrDie) doGenDocument
   where
     forceAllowInvariants :: HasFSpecGenOpts env => RIO env a -> RIO env a
     forceAllowInvariants env = local (set allowInvariantViolationsL True) env

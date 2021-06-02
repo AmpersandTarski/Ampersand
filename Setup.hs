@@ -33,7 +33,7 @@ generateHook pd lbi uh bf = do
     generateBuildInfoModule (T.pack . prettyShow . pkgVersion . package $ pd)
     generateStaticFileModule
     buildHook simpleUserHooks pd lbi uh bf -- start the build
- 
+
 generateBuildInfoModule :: Text -> IO ()
 -- | Generate a Haskell module that contains information that is available
 --   only during build time.
@@ -188,7 +188,7 @@ generateStaticFileModule = do
     readAllStaticFiles = do
         pandocTemplatesFiles <- readStaticFiles PandocTemplates  "." -- templates for several PANDOC output types
         formalAmpersandFiles <- readStaticFiles FormalAmpersand  "." -- meta information about Ampersand
-        systemContextFiles   <- readStaticFiles PrototypeContext "." -- Special system context for Ampersand
+        systemContextFiles   <- readStaticFiles PrototypeContext "." -- Context for prototypes that Ampersand generates.
         return $ mkStaticFileModule $ pandocTemplatesFiles <> formalAmpersandFiles <> systemContextFiles
 
     readStaticFiles :: FileKind -> FilePath -> IO [(FileKind,Entry)]

@@ -50,7 +50,7 @@ instance Show PopAtom where
         PopInt i            -> show i
 
 dirtyId :: Unique a => a -> PopAtom
-dirtyId = DirtyId . idWithType
+dirtyId = DirtyId . idWithoutType
 
 -- Function for PrototypeContext transformers. These atoms don't need to have a type prefix
 toTransformer :: (Text, Text, Text, Props, [(PopAtom,PopAtom)] ) -> Transformer
@@ -821,13 +821,12 @@ transformersFormalAmpersand fSpec = map toTransformer [
 dirtyIdWithoutType :: Unique a => a -> PopAtom
 dirtyIdWithoutType = DirtyId . idWithoutType
 
--- | The information in the following function is fully contained in FormalAmpersand.
---   For this reason, it may become obsolete some time in the future.
---   However, this metamodel has already been used in Ampersand.
---   In the PrototypeContext metamodel, all prefixes "PF_" and "pf_" may been dropped.
---   One transformations can be made:
+-- | The following transformers provide the metamodel needed to run a prototype.
+--   Note: The information in transformersPrototypeContext is fully contained in FormalAmpersand.
+--   You might do this by dropping all prefixes "PF_" and "pf_" and doing
+--   the following transformation:
 --     label[Role*PF_Label]                -> name[Role*RoleName]
--- | The list of all transformers, one for each and every relation in PrototypeContext.
+--   Then you will see that the transformers defined here are a subset of the FormalAmpersand transformers.
 transformersPrototypeContext :: FSpec -> [Transformer]
 transformersPrototypeContext fSpec = map toTransformer [
       ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"

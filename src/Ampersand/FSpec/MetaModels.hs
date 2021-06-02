@@ -2,8 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.FSpec.MetaModels
   ( MetaModel(..)
-  , mkGrindInfo
-  , GrindInfo
   , pCtx2Fspec
   )
 
@@ -14,14 +12,9 @@ import           Ampersand.Basics
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.ShowMeatGrinder
 import           Ampersand.FSpec.ToFSpec.ADL2FSpec
-import           Ampersand.FSpec.Transformers 
 import           Ampersand.Input
 import           Ampersand.Misc.HasClasses
 import qualified RIO.NonEmpty as NE
-import qualified RIO.Text as T
-
-parser :: (HasLogFunc env, HasFSpecGenOpts env) => RIO env (Guarded P_Context)
-parser = parseFormalAmpersand
 
 pCtx2Fspec :: (HasFSpecGenOpts env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = do
@@ -36,32 +29,4 @@ pCtx2Fspec env c = do
         else 
           case violationsOfInvariants fSpec of
             [] -> pure fSpec
-            h:tl -> (Errors . fmap (mkInvariantViolationsError (applyViolText fSpec))) (h NE.:| tl)
-
-
-mkGrindInfo :: (HasFSpecGenOpts env, HasLogFunc env) => RIO env GrindInfo
-mkGrindInfo = do
-    env <- ask 
-    build env <$> parser
-  where
-    build :: (HasFSpecGenOpts env) =>
-        env -> Guarded P_Context -> GrindInfo
-    build env pCtx = GrindInfo
-            { metaModel    = FormalAmpersand
-            , pModel       = case pCtx of
-                  Errors errs -> fatal $ showWithHeader
-                          "The ADL scripts of FormalAmpersand cannot be compiled:" errs
-                  Checked x [] -> x
-                  Checked _ (h:tl) -> fatal $ showWithHeader
-                          "The ADL scripts of FormalAmpersand are not free of warnings:" (h NE.:|tl)
-            , fModel       = 
-                case pCtx2Fspec env =<< pCtx of
-                  Errors errs -> fatal $ showWithHeader
-                          "The ADL scripts of FormalAmpersand cannot be compiled:" errs
-                  Checked x [] -> x
-                  Checked _ (h:tl) -> fatal $ showWithHeader
-                          "The ADL scripts of FormalAmpersand are not free of warnings:" (h NE.:|tl)
-            , transformers = transformersFormalAmpersand -- was: transformersPrototypeContext
-            }
-      where showWithHeader :: Show a => Text -> NE.NonEmpty a -> Text
-            showWithHeader txt xs = T.intercalate "\n" $ txt : (map tshow . NE.toList $ xs)
+            h:tl -> Errors (fmap (mkInvariantViolationsError (applyViolText fSpec)) (h NE.:| tl))

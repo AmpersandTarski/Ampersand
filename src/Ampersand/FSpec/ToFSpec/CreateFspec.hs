@@ -20,47 +20,48 @@ import           Ampersand.FSpec.MetaModels
 import           Ampersand.FSpec.ShowMeatGrinder
 import           Ampersand.Input
 import           Ampersand.Misc.HasClasses
+import qualified Data.Map.Lazy as Map
 
--- | create an FSpec, based on the provided command-line options.
---   Without the command-line switch "--meta-tables", 
---   Ampersand compiles its script (userP_Ctx) straightforwardly in first order relation algebra.
---   This is useful for simple scripts and the compilation process is easy to understand.
---
---   With "--meta-tables" switched on, Ampersand does more.
---   This switch is useful for higher order Ampersand,
---   in which the user can work with the rules, relations and concepts of the model inside the model.
---   Besides the user script, userP_Ctx, Ampersand creates its own metamodel, rapP_Ctx, which is generated from "AST.adl"
---   This metamodel is populated with the result of grinding userP_Ctx, being populationPctx.
---   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
---   The combination of model and populated metamodel results in the Guarded FSpec,
---   which is the result of createFSpec.
+-- | creating an FSpec is based on command-line options.
+--   It follows a recipe for translating a P_Context (the parsed user script) into an FSpec (the type-checked and enriched result).
+--   Ampersand parses its script (userScript) and adds semantics to it, depending on the recipe.
+--   The semantics for generating a prototype differs from the semantics that define an atlas, for instance.
+--   Currently, two semantic interpretations are available: FormalAmpersand and PrototypeContext.
+--   (There may be more in the future.)
+--   There are two relevant operations to take notice of to understand this code:
+--    * mergeContexts :: P_Context -> P_Context -> P_Context
+--      To merge two contexts means to take the union of the respective sets in the context.
+--      mergeContexts behaves almost like a union operator.
+--      Its result is a P_Context because the result must be typechecked as a whole.
+--    * grind transformers :: FSpec -> P_Context
+--      Grinding means to analyse the script down to the binary relations that constitute the metamodel.
+--      It assembles these relations to form a valid P_Context.
 
 createFspec :: (HasFSpecGenOpts env, HasLogFunc env) => 
                Recipe -> RIO env (Guarded FSpec)
-createFspec recipe = do 
-    env <- ask
-    userScript :: Guarded P_Context <- do
+createFspec recipe =
+ do env <- ask
+    userScript <- do
          rootFile <- fromMaybe (fatal "No script was given!") <$> view rootFileL
          snd <$> parseFileTransitive rootFile -- the P_Context of the user's sourceFile
-    return (cook env recipe userScript)
-
-cook :: (HasFSpecGenOpts env) => 
-         env
-      -> Recipe
-      -> Guarded P_Context
-      -> Guarded FSpec
-cook env recipe userScript
-     = case recipe of
-         Standard  -> userGFspec
-         Atlas     -> pCtx2Fspec env =<< liftM2 mergeContexts userMetamodel emptyMetaModel
-         Prototype -> pCtx2Fspec env =<< liftM2 mergeContexts userMetamodel prototypeMetamodel
-       where
-       -- typecheck and check the user's script
-          userGFspec = pCtx2Fspec env =<< userScript
-       -- The following definitions are only used in the atlas.
-       -- make a metamodel by grinding
-          userMetamodel = grind <$!> userGFspec
-       -- create FormalAmpersand without population. Just the metamodel used by the transformers.
-          emptyMetaModel = metaModelTransformers <$!> userGFspec
-       -- create FormalAmpersand without population. Just the metamodel used by the transformers.
-          prototypeMetamodel = metaModelPrototypeContext <$!> userGFspec
+    formalAmpersandScript  <- parseFormalAmpersand
+    prototypeContextScript <- parsePrototypeContext
+    let pContext
+          = case recipe of
+              Standard  -> userScript
+              Atlas     -> let Just (formalAmpersandMetamodel, transformers)
+                                = Map.lookup FormalAmpersand semanticInterpretations in
+                           do userPCtx  <- userScript
+                              userFSpec <- pCtx2Fspec env userPCtx
+                              let atlas  = grind transformers userFSpec
+                              faScript  <- formalAmpersandScript
+                              return (atlas `mergeContexts` formalAmpersandMetamodel `mergeContexts` faScript)
+              Prototype -> let Just (prototypeContext, transformers)
+                                = Map.lookup PrototypeContext semanticInterpretations in
+                           do userPCtx  <- userScript
+                              let one    = userPCtx `mergeContexts` prototypeContext
+                              oneFspec  <- pCtx2Fspec env one
+                              let two    = grind transformers oneFspec
+                              pcScript  <- prototypeContextScript
+                              return (one `mergeContexts` two `mergeContexts` pcScript)
+    return (pCtx2Fspec env =<< pContext)

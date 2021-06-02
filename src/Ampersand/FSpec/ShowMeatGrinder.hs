@@ -4,9 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ShowMeatGrinder
   ( grind
-  , metaModelTransformers
-  , metaModelPrototypeContext
-  , GrindInfo(..)
+  , semanticInterpretations
   , MetaModel(..)
   )
 where
@@ -19,6 +17,7 @@ import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
 -- import qualified RIO.Set as Set
 -- import qualified RIO.Text as T
+import qualified Data.Map.Lazy as Map
 
 data MetaModel = FormalAmpersand | PrototypeContext
        deriving (Eq, Ord, Enum, Bounded, Show)
@@ -26,23 +25,23 @@ instance Named MetaModel where
   name FormalAmpersand = "Formal Ampersand"
   name PrototypeContext = "Prototype context"
 
-data GrindInfo = GrindInfo
-    { metaModel    :: MetaModel
-    , pModel       :: P_Context
-    , fModel       :: FSpec
-    , transformers :: FSpec -> [Transformer]
-    }
+semanticInterpretations :: Map.Map MetaModel (P_Context, FSpec -> [Transformer])
+semanticInterpretations
+ = Map.fromList
+    [ (FormalAmpersand, (metaModelTransformers, transformersFormalAmpersand))
+    , (PrototypeContext, (metaModelPrototypeContext, transformersPrototypeContext))
+    ]
 
 -- | This produces "FormalAmpersand" as defined by the transformers
-metaModelTransformers :: FSpec -> P_Context
-metaModelTransformers anyFspec = 
+metaModelTransformers :: P_Context
+metaModelTransformers = 
   PCtx{ ctx_nm     = "MetaModelTransformers"
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = map metarelation (transformersFormalAmpersand anyFspec)
+      , ctx_ds     = map metarelation (transformersFormalAmpersand emptyFSpec)
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
@@ -56,15 +55,15 @@ metaModelTransformers anyFspec =
       }
 
 -- | This produces "PrototypeContext" as defined by the transformers
-metaModelPrototypeContext :: FSpec -> P_Context
-metaModelPrototypeContext anyFspec = 
+metaModelPrototypeContext :: P_Context
+metaModelPrototypeContext = 
   PCtx{ ctx_nm     = "MetaModelPrototypeContext"
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = map metarelation (transformersPrototypeContext anyFspec)
+      , ctx_ds     = map metarelation (transformersPrototypeContext emptyFSpec)
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
@@ -80,8 +79,8 @@ metaModelPrototypeContext anyFspec =
 -- | The 'grind' function lifts a model to the population of a metamodel.
 --   The model is "ground" with respect to a metamodel defined in transformersFormalAmpersand,
 --   The result is delivered as a P_Context, so it can be merged with other Ampersand results.
-grind :: FSpec -> P_Context
-grind userFspec =
+grind :: (FSpec -> [Transformer]) -> FSpec -> P_Context
+grind transformers userFspec =
   PCtx{ ctx_nm     = "Grinded_"<>name userFspec
       , ctx_pos    = []
       , ctx_lang   = Nothing
@@ -102,7 +101,7 @@ grind userFspec =
       }
   where
     filtered :: [Transformer]
-    filtered = filter (not.null.tPairs) . transformersFormalAmpersand $ userFspec
+    filtered = filter (not.null.tPairs) . transformers $ userFspec
 
 metarelation :: Transformer -> P_Relation
 metarelation  tr =
