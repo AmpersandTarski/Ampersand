@@ -478,7 +478,7 @@ tblcontents ci ps plug
                                 [ "There is an attempt to populate multiple values into "
                                 , "     the row of table `"<>name plug<>"`, where id = "<>tshow(showValADL a)<>":"
                                 , "     Values to be inserted in field `"<>name att<>"` are: "<>tshow (map (showValADL . apRight) ps')
-                                ] --this has happend before due to:
+                                ] --this has happened before due to:
                                   --    when using --dev flag
                                   --  , when there are violations
                                   --  , when you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)

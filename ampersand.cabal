@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ece0f3613904450b4ed1d24b3aa8b6374135e48fe9964ae4296432e020f2967e
+-- hash: 5f6ccfafaa72e4d59a374bf539fcb704864b0c82fca6003d5e330f996df428e5
 
 name:           ampersand
 version:        4.1.4
@@ -6338,8 +6338,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/InterfaceRefCheck.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/InterfaceTest1.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue142Fail.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue142TooGeneric.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue142TooGeneric.xlsx
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue163.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue181.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/Issue726.adl
@@ -6380,6 +6378,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/tryRieks.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/typecheckerror.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ViewAnnotationCheck.adl
+    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/~$Issue142TooGeneric.xlsx
     testing/Travis/testcases/prototype/shouldSucceed/aliasTests.adl
     testing/Travis/testcases/prototype/shouldSucceed/ARM-Test12.adl
     testing/Travis/testcases/prototype/shouldSucceed/ARM_Test10.adl
@@ -6404,6 +6403,8 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/Issue1026.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue142.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue142.xlsx
+    testing/Travis/testcases/prototype/shouldSucceed/Issue142TooGeneric.adl
+    testing/Travis/testcases/prototype/shouldSucceed/Issue142TooGeneric.xlsx
     testing/Travis/testcases/prototype/shouldSucceed/Issue148.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue152.adl
     testing/Travis/testcases/prototype/shouldSucceed/Issue174.adl
