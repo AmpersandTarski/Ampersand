@@ -81,9 +81,9 @@ addRelations pCtx = enrichedContext
                                          -- popRelations are derived from P_Populations only.
     declaredRelations = mergeRels (ctx_ds pCtx<>concatMap pt_dcs (ctx_pats pCtx))
     -- | To derive relations from populations, we derive the signature from the population's signature directly.
-    --   Multiplicity properties are added to constrain the population without introducing violations.
+    --   (SJ20210603: We do not add multiplicity properties because that might add violations that a user cannot fix.)
     popRelations 
-     = [ computeProps rel
+     = [ rel
        | pop@P_RelPopu{p_src = src, p_tgt = tgt}<-ctx_pops pCtx<>[pop |pat<-ctx_pats pCtx, pop<-pt_pop pat]
        , Just src'<-[src], Just tgt'<-[tgt]
        , rel<-[ P_Relation{ dec_nm     = name pop
@@ -95,37 +95,6 @@ addRelations pCtx = enrichedContext
                      }]
        , signatur rel `notElem` map signatur declaredRelations
        ]
-       where
-          computeProps :: P_Relation -> P_Relation
-          computeProps rel
-           = rel{dec_prps = Set.fromList ([ Uni | isUni popR]<>[ Inj | isInj popR ])}
-              where
-               sgn  = dec_sign rel
-               s = pSrc sgn; t = pTgt sgn
---             popu :: P_Concept -> Set.Set PAtomValue
---             popu c = (Set.fromList . concatMap p_popas) [ pop | pop@P_CptPopu{}<-pops, name c==name pop ]
-               popR :: Set.Set PAtomPair
-               popR = (Set.fromList . concatMap p_popps )
-                      [pop
-                      | pop@P_RelPopu {p_src = src, p_tgt = tgt} <- pops
-                      , name rel == name pop
-                      , Just src' <- [src]
-                      , src' == s
-                      , Just tgt' <- [tgt]
-                      , tgt' == t
-                      ]
---             domR = Set.fromList . map ppLeft  . Set.toList $ popR
---             codR = Set.fromList . map ppRight . Set.toList $ popR
-               equal f (a,b) = f a == f b
-               isUni :: Set.Set PAtomPair -> Bool
-               isUni x = null . Set.filter (not . equal ppRight) . Set.filter (equal ppLeft) $ cartesianProduct x x
---             isTot = popu s `Set.isSubsetOf` domR
-               isInj :: Set.Set PAtomPair -> Bool
-               isInj x = null . Set.filter (not . equal ppLeft) . Set.filter (equal ppRight) $ cartesianProduct x x
---             isSur = popu t `Set.isSubsetOf` codR
-               cartesianProduct :: -- Should be implemented as Set.cartesianProduct, but isn't. See https://github.com/commercialhaskell/rio/issues/177
-                                   (Ord a, Ord b) => Set a -> Set b -> Set (a, b)
-               cartesianProduct xs ys = Set.fromList $ liftA2 (,) (toList xs) (toList ys)
 
     genericRelations ::   [P_Relation]   -- generalization of popRelations due to CLASSIFY statements
     genericPopulations :: [P_Population] -- generalization of popRelations due to CLASSIFY statements
