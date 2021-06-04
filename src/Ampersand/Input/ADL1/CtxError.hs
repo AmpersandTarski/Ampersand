@@ -288,13 +288,13 @@ checkNoDoubleLables orig segments = addWarnings warnings $ pure()
         warnings = mapMaybe toWarning . groupWith vsmlabel $ segments
         toWarning :: [ViewSegment] -> Maybe Warning
         toWarning [] = Nothing 
-        toWarning (h:tl) = case vsmlabel h of
-             Nothing -> Nothing 
-             Just l  -> Just . Warning orig . T.intercalate "\n" $ 
+        toWarning (h:tl) = case (vsmlabel h,tl) of
+             (Just l,_:_)  -> Just . Warning orig . T.intercalate "\n" $ 
                    ["The label `"<>l<>"` occurs "<>tshow (length (h:tl))<>" times"
                    ,"in the VIEW statement defined at: "
                    ,"   "<>tshow orig<>"."
                    ]
+             _ -> Nothing 
 
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " <> showA (explObj p)
