@@ -11,7 +11,7 @@ jobs:
 
   release:
     name: Release 🥧
-    if: github.ref == 'master'
+    if: github.ref == 'refs/heads/master'
     needs: [ build-and-test-ubuntu
            , build-and-test-macOS
            , build-and-test-windows

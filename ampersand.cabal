@@ -3,11 +3,9 @@ cabal-version: 2.0
 -- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 5f6ccfafaa72e4d59a374bf539fcb704864b0c82fca6003d5e330f996df428e5
 
 name:           ampersand
-version:        4.1.4
+version:        4.1.5
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -19,9 +17,9 @@ maintainer:     stef.joosten@ou.nl
 copyright:      Stef Joosten
 license:        GPL
 license-file:   LICENSE
+build-type:     Custom
 tested-with:
     GHC == 8.10.4
-build-type:     Custom
 extra-source-files:
     LICENSE
     ReleaseNotes.md
