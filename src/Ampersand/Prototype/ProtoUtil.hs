@@ -1,4 +1,5 @@
-﻿{-# LANGUAGE FlexibleInstances #-}
+﻿{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.ProtoUtil
          ( getGenericsDir
@@ -8,16 +9,59 @@ module Ampersand.Prototype.ProtoUtil
          , addSlashes
          , indentBlock
          , phpIndent,showPhpStr,escapePhpStr
+         , writeFile
+         , FEInterface(..), FEAtomicOrBox(..), FEObject2(..)
+         , doesTemplateExist
          ) where
  
 import           Ampersand.Basics
 import           Ampersand.Misc.Defaults (defaultDirPrototype)
 import           Ampersand.Misc.HasClasses
+import qualified RIO.ByteString.Lazy  as BL
 import qualified RIO.List as L
 import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree
 
+------ Build intermediate data structure
+-- NOTE: _ disables 'not used' warning for fields
+data FEInterface = FEInterface { ifcName :: Text
+                               , ifcLabel :: Text
+                               , _ifcExp :: Expression
+                               , _ifcSource :: A_Concept
+                               , _ifcTarget :: A_Concept
+                               , _ifcRoles :: [Role]
+                               , _ifcObj :: FEObject2
+                               } deriving (Typeable, Data)
+
+data FEObject2 =
+    FEObjE { objName     :: Text
+           , objExp      :: Expression
+           , objSource   :: A_Concept
+           , objTarget   :: A_Concept
+           , objCrudC    :: Bool
+           , objCrudR    :: Bool
+           , objCrudU    :: Bool
+           , objCrudD    :: Bool
+           , exprIsUni   :: Bool
+           , exprIsTot   :: Bool
+           , relIsProp   :: Bool -- True iff the expression is a kind of simple relation and that relation is a property.
+           , exprIsIdent :: Bool
+           , atomicOrBox :: FEAtomicOrBox
+           }
+  | FEObjT { objName     :: Text
+           , objTxt      :: Text
+           } deriving (Show, Data, Typeable )
+
+-- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
+data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
+                                                          , [Text] -- the attributes of the template
+                                                          ) }
+                   | FEBox    { objMClass :: BoxHeader
+                              , ifcSubObjs :: [FEObject2] 
+                              } deriving (Show, Data,Typeable)
 
 writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
                          FilePath -> Text -> RIO env ()
@@ -28,6 +72,11 @@ writePrototypeAppFile relFilePath content = do
   liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
   writeFileUtf8 filePath content
      
+writeFile :: (HasLogFunc env) => FilePath -> BL.ByteString -> RIO env()
+writeFile filePath content = do
+  logDebug $ "  Generating "<>display (T.pack filePath) 
+  liftIO $ createDirectoryIfMissing True (takeDirectory filePath)
+  BL.writeFile filePath content
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
@@ -142,3 +191,9 @@ escapePhpStr txt =
      Just ('\\',s) -> "\\\\" <> escapePhpStr s
      Just (c,s)    -> T.cons c $ escapePhpStr s
 
+-- TODO: better abstraction for specific template and fallback to default
+doesTemplateExist :: (HasDirPrototype env) => FilePath -> RIO env Bool
+doesTemplateExist templatePath = do
+  env <- ask
+  let absPath = getTemplateDir env </> templatePath
+  liftIO $ doesFileExist absPath

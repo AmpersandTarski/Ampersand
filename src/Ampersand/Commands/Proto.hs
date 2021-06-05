@@ -13,7 +13,7 @@ module Ampersand.Commands.Proto
 import           Ampersand.Basics
 import           Ampersand.FSpec
 import           Ampersand.Misc.HasClasses
-import           Ampersand.Prototype.GenFrontend (doGenFrontend, doGenBackend, copyCustomizations)
+import           Ampersand.Prototype.GenFramework (doGenFrontend, doGenBackend, copyCustomizations)
 import           Ampersand.Types.Config
 import qualified RIO.Text as T
 import           System.Directory
