@@ -153,6 +153,8 @@ class HasProtoOpts env where
    forceReinstallFrameworkL :: Lens' env Bool
    forceReinstallFrameworkL
              = protoOptsL . lens xforceReinstallFramework (\x y -> x { xforceReinstallFramework = y })
+   frontendVersionL :: Lens' env FrontendVersion
+   frontendVersionL = protoOptsL . lens xfrontendVersion (\x y -> x { xfrontendVersion = y })
 instance HasProtoOpts ProtoOpts where
    protoOptsL = id
    {-# INLINE protoOptsL #-}
