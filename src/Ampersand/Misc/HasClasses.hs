@@ -244,7 +244,8 @@ data InputOutputOpts = InputOutputOpts
    { x4fSpecGenOpts :: !FSpecGenOpts
    , x4outputFile :: !FilePath --relative path 
    }
-
+data FrontendVersion = Angular | AngularJS 
+  deriving (Show, Eq)
 -- | Options for @ampersand proto@.
 data ProtoOpts = ProtoOpts
    { xforceReinstallFramework :: !Bool
@@ -256,6 +257,7 @@ data ProtoOpts = ProtoOpts
    , xzwolleVersion :: !FilePath
    , xgenerateFrontend :: !Bool
    , xgenerateBackend :: !Bool
+   , xfrontendVersion :: !FrontendVersion
   } deriving Show
 
 -- | Options for @ampersand documentation@.
