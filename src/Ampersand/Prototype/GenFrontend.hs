@@ -64,7 +64,7 @@ This is considered editable iff the composition rel;relRef yields an editable re
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-doGenFrontend :: (HasFSpecGenOpts env, HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
+doGenFrontend :: (HasFSpecGenOpts env, HasRunner env, HasZwolleVersion env, HasDirPrototype env) =>
                  FSpec -> RIO env ()
 doGenFrontend fSpec = do
     now <- getCurrentTime
@@ -78,7 +78,7 @@ doGenFrontend fSpec = do
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     logInfo "Frontend generated"
 
-doGenBackend :: (Show env, HasRunner env, HasProtoOpts env, HasDirPrototype env) =>
+doGenBackend :: (Show env, HasRunner env, HasDirPrototype env) =>
                 FSpec -> RIO env ()
 doGenBackend fSpec = do
   env <- ask
@@ -508,7 +508,7 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
                 Nothing ->  setAttribute (T.unpack $ tkkey h) True
                 Just val -> setAttribute (T.unpack $ tkkey h) val
 
-downloadPrototypeFramework :: (HasRunner env, HasProtoOpts env, HasZwolleVersion env, HasDirPrototype env) =>
+downloadPrototypeFramework :: (HasRunner env, HasZwolleVersion env, HasDirPrototype env) =>
                              RIO env Bool
 downloadPrototypeFramework = ( do 
     env <- ask

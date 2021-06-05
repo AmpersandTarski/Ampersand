@@ -44,11 +44,13 @@ instance HasFSpecGenOpts DaemonOpts where
   fSpecGenOptsL = lens x2fSpecGenOpts (\x y -> x { x2fSpecGenOpts = y })
 instance HasFSpecGenOpts ProtoOpts where
   fSpecGenOptsL = lens x1fSpecGenOpts (\x y -> x { x1fSpecGenOpts = y })
-class (HasRootFile a) => HasDirPrototype a where
+class HasProtoOpts a => HasDirPrototype a where
   dirPrototypeL :: Lens' a (Maybe FilePath)
   getTemplateDir :: a -> FilePath
   getTemplateDir x = 
-    getDirPrototype x </> "templates"
+    getDirPrototype x </> case view frontendVersionL x of
+                             AngularJS -> "templates"
+                             Angular   -> "angular-app/templates"
   getAppDir :: a -> FilePath
   getAppDir x =
     getDirPrototype x </> "public" </> "app" </> "project"
