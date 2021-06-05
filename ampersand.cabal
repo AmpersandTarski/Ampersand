@@ -6376,7 +6376,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/tryRieks.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/typecheckerror.adl
     testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/ViewAnnotationCheck.adl
-    testing/Travis/testcases/prototype/shouldFail/ParserOrTypecheckFailures/~$Issue142TooGeneric.xlsx
     testing/Travis/testcases/prototype/shouldSucceed/aliasTests.adl
     testing/Travis/testcases/prototype/shouldSucceed/ARM-Test12.adl
     testing/Travis/testcases/prototype/shouldSucceed/ARM_Test10.adl
