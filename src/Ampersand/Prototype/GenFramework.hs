@@ -166,19 +166,19 @@ buildInterface :: (HasDirPrototype env) => FSpec -> [Interface] -> Interface -> 
 buildInterface fSpec allIfcs ifc = do
   obj <- buildObject (BxExpr $ ifcObj ifc)
   return 
-    FEInterface { ifcName = escapeIdentifier $ name ifc
-                , ifcLabel = name ifc
-                , _ifcExp = objExp obj
-                , _ifcSource = objSource obj
-                , _ifcTarget = objTarget obj
-                , _ifcRoles = ifcRoles ifc
-                , _ifcObj = obj
+    FEInterface { feiName = escapeIdentifier $ name ifc
+                , feiLabel = name ifc
+                , feiExp = objExp obj
+                , feiSource = objSource obj
+                , feiTarget = objTarget obj
+                , feiRoles = ifcRoles ifc
+                , feiObj = obj
                 }
     -- NOTE: due to Amperand's interface data structure, expression, source, and target are taken from the root object. 
     --       (name comes from interface, but is equal to object name)
  
   where    
-    buildObject :: (HasDirPrototype env) => BoxItem -> RIO env FEObject2
+    buildObject :: (HasDirPrototype env) => BoxItem -> RIO env FEObject
     buildObject (BxExpr object') = do
       env <- ask
       let object = substituteReferenceObjectDef fSpec object'

@@ -10,7 +10,7 @@ module Ampersand.Prototype.ProtoUtil
          , indentBlock
          , phpIndent,showPhpStr,escapePhpStr
          , writeFile
-         , FEInterface(..), FEAtomicOrBox(..), FEObject2(..)
+         , FEInterface(..), FEAtomicOrBox(..), FEObject(..)
          , doesTemplateExist
          ) where
  
@@ -25,18 +25,19 @@ import           System.FilePath
 import           Ampersand.Core.AbstractSyntaxTree
 import           Ampersand.Core.ParseTree
 
------- Build intermediate data structure
--- NOTE: _ disables 'not used' warning for fields
-data FEInterface = FEInterface { ifcName :: Text
-                               , ifcLabel :: Text
-                               , _ifcExp :: Expression
-                               , _ifcSource :: A_Concept
-                               , _ifcTarget :: A_Concept
-                               , _ifcRoles :: [Role]
-                               , _ifcObj :: FEObject2
-                               } deriving (Typeable, Data)
+-- | data object that contains information about an interface, from the
+--   perspective of the generated frontend
+data FEInterface = FEInterface 
+   { feiName :: Text
+   , feiLabel :: Text
+   , feiExp :: Expression
+   , feiSource :: A_Concept
+   , feiTarget :: A_Concept
+   , feiRoles :: [Role]
+   , feiObj :: FEObject
+   } deriving (Typeable, Data)
 
-data FEObject2 =
+data FEObject =
     FEObjE { objName     :: Text
            , objExp      :: Expression
            , objSource   :: A_Concept
@@ -55,12 +56,12 @@ data FEObject2 =
            , objTxt      :: Text
            } deriving (Show, Data, Typeable )
 
--- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
+-- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on feiSubIfcs to determine atomicity.
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
                                                           , [Text] -- the attributes of the template
                                                           ) }
                    | FEBox    { objMClass :: BoxHeader
-                              , ifcSubObjs :: [FEObject2] 
+                              , ifcSubObjs :: [FEObject] 
                               } deriving (Show, Data,Typeable)
 
 writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>

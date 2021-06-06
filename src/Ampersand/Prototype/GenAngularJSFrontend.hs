@@ -75,27 +75,27 @@ genViewInterface :: (HasRunner env, HasDirPrototype env) =>
 genViewInterface fSpec interf = do
   runner <- view runnerL
   let loglevel' = logLevel runner
-  lns <- genViewObject fSpec 0 (_ifcObj interf)
+  lns <- genViewObject fSpec 0 (feiObj interf)
   template <- readTemplate "interface.html"
   let contents = renderTemplate Nothing template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
-                  . setAttribute "isTopLevel"          (isTopLevel . source . _ifcExp $ interf)
-                  . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+                  . setAttribute "isTopLevel"          (isTopLevel . source . feiExp $ interf)
+                  . setAttribute "roles"               (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                   . setAttribute "ampersandVersionStr" (longVersion appVersion)
-                  . setAttribute "interfaceName"       (ifcName  interf)
-                  . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
-                  . setAttribute "expAdl"              (showA . _ifcExp $ interf)
-                  . setAttribute "source"              (idWithoutType . _ifcSource $ interf)
-                  . setAttribute "target"              (idWithoutType . _ifcTarget $ interf)
-                  . setAttribute "crudC"               (objCrudC (_ifcObj interf))
-                  . setAttribute "crudR"               (objCrudR (_ifcObj interf))
-                  . setAttribute "crudU"               (objCrudU (_ifcObj interf))
-                  . setAttribute "crudD"               (objCrudD (_ifcObj interf))
+                  . setAttribute "interfaceName"       (feiName  interf)
+                  . setAttribute "interfaceLabel"      (feiLabel interf) -- no escaping for labels in templates needed
+                  . setAttribute "expAdl"              (showA . feiExp $ interf)
+                  . setAttribute "source"              (idWithoutType . feiSource $ interf)
+                  . setAttribute "target"              (idWithoutType . feiTarget $ interf)
+                  . setAttribute "crudC"               (objCrudC (feiObj interf))
+                  . setAttribute "crudR"               (objCrudR (feiObj interf))
+                  . setAttribute "crudU"               (objCrudU (feiObj interf))
+                  . setAttribute "crudD"               (objCrudD (feiObj interf))
                   . setAttribute "contents"            (T.intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
                   . setAttribute "verbose"             (loglevel' == LevelDebug)
                   . setAttribute "loglevel"            (show loglevel')
   let filename :: FilePath
-      filename = "ifc" <>(T.unpack . ifcName $ interf)<> ".view.html" 
+      filename = "ifc" <>(T.unpack . feiName $ interf)<> ".view.html" 
   writePrototypeAppFile filename contents 
   
 -- Helper data structure to pass attribute values to HStringTemplate
@@ -106,7 +106,7 @@ data SubObjectAttr2 = SubObjAttr{ subObjName :: Text
                                 } deriving (Show, Data, Typeable)
  
 genViewObject :: (HasRunner env, HasDirPrototype env) =>
-                 FSpec -> Int -> FEObject2 -> RIO env [Text]
+                 FSpec -> Int -> FEObject -> RIO env [Text]
 genViewObject fSpec depth obj =
   case obj of 
     FEObjE{} -> do
@@ -163,7 +163,7 @@ genViewObject fSpec depth obj =
     indentation :: [Text] -> [Text]
     indentation = map (T.replicate (if depth == 0 then 4 else 16) " " <>)
     genView_SubObject :: (HasRunner env, HasDirPrototype env) =>
-                         FEObject2 -> RIO env SubObjectAttr2
+                         FEObject -> RIO env SubObjectAttr2
     genView_SubObject subObj =
       case subObj of
         FEObjE{} -> 
@@ -208,23 +208,23 @@ genControllerInterface fSpec interf = do
     let loglevel' = logLevel runner
     let contents = renderTemplate Nothing template $
                        setAttribute "contextName"              (fsName fSpec)
-                     . setAttribute "isRoot"                   (isTopLevel . source . _ifcExp $ interf)
-                     . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "isRoot"                   (isTopLevel . source . feiExp $ interf)
+                     . setAttribute "roles"                    (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr"      (longVersion appVersion)
-                     . setAttribute "interfaceName"            (ifcName interf)
-                     . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"                   (showA . _ifcExp $ interf)
-                     . setAttribute "exprIsUni"                (exprIsUni (_ifcObj interf))
-                     . setAttribute "source"                   (idWithoutType . _ifcSource $ interf)
-                     . setAttribute "target"                   (idWithoutType . _ifcTarget $ interf)
-                     . setAttribute "crudC"                    (objCrudC (_ifcObj interf))
-                     . setAttribute "crudR"                    (objCrudR (_ifcObj interf))
-                     . setAttribute "crudU"                    (objCrudU (_ifcObj interf))
-                     . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
+                     . setAttribute "interfaceName"            (feiName interf)
+                     . setAttribute "interfaceLabel"           (feiLabel interf) -- no escaping for labels in templates needed
+                     . setAttribute "expAdl"                   (showA . feiExp $ interf)
+                     . setAttribute "exprIsUni"                (exprIsUni (feiObj interf))
+                     . setAttribute "source"                   (idWithoutType . feiSource $ interf)
+                     . setAttribute "target"                   (idWithoutType . feiTarget $ interf)
+                     . setAttribute "crudC"                    (objCrudC (feiObj interf))
+                     . setAttribute "crudR"                    (objCrudR (feiObj interf))
+                     . setAttribute "crudU"                    (objCrudU (feiObj interf))
+                     . setAttribute "crudD"                    (objCrudD (feiObj interf))
                      . setAttribute "verbose"                  (loglevel' == LevelDebug)
                      . setAttribute "loglevel"                 (show loglevel')
                      . setAttribute "usedTemplate"             controlerTemplateName
-    let filename = "ifc" <> T.unpack (ifcName interf) <> ".controller.js"
+    let filename = "ifc" <> T.unpack (feiName interf) <> ".controller.js"
     writePrototypeAppFile filename contents 
 
 ------ Utility functions
