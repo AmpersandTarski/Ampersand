@@ -32,8 +32,6 @@ data FEInterface = FEInterface
    { feiName :: Text
    , feiLabel :: Text
    , feiExp :: FEExpression
-   , feiSource :: A_Concept
-   , feiTarget :: A_Concept
    , feiRoles :: [Role]
    , feiObj :: FEObject
    } deriving (Typeable, Data)
@@ -41,8 +39,6 @@ data FEInterface = FEInterface
 data FEObject =
     FEObjE { objName     :: Text
            , objExp      :: FEExpression
-           , objSource   :: A_Concept
-           , objTarget   :: A_Concept
            , objCrudC    :: Bool
            , objCrudR    :: Bool
            , objCrudU    :: Bool

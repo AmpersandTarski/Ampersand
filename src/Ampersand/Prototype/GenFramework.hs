@@ -169,8 +169,6 @@ buildInterface fSpec allIfcs ifc = do
     FEInterface { feiName = escapeIdentifier $ name ifc
                 , feiLabel = name ifc
                 , feiExp = objExp obj
-                , feiSource = objSource obj
-                , feiTarget = objTarget obj
                 , feiRoles = ifcRoles ifc
                 , feiObj = obj
                 }
@@ -226,8 +224,6 @@ buildInterface fSpec allIfcs ifc = do
                                -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
       return FEObjE  { objName = name object
                       , objExp = iExp'
-                      , objSource = source iExp'
-                      , objTarget = target iExp'
                       , objCrudC = crudC . objcrud $ object
                       , objCrudR = crudR . objcrud $ object
                       , objCrudU = crudU . objcrud $ object

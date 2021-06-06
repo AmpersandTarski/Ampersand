@@ -79,14 +79,14 @@ genViewInterface fSpec interf = do
   template <- readTemplate "interface.html"
   let contents = renderTemplate Nothing template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
-                  . setAttribute "isTopLevel"          (isTopLevel . feiSource $ interf)
+                  . setAttribute "isTopLevel"          (isTopLevel . source .feiExp $ interf)
                   . setAttribute "roles"               (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                   . setAttribute "ampersandVersionStr" (longVersion appVersion)
                   . setAttribute "interfaceName"       (feiName  interf)
                   . setAttribute "interfaceLabel"      (feiLabel interf) -- no escaping for labels in templates needed
                   . setAttribute "expAdl"              (showA . toExpr . feiExp $ interf)
-                  . setAttribute "source"              (idWithoutType . feiSource $ interf)
-                  . setAttribute "target"              (idWithoutType . feiTarget $ interf)
+                  . setAttribute "source"              (idWithoutType . source .feiExp $ interf)
+                  . setAttribute "target"              (idWithoutType . target .feiExp $ interf)
                   . setAttribute "crudC"               (objCrudC (feiObj interf))
                   . setAttribute "crudR"               (objCrudR (feiObj interf))
                   . setAttribute "crudU"               (objCrudU (feiObj interf))
@@ -118,8 +118,8 @@ genViewObject fSpec depth obj =
                             . setAttribute "name"       (escapeIdentifier . objName $ obj)
                             . setAttribute "label"      (objName obj) -- no escaping for labels in templates needed
                             . setAttribute "expAdl"     (showA . toExpr . objExp $ obj) 
-                            . setAttribute "source"     (idWithoutType . objSource $ obj)
-                            . setAttribute "target"     (idWithoutType . objTarget $ obj)
+                            . setAttribute "source"     (idWithoutType . source . objExp $ obj)
+                            . setAttribute "target"     (idWithoutType . target . objExp $ obj)
                             . setAttribute "crudC"      (objCrudC obj)
                             . setAttribute "crudR"      (objCrudR obj)
                             . setAttribute "crudU"      (objCrudU obj)
@@ -184,7 +184,7 @@ genViewObject fSpec depth obj =
     getTemplateForObject 
        | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
                    = return $ "View-PROPERTY"<>".html"
-       | otherwise = getTemplateForConcept (objTarget obj)
+       | otherwise = getTemplateForConcept . target . objExp $ obj
     getTemplateForConcept :: (HasDirPrototype env) =>
                              A_Concept -> RIO env FilePath
     getTemplateForConcept cpt = do 
@@ -208,15 +208,15 @@ genControllerInterface fSpec interf = do
     let loglevel' = logLevel runner
     let contents = renderTemplate Nothing template $
                        setAttribute "contextName"              (fsName fSpec)
-                     . setAttribute "isRoot"                   (isTopLevel . feiSource $ interf)
+                     . setAttribute "isRoot"                   (isTopLevel . source . feiExp $ interf)
                      . setAttribute "roles"                    (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr"      (longVersion appVersion)
                      . setAttribute "interfaceName"            (feiName interf)
                      . setAttribute "interfaceLabel"           (feiLabel interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"                   (showA . toExpr . feiExp $ interf)
                      . setAttribute "exprIsUni"                (exprIsUni (feiObj interf))
-                     . setAttribute "source"                   (idWithoutType . feiSource $ interf)
-                     . setAttribute "target"                   (idWithoutType . feiTarget $ interf)
+                     . setAttribute "source"                   (idWithoutType . source . feiExp $ interf)
+                     . setAttribute "target"                   (idWithoutType . target . feiExp $ interf)
                      . setAttribute "crudC"                    (objCrudC (feiObj interf))
                      . setAttribute "crudR"                    (objCrudR (feiObj interf))
                      . setAttribute "crudU"                    (objCrudU (feiObj interf))
