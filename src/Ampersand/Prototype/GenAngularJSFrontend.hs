@@ -1,4 +1,4 @@
-﻿{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.GenAngularJSFrontend (
          genViewInterfaces
@@ -79,7 +79,7 @@ genViewInterface fSpec interf = do
   template <- readTemplate "interface.html"
   let contents = renderTemplate Nothing template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
-                  . setAttribute "isTopLevel"          (isTopLevel . source . feiExp $ interf)
+                  . setAttribute "isTopLevel"          (isTopLevel . feiSource $ interf)
                   . setAttribute "roles"               (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                   . setAttribute "ampersandVersionStr" (longVersion appVersion)
                   . setAttribute "interfaceName"       (feiName  interf)
