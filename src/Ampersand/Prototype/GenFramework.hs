@@ -154,90 +154,85 @@ downloadPrototypeFramework = ( do
                 return False
 
 buildInterfaces :: (HasDirPrototype env) => FSpec -> RIO env [FEInterface]
-buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) topLevelUserInterfaces
+buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
   where
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
 
-    topLevelUserInterfaces :: [Interface]
-    topLevelUserInterfaces = filter (not . ifcIsAPI) allIfcs
+    buildInterface :: (HasDirPrototype env) => Interface -> RIO env FEInterface
+    buildInterface ifc = do
+      obj <- buildObject (BxExpr $ ifcObj ifc)
+      return 
+        FEInterface { feiName = escapeIdentifier $ name ifc
+                    , feiLabel = name ifc
+                    , feiExp = objExp obj
+                    , feiRoles = ifcRoles ifc
+                    , feiObj = obj
+                    }
+      where    
+        buildObject :: (HasDirPrototype env) => BoxItem -> RIO env FEObject
+        buildObject boxItem = case boxItem of
+         BxExpr object' -> do
+          env <- ask
+          let object = substituteReferenceObjectDef fSpec object'
+          let feExp = fromExpr . conjNF env $ objExpression object
+          (aOrB, iExp') <-
+            case objmsub object of
+              Nothing -> do
+                let tgt = target feExp
+                let mView = maybe (getDefaultViewForConcept fSpec tgt) (Just . lookupView fSpec) (objmView object)
+                mSpecificTemplatePath <-
+                      case mView of
+                        Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
+                                  -> return $ Just (fName, mapMaybe vsmlabel viewSegs)
+                        _ -> do
+                           -- no view, or no view with an html template, so we fall back to target-concept template
+                           -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
+                          let templatePath = "Atomic-" <> T.unpack (idWithoutType tgt) <.> ".html"
+                          hasSpecificTemplate <- doesTemplateExist templatePath
+                          return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
+                return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
+                       , feExp)
+              Just si ->
+                case si of
+                  Box{} -> do
+                    subObjs <- mapM buildObject (siObjs si)
+                    return (FEBox { boxHeader  = siHeader si
+                                  , boxSubObjs = subObjs
+                                  }
+                            , feExp)
+                  InterfaceRef{} -> 
+                    case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
+                      []      -> fatal ("Referenced interface " <> siIfcId si <> " missing")
+                      (_:_:_) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
+                      [i]     -> 
+                            if siIsLink si
+                            then do
+                              let templatePath = "View-LINKTO.html"
+                              return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
+                                     , feExp)
+                            else do 
+                              refObj <- buildObject  (BxExpr $ ifcObj i)
+                              let comp = fromExpr $ ECps (toExpr feExp, toExpr $ objExp refObj) 
+                                   -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
+                              return (atomicOrBox refObj, comp)
+                                   -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
+          return FEObjE  { objName = name object
+                          , objExp = iExp'
+                          , objCrudC = crudC . objcrud $ object
+                          , objCrudR = crudR . objcrud $ object
+                          , objCrudU = crudU . objcrud $ object
+                          , objCrudD = crudD . objcrud $ object
+                          , exprIsUni = isUni . toExpr $ iExp'
+                          , exprIsTot = isTot . toExpr $ iExp'
+                          , relIsProp  = case femRelation iExp' of
+                                          Nothing  -> False
+                                          Just dcl -> isProp (EDcD dcl)
+                          , exprIsIdent = isIdent . toExpr $ iExp'
+                          , atomicOrBox = aOrB
+                          }
 
-buildInterface :: (HasDirPrototype env) => FSpec -> [Interface] -> Interface -> RIO env FEInterface
-buildInterface fSpec allIfcs ifc = do
-  obj <- buildObject (BxExpr $ ifcObj ifc)
-  return 
-    FEInterface { feiName = escapeIdentifier $ name ifc
-                , feiLabel = name ifc
-                , feiExp = objExp obj
-                , feiRoles = ifcRoles ifc
-                , feiObj = obj
-                }
-    -- NOTE: due to Amperand's interface data structure, expression, source, and target are taken from the root object. 
-    --       (name comes from interface, but is equal to object name)
- 
-  where    
-    buildObject :: (HasDirPrototype env) => BoxItem -> RIO env FEObject
-    buildObject (BxExpr object') = do
-      env <- ask
-      let object = substituteReferenceObjectDef fSpec object'
-      let feExp = fromExpr . conjNF env $ objExpression object
-      (aOrB, iExp') <-
-        case objmsub object of
-          Nothing -> do
-            let tgt = target feExp
-            let mView = maybe (getDefaultViewForConcept fSpec tgt) (Just . lookupView fSpec) (objmView object)
-            mSpecificTemplatePath <-
-                  case mView of
-                    Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                              -> return $ Just (fName, mapMaybe vsmlabel viewSegs)
-                    _ -> do
-                       -- no view, or no view with an html template, so we fall back to target-concept template
-                       -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                      let templatePath = "Atomic-" <> T.unpack (idWithoutType tgt) <.> ".html"
-                      hasSpecificTemplate <- doesTemplateExist templatePath
-                      return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
-            return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
-                   , feExp)
-          Just si ->
-            case si of
-              Box{} -> do
-                subObjs <- mapM buildObject (siObjs si)
-                return (FEBox { boxHeader  = siHeader si
-                              , boxSubObjs = subObjs
-                              }
-                        , feExp)
-              InterfaceRef{} -> 
-                case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                  []      -> fatal ("Referenced interface " <> siIfcId si <> " missing")
-                  (_:_:_) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
-                  [i]     -> 
-                        if siIsLink si
-                        then do
-                          let templatePath = "View-LINKTO.html"
-                          return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
-                                 , feExp)
-                        else do 
-                          refObj <- buildObject  (BxExpr $ ifcObj i)
-                          let comp = fromExpr $ ECps (toExpr feExp, toExpr $ objExp refObj) 
-                               -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
-                          return (atomicOrBox refObj, comp)
-                               -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
-      return FEObjE  { objName = name object
-                      , objExp = iExp'
-                      , objCrudC = crudC . objcrud $ object
-                      , objCrudR = crudR . objcrud $ object
-                      , objCrudU = crudU . objcrud $ object
-                      , objCrudD = crudD . objcrud $ object
-                      , exprIsUni = isUni . toExpr $ iExp'
-                      , exprIsTot = isTot . toExpr $ iExp'
-                      , relIsProp  = case femRelation iExp' of
-                                      Nothing  -> False
-                                      Just dcl -> isProp (EDcD dcl)
-                      , exprIsIdent = isIdent . toExpr $ iExp'
-                      , atomicOrBox = aOrB
-                      }
-
-    buildObject (BxTxt object') = do
-      return FEObjT{ objName = name object'
-                   , objTxt = objtxt object'
-                   }
+         BxTxt object' -> pure $
+                 FEObjT { objName = name object'
+                        , objTxt = objtxt object'
+                        }

@@ -346,14 +346,22 @@ instance Hashable AClassify where
                          IsE{} -> NE.toList . NE.sort $ genrhs g 
                        )
 
-data Interface = Ifc { ifcIsAPI ::    Bool          -- is this interface of type API?
-                     , ifcname ::     Text        -- all roles for which an interface is available (empty means: available for all roles)
-                     , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
-                     , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-                     , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
-                     , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
-                     , ifcPrp ::      Text        -- The purpose of the interface
-                     } deriving Show
+data Interface = Ifc 
+    { ifcIsAPI :: !Bool
+     -- ^ is this interface of type API?
+    , ifcname :: !Text
+     -- ^ The name of the interface
+    , ifcRoles :: ![Role]
+     -- ^ All roles for which an interface is available (empty means: available for all roles)
+    , ifcObj :: !ObjectDef
+     -- ^ NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
+    , ifcControls :: ![Conjunct]
+     -- ^ All conjuncts that must be evaluated after a transaction
+    , ifcPos :: !Origin
+     -- ^ The position in the file (filename, line- and column number)
+    , ifcPrp :: !Text
+     -- ^ The purpose of the interface
+    } deriving Show
 
 instance Eq Interface where
   a == b = compare a b == EQ
