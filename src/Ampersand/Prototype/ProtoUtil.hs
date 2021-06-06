@@ -11,6 +11,7 @@ module Ampersand.Prototype.ProtoUtil
          , phpIndent,showPhpStr,escapePhpStr
          , writeFile
          , FEInterface(..), FEAtomicOrBox(..), FEObject(..)
+         , FEExpression(..), toExpr, fromExpr
          , doesTemplateExist
          ) where
  
@@ -30,7 +31,7 @@ import           Ampersand.Core.ParseTree
 data FEInterface = FEInterface 
    { feiName :: Text
    , feiLabel :: Text
-   , feiExp :: Expression
+   , feiExp :: FEExpression
    , feiSource :: A_Concept
    , feiTarget :: A_Concept
    , feiRoles :: [Role]
@@ -39,7 +40,7 @@ data FEInterface = FEInterface
 
 data FEObject =
     FEObjE { objName     :: Text
-           , objExp      :: Expression
+           , objExp      :: FEExpression
            , objSource   :: A_Concept
            , objTarget   :: A_Concept
            , objCrudC    :: Bool
@@ -55,6 +56,33 @@ data FEObject =
   | FEObjT { objName     :: Text
            , objTxt      :: Text
            } deriving (Show, Data, Typeable )
+
+-- | distinguish FEExpression from Expression, to avoid accidents. The source/target
+--   of a FEExpression is not allways the same as the source/target of the Expression. 
+data FEExpression = FEExpression 
+    { feExpr :: !Expression 
+    , feSign :: !Signature
+    , femRelation :: !(Maybe Relation)
+    }
+  deriving Data
+instance HasSignature FEExpression where
+  sign = feSign
+   
+instance Show FEExpression where
+  show = show . feExpr
+toExpr :: FEExpression -> Expression
+toExpr = feExpr
+fromExpr :: Expression -> FEExpression
+fromExpr expr = 
+  FEExpression
+    { feExpr = expr
+    , feSign = Sign src tgt
+    , femRelation = mRel}
+  where (src, mRel, tgt) = case getExpressionRelation expr of
+                Nothing                          -> (source expr, Nothing  , target expr)
+                Just (declSrc, decl, declTgt, _) -> (declSrc    , Just decl, declTgt    ) 
+                                                   -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
+
 
 -- | The part to render at the 'end' of the expression
 data FEAtomicOrBox = 

@@ -182,11 +182,11 @@ buildInterface fSpec allIfcs ifc = do
     buildObject (BxExpr object') = do
       env <- ask
       let object = substituteReferenceObjectDef fSpec object'
-      let iExp = conjNF env $ objExpression object
+      let feExp = fromExpr . conjNF env $ objExpression object
       (aOrB, iExp') <-
         case objmsub object of
           Nothing -> do
-            let ( _ , _ , tgt) = getSrcDclTgt iExp
+            let tgt = target feExp
             let mView = maybe (getDefaultViewForConcept fSpec tgt) (Just . lookupView fSpec) (objmView object)
             mSpecificTemplatePath <-
                   case mView of
@@ -199,7 +199,7 @@ buildInterface fSpec allIfcs ifc = do
                       hasSpecificTemplate <- doesTemplateExist templatePath
                       return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
             return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
-                   , iExp)
+                   , feExp)
           Just si ->
             case si of
               Box{} -> do
@@ -207,7 +207,7 @@ buildInterface fSpec allIfcs ifc = do
                 return (FEBox { boxHeader  = siHeader si
                               , boxSubObjs = subObjs
                               }
-                        , iExp)
+                        , feExp)
               InterfaceRef{} -> 
                 case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
                   []      -> fatal ("Referenced interface " <> siIfcId si <> " missing")
@@ -217,36 +217,30 @@ buildInterface fSpec allIfcs ifc = do
                         then do
                           let templatePath = "View-LINKTO.html"
                           return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
-                                 , iExp)
+                                 , feExp)
                         else do 
                           refObj <- buildObject  (BxExpr $ ifcObj i)
-                          let comp = ECps (iExp, objExp refObj) 
+                          let comp = fromExpr $ ECps (toExpr feExp, toExpr $ objExp refObj) 
                                -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
                           return (atomicOrBox refObj, comp)
                                -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
-      let (src, mDecl, tgt) = getSrcDclTgt iExp'
       return FEObjE  { objName = name object
                       , objExp = iExp'
-                      , objSource = src
-                      , objTarget = tgt
+                      , objSource = source iExp'
+                      , objTarget = target iExp'
                       , objCrudC = crudC . objcrud $ object
                       , objCrudR = crudR . objcrud $ object
                       , objCrudU = crudU . objcrud $ object
                       , objCrudD = crudD . objcrud $ object
-                      , exprIsUni = isUni iExp'
-                      , exprIsTot = isTot iExp'
-                      , relIsProp  = case mDecl of
+                      , exprIsUni = isUni . toExpr $ iExp'
+                      , exprIsTot = isTot . toExpr $ iExp'
+                      , relIsProp  = case femRelation iExp' of
                                       Nothing  -> False
                                       Just dcl -> isProp (EDcD dcl)
-                      , exprIsIdent = isIdent iExp'
+                      , exprIsIdent = isIdent . toExpr $ iExp'
                       , atomicOrBox = aOrB
                       }
 
-      where getSrcDclTgt expr = 
-              case getExpressionRelation expr of
-                Nothing                          -> (source expr, Nothing  , target expr)
-                Just (declSrc, decl, declTgt, _) -> (declSrc    , Just decl, declTgt    ) 
-                                                   -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
     buildObject (BxTxt object') = do
       return FEObjT{ objName = name object'
                    , objTxt = objtxt object'

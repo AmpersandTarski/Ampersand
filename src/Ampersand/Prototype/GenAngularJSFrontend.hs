@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+﻿{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.GenAngularJSFrontend (
          genViewInterfaces
@@ -84,7 +84,7 @@ genViewInterface fSpec interf = do
                   . setAttribute "ampersandVersionStr" (longVersion appVersion)
                   . setAttribute "interfaceName"       (feiName  interf)
                   . setAttribute "interfaceLabel"      (feiLabel interf) -- no escaping for labels in templates needed
-                  . setAttribute "expAdl"              (showA . feiExp $ interf)
+                  . setAttribute "expAdl"              (showA . toExpr . feiExp $ interf)
                   . setAttribute "source"              (idWithoutType . feiSource $ interf)
                   . setAttribute "target"              (idWithoutType . feiTarget $ interf)
                   . setAttribute "crudC"               (objCrudC (feiObj interf))
@@ -117,7 +117,7 @@ genViewObject fSpec depth obj =
                             . setAttribute "exprIsTot"  (exprIsTot obj)
                             . setAttribute "name"       (escapeIdentifier . objName $ obj)
                             . setAttribute "label"      (objName obj) -- no escaping for labels in templates needed
-                            . setAttribute "expAdl"     (showA . objExp $ obj) 
+                            . setAttribute "expAdl"     (showA . toExpr . objExp $ obj) 
                             . setAttribute "source"     (idWithoutType . objSource $ obj)
                             . setAttribute "target"     (idWithoutType . objTarget $ obj)
                             . setAttribute "crudC"      (objCrudC obj)
@@ -208,12 +208,12 @@ genControllerInterface fSpec interf = do
     let loglevel' = logLevel runner
     let contents = renderTemplate Nothing template $
                        setAttribute "contextName"              (fsName fSpec)
-                     . setAttribute "isRoot"                   (isTopLevel . source . feiExp $ interf)
+                     . setAttribute "isRoot"                   (isTopLevel . feiSource $ interf)
                      . setAttribute "roles"                    (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr"      (longVersion appVersion)
                      . setAttribute "interfaceName"            (feiName interf)
                      . setAttribute "interfaceLabel"           (feiLabel interf) -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"                   (showA . feiExp $ interf)
+                     . setAttribute "expAdl"                   (showA . toExpr . feiExp $ interf)
                      . setAttribute "exprIsUni"                (exprIsUni (feiObj interf))
                      . setAttribute "source"                   (idWithoutType . feiSource $ interf)
                      . setAttribute "target"                   (idWithoutType . feiTarget $ interf)
