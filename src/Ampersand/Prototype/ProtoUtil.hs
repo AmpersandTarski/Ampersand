@@ -56,13 +56,16 @@ data FEObject =
            , objTxt      :: Text
            } deriving (Show, Data, Typeable )
 
--- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on feiSubIfcs to determine atomicity.
-data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
-                                                          , [Text] -- the attributes of the template
-                                                          ) }
-                   | FEBox    { objMClass :: BoxHeader
-                              , ifcSubObjs :: [FEObject] 
-                              } deriving (Show, Data,Typeable)
+-- | The part to render at the 'end' of the expression
+data FEAtomicOrBox = 
+    FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
+                                         , [Text] -- the attributes of the template
+                                         )
+             }
+  | FEBox    { boxHeader :: BoxHeader
+             , boxSubObjs :: [FEObject] 
+             } 
+    deriving (Show, Data,Typeable)
 
 writePrototypeAppFile :: (HasDirPrototype env, HasLogFunc env) =>
                          FilePath -> Text -> RIO env ()

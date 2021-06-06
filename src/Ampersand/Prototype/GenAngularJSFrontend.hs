@@ -145,8 +145,8 @@ genViewObject fSpec depth obj =
                      . renderTemplate Nothing template $ 
                        atomicAndBoxAttrs
 
-            FEBox { objMClass  = header
-                  , ifcSubObjs = subObjs
+            FEBox { boxHeader  = header
+                  , boxSubObjs = subObjs
                   } -> do
               subObjAttrs <- mapM genView_SubObject subObjs
                         
@@ -198,7 +198,7 @@ genViewObject fSpec depth obj =
 
 ------ Generate controller JavaScript code
 genControllerInterfaces :: (HasRunner env, HasDirPrototype env) => FSpec -> [FEInterface] -> RIO env ()
-genControllerInterfaces fSpec = mapM_ (genControllerInterface fSpec)
+genControllerInterfaces = mapM_ . genControllerInterface
 
 genControllerInterface :: (HasRunner env, HasDirPrototype env) => FSpec -> FEInterface -> RIO env ()
 genControllerInterface fSpec interf = do

@@ -204,8 +204,8 @@ buildInterface fSpec allIfcs ifc = do
             case si of
               Box{} -> do
                 subObjs <- mapM buildObject (siObjs si)
-                return (FEBox { objMClass  = siHeader si
-                              , ifcSubObjs = subObjs
+                return (FEBox { boxHeader  = siHeader si
+                              , boxSubObjs = subObjs
                               }
                         , iExp)
               InterfaceRef{} -> 
