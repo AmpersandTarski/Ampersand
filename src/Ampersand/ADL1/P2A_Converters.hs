@@ -523,15 +523,16 @@ pCtx2aCtx env
               , vd_html = mHtml -- Html template
               , vd_ats  = pvs   -- view segments
               }
-     = (\vdts
-        -> Vd { vdpos  = orig
-              , vdlbl  = lbl
-              , vdcpt  = pCpt2aCpt (conceptMap ci) cpt
-              , vdIsDefault = isDefault
-              , vdhtml = mHtml
-              , vdats  = vdts
-              })
-       <$> traverse typeCheckViewSegment (zip [0..] pvs)
+     = do segments <- traverse typeCheckViewSegment (zip [0..] pvs)
+          checkNoDoubleLables orig segments
+          let avd = Vd { vdpos  = orig
+                       , vdlbl  = lbl
+                       , vdcpt  = pCpt2aCpt (conceptMap ci) cpt
+                       , vdIsDefault = isDefault
+                       , vdhtml = mHtml
+                       , vdats  = segments
+                       }
+          return avd
      where
        typeCheckViewSegment :: (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
        typeCheckViewSegment (seqNr, seg)
