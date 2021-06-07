@@ -151,11 +151,11 @@ mainLexer p ('<':d:s) = if isOperator ['<',d]
                         else returnToken (LexSymbol    '<')    p mainLexer (addPos 1 p) (d:s)
 
 mainLexer p cs@(c:s)
-     | isIdStart c || isUpper c
+     | isLower c || isUpper c
          = let (name', p', s')    = scanIdent (addPos 1 p) s
-               name''               = c:name'
-               tokt   | iskw name'' = LexKeyword name''
-                      | otherwise = if isIdStart c
+               name''             = c:name'
+               tokt | iskw name'' = LexKeyword name''
+                    | otherwise   = if isLower c
                                     then LexVarId name''
                                     else LexConId name''
            in returnToken tokt p mainLexer p' s'
@@ -206,8 +206,6 @@ isOperatorBegin  = locatein (mapMaybe head operators)
    where head :: [a] -> Maybe a
          head (a:_) = Just a
          head []    = Nothing
-isIdStart :: Char -> Bool
-isIdStart c = isLower c || c == '_'
 
 isIdChar :: Char -> Bool
 isIdChar c =  isAlphaNum c || c == '_'
