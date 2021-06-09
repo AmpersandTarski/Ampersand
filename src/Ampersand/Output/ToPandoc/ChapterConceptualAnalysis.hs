@@ -2,20 +2,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
+import           Ampersand.Graphic.ClassDiagram
+import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
-
+import qualified RIO.Text as T
 
 chpConceptualAnalysis :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> Int -> FSpec -> (Blocks,[Picture])
-chpConceptualAnalysis env lev fSpec = (
-      --  *** Header ***
-   xDefBlck env fSpec ConceptualAnalysis
-   <> --  *** Intro  ***
-   caIntro
-   <> --  *** For all patterns, a section containing the conceptual analysis for that pattern  ***
-   caBlocks, pictures)
+chpConceptualAnalysis env lev fSpec
+ = (    --  *** Header ***
+     xDefBlck env fSpec ConceptualAnalysis
+     <> --  *** Intro  ***
+     caIntro
+     <> (mconcat . map caSection . orderingByTheme env) fSpec
+   , pictures)
   where
   -- shorthand for easy localizing
   l :: LocalizedStr -> Text
@@ -25,35 +27,19 @@ chpConceptualAnalysis env lev fSpec = (
   caIntro
    = (case outputLang' of
         Dutch   -> para
-                    (  "Dit hoofdstuk beschrijft een formele taal, waarin functionele eisen ten behoeve van "
-                    <> (singleQuoted.str.name) fSpec
-                    <> " kunnen worden besproken en uitgedrukt. "
-                    <> "De formalisering dient om een bouwbare specificatie te verkrijgen. "
-                    <> "Een derde met voldoende deskundigheid kan op basis van dit hoofdstuk toetsen of de gemaakte afspraken "
-                    <> "overeenkomen met de formele regels en definities. "
+                    (  "Dit hoofdstuk analyseert de \"taal van de business\", om functionele eisen ten behoeve van "
+                    <> (singleQuoted.str.name) fSpec <> " te kunnen bespreken. "
+                    <> "Deze analyse beoogt om een bouwbare, maar oplossingsonafhankelijke specificatie op te leveren. "
+                    <> "Deze tekst richt zich op lezers met voldoende deskundigheid op het gebied van conceptueel modelleren."
                     )
         English -> para
-                    (  "This chapter defines the formal language, in which functional requirements of "
-                    <> (singleQuoted.str.name) fSpec
-                    <> " can be analysed and expressed."
-                    <> "The purpose of this formalisation is to obtain a buildable specification. "
-                    <> "This chapter allows an independent professional with sufficient background to check whether the agreements made "
-                    <> "correspond to the formal rules and definitions. "
+                    (  "This chapter analyses the \"language of the business\" for the purpose of discussing functional requirements of "
+                    <> (singleQuoted.str.name) fSpec <> "."
+                    <> "The analysis is necessary is to obtain a buildable specification that is solution independent. "
+                    <> "The text targets readers with sufficient skill in conceptual modeling."
                     )
      )<> purposes2Blocks env (purposesOf fSpec outputLang' fSpec) -- This explains the purpose of this context.
 
-  caBlocks = 
-         mconcat (map caSection (vpatterns fSpec))
-      <>(case outputLang' of
-           Dutch   -> para "De definities van concepten zijn te vinden in de index."
-                   <> header (lev+3) "Gedeclareerde relaties"
-                   <> para "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en betekenis."
-           English -> para "The definitions of concepts can be found in the glossary."
-                   <> header (lev+3) "Declared relations"
-                   <> para "This section itemizes the declared relations with properties and purpose."
-        )
-      <> definitionList (map caRelation (Set.elems $ vrels fSpec))
-     
   pictures = map pictOfPat (vpatterns fSpec)
           <> map pictOfConcept (Set.elems $ concs fSpec)
           <> map pictOfRule (Set.elems $ vrules fSpec)
@@ -65,24 +51,36 @@ chpConceptualAnalysis env lev fSpec = (
   pictOfRule = makePicture env fSpec . PTCDRule
   pictOfConcept :: A_Concept -> Picture
   pictOfConcept = makePicture env fSpec . PTCDConcept
-  caSection :: Pattern -> Blocks
-  caSection pat
-   =    -- new section to explain this pattern
-        xDefBlck env fSpec (XRefConceptualAnalysisPattern pat)
+  caSection :: ThemeContent -> Blocks
+  caSection themeContent
+    | isNothing (patOfTheme themeContent)  &&
+      null      (cptsOfTheme themeContent) &&
+      null      (dclsOfTheme themeContent) &&
+      null      (rulesOfTheme themeContent) = mempty
+    | otherwise =
+        --  *** Header of the theme: ***
+        (xDefBlck env fSpec . XRefSharedLangTheme . patOfTheme) themeContent
         -- The section starts with the reason why this pattern exists
-     <> purposes2Blocks env (purposesOf fSpec outputLang' pat)
+     <> case patOfTheme themeContent of
+          Just pat -> purposes2Blocks env (purposesOf fSpec outputLang' pat)
+          Nothing  -> mempty
         -- followed by a conceptual model for this pattern
-     <> ( case outputLang' of
-               Dutch   -> -- announce the conceptual diagram
-                          para (hyperLinkTo (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
-                          -- draw the conceptual diagram
-                          <>(xDefBlck env fSpec . pictOfPat) pat
-               English -> para (hyperLinkTo (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
-                          <>(xDefBlck env fSpec . pictOfPat) pat
-        ) <>
+     <> (mconcat . map printConcept . cptsOfTheme ) themeContent
+     <> ( case (outputLang', patOfTheme themeContent) of
+               (Dutch, Just pat)   -> -- announce the conceptual diagram
+                                      para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . name) pat<> ".")
+                                      -- draw the conceptual diagram
+                                      <>(xDefBlck env fSpec . pictOfPat) pat
+               (English, Just pat) -> para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . name) pat<> ".")
+                                      <>(xDefBlck env fSpec . pictOfPat) pat
+               (_, Nothing)        -> mempty
+        )
+     <> mconcat (map fst caSubsections)
+     <> caRemainingRelations
+     <>
     (
         -- now provide the text of this pattern.
-       case map caRule . Set.elems $ invariants fSpec `Set.intersection` udefrules pat of
+       case map caRule . Set.elems $ invariants fSpec `Set.intersection` (Set.fromList . map (cRul . theLoad) . rulesOfTheme) themeContent of
          []     -> mempty
          blocks -> (case outputLang' of
                       Dutch   -> header (lev+3) "Regels"
@@ -92,7 +90,111 @@ chpConceptualAnalysis env lev fSpec = (
                    )
                    <> definitionList blocks
     )
-  
+    where
+      themeClasses :: [Class]
+      themeClasses = case patOfTheme themeContent of
+                       Just pat -> classes (cdAnalysis fSpec pat)
+                       Nothing  -> []
+      
+      caEntity :: Class -> (Blocks, [Relation])
+      caEntity cl
+        = ( simpleTable [ (plain.text.l) (NL "Attribuut", EN "Attribute")
+                        ,(plain.text.l) (NL "Betekenis", EN "Meaning")
+                        ]
+                        ( [[ (plain . text . name) attr
+                           , (intercalate (plain (text " ")) . map meaning2Blocks . decMean) rel  -- use "tshow.attType" for the technical type.
+                           ]
+                          | attr<-clAtts cl, rel<-lookupRel attr
+                          ]
+                        )
+          , [ rel | attr<-clAtts cl, rel<-lookupRel attr]
+          )
+          where
+             lookupRel :: CdAttribute -> [Relation]
+             lookupRel attr
+              = L.nub [ r
+                      | Nr _ decl <- dclsOfTheme themeContent, let rel = cDcl decl
+                      , (r,s,t)<-[(rel,source rel,target rel), (rel, target rel, source rel)]
+                      , name r==name attr, name cl==name s, attTyp attr==name t
+                      , (not . null . decMean) rel ]
+
+      intercalate :: Blocks -> [Blocks] -> Blocks
+      intercalate _ [] = mempty
+      intercalate inter (b:bs) = b<>inter<>intercalate inter bs
+
+      caSubsections :: [(Blocks, [Relation])]
+      caSubsections=
+        [ ( header 3 (str (name cl)) <> entityBlocks
+          , entityRels)
+        | cl <- themeClasses, (entityBlocks, entityRels) <- [caEntity cl], length entityRels>1
+        ]
+      
+      caRemainingRelations :: Blocks
+      caRemainingRelations
+        = simpleTable [ (plain.text.l) (NL "Relatie", EN "Relation")
+                      , (plain.text.l) (NL "Betekenis", EN "Meaning")
+                      ]
+                      ( [[ (plain . text) (name rel <> " " <> if null cls then tshow (sign rel) else l (NL " (Attribuut van ", EN " (Attribute of ") <> T.concat cls <> ")")
+                         , (fromList . concatMap (amPandoc . ameaMrk) . decMean) rel  -- use "tshow.attType" for the technical type.
+                         ]
+                        | rel<-rels
+                        , let cls = [ name cl | cl <-themeClasses, (_, entRels) <- [caEntity cl], rel `elem` entRels ]
+                        ]
+                      )
+       where
+          -- |  Compute all relations that are not discussed in the subsections before,
+          --    i.e. all relations that are not an attribute (not INJ and not UNI) plus the relations that were left out to avoid tables with one attribute only.
+          rels :: [Relation]
+          rels = map (cDcl . theLoad) (dclsOfTheme themeContent) L.\\ Set.toList entityRels
+          -- |  Compute all relations that are discussed in the subsections before.
+          entityRels :: Set Relation
+          entityRels = Set.unions (map (Set.fromList . snd) caSubsections)
+
+  printConcept :: Numbered CptCont -> Blocks
+  printConcept nCpt 
+        = -- Purposes:
+           (printPurposes . cCptPurps . theLoad) nCpt
+         <> case (nubByText.cCptDefs.theLoad) nCpt of
+             []    -> mempty  -- There is no definition of the concept
+             [cd] -> printCDef cd Nothing
+             cds  -> mconcat
+                    [printCDef cd (Just $ T.snoc "." suffx) 
+                    |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
+                    ]
+        where
+         fspecFormat = view fspecFormatL env
+         nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
+         printCDef :: ConceptDef -- the definition to print
+                -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
+                -> Blocks
+         printCDef cDef suffx
+           = definitionList 
+              [(   str (l (NL"Definitie " ,EN "Definition "))
+                <> ( if fspecFormat `elem` [Fpdf, Flatex] 
+                     then (str . tshow .theNr) nCpt
+                     else (str . name) cDef  
+                   )  
+                <> str (fromMaybe "" suffx) <> ":" 
+               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (cddef cDef)
+                        <> ( if fspecFormat `elem` [Fpdf, Flatex]
+                             then rawInline "latex"
+                                    ("~"<>texOnlyMarginNote 
+                                            ("\\gls{"<>escapeLatex 
+                                                        (name cDef<>fromMaybe "" suffx)
+                                                <>"}"
+                                            )
+                                    )
+                             else mempty
+                           )
+                        <> str (cddef cDef)
+                        <> if T.null (cdref cDef) then mempty
+                           else str (" ["<>cdref cDef<>"]")
+                       ) 
+                 ] 
+               )
+              ]
+
+{- unused code, possibly useful later...
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d = (titel, [body])
      where 
@@ -115,6 +217,7 @@ chpConceptualAnalysis env lev fSpec = (
                   then commaNL "en" (map adj . Set.elems $ properties d Set.\\ Set.fromList [Uni,Tot])<>" functie"
                   else commaNL "en" (map adj . Set.elems $ properties d)<>" relatie"
         adj   = propFullName True outputLang' 
+-}
 
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
