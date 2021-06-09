@@ -22,6 +22,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , printMarkup
     , printPurposes
     , purposes2Blocks
+    , meaning2Blocks
     , violation2Inlines
     , isMissing
     , lclForLang
@@ -515,6 +516,10 @@ printPurposes = mconcat . map (printMarkup . explMarkup)
 
 printMarkup :: Markup -> Blocks
 printMarkup = fromList . amPandoc
+
+meaning2Blocks :: Meaning -> Blocks
+meaning2Blocks
+ = printMarkup . ameaMrk
 
 purposes2Blocks :: (HasDocumentOpts env) => env -> [Purpose] -> Blocks
 purposes2Blocks env ps
