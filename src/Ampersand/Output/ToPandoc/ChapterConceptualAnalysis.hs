@@ -2,20 +2,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
+import           Ampersand.Graphic.ClassDiagram
+import           Ampersand.Graphic.Fspec2ClassDiagrams
 import           Ampersand.Output.ToPandoc.SharedAmongChapters
 import qualified RIO.List as L
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 
 
 chpConceptualAnalysis :: (HasDirOutput env, HasDocumentOpts env) 
    => env -> Int -> FSpec -> (Blocks,[Picture])
-chpConceptualAnalysis env lev fSpec = (
-      --  *** Header ***
-   xDefBlck env fSpec ConceptualAnalysis
-   <> --  *** Intro  ***
-   caIntro
-   <> --  *** For all patterns, a section containing the conceptual analysis for that pattern  ***
-   caBlocks, pictures)
+chpConceptualAnalysis env lev fSpec
+ = (    --  *** Header ***
+     xDefBlck env fSpec ConceptualAnalysis
+     <> --  *** Intro  ***
+     caIntro
+     <> --  *** For all patterns, a section containing the conceptual analysis for that pattern  ***
+     caBlocks
+   , pictures)
   where
   -- shorthand for easy localizing
   l :: LocalizedStr -> Text
@@ -74,12 +78,15 @@ chpConceptualAnalysis env lev fSpec = (
         -- followed by a conceptual model for this pattern
      <> ( case outputLang' of
                Dutch   -> -- announce the conceptual diagram
-                          para (hyperLinkTo (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
+                          para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . name) pat<> ".")
                           -- draw the conceptual diagram
                           <>(xDefBlck env fSpec . pictOfPat) pat
-               English -> para (hyperLinkTo (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
+               English -> para (hyperLinkTo (pictOfPat pat) <> "Conceptual diagram of " <> (singleQuoted . str . name) pat<> ".")
                           <>(xDefBlck env fSpec . pictOfPat) pat
-        ) <>
+        )
+     <> mconcat (map fst caSubsections)
+     <> caRemainingRelations
+     <>
     (
         -- now provide the text of this pattern.
        case map caRule . Set.elems $ invariants fSpec `Set.intersection` udefrules pat of
@@ -92,7 +99,57 @@ chpConceptualAnalysis env lev fSpec = (
                    )
                    <> definitionList blocks
     )
-  
+    where
+      oocd :: ClassDiag
+      oocd = cdAnalysis fSpec pat
+      
+      caEntity :: Class -> (Blocks, [Relation])
+      caEntity cl
+        = ( simpleTable [ (plain.text.l) (NL "Attribuut", EN "Attribute")
+                        ,(plain.text.l) (NL "Betekenis", EN "Meaning")
+                        ]
+                        ( [[ plain (text (name attr) <> " (" <> text (attTyp attr) <> ")")
+                           , (plain . text . T.intercalate " " . map tshow . decMean) rel  -- use "tshow.attType" for the technical type.
+                           ]
+                          | attr<-clAtts cl, rel<-lookupRel attr
+                          ]
+                        )
+          , [ rel | attr<-clAtts cl, rel<-lookupRel attr ]
+          )
+          where
+             lookupRel :: CdAttribute -> [Relation]
+             lookupRel attr
+              = [ rel
+                | rel <- Set.toList (ptdcs pat)
+                , name rel==name attr, name cl==name (source rel), attTyp attr==name (target rel) ] <>
+                [ rel
+                | rel <- Set.toList (ptdcs pat)
+                , name rel==name attr, name cl==name (target rel), attTyp attr==name (source rel) ]
+
+      caSubsections :: [(Blocks, [Relation])]
+      caSubsections =
+        [ ( header 2 (str (name cl)) <> entityBlocks
+          , entityRels)
+        | cl <- classes oocd, (entityBlocks, entityRels) <- [caEntity cl], length entityRels>1
+        ]
+      
+      caRemainingRelations :: Blocks
+      caRemainingRelations
+        = simpleTable [ (plain.text.l) (NL "Relatie", EN "Relation")
+                      , (plain.text.l) (NL "Betekenis", EN "Meaning")
+                      ]
+                      ( [[ (plain.text.showA) rel
+                         , (plain . text . T.intercalate " " . map tshow . decMean) rel  -- use "tshow.attType" for the technical type.
+                         ]
+                        | rel<-rels
+                        ]
+                      )
+       where
+          rels :: [Relation]
+          rels = Set.toList (ptdcs pat `Set.difference` entityRels)
+          entityRels :: Set Relation
+          entityRels = Set.unions (map (Set.fromList . snd) caSubsections)
+
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d = (titel, [body])
      where 
