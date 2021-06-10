@@ -815,14 +815,20 @@ pCtx2aCtx env
          <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat) 
          <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
          <*> traverse (pDecl2aDecl cptMap (Just $ name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
+         <*> traverse pure (pt_cds ppat)
+         <*> traverse (pure.pRoleRule2aRoleRule) (pt_RRuls ppat)
+         <*> traverse pure (pt_Reprs ppat)
        where
-        f rules' keys' pops' views' xpls relations
+        f rules' keys' pops' views' xpls relations conceptdefs roleRules representations
            = A_Pat { ptnm  = name ppat
                    , ptpos = origin ppat
                    , ptend = pt_end ppat
                    , ptrls = Set.fromList rules'
                    , ptgns = catMaybes $ pClassify2aClassify (conceptMap ci) <$> pt_gns ppat
                    , ptdcs = Set.fromList relations
+                   , ptrrs = roleRules
+                   , ptcds = conceptdefs
+                   , ptrps = representations
                    , ptups = pops' 
                    , ptids = keys'
                    , ptvds = views'
@@ -894,10 +900,10 @@ pCtx2aCtx env
                                     mustBeBound o [(Src, e)]
     pPurp2aPurp :: ContextInfo -> PPurpose -> Guarded Purpose
     pPurp2aPurp ci
-                PRef2 { pos    = orig     -- :: Origin
-                      , pexObj    = objref   -- :: PRefObj
-                      , pexMarkup = pmarkup  -- :: P_Markup
-                      , pexRefIDs  = refIds  -- :: [Text]
+                PRef2 { pos          = orig     -- :: Origin
+                      , pexObj       = objref   -- :: PRefObj
+                      , pexMarkup    = pmarkup  -- :: P_Markup
+                      , pexRefIDs    = refIds  -- :: [Text]
                       }
      = (\ obj -> Expl { explPos      = orig
                       , explObj      = obj

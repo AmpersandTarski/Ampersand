@@ -78,8 +78,7 @@ chpConceptualAnalysis env lev fSpec
      <> mconcat (map fst caSubsections)
      <> caRemainingRelations
      <>
-    (
-        -- now provide the text of this pattern.
+    (   -- print the rules that are defined in this pattern.
        case map caRule . Set.elems $ invariants fSpec `Set.intersection` (Set.fromList . map (cRul . theLoad) . rulesOfTheme) themeContent of
          []     -> mempty
          blocks -> (case outputLang' of
@@ -152,15 +151,14 @@ chpConceptualAnalysis env lev fSpec
 
   printConcept :: Numbered CptCont -> Blocks
   printConcept nCpt 
-        = -- Purposes:
-           (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (nubByText.cCptDefs.theLoad) nCpt of
+    = case (nubByText.cCptDefs.theLoad) nCpt of
              []    -> mempty  -- There is no definition of the concept
              [cd] -> printCDef cd Nothing
              cds  -> mconcat
                     [printCDef cd (Just $ T.snoc "." suffx) 
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
+      <> (printPurposes . cCptPurps . theLoad) nCpt
         where
          fspecFormat = view fspecFormatL env
          nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617

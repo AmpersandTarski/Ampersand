@@ -398,27 +398,28 @@ orderingByTheme env fSpec
   --   to the theme, respectively
   partitionByTheme :: Maybe Pattern  -- Just pat if this theme is from a pattern, otherwise this stuff comes from outside a pattern (but inside a context).
                    -> ( Counters, [Rule], [Relation], [A_Concept])
-                   -> ( ThemeContent , ( Counters ,[Rule], [Relation], [A_Concept])
-                      )
+                   -> ( ThemeContent , ( Counters ,[Rule], [Relation], [A_Concept]) )
   partitionByTheme mPat (cnt, ruls, rels, cpts)
       = ( Thm { themeNr      = pNr cnt
               , patOfTheme   = mPat
-              , rulesOfTheme = setNumbers (agreementNr cnt + length themeDcls ) rul2rulCont thmRuls
+              , rulesOfTheme = setNumbers (agreementNr cnt + length themeDcls ) rul2rulCont themeRuls
               , dclsOfTheme  = setNumbers (agreementNr cnt) dcl2dclCont themeDcls
               , cptsOfTheme  = setNumbers (definitionNr cnt) cpt2cptCont themeCpts
               }
         , (Counter {pNr = pNr cnt +1
                    ,definitionNr = definitionNr cnt + length themeCpts
-                   ,agreementNr = agreementNr cnt + length themeDcls + length thmRuls
+                   ,agreementNr = agreementNr cnt + length themeDcls + length themeRuls
                    }
         , restRuls, restDcls, restCpts)
         )
      where
-       (thmRuls,restRuls) = L.partition (inThisTheme rulesInTheme) ruls
+       (themeRuls,restRuls) = L.partition (inThisTheme rulesInTheme) ruls
           where rulesInTheme p = Set.filter ( \r -> Just (name p) == rrpat r) (fallRules fSpec)
        (themeDcls,restDcls) = L.partition (inThisTheme relsInTheme) rels
           where relsInTheme p = relsDefdIn p `Set.union` bindedRelationsIn p
-       (themeCpts,restCpts) = L.partition (inThisTheme concs) cpts
+       (themeCpts,restCpts) = L.partition predicate cpts
+        where
+          predicate c = (not.null) [ () | Just pat<-[mPat], cd<-ptcds pat, cdcpt cd==name c]
        inThisTheme :: Eq a => (Pattern -> Set.Set a) -> a -> Bool
        inThisTheme allElemsOf x
          = case mPat of

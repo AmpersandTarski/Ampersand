@@ -111,17 +111,20 @@ instance Named A_Context where
   name  = ctxnm
 
 data Pattern
-   = A_Pat { ptnm ::  Text        -- ^ Name of this pattern
-           , ptpos :: Origin        -- ^ the position in the file in which this pattern was declared.
-           , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
-           , ptrls :: Rules         -- ^ The user defined rules in this pattern
-           , ptgns :: [AClassify]   -- ^ The generalizations defined in this pattern
-           , ptdcs :: Relations     -- ^ The relations that are declared in this pattern
-           , ptups :: [Population]  -- ^ The user defined populations in this pattern
-           , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
-           , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
-           , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           }   deriving (Typeable)  -- Show for debugging purposes
+   = A_Pat { ptnm ::  Text              -- ^ Name of this pattern
+           , ptpos :: Origin            -- ^ the position in the file in which this pattern was declared.
+           , ptend :: Origin            -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
+           , ptrls :: Rules             -- ^ The user defined rules in this pattern
+           , ptgns :: [AClassify]       -- ^ The generalizations defined in this pattern
+           , ptdcs :: Relations         -- ^ The relations that are declared in this pattern
+           , ptrrs :: [A_RoleRule]      -- ^ The role-rule assignments that are declared in this pattern
+           , ptcds :: [ConceptDef]      -- ^ The concept definitions that are declared in this pattern
+           , ptrps :: [Representation]  -- ^ The concept definitions that are declared in this pattern
+           , ptups :: [Population]      -- ^ The user defined populations in this pattern
+           , ptids :: [IdentityDef]     -- ^ The identity definitions defined in this pattern
+           , ptvds :: [ViewDef]         -- ^ The view definitions defined in this pattern
+           , ptxps :: [Purpose]         -- ^ The purposes of elements defined in this pattern
+           }   deriving (Typeable)      -- Show for debugging purposes
 instance Eq Pattern where
   a == b = compare a b == EQ
 instance Unique Pattern where
