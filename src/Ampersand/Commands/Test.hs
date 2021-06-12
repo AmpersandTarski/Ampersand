@@ -16,7 +16,6 @@ import Ampersand.Test.Parser.QuickChecks
   ( doAllQuickCheckPropertyTests,
   )
 import Ampersand.Test.Regression (regressionTest)
-import Ampersand.Test.TestScripts (testAmpersandScripts)
 import Ampersand.Types.Config (HasRunner)
 
 test :: (HasTestOpts env, HasRunner env) => RIO env ()
@@ -28,4 +27,4 @@ parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do
   logInfo "Starting Quickcheck tests."
   doAllQuickCheckPropertyTests
-  testAmpersandScripts
+  logInfo "Roundtrip checks are OK"

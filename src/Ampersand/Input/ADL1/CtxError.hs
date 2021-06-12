@@ -562,6 +562,11 @@ data Guarded a =
  | Checked a [Warning]
 --   deriving Show
 
+instance Eq a => Eq (Guarded a) where
+  Checked a1 _ == Checked a2 _ = a1 == a2
+  _ == _ = False 
+  
+
 instance Functor Guarded where
  fmap _ (Errors a)  = Errors a
  fmap f (Checked a ws) = Checked (f a) ws

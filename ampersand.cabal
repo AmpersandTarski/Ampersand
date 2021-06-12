@@ -3217,7 +3217,6 @@ library
       Ampersand.Test.Parser.ParserTest
       Ampersand.Test.Parser.QuickChecks
       Ampersand.Test.Regression
-      Ampersand.Test.TestScripts
       MainApps
       Options.Applicative.Builder.Extra
       Ampersand.Basics.BuildInfo_Generated
