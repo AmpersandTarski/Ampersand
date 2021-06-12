@@ -9,7 +9,7 @@ module Ampersand.Input.Parsing (
     , parseFormalAmpersand
     , parsePrototypeContext
     , parseRule
-    , runParser
+    , parseCtx
     , ParseCandidate(..) -- exported for use with --daemon
 ) where
 

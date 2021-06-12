@@ -10,7 +10,6 @@ import           Ampersand.ADL1.PrettyPrinters(prettyPrint)
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError (Guarded(..),CtxError)
-import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Parsing
 import           Ampersand.Options.FSpecGenOptsParser
 import           Ampersand.Types.Config
@@ -39,7 +38,7 @@ showErrors :: (HasLogFunc env) => [CtxError] ->  RIO env ()
 showErrors = mapM_ (logError . displayShow)
 
 parse :: FilePath -> Text -> Guarded P_Context
-parse file txt = fst <$> runParser pContext file txt
+parse file txt = fst <$> parseCtx file txt
 
 parseReparse :: FilePath -> Text -> Guarded P_Context
 parseReparse file txt = do 
