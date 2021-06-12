@@ -7,5 +7,5 @@ module Ampersand.Test
 where
 import Ampersand.Test.Regression
 import Ampersand.Test.TestScripts        (getTestScripts, testAmpersandScripts)
-import Ampersand.Test.Parser.ParserTest  (parseScripts)
+import Ampersand.Test.Parser.ParserTest
 import Ampersand.Test.Parser.QuickChecks (parserQuickChecks)

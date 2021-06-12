@@ -3,12 +3,10 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Test.Parser.ParserTest (
-    parseReparse, parseScripts, showErrors
+    parseScripts, showErrors
 ) where
 
-import           Ampersand.ADL1.PrettyPrinters(prettyPrint)
 import           Ampersand.Basics
-import           Ampersand.Core.ParseTree
 import           Ampersand.Input.ADL1.CtxError (Guarded(..),CtxError)
 import           Ampersand.Input.Parsing
 import           Ampersand.Options.FSpecGenOptsParser
@@ -37,10 +35,3 @@ parseScripts paths =
 showErrors :: (HasLogFunc env) => [CtxError] ->  RIO env ()
 showErrors = mapM_ (logError . displayShow)
 
-parse :: FilePath -> Text -> Guarded P_Context
-parse file txt = fst <$> parseCtx file txt
-
-parseReparse :: FilePath -> Text -> Guarded P_Context
-parseReparse file txt = do 
-    pCtx <- parse file txt
-    parse (file ++ "**pretty") (prettyPrint pCtx) 
