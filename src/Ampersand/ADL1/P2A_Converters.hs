@@ -1,9 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ImplicitParams #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.ADL1.P2A_Converters
     ( pCtx2aCtx
