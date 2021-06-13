@@ -151,7 +151,7 @@ mainLexer p ('<':d:s) = if isOperator ['<',d]
                         else returnToken (LexSymbol    '<')    p mainLexer (addPos 1 p) (d:s)
 
 mainLexer p cs@(c:s)
-     | isLower c || isUpper c
+     | isAlpha c
          = let (name', p', s')    = scanIdent (addPos 1 p) s
                name''             = c:name'
                tokt | iskw name'' = LexKeyword name''
