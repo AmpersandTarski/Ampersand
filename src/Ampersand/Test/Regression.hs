@@ -210,10 +210,10 @@ testAdlfile indent dir adl tinfo = do
    where
      passHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
      passHandler (_, _, _) = do
-          logInfo $ indent<>"Passed."
+          logInfo $ indent<>"✅ Passed."
      failHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
      failHandler (exit_code, out, err) = do
-          logError $ "***FAIL*** "<>indent<> (display . T.pack $ adl)<>" " 
+          logError $ "❌Failed. "<>indent<> (display . T.pack $ adl)<>" " 
                      <>"(Expected: "<>(if exitcode tinfo == 0 
                                          then "ExitSuccess" 
                                          else "ExitFailure "<>display (exitcode tinfo)

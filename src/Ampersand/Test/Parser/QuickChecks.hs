@@ -7,6 +7,7 @@
 
 module Ampersand.Test.Parser.QuickChecks
   ( doAllQuickCheckPropertyTests,
+    TestResult (..),
   )
 where
 
@@ -18,26 +19,68 @@ import Ampersand.Input.Parsing (parseCtx)
 import Ampersand.Test.Parser.ArbitraryTree ()
 import qualified RIO.Text as T
 import Test.QuickCheck
-    ( quickCheckWith, stdArgs, chatty )
 
-doAllQuickCheckPropertyTests :: RIO env () -- (Bool,Text)
-doAllQuickCheckPropertyTests = do
-  liftIO . quickCheckWith myArgs $ prop_parserRoundtrip
-     where myArgs = stdArgs {chatty = False}
+-- | An application specific data type that enables nice error
+--   messages in the output.
+data TestResult = TestResult
+  { qcPropName :: !Text,
+    qcIsSuccess :: !Bool,
+    qcMessage :: ![Text],
+    qcQuickCheckResult :: !Result
+  }
+
+doAllQuickCheckPropertyTests :: (HasLogFunc env) => RIO env Bool
+doAllQuickCheckPropertyTests =
+  whileSuccess
+    [ doRoundtripTest
+    -- More tests can be inserted here
+    ]
+  where
+    whileSuccess :: (HasLogFunc env) => [RIO env TestResult] -> RIO env Bool
+    whileSuccess [] = do
+      logInfo "All tests succeeded."
+      pure True
+    whileSuccess (h : tl) = do
+      res <- h
+      if qcIsSuccess res
+        then do
+          logInfo . display $ "OK: " <> qcPropName res
+          whileSuccess tl
+        else do
+          logInfo . display $ "FAIL: " <> qcPropName res
+          pure False
+
+doRoundtripTest :: RIO env TestResult
+doRoundtripTest = do
+  qcResult <- liftIO . quickCheckWithResult myArgs $ prop_parserRoundtrip
+  pure
+    TestResult
+      { qcPropName = "Prettyprint/Parser roundtrip.",
+        qcIsSuccess = isSuccess qcResult,
+        qcMessage = ["---Some message---"],
+        qcQuickCheckResult = qcResult
+      }
+  where
+    myArgs = stdArgs {chatty = False}
+
 prop_parserRoundtrip :: P_Context -> Bool
-prop_parserRoundtrip pCtx = 
+prop_parserRoundtrip pCtx =
   case roundtrip pCtx of
     Checked _ _ -> True
-    Errors err -> exitWith . SomeTestsFailed $
-                    T.lines (tshow err)
-                 <> T.lines (prettyCtx pCtx)
-           
+    Errors err ->
+      exitWith . SomeTestsFailed $
+        T.lines (tshow err)
+          <> T.lines (prettyCtx pCtx)
+
 roundtrip :: P_Context -> Guarded P_Context
-roundtrip pCtx= fst <$> 
-                parseCtx ( "ERROR: There is something wrong with the parser and/or with the\n"
-                         <>"  way an arbitrary P_Context is defined. (See ArbitraryTree.hs)\n"
-                         <>"  Below file at position" )
-                           (prettyCtx pCtx)
+roundtrip pCtx =
+  fst
+    <$> parseCtx
+      ( "ERROR: There is something wrong with the parser and/or with the\n"
+          <> "  way an arbitrary P_Context is defined. (See ArbitraryTree.hs)\n"
+          <> "  Below file at position"
+      )
+      (prettyCtx pCtx)
 
 prettyCtx :: P_Context -> Text
 prettyCtx =

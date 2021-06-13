@@ -10,11 +10,9 @@ module Ampersand.Commands.Test
   )
 where
 
-import Ampersand.Basics (RIO, logInfo)
+import Ampersand.Basics
 import Ampersand.Misc.HasClasses (HasTestOpts (..))
 import Ampersand.Test.Parser.QuickChecks
-  ( doAllQuickCheckPropertyTests,
-  )
 import Ampersand.Test.Regression (regressionTest)
 import Ampersand.Types.Config (HasRunner)
 
@@ -26,5 +24,7 @@ test = do
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do
   logInfo "Starting Quickcheck tests."
-  doAllQuickCheckPropertyTests
-  logInfo "Roundtrip checks are OK"
+  success <- doAllQuickCheckPropertyTests
+  if success
+    then logInfo "✅ Passed."
+    else logError "❌Failed. Quickcheck tests."
