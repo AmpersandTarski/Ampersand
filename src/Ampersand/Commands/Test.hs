@@ -28,5 +28,5 @@ parserRoundtripTest = do
   if success
     then logInfo "✅ Passed."
     else do
-            logError "❌Failed. Quickcheck tests."
+            logError "❗❗❗ Failed. Quickcheck tests."
             exitWith (SomeTestsFailed ["Quickcheck test failed!"])

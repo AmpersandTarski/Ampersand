@@ -213,7 +213,7 @@ testAdlfile indent dir adl tinfo = do
           logInfo $ indent<>"✅ Passed."
      failHandler :: (HasLogFunc env) => (ExitCode, BL.ByteString, BL.ByteString) -> RIO env ()
      failHandler (exit_code, out, err) = do
-          logError $ "❌Failed. "<>indent<> (display . T.pack $ adl)<>" " 
+          logError $ "❗❗❗ Failed. "<>indent<> (display . T.pack $ adl)<>" " 
                      <>"(Expected: "<>(if exitcode tinfo == 0 
                                          then "ExitSuccess" 
                                          else "ExitFailure "<>display (exitcode tinfo)
