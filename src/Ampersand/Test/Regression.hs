@@ -92,7 +92,7 @@ doTestsInDir :: (HasProcessContext env, HasLogFunc env) => ConduitT DirData Test
 doTestsInDir = awaitForever once 
    where
     once x = do
-      lift $ logInfo $ ">> " <> displayShow (traversalNr x) <> ": "<> (display . T.pack $ path x)
+      lift . logInfo $ ">> " <> displayShow (traversalNr x) <> ": "<> (display . T.pack $ path x)
       let candidates = filter isCandidate (filesOf . dirContent $ x)
             where
               isCandidate :: FilePath -> Bool
@@ -148,7 +148,7 @@ doTestsInDir = awaitForever once
                 loop sofar = await >>= maybe (return sofar)
                                             (\result -> loop $! add sofar result)
         parseYaml ::  RIO env (Either ParseException TestInfo) 
-        parseYaml = liftIO $ decodeFileEither $ path x </> yaml
+        parseYaml = liftIO . decodeFileEither $ path x </> yaml
     sayInstruction :: HasLogFunc env => TestInstruction -> RIO env ()
     sayInstruction x = logDebug $ indent <> "  Command: "<>display (command x)<>if exitcode x == 0 then " (should succeed)." else " (should fail with exitcode "<>display (exitcode x)<>")."
     indent :: IsString a => a

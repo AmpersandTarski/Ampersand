@@ -548,7 +548,7 @@ pCtx2aCtx env
            = case payload of
               P_ViewExp term -> 
                  do (viewExpr,(srcBounded,_)) <- typecheckTerm ci term
-                    case userList (conceptMap ci) $toList$ findExact genLattice (flType$ lMeet c (source viewExpr)) of
+                    case userList (conceptMap ci) . toList $ findExact genLattice (flType$ lMeet c (source viewExpr)) of
                        []  -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
                        r@(h:_) -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft genLattice h viewExpr))
                              else mustBeBound (origin seg) [(Tgt,viewExpr)]
@@ -733,7 +733,7 @@ pCtx2aCtx env
      where matchWith :: (ObjectDef, Bool) -> Guarded ObjectDef
            matchWith (ojd,exprBound)
             = if b || exprBound then
-                case userList (conceptMap ci) $toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
+                case userList (conceptMap ci) . toList . findExact genLattice . flType . lMeet (target objExpr) . source . objExpression $ ojd of
                     [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef $ BxExpr ojd)]
                     (r:_) -> pure (ojd{objExpression=addEpsilonLeft genLattice r (objExpression ojd)})
               else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
@@ -874,7 +874,7 @@ pCtx2aCtx env
               do ob <- pObjDefDisamb2aObjDef ci ojd
                  case ob of
                    BxExpr o ->
-                     case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
+                     case toList . findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
                               [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
                               _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft genLattice conc (objExpression o)}
                    BxTxt t -> fatal $ "TXT is not expected in IDENT statements. ("<>tshow (origin t)<>")"
@@ -1038,11 +1038,11 @@ typecheckTerm ci tct
              ) <$> getAndCheckType lMeet (p1, b1, e1) (p2, b2, e2)
      where
       getExactType flf (p1,e1) (p2,e2)
-       = case userList cptMap $toList$ findExact genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of
+       = case userList cptMap . toList . findExact genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2) of
           [] -> mustBeOrdered o (p1,e1) (p2,e2)
           h:_ -> pure h
       getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
-       = case fmap (userList cptMap . toList)$toList$ findUpperbounds genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
+       = case userList cptMap . toList <$> (toList . findUpperbounds genLattice . flType $ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
           [r@(h:_)]
               -> case (b1 || elem (getAConcept p1 e1) r,b2 || elem (getAConcept p2 e2) r ) of
