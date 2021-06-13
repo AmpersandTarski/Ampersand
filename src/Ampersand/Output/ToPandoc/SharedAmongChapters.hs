@@ -22,6 +22,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , printMarkup
     , printPurposes
     , purposes2Blocks
+    , meaning2Blocks
     , violation2Inlines
     , isMissing
     , lclForLang
@@ -113,11 +114,8 @@ hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Eithe
 hyperTarget env fSpec a =
     case a of
       XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff $ a)
-      XRefSharedLangTheme mPat   -> Left . hdr $ 
-                                       (case mPat of
-                                          Nothing  -> (text.l) (NL "Losse eindjes...",EN "Loose ends...")
-                                          Just pat -> text (name pat)
-                                       )
+      XRefSharedLangTheme (Just pat) -> (Left . hdr . text . name) pat
+      XRefSharedLangTheme Nothing    -> (Left . hdr . text . l) (NL "Overig",EN "Remaining")
       XRefSharedLangRelation d        -> Right $ spanWith (xSafeLabel a,[],[]) (str . showRel $ d)
                                       --   Left $ divWith (xSafeLabel a,[],[]) 
                                       --                  (   (para . str $ showRel d)
@@ -237,7 +235,7 @@ refStuff x  =
      XRefSharedLangTheme mt
        -> RefStuff { typeOfSection    = theme
                    , chapterOfSection = SharedLang
-                   , nameOfThing      = maybe ":losseEindjes" name mt
+                   , nameOfThing      = maybe ":overig" name mt
                    , xrefPrefix       = Sec
                    }
   where (relation , rule  , expression , pattern' , theme) =
@@ -515,6 +513,10 @@ printPurposes = mconcat . map (printMarkup . explMarkup)
 
 printMarkup :: Markup -> Blocks
 printMarkup = fromList . amPandoc
+
+meaning2Blocks :: Meaning -> Blocks
+meaning2Blocks
+ = printMarkup . ameaMrk
 
 purposes2Blocks :: (HasDocumentOpts env) => env -> [Purpose] -> Blocks
 purposes2Blocks env ps

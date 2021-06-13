@@ -32,6 +32,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkCrudWarning
   , mkBoxRowsnhWarning
   , mkCaseProblemWarning
+  , checkNoDoubleLables
   , mkNoBoxItemsWarning
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedM, whenChecked, whenError
@@ -278,9 +279,22 @@ uniqueNames nameclass = uniqueBy name
                          <>  T.intercalate "\n    " (map (tshow . origin) (x:xs))
                          <>  "."
                          )
-        messageFor _ = fatal "messageFor must only be used on lists with more than one element!"
-    moreThanOne (_:_:_) = True
-    moreThanOne  _      = False
+        messageFor _ = fatal "messageFor must only be used on lists with more that one element!"
+        moreThanOne (_:_:_) = True
+        moreThanOne  _      = False
+checkNoDoubleLables :: Origin -> [ViewSegment] -> Guarded ()
+checkNoDoubleLables orig segments = addWarnings warnings $ pure()
+   where
+        warnings = mapMaybe toWarning . groupWith vsmlabel $ segments
+        toWarning :: [ViewSegment] -> Maybe Warning
+        toWarning [] = Nothing 
+        toWarning (h:tl) = case (vsmlabel h,tl) of
+             (Just l,_:_)  -> Just . Warning orig . T.intercalate "\n" $ 
+                   ["The label `"<>l<>"` occurs "<>tshow (length (h:tl))<>" times"
+                   ,"in the VIEW statement defined at: "
+                   ,"   "<>tshow orig<>"."
+                   ]
+             _ -> Nothing 
 
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " <> showA (explObj p)

@@ -368,7 +368,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> (pBraces (pViewSegment False `sepBy` pComma) `opt` [])
+                      <*> pBraces (pViewSegment False `sepBy` pComma) `opt` []
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos' nm cpt isDef ats html =
