@@ -60,12 +60,13 @@ chpConceptualAnalysis env lev fSpec
     | otherwise =
         --  *** Header of the theme: ***
         (xDefBlck env fSpec . XRefSharedLangTheme . patOfTheme) themeContent
-        -- The section starts with the reason why this pattern exists
+        -- The section starts with the reason(s) why this pattern exist(s)
      <> case patOfTheme themeContent of
           Just pat -> purposes2Blocks env (purposesOf fSpec outputLang' pat)
           Nothing  -> mempty
-        -- followed by a conceptual model for this pattern
+        -- Then we discuss the concepts that have their definition inside this pattern
      <> (mconcat . map printConcept . cptsOfTheme ) themeContent
+        -- Here we get an entity-relationship diagram of this pattern
      <> ( case (outputLang', patOfTheme themeContent) of
                (Dutch, Just pat)   -> -- announce the conceptual diagram
                                       para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . name) pat<> ".")
@@ -75,7 +76,10 @@ chpConceptualAnalysis env lev fSpec
                                       <>(xDefBlck env fSpec . pictOfPat) pat
                (_, Nothing)        -> mempty
         )
+        -- Now we discuss the attributes of each entity (with sufficiently documented attributes) in one subsection
      <> mconcat (map fst caSubsections)
+        -- Finally we discuss the remaining attributes (of smaller entities) and remaining relations
+        -- This list contains empty spots for relations without documentation.
      <> caRemainingRelations
      <>
     (   -- print the rules that are defined in this pattern.
@@ -101,7 +105,7 @@ chpConceptualAnalysis env lev fSpec
                         ,(plain.text.l) (NL "Betekenis", EN "Meaning")
                         ]
                         ( [[ (plain . text . name) attr
-                           , (intercalate (plain (text " ")) . map meaning2Blocks . decMean) rel  -- use "tshow.attType" for the technical type.
+                           , defineRel rel
                            ]
                           | attr<-clAtts cl, rel<-lookupRel attr
                           ]
@@ -117,9 +121,9 @@ chpConceptualAnalysis env lev fSpec
                       , name r==name attr, name cl==name s, attTyp attr==name t
                       , (not . null . decMean) rel ]
 
-      intercalate :: Blocks -> [Blocks] -> Blocks
-      intercalate _ [] = mempty
-      intercalate inter (b:bs) = b<>inter<>intercalate inter bs
+      defineRel :: Relation -> Blocks
+      defineRel rel = (fromList . concatMap (amPandoc . ameaMrk) . decMean) rel
+                      <>     (printPurposes . purposesOf fSpec outputLang') rel
 
       caSubsections :: [(Blocks, [Relation])]
       caSubsections=
@@ -134,7 +138,7 @@ chpConceptualAnalysis env lev fSpec
                       , (plain.text.l) (NL "Betekenis", EN "Meaning")
                       ]
                       ( [[ (plain . text) (name rel <> " " <> if null cls then tshow (sign rel) else l (NL " (Attribuut van ", EN " (Attribute of ") <> T.concat cls <> ")")
-                         , (fromList . concatMap (amPandoc . ameaMrk) . decMean) rel  -- use "tshow.attType" for the technical type.
+                         , defineRel rel  -- use "tshow.attType" for the technical type.
                          ]
                         | rel<-rels
                         , let cls = [ name cl | cl <-themeClasses, (_, entRels) <- [caEntity cl], rel `elem` entRels ]

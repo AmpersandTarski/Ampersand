@@ -358,7 +358,7 @@ orderingByTheme env fSpec
        pat:pats' -> let ( thm, rest) = partitionByTheme pat stuff
                     in thm : f rest pats'
        []        -> case stuff of
-                      (_,[],[],[]) -> []
+                      (_,[],[],_) -> []
                       _ -> fatal "No stuff should be left over."
 
   rul2rulCont :: Rule -> RuleCont
@@ -417,9 +417,10 @@ orderingByTheme env fSpec
           where rulesInTheme p = Set.filter ( \r -> Just (name p) == rrpat r) (fallRules fSpec)
        (themeDcls,restDcls) = L.partition (inThisTheme relsInTheme) rels
           where relsInTheme p = relsDefdIn p `Set.union` bindedRelationsIn p
+       -- The concepts documented in a theme are the ones for which a concept definition exists within that theme.
        (themeCpts,restCpts) = L.partition predicate cpts
-        where
-          predicate c = (not.null) [ () | Just pat<-[mPat], cd<-ptcds pat, cdcpt cd==name c]
+          where
+            predicate c = (not.null) [ () | Just pat<-[mPat], cd<-ptcds pat, cdcpt cd==name c]
        inThisTheme :: Eq a => (Pattern -> Set.Set a) -> a -> Bool
        inThisTheme allElemsOf x
          = case mPat of
