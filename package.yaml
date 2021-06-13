@@ -211,6 +211,7 @@ executables:
     main: Main.hs
     ghc-options:
       - -threaded
+      - -fwrite-ide-info
     dependencies: 
       - ampersand
       - Cabal == 3.2.1.0
