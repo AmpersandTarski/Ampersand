@@ -27,4 +27,6 @@ parserRoundtripTest = do
   success <- doAllQuickCheckPropertyTests
   if success
     then logInfo "✅ Passed."
-    else logError "❌Failed. Quickcheck tests."
+    else do
+            logError "❌Failed. Quickcheck tests."
+            exitWith (SomeTestsFailed ["Quickcheck test failed!"])
