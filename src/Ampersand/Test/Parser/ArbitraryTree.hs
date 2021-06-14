@@ -129,7 +129,7 @@ instance Arbitrary Meta where
     arbitrary = Meta <$> arbitrary <*> safeStr <*> safeStr
 
 instance Arbitrary P_RoleRule where
-    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
+    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr1
 
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary 
@@ -141,8 +141,8 @@ instance Arbitrary TType where
 
 instance Arbitrary Role where
     arbitrary =
-      oneof [ Role    <$> safeStr
-            , Service <$> safeStr
+      oneof [ Role    <$> safeStr1
+            , Service <$> safeStr1
             ]
 
 instance Arbitrary P_Pattern where
@@ -231,14 +231,14 @@ instance Arbitrary SrcOrTgt where
 instance Arbitrary a => Arbitrary (P_Rule a) where
     arbitrary = P_Rule 
         <$> arbitrary
-        <*> safeStr
+        <*> safeStr1
         <*> sized (genTerm 0) -- rule is a term level 0
         <*> arbitrary
         <*> arbitrary
         <*> arbitrary
 
 instance Arbitrary ConceptDef where
-    arbitrary = Cd <$> arbitrary <*> safeStr <*> safeStr
+    arbitrary = Cd <$> arbitrary <*> safeStr1 <*> safeStr
                    <*> safeStr  <*> safeStr
 
 instance Arbitrary PAtomPair where
@@ -265,7 +265,7 @@ instance Arbitrary PAtomValue where
   -- Arbitrary must produce valid input from an ADL-file, so no Xlsx stuff allowed here,
   -- otherwise it is likely that Quickcheck will fail because of it.
     arbitrary = oneof
-       [ScriptString <$> arbitrary <*> safeStr `suchThat`  stringConstraints,
+       [ScriptString <$> arbitrary <*> safeStr1 `suchThat`  stringConstraints,
 --      ScriptInt <$> arbitrary <*> arbitrary `suchThat` (0 <= ), -- TODO #1182 Show of ScriptInt doesn't pass the roundtrip.
         ScriptFloat <$> arbitrary <*> arbitrary `suchThat` (0 <= ) ,
         ScriptDate <$> arbitrary <*> arbitrary,
@@ -289,7 +289,7 @@ instance Arbitrary a => Arbitrary (P_SubIfc a) where
 
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary 
-                     <*> safeStr
+                     <*> safeStr1
                      <*> arbitrary `suchThat` notIsOne
                      <*> arbitrary
 
@@ -297,14 +297,14 @@ instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> arbitrary
+    arbitrary = P_Vd <$> arbitrary <*> safeStr1 <*> arbitrary
                     <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeFilePath
 
 instance Arbitrary a => Arbitrary (P_ViewSegment a) where
-    arbitrary = P_ViewSegment <$> (Just <$> safeStr) <*> arbitrary <*> arbitrary 
+    arbitrary = P_ViewSegment <$> (Just <$> safeStr1) <*> arbitrary <*> arbitrary 
 instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
     arbitrary =
         oneof [ P_ViewExp  <$> sized(genTerm 1) -- only accepts pTerm, no pRule.
@@ -317,7 +317,7 @@ instance Arbitrary PPurpose where
 instance Arbitrary PRef2Obj where
     arbitrary =
         oneof [
-            PRef2ConceptDef <$> safeStr,
+            PRef2ConceptDef <$> safeStr1,
             PRef2Relation <$> arbitrary,
             PRef2Rule <$> identifier,
             PRef2IdentityDef <$> identifier,
