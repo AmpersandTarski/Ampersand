@@ -170,16 +170,16 @@ pAtomValInPopulation :: Bool -> AmpParser Value
 -- as a term (singleton expression), an ambiguity might occur if we allow
 -- negative numbers. The minus sign could be confused with a complement operator. 
 -- For this reason, we introduced a possibility to constrain the value. 
--- constrained values have the constraint that a negative number is'n allowed. 
--- the user can lift the constraints by embeding the value in curly brackets. In 
+-- constrained values have the constraint that a negative number is not allowed. 
+-- The user can lift the constraints by embedding the value in curly brackets. In 
 -- such a case, the user could use a negative number as a singleton expression. 
-pAtomValInPopulation constrainsApply =
+pAtomValInPopulation constraintsApply =
               VBoolean True  <$ pKey "TRUE"
           <|> VBoolean False <$ pKey "FALSE"
           <|> VRealString <$> (T.pack <$> pString)
           <|> VDateTime <$> pUTCTime
           <|> VDate <$> pDay
-          <|> fromNumeric <$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
+          <|> fromNumeric <$> (if constraintsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713
    where fromNumeric :: Either Int Double -> Value
          fromNumeric num = case num of
              Left i -> VInt i
