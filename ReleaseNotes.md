@@ -2,7 +2,8 @@
 
 ## Unreleased
 * [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Warn about labels with identical names in sections of VIEW statement. 
-* [Issue #1163](https://github.com/AmpersandTarski/Ampersand/issues/1163) Idenfifiers starting with an underscore (`_`) are no longer allowed. 
+* [Issue #1163](https://github.com/AmpersandTarski/Ampersand/issues/1163) Idenfifiers starting with an underscore (`_`) are no longer allowed.
+* The obligation to start relation identifiers with a lower case letter and a concept identifier with an upper case letter has been lifted. The user may use lowercase and uppercase identifiers at will.
 * Some improvements to the way we test the build.
 ## v4.1.5 ( 2 June 2021)
 

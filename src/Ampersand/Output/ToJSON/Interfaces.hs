@@ -107,7 +107,7 @@ instance JSON TemplateKeyValue JSONTemplateKeyValue where
 
 instance JSON Interface JSONInterface where
  fromAmpersand env fSpec interface = JSONInterface
-  { ifcJSONid                 = escapeIdentifier . ifcname $ interface
+  { ifcJSONid                 = escapeIdentifier . ifcname $ interface  -- an ifcname may be a string, so it needs to be escaped.
   , ifcJSONlabel              = ifcname interface
   , ifcJSONifcObject          = fromAmpersand env fSpec (BxExpr $ ifcObj interface)
   , ifcJSONisAPI              = ifcIsAPI interface

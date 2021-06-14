@@ -11,7 +11,7 @@ module Ampersand.Input.ADL1.ParsingLib(
     -- * Positions
     currPos, posOf, valPosOf,
     -- * Basic parsers
-    pConid, pString, pAmpersandMarkup, pVarid, pCrudString,
+    pIdentifier, pString, pAmpersandMarkup, pCrudString,
     -- * special parsers
     pAtomValInPopulation, Value(..),
     -- * Parsers for special symbols
@@ -121,11 +121,12 @@ check predicate = tokenPrim showTok nextPos matchTok
 match :: Lexeme -> AmpParser String
 match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <?> show lx
 
---- Conid ::= UpperChar (Char | '_')*
-pConid :: AmpParser String
-pConid = check (\case
-  LexConId s -> Just s
-  _ -> Nothing) <?> "upper case identifier"
+--- Identifier ::= Alpha (Alphanum | '_')*
+pIdentifier :: AmpParser String
+pIdentifier
+ = check (\case
+            LexIdentifier s -> Just s
+            _               -> Nothing) <?> "identifier"
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
@@ -140,18 +141,11 @@ pAmpersandMarkup = check (\case
   LexMarkup s -> Just s
   _ -> Nothing) <?> "markup"
 
---- Varid ::= (LowerChar | '_') (Char | '_')*
-pVarid :: AmpParser String
-pVarid = check (\case
-  LexVarId s -> Just s
-  _ -> Nothing) <?> "lower case identifier"
-
 -- A non-empty string that contains only the the characters "crud" in any case (upper/lower), but each of them
 -- at most once. The order of the characters is free.
 pCrudString :: AmpParser String
 pCrudString = check (\case
-  LexConId s -> testCrud s
-  LexVarId s -> testCrud s
+  LexIdentifier s -> testCrud s
   _ -> Nothing) <?> "crud definition"
    where 
     testCrud s = 

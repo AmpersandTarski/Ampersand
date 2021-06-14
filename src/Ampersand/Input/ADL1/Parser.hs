@@ -244,16 +244,16 @@ pRelationDef = reorder <$> currPos
                       rel :: P_NamedRel   -- the named relation
                       rel = PNamedRel pos' nm (Just sign)
 
---- RelationNew ::= 'RELATION' Varid Signature
+--- RelationNew ::= 'RELATION' Identifier Signature
 pRelationNew :: AmpParser (Text,P_Sign,Props)
 pRelationNew = (,,) <$  pKey "RELATION"
-                    <*> asText pVarid
+                    <*> asText pIdentifier
                     <*> pSign
                     <*> return Set.empty
 
---- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
+--- RelationOld ::= Identifier '::' ConceptRef Fun ConceptRef
 pRelationOld :: AmpParser (Text,P_Sign,Props)
-pRelationOld = relOld <$> asText pVarid
+pRelationOld = relOld <$> asText pIdentifier
                       <*  pOperator "::"
                       <*> pConceptRef
                       <*> pFun
@@ -407,7 +407,7 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> pParens (pViewSegment True `sepBy` pComma)
 
 
---- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
+--- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Identifier)? SubInterface?
 pInterface :: AmpParser P_Interface
 pInterface = lbl <$> currPos                                       
                  <*> pInterfaceIsAPI
@@ -416,7 +416,7 @@ pInterface = lbl <$> currPos
                  <*> pMaybe pRoles 
                  <*> (pColon *> pTerm)          -- the expression of the interface object
                  <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
-                 <*> pMaybe (pChevrons $ asText pConid)  -- The view that should be used for this object
+                 <*> pMaybe (pChevrons $ asText pIdentifier)  -- The view that should be used for this object
                  <*> pSubInterface
     where lbl :: Origin -> Bool -> Text ->  a -> Maybe (NE.NonEmpty Role) -> Term TermPrim -> Maybe P_Cruds -> Maybe Text -> P_SubInterface -> P_Interface
           lbl p isAPI nm _params roles ctx mCrud mView sub
@@ -454,7 +454,7 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
                                Just (boxtype, atts) -> (boxtype,atts)       
         pBoxSpecification :: AmpParser (Text, [TemplateKeyValue])
         pBoxSpecification = pChevrons $
-                                (,) <$> asText (pVarid <|> pConid <|> anyKeyWord)
+                                (,) <$> asText (pIdentifier <|> anyKeyWord)
                                 <*> many pTemplateKeyValue
          
         anyKeyWord :: AmpParser String
@@ -465,10 +465,10 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
         pTemplateKeyValue = 
           TemplateKeyValue 
                  <$> currPos
-                 <*> asText (pVarid <|> pConid <|> anyKeyWord)
+                 <*> asText (pIdentifier <|> anyKeyWord)
                  <*> optional (id <$ pOperator "=" <*> asText pString)
 
---- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
+--- ObjDef ::= Label Term ('<' Identifier '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_BoxItemTermPrim
 pObjDef = pBoxItem <$> currPos
@@ -483,7 +483,7 @@ pObjDef = pBoxItem <$> currPos
     pObj :: AmpParser P_BoxItemTermPrim
     pObj = obj     <$> pTerm            -- the context expression (for example: I[c])
                    <*> pMaybe pCruds
-                   <*> pMaybe (pChevrons $ asText pConid) --for the view
+                   <*> pMaybe (pChevrons $ asText pIdentifier) --for the view
                    <*> pMaybe pSubInterface  -- the optional subinterface
           where obj ctx mCrud mView msub =
                   P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."
@@ -693,18 +693,19 @@ value2PAtomValue o v = case v of
 pAtt :: AmpParser P_BoxItemTermPrim
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
 pAtt = rebuild <$> currPos <*> try pLabel `opt` "" <*> try pTerm
-  where rebuild pos' nm ctx = P_BxExpr { obj_nm   = nm
-                                    , pos      = pos'
-                                    , obj_ctx  = ctx
-                                    , obj_crud = Nothing
-                                    , obj_mView = Nothing
-                                    , obj_msub = Nothing
-                                    }
+  where rebuild pos' nm ctx
+          = P_BxExpr { obj_nm    = nm
+                     , pos       = pos'
+                     , obj_ctx   = ctx
+                     , obj_crud  = Nothing
+                     , obj_mView = Nothing
+                     , obj_msub  = Nothing
+                     }
 
 --- NamedRelList ::= NamedRel (',' NamedRel)*
---- NamedRel ::= Varid Signature?
+--- NamedRel ::= Identifier Signature?
 pNamedRel :: AmpParser P_NamedRel
-pNamedRel = PNamedRel  <$> currPos <*> asText pVarid <*> pMaybe pSign
+pNamedRel = PNamedRel  <$> currPos <*> asText pIdentifier <*> pMaybe pSign
 
 --- Signature ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
 pSign :: AmpParser P_Sign
@@ -712,10 +713,10 @@ pSign = pBrackets sign
    where sign = mkSign <$> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef)
          mkSign src mTgt = P_Sign src (fromMaybe src mTgt)
 
---- ConceptName ::= Conid | Text
+--- ConceptName ::= Identifier | Text
 --- ConceptNameList ::= ConceptName (',' ConceptName)
 pConceptName ::   AmpParser Text
-pConceptName = asText $ pConid <|> pString
+pConceptName = asText $ pIdentifier <|> pString
 
 --- ConceptRef ::= ConceptName
 pConceptRef ::    AmpParser P_Concept
@@ -742,11 +743,11 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
                             <*> pAtomValue
                      )
 
---- ADLid ::= Varid | Conid | String
+--- ADLid ::= Identifier | String
 --- ADLidList ::= ADLid (',' ADLid)*
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pADLid :: AmpParser Text
-pADLid = asText $ pVarid <|> pConid <|> pString
+pADLid = asText $ pIdentifier <|> pString
 
 asText :: AmpParser String -> AmpParser Text
 asText = fmap T.pack

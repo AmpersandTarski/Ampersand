@@ -57,11 +57,12 @@ toLatexVariable txt =
       | otherwise                  ->        T.singleton h <> toLatexVariable tl
    where specialLaTeXChars :: [Char] -- Based on https://tex.stackexchange.com/questions/34580/escape-character-in-latex 
          specialLaTeXChars = "&%$#_{}~^\\" 
+
 -- Create an identifier that does not start with a digit and consists only of upper/lowercase ascii letters, underscores, and digits.
--- This function is injective.
+-- This function must be injective.
 escapeIdentifier :: Text -> Text
 escapeIdentifier txt = case T.uncons txt of
-  Nothing -> "_EMPTY_"
+  Nothing -> "_EMPTY_"  -- Why not "" (just an empty string) ??
   Just (c0,cs) -> encode False c0 <> mapText (encode True) cs
   where encode :: Bool -> Char -> Text
         encode allowNum c | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = T.singleton c

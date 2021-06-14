@@ -46,21 +46,10 @@ identifier = suchThat str2 noKeyword
           -- The prelude functions accept Unicode characters
           idChar = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
           str2 :: Gen Text
-          str2   = (T.pack <$> listOf idChar) `suchThat` (\s -> T.length s > 1)
-
--- Genrates a valid ADL upper-case identifier
-upperId :: Gen Text
-upperId = suchThat identifier startUpper
-    where startUpper txt = case T.uncons txt of
+          str2   = (T.pack <$> listOf idChar) `suchThat` (\s -> T.length s > 1 && startAlpha s)
+          startAlpha txt = case T.uncons txt of
+            Just (h,_) ->  isAlpha h
             Nothing -> False
-            Just (h,_) -> isUpper h
-
--- Genrates a valid ADL lower-case identifier
-lowerId :: Gen Text
-lowerId = suchThat identifier startLower
-    where startLower txt = case T.uncons txt of
-            Nothing -> False
-            Just (h,_) ->  isLower h
 
 -- Generates an object
 objTermPrim :: Bool -> Int -> Gen (P_BoxItem TermPrim)
@@ -80,8 +69,8 @@ genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (pure Nothing)
 
 makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
-  oneof $ (P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc)
-         :[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
+  oneof $ (P_BxExpr <$> identifier  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc)
+         :[P_BxTxt  <$> identifier  <*> arbitrary <*> safeStr | isTxtAllowed]
      where term = Prim <$> genPrim
            ifc  = if n == 0 then pure Nothing
                   else Just <$> ifcGen (n`div`2)
@@ -118,7 +107,7 @@ instance Arbitrary Origin where
 
 instance Arbitrary P_Context where
     arbitrary = PCtx
-       <$> upperId   -- name
+       <$> identifier   -- name
        <*> arbitrary  -- pos
        <*> arbitrary  -- lang
        <*> arbitrary  -- markup
@@ -163,7 +152,7 @@ instance Arbitrary P_Pattern where
 
 instance Arbitrary P_Relation where
     arbitrary = P_Relation 
-         <$> lowerId
+         <$> identifier
          <*> arbitrary
          <*> arbitrary
          <*> listOf safeStr1 `suchThat` (\xs -> 3 <= length xs)
@@ -270,7 +259,7 @@ instance Arbitrary P_Population where
         ]
 
 instance Arbitrary P_NamedRel where
-    arbitrary = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
+    arbitrary = PNamedRel <$> arbitrary <*> identifier <*> arbitrary
 
 instance Arbitrary PAtomValue where
   -- Arbitrary must produce valid input from an ADL-file, so no Xlsx stuff allowed here,
@@ -330,12 +319,12 @@ instance Arbitrary PRef2Obj where
         oneof [
             PRef2ConceptDef <$> safeStr,
             PRef2Relation <$> arbitrary,
-            PRef2Rule <$> upperId,
-            PRef2IdentityDef <$> upperId,
-            PRef2ViewDef <$> upperId,
-            PRef2Pattern <$> upperId,
-            PRef2Interface <$> upperId,
-            PRef2Context <$> upperId
+            PRef2Rule <$> identifier,
+            PRef2IdentityDef <$> identifier,
+            PRef2ViewDef <$> identifier,
+            PRef2Pattern <$> identifier,
+            PRef2Interface <$> identifier,
+            PRef2Context <$> identifier
         ]
 
 instance Arbitrary PMeaning where
@@ -346,7 +335,7 @@ instance Arbitrary PMessage where
 
 instance Arbitrary P_Concept where
     arbitrary = frequency 
-      [ (100, PCpt <$> upperId)
+      [ (100, PCpt <$> identifier)
       , (  1, pure P_ONE)
       ]
 

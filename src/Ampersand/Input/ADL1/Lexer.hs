@@ -152,12 +152,10 @@ mainLexer p ('<':d:s) = if isOperator ['<',d]
 
 mainLexer p cs@(c:s)
      | isAlpha c
-         = let (name', p', s')    = scanIdent (addPos 1 p) s
+         = let (name', p', s')    = scanTailIdent (addPos 1 p) s
                name''             = c:name'
                tokt | iskw name'' = LexKeyword name''
-                    | otherwise   = if isLower c
-                                    then LexVarId name''
-                                    else LexConId name''
+                    | otherwise   = LexIdentifier name''
            in returnToken tokt p mainLexer p' s'
      | isOperatorBegin c
          = let (name', s') = getOp cs
@@ -178,6 +176,11 @@ mainLexer p cs@(c:s)
      | otherwise  = lexerError (UnexpectedChar c) p
     where beginFile (FilePos _ 1 1) = True
           beginFile _ = False
+          scanTailIdent :: FilePos -> String -> (String, FilePos, String)
+          scanTailIdent p' str
+           = let (nm,rest) = span isIdChar str in (nm,addPos (length nm) p',rest)
+          isIdChar :: Char -> Bool
+          isIdChar x =  isAlphaNum x || x == '_'
 
 -----------------------------------------------------------
 -----------------------------------------------------------
@@ -207,9 +210,6 @@ isOperatorBegin  = locatein (mapMaybe head operators)
          head (a:_) = Just a
          head []    = Nothing
 
-isIdChar :: Char -> Bool
-isIdChar c =  isAlphaNum c || c == '_'
-
 -- Finds the longest prefix of cs occurring in keywordsops
 getOp :: String -> (String, String)
 getOp cs = findOper operators cs ""
@@ -221,10 +221,6 @@ getOp cs = findOper operators cs ""
               else findOper found rest (op ++ [c])
               where found = [s' | o:s'<-ops, c==o]
 
--- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the resting contents.
-scanIdent :: FilePos -> String -> (String, FilePos, String)
-scanIdent p s = let (nm,rest) = span isIdChar s
-                in (nm,addPos (length nm) p,rest)
 
 
 -----------------------------------------------------------

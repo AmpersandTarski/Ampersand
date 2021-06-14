@@ -39,7 +39,7 @@ fst4 (x,_,_,_) = x
 --   The process starts by parsing an XML-file by means of function `processStraight` into a data structure called `archiRepo`. This function uses arrow-logic from the HXT-module.
 --   The resulting data structure contains the folder structure of the tool Archi (https://github.com/archimatetool/archi) and represents the model-elements and their properties.
 --   A lookup-function, `typeLookup`,is derived from `archiRepo`.
---   It assigns the Archi-type (e.g. Business Process) to the identifier of an arbitrary Archi-object (e.g. "0957873").
+--   It assigns the Archi-type (e.g. Business Process) to the identifier of an arbitrary Archi-object (e.g. "id_0957873").
 --   Then, the properties have to be provided with identifiers (see class `WithProperties`), because Archi represents them just as key-value pairs.
 --   The function `grindArchi` retrieves the population of meta-relations
 --   It produces the P_Populations and P_Declarations that represent the ArchiMate model.
@@ -527,10 +527,14 @@ translateArchiElem label (srcLabel,tgtLabel) maybeViewName props tuples
      ref_to_signature = P_Sign (PCpt srcLabel) (PCpt tgtLabel)
 
 -- | Function `relCase` is used to generate relation identifiers that are syntactically valid in Ampersand.
+--   Pre:  the argument of relCase starts with a letter (either lower or uppercase)
 relCase :: Text -> Text
-relCase str = case T.uncons str of
-  Nothing -> fatal "fatal empty relation identifier."
-  Just (c,cs) -> escapeIdentifier . T.cons (toLower c) $ cs
+relCase str = escapeIdentifier
+             ( case T.uncons str of
+                Just (c,cs) | isLower c -> str
+                            | isUpper c -> T.cons (toLower c) cs
+                _                       -> fatal "Illegal relation identifier in 'relCase'."
+             )
 
 -- | Function `unFix` is used to remove the "Relationship" suffix, which is specific to Archi.
 unFix :: Text -> Text

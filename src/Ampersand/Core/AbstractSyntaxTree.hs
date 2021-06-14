@@ -1123,7 +1123,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
               c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
               implicitly = if typ == Object then "(implicitly) " else ""
               example :: [Text]
-              example = case typ of
+              example = case typ of  -- I have summed up all alternatives to be sure to be complete. So I won't use the wildcard pattern at the end.
                   Alphanumeric     -> ["ALPHANUMERIC types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
                   BigAlphanumeric  -> ["BIGALPHANUMERIC types are texts (max 64k chars) surrounded with double quotes (\"-characters)."]
                   Boolean          -> ["BOOLEAN types can have the value TRUE or FALSE (without surrounding quotes)."]
@@ -1133,11 +1133,12 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                   HugeAlphanumeric -> ["HUGEALPHANUMERIC types are texts (max 16M chars) surrounded with double quotes (\"-characters)."]
                   Integer          -> ["INTEGER types are decimal numbers (max 20 positions), e.g. 4711 or -4711 (without surrounding quotes)"]
                   Password         -> ["PASSWORD types are texts (max 255 chars) surrounded with double quotes (\"-characters)."]
-                  Object           -> ["OBJECT types are non-scalar atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
-                  _                -> fatal $ "There is no example denotational syntax for a value of type `"<>tshow typ<>"`." 
+                  Object           -> ["OBJECT types are atoms represented by an identifier (max 255 chars) surrounded with double quotes (\"-characters)."]
+                  Binary           -> fatal $ "There is no example denotational syntax for a value of type `"<>tshow typ<>"`." 
+                  BigBinary        -> fatal $ "There is no example denotational syntax for a value of type `"<>tshow typ<>"`." 
+                  HugeBinary       -> fatal $ "There is no example denotational syntax for a value of type `"<>tshow typ<>"`." 
+                  TypeOfOne        -> fatal $ "There is no example denotational syntax for a value of type `"<>tshow typ<>"`." -- Why not "ONE" ???
          dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
-     
-
 
 -- | The typology of a context is the partioning of the concepts in that context into 
 --   sets such that (isa\/isa~)*;typology |- typology

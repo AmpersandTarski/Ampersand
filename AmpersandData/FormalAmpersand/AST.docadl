@@ -184,13 +184,10 @@ It refers the the total of all populations in relations and concepts inside that
 
 CONCEPT RelPopu "The content of a relation"
 CONCEPT CptPopu "The content of a concept"
-CONCEPT Pair "A pair is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
+CONCEPT Pair "A pair is a ordered structure that contains two atoms."
 CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space."
 REPRESENT Blob TYPE BIGBINARY
 CONCEPT String "A string is a pString expected to be less than 256 characters."
---HJO20150420: Uitgezet: CONCEPT Conid "A conid is an identifier starting with an uppercase"
---HJO20150420: Uitgezet: CONCEPT Varid "A varid is an identifier starting with a lowercase"
---HJO20150420: Uitgezet: CONCEPT ADLid "An ADLid is an identifier of type pVarid <|> pConid <|> pString"
 CONCEPT Isa "An Isa, or generalization rule, represents an is-a-relation between two concepts, one of which we call specific and the other generic. It means that any atom of the specific concept is an atom of the generic concept as well."
 CONCEPT IsE "An IsE, or generalization rule, is the is-relation between one concept, which is called specific, and other concepts which are called generic. It means that all atoms of the specific concepts are all atoms of the intersection set of the generic concepts. Note that if there is one generic concept, the IsE can be regarded as a synonym definition."
 CONCEPT Signature "A signature is a pair of concepts, which are called source concept and target concept."
