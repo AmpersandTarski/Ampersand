@@ -223,6 +223,7 @@ writePicture pict = do
   --  writeDot Canon  --Pretty-printed Dot output with no layout performed.
   --  writeDot DotOutput --Reproduces the input along with layout information.
     writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
+  -- writeDot imagePathRelativeToCurrentDir Canon  -- To obtain the Graphviz source code of the images
   -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
   -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file 
    where
@@ -287,7 +288,7 @@ instance ReferableFromPandoc Picture where
            Fpdf   -> "png"   -- When Pandoc makes a PDF file, Ampersand delivers the pictures in .png format. .pdf-pictures don't seem to work.
            Fdocx  -> "png"   -- When Pandoc makes a .docx file, Ampersand delivers the pictures in .pdf format. The .svg format for scalable rendering does not work in MS-word.
            Fhtml  -> "png"
-           _      -> "pdf"
+           _      -> "dot"
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]  -- ^ The concepts to draw in the graph
                                    , csRels :: [Relation]   -- ^ The relations, (the edges in the graph)
