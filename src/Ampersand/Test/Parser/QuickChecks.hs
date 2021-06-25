@@ -52,7 +52,7 @@ doAllQuickCheckPropertyTests =
 
 doRoundtripTest :: RIO env TestResult
 doRoundtripTest = do
-  qcResult <- liftIO . quickCheckWithResult myArgs $ prop_parserRoundtrip
+  qcResult <- liftIO . quickCheckWithResult checkArgs $ prop_parserRoundtrip
   pure
     TestResult
       { qcPropName = "Prettyprint/Parser roundtrip.",
@@ -61,7 +61,15 @@ doRoundtripTest = do
         qcQuickCheckResult = qcResult
       }
   where
-    myArgs = stdArgs {chatty = False}
+    checkArgs :: Args
+    checkArgs = Args
+      { replay          = Nothing
+      , maxSuccess      = 100
+      , maxDiscardRatio = 8
+      , maxSize         = 15      -- otherwise there's nothing quick about it.
+      , maxShrinks      = 50 
+      , chatty          = True
+      }
 
 prop_parserRoundtrip :: P_Context -> Bool
 prop_parserRoundtrip pCtx =
