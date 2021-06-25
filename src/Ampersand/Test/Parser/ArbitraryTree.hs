@@ -82,8 +82,8 @@ objTermPrim isTxtAllowed i =
 
 makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
-  oneof $ (P_BxExpr <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc)
-         :[P_BxTxt  <$> lowerId  <*> arbitrary <*> safeStr | isTxtAllowed]
+  oneof $ (P_BxExpr <$> identifier  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc)
+         :[P_BxTxt  <$> identifier  <*> arbitrary <*> safeStr | isTxtAllowed]
      where term = Prim <$> genPrim
            ifc  = if n == 0 then pure Nothing
                   else Just <$> ifcGen (n`div`2)
@@ -120,7 +120,7 @@ instance Arbitrary Origin where
 
 instance Arbitrary P_Context where
     arbitrary = PCtx
-       <$> upperId   -- name
+       <$> identifier   -- name
        <*> arbitrary  -- pos
        <*> arbitrary  -- lang
        <*> arbitrary  -- markup
@@ -330,7 +330,7 @@ instance Arbitrary PPurpose where
 instance Arbitrary PRef2Obj where
     arbitrary =
         oneof [
-            PRef2ConceptDef <$> upperId,
+            PRef2ConceptDef <$> identifier,
             PRef2Relation <$> arbitrary,
             PRef2Rule <$> identifier,
             PRef2IdentityDef <$> identifier,
