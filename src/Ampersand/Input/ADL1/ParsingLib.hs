@@ -11,7 +11,7 @@ module Ampersand.Input.ADL1.ParsingLib(
     -- * Positions
     currPos, posOf, valPosOf,
     -- * Basic parsers
-    pConid, pString, pAmpersandMarkup, pVarid, pCrudString,
+    pConid, pDoubleQuotedString, pAmpersandMarkup, pVarid, pCrudString,
     -- * special parsers
     pAtomValInPopulation, Value(..),
     -- * Parsers for special symbols
@@ -27,7 +27,7 @@ module Ampersand.Input.ADL1.ParsingLib(
 import           Ampersand.Basics hiding (many,try)
 import           Ampersand.Input.ADL1.FilePos (Origin(..),FilePos(..))
 import           Ampersand.Input.ADL1.LexerToken(Token(..),Lexeme(..),lexemeText)
-import           RIO.Char(toUpper)
+import RIO.Char ( toUpper, isLower, isUpper ) 
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -124,14 +124,19 @@ match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <
 --- Conid ::= UpperChar (Char | '_')*
 pConid :: AmpParser String
 pConid = check (\case
-  LexConId s -> Just s
+  LexSafeID s@(h:_) -> if isUpper h then Just s else Nothing
   _ -> Nothing) <?> "upper case identifier"
 
+--- Name ::= Letter (AlphaNumericChar | '_')*
+pSafeID :: AmpParser String
+pSafeID = check (\case
+  LexSafeID s -> Just s
+  _ -> Nothing) <?> "identifier (name)"
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
-pString :: AmpParser String
-pString = check (\case
-  LexString s -> Just s
+pDoubleQuotedString :: AmpParser String
+pDoubleQuotedString = check (\case
+  LexDubbleQuotedString s -> Just s
   _ -> Nothing) <?> "string"
 
 --- Markup ::= '{+' Any* '+}'
@@ -143,15 +148,14 @@ pAmpersandMarkup = check (\case
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpParser String
 pVarid = check (\case
-  LexVarId s -> Just s
+  LexSafeID s@(h:_) -> if isLower h then Just s else Nothing
   _ -> Nothing) <?> "lower case identifier"
 
 -- A non-empty string that contains only the the characters "crud" in any case (upper/lower), but each of them
 -- at most once. The order of the characters is free.
 pCrudString :: AmpParser String
 pCrudString = check (\case
-  LexConId s -> testCrud s
-  LexVarId s -> testCrud s
+  LexSafeID s -> testCrud s
   _ -> Nothing) <?> "crud definition"
    where 
     testCrud s = 
@@ -182,7 +186,7 @@ pAtomValInPopulation :: Bool -> AmpParser Value
 pAtomValInPopulation constrainsApply =
               VBoolean True  <$ pKey "TRUE"
           <|> VBoolean False <$ pKey "FALSE"
-          <|> VRealString <$> (T.pack <$> pString)
+          <|> VRealString <$> (T.pack <$> pDoubleQuotedString)
           <|> VDateTime <$> pUTCTime
           <|> VDate <$> pDay
           <|> fromNumeric <$> (if constrainsApply then pUnsignedNumeric else pNumeric) -- Motivated in issue #713

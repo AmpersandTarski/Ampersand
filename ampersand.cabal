@@ -3391,7 +3391,7 @@ executable ampersand
       app/Ampersand
   default-extensions:
       NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded -fwrite-ide-info
   build-depends:
       Cabal ==3.2.1.0
     , HStringTemplate ==0.8.*

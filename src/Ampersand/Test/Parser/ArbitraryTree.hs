@@ -5,7 +5,7 @@ module Ampersand.Test.Parser.ArbitraryTree () where
 
 import           Ampersand.Basics
 import           Ampersand.Core.ParseTree
-import           Ampersand.Input.ADL1.Lexer (keywords)
+import Ampersand.Input.ADL1.Lexer ( keywords, isSafeIdChar ) 
 import           RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -40,24 +40,29 @@ safeFilePath = T.unpack <$> safeStr
 
 -- Genrates a valid ADL identifier
 identifier :: Gen Text
-identifier = suchThat str2 noKeyword
-    where noKeyword :: Text -> Bool
-          noKeyword x = x `notElem` map T.pack keywords
-          -- The prelude functions accept Unicode characters
-          idChar = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
-          str2 :: Gen Text
-          str2   = (T.pack <$> listOf idChar) `suchThat` (\s -> T.length s > 1)
+identifier = (T.cons <$> firstChar <*> (T.pack <$> listOf restChar))
+               `suchThat` noKeyword
+  where
+    firstChar :: Gen Char
+    firstChar = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar True
+    restChar :: Gen Char
+    restChar = arbitrary `suchThat` isAscii `suchThat` isSafeIdChar False 
+
+
+    noKeyword :: Text -> Bool
+    noKeyword x = x `notElem` map T.pack keywords
+
 
 -- Genrates a valid ADL upper-case identifier
 upperId :: Gen Text
-upperId = suchThat identifier startUpper
+upperId = identifier `suchThat` startUpper
     where startUpper txt = case T.uncons txt of
             Nothing -> False
             Just (h,_) -> isUpper h
 
 -- Genrates a valid ADL lower-case identifier
 lowerId :: Gen Text
-lowerId = suchThat identifier startLower
+lowerId = identifier `suchThat` startLower
     where startLower txt = case T.uncons txt of
             Nothing -> False
             Just (h,_) ->  isLower h
@@ -74,9 +79,6 @@ objTermPrim isTxtAllowed i =
           genPrim :: Gen TermPrim
           genPrim = PNamedR <$> arbitrary
 
---TODO: refactor obj/ifc generators
-genObj :: Arbitrary a => Bool -> Int -> Gen (P_BoxItem a)
-genObj isTxtAllowed = makeObj isTxtAllowed arbitrary genIfc (pure Nothing)
 
 makeObj :: Bool -> Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe Text) -> Int -> Gen (P_BoxItem a)
 makeObj isTxtAllowed genPrim ifcGen genView n =
@@ -87,11 +89,11 @@ makeObj isTxtAllowed genPrim ifcGen genView n =
                   else Just <$> ifcGen (n`div`2)
         
 genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
-genIfc = subIfc $ genObj True
+genIfc = subIfc $ makeObj True arbitrary genIfc (pure Nothing)
 
 subIfc :: (Int -> Gen (P_BoxItem a)) -> Int -> Gen (P_SubIfc a)
 subIfc objGen n 
-    | n == 0 = P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
+    | n == 0 = P_InterfaceRef <$> arbitrary <*> arbitrary <*> identifier
     | otherwise = P_Box  <$> arbitrary <*> arbitrary <*> vectorOf n (objGen$ n`div`2)
 
 instance Arbitrary BoxHeader where
@@ -140,7 +142,7 @@ instance Arbitrary Meta where
     arbitrary = Meta <$> arbitrary <*> safeStr <*> safeStr
 
 instance Arbitrary P_RoleRule where
-    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 safeStr
+    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 identifier
 
 instance Arbitrary Representation where
     arbitrary = Repr <$> arbitrary 
@@ -152,12 +154,12 @@ instance Arbitrary TType where
 
 instance Arbitrary Role where
     arbitrary =
-      oneof [ Role    <$> safeStr
-            , Service <$> safeStr
+      oneof [ Role    <$> identifier
+            , Service <$> identifier
             ]
 
 instance Arbitrary P_Pattern where
-    arbitrary = P_Pat <$> arbitrary <*> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Pat <$> arbitrary <*> identifier  <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
@@ -242,14 +244,14 @@ instance Arbitrary SrcOrTgt where
 instance Arbitrary a => Arbitrary (P_Rule a) where
     arbitrary = P_Rule 
         <$> arbitrary
-        <*> safeStr
+        <*> identifier
         <*> sized (genTerm 0) -- rule is a term level 0
         <*> arbitrary
         <*> arbitrary
         <*> arbitrary
 
 instance Arbitrary ConceptDef where
-    arbitrary = Cd <$> arbitrary <*> safeStr <*> safeStr
+    arbitrary = Cd <$> arbitrary <*> identifier <*> safeStr
                    <*> safeStr  <*> safeStr
 
 instance Arbitrary PAtomPair where
@@ -289,7 +291,7 @@ instance Arbitrary PAtomValue where
            isValid c = c `notElem` ['\'', '"', '\\']
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> arbitrary
-                      <*> safeStr1
+                      <*> identifier
                       <*> arbitrary
                       <*> sized (objTermPrim False)
                       <*> arbitrary
@@ -300,7 +302,7 @@ instance Arbitrary a => Arbitrary (P_SubIfc a) where
 
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary 
-                     <*> safeStr
+                     <*> identifier
                      <*> arbitrary `suchThat` notIsOne
                      <*> arbitrary
 
@@ -308,14 +310,14 @@ instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized (objTermPrim False)
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> arbitrary
+    arbitrary = P_Vd <$> arbitrary <*> identifier <*> arbitrary
                     <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeFilePath
 
 instance Arbitrary a => Arbitrary (P_ViewSegment a) where
-    arbitrary = P_ViewSegment <$> (Just <$> safeStr) <*> arbitrary <*> arbitrary 
+    arbitrary = P_ViewSegment <$> (Just <$> identifier) <*> arbitrary <*> arbitrary 
 instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
     arbitrary =
         oneof [ P_ViewExp  <$> sized(genTerm 1) -- only accepts pTerm, no pRule.
@@ -328,14 +330,14 @@ instance Arbitrary PPurpose where
 instance Arbitrary PRef2Obj where
     arbitrary =
         oneof [
-            PRef2ConceptDef <$> safeStr,
+            PRef2ConceptDef <$> upperId,
             PRef2Relation <$> arbitrary,
-            PRef2Rule <$> upperId,
-            PRef2IdentityDef <$> upperId,
-            PRef2ViewDef <$> upperId,
-            PRef2Pattern <$> upperId,
-            PRef2Interface <$> upperId,
-            PRef2Context <$> upperId
+            PRef2Rule <$> identifier,
+            PRef2IdentityDef <$> identifier,
+            PRef2ViewDef <$> identifier,
+            PRef2Pattern <$> identifier,
+            PRef2Interface <$> identifier,
+            PRef2Context <$> identifier
         ]
 
 instance Arbitrary PMeaning where
