@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Input.ADL1.Lexer
@@ -20,6 +19,7 @@ module Ampersand.Input.ADL1.Lexer
     , lexemeText
     , initPos
     , FilePos(..)
+    , isSafeIdChar
 ) where
 
 import           Ampersand.Basics
@@ -30,7 +30,6 @@ import           Ampersand.Input.ADL1.LexerToken
 import           RIO.Char hiding(isSymbol)
 import qualified RIO.List as L
 import qualified RIO.Char.Partial as Partial (chr)
-import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import           RIO.Time
 import           Numeric
@@ -124,7 +123,7 @@ mainLexer :: Lexer
 
 mainLexer _ [] =  return []
 
-mainLexer p ('-':'-':s) = mainLexer p (skipLine s) --TODO: Test if we should increase line number and reset the column number
+mainLexer p ('-':'-':s) = mainLexer p (skipLine s)
 
 mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpaceNoTab s
                                     isSpaceNoTab x = isSpace x && (not .  isTab) x
@@ -137,7 +136,7 @@ mainLexer p ('{':'+':s) = lexMarkup mainLexer (addPos 2 p) s
 mainLexer p ('"':ss) =
     let (s,swidth,rest) = scanString ss
     in case rest of
-         ('"':xs) -> returnToken (LexString s) p mainLexer (addPos (swidth+2) p) xs
+         ('"':xs) -> returnToken (LexDubbleQuotedString s) p mainLexer (addPos (swidth+2) p) xs
          _        -> lexerError (NonTerminatedString s) p
          
 
@@ -151,13 +150,11 @@ mainLexer p ('<':d:s) = if isOperator ['<',d]
                         else returnToken (LexSymbol    '<')    p mainLexer (addPos 1 p) (d:s)
 
 mainLexer p cs@(c:s)
-     | isIdStart c || isUpper c
+     | isSafeIdChar True c
          = let (name', p', s')    = scanIdent (addPos 1 p) s
-               name''               = c:name'
-               tokt   | iskw name'' = LexKeyword name''
-                      | otherwise = if isIdStart c
-                                    then LexVarId name''
-                                    else LexConId name''
+               name''             = c:name'
+               tokt | iskeyword name'' = LexKeyword name''
+                    | otherwise   = LexSafeID name''
            in returnToken tokt p mainLexer p' s'
      | isOperatorBegin c
          = let (name', s') = getOp cs
@@ -189,28 +186,27 @@ mainLexer p cs@(c:s)
 -- Check on keywords - operators - special chars
 -----------------------------------------------------------
 
-locatein :: Ord a => [a] -> a -> Bool
-locatein es e = e `elem` Set.fromList es
-
-iskw :: String -> Bool
-iskw = locatein keywords
+iskeyword :: String -> Bool
+iskeyword str = str `elem` keywords
 
 isSymbol :: Char -> Bool
-isSymbol = locatein symbols
+isSymbol c = c `elem` symbols
 
 isOperator :: String -> Bool
-isOperator  = locatein operators
+isOperator str = str `elem` operators
 
 isOperatorBegin :: Char -> Bool
-isOperatorBegin  = locatein (mapMaybe head operators)
+isOperatorBegin c = c `elem` mapMaybe head operators
    where head :: [a] -> Maybe a
          head (a:_) = Just a
          head []    = Nothing
-isIdStart :: Char -> Bool
-isIdStart c = isLower c || c == '_'
 
-isIdChar :: Char -> Bool
-isIdChar c =  isAlphaNum c || c == '_'
+-- | Tells if a character is valid as character in an identifier. Because there are
+--   different rules for the first character of an identifier and the rest of the
+--   characters of an identifier, a boolean is required that tells if this is the
+--   first character.
+isSafeIdChar :: Bool -> Char -> Bool
+isSafeIdChar isFirst c =  isLetter c || (not isFirst && (isAlphaNum c || c == '_'))
 
 -- Finds the longest prefix of cs occurring in keywordsops
 getOp :: String -> (String, String)
@@ -223,9 +219,9 @@ getOp cs = findOper operators cs ""
               else findOper found rest (op ++ [c])
               where found = [s' | o:s'<-ops, c==o]
 
--- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the resting contents.
+-- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the remaining contents.
 scanIdent :: FilePos -> String -> (String, FilePos, String)
-scanIdent p s = let (nm,rest) = span isIdChar s
+scanIdent p s = let (nm,rest) = span (isSafeIdChar False) s
                 in (nm,addPos (length nm) p,rest)
 
 

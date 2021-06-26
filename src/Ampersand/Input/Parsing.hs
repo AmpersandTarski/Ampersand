@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections #-}
+﻿{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- This module provides an interface to be able to parse a script and to
@@ -9,7 +9,7 @@ module Ampersand.Input.Parsing (
     , parseFormalAmpersand
     , parsePrototypeContext
     , parseRule
-    , runParser
+    , parseCtx
     , ParseCandidate(..) -- exported for use with --daemon
 ) where
 

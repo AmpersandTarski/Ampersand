@@ -2,10 +2,11 @@
 
 ## Unreleased
 * [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Warn about labels with identical names in sections of VIEW statement. 
-
+* [Issue #1163](https://github.com/AmpersandTarski/Ampersand/issues/1163) Idenfifiers starting with an underscore (`_`) are no longer allowed. 
+* Some improvements to the way we test the build.
 ## v4.1.5 ( 2 June 2021)
 
-* Upgrade to [LTS Haskell 17.9 (ghc-8.10.4)](https://www.stackage.org/lts-17.9) . This includes an upgrade of Pandoc. This might effect tables in the documentation that is generated with the `documentation` command.
+* Upgrade to [LTS Haskell 17.9 (ghc-8.10.4)](https://www.stackage.org/lts-17.9) . This includes an upgrade of Pandoc. This might affect tables in the documentation that is generated with the `documentation` command.
 * Add switch `--numeric-version`
 * Improvement to the CI/CD. We abandon travis-ci and appveyor, and are now totally using github actions for our Continous Integration. 
 

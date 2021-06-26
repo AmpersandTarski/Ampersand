@@ -1,5 +1,5 @@
 # Inspired by https://tech.freckle.com/2021/05/18/haskell-on-actions/
-name: CI_test 🚀
+name: Build and test 🚀
 
 on:
   pull_request:
@@ -129,7 +129,7 @@ jobs:
         uses: freckle/stack-action@main # stack-action does all these steps: dependencies, build, test.
         with:
           stack-arguments: '--copy-bins --flag ampersand:buildAll'
-          weeder: false
+          weeder: true
           hlint: true
       - 
         name: Upload artifacts (Linux)  📤
