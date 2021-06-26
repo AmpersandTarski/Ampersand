@@ -48,7 +48,7 @@ build:
 # Ampersand is large, and sometimes stack may crash out of memory.
 # Reducing the number of parallel jobs lowers the memory use to acceptable levels.
 # This resolved issue #1040 and is inspired on https://github.com/commercialhaskell/stack/issues/1910.
-jobs: 2
+jobs: 4
 
 # Require a specific version of stack, using version ranges
 # require-stack-version: -any # Default

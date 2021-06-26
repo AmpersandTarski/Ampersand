@@ -1,5 +1,6 @@
 # Ampersand
 
+[![Build & Test 🚀](https://github.com/AmpersandTarski/Ampersand/actions/workflows/ci2.yml/badge.svg)](https://github.com/AmpersandTarski/Ampersand/actions/workflows/ci2.yml)
 [![Latest Release](https://img.shields.io/github/release/AmpersandTarski/Ampersand.svg)](https://github.com/AmpersandTarski/Ampersand/releases/latest)
 
 ## Releases
