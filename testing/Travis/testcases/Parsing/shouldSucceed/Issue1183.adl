@@ -1,0 +1,5 @@
+CONTEXT ISSUE1183
+  
+CONCEPT SomeConcept {+description+} ""
+
+ENDCONTEXT
