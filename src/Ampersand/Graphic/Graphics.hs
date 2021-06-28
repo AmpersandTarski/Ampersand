@@ -86,8 +86,8 @@ makePicture env fSpec pr =
                                , dotProgName = graphVizCmdForConceptualGraph
                                , caption =
                                    case outputLang' of
-                                      English -> "Concept diagram of the rules about " <> name cpt
-                                      Dutch   -> "Conceptueel diagram van de regels rond " <> name cpt
+                                      English -> "Concept diagram of " <> name cpt
+                                      Dutch   -> "Conceptueel diagram van " <> name cpt
                                }
    PTDeclaredInPat pat -> Pict { pType = pr
                                , scale = scale'
