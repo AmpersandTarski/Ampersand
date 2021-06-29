@@ -310,6 +310,7 @@ pConceptDef       = Cd <$> currPos
                        <*> pConceptName
                        <*> (asText pDoubleQuotedString <?> "concept definition (string)")
                        <*> (asText pDoubleQuotedString `opt` "") -- a reference to the source of this definition.
+                       <*> many pMeaning
 
 --- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
 pRepresentation :: AmpParser Representation

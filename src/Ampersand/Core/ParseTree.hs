@@ -137,11 +137,12 @@ instance Traced P_Pattern where
  origin = pos
 
 data ConceptDef
-   = Cd  { pos :: Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
-         , cdcpt :: Text   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-         , cddef :: Text   -- ^ The textual definition of this concept.
-         , cdref :: Text   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
-         , cdfrom:: Text   -- ^ The name of the pattern or context in which this concept definition was made
+   = Cd  { pos :: !Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
+         , cdcpt :: !Text   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+         , cddef :: !Text   -- ^ The textual definition of this concept.
+         , cdref :: !Text   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+         , cdmean :: ![PMeaning] -- ^ User-specified meanings, possibly more than one, for multiple languages.
+         , cdfrom:: !Text   -- ^ The name of the pattern or context in which this concept definition was made
          }   deriving (Show,Typeable)
 instance Ord ConceptDef where
  compare a b = case compare (name a) (name b) of
