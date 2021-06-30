@@ -255,7 +255,7 @@ instance Arbitrary PConceptDef where
     PConceptDef <$> arbitrary <*> identifier <*> safeStr
       <*> safeStr
       <*> arbitrary
-      <*> safeStr
+      <*> identifier
 instance Arbitrary PAtomPair where
     arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
 
