@@ -250,10 +250,12 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
         <*> arbitrary
         <*> arbitrary
 
-instance Arbitrary ConceptDef where
-    arbitrary = Cd <$> arbitrary <*> identifier <*> safeStr
-                   <*> safeStr <*> arbitrary  <*> safeStr
-
+instance Arbitrary PConceptDef where
+  arbitrary =
+    PConceptDef <$> arbitrary <*> identifier <*> safeStr
+      <*> safeStr
+      <*> arbitrary
+      <*> safeStr
 instance Arbitrary PAtomPair where
     arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
 

@@ -593,9 +593,22 @@ instance ShowHS Relation where
 --   instance ShowHSName ConceptDef where
 --    showHSName cd = haskellIdentifier ("cDef_"<>cdcpt cd)
 
-instance ShowHS ConceptDef where
- showHS env _ cd
-  = " Cd ("<>showHS env "" (origin cd)<>") "<>tshow (cdcpt cd)<>" "<>tshow (cddef cd)<>" "<>tshow (cdref cd)<>" "<>tshow (cdfrom cd)--
+instance ShowHS AConceptDef where
+  showHS env indent cd =
+    T.intercalate
+      indent
+      [ "AConceptDef { pos = " <> showHS env "" (origin cd),
+        "            , acdcpt = " <> tshow (acdcpt cd),
+        "            , acddef = " <> tshow (acddef cd),
+        "            , acdref = " <> tshow (acdref cd),
+        "            , acdmean = "
+          <> showHS
+            env
+            "                        "
+            (acdmean cd),
+        "            , acdfrom = " <> tshow (acdfrom cd)
+      ]
+
 instance ShowHSName A_Concept where
  showHSName ONE = haskellIdentifier "cptOne"
  showHSName c = haskellIdentifier ("cpt_"<>name c)

@@ -98,19 +98,19 @@ instance Xreferenceble Picture where
     dirOutput = view dirOutputL env
     src  = dirOutput </> imagePathRelativeToDirOutput env a
 instance Xreferenceble CustomSection where
-  xSafeLabel a = 
+  xSafeLabel a =
        (tshow . xrefPrefix . refStuff $ a)
      <> tshow (chapterOfSection x)
      <> typeOfSection x
      <> "-"
      <> (tshow . hash . nameOfThing $ x) -- Hash, to make sure there are no fancy characters. 
-    where 
+    where
       x = refStuff a
   hyperLinkTo = codeGen'
   xDefBlck env fSpec a = either id (fatal ("You should use xDefInln for:\n  "<>tshow (refStuff a))) (hyperTarget env fSpec a)
   xDefInln env fSpec a = either (fatal ("You should use xDefBlck for:\n  "<>tshow (refStuff a))) id (hyperTarget env fSpec a)
 
-hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Either Blocks Inlines 
+hyperTarget :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Either Blocks Inlines
 hyperTarget env fSpec a =
     case a of
       XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff $ a)
@@ -131,21 +131,21 @@ hyperTarget env fSpec a =
                                       --                  --       ( "Deze REGEL moet nog verder worden uitgewerkt in de Haskell code")        
                                       --                    <>printMeaning (outputLang env fSpec) r
                                       --                  )
-      XRefConceptualAnalysisRelation _d 
-            -> Right $ spanWith (xSafeLabel a,[],[]) 
+      XRefConceptualAnalysisRelation _d
+            -> Right $ spanWith (xSafeLabel a,[],[])
                                 (    (text.l) (NL "Relatie ",EN "Relation ")
                                --   <> (str . show . numberOf fSpec $ d)
-                                )  
-      XRefConceptualAnalysisRule _r    
-            -> Right $ spanWith (xSafeLabel a,[],[]) 
+                                )
+      XRefConceptualAnalysisRule _r
+            -> Right $ spanWith (xSafeLabel a,[],[])
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                --   <> (str . show . numberOf fSpec $ r)
-                                ) 
+                                )
       XRefConceptualAnalysisExpression _r
-            -> Right $ spanWith (xSafeLabel a,[],[]) 
+            -> Right $ spanWith (xSafeLabel a,[],[])
                                 (    (text.l) (NL "Regel ",EN "Rule ")
                                --   <> (str . show . numberOf fSpec $ r)
-                                ) 
+                                )
       _ ->  fatal ("hyperTarget not yet defined for "<>tshow (refStuff a))
    where
     hdr = headerWith (xSafeLabel a, [], []) 2
@@ -153,7 +153,7 @@ hyperTarget env fSpec a =
     l :: LocalizedStr -> Text
     l = localize (outputLang env fSpec)
 codeGen' :: Xreferenceble a => a -> Inlines
-codeGen' a = 
+codeGen' a =
   cite [Citation { citationId = xSafeLabel a
                  , citationPrefix = [Space]
                  , citationSuffix = [Space]
@@ -178,19 +178,19 @@ instance Show CrossrefType where
             Tbl -> "tbl:"
             Fig -> "fig:"
 pandocEquationWithLabel :: (HasOutputLanguage env) => env -> FSpec -> CustomSection -> Inlines -> Blocks
-pandocEquationWithLabel env fSpec xref x = 
+pandocEquationWithLabel env fSpec xref x =
   para (strong (xDefInln env fSpec xref) <> x)
 
-data RefStuff = 
+data RefStuff =
   RefStuff { typeOfSection    :: Text
            , chapterOfSection :: Chapter
            , nameOfThing      :: Text
            , xrefPrefix       :: CrossrefType
            } deriving Show
 refStuff :: CustomSection -> RefStuff
-refStuff x  = 
+refStuff x  =
    case x of
-     XRefSharedLangRelation d 
+     XRefSharedLangRelation d
        -> RefStuff { typeOfSection    = relation
                    , chapterOfSection = SharedLang
                    , nameOfThing      = showRel d
@@ -220,13 +220,13 @@ refStuff x  =
                    , nameOfThing      = showRel d
                    , xrefPrefix       = Eq
                    }
-     XRefConceptualAnalysisRule r 
+     XRefConceptualAnalysisRule r
        -> RefStuff { typeOfSection    = rule
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = name r
                    , xrefPrefix       = Eq
                    }
-     XRefConceptualAnalysisExpression r 
+     XRefConceptualAnalysisExpression r
        -> RefStuff { typeOfSection    = expression
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = name r
@@ -240,7 +240,7 @@ refStuff x  =
                    }
   where (relation , rule  , expression , pattern' , theme) =
           ("relation","rule" ,"expression","pattern","theme")
-         
+
 
 {- 
 class NumberedThing a where
@@ -299,7 +299,7 @@ data DeclCont = CDcl { cDcl ::  Relation
                      , cDclPairs :: AAtomPairs
                      }
 data CptCont  = CCpt { cCpt ::  A_Concept
-                     , cCptDefs :: [ConceptDef]
+                     , cCptDefs :: [AConceptDef]
                      , cCptPurps :: [Purpose]
                      }
 instance Named RuleCont where
@@ -320,7 +320,7 @@ orderingByTheme :: (HasOutputLanguage env) => env -> FSpec -> [ThemeContent]
 orderingByTheme env fSpec
  = f ( Counter 1 1 1 --the initial numbers of the countes
      , (sortWithOrigins . filter rulMustBeShown . Set.elems . fallRules)  fSpec
-     , (sortWithOrigins . filter relMustBeShown . Set.elems . relsDefdIn) fSpec 
+     , (sortWithOrigins . filter relMustBeShown . Set.elems . relsDefdIn) fSpec
      , (L.sortBy conceptOrder . filter cptMustBeShown . Set.elems . concs)  fSpec
      ) $
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
@@ -337,7 +337,7 @@ orderingByTheme env fSpec
                                                 (False,False) -> fatal "This should be impossible"
                                                 (False,True)  -> LT
                                                 (True,False)  -> GT
-                                                (True,True)   -> comparing name a b 
+                                                (True,True)   -> comparing name a b
      (Just _    , Nothing   ) -> LT
      (Nothing   , Just _    ) -> GT
      (Nothing   , Nothing   ) -> comparing name a b
@@ -347,7 +347,7 @@ orderingByTheme env fSpec
         [] -> Nothing
         cd :_ -> Just (origin cd)
   rulMustBeShown :: Rule -> Bool
-  rulMustBeShown r = 
+  rulMustBeShown r =
      not . isPropertyRule $ r -- property rules are shown as part of the declaration
   relMustBeShown :: Relation -> Bool
   relMustBeShown = decusr
@@ -426,7 +426,7 @@ orderingByTheme env fSpec
              Just pat -> x `elem` allElemsOf pat
 
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
-dpRule' :: (HasDocumentOpts env) => 
+dpRule' :: (HasDocumentOpts env) =>
     env -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
           -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
 dpRule' env fSpec = dpR
@@ -460,7 +460,7 @@ dpRule' env fSpec = dpR
                        []   -> mempty
                        [rd] -> plain (  l (NL "Om dit te formalizeren maken we gebruik van relatie "
                                           ,EN "We use relation ")
-                                     <> showRef rd 
+                                     <> showRef rd
                                      <> l (NL ".", EN " to formalize this.")
                                      )
                        _    ->    plain (  l (NL "Dit formaliseren we door gebruik te maken van de volgende relaties: "
@@ -469,11 +469,11 @@ dpRule' env fSpec = dpR
              else case Set.elems rds of
                        []   -> mempty
                        [rd] -> plain (  l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
-                                      <> showRef rd 
+                                      <> showRef rd
                                       <> l (NL " om ", EN " to formalize ")
                                       <> hyperLinkTo (XRefSharedLangRule r)
                                       <> l (NL " te formaliseren: ", EN ": ")
-                                     ) 
+                                     )
                        _    -> plain (   l (NL " Om ", EN " To formalize ")
                                       <> hyperLinkTo (XRefSharedLangRule r)
                                       <> l (NL " te formaliseren, gebruiken we daarnaast ook de relaties: "
@@ -497,9 +497,9 @@ dpRule' env fSpec = dpR
             )
         showRef :: Relation -> Inlines
         showRef dcl = hyperLinkTo (XRefConceptualAnalysisRelation dcl) <> "(" <> (str . showRel) dcl <> ")"
-        
+
         ncs = concs r Set.\\ seenConcs            -- newly seen concepts
-        cds = [(c,cd) | c<-Set.elems ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
+        cds = [(c,cd) | c<-Set.elems ncs, cd<-conceptDefs fSpec, name cd==name c]    -- ... and their definitions
         ds  = bindedRelationsIn r
         nds = ds Set.\\ seenRelations     -- newly seen relations
         rds = ds `Set.intersection` seenRelations  -- previously seen relations
@@ -512,7 +512,7 @@ printPurposes :: [Purpose] -> Blocks
 printPurposes = mconcat . map (printMarkup . explMarkup)
 
 printMarkup :: Markup -> Blocks
-printMarkup = fromList . amPandoc
+printMarkup = amPandoc
 
 meaning2Blocks :: Meaning -> Blocks
 meaning2Blocks
@@ -520,13 +520,11 @@ meaning2Blocks
 
 purposes2Blocks :: (HasDocumentOpts env) => env -> [Purpose] -> Blocks
 purposes2Blocks env ps
- = case ps of
-      [] -> mempty
-            -- by putting the ref after the first inline of the definition, it aligns nicely with the definition
-      _  -> case concatMarkup [expl{amPandoc = insertAfterFirstInline (ref purp) $ amPandoc expl} | purp<-ps, let expl=explMarkup purp] of
-             Nothing -> mempty
-             Just p  -> fromList $ amPandoc p
-       where   -- The reference information, if available for this purpose, is put
+ = maybe mempty amPandoc (concatMarkup . map markup' $ ps)
+    where   -- The reference information, if available for this purpose, is put
+        markup' purp = Markup { amLang= amLang . explMarkup $ purp
+                    , amPandoc= insertAfterFirstInline (ref purp) $ amPandoc . explMarkup $ purp
+                    }
         ref :: Purpose -> [Inline]
         ref purp = [RawInline
                       (Text.Pandoc.Builder.Format "latex")
@@ -540,18 +538,20 @@ concatMarkup es
  = case eqCl amLang es of
     []   -> Nothing
     [cl] -> Just Markup { amLang   = amLang (NE.head cl)
-                        , amPandoc = concatMap amPandoc es
+                        , amPandoc = mconcat (map amPandoc es)
                         }
     cls  -> fatal ("don't call concatMarkup with different languages and formats\n   "<>
                    T.intercalate "\n   " (map (tshow . amLang . NE.head) cls)
                   )
 
 -- Insert an inline after the first inline in the list of blocks, if possible.
-insertAfterFirstInline :: [Inline] -> [Block] -> [Block]
-insertAfterFirstInline inlines (            Plain (inl:inls):pblocks)        =             Plain (inl : (inlines<>inls)) : pblocks
-insertAfterFirstInline inlines (            Para (inl:inls):pblocks)         =             Para (inl : (inlines<>inls)) : pblocks
-insertAfterFirstInline inlines (BlockQuote (Para (inl:inls):pblocks):blocks) = BlockQuote (Para (inl : (inlines<>inls)) : pblocks):blocks
-insertAfterFirstInline inlines blocks                                        = Plain inlines : blocks
+insertAfterFirstInline :: [Inline] -> Blocks -> Blocks
+insertAfterFirstInline inlines =  fromList . insertAfterFirstInline' . toList
+  where
+    insertAfterFirstInline' (            Plain (inl:inls):pblocks)        =             Plain (inl : (inlines<>inls)) : pblocks
+    insertAfterFirstInline' (            Para (inl:inls):pblocks)         =             Para (inl : (inlines<>inls)) : pblocks
+    insertAfterFirstInline' (BlockQuote (Para (inl:inls):pblocks):blocks) = BlockQuote (Para (inl : (inlines<>inls)) : pblocks):blocks
+    insertAfterFirstInline' blocks                                        = Plain inlines : blocks
 
 isMissing :: Maybe Purpose -> Bool
 isMissing = maybe True (not . explUserdefd)
@@ -579,25 +579,25 @@ violation2Inlines env fSpec _ = (text.l) (NL "<meldingstekst moet hier nog worde
 
 -- Some helper function to cope with changes in Pandoc. In the newer versions of Pandoc,
 -- tables have gotten more possibilities. For the time being, we do not use them. Maybe later.
-legacyTable 
+legacyTable
       :: Inlines               -- ^ Caption
       -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
       -> [Blocks]              -- ^ Headers
       -> [[Blocks]]            -- ^ Rows
       -> Blocks
-legacyTable caption' cellspecs headers rows = 
+legacyTable caption' cellspecs headers rows =
   table tCaption tColSpec tHead tBodies tFooter
     where
       tCaption :: Caption
-      tCaption 
-        | null caption' = emptyCaption 
+      tCaption
+        | null caption' = emptyCaption
         | otherwise = Caption (Just . toList $ caption') []
       tColSpec :: [ColSpec]
       tColSpec = map toColSpec cellspecs
         where toColSpec :: (Alignment, Double) -> ColSpec
               toColSpec (a, d) = (a, ColWidth d)
-      tHead :: TableHead 
-      tHead = TableHead nullAttr (zipWith toRow (map fst cellspecs) headers) 
+      tHead :: TableHead
+      tHead = TableHead nullAttr (zipWith toRow (map fst cellspecs) headers)
         where toRow :: Alignment -> Blocks -> Row
               toRow a bs = Row nullAttr (map (toCell a . singleton) $ toList bs)
       toCell :: Alignment -> Blocks -> Cell
@@ -605,6 +605,6 @@ legacyTable caption' cellspecs headers rows =
       tBodies :: [TableBody]
       tBodies = map toBodyRow rows
          where toBodyRow :: [Blocks] -> TableBody
-               toBodyRow bs = TableBody nullAttr (RowHeadColumns 0) [] [Row nullAttr $ zipWith toCell (map fst cellspecs) bs] 
+               toBodyRow bs = TableBody nullAttr (RowHeadColumns 0) [] [Row nullAttr $ zipWith toCell (map fst cellspecs) bs]
       tFooter :: TableFoot
       tFooter = TableFoot nullAttr []

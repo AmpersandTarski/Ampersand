@@ -207,8 +207,8 @@ instance Pretty (P_Rule TermPrim) where
            where rName = if T.null nm then empty
                          else maybeQuote nm <> text ":"
 
-instance Pretty ConceptDef where
-    pretty (Cd _ cpt def ref mean _) -- from, the last argument, is not used in the parser
+instance Pretty PConceptDef where
+    pretty (PConceptDef _ cpt def ref mean _) -- from, the last argument, is not used in the parser
         = text "CONCEPT" <+> quoteConcept cpt
                <+> quote def <+> maybeText ref <+> pretty mean
         where maybeText txt = if T.null txt then empty

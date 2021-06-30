@@ -912,8 +912,8 @@ pCtx2aCtx env
     pRefObj2aRefObj _       (PRef2Pattern     s ) = pure$ ExplPattern s
     pRefObj2aRefObj _       (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj _       (PRef2Context     s ) = pure$ ExplContext s
-    allConceptDefs :: [ConceptDef]
-    allConceptDefs = p_conceptdefs<>concatMap pt_cds p_patterns
+    allConceptDefs :: [AConceptDef]
+    allConceptDefs = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) $ p_conceptdefs<>concatMap pt_cds p_patterns
     allRoleRules :: [A_RoleRule]
     allRoleRules = map pRoleRule2aRoleRule 
                       (p_roleRules <> concatMap pt_RRuls p_patterns)
@@ -1101,6 +1101,20 @@ pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
 pDisAmb2Expr (o,dx)      = cannotDisambiguate o dx
 
+pConcDef2aConcDef ::
+  Lang -> -- The default language
+  PandocFormat -> -- The default pandocFormatPConceptDef
+  PConceptDef ->
+  AConceptDef
+pConcDef2aConcDef defLanguage defFormat pCd =
+  AConceptDef
+    { pos = origin pCd,
+      acdcpt = name pCd,
+      acddef = cddef pCd,
+      acdref = cdref pCd,
+      acdmean = map (pMean2aMean defLanguage defFormat) (cdmean pCd),
+      acdfrom = cdfrom pCd
+    }
 pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
             -> PMeaning -> Meaning

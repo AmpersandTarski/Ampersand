@@ -149,7 +149,7 @@ chpNatLangReqs env lev fSpec =
   printConcept nCpt 
         = -- Purposes:
            (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (nubByText.cCptDefs.theLoad) nCpt of
+         <> case (nubByText . cCptDefs . theLoad) nCpt of
              []    -> mempty  -- There is no definition of the concept
              [cd] -> printCDef cd Nothing
              cds  -> mconcat
@@ -158,8 +158,8 @@ chpNatLangReqs env lev fSpec =
                     ]
         where
          fspecFormat = view fspecFormatL env
-         nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
-         printCDef :: ConceptDef -- the definition to print
+         nubByText = L.nubBy (\x y -> acddef x ==acddef y && acdref x == acdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
+         printCDef :: AConceptDef -- the definition to print
                 -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
                 -> Blocks
          printCDef cDef suffx
@@ -170,7 +170,7 @@ chpNatLangReqs env lev fSpec =
                      else (str . name) cDef  
                    )  
                 <> str (fromMaybe "" suffx) <> ":" 
-               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (cddef cDef)
+               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (acddef cDef)
                         <> ( if fspecFormat `elem` [Fpdf, Flatex]
                              then rawInline "latex"
                                     ("~"<>texOnlyMarginNote 
@@ -181,9 +181,9 @@ chpNatLangReqs env lev fSpec =
                                     )
                              else mempty
                            )
-                        <> str (cddef cDef)
-                        <> if T.null (cdref cDef) then mempty
-                           else str (" ["<>cdref cDef<>"]")
+                        <> str (acddef cDef)
+                        <> if T.null (acdref cDef) then mempty
+                           else str (" ["<>acdref cDef<>"]")
                        ) 
                  ] 
                )

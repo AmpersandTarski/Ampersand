@@ -9,7 +9,7 @@ import qualified RIO.List as L
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
-chpConceptualAnalysis :: (HasDirOutput env, HasDocumentOpts env) 
+chpConceptualAnalysis :: (HasDirOutput env, HasDocumentOpts env)
    => env -> Int -> FSpec -> (Blocks,[Picture])
 chpConceptualAnalysis env lev fSpec
  = (    --  *** Header ***
@@ -95,7 +95,7 @@ chpConceptualAnalysis env lev fSpec
       themeClasses = case patOfTheme themeContent of
                        Just pat -> classes (cdAnalysis fSpec pat)
                        Nothing  -> []
-      
+
       caEntity :: Class -> (Blocks, [Relation])
       caEntity cl
         = ( simpleTable [ (plain.text.l) (NL "Attribuut", EN "Attribute")
@@ -128,15 +128,14 @@ chpConceptualAnalysis env lev fSpec
           , entityRels)
         | cl <- themeClasses, (entityBlocks, entityRels) <- [caEntity cl], length entityRels>1
         ]
-      
+
       caRemainingRelations :: Blocks
       caRemainingRelations
         = simpleTable [ (plain.text.l) (NL "Relatie", EN "Relation")
                       , (plain.text.l) (NL "Betekenis", EN "Meaning")
                       ]
-                      ( [[ (plain . text) (name rel <> " " <> if null cls then tshow (sign rel) else l (NL " (Attribuut van ", EN " (Attribute of ") <> T.concat cls <> ")")
-                         , (fromList . concatMap (amPandoc . ameaMrk) . decMean) rel  -- use "tshow.attType" for the technical type.
-                         ]
+                      ( [(plain . text) (name rel <> " " <> if null cls then tshow (sign rel) else l (NL " (Attribuut van ", EN " (Attribute of ") <> T.concat cls <> ")") 
+                         : (map meaning2Blocks . meanings $ rel)
                         | rel<-rels
                         , let cls = [ name cl | cl <-themeClasses, (_, entRels) <- [caEntity cl], rel `elem` entRels ]
                         ]
@@ -151,46 +150,46 @@ chpConceptualAnalysis env lev fSpec
           entityRels = Set.unions (map (Set.fromList . snd) caSubsections)
 
   printConcept :: Numbered CptCont -> Blocks
-  printConcept nCpt 
+  printConcept nCpt
         = -- Purposes:
            (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (nubByText.cCptDefs.theLoad) nCpt of
+         <> case (nubByText . cCptDefs . theLoad) nCpt of
              []    -> mempty  -- There is no definition of the concept
              [cd] -> printCDef cd Nothing
              cds  -> mconcat
-                    [printCDef cd (Just $ T.snoc "." suffx) 
+                    [printCDef cd (Just $ T.snoc "." suffx)
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
         where
          fspecFormat = view fspecFormatL env
-         nubByText = L.nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
-         printCDef :: ConceptDef -- the definition to print
+         nubByText = L.nubBy (\x y -> acddef x ==acddef y && acdref x == acdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
+         printCDef :: AConceptDef -- the definition to print
                 -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
                 -> Blocks
          printCDef cDef suffx
-           = definitionList 
+           = definitionList
               [(   str (l (NL"Definitie " ,EN "Definition "))
-                <> ( if fspecFormat `elem` [Fpdf, Flatex] 
+                <> ( if fspecFormat `elem` [Fpdf, Flatex]
                      then (str . tshow .theNr) nCpt
-                     else (str . name) cDef  
-                   )  
-                <> str (fromMaybe "" suffx) <> ":" 
-               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (cddef cDef)
+                     else (str . name) cDef
+                   )
+                <> str (fromMaybe "" suffx) <> ":"
+               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (acddef cDef)
                         <> ( if fspecFormat `elem` [Fpdf, Flatex]
                              then rawInline "latex"
-                                    ("~"<>texOnlyMarginNote 
-                                            ("\\gls{"<>escapeLatex 
+                                    ("~"<>texOnlyMarginNote
+                                            ("\\gls{"<>escapeLatex
                                                         (name cDef<>fromMaybe "" suffx)
                                                 <>"}"
                                             )
                                     )
                              else mempty
                            )
-                        <> str (cddef cDef)
-                        <> if T.null (cdref cDef) then mempty
-                           else str (" ["<>cdref cDef<>"]")
-                       ) 
-                 ] 
+                        <> str (acddef cDef)
+                        <> if T.null (acdref cDef) then mempty
+                           else str (" ["<>acdref cDef<>"]")
+                       )
+                 ]
                )
               ]
 
@@ -249,7 +248,7 @@ chpConceptualAnalysis env lev fSpec
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
                    )
-               <> pandocEquationWithLabel env fSpec (XRefConceptualAnalysisRule r) (showMath r) 
+               <> pandocEquationWithLabel env fSpec (XRefConceptualAnalysisRule r) (showMath r)
                -- followed by a conceptual model for this rule
                <> para (   hyperLinkTo (pictOfRule r)
                         <> str (l (NL " geeft een conceptueel diagram van deze regel."

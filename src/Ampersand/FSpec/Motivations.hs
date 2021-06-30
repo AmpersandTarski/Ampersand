@@ -63,6 +63,15 @@ class Named a => HasMeaning a where
   meanings :: a -> [Meaning]
   {-# MINIMAL meanings #-}
 
+instance HasMeaning AConceptDef where
+  meanings cd = 
+    [Meaning Markup{ amLang = lang 
+                   , amPandoc = string2Blocks ReST . acddef $ cd
+                   }
+    | lang <- [minBound..]
+    ]
+    <> acdmean cd
+
 instance HasMeaning Rule where
   meanings = rrmean
 --  meaning l rule

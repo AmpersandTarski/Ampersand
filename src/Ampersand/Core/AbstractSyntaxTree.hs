@@ -33,6 +33,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Expression(..)
  , getExpressionRelation
  , A_Concept(..), A_Concepts
+ , AConceptDef(..)
  , ShowWithAliases(..)
  , Meaning(..)
  , A_RoleRule(..)
@@ -57,7 +58,7 @@ import           Ampersand.Basics
 import           Ampersand.Core.ParseTree 
     ( Meta(..)
     , Role(..)
-    , ConceptDef, P_Concept(..), mkPConcept, PClassify(specific,generics)
+    , P_Concept(..), mkPConcept, PClassify(specific,generics)
     , Origin(..)
     , maybeOrdering
     , Traced(..)
@@ -89,7 +90,7 @@ data A_Context
          , ctxrs :: Rules           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: Relations        -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
-         , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
+         , ctxcds :: [AConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxrrules :: [A_RoleRule]
          , ctxreprs :: A_Concept -> TType
@@ -133,7 +134,29 @@ instance Named Pattern where
 instance Traced Pattern where
  origin = ptpos
 
-
+data AConceptDef = AConceptDef
+  { pos :: !Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
+  , acdcpt :: !Text   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+  , acddef :: !Text   -- ^ The textual definition of this concept.
+  , acdref :: !Text   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+  , acdmean :: ![Meaning] -- ^ User-specified meanings, possibly more than one, for multiple languages.
+  , acdfrom:: !Text   -- ^ The name of the pattern or context in which this concept definition was made --TODO: Refactor to Maybe Pattern.
+  }   deriving (Show,Typeable)
+instance Named AConceptDef where
+  name = acdcpt
+instance Traced AConceptDef where
+ origin = pos
+instance Ord AConceptDef where
+ compare a b = case compare (name a) (name b) of
+     EQ -> fromMaybe (fatal . T.intercalate "\n" $
+                        ["ConceptDef should have a non-fuzzy Origin."
+                        , tshow (origin a)
+                        , tshow (origin b)
+                        ])
+                     (maybeOrdering (origin a) (origin b))
+     x -> x  
+instance Eq AConceptDef where
+  a == b = compare a b == EQ
 data A_RoleRule = A_RoleRule { arPos ::   Origin
                              , arRoles :: NE.NonEmpty Role
                              , arRules :: NE.NonEmpty Text -- the names of the rules

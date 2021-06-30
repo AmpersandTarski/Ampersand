@@ -105,7 +105,7 @@ data FSpec = FSpec { fsName ::       Text
                    -- ^ generated: The data structure containing the generalization structure of concepts
                    , vpatterns ::    [Pattern]                
                    -- ^ All patterns taken from the Ampersand script
-                   , conceptDefs ::  [ConceptDef]             
+                   , conceptDefs ::  [AConceptDef]             
                    -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                    , fSexpls ::      Set.Set Purpose                
                    -- ^ All purposes that have been declared anywhere in the current specification, including the patterns and interfaces.
@@ -192,7 +192,7 @@ instance Unique A_Pair where
   showUnique x = showUnique (lnkDcl x)
               <> showUnique (lnkLeft x)
               <> showUnique (lnkRight x)
-concDefs :: FSpec -> A_Concept -> [ConceptDef]
+concDefs :: FSpec -> A_Concept -> [AConceptDef]
 concDefs fSpec c = 
   case c of
     ONE -> []

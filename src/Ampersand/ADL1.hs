@@ -31,7 +31,7 @@ import Ampersand.Core.ParseTree (
          , TermPrim(..), P_NamedRel(..)
          , PClassify(..)
          , P_Relation(..)
-         , ConceptDef(..)
+         , PConceptDef(..)
          , PMeaning(..),PMessage(..),P_Markup(..)
          )
 import Ampersand.Core.AbstractSyntaxTree (
@@ -56,6 +56,7 @@ import Ampersand.Core.AbstractSyntaxTree (
          , Relation(..), Relations, getExpressionRelation, showRel
          , Rule(..), Rules, A_RoleRule(..)
          , A_Concept(..), A_Concepts, TType(..), showValADL, showValSQL, unsafePAtomVal2AtomValue 
+         , AConceptDef(..)
          , Conjunct(..)
          , PAtomValue(..)
          , AAtomValues, AAtomPairs, safePSingleton2AAtomVal
