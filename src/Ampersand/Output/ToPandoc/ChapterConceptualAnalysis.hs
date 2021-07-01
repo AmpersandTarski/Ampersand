@@ -65,7 +65,7 @@ chpConceptualAnalysis env lev fSpec
           Just pat -> purposes2Blocks env (purposesOf fSpec outputLang' pat)
           Nothing  -> mempty
         -- followed by a conceptual model for this pattern
-     <> (mconcat . map printConcept . cptsOfTheme ) themeContent
+     <> (mconcat . map (printConcept env l). cptsOfTheme ) themeContent
      <> ( case (outputLang', patOfTheme themeContent) of
                (Dutch, Just pat)   -> -- announce the conceptual diagram
                                       para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . name) pat<> ".")
@@ -148,50 +148,6 @@ chpConceptualAnalysis env lev fSpec
           -- |  Compute all relations that are discussed in the subsections before.
           entityRels :: Set Relation
           entityRels = Set.unions (map (Set.fromList . snd) caSubsections)
-
-  printConcept :: Numbered CptCont -> Blocks
-  printConcept nCpt
-        = -- Purposes:
-           (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (nubByText . cCptDefs . theLoad) nCpt of
-             []    -> mempty  -- There is no definition of the concept
-             [cd] -> printCDef cd Nothing
-             cds  -> mconcat
-                    [printCDef cd (Just $ T.snoc "." suffx)
-                    |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
-                    ]
-        where
-         fspecFormat = view fspecFormatL env
-         nubByText = L.nubBy (\x y -> acddef x ==acddef y && acdref x == acdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
-         printCDef :: AConceptDef -- the definition to print
-                -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
-                -> Blocks
-         printCDef cDef suffx
-           = definitionList
-              [(   str (l (NL"Definitie " ,EN "Definition "))
-                <> ( if fspecFormat `elem` [Fpdf, Flatex]
-                     then (str . tshow .theNr) nCpt
-                     else (str . name) cDef
-                   )
-                <> str (fromMaybe "" suffx) <> ":"
-               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (acddef cDef)
-                        <> ( if fspecFormat `elem` [Fpdf, Flatex]
-                             then rawInline "latex"
-                                    ("~"<>texOnlyMarginNote
-                                            ("\\gls{"<>escapeLatex
-                                                        (name cDef<>fromMaybe "" suffx)
-                                                <>"}"
-                                            )
-                                    )
-                             else mempty
-                           )
-                        <> str (acddef cDef)
-                        <> if T.null (acdref cDef) then mempty
-                           else str (" ["<>acdref cDef<>"]")
-                       )
-                 ]
-               )
-              ]
 
 {- unused code, possibly useful later...
   caRelation :: Relation -> (Inlines, [Blocks])

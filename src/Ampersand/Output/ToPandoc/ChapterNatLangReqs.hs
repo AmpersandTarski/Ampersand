@@ -85,7 +85,7 @@ chpNatLangReqs env lev fSpec =
                      []    -> printIntro    (cptsOfTheme tc)
                      purps -> purposes2Blocks env purps
              )
-          <> (mconcat . map printConcept . cptsOfTheme ) tc
+          <> (mconcat . map (printConcept env l). cptsOfTheme ) tc
           <> (mconcat . map printRel     . dclsOfTheme ) tc
           <> (mconcat . map printRule    . rulesOfTheme) tc
       where
@@ -145,49 +145,6 @@ chpNatLangReqs env lev fSpec =
                 (_:_:_) -> True
                 _       -> False       
 
-  printConcept :: Numbered CptCont -> Blocks
-  printConcept nCpt 
-        = -- Purposes:
-           (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (nubByText . cCptDefs . theLoad) nCpt of
-             []    -> mempty  -- There is no definition of the concept
-             [cd] -> printCDef cd Nothing
-             cds  -> mconcat
-                    [printCDef cd (Just $ T.snoc "." suffx) 
-                    |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
-                    ]
-        where
-         fspecFormat = view fspecFormatL env
-         nubByText = L.nubBy (\x y -> acddef x ==acddef y && acdref x == acdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
-         printCDef :: AConceptDef -- the definition to print
-                -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
-                -> Blocks
-         printCDef cDef suffx
-           = definitionList 
-              [(   str (l (NL"Definitie " ,EN "Definition "))
-                <> ( if fspecFormat `elem` [Fpdf, Flatex] 
-                     then (str . tshow .theNr) nCpt
-                     else (str . name) cDef  
-                   )  
-                <> str (fromMaybe "" suffx) <> ":" 
-               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (acddef cDef)
-                        <> ( if fspecFormat `elem` [Fpdf, Flatex]
-                             then rawInline "latex"
-                                    ("~"<>texOnlyMarginNote 
-                                            ("\\gls{"<>escapeLatex 
-                                                        (name cDef<>fromMaybe "" suffx)
-                                                <>"}"
-                                            )
-                                    )
-                             else mempty
-                           )
-                        <> str (acddef cDef)
-                        <> if T.null (acdref cDef) then mempty
-                           else str (" ["<>acdref cDef<>"]")
-                       ) 
-                 ] 
-               )
-              ]
 
   printRel :: Numbered DeclCont -> Blocks
   printRel nDcl =
