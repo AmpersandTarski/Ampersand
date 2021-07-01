@@ -1,4 +1,4 @@
-﻿{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -119,7 +119,7 @@ data Pattern
            , ptgns :: [AClassify]       -- ^ The generalizations defined in this pattern
            , ptdcs :: Relations         -- ^ The relations that are declared in this pattern
            , ptrrs :: [A_RoleRule]      -- ^ The role-rule assignments that are declared in this pattern
-           , ptcds :: [ConceptDef]      -- ^ The concept definitions that are declared in this pattern
+           , ptcds :: [AConceptDef]     -- ^ The concept definitions that are declared in this pattern
            , ptrps :: [Representation]  -- ^ The concept definitions that are declared in this pattern
            , ptups :: [Population]      -- ^ The user defined populations in this pattern
            , ptids :: [IdentityDef]     -- ^ The identity definitions defined in this pattern

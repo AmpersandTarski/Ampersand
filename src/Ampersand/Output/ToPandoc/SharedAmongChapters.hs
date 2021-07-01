@@ -420,7 +420,7 @@ orderingByTheme env fSpec
        -- The concepts documented in a theme are the ones for which a concept definition exists within that theme.
        (themeCpts,restCpts) = L.partition predicate cpts
           where
-            predicate c = (not.null) [ () | Just pat<-[mPat], cd<-ptcds pat, cdcpt cd==name c]
+            predicate c = (not.null) [ () | Just pat<-[mPat], cd<-ptcds pat, name cd==name c]
        inThisTheme :: Eq a => (Pattern -> Set.Set a) -> a -> Bool
        inThisTheme allElemsOf x
          = case mPat of

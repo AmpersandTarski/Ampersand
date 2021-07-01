@@ -122,7 +122,10 @@ chpConceptualAnalysis env lev fSpec
                       , (not . null . decMean) rel ]
 
       defineRel :: Relation -> Blocks
-      defineRel rel = (fromList . concatMap (amPandoc . ameaMrk) . decMean) rel
+      defineRel rel = case map (amPandoc . ameaMrk) (decMean rel) of
+                        []       -> mempty 
+                        [blocks] -> blocks
+                        bss      -> bulletList bss
                       <>     (printPurposes . purposesOf fSpec outputLang') rel
 
       caSubsections :: [(Blocks, [Relation])]
@@ -155,15 +158,14 @@ chpConceptualAnalysis env lev fSpec
 
   printConcept :: Numbered CptCont -> Blocks
   printConcept nCpt
-        = -- Purposes:
-          -- (printPurposes . cCptPurps . theLoad) nCpt <>
-          case (nubByText . cCptDefs . theLoad) nCpt of
-             []    -> mempty  -- There is no definition of the concept
-             [cd] -> printCDef cd Nothing
-             cds  -> mconcat
-                    [printCDef cd (Just $ T.snoc "." suffx)
-                    |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
-                    ]
+    = -- Purposes:
+      case (nubByText . cCptDefs . theLoad) nCpt of
+         []   -> mempty  -- There is no definition of the concept
+         [cd] -> printCDef cd Nothing
+         cds  -> mconcat
+                [printCDef cd (Just $ T.snoc "." suffx)
+                |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
+                ]
       <> (printPurposes . cCptPurps . theLoad) nCpt
         where
          fspecFormat = view fspecFormatL env

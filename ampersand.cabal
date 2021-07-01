@@ -1955,10 +1955,17 @@ extra-source-files:
     testing/Travis/testcases/Bugs/NoSentinel/testinfo.yaml
     testing/Travis/testcases/Check/Issue1063.adl
     testing/Travis/testcases/Check/testinfo.yaml
+    testing/Travis/testcases/FuncSpec/images/CDConceptONE.png
+    testing/Travis/testcases/FuncSpec/images/Classification.png
+    testing/Travis/testcases/FuncSpec/images/LogicalDataModel.png
+    testing/Travis/testcases/FuncSpec/images/TechnicalDataModel.png
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl
     testing/Travis/testcases/FuncSpec/testinfo.yaml
+    testing/Travis/testcases/FuncSpec/testIssue1183.adl
+    testing/Travis/testcases/FuncSpec/testIssue1183.docx
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
+    testing/Travis/testcases/FuncSpec/~$stIssue1183.docx
     testing/Travis/testcases/FuncSpec/~$stpredLogic.docx
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/Arbeidsduur.adl.proto/.phan/config.php
