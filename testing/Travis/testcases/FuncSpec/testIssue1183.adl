@@ -1,28 +1,25 @@
 CONTEXT TestIssue1183
 
 PATTERN FOO
-CONCEPT A123  "string 1"  "ref"
-MEANING {+ string 2 +}
-
-CONCEPT A123L  "string 1"  "ref"
-MEANING LATEX {+ string 2 +}
-
-CONCEPT A13  "string 1"
-MEANING {+ string 2 +}
-
-CONCEPT A13L  "string 1"
-MEANING LATEX {+ string 2 +}
-
 CONCEPT A12  "string 1"  "ref"
 
-CONCEPT A1  "string 1"
+CONCEPT AMR
+MEANING REF "ref" {+ string 2 +}
 
-CONCEPT A123  "string 3"  "ref"
-MEANING {+ string 4 +}
+CONCEPT AMU
+MEANING LATEX {+ string 3 +}
 
-RELATION foo[A123 * A123L]
-RELATION foo[A133 * A13L]
-RELATION foo[A1 * A12]
+CONCEPT AMLU
+MEANING IN ENGLISH LATEX {+ string 4 +}
+
+CONCEPT A1 "string 5"
+
+CONCEPT A3
+MEANING {+ string 6 +}
+
+RELATION foo[A12 * AMR]
+RELATION foo[AMU * AMLU]
+RELATION foo[A1 * A3]
 ENDPATTERN
 
 ENDCONTEXT
