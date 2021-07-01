@@ -217,12 +217,12 @@ allFolders  = concatMap recur . archFolders
 
 -- | `data Folder` represents the folder structure of the ArchiMate Tool.
 data Folder = Folder
-  { fldName        :: Text       -- the name of the folder
-  , fldId          :: Text       -- the Archi-id (e.g. "b12f3af5")
-  , fldType        :: Text       -- the xsi:type of the folder
-  , fldLevel       :: Int        -- the nesting level: 0=top level, 1=subfolder, 2=subsubfolder, etc.
-  , fldObjs        :: [ArchiObj] -- the elements in the current folder, without the subfolders
-  , fldFolders     :: [Folder]   -- the subfolders
+  { fldName    :: Text       -- the name of the folder
+  , fldId      :: Text       -- the Archi-id (e.g. "b12f3af5")
+  , fldType    :: Text       -- the xsi:type of the folder
+  , fldLevel   :: Int        -- the nesting level: 0=top level, 1=subfolder, 2=subsubfolder, etc.
+  , fldObjs    :: [ArchiObj] -- the elements in the current folder, without the subfolders
+  , fldFolders :: [Folder]   -- the subfolders
   } deriving (Show, Eq)
 
 -- | `data ArchiObj` represents every ArchiMate element in the ArchiMate repo
