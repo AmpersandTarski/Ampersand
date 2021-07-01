@@ -105,7 +105,7 @@ makePicture env fSpec pr =
                                , caption =
                                    case outputLang' of
                                       English -> "Concept diagram of the rules in " <> name pat
-                                      Dutch   -> "Conceptueel diagram van de regels in " <> name pat
+                                      Dutch   -> "Conceptueel diagram van " <> name pat
                                }
    PTCDRule rul        -> Pict { pType = pr
                                , scale = scale'
