@@ -30,7 +30,7 @@ chpConceptualAnalysis env lev fSpec
                     (  "Dit hoofdstuk analyseert de \"taal van de business\", om functionele eisen ten behoeve van "
                     <> (singleQuoted.str.name) fSpec <> " te kunnen bespreken. "
                     <> "Deze analyse beoogt om een bouwbare, maar oplossingsonafhankelijke specificatie op te leveren. "
-                    <> "Deze tekst richt zich op lezers met voldoende deskundigheid op het gebied van conceptueel modelleren."
+                    <> "Het begrijpen van tekst vereist deskundigheid op het gebied van conceptueel modelleren."
                     )
         English -> para
                     (  "This chapter analyses the \"language of the business\" for the purpose of discussing functional requirements of "
