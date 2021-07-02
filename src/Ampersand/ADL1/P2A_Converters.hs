@@ -1110,11 +1110,19 @@ pConcDef2aConcDef defLanguage defFormat pCd =
   AConceptDef
     { pos = origin pCd,
       acdcpt = name pCd,
-      acddef = cddef pCd,
-      acdref = cdref pCd,
+      acddef2 = pCDDef2Mean defLanguage defFormat $ cddef2 pCd,
       acdmean = map (pMean2aMean defLanguage defFormat) (cdmean pCd),
       acdfrom = cdfrom pCd
     }
+pCDDef2Mean :: Lang           -- The default language
+            -> PandocFormat   -- The default pandocFormat
+            -> PCDDef -> Meaning
+pCDDef2Mean defLanguage defFormat x = case x of 
+  PCDDefLegacy defStr refStr -> 
+      Meaning Markup{ amLang = defLanguage
+                    , amPandoc = string2Blocks defFormat (defStr <> if T.null refStr then mempty else "["<>refStr<>"]")
+                   } 
+  PCDDefNew m -> pMean2aMean defLanguage defFormat m
 pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
             -> PMeaning -> Meaning

@@ -208,9 +208,12 @@ instance Pretty (P_Rule TermPrim) where
                          else maybeQuote nm <> text ":"
 
 instance Pretty PConceptDef where
-    pretty (PConceptDef _ cpt def ref mean _) -- from, the last argument, is not used in the parser
+    pretty (PConceptDef _ cpt def mean _) -- from, the last argument, is not used in the parser
         = text "CONCEPT" <+> quoteConcept cpt
-               <+> quote def <+> maybeText ref <+\> perline mean 
+               <+> pretty def <+\> perline mean 
+instance Pretty PCDDef where
+    pretty (PCDDefNew mean) = pretty mean
+    pretty (PCDDefLegacy def ref) = quote def <+> maybeText ref
         where maybeText txt = if T.null txt then empty
                               else quote txt
 

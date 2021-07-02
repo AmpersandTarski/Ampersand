@@ -599,8 +599,7 @@ instance ShowHS AConceptDef where
       indent
       [ "AConceptDef { pos = " <> showHS env "" (origin cd),
         "            , acdcpt = " <> tshow (acdcpt cd),
-        "            , acddef = " <> tshow (acddef cd),
-        "            , acdref = " <> tshow (acdref cd),
+        "            , acddef2 = " <> showHS env "                        " (acddef2 cd),
         "            , acdmean = "
           <> showHS
             env

@@ -308,10 +308,15 @@ pConceptDef :: AmpParser (Text->PConceptDef)
 pConceptDef       = PConceptDef <$> currPos
                        <*  pKey "CONCEPT"
                        <*> pConceptName
-                       <*> (asText pDoubleQuotedString <?> "concept definition (string)")
-                       <*> (asText pDoubleQuotedString `opt` "") -- a reference to the source of this definition.
+                       <*> pPCDDef2
                        <*> many pMeaning
-
+    where
+      pPCDDef2 :: AmpParser PCDDef
+      pPCDDef2 = 
+            (PCDDefLegacy <$> (asText pDoubleQuotedString <?> "concept definition (string)")
+                          <*> (asText pDoubleQuotedString `opt` "") -- a reference to the source of this definition.
+            )
+        <|> (PCDDefNew <$> pMeaning)     
 --- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
 pRepresentation :: AmpParser Representation
 pRepresentation

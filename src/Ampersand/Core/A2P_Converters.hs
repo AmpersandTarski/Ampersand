@@ -53,8 +53,7 @@ aConcDef2pConcDef aCd =
   PConceptDef
     { pos = origin aCd,
       cdcpt = name aCd,
-      cddef = acddef aCd,
-      cdref = acdref aCd,
+      cddef2 = PCDDefNew (aMeaning2pMeaning $ acddef2 aCd),
       cdmean = map aMeaning2pMeaning $ acdmean aCd,
       cdfrom = acdfrom aCd
     }

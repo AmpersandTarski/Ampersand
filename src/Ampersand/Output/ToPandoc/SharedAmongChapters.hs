@@ -617,7 +617,7 @@ printConcept :: (HasDocumentOpts env) =>
 printConcept env l nCpt
         = -- Purposes:
            (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (nubByText . cCptDefs . theLoad) nCpt of
+         <> case (nubByContent . cCptDefs . theLoad) nCpt of
              []    -> mempty  -- There is no definition of the concept
              [cd] -> printCDef cd Nothing
              cds  -> mconcat
@@ -626,7 +626,8 @@ printConcept env l nCpt
                     ]
         where
          fspecFormat = view fspecFormatL env
-         nubByText = L.nubBy (\x y -> acddef x ==acddef y && acdref x == acdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
+         nubByContent = L.nubBy (\x y -> fun x == fun y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
+           where fun = amPandoc . ameaMrk . acddef2
          printCDef :: AConceptDef -- the definition to print
                 -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
                 -> Blocks
@@ -638,22 +639,7 @@ printConcept env l nCpt
                      else (str . name) cDef
                    )
                 <> str (fromMaybe "" suffx) <> ":"
-               , [para (   newGlossaryEntry (name cDef<>fromMaybe "" suffx) (acddef cDef)
-                        <> ( if fspecFormat `elem` [Fpdf, Flatex]
-                             then rawInline "latex"
-                                    ("~"<>texOnlyMarginNote
-                                            ("\\gls{"<>escapeLatex
-                                                        (name cDef<>fromMaybe "" suffx)
-                                                <>"}"
-                                            )
-                                    )
-                             else mempty
-                           )
-                        <> str (acddef cDef)
-                        <> if T.null (acdref cDef) then mempty
-                           else str (" ["<>acdref cDef<>"]")
-                       )
-                 ]
+               , [meaning2Blocks (acddef2 cDef)]
                )
               ]
 

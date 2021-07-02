@@ -65,12 +65,7 @@ class Named a => HasMeaning a where
 
 instance HasMeaning AConceptDef where
   meanings cd = 
-    [Meaning Markup{ amLang = lang 
-                   , amPandoc = string2Blocks ReST . acddef $ cd
-                   }
-    | lang <- [minBound..]
-    ]
-    <> acdmean cd
+    acddef2 cd : acdmean cd
 
 instance HasMeaning Rule where
   meanings = rrmean

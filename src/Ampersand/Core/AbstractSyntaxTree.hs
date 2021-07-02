@@ -137,8 +137,7 @@ instance Traced Pattern where
 data AConceptDef = AConceptDef
   { pos :: !Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
   , acdcpt :: !Text   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-  , acddef :: !Text   -- ^ The textual definition of this concept.
-  , acdref :: !Text   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+  , acddef2 :: !Meaning   -- ^ The textual definition of this concept.
   , acdmean :: ![Meaning] -- ^ User-specified meanings, possibly more than one, for multiple languages.
   , acdfrom:: !Text   -- ^ The name of the pattern or context in which this concept definition was made --TODO: Refactor to Maybe Pattern.
   }   deriving (Show,Typeable)
