@@ -82,7 +82,7 @@ data ContextElement = CMeta Meta
                     | CRul (P_Rule TermPrim)
                     | CCfy [PClassify]
                     | CRel (P_Relation, [P_Population])
-                    | CCon (Text -> ConceptDef)
+                    | CCon (Text -> PConceptDef)
                     | CRep Representation
                     | Cm P_RoleRule
                     | CIndx P_IdentDef
@@ -164,7 +164,7 @@ data PatElem = Pr (P_Rule TermPrim)
              | Py [PClassify]
              | Pd (P_Relation, [P_Population])
              | Pm P_RoleRule
-             | Pc (Text -> ConceptDef)
+             | Pc (Text -> PConceptDef)
              | Prep Representation
              | Pk P_IdentDef
              | Pv P_ViewDef
@@ -304,13 +304,19 @@ pFun  =  Set.empty               <$ pOperator "*"  <|>
                         Set.fromList [ts,ui] <$ try pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName Text ('TYPE' Text)? Text?
-pConceptDef :: AmpParser (Text->ConceptDef)
-pConceptDef       = Cd <$> currPos
+pConceptDef :: AmpParser (Text->PConceptDef)
+pConceptDef       = PConceptDef <$> currPos
                        <*  pKey "CONCEPT"
                        <*> pConceptName
-                       <*> (asText pDoubleQuotedString <?> "concept definition (string)")
-                       <*> (asText pDoubleQuotedString `opt` "") -- a reference to the source of this definition.
-
+                       <*> pPCDDef2
+                       <*> many pMeaning
+    where
+      pPCDDef2 :: AmpParser PCDDef
+      pPCDDef2 = 
+            (PCDDefLegacy <$> (asText pDoubleQuotedString <?> "concept definition (string)")
+                          <*> (asText pDoubleQuotedString `opt` "") -- a reference to the source of this definition.
+            )
+        <|> (PCDDefNew <$> pMeaning)     
 --- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
 pRepresentation :: AmpParser Representation
 pRepresentation

@@ -132,7 +132,7 @@ pConid = check (\case
 pDoubleQuotedString :: AmpParser String
 pDoubleQuotedString = check (\case
   LexDubbleQuotedString s -> Just s
-  _ -> Nothing) <?> "string"
+  _ -> Nothing) <?> "double quoted string"
 
 --- Markup ::= '{+' Any* '+}'
 pAmpersandMarkup :: AmpParser String
