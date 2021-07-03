@@ -261,6 +261,7 @@ pCtx2aCtx env
                      , ctxrs = Set.fromList rules
                      , ctxds = Set.fromList relations
                      , ctxpopus = udpops  -- the content is copied from p_pops
+                     , ctxcdsOutPats = allConceptDefsOutPats
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
                      , ctxrrules = allRoleRules
@@ -922,8 +923,10 @@ pCtx2aCtx env
     pRefObj2aRefObj _       (PRef2Pattern     s ) = pure$ ExplPattern s
     pRefObj2aRefObj _       (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj _       (PRef2Context     s ) = pure$ ExplContext s
+    allConceptDefsOutPats :: [AConceptDef]
+    allConceptDefsOutPats = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) (concatMap pt_cds p_patterns)
     allConceptDefs :: [AConceptDef]
-    allConceptDefs = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) $ p_conceptdefs<>concatMap pt_cds p_patterns
+    allConceptDefs = map (pConcDef2aConcDef deflangCtxt deffrmtCtxt) (p_conceptdefs<>concatMap pt_cds p_patterns)
     allRoleRules :: [A_RoleRule]
     allRoleRules = map pRoleRule2aRoleRule
                       (p_roleRules <> concatMap pt_RRuls p_patterns)

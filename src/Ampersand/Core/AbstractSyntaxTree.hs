@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+﻿{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -90,6 +90,7 @@ data A_Context
          , ctxrs :: Rules           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: Relations        -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
+         , ctxcdsOutPats :: [AConceptDef]  -- ^ The concept definitions defined outside the patterns of this context.
          , ctxcds :: [AConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxrrules :: [A_RoleRule]

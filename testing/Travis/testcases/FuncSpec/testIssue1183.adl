@@ -3,23 +3,23 @@ CONTEXT TestIssue1183
 PATTERN FOO
 CONCEPT A12  "string 1"  "ref"
 
-CONCEPT AMR
-MEANING REF "ref" {+ string 2 +}
+CONCEPT AMU "string 2"
+-- MEANING LATEX {+ string 3 +}
 
-CONCEPT AMU
-MEANING LATEX {+ string 3 +}
-
-CONCEPT AMLU
-MEANING IN ENGLISH LATEX {+ string 4 +}
+CONCEPT AMLU "string 3"
+-- MEANING IN ENGLISH LATEX {+ string 4 +}
 
 CONCEPT A1 "string 5"
 
-CONCEPT A3
-MEANING {+ string 6 +}
+CONCEPT A3 "string 4"
+-- MEANING {+ string 6 +}
 
-RELATION foo[A12 * AMR]
-RELATION foo[AMU * AMLU]
+
 RELATION foo[A1 * A3]
 ENDPATTERN
 
+CONCEPT AMR "string 6"
+-- MEANING REF "ref" {+ string 2 +}
+
+RELATION foo[AMU * AMLU]
 ENDCONTEXT

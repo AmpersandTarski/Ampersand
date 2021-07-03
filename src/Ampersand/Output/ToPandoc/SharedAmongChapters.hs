@@ -304,7 +304,7 @@ orderingByTheme env fSpec
      nconceptss  :: NonEmpty [Numbered AConceptDef]
      nrelationss :: NonEmpty [Numbered Relation]
      nruless      = transformNonEmpty (numbering 0 (map Set.toList ruless    <>[Set.toList (ctxrs aCtx)]))
-     nconceptss   = transformNonEmpty (numbering 0 (               conceptss <>[ctxcds aCtx]            ))
+     nconceptss   = transformNonEmpty (numbering 0 (               conceptss <>[ctxcdsOutPats aCtx]            ))
      nrelationss  = transformNonEmpty (numbering 0 (map Set.toList relationss<>[Set.toList (ctxds aCtx)]))
      transformNonEmpty :: [a] -> NonEmpty a
      transformNonEmpty x = case NE.nonEmpty x of Just ne -> ne; Nothing -> fatal "onbereikbare code"
