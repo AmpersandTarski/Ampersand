@@ -501,11 +501,7 @@ chpDiagnosis env fSpec
                         -- Alignment:
                         (replicate 1 (AlignLeft,1))
                         -- Headers:
-                        ( ( fmap singleton
-                          . concatMap (amPandoc . ameaMrk)
-                          . meanings
-                          ) r
-                        )
+                        (map (amPandoc . ameaMrk) . meanings $ r)
                         -- Rows:
                         (mkInvariantViolationsError (applyViolText fSpec) (r,ps))
 

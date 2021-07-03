@@ -36,7 +36,7 @@ aCtx2pCtx ctx =
       , ctx_pats   = map aPattern2pPattern . ctxpats $ ctx
       , ctx_rs     = map aRule2pRule . Set.elems . ctxrs $ ctx
       , ctx_ds     = map aRelation2pRelation . Set.elems . ctxds $ ctx
-      , ctx_cs     = ctxcds ctx
+      , ctx_cs     = map aConcDef2pConcDef $ ctxcds ctx
       , ctx_ks     = map aIdentityDef2pIdentityDef . ctxks $ ctx
       , ctx_rrules = map aRoleRule2pRoleRule  .ctxrrules $ ctx
       , ctx_reprs  = reprList (ctxInfo ctx)
@@ -47,7 +47,16 @@ aCtx2pCtx ctx =
       , ctx_pops   = map aPopulation2pPopulation . ctxpopus $ ctx
       , ctx_metas  = ctxmetas ctx
       }
-  
+
+aConcDef2pConcDef :: AConceptDef -> PConceptDef
+aConcDef2pConcDef aCd =
+  PConceptDef
+    { pos = origin aCd,
+      cdcpt = name aCd,
+      cddef2 = PCDDefNew (aMeaning2pMeaning $ acddef2 aCd),
+      cdmean = map aMeaning2pMeaning $ acdmean aCd,
+      cdfrom = acdfrom aCd
+    }
 aPattern2pPattern :: Pattern -> P_Pattern
 aPattern2pPattern pat = 
  P_Pat { pos   = ptpos pat
