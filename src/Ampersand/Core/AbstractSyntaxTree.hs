@@ -891,19 +891,21 @@ instance ShowWithAliases Signature where
 instance Unique Signature where
   showUnique (Sign s t) = "[" <> showUnique s <> "*" <> showUnique t <> "]"
 instance HasSignature Signature where
+  source (Sign s _) = s
+  target (Sign _ t) = t
   sign sgn = sgn
 
 instance Flippable Signature where
  flp (Sign s t) = Sign t s
 
 class HasSignature a where
-  sign :: a -> Signature
   source, target :: a -> A_Concept
-  source = source . sign
-  target = target . sign
+  source x = source (sign x)
+  target x = target (sign x)
+  sign :: a -> Signature
   isEndo :: a  -> Bool
   isEndo s = source s == target s
-  {-# MINIMAL sign #-}
+--  {-# MINIMAL sign #-}
 
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
