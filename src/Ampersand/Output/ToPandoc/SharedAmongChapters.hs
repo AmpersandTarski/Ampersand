@@ -32,6 +32,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , plainText
     , showPredLogic
     , legacyTable
+    , printConcept
     )
 where
 import           Ampersand.ADL1 hiding (Meta)
@@ -521,3 +522,37 @@ legacyTable caption' cellspecs headers rows =
                toBodyRow bs = TableBody nullAttr (RowHeadColumns 0) [] [Row nullAttr $ zipWith toCell (map fst cellspecs) bs]
       tFooter :: TableFoot
       tFooter = TableFoot nullAttr []
+
+-- | This function is used in the conceptual analysis chapter as wel as the natural language chapter. To avoid
+--   code duplication, it has been placed in this shared module.
+printConcept :: (HasDocumentOpts env) =>
+    env -> (LocalizedStr -> Text) -> Numbered CptCont -> Blocks
+printConcept env l nCpt
+        = -- Purposes:
+           (printPurposes . cCptPurps . theLoad) nCpt
+         <> case (nubByContent . cCptDefs . theLoad) nCpt of
+             []    -> mempty  -- There is no definition of the concept
+             [cd] -> printCDef cd Nothing
+             cds  -> mconcat
+                    [printCDef cd (Just $ T.snoc "." suffx)
+                    |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
+                    ]
+        where
+         fspecFormat = view fspecFormatL env
+         nubByContent = L.nubBy (\x y -> fun x == fun y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
+           where fun = amPandoc . ameaMrk . acddef2
+         printCDef :: AConceptDef -- the definition to print
+                -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
+                -> Blocks
+         printCDef cDef suffx
+           = definitionList
+              [(   str (l (NL"Definitie " ,EN "Definition "))
+                <> ( if fspecFormat `elem` [Fpdf, Flatex]
+                     then (str . tshow .theNr) nCpt
+                     else (str . name) cDef
+                   )
+                <> str (fromMaybe "" suffx) <> ":"
+               , [meaning2Blocks (acddef2 cDef)]
+               )
+              ]
+

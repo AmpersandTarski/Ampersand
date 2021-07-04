@@ -53,15 +53,10 @@ aConcDef2pConcDef aCd =
   PConceptDef
     { pos = origin aCd,
       cdcpt = name aCd,
-      cddef = acddef aCd,
-      cdref = acdref aCd,
+      cddef2 = PCDDefNew (aMeaning2pMeaning $ acddef2 aCd),
       cdmean = map aMeaning2pMeaning $ acdmean aCd,
       cdfrom = acdfrom aCd
     }
-
-aConceptDef2pConceptDef :: AConceptDef -> PConceptDef
-aConceptDef2pConceptDef AConceptDef {pos=_pos, acdcpt=_cdcpt, acddef=_cddef, acdref=_cdref, acdmean=_cdmean, acdfrom=_cdfrom}
- = PConceptDef {pos=_pos, cdcpt=_cdcpt, cddef=_cddef, cdref=_cdref, cdmean=map aMeaning2pMeaning _cdmean, cdfrom=_cdfrom}
 
 aPattern2pPattern :: Pattern -> P_Pattern
 aPattern2pPattern pat = 
@@ -71,7 +66,7 @@ aPattern2pPattern pat =
        , pt_gns   = map aClassify2pClassify . ptgns $ pat
        , pt_dcs   = map aRelation2pRelation . Set.elems . ptdcs $ pat
        , pt_RRuls = map aRoleRule2pRoleRule . ptrrs $ pat
-       , pt_cds   = map aConceptDef2pConceptDef (ptcds pat)
+       , pt_cds   = map aConcDef2pConcDef (ptcds pat)
        , pt_Reprs = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_ids   = map aIdentityDef2pIdentityDef . ptids $ pat
        , pt_vds   = map aViewDef2pViewDef . ptvds $ pat

@@ -141,8 +141,7 @@ instance Traced Pattern where
 data AConceptDef = AConceptDef
   { pos :: !Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
   , acdcpt :: !Text   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-  , acddef :: !Text   -- ^ The textual definition of this concept.
-  , acdref :: !Text   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+  , acddef2 :: !Meaning   -- ^ The textual definition of this concept.
   , acdmean :: ![Meaning] -- ^ User-specified meanings, possibly more than one, for multiple languages.
   , acdfrom:: !Text   -- ^ The name of the pattern or context in which this concept definition was made --TODO: Refactor to Maybe Pattern.
   }   deriving (Show,Typeable)
@@ -907,14 +906,36 @@ class HasSignature rel where
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
 data ContextInfo =
-  CI { ctxiGens         :: [AClassify]      -- The generalisation relations in the context
-     , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
-     , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
-     , reprList         :: [Representation] -- a list of all Representations
-     , declDisambMap    :: Map.Map Text (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
-     , soloConcs        :: Set.Set Type -- types not used in any declaration
-     , gens_efficient   :: Op1EqualitySystem Type -- generalisation relations again, as a type system (including phantom types)
-     , conceptMap       :: ConceptMap -- a map that must be used to convert P_Concept to A_Concept
+  CI {
+    -- | The generalisation relations in the context
+    ctxiGens         :: [AClassify]     
+     ,
+    -- | a list containing all user defined Representations in the context
+    representationOf :: A_Concept -> TType
+     ,
+    -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
+    multiKernels     :: [Typology]
+     ,
+    -- | a list of all Representations
+    reprList         :: [Representation]
+     ,
+    -- | a map of declarations and the corresponding types
+    declDisambMap    :: Map.Map Text (Map.Map SignOrd Expression)
+     ,
+    -- | types not used in any declaration
+    soloConcs        :: Set.Set Type
+     ,
+    -- | generalisation relations again, as a type system (including phantom types)
+    gens_efficient   :: Op1EqualitySystem Type
+     ,
+    -- | a map that must be used to convert P_Concept to A_Concept
+    conceptMap       :: ConceptMap
+     ,
+    -- | the default language used to interpret markup texts in this context
+    defaultLang      :: Lang
+     ,
+    -- | the default format used to interpret markup texts in this context
+    defaultFormat    :: PandocFormat
      } 
                        
 instance Named Type where

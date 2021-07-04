@@ -31,7 +31,7 @@ import Ampersand.Core.ParseTree (
          , TermPrim(..), P_NamedRel(..)
          , PClassify(..)
          , P_Relation(..)
-         , PConceptDef(..)
+         , PConceptDef(..), PCDDef(..)
          , PMeaning(..),PMessage(..),P_Markup(..)
          )
 import Ampersand.Core.AbstractSyntaxTree (

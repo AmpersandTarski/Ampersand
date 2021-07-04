@@ -14,7 +14,7 @@ module Ampersand.Core.ParseTree (
    , BoxHeader(..), TemplateKeyValue(..)
    , SrcOrTgt(..)
    , P_Rule(..)
-   , PConceptDef(..)
+   , PConceptDef(..), PCDDef(..)
    , Representation(..), TType(..)
    , P_Population(..)
    , PAtomPair(..), PAtomValue(..), mkPair, makePSingleton
@@ -142,10 +142,8 @@ data PConceptDef = PConceptDef
     -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
     cdcpt :: !Text,
     -- | The textual definition of this concept.
-    cddef :: !Text,
+    cddef2 :: !PCDDef,
     -- | A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
-    cdref :: !Text,
-    -- | User-specified meanings, possibly more than one, for multiple languages.
     cdmean :: ![PMeaning],
     -- | The name of the pattern or context in which this concept definition was made
     cdfrom :: !Text
@@ -170,6 +168,21 @@ instance Traced PConceptDef where
  origin = pos
 instance Named PConceptDef where
  name = cdcpt
+
+-- | Data structure to implement the change to the new way to specify 
+--   the definition part of a concept. By using this structure, we can 
+--   implement the change in a fully backwards compatible way. 
+data PCDDef
+  = PCDDefLegacy
+      { -- | The textual definition of this concept.
+        pcddef :: !Text,
+        -- | A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+        pcdref :: !Text
+      }
+  | PCDDefNew
+      { pcdmean :: !PMeaning
+      }
+  deriving (Show, Typeable)
 data Representation
   = Repr { pos  :: Origin
          , reprcpts  :: NE.NonEmpty P_Concept  -- ^ the concepts

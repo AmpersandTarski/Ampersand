@@ -64,9 +64,8 @@ chpConceptualAnalysis env lev fSpec
      <> case patOfTheme themeContent of
           Just pat -> purposes2Blocks env (purposesOf fSpec outputLang' pat)
           Nothing  -> mempty
-        -- Then we discuss the concepts that have their definition inside this pattern
-     <> (mconcat . map printConcept . cptsOfTheme ) themeContent
-        -- Here we get an entity-relationship diagram of this pattern
+        -- followed by a conceptual model for this pattern
+   <> (mconcat . map (printConcept env l) . cptsOfTheme) themeContent
      <> ( case (outputLang', patOfTheme themeContent) of
                (Dutch, Just pat)   -> -- announce the conceptual diagram
                                       para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . name) pat<> ".")
@@ -123,7 +122,7 @@ chpConceptualAnalysis env lev fSpec
 
       defineRel :: Relation -> Blocks
       defineRel rel = case map (amPandoc . ameaMrk) (decMean rel) of
-                        []       -> mempty 
+                        []       -> mempty
                         [blocks] -> blocks
                         bss      -> bulletList bss
                       <>     (printPurposes . purposesOf fSpec outputLang') rel
@@ -156,6 +155,7 @@ chpConceptualAnalysis env lev fSpec
           entityRels :: Set Relation
           entityRels = Set.unions (map (Set.fromList . snd) caSubsections)
 
+{-
   printConcept :: Numbered CptCont -> Blocks
   printConcept nCpt
     = -- Purposes:
@@ -169,7 +169,7 @@ chpConceptualAnalysis env lev fSpec
       <> (printPurposes . cCptPurps . theLoad) nCpt
         where
          fspecFormat = view fspecFormatL env
-         nubByText = L.nubBy (\x y -> acddef x ==acddef y && acdref x == acdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
+         nubByText = L.nubBy (\x y -> acddef2 x ==acddef2 y && acdref x == acdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
          printCDef :: AConceptDef -- the definition to print
                 -> Maybe Text -- when multiple definitions exist of a single concept, this is to distinguish
                 -> Blocks
@@ -200,7 +200,7 @@ chpConceptualAnalysis env lev fSpec
                )
               ]
 
-{- unused code, possibly useful later...
+ unused code, possibly useful later...
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d = (titel, [body])
      where 

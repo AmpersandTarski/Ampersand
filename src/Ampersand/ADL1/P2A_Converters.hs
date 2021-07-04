@@ -310,6 +310,8 @@ pCtx2aCtx env
                     , soloConcs = Set.filter (not . isInSystem genLattice) allConcs
                     , gens_efficient = genLattice
                     , conceptMap = conceptmap
+                    , defaultLang = deflangCtxt
+                    , defaultFormat = deffrmtCtxt
                     }
         where
           gns = catMaybes $ pClassify2aClassify conceptmap <$> allGens
@@ -805,10 +807,6 @@ pCtx2aCtx env
                   , arPos   = origin prr
                   }
 
-    pConceptDef2aConceptDef :: PConceptDef -> AConceptDef
-    pConceptDef2aConceptDef PConceptDef {pos=_pos, cdcpt=_cdcpt, cddef=_cddef, cdref=_cdref, cdmean=_cdmean, cdfrom=_cdfrom}
-     = AConceptDef {pos=_pos, acdcpt=_cdcpt, acddef=_cddef, acdref=_cdref, acdmean=map (pMean2aMean deflangCtxt deffrmtCtxt) _cdmean, acdfrom=_cdfrom}
-
     pPat2aPat :: ContextInfo -> P_Pattern -> Guarded Pattern
     pPat2aPat ci ppat
      = f <$> traverse (pRul2aRul ci (Just $ name ppat)) (pt_rls ppat)
@@ -817,7 +815,7 @@ pCtx2aCtx env
          <*> traverse (pViewDef2aViewDef ci) (pt_vds ppat)
          <*> traverse (pPurp2aPurp ci) (pt_xps ppat)
          <*> traverse (pDecl2aDecl cptMap (Just $ name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
-         <*> traverse (pure.pConceptDef2aConceptDef) (pt_cds ppat)
+         <*> traverse (pure.pConcDef2aConcDef (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
          <*> traverse (pure.pRoleRule2aRoleRule) (pt_RRuls ppat)
          <*> traverse pure (pt_Reprs ppat)
        where
@@ -1115,7 +1113,7 @@ pDisAmb2Expr (_,Rel [x]) = pure x
 pDisAmb2Expr (o,dx)      = cannotDisambiguate o dx
 
 pConcDef2aConcDef ::
-  Lang -> -- The default language
+  Lang ->         -- The default language
   PandocFormat -> -- The default pandocFormatPConceptDef
   PConceptDef ->
   AConceptDef
@@ -1123,11 +1121,19 @@ pConcDef2aConcDef defLanguage defFormat pCd =
   AConceptDef
     { pos = origin pCd,
       acdcpt = name pCd,
-      acddef = cddef pCd,
-      acdref = cdref pCd,
+      acddef2 = pCDDef2Mean defLanguage defFormat $ cddef2 pCd,
       acdmean = map (pMean2aMean defLanguage defFormat) (cdmean pCd),
       acdfrom = cdfrom pCd
     }
+pCDDef2Mean :: Lang           -- The default language
+            -> PandocFormat   -- The default pandocFormat
+            -> PCDDef -> Meaning
+pCDDef2Mean defLanguage defFormat x = case x of 
+  PCDDefLegacy defStr refStr -> 
+      Meaning Markup{ amLang = defLanguage
+                    , amPandoc = string2Blocks defFormat (defStr <> if T.null refStr then mempty else "["<>refStr<>"]")
+                   } 
+  PCDDefNew m -> pMean2aMean defLanguage defFormat m
 pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
             -> PMeaning -> Meaning

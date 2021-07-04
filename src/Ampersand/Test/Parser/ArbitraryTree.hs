@@ -252,10 +252,14 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
 
 instance Arbitrary PConceptDef where
   arbitrary =
-    PConceptDef <$> arbitrary <*> identifier <*> safeStr
-      <*> safeStr
+    PConceptDef <$> arbitrary <*> identifier <*> arbitrary
       <*> arbitrary
       <*> identifier
+instance Arbitrary PCDDef where
+    arbitrary = oneof 
+      [ PCDDefLegacy <$> safeStr <*> safeStr
+      , PCDDefNew <$> arbitrary
+      ]
 instance Arbitrary PAtomPair where
     arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
 
