@@ -76,7 +76,7 @@ downloadPrototypeFramework = ( do
           url = "https://github.com/AmpersandTarski/Prototype/archive/"<>zwolleVersion<>".zip"
       logDebug "Start downloading prototype framework."
       response <- (parseRequest url >>= httpBS) `catch` \err ->  
-                          exitWith . FailedToInstallPrototypeFramework $
+                          failWithMessage
                               [ "Error encountered during deployment of prototype framework:"
                               , "  Failed to download "<>T.pack url
                               , tshow (err :: SomeException)
@@ -91,28 +91,36 @@ downloadPrototypeFramework = ( do
                [OptVerbose | logLevel runner == LevelDebug]
             <> [OptDestination dirPrototype]
       (liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
-                          exitWith . FailedToInstallPrototypeFramework $
+                          failWithMessage
                               [ "Error encountered during deployment of prototype framework:"
                               , "  Failed to extract the archive found at "<>T.pack url
                               , tshow (err :: SomeException)
                               ]
+                  
+      logDebug "Extraction of prototype framework finished."
       let dest = dirPrototype </> ".frameworkSHA"  
+      logDebug "Start extraction of prototype framework."
       (writeFileUtf8 dest . tshow . zComment $ archive) `catch` \err ->  
-                          exitWith . FailedToInstallPrototypeFramework $
+                          failWithMessage
                               [ "Error encountered during deployment of prototype framework:"
                               , "Archive seems valid: "<>T.pack url
                               , "  Failed to write contents of archive to "<>T.pack dest
                               , tshow (err :: SomeException)
                               ]
+      logDebug "Start extraction of prototype framework."
       return x
     else return x
   ) `catch` \err ->  -- git failed to execute
-         exitWith . FailedToInstallPrototypeFramework $
+         failWithMessage
             [ "Error encountered during deployment of prototype framework:"
             , tshow (err :: SomeException)
             ]
             
   where
+    failWithMessage :: HasLogFunc env => [Text] -> RIO env a
+    failWithMessage msg = do
+      mapM_ (logDebug . display) msg
+      exitWith (FailedToInstallPrototypeFramework msg)
     removeTopLevelFolder :: Archive -> Archive
     removeTopLevelFolder archive = 
        archive{zEntries = mapMaybe removeTopLevelPath . zEntries $ archive}
