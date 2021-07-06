@@ -116,9 +116,9 @@ jobs:
       - 
         name: Checkout project contents 📡
         uses: actions/checkout@v2
-      - 
-        name: Use cache when available 📦
-        uses: freckle/stack-cache-action@main
+#      - 
+#        name: Use cache when available 📦
+#        uses: freckle/stack-cache-action@main
       - 
         name: Archive content 🎒
         uses: thedoctor0/zip-release@master
@@ -146,9 +146,9 @@ jobs:
       - 
         name: Checkout project contents 📡
         uses: actions/checkout@v2
-      - 
-        name: Use cache when available 📦
-        uses: freckle/stack-cache-action@main
+#      - 
+#        name: Use cache when available 📦
+#        uses: freckle/stack-cache-action@main
       - 
         name: Build and test  🏗 🧪
         uses: freckle/stack-action@main
@@ -170,9 +170,9 @@ jobs:
       - 
         name: Checkout project contents 📡
         uses: actions/checkout@v2
-      - 
-        name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
-        uses: actions/cache@v2.1.3
+#      - 
+#        name: Use cache (manually) 📦 # See https://github.com/freckle/stack-cache-action/issues/5
+#        uses: actions/cache@v2.1.3
 # TODO: Cache might be done better, see for inspiration:  https://github.com/godu/advent-of-code-2020/blob/46796832f59d185457a8edf8de043a54a451d688/.github/workflows/ci.yml
         with:
           path: | 
