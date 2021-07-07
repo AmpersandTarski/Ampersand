@@ -219,8 +219,8 @@ testAdlfile indent dir adl tinfo = do
                                          else "ExitFailure "<>display (exitcode tinfo)
                                        )
                      <>", Actual: "<>display (tshow exit_code)<>")"
-          mapM_ (logWarn  . indnt) . toUtf8Builders $ out
-          logWarn .indnt $ "-------------------" 
+          mapM_ (logError  . indnt) . toUtf8Builders $ out
+          logError .indnt $ "-------------------" 
           mapM_ (logError . indnt) . toUtf8Builders $ err
           logError  "❗❗❗ -------------------" 
      indnt :: Utf8Builder -> Utf8Builder
