@@ -32,12 +32,14 @@ doGenFrontend fSpec = do
     copyTemplates
     feInterfaces <- buildInterfaces fSpec
     frontendVersion <- view frontendVersionL 
+    logDebug . display $ tshow (length feInterfaces) <>" will be generated. ("<>tshow frontendVersion<>")."
     case frontendVersion of 
       AngularJS -> do genViewInterfaces fSpec feInterfaces
                       genControllerInterfaces fSpec feInterfaces
                       genRouteProvider fSpec feInterfaces
       Angular   -> do genComponents fSpec feInterfaces
                       genAngularModule fSpec feInterfaces 
+    logDebug "Write .timestamp"
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     logInfo "Frontend generated"
 
@@ -75,6 +77,7 @@ downloadPrototypeFramework = ( do
       let url :: FilePath
           url = "https://github.com/AmpersandTarski/Prototype/archive/"<>zwolleVersion<>".zip"
       logDebug "Start downloading prototype framework."
+      logDebug . display $ "  url = "<> T.pack url
       response <- (parseRequest url >>= httpBS) `catch` \err ->  
                           failWithMessage
                               [ "Error encountered during deployment of prototype framework:"
@@ -99,7 +102,7 @@ downloadPrototypeFramework = ( do
                   
       logDebug "Extraction of prototype framework finished."
       let dest = dirPrototype </> ".frameworkSHA"  
-      logDebug "Start extraction of prototype framework."
+      logDebug . display $ "Start writing to " <> T.pack dest
       (writeFileUtf8 dest . tshow . zComment $ archive) `catch` \err ->  
                           failWithMessage
                               [ "Error encountered during deployment of prototype framework:"
@@ -107,7 +110,7 @@ downloadPrototypeFramework = ( do
                               , "  Failed to write contents of archive to "<>T.pack dest
                               , tshow (err :: SomeException)
                               ]
-      logDebug "Start extraction of prototype framework."
+      logDebug . display $ "Succesfully written " <> T.pack dest
       return x
     else return x
   ) `catch` \err ->  -- git failed to execute
