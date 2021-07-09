@@ -11,6 +11,7 @@ import           Conduit
 import           Data.Yaml
 import           RIO.Process
 import qualified RIO.ByteString.Lazy as BL
+import qualified RIO.ByteString.Lazy.Partial as BLPartial
 import qualified RIO.Text as T
 import           System.Directory
 import           System.FilePath
@@ -221,13 +222,13 @@ testAdlfile indent dir adl tinfo = do
                      <>", Actual: "<>display (tshow exit_code)<>")"
           mapM_ (logError  . indnt) . toUtf8Builders $ out
            
-          logError . indnt $ "-------------------" 
+          logError . indnt $ "------------------- " 
           mapM_ (logError . indnt) . toUtf8Builders $ err
+          logError . indnt . display $ "out: " <> tshow (nrOfLines out) <> " lines."
+          logError . indnt . display $ "err: " <> tshow (nrOfLines err) <> " lines."
           logError  "❗❗❗ -------------------" 
         where
-          nrOfLines :: BL.ByteString -> Int
-          nrOfLines bs = length . BL.unpackChars $ bs
-            where aap = BL.unpackChars bs
+          nrOfLines = length . BL.split (BLPartial.head "\n")
      indnt :: Utf8Builder -> Utf8Builder
      indnt = ("    " <>)
      toUtf8Builders :: BL.ByteString -> [Utf8Builder]
