@@ -220,9 +220,14 @@ testAdlfile indent dir adl tinfo = do
                                        )
                      <>", Actual: "<>display (tshow exit_code)<>")"
           mapM_ (logError  . indnt) . toUtf8Builders $ out
-          logError .indnt $ "-------------------" 
+           
+          logError . indnt $ "-------------------" 
           mapM_ (logError . indnt) . toUtf8Builders $ err
           logError  "❗❗❗ -------------------" 
+        where
+          nrOfLines :: BL.ByteString -> Int
+          nrOfLines bs = length . BL.unpackChars $ bs
+            where aap = BL.unpackChars bs
      indnt :: Utf8Builder -> Utf8Builder
      indnt = ("    " <>)
      toUtf8Builders :: BL.ByteString -> [Utf8Builder]
