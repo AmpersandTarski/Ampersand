@@ -10,17 +10,17 @@ Violations of rule "TOT Room::Room*Resource":
 -}
 
 PATTERN FraakTest2
-		
-	CLASSIFY Room ISA Resource
-	CLASSIFY Beamer ISA Resource
 
-	beamerLocation :: Beamer * Room
+    CLASSIFY Room ISA Resource
+    CLASSIFY Beamer ISA Resource
+
+    beamerLocation :: Beamer * Room
 
 ENDPATTERN
 
 POPULATION beamerLocation CONTAINS
-	[ ("Beamer 001", "Gn secretariaat")
-	; ("Beamer Gn 1.147", "Gn 1.147")
-	]
+    [ ("Beamer 001", "Gn secretariaat")
+    ; ("Beamer Gn 1.147", "Gn 1.147")
+    ]
 
 ENDCONTEXT

@@ -88,27 +88,27 @@ PATTERN Patterns
 ENDPATTERN
 
     PURPOSE RELATION including[Instance*Definition]
-    {+	To accomodate selective instances, we need a relation that identifies which
-    	entities are actually being instantiated. This administers the difference between the
+    {+  To accomodate selective instances, we need a relation that identifies which
+        entities are actually being instantiated. This administers the difference between the
         entire name space and the hidden names.
     +}
     PURPOSE CONCEPT Instance
-    {+	To administer INSTANCE-statements together with their AS-annotations,
-    	we need the concept of Instance.
+    {+  To administer INSTANCE-statements together with their AS-annotations,
+        we need the concept of Instance.
         Instantiating (consuming) a pattern adds the content of that pattern to the consumer pattern,
         under a different name. This creates a new instance of the entities in the instantiated pattern.
     +}
     PURPOSE RELATION name[Pattern*PatternName]
-    {+	To distinguish different patterns that exist within the same environment,
-    	every pattern has a name.
+    {+  To distinguish different patterns that exist within the same environment,
+        every pattern has a name.
     +}
     PURPOSE RELATION instantiates[Pattern*Pattern]
-    {+	A pattern can contain `INSTANCE` statements, which identify other patterns to be instantiated.
-    	These statements are registered in the system for the purpose of computing the name space.
-    	This determines which names are visible in which patterns.
+    {+  A pattern can contain `INSTANCE` statements, which identify other patterns to be instantiated.
+        These statements are registered in the system for the purpose of computing the name space.
+        This determines which names are visible in which patterns.
     +}
     PURPOSE RELATION locator[Definition*Locator]
-    {+	Ampersand users can ask where a certain Definition has been defined.
+    {+  Ampersand users can ask where a certain Definition has been defined.
         This relation administrates that.
     +}
     PURPOSE CONCEPT Locator
@@ -116,15 +116,15 @@ ENDPATTERN
         Place in a document of the Ampersand-user
     +}
     PURPOSE RELATION definition[Entity*Definition]
-    {+	
-    	
+    {+  
+        
     +}
     PURPOSE RELATION type[Entity*SyntacticCategory]
-    {+	As different syntactic categories may have disjoint name spaces,
-    	we need to distinguish all entities to their respective syntactic categories.
+    {+  As different syntactic categories may have disjoint name spaces,
+        we need to distinguish all entities to their respective syntactic categories.
     +}
     PURPOSE RELATION declaredIn[Definition*Pattern]
-    {+	We wish to know which definitions there are in a certain pattern.
+    {+  We wish to know which definitions there are in a certain pattern.
         This enables us to instantiate exactly the entities that are defined in the instantiated pattern.
     +}
 
