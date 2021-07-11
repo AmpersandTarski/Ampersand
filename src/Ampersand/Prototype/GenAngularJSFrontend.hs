@@ -1,4 +1,4 @@
-﻿{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.GenAngularJSFrontend (
          genViewInterfaces
@@ -246,6 +246,9 @@ readTemplate templatePath = do
 renderTemplate :: Maybe [TemplateKeyValue] -> Template -> (StringTemplate String -> StringTemplate String) -> Text
 renderTemplate userAtts (Template template absPath) setRuntimeAtts =
     case checkTemplateDeep appliedTemplate of
+      -- BEWARE: checkTemplateDeep will hang if there are sub-attributes missing. I had such a case after I renamed ifcName 
+      --         and ifcLabel to feiName and feiLabel. The template `routeProvider.config.js` needs those attributes in
+      --         for each interface provided. 
              ([],  [],    []) -> T.pack $ render appliedTemplate
              (parseErrs@(_:_), _, _)
                 -> templateError . T.concat $

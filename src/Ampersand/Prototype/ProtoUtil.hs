@@ -29,9 +29,12 @@ import           Ampersand.Core.ParseTree
 -- | data object that contains information about an interface, from the
 --   perspective of the generated frontend
 data FEInterface = FEInterface 
-   { feiName :: Text
-   , feiLabel :: Text
-   , feiExp :: FEExpression
+  -- BEWARE: the names `ifcName` and `ifcLabel` must not be changed, because they are used
+  -- in at lease one template, called routeProvider.config.js. If these names are not present,
+  -- the call to renderTemplate will hang 
+   { ifcName :: Text 
+   , ifcLabel :: Text
+   , ifcExp :: FEExpression
    , feiRoles :: [Role]
    , feiObj :: FEObject
    } deriving (Typeable, Data)
