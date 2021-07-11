@@ -62,7 +62,7 @@ genRouteProvider fSpec ifcs = do
                  . setAttribute "ifcs"                ifcs
                  . setAttribute "verbose"             (loglevel' == LevelDebug)
                  . setAttribute "loglevel"            (show loglevel')
-  logDebug . display $ "Contents: "<> contents
+  mapM_ (logDebug . display) $ "Generated template: " : (map ("   "<>) . T.lines $ contents)
   writePrototypeAppFile "routeProvider.config.js" contents
   logDebug "Finish genRouteProvider."
       
