@@ -139,9 +139,9 @@ chpDiagnosis env fSpec
                               ,EN " are defined, but not used.")
                   )
      where
-       concepts :: [A_Concept]
-       concepts = Set.elems (concs fSpec)
-       undefinedConcepts = [cd | cd <-conceptDefs fSpec, name cd `notElem` map name concepts]
+       conceptsInUsedRelation :: [A_Concept]
+       conceptsInUsedRelation = Set.elems . concs . allUsedDecls $ fSpec
+       undefinedConcepts = [cd | cd <-conceptDefs fSpec, name cd `notElem` map name conceptsInUsedRelation]
 
   missingRels :: Blocks
   missingRels
