@@ -30,5 +30,5 @@ genComponent _ ifc = do
 
 genAngularModule :: (HasLogFunc env) => FSpec -> [FEInterface] -> RIO env ()
 genAngularModule _ ifcs = do
-    logError . display $ "Still TODO: Generate component for "<> tshow (map ifcName ifcs)
-    return undefined
+    logError . display $ "Still TODO: Generate module for "<> tshow (map ifcName ifcs)
+    return ()
