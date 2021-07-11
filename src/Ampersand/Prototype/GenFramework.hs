@@ -32,7 +32,7 @@ doGenFrontend fSpec = do
     copyTemplates
     feInterfaces <- buildInterfaces fSpec
     frontendVersion <- view frontendVersionL
-    logDebug . display $ tshow (length feInterfaces) <>"interfaces will be generated. ("<>tshow frontendVersion<>")."
+    logDebug . display $ tshow (length feInterfaces) <>" interfaces will be generated. ("<>tshow frontendVersion<>")."
     case frontendVersion of
       AngularJS -> do genViewInterfaces fSpec feInterfaces
                       genControllerInterfaces fSpec feInterfaces

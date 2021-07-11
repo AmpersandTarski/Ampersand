@@ -1,4 +1,4 @@
--- {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.GenAngularFrontend (genComponents,genAngularModule) 
 
 where
@@ -20,8 +20,15 @@ import           Ampersand.Prototype.ProtoUtil
 import           Text.StringTemplate.GenericStandard () -- only import instances
 
 
-genComponents :: FSpec -> [FEInterface] -> RIO env ()
-genComponents = undefined
+genComponents :: (HasLogFunc env) => FSpec -> [FEInterface] -> RIO env ()
+genComponents fSpec = mapM_ (genComponent fSpec)
 
-genAngularModule :: FSpec -> [FEInterface] -> RIO env ()
-genAngularModule = undefined
+genComponent :: (HasLogFunc env) => FSpec -> FEInterface -> RIO env ()
+genComponent _ ifc = do
+    logError . display $ "Still TODO: Generate component for "<> ifcName ifc
+
+
+genAngularModule :: (HasLogFunc env) => FSpec -> [FEInterface] -> RIO env ()
+genAngularModule _ ifcs = do
+    logError . display $ "Still TODO: Generate component for "<> tshow (map ifcName ifcs)
+    return undefined
