@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+﻿{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.GenAngularJSFrontend (
          genViewInterfaces
@@ -20,7 +20,7 @@ import qualified RIO.Text as T
 import qualified RIO.List as L
 import           System.Directory
 import           System.FilePath
-import           Text.StringTemplate(Stringable, StringTemplate, setAttribute, newSTMP, checkTemplateDeep, render)
+import           Text.StringTemplate(Stringable, StringTemplate, setAttribute, newSTMP, checkTemplateDeep, render, toString)
 import           Text.StringTemplate.GenericStandard () -- only import instances
 
 
@@ -51,17 +51,27 @@ copyCustomizations = do
 genRouteProvider :: (HasRunner env, HasDirPrototype env) =>
                     FSpec -> [FEInterface] -> RIO env ()
 genRouteProvider fSpec ifcs = do
+  logDebug "Start genRouteProvider."
   runner <- view runnerL
   let loglevel' = logLevel runner
   template <- readTemplate "routeProvider.config.js"
+  mapM_ (logDebug . display) (showTemplate template)
   let contents = renderTemplate Nothing template $
                    setAttribute "contextName"         (fsName fSpec)
                  . setAttribute "ampersandVersionStr" (longVersion appVersion)
                  . setAttribute "ifcs"                ifcs
                  . setAttribute "verbose"             (loglevel' == LevelDebug)
                  . setAttribute "loglevel"            (show loglevel')
+  logDebug . display $ "Contents: "<> contents
   writePrototypeAppFile "routeProvider.config.js" contents
+  logDebug "Finish genRouteProvider."
       
+showTemplate :: Template -> [Text]
+showTemplate ( Template a b )= 
+  T.lines . T.intercalate "\n" $ 
+    ("Template (" <>T.pack b<>")") :
+      map ("  "<>) 
+        [T.pack $ toString a]
 ------ Generate view html code
 isTopLevel :: A_Concept -> Bool
 isTopLevel cpt = isONE cpt || isSESSION cpt
@@ -79,14 +89,14 @@ genViewInterface fSpec interf = do
   template <- readTemplate "interface.html"
   let contents = renderTemplate Nothing template $
                     setAttribute "contextName"         (addSlashes . fsName $ fSpec)
-                  . setAttribute "isTopLevel"          (isTopLevel . source .feiExp $ interf)
+                  . setAttribute "isTopLevel"          (isTopLevel . source .ifcExp $ interf)
                   . setAttribute "roles"               (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                   . setAttribute "ampersandVersionStr" (longVersion appVersion)
-                  . setAttribute "interfaceName"       (feiName  interf)
-                  . setAttribute "interfaceLabel"      (feiLabel interf) -- no escaping for labels in templates needed
-                  . setAttribute "expAdl"              (showA . toExpr . feiExp $ interf)
-                  . setAttribute "source"              (idWithoutType . source .feiExp $ interf)
-                  . setAttribute "target"              (idWithoutType . target .feiExp $ interf)
+                  . setAttribute "interfaceName"       (ifcName  interf)
+                  . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
+                  . setAttribute "expAdl"              (showA . toExpr . ifcExp $ interf)
+                  . setAttribute "source"              (idWithoutType . source .ifcExp $ interf)
+                  . setAttribute "target"              (idWithoutType . target .ifcExp $ interf)
                   . setAttribute "crudC"               (objCrudC (feiObj interf))
                   . setAttribute "crudR"               (objCrudR (feiObj interf))
                   . setAttribute "crudU"               (objCrudU (feiObj interf))
@@ -95,7 +105,7 @@ genViewInterface fSpec interf = do
                   . setAttribute "verbose"             (loglevel' == LevelDebug)
                   . setAttribute "loglevel"            (show loglevel')
   let filename :: FilePath
-      filename = "ifc" <>(T.unpack . feiName $ interf)<> ".view.html" 
+      filename = "ifc" <>(T.unpack . ifcName $ interf)<> ".view.html" 
   writePrototypeAppFile filename contents 
   
 -- Helper data structure to pass attribute values to HStringTemplate
@@ -208,15 +218,15 @@ genControllerInterface fSpec interf = do
     let loglevel' = logLevel runner
     let contents = renderTemplate Nothing template $
                        setAttribute "contextName"              (fsName fSpec)
-                     . setAttribute "isRoot"                   (isTopLevel . source . feiExp $ interf)
+                     . setAttribute "isRoot"                   (isTopLevel . source . ifcExp $ interf)
                      . setAttribute "roles"                    (map show . feiRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr"      (longVersion appVersion)
-                     . setAttribute "interfaceName"            (feiName interf)
-                     . setAttribute "interfaceLabel"           (feiLabel interf) -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"                   (showA . toExpr . feiExp $ interf)
+                     . setAttribute "interfaceName"            (ifcName interf)
+                     . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
+                     . setAttribute "expAdl"                   (showA . toExpr . ifcExp $ interf)
                      . setAttribute "exprIsUni"                (exprIsUni (feiObj interf))
-                     . setAttribute "source"                   (idWithoutType . source . feiExp $ interf)
-                     . setAttribute "target"                   (idWithoutType . target . feiExp $ interf)
+                     . setAttribute "source"                   (idWithoutType . source . ifcExp $ interf)
+                     . setAttribute "target"                   (idWithoutType . target . ifcExp $ interf)
                      . setAttribute "crudC"                    (objCrudC (feiObj interf))
                      . setAttribute "crudR"                    (objCrudR (feiObj interf))
                      . setAttribute "crudU"                    (objCrudU (feiObj interf))
@@ -224,12 +234,12 @@ genControllerInterface fSpec interf = do
                      . setAttribute "verbose"                  (loglevel' == LevelDebug)
                      . setAttribute "loglevel"                 (show loglevel')
                      . setAttribute "usedTemplate"             controlerTemplateName
-    let filename = "ifc" <> T.unpack (feiName interf) <> ".controller.js"
+    let filename = "ifc" <> T.unpack (ifcName interf) <> ".controller.js"
     writePrototypeAppFile filename contents 
 
 ------ Utility functions
 -- data type to keep template and source file together for better errors
-data Template = Template (StringTemplate FilePath) Text
+data Template = Template (StringTemplate FilePath) FilePath
 
 
 readTemplate :: (HasDirPrototype env) =>
@@ -240,9 +250,8 @@ readTemplate templatePath = do
   res <- readUTF8File absPath
   case res of
     Left err   -> exitWith $ ReadFileError $ "Error while reading template." : err
-    Right cont -> return $ Template (newSTMP . T.unpack $ cont) (T.pack absPath)
+    Right cont -> return $ Template (newSTMP . T.unpack $ cont) absPath
 
--- having Bool attributes prevents us from using a [(Text, Text)] parameter for attribute settings
 renderTemplate :: Maybe [TemplateKeyValue] -> Template -> (StringTemplate String -> StringTemplate String) -> Text
 renderTemplate userAtts (Template template absPath) setRuntimeAtts =
     case checkTemplateDeep appliedTemplate of
@@ -263,7 +272,7 @@ renderTemplate userAtts (Template template absPath) setRuntimeAtts =
                 -> templateError $ 
                       "Missing invoked templates: " <> tshow ts -- should not happen as we don't invoke templates
   where templateError msg = exitWith $ ReadFileError 
-            ["*** TEMPLATE ERROR in:" <> absPath
+            ["*** TEMPLATE ERROR in:" <> T.pack absPath
             , msg
             ]
         appliedTemplate = setRuntimeAtts . setUserAtts (fromMaybe [] userAtts) $ template

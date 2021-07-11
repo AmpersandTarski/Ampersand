@@ -31,41 +31,45 @@ doGenFrontend fSpec = do
     _ <- downloadPrototypeFramework
     copyTemplates
     feInterfaces <- buildInterfaces fSpec
-    frontendVersion <- view frontendVersionL 
-    logDebug . display $ tshow (length feInterfaces) <>" will be generated. ("<>tshow frontendVersion<>")."
-    case frontendVersion of 
+    frontendVersion <- view frontendVersionL
+    logDebug . display $ tshow (length feInterfaces) <>"interfaces will be generated. ("<>tshow frontendVersion<>")."
+    case frontendVersion of
       AngularJS -> do genViewInterfaces fSpec feInterfaces
                       genControllerInterfaces fSpec feInterfaces
                       genRouteProvider fSpec feInterfaces
+                      logDebug "Finished generating files for AngularJS"
       Angular   -> do genComponents fSpec feInterfaces
-                      genAngularModule fSpec feInterfaces 
+                      genAngularModule fSpec feInterfaces
     logDebug "Write .timestamp"
     writePrototypeAppFile ".timestamp" (tshow . hash . show $ now) -- this hashed timestamp is used by the prototype framework to prevent browser from using the wrong files from cache
     logInfo "Frontend generated"
 
 -- For useful info on the template language, see
--- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
+-- https://theantlrguy.atlassian.net/wiki/spaces/ST/pages/1409038/StringTemplate+cheat+sheet
 -- NOTE: due to a bug in HStringTemplate's checkTemplateDeep, non-existent attribute names on
 --       composite attributes in anonymous templates will hang the generator :-(
 --       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
 
-  
+
 copyTemplates :: (HasFSpecGenOpts env, HasDirPrototype env, HasLogFunc env) =>
                  RIO env ()
 copyTemplates = do
   env <- ask
+  logDebug "Start copy templates"
   let tempDir = dirSource env </> "templates"
       toDir = getTemplateDir env
+  logDebug . display $ "  From: "<>T.pack tempDir
+  logDebug . display $ "  To:   "<>T.pack toDir
   tempDirExists <- liftIO $ doesDirectoryExist tempDir
   if tempDirExists then do
          logDebug $ "Copying project specific templates from " <> display (T.pack tempDir) <> " -> " <> display (T.pack toDir)
          copyDirRecursively tempDir toDir -- recursively copy all templates
   else
-         logDebug $ "No project specific templates (there is no directory " <> display (T.pack tempDir) <> ")"
+         logDebug $ "No project specific templates are copied (there is no such directory " <> display (T.pack tempDir) <> ")"
 
 downloadPrototypeFramework :: (HasRunner env, HasZwolleVersion env, HasDirPrototype env) =>
                              RIO env Bool
-downloadPrototypeFramework = ( do 
+downloadPrototypeFramework = ( do
     env <- ask
     let dirPrototype = getDirPrototype env
     x <- extractionIsAllowed dirPrototype
@@ -78,32 +82,32 @@ downloadPrototypeFramework = ( do
           url = "https://github.com/AmpersandTarski/Prototype/archive/"<>zwolleVersion<>".zip"
       logDebug "Start downloading prototype framework."
       logDebug . display $ "  url = "<> T.pack url
-      response <- (parseRequest url >>= httpBS) `catch` \err ->  
+      response <- (parseRequest url >>= httpBS) `catch` \err ->
                           failWithMessage
                               [ "Error encountered during deployment of prototype framework:"
                               , "  Failed to download "<>T.pack url
                               , tshow (err :: SomeException)
                               ]
-      let archive = removeTopLevelFolder 
-                  . toArchive 
-                  . BL.fromStrict 
+      let archive = removeTopLevelFolder
+                  . toArchive
+                  . BL.fromStrict
                   . getResponseBody $ response
       logDebug "Start extraction of prototype framework."
       runner <- view runnerL
-      let zipoptions = 
+      let zipoptions =
                [OptVerbose | logLevel runner == LevelDebug]
             <> [OptDestination dirPrototype]
-      (liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->  
+      (liftIO . extractFilesFromArchive zipoptions $ archive) `catch` \err ->
                           failWithMessage
                               [ "Error encountered during deployment of prototype framework:"
                               , "  Failed to extract the archive found at "<>T.pack url
                               , tshow (err :: SomeException)
                               ]
-                  
+
       logDebug "Extraction of prototype framework finished."
-      let dest = dirPrototype </> ".frameworkSHA"  
+      let dest = dirPrototype </> ".frameworkSHA"
       logDebug . display $ "Start writing to " <> T.pack dest
-      (writeFileUtf8 dest . tshow . zComment $ archive) `catch` \err ->  
+      (writeFileUtf8 dest . tshow . zComment $ archive) `catch` \err ->
                           failWithMessage
                               [ "Error encountered during deployment of prototype framework:"
                               , "Archive seems valid: "<>T.pack url
@@ -118,18 +122,18 @@ downloadPrototypeFramework = ( do
             [ "Error encountered during deployment of prototype framework:"
             , tshow (err :: SomeException)
             ]
-            
+
   where
     failWithMessage :: HasLogFunc env => [Text] -> RIO env a
     failWithMessage msg = do
       mapM_ (logDebug . display) msg
       exitWith (FailedToInstallPrototypeFramework msg)
     removeTopLevelFolder :: Archive -> Archive
-    removeTopLevelFolder archive = 
+    removeTopLevelFolder archive =
        archive{zEntries = mapMaybe removeTopLevelPath . zEntries $ archive}
       where
         removeTopLevelPath :: Entry -> Maybe Entry
-        removeTopLevelPath entry = 
+        removeTopLevelPath entry =
             case splitPath . eRelativePath $ entry of
               []   -> fatal "Impossible"
               [_]  -> Nothing
@@ -139,11 +143,11 @@ downloadPrototypeFramework = ( do
                            FilePath ->  RIO env Bool
     extractionIsAllowed destination = do
       pathExist <- liftIO $ doesPathExist destination
-      destIsDirectory <- liftIO $ doesDirectoryExist destination 
+      destIsDirectory <- liftIO $ doesDirectoryExist destination
       if pathExist
-      then 
+      then
           if destIsDirectory
-          then do 
+          then do
             dirContents <- liftIO $ listDirectory destination
             if null dirContents
             then return True
@@ -173,14 +177,14 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
     buildInterface :: (HasDirPrototype env) => Interface -> RIO env FEInterface
     buildInterface ifc = do
       obj <- buildObject (BxExpr $ ifcObj ifc)
-      return 
-        FEInterface { feiName = escapeIdentifier $ name ifc
-                    , feiLabel = name ifc
-                    , feiExp = objExp obj
+      return
+        FEInterface { ifcName = escapeIdentifier $ name ifc
+                    , ifcLabel = name ifc
+                    , ifcExp = objExp obj
                     , feiRoles = ifcRoles ifc
                     , feiObj = obj
                     }
-      where    
+      where
         buildObject :: (HasDirPrototype env) => BoxItem -> RIO env FEObject
         buildObject boxItem = case boxItem of
          BxExpr object' -> do
@@ -212,19 +216,19 @@ buildInterfaces fSpec = mapM buildInterface . filter (not . ifcIsAPI) $ allIfcs
                                   , boxSubObjs = subObjs
                                   }
                             , feExp)
-                  InterfaceRef{} -> 
+                  InterfaceRef{} ->
                     case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
                       []      -> fatal ("Referenced interface " <> siIfcId si <> " missing")
                       (_:_:_) -> fatal ("Multiple relations of referenced interface " <> siIfcId si)
-                      [i]     -> 
+                      [i]     ->
                             if siIsLink si
                             then do
                               let templatePath = "View-LINKTO.html"
                               return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
                                      , feExp)
-                            else do 
+                            else do
                               refObj <- buildObject  (BxExpr $ ifcObj i)
-                              let comp = fromExpr $ ECps (toExpr feExp, toExpr $ objExp refObj) 
+                              let comp = fromExpr $ ECps (toExpr feExp, toExpr $ objExp refObj)
                                    -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
                               return (atomicOrBox refObj, comp)
                                    -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
