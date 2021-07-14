@@ -25,7 +25,7 @@ BOX <TABS>
          ]
     ]
     
-INTERFACE "Context" FOR Ampersand : I[Context]
+INTERFACE Context FOR Ampersand : I[Context]
 BOX <TABS>
   [ "About" : I BOX
     [ "name"  : name[Context*ContextName]
