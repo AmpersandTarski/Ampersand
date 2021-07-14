@@ -36,6 +36,24 @@ import           Ampersand.Misc.HasClasses
 --      Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --      It assembles these relations to form a valid P_Context.
 
+--   Explanation Grind:
+--     The "Grind" option is used for RAP because the "grinded" user script lands in the RAP-database.
+--     The function pCtx2Fspec checks the user script for type errors, yielding 'userFspc'.
+--     Grinding provides a minimal metamodel, which is devoid of empty relations.
+
+--   Explanation RAP
+--     The entire FormalAmpersand metamodel is called 'faScript' in the code below.
+--     It is merged into the result so the RAP-database can hold the grinded results of any valid Ampersand script.
+--     The metamodel FormalAmpersand is also incorporated in the database, so
+--     RAP can populate this metamodel with grinded user scripts for showing an Atlas.
+--     It also incorporates PrototypeContext because RAP is a running application.
+
+--   Explanation Prototype
+--     The "Prototype" option is used to generate prototypes. It combines the user script
+--     with some navigation elements from the prototype context.
+--     That is why 'one' is the combination of the user script and the metamodel of the prototype context.
+--     The compiler typechecks the combination because a user might inadvertedly use concepts from the prototype context.
+--     In that case he is in for a suprise, but at least the system does not land on its back.
 createFspec :: (HasFSpecGenOpts env, HasLogFunc env) => 
                Recipe -> RIO env (Guarded FSpec)
 createFspec recipe =
@@ -48,15 +66,25 @@ createFspec recipe =
     let pContext
           = case recipe of
               Standard  -> userScript
-              Atlas     -> do userPCtx  <- userScript
-                              let one    = userPCtx `mergeContexts` metaModel FormalAmpersand
-                              oneFspec  <- pCtx2Fspec env one
-                              let two  = grind transformersFormalAmpersand oneFspec
-                              faScript  <- formalAmpersandScript
-                              return (one `mergeContexts` two `mergeContexts` faScript)
+              -- the following option, Grind, generates population for an atlas.
+              -- It assumes that the database is fit to receive that population, as RAP does.
+              Grind     -> do userScr   <- userScript
+                              userFspc  <- pCtx2Fspec env userScr
+                              return (grind transformersFormalAmpersand userFspc)
               Prototype -> do userPCtx  <- userScript
                               let one    = userPCtx `mergeContexts` metaModel PrototypeContext
-                              oneFspec  <- pCtx2Fspec env one
+                              oneFspec  <- pCtx2Fspec env one  -- this is done to typecheck the combination
+                              let two    = grind transformersPrototypeContext oneFspec
+                              pcScript  <- prototypeContextScript
+                              return (one `mergeContexts` two `mergeContexts` pcScript)
+              -- The option 'RAP' generates a database that is fit to receive metamodels, so an Atlas is possible.
+              -- 
+              -- 
+              -- The 'makeAtlas' button in RAP uses the 'Grind' option to populate the metamodel.
+              RAP       -> do rapPCtx   <- userScript
+                              faScript  <- formalAmpersandScript
+                              let one    = rapPCtx `mergeContexts` metaModel PrototypeContext `mergeContexts` faScript
+                              oneFspec  <- pCtx2Fspec env one  -- this is done to typecheck the combination
                               let two    = grind transformersPrototypeContext oneFspec
                               pcScript  <- prototypeContextScript
                               return (one `mergeContexts` two `mergeContexts` pcScript)

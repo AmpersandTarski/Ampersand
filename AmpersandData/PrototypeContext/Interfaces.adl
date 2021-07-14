@@ -12,7 +12,7 @@ CONTEXT PrototypeFramework IN ENGLISH
     RELATION isPublic[PF_Interface*PF_Interface] [PROP]
         MEANING "This property states that an interface is accessible for all roles (i.e. public)"
 
-        -- Cannot enfore this rule yet, because ExecEngine is still required to add missing roles
+        -- Cannot enforce this rule yet, because ExecEngine is still required to add missing roles
         -- RULE "Public interface integrity" : isPublic;V[PF_Interface*Role] |- pf_ifcRoles
 
     -- EQUIVALENCE pf_ifcRoles[PF_Interface*Role] == isPublic;V[PF_Interface*Role]

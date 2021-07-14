@@ -828,22 +828,14 @@ dirtyIdWithoutType = DirtyId . idWithoutType
 --     label[Role*PF_Label]                -> name[Role*RoleName]
 --   Then you will see that the transformers defined here are a subset of the FormalAmpersand transformers.
 transformersPrototypeContext :: FSpec -> [Transformer]
-transformersPrototypeContext fSpec = map toTransformer [
-      ("ifc"                   , "PF_NavMenuItem"        , "PF_Interface"
-      , Set.fromList []
-      , []
-      )
+transformersPrototypeContext fSpec = map toTransformer
 -- the following transformer is also contained in FormalAmpersand.
-    , ("isAPI"                 , "PF_Interface"          , "PF_Interface"
+    [ ("isAPI"                 , "PF_Interface"          , "PF_Interface"
       , Set.fromList []
       , [(dirtyIdWithoutType ifc, dirtyIdWithoutType ifc)
         | ifc::Interface <- instanceList fSpec
         , ifcIsAPI ifc
         ]
-      )
-    , ("isPartOf"              , "PF_NavMenuItem"        , "PF_NavMenu"
-      , Set.fromList []
-      , []
       )
 -- the following transformer can be calculated by the Exec Engine.
 -- it is also contained in FormalAmpersand.
@@ -854,24 +846,12 @@ transformersPrototypeContext fSpec = map toTransformer [
         , null (ifcRoles ifc)
         ]
       )
-    , ("isSubItemOf"           , "PF_NavMenuItem"        , "PF_NavMenuItem"
-      , Set.fromList []
-      , []
-      )
-    , ("isVisible"             , "PF_NavMenuItem"        , "PF_NavMenuItem"
-      , Set.fromList []
-      , []
-      )
 -- the following transformer is also contained in FormalAmpersand.
     , ("label"                 , "PF_Interface"          , "PF_Label"
       , Set.fromList []
       , [(dirtyIdWithoutType ifc, PopAlphaNumeric . name $ ifc)
         | ifc::Interface <- instanceList fSpec
         ]
-      )
-    , ("label"                 , "PF_NavMenuItem"        , "PF_Label"
-      , Set.fromList []
-      , []
       )
 -- the following transformer is called name[Role*RoleName] in FormalAmpersand
     , ("label"                 , "Role"               , "PF_Label"
@@ -880,10 +860,6 @@ transformersPrototypeContext fSpec = map toTransformer [
         | role::Role <- instanceList fSpec
         ]
       )
-    , ("lastAccess"            , "SESSION"            , "DateTime"
-      , Set.fromList [Uni,Tot]
-      , []
-      )
 -- the following transformer is called ifcRoles[Interface*Role] in FormalAmpersand
     , ("pf_ifcRoles"           , "PF_Interface"          , "Role"
       , Set.fromList []
@@ -891,26 +867,6 @@ transformersPrototypeContext fSpec = map toTransformer [
         | ifc::Interface <- instanceList fSpec
         , role <- ifcRoles ifc
         ]
-      )
-    , ("pf_navItemRoles"       , "PF_NavMenuItem"        , "Role"
-      , Set.fromList []
-      , []
-      )
-    , ("seqNr"                 , "PF_NavMenuItem"        , "PF_SeqNr"
-      , Set.fromList []
-      , []
-      )
-    , ("sessionActiveRoles"    , "SESSION"            , "Role"
-      , Set.fromList []
-      , []
-      )
-    , ("sessionAllowedRoles"   , "SESSION"            , "Role"
-      , Set.fromList []
-      , []
-      )
-    , ("url"                   , "PF_NavMenuItem"        , "PF_URL"
-      , Set.fromList []
-      , []
       )
     ]
 
