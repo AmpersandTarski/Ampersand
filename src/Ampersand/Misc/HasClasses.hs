@@ -213,7 +213,7 @@ data FSpecGenOpts = FSpecGenOpts
   , xdefaultCrud :: !(Bool,Bool,Bool,Bool)
   , xtrimXLSXCells :: !Bool
   , xrecipeName :: !Recipe 
-  -- ^ Should leading and trailing spaces of text values in .XLSX files be ignored? 
+  -- ^ Which recipe for generating code? Standard, Prototype, or Atlas? 
   , xallowInvariantViolations :: !Bool
   -- ^ Should invariant violations be ignored?
 } deriving Show

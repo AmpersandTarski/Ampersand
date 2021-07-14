@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ShowMeatGrinder
   ( grind
-  , semanticInterpretations
+  , metaModel
   , MetaModel(..)
   )
 where
@@ -16,8 +16,7 @@ import           Ampersand.Core.ParseTree
 import           Ampersand.FSpec.FSpec
 import           Ampersand.FSpec.Transformers
 -- import qualified RIO.Set as Set
--- import qualified RIO.Text as T
-import qualified Data.Map.Lazy as Map
+import qualified RIO.Text as T
 
 data MetaModel = FormalAmpersand | PrototypeContext
        deriving (Eq, Ord, Enum, Bounded, Show)
@@ -25,23 +24,17 @@ instance Named MetaModel where
   name FormalAmpersand = "Formal Ampersand"
   name PrototypeContext = "Prototype context"
 
-semanticInterpretations :: Map.Map MetaModel (P_Context, FSpec -> [Transformer])
-semanticInterpretations
- = Map.fromList
-    [ (FormalAmpersand, (metaModelTransformers, transformersFormalAmpersand))
-    , (PrototypeContext, (metaModelPrototypeContext, transformersPrototypeContext))
-    ]
-
--- | This produces "FormalAmpersand" as defined by the transformers
-metaModelTransformers :: P_Context
-metaModelTransformers = 
-  PCtx{ ctx_nm     = "MetaModelTransformers"
+-- | This produces the metamodel of either
+--   "FormalAmpersand" or "PrototypeContext" as defined by their transformers.
+metaModel :: MetaModel -> P_Context
+metaModel mmLabel = 
+  PCtx{ ctx_nm     = "MetaModel"<>T.pack (show mmLabel)
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
       , ctx_pats   = []
       , ctx_rs     = []
-      , ctx_ds     = map metarelation (transformersFormalAmpersand emptyFSpec)
+      , ctx_ds     = map metarelation (transformers emptyFSpec)
       , ctx_cs     = []
       , ctx_ks     = []
       , ctx_rrules = []
@@ -53,28 +46,10 @@ metaModelTransformers =
       , ctx_pops   = []
       , ctx_metas  = []
       }
-
--- | This produces "PrototypeContext" as defined by the transformers
-metaModelPrototypeContext :: P_Context
-metaModelPrototypeContext = 
-  PCtx{ ctx_nm     = "MetaModelPrototypeContext"
-      , ctx_pos    = []
-      , ctx_lang   = Nothing
-      , ctx_markup = Nothing
-      , ctx_pats   = []
-      , ctx_rs     = []
-      , ctx_ds     = map metarelation (transformersPrototypeContext emptyFSpec)
-      , ctx_cs     = []
-      , ctx_ks     = []
-      , ctx_rrules = []
-      , ctx_reprs  = []
-      , ctx_vs     = []
-      , ctx_gs     = []
-      , ctx_ifcs   = []
-      , ctx_ps     = []
-      , ctx_pops   = []
-      , ctx_metas  = []
-      }
+  where
+    transformers = case mmLabel of
+      FormalAmpersand  -> transformersFormalAmpersand
+      PrototypeContext -> transformersPrototypeContext
 
 -- | The 'grind' function lifts a model to the population of a metamodel.
 --   The model is "ground" with respect to a metamodel defined in transformersFormalAmpersand,
