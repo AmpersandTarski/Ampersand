@@ -3,7 +3,7 @@ CONTEXT PrototypeFramework IN ENGLISH
     CONCEPT PF_Interface ""
         REPRESENT PF_Interface TYPE OBJECT
 
-    RELATION label[PF_Interface*PF_Label] [UNI,TOT]
+    RELATION label[PF_Interface*PF_Label] [UNI]
         REPRESENT PF_Label TYPE ALPHANUMERIC
 
     RELATION pf_ifcRoles[PF_Interface*Role]

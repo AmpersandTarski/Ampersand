@@ -44,7 +44,8 @@ PATTERN "Term definitions"
     RELATION arg[UnaryTerm*Term] [UNI]
     RELATION operator[UnaryTerm*Operator] [UNI]
 
-    CONCEPT AtomValue "A value can exist on it's own, without having one or more concepts, where it is a value of an atom in it."
+    CONCEPT AtomValue "A value can exist on its own, without having one or more concepts, where it is a value of an atom in it."
+    REPRESENT AtomValue TYPE ALPHANUMERIC
     RELATION singleton[Singleton*AtomValue] [UNI]
     
     CONCEPT "V" "The cartesian product."
