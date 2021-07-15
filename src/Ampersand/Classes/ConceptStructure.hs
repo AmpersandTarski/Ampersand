@@ -57,7 +57,7 @@ instance ConceptStructure A_Context where
   concs ctx = Set.unions -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
               [ Set.singleton ONE
             --  , Set.singleton (makeConcept "SESSION") --SESSION is in PrototypeContext.adl
-              , (concs . ctxcds) ctx
+              , (concs . ctxcdsOutPats) ctx
               , (concs . ctxds) ctx
               , (concs . ctxgs) ctx
               , (concs . ctxifcs) ctx

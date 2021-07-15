@@ -90,6 +90,7 @@ data A_Context
          , ctxrs :: Rules           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: Relations        -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
+         , ctxcdsOutPats :: [AConceptDef]  -- ^ The concept definitions defined outside the patterns of this context.
          , ctxcds :: [AConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxrrules :: [A_RoleRule]
@@ -112,17 +113,20 @@ instance Named A_Context where
   name  = ctxnm
 
 data Pattern
-   = A_Pat { ptnm ::  Text        -- ^ Name of this pattern
-           , ptpos :: Origin        -- ^ the position in the file in which this pattern was declared.
-           , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
-           , ptrls :: Rules         -- ^ The user defined rules in this pattern
-           , ptgns :: [AClassify]   -- ^ The generalizations defined in this pattern
-           , ptdcs :: Relations     -- ^ The relations that are declared in this pattern
-           , ptups :: [Population]  -- ^ The user defined populations in this pattern
-           , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
-           , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
-           , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           }   deriving (Typeable)  -- Show for debugging purposes
+   = A_Pat { ptnm ::  Text              -- ^ Name of this pattern
+           , ptpos :: Origin            -- ^ the position in the file in which this pattern was declared.
+           , ptend :: Origin            -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
+           , ptrls :: Rules             -- ^ The user defined rules in this pattern
+           , ptgns :: [AClassify]       -- ^ The generalizations defined in this pattern
+           , ptdcs :: Relations         -- ^ The relations that are declared in this pattern
+           , ptrrs :: [A_RoleRule]      -- ^ The role-rule assignments that are declared in this pattern
+           , ptcds :: [AConceptDef]     -- ^ The concept definitions that are declared in this pattern
+           , ptrps :: [Representation]  -- ^ The concept definitions that are declared in this pattern
+           , ptups :: [Population]      -- ^ The user defined populations in this pattern
+           , ptids :: [IdentityDef]     -- ^ The identity definitions defined in this pattern
+           , ptvds :: [ViewDef]         -- ^ The view definitions defined in this pattern
+           , ptxps :: [Purpose]         -- ^ The purposes of elements defined in this pattern
+           }   deriving (Typeable)      -- Show for debugging purposes
 instance Eq Pattern where
   a == b = compare a b == EQ
 instance Unique Pattern where
@@ -902,14 +906,36 @@ class HasSignature rel where
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
 data ContextInfo =
-  CI { ctxiGens         :: [AClassify]      -- The generalisation relations in the context
-     , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
-     , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
-     , reprList         :: [Representation] -- a list of all Representations
-     , declDisambMap    :: Map.Map Text (Map.Map SignOrd Expression) -- a map of declarations and the corresponding types
-     , soloConcs        :: Set.Set Type -- types not used in any declaration
-     , gens_efficient   :: Op1EqualitySystem Type -- generalisation relations again, as a type system (including phantom types)
-     , conceptMap       :: ConceptMap -- a map that must be used to convert P_Concept to A_Concept
+  CI {
+    -- | The generalisation relations in the context
+    ctxiGens         :: [AClassify]     
+     ,
+    -- | a list containing all user defined Representations in the context
+    representationOf :: A_Concept -> TType
+     ,
+    -- | a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
+    multiKernels     :: [Typology]
+     ,
+    -- | a list of all Representations
+    reprList         :: [Representation]
+     ,
+    -- | a map of declarations and the corresponding types
+    declDisambMap    :: Map.Map Text (Map.Map SignOrd Expression)
+     ,
+    -- | types not used in any declaration
+    soloConcs        :: Set.Set Type
+     ,
+    -- | generalisation relations again, as a type system (including phantom types)
+    gens_efficient   :: Op1EqualitySystem Type
+     ,
+    -- | a map that must be used to convert P_Concept to A_Concept
+    conceptMap       :: ConceptMap
+     ,
+    -- | the default language used to interpret markup texts in this context
+    defaultLang      :: Lang
+     ,
+    -- | the default format used to interpret markup texts in this context
+    defaultFormat    :: PandocFormat
      } 
                        
 instance Named Type where
