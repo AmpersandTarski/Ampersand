@@ -78,17 +78,20 @@ fSpec2Pandoc env now fSpec = (thePandoc,thePictures)
             <> cref True     --required for pandoc-crossref to do its work properly
             <> chapters True -- Numbering with subnumbers per chapter
 
-    diagnosisOnly = view chaptersL env == [Diagnosis]
     thePandoc = wrap .
         setTitle
            (case metaValues "title" fSpec of
-                [] -> (if diagnosisOnly
+                [] -> (if view chaptersL env == [Diagnosis]
                        then (text.l)
-                               ( NL "Functioneel Ontwerp van "
-                               , EN "Functional Design of ")
-                       else (text.l)
                                ( NL "Diagnose van "
                                , EN "Diagnosis of ")
+                       else if view chaptersL env == [ConceptualAnalysis]
+                       then (text.l)
+                               ( NL "Conceptuele Analyse van "
+                               , EN "Conceptual Analysis of ")
+                       else  (text.l)
+                               ( NL "Functioneel Ontwerp van "
+                               , EN "Functional Design of ")
                       ) <> (singleQuoted.text.name) fSpec
                 titles -> (text . T.concat . L.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
            )

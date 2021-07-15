@@ -213,7 +213,7 @@ instance Pretty PConceptDef where
                <+> pretty def <+\> perline mean 
 instance Pretty PCDDef where
     pretty (PCDDefNew mean) = pretty mean
-    pretty (PCDDefLegacy def ref) = quote def <+> maybeText ref
+    pretty (PCDDefLegacy def ref) = quote def <+> maybeText ("["<>ref<>"]")
         where maybeText txt = if T.null txt then empty
                               else quote txt
 

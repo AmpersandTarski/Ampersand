@@ -1,6 +1,7 @@
 ﻿# Release notes of Ampersand
 
 ## Unreleased
+* In the generated documentation, the Conceptual Analysis chapter has been revised to be readable by stakeholders with some knowledge of conceptual modeling.
 * [Issue #1171](https://github.com/AmpersandTarski/Ampersand/issues/1171) Warn about labels with identical names in sections of VIEW statement. 
 * [Issue #1163](https://github.com/AmpersandTarski/Ampersand/issues/1163) Idenfifiers starting with an underscore (`_`) are no longer allowed. 
 * [Issue #1183](https://github.com/AmpersandTarski/Ampersand/issues/1183) Use markup in definition of Concept is now possible.

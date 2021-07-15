@@ -39,7 +39,6 @@ import           Ampersand.ADL1 hiding (MetaData)
 import           Ampersand.Basics hiding (Reader,Identity,toList,link)
 import           Ampersand.Classes
 import           Ampersand.Core.ShowAStruct
-import           Ampersand.Input.ADL1.FilePos
 import           Ampersand.FSpec
 import           Ampersand.Graphic.Graphics
 import           Ampersand.Misc.HasClasses
@@ -243,6 +242,7 @@ refStuff x  =
           ("relation","rule" ,"expression","pattern","theme")
 
 
+<<<<<<< HEAD
 {- 
 class NumberedThing a where
   numberOf :: FSpec -> a -> Int
@@ -276,6 +276,8 @@ instance NumberedThing A_Concept where
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
 --   that isn't handled in a specific theme.
+=======
+>>>>>>> 46d2f3a048c6f7832e73ffaaff885737dc6d1344
 
 data ThemeContent =
        Thm { themeNr ::      Int
@@ -309,6 +311,7 @@ instance Named DeclCont where
   name = name . cDcl
 instance Named CptCont where
   name = name . cCpt
+<<<<<<< HEAD
 data Counters
   = Counter { pNr :: Int --Theme number
             , definitionNr :: Int --For Concepts
@@ -382,36 +385,59 @@ orderingByTheme env fSpec
            , cCptDefs  = sortWithOrigins $ concDefs fSpec cpt
            , cCptPurps = purposesOf fSpec (outputLang env fSpec) cpt
            }
+=======
+>>>>>>> 46d2f3a048c6f7832e73ffaaff885737dc6d1344
 
+-- | orderingByTheme collects materials from the fSpec to distribute over themes.
+--   It ensures that all rules, relations and concepts from the context are included in the specification.
+--   The principle is that every rule, relation, or concept that is defined in a pattern is documented in the corresponding theme.
+--   Everything that is defined outside themes is documented in the last theme.
+--   As a consequence, something that is declared in several patterns occurs in the corresponding themes and may be seen as a double occurrence.
+--   However, that may be the intention of the Ampersand modeler.
+--   The story: materials from the patterns are gathered in ruless, conceptss, and relationss.
+--   Numbering of each item is done recursively by `numbered`, while keeping the structure intact.
+--   Finally, the theme content is constructed.
+orderingByTheme :: HasOutputLanguage env => env -> FSpec -> [ThemeContent]
+orderingByTheme env fSpec
+ = [ Thm { themeNr      = i
+         , patOfTheme   = Just pat
+         , rulesOfTheme = fmap rul2rulCont nrules
+         , dclsOfTheme  = fmap dcl2dclCont nrelations
+         , cptsOfTheme  = fmap cpt2cptCont nconcepts
+         }
+   | (pat, i, nrules, nrelations, nconcepts)<-L.zip5 (vpatterns fSpec) [0..] (NE.init nruless) (NE.init nrelationss) (NE.init nconceptss) ] <>
+   [ Thm { themeNr      = length (vpatterns fSpec)
+         , patOfTheme   = Nothing
+         , rulesOfTheme = fmap rul2rulCont (NE.last nruless)
+         , dclsOfTheme  = fmap dcl2dclCont (NE.last nrelationss)
+         , cptsOfTheme  = fmap cpt2cptCont (NE.last nconceptss)
+         } ]
+   where
+     nruless     :: NonEmpty [Numbered Rule]
+     nconceptss  :: NonEmpty [Numbered AConceptDef]
+     nrelationss :: NonEmpty [Numbered Relation]
+     nruless      = transformNonEmpty (numbering 0 (map Set.toList ruless    <>[Set.toList (ctxrs aCtx)]))
+     nconceptss   = transformNonEmpty (numbering 0 (               conceptss <>[ctxcdsOutPats aCtx]            ))
+     nrelationss  = transformNonEmpty (numbering 0 (map Set.toList relationss<>[Set.toList (ctxds aCtx)]))
+     transformNonEmpty :: [a] -> NonEmpty a
+     transformNonEmpty x = case NE.nonEmpty x of Just ne -> ne; Nothing -> fatal "onbereikbare code"
+     aCtx = originalContext fSpec
+     ruless     :: [Rules]
+     conceptss  :: [[AConceptDef]]
+     relationss :: [Relations]
+     (ruless, conceptss, relationss)
+      = L.unzip3 [ (ptrls pat, ptcds pat, ptdcs pat) | pat<-vpatterns fSpec ]
+     numbering :: Int -> [[a]] -> [[Numbered a]]
+     numbering n (xs:xss) = [ Nr i x | (x,i)<-zip xs [n..]]: numbering (n+length xs) xss
+     numbering _ _ = []
 
-  setNumbers :: Int           -- ^ the initial number
-             -> (t -> a)      -- ^ the constructor function
-             -> [t]           -- ^ a list of things that are numberd
-             -> [Numbered a]
-  setNumbers i construct items =
-    case items of
-      []     -> []
-      (x:xs) ->  Nr { theNr   = i
-                    , theLoad = construct x
-                    }:setNumbers (i+1) construct xs
-  -- | This function takes care of partitioning each of the
-  --   lists in a pair of lists of elements which do and do not belong
-  --   to the theme, respectively
-  partitionByTheme :: Maybe Pattern  -- Just pat if this theme is from a pattern, otherwise this stuff comes from outside a pattern (but inside a context).
-                   -> ( Counters, [Rule], [Relation], [A_Concept])
-                   -> ( ThemeContent , ( Counters ,[Rule], [Relation], [A_Concept])
-                      )
-  partitionByTheme mPat (cnt, ruls, rels, cpts)
-      = ( Thm { themeNr      = pNr cnt
-              , patOfTheme   = mPat
-              , rulesOfTheme = setNumbers (agreementNr cnt + length themeDcls ) rul2rulCont thmRuls
-              , dclsOfTheme  = setNumbers (agreementNr cnt) dcl2dclCont themeDcls
-              , cptsOfTheme  = setNumbers (definitionNr cnt) cpt2cptCont themeCpts
-              }
-        , (Counter {pNr = pNr cnt +1
-                   ,definitionNr = definitionNr cnt + length themeCpts
-                   ,agreementNr = agreementNr cnt + length themeDcls + length thmRuls
+     rul2rulCont :: Numbered Rule -> Numbered RuleCont
+     rul2rulCont (Nr n rul)
+       = Nr n CRul { cRul      = rul
+                   , cRulPurps = purposesOf fSpec (outputLang env fSpec) rul
+                   , cRulMeanings = meanings rul
                    }
+<<<<<<< HEAD
         , restRuls, restDcls, restCpts)
         )
      where
@@ -430,6 +456,26 @@ orderingByTheme env fSpec
 dpRule' :: (HasDocumentOpts env) =>
     env -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
           -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
+=======
+     dcl2dclCont :: Numbered Relation -> Numbered DeclCont
+     dcl2dclCont (Nr n dcl)
+       = Nr n CDcl { cDcl      = dcl
+                   , cDclPurps = purposesOf fSpec (outputLang env fSpec) dcl
+                   , cDclMeanings = meanings dcl
+                   , cDclPairs = pairsInExpr fSpec (EDcD dcl)
+                   }
+   
+     cpt2cptCont :: Numbered AConceptDef -> Numbered CptCont
+     cpt2cptCont (Nr n cpt)
+       = Nr n CCpt { cCpt      = c
+                   , cCptDefs  = [cpt]
+                   , cCptPurps = purposesOf fSpec (outputLang env fSpec) c
+                   } where c = PlainConcept (acdcpt cpt NE.:| [])
+
+dpRule' :: (HasDocumentOpts env) =>
+            env -> FSpec -> [Rule] -> Int -> A_Concepts -> Relations
+            -> ([(Inlines, [Blocks])], Int, A_Concepts, Relations)
+>>>>>>> 46d2f3a048c6f7832e73ffaaff885737dc6d1344
 dpRule' env fSpec = dpR
  where
    l lstr = text $ localize (outputLang env fSpec) lstr
