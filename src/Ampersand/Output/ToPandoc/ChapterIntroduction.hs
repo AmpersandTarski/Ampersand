@@ -11,8 +11,8 @@ chpIntroduction :: (HasDirOutput env, HasDocumentOpts env)
    => env -> UTCTime -> FSpec -> Blocks
 chpIntroduction env now fSpec =
       xDefBlck env fSpec Intro
-   <> fromList purposesOfContext  -- the motivation(s) of this context
-   <> readingGuide                -- tells what can be expected in this document.
+   <> purposesOfContext  -- the motivation(s) of this context
+   <> readingGuide       -- tells what can be expected in this document.
   where
     outputLang' = outputLang env fSpec
     readingGuide
@@ -121,4 +121,6 @@ chpIntroduction env now fSpec =
     time :: Text
     time = T.pack $ formatTime (lclForLang outputLang') "%H:%M:%S" now
 
-    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesOf fSpec outputLang' fSpec]
+    purposesOfContext :: Blocks
+    purposesOfContext = mconcat . map (amPandoc . explMarkup) . purposesOf fSpec outputLang' $ fSpec
+    

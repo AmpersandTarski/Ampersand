@@ -63,6 +63,10 @@ class Named a => HasMeaning a where
   meanings :: a -> [Meaning]
   {-# MINIMAL meanings #-}
 
+instance HasMeaning AConceptDef where
+  meanings cd = 
+    acddef2 cd : acdmean cd
+
 instance HasMeaning Rule where
   meanings = rrmean
 --  meaning l rule

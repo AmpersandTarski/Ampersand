@@ -110,8 +110,8 @@ instance ConceptStructure A_Concept where
   concs         c = Set.singleton c
   expressionsIn _ = Set.empty
 
-instance ConceptStructure ConceptDef where
-  concs _         = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into P_ConceptDef and A_ConceptDef
+instance ConceptStructure AConceptDef where
+  concs _         = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into PConceptDef and A_ConceptDef
   expressionsIn _ = Set.empty
 
 instance ConceptStructure Signature where
