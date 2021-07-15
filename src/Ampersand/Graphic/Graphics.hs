@@ -223,11 +223,7 @@ writePicture pict = do
   --  writeDot Canon  --Pretty-printed Dot output with no layout performed.
   --  writeDot DotOutput --Reproduces the input along with layout information.
     writeDot imagePathRelativeToCurrentDir Png    --handy format to include in github comments/issues
-<<<<<<< HEAD
-  -- writeDot imagePathRelativeToCurrentDir Pdf
-=======
   -- writeDot imagePathRelativeToCurrentDir Canon  -- To obtain the Graphviz source code of the images
->>>>>>> 46d2f3a048c6f7832e73ffaaff885737dc6d1344
   -- writeDot imagePathRelativeToCurrentDir Svg   -- format that is used when docx docs are being generated.
   -- writePdf imagePathRelativeToCurrentDir Eps   -- .eps file that is postprocessed to a .pdf file 
    where

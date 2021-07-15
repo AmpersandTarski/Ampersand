@@ -65,11 +65,7 @@ chpConceptualAnalysis env lev fSpec
           Just pat -> purposes2Blocks env (purposesOf fSpec outputLang' pat)
           Nothing  -> mempty
         -- followed by a conceptual model for this pattern
-<<<<<<< HEAD
-     <> (mconcat . map (printConcept env l). cptsOfTheme ) themeContent
-=======
    <> (mconcat . map (printConcept env l) . cptsOfTheme) themeContent
->>>>>>> 46d2f3a048c6f7832e73ffaaff885737dc6d1344
      <> ( case (outputLang', patOfTheme themeContent) of
                (Dutch, Just pat)   -> -- announce the conceptual diagram
                                       para (hyperLinkTo (pictOfPat pat) <> "Conceptueel diagram van " <> (singleQuoted . str . name) pat<> ".")
@@ -143,14 +139,9 @@ chpConceptualAnalysis env lev fSpec
         = simpleTable [ (plain.text.l) (NL "Relatie", EN "Relation")
                       , (plain.text.l) (NL "Betekenis", EN "Meaning")
                       ]
-<<<<<<< HEAD
-                      ( [(plain . text) (name rel <> " " <> if null cls then tshow (sign rel) else l (NL " (Attribuut van ", EN " (Attribute of ") <> T.concat cls <> ")") 
-                         : (map meaning2Blocks . meanings $ rel)
-=======
                       ( [[ (plain . text) (name rel <> " " <> if null cls then tshow (sign rel) else l (NL " (Attribuut van ", EN " (Attribute of ") <> T.concat cls <> ")")
                          , defineRel rel  -- use "tshow.attType" for the technical type.
                          ]
->>>>>>> 46d2f3a048c6f7832e73ffaaff885737dc6d1344
                         | rel<-rels
                         , let cls = [ name cl | cl <-themeClasses, (_, entRels) <- [caEntity cl], rel `elem` entRels ]
                         ]
@@ -164,9 +155,6 @@ chpConceptualAnalysis env lev fSpec
           entityRels :: Set Relation
           entityRels = Set.unions (map (Set.fromList . snd) caSubsections)
 
-<<<<<<< HEAD
-{- unused code, possibly useful later...
-=======
 {-
   printConcept :: Numbered CptCont -> Blocks
   printConcept nCpt
@@ -213,7 +201,6 @@ chpConceptualAnalysis env lev fSpec
               ]
 
  unused code, possibly useful later...
->>>>>>> 46d2f3a048c6f7832e73ffaaff885737dc6d1344
   caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d = (titel, [body])
      where 
