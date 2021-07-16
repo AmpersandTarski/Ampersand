@@ -1,4 +1,3 @@
 testCmds:
-#  - command: ampersand check --build-recipe Atlas --verbose
   - command: ampersand check --verbose
     exitcode: 0
