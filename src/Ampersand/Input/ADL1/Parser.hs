@@ -82,7 +82,7 @@ data ContextElement = CMeta Meta
                     | CRul (P_Rule TermPrim)
                     | CCfy [PClassify]
                     | CRel (P_Relation, [P_Population])
-                    | CCon (Text -> ConceptDef)
+                    | CCon (Text -> PConceptDef)
                     | CRep Representation
                     | Cm P_RoleRule
                     | CIndx P_IdentDef
@@ -98,8 +98,8 @@ pIncludeStatement :: AmpParser Include
 pIncludeStatement = 
       Include <$> currPos
               <*  pKey "INCLUDE" 
-              <*> pString
-              <*> (pBrackets (asText pString `sepBy` pComma) <|> return [])
+              <*> pDoubleQuotedString
+              <*> (pBrackets (asText pDoubleQuotedString `sepBy` pComma) <|> return [])
 
 --- LanguageRef ::= 'IN' ('DUTCH' | 'ENGLISH')
 pLanguageRef :: AmpParser Lang
@@ -116,7 +116,7 @@ pTextMarkup = ReST     <$ pKey "REST"     <|>
 
 --- Meta ::= 'META' Text Text
 pMeta :: AmpParser Meta
-pMeta = Meta <$> currPos <* pKey "META" <*> asText pString <*> asText pString
+pMeta = Meta <$> currPos <* pKey "META" <*> asText pDoubleQuotedString <*> asText pDoubleQuotedString
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN' 
 pPatternDef  :: AmpParser P_Pattern
@@ -164,7 +164,7 @@ data PatElem = Pr (P_Rule TermPrim)
              | Py [PClassify]
              | Pd (P_Relation, [P_Population])
              | Pm P_RoleRule
-             | Pc (Text -> ConceptDef)
+             | Pc (Text -> PConceptDef)
              | Prep Representation
              | Pk P_IdentDef
              | Pv P_ViewDef
@@ -224,14 +224,14 @@ pRuleDef =  P_Rule <$> currPos
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
                  pPairViewSegment = PairViewExp  <$> posOf (pKey "SRC") <*> return Src <*> pTerm
                                 <|> PairViewExp  <$> posOf (pKey "TGT") <*> return Tgt <*> pTerm
-                                <|> PairViewText <$> posOf (pKey "TXT") <*> asText pString
+                                <|> PairViewText <$> posOf (pKey "TXT") <*> asText pDoubleQuotedString
 
 --- RelationDef ::= (RelationNew | RelationOld) Props? ('PRAGMA' Text+)? Meaning* ('=' Content)? '.'?
 pRelationDef :: AmpParser (P_Relation, [P_Population])
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
                        <*> optSet pProps
-                       <*> optList (pKey "PRAGMA" *> many1 (asText pString))
+                       <*> optList (pKey "PRAGMA" *> many1 (asText pDoubleQuotedString))
                        <*> many pMeaning
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
@@ -304,13 +304,19 @@ pFun  =  Set.empty               <$ pOperator "*"  <|>
                         Set.fromList [ts,ui] <$ try pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName Text ('TYPE' Text)? Text?
-pConceptDef :: AmpParser (Text->ConceptDef)
-pConceptDef       = Cd <$> currPos
+pConceptDef :: AmpParser (Text->PConceptDef)
+pConceptDef       = PConceptDef <$> currPos
                        <*  pKey "CONCEPT"
                        <*> pConceptName
-                       <*> (asText pString <?> "concept definition (string)")
-                       <*> (asText pString `opt` "") -- a reference to the source of this definition.
-
+                       <*> pPCDDef2
+                       <*> many pMeaning
+    where
+      pPCDDef2 :: AmpParser PCDDef
+      pPCDDef2 = 
+            (PCDDefLegacy <$> (asText pDoubleQuotedString <?> "concept definition (string)")
+                          <*> (asText pDoubleQuotedString `opt` "") -- a reference to the source of this definition.
+            )
+        <|> (PCDDefNew <$> pMeaning)     
 --- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
 pRepresentation :: AmpParser Representation
 pRepresentation
@@ -368,7 +374,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> (pBraces (pViewSegment False `sepBy` pComma) `opt` [])
+                      <*> pBraces (pViewSegment False `sepBy` pComma) `opt` []
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos' nm cpt isDef ats html =
@@ -382,11 +388,11 @@ pFancyViewDef  = mkViewDef <$> currPos
           --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
           --- HtmlView ::= 'HTML' 'TEMPLATE' Text
           pHtmlView :: AmpParser ViewHtmlTemplate
-          pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
+          pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pDoubleQuotedString
 --- ViewSegmentLoad ::= Term | 'TXT' Text
 pViewSegmentLoad :: AmpParser (P_ViewSegmtPayLoad TermPrim)           
 pViewSegmentLoad = P_ViewExp  <$> pTerm
-               <|> P_ViewText <$ pKey "TXT" <*> asText pString
+               <|> P_ViewText <$ pKey "TXT" <*> asText pDoubleQuotedString
             
 --- ViewSegment ::= Label ViewSegmentLoad
 pViewSegment :: Bool -> AmpParser (P_ViewSegment  TermPrim)
@@ -466,7 +472,7 @@ pSubInterface = P_Box          <$> currPos <*> pBoxHeader <*> pBox
           TemplateKeyValue 
                  <$> currPos
                  <*> asText (pVarid <|> pConid <|> anyKeyWord)
-                 <*> optional (id <$ pOperator "=" <*> asText pString)
+                 <*> optional (id <$ pOperator "=" <*> asText pDoubleQuotedString)
 
 --- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
@@ -485,8 +491,8 @@ pObjDef = pBoxItem <$> currPos
                    <*> pMaybe pCruds
                    <*> pMaybe (pChevrons $ asText pConid) --for the view
                    <*> pMaybe pSubInterface  -- the optional subinterface
-          where obj ctx mCrud mView msub =
-                  P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."
+      where obj ctx mCrud mView msub =
+               P_BxExpr { obj_nm    = fatal "This should have been filled in promptly."
                         , pos       = fatal "This should have been filled in promptly."
                         , obj_ctx   = ctx
                         , obj_crud  = mCrud
@@ -495,8 +501,8 @@ pObjDef = pBoxItem <$> currPos
                         }
     pTxt :: AmpParser P_BoxItemTermPrim
     pTxt = obj <$ pKey "TXT"
-               <*> asText pString
-          where obj txt = 
+               <*> asText pDoubleQuotedString
+      where obj txt = 
                   P_BxTxt  { obj_nm   = fatal "This should have been filled in promptly."
                         , pos      = fatal "This should have been filled in promptly."
                         , obj_txt  = txt
@@ -517,7 +523,7 @@ pPurpose = rebuild <$> currPos
                    <*> pRef2Obj
                    <*> pMaybe pLanguageRef
                    <*> pMaybe pTextMarkup
-                   <*> pMaybe (pKey "REF" *> asText pString `sepBy1` pSemi)
+                   <*> pMaybe (pKey "REF" *> asText pDoubleQuotedString `sepBy1` pSemi)
                    <*> asText pAmpersandMarkup
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> Maybe (NE.NonEmpty Text) -> Text -> PPurpose
@@ -586,7 +592,7 @@ pMarkup :: AmpParser P_Markup
 pMarkup = P_Markup
            <$> pMaybe pLanguageRef
            <*> pMaybe pTextMarkup
-           <*> (asText pString <|> asText pAmpersandMarkup)
+           <*> (asText pDoubleQuotedString <|> asText pAmpersandMarkup)
 
 --- Rule ::= Term ('=' Term | '|-' Term)?
 -- | Parses a rule
@@ -715,7 +721,7 @@ pSign = pBrackets sign
 --- ConceptName ::= Conid | Text
 --- ConceptNameList ::= ConceptName (',' ConceptName)
 pConceptName ::   AmpParser Text
-pConceptName = asText $ pConid <|> pString
+pConceptName = asText $ pConid <|> pDoubleQuotedString
 
 --- ConceptRef ::= ConceptName
 pConceptRef ::    AmpParser P_Concept
@@ -746,7 +752,7 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
 --- ADLidList ::= ADLid (',' ADLid)*
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pADLid :: AmpParser Text
-pADLid = asText $ pVarid <|> pConid <|> pString
+pADLid = asText $ pVarid <|> pConid <|> pDoubleQuotedString
 
 asText :: AmpParser String -> AmpParser Text
 asText = fmap T.pack

@@ -14,7 +14,7 @@ module Ampersand.Core.ParseTree (
    , BoxHeader(..), TemplateKeyValue(..)
    , SrcOrTgt(..)
    , P_Rule(..)
-   , ConceptDef(..)
+   , PConceptDef(..), PCDDef(..)
    , Representation(..), TType(..)
    , P_Population(..)
    , PAtomPair(..), PAtomValue(..), mkPair, makePSingleton
@@ -55,7 +55,7 @@ data P_Context
          , ctx_pats ::   [P_Pattern]        -- ^ The patterns defined in this context
          , ctx_rs ::     [P_Rule TermPrim]  -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Relation]       -- ^ The relations defined in this context, outside the scope of patterns
-         , ctx_cs ::     [ConceptDef]       -- ^ The concept definitions defined in this context, outside the scope of patterns
+         , ctx_cs ::     [PConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctx_ks ::     [P_IdentDef]       -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctx_rrules :: [P_RoleRule]       -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
          , ctx_reprs ::  [Representation]
@@ -110,7 +110,7 @@ data P_Pattern
            , pt_gns ::   [PClassify]       -- ^ The generalizations defined in this pattern
            , pt_dcs ::   [P_Relation]      -- ^ The relations that are declared in this pattern
            , pt_RRuls :: [P_RoleRule]      -- ^ The assignment of roles to rules.
-           , pt_cds ::   [ConceptDef]      -- ^ The concept definitions defined in this pattern
+           , pt_cds ::   [PConceptDef]    -- ^ The concept definitions defined in this pattern
            , pt_Reprs :: [Representation]  -- ^ The type into which concepts is represented
            , pt_ids ::   [P_IdentDef]      -- ^ The identity definitions defined in this pattern
            , pt_vds ::   [P_ViewDef]       -- ^ The view definitions defined in this pattern
@@ -136,14 +136,21 @@ instance Named P_Pattern where
 instance Traced P_Pattern where
  origin = pos
 
-data ConceptDef
-   = Cd  { pos :: Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
-         , cdcpt :: Text   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
-         , cddef :: Text   -- ^ The textual definition of this concept.
-         , cdref :: Text   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
-         , cdfrom:: Text   -- ^ The name of the pattern or context in which this concept definition was made
-         }   deriving (Show,Typeable)
-instance Ord ConceptDef where
+data PConceptDef = PConceptDef
+  { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
+    pos :: !Origin,
+    -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+    cdcpt :: !Text,
+    -- | The textual definition of this concept.
+    cddef2 :: !PCDDef,
+    -- | A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+    cdmean :: ![PMeaning],
+    -- | The name of the pattern or context in which this concept definition was made
+    cdfrom :: !Text
+  }
+  deriving (Show, Typeable)
+
+instance Ord PConceptDef where
  compare a b = case compare (name a) (name b) of
      EQ -> fromMaybe (fatal . T.intercalate "\n" $
                         ["ConceptDef should have a non-fuzzy Origin."
@@ -152,15 +159,30 @@ instance Ord ConceptDef where
                         ])
                      (maybeOrdering (origin a) (origin b))
      x -> x  
-instance Eq ConceptDef where
+instance Eq PConceptDef where
   a == b = compare a b == EQ
-instance Unique ConceptDef where
+instance Unique PConceptDef where
   showUnique cd = cdcpt cd<>"At"<>tshow (typeOf x) <>"_" <> tshow x
     where x = origin cd
-instance Traced ConceptDef where
+instance Traced PConceptDef where
  origin = pos
-instance Named ConceptDef where
+instance Named PConceptDef where
  name = cdcpt
+
+-- | Data structure to implement the change to the new way to specify 
+--   the definition part of a concept. By using this structure, we can 
+--   implement the change in a fully backwards compatible way. 
+data PCDDef
+  = PCDDefLegacy
+      { -- | The textual definition of this concept.
+        pcddef :: !Text,
+        -- | A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+        pcdref :: !Text
+      }
+  | PCDDefNew
+      { pcdmean :: !PMeaning
+      }
+  deriving (Show, Typeable)
 data Representation
   = Repr { pos  :: Origin
          , reprcpts  :: NE.NonEmpty P_Concept  -- ^ the concepts

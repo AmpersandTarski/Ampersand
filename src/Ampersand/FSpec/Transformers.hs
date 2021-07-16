@@ -921,7 +921,7 @@ instance Instances AClassify where
   instances = Set.fromList . gens . originalContext
 instance Instances A_Concept where
   instances = concs . originalContext
-instance Instances ConceptDef where
+instance Instances AConceptDef where
   instances = Set.fromList . ctxcds . originalContext
 instance Instances Conjunct where
   instances = Set.fromList . allConjuncts

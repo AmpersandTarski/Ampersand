@@ -1,5 +1,5 @@
 name:           ampersand
-version:        4.1.5
+version:        4.2.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of enterprise information systems.
@@ -116,7 +116,6 @@ library:
       - Ampersand.Core.ShowPStruct
       - Ampersand.FSpec
       - Ampersand.FSpec.Crud
-#      - Ampersand.FSpec.FPA
       - Ampersand.FSpec.FSpec
       - Ampersand.FSpec.FSpecAux
       - Ampersand.FSpec.GenerateUML
@@ -159,8 +158,6 @@ library:
       - Ampersand.Output.FSpec2SQL
       - Ampersand.Output.PandocAux
       - Ampersand.Output.Population2Xlsx
-#      - Ampersand.Output.PredLogic
-#      - Ampersand.Output.Statistics
       - Ampersand.Output.ToJSON.Concepts
       - Ampersand.Output.ToJSON.Conjuncts
       - Ampersand.Output.ToJSON.Interfaces
@@ -190,8 +187,6 @@ library:
       - Ampersand.Test.Parser.ParserTest
       - Ampersand.Test.Parser.QuickChecks
       - Ampersand.Test.Regression
-#      - Ampersand.Test.RunAmpersand
-      - Ampersand.Test.TestScripts
       - MainApps
       - Options.Applicative.Builder.Extra
   generated-exposed-modules:
@@ -216,6 +211,7 @@ executables:
     main: Main.hs
     ghc-options:
       - -threaded
+      - -fwrite-ide-info
     dependencies: 
       - ampersand
       - Cabal == 3.2.1.0

@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        4.1.5
+version:        4.2.0
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -194,6 +194,7 @@ extra-source-files:
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl
     testing/Travis/testcases/FuncSpec/testinfo.yaml
+    testing/Travis/testcases/FuncSpec/testIssue1183.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
@@ -222,6 +223,7 @@ extra-source-files:
     testing/Travis/testcases/Parsing/shouldFail/Issue980.adl
     testing/Travis/testcases/Parsing/shouldFail/testinfo.yaml
     testing/Travis/testcases/Parsing/shouldSucceed/Issue1014.adl
+    testing/Travis/testcases/Parsing/shouldSucceed/Issue1183.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue899b.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue960.adl
     testing/Travis/testcases/Parsing/shouldSucceed/testinfo.yaml
@@ -543,7 +545,6 @@ library
       Ampersand.Test.Parser.ParserTest
       Ampersand.Test.Parser.QuickChecks
       Ampersand.Test.Regression
-      Ampersand.Test.TestScripts
       MainApps
       Options.Applicative.Builder.Extra
       Ampersand.Basics.BuildInfo_Generated
@@ -718,7 +719,7 @@ executable ampersand
       app/Ampersand
   default-extensions:
       NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded
+  ghc-options: -Wall -Wcompat -Widentities -optP-Wno-nonportable-include-path -Wredundant-constraints -threaded -fwrite-ide-info
   build-depends:
       Cabal ==3.2.1.0
     , HStringTemplate ==0.8.*

@@ -15,7 +15,7 @@ import qualified RIO.Text as T
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
 --         the class diagram and multiplicity rules are printed
-chpDataAnalysis :: (HasDirOutput env, HasDocumentOpts env) 
+chpDataAnalysis :: (HasDirOutput env, HasDocumentOpts env)
    => env -> FSpec -> (Blocks,[Picture])
 chpDataAnalysis env fSpec = (theBlocks, thePictures)
  where
@@ -25,7 +25,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
   outputLang' :: Lang
   outputLang' = outputLang env fSpec
   sectionLevel = 2
- 
+
   theBlocks
     =  xDefBlck env fSpec DataAnalysis  -- The header
     <> (case outputLang' of
@@ -44,9 +44,9 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                             <>  "Finally, the logical and technical data model are discussed."
                              )
        )
-    <> ( if null (classes $ clAnalysis fSpec) 
+    <> ( if null (classes $ clAnalysis fSpec)
          then mempty
-         else 
+         else
                header sectionLevel
                    (text.l $ (NL "Classificaties", EN "Classifications")
                    )
@@ -59,17 +59,17 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                                   )
                     )
             <> xDefBlck env fSpec classificationPicture
-           
-       )    
+
+       )
     <> daRulesSection
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
-    <> crudMatrixSection 
+    <> crudMatrixSection
   thePictures
     =  [classificationPicture, logicalDataModelPicture, technicalDataModelPicture]
   classificationPicture = makePicture env fSpec PTClassDiagram
 
-      
+
 
   logicalDataModelBlocks =
          header sectionLevel
@@ -111,31 +111,27 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
   conceptTables :: Blocks  -- This produces two separate tables:
                            -- The first table contains the concepts that have their own table in the logical data model.
                            -- The second table contains all other concepts.  
-  conceptTables = 
+  conceptTables =
     legacyTable (text.l $ (NL "Logische gegevensverzamelingen"
                     ,EN "Logical entity types"))
          [(AlignLeft,1/8),(AlignLeft,4/8),(AlignLeft,1/8),(AlignLeft,1/8),(AlignLeft,1/8)]
          [ (plain.text.l) (NL "Concept"       , EN "Concept")
          , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
-         , (plain.text.l) (NL "Aantal"        , EN "Count") 
-         , (plain.text.l) (NL "Vullingsgraad" , EN "Filling degree") 
-         ] 
+         , (plain.text.l) (NL "Aantal"        , EN "Count")
+         , (plain.text.l) (NL "Vullingsgraad" , EN "Filling degree")
+         ]
          [ [ (plain.text.name) c
            ,   meaningOf c
-            <> ( fromList 
-               . concatMap (amPandoc . explMarkup)
-               . purposesOf fSpec outputLang' 
-               $ c
-               )
+            <> (mconcat . map (amPandoc . explMarkup) . purposesOf fSpec outputLang') c
            , (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c
            , (plain . text . tshow) (percent (sum [ Set.size pairs
                                                  | attr<-attributesOfConcept fSpec c, pairs<-[(pairsInExpr fSpec . attExpr) (attr::SqlAttribute)]
                                                  ]) (Set.size (atomsInCptIncludingSmaller fSpec c)*length (attributesOfConcept fSpec c)))
            ]
-         | c <- L.sortBy (compare `on` name) 
-              . filter isKey 
-              . L.delete ONE 
-              . Set.elems 
+         | c <- L.sortBy (compare `on` name)
+              . filter isKey
+              . L.delete ONE
+              . Set.elems
               $ concs fSpec
          ]  <>
     legacyTable (text.l $ (NL "Overige attributen"
@@ -143,34 +139,35 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
          [(AlignLeft,1/6),(AlignLeft,4/6),(AlignLeft,1/6)]
          [ (plain.text.l) (NL "Concept"       , EN "Concept")
          , (plain.text.l) (NL "Voorbeelden"   , EN "Examples")
-         , (plain.text.l) (NL "Aantal"        , EN "Count") 
-         ] 
+         , (plain.text.l) (NL "Aantal"        , EN "Count")
+         ]
          [ [ (plain . text . name) c
            ]   -- max 20 voorbeelden van atomen van concept c
          ++(map (plain . text . showA) . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
          ++[ (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c
            ]
-         | c <- L.sortBy (compare `on` name) 
-              . Set.elems 
-              . Set.filter (not.isKey) 
+         | c <- L.sortBy (compare `on` name)
+              . Set.elems
+              . Set.filter (not.isKey)
               $ concs fSpec
          ]
      where
        isKey :: A_Concept -> Bool
        isKey cpt = cpt `elem` ooCpts oocd
        meaningOf :: A_Concept -> Blocks
-       meaningOf = mconcat . map (fromList . string2Blocks ReST . cddef) . concDefs fSpec 
-
+       meaningOf = agregateMany . map (maybe mempty meaning2Blocks . meaning outputLang') . concDefs fSpec
+  agregateMany :: [Many a] -> Many a
+  agregateMany = Many . join . unMany . fromList . fmap unMany
   percent :: (Integral a, Show a) => a -> a -> Text
   percent num denom
    = if denom==0
      then tshow num
      else tshow num<>"("<>tshow (round ((fromIntegral num*100.0/fromIntegral denom)::Float)::Integer)<>"%)"
-  
+
 
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
-           header (sectionLevel+1) 
+           header (sectionLevel+1)
                   ((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl)
         <> case clcpt cl of
              Nothing -> mempty
@@ -205,7 +202,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                          ]
                        )
         <> let asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
-                       ] 
+                       ]
            in  case asscs of
                  [] -> para ( text (name cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
                  _  -> para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
@@ -271,9 +268,9 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
             | (cncpt, (ifcsC, ifcsR, ifcsU, ifcsD)) <- crudObjsPerConcept (crudInfo fSpec)
             ]
         ]
-  
 
-  technicalDataModelBlocks = 
+
+  technicalDataModelBlocks =
        header sectionLevel
                 (case outputLang' of
                     Dutch   ->  "Technisch datamodel"
@@ -318,7 +315,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
              InternalPlug bin@BinSQL{}
                -> para (   (text.l) (NL "Dit is een koppeltabel, die "
                                     ,EN "This is a link-table, implementing ")
-                        <> primExpr2pandocMath outputLang' 
+                        <> primExpr2pandocMath outputLang'
                                                (case dLkpTbl bin of
                                                   [store] -> EDcD (rsDcl store)
                                                   ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "<>tshow (length ss))
@@ -365,7 +362,7 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
   technicalDataModelPicture = makePicture env fSpec PTTechnicalDM
 
   daRulesSection :: Blocks
-  daRulesSection = mconcat 
+  daRulesSection = mconcat
       [ header sectionLevel . text $ l (NL "Regels", EN "Rules")
       , para . text $ l ( NL $ "Nu volgt een opsomming van alle regels. Per regel wordt de formele expressie ervan gegeven. " <>
                                "Eerst worden de procesregels gegeven, vervolgens de invarianten."
@@ -388,27 +385,27 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
       ]
    where
     docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> Rules -> Blocks
-    docRules title intro noRules heading rules = 
-      if null rules 
+    docRules title intro noRules heading rules =
+      if null rules
       then (para . text . l) noRules
       else mconcat $
-                 [ header (sectionLevel+1) . text $ l title 
+                 [ header (sectionLevel+1) . text $ l title
                  , para . text $ l intro
                  ] <>
                  map (docRule heading) (Set.elems rules)
-    
+
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat
        [ plain $ strong (text (l heading <> ": ") <> emph (text (rrnm rule)))
-       , fromList . concatMap (amPandoc . explMarkup) . purposesOf fSpec outputLang' $ rule
+       , mconcat . map (amPandoc . explMarkup) . purposesOf fSpec outputLang' $ rule
        , printMeaning outputLang' rule
        , para (showMath rule)
        , if isSignal rule
          then mempty
          else case rrviol rule of
                 Nothing  -> mempty
-                Just sgmts -> 
-                    para (if isSignal rule 
+                Just sgmts ->
+                    para (if isSignal rule
                           then (text.l)(NL "Een overtreding van deze regel wordt gesignaleerd door middel van de melding: "
                                        ,EN "Violations of this rule are reported with the following message: "
                                        )
@@ -417,9 +414,9 @@ chpDataAnalysis env fSpec = (theBlocks, thePictures)
                                        )
                          )
                   <>bulletList [para $ violation2Inlines env fSpec sgmts]
-                   
-       ]   
-  
+
+       ]
+
 primExpr2pandocMath :: Lang -> Expression -> Inlines
 primExpr2pandocMath lang e =
  case e of
@@ -447,7 +444,7 @@ primExpr2pandocMath lang e =
              Dutch -> text "de identiteitsrelatie van "
              English -> text "the identityrelation of "
         <> math (name c)
-  (EEps c _) -> 
+  (EEps c _) ->
             case lang of
              Dutch -> text "de identiteitsrelatie van "
              English -> text "the identityrelation of "

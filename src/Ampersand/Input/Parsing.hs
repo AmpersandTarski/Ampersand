@@ -9,7 +9,7 @@ module Ampersand.Input.Parsing (
     , parseFormalAmpersand
     , parsePrototypeContext
     , parseRule
-    , runParser
+    , parseCtx
     , ParseCandidate(..) -- exported for use with --daemon
 ) where
 
@@ -17,7 +17,7 @@ import           Ampersand.ADL1
 import           Ampersand.Basics
 import           Ampersand.Core.ShowPStruct
 import           Ampersand.Input.ADL1.CtxError
-import           Ampersand.Input.ADL1.Lexer
+import Ampersand.Input.ADL1.Lexer ( initPos, Token(tokPos), lexer )
 import           Ampersand.Input.ADL1.Parser
 import           Ampersand.Input.Archi.ArchiAnalyze
 import           Ampersand.Input.PreProcessor

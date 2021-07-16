@@ -57,7 +57,7 @@ instance ConceptStructure A_Context where
   concs ctx = Set.unions -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
               [ Set.singleton ONE
             --  , Set.singleton (makeConcept "SESSION") --SESSION is in PrototypeContext.adl
-              , (concs . ctxcds) ctx
+              , (concs . ctxcdsOutPats) ctx
               , (concs . ctxds) ctx
               , (concs . ctxgs) ctx
               , (concs . ctxifcs) ctx
@@ -110,8 +110,8 @@ instance ConceptStructure A_Concept where
   concs         c = Set.singleton c
   expressionsIn _ = Set.empty
 
-instance ConceptStructure ConceptDef where
-  concs _         = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into P_ConceptDef and A_ConceptDef
+instance ConceptStructure AConceptDef where
+  concs _         = Set.empty -- singleton . makeConcept . name -- TODO: To do this properly, we need to separate Conceptdef into PConceptDef and A_ConceptDef
   expressionsIn _ = Set.empty
 
 instance ConceptStructure Signature where
