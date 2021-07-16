@@ -462,7 +462,7 @@ transformersFormalAmpersand fSpec = map toTransformer [
         ]
       )
      ,("name"                  , "Role"                  , "RoleName"
-      , Set.fromList [Uni,Tot]
+      , Set.fromList [Uni]
       , [(dirtyId rol,(PopAlphaNumeric . name) rol)
         | rol::Role <- instanceList fSpec
         ]
