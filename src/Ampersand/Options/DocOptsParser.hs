@@ -16,7 +16,7 @@ import qualified RIO.List as L
 import qualified RIO.Text as T
 
 
--- | Command-line parser for the proto command.
+-- | Command-line parser for the document command.
 docOptsParser :: 
      Parser DocOpts
 docOptsParser =
